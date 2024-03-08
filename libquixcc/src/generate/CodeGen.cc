@@ -158,7 +158,7 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstBinaryExp
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IdentifierNode *node) const
 {
-    return m_ctx->m_named_values.at(node->m_name);
+    return nullptr;
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U8TypeNode *node) const

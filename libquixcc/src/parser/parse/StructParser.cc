@@ -97,8 +97,7 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     tok = scanner->next();
     if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
     {
-        node = std::make_shared<StructDeclNode>();
-        std::static_pointer_cast<StructDeclNode>(node)->m_name = name;
+        node = std::make_shared<StructDeclNode>(name);
         return true;
     }
     else if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::OpenBrace)

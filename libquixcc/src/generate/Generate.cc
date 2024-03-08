@@ -89,11 +89,8 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNode
         return false;
     }
 
-    // Get the LLVMContext from the quixcc_job_t
-    LLVMContext &llvm_ctx = *(LLVMContext *)ctx.m_inner;
-
     // Add root nodes to the LLVMContext
-    if (!ast->codegen(CodegenVisitor(&llvm_ctx)))
+    if (!ast->codegen(CodegenVisitor(ctx.m_inner.get())))
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
         return false;
@@ -104,14 +101,14 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNode
     std::string err;
     llvm::raw_string_ostream err_stream(err);
 
-    if (llvm::verifyModule(*llvm_ctx.m_module, &err_stream))
+    if (llvm::verifyModule(*ctx.m_inner->m_module, &err_stream))
     {
         throw std::runtime_error("LLVM IR generation failed. The AST must have been semantically incorrect: " + err_stream.str());
     }
 
     // Generate the IR
     message(ctx, libquixcc::Err::DEBUG, "Generating LLVM IR");
-    llvm_ctx.m_module->print(os, nullptr, ctx.m_argset->contains("-g"));
+    ctx.m_inner->m_module->print(os, nullptr, ctx.m_argset->contains("-g"));
 
     message(ctx, libquixcc::Err::DEBUG, "Finished generating LLVM IR");
 

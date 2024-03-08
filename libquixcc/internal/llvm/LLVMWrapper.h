@@ -31,6 +31,7 @@
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Type.h>
+#include <parse/NodeType.h>
 #include <map>
 
 namespace libquixcc
@@ -42,7 +43,7 @@ namespace libquixcc
         std::shared_ptr<llvm::LLVMContext> m_ctx;
         std::shared_ptr<llvm::Module> m_module;
         std::shared_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::string, llvm::Value *> m_named_values;
+        std::vector<std::pair<std::string, TypeNode *>> m_named_construsts;
         std::string prefix = "";
         bool m_pub = false;
 

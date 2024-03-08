@@ -119,6 +119,7 @@ extern "C"
 
 #include <map>
 #include <string>
+#include <llvm/LLVMWrapper.h>
 
 typedef struct quixcc_job_t
 {
@@ -142,7 +143,8 @@ typedef struct quixcc_job_t
     uint32_t m_internal_flags;
 
     /// @brief Internal data
-    void *m_inner;
+    // void *m_inner;
+    std::shared_ptr<libquixcc::LLVMContext> m_inner;
 
     std::map<std::string, std::string> *m_argset;
 

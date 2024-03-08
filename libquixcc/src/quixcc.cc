@@ -103,7 +103,7 @@ static quixcc_uuid_t quixcc_uuid()
 LIB_EXPORT quixcc_job_t *quixcc_new()
 {
     quixcc_job_t *job = (quixcc_job_t *)safe_malloc(sizeof(quixcc_job_t));
-    memset(job, 0, sizeof(quixcc_job_t));
+    memset((void *)job, 0, sizeof(quixcc_job_t));
 
     job->m_id = quixcc_uuid();
 
@@ -163,9 +163,6 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
         free(job->m_result);
     }
 
-    if (job->m_inner)
-        delete reinterpret_cast<libquixcc::LLVMContext *>(job->m_inner);
-
     if (job->m_argset)
         delete job->m_argset;
 
@@ -175,7 +172,7 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
         job->m_filename = nullptr;
     }
 
-    memset(job, 0, sizeof(quixcc_job_t));
+    memset((void *)job, 0, sizeof(quixcc_job_t));
 
     free(job);
 
@@ -685,7 +682,7 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     if (!job->m_in || !job->m_out || !job->m_filename || job->m_inner != nullptr || job->m_argset != nullptr)
         return false;
 
-    job->m_inner = new libquixcc::LLVMContext(job->m_filename);
+    job->m_inner = std::make_shared<libquixcc::LLVMContext>(job->m_filename);
     job->m_argset = new std::map<std::string, std::string>();
     job->m_result = (quixcc_result_t *)safe_malloc(sizeof(quixcc_result_t));
     memset(job->m_result, 0, sizeof(quixcc_result_t));
