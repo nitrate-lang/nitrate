@@ -25,19 +25,23 @@
 
 #include <string>
 #include <memory>
+#include <functional>
 #include <parse/NodeType.h>
 
 namespace libquixcc
 {
-    typedef void (*ParseNodePreorderVisitorCallback)(libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node);
-    typedef void (*ParseNodePostorderVisitorCallback)(libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node);
+    typedef std::function<void(std::string _namespace, libquixcc::ParseNode *, std::shared_ptr<libquixcc::ParseNode> *)> ParseNodePreorderVisitorCallback;
+    typedef std::function<void(std::string _namespace, libquixcc::ParseNode *, std::shared_ptr<libquixcc::ParseNode> *)> ParseNodePostorderVisitorCallback;
 
     class ParseNodePreorderVisitor
     {
         ParseNodePreorderVisitorCallback m_callback;
+        std::string m_prefix;
+
+        void push_prefix(const std::string &name);
 
     public:
-        ParseNodePreorderVisitor(ParseNodePreorderVisitorCallback callback) : m_callback(callback) {}
+        ParseNodePreorderVisitor(ParseNodePreorderVisitorCallback callback, std::string _namespace) : m_callback(callback), m_prefix(_namespace) {}
 
         size_t visit(ParseNode *node);
         size_t visit(ExprNode *node);
@@ -97,6 +101,9 @@ namespace libquixcc
     class ParseNodePostorderVisitor
     {
         ParseNodePostorderVisitorCallback m_callback;
+        std::string m_prefix;
+        
+        void push_prefix(const std::string &name);
 
     public:
         ParseNodePostorderVisitor(ParseNodePostorderVisitorCallback callback) : m_callback(callback) {}

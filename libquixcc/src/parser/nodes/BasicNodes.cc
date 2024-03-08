@@ -26,12 +26,15 @@ void libquixcc::ParseNode::replace_child(std::shared_ptr<libquixcc::ParseNode> &
     old_node = new_node;
 }
 
-static void nop(libquixcc::ParseNode *parrent, std::shared_ptr<libquixcc::ParseNode> *node)
+static void nop(std::string _namespace, libquixcc::ParseNode *parrent, std::shared_ptr<libquixcc::ParseNode> *node)
 {
+    (void)_namespace;
+    (void)parrent;
+    (void)node;
     return;
 }
 
 size_t libquixcc::ParseNode::count()
 {
-    return dfs_preorder(nop);
+    return dfs_preorder(ParseNodePreorderVisitor(nop, ""));
 }
