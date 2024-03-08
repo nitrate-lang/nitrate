@@ -44,6 +44,7 @@ namespace libquixcc
     void message(quixcc_job_t &job, Err type, const std::string &format, ...);
     void parmsg(quixcc_job_t &job, const Token &tok, Err type, const std::string &format, ...);
     void prepmsg(quixcc_job_t &job, const Token &tok, Err type, const std::string &format, ...);
+    void semanticmsg(quixcc_job_t &job, Err type, bool fatal_now, const std::string &format, ...);
 };
 
 #endif // __QUIXCC_ERROR_H__

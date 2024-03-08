@@ -271,3 +271,25 @@ void libquixcc::prepmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixc
     if (type == Err::FATAL || type == Err::ERROR)
         throw libquixcc::PreprocessorException();
 }
+
+void libquixcc::semanticmsg(quixcc_job_t &job, libquixcc::Err type, bool fatal_now, const std::string &format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    std::string msg;
+
+    if (is_color_enabled())
+        msg = make_message_colored(type, format, args);
+    else
+        msg = make_message_nocolor(type, format, args);
+
+    va_end(args);
+
+    push_message_to_job(job, type, msg);
+
+    if (fatal_now)
+    {
+        if (type == Err::FATAL || type == Err::ERROR)
+            throw libquixcc::SemanticException();
+    }
+}

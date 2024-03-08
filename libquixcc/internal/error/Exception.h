@@ -38,6 +38,12 @@ namespace libquixcc
     public:
         const char *what() const noexcept override { return "Parse error"; }
     };
+
+    class SemanticException : public std::exception
+    {
+    public:
+        const char *what() const noexcept override { return "Semantic error"; }
+    };
 }
 
 #endif // __QUIXCC_ERROR_EXCEPTIONS_H__
