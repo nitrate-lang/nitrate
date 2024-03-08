@@ -16,16 +16,18 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
+#define QUIXCC_INTERNAL
+
 #include <mutate/Routine.h>
 #include <stack>
 #include <queue>
 
-#include <iostream>
-
 using namespace libquixcc;
 
-static void fold_const_string_expr(libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+static void fold_const_string_expr(std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
 {
+    (void)_namespace;
+
     if ((*node)->ntype != NodeType::ConstBinaryExprNode)
         return;
 
@@ -66,5 +68,5 @@ static void fold_const_string_expr(libquixcc::ParseNode *parent, std::shared_ptr
 
 void libquixcc::mutate::FoldConstExpr(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
 {
-    ast->dfs_preorder(ParseNodePreorderVisitor(fold_const_string_expr));
+    ast->dfs_preorder(ParseNodePreorderVisitor(fold_const_string_expr, job->m_inner->prefix));
 }
