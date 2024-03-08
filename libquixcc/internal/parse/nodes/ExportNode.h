@@ -35,7 +35,6 @@ namespace libquixcc
     class ExportNode : public StmtNode
     {
     public:
-        ExportNode() { ntype = NodeType::ExportNode; }
         ExportNode(std::shared_ptr<StmtNode> stmt) : m_stmt(stmt) { ntype = NodeType::ExportNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }

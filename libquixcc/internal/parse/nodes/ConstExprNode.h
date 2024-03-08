@@ -37,7 +37,6 @@ namespace libquixcc
     class ConstUnaryExprNode : public ConstExprNode
     {
     public:
-        ConstUnaryExprNode() { ntype = NodeType::ConstUnaryExprNode; }
         ConstUnaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &expr) : m_op(op), m_expr(expr) { ntype = NodeType::ConstUnaryExprNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
@@ -53,7 +52,6 @@ namespace libquixcc
     class ConstBinaryExprNode : public ConstExprNode
     {
     public:
-        ConstBinaryExprNode() { ntype = NodeType::ConstBinaryExprNode; }
         ConstBinaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &lhs, const std::shared_ptr<ConstExprNode> &rhs)
             : m_op(op), m_lhs(lhs), m_rhs(rhs) { ntype = NodeType::ConstBinaryExprNode; }
 

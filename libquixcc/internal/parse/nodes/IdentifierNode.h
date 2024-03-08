@@ -35,7 +35,6 @@ namespace libquixcc
     class IdentifierNode : public ExprNode
     {
     public:
-        IdentifierNode() { ntype = NodeType::IdentifierNode; }
         IdentifierNode(const std::string &name) : m_name(name) { ntype = NodeType::IdentifierNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
