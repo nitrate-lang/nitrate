@@ -50,6 +50,21 @@ static uint8_t get_numbits(const std::string &s)
     return 8;
 }
 
+static std::string getRandomIdentifier()
+{
+    static const char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    static const size_t alphanum_size = sizeof(alphanum) - 1;
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
+
+    std::string s;
+    for (size_t i = 0; i < 10; ++i)
+    {
+        s += alphanum[rand() % alphanum_size];
+    }
+    return "_" + s;
+}
+
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BlockNode *node) const
 {
     for (auto &stmt : node->m_stmts)
@@ -148,67 +163,67 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IdentifierNode *n
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U8TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt8Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U16TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt16Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U32TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt32Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U64TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt64Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I8TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt8Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I16TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt16Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I32TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt32Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I64TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt64Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::F32TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getFloatTy();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::F64TypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getDoubleTy();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::BoolTypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt1Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::CharTypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getInt8Ty();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::VoidTypeNode *node) const
 {
-    return nullptr;
+    return m_ctx->m_builder->getVoidTy();
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StringTypeNode *node) const
@@ -272,12 +287,20 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::FloatLiteralNo
 
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::StringLiteralNode *node) const
 {
+    const auto randId = getRandomIdentifier();
     auto str = llvm::ConstantDataArray::getString(*m_ctx->m_ctx, node->m_val);
 
     llvm::Constant *zero = llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(*m_ctx->m_ctx));
     llvm::Constant *indices[] = {zero, zero};
 
-    return llvm::ConstantExpr::getGetElementPtr(str->getType(), str, indices, true);
+    auto global = m_ctx->m_module->getOrInsertGlobal(randId, str->getType());
+    auto gvar = m_ctx->m_module->getGlobalVariable(randId);
+
+    gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
+
+    gvar->setInitializer(str);
+
+    return llvm::ConstantExpr::getGetElementPtr(str->getType(), global, indices);
 }
 
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::CharLiteralNode *node) const
@@ -313,6 +336,10 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::VarDeclNode *node
 
         gvar->setInitializer(init);
     }
+    else
+    {
+        gvar->setInitializer(llvm::Constant::getNullValue(type));
+    }
 
     return gvar;
 }
@@ -326,6 +353,8 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::LetDeclNode *node
 
     m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix), type);
     llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix));
+    if (!gvar)
+        return nullptr;
 
     if (m_ctx->m_pub)
         gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
@@ -339,6 +368,10 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::LetDeclNode *node
             return nullptr;
 
         gvar->setInitializer(init);
+    }
+    else
+    {
+        gvar->setInitializer(llvm::Constant::getNullValue(type));
     }
 
     return gvar;
@@ -366,6 +399,10 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ConstDeclNode *no
             return nullptr;
 
         gvar->setInitializer(init);
+    }
+    else
+    {
+        gvar->setInitializer(llvm::Constant::getNullValue(type));
     }
 
     return gvar;
