@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.15)
 project(libquixcc CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Find C++20 source files
+# Find C++23 source files
 file(GLOB_RECURSE LIBQUIX_CXX_SOURCES "src/*.cc")
 
 # Get LLVM flags from llvm-config-14 --cxxflags
