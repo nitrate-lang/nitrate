@@ -280,7 +280,10 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Va
     str += "\",\"type\":";
     str += node->m_type->to_json(*this);
     str += ",\"value\":";
-    str += node->m_init->to_json(*this);
+    if (node->m_init)
+        str += node->m_init->to_json(*this);
+    else
+        str += "null";
     str += ",\"deprecated\":";
     str += std::string(node->m_is_deprecated ? "true" : "false");
     str += ",\"mutable\":";
@@ -299,7 +302,10 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Le
     str += "\",\"type\":";
     str += node->m_type->to_json(*this);
     str += ",\"value\":";
-    str += node->m_init->to_json(*this);
+    if (node->m_init)
+        str += node->m_init->to_json(*this);
+    else
+        str += "null";
     str += ",\"deprecated\":";
     str += std::string(node->m_is_deprecated ? "true" : "false");
     str += ",\"mutable\":";
@@ -318,7 +324,10 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Co
     str += "\",\"type\":";
     str += node->m_type->to_json(*this);
     str += ",\"value\":";
-    str += node->m_init->to_json(*this);
+    if (node->m_init)
+        str += node->m_init->to_json(*this);
+    else
+        str += "null";
     str += ",\"deprecated\":";
     str += std::string(node->m_is_deprecated ? "true" : "false");
     return str + "}";
