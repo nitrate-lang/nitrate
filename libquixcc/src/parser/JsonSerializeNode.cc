@@ -225,22 +225,46 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::St
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StructTypeNode *node) const
 {
-    return "{\"ntype\":\"StructTypeNode\"}";
+    std::string str = "{\"ntype\":\"StructTypeNode\",\"fields\":[";
+    for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_fields.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    return str + "]}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UnionTypeNode *node) const
 {
-    return "{\"ntype\":\"UnionTypeNode\"}";
+    std::string str = "{\"ntype\":\"UnionTypeNode\",\"fields\":[";
+    for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_fields.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    return str + "]}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ArrayTypeNode *node) const
 {
-    return "{\"ntype\":\"ArrayTypeNode\"}";
+    std::string str = "{\"ntype\":\"ArrayTypeNode\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"size\":";
+    str += node->m_size->to_json(*this);
+    return str + "}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UserTypeNode *node) const
 {
-    return "{\"ntype\":\"UserTypeNode\"}";
+    return "{\"ntype\":\"UserTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::LiteralNode *node) const
