@@ -214,6 +214,9 @@ static std::string make_parser_message_nocolor(const std::string &file, const li
 
 void libquixcc::message(quixcc_job_t &job, Err type, const std::string &format, ...)
 {
+    if (!job.m_debug && type == Err::DEBUG)
+        return;
+
     va_list args;
     va_start(args, format);
     std::string msg;
@@ -230,6 +233,9 @@ void libquixcc::message(quixcc_job_t &job, Err type, const std::string &format, 
 
 void libquixcc::parmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::Err type, const std::string &format, ...)
 {
+    if (!job.m_debug && type == Err::DEBUG)
+        return;
+
     va_list args;
     va_start(args, format);
     std::string msg;
@@ -252,6 +258,9 @@ void libquixcc::parmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc
 
 void libquixcc::prepmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::Err type, const std::string &format, ...)
 {
+    if (!job.m_debug && type == Err::DEBUG)
+        return;
+
     va_list args;
     va_start(args, format);
     std::string msg;
@@ -274,6 +283,9 @@ void libquixcc::prepmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixc
 
 void libquixcc::semanticmsg(quixcc_job_t &job, libquixcc::Err type, bool fatal_now, const std::string &format, ...)
 {
+    if (!job.m_debug && type == Err::DEBUG)
+        return;
+
     va_list args;
     va_start(args, format);
     std::string msg;
