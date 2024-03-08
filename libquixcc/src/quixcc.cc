@@ -35,7 +35,7 @@
 #include <error/Exception.h>
 #include <parse/Parser.h>
 #include <libquixcc.h>
-#include <optimize/Routine.h>
+#include <mutate/Routine.h>
 
 #define LIB_EXPORT extern "C" __attribute__((visibility("default")))
 
@@ -284,9 +284,9 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>
     (void)job;
     (void)ast;
 
-    libquixcc::PreliminaryOptimizer optimizer;
-    optimizer.add_routine(libquixcc::optimize::FoldConstExpr);
-    optimizer.run(ast);
+    libquixcc::Mutation optimizer;
+    optimizer.add_routine(libquixcc::mutate::FoldConstExpr);
+    optimizer.run(job, ast);
 
     /// TODO: Name resolution. Update all identifiers to use the fully qualified name
     /// TODO: Replace UserTypeNode with the defined type

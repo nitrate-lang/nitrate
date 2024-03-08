@@ -16,56 +16,20 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_OPTIMIZE_ROUTINES_H__
-#define __QUIXCC_OPTIMIZE_ROUTINES_H__
+#ifndef __QUIXCC_MUTATE_EXPR_FOLDER_H__
+#define __QUIXCC_MUTATE_EXPR_FOLDER_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <optimize/FoldConstExpr.h>
+#include <string>
 
-namespace libquixcc
+#include <parse/Parser.h>
+
+namespace libquixcc::mutate
 {
-    typedef std::function<void(std::shared_ptr<libquixcc::AST>)> ASTOptimizeRoutine;
-
-    class PreliminaryOptimizer
-    {
-    public:
-        void run(std::shared_ptr<libquixcc::AST> ast)
-        {
-            for (auto routine : m_routines)
-            {
-                routine(ast);
-            }
-        }
-
-        void add_routine(ASTOptimizeRoutine routine)
-        {
-            m_routines.push_back(routine);
-        }
-
-        std::vector<ASTOptimizeRoutine> m_routines;
-    };
-
-    class Optimizer
-    {
-    public:
-        void run(std::shared_ptr<libquixcc::AST> ast)
-        {
-            for (auto routine : m_routines)
-            {
-                routine(ast);
-            }
-        }
-
-        void add_routine(ASTOptimizeRoutine routine)
-        {
-            m_routines.push_back(routine);
-        }
-
-        std::vector<ASTOptimizeRoutine> m_routines;
-    };
+    void FoldConstExpr(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast);
 }
 
-#endif // __QUIXCC_OPTIMIZE_ROUTINES_H__
+#endif // __QUIXCC_MUTATE_EXPR_FOLDER_H__
