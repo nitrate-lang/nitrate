@@ -126,10 +126,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         return false;
     }
 
-    auto edef = std::make_shared<EnumDefNode>();
-    edef->m_name = name;
-    edef->m_fields = fields;
-    edef->m_type = type;
-    node = edef;
+    /// TODO: implement the scoped enum feature like c++ `enum class`
+    node = std::make_shared<EnumDefNode>(name, type, false, fields);
     return true;
 }

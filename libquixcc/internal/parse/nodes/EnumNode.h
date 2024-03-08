@@ -68,7 +68,8 @@ namespace libquixcc
     {
     public:
         EnumDefNode() { ntype = NodeType::EnumDefNode; }
-        EnumDefNode(const std::string &name, TypeNode *type) : m_name(name), m_type(type) { ntype = NodeType::EnumDefNode; }
+        EnumDefNode(const std::string &name, TypeNode *type, bool is_scoped, const std::vector<std::shared_ptr<EnumFieldNode>> &fields)
+            : m_name(name), m_type(type), m_fields(fields), m_scoped(is_scoped) { ntype = NodeType::EnumDefNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
@@ -79,6 +80,7 @@ namespace libquixcc
         std::string m_name;
         TypeNode *m_type;
         std::vector<std::shared_ptr<EnumFieldNode>> m_fields;
+        bool m_scoped = false;
     };
 }
 
