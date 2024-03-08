@@ -93,14 +93,10 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNode
     LLVMContext &llvm_ctx = *(LLVMContext *)ctx.m_inner;
 
     // Add root nodes to the LLVMContext
-    for (auto &node : ast->m_stmts)
+    if (!ast->codegen(CodegenVisitor(&llvm_ctx)))
     {
-        llvm::Value *val = node->codegen(CodegenVisitor(&llvm_ctx));
-        if (!val)
-        {
-            message(ctx, libquixcc::Err::ERROR, "Failed to generate code for node");
-            return false;
-        }
+        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
+        return false;
     }
 
     // Verify the module

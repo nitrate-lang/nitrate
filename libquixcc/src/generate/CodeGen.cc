@@ -262,12 +262,13 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::UnionTypeNode *nod
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::ArrayTypeNode *node) const
 {
-    return nullptr;
-}
+    auto sz = node->m_size->codegen(*this);
+    if (!sz)
+        return nullptr;
+    if (!sz->getType()->isIntegerTy())
+        return nullptr;
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::UserTypeNode *node) const
-{
-    return nullptr;
+    return llvm::ArrayType::get(node->m_type->codegen(*this), static_cast<llvm::ConstantInt *>(sz)->getZExtValue());
 }
 
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::IntegerLiteralNode *node) const
@@ -449,12 +450,20 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StructDefNode *node) const
 {
-    return nullptr;
-}
+    llvm::Type *f;
+    std::vector<llvm::Type *> fields;
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StructFieldNode *node) const
-{
-    return nullptr;
+    for (auto &field : node->m_fields)
+    {
+        if (!(f = field->m_type->codegen(*this)))
+            return nullptr;
+        fields.push_back(f);
+    }
+
+    llvm::StructType *stype = llvm::StructType::create(*m_ctx->m_ctx, node->m_name);
+    stype->setBody(fields);
+
+    return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnionDefNode *node) const

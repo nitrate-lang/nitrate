@@ -71,7 +71,7 @@ namespace libquixcc
         std::string m_name;
     };
 
-    class StructFieldNode : public DefNode
+    class StructFieldNode : public ParseNode
     {
     public:
         StructFieldNode() { ntype = NodeType::StructFieldNode; }
@@ -79,9 +79,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const { return visitor.visit(this); }
 
         std::string m_name;
         TypeNode *m_type;
