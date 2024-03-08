@@ -91,4 +91,18 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {FN_IMPURE_ALREADY_SPECIFIED, "The 'impure' specifier was already specified for this function. To fix the issue, remove the duplicate 'impure' specifier"},
     {FN_PURE_AND_IMPURE_SPECIFIED, "The 'pure' and 'impure' specifiers were both specified for this function. To fix the issue, remove one of the duplicate specifiers"},
 
-    {PREP_DUPLICATE_IMPORT, "Source file \"%s\" contains duplicate import of \"%s\""}};
+    {PREP_DUPLICATE_IMPORT, "Source file \"%s\" contains duplicate import of \"%s\""},
+
+    {VAR_NAME_DUPLICATE, "Variable name '%s' is already in use. To fix the issue, rename the variable to something unique"},
+    {LET_NAME_DUPLICATE, "Variable name '%s' is already in use. To fix the issue, rename the variable to something unique"},
+    {CONST_NAME_DUPLICATE, "Variable name '%s' is already in use. To fix the issue, rename the variable to something unique"},
+    {STRUCT_NAME_DUPLICATE, "Struct name '%s' is already in use. To fix the issue, rename the struct to something unique"},
+    {UNION_NAME_DUPLICATE, "Union name '%s' is already in use. To fix the issue, rename the union to something unique"},
+    {ENUM_NAME_DUPLICATE, "Enum name '%s' is already in use. To fix the issue, rename the enum to something unique"},
+    {FUNC_NAME_DUPLICATE, "Function name '%s' is already in use. To fix the issue, rename the function to something unique"},
+    {STRUCT_FIELD_DUPLICATE, "Field name '%s' is already in use. To fix the issue, rename the field to something unique"},
+    {UNION_FIELD_DUPLICATE, "Field name '%s' is already in use. To fix the issue, rename the field to something unique"},
+    {ENUM_FIELD_DUPLICATE, "Field name '%s' is already in use. To fix the issue, rename the field to something unique"},
+    {PARAM_NAME_DUPLICATE, "Parameter name '%s' is already in use. To fix the issue, rename the parameter to something unique"},
+    {SUBSYSTEM_NAME_DUPLICATE, "Subsystem name '%s' is already in use. To fix the issue, rename the subsystem to something unique"},
+};

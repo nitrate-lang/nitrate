@@ -101,6 +101,22 @@ namespace libquixcc
 
         PREP_DUPLICATE_IMPORT,
 
+        VAR_NAME_DUPLICATE,
+        LET_NAME_DUPLICATE,
+        CONST_NAME_DUPLICATE,
+        STRUCT_NAME_DUPLICATE,
+        UNION_NAME_DUPLICATE,
+        ENUM_NAME_DUPLICATE,
+        FUNC_NAME_DUPLICATE,
+        STRUCT_FIELD_DUPLICATE,
+        UNION_FIELD_DUPLICATE,
+        ENUM_FIELD_DUPLICATE,
+        PARAM_NAME_DUPLICATE,
+        SUBSYSTEM_NAME_DUPLICATE,
+
+        GENERIC_ERROR,
+
+        MAX_MSG
     };
 
     extern std::map<Msg, const char *> feedback;

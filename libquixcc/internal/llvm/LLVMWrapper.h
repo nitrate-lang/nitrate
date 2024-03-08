@@ -43,7 +43,7 @@ namespace libquixcc
         std::shared_ptr<llvm::LLVMContext> m_ctx;
         std::shared_ptr<llvm::Module> m_module;
         std::shared_ptr<llvm::IRBuilder<>> m_builder;
-        std::vector<std::pair<std::string, TypeNode *>> m_named_construsts;
+        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
         std::string prefix = "";
         bool m_pub = false;
 
