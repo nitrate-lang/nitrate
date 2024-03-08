@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <mangle/symbol.h>
+#include <mangle/Symbol.h>
 #include <parse/nodes/variable.h>
 #include <parse/nodes/integer.h>
 
