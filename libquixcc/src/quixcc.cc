@@ -284,13 +284,16 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>
     (void)job;
     (void)ast;
 
-    libquixcc::Mutation optimizer;
-    optimizer.add_routine(libquixcc::mutate::FoldConstExpr);
-    optimizer.run(job, ast);
+    libquixcc::Mutation mutator;
+    mutator.add_routine(libquixcc::mutate::DiscoverNamedConstructs);
+    mutator.add_routine(libquixcc::mutate::ResolveNamedConstructs);
+    mutator.add_routine(libquixcc::mutate::ReplaceNamedTypes);
+    mutator.add_routine(libquixcc::mutate::FillInConstants);
+    mutator.add_routine(libquixcc::mutate::FoldConstExpr);
+    mutator.add_routine(libquixcc::mutate::ConvertTypes);
+    mutator.add_routine(libquixcc::mutate::InferTypes);
+    mutator.run(job, ast);
 
-    /// TODO: Name resolution. Update all identifiers to use the fully qualified name
-    /// TODO: Replace UserTypeNode with the defined type
-    /// TODO: Type Coercion/Conversion
     /// TODO: Type Inference
 
     return true;

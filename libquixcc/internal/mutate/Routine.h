@@ -23,10 +23,25 @@
 #error "This header requires C++"
 #endif
 
-#include <mutate/FoldConstExpr.h>
+#include <memory>
+#include <functional>
+#include <vector>
+#include <parse/Parser.h>
+#include <quixcc.h>
 
 namespace libquixcc
 {
+    namespace mutate
+    {
+        void DiscoverNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
+        inline void ResolveNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
+        inline void ReplaceNamedTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
+        inline void FillInConstants(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
+        void FoldConstExpr(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
+        inline void ConvertTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
+        inline void InferTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
+    }
+
     typedef std::function<void(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>)> ASTMutateRoutine;
 
     class Mutation
