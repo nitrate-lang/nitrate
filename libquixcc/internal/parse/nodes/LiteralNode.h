@@ -64,6 +64,8 @@ namespace libquixcc
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
+        virtual int64_t GetInt64() const override { return std::stoll(m_val); }
+
         std::string m_val;
     };
 

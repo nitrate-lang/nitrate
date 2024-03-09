@@ -42,7 +42,7 @@ void libquixcc::mutate::ResolveNamedConstructs(quixcc_job_t *job, std::shared_pt
 
             if (!job->m_inner->m_named_types.contains(user_type->m_name))
             {
-                semanticmsg(*job, Err::ERROR, false, feedback[UNRESOLVED_TYPE], user_type->m_name);
+                semanticmsg(*job, Err::ERROR, false, feedback[UNRESOLVED_TYPE], user_type->m_name.c_str());
                 return;
             }
 

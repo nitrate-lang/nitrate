@@ -299,9 +299,11 @@ void libquixcc::semanticmsg(quixcc_job_t &job, libquixcc::Err type, bool fatal_n
 
     push_message_to_job(job, type, msg);
 
-    if (fatal_now)
+    if (type == Err::FATAL || type == Err::ERROR)
     {
-        if (type == Err::FATAL || type == Err::ERROR)
+        job.m_tainted = true;
+
+        if (fatal_now)
             throw libquixcc::SemanticException();
     }
 }

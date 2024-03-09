@@ -150,6 +150,8 @@ typedef struct quixcc_job_t
 
     /// @brief User may set to true to enable debug messages
     bool m_debug;
+
+    bool m_tainted;
 } quixcc_job_t;
 
 extern "C"

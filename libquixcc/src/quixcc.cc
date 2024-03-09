@@ -551,13 +551,13 @@ static bool compile(quixcc_job_t *job)
     ///=========================================
     /// BEGIN: INTERMEDIATE PROCESSING
     ///=========================================
-    if (!quixcc_mutate_ast(job, ast))
+    if (!quixcc_mutate_ast(job, ast) || job->m_tainted)
         return false;
 
-    if (!quixcc_verify_semantics(job, ast))
+    if (!quixcc_verify_semantics(job, ast) || job->m_tainted)
         return false;
 
-    if (!quixcc_optimize_ast(job, ast))
+    if (!quixcc_optimize_ast(job, ast) || job->m_tainted)
         return false;
 
     if (job->m_debug)
