@@ -62,6 +62,7 @@ namespace libquixcc
         StructTypeNode,
         UnionTypeNode,
         ArrayTypeNode,
+        FunctionTypeNode,
         UserTypeNode,
 
         LiteralNode,
@@ -122,6 +123,7 @@ namespace libquixcc
     class StructTypeNode;
     class UnionTypeNode;
     class ArrayTypeNode;
+    class FunctionTypeNode;
     class UserTypeNode;
     class LiteralNode;
     class IntegerLiteralNode;

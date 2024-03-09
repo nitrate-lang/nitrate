@@ -271,6 +271,11 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::ArrayTypeNode *nod
     return llvm::ArrayType::get(node->m_type->codegen(*this), static_cast<llvm::ConstantInt *>(sz)->getZExtValue());
 }
 
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *node) const
+{
+    return nullptr;
+}
+
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::IntegerLiteralNode *node) const
 {
     return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(get_numbits(node->m_val), node->m_val, 10));

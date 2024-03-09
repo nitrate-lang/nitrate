@@ -98,6 +98,14 @@ namespace libquixcc
 
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
+        virtual UnionTypeNode *get_type() const
+        {
+            std::vector<TypeNode *> fields;
+            for (auto &field : m_fields)
+                fields.push_back(field->m_type);
+            return UnionTypeNode::create(fields);
+        }
+
         std::string m_name;
         std::vector<std::shared_ptr<UnionFieldNode>> m_fields;
     };

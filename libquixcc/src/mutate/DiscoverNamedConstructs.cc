@@ -57,11 +57,13 @@ static std::map<libquixcc::NodeType, libquixcc::Msg> error_message_index = {
 void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> named_construct_map;
+    std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> named_types_map;
 
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [&named_construct_map, job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [&named_construct_map, job, &named_types_map](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
             std::string tmp;
+            bool is_type = false;
 
             switch ((*node)->ntype)
             {
@@ -74,32 +76,26 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
             case NodeType::ConstDeclNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::ConstDeclNode>(*node)->m_name);
                 break;
-            case NodeType::StructDeclNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::StructDeclNode>(*node)->m_name);
-                break;
-            case NodeType::UnionDeclNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::UnionDeclNode>(*node)->m_name);
-                break;
-            case NodeType::EnumDeclNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::EnumDeclNode>(*node)->m_name);
-                break;
             case NodeType::FunctionDeclNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::FunctionDeclNode>(*node)->m_name);
                 break;
             case NodeType::StructDefNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::StructDefNode>(*node)->m_name);
+                is_type = true;
                 break;
             case NodeType::StructFieldNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::StructFieldNode>(*node)->m_name);
                 break;
             case NodeType::UnionDefNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::UnionDefNode>(*node)->m_name);
+                is_type = true;
                 break;
             case NodeType::UnionFieldNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::UnionFieldNode>(*node)->m_name);
                 break;
             case NodeType::EnumDefNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::EnumDefNode>(*node)->m_name);
+                is_type = true;
                 break;
             case NodeType::EnumFieldNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::EnumFieldNode>(*node)->m_name);
@@ -116,13 +112,16 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
             }
 
             auto key = std::make_pair((*node)->ntype, tmp);
-            if (!named_construct_map.contains(key))
+            if (named_construct_map.contains(key))
             {
-                named_construct_map[key] = *node;
+                semanticmsg(*job, Err::ERROR, false, feedback[error_message_index[(*node)->ntype]], tmp.c_str());
                 return;
             }
 
-            semanticmsg(*job, Err::ERROR, false, feedback[error_message_index[(*node)->ntype]], tmp.c_str());
+            named_construct_map[key] = *node;
+
+            if (is_type)
+                named_types_map[tmp] = *node;
         },
         job->m_inner->prefix));
 
@@ -130,4 +129,5 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
         message(*job, Err::DEBUG, "Found named construct: %s", pair.first.second.c_str());
 
     job->m_inner->m_named_construsts = named_construct_map;
+    job->m_inner->m_named_types = named_types_map;
 }

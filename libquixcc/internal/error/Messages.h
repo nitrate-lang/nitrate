@@ -114,6 +114,9 @@ namespace libquixcc
         PARAM_NAME_DUPLICATE,
         SUBSYSTEM_NAME_DUPLICATE,
 
+        UNRESOLVED_TYPE,
+        RESOLVED_TYPE,
+
         GENERIC_ERROR,
 
         MAX_MSG

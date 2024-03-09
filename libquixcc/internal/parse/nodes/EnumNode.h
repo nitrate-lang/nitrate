@@ -57,8 +57,8 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-       
-       virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
+
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
 
         std::string m_name;
         std::shared_ptr<ConstExprNode> m_value;
@@ -76,6 +76,8 @@ namespace libquixcc
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        virtual TypeNode *get_type() const { return m_type; }
 
         std::string m_name;
         TypeNode *m_type;

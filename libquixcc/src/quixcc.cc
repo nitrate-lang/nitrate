@@ -281,9 +281,6 @@ static std::string base64_encode(const std::string &in)
 
 static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
 {
-    (void)job;
-    (void)ast;
-
     libquixcc::Mutation mutator;
     mutator.add_routine(libquixcc::mutate::DiscoverNamedConstructs);
     mutator.add_routine(libquixcc::mutate::ResolveNamedConstructs);
@@ -293,8 +290,6 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>
     mutator.add_routine(libquixcc::mutate::ConvertTypes);
     mutator.add_routine(libquixcc::mutate::InferTypes);
     mutator.run(job, ast);
-
-    /// TODO: Type Inference
 
     return true;
 }

@@ -57,6 +57,7 @@ namespace libquixcc
         llvm::Type *visit(const StructTypeNode *node) const;
         llvm::Type *visit(const UnionTypeNode *node) const;
         llvm::Type *visit(const ArrayTypeNode *node) const;
+        llvm::Type *visit(const FunctionTypeNode *node) const;
         llvm::Constant *visit(const IntegerLiteralNode *node) const;
         llvm::Constant *visit(const FloatLiteralNode *node) const;
         llvm::Constant *visit(const StringLiteralNode *node) const;

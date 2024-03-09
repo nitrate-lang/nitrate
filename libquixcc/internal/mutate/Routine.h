@@ -34,7 +34,7 @@ namespace libquixcc
     namespace mutate
     {
         void DiscoverNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        inline void ResolveNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
+        void ResolveNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
         inline void ReplaceNamedTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
         inline void FillInConstants(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
         void FoldConstExpr(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
@@ -47,6 +47,7 @@ namespace libquixcc
     class Mutation
     {
     public:
+        /// @brief Run rountines in the order they were added.
         void run(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
         {
             for (auto routine : m_routines)

@@ -16,46 +16,57 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <mutate/Routine.h>
+#include <error/Message.h>
+#include <mutex>
+#include <set>
+#include <quixcc.h>
+#include <iostream>
+#include <algorithm>
 
-#include <memory>
+using namespace libquixcc;
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parse/NodeType.h>
-#include <map>
-
-namespace libquixcc
+void libquixcc::mutate::ResolveNamedConstructs(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    class LLVMContext
-    {
-
-    public:
-        std::shared_ptr<llvm::LLVMContext> m_ctx;
-        std::shared_ptr<llvm::Module> m_module;
-        std::shared_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::string prefix = "";
-        bool m_pub = false;
-
-        LLVMContext(const std::string &filename)
+    ast->dfs_preorder(ParseNodePreorderVisitor(
+        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
-            m_ctx = std::make_shared<llvm::LLVMContext>();
-            m_module = std::make_shared<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_shared<llvm::IRBuilder<>>(*m_ctx);
-        }
-    };
+            if ((*node)->ntype != NodeType::UserTypeNode)
+                return;
 
-};
+            libquixcc::UserTypeNode **user_type_ptr = reinterpret_cast<libquixcc::UserTypeNode **>(node);
+            libquixcc::UserTypeNode *user_type = *user_type_ptr;
+            std::string name = user_type->m_name;
 
-#endif // __QUIXCC_LLVM_CTX_H__
+            if (!job->m_inner->m_named_types.contains(user_type->m_name))
+            {
+                semanticmsg(*job, Err::ERROR, false, feedback[UNRESOLVED_TYPE], user_type->m_name);
+                return;
+            }
+
+            auto named_type = job->m_inner->m_named_types[user_type->m_name];
+            TypeNode *type = nullptr;
+
+            switch (named_type->ntype)
+            {
+            case NodeType::StructDefNode:
+                type = std::static_pointer_cast<libquixcc::StructDefNode>(named_type)->get_type();
+                break;
+            case NodeType::UnionDefNode:
+                type = std::static_pointer_cast<libquixcc::UnionDefNode>(named_type)->get_type();
+                break;
+            case NodeType::EnumDefNode:
+                type = std::static_pointer_cast<libquixcc::EnumDefNode>(named_type)->get_type();
+                break;
+            default:
+                throw std::runtime_error("Unimplemented typeid in ResolveNamedConstructs");
+            }
+
+            *user_type_ptr = reinterpret_cast<libquixcc::UserTypeNode *>(type);
+
+            semanticmsg(*job, Err::DEBUG, false, feedback[RESOLVED_TYPE], name.c_str(), type->to_json(ParseNodeJsonSerializerVisitor()).c_str());
+        },
+        job->m_inner->prefix));
+}
