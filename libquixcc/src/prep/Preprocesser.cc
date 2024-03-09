@@ -40,6 +40,10 @@ void libquixcc::PrepEngine::setup()
     m_macro_parser.add_routine("pragma", libquixcc::macro::ParsePragma);
     m_macro_parser.add_routine("print", libquixcc::macro::ParsePrint);
     m_macro_parser.add_routine("readstdin", libquixcc::macro::ParseReadStdin);
+    m_macro_parser.add_routine("encoding", libquixcc::macro::ParseEncoding);
+    m_macro_parser.add_routine("lang", libquixcc::macro::ParseLang);
+    m_macro_parser.add_routine("author", libquixcc::macro::ParseAuthor);
+    m_macro_parser.add_routine("license", libquixcc::macro::ParseLicense);
 }
 
 void libquixcc::PrepEngine::addpath(const std::string &path)
@@ -278,6 +282,6 @@ libquixcc::Token libquixcc::PrepEngine::read_token()
     }
 
 end:
-// std::cout << "tok: " << tok.serialize() << std::endl;
+    // std::cout << "tok: " << tok.serialize() << std::endl;
     return tok;
 }

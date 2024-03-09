@@ -16,21 +16,31 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PREP_MACRO_H__
-#define __QUIXCC_PREP_MACRO_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <prep/macro/MacroParser.h>
-#include <prep/macro/DefineMacro.h>
-#include <prep/macro/PragmaMacro.h>
-#include <prep/macro/PrintMacro.h>
-#include <prep/macro/ReadstdinMacro.h>
-#include <prep/macro/EncodingMacro.h>
-#include <prep/macro/LangMacro.h>
 #include <prep/macro/AuthorMacro.h>
-#include <prep/macro/LicenseMacro.h>
 
-#endif // __QUIXCC_PREP_MACRO_H__
+bool libquixcc::macro::ParseAuthor(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp)
+{
+    (void)tok;
+    (void)directive;
+
+    std::string identifier = "__AUTHOR__";
+    for (auto &c : std::string(job->m_filename))
+    {
+        if (std::isalnum(c))
+            identifier += c;
+        else
+            identifier += '_';
+    }
+
+    exp.push_back(Token(TokenType::Keyword, Keyword::Const));
+    exp.push_back(Token(TokenType::Identifier, identifier));
+    exp.push_back(Token(TokenType::Punctor, Punctor::Colon));
+    exp.push_back(Token(TokenType::Identifier, "string"));
+    exp.push_back(Token(TokenType::Operator, Operator::Assign));
+    exp.push_back(Token(TokenType::StringLiteral, parameter));
+    exp.push_back(Token(TokenType::Punctor, Punctor::Semicolon));
+
+    return true;
+}
