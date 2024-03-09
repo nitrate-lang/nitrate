@@ -38,6 +38,7 @@ namespace libquixcc
         static std::string mangle(const DeclNode *node, const std::string &prefix = "");
 
         static std::shared_ptr<DeclNode> demangle(const std::string &mangled);
+        static bool demangle_tojson(const std::string &mangled, std::string &output);
     };
 }
 

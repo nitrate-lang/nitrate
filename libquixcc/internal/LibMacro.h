@@ -21,6 +21,7 @@
 
 #define PARMSG(tok, tp, fmt, ...) parmsg(job, tok, tp, fmt, ##__VA_ARGS__)
 #define PREPMSG(tok, tp, fmt, ...) prepmsg(*m_job, tok, tp, fmt, ##__VA_ARGS__)
+#define LIB_EXPORT extern "C" __attribute__((visibility("default")))
 
 #define QUIXCC_INTERNAL
 

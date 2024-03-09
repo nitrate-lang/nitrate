@@ -27,6 +27,7 @@
 #include <regex>
 #include <filesystem>
 
+#include <LibMacro.h>
 #include <llvm/LLVMWrapper.h>
 #include <generate/Generate.h>
 #include <lexer/Lex.h>
@@ -36,8 +37,6 @@
 #include <parse/Parser.h>
 #include <libquixcc.h>
 #include <mutate/Routine.h>
-
-#define LIB_EXPORT extern "C" __attribute__((visibility("default")))
 
 static void *safe_malloc(size_t size)
 {

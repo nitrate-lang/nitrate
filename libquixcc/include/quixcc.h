@@ -225,6 +225,19 @@ typedef struct quixcc_job_t quixcc_job_t;
     /// @note This function will return NULL if the job is still running
     const quixcc_result_t *quixcc_result(quixcc_job_t *job);
 
+    ///===================================================================================================
+    /// BEGIN: LANGUAGE stuff
+    ///===================================================================================================
+
+    /// @brief Demangle a mangled symbol name into JSON.
+    /// @param mangled The mangled symbol name.
+    /// @return malloc'd JSON string.
+    char *quixcc_demangle_symbol(const char *mangled);
+
+    ///===================================================================================================
+    /// END: LANGUAGE stuff
+    ///===================================================================================================
+
 #ifdef __cplusplus
 }
 #endif

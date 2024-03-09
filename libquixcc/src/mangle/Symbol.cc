@@ -18,6 +18,7 @@
 
 #define QUIXCC_INTERNAL
 
+#include <LibMacro.h>
 #include <mangle/Symbol.h>
 #include <parse/nodes/AllNodes.h>
 
@@ -426,4 +427,23 @@ std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle(const std::stri
     }
 
     return nullptr;
+}
+
+bool libquixcc::Symbol::demangle_tojson(const std::string &mangled, std::string &output)
+{
+    auto node = demangle(mangled);
+    if (node == nullptr)
+        return false;
+
+    output= node->to_json(ParseNodeJsonSerializerVisitor());
+    return true;
+}
+
+LIB_EXPORT char *quixcc_demangle_symbol(const char *mangled)
+{
+    std::string output;
+    if (!libquixcc::Symbol::demangle_tojson(mangled, output))
+        return nullptr;
+
+    return strdup(output.c_str());
 }
