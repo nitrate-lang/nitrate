@@ -169,6 +169,31 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
         s += wrap_tag(serialize_type(st->m_type));
         return "p" + s;
     }
+    else if (type->ntype == NodeType::FunctionTypeNode)
+    {
+        const libquixcc::FunctionTypeNode *st = static_cast<const FunctionTypeNode *>(type);
+        std::string s;
+        s += wrap_tag(serialize_type(st->m_return_type));
+        for (auto &param : st->m_params)
+            s += wrap_tag(serialize_type(param));
+
+        std::string prop;
+
+        if (st->m_foreign)
+            prop += "f";
+        if (st->m_nothrow)
+            prop += "n";
+        if (st->m_pure)
+            prop += "p";
+        if (st->m_thread_safe)
+            prop += "t";
+        if (st->m_variadic)
+            prop += "v";
+
+        s += wrap_tag(prop);
+
+        return "f" + s;
+    }
 
     throw std::runtime_error("Unknown type");
 }
@@ -255,6 +280,53 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
             return nullptr;
 
         return PointerTypeNode::create(t);
+    }
+    else if (type[0] == 'f')
+    {
+        std::vector<std::string> fields;
+        if (!unwrap_tags(type.substr(1), fields))
+            return nullptr;
+
+        TypeNode *ret;
+        if ((ret = deserialize_type(fields[0])) == nullptr)
+            return nullptr;
+
+        std::vector<TypeNode *> params;
+        for (size_t i = 1; i < fields.size() - 1; i++)
+        {
+            TypeNode *t;
+            if ((t = deserialize_type(fields[i])) == nullptr)
+                return nullptr;
+            params.push_back(t);
+        }
+
+        std::string prop = fields.back();
+        bool foreign = false, nothrow = false, pure = false, thread_safe = false, variadic = false;
+        for (size_t i = 0; i < prop.size(); i++)
+        {
+            switch (prop[i])
+            {
+            case 'f':
+                foreign = true;
+                break;
+            case 'n':
+                nothrow = true;
+                break;
+            case 'p':
+                pure = true;
+                break;
+            case 't':
+                thread_safe = true;
+                break;
+            case 'v':
+                variadic = true;
+                break;
+            default:
+                return nullptr;
+            }
+        }
+
+        return FunctionTypeNode::create(ret, params, variadic, pure, thread_safe, foreign, nothrow);
     }
 
     throw std::runtime_error("Unknown type");

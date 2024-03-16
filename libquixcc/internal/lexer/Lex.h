@@ -107,6 +107,8 @@ namespace libquixcc
         virtual Token peek() = 0;
 
         static std::string escape_string(const std::string &str);
+
+        virtual void push(Token tok) = 0;
     };
 
     class StreamLexer : public Scanner
@@ -144,6 +146,8 @@ namespace libquixcc
         /// @brief Peek the next token
         /// @return The next token
         Token peek() override;
+
+        void push(Token tok) override;
     };
 
     class StringLexer : StreamLexer
@@ -163,8 +167,8 @@ namespace libquixcc
         bool set_source(const std::string &source_code, const std::string &filename);
 
         /// @brief lex the source code
-        /// @param source_code 
-        /// @param tokens 
+        /// @param source_code
+        /// @param tokens
         /// @return Returns false if the source code is invalid
         /// @note Does not throw exceptions
         static bool QuixkLex(const std::string &source_code, std::vector<Token> &tokens, const std::string &filename = "quicklex");

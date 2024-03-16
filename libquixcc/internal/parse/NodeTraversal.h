@@ -72,6 +72,7 @@ namespace libquixcc
         size_t visit(StructTypeNode *node);
         size_t visit(UnionTypeNode *node);
         size_t visit(ArrayTypeNode *node);
+        size_t visit(FunctionTypeNode *node);
         size_t visit(UserTypeNode *node);
         size_t visit(LiteralNode *node);
         size_t visit(IntegerLiteralNode *node);
@@ -137,6 +138,7 @@ namespace libquixcc
         size_t visit(StructTypeNode *node);
         size_t visit(UnionTypeNode *node);
         size_t visit(ArrayTypeNode *node);
+        size_t visit(FunctionTypeNode *node);
         size_t visit(UserTypeNode *node);
         size_t visit(LiteralNode *node);
         size_t visit(IntegerLiteralNode *node);

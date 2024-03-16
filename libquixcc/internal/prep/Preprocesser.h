@@ -68,6 +68,8 @@ namespace libquixcc
 
         Entry build_statics_decl();
 
+        void push(Token tok) override;
+
     public:
         PrepEngine(quixcc_job_t &job) : m_job(&job), m_macro_parser(job) {}
 

@@ -39,3 +39,4 @@ std::map<std::vector<libquixcc::TypeNode *>, libquixcc::StructTypeNode *> libqui
 std::map<std::vector<libquixcc::TypeNode *>, libquixcc::UnionTypeNode *> libquixcc::UnionTypeNode::m_instances;
 std::map<std::pair<libquixcc::TypeNode *, std::shared_ptr<libquixcc::ConstExprNode>>, libquixcc::ArrayTypeNode *> libquixcc::ArrayTypeNode::m_instances;
 std::unordered_map<std::string, libquixcc::UserTypeNode *> libquixcc::UserTypeNode::m_instances;
+std::map<libquixcc::FunctionTypeNode::Inner, libquixcc::FunctionTypeNode *> libquixcc::FunctionTypeNode::s_instances;

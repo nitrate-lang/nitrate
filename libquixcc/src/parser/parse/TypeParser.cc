@@ -45,10 +45,28 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     Token tok = scanner->next();
     if (tok.type() == TokenType::Keyword)
     {
+        std::shared_ptr<StmtNode> fn;
+
         switch (std::get<Keyword>(tok.val()))
         {
         case Keyword::Void:
             *node = VoidTypeNode::create();
+            return true;
+        case Keyword::Fn:
+            if (!parse_function(job, scanner, fn))
+            {
+                PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPE_EXPECTED_FUNCTION]);
+                return false;
+            }
+
+            if (fn->ntype != NodeType::FunctionDeclNode)
+            {
+                PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPE_EXPECTED_FUNCTION]);
+                return false;
+            }
+
+            *node = std::static_pointer_cast<FunctionDeclNode>(fn)->m_type;
+            scanner->push(Token(TokenType::Punctor, Punctor::Semicolon));
             return true;
         default:
             return false;

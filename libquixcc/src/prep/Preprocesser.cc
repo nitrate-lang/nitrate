@@ -81,6 +81,11 @@ libquixcc::PrepEngine::Entry libquixcc::PrepEngine::build_statics_decl()
     return Entry(l, QUIX_STATICS_FILE, f, ptr);
 }
 
+void libquixcc::PrepEngine::push(libquixcc::Token tok)
+{
+    m_tok = tok;
+}
+
 bool libquixcc::PrepEngine::set_source(FILE *src, const std::string &filename)
 {
     StreamLexer l;

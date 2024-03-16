@@ -27,6 +27,7 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {PARSER_EXPECTED_LEFT_BRACE, "Parser failed because an open brace was expected, but the token %s was found"},
     {PARSER_EXPECTED_RIGHT_BRACE, "Parser failed because a close brace was expected, but the token %s was found"},
     {PARSER_EXPECTED_SEMICOLON, "Parser failed because a semicolon was expected, but the token %s was found"},
+    {PARSER_UNKNOWN_LANGUAGE, "Parser failed because the language type %s is unknown"},
 
     {LET_DECL_MISSING_IDENTIFIER, "Expected identifier in variable declaration. To fix the issue, name your variable. Syntax: let name: type [= expr];"},
     {LET_DECL_MISSING_COLON, "Expected colon separator in variable declaration. To fix the issue, insert a colon between the variable name and the typename. Syntax: let name: type [= expr];"},
@@ -67,7 +68,8 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {TYPE_EXPECTED_SEMICOLON, "Expected a semicolon after the type name. To fix the issue, insert a semicolon after the type name. Syntax: [type; size]"},
     {TYPE_EXPECTED_CONST_EXPR, "Expected a constant expression after the semicolon. To fix the issue, insert a constant expression after the semicolon. Syntax: [type; size]"},
     {TYPE_EXPECTED_CLOSE_BRACKET, "Expected a close bracket after the constant expression. To fix the issue, insert a close bracket after the constant expression. Syntax: [type; size]"},
-
+    {TYPE_EXPECTED_FUNCTION, "Expected a function name after the keyword 'fn'. To fix the issue, insert a function name after the keyword 'fn'"},
+    
     {SUBSYSTEM_MISSING_IDENTIFIER, "Expected identifier after the keyword 'subsystem'. To fix the issue, insert an identifier after the keyword 'subsystem'"},
     {SUBSYSTEM_EXPECTED_IDENTIFIER, "Expected identifier after the colon in the subsystem declaration. To fix the issue, insert an identifier after the colon in the subsystem declaration"},
     {SUBSYSTEM_EXPECTED_SEMICOLON, "Expected semicolon after the subsystem block. To fix the issue, insert a semicolon after the subsystem block. Syntax: subsystem name[: dep1, dep2, ...] { ... };"},

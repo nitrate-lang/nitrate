@@ -34,8 +34,52 @@ namespace libquixcc
 {
     class FunctionTypeNode : public TypeNode
     {
+        FunctionTypeNode(TypeNode *return_type, std::vector<TypeNode *> params, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false)
+            : m_return_type(return_type), m_params(params), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_nothrow(nothrow) { ntype = NodeType::FunctionTypeNode; }
+
+        struct Inner
+        {
+            TypeNode *return_type;
+            std::vector<TypeNode *> params;
+            bool variadic;
+            bool pure;
+            bool thread_safe;
+            bool foreign;
+            bool nothrow;
+
+            Inner(TypeNode *return_type, std::vector<TypeNode *> params, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
+                : return_type(return_type), params(params), variadic(variadic), pure(pure), thread_safe(thread_safe), foreign(foreign), nothrow(nothrow) {}
+
+            bool operator<(const Inner &other) const
+            {
+                if (return_type != other.return_type)
+                    return return_type < other.return_type;
+                if (params != other.params)
+                    return params < other.params;
+                if (variadic != other.variadic)
+                    return variadic < other.variadic;
+                if (pure != other.pure)
+                    return pure < other.pure;
+                if (thread_safe != other.thread_safe)
+                    return thread_safe < other.thread_safe;
+                if (foreign != other.foreign)
+                    return foreign < other.foreign;
+                if (nothrow != other.nothrow)
+                    return nothrow < other.nothrow;
+                return false;
+            }
+        };
+
+        static std::map<Inner, FunctionTypeNode *> s_instances;
+
     public:
-        FunctionTypeNode() { ntype = NodeType::FunctionTypeNode; }
+        static FunctionTypeNode *create(TypeNode *return_type, std::vector<TypeNode *> params, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false)
+        {
+            Inner inner(return_type, params, variadic, pure, thread_safe, foreign, nothrow);
+            if (s_instances.find(inner) == s_instances.end())
+                s_instances[inner] = new FunctionTypeNode(return_type, params, variadic, pure, thread_safe, foreign, nothrow);
+            return s_instances[inner];
+        }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
@@ -43,8 +87,8 @@ namespace libquixcc
 
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
 
-        std::vector<TypeNode *> m_params;
         TypeNode *m_return_type;
+        std::vector<TypeNode *> m_params;
         bool m_variadic = false;
         bool m_pure = false;
         bool m_thread_safe = false;
@@ -71,7 +115,7 @@ namespace libquixcc
     class FunctionDeclNode : public DeclNode
     {
     public:
-        FunctionDeclNode() { ntype = NodeType::FunctionDeclNode; }
+        FunctionDeclNode() : m_type(nullptr) { ntype = NodeType::FunctionDeclNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
@@ -81,12 +125,7 @@ namespace libquixcc
 
         std::string m_name;
         std::vector<std::shared_ptr<FunctionParamNode>> m_params;
-        TypeNode *m_return_type;
-        bool m_variadic = false;
-        bool m_pure = false;
-        bool m_thread_safe = false;
-        bool m_foreign = false;
-        bool m_nothrow = false;
+        FunctionTypeNode *m_type;
     };
 
     class FunctionDefNode : public DefNode

@@ -33,7 +33,7 @@ struct GetPropState
     bool did_tsafe;
 };
 
-static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::FunctionDeclNode> &node, GetPropState &state)
+static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, GetPropState &state)
 {
     Token tok = scanner->peek();
 
@@ -45,7 +45,6 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
             return false;
         }
 
-        node->m_nothrow = true;
         scanner->next();
         state.did_nothrow = true;
         return true;
@@ -58,7 +57,6 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
             PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_FOREIGN_ALREADY_SPECIFIED], tok.serialize().c_str());
             return false;
         }
-        node->m_foreign = true;
         scanner->next();
         state.did_foreign = true;
         return true;
@@ -71,7 +69,6 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
             PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_THREAD_SAFE_ALREADY_SPECIFIED], tok.serialize().c_str());
             return false;
         }
-        node->m_thread_safe = true;
         scanner->next();
         state.did_tsafe = true;
         return true;
@@ -90,7 +87,6 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
             PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_PURE_AND_IMPURE_SPECIFIED], tok.serialize().c_str());
             return false;
         }
-        node->m_pure = true;
         scanner->next();
         state.did_pure = true;
         return true;
@@ -108,7 +104,6 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
             PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_PURE_AND_IMPURE_SPECIFIED], tok.serialize().c_str());
             return false;
         }
-        node->m_pure = false;
         scanner->next();
         state.did_impure = true;
         return true;
@@ -129,7 +124,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     GetPropState state = {false, false, false, false, false};
 
-    while (fn_get_property(job, scanner, fndecl, state))
+    while (fn_get_property(job, scanner, state))
     {
         // get all properties
     }
@@ -170,11 +165,16 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
         }
     }
 
+    std::vector<TypeNode *> params;
+    for (auto &param : fndecl->m_params)
+        params.push_back(param->m_type);
+
     tok = scanner->peek();
 
     if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
     {
-        fndecl->m_return_type = VoidTypeNode::create();
+        fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, false, state.did_pure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+
         scanner->next();
         node = fndecl;
         return true;
@@ -183,8 +183,12 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Colon)
     {
         scanner->next();
-        if (!parse_type(job, scanner, &fndecl->m_return_type))
+        TypeNode *type;
+
+        if (!parse_type(job, scanner, &type))
             return false;
+
+        fndecl->m_type = FunctionTypeNode::create(type, params, false, state.did_pure, state.did_tsafe, state.did_foreign, state.did_nothrow);
 
         tok = scanner->peek();
         if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
@@ -205,8 +209,8 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     if (!parse(job, scanner, fnbody))
         return false;
 
-    if (!fndecl->m_return_type)
-        fndecl->m_return_type = VoidTypeNode::create();
+    if (!fndecl->m_type)
+        fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, false, state.did_pure, state.did_tsafe, state.did_foreign, state.did_nothrow);
 
     auto fndef = std::make_shared<FunctionDefNode>();
     fndef->m_decl = fndecl;

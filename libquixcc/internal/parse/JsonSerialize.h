@@ -61,6 +61,7 @@ namespace libquixcc
         std::string visit(const StructTypeNode *node) const;
         std::string visit(const UnionTypeNode *node) const;
         std::string visit(const ArrayTypeNode *node) const;
+        std::string visit(const FunctionTypeNode *node) const;
         std::string visit(const UserTypeNode *node) const;
         std::string visit(const LiteralNode *node) const;
         std::string visit(const IntegerLiteralNode *node) const;

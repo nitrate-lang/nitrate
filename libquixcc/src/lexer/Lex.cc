@@ -351,6 +351,11 @@ libquixcc::Token libquixcc::StreamLexer::next()
     return tok;
 }
 
+void libquixcc::StreamLexer::push(libquixcc::Token tok)
+{
+    m_tok = tok;
+}
+
 // static bool validate_identifier_type_1(const std::string &id)
 // {
 //     int state = 0;

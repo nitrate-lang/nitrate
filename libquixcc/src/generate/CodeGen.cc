@@ -451,7 +451,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
     {
         params.push_back(param->m_type->codegen(*this));
     }
-    llvm::FunctionType *ftype = llvm::FunctionType::get(node->m_return_type->codegen(*this), params, node->m_variadic);
+    llvm::FunctionType *ftype = llvm::FunctionType::get(node->m_type->m_return_type->codegen(*this), params, node->m_type->m_variadic);
     llvm::Function *func;
 
     if (m_ctx->m_pub)

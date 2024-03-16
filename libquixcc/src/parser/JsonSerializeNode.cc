@@ -262,6 +262,34 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Ar
     return str + "}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::FunctionTypeNode *node) const
+{
+    std::string str = "{\"ntype\":\"FunctionTypeNode\",\"params\":[";
+    for (auto it = node->m_params.begin(); it != node->m_params.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_params.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    str += "],\"return_type\":";
+    str += node->m_return_type->to_json(*this);
+    str += ",\"variadic\":";
+    str += std::string(node->m_variadic ? "true" : "false");
+    str += ",\"pure\":";
+    str += std::string(node->m_pure ? "true" : "false");
+    str += ",\"thread_safe\":";
+    str += std::string(node->m_thread_safe ? "true" : "false");
+    str += ",\"foreign\":";
+    str += std::string(node->m_foreign ? "true" : "false");
+    str += ",\"nothrow\":";
+    str += std::string(node->m_nothrow ? "true" : "false");
+    return str + "}";
+
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UserTypeNode *node) const
 {
     return "{\"ntype\":\"UserTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
@@ -387,17 +415,17 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Fu
     }
 
     str += "],\"return_type\":";
-    str += node->m_return_type->to_json(*this);
+    str += node->m_type->m_return_type->to_json(*this);
     str += ",\"variadic\":";
-    str += std::string(node->m_variadic ? "true" : "false");
+    str += std::string(node->m_type->m_variadic ? "true" : "false");
     str += ",\"pure\":";
-    str += std::string(node->m_pure ? "true" : "false");
+    str += std::string(node->m_type->m_pure ? "true" : "false");
     str += ",\"thread_safe\":";
-    str += std::string(node->m_thread_safe ? "true" : "false");
+    str += std::string(node->m_type->m_thread_safe ? "true" : "false");
     str += ",\"foreign\":";
-    str += std::string(node->m_foreign ? "true" : "false");
+    str += std::string(node->m_type->m_foreign ? "true" : "false");
     str += ",\"nothrow\":";
-    str += std::string(node->m_nothrow ? "true" : "false");
+    str += std::string(node->m_type->m_nothrow ? "true" : "false");
     return str + "}";
 }
 

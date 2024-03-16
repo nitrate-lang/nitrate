@@ -28,6 +28,29 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
 {
     Token tok = scanner->next();
 
+    ExportLangType langType = ExportLangType::Default;
+
+    if (tok.type() == TokenType::StringLiteral)
+    {
+        std::string lang = std::get<std::string>(tok.val());
+
+        std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
+
+        if (lang == "c")
+            langType = ExportLangType::C;
+        else if (lang == "c++" || lang == "cxx")
+            langType = ExportLangType::CXX;
+        else if (lang == "d" || lang == "dlang")
+            langType = ExportLangType::DLang;
+        else
+        {
+            PARMSG(tok, libquixcc::Err::ERROR, feedback[PARSER_UNKNOWN_LANGUAGE], lang.c_str());
+            return false;
+        }
+
+        tok = scanner->next();
+    }
+
     if (tok.type() != TokenType::Keyword)
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[PARSER_EXPECTED_KEYWORD], tok.serialize().c_str());
@@ -54,7 +77,6 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         if (!parse_enum(job, scanner, stmt))
             return false;
         break;
-
     case Keyword::Subsystem:
         if (!parse_subsystem(job, scanner, stmt))
             return false;
@@ -72,7 +94,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         return false;
     }
 
-    node = std::make_shared<libquixcc::ExportNode>(stmt);
+    node = std::make_shared<libquixcc::ExportNode>(stmt, langType);
 
     return true;
 }
