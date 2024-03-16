@@ -50,7 +50,6 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         case Keyword::Void:
             *node = VoidTypeNode::create();
             return true;
-
         default:
             return false;
         }
@@ -101,6 +100,19 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         }
 
         *node = ArrayTypeNode::create(type, size);
+        return true;
+    }
+    else if (tok.type() == TokenType::Operator && std::get<Operator>(tok.val()) == Operator::Multiply)
+    {
+        // Pointer type
+        TypeNode *type;
+        if (!parse_type(job, scanner, &type))
+        {
+            PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPE_EXPECTED_TYPE]);
+            return false;
+        }
+
+        *node = PointerTypeNode::create(type);
         return true;
     }
     else

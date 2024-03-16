@@ -172,6 +172,25 @@ namespace libquixcc
 
         bool m_val;
     };
+
+    class NullLiteralNode : public LiteralNode
+    {
+        NullLiteralNode() { ntype = NodeType::NullLiteralNode; }
+        static std::shared_ptr<NullLiteralNode> m_instance;
+
+    public:
+        static std::shared_ptr<NullLiteralNode> create()
+        {
+            if (m_instance == nullptr)
+                m_instance = std::shared_ptr<NullLiteralNode>(new NullLiteralNode());
+            return m_instance;
+        }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+    };
 }
 
 #endif // __QUIXCC_PARSE_NODES_LITERAL_H__

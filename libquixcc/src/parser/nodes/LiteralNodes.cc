@@ -26,3 +26,4 @@ std::shared_ptr<libquixcc::BoolLiteralNode> libquixcc::BoolLiteralNode::m_true_i
 std::shared_ptr<libquixcc::BoolLiteralNode> libquixcc::BoolLiteralNode::m_false_instance;
 std::unordered_map<std::string, std::shared_ptr<libquixcc::FloatLiteralNode>> libquixcc::FloatLiteralNode::m_instances;
 std::unordered_map<std::string, std::shared_ptr<libquixcc::IntegerLiteralNode>> libquixcc::IntegerLiteralNode::m_instances;
+std::shared_ptr<libquixcc::NullLiteralNode> libquixcc::NullLiteralNode::m_instance;

@@ -55,7 +55,7 @@ namespace libquixcc
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
         TypeNode *m_type;
-        std::shared_ptr<const ConstExprNode> m_size;
+        std::shared_ptr<ConstExprNode> m_size;
     };
 }
 

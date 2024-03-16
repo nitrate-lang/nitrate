@@ -32,6 +32,26 @@
 
 namespace libquixcc
 {
+    class FunctionTypeNode : public TypeNode
+    {
+    public:
+        FunctionTypeNode() { ntype = NodeType::FunctionTypeNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+
+        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
+
+        std::vector<TypeNode *> m_params;
+        TypeNode *m_return_type;
+        bool m_variadic = false;
+        bool m_pure = false;
+        bool m_thread_safe = false;
+        bool m_foreign = false;
+        bool m_nothrow = false;
+    };
+
     class FunctionParamNode : public ParseNode
     {
     public:

@@ -226,6 +226,11 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::VoidTypeNode *node
     return m_ctx->m_builder->getVoidTy();
 }
 
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::PointerTypeNode *node) const
+{
+    return llvm::PointerType::get(node->m_type->codegen(*this), 0);
+}
+
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StringTypeNode *node) const
 {
     return llvm::Type::getInt8PtrTy(*m_ctx->m_ctx);
@@ -273,7 +278,12 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::ArrayTypeNode *nod
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *node) const
 {
-    return nullptr;
+    std::vector<llvm::Type *> params;
+    for (const auto &param : node->m_params)
+    {
+        params.push_back(param->codegen(*this));
+    }
+    return llvm::FunctionType::get(node->m_return_type->codegen(*this), params, node->m_variadic);
 }
 
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::IntegerLiteralNode *node) const
@@ -317,6 +327,11 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::CharLiteralNod
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::BoolLiteralNode *node) const
 {
     return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, node->m_val));
+}
+
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::NullLiteralNode *node) const
+{
+    return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::VarDeclNode *node) const

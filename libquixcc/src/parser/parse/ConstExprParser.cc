@@ -72,6 +72,9 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
             case Keyword::False:
                 stack.push(libquixcc::BoolLiteralNode::create(false));
                 continue;
+            case Keyword::Null:
+                stack.push(libquixcc::NullLiteralNode::create());
+                continue;
             default:
                 PARMSG(tok, libquixcc::Err::ERROR, "Unexpected token %s 1",  tok.serialize().c_str());
                 return false;

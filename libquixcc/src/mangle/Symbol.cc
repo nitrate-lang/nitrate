@@ -24,6 +24,15 @@
 
 const std::string abiprefix = "_ZJ0";
 
+static std::string join_namespace(const std::string &a, const std::string &b)
+{
+    if (a.empty())
+        return b;
+    if (b.empty())
+        return a;
+    return a + "::" + b;
+}
+
 static std::string wrap_tag(const std::string &tag)
 {
     return std::to_string(tag.size()) + tag;
@@ -91,8 +100,7 @@ static std::string deserialize_ns(const std::string &ns)
             }
             else
             {
-                s += ":";
-                i++;
+                s += "::";
             }
         }
         else
@@ -151,8 +159,15 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
         const libquixcc::ArrayTypeNode *st = static_cast<const ArrayTypeNode *>(type);
         std::string s;
         s += wrap_tag(serialize_type(st->m_type));
-        s += wrap_tag(std::to_string(st->m_size->GetInt64()));
+        s += wrap_tag("x" + std::to_string(st->m_size->GetInt64()));
         return "a" + s;
+    }
+    else if (type->ntype == NodeType::PointerTypeNode)
+    {
+        const libquixcc::PointerTypeNode *st = static_cast<const PointerTypeNode *>(type);
+        std::string s;
+        s += wrap_tag(serialize_type(st->m_type));
+        return "p" + s;
     }
 
     throw std::runtime_error("Unknown type");
@@ -195,7 +210,6 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
             TypeNode *t;
             if ((t = deserialize_type(field)) == nullptr)
                 return nullptr;
-            // st->m_fields.push_back(t);
             fields_nodes.push_back(t);
         }
 
@@ -213,7 +227,6 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
             TypeNode *t;
             if ((t = deserialize_type(field)) == nullptr)
                 return nullptr;
-            // st->m_fields.push_back(t);
             fields_nodes.push_back(t);
         }
 
@@ -229,7 +242,19 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         if ((t = deserialize_type(fields[0])) == nullptr)
             return nullptr;
 
-        return ArrayTypeNode::create(t, libquixcc::IntegerLiteralNode::create(fields[1]));
+        return ArrayTypeNode::create(t, libquixcc::IntegerLiteralNode::create(fields[1].substr(1)));
+    }
+    else if (type[0] == 'p')
+    {
+        std::vector<std::string> fields;
+        if (!unwrap_tags(type.substr(1), fields))
+            return nullptr;
+
+        TypeNode *t;
+        if ((t = deserialize_type(fields[0])) == nullptr)
+            return nullptr;
+
+        return PointerTypeNode::create(t);
     }
 
     throw std::runtime_error("Unknown type");
@@ -250,7 +275,7 @@ std::string libquixcc::Symbol::mangle(const libquixcc::DeclNode *node, const std
     {
         res += "v";
         auto var = static_cast<const libquixcc::VarDeclNode *>(node);
-        res += wrap_tag(serialize_ns(prefix + var->m_name));
+        res += wrap_tag(serialize_ns(join_namespace(prefix, var->m_name)));
         res += wrap_tag(serialize_type(var->m_type));
 
         std::string flags;
@@ -270,7 +295,7 @@ std::string libquixcc::Symbol::mangle(const libquixcc::DeclNode *node, const std
     {
         res += "l";
         auto var = static_cast<const libquixcc::LetDeclNode *>(node);
-        res += wrap_tag(serialize_ns(prefix + var->m_name));
+        res += wrap_tag(serialize_ns(join_namespace(prefix, var->m_name)));
         res += wrap_tag(serialize_type(var->m_type));
 
         std::string flags;
@@ -290,7 +315,7 @@ std::string libquixcc::Symbol::mangle(const libquixcc::DeclNode *node, const std
     {
         res += "c";
         auto var = static_cast<const libquixcc::ConstDeclNode *>(node);
-        res += wrap_tag(serialize_ns(prefix + var->m_name));
+        res += wrap_tag(serialize_ns(join_namespace(prefix, var->m_name)));
         res += wrap_tag(serialize_type(var->m_type));
 
         std::string flags;
@@ -435,7 +460,7 @@ bool libquixcc::Symbol::demangle_tojson(const std::string &mangled, std::string 
     if (node == nullptr)
         return false;
 
-    output= node->to_json(ParseNodeJsonSerializerVisitor());
+    output = node->to_json(ParseNodeJsonSerializerVisitor());
     return true;
 }
 

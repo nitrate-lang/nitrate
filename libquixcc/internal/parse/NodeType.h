@@ -57,6 +57,7 @@ namespace libquixcc
         BoolTypeNode,
         CharTypeNode,
         VoidTypeNode,
+        PointerTypeNode,
         StringTypeNode,
 
         StructTypeNode,
@@ -71,6 +72,7 @@ namespace libquixcc
         StringLiteralNode,
         CharLiteralNode,
         BoolLiteralNode,
+        NullLiteralNode,
 
         VarDeclNode,
         LetDeclNode,
@@ -119,6 +121,7 @@ namespace libquixcc
     class BoolTypeNode;
     class CharTypeNode;
     class VoidTypeNode;
+    class PointerTypeNode;
     class StringTypeNode;
     class StructTypeNode;
     class UnionTypeNode;
@@ -131,6 +134,7 @@ namespace libquixcc
     class StringLiteralNode;
     class CharLiteralNode;
     class BoolLiteralNode;
+    class NullLiteralNode;
     class VarDeclNode;
     class LetDeclNode;
     class ConstDeclNode;

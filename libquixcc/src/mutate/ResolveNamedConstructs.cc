@@ -28,7 +28,7 @@
 
 using namespace libquixcc;
 
-void libquixcc::mutate::ResolveNamedConstructs(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
+static void do_pass(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
         [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
@@ -69,4 +69,9 @@ void libquixcc::mutate::ResolveNamedConstructs(quixcc_job_t *job, std::shared_pt
             semanticmsg(*job, Err::DEBUG, false, feedback[RESOLVED_TYPE], name.c_str(), type->to_json(ParseNodeJsonSerializerVisitor()).c_str());
         },
         job->m_inner->prefix));
+}
+
+void libquixcc::mutate::ResolveNamedConstructs(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
+{
+    do_pass(job, ast);
 }

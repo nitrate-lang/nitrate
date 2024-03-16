@@ -291,6 +291,28 @@ namespace libquixcc
 
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
     };
+
+    class PointerTypeNode : public BasicTypeNode
+    {
+        PointerTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::PointerTypeNode; }
+        static PointerTypeNode *m_instance;
+
+    public:
+        static PointerTypeNode *create(TypeNode *type)
+        {
+            if (m_instance == nullptr)
+                m_instance = new PointerTypeNode(type);
+            return m_instance;
+        }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+
+        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        TypeNode *m_type;
+    };
 }
 
 #endif // __QUIXCC_PARSE_NODES_INTEGER_H__

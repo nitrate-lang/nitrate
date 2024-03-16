@@ -53,6 +53,7 @@ namespace libquixcc
         llvm::Type *visit(const BoolTypeNode *node) const;
         llvm::Type *visit(const CharTypeNode *node) const;
         llvm::Type *visit(const VoidTypeNode *node) const;
+        llvm::Type *visit(const PointerTypeNode *node) const;
         llvm::Type *visit(const StringTypeNode *node) const;
         llvm::Type *visit(const StructTypeNode *node) const;
         llvm::Type *visit(const UnionTypeNode *node) const;
@@ -63,6 +64,7 @@ namespace libquixcc
         llvm::Constant *visit(const StringLiteralNode *node) const;
         llvm::Constant *visit(const CharLiteralNode *node) const;
         llvm::Constant *visit(const BoolLiteralNode *node) const;
+        llvm::Constant *visit(const NullLiteralNode *node) const;
         llvm::Value *visit(const VarDeclNode *node) const;
         llvm::Value *visit(const LetDeclNode *node) const;
         llvm::Value *visit(const ConstDeclNode *node) const;
