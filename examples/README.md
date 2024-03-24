@@ -1,1 +1,0 @@
-These programs are examples of what the QUIX programming language will look like.

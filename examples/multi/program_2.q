@@ -1,1 +1,0 @@
-pub let myVar2: string = "I am the second variable";
