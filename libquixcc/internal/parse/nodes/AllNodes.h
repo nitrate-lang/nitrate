@@ -26,6 +26,7 @@
 #include <parse/nodes/BasicNodes.h>
 #include <parse/nodes/LiteralNode.h>
 #include <parse/nodes/ConstExprNode.h>
+#include <parse/nodes/ExprNode.h>
 #include <parse/nodes/IdentifierNode.h>
 #include <parse/nodes/BasicTypeNode.h>
 #include <parse/nodes/StringNode.h>

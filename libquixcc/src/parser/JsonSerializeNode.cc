@@ -126,6 +126,28 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Ba
     return "{\"ntype\":\"BasicTypeNode\"}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UnaryExprNode *node) const
+{
+    std::string str = "{\"ntype\":\"UnaryExprNode\",\"op\":\"";
+    str += operator_map_inverse.at(node->m_op);
+    str += "\",\"operand\":";
+    str += node->m_expr->to_json(*this);
+
+    return str + "}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::BinaryExprNode *node) const
+{
+    std::string str = "{\"ntype\":\"BinaryExprNode\",\"op\":\"";
+    str += operator_map_inverse.at(node->m_op);
+    str += "\",\"lhs\":";
+    str += node->m_lhs->to_json(*this);
+    str += ",\"rhs\":";
+    str += node->m_rhs->to_json(*this);
+
+    return str + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ConstUnaryExprNode *node) const
 {
     std::string str = "{\"ntype\":\"ConstUnaryExprNode\",\"op\":\"";
@@ -287,7 +309,6 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Fu
     str += ",\"nothrow\":";
     str += std::string(node->m_nothrow ? "true" : "false");
     return str + "}";
-
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UserTypeNode *node) const

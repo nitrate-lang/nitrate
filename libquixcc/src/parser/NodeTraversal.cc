@@ -139,6 +139,38 @@ size_t libquixcc::ParseNodePostorderVisitor::visit(libquixcc::BasicTypeNode *nod
     return 1;
 }
 
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::UnaryExprNode *node)
+{
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_expr));
+    return node->m_expr->dfs_preorder(*this) + 1;
+}
+
+size_t libquixcc::ParseNodePostorderVisitor::visit(libquixcc::UnaryExprNode *node)
+{
+    size_t count = node->m_expr->dfs_postorder(*this);
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_expr));
+    return count + 1;
+}
+
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::BinaryExprNode *node)
+{
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_lhs));
+    size_t count = node->m_lhs->dfs_preorder(*this);
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_rhs));
+    count += node->m_rhs->dfs_preorder(*this);
+    return count + 1;
+}
+
+size_t libquixcc::ParseNodePostorderVisitor::visit(libquixcc::BinaryExprNode *node)
+{
+    size_t count = 0;
+    count += node->m_rhs->dfs_postorder(*this);
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_rhs));
+    count += node->m_lhs->dfs_postorder(*this);
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_lhs));
+    return count + 1;
+}
+
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ConstUnaryExprNode *node)
 {
     m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_expr));

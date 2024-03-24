@@ -42,6 +42,10 @@ namespace libquixcc
         ConstUnaryExprNode,
         ConstBinaryExprNode,
 
+        UnaryExprNode,
+        BinaryExprNode,
+
+
         IdentifierNode,
 
         U8TypeNode,
@@ -107,6 +111,8 @@ namespace libquixcc
     class DefNode;
     class BlockNode;
     class BasicTypeNode;
+    class UnaryExprNode;
+    class BinaryExprNode;
     class ConstUnaryExprNode;
     class ConstBinaryExprNode;
     class IdentifierNode;

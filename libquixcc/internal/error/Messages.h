@@ -116,6 +116,8 @@ namespace libquixcc
         PARAM_NAME_DUPLICATE,
         SUBSYSTEM_NAME_DUPLICATE,
 
+        RETURN_MISSING_SEMICOLON,
+
         UNRESOLVED_TYPE,
         RESOLVED_TYPE,
 

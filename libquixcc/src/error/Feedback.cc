@@ -107,6 +107,7 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {ENUM_FIELD_DUPLICATE, "Field name '%s' is already in use. To fix the issue, rename the field to something unique"},
     {PARAM_NAME_DUPLICATE, "Parameter name '%s' is already in use. To fix the issue, rename the parameter to something unique"},
     {SUBSYSTEM_NAME_DUPLICATE, "Subsystem name '%s' is already in use. To fix the issue, rename the subsystem to something unique"},
+    {RETURN_MISSING_SEMICOLON, "Expected a semicolon after the return statement. To fix the issue, insert a semicolon after the return statement"},
     {UNRESOLVED_TYPE, "Type '%s' is not defined in the current scope. To fix the issue, define the type or import the module that defines the type"},
     {RESOLVED_TYPE, "Resolved type '%s' into '%s'"},
 };

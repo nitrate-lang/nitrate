@@ -16,53 +16,53 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#ifndef __QUIXCC_PARSE_NODES_EXPR_H__
+#define __QUIXCC_PARSE_NODES_EXPR_H__
 
-#include <parse/Parser.h>
-#include <LibMacro.h>
-#include <error/Message.h>
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
 
-using namespace libquixcc;
+#include <string>
+#include <vector>
+#include <memory>
 
-bool libquixcc::parse_return(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+#include <llvm/LLVMWrapper.h>
+#include <lexer/Token.h>
+#include <parse/nodes/BasicNodes.h>
+#include <parse/nodes/LiteralNode.h>
+
+namespace libquixcc
 {
-    Token tok = scanner->peek();
-
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
+    class UnaryExprNode : public ExprNode
     {
-        scanner->next();
-        node = std::make_shared<ReturnStmtNode>(nullptr); // void
-        return true;
-    }
+    public:
+        UnaryExprNode(Operator op, const std::shared_ptr<ExprNode> &expr) : m_op(op), m_expr(expr) { ntype = NodeType::UnaryExprNode; }
 
-    std::shared_ptr<ExprNode> expr;
-    if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Semicolon), expr))
-        return false;
-    node = std::make_shared<ReturnStmtNode>(expr);
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
-    tok = scanner->next();
+        Operator m_op;
+        std::shared_ptr<ExprNode> m_expr;
+    };
 
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    class BinaryExprNode : public ExprNode
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[RETURN_MISSING_SEMICOLON]);
-        return false;
-    }
+    public:
+        BinaryExprNode(Operator op, const std::shared_ptr<ExprNode> &lhs, const std::shared_ptr<ExprNode> &rhs)
+            : m_op(op), m_lhs(lhs), m_rhs(rhs) { ntype = NodeType::BinaryExprNode; }
 
-    return true;
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        Operator m_op;
+        std::shared_ptr<ExprNode> m_lhs;
+        std::shared_ptr<ExprNode> m_rhs;
+    };
 }
 
-bool libquixcc::parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
-{
-    (void)job;
-    (void)scanner;
-    (void)node;
-    return false;
-}
-
-bool libquixcc::parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
-{
-    (void)job;
-    (void)scanner;
-    (void)node;
-    return false;
-}
+#endif // __QUIXCC_PARSE_NODES_EXPR_H__
