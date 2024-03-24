@@ -69,7 +69,9 @@ static std::map<std::string, std::string> acceptable_bingen_flags = {
     {"-static", "-static"},
     {"-shared", "-shared"},
     {"-fPIC", "-fPIC"},
-    {"-fPIE", "-fPIE"}};
+    {"-fPIE", "-fPIE"},
+    {"-nostdlib", "-nostdlib"},
+    {"-nostartfiles", "-nostartfiles"}};
 
 bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
 {
@@ -232,10 +234,17 @@ bool libquixcc::write_bin(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AS
     }
 
     // if not building a static library, do the following
-    std::string flags = " ";
+    std::string flags = "-Wno-override-module ";
     for (const auto &e : *ctx.m_argset)
+    {
         if (acceptable_bingen_flags.contains(e.first))
             flags += acceptable_bingen_flags[e.first] + " ";
+        else if (e.first.starts_with("-l"))
+        {
+            message(ctx, libquixcc::Err::DEBUG, "Linking library: " + e.first);
+            flags += e.first + " ";
+        }
+    }
 
     std::string filename = std::tmpnam(nullptr) + std::string(".ll");
     FILE *tmp;
@@ -254,7 +263,9 @@ bool libquixcc::write_bin(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AS
     }
     fclose(tmp);
 
-    if (system(("clang " + filename + " -o " + filename + ".out " + flags).c_str()) != 0)
+    std::string cmd = "clang " + filename + " -o " + filename + ".out " + flags;
+    message(ctx, libquixcc::Err::DEBUG, "Clang: " + cmd);
+    if (system(cmd.c_str()) != 0)
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate executable");
         return false;

@@ -533,10 +533,17 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
     llvm::FunctionType *ftype = llvm::FunctionType::get(node->m_type->m_return_type->codegen(*this), params, node->m_type->m_variadic);
     llvm::Function *func;
 
-    if (m_ctx->m_pub)
-        func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), *m_ctx->m_module);
+    if (m_ctx->prefix.empty() && node->m_name == "main") // special case for main function
+    {
+        func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, "main", *m_ctx->m_module);
+    }
     else
-        func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), *m_ctx->m_module);
+    {
+        if (m_ctx->m_pub)
+            func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), *m_ctx->m_module);
+        else
+            func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), *m_ctx->m_module);
+    }
 
     size_t i = 0;
     for (auto &arg : func->args())

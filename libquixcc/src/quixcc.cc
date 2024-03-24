@@ -624,29 +624,32 @@ static bool compile(quixcc_job_t *job)
 static bool verify_build_option(const std::string &option, const std::string &value)
 {
     const static std::set<std::string> static_options = {
-        "-S",         // assembly output
-        "-PREP",      // preprocessor/Lexer output
-        "-LEX",       // lexer output (no preprocessing)
-        "-IR",        // IR output
-        "-c",         // compile only
-        "-O0",        // optimization levels
-        "-O1",        // optimization levels
-        "-O2",        // optimization levels
-        "-O3",        // optimization levels
-        "-Os",        // optimization levels
-        "-g",         // debug information
-        "-flto",      // link time optimization
-        "-static",    // static linking
-        "-shared",    // shared library
-        "-fPIC",      // position independent code
-        "-fPIE",      // position independent executable
-        "-staticlib", // build static library
-        "-v",         // verbose
-        "-s",         // strip
+        "-S",            // assembly output
+        "-PREP",         // preprocessor/Lexer output
+        "-LEX",          // lexer output (no preprocessing)
+        "-IR",           // IR output
+        "-c",            // compile only
+        "-O0",           // optimization levels
+        "-O1",           // optimization levels
+        "-O2",           // optimization levels
+        "-O3",           // optimization levels
+        "-Os",           // optimization levels
+        "-g",            // debug information
+        "-flto",         // link time optimization
+        "-static",       // static linking
+        "-shared",       // shared library
+        "-fPIC",         // position independent code
+        "-fPIE",         // position independent executable
+        "-staticlib",    // build static library
+        "-v",            // verbose
+        "-s",            // strip
+        "-nostdlib",     // no standard library
+        "-nostartfiles", // no standard startup files
     };
     const static std::vector<std::pair<std::regex, std::regex>> static_regexes = {
         // -D<name>[=<value>]
         {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex("[a-zA-Z0-9_ ]*")},
+        {std::regex("-l[a-zA-Z0-9_]*"), std::regex("")},
     };
 
     if (static_options.contains(option))
@@ -670,7 +673,7 @@ static bool verify_build_option_conflicts(quixcc_job_t *job)
 static bool build_argmap(quixcc_job_t *job)
 {
     // -<p><key>[=<value>]
-    const static std::set<char> okay_prefixes = {'f', 'O', 'l', 'P', 'L', 'I', 'D', 'W', 'm', 'c', 'S', 'g', 's', 'v'};
+    const static std::set<char> okay_prefixes = {'f', 'O', 'l', 'P', 'n', 'L', 'I', 'D', 'W', 'm', 'c', 'S', 'g', 's', 'v'};
 
     std::map<std::string, std::string> *argmap = job->m_argset;
 
