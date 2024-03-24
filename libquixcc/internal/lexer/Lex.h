@@ -31,6 +31,7 @@
 #include <deque>
 #include <array>
 #include <map>
+#include <queue>
 #include <lexer/Token.h>
 
 namespace libquixcc
@@ -121,6 +122,7 @@ namespace libquixcc
         /// @note The caller is responsible for closing the file.
         std::string m_filename;
         std::vector<char> m_buffer;
+        std::queue<char> m_pushback;
         std::optional<Token> m_tok;
         size_t m_buf_pos = 0;
         char m_last = 0;
@@ -131,6 +133,7 @@ namespace libquixcc
         virtual char getc();
         virtual libquixcc::Token read_token();
 
+        void pushback(char c) { m_pushback.push(c); }
     public:
         StreamLexer();
 

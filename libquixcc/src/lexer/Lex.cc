@@ -291,6 +291,13 @@ char libquixcc::StreamLexer::getc()
 {
     char c = EOF;
 
+    if (!m_pushback.empty())
+    {
+        c = m_pushback.front();
+        m_pushback.pop();
+        goto end;
+    }
+
     if (m_buf_pos >= m_buffer.size())
     {
         size_t read;
@@ -720,10 +727,18 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
         }
         case LexState::Identifier:
         {
-            // match [a-zA-Z0-9_]
             if (std::isalnum(c) || c == '_' || c == '.' || c == ':')
             {
                 buffer += c;
+                continue;
+            }
+
+            if (buffer.size() > 0 && buffer.back() == ':')
+            {
+                m_last = c;
+                buffer.pop_back();
+
+                pushback(':');
                 continue;
             }
 
@@ -942,7 +957,7 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
                     m_tok = Token(TokenType::MacroSingleLine, buffer, m_loc - buffer.size());
                     return m_tok.value();
                 }
-                else if (std::isalnum(c) || c == '_' || std::isspace(c))
+                else if (std::isalnum(c) || c == '_' || std::isspace(c) || c == '.')
                 {
                     buffer += c;
                     continue;
@@ -955,7 +970,6 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
                 }
                 else
                 {
-                    throw std::runtime_error("Invalid character in macro" + std::to_string(c));
                     m_tok = Token(TokenType::Unknown, buffer, m_loc - buffer.size());
                     return m_tok.value();
                 }
