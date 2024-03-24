@@ -283,8 +283,11 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *
     {
         params.push_back(param->codegen(*this));
     }
+
     return llvm::FunctionType::get(node->m_return_type->codegen(*this), params, node->m_variadic);
 }
+
+
 
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::IntegerLiteralNode *node) const
 {

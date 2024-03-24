@@ -26,6 +26,7 @@
 #include <iostream>
 #include <regex>
 #include <filesystem>
+#include <openssl/rand.h>
 
 #include <LibMacro.h>
 #include <llvm/LLVMWrapper.h>
@@ -83,20 +84,12 @@ static quixcc_uuid_t quixcc_uuid()
         } __attribute__((packed)) m;
     } __attribute__((packed)) raw;
 
-    // if (RAND_bytes((unsigned char *)raw.bytes, sizeof(raw.bytes)) != 1)
-    // {
-    //     raw.m.m_high = (uint64_t)rand() << 32 | rand();
-    //     raw.m.m_low = (uint64_t)rand() << 32 | rand();
-    // }
-
-    /// TODO: resolve the issue with RAND_bytes
-    raw.m.m_high = (uint64_t)rand() << 32 | rand();
-    raw.m.m_low = (uint64_t)rand() << 32 | rand();
-
-    quixcc_uuid_t uuid;
-    uuid.m_high = raw.m.m_high;
-    uuid.m_low = raw.m.m_low;
-    return uuid;
+    if (RAND_bytes(raw.bytes, sizeof(raw.bytes)) != 1)
+    {
+        raw.m.m_high = (uint64_t)rand() << 32 | rand();
+        raw.m.m_low = (uint64_t)rand() << 32 | rand();
+    }
+    return {.m_low = raw.m.m_low, .m_high = raw.m.m_high};
 }
 
 LIB_EXPORT quixcc_job_t *quixcc_new()
@@ -521,6 +514,51 @@ static bool compile(quixcc_job_t *job)
     // libquixcc::AST ast;
     std::shared_ptr<libquixcc::AST> ast = std::make_shared<libquixcc::AST>();
 
+    if (job->m_argset->contains("-PREP"))
+    {
+        libquixcc::message(*job, libquixcc::Err::DEBUG, "Preprocessing only");
+        std::shared_ptr<libquixcc::PrepEngine> prep = std::make_shared<libquixcc::PrepEngine>(*job);
+        prep->setup();
+        if (!preprocess_phase(job, prep))
+            return false;
+
+        // Generate output
+        std::string tmp;
+        std::optional<libquixcc::Token> tok;
+        while ((tok = prep->next())->type() != libquixcc::TokenType::Eof)
+        {
+            tmp = tok->serialize();
+            fwrite(tmp.c_str(), 1, tmp.size(), job->m_out);
+            fputc('\n', job->m_out);
+        }
+        fflush(job->m_out);
+        return true;
+    }
+
+    if (job->m_argset->contains("-LEX"))
+    {
+        libquixcc::message(*job, libquixcc::Err::DEBUG, "Lexing only");
+        libquixcc::StreamLexer lexer;
+        
+        if (!lexer.set_source(job->m_in, job->m_filename))
+        {
+            libquixcc::message(*job, libquixcc::Err::ERROR, "failed to set source");
+            return false;
+        }
+
+        // Generate output
+        std::string tmp;
+        libquixcc::Token tok;
+        while ((tok = lexer.next()).type() != libquixcc::TokenType::Eof)
+        {
+            tmp = tok.serialize();
+            fwrite(tmp.c_str(), 1, tmp.size(), job->m_out);
+            fputc('\n', job->m_out);
+        }
+        fflush(job->m_out);
+        return true;
+    }
+
     ///=========================================
     /// BEGIN: PREPROCESSOR/LEXER
     ///=========================================
@@ -587,6 +625,8 @@ static bool verify_build_option(const std::string &option, const std::string &va
 {
     const static std::set<std::string> static_options = {
         "-S",         // assembly output
+        "-PREP",      // preprocessor/Lexer output
+        "-LEX",       // lexer output (no preprocessing)
         "-IR",        // IR output
         "-c",         // compile only
         "-O0",        // optimization levels
@@ -630,7 +670,7 @@ static bool verify_build_option_conflicts(quixcc_job_t *job)
 static bool build_argmap(quixcc_job_t *job)
 {
     // -<p><key>[=<value>]
-    const static std::set<char> okay_prefixes = {'f', 'O', 'l', 'L', 'I', 'D', 'W', 'm', 'c', 'S', 'g', 's', 'v'};
+    const static std::set<char> okay_prefixes = {'f', 'O', 'l', 'P', 'L', 'I', 'D', 'W', 'm', 'c', 'S', 'g', 's', 'v'};
 
     std::map<std::string, std::string> *argmap = job->m_argset;
 

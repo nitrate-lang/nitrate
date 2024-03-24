@@ -356,40 +356,37 @@ void libquixcc::StreamLexer::push(libquixcc::Token tok)
     m_tok = tok;
 }
 
-// static bool validate_identifier_type_1(const std::string &id)
-// {
-//     int state = 0;
+static bool validate_identifier_type_1(const std::string &id)
+{
+    // check if its a a::b::c::d::e::f
 
-//     for (const auto &c : id)
-//     {
-//         switch (state)
-//         {
-//         case 0:
-//             if (std::isalnum(c) || c == '_')
-//                 continue;
-//             if (c == ':')
-//             {
-//                 state = 1;
-//                 continue;
-//             }
-//             return false;
-//         case 1:
-//             if (c != ':')
-//                 return false;
-//             state = 2;
-//             continue;
-//         case 2:
-//             if (std::isalnum(c) || c == '_')
-//             {
-//                 state = 0;
-//                 continue;
-//             }
-//             return false;
-//         }
-//     }
+    int state = 0;
 
-//     return state == 0;
-// }
+    for (const auto &c : id)
+    {
+        switch (state)
+        {
+        case 0:
+            if (std::isalnum(c) || c == '_')
+                continue;
+            if (c == ':')
+            {
+                state = 1;
+                continue;
+            }
+            return false;
+        case 1:
+            if (c == ':')
+            {
+                state = 0;
+                continue;
+            }
+            return false;
+        }
+    }
+
+    return state == 0;
+}
 
 static bool validate_identifier_type_2(const std::string &id)
 {
@@ -423,8 +420,13 @@ static bool validate_identifier_type_2(const std::string &id)
 
 static bool reduce_identifier(std::string &str)
 {
-    // if (validate_identifier_type_1(str))
-    //     return true;
+    if (validate_identifier_type_1(str))
+        return true;
+
+    /*
+        a.b.c.d.e.f
+        becomes -> a::b::c::d::e::f
+    */
 
     if (validate_identifier_type_2(str))
     {
@@ -719,7 +721,7 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
         case LexState::Identifier:
         {
             // match [a-zA-Z0-9_]
-            if (std::isalnum(c) || c == '_' || c == '.')
+            if (std::isalnum(c) || c == '_' || c == '.' || c == ':')
             {
                 buffer += c;
                 continue;
@@ -911,7 +913,6 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
         case LexState::MacroStart:
             // macros begin with '@'
             // There are two types. One is a single line macro, the other is a block macro.
-            // single line macros end with a semicolon and a newline
             // block macros begin with a '@(' and end with a ');'
             if (c == '(')
             {
@@ -922,20 +923,63 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
             else
             {
                 state = LexState::SingleLineMacro;
+                state_parens = 0;
                 buffer += c;
                 continue;
             }
             break;
         case LexState::SingleLineMacro:
         {
-            if (c != '\n')
+            /*
+            Format:
+                ... @macro_name(arg1, arg2, arg3, ...) ...
+            */
+            switch (state_parens)
             {
+            case 0:
+                if (c == '\n')
+                {
+                    m_tok = Token(TokenType::MacroSingleLine, buffer, m_loc - buffer.size());
+                    return m_tok.value();
+                }
+                else if (std::isalnum(c) || c == '_' || std::isspace(c))
+                {
+                    buffer += c;
+                    continue;
+                }
+                else if (c == '(')
+                {
+                    buffer += c;
+                    state_parens++;
+                    continue;
+                }
+                else
+                {
+                    throw std::runtime_error("Invalid character in macro" + std::to_string(c));
+                    m_tok = Token(TokenType::Unknown, buffer, m_loc - buffer.size());
+                    return m_tok.value();
+                }
+            default:
+                if (c == '(')
+                {
+                    buffer += c;
+                    state_parens++;
+                }
+                else if (c == ')')
+                {
+                    buffer += c;
+                    state_parens--;
+                }
+
+                if (state_parens == 0)
+                {
+                    m_tok = Token(TokenType::MacroSingleLine, buffer, m_loc - buffer.size());
+                    return m_tok.value();
+                }
+
                 buffer += c;
                 continue;
             }
-
-            m_tok = Token(TokenType::MacroSingleLine, buffer, m_loc - buffer.size());
-            return m_tok.value();
         }
         case LexState::BlockMacro:
         {
@@ -987,23 +1031,15 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
                     continue;
                 }
             }
-            try
+            if (operator_map.contains(buffer))
             {
-                if (operator_map.find(buffer) != operator_map.end())
-                {
-                    m_last = c;
-                    m_tok = Token(TokenType::Operator, operator_map.at(buffer), m_loc - buffer.size());
-                    return m_tok.value();
-                }
-
-                buffer += c;
-                continue;
-            }
-            catch (std::out_of_range &)
-            {
-                m_tok = Token(TokenType::Unknown, buffer, m_loc - buffer.size());
+                m_last = c;
+                m_tok = Token(TokenType::Operator, operator_map.at(buffer), m_loc - buffer.size());
                 return m_tok.value();
             }
+
+            buffer += c;
+            continue;
         }
         }
     }
