@@ -16,36 +16,32 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_EXPORTED_H__
-#define __QUIXCC_PARSE_NODES_EXPORTED_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <LibMacro.h>
+#include <mangle/Symbol.h>
+#include <parse/nodes/AllNodes.h>
 
-#include <string>
-#include <vector>
-#include <memory>
-
-#include <llvm/LLVMWrapper.h>
-#include <parse/nodes/BasicNodes.h>
-
-namespace libquixcc
+std::string libquixcc::Symbol::mangle_c(const libquixcc::DeclNode *node, const std::string &prefix)
 {
-    class ExportNode : public StmtNode
+    /// TODO: verify this is correct
+    switch (node->ntype)
     {
-    public:
-        ExportNode(std::shared_ptr<StmtNode> stmt, ExportLangType lang) : m_stmt(stmt), m_lang_type(lang) { ntype = NodeType::ExportNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
-
-        std::shared_ptr<libquixcc::StmtNode> m_stmt;
-        ExportLangType m_lang_type;
-    };
+    case libquixcc::NodeType::VarDeclNode:
+        return static_cast<const libquixcc::VarDeclNode *>(node)->m_name;
+    case libquixcc::NodeType::LetDeclNode:
+        return static_cast<const libquixcc::LetDeclNode *>(node)->m_name;
+    case libquixcc::NodeType::ConstDeclNode:
+        return static_cast<const libquixcc::ConstDeclNode *>(node)->m_name;
+    case libquixcc::NodeType::FunctionDeclNode:
+        return static_cast<const libquixcc::FunctionDeclNode *>(node)->m_name;
+    default:
+        throw std::runtime_error("Invalid node type");
+    }
 }
 
-#endif // __QUIXCC_PARSE_NODES_EXPORTED_H__
+std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_c(std::string input)
+{
+    /// TODO: handle case where type is unknown
+    return nullptr;
+}

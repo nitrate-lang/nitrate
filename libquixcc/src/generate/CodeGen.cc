@@ -287,8 +287,6 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *
     return llvm::FunctionType::get(node->m_return_type->codegen(*this), params, node->m_variadic);
 }
 
-
-
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::IntegerLiteralNode *node) const
 {
     return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(get_numbits(node->m_val), node->m_val, 10));
@@ -344,8 +342,8 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::VarDeclNode *node
     if (!(type = node->m_type->codegen(*this)))
         return nullptr;
 
-    m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix), type);
-    llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix));
+    m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), type);
+    llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang));
 
     if (m_ctx->m_pub)
         gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
@@ -375,8 +373,8 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::LetDeclNode *node
     if (!(type = node->m_type->codegen(*this)))
         return nullptr;
 
-    m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix), type);
-    llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix));
+    m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), type);
+    llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang));
     if (!gvar)
         return nullptr;
 
@@ -408,8 +406,8 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ConstDeclNode *no
     if (!(type = node->m_type->codegen(*this)))
         return nullptr;
 
-    m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix), type);
-    llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix));
+    m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), type);
+    llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang));
 
     if (m_ctx->m_pub)
         gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
@@ -458,9 +456,9 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
     llvm::Function *func;
 
     if (m_ctx->m_pub)
-        func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, node->m_name, *m_ctx->m_module);
+        func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), *m_ctx->m_module);
     else
-        func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, node->m_name, *m_ctx->m_module);
+        func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), *m_ctx->m_module);
 
     size_t i = 0;
     for (auto &arg : func->args())
@@ -559,13 +557,15 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::SubsystemNode *no
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExportNode *node) const
 {
     bool pub = m_ctx->m_pub;
+    ExportLangType lang = m_ctx->m_lang;
 
     m_ctx->m_pub = true;
+    m_ctx->m_lang = node->m_lang_type;
 
     auto stmt = node->m_stmt->codegen(*this);
 
-    if (!pub)
-        m_ctx->m_pub = false;
+    m_ctx->m_pub = pub;
+    m_ctx->m_lang = lang;
 
     return stmt;
 }
