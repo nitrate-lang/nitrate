@@ -81,6 +81,7 @@ namespace libquixcc
         llvm::Value *visit(const FunctionParamNode *node) const;
         llvm::Value *visit(const SubsystemNode *node) const;
         llvm::Value *visit(const ExportNode *node) const;
+        llvm::Value *visit(const ReturnStmtNode *node) const;
     };
 };
 

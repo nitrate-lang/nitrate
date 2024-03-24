@@ -95,6 +95,18 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             if (!parse_pub(job, scanner, node))
                 return false;
             break;
+        case Keyword::Return:
+            if (!parse_return(job, scanner, node))
+                return false;
+            break;
+        case Keyword::Retif:
+            if (!parse_retif(job, scanner, node))
+                return false;
+            break;
+        case Keyword::Retz:
+            if (!parse_retz(job, scanner, node))
+                return false;
+            break;
         default:
             break;
         }

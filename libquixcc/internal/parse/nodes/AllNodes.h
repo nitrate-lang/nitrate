@@ -37,5 +37,6 @@
 #include <parse/nodes/UnionNode.h>
 #include <parse/nodes/FunctionNode.h>
 #include <parse/nodes/ExportNode.h>
+#include <parse/nodes/ControlFlow.h>
 
 #endif // __QUIXCC_PARSE_NODES_NODES_H__

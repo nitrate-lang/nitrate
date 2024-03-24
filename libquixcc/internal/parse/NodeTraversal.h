@@ -97,6 +97,7 @@ namespace libquixcc
         size_t visit(FunctionParamNode *node);
         size_t visit(SubsystemNode *node);
         size_t visit(ExportNode *node);
+        size_t visit(ReturnStmtNode *node);
     };
 
     class ParseNodePostorderVisitor
@@ -163,6 +164,7 @@ namespace libquixcc
         size_t visit(FunctionParamNode *node);
         size_t visit(SubsystemNode *node);
         size_t visit(ExportNode *node);
+        size_t visit(ReturnStmtNode *node);
     };
 
 }

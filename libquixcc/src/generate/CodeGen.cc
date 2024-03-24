@@ -514,24 +514,47 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
     llvm::BasicBlock *EntryBlock = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
     m_ctx->m_builder->SetInsertPoint(EntryBlock);
 
-    // Create the loop block
-    llvm::BasicBlock *LoopBlock = llvm::BasicBlock::Create(*m_ctx->m_ctx, "loop", func);
+    for (const auto &stmt : node->m_body->m_stmts)
+    {
+        switch (stmt->ntype)
+        {
+        case NodeType::ReturnStmtNode:
+        {
+            auto n = std::static_pointer_cast<ReturnStmtNode>(stmt);
+            if (!n->m_expr)
+                m_ctx->m_builder->CreateRetVoid();
+            else
+            {
+                auto val = n->m_expr->codegen(*this);
+                if (!val)
+                    return nullptr;
+                m_ctx->m_builder->CreateRet(val);
+            }
+            break;
+        }
+        default:
+            throw std::runtime_error("Invalid statement type");
+        }
+    }
 
-    // Branch to the loop block
-    m_ctx->m_builder->CreateBr(LoopBlock);
+    // // Create the loop block
+    // llvm::BasicBlock *LoopBlock = llvm::BasicBlock::Create(*m_ctx->m_ctx, "loop", func);
 
-    // Set insertion point to the loop block
-    m_ctx->m_builder->SetInsertPoint(LoopBlock);
+    // // Branch to the loop block
+    // m_ctx->m_builder->CreateBr(LoopBlock);
 
-    // Here you would insert code for the loop body
+    // // Set insertion point to the loop block
+    // m_ctx->m_builder->SetInsertPoint(LoopBlock);
 
-    // Create an unconditional branch back to the loop block
-    m_ctx->m_builder->CreateBr(LoopBlock);
+    // // Here you would insert code for the loop body
 
-    // If the function returns void, insert a return void instruction at the end of the entry block
-    if (func->getReturnType()->isVoidTy())
-        m_ctx->m_builder->SetInsertPoint(EntryBlock);
-    // m_ctx->m_builder->CreateRetVoid();
+    // // Create an unconditional branch back to the loop block
+    // m_ctx->m_builder->CreateBr(LoopBlock);
+
+    // // If the function returns void, insert a return void instruction at the end of the entry block
+    // if (func->getReturnType()->isVoidTy())
+    //     m_ctx->m_builder->SetInsertPoint(EntryBlock);
+    // // m_ctx->m_builder->CreateRetVoid();
 
     return func;
 }
@@ -568,4 +591,13 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExportNode *node)
     m_ctx->m_lang = lang;
 
     return stmt;
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ReturnStmtNode *node) const
+{
+    llvm::Value *val = node->m_expr->codegen(*this);
+    if (!val)
+        return nullptr;
+
+    return m_ctx->m_builder->CreateRet(val);
 }

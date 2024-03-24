@@ -544,3 +544,8 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Ex
     str += node->m_stmt->to_json(*this);
     return str + "}";
 }
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ReturnStmtNode *node) const
+{
+    return "{\"ntype\":\"ReturnStmtNode\",\"value\":" + node->m_expr->to_json(*this) + "}";
+}
