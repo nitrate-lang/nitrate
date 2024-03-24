@@ -539,7 +539,7 @@ static bool compile(quixcc_job_t *job)
     {
         libquixcc::message(*job, libquixcc::Err::DEBUG, "Lexing only");
         libquixcc::StreamLexer lexer;
-        
+
         if (!lexer.set_source(job->m_in, job->m_filename))
         {
             libquixcc::message(*job, libquixcc::Err::ERROR, "failed to set source");

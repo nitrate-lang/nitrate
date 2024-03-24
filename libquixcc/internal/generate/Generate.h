@@ -30,10 +30,10 @@
 
 namespace libquixcc
 {
-    bool write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, const std::string &ir_filename);
-    bool write_asm(quixcc_job_t &ctx, const std::string &ir_filename, const std::string &asm_filename);
-    bool write_obj(quixcc_job_t &ctx, const std::string &asm_filename, const std::string &obj_filename);
-    bool write_bin(quixcc_job_t &ctx, const std::string &obj_filename, const std::string &bin_filename);
+    bool write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out);
+    bool write_asm(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out);
+    bool write_obj(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out);
+    bool write_bin(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out);
     bool generate(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast);
 };
 

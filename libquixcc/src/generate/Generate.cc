@@ -71,18 +71,19 @@ static std::map<std::string, std::string> acceptable_bingen_flags = {
     {"-fPIC", "-fPIC"},
     {"-fPIE", "-fPIE"}};
 
-bool libquixcc::write_IR(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNode> ast, const std::string &ir_filename)
+bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
 {
-    // Check if the quixcc_job_t is valid
-    if (!ctx.m_inner)
+    int fd;
+    // Get the file descriptor
+    if ((fd = fileno(out)) == -1)
     {
-        message(ctx, libquixcc::Err::FATAL, "Invalid quixcc_job_t");
+        message(ctx, libquixcc::Err::ERROR, "Failed to get file descriptor");
         return false;
     }
 
     // Create a llvm::raw_fd_ostream
     std::error_code ec;
-    llvm::raw_fd_ostream os(ir_filename, ec);
+    llvm::raw_fd_ostream os(fd, false);
     if (os.has_error())
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to create llvm::raw_fd_ostream");
@@ -115,7 +116,7 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNode
     return true;
 }
 
-bool libquixcc::write_asm(quixcc_job_t &ctx, const std::string &ir_filename, const std::string &asm_filename)
+bool libquixcc::write_asm(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
 {
     // LLVM createTargetMachine is bugging and not working
     // therefore, we will use clang binary to generate the assembly
@@ -130,21 +131,41 @@ bool libquixcc::write_asm(quixcc_job_t &ctx, const std::string &ir_filename, con
         if (acceptable_asmgen_flags.contains(e.first))
             flags += acceptable_asmgen_flags[e.first] + " ";
 
-    // Its ugly, but it works
-    std::string os_cmd = "clang -Wno-override-module -S " + ir_filename + " -o " + asm_filename + " " + flags;
-
-    message(ctx, libquixcc::Err::DEBUG, "Running command: " + os_cmd);
-    if (system(os_cmd.c_str()) != 0)
+    std::string filename = std::tmpnam(nullptr) + std::string(".ll");
+    FILE *tmp;
+    if ((tmp = fopen(filename.c_str(), "w")) == nullptr)
     {
-        message(ctx, libquixcc::Err::ERROR, "Failed to generate assembly");
+        message(ctx, libquixcc::Err::ERROR, "Failed to create temporary file");
         return false;
     }
 
+    if (!write_IR(ctx, ast, tmp))
+    {
+        fclose(tmp);
+        std::filesystem::remove(filename);
+        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
+        return false;
+    }
+    fclose(tmp);
+
+    if (system(("clang -S " + filename + " -o " + filename + ".S " + flags).c_str()) != 0)
+    {
+        message(ctx, libquixcc::Err::ERROR, "Failed to generate assembly file");
+        return false;
+    }
+
+    std::ifstream ifs(filename + ".S");
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                        (std::istreambuf_iterator<char>()));
+
+    std::fputs(content.c_str(), out);
+
+    std::filesystem::remove(filename);
     return true;
 #endif
 }
 
-bool libquixcc::write_obj(quixcc_job_t &ctx, const std::string &asm_filename, const std::string &obj_filename)
+bool libquixcc::write_obj(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
 {
 #if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
     message(ctx, libquixcc::Err::FATAL, "Unsupported operating system");
@@ -155,21 +176,40 @@ bool libquixcc::write_obj(quixcc_job_t &ctx, const std::string &asm_filename, co
         if (acceptable_objgen_flags.contains(e.first))
             flags += acceptable_objgen_flags[e.first] + " ";
 
-    // Its ugly, but it works
-    std::string os_cmd = "clang -c " + asm_filename + " -o " + obj_filename + " " + flags;
+    std::string filename = std::tmpnam(nullptr) + std::string(".ll");
+    FILE *tmp;
+    if ((tmp = fopen(filename.c_str(), "w")) == nullptr)
+    {
+        message(ctx, libquixcc::Err::ERROR, "Failed to create temporary file");
+        return false;
+    }
 
-    message(ctx, libquixcc::Err::DEBUG, "Running command: " + os_cmd);
-    if (system(os_cmd.c_str()) != 0)
+    if (!write_IR(ctx, ast, tmp))
+    {
+        fclose(tmp);
+        std::filesystem::remove(filename);
+        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
+        return false;
+    }
+    fclose(tmp);
+
+    if (system(("clang -c " + filename + " -o " + filename + ".o " + flags).c_str()) != 0)
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate object file");
         return false;
     }
 
+    std::ifstream ifs(filename + ".o");
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                        (std::istreambuf_iterator<char>()));
+    std::fwrite(content.c_str(), 1, content.size(), out);
+    std::filesystem::remove(filename);
+
     return true;
 #endif
 }
 
-bool libquixcc::write_bin(quixcc_job_t &ctx, const std::string &obj_filename, const std::string &bin_filename)
+bool libquixcc::write_bin(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
 {
 #if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
     message(ctx, libquixcc::Err::FATAL, "Unsupported operating system");
@@ -177,34 +217,54 @@ bool libquixcc::write_bin(quixcc_job_t &ctx, const std::string &obj_filename, co
 #else
     if (ctx.m_argset->contains("-staticlib"))
     {
-        message(ctx, libquixcc::Err::DEBUG, "Static library output requested");
-        std::string os_cmd = "ar rcs " + bin_filename + " " + obj_filename;
-        message(ctx, libquixcc::Err::DEBUG, "Running command: " + os_cmd);
-        if (system(os_cmd.c_str()) != 0)
-        {
-            message(ctx, libquixcc::Err::ERROR, "Failed to generate static library");
-            return false;
-        }
-        return true;
+        // message(ctx, libquixcc::Err::DEBUG, "Static library output requested");
+        // std::string os_cmd = "ar rcs " + bin_filename + " " + obj_filename;
+        // message(ctx, libquixcc::Err::DEBUG, "Running command: " + os_cmd);
+        // if (system(os_cmd.c_str()) != 0)
+        // {
+        //     message(ctx, libquixcc::Err::ERROR, "Failed to generate static library");
+        //     return false;
+        // }
+        // return true;
+
+        /// TODO: implement static library generation
+        return false;
     }
 
     // if not building a static library, do the following
-    std::string flags = "-nostdlib -nostartfiles -nodefaultlibs ";
+    std::string flags = " ";
     for (const auto &e : *ctx.m_argset)
         if (acceptable_bingen_flags.contains(e.first))
             flags += acceptable_bingen_flags[e.first] + " ";
 
-    // Its ugly, but it works
-    std::string os_cmd = "clang " + flags + " " + obj_filename + " -o " + bin_filename;
+    std::string filename = std::tmpnam(nullptr) + std::string(".ll");
+    FILE *tmp;
+    if ((tmp = fopen(filename.c_str(), "w")) == nullptr)
+    {
+        message(ctx, libquixcc::Err::ERROR, "Failed to create temporary file");
+        return false;
+    }
 
-    message(ctx, libquixcc::Err::DEBUG, "Running command: " + os_cmd);
-    bool ok = system(os_cmd.c_str()) == 0;
+    if (!write_IR(ctx, ast, tmp))
+    {
+        fclose(tmp);
+        std::filesystem::remove(filename);
+        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
+        return false;
+    }
+    fclose(tmp);
 
-    if (!ok)
+    if (system(("clang " + filename + " -o " + filename + ".out " + flags).c_str()) != 0)
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate executable");
         return false;
     }
+
+    std::ifstream ifs(filename + ".out");
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                        (std::istreambuf_iterator<char>()));
+    std::fwrite(content.c_str(), 1, content.size(), out);
+    std::filesystem::remove(filename);
 
     return true;
 #endif
@@ -212,183 +272,12 @@ bool libquixcc::write_bin(quixcc_job_t &ctx, const std::string &obj_filename, co
 
 bool libquixcc::generate(quixcc_job_t &job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    std::string ir_filename = std::tmpnam(nullptr) + std::string(".ll");
-    std::string asm_filename = std::tmpnam(nullptr) + std::string(".s");
-    std::string obj_filename = std::tmpnam(nullptr) + std::string(".o");
-    std::string bin_filename = std::tmpnam(nullptr) + std::string(".out");
-    char buf[4096];
-    size_t n = 0;
-    FILE *ir_out, *asm_out, *obj_out, *bin_out;
-    ir_out = asm_out = obj_out = bin_out = nullptr;
-
-    if (!libquixcc::write_IR(job, ast, ir_filename))
-    {
-        libquixcc::message(job, libquixcc::Err::ERROR, "failed to generate output");
-        goto remove_irfile_false;
-    }
-
     if (job.m_argset->contains("-IR"))
-    {
-        libquixcc::message(job, libquixcc::Err::DEBUG, "IR output requested");
-
-        if ((ir_out = fopen(ir_filename.c_str(), "r")) == nullptr)
-        {
-            libquixcc::message(job, libquixcc::Err::ERROR, "failed to open temporary file to write IR");
-            goto remove_irfile_false;
-        }
-
-        while ((n = fread(buf, 1, sizeof(buf), ir_out)) > 0)
-        {
-            if (fwrite(buf, 1, n, job.m_out) != n)
-            {
-                libquixcc::message(job, libquixcc::Err::ERROR, "failed to write IR to output");
-                fclose(ir_out);
-                goto remove_irfile_false;
-            }
-        }
-
-        if (ferror(ir_out) != 0)
-        {
-            libquixcc::message(job, libquixcc::Err::ERROR, "failed to read IR from temporary file");
-            fclose(ir_out);
-            goto remove_irfile_false;
-        }
-
-        fclose(ir_out);
-        return true;
-    }
-
-    if (!libquixcc::write_asm(job, ir_filename, asm_filename))
-    {
-        libquixcc::message(job, libquixcc::Err::ERROR, "failed to generate assembly");
-        goto remove_irfile_asm_false;
-    }
-
-    message(job, libquixcc::Err::DEBUG, "Generated assembly");
-
-    if (job.m_argset->contains("-S"))
-    {
-        libquixcc::message(job, libquixcc::Err::DEBUG, "Assembly output requested");
-
-        if ((asm_out = fopen(asm_filename.c_str(), "r")) == nullptr)
-        {
-            libquixcc::message(job, libquixcc::Err::ERROR, "failed to open temporary file to write assembly");
-            goto remove_irfile_asm_false;
-        }
-
-        while ((n = fread(buf, 1, sizeof(buf), asm_out)) > 0)
-        {
-            if (fwrite(buf, 1, n, job.m_out) != n)
-            {
-                libquixcc::message(job, libquixcc::Err::ERROR, "failed to write assembly to output");
-                fclose(asm_out);
-                goto remove_irfile_asm_false;
-            }
-        }
-
-        if (ferror(asm_out) != 0)
-        {
-            libquixcc::message(job, libquixcc::Err::ERROR, "failed to read assembly from temporary file");
-            fclose(asm_out);
-            goto remove_irfile_asm_false;
-        }
-
-        fclose(asm_out);
-        return true;
-    }
-
-    if (!libquixcc::write_obj(job, asm_filename, obj_filename))
-    {
-        libquixcc::message(job, libquixcc::Err::ERROR, "failed to generate object file");
-        goto remove_irfile_asm_obj_false;
-    }
-
-    message(job, libquixcc::Err::DEBUG, "Generated object file");
-
-    if (job.m_argset->contains("-c"))
-    {
-        libquixcc::message(job, libquixcc::Err::DEBUG, "Object file output requested");
-
-        if ((obj_out = fopen(obj_filename.c_str(), "r")) == nullptr)
-        {
-            libquixcc::message(job, libquixcc::Err::ERROR, "failed to open temporary file to write object file");
-            goto remove_irfile_asm_obj_false;
-        }
-
-        while ((n = fread(buf, 1, sizeof(buf), obj_out)) > 0)
-        {
-            if (fwrite(buf, 1, n, job.m_out) != n)
-            {
-                libquixcc::message(job, libquixcc::Err::ERROR, "failed to write object file to output");
-                fclose(obj_out);
-                goto remove_irfile_asm_obj_false;
-            }
-        }
-
-        if (ferror(obj_out) != 0)
-        {
-            libquixcc::message(job, libquixcc::Err::ERROR, "failed to read object file from temporary file");
-            fclose(obj_out);
-            goto remove_irfile_asm_obj_false;
-        }
-
-        fclose(obj_out);
-        return true;
-    }
-
-    if (!libquixcc::write_bin(job, obj_filename, bin_filename))
-    {
-        libquixcc::message(job, libquixcc::Err::ERROR, "failed to generate executable");
-        goto remove_irfile_asm_obj_false;
-    }
-
-    message(job, libquixcc::Err::DEBUG, "Generated executable");
-
-    if ((bin_out = fopen(bin_filename.c_str(), "r")) == nullptr)
-    {
-        libquixcc::message(job, libquixcc::Err::ERROR, "failed to open temporary file to write executable");
-        fclose(bin_out);
-        goto remove_irfile_asm_obj_false;
-    }
-
-    while ((n = fread(buf, 1, sizeof(buf), bin_out)) > 0)
-    {
-        if (fwrite(buf, 1, n, job.m_out) != n)
-        {
-            libquixcc::message(job, libquixcc::Err::ERROR, "failed to write object file to output");
-            fclose(bin_out);
-            goto remove_irfile_asm_obj_false;
-        }
-    }
-
-    if (ferror(bin_out) != 0)
-    {
-        libquixcc::message(job, libquixcc::Err::ERROR, "failed to read object file from temporary file");
-        fclose(bin_out);
-        goto remove_irfile_asm_obj_false;
-    }
-
-    fflush(job.m_out);
-    fclose(bin_out);
-
-    std::filesystem::remove(ir_filename);
-    std::filesystem::remove(asm_filename);
-    std::filesystem::remove(obj_filename);
-    std::filesystem::remove(bin_filename);
-    return true; // TODO: fixme
-
-remove_irfile_false:
-    std::filesystem::remove(ir_filename);
-    return false;
-
-remove_irfile_asm_false:
-    std::filesystem::remove(ir_filename);
-    std::filesystem::remove(asm_filename);
-    return false;
-
-remove_irfile_asm_obj_false:
-    std::filesystem::remove(ir_filename);
-    std::filesystem::remove(asm_filename);
-    std::filesystem::remove(obj_filename);
-    return false;
+        return write_IR(job, ast, job.m_out);
+    else if (job.m_argset->contains("-S"))
+        return write_asm(job, ast, job.m_out);
+    else if (job.m_argset->contains("-c"))
+        return write_obj(job, ast, job.m_out);
+    else
+        return write_bin(job, ast, job.m_out);
 }
