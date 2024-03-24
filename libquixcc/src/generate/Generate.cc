@@ -127,7 +127,7 @@ bool libquixcc::write_asm(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AS
     message(ctx, libquixcc::Err::FATAL, "Unsupported operating system");
     throw std::runtime_error("Unsupported operating system");
 #else
-    std::string flags = "-ffunction-sections -fdata-sections ";
+    std::string flags = "-Wno-override-module -ffunction-sections -fdata-sections ";
 
     for (const auto &e : *ctx.m_argset)
         if (acceptable_asmgen_flags.contains(e.first))
@@ -173,7 +173,7 @@ bool libquixcc::write_obj(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AS
     message(ctx, libquixcc::Err::FATAL, "Unsupported operating system");
     throw std::runtime_error("Unsupported operating system");
 #else
-    std::string flags;
+    std::string flags = "-Wno-override-module ";
     for (const auto &e : *ctx.m_argset)
         if (acceptable_objgen_flags.contains(e.first))
             flags += acceptable_objgen_flags[e.first] + " ";

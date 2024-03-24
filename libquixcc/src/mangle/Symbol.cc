@@ -26,6 +26,15 @@ const std::string libquixcc::Symbol::quix_abiprefix = "_ZJ0";
 const std::string libquixcc::Symbol::cxx_abiprefix = "_Z";
 const std::string libquixcc::Symbol::c_abiprefix = "";
 
+std::string libquixcc::Symbol::join(const std::string &a, const std::string &b)
+{
+    if (a.empty())
+        return b;
+    if (b.empty())
+        return a;
+    return a + "::" + b;
+}
+
 std::string libquixcc::Symbol::mangle(const libquixcc::DeclNode *node, const std::string &prefix, ExportLangType lang)
 {
     switch (lang)

@@ -236,6 +236,16 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstBinaryExp
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IdentifierNode *node) const
 {
+    auto name = Symbol::join(m_ctx->prefix, node->m_name);
+
+    if (m_ctx->m_named_stack_vars.contains(name))
+    {
+        // Load the value from the alloca and return it
+        auto load = m_ctx->m_builder->CreateLoad(m_ctx->m_named_stack_vars[name].second, static_cast<llvm::Value *>(m_ctx->m_named_stack_vars[name].first), name);
+
+        return load;
+    }
+
     return nullptr;
 }
 
@@ -617,6 +627,55 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
             }
             break;
         }
+        case NodeType::VarDeclNode:
+        {
+            auto n = std::static_pointer_cast<VarDeclNode>(stmt);
+
+            std::string name = Symbol::join(m_ctx->prefix, n->m_name);
+            auto ptr = m_ctx->m_builder->CreateAlloca(n->m_type->codegen(*this), nullptr, name);
+            m_ctx->m_named_stack_vars[n->m_name] = std::make_pair(ptr, n->m_type->codegen(*this));
+            if (n->m_init)
+            {
+                auto val = n->m_init->codegen(*this);
+                if (!val)
+                    return nullptr;
+                m_ctx->m_builder->CreateStore(val, ptr);
+            }
+            break;
+        }
+        case NodeType::LetDeclNode:
+        {
+            auto n = std::static_pointer_cast<LetDeclNode>(stmt);
+
+            std::string name = Symbol::join(m_ctx->prefix, n->m_name);
+            auto ptr = m_ctx->m_builder->CreateAlloca(n->m_type->codegen(*this), nullptr, name);
+            m_ctx->m_named_stack_vars[n->m_name] = std::make_pair(ptr, n->m_type->codegen(*this));
+            if (n->m_init)
+            {
+                auto val = n->m_init->codegen(*this);
+                if (!val)
+                    return nullptr;
+                m_ctx->m_builder->CreateStore(val, ptr);
+            }
+            break;
+        }
+        case NodeType::ConstDeclNode:
+        {
+            auto n = std::static_pointer_cast<ConstDeclNode>(stmt);
+
+            std::string name = Symbol::join(m_ctx->prefix, n->m_name);
+            auto ptr = m_ctx->m_builder->CreateAlloca(n->m_type->codegen(*this), nullptr, name);
+            m_ctx->m_named_stack_vars[n->m_name] = std::make_pair(ptr, n->m_type->codegen(*this));
+            if (n->m_init)
+            {
+                auto val = n->m_init->codegen(*this);
+                if (!val)
+                    return nullptr;
+                m_ctx->m_builder->CreateStore(val, ptr);
+            }
+            break;
+        }
+
         default:
             throw std::runtime_error("Invalid statement type");
         }

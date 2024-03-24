@@ -136,6 +136,49 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             }
             break;
         }
+        case TokenType::Identifier:
+        {
+            auto ident = std::get<std::string>(tok.val());
+            if (scanner->peek().type() == TokenType::Punctor && std::get<Punctor>(scanner->peek().val()) == Punctor::OpenParen)
+            {
+                // Function call
+                scanner->next();
+                std::vector<std::shared_ptr<libquixcc::ExprNode>> args;
+                while (true)
+                {
+                    auto tok = scanner->peek();
+                    if (tok.type() == TokenType::Eof)
+                    {
+                        PARMSG(tok, libquixcc::Err::ERROR, "Unexpected EOF");
+                        return false;
+                    }
+
+                    if (tok == Token(TokenType::Punctor, Punctor::CloseParen))
+                    {
+                        scanner->next();
+                        break;
+                    }
+
+                    std::shared_ptr<libquixcc::ExprNode> arg;
+                    if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), arg))
+                        return false;
+
+                    args.push_back(arg);
+                }
+
+                // stack.push(std::make_shared<libquixcc::CallExprNode>(ident, args));
+                // continue;
+
+                throw std::runtime_error("Function calls are not yet implemented");
+            }
+            else
+            {
+                stack.push(std::make_shared<libquixcc::IdentifierNode>(ident));
+                continue;
+            }
+            break;
+        
+        }
         default:
             PARMSG(tok, libquixcc::Err::ERROR, "Unexpected token %s", tok.serialize().c_str());
             return false;

@@ -53,6 +53,7 @@ namespace libquixcc
         std::shared_ptr<llvm::IRBuilder<>> m_builder;
         std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
         std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
+        std::map<std::string, std::pair<llvm::AllocaInst *, llvm::Type *>> m_named_stack_vars;
         std::string prefix = "";
         bool m_pub = false;
         ExportLangType m_lang = ExportLangType::Default;

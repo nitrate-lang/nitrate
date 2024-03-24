@@ -22,14 +22,7 @@
 #include <mangle/Symbol.h>
 #include <parse/nodes/AllNodes.h>
 
-static std::string join_namespace(const std::string &a, const std::string &b)
-{
-    if (a.empty())
-        return b;
-    if (b.empty())
-        return a;
-    return a + "::" + b;
-}
+
 
 static std::string wrap_tag(const std::string &tag)
 {
@@ -340,7 +333,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
     {
         res += "v";
         auto var = static_cast<const libquixcc::VarDeclNode *>(node);
-        res += wrap_tag(serialize_ns(join_namespace(prefix, var->m_name)));
+        res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
         res += wrap_tag(serialize_type(var->m_type));
 
         std::string flags;
@@ -360,7 +353,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
     {
         res += "l";
         auto var = static_cast<const libquixcc::LetDeclNode *>(node);
-        res += wrap_tag(serialize_ns(join_namespace(prefix, var->m_name)));
+        res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
         res += wrap_tag(serialize_type(var->m_type));
 
         std::string flags;
@@ -380,7 +373,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
     {
         res += "c";
         auto var = static_cast<const libquixcc::ConstDeclNode *>(node);
-        res += wrap_tag(serialize_ns(join_namespace(prefix, var->m_name)));
+        res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
         res += wrap_tag(serialize_type(var->m_type));
 
         std::string flags;
@@ -395,7 +388,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
         res += "f";
         auto var = static_cast<const libquixcc::FunctionDeclNode *>(node);
         auto tp = static_cast<const libquixcc::FunctionTypeNode *>(var->m_type);
-        res += wrap_tag(serialize_ns(join_namespace(prefix, var->m_name)));
+        res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
         res += wrap_tag(serialize_type(var->m_type));
 
         std::string flags;
