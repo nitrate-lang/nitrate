@@ -240,6 +240,13 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Vo
     return "{\"ntype\":\"VoidTypeNode\"}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::PointerTypeNode *node) const
+{
+    std::string str = "{\"ntype\":\"PointerTypeNode\",\"type\":";
+    str += node->m_type->to_json(*this);
+    return str + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StringTypeNode *node) const
 {
     return "{\"ntype\":\"StringTypeNode\"}";
