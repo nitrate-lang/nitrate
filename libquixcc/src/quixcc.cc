@@ -627,7 +627,7 @@ static bool verify_build_option(const std::string &option, const std::string &va
         "-S",            // assembly output
         "-PREP",         // preprocessor/Lexer output
         "-LEX",          // lexer output (no preprocessing)
-        "-IR",           // IR output
+        "-emit-ir",      // IR output
         "-c",            // compile only
         "-O0",           // optimization levels
         "-O1",           // optimization levels
@@ -650,6 +650,7 @@ static bool verify_build_option(const std::string &option, const std::string &va
         // -D<name>[=<value>]
         {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex("[a-zA-Z0-9_ ]*")},
         {std::regex("-l[a-zA-Z0-9_]*"), std::regex("")},
+        {std::regex("-I[a-zA-Z0-9_]*"), std::regex("")},
     };
 
     if (static_options.contains(option))
@@ -673,7 +674,7 @@ static bool verify_build_option_conflicts(quixcc_job_t *job)
 static bool build_argmap(quixcc_job_t *job)
 {
     // -<p><key>[=<value>]
-    const static std::set<char> okay_prefixes = {'f', 'O', 'l', 'P', 'n', 'L', 'I', 'D', 'W', 'm', 'c', 'S', 'g', 's', 'v'};
+    const static std::set<char> okay_prefixes = {'f', 'O', 'l', 'P', 'n', 'L', 'I', 'e', 'D', 'W', 'm', 'c', 'S', 'g', 's', 'v'};
 
     std::map<std::string, std::string> *argmap = job->m_argset;
 

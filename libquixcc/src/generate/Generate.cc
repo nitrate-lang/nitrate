@@ -283,7 +283,7 @@ bool libquixcc::write_bin(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AS
 
 bool libquixcc::generate(quixcc_job_t &job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    if (job.m_argset->contains("-IR"))
+    if (job.m_argset->contains("-emit-ir"))
         return write_IR(job, ast, job.m_out);
     else if (job.m_argset->contains("-S"))
         return write_asm(job, ast, job.m_out);
