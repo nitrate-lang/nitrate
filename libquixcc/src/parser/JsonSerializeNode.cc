@@ -559,7 +559,10 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Ex
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ReturnStmtNode *node) const
 {
-    return "{\"ntype\":\"ReturnStmtNode\",\"value\":" + node->m_expr->to_json(*this) + "}";
+    if (node->m_expr)
+        return "{\"ntype\":\"ReturnStmtNode\",\"value\":" + node->m_expr->to_json(*this) + "}";
+    else
+        return "{\"ntype\":\"ReturnStmtNode\"}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::IfStmtNode *node) const

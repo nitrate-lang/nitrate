@@ -295,14 +295,14 @@ namespace libquixcc
     class PointerTypeNode : public BasicTypeNode
     {
         PointerTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::PointerTypeNode; }
-        static PointerTypeNode *m_instance;
+        static std::map<TypeNode *, PointerTypeNode *> m_instances;
 
     public:
         static PointerTypeNode *create(TypeNode *type)
         {
-            if (m_instance == nullptr)
-                m_instance = new PointerTypeNode(type);
-            return m_instance;
+            if (!m_instances.contains(type))
+                m_instances[type] = new PointerTypeNode(type);
+            return m_instances[type];
         }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }

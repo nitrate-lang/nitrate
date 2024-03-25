@@ -1045,8 +1045,8 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
             }
             if (!operator_map.contains(buffer))
             {
-                m_last = c;
                 pushback(buffer.back());
+                pushback(c);
                 m_tok = Token(TokenType::Operator, operator_map.at(buffer.substr(0, buffer.size() - 1)), m_loc - buffer.size());
                 return m_tok.value();
             }
