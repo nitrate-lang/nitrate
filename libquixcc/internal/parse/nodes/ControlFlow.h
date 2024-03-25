@@ -40,12 +40,27 @@ namespace libquixcc
         ReturnStmtNode(const std::shared_ptr<ExprNode> &expr) : m_expr(expr) { ntype = NodeType::ReturnStmtNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
         std::shared_ptr<ExprNode> m_expr;
+    };
+
+    class ReturnIfStmtNode : public StmtNode
+    {
+    public:
+        ReturnIfStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &expr, const std::shared_ptr<ExprNode> &return_val)
+            : m_cond(cond), m_expr(expr), m_return_val(return_val) { ntype = NodeType::ReturnIfStmtNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        std::shared_ptr<ExprNode> m_cond;
+        std::shared_ptr<ExprNode> m_expr;
+        std::shared_ptr<ExprNode> m_return_val;
     };
 
     class IfStmtNode : public StmtNode
@@ -55,7 +70,6 @@ namespace libquixcc
             : m_cond(cond), m_then(then), m_else(els) { ntype = NodeType::IfStmtNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }

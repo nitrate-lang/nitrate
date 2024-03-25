@@ -38,7 +38,6 @@ namespace libquixcc
         ExportNode(std::vector<std::shared_ptr<libquixcc::StmtNode>> stmts, ExportLangType lang) : m_stmts(stmts), m_lang_type(lang) { ntype = NodeType::ExportNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }

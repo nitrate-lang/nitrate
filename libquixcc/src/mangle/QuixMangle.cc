@@ -22,7 +22,7 @@
 #include <mangle/Symbol.h>
 #include <parse/nodes/AllNodes.h>
 
-
+/// TODO: Add a construct to the mangling system that indicates mutability.
 
 static std::string wrap_tag(const std::string &tag)
 {

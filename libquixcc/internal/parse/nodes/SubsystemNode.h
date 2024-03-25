@@ -39,7 +39,6 @@ namespace libquixcc
         SubsystemNode(const std::string &name, const std::set<std::string> &deps, const std::shared_ptr<BlockNode> &block) : m_name(name), m_deps(deps), m_block(block) { ntype = NodeType::SubsystemNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }

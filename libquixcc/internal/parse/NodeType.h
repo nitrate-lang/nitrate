@@ -45,7 +45,6 @@ namespace libquixcc
         UnaryExprNode,
         BinaryExprNode,
 
-
         IdentifierNode,
 
         U8TypeNode,
@@ -99,6 +98,7 @@ namespace libquixcc
         ExportNode,
 
         ReturnStmtNode,
+        ReturnIfStmtNode,
         IfStmtNode,
     };
 
@@ -160,6 +160,7 @@ namespace libquixcc
     class SubsystemNode;
     class ExportNode;
     class ReturnStmtNode;
+    class ReturnIfStmtNode;
     class IfStmtNode;
 }
 
