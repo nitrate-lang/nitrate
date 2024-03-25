@@ -131,6 +131,7 @@ Orbit is the standard library for QUIX. It contains all the built-in functions a
     | `net` | TCP, UDP, QUIX transport layer protocols |
     | `tls` | TLS client and server support (OpenSSL) |   
     | `protocol` | Higher level protocols |
+    | `io` | I/O stream manipulation functions |
     | `@sysio` | Package for all sysio modules |
 
 - **runtime**
