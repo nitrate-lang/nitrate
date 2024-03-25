@@ -44,7 +44,6 @@ namespace libquixcc
         Fn,
         Nothrow,
         Foreign,
-        Pure,
         Impure,
         Tsafe,
         Typedef,

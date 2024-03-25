@@ -28,7 +28,6 @@ struct GetPropState
 {
     bool did_nothrow;
     bool did_foreign;
-    bool did_pure;
     bool did_impure;
     bool did_tsafe;
 };
@@ -74,34 +73,11 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         return true;
     }
 
-    if (tok.type() == TokenType::Keyword && std::get<Keyword>(tok.val()) == Keyword::Pure)
-    {
-        if (state.did_pure)
-        {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_PURE_ALREADY_SPECIFIED], tok.serialize().c_str());
-            return false;
-        }
-
-        if (state.did_impure)
-        {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_PURE_AND_IMPURE_SPECIFIED], tok.serialize().c_str());
-            return false;
-        }
-        scanner->next();
-        state.did_pure = true;
-        return true;
-    }
-
     if (tok.type() == TokenType::Keyword && std::get<Keyword>(tok.val()) == Keyword::Impure)
     {
         if (state.did_impure)
         {
             PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_IMPURE_ALREADY_SPECIFIED], tok.serialize().c_str());
-            return false;
-        }
-        if (state.did_pure)
-        {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_PURE_AND_IMPURE_SPECIFIED], tok.serialize().c_str());
             return false;
         }
         scanner->next();
@@ -119,10 +95,10 @@ static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
 bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    // fn [nothrow] [foreign] [pure | impure] [tsafe] <name> ( [param]... ) [: <type>]; or {}
+    // fn [nothrow] [foreign] [impure] [tsafe] <name> ( [param]... ) [: <type>]; or {}
     auto fndecl = std::make_shared<FunctionDeclNode>();
 
-    GetPropState state = {false, false, false, false, false};
+    GetPropState state = {false, false, false, false};
 
     while (fn_get_property(job, scanner, state))
     {
@@ -173,7 +149,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
     {
-        fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, false, state.did_pure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+        fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, false, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
 
         scanner->next();
         node = fndecl;
@@ -188,7 +164,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
         if (!parse_type(job, scanner, &type))
             return false;
 
-        fndecl->m_type = FunctionTypeNode::create(type, params, false, state.did_pure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+        fndecl->m_type = FunctionTypeNode::create(type, params, false, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
 
         tok = scanner->peek();
         if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
@@ -210,7 +186,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
         return false;
 
     if (!fndecl->m_type)
-        fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, false, state.did_pure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+        fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, false, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
 
     auto fndef = std::make_shared<FunctionDefNode>();
     fndef->m_decl = fndecl;

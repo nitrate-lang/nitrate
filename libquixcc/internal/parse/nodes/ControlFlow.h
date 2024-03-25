@@ -47,6 +47,23 @@ namespace libquixcc
 
         std::shared_ptr<ExprNode> m_expr;
     };
+
+    class IfStmtNode : public StmtNode
+    {
+    public:
+        IfStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<StmtNode> &then, const std::shared_ptr<StmtNode> &els)
+            : m_cond(cond), m_then(then), m_else(els) { ntype = NodeType::IfStmtNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        std::shared_ptr<ExprNode> m_cond;
+        std::shared_ptr<StmtNode> m_then;
+        std::shared_ptr<StmtNode> m_else;
+    };
 }
 
 #endif // __QUIXCC_PARSE_NODES_CONTROL_FLOW_H__

@@ -46,7 +46,6 @@ namespace libquixcc
         {"fn", libquixcc::Keyword::Fn},
         {"nothrow", libquixcc::Keyword::Nothrow},
         {"foreign", libquixcc::Keyword::Foreign},
-        {"pure", libquixcc::Keyword::Pure},
         {"impure", libquixcc::Keyword::Impure},
         {"tsafe", libquixcc::Keyword::Tsafe},
         {"typedef", libquixcc::Keyword::Typedef},
@@ -90,7 +89,6 @@ namespace libquixcc
         {libquixcc::Keyword::Fn, "fn"},
         {libquixcc::Keyword::Nothrow, "nothrow"},
         {libquixcc::Keyword::Foreign, "foreign"},
-        {libquixcc::Keyword::Pure, "pure"},
         {libquixcc::Keyword::Impure, "impure"},
         {libquixcc::Keyword::Tsafe, "tsafe"},
         {libquixcc::Keyword::Typedef, "typedef"},
@@ -1045,10 +1043,11 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
                     continue;
                 }
             }
-            if (operator_map.contains(buffer))
+            if (!operator_map.contains(buffer))
             {
                 m_last = c;
-                m_tok = Token(TokenType::Operator, operator_map.at(buffer), m_loc - buffer.size());
+                pushback(buffer.back());
+                m_tok = Token(TokenType::Operator, operator_map.at(buffer.substr(0, buffer.size() - 1)), m_loc - buffer.size());
                 return m_tok.value();
             }
 

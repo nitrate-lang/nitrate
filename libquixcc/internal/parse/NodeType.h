@@ -99,6 +99,7 @@ namespace libquixcc
         ExportNode,
 
         ReturnStmtNode,
+        IfStmtNode,
     };
 
     class ParseNode;
@@ -159,6 +160,7 @@ namespace libquixcc
     class SubsystemNode;
     class ExportNode;
     class ReturnStmtNode;
+    class IfStmtNode;
 }
 
 #endif // __QUIXCC_PARSE_NODES_NODETYPES_H__

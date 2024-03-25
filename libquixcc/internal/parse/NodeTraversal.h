@@ -100,13 +100,14 @@ namespace libquixcc
         size_t visit(SubsystemNode *node);
         size_t visit(ExportNode *node);
         size_t visit(ReturnStmtNode *node);
+        size_t visit(IfStmtNode *node);
     };
 
     class ParseNodePostorderVisitor
     {
         ParseNodePostorderVisitorCallback m_callback;
         std::string m_prefix;
-        
+
         void push_prefix(const std::string &name);
 
     public:
@@ -169,6 +170,7 @@ namespace libquixcc
         size_t visit(SubsystemNode *node);
         size_t visit(ExportNode *node);
         size_t visit(ReturnStmtNode *node);
+        size_t visit(IfStmtNode *node);
     };
 
 }
