@@ -343,6 +343,19 @@ size_t libquixcc::ParseNodePostorderVisitor::visit(libquixcc::VoidTypeNode *node
     return 1;
 }
 
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::PointerTypeNode *node)
+{
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type));
+    return node->m_type->dfs_preorder(*this) + 1;
+}
+
+size_t libquixcc::ParseNodePostorderVisitor::visit(libquixcc::PointerTypeNode *node)
+{
+    size_t count = node->m_type->dfs_postorder(*this);
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type));
+    return count + 1;
+}
+
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StringTypeNode *node)
 {
     return 1;

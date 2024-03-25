@@ -321,7 +321,11 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::VoidTypeNode *node
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::PointerTypeNode *node) const
 {
-    return llvm::PointerType::get(node->m_type->codegen(*this), 0);
+    auto type = node->m_type->codegen(*this);
+    if (!type)
+        return nullptr;
+    
+    return llvm::PointerType::get(type, 0);
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StringTypeNode *node) const
@@ -366,7 +370,11 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::ArrayTypeNode *nod
     if (!sz->getType()->isIntegerTy())
         return nullptr;
 
-    return llvm::ArrayType::get(node->m_type->codegen(*this), static_cast<llvm::ConstantInt *>(sz)->getZExtValue());
+    auto type = node->m_type->codegen(*this);
+    if (!type)
+        return nullptr;
+
+    return llvm::ArrayType::get(type, static_cast<llvm::ConstantInt *>(sz)->getZExtValue());
 }
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *node) const
