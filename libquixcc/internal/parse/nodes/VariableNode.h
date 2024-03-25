@@ -36,7 +36,7 @@ namespace libquixcc
     {
     public:
         VarDeclNode() { ntype = NodeType::VarDeclNode; }
-        VarDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ConstExprNode> init)
+        VarDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::VarDeclNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
@@ -59,7 +59,7 @@ namespace libquixcc
     {
     public:
         LetDeclNode() { ntype = NodeType::LetDeclNode; }
-        LetDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ConstExprNode> init)
+        LetDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::LetDeclNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
@@ -84,7 +84,7 @@ namespace libquixcc
     {
     public:
         ConstDeclNode() { ntype = NodeType::ConstDeclNode; }
-        ConstDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ConstExprNode> init)
+        ConstDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::ConstDeclNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }

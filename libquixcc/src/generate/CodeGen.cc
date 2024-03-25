@@ -246,6 +246,11 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IdentifierNode *n
         return load;
     }
 
+    if (m_ctx->m_named_global_vars.contains(name))
+    {
+        return m_ctx->m_builder->CreateLoad(m_ctx->m_named_global_vars[name]->getValueType(), m_ctx->m_named_global_vars[name], name);
+    }
+
     return nullptr;
 }
 
@@ -433,6 +438,11 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::VarDeclNode *node
     m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), type);
     llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang));
 
+    if (!gvar)
+        return nullptr;
+
+    m_ctx->m_named_global_vars[Symbol::join(m_ctx->prefix, node->m_name)] = gvar;
+
     if (m_ctx->m_pub)
         gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
     else
@@ -466,6 +476,8 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::LetDeclNode *node
     if (!gvar)
         return nullptr;
 
+    m_ctx->m_named_global_vars[Symbol::join(m_ctx->prefix, node->m_name)] = gvar;
+
     if (m_ctx->m_pub)
         gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
     else
@@ -496,6 +508,11 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ConstDeclNode *no
 
     m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), type);
     llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang));
+
+    if (!gvar)
+        return nullptr;
+
+    m_ctx->m_named_global_vars[Symbol::join(m_ctx->prefix, node->m_name)] = gvar;
 
     if (m_ctx->m_pub)
         gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
@@ -633,7 +650,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
 
             std::string name = Symbol::join(m_ctx->prefix, n->m_name);
             auto ptr = m_ctx->m_builder->CreateAlloca(n->m_type->codegen(*this), nullptr, name);
-            m_ctx->m_named_stack_vars[n->m_name] = std::make_pair(ptr, n->m_type->codegen(*this));
+            m_ctx->m_named_stack_vars[name] = std::make_pair(ptr, n->m_type->codegen(*this));
             if (n->m_init)
             {
                 auto val = n->m_init->codegen(*this);
@@ -649,7 +666,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
 
             std::string name = Symbol::join(m_ctx->prefix, n->m_name);
             auto ptr = m_ctx->m_builder->CreateAlloca(n->m_type->codegen(*this), nullptr, name);
-            m_ctx->m_named_stack_vars[n->m_name] = std::make_pair(ptr, n->m_type->codegen(*this));
+            m_ctx->m_named_stack_vars[name] = std::make_pair(ptr, n->m_type->codegen(*this));
             if (n->m_init)
             {
                 auto val = n->m_init->codegen(*this);
@@ -665,7 +682,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
 
             std::string name = Symbol::join(m_ctx->prefix, n->m_name);
             auto ptr = m_ctx->m_builder->CreateAlloca(n->m_type->codegen(*this), nullptr, name);
-            m_ctx->m_named_stack_vars[n->m_name] = std::make_pair(ptr, n->m_type->codegen(*this));
+            m_ctx->m_named_stack_vars[name] = std::make_pair(ptr, n->m_type->codegen(*this));
             if (n->m_init)
             {
                 auto val = n->m_init->codegen(*this);

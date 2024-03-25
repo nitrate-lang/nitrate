@@ -59,8 +59,8 @@ bool libquixcc::parse_var(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     else if (tok.type() == TokenType::Operator && std::get<Operator>(tok.val()) == Operator::Assign)
     {
         // Parse initializer
-        std::shared_ptr<ConstExprNode> init;
-        if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::Semicolon), init))
+        std::shared_ptr<ExprNode> init;
+        if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Semicolon), init))
         {
             PARMSG(tok, libquixcc::Err::ERROR, feedback[VAR_DECL_INIT_ERR], name.c_str());
             return false;
