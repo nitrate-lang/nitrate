@@ -571,32 +571,6 @@ size_t libquixcc::ParseNodePostorderVisitor::visit(libquixcc::LetDeclNode *node)
     return count + 1;
 }
 
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ConstDeclNode *node)
-{
-    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type));
-    size_t count = node->m_type->dfs_preorder(*this);
-    if (node->m_init)
-    {
-        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_init));
-        count += node->m_init->dfs_preorder(*this);
-    }
-    return count + 1;
-}
-
-size_t libquixcc::ParseNodePostorderVisitor::visit(libquixcc::ConstDeclNode *node)
-{
-    size_t count = 0;
-    if (node->m_init)
-    {
-        count += node->m_init->dfs_postorder(*this);
-        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_init));
-    }
-
-    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type));
-    count += node->m_type->dfs_postorder(*this);
-    return count + 1;
-}
-
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StructDeclNode *node)
 {
     return 1;
@@ -902,14 +876,23 @@ size_t libquixcc::ParseNodePostorderVisitor::visit(libquixcc::SubsystemNode *nod
 
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ExportNode *node)
 {
-    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_stmt));
-    return node->m_stmt->dfs_preorder(*this) + 1;
+    size_t count = 0;
+    for (auto &stmt : node->m_stmts)
+    {
+        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&stmt));
+        count += stmt->dfs_preorder(*this);
+    }
+    return count + 1;
 }
 
 size_t libquixcc::ParseNodePostorderVisitor::visit(libquixcc::ExportNode *node)
 {
-    size_t count = node->m_stmt->dfs_postorder(*this);
-    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_stmt));
+    size_t count = 0;
+    for (auto &stmt : node->m_stmts)
+    {
+        count += stmt->dfs_postorder(*this);
+        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&stmt));
+    }
     return count + 1;
 }
 

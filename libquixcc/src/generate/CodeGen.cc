@@ -499,42 +499,6 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::LetDeclNode *node
     return gvar;
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ConstDeclNode *node) const
-{
-    llvm::Type *type;
-
-    if (!(type = node->m_type->codegen(*this)))
-        return nullptr;
-
-    m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), type);
-    llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang));
-
-    if (!gvar)
-        return nullptr;
-
-    m_ctx->m_named_global_vars[Symbol::join(m_ctx->prefix, node->m_name)] = gvar;
-
-    if (m_ctx->m_pub)
-        gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
-    else
-        gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
-
-    if (node->m_init)
-    {
-        llvm::Constant *init;
-        if (!(init = static_cast<llvm::Constant *>(node->m_init->codegen(*this))))
-            return nullptr;
-
-        gvar->setInitializer(init);
-    }
-    else
-    {
-        gvar->setInitializer(llvm::Constant::getNullValue(type));
-    }
-
-    return gvar;
-}
-
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StructDeclNode *node) const
 {
     return nullptr;
@@ -676,23 +640,6 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
             }
             break;
         }
-        case NodeType::ConstDeclNode:
-        {
-            auto n = std::static_pointer_cast<ConstDeclNode>(stmt);
-
-            std::string name = Symbol::join(m_ctx->prefix, n->m_name);
-            auto ptr = m_ctx->m_builder->CreateAlloca(n->m_type->codegen(*this), nullptr, name);
-            m_ctx->m_named_stack_vars[name] = std::make_pair(ptr, n->m_type->codegen(*this));
-            if (n->m_init)
-            {
-                auto val = n->m_init->codegen(*this);
-                if (!val)
-                    return nullptr;
-                m_ctx->m_builder->CreateStore(val, ptr);
-            }
-            break;
-        }
-
         default:
             throw std::runtime_error("Invalid statement type");
         }
@@ -746,12 +693,15 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExportNode *node)
     m_ctx->m_pub = true;
     m_ctx->m_lang = node->m_lang_type;
 
-    auto stmt = node->m_stmt->codegen(*this);
+    for (const auto &stmt : node->m_stmts)
+    {
+        stmt->codegen(*this);
+    }
 
     m_ctx->m_pub = pub;
     m_ctx->m_lang = lang;
 
-    return stmt;
+    return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ReturnStmtNode *node) const

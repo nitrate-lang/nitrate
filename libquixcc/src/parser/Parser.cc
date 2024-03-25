@@ -60,17 +60,23 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
         switch (std::get<Keyword>(tok.val()))
         {
         case Keyword::Var:
-            if (!parse_var(job, scanner, node))
+        {
+            std::vector<std::shared_ptr<StmtNode>> decls;
+            if (!parse_var(job, scanner, decls))
                 return false;
+            for (auto &decl : decls)
+                group->m_stmts.push_back(decl);
             break;
+        }
         case Keyword::Let:
-            if (!parse_let(job, scanner, node))
+        {
+            std::vector<std::shared_ptr<StmtNode>> decls;
+            if (!parse_let(job, scanner, decls))
                 return false;
+            for (auto &decl : decls)
+                group->m_stmts.push_back(decl);
             break;
-        case Keyword::Const:
-            if (!parse_const(job, scanner, node))
-                return false;
-            break;
+        }
         case Keyword::Enum:
             if (!parse_enum(job, scanner, node))
                 return false;

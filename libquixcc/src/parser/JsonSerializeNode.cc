@@ -390,22 +390,6 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Le
     return str + "}";
 }
 
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ConstDeclNode *node) const
-{
-    std::string str = "{\"ntype\":\"ConstDeclNode\",\"name\":\"";
-    str += escape_json(node->m_name);
-    str += "\",\"type\":";
-    str += node->m_type->to_json(*this);
-    str += ",\"value\":";
-    if (node->m_init)
-        str += node->m_init->to_json(*this);
-    else
-        str += "null";
-    str += ",\"deprecated\":";
-    str += std::string(node->m_is_deprecated ? "true" : "false");
-    return str + "}";
-}
-
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StructDeclNode *node) const
 {
     return "{\"ntype\":\"StructDeclNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
@@ -561,9 +545,16 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Su
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ExportNode *node) const
 {
-    std::string str = "{\"ntype\":\"ExportNode\",\"block\":";
-    str += node->m_stmt->to_json(*this);
-    return str + "}";
+    std::string str = "{\"ntype\":\"ExportNode\",\"block\":[";
+    for (auto it = node->m_stmts.begin(); it != node->m_stmts.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_stmts.end() - 1)
+        {
+            str += ",";
+        }
+    }
+    return str + "]}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ReturnStmtNode *node) const

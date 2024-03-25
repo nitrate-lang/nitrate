@@ -57,20 +57,17 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         return false;
     }
 
+    std::vector<std::shared_ptr<libquixcc::StmtNode>> stmts;
     std::shared_ptr<libquixcc::StmtNode> stmt;
 
     switch (std::get<Keyword>(tok.val()))
     {
     case Keyword::Var:
-        if (!parse_var(job, scanner, stmt))
+        if (!parse_var(job, scanner, stmts))
             return false;
         break;
     case Keyword::Let:
-        if (!parse_let(job, scanner, stmt))
-            return false;
-        break;
-    case Keyword::Const:
-        if (!parse_const(job, scanner, stmt))
+        if (!parse_let(job, scanner, stmts))
             return false;
         break;
     case Keyword::Enum:
@@ -93,8 +90,10 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         PARMSG(tok, libquixcc::Err::ERROR, feedback[PARSER_EXPECTED_KEYWORD], tok.serialize().c_str());
         return false;
     }
+    if (stmt)
+        stmts.push_back(stmt);
 
-    node = std::make_shared<libquixcc::ExportNode>(stmt, langType);
+    node = std::make_shared<libquixcc::ExportNode>(stmts, langType);
 
     return true;
 }

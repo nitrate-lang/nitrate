@@ -77,29 +77,6 @@ namespace libquixcc
         bool m_is_static = false;
         bool m_is_deprecated = false;
     };
-
-#define LETDECLSIZE sizeof(LetDeclNode)
-
-    class ConstDeclNode : public DeclNode
-    {
-    public:
-        ConstDeclNode() { ntype = NodeType::ConstDeclNode; }
-        ConstDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
-            : m_name(name), m_type(type), m_init(init) { ntype = NodeType::ConstDeclNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual size_t dfs_postorder(ParseNodePostorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
-
-        std::string m_name;
-        TypeNode *m_type;
-        std::shared_ptr<ExprNode> m_init;
-
-        bool m_is_deprecated = false;
-    };
-
 }
 
 #endif // __QUIXCC_PARSE_NODES_VARIABLE_H__

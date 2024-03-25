@@ -31,8 +31,6 @@ std::string libquixcc::Symbol::mangle_c(const libquixcc::DeclNode *node, const s
         return static_cast<const libquixcc::VarDeclNode *>(node)->m_name;
     case libquixcc::NodeType::LetDeclNode:
         return static_cast<const libquixcc::LetDeclNode *>(node)->m_name;
-    case libquixcc::NodeType::ConstDeclNode:
-        return static_cast<const libquixcc::ConstDeclNode *>(node)->m_name;
     case libquixcc::NodeType::FunctionDeclNode:
         return static_cast<const libquixcc::FunctionDeclNode *>(node)->m_name;
     default:

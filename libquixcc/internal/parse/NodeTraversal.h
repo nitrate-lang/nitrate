@@ -84,7 +84,6 @@ namespace libquixcc
         size_t visit(BoolLiteralNode *node);
         size_t visit(VarDeclNode *node);
         size_t visit(LetDeclNode *node);
-        size_t visit(ConstDeclNode *node);
         size_t visit(StructDeclNode *node);
         size_t visit(UnionDeclNode *node);
         size_t visit(EnumDeclNode *node);
@@ -153,7 +152,6 @@ namespace libquixcc
         size_t visit(BoolLiteralNode *node);
         size_t visit(VarDeclNode *node);
         size_t visit(LetDeclNode *node);
-        size_t visit(ConstDeclNode *node);
         size_t visit(StructDeclNode *node);
         size_t visit(UnionDeclNode *node);
         size_t visit(EnumDeclNode *node);

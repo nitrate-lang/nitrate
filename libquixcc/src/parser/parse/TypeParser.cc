@@ -133,6 +133,20 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         *node = PointerTypeNode::create(type);
         return true;
     }
+    else if (tok.type() == TokenType::Operator && std::get<Operator>(tok.val()) == Operator::Modulo)
+    {
+        // '%' means mutability
+        TypeNode *type;
+        if (!parse_type(job, scanner, &type))
+        {
+            PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPE_EXPECTED_TYPE]);
+            return false;
+        }
+
+        type->m_mut = true;
+        *node = type;
+        return true;
+    }
     else
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPE_EXPECTED_IDENTIFIER_OR_BRACKET]);

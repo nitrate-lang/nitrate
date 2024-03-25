@@ -80,7 +80,6 @@ namespace libquixcc
 
         VarDeclNode,
         LetDeclNode,
-        ConstDeclNode,
 
         StructDeclNode,
         UnionDeclNode,
@@ -145,7 +144,6 @@ namespace libquixcc
     class NullLiteralNode;
     class VarDeclNode;
     class LetDeclNode;
-    class ConstDeclNode;
     class StructDeclNode;
     class UnionDeclNode;
     class EnumDeclNode;
