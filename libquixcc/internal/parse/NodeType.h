@@ -98,7 +98,9 @@ namespace libquixcc
         ExportNode,
 
         ReturnStmtNode,
-        ReturnIfStmtNode,
+        RetifStmtNode,
+        RetzStmtNode,
+        RetvStmtNode,
         IfStmtNode,
     };
 
@@ -160,7 +162,9 @@ namespace libquixcc
     class SubsystemNode;
     class ExportNode;
     class ReturnStmtNode;
-    class ReturnIfStmtNode;
+    class RetifStmtNode;
+    class RetzStmtNode;
+    class RetvStmtNode;
     class IfStmtNode;
 }
 

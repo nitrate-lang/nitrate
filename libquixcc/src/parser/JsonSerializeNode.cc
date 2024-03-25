@@ -572,16 +572,19 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Re
         return "{\"ntype\":\"ReturnStmtNode\"}";
 }
 
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ReturnIfStmtNode *node) const
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::RetifStmtNode *node) const
 {
-    std::string str = "{\"ntype\":\"ReturnIfStmtNode\",\"cond\":" + node->m_cond->to_json(*this) + ",\"expr\":" + node->m_expr->to_json(*this);
+    return "{\"ntype\":\"RetifStmtNode\",\"cond\":" + node->m_cond->to_json(*this) + ",\"value\":" + node->m_return->to_json(*this) + "}";
+}
 
-    if (node->m_return_val)
-    {
-        str += ",\"return\":" + node->m_return_val->to_json(*this);
-    }
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::RetzStmtNode *node) const
+{
+    return "{\"ntype\":\"RetzStmtNode\",\"cond\":" + node->m_cond->to_json(*this) + ",\"value\":" + node->m_return->to_json(*this) + "}";
+}
 
-    return str + "}";
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::RetvStmtNode *node) const
+{
+    return "{\"ntype\":\"RetvStmtNode\",\"cond\":" + node->m_cond->to_json(*this) + "}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::IfStmtNode *node) const

@@ -69,7 +69,7 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {TYPE_EXPECTED_CONST_EXPR, "Expected a constant expression after the semicolon. To fix the issue, insert a constant expression after the semicolon. Syntax: [type; size]"},
     {TYPE_EXPECTED_CLOSE_BRACKET, "Expected a close bracket after the constant expression. To fix the issue, insert a close bracket after the constant expression. Syntax: [type; size]"},
     {TYPE_EXPECTED_FUNCTION, "Expected a function name after the keyword 'fn'. To fix the issue, insert a function name after the keyword 'fn'"},
-    
+
     {SUBSYSTEM_MISSING_IDENTIFIER, "Expected identifier after the keyword 'subsystem'. To fix the issue, insert an identifier after the keyword 'subsystem'"},
     {SUBSYSTEM_EXPECTED_IDENTIFIER, "Expected identifier after the colon in the subsystem declaration. To fix the issue, insert an identifier after the colon in the subsystem declaration"},
     {SUBSYSTEM_EXPECTED_SEMICOLON, "Expected semicolon after the subsystem block. To fix the issue, insert a semicolon after the subsystem block. Syntax: subsystem name[: dep1, dep2, ...] { ... };"},
@@ -107,7 +107,13 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {ENUM_FIELD_DUPLICATE, "Field name '%s' is already in use. To fix the issue, rename the field to something unique"},
     {PARAM_NAME_DUPLICATE, "Parameter name '%s' is already in use. To fix the issue, rename the parameter to something unique"},
     {SUBSYSTEM_NAME_DUPLICATE, "Subsystem name '%s' is already in use. To fix the issue, rename the subsystem to something unique"},
-    {RETURN_MISSING_SEMICOLON, "Expected a semicolon after the return statement. To fix the issue, insert a semicolon after the return statement"},
     {UNRESOLVED_TYPE, "Type '%s' is not defined in the current scope. To fix the issue, define the type or import the module that defines the type"},
+    {RETIF_MISSING_COMMA, "Expected a comma after the condition in the return-if statement. To fix the issue, insert a comma after the condition in the return-if statement"},
+    {RETIF_MISSING_SEMICOLON, "Expected a semicolon after the return-if statement. To fix the issue, insert a semicolon after the return-if statement"},
+    {RETZ_MISSING_SEMICOLON, "Expected a semicolon after the return-zero statement. To fix the issue, insert a semicolon after the return-zero statement"},
+    {RETZ_MISSING_COMMA, "Expected a comma after the condition in the return-zero statement. To fix the issue, insert a comma after the condition in the return-zero statement"},
+    {RETV_MISSING_SEMICOLON, "Expected a semicolon after the return-void statement. To fix the issue, insert a semicolon after the return-void statement"},
+    {RETV_MISSING_COMMA, "Expected a comma after the condition in the return-void statement. To fix the issue, insert a comma after the condition in the return-void statement"},
+
     {RESOLVED_TYPE, "Resolved type '%s' into '%s'"},
 };

@@ -89,7 +89,9 @@ namespace libquixcc
         std::string visit(const SubsystemNode *node) const;
         std::string visit(const ExportNode *node) const;
         std::string visit(const ReturnStmtNode *node) const;
-        std::string visit(const ReturnIfStmtNode *node) const;
+        std::string visit(const RetifStmtNode *node) const;
+        std::string visit(const RetzStmtNode *node) const;
+        std::string visit(const RetvStmtNode *node) const;
         std::string visit(const IfStmtNode *node) const;
     };
 }

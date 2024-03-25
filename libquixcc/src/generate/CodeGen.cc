@@ -90,6 +90,8 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
         return expr;
     case Operator::BitNot:
         return llvm::BinaryOperator::CreateNot(expr, "", m_ctx->m_builder->GetInsertBlock());
+    case Operator::Not:
+        return llvm::BinaryOperator::CreateNot(expr, "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Increment:
         return llvm::BinaryOperator::CreateAdd(expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 1, false)), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Decrement:
@@ -662,9 +664,25 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
         }
         case NodeType::IfStmtNode:
         {
-            auto n = std::static_pointer_cast<IfStmtNode>(stmt);
-
-            if (!n->codegen(*this))
+            if (!std::static_pointer_cast<IfStmtNode>(stmt)->codegen(*this))
+                return nullptr;
+            break;
+        }
+        case NodeType::RetifStmtNode:
+        {
+            if (!std::static_pointer_cast<RetifStmtNode>(stmt)->codegen(*this))
+                return nullptr;
+            break;
+        }
+        case NodeType::RetzStmtNode:
+        {
+            if (!std::static_pointer_cast<RetzStmtNode>(stmt)->codegen(*this))
+                return nullptr;
+            break;
+        }
+        case NodeType::RetvStmtNode:
+        {
+            if (!std::static_pointer_cast<RetvStmtNode>(stmt)->codegen(*this))
                 return nullptr;
             break;
         }
@@ -730,6 +748,43 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ReturnStmtNode *n
     m_ctx->m_builder->CreateBr(m_ctx->m_named_blocks.at(func->getName().str() + ".end"));
 
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::RetifStmtNode *node) const
+{
+    /*
+    if (<cond>)
+    {
+        return <return_expr>; // may have side effects
+    }
+    */
+
+    return std::make_shared<IfStmtNode>(node->m_cond, std::make_shared<ReturnStmtNode>(node->m_return), nullptr)->codegen(*this);
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::RetzStmtNode *node) const
+{
+    /*
+    if (!<cond>)
+    {
+        return <return_expr>; // may have side effects
+    }
+    */
+
+    auto cond = std::make_shared<UnaryExprNode>(Operator::Not, node->m_cond);
+    return std::make_shared<IfStmtNode>(cond, std::make_shared<ReturnStmtNode>(node->m_return), nullptr)->codegen(*this);
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::RetvStmtNode *node) const
+{
+    /*
+    if (<cond>)
+    {
+        return;
+    }
+    */
+
+    return std::make_shared<IfStmtNode>(node->m_cond, std::make_shared<ReturnStmtNode>(nullptr), nullptr)->codegen(*this);
 }
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IfStmtNode *node) const

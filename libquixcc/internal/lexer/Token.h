@@ -67,6 +67,7 @@ namespace libquixcc
         Retif,
         Abortif,
         Retz,
+        Retv,
         Void,
         Undef,
         Null,

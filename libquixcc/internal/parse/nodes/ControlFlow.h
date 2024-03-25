@@ -47,11 +47,11 @@ namespace libquixcc
         std::shared_ptr<ExprNode> m_expr;
     };
 
-    class ReturnIfStmtNode : public StmtNode
+    class RetifStmtNode : public StmtNode
     {
     public:
-        ReturnIfStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &expr, const std::shared_ptr<ExprNode> &return_val)
-            : m_cond(cond), m_expr(expr), m_return_val(return_val) { ntype = NodeType::ReturnIfStmtNode; }
+        RetifStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &return_val)
+            : m_cond(cond), m_return(return_val) { ntype = NodeType::RetifStmtNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
@@ -59,8 +59,35 @@ namespace libquixcc
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
         std::shared_ptr<ExprNode> m_cond;
-        std::shared_ptr<ExprNode> m_expr;
-        std::shared_ptr<ExprNode> m_return_val;
+        std::shared_ptr<ExprNode> m_return;
+    };
+
+    class RetzStmtNode : public StmtNode
+    {
+    public:
+        RetzStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &return_val)
+            : m_cond(cond), m_return(return_val) { ntype = NodeType::RetzStmtNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        std::shared_ptr<ExprNode> m_cond;
+        std::shared_ptr<ExprNode> m_return;
+    };
+
+    class RetvStmtNode : public StmtNode
+    {
+    public:
+        RetvStmtNode(const std::shared_ptr<ExprNode> &cond) : m_cond(cond) { ntype = NodeType::RetvStmtNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        std::shared_ptr<ExprNode> m_cond;
     };
 
     class IfStmtNode : public StmtNode
