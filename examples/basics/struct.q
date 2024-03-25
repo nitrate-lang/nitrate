@@ -29,7 +29,7 @@ struct Line {
 };
 
 struct Texture {
-    data: *void;
+    data: *u8;
     width: i32;
     height: i32;
 };
