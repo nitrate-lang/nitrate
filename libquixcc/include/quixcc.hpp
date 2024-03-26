@@ -36,6 +36,11 @@ namespace quixcc
     {
         std::vector<quixcc_job_t *> m_jobs;                                      ///< Vector to store compiler job instances.
         std::vector<std::pair<std::string, enum quixcc_msg_level_t>> m_messages; ///< Vector to store messages generated during compilation.
+        bool m_ok;
+
+        Compiler(const Compiler &) = delete;
+        Compiler (Compiler &&) = delete;
+        Compiler &operator=(const Compiler &) = delete;
 
     public:
         /**
@@ -92,6 +97,13 @@ namespace quixcc
          * @return true if compilation was successful, false otherwise.
          */
         bool ok() const;
+
+        /**
+         * @brief Finish chaining and return the Compiler Object by value
+         *
+         * @return Compiler
+         */
+        Compiler done() const;
     };
 
     enum class Target
@@ -169,7 +181,7 @@ namespace quixcc
          * @param code The source code to be compiled.
          * @return Reference to the CompilerBuilder object.
          */
-        CompilerBuilder &src(const char* code, size_t size);
+        CompilerBuilder &src(const char *code, size_t size);
 
         /**
          * @brief Set input stream for providing source code directly.
@@ -212,17 +224,6 @@ namespace quixcc
         CompilerBuilder &opt(const std::string &flag);
 
         /**
-         * @brief Add compiler flag with value.
-         *
-         * Adds a compiler flag with a corresponding value to the list of compiler options.
-         *
-         * @param flag The compiler flag.
-         * @param value The value associated with the flag.
-         * @return Reference to the CompilerBuilder object.
-         */
-        CompilerBuilder &opt(const std::string &flag, const std::string &value);
-
-        /**
          * @brief Add multiple compiler flags.
          *
          * Adds multiple compiler flags to the list of compiler options.
@@ -231,16 +232,6 @@ namespace quixcc
          * @return Reference to the CompilerBuilder object.
          */
         CompilerBuilder &opt(const std::vector<std::string> &flags);
-
-        /**
-         * @brief Add multiple compiler flags with values.
-         *
-         * Adds multiple compiler flags with corresponding values to the list of compiler options.
-         *
-         * @param flags Vector containing pairs of compiler flags and their values.
-         * @return Reference to the CompilerBuilder object.
-         */
-        CompilerBuilder &opt(const std::vector<std::pair<std::string, std::string>> &flags);
 
         /**
          * @brief Set target for compilation.

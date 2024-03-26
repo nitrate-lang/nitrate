@@ -19,62 +19,80 @@
 #define QUIXCC_INTERNAL
 
 #include <quixcc.hpp>
+#include <LibMacro.h>
 #include <thread>
 #include <fstream>
 
 #include <sys/mman.h>
 
-quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs)
+LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs)
 {
     this->m_jobs = jobs;
+    this->m_ok = false;
 }
 
-quixcc::Compiler::~Compiler()
+LIB_CXX_EXPORT quixcc::Compiler::~Compiler()
 {
     for (auto job : this->m_jobs)
         quixcc_dispose(job);
 }
 
-quixcc::Compiler &quixcc::Compiler::run(size_t max_threads)
+LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads)
 {
+    if (m_jobs.empty())
+        return *this;
+
     std::vector<std::thread> threads;
 
     size_t thread_count = std::min(max_threads, this->m_jobs.size());
 
-    // Allocate jobs into threads
-    for (size_t i = 0; i < thread_count; i++)
+    if (thread_count == 1)
     {
-        threads.push_back(std::thread([this, i, thread_count]()
-                                      {
-            for (size_t j = i; j < this->m_jobs.size(); j += thread_count)
-            {
-                quixcc_run(this->m_jobs[j]);
-            } }));
+        quixcc_run(this->m_jobs[0]);
+    }
+    else
+    {
+        // Allocate jobs into threads
+        for (size_t i = 0; i < thread_count; i++)
+        {
+            threads.push_back(std::thread([this, i, thread_count]()
+                                          {
+                    for (size_t j = i; j < this->m_jobs.size(); j += thread_count)
+                        quixcc_run(this->m_jobs[j]); }));
+        }
+
+        // Wait for all threads to finish
+        for (auto &thread : threads)
+            thread.join();
     }
 
-    // Wait for all threads to finish
-    for (auto &thread : threads)
-        thread.join();
+    m_ok = true;
 
     // Collect messages
     for (auto job : this->m_jobs)
     {
+        if (!job->m_result)
+            throw std::runtime_error("Job result is null.");
+
         for (size_t i = 0; i < job->m_result->m_feedback.m_count; i++)
         {
             auto feedback = job->m_result->m_feedback.m_messages[i];
             this->m_messages.push_back(std::make_pair(feedback->message, feedback->m_level));
         }
+
+        if (!job->m_result->m_success)
+            this->m_ok = false;
     }
 
     return *this;
 }
 
-const std::vector<std::pair<std::string, enum quixcc_msg_level_t>> &quixcc::Compiler::messages() const
+LIB_CXX_EXPORT const std::vector<std::pair<std::string, enum quixcc_msg_level_t>> &quixcc::Compiler::messages() const
 {
     return this->m_messages;
 }
 
-quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal, std::ostream &error)
+LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal, std::ostream &error)
 {
     for (auto job : this->m_jobs)
     {
@@ -92,28 +110,25 @@ quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal, std::ostream &err
     return *this;
 }
 
-bool quixcc::Compiler::ok() const
+LIB_CXX_EXPORT bool quixcc::Compiler::ok() const
 {
-    for (auto job : this->m_jobs)
-        if (!job->m_result->m_success)
-            return false;
-
-    return true;
+    return m_ok;
 }
 
 ///=============================================================================
 
-quixcc::CompilerBuilder::CompilerBuilder()
+LIB_CXX_EXPORT quixcc::CompilerBuilder::CompilerBuilder()
 {
-    m_verbose = false;
+    m_verbose = m_debug = false;
     m_target = Target::EXECUTABLE;
+    m_input = m_output = nullptr;
 }
 
-quixcc::CompilerBuilder::~CompilerBuilder()
+LIB_CXX_EXPORT quixcc::CompilerBuilder::~CompilerBuilder()
 {
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::in(const std::string &file)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::in(const std::string &file)
 {
     FILE *input;
     if ((input = fopen(file.c_str(), "r")) == nullptr)
@@ -123,7 +138,7 @@ quixcc::CompilerBuilder &quixcc::CompilerBuilder::in(const std::string &file)
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::in(const std::vector<std::string> &files)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::in(const std::vector<std::string> &files)
 {
     for (auto &file : files)
         in(file);
@@ -131,19 +146,21 @@ quixcc::CompilerBuilder &quixcc::CompilerBuilder::in(const std::vector<std::stri
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::src(const char *code, size_t size)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::src(const char *code, size_t size)
 {
     m_input = fmemopen((void *)code, size, "r");
+    if (!m_input)
+        throw std::runtime_error("Failed to open input stream.");
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::src(FILE *input)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::src(FILE *input)
 {
-    m_input = std::move(input);
+    m_input = input;
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::out(const std::string &file)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::out(const std::string &file)
 {
     if ((m_output = fopen(file.c_str(), "w")) == nullptr)
         throw std::runtime_error("Failed to open output file: " + file);
@@ -151,51 +168,37 @@ quixcc::CompilerBuilder &quixcc::CompilerBuilder::out(const std::string &file)
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::out(FILE *output)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::out(FILE *output)
 {
-    m_output = std::move(output);
+    m_output = output;
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::string &flag)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::string &flag)
 {
     m_flags.push_back(flag);
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::string &flag, const std::string &value)
-{
-    m_flags.push_back(flag + "=" + value);
-    return *this;
-}
-
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::vector<std::string> &flags)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::vector<std::string> &flags)
 {
     m_flags.insert(m_flags.end(), flags.begin(), flags.end());
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::vector<std::pair<std::string, std::string>> &flags)
-{
-    for (auto &flag : flags)
-        m_flags.push_back(flag.first + "=" + flag.second);
-
-    return *this;
-}
-
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::target(quixcc::Target target)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::target(quixcc::Target target)
 {
     m_target = target;
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::verbose(bool verbose)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::verbose(bool verbose)
 {
     m_verbose = verbose;
     return *this;
 }
 
-quixcc::CompilerBuilder &quixcc::CompilerBuilder::debug(bool debug)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::debug(bool debug)
 {
     m_debug = debug;
     return *this;
@@ -212,12 +215,18 @@ bool quixcc::CompilerBuilder::verify()
     return true;
 }
 
-quixcc::Compiler quixcc::CompilerBuilder::build()
+LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
 {
+    if (!verify())
+        throw std::runtime_error("Invalid compiler configuration.");
+
     std::vector<quixcc_job_t *> jobs;
     quixcc_job_t *job;
 
-    for (auto &[_FILE, name] : m_files)
+    if (m_input)
+        m_files.push_back(std::make_pair(m_input, "stdin"));
+
+    for (auto &entry : m_files)
     {
         if ((job = quixcc_new()) == nullptr)
             throw std::runtime_error("Failed to create new job.");
@@ -230,7 +239,7 @@ quixcc::Compiler quixcc::CompilerBuilder::build()
         for (auto &flag : m_flags)
             quixcc_add_option(job, flag.c_str(), true);
 
-        quixcc_set_input(job, _FILE, name.c_str());
+        quixcc_set_input(job, entry.first, entry.second.c_str());
 
         switch (m_target)
         {
@@ -238,15 +247,19 @@ quixcc::Compiler quixcc::CompilerBuilder::build()
         default:
             break;
 
-        /*
-            Handle this:
-                src_0 -> job_0 -> out_0   ->
-                src_1 -> job_1 -> out_1      ->
-                                                 -> Custom linker command
-                src_2 -> job_2 -> out_2      ->  
-                src_n -> job_n -> out_n   ->  
-        */
+            /*
+                Handle this:
+                    src_0 -> job_0 -> out_0   ->
+                    src_1 -> job_1 -> out_1      ->
+                                                     -> Custom linker command
+                    src_2 -> job_2 -> out_2      ->
+                    src_n -> job_n -> out_n   ->
+            */
         }
+
+        quixcc_set_output(job, m_output);
+
+        jobs.push_back(job);
     }
 
     return Compiler(jobs);
@@ -254,64 +267,64 @@ quixcc::Compiler quixcc::CompilerBuilder::build()
 
 ///=============================================================================
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createLinter()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createLinter()
 {
     return CompilerBuilder();
 }
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIR()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIR()
+{
+    return CompilerBuilder().opt("-emit-ir");
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIRBitcode()
 {
     return CompilerBuilder();
 }
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIRBitcode()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createAssembly()
 {
     return CompilerBuilder();
 }
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createAssembly()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createObject()
 {
     return CompilerBuilder();
 }
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createObject()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createExecutable()
 {
     return CompilerBuilder();
 }
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createExecutable()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createUpxCompressedExecutable()
 {
     return CompilerBuilder();
 }
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createUpxCompressedExecutable()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createShellcode()
 {
     return CompilerBuilder();
 }
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createShellcode()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createSharedLibrary()
 {
     return CompilerBuilder();
 }
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createSharedLibrary()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createStaticLibrary()
 {
     return CompilerBuilder();
 }
 
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createStaticLibrary()
-{
-    return CompilerBuilder();
-}
-
-quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createDocumentation()
+LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createDocumentation()
 {
     return CompilerBuilder();
 }
 
 ///=============================================================================
 
-bool quixcc::Execute::exec(const std::string &code, std::ostream &messages)
+LIB_CXX_EXPORT bool quixcc::Execute::exec(const std::string &code, std::ostream &messages)
 {
     FILE *output = tmpfile();
     if (!output)

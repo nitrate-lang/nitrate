@@ -1,4 +1,4 @@
-#include <quixcc.h>
+#include <quixcc.hpp>
 #include <string>
 #include <chrono>
 #include <vector>
@@ -153,7 +153,7 @@ struct BenchStats
     GeneralDistributionStats ct_per_target_byte;
 };
 
-static const char *quix_src_freeform = R"(
+static const char quix_src_freeform[] = R"(
 
 /* This is a simple program that does some basic stuff */
 
@@ -203,41 +203,36 @@ fn main(): i8 {             ~> The main function
 }
 )";
 
+constexpr size_t quix_src_freeform_len = sizeof(quix_src_freeform) - 1;
+
 static bool compile_single_source(const char *src, std::vector<uint8_t> &out)
 {
-    FILE *inf, *outf;
-    char *outbuf, *errors;
+    char *outbuf;
     size_t outlen;
 
-    static const char *options[] = {"-emit-ir", nullptr};
-
-    if ((inf = fmemopen((void *)src, std::strlen(src), "r")) == NULL)
-    {
-        std::cerr << "Failed to open input file" << std::endl;
+    FILE *outf = open_memstream(&outbuf, &outlen);
+    if (!outf)
         return false;
-    }
 
-    if ((outf = open_memstream(&outbuf, &outlen)) == NULL)
-    {
-        std::cerr << "Failed to open output file" << std::endl;
-        fclose(inf);
-        return false;
-    }
+    auto &compiler = quixcc::CompilerBuilderFactory::createIR()
+                         .src(src, quix_src_freeform_len)
+                         .out(outf)
+                         .build()
+                         .run()
+                         .puts();
 
-    if ((errors = quixcc_compile(inf, outf, options)) != nullptr)
+    if (!compiler.ok())
     {
-        std::cerr << "Compilation failed" << std::endl;
-        std::cerr << errors << std::endl;
-        free(errors);
-        fclose(inf);
         fclose(outf);
+        free(outbuf);
         return false;
     }
 
-    fclose(inf);
     fclose(outf);
 
     out = std::vector<uint8_t>(outbuf, outbuf + outlen);
+
+    free(outbuf);
 
     return true;
 }

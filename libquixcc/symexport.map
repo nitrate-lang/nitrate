@@ -1,6 +1,7 @@
 {
     global:
         quixcc_*;
+        _ZN*quixcc*;
     local:
         *;
 };
