@@ -42,7 +42,6 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
 
     while ((tok = scanner->next()).type() != TokenType::Eof)
     {
-
         if (expect_braces)
         {
             if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::CloseBrace)
@@ -87,6 +86,10 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             break;
         case Keyword::Union:
             if (!parse_union(job, scanner, node))
+                return false;
+            break;
+        case Keyword::Type:
+            if (!parse_typedef(job, scanner, node))
                 return false;
             break;
         case Keyword::Subsystem:

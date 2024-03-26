@@ -30,9 +30,11 @@ namespace libquixcc
     enum class NodeType : uint8_t
     {
         ParseNode,
+        ASTNopNode,
         ExprNode,
         ConstExprNode,
         StmtNode,
+        NopStmtNode,
         TypeNode,
         DeclNode,
         DefNode,
@@ -77,6 +79,8 @@ namespace libquixcc
         BoolLiteralNode,
         NullLiteralNode,
 
+        TypedefNode,
+
         VarDeclNode,
         LetDeclNode,
 
@@ -105,9 +109,11 @@ namespace libquixcc
     };
 
     class ParseNode;
+    class ASTNopNode;
     class ExprNode;
     class ConstExprNode;
     class StmtNode;
+    class NopStmtNode;
     class TypeNode;
     class DeclNode;
     class DefNode;
@@ -145,6 +151,7 @@ namespace libquixcc
     class CharLiteralNode;
     class BoolLiteralNode;
     class NullLiteralNode;
+    class TypedefNode;
     class VarDeclNode;
     class LetDeclNode;
     class StructDeclNode;

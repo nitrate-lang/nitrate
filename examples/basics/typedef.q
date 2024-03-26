@@ -15,13 +15,13 @@
 ///     * License terms may be found in the LICENSE file.                        ///
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
-                                                   
-@lang v1
 
-fn main(): i8 {
-    retv !true==true;
-    retif 10, true;
-    retz 20, false;
+type bit32 = u8;
 
-    return 60;
+fn main(): bit32 {
+    let x: bit32 = 10;
+    let y: bit32 = 20;
+    let z: bit32 = x + y;
+
+    return z;
 }

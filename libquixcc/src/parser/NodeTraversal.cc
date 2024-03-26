@@ -34,6 +34,11 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ParseNode *node)
     return 1;
 }
 
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ASTNopNode *node)
+{
+    return 0;
+}
+
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ExprNode *node)
 {
     return 1;
@@ -47,6 +52,11 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ConstExprNode *node
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StmtNode *node)
 {
     return 1;
+}
+
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::NopStmtNode *node)
+{
+    return 0;
 }
 
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::TypeNode *node)
@@ -271,6 +281,17 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::CharLiteralNode *no
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::BoolLiteralNode *node)
 {
     return 1;
+}
+
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::NullLiteralNode *node)
+{
+    return 1;
+}
+
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::TypedefNode *node)
+{
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_orig));
+    return node->m_orig->dfs_preorder(*this) + 1;
 }
 
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::VarDeclNode *node)

@@ -76,6 +76,11 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BlockNode *node) 
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::NopStmtNode *node) const
+{
+    return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+}
+
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *node) const
 {
     llvm::Value *expr = node->m_expr->codegen(*this);

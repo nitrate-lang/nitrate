@@ -33,9 +33,11 @@ namespace libquixcc
     {
     public:
         std::string visit(const ParseNode *node) const;
+        std::string visit(const ASTNopNode *node) const;
         std::string visit(const ExprNode *node) const;
         std::string visit(const ConstExprNode *node) const;
         std::string visit(const StmtNode *node) const;
+        std::string visit(const NopStmtNode *node) const;
         std::string visit(const TypeNode *node) const;
         std::string visit(const DeclNode *node) const;
         std::string visit(const DefNode *node) const;
@@ -72,6 +74,8 @@ namespace libquixcc
         std::string visit(const StringLiteralNode *node) const;
         std::string visit(const CharLiteralNode *node) const;
         std::string visit(const BoolLiteralNode *node) const;
+        std::string visit(const NullLiteralNode *node) const;
+        std::string visit(const TypedefNode *node) const;
         std::string visit(const VarDeclNode *node) const;
         std::string visit(const LetDeclNode *node) const;
         std::string visit(const StructDeclNode *node) const;

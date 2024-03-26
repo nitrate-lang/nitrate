@@ -76,6 +76,11 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Pa
     return "{\"ntype\":\"ParseNode\"}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ASTNopNode *node) const
+{
+    return "{\"ntype\":\"nop\"}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ExprNode *node) const
 {
     return "{\"ntype\":\"ExprNode\"}";
@@ -89,6 +94,11 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Co
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StmtNode *node) const
 {
     return "{\"ntype\":\"StmtNode\"}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::NopStmtNode *node) const
+{
+    return "{\"ntype\":\"nop\"}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::TypeNode *node) const
@@ -351,6 +361,19 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Ch
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::BoolLiteralNode *node) const
 {
     return "{\"ntype\":\"BoolLiteralNode\",\"value\":\"" + std::string(node->m_val ? "true" : "false") + "\"}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::NullLiteralNode *node) const
+{
+    return "{\"ntype\":\"NullLiteralNode\"}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::TypedefNode *node) const
+{
+    std::string str = "{\"ntype\":\"TypedefNode\",\"base\":";
+    str += node->m_orig->to_json(*this);
+    str += ",\"name\":\"" + escape_json(node->m_name);
+    return str + "\"}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::VarDeclNode *node) const

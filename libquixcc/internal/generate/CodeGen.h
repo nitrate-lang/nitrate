@@ -29,6 +29,16 @@
 
 namespace libquixcc
 {
+    class CodegenException : public std::exception
+    {
+        std::string m_msg;
+
+    public:
+        CodegenException(const std::string &msg) : m_msg(msg) {}
+
+        virtual const char *what() const noexcept override { return m_msg.c_str(); }
+    };
+
     class CodegenVisitor
     {
         LLVMContext *m_ctx;
@@ -37,6 +47,7 @@ namespace libquixcc
         CodegenVisitor(LLVMContext *llvm) : m_ctx(llvm) {}
 
         llvm::Value *visit(const BlockNode *node) const;
+        llvm::Value *visit(const NopStmtNode *node) const;
         llvm::Value *visit(const UnaryExprNode *node) const;
         llvm::Value *visit(const BinaryExprNode *node) const;
         llvm::Constant *visit(const ConstUnaryExprNode *node) const;

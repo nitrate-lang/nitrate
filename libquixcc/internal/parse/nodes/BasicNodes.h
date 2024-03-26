@@ -59,6 +59,15 @@ namespace libquixcc
 
 #define PARSE_NODE_SIZE sizeof(ParseNode)
 
+    class ASTNopNode : public ParseNode
+    {
+    public:
+        ASTNopNode() { ntype = NodeType::ASTNopNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+    };
+
     class ExprNode : public ParseNode
     {
     public:
@@ -89,6 +98,16 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const = 0;
+    };
+
+    class NopStmtNode : public StmtNode
+    {
+    public:
+        NopStmtNode() { ntype = NodeType::NopStmtNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
     };
 
     class TypeNode : public ParseNode

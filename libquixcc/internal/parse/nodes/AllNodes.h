@@ -39,5 +39,6 @@
 #include <parse/nodes/FunctionNode.h>
 #include <parse/nodes/ExportNode.h>
 #include <parse/nodes/ControlFlow.h>
+#include <parse/nodes/TypedefNode.h>
 
 #endif // __QUIXCC_PARSE_NODES_NODES_H__

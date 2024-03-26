@@ -107,7 +107,7 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {ENUM_FIELD_DUPLICATE, "Field name '%s' is already in use. To fix the issue, rename the field to something unique"},
     {PARAM_NAME_DUPLICATE, "Parameter name '%s' is already in use. To fix the issue, rename the parameter to something unique"},
     {SUBSYSTEM_NAME_DUPLICATE, "Subsystem name '%s' is already in use. To fix the issue, rename the subsystem to something unique"},
-    {UNRESOLVED_TYPE, "Type '%s' is not defined in the current scope. To fix the issue, define the type or import the module that defines the type"},
+
     {RETIF_MISSING_COMMA, "Expected a comma after the condition in the return-if statement. To fix the issue, insert a comma after the condition in the return-if statement"},
     {RETIF_MISSING_SEMICOLON, "Expected a semicolon after the return-if statement. To fix the issue, insert a semicolon after the return-if statement"},
     {RETZ_MISSING_SEMICOLON, "Expected a semicolon after the return-zero statement. To fix the issue, insert a semicolon after the return-zero statement"},
@@ -115,5 +115,12 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {RETV_MISSING_SEMICOLON, "Expected a semicolon after the return-void statement. To fix the issue, insert a semicolon after the return-void statement"},
     {RETV_MISSING_COMMA, "Expected a comma after the condition in the return-void statement. To fix the issue, insert a comma after the condition in the return-void statement"},
 
+    {TYPEDEF_EXPECTED_IDENTIFIER, "Expected identifier in type definition. To fix the issue, name your type. Syntax: type name = type;"},
+    {TYPEDEF_EXPECTED_ASSIGN, "Expected an assignment operator in type definition. To fix the issue, insert an assignment operator after the type name. Syntax: type name = type;"},
+    {TYPEDEF_INVALID_TYPE, "An error occurred while parsing the type of type '%s'. Syntax: type name = type;"},
+    {TYPEDEF_EXPECTED_SEMICOLON, "Expected a semicolon after the type definition. To fix the issue, insert a semicolon after the type definition. Syntax: type name = type;"},
+    {TYPEDEF_NAME_DUPLICATE, "Type name '%s' is already in use. To fix the issue, rename the type to something unique"},
+    
+    {UNRESOLVED_TYPE, "Type '%s' is not defined in the current scope. To fix the issue, define the type or import the module that defines the type"},
     {RESOLVED_TYPE, "Resolved type '%s' into '%s'"},
 };

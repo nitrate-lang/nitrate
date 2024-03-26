@@ -28,7 +28,22 @@
 
 using namespace libquixcc;
 
-static void do_pass(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
+static void remove_typedef(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
+{
+    ast->dfs_preorder(ParseNodePreorderVisitor(
+        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        {
+            if ((*node)->ntype != NodeType::TypedefNode)
+                return;
+
+            semanticmsg(*job, Err::DEBUG, false, "replace typedef with NOP node");
+
+            *node = std::make_shared<NopStmtNode>();
+        },
+        job->m_inner->prefix));
+}
+
+static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
         [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
@@ -60,6 +75,9 @@ static void do_pass(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast
             case NodeType::EnumDefNode:
                 type = std::static_pointer_cast<libquixcc::EnumDefNode>(named_type)->get_type();
                 break;
+            case NodeType::TypedefNode:
+                type = std::static_pointer_cast<libquixcc::TypedefNode>(named_type)->m_orig;
+                break;
             default:
                 throw std::runtime_error("Unimplemented typeid in ResolveNamedConstructs");
             }
@@ -73,5 +91,6 @@ static void do_pass(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast
 
 void libquixcc::mutate::ResolveNamedConstructs(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    do_pass(job, ast);
+    resolve_user_type_nodes(job, ast);
+    remove_typedef(job, ast);
 }
