@@ -8,7 +8,7 @@
 #include <fstream>
 #include <iomanip>
 
-constexpr size_t num_iterations = 10000;
+constexpr size_t num_iterations = 100000;
 
 struct GeneralDistributionStats
 {

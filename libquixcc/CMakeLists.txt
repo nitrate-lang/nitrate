@@ -31,7 +31,7 @@ execute_process(COMMAND echo -n 0x | openssl rand -hex 4
 OUTPUT_VARIABLE RANDOM_NUMBER
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-SET(PROJECT_RELEASE_FLAGS -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC -O3 -s -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete)
+SET(PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete)
 SET(PROJECT_DEBUG_FLAGS -g -Wall -Wextra -Werror -Wno-unused-parameter -Wno-error=unused-parameter -pedantic ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC  -Wno-error=mismatched-new-delete)
 
 add_library(libquixcc SHARED ${LIBQUIX_CXX_SOURCES})
@@ -39,7 +39,6 @@ target_include_directories(libquixcc PUBLIC "internal" include)
 if (CMAKE_BUILD_TYPE STREQUAL "Release") 
     target_compile_options(libquixcc PRIVATE ${PROJECT_RELEASE_FLAGS} -flto)
     target_link_options(libquixcc PRIVATE ${LLVM_LD_FLAGS} -O3 -flto -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-    add_custom_command(TARGET libquixcc POST_BUILD COMMAND strip -s $<TARGET_FILE:libquixcc>)
 else()
     target_compile_options(libquixcc PRIVATE ${PROJECT_DEBUG_FLAGS})
     target_link_options(libquixcc PRIVATE ${LLVM_LD_FLAGS})

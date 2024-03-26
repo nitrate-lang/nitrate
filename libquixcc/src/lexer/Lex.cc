@@ -24,6 +24,8 @@
 #include <stdexcept>
 #include <cstring>
 #include <iomanip>
+#include <unordered_map>
+#include <mutex>
 #include <regex>
 #include <cmath>
 
@@ -412,8 +414,19 @@ static bool validate_identifier_type_2(const std::string &id)
 
 static bool reduce_identifier(std::string &str)
 {
-    if (validate_identifier_type_1(str))
+    static std::unordered_map<std::string, std::string> cache;
+
+    if (cache.contains(str))
+    {
+        str = cache[str];
         return true;
+    }
+
+    if (validate_identifier_type_1(str))
+    {
+        cache[str] = str;
+        return true;
+    }
 
     /*
         a.b.c.d.e.f
@@ -437,6 +450,8 @@ static bool reduce_identifier(std::string &str)
             index++;
         }
 
+        cache[str] = str;
+
         return true;
     }
 
@@ -456,17 +471,26 @@ enum class NumberLiteralType
 
 static NumberLiteralType check_number_literal_type(std::string input)
 {
+    static std::unordered_map<std::string, NumberLiteralType> cache;
+
+    if (cache.contains(input))
+        return cache[input];
+
     if (input[0] == '-')
-    {
         input = input.substr(1);
-    }
 
     if (input.length() < 3)
     {
         if (std::isdigit(input[0]))
+        {
+            cache[input] = NumberLiteralType::Decimal;
             return NumberLiteralType::Decimal;
+        }
         else
+        {
+            cache[input] = NumberLiteralType::Invalid;
             return NumberLiteralType::Invalid;
+        }
     }
 
     std::string prefix = input.substr(0, 2);
@@ -477,9 +501,11 @@ static NumberLiteralType check_number_literal_type(std::string input)
         {
             if (!((input[i] >= '0' && input[i] <= '9') || (input[i] >= 'a' && input[i] <= 'f')))
             {
+                cache[input] = NumberLiteralType::Invalid;
                 return NumberLiteralType::Invalid;
             }
         }
+        cache[input] = NumberLiteralType::Hexadecimal;
         return NumberLiteralType::Hexadecimal;
     }
     else if (prefix == "0b")
@@ -488,9 +514,11 @@ static NumberLiteralType check_number_literal_type(std::string input)
         {
             if (!(input[i] == '0' || input[i] == '1'))
             {
+                cache[input] = NumberLiteralType::Invalid;
                 return NumberLiteralType::Invalid;
             }
         }
+        cache[input] = NumberLiteralType::Binary;
         return NumberLiteralType::Binary;
     }
     else if (prefix == "0o")
@@ -499,9 +527,11 @@ static NumberLiteralType check_number_literal_type(std::string input)
         {
             if (!(input[i] >= '0' && input[i] <= '7'))
             {
+                cache[input] = NumberLiteralType::Invalid;
                 return NumberLiteralType::Invalid;
             }
         }
+        cache[input] = NumberLiteralType::Octal;
         return NumberLiteralType::Octal;
     }
     else if (prefix == "0d")
@@ -510,9 +540,11 @@ static NumberLiteralType check_number_literal_type(std::string input)
         {
             if (!(input[i] >= '0' && input[i] <= '9'))
             {
+                cache[input] = NumberLiteralType::Invalid;
                 return NumberLiteralType::Invalid;
             }
         }
+        cache[input] = NumberLiteralType::DecimalExplicit;
         return NumberLiteralType::DecimalExplicit;
     }
     else
@@ -524,6 +556,7 @@ static NumberLiteralType check_number_literal_type(std::string input)
                 goto test_float;
             }
         }
+        cache[input] = NumberLiteralType::Decimal;
         return NumberLiteralType::Decimal;
     }
 
@@ -533,9 +566,11 @@ test_float:
     // slow operation
     if (std::regex_match(input, regexpFloat))
     {
+        cache[input] = NumberLiteralType::Floating;
         return NumberLiteralType::Floating;
     }
 
+    cache[input] = NumberLiteralType::Invalid;
     return NumberLiteralType::Invalid;
 }
 
@@ -561,6 +596,14 @@ static std::string normalize_float(const std::string &input)
 
 bool normalize_number_literal(std::string &number, std::string &norm, NumberLiteralType type)
 {
+    static std::unordered_map<std::string, std::string> cache;
+
+    if (cache.contains(number))
+    {
+        norm = cache[number];
+        return true;
+    }
+
     uint64_t x = 0;
 
     for (size_t i = 0; i < number.length(); i++)
@@ -616,6 +659,7 @@ bool normalize_number_literal(std::string &number, std::string &norm, NumberLite
     }
 
     norm = std::to_string(x);
+    cache[number] = norm;
     return true;
 }
 
@@ -728,13 +772,14 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
             // check if it's a keyword
             for (const auto &kw : keywords)
             {
-                if (buffer == kw.first)
+                if ((int)buffer.size() == kw.second && memcmp(buffer.c_str(), kw.first, kw.second) == 0)
                 {
-                    m_tok = Token(TokenType::Keyword, keyword_map.at(buffer), m_loc - buffer.size());
+                    m_tok = Token(TokenType::Keyword, keyword_map[buffer], m_loc - buffer.size());
                     return m_tok.value();
                 }
             }
 
+            /// TODO: Optimise this
             if (!reduce_identifier(buffer))
             {
                 m_tok = Token(TokenType::Unknown, buffer, m_loc - buffer.size());
@@ -1004,9 +1049,9 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
         {
             if (buffer.size() == 1)
             {
-                for (const auto &punc : punctors)
+                for (const char punc : punctors)
                 {
-                    if (punc[0] == buffer[0])
+                    if (punc == buffer[0])
                     {
                         m_last = c;
                         m_tok = Token(TokenType::Punctor, punctor_map.at(buffer), m_loc - buffer.size());
@@ -1050,6 +1095,9 @@ libquixcc::Token libquixcc::StreamLexer::peek()
     if (m_tok.has_value())
         return m_tok.value();
 
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
+
     while (true)
     {
         tok = read_token();
@@ -1063,32 +1111,18 @@ libquixcc::Token libquixcc::StreamLexer::peek()
 bool libquixcc::StringLexer::set_source(const std::string &source_code, const std::string &filename)
 {
     m_src = source_code;
-    m_filename = filename;
-    m_loc_curr = Loc(1, 1, filename);
-    m_buf_pos = 0;
-    return true;
+
+    m_file = fmemopen((void *)m_src.c_str(), m_src.size(), "r");
+    if (m_file == nullptr)
+        return false;
+
+    return StreamLexer::set_source(m_file, filename);
 }
 
-char libquixcc::StringLexer::getc()
+libquixcc::StringLexer::~StringLexer()
 {
-    if (m_buf_pos >= m_src.size())
-        return EOF;
-
-    char c = m_src[m_buf_pos++];
-
-    m_loc = m_loc_curr;
-
-    if (c == '\n')
-    {
-        m_loc_curr.line++;
-        m_loc_curr.col = 1;
-    }
-    else
-    {
-        m_loc_curr.col++;
-    }
-
-    return c;
+    if (m_file != nullptr)
+        fclose(m_file);
 }
 
 bool libquixcc::StringLexer::QuixkLex(const std::string &source_code, std::vector<libquixcc::Token> &tokens, const std::string &filename)

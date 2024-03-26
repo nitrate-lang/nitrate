@@ -31,13 +31,14 @@
 #include <deque>
 #include <array>
 #include <map>
+#include <set>
 #include <queue>
 #include <lexer/Token.h>
 
 namespace libquixcc
 {
-    constexpr std::array<const char *, 10> punctors = {
-        "(", ")", "{", "}", "[", "]", ".", ",", ":", ";"};
+    constexpr std::array<char, 10> punctors = {
+        '(', ')', '{', '}', '[', ']', '.', ',', ':', ';'};
 
     typedef std::pair<const char *, int> KWPair;
 
@@ -128,6 +129,7 @@ namespace libquixcc
         virtual libquixcc::Token read_token();
 
         void pushback(char c) { m_pushback.push(c); }
+
     public:
         StreamLexer();
 
@@ -151,12 +153,11 @@ namespace libquixcc
     {
     private:
         std::string m_src;
-
-    protected:
-        virtual char getc() override;
+        FILE *m_file;
 
     public:
         StringLexer() = default;
+        ~StringLexer();
 
         /// @brief Set the source file
         /// @param src C FILE pointer
