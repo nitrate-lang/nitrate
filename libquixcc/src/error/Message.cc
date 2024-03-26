@@ -38,7 +38,6 @@ static void push_message_to_job(quixcc_job_t &job, Err type, const std::string &
     msg->column = 0;
     msg->message = strdup(message.c_str());
     msg->m_level = (quixcc_msg_level_t)type;
-    msg->m_allocated = true;
     job.m_result->m_feedback.m_messages[job.m_result->m_feedback.m_count] = msg;
     job.m_result->m_feedback.m_count++;
 }

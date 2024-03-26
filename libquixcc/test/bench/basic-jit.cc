@@ -8,7 +8,7 @@
 #include <fstream>
 #include <iomanip>
 
-constexpr size_t num_iterations = 1000000; // So long RUST. 1 million compilations in the time it takes to compile a ~300 RUST sources!
+constexpr size_t num_iterations = 10000;
 
 struct GeneralDistributionStats
 {
@@ -262,7 +262,7 @@ static BenchStats run_bench()
 
         if (i % (num_iterations / 20) == 0)
         {
-            int percent = (i * 100) / num_iterations;
+            int percent = ((i * 100) / num_iterations) + 5;
             std::cout << "\x1b[36;49;1m*\x1b[0m \x1b[36;4mProgress: \x1b[0m\x1b[36;1;4m" << percent << "%\x1b[0m\tIteration " << i << "\t took " << duration << " nanoseconds" << std::endl;
         }
     }
@@ -275,15 +275,15 @@ static BenchStats run_bench()
     size_t srcbytes = std::strlen(quix_src_freeform);
 
     /* Per source byte */
-    bench.ct_per_source_byte.dist_name = "Compilation Time Per Source Byte";
+    bench.ct_per_source_byte.dist_name = "Compilation Time Per Source Bit";
     for (auto &d : copy_ct_data)
-        d /= srcbytes;
+        d /= srcbytes * 8;
     bench.ct_per_source_byte.compute(copy_ct_data);
 
     /* Per target byte */
-    bench.ct_per_target_byte.dist_name = "Compilation Time Per Target Byte";
+    bench.ct_per_target_byte.dist_name = "Compilation Time Per Target Bit";
     for (auto &d : ct_data)
-        d /= out.size();
+        d /= out.size() * 8;
     bench.ct_per_target_byte.compute(ct_data);
 
     std::cout << std::endl;
@@ -295,7 +295,8 @@ int main()
 {
     std::cout << "\x1b[36;49;1m*\x1b[0m Running benchmarks for \x1b[36;1;4mlibquixcc\x1b[0m..." << std::endl;
     std::cout << "\x1b[36;49;1m*\x1b[0m Doing " << num_iterations << " iterations" << std::endl;
-    std::cout << "\x1b[36;49;1m*\x1b[0m This may take a while. Status updates will be printed every 5% of the way\n" << std::endl;
+    std::cout << "\x1b[36;49;1m*\x1b[0m This may take a while. Status updates will be printed every 5% of the way\n"
+              << std::endl;
     auto bench = run_bench();
 
     std::cout << "\x1b[36;49;1m*\x1b[0m \x1b[32;49;1mBenchmarks complete\x1b[0m" << std::endl;
