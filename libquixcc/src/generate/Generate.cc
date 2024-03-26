@@ -169,7 +169,7 @@ bool libquixcc::write_asm(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AS
     }
     fclose(tmp);
 
-    if (system(("clang -S " + filename + " -o " + filename + ".S " + flags).c_str()) != 0)
+    if (system(("clang -S " + filename + " -o " + filename + ".S " + flags + " 2> /dev/null").c_str()) != 0)
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate assembly file");
         return false;
@@ -214,7 +214,7 @@ bool libquixcc::write_obj(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AS
     }
     fclose(tmp);
 
-    if (system(("clang -c " + filename + " -o " + filename + ".o " + flags).c_str()) != 0)
+    if (system(("clang -c " + filename + " -o " + filename + ".o " + flags + " 2> /dev/null").c_str()) != 0)
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate object file");
         return false;
@@ -282,7 +282,7 @@ bool libquixcc::write_bin(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AS
     }
     fclose(tmp);
 
-    std::string cmd = "clang " + filename + " -o " + filename + ".out " + flags;
+    std::string cmd = "clang " + filename + " -o " + filename + ".out " + flags + " 2> /dev/null";
     message(ctx, libquixcc::Err::DEBUG, "Clang: " + cmd);
     if (system(cmd.c_str()) != 0)
     {
