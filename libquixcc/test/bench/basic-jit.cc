@@ -8,7 +8,7 @@
 #include <fstream>
 #include <iomanip>
 
-constexpr size_t num_iterations = 50000;
+constexpr size_t num_iterations = 1000000; // So long RUST. 1 million compilations in the time it takes to compile a ~300 RUST sources!
 
 struct GeneralDistributionStats
 {
@@ -261,7 +261,10 @@ static BenchStats run_bench()
         ct_data.push_back(duration);
 
         if (i % (num_iterations / 20) == 0)
-            std::cout << "\x1b[36;49;1m*\x1b[0m Iteration " << i << "\t took " << duration << " nanoseconds" << std::endl;
+        {
+            int percent = (i * 100) / num_iterations;
+            std::cout << "\x1b[36;49;1m*\x1b[0m \x1b[36;4mProgress: \x1b[0m\x1b[36;1;4m" << percent << "%\x1b[0m\tIteration " << i << "\t took " << duration << " nanoseconds" << std::endl;
+        }
     }
 
     /* Overall */
@@ -283,12 +286,16 @@ static BenchStats run_bench()
         d /= out.size();
     bench.ct_per_target_byte.compute(ct_data);
 
+    std::cout << std::endl;
+
     return bench;
 }
 
 int main()
 {
     std::cout << "\x1b[36;49;1m*\x1b[0m Running benchmarks for \x1b[36;1;4mlibquixcc\x1b[0m..." << std::endl;
+    std::cout << "\x1b[36;49;1m*\x1b[0m Doing " << num_iterations << " iterations" << std::endl;
+    std::cout << "\x1b[36;49;1m*\x1b[0m This may take a while. Status updates will be printed every 5% of the way\n" << std::endl;
     auto bench = run_bench();
 
     std::cout << "\x1b[36;49;1m*\x1b[0m \x1b[32;49;1mBenchmarks complete\x1b[0m" << std::endl;
@@ -304,7 +311,7 @@ int main()
 
     std::cout << "\x1b[36;49;1m*\x1b[0m \x1b[32;49;1mBenchmark results printed\x1b[0m" << std::endl;
 
-    std::cout << "\x1b[36;49;1m*\x1b[0m Writing dataset to \x1b[36;1;4mct_data.json, ct_per_source_byte_data.json, ct_per_target_byte_data.json\x1b[0m" << std::endl;
+    std::cout << "\x1b[36;49;1m*\x1b[0m Writing datasets to \x1b[36;1;4mct_data.json, ct_per_source_byte_data.json, ct_per_target_byte_data.json\x1b[0m" << std::endl;
     bench.ct.write_dataset_json("ct_data.json");
     bench.ct_per_source_byte.write_dataset_json("ct_per_source_byte_data.json");
     bench.ct_per_target_byte.write_dataset_json("ct_per_target_byte_data.json");
