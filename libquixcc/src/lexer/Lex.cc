@@ -277,13 +277,11 @@ libquixcc::StreamLexer::StreamLexer()
 
 char libquixcc::StreamLexer::getc()
 {
-    char c = EOF;
-
     if (!m_pushback.empty())
     {
-        c = m_pushback.front();
+        char c = m_pushback.front();
         m_pushback.pop();
-        goto end;
+        return c;
     }
 
     if (m_buf_pos >= m_buffer.size())
@@ -292,7 +290,7 @@ char libquixcc::StreamLexer::getc()
         if ((read = fread(m_buffer.data(), 1, m_buffer.size(), m_src)) == 0)
         {
             if (added_newline)
-                goto end;
+                return EOF;
 
             m_buffer[0] = '\n';
             read = 1;
@@ -305,7 +303,7 @@ char libquixcc::StreamLexer::getc()
         m_buf_pos = 0;
     }
 
-    c = m_buffer[m_buf_pos++];
+    char c = m_buffer[m_buf_pos++];
 
     m_loc = m_loc_curr;
 
@@ -319,7 +317,6 @@ char libquixcc::StreamLexer::getc()
         m_loc_curr.col++;
     }
 
-end:
     return c;
 }
 
@@ -624,9 +621,6 @@ bool normalize_number_literal(std::string &number, std::string &norm, NumberLite
 
 libquixcc::Token libquixcc::StreamLexer::read_token()
 {
-    if (m_tok.has_value())
-        return m_tok.value();
-
     enum class LexState
     {
         Start,
@@ -642,10 +636,9 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
         Other,
     };
 
-    LexState state = LexState::Start;
     std::string buffer;
+    LexState state = LexState::Start;
     size_t state_parens = 0;
-
     char c;
 
     while (true)
@@ -1054,6 +1047,9 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
 libquixcc::Token libquixcc::StreamLexer::peek()
 {
     Token tok;
+    if (m_tok.has_value())
+        return m_tok.value();
+
     while (true)
     {
         tok = read_token();
