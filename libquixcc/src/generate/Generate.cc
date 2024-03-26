@@ -73,19 +73,38 @@ static std::map<std::string, std::string> acceptable_bingen_flags = {
     {"-nostdlib", "-nostdlib"},
     {"-nostartfiles", "-nostartfiles"}};
 
-bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
+class CFILE_raw_fd_ostream : public llvm::raw_fd_ostream
 {
-    int fd;
-    // Get the file descriptor
-    if ((fd = fileno(out)) == -1)
+public:
+    explicit CFILE_raw_fd_ostream(FILE *file, std::error_code &ec) 
+        : llvm::raw_fd_ostream(-1, false, false)
     {
-        message(ctx, libquixcc::Err::ERROR, "Failed to get file descriptor");
-        return false;
+        m_file = file;
     }
 
-    // Create a llvm::raw_fd_ostream
+protected:
+    FILE *m_file;
+
+    void write_impl(const char *Ptr, size_t Size) override
+    {
+        fwrite(Ptr, 1, Size, m_file);
+    }
+
+    uint64_t current_pos() const override
+    {
+        llvm::report_fatal_error("current_pos not implemented!");
+    }
+
+    size_t preferred_buffer_size() const override
+    {
+        return 0;
+    }
+};
+
+bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
+{
     std::error_code ec;
-    llvm::raw_fd_ostream os(fd, false);
+    CFILE_raw_fd_ostream os(out, ec);
     if (os.has_error())
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to create llvm::raw_fd_ostream");

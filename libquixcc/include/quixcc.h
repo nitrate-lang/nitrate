@@ -93,10 +93,7 @@ extern "C"
     typedef struct quixcc_option_t
     {
         /// @brief Identifier
-        const char *m_u;
-
-        /// @brief Value
-        const char *m_v;
+        const char *opt;
     } quixcc_option_t;
 
     typedef struct quixcc_options_t
@@ -179,19 +176,18 @@ typedef struct quixcc_job_t quixcc_job_t;
 
     /// @brief Add an option to a compiler job
     /// @param job The compiler job
-    /// @param name The option name
-    /// @param value The option value
+    /// @param option The option
     /// @param enabled Is the option enabled?
     /// @note This function is thread-safe
     /// @note This function is safe to call with NULL
-    void quixcc_add_option(quixcc_job_t *job, const char *name, const char *value, bool enabled);
+    void quixcc_add_option(quixcc_job_t *job, const char *option, bool enabled);
 
     /// @brief Remove an option from a compiler job
     /// @param job The compiler job
-    /// @param name The option name
+    /// @param opt The option
     /// @note This function is thread-safe
     /// @note This function is safe to call with NULL
-    void quixcc_remove_option(quixcc_job_t *job, const char *name);
+    void quixcc_remove_option(quixcc_job_t *job, const char *opt);
 
     /// @brief Set the input stream for a compiler job
     /// @param job The compiler job
@@ -224,6 +220,15 @@ typedef struct quixcc_job_t quixcc_job_t;
     /// @note This function is safe to call with NULL
     /// @note This function will return NULL if the job is still running
     const quixcc_result_t *quixcc_result(quixcc_job_t *job);
+
+    /// @brief One shot compile
+    /// @param in The input stream
+    /// @param out The output stream
+    /// @param options The compiler options
+    /// @return NULL if successful, otherwise all messages concatenated with newlines
+    /// @note This function is thread-safe
+    /// @note Make sure to free the returned string
+    char *quixcc_compile(FILE *in, FILE *out, const char *options[]);
 
     ///===================================================================================================
     /// BEGIN: LANGUAGE stuff

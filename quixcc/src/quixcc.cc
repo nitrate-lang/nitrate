@@ -9,7 +9,7 @@
 #include <quixcc.h>
 #include <thread>
 
-static int build_single_source(std::string file_in, std::string file_out, std::vector<std::pair<std::string, std::string>> switches)
+static int build_single_source(std::string file_in, std::string file_out, std::vector<std::string> switches)
 {
     FILE *in = fopen(file_in.c_str(), "r");
 
@@ -40,7 +40,7 @@ static int build_single_source(std::string file_in, std::string file_out, std::v
     quixcc_set_output(job, out);
 
     for (const auto &sw : switches)
-        quixcc_add_option(job, sw.first.c_str(), sw.second.c_str(), true);
+        quixcc_add_option(job, sw.c_str(), true);
 
     bool success = quixcc_run(job);
 
@@ -84,7 +84,7 @@ static int build_single_source(std::string file_in, std::string file_out, std::v
     return 0;
 }
 
-static int build_many_sources(const std::vector<std::string> &files_in, std::string file_out, std::vector<std::pair<std::string, std::string>> switches)
+static int build_many_sources(const std::vector<std::string> &files_in, std::string file_out, std::vector<std::string> switches)
 {
     enum mode
     {
@@ -95,16 +95,15 @@ static int build_many_sources(const std::vector<std::string> &files_in, std::str
 
     mode m = EXECUTABLE;
 
-    std::vector<std::pair<std::string, std::string>> copy;
+    std::vector<std::string> copy;
     for (const auto &sw : switches)
     {
-        auto tmp = sw.first + sw.second;
-        if (tmp == "staticlib")
+        if (sw == "staticlib")
         {
             m = STATICLIB;
             break;
         }
-        else if (tmp == "shared")
+        else if (sw == "shared")
         {
             m = SHARED;
             break;
@@ -194,7 +193,7 @@ static int build_many_sources(const std::vector<std::string> &files_in, std::str
     return 0;
 }
 
-static int parse_args(const std::vector<std::string> &args, std::vector<std::string> &files_in, std::string &file_out, std::vector<std::pair<std::string, std::string>> &switches)
+static int parse_args(const std::vector<std::string> &args, std::vector<std::string> &files_in, std::string &file_out, std::vector<std::string> &switches)
 {
     for (size_t i = 1; i < args.size(); i++)
     {
@@ -226,14 +225,7 @@ static int parse_args(const std::vector<std::string> &args, std::vector<std::str
                 return 1;
             }
 
-            if (args[i].size() > 2)
-            {
-                switches.push_back({args[i].substr(1, 1), args[i].substr(2)});
-            }
-            else
-            {
-                switches.push_back({args[i].substr(1, 1), ""});
-            }
+            switches.push_back(args[i]);
         }
         else
         {
@@ -265,7 +257,7 @@ int main(int argc, char *argv[])
     std::vector<std::string> args(argv, argv + argc);
     std::vector<std::string> files_in;
     std::string file_out;
-    std::vector<std::pair<std::string, std::string>> switches;
+    std::vector<std::string> switches;
 
     if (parse_args(args, files_in, file_out, switches))
         return 1;

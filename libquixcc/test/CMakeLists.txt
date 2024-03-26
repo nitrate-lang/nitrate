@@ -19,13 +19,12 @@ file(GLOB_RECURSE TEST_SOURCES "unit/*.cc")
 
 enable_testing()
 
-add_executable(libquixcc-tests ${TEST_SOURCES})
-target_include_directories(libquixcc-tests PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/../include "${CMAKE_CURRENT_SOURCE_DIR}/../internal")
-target_link_directories(libquixcc-tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../../libquixcc)
-target_compile_options(libquixcc-tests PRIVATE -Wall -Wextra -Werror)
-target_link_libraries(libquixcc-tests j GTest::gtest_main)
-add_dependencies(libquixcc-tests libquixcc)
-add_test(NAME libquixcc-tests COMMAND libquixcc-tests)
 
-include(GoogleTest)
-gtest_discover_tests(libquixcc-tests)
+# Build benchmark
+file(GLOB_RECURSE BENCHMARK_SOURCES "bench/*.cc")
+
+add_executable(libquixcc-bench ${BENCHMARK_SOURCES})
+target_include_directories(libquixcc-bench PRIVATE ${CMAKE_SOURCE_DIR}/include)
+target_compile_options(libquixcc-bench PRIVATE -O3 -g -march=native -flto)
+target_link_libraries(libquixcc-bench libquixcc)
+target_link_options(libquixcc-bench PRIVATE -flto)

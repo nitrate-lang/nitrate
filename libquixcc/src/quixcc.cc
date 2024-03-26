@@ -121,13 +121,8 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
         if (!option)
             continue;
 
-        if (option->m_u)
-            free((void *)option->m_u);
-        if (option->m_v)
-            free((void *)option->m_v);
-
-        option->m_u = nullptr;
-        option->m_v = nullptr;
+        free((void *)option->opt);
+        option->opt = nullptr;
         free(option);
 
         job->m_options.m_options[i] = nullptr;
@@ -179,29 +174,24 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
     return true;
 }
 
-LIB_EXPORT void quixcc_add_option(quixcc_job_t *job, const char *name, const char *value, bool enabled)
+LIB_EXPORT void quixcc_add_option(quixcc_job_t *job, const char *opt, bool enabled)
 {
     quixcc_option_t *option;
 
-    if (!job || !name || !enabled)
+    if (!job || !opt || !enabled)
         return;
 
     option = (quixcc_option_t *)safe_malloc(sizeof(quixcc_option_t));
 
-    option->m_u = safe_strdup(name);
-
-    if (value)
-        option->m_v = safe_strdup(value);
-    else
-        option->m_v = nullptr;
+    option->opt = safe_strdup(opt);
 
     job->m_options.m_options = (quixcc_option_t **)safe_realloc(job->m_options.m_options, (job->m_options.m_count + 1) * sizeof(quixcc_option_t *));
     job->m_options.m_options[job->m_options.m_count++] = option;
 }
 
-LIB_EXPORT void quixcc_remove_option(quixcc_job_t *job, const char *name)
+LIB_EXPORT void quixcc_remove_option(quixcc_job_t *job, const char *opt)
 {
-    if (!job || !name)
+    if (!job || !opt)
         return;
 
     for (uint32_t i = 0; i < job->m_options.m_count; i++)
@@ -210,15 +200,11 @@ LIB_EXPORT void quixcc_remove_option(quixcc_job_t *job, const char *name)
         if (!option)
             continue;
 
-        if (strcmp(option->m_u, name) == 0)
+        if (strcmp(option->opt, opt) == 0)
         {
-            if (option->m_u)
-                free((void *)option->m_u);
-            if (option->m_v)
-                free((void *)option->m_v);
+            free((void *)option->opt);
 
-            option->m_u = nullptr;
-            option->m_v = nullptr;
+            option->opt = nullptr;
             free(option);
 
             job->m_options.m_options[i] = job->m_options.m_options[job->m_options.m_count - 1];
@@ -341,13 +327,14 @@ static bool get_include_directories(quixcc_job_t *job, std::set<std::string> &di
 {
     for (uint32_t i = 0; i < job->m_options.m_count; i++)
     {
-        quixcc_option_t *option = job->m_options.m_options[i];
-        if (!option)
+        std::string option = job->m_options.m_options[i]->opt;
+
+        if (option.size() < 3)
             continue;
 
-        if (strcmp(option->m_u, "I") == 0)
+        if (option.starts_with("-I"))
         {
-            dirs.insert(option->m_v);
+            dirs.insert(option.substr(2));
             continue;
         }
     }
@@ -688,23 +675,20 @@ static bool build_argmap(quixcc_job_t *job)
 
     for (uint32_t i = 0; i < job->m_options.m_count; i++)
     {
-        quixcc_option_t *option = job->m_options.m_options[i];
-        if (!option)
-            continue;
+        std::string option = job->m_options.m_options[i]->opt;
 
-        if (std::strlen(option->m_u) != 1 || !okay_prefixes.contains(option->m_u[0]))
+        if (option.size() == 2 && option[0] == '-' && !okay_prefixes.contains(option[1]))
         {
-            libquixcc::message(*job, libquixcc::Err::ERROR, "invalid build option: " + std::string(option->m_u));
+            libquixcc::message(*job, libquixcc::Err::ERROR, "invalid build option: " + option);
             return false;
         }
 
-        std::string def = option->m_v;
-        size_t pos = def.find('=');
-        std::string key = "-" + std::string(option->m_u) + def.substr(0, pos);
+        size_t pos = option.find('=');
+        std::string key = option.substr(0, pos);
         std::string value;
 
         if (pos != std::string::npos)
-            value = def.substr(pos + 1);
+            value = option.substr(pos + 1);
 
         if (!verify_build_option(key, value))
         {
@@ -814,4 +798,35 @@ LIB_EXPORT const quixcc_result_t *quixcc_result(quixcc_job_t *job)
     }
 
     return result;
+}
+
+LIB_EXPORT char *quixcc_compile(FILE *in, FILE *out, const char *options[])
+{
+    quixcc_job_t *job = quixcc_new();
+    quixcc_set_input(job, in, "stdin");
+    quixcc_set_output(job, out);
+
+    if (options)
+    {
+        for (uint32_t i = 0; options[i]; i++)
+            quixcc_add_option(job, options[i], true);
+    }
+    if (quixcc_run(job))
+    {
+        quixcc_dispose(job);
+        return nullptr;
+    }
+
+    std::string str;
+    for (uint32_t i = 0; i < job->m_result->m_feedback.m_count; i++)
+    {
+        quixcc_msg_t *msg = job->m_result->m_feedback.m_messages[i];
+        if (!msg)
+            continue;
+
+        str += msg->message;
+        str += '\n';
+    }
+
+    return safe_strdup(str.c_str());
 }

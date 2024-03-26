@@ -9,7 +9,7 @@ os.chdir('build')
 if '--release' in sys.argv:
     os.system('cmake -DCMAKE_BUILD_TYPE=Release ..')
 else:
-    os.system('cmake ..')
+    os.system('cmake -DBUILD_TESTING=On ..')
 
 os.system('make -j`nproc`')
 os.chdir('..')
