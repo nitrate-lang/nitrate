@@ -92,7 +92,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     tok = scanner->next();
     if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
     {
-        node = std::make_shared<EnumDeclNode>(name, type);
+        node = std::make_shared<EnumDeclNode>(EnumTypeNode::create(name, type));
         return true;
     }
 
@@ -127,6 +127,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     }
 
     /// TODO: implement the scoped enum feature like c++ `enum class`
-    node = std::make_shared<EnumDefNode>(name, type, false, fields);
+    auto decl = std::make_shared<EnumDeclNode>(EnumTypeNode::create(name, type));
+    node = std::make_shared<EnumDefNode>(decl, true, fields);
     return true;
 }

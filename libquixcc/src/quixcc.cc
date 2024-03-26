@@ -275,12 +275,12 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>
 {
     libquixcc::Mutation mutator;
     mutator.add_routine(libquixcc::mutate::DiscoverNamedConstructs);
+    mutator.add_routine(libquixcc::mutate::ExtrapolateEnumFields);
     mutator.add_routine(libquixcc::mutate::ResolveNamedConstructs);
-    mutator.add_routine(libquixcc::mutate::ReplaceNamedTypes);
-    mutator.add_routine(libquixcc::mutate::FillInConstants);
     mutator.add_routine(libquixcc::mutate::FoldConstExpr);
     mutator.add_routine(libquixcc::mutate::ConvertTypes);
     mutator.add_routine(libquixcc::mutate::InferTypes);
+    mutator.add_routine(libquixcc::mutate::FilterNonGeneratable);
     mutator.run(job, ast);
 
     return true;

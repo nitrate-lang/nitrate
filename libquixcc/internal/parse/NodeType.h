@@ -65,6 +65,7 @@ namespace libquixcc
         PointerTypeNode,
         StringTypeNode,
 
+        EnumTypeNode,
         StructTypeNode,
         UnionTypeNode,
         ArrayTypeNode,
@@ -139,6 +140,7 @@ namespace libquixcc
     class VoidTypeNode;
     class PointerTypeNode;
     class StringTypeNode;
+    class EnumTypeNode;
     class StructTypeNode;
     class UnionTypeNode;
     class ArrayTypeNode;

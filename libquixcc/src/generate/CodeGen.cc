@@ -340,6 +340,11 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StringTypeNode *no
     return llvm::Type::getInt8PtrTy(*m_ctx->m_ctx);
 }
 
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::EnumTypeNode *node) const
+{
+    return node->m_member_type->codegen(*this);
+}
+
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StructTypeNode *node) const
 {
     std::vector<llvm::Type *> fields;

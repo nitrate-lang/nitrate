@@ -91,7 +91,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::UnionFieldNode>(*node)->m_name);
                 break;
             case NodeType::EnumDefNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::EnumDefNode>(*node)->m_name);
+                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::EnumDefNode>(*node)->m_decl->m_type->m_name);
                 is_type = true;
                 break;
             case NodeType::EnumFieldNode:

@@ -28,21 +28,6 @@
 
 using namespace libquixcc;
 
-static void remove_typedef(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
-{
-    ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
-        {
-            if ((*node)->ntype != NodeType::TypedefNode)
-                return;
-
-            semanticmsg(*job, Err::DEBUG, false, "replace typedef with NOP node");
-
-            *node = std::make_shared<NopStmtNode>();
-        },
-        job->m_inner->prefix));
-}
-
 static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
@@ -89,8 +74,28 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
         job->m_inner->prefix));
 }
 
+static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
+{
+    ast->dfs_preorder(ParseNodePreorderVisitor(
+        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        {
+            if ((*node)->ntype != NodeType::IdentifierNode)
+                return;
+
+            auto ident = std::static_pointer_cast<libquixcc::IdentifierNode>(*node);
+
+            if (!job->m_inner->m_named_construsts.contains(std::make_pair(NodeType::EnumFieldNode, ident->m_name)))
+                return;
+
+            auto enum_field = std::static_pointer_cast<libquixcc::EnumFieldNode>(job->m_inner->m_named_construsts[std::make_pair(NodeType::EnumFieldNode, ident->m_name)]);
+
+            *node = enum_field->m_value;
+        },
+        job->m_inner->prefix));
+}
+
 void libquixcc::mutate::ResolveNamedConstructs(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     resolve_user_type_nodes(job, ast);
-    remove_typedef(job, ast);
+    resolve_enum_values(job, ast);
 }

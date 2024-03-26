@@ -16,28 +16,26 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+@lang v1
 
-#include <parse/nodes/AllNodes.h>
+subsystem libquixcc {
+    enum error_message_index: i8 {
+        VAR_NAME_DUPLICATE = 10,
+        LET_NAME_DUPLICATE,
+        STRUCT_NAME_DUPLICATE,
+        UNION_NAME_DUPLICATE,
+        ENUM_NAME_DUPLICATE,
+        FUNC_NAME_DUPLICATE,
+        STRUCT_FIELD_DUPLICATE,
+        UNION_FIELD_DUPLICATE,
+        ENUM_FIELD_DUPLICATE,
+        PARAM_NAME_DUPLICATE,
+        SUBSYSTEM_NAME_DUPLICATE,
+        TYPEDEF_NAME_DUPLICATE,
+    };
+};
 
-libquixcc::U8TypeNode *libquixcc::U8TypeNode::m_instance = nullptr;
-libquixcc::U16TypeNode *libquixcc::U16TypeNode::m_instance = nullptr;
-libquixcc::U32TypeNode *libquixcc::U32TypeNode::m_instance = nullptr;
-libquixcc::U64TypeNode *libquixcc::U64TypeNode::m_instance = nullptr;
-libquixcc::I8TypeNode *libquixcc::I8TypeNode::m_instance = nullptr;
-libquixcc::I16TypeNode *libquixcc::I16TypeNode::m_instance = nullptr;
-libquixcc::I32TypeNode *libquixcc::I32TypeNode::m_instance = nullptr;
-libquixcc::I64TypeNode *libquixcc::I64TypeNode::m_instance = nullptr;
-libquixcc::F32TypeNode *libquixcc::F32TypeNode::m_instance = nullptr;
-libquixcc::F64TypeNode *libquixcc::F64TypeNode::m_instance = nullptr;
-libquixcc::BoolTypeNode *libquixcc::BoolTypeNode::m_instance = nullptr;
-libquixcc::CharTypeNode *libquixcc::CharTypeNode::m_instance = nullptr;
-libquixcc::VoidTypeNode *libquixcc::VoidTypeNode::m_instance = nullptr;
-std::map<libquixcc::TypeNode *, libquixcc::PointerTypeNode *> libquixcc::PointerTypeNode::m_instances;
-libquixcc::StringTypeNode *libquixcc::StringTypeNode::m_instance = nullptr;
-std::map<std::vector<libquixcc::TypeNode *>, libquixcc::StructTypeNode *> libquixcc::StructTypeNode::m_instances;
-std::map<std::vector<libquixcc::TypeNode *>, libquixcc::UnionTypeNode *> libquixcc::UnionTypeNode::m_instances;
-std::map<std::pair<libquixcc::TypeNode *, std::shared_ptr<libquixcc::ConstExprNode>>, libquixcc::ArrayTypeNode *> libquixcc::ArrayTypeNode::m_instances;
-std::unordered_map<std::string, libquixcc::UserTypeNode *> libquixcc::UserTypeNode::m_instances;
-std::map<libquixcc::FunctionTypeNode::Inner, libquixcc::FunctionTypeNode *> libquixcc::FunctionTypeNode::s_instances;
-std::map<std::pair<std::string, libquixcc::TypeNode *>, libquixcc::EnumTypeNode *> libquixcc::EnumTypeNode::m_instances;
+fn main(): i8 {
+    return libquixcc::error_message_index::LET_NAME_DUPLICATE;
+}
+    

@@ -32,19 +32,39 @@
 
 namespace libquixcc
 {
+    class EnumTypeNode : public TypeNode
+    {
+        static std::map<std::pair<std::string, TypeNode *>, EnumTypeNode *> m_instances;
+        EnumTypeNode(const std::string &name, TypeNode *member_type) : m_name(name), m_member_type(member_type) { ntype = NodeType::EnumTypeNode; }
+
+    public:
+        static EnumTypeNode *create(const std::string &name, TypeNode *member_type)
+        {
+            auto key = std::make_pair(name, member_type);
+            if (m_instances.find(key) == m_instances.end())
+                m_instances[key] = new EnumTypeNode(name, member_type);
+            return m_instances[key];
+        }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        std::string m_name;
+        TypeNode *m_member_type;
+    };
+
     class EnumDeclNode : public DeclNode
     {
     public:
         EnumDeclNode() { ntype = NodeType::EnumDeclNode; }
-        EnumDeclNode(const std::string &name, TypeNode *type) : m_name(name), m_type(type) { ntype = NodeType::EnumDeclNode; }
+        EnumDeclNode(EnumTypeNode *type) : m_type(type) { ntype = NodeType::EnumDeclNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("EnumDeclNode is not codegenable"); }
 
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
-
-        std::string m_name;
-        TypeNode *m_type;
+        EnumTypeNode *m_type;
     };
 
     class EnumFieldNode : public ParseNode
@@ -56,7 +76,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { throw CodegenException("EnumDeclNode is not codegenable"); }
 
         std::string m_name;
         std::shared_ptr<ConstExprNode> m_value;
@@ -66,18 +86,15 @@ namespace libquixcc
     {
     public:
         EnumDefNode() { ntype = NodeType::EnumDefNode; }
-        EnumDefNode(const std::string &name, TypeNode *type, bool is_scoped, const std::vector<std::shared_ptr<EnumFieldNode>> &fields)
-            : m_name(name), m_type(type), m_fields(fields), m_scoped(is_scoped) { ntype = NodeType::EnumDefNode; }
-
+        EnumDefNode(std::shared_ptr<EnumDeclNode> decl, bool scoped, const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {}) : m_decl(decl), m_fields(fields), m_scoped(scoped) { ntype = NodeType::EnumDefNode; }
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("EnumDeclNode is not codegenable"); }
 
-        virtual TypeNode *get_type() const { return m_type; }
+        virtual TypeNode *get_type() const { return m_decl->m_type; }
 
-        std::string m_name;
-        TypeNode *m_type;
+        std::shared_ptr<EnumDeclNode> m_decl;
         std::vector<std::shared_ptr<EnumFieldNode>> m_fields;
         bool m_scoped = false;
     };

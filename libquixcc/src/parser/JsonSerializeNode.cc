@@ -262,6 +262,15 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::St
     return "{\"ntype\":\"StringTypeNode\"}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::EnumTypeNode *node) const
+{
+    std::string str = "{\"ntype\":\"EnumTypeNode\",\"name\":\"";
+    str += escape_json(node->m_name);
+    str += "\",\"member_type\":";
+    str += node->m_member_type->to_json(*this);
+    return str + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StructTypeNode *node) const
 {
     std::string str = "{\"ntype\":\"StructTypeNode\",\"fields\":[";
@@ -432,7 +441,7 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Un
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::EnumDeclNode *node) const
 {
-    return "{\"ntype\":\"EnumDeclNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
+    return "{\"ntype\":\"EnumDeclNode\",\"type\":" +  node->m_type->to_json(*this) + "}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::FunctionDeclNode *node) const
@@ -522,9 +531,9 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Un
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::EnumDefNode *node) const
 {
-    std::string str = "{\"ntype\":\"EnumDefNode\",\"name\":\"";
-    str += escape_json(node->m_name);
-    str += "\",\"fields\":[";
+    std::string str = "{\"ntype\":\"EnumDefNode\",\"type\":";
+    str += node->m_decl->m_type->to_json(*this);
+    str += ",\"fields\":[";
     for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it)
     {
         str += (*it)->to_json(*this);
@@ -541,8 +550,11 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::En
 {
     std::string str = "{\"ntype\":\"EnumFieldNode\",\"name\":\"";
     str += escape_json(node->m_name);
-    str += "\",\"value\":";
-    str += node->m_value->to_json(*this);
+    if (node->m_value)
+    {
+        str += "\",\"value\":";
+        str += node->m_value->to_json(*this);
+    }
     return str + "}";
 }
 
