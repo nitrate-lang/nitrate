@@ -18,10 +18,13 @@ execute_process(COMMAND llvm-config-14 --ldflags
 OUTPUT_VARIABLE LLVM_LD_FLAGS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-# Get LLVM flags from llvm-config-14  --libs
-execute_process(COMMAND llvm-config-14 --libs --system-libs
+# Get LLVM flags from llvm-config-14 --link-static --libfiles
+execute_process(COMMAND llvm-config-14 --link-static --system-libs --libfiles
 OUTPUT_VARIABLE LLVM_LIBS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+string(REPLACE "\n" " " LLVM_LIBS "${LLVM_LIBS}")
+string(REPLACE " " ";" LLVM_LIBS "${LLVM_LIBS}")
 
 # Get random number
 execute_process(COMMAND echo -n 0x | openssl rand -hex 4
@@ -41,19 +44,22 @@ else()
     target_compile_options(libquixcc PRIVATE ${PROJECT_DEBUG_FLAGS})
     target_link_options(libquixcc PRIVATE ${LLVM_LD_FLAGS})
 endif()
-target_link_libraries(libquixcc PRIVATE -lstdc++ -lm -lpthread -lstdc++fs crypto ${LLVM_LIBS})
+foreach(lib ${LLVM_LIBS})
+    message(STATUS "Linking with ${lib}")
+    target_link_libraries(libquixcc PRIVATE ${lib})
+endforeach()
 set_target_properties(libquixcc PROPERTIES OUTPUT_NAME quixcc)
 
-add_library(libquixcc_static STATIC ${LIBQUIX_CXX_SOURCES})
-target_include_directories(libquixcc_static PUBLIC "internal" include)
-if (CMAKE_BUILD_TYPE STREQUAL "Release") 
-    target_compile_options(libquixcc_static PRIVATE ${PROJECT_RELEASE_FLAGS})
-else()
-    target_compile_options(libquixcc_static PRIVATE ${PROJECT_DEBUG_FLAGS})
-    target_link_options(libquixcc_static PRIVATE ${LLVM_LD_FLAGS})
-endif()
-target_link_libraries(libquixcc_static PRIVATE -lstdc++ -lm -lpthread -lstdc++fs crypto ${LLVM_LIBS})
-set_target_properties(libquixcc_static PROPERTIES OUTPUT_NAME quixcc)
+# add_library(libquixcc_static STATIC ${LIBQUIX_CXX_SOURCES})
+# target_include_directories(libquixcc_static PUBLIC "internal" include)
+# if (CMAKE_BUILD_TYPE STREQUAL "Release") 
+#     target_compile_options(libquixcc_static PRIVATE ${PROJECT_RELEASE_FLAGS})
+# else()
+#     target_compile_options(libquixcc_static PRIVATE ${PROJECT_DEBUG_FLAGS})
+#     target_link_options(libquixcc_static PRIVATE ${LLVM_LD_FLAGS})
+# endif()
+# target_link_libraries(libquixcc_static PRIVATE -lstdc++ -lm -lpthread -lstdc++fs ${LLVM_LIBS})
+# set_target_properties(libquixcc_static PROPERTIES OUTPUT_NAME quixcc)
 
 if (BUILD_TESTING)
     add_subdirectory(test)

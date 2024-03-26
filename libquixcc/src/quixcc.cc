@@ -26,7 +26,7 @@
 #include <iostream>
 #include <regex>
 #include <filesystem>
-#include <openssl/rand.h>
+#include <random>
 
 #include <LibMacro.h>
 #include <llvm/LLVMWrapper.h>
@@ -74,6 +74,12 @@ static char *safe_strdup(const char *str)
 
 static quixcc_uuid_t quixcc_uuid()
 {
+    /*
+        I'm not sure if std::random_device is thread safe, so I'm using a mutex to lock it.
+    */
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
+
     union
     {
         uint8_t bytes[16];
@@ -84,11 +90,13 @@ static quixcc_uuid_t quixcc_uuid()
         } __attribute__((packed)) m;
     } __attribute__((packed)) raw;
 
-    if (RAND_bytes(raw.bytes, sizeof(raw.bytes)) != 1)
-    {
-        raw.m.m_high = (uint64_t)rand() << 32 | rand();
-        raw.m.m_low = (uint64_t)rand() << 32 | rand();
-    }
+    // Generate non-deteministic random number
+    std::random_device rd;
+    std::mt19937_64 gen(rd());
+    std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
+    raw.m.m_high = dis(gen);
+    raw.m.m_low = dis(gen);
+
     return {.m_low = raw.m.m_low, .m_high = raw.m.m_high};
 }
 

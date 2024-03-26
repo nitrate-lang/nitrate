@@ -17,29 +17,13 @@ FetchContent_MakeAvailable(googletest)
 # Add the libquixcc library unit tests
 file(GLOB_RECURSE TEST_SOURCES "unit/*.cc")
 
-# Get LLVM flags from llvm-config-14 --cxxflags
-execute_process(COMMAND llvm-config-14 --cxxflags
-                OUTPUT_VARIABLE LLVM_CXX_FLAGS
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-# Get LLVM flags from llvm-config-14 --ldflags 
-execute_process(COMMAND llvm-config-14 --ldflags
-OUTPUT_VARIABLE LLVM_LD_FLAGS
-OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-# Get LLVM flags from llvm-config-14  --libs
-execute_process(COMMAND llvm-config-14 --libs --system-libs
-OUTPUT_VARIABLE LLVM_LIBS
-OUTPUT_STRIP_TRAILING_WHITESPACE)
-
 enable_testing()
 
 add_executable(libquixcc-tests ${TEST_SOURCES})
 target_include_directories(libquixcc-tests PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/../include "${CMAKE_CURRENT_SOURCE_DIR}/../internal")
 target_link_directories(libquixcc-tests PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../../libquixcc)
-target_link_options(libquixcc-tests PRIVATE ${LLVM_LD_FLAGS})
 target_compile_options(libquixcc-tests PRIVATE -Wall -Wextra -Werror)
-target_link_libraries(libquixcc-tests j GTest::gtest_main ${LLVM_LIBS})
+target_link_libraries(libquixcc-tests j GTest::gtest_main)
 add_dependencies(libquixcc-tests libquixcc)
 add_test(NAME libquixcc-tests COMMAND libquixcc-tests)
 
