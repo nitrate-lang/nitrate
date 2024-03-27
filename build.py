@@ -15,7 +15,7 @@ os.system('make -j`nproc`')
 os.chdir('..')
 
 os.makedirs('bin', exist_ok=True)
-os.system('cp build/quixcc/quixcc bin/')
+os.system('cp build/quixcc/qcc bin/')
 os.system('cp -r build/tools/quixcc-* bin/')
 
 print('Build complete')
