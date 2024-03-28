@@ -16,23 +16,37 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_GEN_H__
-#define __QUIXCC_LLVM_GEN_H__
+#include <quixcc.hpp>
+#include <vector>
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <bits/types/FILE.h>
-#include <quixcc.h>
-#include <parse/Parser.h>
-#include <parse/NodeType.h>
-
-namespace libquixcc
+int main(int argc, char **argv)
 {
-    bool write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out);
-    bool write_llvm(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out, llvm::CodeGenFileType mode);
-    bool generate(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast);
-};
+    std::vector<std::string> args(argv, argv + argc);
 
-#endif // __QUIXCC_LLVM_GEN_H__
+    if (args.size() < 2)
+    {
+        std::cerr << "Usage: " << args[0] << " <source file>" << std::endl;
+        return 1;
+    }
+
+    if (!quixcc_init())
+    {
+        std::cerr << "Failed to initialize QuixCC." << std::endl;
+        return 1;
+    }
+
+    quixcc::Compiler &compiler = quixcc::CompilerBuilderFactory::createObject()
+                                    .in(args[1])
+                                    .out("a.out")
+                                    .build()
+                                    .run()
+                                    .puts();
+
+    if (!compiler.ok())
+    {
+        std::cerr << "Compilation failed." << std::endl;
+        return 1;
+    }   
+
+    return 0;
+}

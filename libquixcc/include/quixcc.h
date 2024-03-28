@@ -113,6 +113,17 @@ typedef struct quixcc_job_t quixcc_job_t;
 #endif
 
     /**
+     * @brief Initialize the QUIX compiler library.
+     * 
+     * This function initializes the QUIX compiler library and must be called before any other functions.
+     * 
+     * @return true if the library was initialized successfully.
+     * @note This function is thread-safe.
+     * @note It is okay to call this function multiple times. All calls after the first are no-ops.
+    */
+    bool quixcc_init();
+
+    /**
      * @brief Create a new compiler job.
      *
      * This function initializes and allocates memory for a new compiler job structure.

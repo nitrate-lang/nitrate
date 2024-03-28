@@ -30,6 +30,7 @@
 
 #include <LibMacro.h>
 #include <llvm/LLVMWrapper.h>
+#include <llvm/Support/TargetSelect.h>
 #include <generate/Generate.h>
 #include <lexer/Lex.h>
 #include <prep/Preprocesser.h>
@@ -98,6 +99,28 @@ static quixcc_uuid_t quixcc_uuid()
     raw.m.m_low = dis(gen);
 
     return {.m_low = raw.m.m_low, .m_high = raw.m.m_high};
+}
+
+LIB_EXPORT bool quixcc_init()
+{
+    static bool g_is_initialized = false;
+    static std::mutex g_mutex;
+
+    std::lock_guard<std::mutex> lock(g_mutex);
+
+    if (g_is_initialized)
+        return true;
+
+#ifdef LLVM_SUUPORT_ALL_TARGETS
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllAsmPrinters();
+#endif
+
+    g_is_initialized = true;
+    return true;
 }
 
 LIB_EXPORT quixcc_job_t *quixcc_new()

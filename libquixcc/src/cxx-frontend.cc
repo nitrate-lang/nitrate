@@ -25,9 +25,10 @@
 
 #include <sys/mman.h>
 
-LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs)
+LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs, std::vector<std::string> oscmds)
 {
     this->m_jobs = jobs;
+    this->m_oscmds = oscmds;
     this->m_ok = false;
 }
 
@@ -162,7 +163,7 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::src(FILE *input
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::out(const std::string &file)
 {
-    if ((m_output = fopen(file.c_str(), "w")) == nullptr)
+    if ((m_output = fopen(file.c_str(), "w+")) == nullptr)
         throw std::runtime_error("Failed to open output file: " + file);
 
     return *this;
@@ -183,6 +184,22 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::
 LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::vector<std::string> &flags)
 {
     m_flags.insert(m_flags.end(), flags.begin(), flags.end());
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::post(const std::string &cmd, const std::vector<std::string> &args)
+{
+    std::string pre;
+    for (auto &arg : args)
+        pre += "export " + arg + ";";
+    
+    m_oscmds.push_back(pre + cmd);
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::disregard(bool disregard)
+{
+    m_disregard = disregard;
     return *this;
 }
 
@@ -262,14 +279,14 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
         jobs.push_back(job);
     }
 
-    return Compiler(jobs);
+    return Compiler(jobs, m_oscmds);
 }
 
 ///=============================================================================
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createLinter()
 {
-    return CompilerBuilder();
+    return CompilerBuilder().opt("-emit-bc").disregard();
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIR()
@@ -279,46 +296,53 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIR(
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIRBitcode()
 {
-    return CompilerBuilder();
+    return CompilerBuilder().opt("-emit-bc");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createAssembly()
 {
-    return CompilerBuilder();
+    return CompilerBuilder().opt("-S");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createObject()
 {
-    return CompilerBuilder();
+    return CompilerBuilder().opt("-c");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createExecutable()
 {
-    return CompilerBuilder();
+    return CompilerBuilder().opt("-O5");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createUpxCompressedExecutable()
 {
-    return CompilerBuilder();
+    /// TODO: Implement UPX compression
+    return CompilerBuilder().opt("-O5").opt("-fpack=upx");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createShellcode()
 {
+    /// TODO: Implement shellcode builder
+    throw std::runtime_error("Shellcode builder not implemented.");
     return CompilerBuilder();
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createSharedLibrary()
 {
-    return CompilerBuilder();
+    /// TODO: Implement shared library builder
+    return CompilerBuilder().opt("-shared").opt("-fPIC").opt("-O5").post("ld -shared -o $QCC_OUTPUT $QCC_LAST");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createStaticLibrary()
 {
-    return CompilerBuilder();
+    /// TODO: Implement static library builder
+    return CompilerBuilder().opt("-c").opt("-O5").post("ar rcs $QCC_OUTPUT $QCC_LAST");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createDocumentation()
 {
+    /// TODO: Implement documentation builder
+    throw std::runtime_error("Documentation builder not implemented.");
     return CompilerBuilder();
 }
 

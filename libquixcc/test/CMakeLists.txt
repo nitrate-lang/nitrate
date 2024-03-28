@@ -5,26 +5,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-include(FetchContent)
-    FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
-)
-# For Windows: Prevent overriding the parent project's compiler/linker settings
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+file(GLOB_RECURSE TEST_PROGRAMS "programs/*.cc")
 
-# Add the libquixcc library unit tests
-file(GLOB_RECURSE TEST_SOURCES "unit/*.cc")
+message(STATUS "Found test programs: ${TEST_PROGRAMS}")
 
-enable_testing()
-
-
-# Build benchmark
-file(GLOB_RECURSE BENCHMARK_SOURCES "bench/*.cc")
-
-add_executable(libquixcc-bench ${BENCHMARK_SOURCES})
-target_include_directories(libquixcc-bench PRIVATE ${CMAKE_SOURCE_DIR}/include)
-target_compile_options(libquixcc-bench PRIVATE -O3 -g -march=native -flto)
-target_link_libraries(libquixcc-bench libquixcc)
-target_link_options(libquixcc-bench PRIVATE -flto)
+foreach(TEST_SOURCE ${TEST_PROGRAMS})
+    message(STATUS "Adding test: ${TEST_SOURCE}")
+    get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
+    add_executable(qcc-${TEST_NAME} ${TEST_SOURCE})
+    target_include_directories(qcc-${TEST_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/programs)
+    target_link_libraries(qcc-${TEST_NAME} libquixcc)
+    add_test(NAME qcc-${TEST_NAME} COMMAND qcc-${TEST_NAME})
+    add_dependencies(qcc-${TEST_NAME} libquixcc)
+endforeach()

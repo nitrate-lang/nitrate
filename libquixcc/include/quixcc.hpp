@@ -36,10 +36,11 @@ namespace quixcc
     {
         std::vector<quixcc_job_t *> m_jobs;                                      ///< Vector to store compiler job instances.
         std::vector<std::pair<std::string, enum quixcc_msg_level_t>> m_messages; ///< Vector to store messages generated during compilation.
-        bool m_ok;
+        std::vector<std::string> m_oscmds;                                       ///< Vector to store OS commands for post-compilation tasks.
+        bool m_ok;                                                               ///< Flag indicating compilation status.
 
         Compiler(const Compiler &) = delete;
-        Compiler (Compiler &&) = delete;
+        Compiler(Compiler &&) = delete;
         Compiler &operator=(const Compiler &) = delete;
 
     public:
@@ -50,7 +51,7 @@ namespace quixcc
          *
          * @param jobs Vector containing compilation job instances.
          */
-        Compiler(std::vector<quixcc_job_t *> jobs);
+        Compiler(std::vector<quixcc_job_t *> jobs, std::vector<std::string> oscmds);
 
         /**
          * @brief Destructor.
@@ -132,11 +133,13 @@ namespace quixcc
     {
         std::vector<std::pair<FILE *, std::string>> m_files; ///< Vector to store input files.
         std::vector<std::string> m_flags;                    ///< Vector to store compiler flags.
+        std::vector<std::string> m_oscmds;                   ///< Vector to store OS commands for post-compilation tasks.
         FILE *m_input;                                       ///< Input stream for providing source code directly.
         FILE *m_output;                                      ///< Output stream for capturing compiled output.
         Target m_target;                                     ///< Target platform for compilation.
         bool m_verbose;                                      ///< Flag indicating verbosity level.
         bool m_debug;                                        ///< Flag indicating debug mode.
+        bool m_disregard;                                    ///< Flag indicating whether to disregard output from compilation.
 
     public:
         /**
@@ -232,6 +235,32 @@ namespace quixcc
          * @return Reference to the CompilerBuilder object.
          */
         CompilerBuilder &opt(const std::vector<std::string> &flags);
+
+        /**
+         * @brief Add OS command for post-compilation tasks.
+         *
+         * Adds an OS command to the list of post-compilation tasks.
+         *
+         * @param cmd The OS command to add.
+         * @return Reference to the CompilerBuilder object.
+         * @note Commands will be invoked in the order they are added.
+         * @note The args will be transformed as follows:
+         *    - std::string pre = "";
+         *    - foreach (auto &arg : args) { pre += "export " + arg + ";" }
+         *    - cmd = pre + cmd;
+         *    - system(cmd.c_str()) == 0 // success
+         */
+        CompilerBuilder &post(const std::string &cmd, const std::vector<std::string> &args = {});
+
+        /**
+         * @brief Disregard output from compilation.
+         * 
+         * Sets the flag to disregard output from compilation.
+         * 
+         * @param disregard Flag indicating whether to disregard output from compilation (default is true).
+         * @return Reference to the CompilerBuilder object.
+        */
+        CompilerBuilder &disregard(bool disregard = true);
 
         /**
          * @brief Set target for compilation.

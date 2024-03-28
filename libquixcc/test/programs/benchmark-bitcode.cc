@@ -1,3 +1,21 @@
+////////////////////////////////////////////////////////////////////////////////////
+///                                                                              ///
+///    ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
+///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
+///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
+///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░          ///
+///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
+///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
+///    ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
+///      ░▒▓█▓▒░                                                                 ///
+///       ░▒▓██▓▒░                                                               ///
+///                                                                              ///
+///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
+///     * Copyright (c) 2024, Wesley C. Jones. All rights reserved.              ///
+///     * License terms may be found in the LICENSE file.                        ///
+///                                                                              ///
+////////////////////////////////////////////////////////////////////////////////////
+
 #include <quixcc.hpp>
 #include <string>
 #include <chrono>
@@ -7,8 +25,9 @@
 #include <cstring>
 #include <fstream>
 #include <iomanip>
+#include <code-example.hpp>
 
-constexpr size_t num_iterations = 100000;
+constexpr size_t num_iterations = 10000;
 
 struct GeneralDistributionStats
 {
@@ -153,59 +172,7 @@ struct BenchStats
     GeneralDistributionStats ct_per_target_byte;
 };
 
-static const char quix_src_freeform[] = R"(
-
-/* This is a simple program that does some basic stuff */
-
-type EnginePoint = f32;     ~> The floating point type used for engine points
-type EP = EnginePoint;      ~> Alias for EnginePoint
-
-struct Point {              ~> A point in 2D space
-    x: EP = 0.0;            ~> The x-coordinate
-    y: EP = 0.0;            ~> The y-coordinate
-};                          ~> End of Point struct
-
-struct Line {               ~> A line in 2D space
-    start: Point;           ~> The start point of the line
-    end: Point;             ~> The end point of the line
-};
-
-struct Circle {             ~> A circle in 2D space
-    center: Point;          ~> The center of the circle
-    radius: EP;             ~> The radius of the circle
-};
-
-struct Rectangle {          ~> A rectangle in 2D space
-    top_left: Point;        ~> The top-left corner
-    bottom_right: Point;    ~> The bottom-right corner
-};
-
-struct Triangle {           ~> A triangle in 2D space
-    a: Point;               ~> The first point
-    b: Point;               ~> The second point
-    c: Point;               ~> The third point
-};
-
-let world_line: Line;       ~> A line in the world
-let world_circle: Circle;   ~> A circle in the world
-let world_rect: Rectangle;  ~> A rectangle in the world
-let world_tri: Triangle;    ~> A triangle in the world
-
-fn calculate_yada(): i8 {   ~> A function that calculates yada
-    let x: i8 = 0;          ~> A variable x
-    let y: i8 = 0;          ~> A variable y
-
-    return (x+1) >> 2 & y;  ~> Return the result of some operations
-}
-
-fn main(): i8 {             ~> The main function
-    return 0;               ~> Return 0
-}
-)";
-
-constexpr size_t quix_src_freeform_len = sizeof(quix_src_freeform) - 1;
-
-static bool compile_single_source(const char *src, std::vector<uint8_t> &out)
+static bool compile_single_source(std::vector<uint8_t> &out)
 {
     char *outbuf;
     size_t outlen;
@@ -214,8 +181,8 @@ static bool compile_single_source(const char *src, std::vector<uint8_t> &out)
     if (!outf)
         return false;
 
-    auto &compiler = quixcc::CompilerBuilderFactory::createIR()
-                         .src(src, quix_src_freeform_len)
+    auto &compiler = quixcc::CompilerBuilderFactory::createIRBitcode()
+                         .src(libquixcc::benchmark_source, libquixcc::benchmark_source_len)
                          .out(outf)
                          .build()
                          .run()
@@ -248,7 +215,7 @@ static BenchStats run_bench()
     {
 
         auto start = std::chrono::high_resolution_clock::now();
-        if (!compile_single_source(quix_src_freeform, out))
+        if (!compile_single_source(out))
             throw std::runtime_error("Failed to compile source");
         auto end = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -267,12 +234,11 @@ static BenchStats run_bench()
     bench.ct.compute(ct_data);
 
     auto copy_ct_data = ct_data;
-    size_t srcbytes = std::strlen(quix_src_freeform);
 
     /* Per source byte */
     bench.ct_per_source_byte.dist_name = "Compilation Time Per Source Bit";
     for (auto &d : copy_ct_data)
-        d /= srcbytes * 8;
+        d /= libquixcc::benchmark_source_len * 8;
     bench.ct_per_source_byte.compute(copy_ct_data);
 
     /* Per target byte */
@@ -288,6 +254,12 @@ static BenchStats run_bench()
 
 int main()
 {
+    if (!quixcc_init())
+    {
+        std::cerr << "Failed to initialize QUIXCC" << std::endl;
+        return 1;
+    }
+
     std::cout << "\x1b[36;49;1m*\x1b[0m Running benchmarks for \x1b[36;1;4mlibquixcc\x1b[0m..." << std::endl;
     std::cout << "\x1b[36;49;1m*\x1b[0m Doing " << num_iterations << " iterations" << std::endl;
     std::cout << "\x1b[36;49;1m*\x1b[0m This may take a while. Status updates will be printed every 5% of the way\n"

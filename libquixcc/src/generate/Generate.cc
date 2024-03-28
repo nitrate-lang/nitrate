@@ -27,6 +27,7 @@
 #include <error/Message.h>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/Host.h>
@@ -35,6 +36,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include "llvm/Target/TargetOptions.h"
 #include "llvm/MC/TargetRegistry.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include <stdlib.h>
 
 static std::map<std::string, std::string> acceptable_asmgen_flags = {
@@ -73,11 +75,11 @@ static std::map<std::string, std::string> acceptable_bingen_flags = {
     {"-nostdlib", "-nostdlib"},
     {"-nostartfiles", "-nostartfiles"}};
 
-class CFILE_raw_fd_ostream : public llvm::raw_fd_ostream
+class CFILE_raw_pwrite_ostream : public llvm::raw_pwrite_stream
 {
 public:
-    explicit CFILE_raw_fd_ostream(FILE *file, std::error_code &ec) 
-        : llvm::raw_fd_ostream(-1, false, false)
+    explicit CFILE_raw_pwrite_ostream(FILE *file)
+        : llvm::raw_pwrite_stream(false)
     {
         m_file = file;
     }
@@ -85,31 +87,35 @@ public:
 protected:
     FILE *m_file;
 
+    void pwrite_impl(const char *Ptr, size_t Size, uint64_t Offset) override
+    {
+        if (fseek(m_file, Offset, SEEK_SET) == -1)
+            llvm::report_fatal_error("Failed to seek in file");
+
+        if (fwrite(Ptr, 1, Size, m_file) != Size)
+            llvm::report_fatal_error("Failed to write to file");
+    }
+
     void write_impl(const char *Ptr, size_t Size) override
     {
-        fwrite(Ptr, 1, Size, m_file);
+        if (fwrite(Ptr, 1, Size, m_file) != Size)
+            llvm::report_fatal_error("Failed to write to file");
     }
 
     uint64_t current_pos() const override
     {
-        llvm::report_fatal_error("current_pos not implemented!");
-    }
+        long pos = ftell(m_file);
+        if (pos == -1)
+            llvm::report_fatal_error("Failed to get current position in file");
 
-    size_t preferred_buffer_size() const override
-    {
-        return 0;
+        return pos;
     }
 };
 
 bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
 {
     std::error_code ec;
-    CFILE_raw_fd_ostream os(out, ec);
-    if (os.has_error())
-    {
-        message(ctx, libquixcc::Err::ERROR, "Failed to create llvm::raw_fd_ostream");
-        return false;
-    }
+    CFILE_raw_pwrite_ostream os(out);
 
     // Add root nodes to the LLVMContext
     if (!ast->codegen(CodegenVisitor(ctx.m_inner.get())))
@@ -137,164 +143,65 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
     return true;
 }
 
-bool libquixcc::write_asm(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
-{
-    // LLVM createTargetMachine is bugging and not working
-    // therefore, we will use clang binary to generate the assembly
-
-#if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
-    message(ctx, libquixcc::Err::FATAL, "Unsupported operating system");
-    throw std::runtime_error("Unsupported operating system");
-#else
-    std::string flags = "-Wno-override-module -ffunction-sections -fdata-sections ";
-
-    for (const auto &e : *ctx.m_argset)
-        if (acceptable_asmgen_flags.contains(e.first))
-            flags += acceptable_asmgen_flags[e.first] + " ";
-
-    std::string filename = std::tmpnam(nullptr) + std::string(".ll");
-    FILE *tmp;
-    if ((tmp = fopen(filename.c_str(), "w")) == nullptr)
-    {
-        message(ctx, libquixcc::Err::ERROR, "Failed to create temporary file");
-        return false;
-    }
-
-    if (!write_IR(ctx, ast, tmp))
-    {
-        fclose(tmp);
-        std::filesystem::remove(filename);
-        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
-        return false;
-    }
-    fclose(tmp);
-
-    if (system(("clang -S " + filename + " -o " + filename + ".S " + flags + " 2> /dev/null").c_str()) != 0)
-    {
-        message(ctx, libquixcc::Err::ERROR, "Failed to generate assembly file");
-        return false;
-    }
-
-    std::ifstream ifs(filename + ".S");
-    std::string content((std::istreambuf_iterator<char>(ifs)),
-                        (std::istreambuf_iterator<char>()));
-
-    std::fputs(content.c_str(), out);
-
-    std::filesystem::remove(filename);
-    return true;
-#endif
-}
-
-bool libquixcc::write_obj(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
+bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNode> ast, FILE *out, llvm::CodeGenFileType mode)
 {
 #if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
     message(ctx, libquixcc::Err::FATAL, "Unsupported operating system");
     throw std::runtime_error("Unsupported operating system");
 #else
-    std::string flags = "-Wno-override-module ";
-    for (const auto &e : *ctx.m_argset)
-        if (acceptable_objgen_flags.contains(e.first))
-            flags += acceptable_objgen_flags[e.first] + " ";
+    auto TargetTriple = llvm::sys::getDefaultTargetTriple();
 
-    std::string filename = std::tmpnam(nullptr) + std::string(".ll");
-    FILE *tmp;
-    if ((tmp = fopen(filename.c_str(), "w")) == nullptr)
+    std::string Error;
+    auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+
+    // Print an error and exit if we couldn't find the requested target.
+    // This generally occurs if we've forgotten to initialise the
+    // TargetRegistry or we have a bogus target triple.
+    if (!Target)
     {
-        message(ctx, libquixcc::Err::ERROR, "Failed to create temporary file");
+        llvm::errs() << Error;
         return false;
     }
 
-    if (!write_IR(ctx, ast, tmp))
+    auto CPU = "generic";
+    auto Features = "";
+
+    llvm::TargetOptions opt;
+    auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, llvm::Reloc::PIC_);
+
+    ctx.m_inner->m_module->setDataLayout(TargetMachine->createDataLayout());
+    ctx.m_inner->m_module->setTargetTriple(TargetTriple);
+
+    std::error_code ec;
+    CFILE_raw_pwrite_ostream os(out);
+
+    // Add root nodes to the LLVMContext
+    if (!ast->codegen(CodegenVisitor(ctx.m_inner.get())))
     {
-        fclose(tmp);
-        std::filesystem::remove(filename);
-        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
-        return false;
-    }
-    fclose(tmp);
-
-    if (system(("clang -c " + filename + " -o " + filename + ".o " + flags + " 2> /dev/null").c_str()) != 0)
-    {
-        message(ctx, libquixcc::Err::ERROR, "Failed to generate object file");
-        return false;
-    }
-
-    std::ifstream ifs(filename + ".o");
-    std::string content((std::istreambuf_iterator<char>(ifs)),
-                        (std::istreambuf_iterator<char>()));
-    std::fwrite(content.c_str(), 1, content.size(), out);
-    std::filesystem::remove(filename);
-
-    return true;
-#endif
-}
-
-bool libquixcc::write_bin(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
-{
-#if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
-    message(ctx, libquixcc::Err::FATAL, "Unsupported operating system");
-    throw std::runtime_error("Unsupported operating system");
-#else
-    if (ctx.m_argset->contains("-staticlib"))
-    {
-        // message(ctx, libquixcc::Err::DEBUG, "Static library output requested");
-        // std::string os_cmd = "ar rcs " + bin_filename + " " + obj_filename;
-        // message(ctx, libquixcc::Err::DEBUG, "Running command: " + os_cmd);
-        // if (system(os_cmd.c_str()) != 0)
-        // {
-        //     message(ctx, libquixcc::Err::ERROR, "Failed to generate static library");
-        //     return false;
-        // }
-        // return true;
-
-        /// TODO: implement static library generation
+        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM Code");
         return false;
     }
 
-    // if not building a static library, do the following
-    std::string flags = "-Wno-override-module ";
-    for (const auto &e : *ctx.m_argset)
+    // Verify the module
+    message(ctx, libquixcc::Err::DEBUG, "Verifying LLVM module");
+    std::string err;
+    llvm::raw_string_ostream err_stream(err);
+
+    if (llvm::verifyModule(*ctx.m_inner->m_module, &err_stream))
     {
-        if (acceptable_bingen_flags.contains(e.first))
-            flags += acceptable_bingen_flags[e.first] + " ";
-        else if (e.first.starts_with("-l"))
-        {
-            message(ctx, libquixcc::Err::DEBUG, "Linking library: " + e.first);
-            flags += e.first + " ";
-        }
+        throw std::runtime_error("LLVM Code generation failed. The AST must have been semantically incorrect: " + err_stream.str());
     }
 
-    std::string filename = std::tmpnam(nullptr) + std::string(".ll");
-    FILE *tmp;
-    if ((tmp = fopen(filename.c_str(), "w")) == nullptr)
+    llvm::legacy::PassManager pass;
+
+    if (TargetMachine->addPassesToEmitFile(pass, os, nullptr, mode))
     {
-        message(ctx, libquixcc::Err::ERROR, "Failed to create temporary file");
+        llvm::errs() << "TheTargetMachine can't emit a file of this type";
         return false;
     }
 
-    if (!write_IR(ctx, ast, tmp))
-    {
-        fclose(tmp);
-        std::filesystem::remove(filename);
-        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
-        return false;
-    }
-    fclose(tmp);
-
-    std::string cmd = "clang " + filename + " -o " + filename + ".out " + flags + " 2> /dev/null";
-    message(ctx, libquixcc::Err::DEBUG, "Clang: " + cmd);
-    if (system(cmd.c_str()) != 0)
-    {
-        message(ctx, libquixcc::Err::ERROR, "Failed to generate executable");
-        return false;
-    }
-
-    std::ifstream ifs(filename + ".out");
-    std::string content((std::istreambuf_iterator<char>(ifs)),
-                        (std::istreambuf_iterator<char>()));
-    std::fwrite(content.c_str(), 1, content.size(), out);
-    std::filesystem::remove(filename);
+    pass.run(*ctx.m_inner->m_module);
+    os.flush();
 
     return true;
 #endif
@@ -304,10 +211,15 @@ bool libquixcc::generate(quixcc_job_t &job, std::shared_ptr<libquixcc::BlockNode
 {
     if (job.m_argset->contains("-emit-ir"))
         return write_IR(job, ast, job.m_out);
-    else if (job.m_argset->contains("-S"))
-        return write_asm(job, ast, job.m_out);
-    else if (job.m_argset->contains("-c"))
-        return write_obj(job, ast, job.m_out);
-    else
-        return write_bin(job, ast, job.m_out);
+
+    if (job.m_argset->contains("-S"))
+        return write_llvm(job, ast, job.m_out, llvm::CGFT_AssemblyFile);
+
+    if (job.m_argset->contains("-c"))
+        return write_llvm(job, ast, job.m_out, llvm::CGFT_ObjectFile);
+
+    /// TODO: Implement binary generation with linker
+
+    throw std::runtime_error("Automatic binary generation is not yet implemented");
+    return false;
 }
