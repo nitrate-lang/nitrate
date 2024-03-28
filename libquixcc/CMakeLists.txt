@@ -47,6 +47,7 @@ foreach(lib ${LLVM_LIBS})
     message(STATUS "Linking with ${lib}")
     target_link_libraries(libquixcc PRIVATE ${lib})
 endforeach()
+target_link_libraries(libquixcc PRIVATE libstdc++.a)
 set_target_properties(libquixcc PROPERTIES OUTPUT_NAME quixcc)
 
 if (BUILD_TESTING)
