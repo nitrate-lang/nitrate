@@ -30,7 +30,7 @@
 
 namespace libquixcc
 {
-    bool write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out);
+    bool write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out, bool generate_bitcode);
     bool write_llvm(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out, llvm::CodeGenFileType mode);
     bool generate(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast);
 };

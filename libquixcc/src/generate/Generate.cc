@@ -31,9 +31,10 @@
 #include <llvm/Support/Host.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Support/TargetSelect.h>
-#include "llvm/Target/TargetOptions.h"
-#include "llvm/MC/TargetRegistry.h"
-#include "llvm/IR/LegacyPassManager.h"
+#include <llvm/Bitcode/BitcodeWriter.h>
+#include <llvm/Target/TargetOptions.h>
+#include <llvm/MC/TargetRegistry.h>
+#include <llvm/IR/LegacyPassManager.h>
 #include <stdlib.h>
 
 static std::map<std::string, std::string> acceptable_asmgen_flags = {
@@ -109,8 +110,10 @@ protected:
     }
 };
 
-bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out)
+bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out, bool generate_bitcode)
 {
+    /// TODO: generate LLVM Bitcode
+
     std::error_code ec;
     CFILE_raw_pwrite_ostream os(out);
 
@@ -133,7 +136,19 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
 
     // Generate the IR
     message(ctx, libquixcc::Err::DEBUG, "Generating LLVM IR");
-    ctx.m_inner->m_module->print(os, nullptr, ctx.m_argset->contains("-g"));
+
+    if (generate_bitcode)
+    {
+        message(ctx, libquixcc::Err::DEBUG, "Generating LLVM Bitcode");
+        llvm::WriteBitcodeToFile(*ctx.m_inner->m_module, os);
+        throw std::runtime_error("LLVM Bitcode generation is not yet implemented");
+
+    }
+    else
+    {
+        message(ctx, libquixcc::Err::DEBUG, "Generating LLVM IR");
+        ctx.m_inner->m_module->print(os, nullptr, ctx.m_argset->contains("-g"));
+    }
 
     message(ctx, libquixcc::Err::DEBUG, "Finished generating LLVM IR");
 
@@ -207,7 +222,10 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
 bool libquixcc::generate(quixcc_job_t &job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     if (job.m_argset->contains("-emit-ir"))
-        return write_IR(job, ast, job.m_out);
+        return write_IR(job, ast, job.m_out, false);
+
+    if (job.m_argset->contains("-emit-bc"))
+        return write_IR(job, ast, job.m_out, true);
 
     if (job.m_argset->contains("-S"))
         return write_llvm(job, ast, job.m_out, llvm::CGFT_AssemblyFile);

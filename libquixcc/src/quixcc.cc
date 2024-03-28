@@ -661,6 +661,7 @@ static bool verify_build_option(const std::string &option, const std::string &va
         "-PREP",         // preprocessor/Lexer output
         "-LEX",          // lexer output (no preprocessing)
         "-emit-ir",      // IR output
+        "-emit-bc",      // bitcode output
         "-c",            // compile only
         "-O0",           // optimization levels
         "-O1",           // optimization levels
