@@ -108,6 +108,7 @@ namespace libquixcc
         size_t visit(RetzStmtNode *node);
         size_t visit(RetvStmtNode *node);
         size_t visit(IfStmtNode *node);
+        size_t visit(WhileStmtNode *node);
     };
 }
 

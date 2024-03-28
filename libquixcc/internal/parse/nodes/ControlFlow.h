@@ -105,6 +105,21 @@ namespace libquixcc
         std::shared_ptr<StmtNode> m_then;
         std::shared_ptr<StmtNode> m_else;
     };
+
+    class WhileStmtNode : public StmtNode
+    {
+    public:
+        WhileStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<StmtNode> &body)
+            : m_cond(cond), m_stmt(body) { ntype = NodeType::WhileStmtNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        std::shared_ptr<ExprNode> m_cond;
+        std::shared_ptr<StmtNode> m_stmt;
+    };
 }
 
 #endif // __QUIXCC_PARSE_NODES_CONTROL_FLOW_H__

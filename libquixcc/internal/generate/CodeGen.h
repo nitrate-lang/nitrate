@@ -99,6 +99,7 @@ namespace libquixcc
         llvm::Value *visit(const RetzStmtNode *node) const;
         llvm::Value *visit(const RetvStmtNode *node) const;
         llvm::Value *visit(const IfStmtNode *node) const;
+        llvm::Value *visit(const WhileStmtNode *node) const;
     };
 };
 

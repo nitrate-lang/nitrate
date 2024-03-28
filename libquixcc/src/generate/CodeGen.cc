@@ -632,14 +632,10 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
         switch (stmt->ntype)
         {
         case NodeType::ReturnStmtNode:
-        {
-            auto n = std::static_pointer_cast<ReturnStmtNode>(stmt);
-
-            if (!n->codegen(*this))
+            if (!std::static_pointer_cast<ReturnStmtNode>(stmt)->codegen(*this))
                 return nullptr;
 
             break;
-        }
         case NodeType::VarDeclNode:
         {
             auto n = std::static_pointer_cast<VarDeclNode>(stmt);
@@ -673,29 +669,25 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
             break;
         }
         case NodeType::IfStmtNode:
-        {
             if (!std::static_pointer_cast<IfStmtNode>(stmt)->codegen(*this))
                 return nullptr;
             break;
-        }
         case NodeType::RetifStmtNode:
-        {
             if (!std::static_pointer_cast<RetifStmtNode>(stmt)->codegen(*this))
                 return nullptr;
             break;
-        }
         case NodeType::RetzStmtNode:
-        {
             if (!std::static_pointer_cast<RetzStmtNode>(stmt)->codegen(*this))
                 return nullptr;
             break;
-        }
         case NodeType::RetvStmtNode:
-        {
             if (!std::static_pointer_cast<RetvStmtNode>(stmt)->codegen(*this))
                 return nullptr;
             break;
-        }
+        case NodeType::WhileStmtNode:
+            if (!std::static_pointer_cast<WhileStmtNode>(stmt)->codegen(*this))
+                return nullptr;
+            break;
         default:
             throw std::runtime_error("Invalid statement type");
         }
@@ -856,6 +848,38 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IfStmtNode *node)
         func->getBasicBlockList().push_back(MergeBB);
         m_ctx->m_builder->SetInsertPoint(MergeBB);
     }
+
+    return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::WhileStmtNode *node) const
+{
+    llvm::Function *func = m_ctx->m_builder->GetInsertBlock()->getParent();
+
+    llvm::BasicBlock *CondBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "", func);
+    llvm::BasicBlock *LoopBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "", func);
+    llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "");
+
+    m_ctx->m_builder->CreateBr(CondBB);
+
+    m_ctx->m_builder->SetInsertPoint(CondBB);
+    llvm::Value *cond = node->m_cond->codegen(*this);
+    if (!cond)
+        return nullptr;
+
+    m_ctx->m_builder->CreateCondBr(cond, LoopBB, MergeBB);
+
+    m_ctx->m_builder->SetInsertPoint(LoopBB);
+    if (!node->m_stmt->codegen(*this))
+        return nullptr;
+
+    if (m_ctx->m_skipbr > 0)
+        m_ctx->m_skipbr--;
+    else
+        m_ctx->m_builder->CreateBr(CondBB);
+
+    func->getBasicBlockList().push_back(MergeBB);
+    m_ctx->m_builder->SetInsertPoint(MergeBB);
 
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }

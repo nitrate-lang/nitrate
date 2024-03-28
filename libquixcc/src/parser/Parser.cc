@@ -124,6 +124,10 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             if (!parse_if(job, scanner, node))
                 return false;
             break;
+        case Keyword::While:
+            if (!parse_while(job, scanner, node))
+                return false;
+            break;
         default:
             break;
         }
