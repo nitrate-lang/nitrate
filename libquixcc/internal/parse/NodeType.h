@@ -108,6 +108,7 @@ namespace libquixcc
         RetvStmtNode,
         IfStmtNode,
         WhileStmtNode,
+        ForStmtNode,
     };
 
     class ParseNode;
@@ -177,6 +178,7 @@ namespace libquixcc
     class RetvStmtNode;
     class IfStmtNode;
     class WhileStmtNode;
+    class ForStmtNode;
 }
 
 #endif // __QUIXCC_PARSE_NODES_NODETYPES_H__

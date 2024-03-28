@@ -37,6 +37,12 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
 
         if (tok == terminator)
         {
+            if (stack.empty())
+            {
+                node = nullptr;
+                return true;
+            }
+
             if (stack.size() != 1)
             {
                 PARMSG(tok, libquixcc::Err::ERROR, "Expected a single expression");
@@ -177,7 +183,6 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 continue;
             }
             break;
-        
         }
         default:
             PARMSG(tok, libquixcc::Err::ERROR, "Unexpected token %s", tok.serialize().c_str());

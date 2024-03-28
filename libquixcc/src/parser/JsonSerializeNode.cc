@@ -441,7 +441,7 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Un
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::EnumDeclNode *node) const
 {
-    return "{\"ntype\":\"EnumDeclNode\",\"type\":" +  node->m_type->to_json(*this) + "}";
+    return "{\"ntype\":\"EnumDeclNode\",\"type\":" + node->m_type->to_json(*this) + "}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::FunctionDeclNode *node) const
@@ -635,4 +635,28 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::If
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::WhileStmtNode *node) const
 {
     return "{\"ntype\":\"WhileStmtNode\",\"cond\":" + node->m_cond->to_json(*this) + ",\"block\":" + node->m_stmt->to_json(*this) + "}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ForStmtNode *node) const
+{
+    std::string str = "{\"ntype\":\"ForStmtNode\"";
+
+    if (node->m_init)
+        str += ",\"init\":" + node->m_init->to_json(*this);
+    else
+        str += ",\"init\":null";
+
+    if (node->m_cond)
+        str += ",\"cond\":" + node->m_cond->to_json(*this);
+    else
+        str += ",\"cond\":null";
+
+    if (node->m_step)
+        str += ",\"step\":" + node->m_step->to_json(*this);
+    else
+        str += ",\"step\":null";
+
+    str += ",\"block\":" + node->m_stmt->to_json(*this);
+
+    return str + "}";
 }

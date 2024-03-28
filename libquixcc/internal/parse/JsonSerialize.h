@@ -99,6 +99,7 @@ namespace libquixcc
         std::string visit(const RetvStmtNode *node) const;
         std::string visit(const IfStmtNode *node) const;
         std::string visit(const WhileStmtNode *node) const;
+        std::string visit(const ForStmtNode *node) const;
     };
 }
 

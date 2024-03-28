@@ -121,6 +121,9 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {TYPEDEF_EXPECTED_SEMICOLON, "Expected a semicolon after the type definition. To fix the issue, insert a semicolon after the type definition. Syntax: type name = type;"},
     {TYPEDEF_NAME_DUPLICATE, "Type name '%s' is already in use. To fix the issue, rename the type to something unique"},
     
+    {FOR_EXPECTED_SEMICOLON, "Expected a semicolon after the for loop condition. To fix the issue, insert a semicolon after the for loop condition"},
+    {FOR_EXPECTED_CLOSING_PARANTHESIS, "Expected a closing parenthesis after the for loop condition. To fix the issue, insert a closing parenthesis after the for loop condition"},
+
     {UNRESOLVED_TYPE, "Type '%s' is not defined in the current scope. To fix the issue, define the type or import the module that defines the type"},
     {RESOLVED_TYPE, "Resolved type '%s' into '%s'"},
 };

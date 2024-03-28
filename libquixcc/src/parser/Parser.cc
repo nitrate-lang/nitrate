@@ -128,6 +128,10 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             if (!parse_while(job, scanner, node))
                 return false;
             break;
+        case Keyword::For:
+            if (!parse_for(job, scanner, node))
+                return false;
+            break;
         default:
             break;
         }
@@ -135,13 +139,6 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
         if (node)
             group->m_stmts.push_back(node);
     }
-
-    // llvm::FunctionType *funcType = llvm::FunctionType::get(llvm::Type::getVoidTy(llvm_ctx), false);
-    // llvm::Function *mainFunc = llvm::Function::Create(funcType, llvm::Function::ExternalLinkage, "main", &module);
-
-    // llvm::BasicBlock *entry = llvm::BasicBlock::Create(llvm_ctx, "entry", mainFunc);
-    // builder.SetInsertPoint(entry);
-    // builder.CreateRetVoid();
 
     return true;
 }
