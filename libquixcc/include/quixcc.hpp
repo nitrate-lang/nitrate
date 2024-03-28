@@ -27,6 +27,55 @@
 
 namespace quixcc
 {
+
+    /**
+     * @brief Exception class for handling errors related to target triple.
+     */
+    class TargetTripleException : public std::runtime_error
+    {
+    public:
+        TargetTripleException(const std::string &msg) : std::runtime_error(msg) {}
+    };
+
+    class TargetTriple
+    {
+        std::string m_triple;
+
+    public:
+        /**
+         * @brief Default constructor.
+         *
+         * Initializes a TargetTriple object with default settings.
+         *
+         * @param triple The LLVM target triple.
+         * @throw TargetTripleException if the target triple is invalid.
+         * @note Will validate the target triple against the LLVM TargetRegistry.
+         * @note An empty string is a special case and will use the Host Target Triple returned by `llvm::sys::getDefaultTargetTriple()`.
+         */
+        TargetTriple(const std::string &triple = "") { TargetTriple(triple.c_str()); }
+
+        /**
+         * @brief Default constructor.
+         *
+         * Initializes a TargetTriple object with default settings.
+         *
+         * @param triple The LLVM target triple.
+         * @throw TargetTripleException if the target triple is invalid.
+         * @note Will validate the target triple against the LLVM TargetRegistry.
+         * @note An empty string is a special case and will use the Host Target Triple returned by `llvm::sys::getDefaultTargetTriple()`.
+         */
+        TargetTriple(const char *triple);
+
+        /**
+         * @brief Get the target triple.
+         *
+         * Retrieves the LLVM target triple.
+         *
+         * @return The LLVM target triple.
+         */
+        const std::string &triple() const { return m_triple; }
+    };
+
     /**
      * @brief Compiler class for managing compilation jobs.
      *
@@ -107,22 +156,6 @@ namespace quixcc
         Compiler done() const;
     };
 
-    enum class Target
-    {
-        LINTER,
-        IR,
-        IR_BITCODE,
-        ASSEMBLY,
-        OBJECT,
-        EXECUTABLE,
-        UPX_COMPRESSED_EXECUTABLE,
-        SHELLCODE,
-        SHARED_LIBRARY,
-        STATIC_LIBRARY,
-        DOCUMENTATION,
-        QUIXCC_TARGET_DEFAULT = Target::EXECUTABLE
-    };
-
     /**
      * @brief Builder class for constructing Compiler objects with specific configurations.
      *
@@ -136,7 +169,7 @@ namespace quixcc
         std::vector<std::string> m_oscmds;                   ///< Vector to store OS commands for post-compilation tasks.
         FILE *m_input;                                       ///< Input stream for providing source code directly.
         FILE *m_output;                                      ///< Output stream for capturing compiled output.
-        Target m_target;                                     ///< Target platform for compilation.
+        TargetTriple m_target;                               ///< Target platform for compilation.
         bool m_verbose;                                      ///< Flag indicating verbosity level.
         bool m_debug;                                        ///< Flag indicating debug mode.
         bool m_disregard;                                    ///< Flag indicating whether to disregard output from compilation.
@@ -254,23 +287,23 @@ namespace quixcc
 
         /**
          * @brief Disregard output from compilation.
-         * 
+         *
          * Sets the flag to disregard output from compilation.
-         * 
+         *
          * @param disregard Flag indicating whether to disregard output from compilation (default is true).
          * @return Reference to the CompilerBuilder object.
-        */
+         */
         CompilerBuilder &disregard(bool disregard = true);
 
         /**
-         * @brief Set target for compilation.
+         * @brief Set target triple for compilation.
          *
-         * Sets the target for compilation.
+         * Sets the target triple for compilation.
          *
-         * @param target The target.
+         * @param target The LLVM target triple.
          * @return Reference to the CompilerBuilder object.
          */
-        CompilerBuilder &target(Target target);
+        CompilerBuilder &target(TargetTriple target);
 
         /**
          * @brief Set verbosity level.

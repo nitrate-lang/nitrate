@@ -31,6 +31,8 @@
 #include <LibMacro.h>
 #include <llvm/LLVMWrapper.h>
 #include <llvm/Support/TargetSelect.h>
+#include <llvm/Support/Host.h>
+#include <llvm/MC/TargetRegistry.h>
 #include <generate/Generate.h>
 #include <lexer/Lex.h>
 #include <prep/Preprocesser.h>
@@ -227,6 +229,38 @@ LIB_EXPORT void quixcc_set_input(quixcc_job_t *job, FILE *in, const char *filena
 
     job->m_in = in;
     job->m_filename = safe_strdup(filename);
+}
+
+LIB_EXPORT bool quixcc_set_triple(quixcc_job_t *job, const char *_triple)
+{
+    if (!job || !_triple)
+        return false;
+
+    if (!quixcc_triple(_triple))
+        return false;
+
+    job->m_triple = _triple;
+
+    return true;
+}
+
+LIB_EXPORT bool quixcc_triple(const char *_triple)
+{
+    if (!_triple)
+        return false;
+
+    try
+    {
+        if (_triple[0] == '\0')
+            return !llvm::sys::getDefaultTargetTriple().empty();
+
+        std::string err;
+        return llvm::TargetRegistry::lookupTarget(_triple, err) != nullptr;
+    }
+    catch (std::exception &)
+    {
+        return false;
+    }
 }
 
 LIB_EXPORT void quixcc_set_output(quixcc_job_t *job, FILE *out)

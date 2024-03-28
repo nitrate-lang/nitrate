@@ -1,6 +1,8 @@
 // This code is horrible
 // ill come back to it later
-/// TODO: fix this code
+/// TODO: Finish implementing the rest of the modes
+/// TODO: polish the frontend
+/// TODO: considier writing a python wrapper library for libquixcc.so
 
 #include <string>
 #include <vector>

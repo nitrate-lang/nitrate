@@ -22,8 +22,31 @@
 #include <LibMacro.h>
 #include <thread>
 #include <fstream>
+#include <llvm/Support/Host.h>
+#include "llvm/MC/TargetRegistry.h"
 
 #include <sys/mman.h>
+
+LIB_CXX_EXPORT quixcc::TargetTriple::TargetTriple(const char *_triple)
+{
+    if (!_triple)
+        throw TargetTripleException("Invalid or unsupported LLVM target triple: (null)");
+
+    std::string triple = _triple;
+
+    if (triple[0] == '\0')
+    {
+        m_triple = llvm::sys::getDefaultTargetTriple();
+    }
+    else
+    {
+        std::string err;
+        if (!llvm::TargetRegistry::lookupTarget(triple, err))
+            throw TargetTripleException("Invalid or unsupported LLVM target triple: " + triple);
+
+        m_triple = triple;
+    }
+}
 
 LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs, std::vector<std::string> oscmds)
 {
@@ -121,7 +144,7 @@ LIB_CXX_EXPORT bool quixcc::Compiler::ok() const
 LIB_CXX_EXPORT quixcc::CompilerBuilder::CompilerBuilder()
 {
     m_verbose = m_debug = false;
-    m_target = Target::EXECUTABLE;
+    m_target = ""; // Host target
     m_input = m_output = nullptr;
 }
 
@@ -192,7 +215,7 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::post(const std:
     std::string pre;
     for (auto &arg : args)
         pre += "export " + arg + ";";
-    
+
     m_oscmds.push_back(pre + cmd);
     return *this;
 }
@@ -203,7 +226,7 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::disregard(bool 
     return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::target(quixcc::Target target)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::target(quixcc::TargetTriple target)
 {
     m_target = target;
     return *this;
@@ -258,21 +281,19 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
 
         quixcc_set_input(job, entry.first, entry.second.c_str());
 
-        switch (m_target)
-        {
-            /// TODO: Implement other targets
-        default:
-            break;
+        if (!quixcc_set_triple(job, m_target.triple().c_str()))
+            throw std::runtime_error("Failed to set target triple.");
 
-            /*
-                Handle this:
-                    src_0 -> job_0 -> out_0   ->
-                    src_1 -> job_1 -> out_1      ->
-                                                     -> Custom linker command
-                    src_2 -> job_2 -> out_2      ->
-                    src_n -> job_n -> out_n   ->
-            */
-        }
+        /// TODO: Implement other targets
+
+        /*
+            Handle this:
+                src_0 -> job_0 -> out_0   ->
+                src_1 -> job_1 -> out_1      ->
+                                                 -> Custom linker command
+                src_2 -> job_2 -> out_2      ->
+                src_n -> job_n -> out_n   ->
+        */
 
         quixcc_set_output(job, m_output);
 

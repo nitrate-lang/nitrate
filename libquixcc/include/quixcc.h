@@ -102,6 +102,7 @@ typedef struct quixcc_job_t
     uint8_t m_priority;
     std::shared_ptr<libquixcc::LLVMContext> m_inner;
     std::map<std::string, std::string> *m_argset;
+    std::string m_triple;
     bool m_debug;
     bool m_tainted;
 } quixcc_job_t;
@@ -114,13 +115,13 @@ typedef struct quixcc_job_t quixcc_job_t;
 
     /**
      * @brief Initialize the QUIX compiler library.
-     * 
+     *
      * This function initializes the QUIX compiler library and must be called before any other functions.
-     * 
+     *
      * @return true if the library was initialized successfully.
      * @note This function is thread-safe.
      * @note It is okay to call this function multiple times. All calls after the first are no-ops.
-    */
+     */
     bool quixcc_init();
 
     /**
@@ -188,6 +189,33 @@ typedef struct quixcc_job_t quixcc_job_t;
      * @note This function is thread-safe.
      */
     void quixcc_set_input(quixcc_job_t *job, FILE *in, const char *filename);
+
+    /**
+     * @brief Set the LLVM Target Triple for a compiler job.
+     *
+     * This function sets the LLVM Target Triple for the given compiler job.
+     *
+     * @param job The compiler job.
+     * @param triple The LLVM Target Triple.
+     * @return true if the triple was set successfully. false if the triple is invalid or unknown.
+     * @warning An empty string is a special case and will use the Host Target Triple returned by `llvm::sys::getDefaultTargetTriple()`.
+     * @note This function will validate the triple before setting it and will check if it is supported.
+     * @note Is is okay to set the triple multiple times. The last valid triple will be used.
+     * @note This function is thread-safe.
+     */
+    bool quixcc_set_triple(quixcc_job_t *job, const char *triple);
+
+    /**
+     * @brief Check if a LLVM Target Triple is valid.
+     *
+     * This function checks if the given LLVM Target Triple is valid.
+     *
+     * @param triple The LLVM Target Triple.
+     * @return true if the triple is valid. false if the triple is invalid or unknown.
+     * @warning An empty string is a special case and will use the Host Target Triple returned by `llvm::sys::getDefaultTargetTriple()`.
+     * @note This function is thread-safe.
+     */
+    bool quixcc_triple(const char *triple);
 
     /**
      * @brief Set the output stream for a compiler job.

@@ -779,7 +779,6 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
                 }
             }
 
-            /// TODO: Optimise this
             if (!reduce_identifier(buffer))
             {
                 m_tok = Token(TokenType::Unknown, buffer, m_loc - buffer.size());

@@ -18,8 +18,6 @@
 
 #define QUIXCC_INTERNAL
 
-/// TODO: make this code less horrible
-
 #include <generate/Generate.h>
 #include <generate/CodeGen.h>
 #include <stdlib.h>
@@ -31,7 +29,6 @@
 
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/Host.h>
-#include <llvm/Support/TargetSelect.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Support/TargetSelect.h>
 #include "llvm/Target/TargetOptions.h"
@@ -149,7 +146,7 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
     message(ctx, libquixcc::Err::FATAL, "Unsupported operating system");
     throw std::runtime_error("Unsupported operating system");
 #else
-    auto TargetTriple = llvm::sys::getDefaultTargetTriple();
+    auto &TargetTriple = ctx.m_triple;
 
     std::string Error;
     auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);

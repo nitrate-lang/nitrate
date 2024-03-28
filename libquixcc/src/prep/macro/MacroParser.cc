@@ -60,7 +60,7 @@ bool libquixcc::MacroParser::parse(const libquixcc::Token &macro, std::vector<li
     }
     else if (macro.type() == TokenType::MacroBlock)
     {
-        /// TODO: fix this
+        /// TODO: implement block macro parsing
         return parse(Token(TokenType::MacroSingleLine, content), exp);
     }
     else
