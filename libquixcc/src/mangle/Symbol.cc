@@ -45,6 +45,8 @@ std::string libquixcc::Symbol::mangle(const libquixcc::DeclNode *node, const std
         return mangle_c(node, prefix);
     case ExportLangType::CXX:
         return mangle_cxx(node, prefix);
+    case ExportLangType::DLang:
+        throw std::runtime_error("DLang export not yet supported");
     default:
         throw std::runtime_error("Invalid export language type");
     }

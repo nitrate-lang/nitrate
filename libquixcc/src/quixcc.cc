@@ -685,7 +685,7 @@ static bool verify_build_option(const std::string &option, const std::string &va
         // -D<name>[=<value>]
         {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex("[a-zA-Z0-9_ ]*")},
         {std::regex("-l[a-zA-Z0-9_]*"), std::regex("")},
-        {std::regex("-I[a-zA-Z0-9_]*"), std::regex("")},
+        {std::regex("-I.+"), std::regex("")},
     };
 
     if (static_options.contains(option))
