@@ -38,5 +38,5 @@ void libquixcc::mutate::ConvertTypes(quixcc_job_t *job, std::shared_ptr<libquixc
 
             /// TODO: Implement type conversion logic here.
         },
-        job->m_inner->prefix));
+        job->m_inner.prefix));
 }

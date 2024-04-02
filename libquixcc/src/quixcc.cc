@@ -751,10 +751,10 @@ static bool build_argmap(quixcc_job_t *job)
 
 LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
 {
-    if (!job->m_in || !job->m_out || !job->m_filename || job->m_inner != nullptr)
+    if (!job->m_in || !job->m_out || !job->m_filename)
         return false;
 
-    job->m_inner = std::make_shared<libquixcc::LLVMContext>(job->m_filename);
+    job->m_inner.setup(job->m_filename);
     job->m_result = (quixcc_result_t *)safe_malloc(sizeof(quixcc_result_t));
     memset(job->m_result, 0, sizeof(quixcc_result_t));
 

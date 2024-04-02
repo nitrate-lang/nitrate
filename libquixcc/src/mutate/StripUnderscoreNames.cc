@@ -54,5 +54,5 @@ void libquixcc::mutate::StripUnderscoreNames(quixcc_job_t *job, std::shared_ptr<
                 break;
             }
         },
-        job->m_inner->prefix));
+        job->m_inner.prefix));
 }

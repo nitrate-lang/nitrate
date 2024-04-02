@@ -47,6 +47,8 @@ namespace libquixcc
 
     class LLVMContext
     {
+        LLVMContext(const LLVMContext &) = delete;
+        LLVMContext &operator=(const LLVMContext &) = delete;
 
     public:
         std::shared_ptr<llvm::LLVMContext> m_ctx;
@@ -57,12 +59,16 @@ namespace libquixcc
         std::map<std::string, std::pair<llvm::AllocaInst *, llvm::Type *>> m_named_stack_vars;
         std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
         std::map<std::string, llvm::BasicBlock *> m_named_blocks;
-        std::string prefix = "";
+        std::string prefix;
         bool m_pub = false;
         size_t m_skipbr = 0;
         ExportLangType m_lang = ExportLangType::Default;
 
-        LLVMContext(const std::string &filename)
+        LLVMContext()
+        {
+        }
+
+        void setup(const std::string &filename)
         {
             m_ctx = std::make_shared<llvm::LLVMContext>();
             m_module = std::make_shared<llvm::Module>(filename, *m_ctx);

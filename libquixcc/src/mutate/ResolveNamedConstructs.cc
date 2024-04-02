@@ -40,13 +40,13 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
             libquixcc::UserTypeNode *user_type = *user_type_ptr;
             std::string name = user_type->m_name;
 
-            if (!job->m_inner->m_named_types.contains(user_type->m_name))
+            if (!job->m_inner.m_named_types.contains(user_type->m_name))
             {
                 semanticmsg(*job, Err::ERROR, false, feedback[UNRESOLVED_TYPE], user_type->m_name.c_str());
                 return;
             }
 
-            auto named_type = job->m_inner->m_named_types[user_type->m_name];
+            auto named_type = job->m_inner.m_named_types[user_type->m_name];
             TypeNode *type = nullptr;
 
             switch (named_type->ntype)
@@ -71,7 +71,7 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
 
             semanticmsg(*job, Err::DEBUG, false, feedback[RESOLVED_TYPE], name.c_str(), type->to_json(ParseNodeJsonSerializerVisitor()).c_str());
         },
-        job->m_inner->prefix));
+        job->m_inner.prefix));
 }
 
 static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
@@ -84,14 +84,14 @@ static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::Bl
 
             auto ident = std::static_pointer_cast<libquixcc::IdentifierNode>(*node);
 
-            if (!job->m_inner->m_named_construsts.contains(std::make_pair(NodeType::EnumFieldNode, ident->m_name)))
+            if (!job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::EnumFieldNode, ident->m_name)))
                 return;
 
-            auto enum_field = std::static_pointer_cast<libquixcc::EnumFieldNode>(job->m_inner->m_named_construsts[std::make_pair(NodeType::EnumFieldNode, ident->m_name)]);
+            auto enum_field = std::static_pointer_cast<libquixcc::EnumFieldNode>(job->m_inner.m_named_construsts[std::make_pair(NodeType::EnumFieldNode, ident->m_name)]);
 
             *node = enum_field->m_value;
         },
-        job->m_inner->prefix));
+        job->m_inner.prefix));
 }
 
 void libquixcc::mutate::ResolveNamedConstructs(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)

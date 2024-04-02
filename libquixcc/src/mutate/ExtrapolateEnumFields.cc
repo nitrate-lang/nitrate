@@ -59,5 +59,5 @@ void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr
                 def->m_fields[i]->m_value = last;
             }
         },
-        job->m_inner->prefix));
+        job->m_inner.prefix));
 }

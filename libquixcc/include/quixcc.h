@@ -90,7 +90,7 @@ typedef struct quixcc_job_t
 {
     std::map<std::string, std::string> m_argset;
     std::string m_triple;
-    std::shared_ptr<libquixcc::LLVMContext> m_inner;
+    libquixcc::LLVMContext m_inner;
     quixcc_uuid_t m_id;
     quixcc_options_t m_options;
     quixcc_result_t *m_result;

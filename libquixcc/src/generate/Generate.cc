@@ -90,7 +90,7 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
     CFILE_raw_pwrite_ostream os(out);
 
     // Generate code for AST
-    if (!ast->codegen(CodegenVisitor(ctx.m_inner.get())))
+    if (!ast->codegen(CodegenVisitor(ctx.m_inner)))
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
         return false;
@@ -101,7 +101,7 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
     llvm::raw_string_ostream err_stream(err);
 
     // Verify the module
-    if (llvm::verifyModule(*ctx.m_inner->m_module, &err_stream))
+    if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
         throw std::runtime_error("LLVM IR generation failed. The AST must have been semantically incorrect: " + err_stream.str());
 
     message(ctx, libquixcc::Err::DEBUG, "Generating LLVM IR");
@@ -115,7 +115,7 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
     else
     {
         message(ctx, libquixcc::Err::DEBUG, "Generating LLVM IR");
-        ctx.m_inner->m_module->print(os, nullptr, ctx.m_argset.contains("-g"));
+        ctx.m_inner.m_module->print(os, nullptr, ctx.m_argset.contains("-g"));
     }
 
     message(ctx, libquixcc::Err::DEBUG, "Finished generating LLVM IR");
@@ -148,14 +148,14 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
     llvm::TargetOptions opt;
     auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, llvm::Reloc::PIC_);
 
-    ctx.m_inner->m_module->setDataLayout(TargetMachine->createDataLayout());
-    ctx.m_inner->m_module->setTargetTriple(TargetTriple);
+    ctx.m_inner.m_module->setDataLayout(TargetMachine->createDataLayout());
+    ctx.m_inner.m_module->setTargetTriple(TargetTriple);
 
     std::error_code ec;
     CFILE_raw_pwrite_ostream os(out);
 
     // Generate code for AST
-    if (!ast->codegen(CodegenVisitor(ctx.m_inner.get())))
+    if (!ast->codegen(CodegenVisitor(ctx.m_inner)))
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM Code");
         return false;
@@ -166,7 +166,7 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
     llvm::raw_string_ostream err_stream(err);
 
     // Verify the module
-    if (llvm::verifyModule(*ctx.m_inner->m_module, &err_stream))
+    if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
         throw std::runtime_error("LLVM Code generation failed. The AST must have been semantically incorrect: " + err_stream.str());
 
     llvm::legacy::PassManager pass;
@@ -179,7 +179,7 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
         return false;
     }
 
-    pass.run(*ctx.m_inner->m_module);
+    pass.run(*ctx.m_inner.m_module);
     os.flush();
 
     return true;

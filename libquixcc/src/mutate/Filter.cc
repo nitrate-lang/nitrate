@@ -54,7 +54,7 @@ static void filter_tree(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode>
                 break;
             }
         },
-        job->m_inner->prefix));
+        job->m_inner.prefix));
 }
 
 void libquixcc::mutate::FilterNonGeneratable(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
