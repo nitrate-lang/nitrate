@@ -20,6 +20,7 @@
 #define __QUIXCC_HPP__
 
 #include <vector>
+#include <set>
 #include <string>
 #include <memory>
 #include <iostream>
@@ -38,7 +39,7 @@ namespace quixcc
         std::string m_triple;
 
     public:
-        TargetTriple(const std::string &triple = "") { TargetTriple(triple.c_str()); }
+        TargetTriple(const std::string &triple = "") : m_triple(triple.c_str()) {}
 
         TargetTriple(const char *triple);
 
@@ -56,7 +57,6 @@ namespace quixcc
     {
         NONE = 0,
         SIZE = 10,
-        AGGRESSIVE_SIZE = 20,
         SPEED_1 = 30,
         SPEED_2 = 40,
         SPEED_3 = 50,
@@ -66,6 +66,7 @@ namespace quixcc
     class Compiler
     {
         std::vector<quixcc_job_t *> m_jobs;
+        std::set<FILE *> m_to_close;
         std::vector<std::pair<std::string, enum quixcc_msg_level_t>> m_messages;
         bool m_ok;
 
@@ -74,29 +75,28 @@ namespace quixcc
         Compiler &operator=(const Compiler &) = delete;
 
     public:
-        Compiler(std::vector<quixcc_job_t *> jobs);
+        Compiler(std::vector<quixcc_job_t *> jobs, std::set<FILE *> to_close);
 
         ~Compiler();
 
         Compiler &run(size_t max_threads = 4);
 
-        const std::vector<std::pair<std::string, enum quixcc_msg_level_t>> &messages() const;
+        const std::vector<std::pair<std::string, enum quixcc_msg_level_t>> &messages() const { return m_messages; }
 
         Compiler &puts(std::ostream &normal = std::cout, std::ostream &error = std::cerr);
 
-        bool ok() const;
-
-        Compiler done() const;
+        bool ok() const { return m_ok; }
     };
 
     class CompilerBuilder
     {
         std::vector<std::pair<FILE *, std::string>> m_files;
         std::vector<std::string> m_flags;
-        Verbosity m_verbose;
-        TargetTriple m_target;
+        std::set<FILE *> m_to_close;
         FILE *m_input;
         FILE *m_output;
+        Verbosity m_verbose;
+        TargetTriple m_target;
         bool m_disregard;
 
     public:

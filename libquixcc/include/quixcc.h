@@ -60,29 +60,12 @@ extern "C"
         enum quixcc_msg_level_t m_level;
     };
 
-    struct quixcc_feedback_t
+    struct quixcc_result_t
     {
         struct quixcc_msg_t **m_messages;
         uint32_t m_count;
-    };
-
-    struct quixcc_result_t
-    {
-        struct quixcc_feedback_t m_feedback;
         bool m_success;
     };
-
-    typedef struct quixcc_options_t
-    {
-        const char **m_options;
-        uint32_t m_count;
-    } quixcc_options_t;
-
-    typedef struct quixcc_uuid_t
-    {
-        uint64_t m_low;
-        uint64_t m_high;
-    } quixcc_uuid_t;
 
 #if defined(__cplusplus) && defined(QUIXCC_INTERNAL)
 }
@@ -91,18 +74,30 @@ extern "C"
 #include <string>
 #include <llvm/LLVMWrapper.h>
 
+typedef struct quixcc_options_t
+{
+    const char **m_options;
+    uint32_t m_count;
+} quixcc_options_t;
+
+typedef struct quixcc_uuid_t
+{
+    uint64_t m_low;
+    uint64_t m_high;
+} quixcc_uuid_t;
+
 typedef struct quixcc_job_t
 {
+    std::map<std::string, std::string> m_argset;
+    std::string m_triple;
+    std::shared_ptr<libquixcc::LLVMContext> m_inner;
     quixcc_uuid_t m_id;
     quixcc_options_t m_options;
     quixcc_result_t *m_result;
     FILE *m_in;
     FILE *m_out;
-    const char *m_filename;
+    char *m_filename;
     uint8_t m_priority;
-    std::shared_ptr<libquixcc::LLVMContext> m_inner;
-    std::map<std::string, std::string> *m_argset;
-    std::string m_triple;
     bool m_debug;
     bool m_tainted;
 } quixcc_job_t;

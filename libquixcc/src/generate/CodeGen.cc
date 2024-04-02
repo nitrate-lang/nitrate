@@ -795,7 +795,6 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::RetvStmtNode *nod
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IfStmtNode *node) const
 {
-    /// TODO: fix this. Return value is not working correctly. Must allocate first.
     llvm::Value *cond = node->m_cond->codegen(*this);
     if (!cond)
         return nullptr;

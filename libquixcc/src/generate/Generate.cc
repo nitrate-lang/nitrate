@@ -31,21 +31,10 @@
 #include <llvm/Support/Host.h>
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Support/TargetSelect.h>
-#include <llvm/Bitcode/BitcodeWriter.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <stdlib.h>
-
-static std::map<std::string, std::string> acceptable_asmgen_flags = {
-    {"-O0", "-O0"},
-    {"-O1", "-O1"},
-    {"-O2", "-O2"},
-    {"-O3", "-O3"},
-    {"-g", "-g"},
-    {"-v", "-v"},
-    {"-fPIC", "-fPIC"},
-    {"-fPIE", "-fPIE"}};
 
 static std::map<std::string, std::string> acceptable_objgen_flags = {
     {"-O0", "-O0"},
@@ -57,21 +46,6 @@ static std::map<std::string, std::string> acceptable_objgen_flags = {
     {"-flto", "-flto"},
     {"-fPIC", "-fPIC"},
     {"-fPIE", "-fPIE"}};
-
-static std::map<std::string, std::string> acceptable_bingen_flags = {
-    {"-O0", "-O0"},
-    {"-O1", "-O1"},
-    {"-O2", "-O2"},
-    {"-O3", "-O3"},
-    {"-g", "-g"},
-    {"-v", "-v"},
-    {"-flto", "-flto"},
-    {"-static", "-static"},
-    {"-shared", "-shared"},
-    {"-fPIC", "-fPIC"},
-    {"-fPIE", "-fPIE"},
-    {"-nostdlib", "-nostdlib"},
-    {"-nostartfiles", "-nostartfiles"}};
 
 class CFILE_raw_pwrite_ostream : public llvm::raw_pwrite_stream
 {
@@ -112,42 +86,36 @@ protected:
 
 bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out, bool generate_bitcode)
 {
-    /// TODO: generate LLVM Bitcode
-
     std::error_code ec;
     CFILE_raw_pwrite_ostream os(out);
 
-    // Add root nodes to the LLVMContext
+    // Generate code for AST
     if (!ast->codegen(CodegenVisitor(ctx.m_inner.get())))
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
         return false;
     }
 
-    // Verify the module
     message(ctx, libquixcc::Err::DEBUG, "Verifying LLVM module");
     std::string err;
     llvm::raw_string_ostream err_stream(err);
 
+    // Verify the module
     if (llvm::verifyModule(*ctx.m_inner->m_module, &err_stream))
-    {
         throw std::runtime_error("LLVM IR generation failed. The AST must have been semantically incorrect: " + err_stream.str());
-    }
 
-    // Generate the IR
     message(ctx, libquixcc::Err::DEBUG, "Generating LLVM IR");
 
     if (generate_bitcode)
     {
         message(ctx, libquixcc::Err::DEBUG, "Generating LLVM Bitcode");
-        llvm::WriteBitcodeToFile(*ctx.m_inner->m_module, os);
         throw std::runtime_error("LLVM Bitcode generation is not yet implemented");
-
+        message(ctx, libquixcc::Err::DEBUG, "Finished generating LLVM Bitcode");
     }
     else
     {
         message(ctx, libquixcc::Err::DEBUG, "Generating LLVM IR");
-        ctx.m_inner->m_module->print(os, nullptr, ctx.m_argset->contains("-g"));
+        ctx.m_inner->m_module->print(os, nullptr, ctx.m_argset.contains("-g"));
     }
 
     message(ctx, libquixcc::Err::DEBUG, "Finished generating LLVM IR");
@@ -163,12 +131,11 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
 #else
     auto &TargetTriple = ctx.m_triple;
 
+    message(ctx, libquixcc::Err::DEBUG, "Generating code for target: %s", TargetTriple.c_str());
+
     std::string Error;
     auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
 
-    // Print an error and exit if we couldn't find the requested target.
-    // This generally occurs if we've forgotten to initialise the
-    // TargetRegistry or we have a bogus target triple.
     if (!Target)
     {
         llvm::errs() << Error;
@@ -187,24 +154,24 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
     std::error_code ec;
     CFILE_raw_pwrite_ostream os(out);
 
-    // Add root nodes to the LLVMContext
+    // Generate code for AST
     if (!ast->codegen(CodegenVisitor(ctx.m_inner.get())))
     {
         message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM Code");
         return false;
     }
 
-    // Verify the module
     message(ctx, libquixcc::Err::DEBUG, "Verifying LLVM module");
     std::string err;
     llvm::raw_string_ostream err_stream(err);
 
+    // Verify the module
     if (llvm::verifyModule(*ctx.m_inner->m_module, &err_stream))
-    {
         throw std::runtime_error("LLVM Code generation failed. The AST must have been semantically incorrect: " + err_stream.str());
-    }
 
     llvm::legacy::PassManager pass;
+
+    /// TODO: Add optimization levels
 
     if (TargetMachine->addPassesToEmitFile(pass, os, nullptr, mode))
     {
@@ -221,20 +188,18 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
 
 bool libquixcc::generate(quixcc_job_t &job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    if (job.m_argset->contains("-emit-ir"))
+    if (job.m_argset.contains("-emit-ir"))
         return write_IR(job, ast, job.m_out, false);
 
-    if (job.m_argset->contains("-emit-bc"))
+    if (job.m_argset.contains("-emit-bc"))
         return write_IR(job, ast, job.m_out, true);
 
-    if (job.m_argset->contains("-S"))
+    if (job.m_argset.contains("-S"))
         return write_llvm(job, ast, job.m_out, llvm::CGFT_AssemblyFile);
 
-    if (job.m_argset->contains("-c"))
+    if (job.m_argset.contains("-c"))
         return write_llvm(job, ast, job.m_out, llvm::CGFT_ObjectFile);
 
-    /// TODO: Implement binary generation with linker
-
-    throw std::runtime_error("Automatic binary generation is not yet implemented");
+    message(job, libquixcc::Err::FATAL, "Output format was not specified. Expected: [-emit-ir, -emit-bc, -S, -c]");
     return false;
 }

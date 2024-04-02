@@ -32,14 +32,14 @@ static bool __G_is_color_enabled = getenv("QUIXCC_COLOR") == nullptr;
 
 static void push_message_to_job(quixcc_job_t &job, Err type, const std::string &message)
 {
-    job.m_result->m_feedback.m_messages = (quixcc_msg_t **)realloc(job.m_result->m_feedback.m_messages, (job.m_result->m_feedback.m_count + 1) * sizeof(quixcc_msg_t *));
+    job.m_result->m_messages = (quixcc_msg_t **)realloc(job.m_result->m_messages, (job.m_result->m_count + 1) * sizeof(quixcc_msg_t *));
     quixcc_msg_t *msg = (quixcc_msg_t *)malloc(sizeof(quixcc_msg_t));
     msg->line = 0;
     msg->column = 0;
     msg->message = strdup(message.c_str());
     msg->m_level = (quixcc_msg_level_t)type;
-    job.m_result->m_feedback.m_messages[job.m_result->m_feedback.m_count] = msg;
-    job.m_result->m_feedback.m_count++;
+    job.m_result->m_messages[job.m_result->m_count] = msg;
+    job.m_result->m_count++;
 }
 
 static bool is_color_enabled()

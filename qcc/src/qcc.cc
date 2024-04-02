@@ -1,9 +1,3 @@
-// This code is horrible
-// ill come back to it later
-/// TODO: Finish implementing the rest of the modes
-/// TODO: polish the frontend
-/// TODO: considier writing a python wrapper library for libquixcc.so
-
 #include <string>
 #include <vector>
 #include <iostream>
@@ -70,6 +64,7 @@ struct Options
     std::vector<std::string> undefines;
     std::vector<std::string> settings;
     std::vector<std::string> sources;
+    std::string target_triple;
     std::map<std::string, std::string> defines;
     std::string output;
     quixcc::Verbosity verbosity;
@@ -88,7 +83,37 @@ struct Options
 
     bool validate()
     {
-        return true;
+        switch (mode)
+        {
+        case OperatingMode::ERROR:
+            return false;
+        case OperatingMode::DISP_HELP:
+        case OperatingMode::DISP_VERSION:
+        case OperatingMode::DISP_LICENSE:
+            return true;
+        case OperatingMode::IR:
+        case OperatingMode::IR_BITCODE:
+            /// TODO: validate
+            return true;
+        case OperatingMode::ASSEMBLY:
+        case OperatingMode::OBJECT:
+            /// TODO: validate
+            return true;
+        case OperatingMode::EXECUTABLE:
+            /// TODO: validate
+            return true;
+        case OperatingMode::SHELLCODE:
+            /// TODO: validate
+            return true;
+        case OperatingMode::SHARED_LIBRARY:
+            /// TODO: validate
+            return false;
+        case OperatingMode::STATIC_LIBRARY:
+            /// TODO: validate
+            return false;
+        default:
+            return false;
+        }
     }
 };
 
@@ -111,6 +136,7 @@ static void print_help()
     println("  -l<name>                  Link with library <name>");
     println("  -D<name>[=<value>]        Define macro <name> with optional <value>");
     println("  -U<name>                  Undefine macro <name>");
+    println("  -T, --target <triple>     Specify the LLVM target triple");
     println("  -emit-ir                  Emit the intermediate representation (LLVM IR)");
     println("  -emit-bc                  Emit the intermediate representation (LLVM bitcode)");
     println("  -S                        Compile only; do not assemble or link");
@@ -118,11 +144,6 @@ static void print_help()
     println("  -g                        Generate debug information");
     println("  -O0                       Disable all optimizations");
     println("  -Os                       Optimize for size");
-    println("  -Oz                       Optimize for size (aggressive). Will apply post-processing");
-    println("                            to the ELF file stripping unnecessary sections, applying");
-    println("                            compression, and modifying the ELF header to reduce the file");
-    println("                            size.");
-    println("                            This may break compatibility with some tools and platforms.");
     println("  -O1                       Optimize for speed (level 1); default");
     println("  -O2                       Optimize for speed (level 2)");
     println("  -O3                       Optimize for speed (level 3)");
@@ -280,6 +301,16 @@ static std::optional<Options> parse_options(const std::vector<std::string> &args
             }
             options.undefines.push_back(sub);
         }
+        else if (*it == "-T" || *it == "--target")
+        {
+            if (++it == args.end())
+            {
+                std::cerr << "Error: missing argument for -T" << std::endl;
+                return std::nullopt;
+            }
+
+            options.target_triple = *it;
+        }
         else if (*it == "-emit-ir")
         {
             options.mode = OperatingMode::IR;
@@ -307,10 +338,6 @@ static std::optional<Options> parse_options(const std::vector<std::string> &args
         else if (*it == "-Os")
         {
             options.optimization = quixcc::OptimizationLevel::SIZE;
-        }
-        else if (*it == "-Oz")
-        {
-            options.optimization = quixcc::OptimizationLevel::AGGRESSIVE_SIZE;
         }
         else if (*it == "-O1")
         {
@@ -386,6 +413,17 @@ int main(int argc, char *argv[])
     builder.set_verbosity(options->verbosity);
     builder.set_optimization(options->optimization);
     builder.set_debug(options->debug);
+
+    try
+    {
+        if (!options->target_triple.empty())
+            builder.target(options->target_triple);
+    }
+    catch (const quixcc::TargetTripleException &e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 5;
+    }
 
     switch (options->mode)
     {

@@ -127,10 +127,16 @@ LIB_EXPORT bool quixcc_init()
 
 LIB_EXPORT quixcc_job_t *quixcc_new()
 {
-    quixcc_job_t *job = (quixcc_job_t *)safe_malloc(sizeof(quixcc_job_t));
-    memset((void *)job, 0, sizeof(quixcc_job_t));
-
+    quixcc_job_t *job = new quixcc_job_t();
     job->m_id = quixcc_uuid();
+
+    job->m_options.m_count = 0;
+    job->m_options.m_options = nullptr;
+    job->m_result = nullptr;
+    job->m_in = job->m_out = nullptr;
+    job->m_filename = nullptr;
+    job->m_priority = 0;
+    job->m_debug = job->m_tainted = false;
 
     return job;
 }
@@ -153,9 +159,9 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
 
     if (job->m_result)
     {
-        for (uint32_t i = 0; i < job->m_result->m_feedback.m_count; i++)
+        for (uint32_t i = 0; i < job->m_result->m_count; i++)
         {
-            quixcc_msg_t *msg = job->m_result->m_feedback.m_messages[i];
+            quixcc_msg_t *msg = job->m_result->m_messages[i];
             if (!msg)
                 continue;
 
@@ -165,19 +171,16 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
             msg->message = nullptr;
             free(msg);
 
-            job->m_result->m_feedback.m_messages[i] = nullptr;
+            job->m_result->m_messages[i] = nullptr;
         }
 
-        if (job->m_result->m_feedback.m_messages)
-            free(job->m_result->m_feedback.m_messages);
-        job->m_result->m_feedback.m_count = 0;
-        job->m_result->m_feedback.m_messages = nullptr;
+        if (job->m_result->m_messages)
+            free(job->m_result->m_messages);
+        job->m_result->m_count = 0;
+        job->m_result->m_messages = nullptr;
 
         free(job->m_result);
     }
-
-    if (job->m_argset)
-        delete job->m_argset;
 
     if (job->m_filename)
     {
@@ -185,9 +188,7 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
         job->m_filename = nullptr;
     }
 
-    memset((void *)job, 0, sizeof(quixcc_job_t));
-
-    free(job);
+    delete job;
 
     return true;
 }
@@ -459,7 +460,7 @@ static bool get_compile_time_user_constants(quixcc_job_t *job, std::map<std::str
 {
     auto argmap = job->m_argset;
 
-    for (auto &arg : *argmap)
+    for (auto &arg : argmap)
     {
         if (arg.first.starts_with("-D"))
         {
@@ -547,7 +548,7 @@ static bool compile(quixcc_job_t *job)
     // libquixcc::AST ast;
     std::shared_ptr<libquixcc::AST> ast = std::make_shared<libquixcc::AST>();
 
-    if (job->m_argset->contains("-PREP"))
+    if (job->m_argset.contains("-PREP"))
     {
         libquixcc::message(*job, libquixcc::Err::DEBUG, "Preprocessing only");
         std::shared_ptr<libquixcc::PrepEngine> prep = std::make_shared<libquixcc::PrepEngine>(*job);
@@ -568,7 +569,7 @@ static bool compile(quixcc_job_t *job)
         return true;
     }
 
-    if (job->m_argset->contains("-LEX"))
+    if (job->m_argset.contains("-LEX"))
     {
         libquixcc::message(*job, libquixcc::Err::DEBUG, "Lexing only");
         libquixcc::StreamLexer lexer;
@@ -710,8 +711,6 @@ static bool build_argmap(quixcc_job_t *job)
     // -<p><key>[=<value>]
     const static std::set<char> okay_prefixes = {'f', 'O', 'l', 'P', 'n', 'L', 'I', 'e', 'D', 'W', 'm', 'c', 'S', 'g', 's', 'v'};
 
-    std::map<std::string, std::string> *argmap = job->m_argset;
-
     for (uint32_t i = 0; i < job->m_options.m_count; i++)
     {
         std::string option = job->m_options.m_options[i];
@@ -738,7 +737,7 @@ static bool build_argmap(quixcc_job_t *job)
         if (key == "-v" && value.empty())
             job->m_debug = true;
 
-        argmap->insert({key, value});
+        job->m_argset.insert({key, value});
 
         if (!value.empty())
             libquixcc::message(*job, libquixcc::Err::DEBUG, "Added switch entry: " + key + "=" + value);
@@ -751,11 +750,10 @@ static bool build_argmap(quixcc_job_t *job)
 
 LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
 {
-    if (!job->m_in || !job->m_out || !job->m_filename || job->m_inner != nullptr || job->m_argset != nullptr)
+    if (!job->m_in || !job->m_out || !job->m_filename || job->m_inner != nullptr)
         return false;
 
     job->m_inner = std::make_shared<libquixcc::LLVMContext>(job->m_filename);
-    job->m_argset = new std::map<std::string, std::string>();
     job->m_result = (quixcc_result_t *)safe_malloc(sizeof(quixcc_result_t));
     memset(job->m_result, 0, sizeof(quixcc_result_t));
 
@@ -808,9 +806,9 @@ LIB_EXPORT const quixcc_result_t *quixcc_result(quixcc_job_t *job)
     // remove debug messages
     uint32_t i = 0;
 
-    while (i < result->m_feedback.m_count)
+    while (i < result->m_count)
     {
-        quixcc_msg_t *msg = result->m_feedback.m_messages[i];
+        quixcc_msg_t *msg = result->m_messages[i];
         if (msg->m_level != QUIXCC_DEBUG)
         {
             i++;
@@ -822,18 +820,18 @@ LIB_EXPORT const quixcc_result_t *quixcc_result(quixcc_job_t *job)
         msg->message = nullptr;
         free(msg);
 
-        memmove(&result->m_feedback.m_messages[i], &result->m_feedback.m_messages[i + 1], (result->m_feedback.m_count - i - 1) * sizeof(quixcc_msg_t *));
-        result->m_feedback.m_count--;
+        memmove(&result->m_messages[i], &result->m_messages[i + 1], (result->m_count - i - 1) * sizeof(quixcc_msg_t *));
+        result->m_count--;
     }
 
-    if (result->m_feedback.m_count == 0)
+    if (result->m_count == 0)
     {
-        free(result->m_feedback.m_messages);
-        result->m_feedback.m_messages = nullptr;
+        free(result->m_messages);
+        result->m_messages = nullptr;
     }
     else
     {
-        result->m_feedback.m_messages = (quixcc_msg_t **)safe_realloc(result->m_feedback.m_messages, result->m_feedback.m_count * sizeof(quixcc_msg_t *));
+        result->m_messages = (quixcc_msg_t **)safe_realloc(result->m_messages, result->m_count * sizeof(quixcc_msg_t *));
     }
 
     return result;
@@ -857,9 +855,9 @@ LIB_EXPORT char *quixcc_compile(FILE *in, FILE *out, const char *options[])
     }
 
     std::string str;
-    for (uint32_t i = 0; i < job->m_result->m_feedback.m_count; i++)
+    for (uint32_t i = 0; i < job->m_result->m_count; i++)
     {
-        quixcc_msg_t *msg = job->m_result->m_feedback.m_messages[i];
+        quixcc_msg_t *msg = job->m_result->m_messages[i];
         if (!msg)
             continue;
 

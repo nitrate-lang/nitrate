@@ -49,9 +49,10 @@ LIB_CXX_EXPORT quixcc::TargetTriple::TargetTriple(const char *_triple)
     }
 }
 
-LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs)
+LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs, std::set<FILE *> to_close)
 {
     this->m_jobs = jobs;
+    this->m_to_close = to_close;
     this->m_ok = false;
 }
 
@@ -59,33 +60,34 @@ LIB_CXX_EXPORT quixcc::Compiler::~Compiler()
 {
     for (auto job : this->m_jobs)
         quixcc_dispose(job);
+
+    for (auto file : this->m_to_close)
+        fclose(file);
 }
 
 LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads)
 {
+    size_t i, tcount;
+    std::vector<std::thread> threads;
+
     if (m_jobs.empty())
         return *this;
 
-    std::vector<std::thread> threads;
-
-    size_t thread_count = std::min(max_threads, this->m_jobs.size());
-
-    if (thread_count == 1)
+    if ((tcount = std::min(max_threads, this->m_jobs.size())) == 1)
     {
         quixcc_run(this->m_jobs[0]);
     }
     else
     {
         // Allocate jobs into threads
-        for (size_t i = 0; i < thread_count; i++)
+        for (i = 0; i < tcount; i++)
         {
-            threads.push_back(std::thread([this, i, thread_count]()
+            threads.push_back(std::thread([this, i, tcount]()
                                           {
-                    for (size_t j = i; j < this->m_jobs.size(); j += thread_count)
+                    for (size_t j = i; j < this->m_jobs.size(); j += tcount)
                         quixcc_run(this->m_jobs[j]); }));
         }
 
-        // Wait for all threads to finish
         for (auto &thread : threads)
             thread.join();
     }
@@ -98,9 +100,9 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads)
         if (!job->m_result)
             throw std::runtime_error("Job result is null.");
 
-        for (size_t i = 0; i < job->m_result->m_feedback.m_count; i++)
+        for (i = 0; i < job->m_result->m_count; i++)
         {
-            auto feedback = job->m_result->m_feedback.m_messages[i];
+            auto feedback = job->m_result->m_messages[i];
             this->m_messages.push_back(std::make_pair(feedback->message, feedback->m_level));
         }
 
@@ -111,19 +113,15 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads)
     return *this;
 }
 
-LIB_CXX_EXPORT const std::vector<std::pair<std::string, enum quixcc_msg_level_t>> &quixcc::Compiler::messages() const
-{
-    return this->m_messages;
-}
-
 LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal, std::ostream &error)
 {
+    size_t i;
+
     for (auto job : this->m_jobs)
     {
-        size_t i;
-        for (i = 0; i < job->m_result->m_feedback.m_count; i++)
+        for (i = 0; i < job->m_result->m_count; i++)
         {
-            auto feedback = job->m_result->m_feedback.m_messages[i];
+            auto feedback = job->m_result->m_messages[i];
             if (feedback->m_level < QUIXCC_ERROR)
                 normal << feedback->message << std::endl;
             else
@@ -132,11 +130,6 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal, st
     }
 
     return *this;
-}
-
-LIB_CXX_EXPORT bool quixcc::Compiler::ok() const
-{
-    return m_ok;
 }
 
 ///=============================================================================
@@ -154,6 +147,7 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_source(cons
     if ((input = fopen(file.c_str(), "r")) == nullptr)
         throw std::runtime_error("Failed to open input file: " + file);
 
+    m_to_close.insert(input);
     m_files.push_back(std::make_pair(input, file));
     return *this;
 }
@@ -163,6 +157,8 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_code(const 
     m_input = fmemopen((void *)code, size, "r");
     if (!m_input)
         throw std::runtime_error("Failed to open input stream.");
+
+    m_to_close.insert(m_input);
     return *this;
 }
 
@@ -177,6 +173,7 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_output(cons
     if ((m_output = fopen(file.c_str(), "w+")) == nullptr)
         throw std::runtime_error("Failed to open output file: " + file);
 
+    m_to_close.insert(m_output);
     return *this;
 }
 
@@ -263,9 +260,6 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_optimizatio
     case quixcc::OptimizationLevel::SIZE:
         m_flags.push_back("-Os");
         break;
-    case quixcc::OptimizationLevel::AGGRESSIVE_SIZE:
-        /// TODO: Implement aggressive size optimization
-        throw std::runtime_error("Aggressive size optimization is not supported.");
     }
 
     return *this;
@@ -361,5 +355,5 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
         jobs.push_back(job);
     }
 
-    return Compiler(jobs);
+    return Compiler(jobs, m_to_close);
 }

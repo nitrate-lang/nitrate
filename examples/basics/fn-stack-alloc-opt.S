@@ -1,15 +1,17 @@
 	.text
 	.file	"fn-stack-alloc.q"
-	.section	.text.main,"ax",@progbits
-	.globl	main                            # -- Begin function main
+	.globl	main
 	.p2align	4, 0x90
 	.type	main,@function
-main:                                   # @main
-# %bb.0:                                # %entry
-	movb	$30, %al
+main:
+	.cfi_startproc
+	movb	$10, -1(%rsp)
+	movb	$20, -2(%rsp)
+	movb	$30, -3(%rsp)
+	movb	-3(%rsp), %al
 	retq
 .Lfunc_end0:
 	.size	main, .Lfunc_end0-main
-                                        # -- End function
+	.cfi_endproc
+
 	.section	".note.GNU-stack","",@progbits
-	.addrsig
