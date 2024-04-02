@@ -75,7 +75,7 @@ struct Options
     Options()
     {
         verbosity = quixcc::Verbosity::NORMAL;
-        optimization = quixcc::OptimizationLevel::SPEED_1;
+        optimization = (quixcc::OptimizationLevel)-1;
         debug = false;
         mode = OperatingMode::QUIXCC_TARGET_DEFAULT;
         output = "a.out";
@@ -93,17 +93,54 @@ struct Options
             return true;
         case OperatingMode::IR:
         case OperatingMode::IR_BITCODE:
-            /// TODO: validate
+            if (output.empty())
+            {
+                std::cerr << "Error: missing output file" << std::endl;
+                return false;
+            }
+            if (sources.empty())
+            {
+                std::cerr << "Error: missing input files" << std::endl;
+                return false;
+            }
+            if (optimization != quixcc::OptimizationLevel::NONE)
+            {
+                std::cerr << "Warning: ignoring optimization flags for IR generation" << std::endl;
+                optimization = quixcc::OptimizationLevel::NONE;
+            }
             return true;
         case OperatingMode::ASSEMBLY:
         case OperatingMode::OBJECT:
-            /// TODO: validate
+            if (output.empty())
+            {
+                std::cerr << "Error: missing output file" << std::endl;
+                return false;
+            }
+            if (sources.empty())
+            {
+                std::cerr << "Error: missing input files" << std::endl;
+                return false;
+            }
+            if (optimization == quixcc::OptimizationLevel::SPEED_4)
+            {
+                std::cerr << "Warning: -O4 optimization is being decreased to -O3 for assembly and object generation" << std::endl;
+                optimization = quixcc::OptimizationLevel::SPEED_3;
+            }
             return true;
         case OperatingMode::EXECUTABLE:
-            /// TODO: validate
+            if (output.empty())
+            {
+                std::cerr << "Error: missing output file" << std::endl;
+                return false;
+            }
+            if (sources.empty())
+            {
+                std::cerr << "Error: missing input files" << std::endl;
+                return false;
+            }
             return true;
         case OperatingMode::SHELLCODE:
-            /// TODO: validate
+            /// TODO: IMPLEMENT
             return true;
         case OperatingMode::SHARED_LIBRARY:
             /// TODO: validate
@@ -375,6 +412,20 @@ static std::optional<Options> parse_options(const std::vector<std::string> &args
         }
     }
 
+    // set default optimization level to -O1 if not specified
+    switch (options.mode)
+    {
+    case OperatingMode::ASSEMBLY:
+    case OperatingMode::OBJECT:
+    case OperatingMode::EXECUTABLE:
+        if ((int)options.optimization == -1)
+            options.optimization = quixcc::OptimizationLevel::SPEED_1;
+        break;
+    default:
+        if ((int)options.optimization == -1)
+            options.optimization = quixcc::OptimizationLevel::NONE;
+    }
+
     return options;
 }
 
@@ -392,6 +443,21 @@ int main(int argc, char *argv[])
 
     if (!options->validate())
         return 3;
+
+    switch (options->mode)
+    {
+    case OperatingMode::DISP_HELP:
+        print_help();
+        return 0;
+    case OperatingMode::DISP_VERSION:
+        print_version();
+        return 0;
+    case OperatingMode::DISP_LICENSE:
+        print_license();
+        return 0;
+    default:
+        break;
+    }
 
     auto builder = quixcc::CompilerBuilder();
 
@@ -427,15 +493,6 @@ int main(int argc, char *argv[])
 
     switch (options->mode)
     {
-    case OperatingMode::DISP_HELP:
-        print_help();
-        return 0;
-    case OperatingMode::DISP_VERSION:
-        print_version();
-        return 0;
-    case OperatingMode::DISP_LICENSE:
-        print_license();
-        return 0;
     case OperatingMode::IR:
         builder.opt("-emit-ir");
         break;

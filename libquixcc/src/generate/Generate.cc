@@ -51,7 +51,7 @@ class CFILE_raw_pwrite_ostream : public llvm::raw_pwrite_stream
 {
 public:
     explicit CFILE_raw_pwrite_ostream(FILE *file)
-        : llvm::raw_pwrite_stream(false)
+        : llvm::raw_pwrite_stream(true)
     {
         m_file = file;
     }

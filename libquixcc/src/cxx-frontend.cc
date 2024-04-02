@@ -170,7 +170,7 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_source(FILE
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_output(const std::string &file)
 {
-    if ((m_output = fopen(file.c_str(), "w+")) == nullptr)
+    if ((m_output = fopen(file.c_str(), "wb")) == nullptr)
         throw std::runtime_error("Failed to open output file: " + file);
 
     m_to_close.insert(m_output);
