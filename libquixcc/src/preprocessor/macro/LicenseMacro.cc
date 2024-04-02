@@ -18,7 +18,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <prep/macro/LicenseMacro.h>
+#include <preprocessor/macro/LicenseMacro.h>
 #include <error/Message.h>
 #include <LibMacro.h>
 

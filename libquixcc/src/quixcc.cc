@@ -35,7 +35,7 @@
 #include <llvm/MC/TargetRegistry.h>
 #include <generate/Generate.h>
 #include <lexer/Lex.h>
-#include <prep/Preprocesser.h>
+#include <preprocessor/Preprocesser.h>
 #include <error/Message.h>
 #include <error/Exception.h>
 #include <parse/Parser.h>

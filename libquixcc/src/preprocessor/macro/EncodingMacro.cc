@@ -16,19 +16,17 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PREP_MACRO_LICENSE__
-#define __QUIXCC_PREP_MACRO_LICENSE__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <preprocessor/macro/EncodingMacro.h>
 
-#include <string>
-#include <prep/macro/MacroParser.h>
-
-namespace libquixcc::macro
+bool libquixcc::macro::ParseEncoding(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp)
 {
-    bool ParseLicense(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp);
-}
+    (void)job;
+    (void)tok;
+    (void)directive;
 
-#endif // __QUIXCC_PREP_MACRO_LICENSE__
+    /// TODO: Implement source encoding directive
+
+    return true;
+}

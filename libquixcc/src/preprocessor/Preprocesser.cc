@@ -18,7 +18,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <prep/Preprocesser.h>
+#include <preprocessor/Preprocesser.h>
 #include <cstdio>
 #include <cctype>
 #include <stdexcept>
@@ -29,7 +29,7 @@
 #include <error/Message.h>
 #include <LibMacro.h>
 #include <filesystem>
-#include <prep/AllMacros.h>
+#include <preprocessor/AllMacros.h>
 
 #define QUIX_HEADER_EXTENSION ".qh"
 #define QUIX_STATICS_FILE "~statics.qh"

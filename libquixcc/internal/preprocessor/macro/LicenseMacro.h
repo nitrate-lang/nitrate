@@ -16,19 +16,19 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PREP_MACRO_ENCODING__
-#define __QUIXCC_PREP_MACRO_ENCODING__
+#ifndef __QUIXCC_PREP_MACRO_LICENSE__
+#define __QUIXCC_PREP_MACRO_LICENSE__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
 #include <string>
-#include <prep/macro/MacroParser.h>
+#include <preprocessor/macro/MacroParser.h>
 
 namespace libquixcc::macro
 {
-    bool ParseEncoding(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp);
+    bool ParseLicense(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp);
 }
 
-#endif // __QUIXCC_PREP_MACRO_ENCODING__
+#endif // __QUIXCC_PREP_MACRO_LICENSE__

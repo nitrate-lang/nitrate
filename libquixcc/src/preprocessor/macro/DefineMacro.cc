@@ -18,59 +18,83 @@
 
 #define QUIXCC_INTERNAL
 
-#include <prep/macro/MacroParser.h>
-#include <stdexcept>
-#include <map>
-#include <LibMacro.h>
-#include <error/Message.h>
+#include <preprocessor/macro/DefineMacro.h>
 
-static std::string trim(const std::string &str)
+bool libquixcc::macro::ParseDefine(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp)
 {
-    return str.substr(str.find_first_not_of(" \t\n\r\f\v"), str.find_last_not_of(" \t\n\r\f\v") + 1);
-}
+    (void)job;
+    (void)tok;
+    (void)directive;
 
-bool libquixcc::MacroParser::parse(const libquixcc::Token &macro, std::vector<libquixcc::Token> &exp) const
-{
-    std::string content = trim(std::get<std::string>(macro.val()));
-
-    if (macro.type() == TokenType::MacroSingleLine)
+    std::string name;
+    std::string value;
+    enum Type
     {
-        std::string directive;
-        std::string parameter;
-        size_t start = content.find('(');
-        if (start == std::string::npos)
-        {
-            PREPMSG(macro, Err::ERROR, "Invalid macro directive: %s", content.c_str());
-            return false;
-        }
-        size_t end = content.find(')', start);
-        if (end == std::string::npos)
-        {
-            PREPMSG(macro, Err::ERROR, "Invalid macro directive: %s", content.c_str());
-            return false;
-        }
+        Int,
+        String,
+        Bool
+    } type;
 
-        directive = trim(content.substr(0, start));
-        if (start + 1 < content.size())
-            parameter = content.substr(start + 1, end - start - 1);
+    size_t pos = parameter.find(' ');
 
-        if (!m_routines.contains(directive))
-            PREPMSG(macro, Err::ERROR, "Unknown macro directive: %s", directive.c_str());
-
-        if (!m_routines.at(directive)(job, macro, directive, parameter, exp))
-            PREPMSG(macro, Err::ERROR, "Failed to process macro directive: %s", directive.c_str());
-
-        return true;
-    }
-    else if (macro.type() == TokenType::MacroBlock)
+    if (pos == std::string::npos)
     {
-        /// TODO: implement block macro parsing
-        return parse(Token(TokenType::MacroSingleLine, content), exp);
+        name = parameter;
+        type = Bool;
     }
     else
     {
-        throw std::runtime_error("Invalid macro type");
+        name = parameter.substr(0, pos);
+        if (pos + 1 < parameter.size())
+            value = parameter.substr(pos + 1);
+
+        bool is_int = true;
+        for (char c : value)
+        {
+            if (!std::isdigit(c))
+            {
+                is_int = false;
+                break;
+            }
+        }
+
+        if (value == "true" || value == "false")
+            type = Bool;
+        else if (is_int)
+            type = Int;
+        else
+            type = String;
     }
 
-    return false;
+    exp.push_back(Token(TokenType::Keyword, Keyword::Let));
+    exp.push_back(Token(TokenType::Identifier, name));
+    exp.push_back(Token(TokenType::Punctor, Punctor::Colon));
+
+    switch (type)
+    {
+    case Int:
+        exp.push_back(Token(TokenType::Identifier, "i64"));
+        exp.push_back(Token(TokenType::Operator, Operator::Assign));
+        exp.push_back(Token(TokenType::IntegerLiteral, value));
+        break;
+    case String:
+        exp.push_back(Token(TokenType::Identifier, "string"));
+        exp.push_back(Token(TokenType::Operator, Operator::Assign));
+        exp.push_back(Token(TokenType::StringLiteral, value));
+        break;
+    case Bool:
+        exp.push_back(Token(TokenType::Identifier, "bool"));
+        exp.push_back(Token(TokenType::Operator, Operator::Assign));
+        if (value == "true")
+            exp.push_back(Token(TokenType::Keyword, Keyword::True));
+        else
+            exp.push_back(Token(TokenType::Keyword, Keyword::False));
+        break;
+    default:
+        break;
+    }
+
+    exp.push_back(Token(TokenType::Punctor, Punctor::Semicolon));
+
+    return true;
 }

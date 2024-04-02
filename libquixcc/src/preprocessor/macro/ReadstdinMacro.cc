@@ -18,7 +18,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <prep/macro/ReadstdinMacro.h>
+#include <preprocessor/macro/ReadstdinMacro.h>
 #include <lexer/Lex.h>
 #include <error/Message.h>
 #include <iostream>

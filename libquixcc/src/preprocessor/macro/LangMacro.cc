@@ -16,19 +16,17 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PREP_MACRO_AUTHOR__
-#define __QUIXCC_PREP_MACRO_AUTHOR__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <preprocessor/macro/LangMacro.h>
 
-#include <string>
-#include <prep/macro/MacroParser.h>
-
-namespace libquixcc::macro
+bool libquixcc::macro::ParseLang(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp)
 {
-    bool ParseAuthor(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp);
-}
+    (void)job;
+    (void)tok;
+    (void)directive;
 
-#endif // __QUIXCC_PREP_MACRO_AUTHOR__
+    /// TODO: Implement language encoding directive
+
+    return true;
+}

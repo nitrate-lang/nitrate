@@ -18,7 +18,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <prep/macro/PrintMacro.h>
+#include <preprocessor/macro/PrintMacro.h>
 #include <error/Exception.h>
 #include <lexer/Lex.h>
 #include <error/Message.h>
