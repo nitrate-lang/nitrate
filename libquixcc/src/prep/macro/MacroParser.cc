@@ -24,36 +24,40 @@
 #include <LibMacro.h>
 #include <error/Message.h>
 
-static void trim(std::string &str)
+static std::string trim(const std::string &str)
 {
-    str = str.substr(str.find_first_not_of(" \t\n\r\f\v"), str.find_last_not_of(" \t\n\r\f\v") + 1);
+    return str.substr(str.find_first_not_of(" \t\n\r\f\v"), str.find_last_not_of(" \t\n\r\f\v") + 1);
 }
 
 bool libquixcc::MacroParser::parse(const libquixcc::Token &macro, std::vector<libquixcc::Token> &exp) const
 {
-    std::string content = std::get<std::string>(macro.val());
-    trim(content);
+    std::string content = trim(std::get<std::string>(macro.val()));
 
     if (macro.type() == TokenType::MacroSingleLine)
     {
         std::string directive;
         std::string parameter;
-        size_t pos = content.find(' ');
-        if (pos == std::string::npos)
+        size_t start = content.find('(');
+        if (start == std::string::npos)
         {
-            directive = content;
+            PREPMSG(macro, Err::ERROR, "Invalid macro directive: %s", content.c_str());
+            return false;
         }
-        else
+        size_t end = content.find(')', start);
+        if (end == std::string::npos)
         {
-            directive = content.substr(0, pos);
-            if (pos + 1 < content.size())
-                parameter = content.substr(pos + 1);
+            PREPMSG(macro, Err::ERROR, "Invalid macro directive: %s", content.c_str());
+            return false;
         }
+
+        directive = trim(content.substr(0, start));
+        if (start + 1 < content.size())
+            parameter = content.substr(start + 1, end - start - 1);
 
         if (!m_routines.contains(directive))
             PREPMSG(macro, Err::ERROR, "Unknown macro directive: %s", directive.c_str());
 
-        if (!m_routines.at(directive)(m_job, macro, directive, parameter, exp))
+        if (!m_routines.at(directive)(job, macro, directive, parameter, exp))
             PREPMSG(macro, Err::ERROR, "Failed to process macro directive: %s", directive.c_str());
 
         return true;

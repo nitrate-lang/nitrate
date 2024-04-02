@@ -20,6 +20,7 @@
 
 #include <prep/macro/LicenseMacro.h>
 #include <error/Message.h>
+#include <LibMacro.h>
 
 static std::set<std::string> spdx_licenses = {
     "0bsd",
@@ -634,7 +635,7 @@ bool libquixcc::macro::ParseLicense(quixcc_job_t *job, const Token &tok, const s
     // Force coders to choose a SPDX license identifier if they use the macro
     if (!spdx_licenses.contains(lower))
     {
-        prepmsg(*job, tok, Err::ERROR, "Invalid SPDX license identifier: '%s'. All License macros must use a valid SPDX license identifier.", lower.c_str());
+        PREPMSG(tok, Err::ERROR, "Invalid SPDX license identifier: '%s'. All License macros must use a valid SPDX license identifier.", lower.c_str());
         return false;
     }
 

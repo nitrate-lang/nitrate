@@ -57,7 +57,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
     (void)directive;
 
     std::vector<libquixcc::Token> tokens;
-    if (!libquixcc::StringLexer::QuixkLex(parameter, tokens))
+    if (!libquixcc::StringLexer::QuickLex(parameter, tokens))
     {
         libquixcc::message(*job, libquixcc::Err::ERROR, "Failed to lex readstdin parameter");
         return false;
@@ -136,7 +136,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
 
     if (expand)
     {
-        if (!StringLexer::QuixkLex(input, exp))
+        if (!StringLexer::QuickLex(input, exp))
         {
             libquixcc::message(*job, libquixcc::Err::ERROR, "Failed to lex readstdin input");
             disable_noecho();

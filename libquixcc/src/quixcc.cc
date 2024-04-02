@@ -778,6 +778,10 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
             libquixcc::message(*job, libquixcc::Err::ERROR, "Compilation failed");
         }
     }
+    catch (libquixcc::ProgrammaticPreprocessorException &)
+    {
+        libquixcc::message(*job, libquixcc::Err::ERROR, "Compilation was programmatically aborted while preprocessing source");
+    }
     catch (libquixcc::PreprocessorException &)
     {
         libquixcc::message(*job, libquixcc::Err::ERROR, "Compilation was aborted while preprocessing source");

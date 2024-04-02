@@ -58,25 +58,25 @@ static std::string make_message_colored(Err type, const std::string &format, va_
     switch (type)
     {
     case Err::DEBUG:
-        msg = "\x1b[49;1mdebug:\x1b[0m " + format;
+        msg = "\x1b[49;1mdebug:\x1b[0m " + format + "\x1b[0m";
         break;
     case Err::SUCCESS:
-        msg = "\x1b[32;49;1msuccess:\x1b[0m " + format;
+        msg = "\x1b[32;49;1msuccess:\x1b[0m " + format + "\x1b[0m";
         break;
     case Err::INFO:
-        msg = "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + format;
+        msg = "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + format + "\x1b[0m";
         break;
     case Err::WARN:
-        msg = "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + format;
+        msg = "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
     case Err::ERROR:
-        msg = "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + format;
+        msg = "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
     case Err::FATAL:
-        msg = "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + format;
+        msg = "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
     default:
-        msg = format;
+        msg = format + "\x1b[0m";
         break;
     }
 
@@ -87,7 +87,7 @@ static std::string make_message_colored(Err type, const std::string &format, va_
     len += vsnprintf(&tmp[0], tmp.size() - 1, msg.c_str(), args);
     msg = tmp.substr(0, len);
 
-    return msg + "\x1b[0m";
+    return msg;
 }
 
 static std::string make_message_nocolor(Err type, const std::string &format, va_list args)
@@ -138,25 +138,25 @@ static std::string make_parser_message_colored(const std::string &file, const li
     switch (type)
     {
     case Err::DEBUG:
-        msg += "\x1b[49;1mdebug:\x1b[0m " + format;
+        msg += "\x1b[49;1mdebug:\x1b[0m " + format + "\x1b[0m";
         break;
     case Err::SUCCESS:
-        msg += "\x1b[32;49;1msuccess:\x1b[0m " + format;
+        msg += "\x1b[32;49;1msuccess:\x1b[0m " + format + "\x1b[0m";
         break;
     case Err::INFO:
-        msg += "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + format;
+        msg += "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + format + "\x1b[0m";
         break;
     case Err::WARN:
-        msg += "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + format;
+        msg += "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
     case Err::ERROR:
-        msg += "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + format;
+        msg += "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
     case Err::FATAL:
-        msg += "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + format;
+        msg += "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
     default:
-        msg += format;
+        msg += format + "\x1b[0m";
         break;
     }
 
@@ -167,7 +167,7 @@ static std::string make_parser_message_colored(const std::string &file, const li
     len += vsnprintf(&tmp[0], tmp.size() - 1, msg.c_str(), args);
     msg = tmp.substr(0, len);
 
-    return msg + "\x1b[0m";
+    return msg;
 }
 
 static std::string make_parser_message_nocolor(const std::string &file, const libquixcc::Token &tok, Err type, const std::string &format, va_list args)
@@ -255,7 +255,7 @@ void libquixcc::parmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc
         throw libquixcc::ParseException();
 }
 
-void libquixcc::prepmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::Err type, const std::string &format, ...)
+void libquixcc::prepmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::Err type, bool fatal_now, const std::string &format, ...)
 {
     if (!job.m_debug && type == Err::DEBUG)
         return;
@@ -277,7 +277,12 @@ void libquixcc::prepmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixc
     push_message_to_job(job, type, msg);
 
     if (type == Err::FATAL || type == Err::ERROR)
-        throw libquixcc::PreprocessorException();
+    {
+        job.m_tainted = true;
+
+        if (fatal_now)
+            throw libquixcc::PreprocessorException();
+    }
 }
 
 void libquixcc::semanticmsg(quixcc_job_t &job, libquixcc::Err type, bool fatal_now, const std::string &format, ...)

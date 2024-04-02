@@ -33,6 +33,12 @@ namespace libquixcc
         const char *what() const noexcept override { return "Preprocessor error"; }
     };
 
+    class ProgrammaticPreprocessorException : public PreprocessorException
+    {
+    public:
+        const char *what() const noexcept override { return "Programmatic preprocessor error"; }
+    };
+
     class ParseException : public std::exception
     {
     public:

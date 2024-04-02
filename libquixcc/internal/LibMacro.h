@@ -20,7 +20,7 @@
 #define __QUIXCC_MACRO_H__
 
 #define PARMSG(tok, tp, fmt, ...) parmsg(job, tok, tp, fmt, ##__VA_ARGS__)
-#define PREPMSG(tok, tp, fmt, ...) prepmsg(*m_job, tok, tp, fmt, ##__VA_ARGS__)
+#define PREPMSG(tok, tp, fmt, ...) prepmsg(*job, tok, tp, true, fmt, ##__VA_ARGS__)
 #define LIB_EXPORT extern "C" __attribute__((visibility("default")))
 #define LIB_CXX_EXPORT __attribute__((visibility("default")))
 

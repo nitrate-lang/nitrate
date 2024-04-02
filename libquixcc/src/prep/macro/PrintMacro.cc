@@ -19,18 +19,19 @@
 #define QUIXCC_INTERNAL
 
 #include <prep/macro/PrintMacro.h>
+#include <error/Exception.h>
 #include <lexer/Lex.h>
 #include <error/Message.h>
 #include <iostream>
 
 bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp)
 {
-    // print [mode] <message>
+    // print [mode] "<message>"
     (void)directive;
     (void)exp;
 
     std::vector<libquixcc::Token> tokens;
-    if (!libquixcc::StringLexer::QuixkLex(parameter, tokens))
+    if (!libquixcc::StringLexer::QuickLex(parameter, tokens))
     {
         libquixcc::message(*job, libquixcc::Err::ERROR, "Failed to lex print message");
         return false;
@@ -45,9 +46,11 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
     Err level = Err::INFO;
 
     Token t = tokens[0];
-    if (t.type() == TokenType::Identifier && tokens.size() == 2)
+    if (t.type() == TokenType::Identifier && tokens.size() == 3)
     {
         std::string id = std::get<std::string>(t.val());
+        std::transform(id.begin(), id.end(), id.begin(), ::tolower);
+
         if (id == "debug")
             level = Err::DEBUG;
         else if (id == "ok" || id == "good" || id == "success")
@@ -56,7 +59,7 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
             level = Err::INFO;
         else if (id == "warning" || id == "warn")
             level = Err::WARN;
-        else if (id == "error")
+        else if (id == "error" || id == "err")
             level = Err::ERROR;
         else if (id == "raw")
             level = Err::RAW;
@@ -66,25 +69,31 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
             return false;
         }
 
+        if (tokens[1].type() != TokenType::Punctor || std::get<Punctor>(tokens[1].val()) != Punctor::Comma)
+        {
+            libquixcc::message(*job, libquixcc::Err::ERROR, "Expected comma after print level");
+            return false;
+        }
+
         switch (level)
         {
         case Err::DEBUG:
-            prepmsg(*job, tok, libquixcc::Err::DEBUG, std::get<std::string>(tokens[1].val()));
+            prepmsg(*job, tok, libquixcc::Err::DEBUG, false, std::get<std::string>(tokens[2].val()));
             break;
         case Err::SUCCESS:
-            prepmsg(*job, tok, libquixcc::Err::SUCCESS, std::get<std::string>(tokens[1].val()));
+            prepmsg(*job, tok, libquixcc::Err::SUCCESS, false, std::get<std::string>(tokens[2].val()));
             break;
         case Err::INFO:
-            prepmsg(*job, tok, libquixcc::Err::INFO, std::get<std::string>(tokens[1].val()));
+            prepmsg(*job, tok, libquixcc::Err::INFO, false, std::get<std::string>(tokens[2].val()));
             break;
         case Err::WARN:
-            prepmsg(*job, tok, libquixcc::Err::WARN, std::get<std::string>(tokens[1].val()));
+            prepmsg(*job, tok, libquixcc::Err::WARN, false, std::get<std::string>(tokens[2].val()));
             break;
         case Err::ERROR:
-            prepmsg(*job, tok, libquixcc::Err::ERROR, std::get<std::string>(tokens[1].val()));
-            break;
+            prepmsg(*job, tok, libquixcc::Err::ERROR, false, std::get<std::string>(tokens[2].val()));
+            throw libquixcc::ProgrammaticPreprocessorException();
         case Err::RAW:
-            std::cout << std::get<std::string>(tokens[1].val());
+            std::cout << std::get<std::string>(tokens[2].val());
             break;
         default:
             break;
@@ -92,7 +101,7 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
     }
     else
     {
-        prepmsg(*job, tok, libquixcc::Err::INFO, std::get<std::string>(t.val()));
+        prepmsg(*job, tok, libquixcc::Err::INFO, false, std::get<std::string>(t.val()));
     }
 
     return true;

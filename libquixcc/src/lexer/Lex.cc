@@ -1124,7 +1124,7 @@ libquixcc::StringLexer::~StringLexer()
         fclose(m_file);
 }
 
-bool libquixcc::StringLexer::QuixkLex(const std::string &source_code, std::vector<libquixcc::Token> &tokens, const std::string &filename)
+bool libquixcc::StringLexer::QuickLex(const std::string &source_code, std::vector<libquixcc::Token> &tokens, const std::string &filename)
 {
     try
     {

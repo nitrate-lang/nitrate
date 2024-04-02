@@ -54,7 +54,7 @@ namespace libquixcc
         std::set<std::string> m_include_dirs;
         std::vector<std::string> m_include_files; // for circular include detection
         std::stack<Entry> m_stack;
-        quixcc_job_t *m_job;
+        quixcc_job_t *job;
         std::string include_path;
         std::optional<Token> m_tok;
         std::map<std::string, std::string> m_statics;
@@ -71,7 +71,7 @@ namespace libquixcc
         void push(Token tok) override;
 
     public:
-        PrepEngine(quixcc_job_t &job) : m_job(&job), m_macro_parser(job) {}
+        PrepEngine(quixcc_job_t &job) : job(&job), m_macro_parser(job) {}
 
         // Install macro routines
         void setup();

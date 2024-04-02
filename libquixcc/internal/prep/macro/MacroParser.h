@@ -37,10 +37,10 @@ namespace libquixcc
     {
     protected:
         std::map<std::string, MacroParserRoutine> m_routines;
-        quixcc_job_t *m_job;
+        quixcc_job_t *job;
 
     public:
-        MacroParser(quixcc_job_t &job) : m_job(&job) {}
+        MacroParser(quixcc_job_t &job) : job(&job) {}
         void add_routine(const std::string &name, MacroParserRoutine routine) { m_routines[name] = routine; }
         bool parse(const libquixcc::Token &macro, std::vector<libquixcc::Token> &exp) const;
     };

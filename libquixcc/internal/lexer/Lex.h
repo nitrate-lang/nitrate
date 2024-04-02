@@ -169,7 +169,7 @@ namespace libquixcc
         /// @param tokens
         /// @return Returns false if the source code is invalid
         /// @note Does not throw exceptions
-        static bool QuixkLex(const std::string &source_code, std::vector<Token> &tokens, const std::string &filename = "quicklex");
+        static bool QuickLex(const std::string &source_code, std::vector<Token> &tokens, const std::string &filename = "quicklex");
     };
 };
 
