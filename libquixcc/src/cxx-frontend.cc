@@ -322,23 +322,23 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIRB
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createAssembly()
 {
-    return CompilerBuilder().opt("-S");
+    return CompilerBuilder().opt("-O4").opt("-S");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createObject()
 {
-    return CompilerBuilder().opt("-c");
+    return CompilerBuilder().opt("-O4").opt("-c");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createExecutable()
 {
-    return CompilerBuilder().opt("-O5");
+    return CompilerBuilder().opt("-O4");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createUpxCompressedExecutable()
 {
     /// TODO: Implement UPX compression
-    return CompilerBuilder().opt("-O5").opt("-fpack=upx");
+    return CompilerBuilder().opt("-O4").opt("-fpack=upx");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createShellcode()
@@ -351,13 +351,13 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createShe
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createSharedLibrary()
 {
     /// TODO: Implement shared library builder
-    return CompilerBuilder().opt("-shared").opt("-fPIC").opt("-O5").post("ld -shared -o $QCC_OUTPUT $QCC_LAST");
+    return CompilerBuilder().opt("-shared").opt("-fPIC").opt("-O4").post("ld -shared -o $QCC_OUTPUT $QCC_LAST");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createStaticLibrary()
 {
     /// TODO: Implement static library builder
-    return CompilerBuilder().opt("-c").opt("-O5").post("ar rcs $QCC_OUTPUT $QCC_LAST");
+    return CompilerBuilder().opt("-c").opt("-O4").post("ar rcs $QCC_OUTPUT $QCC_LAST");
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createDocumentation()

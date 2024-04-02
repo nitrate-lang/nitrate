@@ -166,7 +166,7 @@ Orbit is the standard library for QUIX. It contains all the built-in functions a
 # How to build?
 - Clone the repository
 - Navigate to the root of the repository
-- Run `quixcc build -O5 -g2 -o orbit.qlib .`
+- Run `quixcc build -O4 -g2 -o orbit.qlib .`
 - It will take a while to build. Also, the output jlib file will be quite large. It contains extra debug symbols and QUIX metadata sections. It will be significantly smaller when linked and stripped to a final executable.
 
 # How to install?

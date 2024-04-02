@@ -94,7 +94,6 @@ static void print_help()
     println("  -O2                       Optimize for speed (level 2)");
     println("  -O3                       Optimize for speed (level 3)");
     println("  -O4                       Optimize -O3 and enable link-time optimization");
-    println("  -O5                       Optimize -O4 and enable whole program optimization");
     println("  -vv                       Enable verbose output");
     println("  -vvv                      Enable very verbose output; includes compiler internals");
     println();
@@ -109,7 +108,7 @@ static void print_help()
     println("   " + program_name + " source.q -o myapp -g");
     println();
     println(" Build a multiple sources with maximum optimizations, link a library, and output to a specific file:");
-    println("   " + program_name + " source1.q source2.q -o myapp -O5 -lcrypto");
+    println("   " + program_name + " source1.q source2.q -o myapp -O4 -lcrypto");
     println();
     println("(See license for legal information)");
 }
