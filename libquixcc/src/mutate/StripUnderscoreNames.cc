@@ -40,6 +40,14 @@ void libquixcc::mutate::StripUnderscoreNames(quixcc_job_t *job, std::shared_ptr<
                 auto let = std::dynamic_pointer_cast<LetDeclNode>(*node);
                 if (let->m_name == "_")
                     *node = std::make_shared<NopStmtNode>();
+                break;
+            }
+            case NodeType::VarDeclNode:
+            {
+                auto var = std::dynamic_pointer_cast<VarDeclNode>(*node);
+                if (var->m_name == "_")
+                    *node = std::make_shared<NopStmtNode>();
+                break;
             }
             default:
                 /// TODO: Implement more cases.
