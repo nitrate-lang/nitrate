@@ -16,54 +16,35 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_MUTATE_ROUTINES_H__
-#define __QUIXCC_MUTATE_ROUTINES_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <memory>
-#include <functional>
-#include <vector>
-#include <parse/Parser.h>
+#include <mutate/Routine.h>
+#include <error/Message.h>
+#include <mutex>
+#include <set>
 #include <quixcc.h>
+#include <iostream>
+#include <algorithm>
 
-namespace libquixcc
+using namespace libquixcc;
+
+void libquixcc::mutate::StripUnderscoreNames(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    namespace mutate
-    {
-        void StripUnderscoreNames(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void DiscoverNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ExtrapolateEnumFields(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ResolveNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void FoldConstExpr(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ConvertTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        inline void InferTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
-        void FilterNonGeneratable(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-    }
-
-    typedef std::function<void(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>)> ASTMutateRoutine;
-
-    class Mutation
-    {
-    public:
-        /// @brief Run rountines in the order they were added.
-        void run(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
+    ast->dfs_preorder(ParseNodePreorderVisitor(
+        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
-            for (auto routine : m_routines)
+            switch ((*node)->ntype)
             {
-                routine(job, ast);
+            case NodeType::LetDeclNode:
+            {
+                auto let = std::dynamic_pointer_cast<LetDeclNode>(*node);
+                if (let->m_name == "_")
+                    *node = std::make_shared<NopStmtNode>();
             }
-        }
-
-        void add_routine(ASTMutateRoutine routine)
-        {
-            m_routines.push_back(routine);
-        }
-
-        std::vector<ASTMutateRoutine> m_routines;
-    };
+            default:
+                /// TODO: Implement more cases.
+                break;
+            }
+        },
+        job->m_inner->prefix));
 }
-
-#endif // __QUIXCC_MUTATE_ROUTINES_H__

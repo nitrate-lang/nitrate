@@ -307,6 +307,7 @@ static std::string base64_encode(const std::string &in)
 static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
 {
     libquixcc::Mutation mutator;
+    mutator.add_routine(libquixcc::mutate::StripUnderscoreNames);
     mutator.add_routine(libquixcc::mutate::ExtrapolateEnumFields);
     mutator.add_routine(libquixcc::mutate::DiscoverNamedConstructs);
     mutator.add_routine(libquixcc::mutate::ResolveNamedConstructs);
