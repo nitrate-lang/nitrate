@@ -22,6 +22,7 @@
 #include <LibMacro.h>
 #include <thread>
 #include <fstream>
+#include <filesystem>
 #include <llvm/Support/Host.h>
 #include "llvm/MC/TargetRegistry.h"
 
@@ -48,10 +49,9 @@ LIB_CXX_EXPORT quixcc::TargetTriple::TargetTriple(const char *_triple)
     }
 }
 
-LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs, std::vector<std::string> oscmds)
+LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs)
 {
     this->m_jobs = jobs;
-    this->m_oscmds = oscmds;
     this->m_ok = false;
 }
 
@@ -143,16 +143,12 @@ LIB_CXX_EXPORT bool quixcc::Compiler::ok() const
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder::CompilerBuilder()
 {
-    m_verbose = m_debug = false;
+    m_verbose = Verbosity::NORMAL;
     m_target = ""; // Host target
     m_input = m_output = nullptr;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder::~CompilerBuilder()
-{
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::in(const std::string &file)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_source(const std::string &file)
 {
     FILE *input;
     if ((input = fopen(file.c_str(), "r")) == nullptr)
@@ -162,15 +158,7 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::in(const std::s
     return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::in(const std::vector<std::string> &files)
-{
-    for (auto &file : files)
-        in(file);
-
-    return *this;
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::src(const char *code, size_t size)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_code(const char *code, size_t size)
 {
     m_input = fmemopen((void *)code, size, "r");
     if (!m_input)
@@ -178,13 +166,13 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::src(const char 
     return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::src(FILE *input)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_source(FILE *input)
 {
     m_input = input;
     return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::out(const std::string &file)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_output(const std::string &file)
 {
     if ((m_output = fopen(file.c_str(), "w+")) == nullptr)
         throw std::runtime_error("Failed to open output file: " + file);
@@ -192,31 +180,108 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::out(const std::
     return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::out(FILE *output)
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_output(FILE *output)
 {
     m_output = output;
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_include(const std::string &dir)
+{
+    if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir))
+        throw std::runtime_error("failed to access include directory: " + dir);
+
+    m_flags.push_back("-I" + dir);
+
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_library(const std::string &dir)
+{
+    if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir))
+        throw std::runtime_error("failed to access library directory: " + dir);
+
+    m_flags.push_back("-L" + dir);
+
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::link_library(const std::string &lib)
+{
+    if (!std::filesystem::exists(lib) || !std::filesystem::is_directory(lib))
+        throw std::runtime_error("failed to access library: " + lib);
+
+    m_flags.push_back("-l" + lib);
+
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::define(const std::string &name, const std::string &value)
+{
+    m_flags.push_back("-D" + name + "=" + value);
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::undefine(const std::string &name)
+{
+    m_flags.push_back("-U" + name);
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_flag(const std::string &flag)
+{
+    m_flags.push_back(flag);
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_verbosity(quixcc::Verbosity verbose)
+{
+    m_verbose = verbose;
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_optimization(quixcc::OptimizationLevel optimize)
+{
+    switch (optimize)
+    {
+    case quixcc::OptimizationLevel::NONE:
+        m_flags.push_back("-O0");
+        break;
+    case quixcc::OptimizationLevel::SPEED_1:
+        m_flags.push_back("-O1");
+        break;
+    case quixcc::OptimizationLevel::SPEED_2:
+        m_flags.push_back("-O2");
+        break;
+    case quixcc::OptimizationLevel::SPEED_3:
+        m_flags.push_back("-O3");
+        break;
+    case quixcc::OptimizationLevel::SPEED_4:
+        m_flags.push_back("-O3");
+        m_flags.push_back("-flto");
+        break;
+    case quixcc::OptimizationLevel::SIZE:
+        m_flags.push_back("-Os");
+        break;
+    case quixcc::OptimizationLevel::AGGRESSIVE_SIZE:
+        /// TODO: Implement aggressive size optimization
+        throw std::runtime_error("Aggressive size optimization is not supported.");
+    }
+
+    return *this;
+}
+
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_debug(bool debug)
+{
+    if (debug)
+        m_flags.push_back("-g");
+
     return *this;
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::string &flag)
 {
     m_flags.push_back(flag);
-    return *this;
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::vector<std::string> &flags)
-{
-    m_flags.insert(m_flags.end(), flags.begin(), flags.end());
-    return *this;
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::post(const std::string &cmd, const std::vector<std::string> &args)
-{
-    std::string pre;
-    for (auto &arg : args)
-        pre += "export " + arg + ";";
-
-    m_oscmds.push_back(pre + cmd);
     return *this;
 }
 
@@ -229,18 +294,6 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::disregard(bool 
 LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::target(quixcc::TargetTriple target)
 {
     m_target = target;
-    return *this;
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::verbose(bool verbose)
-{
-    m_verbose = verbose;
-    return *this;
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::debug(bool debug)
-{
-    m_debug = debug;
     return *this;
 }
 
@@ -270,11 +323,19 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
     {
         if ((job = quixcc_new()) == nullptr)
             throw std::runtime_error("Failed to create new job.");
-        if (m_debug)
-            job->m_debug = true;
 
-        if (m_verbose)
+        switch (m_verbose)
+        {
+        case Verbosity::NORMAL:
+            break;
+        case Verbosity::VERBOSE:
             quixcc_add_option(job, "-v", true);
+            break;
+        case Verbosity::VERY_VERBOSE:
+            job->m_debug = true;
+            quixcc_add_option(job, "-v", true);
+            break;
+        }
 
         for (auto &flag : m_flags)
             quixcc_add_option(job, flag.c_str(), true);
@@ -300,113 +361,5 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
         jobs.push_back(job);
     }
 
-    return Compiler(jobs, m_oscmds);
-}
-
-///=============================================================================
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createLinter()
-{
-    return CompilerBuilder().opt("-emit-bc").disregard();
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIR()
-{
-    return CompilerBuilder().opt("-emit-ir");
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createIRBitcode()
-{
-    return CompilerBuilder().opt("-emit-bc");
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createAssembly()
-{
-    return CompilerBuilder().opt("-O4").opt("-S");
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createObject()
-{
-    return CompilerBuilder().opt("-O4").opt("-c");
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createExecutable()
-{
-    return CompilerBuilder().opt("-O4");
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createUpxCompressedExecutable()
-{
-    /// TODO: Implement UPX compression
-    return CompilerBuilder().opt("-O4").opt("-fpack=upx");
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createShellcode()
-{
-    /// TODO: Implement shellcode builder
-    throw std::runtime_error("Shellcode builder not implemented.");
-    return CompilerBuilder();
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createSharedLibrary()
-{
-    /// TODO: Implement shared library builder
-    return CompilerBuilder().opt("-shared").opt("-fPIC").opt("-O4").post("ld -shared -o $QCC_OUTPUT $QCC_LAST");
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createStaticLibrary()
-{
-    /// TODO: Implement static library builder
-    return CompilerBuilder().opt("-c").opt("-O4").post("ar rcs $QCC_OUTPUT $QCC_LAST");
-}
-
-LIB_CXX_EXPORT quixcc::CompilerBuilder quixcc::CompilerBuilderFactory::createDocumentation()
-{
-    /// TODO: Implement documentation builder
-    throw std::runtime_error("Documentation builder not implemented.");
-    return CompilerBuilder();
-}
-
-///=============================================================================
-
-LIB_CXX_EXPORT bool quixcc::Execute::exec(const std::string &code, std::ostream &messages)
-{
-    FILE *output = tmpfile();
-    if (!output)
-        return false;
-
-    auto shellcode = quixcc::CompilerBuilderFactory::createShellcode()
-                         .src(code.c_str(), code.size())
-                         .out(output)
-                         .build();
-
-    shellcode.run(std::thread::hardware_concurrency())
-        .puts(messages, messages);
-
-    if (!shellcode.ok())
-        return false;
-
-    if (fseek(output, 0, SEEK_END) != 0)
-        return false;
-    size_t size = ftell(output);
-    if (fseek(output, 0, SEEK_SET) != 0)
-        return false;
-
-    // Execute shellcode
-    void *executable_memory = mmap(nullptr, size, PROT_READ | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (executable_memory == MAP_FAILED)
-        return false;
-
-    if (fread(executable_memory, 1, size, output) != size)
-    {
-        munmap(executable_memory, size);
-        return false;
-    }
-
-    ((void (*)())executable_memory)();
-
-    munmap(executable_memory, size);
-    fclose(output);
-
-    return true;
+    return Compiler(jobs);
 }

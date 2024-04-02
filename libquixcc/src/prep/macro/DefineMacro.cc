@@ -66,7 +66,7 @@ bool libquixcc::macro::ParseDefine(quixcc_job_t *job, const Token &tok, const st
             type = String;
     }
 
-    exp.push_back(Token(TokenType::Keyword, Keyword::Const));
+    exp.push_back(Token(TokenType::Keyword, Keyword::Let));
     exp.push_back(Token(TokenType::Identifier, name));
     exp.push_back(Token(TokenType::Punctor, Punctor::Colon));
 
