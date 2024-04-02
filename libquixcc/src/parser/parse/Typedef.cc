@@ -33,7 +33,7 @@ bool libquixcc::parse_typedef(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     Token tok = scanner->next();
     if (tok.type() != TokenType::Identifier)
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPEDEF_EXPECTED_IDENTIFIER]);
+        PARMSG(tok, libquixcc::E::ERROR, feedback[TYPEDEF_EXPECTED_IDENTIFIER]);
         return false;
     }
 
@@ -42,21 +42,21 @@ bool libquixcc::parse_typedef(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     tok = scanner->next();
     if (!tok.is<Operator>(Operator::Assign))
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPEDEF_EXPECTED_ASSIGN]);
+        PARMSG(tok, libquixcc::E::ERROR, feedback[TYPEDEF_EXPECTED_ASSIGN]);
         return false;
     }
 
     TypeNode *type;
     if (!parse_type(job, scanner, &type))
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPEDEF_INVALID_TYPE], name.c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[TYPEDEF_INVALID_TYPE], name.c_str());
         return false;
     }
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPEDEF_EXPECTED_SEMICOLON]);
+        PARMSG(tok, libquixcc::E::ERROR, feedback[TYPEDEF_EXPECTED_SEMICOLON]);
         return false;
     }
 

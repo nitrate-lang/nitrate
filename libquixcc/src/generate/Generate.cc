@@ -92,11 +92,11 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
     // Generate code for AST
     if (!ast->codegen(CodegenVisitor(ctx.m_inner)))
     {
-        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM IR");
+        Message(ctx, libquixcc::E::ERROR, "Failed to generate LLVM IR");
         return false;
     }
 
-    message(ctx, libquixcc::Err::DEBUG, "Verifying LLVM module");
+    Message(ctx, libquixcc::E::DEBUG, "Verifying LLVM module");
     std::string err;
     llvm::raw_string_ostream err_stream(err);
 
@@ -104,21 +104,21 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
     if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
         throw std::runtime_error("LLVM IR generation failed. The AST must have been semantically incorrect: " + err_stream.str());
 
-    message(ctx, libquixcc::Err::DEBUG, "Generating LLVM IR");
+    Message(ctx, libquixcc::E::DEBUG, "Generating LLVM IR");
 
     if (generate_bitcode)
     {
-        message(ctx, libquixcc::Err::DEBUG, "Generating LLVM Bitcode");
+        Message(ctx, libquixcc::E::DEBUG, "Generating LLVM Bitcode");
         throw std::runtime_error("LLVM Bitcode generation is not yet implemented");
-        message(ctx, libquixcc::Err::DEBUG, "Finished generating LLVM Bitcode");
+        Message(ctx, libquixcc::E::DEBUG, "Finished generating LLVM Bitcode");
     }
     else
     {
-        message(ctx, libquixcc::Err::DEBUG, "Generating LLVM IR");
+        Message(ctx, libquixcc::E::DEBUG, "Generating LLVM IR");
         ctx.m_inner.m_module->print(os, nullptr, ctx.m_argset.contains("-g"));
     }
 
-    message(ctx, libquixcc::Err::DEBUG, "Finished generating LLVM IR");
+    Message(ctx, libquixcc::E::DEBUG, "Finished generating LLVM IR");
 
     return true;
 }
@@ -126,12 +126,12 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
 bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNode> ast, FILE *out, llvm::CodeGenFileType mode)
 {
 #if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
-    message(ctx, libquixcc::Err::FATAL, "Unsupported operating system");
+    Message(ctx, libquixcc::E::FATAL, "Unsupported operating system");
     throw std::runtime_error("Unsupported operating system");
 #else
     auto &TargetTriple = ctx.m_triple;
 
-    message(ctx, libquixcc::Err::DEBUG, "Generating code for target: %s", TargetTriple.c_str());
+    Message(ctx, libquixcc::E::DEBUG, "Generating code for target: %s", TargetTriple.c_str());
 
     std::string Error;
     auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
@@ -157,11 +157,11 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
     // Generate code for AST
     if (!ast->codegen(CodegenVisitor(ctx.m_inner)))
     {
-        message(ctx, libquixcc::Err::ERROR, "Failed to generate LLVM Code");
+        Message(ctx, libquixcc::E::ERROR, "Failed to generate LLVM Code");
         return false;
     }
 
-    message(ctx, libquixcc::Err::DEBUG, "Verifying LLVM module");
+    Message(ctx, libquixcc::E::DEBUG, "Verifying LLVM module");
     std::string err;
     llvm::raw_string_ostream err_stream(err);
 
@@ -200,6 +200,6 @@ bool libquixcc::generate(quixcc_job_t &job, std::shared_ptr<libquixcc::BlockNode
     if (job.m_argset.contains("-c"))
         return write_llvm(job, ast, job.m_out, llvm::CGFT_ObjectFile);
 
-    message(job, libquixcc::Err::FATAL, "Output format was not specified. Expected: [-emit-ir, -emit-bc, -S, -c]");
+    Message(job, libquixcc::E::FATAL, "Output format was not specified. Expected: [-emit-ir, -emit-bc, -S, -c]");
     return false;
 }

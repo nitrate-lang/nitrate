@@ -30,7 +30,7 @@
 
 namespace libquixcc
 {
-    enum class Err
+    enum class E
     {
         RAW,
         DEBUG,
@@ -41,10 +41,10 @@ namespace libquixcc
         FATAL
     };
 
-    void message(quixcc_job_t &job, Err type, const std::string &format, ...);
-    void parmsg(quixcc_job_t &job, const Token &tok, Err type, const std::string &format, ...);
-    void prepmsg(quixcc_job_t &job, const Token &tok, Err type, bool fatal_now, const std::string &format, ...);
-    void semanticmsg(quixcc_job_t &job, Err type, bool fatal_now, const std::string &format, ...);
+    void Message(quixcc_job_t &job, E type, const std::string &format, ...);
+    void ParserMessage(quixcc_job_t &job, const Token &tok, E type, const std::string &format, ...);
+    void PreprocessorMessage(quixcc_job_t &job, const Token &tok, E type, bool fatal_now, const std::string &format, ...);
+    void SemanticMessage(quixcc_job_t &job, E type, bool fatal_now, const std::string &format, ...);
 };
 
 #endif // __QUIXCC_ERROR_H__

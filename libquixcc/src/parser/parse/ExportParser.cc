@@ -44,7 +44,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             langType = ExportLangType::DLang;
         else
         {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[PARSER_UNKNOWN_LANGUAGE], lang.c_str());
+            PARMSG(tok, libquixcc::E::ERROR, feedback[PARSER_UNKNOWN_LANGUAGE], lang.c_str());
             return false;
         }
 
@@ -53,7 +53,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
 
     if (tok.type() != TokenType::Keyword)
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[PARSER_EXPECTED_KEYWORD], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[PARSER_EXPECTED_KEYWORD], tok.serialize().c_str());
         return false;
     }
 
@@ -87,7 +87,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
         break;
     default:
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[PARSER_EXPECTED_KEYWORD], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[PARSER_EXPECTED_KEYWORD], tok.serialize().c_str());
         return false;
     }
     if (stmt)

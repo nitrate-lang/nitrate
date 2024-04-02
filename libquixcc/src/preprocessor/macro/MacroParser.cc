@@ -40,13 +40,13 @@ bool libquixcc::MacroParser::parse(const libquixcc::Token &macro, std::vector<li
         size_t start = content.find('(');
         if (start == std::string::npos)
         {
-            PREPMSG(macro, Err::ERROR, "Invalid macro directive: %s", content.c_str());
+            PREPMSG(macro, E::ERROR, "Invalid macro directive: %s", content.c_str());
             return false;
         }
         size_t end = content.find(')', start);
         if (end == std::string::npos)
         {
-            PREPMSG(macro, Err::ERROR, "Invalid macro directive: %s", content.c_str());
+            PREPMSG(macro, E::ERROR, "Invalid macro directive: %s", content.c_str());
             return false;
         }
 
@@ -55,10 +55,10 @@ bool libquixcc::MacroParser::parse(const libquixcc::Token &macro, std::vector<li
             parameter = content.substr(start + 1, end - start - 1);
 
         if (!m_routines.contains(directive))
-            PREPMSG(macro, Err::ERROR, "Unknown macro directive: %s", directive.c_str());
+            PREPMSG(macro, E::ERROR, "Unknown macro directive: %s", directive.c_str());
 
         if (!m_routines.at(directive)(job, macro, directive, parameter, exp))
-            PREPMSG(macro, Err::ERROR, "Failed to process macro directive: %s", directive.c_str());
+            PREPMSG(macro, E::ERROR, "Failed to process macro directive: %s", directive.c_str());
 
         return true;
     }

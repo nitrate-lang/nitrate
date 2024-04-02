@@ -30,7 +30,7 @@ using namespace libquixcc;
 
 static bool __G_is_color_enabled = getenv("QUIXCC_COLOR") == nullptr;
 
-static void push_message_to_job(quixcc_job_t &job, Err type, const std::string &message)
+static void push_message_to_job(quixcc_job_t &job, E type, const std::string &message)
 {
     job.m_result->m_messages = (quixcc_msg_t **)realloc(job.m_result->m_messages, (job.m_result->m_count + 1) * sizeof(quixcc_msg_t *));
     quixcc_msg_t *msg = (quixcc_msg_t *)malloc(sizeof(quixcc_msg_t));
@@ -51,28 +51,28 @@ static bool is_color_enabled()
 #endif
 }
 
-static std::string make_message_colored(Err type, const std::string &format, va_list args)
+static std::string make_message_colored(E type, const std::string &format, va_list args)
 {
     std::string msg;
 
     switch (type)
     {
-    case Err::DEBUG:
+    case E::DEBUG:
         msg = "\x1b[49;1mdebug:\x1b[0m " + format + "\x1b[0m";
         break;
-    case Err::SUCCESS:
+    case E::SUCCESS:
         msg = "\x1b[32;49;1msuccess:\x1b[0m " + format + "\x1b[0m";
         break;
-    case Err::INFO:
+    case E::INFO:
         msg = "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + format + "\x1b[0m";
         break;
-    case Err::WARN:
+    case E::WARN:
         msg = "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
-    case Err::ERROR:
+    case E::ERROR:
         msg = "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
-    case Err::FATAL:
+    case E::FATAL:
         msg = "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
     default:
@@ -90,28 +90,28 @@ static std::string make_message_colored(Err type, const std::string &format, va_
     return msg;
 }
 
-static std::string make_message_nocolor(Err type, const std::string &format, va_list args)
+static std::string make_message_nocolor(E type, const std::string &format, va_list args)
 {
     std::string msg;
 
     switch (type)
     {
-    case Err::DEBUG:
+    case E::DEBUG:
         msg = "(debug): " + format;
         break;
-    case Err::SUCCESS:
+    case E::SUCCESS:
         msg = "(success): " + format;
         break;
-    case Err::INFO:
+    case E::INFO:
         msg = "(info): " + format;
         break;
-    case Err::WARN:
+    case E::WARN:
         msg = "(warn): " + format;
         break;
-    case Err::ERROR:
+    case E::ERROR:
         msg = "(ERROR): " + format;
         break;
-    case Err::FATAL:
+    case E::FATAL:
         msg = "(FATAL): " + format;
         break;
     default:
@@ -129,7 +129,7 @@ static std::string make_message_nocolor(Err type, const std::string &format, va_
     return msg;
 }
 
-static std::string make_parser_message_colored(const std::string &file, const libquixcc::Token &tok, Err type, const std::string &format, va_list args)
+static std::string make_parser_message_colored(const std::string &file, const libquixcc::Token &tok, E type, const std::string &format, va_list args)
 {
     std::string msg = "\x1b[49;1m" + file + ":";
 
@@ -137,22 +137,22 @@ static std::string make_parser_message_colored(const std::string &file, const li
 
     switch (type)
     {
-    case Err::DEBUG:
+    case E::DEBUG:
         msg += "\x1b[49;1mdebug:\x1b[0m " + format + "\x1b[0m";
         break;
-    case Err::SUCCESS:
+    case E::SUCCESS:
         msg += "\x1b[32;49;1msuccess:\x1b[0m " + format + "\x1b[0m";
         break;
-    case Err::INFO:
+    case E::INFO:
         msg += "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + format + "\x1b[0m";
         break;
-    case Err::WARN:
+    case E::WARN:
         msg += "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
-    case Err::ERROR:
+    case E::ERROR:
         msg += "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
-    case Err::FATAL:
+    case E::FATAL:
         msg += "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
         break;
     default:
@@ -170,7 +170,7 @@ static std::string make_parser_message_colored(const std::string &file, const li
     return msg;
 }
 
-static std::string make_parser_message_nocolor(const std::string &file, const libquixcc::Token &tok, Err type, const std::string &format, va_list args)
+static std::string make_parser_message_nocolor(const std::string &file, const libquixcc::Token &tok, E type, const std::string &format, va_list args)
 {
     std::string msg = file + ":";
 
@@ -178,22 +178,22 @@ static std::string make_parser_message_nocolor(const std::string &file, const li
 
     switch (type)
     {
-    case Err::DEBUG:
+    case E::DEBUG:
         msg += "(debug): " + format;
         break;
-    case Err::SUCCESS:
+    case E::SUCCESS:
         msg += "(success): " + format;
         break;
-    case Err::INFO:
+    case E::INFO:
         msg += "(info): " + format;
         break;
-    case Err::WARN:
+    case E::WARN:
         msg += "(warn): " + format;
         break;
-    case Err::ERROR:
+    case E::ERROR:
         msg += "(ERROR): " + format;
         break;
-    case Err::FATAL:
+    case E::FATAL:
         msg += "(FATAL): " + format;
         break;
     default:
@@ -211,9 +211,9 @@ static std::string make_parser_message_nocolor(const std::string &file, const li
     return msg;
 }
 
-void libquixcc::message(quixcc_job_t &job, Err type, const std::string &format, ...)
+void libquixcc::Message(quixcc_job_t &job, E type, const std::string &format, ...)
 {
-    if (!job.m_debug && type == Err::DEBUG)
+    if (!job.m_debug && type == E::DEBUG)
         return;
 
     va_list args;
@@ -230,9 +230,9 @@ void libquixcc::message(quixcc_job_t &job, Err type, const std::string &format, 
     push_message_to_job(job, type, msg);
 }
 
-void libquixcc::parmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::Err type, const std::string &format, ...)
+void libquixcc::ParserMessage(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::E type, const std::string &format, ...)
 {
-    if (!job.m_debug && type == Err::DEBUG)
+    if (!job.m_debug && type == E::DEBUG)
         return;
 
     va_list args;
@@ -251,13 +251,13 @@ void libquixcc::parmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc
 
     push_message_to_job(job, type, msg);
 
-    if (type == Err::FATAL || type == Err::ERROR)
+    if (type == E::FATAL || type == E::ERROR)
         throw libquixcc::ParseException();
 }
 
-void libquixcc::prepmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::Err type, bool fatal_now, const std::string &format, ...)
+void libquixcc::PreprocessorMessage(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::E type, bool fatal_now, const std::string &format, ...)
 {
-    if (!job.m_debug && type == Err::DEBUG)
+    if (!job.m_debug && type == E::DEBUG)
         return;
 
     va_list args;
@@ -276,7 +276,7 @@ void libquixcc::prepmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixc
 
     push_message_to_job(job, type, msg);
 
-    if (type == Err::FATAL || type == Err::ERROR)
+    if (type == E::FATAL || type == E::ERROR)
     {
         job.m_tainted = true;
 
@@ -285,9 +285,9 @@ void libquixcc::prepmsg(quixcc_job_t &job, const libquixcc::Token &tok, libquixc
     }
 }
 
-void libquixcc::semanticmsg(quixcc_job_t &job, libquixcc::Err type, bool fatal_now, const std::string &format, ...)
+void libquixcc::SemanticMessage(quixcc_job_t &job, libquixcc::E type, bool fatal_now, const std::string &format, ...)
 {
-    if (!job.m_debug && type == Err::DEBUG)
+    if (!job.m_debug && type == E::DEBUG)
         return;
 
     va_list args;
@@ -303,7 +303,7 @@ void libquixcc::semanticmsg(quixcc_job_t &job, libquixcc::Err type, bool fatal_n
 
     push_message_to_job(job, type, msg);
 
-    if (type == Err::FATAL || type == Err::ERROR)
+    if (type == E::FATAL || type == E::ERROR)
     {
         job.m_tainted = true;
 

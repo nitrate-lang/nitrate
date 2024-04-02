@@ -45,7 +45,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
 
             if (stack.size() != 1)
             {
-                PARMSG(tok, libquixcc::Err::ERROR, "Expected a single expression");
+                PARMSG(tok, libquixcc::E::ERROR, "Expected a single expression");
                 return false;
             }
 
@@ -82,7 +82,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 stack.push(libquixcc::NullLiteralNode::create());
                 continue;
             default:
-                PARMSG(tok, libquixcc::Err::ERROR, "Unexpected token %s 1", tok.serialize().c_str());
+                PARMSG(tok, libquixcc::E::ERROR, "Unexpected token %s 1", tok.serialize().c_str());
                 return false;
             }
             break;
@@ -101,7 +101,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             {
                 if (stack.size() != 1)
                 {
-                    PARMSG(tok, libquixcc::Err::ERROR, "Expected a single expression");
+                    PARMSG(tok, libquixcc::E::ERROR, "Expected a single expression");
                     return false;
                 }
 
@@ -110,7 +110,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 return true;
             }
             default:
-                PARMSG(tok, libquixcc::Err::ERROR, "Unexpected token %s 2", tok.serialize().c_str());
+                PARMSG(tok, libquixcc::E::ERROR, "Unexpected token %s 2", tok.serialize().c_str());
                 return false;
             }
             break;
@@ -137,7 +137,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             }
             else
             {
-                PARMSG(tok, libquixcc::Err::ERROR, "Unexpected token %s", tok.serialize().c_str());
+                PARMSG(tok, libquixcc::E::ERROR, "Unexpected token %s", tok.serialize().c_str());
                 return false;
             }
             break;
@@ -155,7 +155,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                     auto tok = scanner->peek();
                     if (tok.type() == TokenType::Eof)
                     {
-                        PARMSG(tok, libquixcc::Err::ERROR, "Unexpected EOF");
+                        PARMSG(tok, libquixcc::E::ERROR, "Unexpected EOF");
                         return false;
                     }
 
@@ -185,7 +185,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             break;
         }
         default:
-            PARMSG(tok, libquixcc::Err::ERROR, "Unexpected token %s", tok.serialize().c_str());
+            PARMSG(tok, libquixcc::E::ERROR, "Unexpected token %s", tok.serialize().c_str());
             return false;
         }
     }

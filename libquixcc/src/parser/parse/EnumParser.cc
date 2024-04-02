@@ -31,7 +31,7 @@ static bool parse_enum_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     Token tok = scanner->next();
     if (tok.type() != TokenType::Identifier)
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[ENUM_FIELD_EXPECTED_IDENTIFIER], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[ENUM_FIELD_EXPECTED_IDENTIFIER], tok.serialize().c_str());
         return false;
     }
 
@@ -45,7 +45,7 @@ static bool parse_enum_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
         scanner->next();
         if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), node->m_value))
         {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[ENUM_FIELD_EXPECTED_CONST_EXPR], node->m_name.c_str());
+            PARMSG(tok, libquixcc::E::ERROR, feedback[ENUM_FIELD_EXPECTED_CONST_EXPR], node->m_name.c_str());
             return false;
         }
 
@@ -60,7 +60,7 @@ static bool parse_enum_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
 
     if (!tok.is<Punctor>(Punctor::CloseBrace))
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[ENUM_FIELD_EXPECTED_SEMICOLON], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[ENUM_FIELD_EXPECTED_SEMICOLON], tok.serialize().c_str());
         return false;
     }
 
@@ -72,7 +72,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     Token tok = scanner->next();
     if (tok.type() != TokenType::Identifier)
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[ENUM_EXPECTED_IDENTIFIER], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[ENUM_EXPECTED_IDENTIFIER], tok.serialize().c_str());
         return false;
     }
 
@@ -81,7 +81,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Colon))
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[ENUM_EXPECTED_COLON], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[ENUM_EXPECTED_COLON], tok.serialize().c_str());
         return false;
     }
 
@@ -98,7 +98,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
 
     if (!tok.is<Punctor>(Punctor::OpenBrace))
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[ENUM_EXPECTED_LEFT_BRACE], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[ENUM_EXPECTED_LEFT_BRACE], tok.serialize().c_str());
         return false;
     }
 
@@ -122,7 +122,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[ENUM_DEF_EXPECTED_SEMICOLON]);
+        PARMSG(tok, libquixcc::E::ERROR, feedback[ENUM_DEF_EXPECTED_SEMICOLON]);
         return false;
     }
 

@@ -40,7 +40,7 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     {
         if (state.did_nothrow)
         {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_NO_THROW_ALREADY_SPECIFIED], tok.serialize().c_str());
+            PARMSG(tok, libquixcc::E::ERROR, feedback[FN_NO_THROW_ALREADY_SPECIFIED], tok.serialize().c_str());
             return false;
         }
 
@@ -53,7 +53,7 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     {
         if (state.did_foreign)
         {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_FOREIGN_ALREADY_SPECIFIED], tok.serialize().c_str());
+            PARMSG(tok, libquixcc::E::ERROR, feedback[FN_FOREIGN_ALREADY_SPECIFIED], tok.serialize().c_str());
             return false;
         }
         scanner->next();
@@ -65,7 +65,7 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     {
         if (state.did_tsafe)
         {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_THREAD_SAFE_ALREADY_SPECIFIED], tok.serialize().c_str());
+            PARMSG(tok, libquixcc::E::ERROR, feedback[FN_THREAD_SAFE_ALREADY_SPECIFIED], tok.serialize().c_str());
             return false;
         }
         scanner->next();
@@ -77,7 +77,7 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     {
         if (state.did_impure)
         {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_IMPURE_ALREADY_SPECIFIED], tok.serialize().c_str());
+            PARMSG(tok, libquixcc::E::ERROR, feedback[FN_IMPURE_ALREADY_SPECIFIED], tok.serialize().c_str());
             return false;
         }
         scanner->next();
@@ -109,7 +109,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     if (tok.type() != TokenType::Identifier)
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_EXPECTED_IDENTIFIER], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[FN_EXPECTED_IDENTIFIER], tok.serialize().c_str());
         return false;
     }
 
@@ -119,7 +119,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     if (!tok.is<Punctor>(Punctor::OpenParen))
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_EXPECTED_OPEN_PAREN], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[FN_EXPECTED_OPEN_PAREN], tok.serialize().c_str());
         return false;
     }
 
@@ -136,7 +136,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
         if (tok.type() != TokenType::Punctor || (std::get<Punctor>(tok.val()) != Punctor::Comma && std::get<Punctor>(tok.val()) != Punctor::CloseParen))
         {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_EXPECTED_CLOSE_PAREN_OR_COMMA], tok.serialize().c_str());
+            PARMSG(tok, libquixcc::E::ERROR, feedback[FN_EXPECTED_CLOSE_PAREN_OR_COMMA], tok.serialize().c_str());
             return false;
         }
     }
@@ -176,7 +176,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     }
     else if (!tok.is<Punctor>(Punctor::OpenBrace))
     {
-        PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_EXPECTED_OPEN_BRACE], tok.serialize().c_str());
+        PARMSG(tok, libquixcc::E::ERROR, feedback[FN_EXPECTED_OPEN_BRACE], tok.serialize().c_str());
         return false;
     }
 

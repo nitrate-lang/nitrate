@@ -115,7 +115,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
             auto key = std::make_pair((*node)->ntype, tmp);
             if (named_construct_map.contains(key))
             {
-                semanticmsg(*job, Err::ERROR, false, feedback[error_message_index[(*node)->ntype]], tmp.c_str());
+                SemanticMessage(*job, E::ERROR, false, feedback[error_message_index[(*node)->ntype]], tmp.c_str());
                 return;
             }
 
@@ -127,7 +127,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
         job->m_inner.prefix));
 
     for (auto &pair : named_construct_map)
-        message(*job, Err::DEBUG, "Found named construct: %s", pair.first.second.c_str());
+        Message(*job, E::DEBUG, "Found named construct: %s", pair.first.second.c_str());
 
     job->m_inner.m_named_construsts = named_construct_map;
     job->m_inner.m_named_types = named_types_map;

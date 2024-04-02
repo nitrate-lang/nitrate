@@ -59,13 +59,13 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
     std::vector<libquixcc::Token> tokens;
     if (!libquixcc::StringLexer::QuickLex(parameter, tokens))
     {
-        libquixcc::message(*job, libquixcc::Err::ERROR, "Failed to lex readstdin parameter");
+        libquixcc::Message(*job, libquixcc::E::ERROR, "Failed to lex readstdin parameter");
         return false;
     }
 
     if (tokens.empty())
     {
-        libquixcc::message(*job, libquixcc::Err::ERROR, "Empty parameter for readstdin");
+        libquixcc::Message(*job, libquixcc::E::ERROR, "Empty parameter for readstdin");
         return false;
     }
 
@@ -89,7 +89,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
             binary = true;
             if ((uint)(noecho + 1) >= tokens.size())
             {
-                libquixcc::message(*job, libquixcc::Err::ERROR, "Invalid readstdin argument count");
+                libquixcc::Message(*job, libquixcc::E::ERROR, "Invalid readstdin argument count");
                 return false;
             }
             t = tokens[noecho + 1];
@@ -99,7 +99,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
             expand = true;
             if ((uint)(noecho + binary + 1) >= tokens.size())
             {
-                libquixcc::message(*job, libquixcc::Err::ERROR, "Invalid readstdin argument count");
+                libquixcc::Message(*job, libquixcc::E::ERROR, "Invalid readstdin argument count");
                 return false;
             }
             t = tokens[noecho + binary + 1];
@@ -108,7 +108,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
 
     if (t.type() != TokenType::IntegerLiteral)
     {
-        libquixcc::message(*job, libquixcc::Err::ERROR, "Invalid readstdin maxlen");
+        libquixcc::Message(*job, libquixcc::E::ERROR, "Invalid readstdin maxlen");
         return false;
     }
 
@@ -138,7 +138,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
     {
         if (!StringLexer::QuickLex(input, exp))
         {
-            libquixcc::message(*job, libquixcc::Err::ERROR, "Failed to lex readstdin input");
+            libquixcc::Message(*job, libquixcc::E::ERROR, "Failed to lex readstdin input");
             disable_noecho();
             return false;
         }

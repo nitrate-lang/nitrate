@@ -33,17 +33,17 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
     std::vector<libquixcc::Token> tokens;
     if (!libquixcc::StringLexer::QuickLex(parameter, tokens))
     {
-        libquixcc::message(*job, libquixcc::Err::ERROR, "Failed to lex print message");
+        libquixcc::Message(*job, libquixcc::E::ERROR, "Failed to lex print message");
         return false;
     }
 
     if (tokens.empty())
     {
-        libquixcc::message(*job, libquixcc::Err::ERROR, "Empty print message");
+        libquixcc::Message(*job, libquixcc::E::ERROR, "Empty print message");
         return false;
     }
 
-    Err level = Err::INFO;
+    E level = E::INFO;
 
     Token t = tokens[0];
     if (t.type() == TokenType::Identifier && tokens.size() == 3)
@@ -52,47 +52,47 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
         std::transform(id.begin(), id.end(), id.begin(), ::tolower);
 
         if (id == "debug")
-            level = Err::DEBUG;
+            level = E::DEBUG;
         else if (id == "ok" || id == "good" || id == "success")
-            level = Err::SUCCESS;
+            level = E::SUCCESS;
         else if (id == "info")
-            level = Err::INFO;
+            level = E::INFO;
         else if (id == "warning" || id == "warn")
-            level = Err::WARN;
+            level = E::WARN;
         else if (id == "error" || id == "err")
-            level = Err::ERROR;
+            level = E::ERROR;
         else if (id == "raw")
-            level = Err::RAW;
+            level = E::RAW;
         else
         {
-            libquixcc::message(*job, libquixcc::Err::ERROR, "Invalid print level");
+            libquixcc::Message(*job, libquixcc::E::ERROR, "Invalid print level");
             return false;
         }
 
         if (tokens[1].type() != TokenType::Punctor || std::get<Punctor>(tokens[1].val()) != Punctor::Comma)
         {
-            libquixcc::message(*job, libquixcc::Err::ERROR, "Expected comma after print level");
+            libquixcc::Message(*job, libquixcc::E::ERROR, "Expected comma after print level");
             return false;
         }
 
         switch (level)
         {
-        case Err::DEBUG:
-            prepmsg(*job, tok, libquixcc::Err::DEBUG, false, std::get<std::string>(tokens[2].val()));
+        case E::DEBUG:
+            PreprocessorMessage(*job, tok, libquixcc::E::DEBUG, false, std::get<std::string>(tokens[2].val()));
             break;
-        case Err::SUCCESS:
-            prepmsg(*job, tok, libquixcc::Err::SUCCESS, false, std::get<std::string>(tokens[2].val()));
+        case E::SUCCESS:
+            PreprocessorMessage(*job, tok, libquixcc::E::SUCCESS, false, std::get<std::string>(tokens[2].val()));
             break;
-        case Err::INFO:
-            prepmsg(*job, tok, libquixcc::Err::INFO, false, std::get<std::string>(tokens[2].val()));
+        case E::INFO:
+            PreprocessorMessage(*job, tok, libquixcc::E::INFO, false, std::get<std::string>(tokens[2].val()));
             break;
-        case Err::WARN:
-            prepmsg(*job, tok, libquixcc::Err::WARN, false, std::get<std::string>(tokens[2].val()));
+        case E::WARN:
+            PreprocessorMessage(*job, tok, libquixcc::E::WARN, false, std::get<std::string>(tokens[2].val()));
             break;
-        case Err::ERROR:
-            prepmsg(*job, tok, libquixcc::Err::ERROR, false, std::get<std::string>(tokens[2].val()));
+        case E::ERROR:
+            PreprocessorMessage(*job, tok, libquixcc::E::ERROR, false, std::get<std::string>(tokens[2].val()));
             throw libquixcc::ProgrammaticPreprocessorException();
-        case Err::RAW:
+        case E::RAW:
             std::cout << std::get<std::string>(tokens[2].val());
             break;
         default:
@@ -101,7 +101,7 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
     }
     else
     {
-        prepmsg(*job, tok, libquixcc::Err::INFO, false, std::get<std::string>(t.val()));
+        PreprocessorMessage(*job, tok, libquixcc::E::INFO, false, std::get<std::string>(t.val()));
     }
 
     return true;

@@ -33,7 +33,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::OpenBrace))
         {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[PARSER_EXPECTED_LEFT_BRACE], tok.serialize().c_str());
+            PARMSG(tok, libquixcc::E::ERROR, feedback[PARSER_EXPECTED_LEFT_BRACE], tok.serialize().c_str());
             return false;
         }
     }
@@ -50,7 +50,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
 
         if (tok.type() != TokenType::Keyword)
         {
-            PARMSG(tok, libquixcc::Err::ERROR, feedback[PARSER_EXPECTED_KEYWORD], tok.serialize().c_str());
+            PARMSG(tok, libquixcc::E::ERROR, feedback[PARSER_EXPECTED_KEYWORD], tok.serialize().c_str());
             return false;
         }
 
