@@ -316,11 +316,6 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::BoolTypeNode *node
     return m_ctx->m_builder->getInt1Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::CharTypeNode *node) const
-{
-    return m_ctx->m_builder->getInt8Ty();
-}
-
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::VoidTypeNode *node) const
 {
     return m_ctx->m_builder->getVoidTy();

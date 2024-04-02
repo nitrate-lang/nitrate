@@ -36,7 +36,6 @@ static std::map<std::string, TypeNode *> primitive_types = {
     {"f32", F32TypeNode::create()},
     {"f64", F64TypeNode::create()},
     {"bool", BoolTypeNode::create()},
-    {"char", CharTypeNode::create()},
     {"string", StringTypeNode::create()},
     {"void", VoidTypeNode::create()}};
 

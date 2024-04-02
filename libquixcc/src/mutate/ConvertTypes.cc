@@ -16,53 +16,27 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_MUTATE_ROUTINES_H__
-#define __QUIXCC_MUTATE_ROUTINES_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <memory>
-#include <functional>
-#include <vector>
-#include <parse/Parser.h>
+#include <mutate/Routine.h>
+#include <error/Message.h>
+#include <mutex>
+#include <set>
 #include <quixcc.h>
+#include <iostream>
+#include <algorithm>
 
-namespace libquixcc
+using namespace libquixcc;
+
+void libquixcc::mutate::ConvertTypes(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    namespace mutate
-    {
-        void DiscoverNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ExtrapolateEnumFields(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ResolveNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void FoldConstExpr(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ConvertTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        inline void InferTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
-        void FilterNonGeneratable(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-    }
-
-    typedef std::function<void(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>)> ASTMutateRoutine;
-
-    class Mutation
-    {
-    public:
-        /// @brief Run rountines in the order they were added.
-        void run(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
+    ast->dfs_preorder(ParseNodePreorderVisitor(
+        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
-            for (auto routine : m_routines)
-            {
-                routine(job, ast);
-            }
-        }
+            if ((*node)->ntype != NodeType::LetDeclNode)
+                return;
 
-        void add_routine(ASTMutateRoutine routine)
-        {
-            m_routines.push_back(routine);
-        }
-
-        std::vector<ASTMutateRoutine> m_routines;
-    };
+            /// TODO: Implement type conversion logic here.
+        },
+        job->m_inner->prefix));
 }
-
-#endif // __QUIXCC_MUTATE_ROUTINES_H__

@@ -31,7 +31,6 @@ libquixcc::I64TypeNode *libquixcc::I64TypeNode::m_instance = nullptr;
 libquixcc::F32TypeNode *libquixcc::F32TypeNode::m_instance = nullptr;
 libquixcc::F64TypeNode *libquixcc::F64TypeNode::m_instance = nullptr;
 libquixcc::BoolTypeNode *libquixcc::BoolTypeNode::m_instance = nullptr;
-libquixcc::CharTypeNode *libquixcc::CharTypeNode::m_instance = nullptr;
 libquixcc::VoidTypeNode *libquixcc::VoidTypeNode::m_instance = nullptr;
 std::map<libquixcc::TypeNode *, libquixcc::PointerTypeNode *> libquixcc::PointerTypeNode::m_instances;
 libquixcc::StringTypeNode *libquixcc::StringTypeNode::m_instance = nullptr;

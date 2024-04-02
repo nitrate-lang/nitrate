@@ -180,11 +180,6 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::BoolTypeNode *node)
     return 1;
 }
 
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::CharTypeNode *node)
-{
-    return 1;
-}
-
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::VoidTypeNode *node)
 {
     return 1;

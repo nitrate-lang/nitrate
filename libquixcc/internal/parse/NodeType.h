@@ -60,7 +60,6 @@ namespace libquixcc
         F32TypeNode,
         F64TypeNode,
         BoolTypeNode,
-        CharTypeNode,
         VoidTypeNode,
         PointerTypeNode,
         StringTypeNode,
@@ -138,7 +137,6 @@ namespace libquixcc
     class F32TypeNode;
     class F64TypeNode;
     class BoolTypeNode;
-    class CharTypeNode;
     class VoidTypeNode;
     class PointerTypeNode;
     class StringTypeNode;

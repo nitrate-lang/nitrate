@@ -119,7 +119,6 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
         {NodeType::F32TypeNode, "g"},
         {NodeType::F64TypeNode, "e"},
         {NodeType::BoolTypeNode, "y"},
-        {NodeType::CharTypeNode, "c"},
         {NodeType::StringTypeNode, "x"},
         {NodeType::VoidTypeNode, "v"},
     };
@@ -206,9 +205,6 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         {"e", F64TypeNode::create()},
         {"y", BoolTypeNode::create()},
         {"x", StringTypeNode::create()},
-        {"v", VoidTypeNode::create()},
-        {"c", CharTypeNode::create()},
-        {"s", StringTypeNode::create()},
         {"v", VoidTypeNode::create()}};
 
     if (basic_typesmap.contains(type))

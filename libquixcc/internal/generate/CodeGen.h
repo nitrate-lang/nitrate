@@ -64,7 +64,6 @@ namespace libquixcc
         llvm::Type *visit(const F32TypeNode *node) const;
         llvm::Type *visit(const F64TypeNode *node) const;
         llvm::Type *visit(const BoolTypeNode *node) const;
-        llvm::Type *visit(const CharTypeNode *node) const;
         llvm::Type *visit(const VoidTypeNode *node) const;
         llvm::Type *visit(const PointerTypeNode *node) const;
         llvm::Type *visit(const StringTypeNode *node) const;

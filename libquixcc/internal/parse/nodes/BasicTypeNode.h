@@ -241,25 +241,6 @@ namespace libquixcc
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
     };
 
-    class CharTypeNode : public BasicTypeNode
-    {
-        CharTypeNode() { ntype = NodeType::CharTypeNode; }
-        static CharTypeNode *m_instance;
-
-    public:
-        static CharTypeNode *create()
-        {
-            if (m_instance == nullptr)
-                m_instance = new CharTypeNode();
-            return m_instance;
-        }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
-        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
-    };
-
     class VoidTypeNode : public BasicTypeNode
     {
         VoidTypeNode() { ntype = NodeType::VoidTypeNode; }
