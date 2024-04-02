@@ -84,7 +84,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             return true;
         }
     }
-    else if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::OpenBracket)
+    else if (tok.is<Punctor>(Punctor::OpenBracket))
     {
         // Array type
         // syntax [type; size]
@@ -119,7 +119,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         *node = ArrayTypeNode::create(type, size);
         return true;
     }
-    else if (tok.type() == TokenType::Operator && std::get<Operator>(tok.val()) == Operator::Multiply)
+    else if (tok.is<Operator>(Operator::Multiply))
     {
         // Pointer type
         TypeNode *type;
@@ -132,7 +132,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         *node = PointerTypeNode::create(type);
         return true;
     }
-    else if (tok.type() == TokenType::Operator && std::get<Operator>(tok.val()) == Operator::Modulo)
+    else if (tok.is<Operator>(Operator::Modulo))
     {
         // '%' means mutability
         TypeNode *type;

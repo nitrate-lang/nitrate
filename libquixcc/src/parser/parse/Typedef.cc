@@ -40,7 +40,7 @@ bool libquixcc::parse_typedef(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     std::string name = std::get<std::string>(tok.val());
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Operator || std::get<Operator>(tok.val()) != Operator::Assign)
+    if (!tok.is<Operator>(Operator::Assign))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPEDEF_EXPECTED_ASSIGN]);
         return false;

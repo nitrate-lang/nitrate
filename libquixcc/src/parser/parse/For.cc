@@ -29,7 +29,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     std::shared_ptr<ExprNode> x0, x1, x2;
 
     Token tok = scanner->peek();
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::OpenParen)
+    if (tok.is<Punctor>(Punctor::OpenParen))
     {
         tok = scanner->next();
 

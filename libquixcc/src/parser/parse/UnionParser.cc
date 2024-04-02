@@ -72,7 +72,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     std::string name = std::get<std::string>(tok.val());
 
     tok = scanner->next();
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
+    if (tok.is<Punctor>(Punctor::Semicolon))
     {
         node = std::make_shared<UnionDeclNode>();
         std::static_pointer_cast<UnionDeclNode>(node)->m_name = name;
@@ -89,7 +89,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     while (true)
     {
         tok = scanner->peek();
-        if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::CloseBrace)
+        if (tok.is<Punctor>(Punctor::CloseBrace))
         {
             scanner->next();
             break;

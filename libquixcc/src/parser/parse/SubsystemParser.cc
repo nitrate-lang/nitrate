@@ -35,7 +35,7 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Sc
     tok = scanner->peek();
 
     // check if : item1, item2, item3
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Colon)
+    if (tok.is<Punctor>(Punctor::Colon))
     {
         scanner->next(); // consume colon
         tok = scanner->next();
@@ -47,7 +47,7 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Sc
         deps.insert(std::get<std::string>(tok.val()));
 
         tok = scanner->peek();
-        while (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Comma)
+        while (tok.is<Punctor>(Punctor::Comma))
         {
             scanner->next(); // consume comma
             tok = scanner->next();

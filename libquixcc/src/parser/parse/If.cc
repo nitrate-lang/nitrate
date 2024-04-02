@@ -35,7 +35,7 @@ bool libquixcc::parse_if(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> 
         return false;
 
     Token tok = scanner->peek();
-    if (tok.type() == TokenType::Keyword && std::get<Keyword>(tok.val()) == Keyword::Else)
+    if (tok.is<Keyword>(Keyword::Else))
     {
         scanner->next();
         std::shared_ptr<BlockNode> else_block;

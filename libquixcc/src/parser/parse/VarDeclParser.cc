@@ -53,7 +53,7 @@ bool libquixcc::parse_var(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
 
     std::vector<std::pair<std::string, libquixcc::TypeNode *>> decls;
     bool multi_decl = false;
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::OpenBracket)
+    if (tok.is<Punctor>(Punctor::OpenBracket))
     {
         multi_decl = true;
         /*
@@ -71,9 +71,9 @@ bool libquixcc::parse_var(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             decls.push_back(decl);
 
             tok = scanner->next();
-            if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Comma)
+            if (tok.is<Punctor>(Punctor::Comma))
                 continue;
-            else if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::CloseBracket)
+            else if (tok.is<Punctor>(Punctor::CloseBracket))
                 break;
             else
             {
@@ -98,13 +98,13 @@ bool libquixcc::parse_var(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     }
 
     tok = scanner->next();
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
+    if (tok.is<Punctor>(Punctor::Semicolon))
     {
         // No initializer
         for (auto &decl : decls)
             nodes.push_back(std::make_shared<VarDeclNode>(decl.first, decl.second, nullptr));
     }
-    else if (tok.type() == TokenType::Operator && std::get<Operator>(tok.val()) == Operator::Assign)
+    else if (tok.is<Operator>(Operator::Assign))
     {
         if (multi_decl)
             throw std::runtime_error("Initializer not implemented for multiple declarations");

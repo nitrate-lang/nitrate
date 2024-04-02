@@ -44,7 +44,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
     {
         if (expect_braces)
         {
-            if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::CloseBrace)
+            if (tok.is<Punctor>(Punctor::CloseBrace))
                 break;
         }
 

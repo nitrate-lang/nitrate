@@ -28,7 +28,7 @@ bool libquixcc::parse_return(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
 {
     Token tok = scanner->peek();
 
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
+    if (tok.is<Punctor>(Punctor::Semicolon))
     {
         scanner->next();
         node = std::make_shared<ReturnStmtNode>(nullptr); // void

@@ -40,7 +40,7 @@ static bool parse_enum_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     node->m_name = std::get<std::string>(tok.val());
 
     tok = scanner->peek();
-    if (tok.type() == TokenType::Operator && std::get<Operator>(tok.val()) == Operator::Assign)
+    if (tok.is<Operator>(Operator::Assign))
     {
         scanner->next();
         if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), node->m_value))
@@ -52,7 +52,7 @@ static bool parse_enum_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
         tok = scanner->peek();
     }
 
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Comma)
+    if (tok.is<Punctor>(Punctor::Comma))
     {
         scanner->next();
         return true;
@@ -90,7 +90,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         return false;
 
     tok = scanner->next();
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
+    if (tok.is<Punctor>(Punctor::Semicolon))
     {
         node = std::make_shared<EnumDeclNode>(EnumTypeNode::create(name, type));
         return true;
@@ -107,7 +107,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     while (true)
     {
         tok = scanner->peek();
-        if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::CloseBrace)
+        if (tok.is<Punctor>(Punctor::CloseBrace))
         {
             scanner->next();
             break;

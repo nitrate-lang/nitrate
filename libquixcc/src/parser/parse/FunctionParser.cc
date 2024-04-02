@@ -36,7 +36,7 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
 {
     Token tok = scanner->peek();
 
-    if (tok.type() == TokenType::Keyword && std::get<Keyword>(tok.val()) == Keyword::Nothrow)
+    if (tok.is<Keyword>(Keyword::Nothrow))
     {
         if (state.did_nothrow)
         {
@@ -49,7 +49,7 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         return true;
     }
 
-    if (tok.type() == TokenType::Keyword && std::get<Keyword>(tok.val()) == Keyword::Foreign)
+    if (tok.is<Keyword>(Keyword::Foreign))
     {
         if (state.did_foreign)
         {
@@ -61,7 +61,7 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         return true;
     }
 
-    if (tok.type() == TokenType::Keyword && std::get<Keyword>(tok.val()) == Keyword::Tsafe)
+    if (tok.is<Keyword>(Keyword::Tsafe))
     {
         if (state.did_tsafe)
         {
@@ -73,7 +73,7 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         return true;
     }
 
-    if (tok.type() == TokenType::Keyword && std::get<Keyword>(tok.val()) == Keyword::Impure)
+    if (tok.is<Keyword>(Keyword::Impure))
     {
         if (state.did_impure)
         {
@@ -147,7 +147,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     tok = scanner->peek();
 
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
+    if (tok.is<Punctor>(Punctor::Semicolon))
     {
         fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, false, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
 
@@ -156,7 +156,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
         return true;
     }
 
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Colon)
+    if (tok.is<Punctor>(Punctor::Colon))
     {
         scanner->next();
         TypeNode *type;
@@ -167,7 +167,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
         fndecl->m_type = FunctionTypeNode::create(type, params, false, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
 
         tok = scanner->peek();
-        if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
+        if (tok.is<Punctor>(Punctor::Semicolon))
         {
             scanner->next();
             node = fndecl;

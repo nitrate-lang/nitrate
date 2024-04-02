@@ -140,7 +140,7 @@ bool libquixcc::PrepEngine::handle_import()
     std::string filename = std::regex_replace(std::get<std::string>(tok.val()), std::regex("::"), "/");
 
     tok = m_stack.top().lexer.peek();
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::OpenParen)
+    if (tok.is<Punctor>(Punctor::OpenParen))
     {
         // <name>(version)
         m_stack.top().lexer.next();
@@ -282,7 +282,7 @@ libquixcc::Token libquixcc::PrepEngine::read_token()
 
         tok = m_stack.top().lexer.next();
 
-        if (tok.type() == TokenType::Keyword && std::get<Keyword>(tok.val()) == Keyword::Import)
+        if (tok.is<Keyword>(Keyword::Import))
         {
             if (!handle_import())
                 PREPMSG(tok, Err::ERROR, "Failed to handle import");

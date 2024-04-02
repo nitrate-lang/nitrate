@@ -52,12 +52,12 @@ static bool parse_struct_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     std::shared_ptr<ConstExprNode> value;
 
     tok = scanner->next();
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
+    if (tok.is<Punctor>(Punctor::Semicolon))
     {
         node = std::make_shared<StructFieldNode>(name, type);
         return true;
     }
-    else if (tok.type() == TokenType::Operator && std::get<Operator>(tok.val()) == Operator::Assign)
+    else if (tok.is<Operator>(Operator::Assign))
     {
         if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::Semicolon), value))
         {
@@ -95,7 +95,7 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     std::string name = std::get<std::string>(tok.val());
 
     tok = scanner->next();
-    if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::Semicolon)
+    if (tok.is<Punctor>(Punctor::Semicolon))
     {
         node = std::make_shared<StructDeclNode>(name);
         return true;
@@ -111,7 +111,7 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     while (true)
     {
         tok = scanner->peek();
-        if (tok.type() == TokenType::Punctor && std::get<Punctor>(tok.val()) == Punctor::CloseBrace)
+        if (tok.is<Punctor>(Punctor::CloseBrace))
         {
             scanner->next();
             break;
