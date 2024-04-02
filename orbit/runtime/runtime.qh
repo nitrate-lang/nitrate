@@ -13,8 +13,6 @@
 ///     * License terms may be found in the LICENSE file.                   ///
 ///                                                                         ///
 ///////////////////////////////////////////////////////////////////////////////
-
-@lang v1
 @encoding utf8
 @pragma version 1.0.0
 

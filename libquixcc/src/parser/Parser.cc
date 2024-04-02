@@ -31,7 +31,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
     if (expect_braces)
     {
         tok = scanner->next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::OpenBrace)
+        if (!tok.is<Punctor>(Punctor::OpenBrace))
         {
             PARMSG(tok, libquixcc::Err::ERROR, feedback[PARSER_EXPECTED_LEFT_BRACE], tok.serialize().c_str());
             return false;

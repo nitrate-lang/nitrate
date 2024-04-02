@@ -36,7 +36,7 @@ static bool parse_struct_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     auto name = std::get<std::string>(tok.val());
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Colon)
+    if (!tok.is<Punctor>(Punctor::Colon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[STRUCT_FIELD_MISSING_COLON]);
         return false;
@@ -72,7 +72,7 @@ static bool parse_struct_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     }
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[STRUCT_FIELD_MISSING_PUNCTOR], name.c_str());
         return false;
@@ -100,7 +100,7 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
         node = std::make_shared<StructDeclNode>(name);
         return true;
     }
-    else if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::OpenBrace)
+    else if (!tok.is<Punctor>(Punctor::OpenBrace))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[STRUCT_DEF_EXPECTED_OPEN_BRACE]);
         return false;
@@ -124,7 +124,7 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     }
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[STRUCT_DEF_EXPECTED_SEMICOLON]);
         return false;

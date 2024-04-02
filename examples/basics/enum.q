@@ -16,8 +16,6 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-@lang v1
-
 subsystem libquixcc {
     enum error_message_index: i8 {
         VAR_NAME_DUPLICATE = 10,

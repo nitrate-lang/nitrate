@@ -29,7 +29,7 @@ static bool parse_decl(quixcc_job_t &job, Token tok, std::shared_ptr<libquixcc::
     std::string name = std::get<std::string>(tok.val());
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Colon)
+    if (!tok.is<Punctor>(Punctor::Colon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[LET_DECL_MISSING_COLON]);
         return false;
@@ -121,7 +121,7 @@ bool libquixcc::parse_let(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
 
         tok = scanner->next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+        if (!tok.is<Punctor>(Punctor::Semicolon))
         {
             PARMSG(tok, libquixcc::Err::ERROR, feedback[LET_DECL_MISSING_PUNCTOR], decls[0].first.c_str());
             return false;

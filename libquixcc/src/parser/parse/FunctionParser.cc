@@ -117,7 +117,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     tok = scanner->next();
 
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::OpenParen)
+    if (!tok.is<Punctor>(Punctor::OpenParen))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_EXPECTED_OPEN_PAREN], tok.serialize().c_str());
         return false;
@@ -174,7 +174,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
             return true;
         }
     }
-    else if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::OpenBrace)
+    else if (!tok.is<Punctor>(Punctor::OpenBrace))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[FN_EXPECTED_OPEN_BRACE], tok.serialize().c_str());
         return false;

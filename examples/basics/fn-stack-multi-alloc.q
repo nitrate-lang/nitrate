@@ -16,8 +16,6 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-@lang v1
-
 fn main(): i8 {
     let [x: i8, y: i8];              ~> Declare x and y as seperate i8 variables on one line.
     let z: i8 = 6;                   ~> Declare z as an i8 variable.

@@ -37,7 +37,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
 
         tok = scanner->next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+        if (!tok.is<Punctor>(Punctor::Semicolon))
         {
             PARMSG(tok, Err::ERROR, feedback[FOR_EXPECTED_SEMICOLON]);
             return false;
@@ -47,7 +47,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
 
         tok = scanner->next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+        if (!tok.is<Punctor>(Punctor::Semicolon))
         {
             PARMSG(tok, Err::ERROR, feedback[FOR_EXPECTED_SEMICOLON]);
             return false;
@@ -57,7 +57,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
 
         tok = scanner->next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::CloseParen)
+        if (!tok.is<Punctor>(Punctor::CloseParen))
         {
             PARMSG(tok, Err::ERROR, feedback[FOR_EXPECTED_CLOSING_PARANTHESIS]);
             return false;
@@ -77,7 +77,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
 
         tok = scanner->next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+        if (!tok.is<Punctor>(Punctor::Semicolon))
         {
             PARMSG(tok, Err::ERROR, feedback[FOR_EXPECTED_SEMICOLON]);
             return false;
@@ -87,7 +87,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
 
         tok = scanner->next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+        if (!tok.is<Punctor>(Punctor::Semicolon))
         {
             PARMSG(tok, Err::ERROR, feedback[FOR_EXPECTED_SEMICOLON]);
             return false;

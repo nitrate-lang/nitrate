@@ -160,7 +160,7 @@ bool libquixcc::PrepEngine::handle_import()
         }
 
         tok = m_stack.top().lexer.next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::CloseParen)
+        if (!tok.is<Punctor>(Punctor::CloseParen))
         {
             PREPMSG(tok, Err::ERROR, "Expected closing parenthesis after import");
             return false;
@@ -170,7 +170,7 @@ bool libquixcc::PrepEngine::handle_import()
     PREPMSG(tok, Err::DEBUG, "Requested import of file: %s", filename.c_str());
 
     tok = m_stack.top().lexer.next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PREPMSG(tok, Err::ERROR, "Expected semicolon after import");
         return false;

@@ -38,7 +38,7 @@ static bool parse_union_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     node->m_name = std::get<std::string>(tok.val());
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Colon)
+    if (!tok.is<Punctor>(Punctor::Colon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[UNION_FIELD_MISSING_COLON]);
         return false;
@@ -51,7 +51,7 @@ static bool parse_union_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     }
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[UNION_FIELD_MISSING_PUNCTOR]);
         return false;
@@ -78,7 +78,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         std::static_pointer_cast<UnionDeclNode>(node)->m_name = name;
         return true;
     }
-    else if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::OpenBrace)
+    else if (!tok.is<Punctor>(Punctor::OpenBrace))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[UNION_DEF_EXPECTED_OPEN_BRACE]);
         return false;
@@ -102,7 +102,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     }
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[UNION_DEF_EXPECTED_SEMICOLON]);
         return false;

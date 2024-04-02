@@ -96,7 +96,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         }
 
         tok = scanner->next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+        if (!tok.is<Punctor>(Punctor::Semicolon))
         {
             PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPE_EXPECTED_SEMICOLON]);
             return false;
@@ -110,7 +110,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         }
 
         tok = scanner->next();
-        if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::CloseBracket)
+        if (!tok.is<Punctor>(Punctor::CloseBracket))
         {
             PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPE_EXPECTED_CLOSE_BRACKET]);
             return false;

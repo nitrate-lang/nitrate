@@ -177,6 +177,17 @@ namespace libquixcc
         const TokVal &val() const;
         const Loc &loc() const;
 
+        bool is(TokenType val) const
+        {
+            return m_type == val;
+        }
+
+        template <typename T, typename V = T>
+        bool is(V val) const
+        {
+            return std::holds_alternative<T>(m_value) && std::get<V>(m_value) == val;
+        }
+
         std::string serialize(bool human_readable = true) const;
 
         bool operator==(const Token &rhs) const;

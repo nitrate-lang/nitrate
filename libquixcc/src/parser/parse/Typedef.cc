@@ -54,7 +54,7 @@ bool libquixcc::parse_typedef(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     }
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[TYPEDEF_EXPECTED_SEMICOLON]);
         return false;

@@ -42,7 +42,7 @@ bool libquixcc::parse_return(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
 
     tok = scanner->next();
 
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[RETIF_MISSING_SEMICOLON]);
         return false;
@@ -71,7 +71,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         return false;
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Comma)
+    if (!tok.is<Punctor>(Punctor::Comma))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[RETIF_MISSING_COMMA]);
         return false;
@@ -82,7 +82,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         return false;
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[RETIF_MISSING_SEMICOLON]);
         return false;
@@ -112,7 +112,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         return false;
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Comma)
+    if (!tok.is<Punctor>(Punctor::Comma))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[RETZ_MISSING_COMMA]);
         return false;
@@ -123,7 +123,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         return false;
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[RETZ_MISSING_SEMICOLON]);
         return false;
@@ -153,7 +153,7 @@ bool libquixcc::parse_retv(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         return false;
 
     tok = scanner->next();
-    if (tok.type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::Semicolon)
+    if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         PARMSG(tok, libquixcc::Err::ERROR, feedback[RETV_MISSING_SEMICOLON]);
         return false;
