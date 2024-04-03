@@ -139,17 +139,7 @@ namespace libquixcc
         Logger *m_hole;
         quixcc_job_t *m_job;
 
-        static void push_message_to_job(quixcc_job_t &job, E type, const std::string &message)
-        {
-            job.m_result.m_messages = (quixcc_msg_t **)realloc(job.m_result.m_messages, (job.m_result.m_count + 1) * sizeof(quixcc_msg_t *));
-            quixcc_msg_t *msg = (quixcc_msg_t *)malloc(sizeof(quixcc_msg_t));
-            msg->line = 0;
-            msg->column = 0;
-            msg->message = strdup(message.c_str());
-            msg->m_level = (quixcc_msg_level_t)type;
-            job.m_result.m_messages[job.m_result.m_count] = msg;
-            job.m_result.m_count++;
-        }
+        static void push_message_to_job(quixcc_job_t &job, E type, const std::string &message);
 
         static bool is_color_enabled();
         static std::string format_message_ansi(const std::string &message, E type, const Token &tok);
@@ -196,12 +186,7 @@ namespace libquixcc
                          { (void)message; (void)type; (void)tok; return ""; });
         }
 
-        inline Logger &operator[](E level)
-        {
-            if (!m_job->m_debug && level == E::DEBUG)
-                return *m_hole;
-            return *m_loggers[level];
-        }
+        Logger &operator[](E level);
     };
 
     template <class T>
@@ -211,7 +196,7 @@ namespace libquixcc
     }
 
     static inline void operator<<(Logger &log, std::ostream &(*var)(std::ostream &)) { log.flush(); }
-    static inline Logger &operator<<(Logger &log, const Token& tok)
+    static inline Logger &operator<<(Logger &log, const Token &tok)
     {
         log.base(tok);
         return log;

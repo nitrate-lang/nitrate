@@ -67,7 +67,7 @@ extern "C"
         bool m_success;
     };
 
-#if defined(__cplusplus)
+#if defined(__cplusplus) && defined(QUIXCC_INTERNAL)
 }
 
 #include <map>
