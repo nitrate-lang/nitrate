@@ -141,7 +141,7 @@ struct Options
             return true;
         case OperatingMode::SHELLCODE:
             /// TODO: IMPLEMENT
-            return true;
+            return false;
         case OperatingMode::SHARED_LIBRARY:
             /// TODO: validate
             return false;

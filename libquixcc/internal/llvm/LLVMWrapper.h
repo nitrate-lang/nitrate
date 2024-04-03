@@ -51,9 +51,9 @@ namespace libquixcc
         LLVMContext &operator=(const LLVMContext &) = delete;
 
     public:
-        std::shared_ptr<llvm::LLVMContext> m_ctx;
-        std::shared_ptr<llvm::Module> m_module;
-        std::shared_ptr<llvm::IRBuilder<>> m_builder;
+        std::unique_ptr<llvm::LLVMContext> m_ctx;
+        std::unique_ptr<llvm::Module> m_module;
+        std::unique_ptr<llvm::IRBuilder<>> m_builder;
         std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
         std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
         std::map<std::string, std::pair<llvm::AllocaInst *, llvm::Type *>> m_named_stack_vars;
@@ -64,15 +64,13 @@ namespace libquixcc
         size_t m_skipbr = 0;
         ExportLangType m_lang = ExportLangType::Default;
 
-        LLVMContext()
-        {
-        }
+        LLVMContext() = default;
 
         void setup(const std::string &filename)
         {
-            m_ctx = std::make_shared<llvm::LLVMContext>();
-            m_module = std::make_shared<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_shared<llvm::IRBuilder<>>(*m_ctx);
+            m_ctx = std::make_unique<llvm::LLVMContext>();
+            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
+            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);
         }
     };
 
