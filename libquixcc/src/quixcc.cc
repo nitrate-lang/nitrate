@@ -42,17 +42,6 @@
 #include <libquixcc.h>
 #include <mutate/Routine.h>
 
-static void *safe_malloc(size_t size)
-{
-    void *ptr = malloc(size);
-    if (!ptr)
-    {
-        std::cerr << "error: out of memory" << std::endl;
-        exit(1);
-    }
-    return ptr;
-}
-
 static void *safe_realloc(void *ptr, size_t size)
 {
     void *new_ptr = realloc(ptr, size);
@@ -132,11 +121,13 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
 
     job->m_options.m_count = 0;
     job->m_options.m_options = nullptr;
-    job->m_result = nullptr;
+    memset(&job->m_result, 0, sizeof(quixcc_result_t));
     job->m_in = job->m_out = nullptr;
     job->m_filename = nullptr;
     job->m_priority = 0;
     job->m_debug = job->m_tainted = false;
+
+    libquixcc::LoggerConfigure(*job);
 
     return job;
 }
@@ -157,30 +148,25 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
     job->m_options.m_count = 0;
     job->m_options.m_options = nullptr;
 
-    if (job->m_result)
+    for (uint32_t i = 0; i < job->m_result.m_count; i++)
     {
-        for (uint32_t i = 0; i < job->m_result->m_count; i++)
-        {
-            quixcc_msg_t *msg = job->m_result->m_messages[i];
-            if (!msg)
-                continue;
+        quixcc_msg_t *msg = job->m_result.m_messages[i];
+        if (!msg)
+            continue;
 
-            if (msg->message)
-                free((void *)msg->message);
+        if (msg->message)
+            free((void *)msg->message);
 
-            msg->message = nullptr;
-            free(msg);
+        msg->message = nullptr;
+        free(msg);
 
-            job->m_result->m_messages[i] = nullptr;
-        }
-
-        if (job->m_result->m_messages)
-            free(job->m_result->m_messages);
-        job->m_result->m_count = 0;
-        job->m_result->m_messages = nullptr;
-
-        free(job->m_result);
+        job->m_result.m_messages[i] = nullptr;
     }
+
+    if (job->m_result.m_messages)
+        free(job->m_result.m_messages);
+    job->m_result.m_count = 0;
+    job->m_result.m_messages = nullptr;
 
     if (job->m_filename)
     {
@@ -755,8 +741,6 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
         return false;
 
     job->m_inner.setup(job->m_filename);
-    job->m_result = (quixcc_result_t *)safe_malloc(sizeof(quixcc_result_t));
-    memset(job->m_result, 0, sizeof(quixcc_result_t));
 
     libquixcc::Message(*job, libquixcc::E::DEBUG, "Starting quixcc run @ %s", get_datetime().c_str());
 
@@ -798,12 +782,12 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
 
     libquixcc::Message(*job, libquixcc::E::DEBUG, "Finished quixcc run @ %s", get_datetime().c_str());
 
-    return job->m_result->m_success = success;
+    return job->m_result.m_success = success;
 }
 
 LIB_EXPORT const quixcc_result_t *quixcc_result(quixcc_job_t *job)
 {
-    quixcc_result_t *result = job->m_result;
+    quixcc_result_t *result = &job->m_result;
 
     if (job->m_debug)
         return result;
@@ -860,9 +844,9 @@ LIB_EXPORT char *quixcc_compile(FILE *in, FILE *out, const char *options[])
     }
 
     std::string str;
-    for (uint32_t i = 0; i < job->m_result->m_count; i++)
+    for (uint32_t i = 0; i < job->m_result.m_count; i++)
     {
-        quixcc_msg_t *msg = job->m_result->m_messages[i];
+        quixcc_msg_t *msg = job->m_result.m_messages[i];
         if (!msg)
             continue;
 

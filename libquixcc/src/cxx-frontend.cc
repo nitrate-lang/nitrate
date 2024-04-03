@@ -97,16 +97,13 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads)
     // Collect messages
     for (auto job : this->m_jobs)
     {
-        if (!job->m_result)
-            throw std::runtime_error("Job result is null.");
-
-        for (i = 0; i < job->m_result->m_count; i++)
+        for (i = 0; i < job->m_result.m_count; i++)
         {
-            auto feedback = job->m_result->m_messages[i];
+            auto feedback = job->m_result.m_messages[i];
             this->m_messages.push_back(std::make_pair(feedback->message, feedback->m_level));
         }
 
-        if (!job->m_result->m_success)
+        if (!job->m_result.m_success)
             this->m_ok = false;
     }
 
@@ -119,9 +116,9 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal, st
 
     for (auto job : this->m_jobs)
     {
-        for (i = 0; i < job->m_result->m_count; i++)
+        for (i = 0; i < job->m_result.m_count; i++)
         {
-            auto feedback = job->m_result->m_messages[i];
+            auto feedback = job->m_result.m_messages[i];
             if (feedback->m_level < QUIXCC_ERROR)
                 normal << feedback->message << std::endl;
             else

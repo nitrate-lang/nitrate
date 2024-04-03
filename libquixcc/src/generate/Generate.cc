@@ -200,6 +200,7 @@ bool libquixcc::generate(quixcc_job_t &job, std::shared_ptr<libquixcc::BlockNode
     if (job.m_argset.contains("-c"))
         return write_llvm(job, ast, job.m_out, llvm::CGFT_ObjectFile);
 
-    Message(job, libquixcc::E::FATAL, "Output format was not specified. Expected: [-emit-ir, -emit-bc, -S, -c]");
+    LOG(FATAL) << "Output format was not specified. Expected: [-emit-ir, -emit-bc, -S, -c]" << std::endl;
+
     return false;
 }

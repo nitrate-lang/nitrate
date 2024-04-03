@@ -24,290 +24,146 @@
 #include <string.h>
 #include <stdlib.h>
 
+LOGGER_SETUP();
+
 using namespace libquixcc;
 
-#define STRING_BUFFER_SIZE 4096
-
-static bool __G_is_color_enabled = getenv("QUIXCC_COLOR") == nullptr;
-
-static void push_message_to_job(quixcc_job_t &job, E type, const std::string &message)
-{
-    job.m_result->m_messages = (quixcc_msg_t **)realloc(job.m_result->m_messages, (job.m_result->m_count + 1) * sizeof(quixcc_msg_t *));
-    quixcc_msg_t *msg = (quixcc_msg_t *)malloc(sizeof(quixcc_msg_t));
-    msg->line = 0;
-    msg->column = 0;
-    msg->message = strdup(message.c_str());
-    msg->m_level = (quixcc_msg_level_t)type;
-    job.m_result->m_messages[job.m_result->m_count] = msg;
-    job.m_result->m_count++;
-}
-
-static bool is_color_enabled()
+bool libquixcc::LoggerGroup::is_color_enabled()
 {
 #if defined(_WIN32) || defined(_WIN64)
     return false;
 #else
+    static bool __G_is_color_enabled = getenv("QUIXCC_COLOR") == nullptr;
+
     return __G_is_color_enabled;
 #endif
 }
 
-static std::string make_message_colored(E type, const std::string &format, va_list args)
+std::string libquixcc::LoggerGroup::format_message_ansi(const std::string &message, libquixcc::E type, const libquixcc::Token &tok)
 {
     std::string msg;
 
+    if (!tok.nil())
+    {
+        msg += "\x1b[49;1m" + tok.loc().file + ":";
+        msg += std::to_string(tok.loc().line) + ":" + std::to_string(tok.loc().col) + ":\x1b[0m ";
+    }
+
     switch (type)
     {
     case E::DEBUG:
-        msg = "\x1b[49;1mdebug:\x1b[0m " + format + "\x1b[0m";
+        msg += "\x1b[49;1mdebug:\x1b[0m " + message + "\x1b[0m";
         break;
     case E::SUCCESS:
-        msg = "\x1b[32;49;1msuccess:\x1b[0m " + format + "\x1b[0m";
+        msg += "\x1b[32;49;1msuccess:\x1b[0m " + message + "\x1b[0m";
         break;
     case E::INFO:
-        msg = "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + format + "\x1b[0m";
+        msg += "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + message + "\x1b[0m";
         break;
     case E::WARN:
-        msg = "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
+        msg += "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
         break;
     case E::ERROR:
-        msg = "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
+        msg += "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
         break;
     case E::FATAL:
-        msg = "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
+        msg += "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
         break;
     default:
-        msg = format + "\x1b[0m";
+        msg += message + "\x1b[0m";
         break;
     }
-
-    size_t len = msg.size();
-
-    std::string tmp;
-    tmp.resize(STRING_BUFFER_SIZE + len);
-    len += vsnprintf(&tmp[0], tmp.size() - 1, msg.c_str(), args);
-    msg = tmp.substr(0, len);
 
     return msg;
 }
 
-static std::string make_message_nocolor(E type, const std::string &format, va_list args)
+std::string libquixcc::LoggerGroup::format_message_nocolor(const std::string &message, libquixcc::E type, const libquixcc::Token &tok)
 {
     std::string msg;
 
-    switch (type)
+    if (!tok.nil())
     {
-    case E::DEBUG:
-        msg = "(debug): " + format;
-        break;
-    case E::SUCCESS:
-        msg = "(success): " + format;
-        break;
-    case E::INFO:
-        msg = "(info): " + format;
-        break;
-    case E::WARN:
-        msg = "(warn): " + format;
-        break;
-    case E::ERROR:
-        msg = "(ERROR): " + format;
-        break;
-    case E::FATAL:
-        msg = "(FATAL): " + format;
-        break;
-    default:
-        msg = format;
-        break;
+        msg += tok.loc().file + ":";
+        msg += std::to_string(tok.loc().line) + ":" + std::to_string(tok.loc().col) + ": ";
     }
-
-    size_t len = msg.size();
-
-    std::string tmp;
-    tmp.resize(STRING_BUFFER_SIZE + len);
-    len += vsnprintf(&tmp[0], tmp.size() - 1, msg.c_str(), args);
-    msg = tmp.substr(0, len);
-
-    return msg;
-}
-
-static std::string make_parser_message_colored(const std::string &file, const libquixcc::Token &tok, E type, const std::string &format, va_list args)
-{
-    std::string msg = "\x1b[49;1m" + file + ":";
-
-    msg += std::to_string(tok.loc().line) + ":" + std::to_string(tok.loc().col) + ":\x1b[0m ";
 
     switch (type)
     {
     case E::DEBUG:
-        msg += "\x1b[49;1mdebug:\x1b[0m " + format + "\x1b[0m";
+        msg += "(debug): " + message;
         break;
     case E::SUCCESS:
-        msg += "\x1b[32;49;1msuccess:\x1b[0m " + format + "\x1b[0m";
+        msg += "(success): " + message;
         break;
     case E::INFO:
-        msg += "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + format + "\x1b[0m";
+        msg += "(info): " + message;
         break;
     case E::WARN:
-        msg += "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
+        msg += "(warn): " + message;
         break;
     case E::ERROR:
-        msg += "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
+        msg += "(ERROR): " + message;
         break;
     case E::FATAL:
-        msg += "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + format + "\x1b[0m";
+        msg += "(FATAL): " + message;
         break;
     default:
-        msg += format + "\x1b[0m";
+        msg += message;
         break;
     }
-
-    size_t len = msg.size();
-
-    std::string tmp;
-    tmp.resize(STRING_BUFFER_SIZE + len);
-    len += vsnprintf(&tmp[0], tmp.size() - 1, msg.c_str(), args);
-    msg = tmp.substr(0, len);
-
-    return msg;
-}
-
-static std::string make_parser_message_nocolor(const std::string &file, const libquixcc::Token &tok, E type, const std::string &format, va_list args)
-{
-    std::string msg = file + ":";
-
-    msg += std::to_string(tok.loc().line) + ":" + std::to_string(tok.loc().col) + ": ";
-
-    switch (type)
-    {
-    case E::DEBUG:
-        msg += "(debug): " + format;
-        break;
-    case E::SUCCESS:
-        msg += "(success): " + format;
-        break;
-    case E::INFO:
-        msg += "(info): " + format;
-        break;
-    case E::WARN:
-        msg += "(warn): " + format;
-        break;
-    case E::ERROR:
-        msg += "(ERROR): " + format;
-        break;
-    case E::FATAL:
-        msg += "(FATAL): " + format;
-        break;
-    default:
-        msg += format;
-        break;
-    }
-
-    size_t len = msg.size();
-
-    std::string tmp;
-    tmp.resize(STRING_BUFFER_SIZE + len);
-    len += vsnprintf(&tmp[0], tmp.size() - 1, msg.c_str(), args);
-    msg = tmp.substr(0, len);
 
     return msg;
 }
 
 void libquixcc::Message(quixcc_job_t &job, E type, const std::string &format, ...)
 {
-    if (!job.m_debug && type == E::DEBUG)
-        return;
+    (void)job;
+    (void)type;
+    (void)format;
 
-    va_list args;
-    va_start(args, format);
-    std::string msg;
+    // if (!job.m_debug && type == E::DEBUG)
+    //     return;
 
-    if (is_color_enabled())
-        msg = make_message_colored(type, format, args);
-    else
-        msg = make_message_nocolor(type, format, args);
+    // va_list args;
+    // va_start(args, format);
+    // std::string msg;
 
-    va_end(args);
+    // if (is_color_enabled())
+    //     msg = make_message_colored(type, format, args);
+    // else
+    //     msg = make_message_nocolor(type, format, args);
 
-    push_message_to_job(job, type, msg);
+    // va_end(args);
+
+    // push_message_to_job(job, type, msg);
 }
 
 void libquixcc::ParserMessage(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::E type, const std::string &format, ...)
 {
-    if (!job.m_debug && type == E::DEBUG)
-        return;
+    (void)job;
+    (void)tok;
+    (void)type;
+    (void)format;
 
-    va_list args;
-    va_start(args, format);
-    std::string msg;
-    std::string filename = tok.loc().file;
-    if (filename.empty())
-        filename = job.m_filename;
+    // if (!job.m_debug && type == E::DEBUG)
+    //     return;
 
-    if (is_color_enabled())
-        msg = make_parser_message_colored(filename, tok, type, format, args);
-    else
-        msg = make_parser_message_nocolor(filename, tok, type, format, args);
+    // va_list args;
+    // va_start(args, format);
+    // std::string msg;
+    // std::string filename = tok.loc().file;
+    // if (filename.empty())
+    //     filename = job.m_filename;
 
-    va_end(args);
+    // if (is_color_enabled())
+    //     msg = make_parser_message_colored(filename, tok, type, format, args);
+    // else
+    //     msg = make_parser_message_nocolor(filename, tok, type, format, args);
 
-    push_message_to_job(job, type, msg);
+    // va_end(args);
 
-    if (type == E::FATAL || type == E::ERROR)
-        throw libquixcc::ParseException();
-}
+    // push_message_to_job(job, type, msg);
 
-void libquixcc::PreprocessorMessage(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::E type, bool fatal_now, const std::string &format, ...)
-{
-    if (!job.m_debug && type == E::DEBUG)
-        return;
-
-    va_list args;
-    va_start(args, format);
-    std::string msg;
-    std::string filename = tok.loc().file;
-    if (filename.empty())
-        filename = job.m_filename;
-
-    if (is_color_enabled())
-        msg = make_parser_message_colored(filename, tok, type, format, args);
-    else
-        msg = make_parser_message_nocolor(filename, tok, type, format, args);
-
-    va_end(args);
-
-    push_message_to_job(job, type, msg);
-
-    if (type == E::FATAL || type == E::ERROR)
-    {
-        job.m_tainted = true;
-
-        if (fatal_now)
-            throw libquixcc::PreprocessorException();
-    }
-}
-
-void libquixcc::SemanticMessage(quixcc_job_t &job, libquixcc::E type, bool fatal_now, const std::string &format, ...)
-{
-    if (!job.m_debug && type == E::DEBUG)
-        return;
-
-    va_list args;
-    va_start(args, format);
-    std::string msg;
-
-    if (is_color_enabled())
-        msg = make_message_colored(type, format, args);
-    else
-        msg = make_message_nocolor(type, format, args);
-
-    va_end(args);
-
-    push_message_to_job(job, type, msg);
-
-    if (type == E::FATAL || type == E::ERROR)
-    {
-        job.m_tainted = true;
-
-        if (fatal_now)
-            throw libquixcc::SemanticException();
-    }
+    // if (type == E::FATAL || type == E::ERROR)
+    //     throw libquixcc::ParseException();
 }

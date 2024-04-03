@@ -78,19 +78,19 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
         switch (level)
         {
         case E::DEBUG:
-            PreprocessorMessage(*job, tok, libquixcc::E::DEBUG, false, std::get<std::string>(tokens[2].val()));
+            LOG(DEBUG) << std::get<std::string>(tokens[2].val()) << tok << std::endl;
             break;
         case E::SUCCESS:
-            PreprocessorMessage(*job, tok, libquixcc::E::SUCCESS, false, std::get<std::string>(tokens[2].val()));
+            LOG(SUCCESS) << std::get<std::string>(tokens[2].val()) << tok << std::endl;
             break;
         case E::INFO:
-            PreprocessorMessage(*job, tok, libquixcc::E::INFO, false, std::get<std::string>(tokens[2].val()));
+            LOG(INFO) << std::get<std::string>(tokens[2].val()) << tok << std::endl;
             break;
         case E::WARN:
-            PreprocessorMessage(*job, tok, libquixcc::E::WARN, false, std::get<std::string>(tokens[2].val()));
+            LOG(WARN) << std::get<std::string>(tokens[2].val()) << tok << std::endl;
             break;
         case E::ERROR:
-            PreprocessorMessage(*job, tok, libquixcc::E::ERROR, false, std::get<std::string>(tokens[2].val()));
+            LOG(ERROR) << std::get<std::string>(tokens[2].val()) << tok << std::endl;
             throw libquixcc::ProgrammaticPreprocessorException();
         case E::RAW:
             std::cout << std::get<std::string>(tokens[2].val());
@@ -101,7 +101,7 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
     }
     else
     {
-        PreprocessorMessage(*job, tok, libquixcc::E::INFO, false, std::get<std::string>(t.val()));
+        LOG(INFO) << std::get<std::string>(t.val()) << tok << std::endl;
     }
 
     return true;

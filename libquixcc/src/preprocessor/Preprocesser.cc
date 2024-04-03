@@ -133,7 +133,7 @@ bool libquixcc::PrepEngine::handle_import()
     Token tok = m_stack.top().lexer.next();
     if (tok.type() != TokenType::Identifier)
     {
-        PREPMSG(tok, E::ERROR, "Expected identifier after import");
+        LOG(ERROR) << "Expected identifier after import" << tok << std::endl;
         return false;
     }
 
@@ -155,28 +155,28 @@ bool libquixcc::PrepEngine::handle_import()
         }
         else
         {
-            PREPMSG(tok, E::ERROR, "Expected identifier or integer literal after import");
+            LOG(ERROR) << "Expected identifier or integer literal after import" << tok << std::endl;
             return false;
         }
 
         tok = m_stack.top().lexer.next();
         if (!tok.is<Punctor>(Punctor::CloseParen))
         {
-            PREPMSG(tok, E::ERROR, "Expected closing parenthesis after import");
+            LOG(ERROR) << "Expected closing parenthesis after import" << tok << std::endl;
             return false;
         }
     }
 
-    PREPMSG(tok, E::DEBUG, "Requested import of file: %s", filename.c_str());
+    LOG(INFO) << "Requested import of file: " << filename << std::endl;
 
     tok = m_stack.top().lexer.next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PREPMSG(tok, E::ERROR, "Expected semicolon after import");
+        LOG(ERROR) << "Expected semicolon after import" << tok << std::endl;
         return false;
     }
 
-    PREPMSG(tok, E::DEBUG, "Searching for file: %s in include directories [%s]", filename.c_str(), include_path.c_str());
+    LOG(DEBUG) << "Searching for file: {} in include directories [{}]" << filename << include_path << tok << std::endl;
     std::string filepath;
     for (auto &dir : m_include_dirs)
     {
@@ -190,7 +190,7 @@ bool libquixcc::PrepEngine::handle_import()
 
     if (filepath.empty())
     {
-        PREPMSG(tok, E::ERROR, "Could not find file: \"%s\" in include directories [%s]", filename.c_str(), include_path.c_str());
+        LOG(ERROR) << "Could not find file: \"{}\" in include directories [{}]" << filename << include_path << tok << std::endl;
         return false;
     }
 
@@ -203,8 +203,9 @@ bool libquixcc::PrepEngine::handle_import()
         for (auto &file : m_include_files)
             msg += "  -> " + file + "\n";
         msg += "  -> " + filepath + "\n";
-        PREPMSG(tok, E::ERROR, "Circular include detected: \n%s", msg.c_str());
-        PREPMSG(tok, E::ERROR, "Refusing to enter infinite loop. Try to split your dependencies into smaller files.");
+        LOG(ERROR) << "Circular include detected: \n"
+                   << msg << tok << std::endl;
+        LOG(ERROR) << "Refusing to enter infinite loop. Try to split your dependencies into smaller files." << tok << std::endl;
         return false;
     }
 
@@ -215,7 +216,7 @@ bool libquixcc::PrepEngine::handle_import()
 
         if (!(f = fopen(filepath.c_str(), "r")))
         {
-            PREPMSG(tok, E::ERROR, "Could not open file: \"%s.q\" in include directories [%s]", filepath.c_str(), include_path.c_str());
+            LOG(ERROR) << "Could not open file: \"{}\" in include directories [{}]" << filepath << include_path << tok << std::endl;
             return false;
         }
 
@@ -227,7 +228,7 @@ bool libquixcc::PrepEngine::handle_import()
     }
     else
     {
-        PREPMSG(tok, E::ERROR, feedback[PREP_DUPLICATE_IMPORT], m_stack.top().path.c_str(), filepath.c_str());
+        LOG(ERROR) << feedback[PREP_DUPLICATE_IMPORT] << m_stack.top().path << filepath << tok << std::endl;
         return false;
     }
 
@@ -241,7 +242,7 @@ bool libquixcc::PrepEngine::handle_macro(const libquixcc::Token &tok)
     std::vector<libquixcc::Token> expanded;
     if (!m_macro_parser.parse(tok, expanded))
     {
-        PREPMSG(tok, E::ERROR, "Failed to expand macro");
+        LOG(ERROR) << "Failed to expand macro" << tok << std::endl;
         return false;
     }
 
@@ -285,14 +286,14 @@ libquixcc::Token libquixcc::PrepEngine::read_token()
         if (tok.is<Keyword>(Keyword::Import))
         {
             if (!handle_import())
-                PREPMSG(tok, E::ERROR, "Failed to handle import");
+                LOG(ERROR) << "Failed to handle import" << tok << std::endl;
 
             continue;
         }
         else if (tok.type() == TokenType::MacroSingleLine || tok.type() == TokenType::MacroBlock)
         {
             if (!handle_macro(tok))
-                PREPMSG(tok, E::ERROR, "Failed to process macro");
+                LOG(ERROR) << "Failed to process macro" << tok << std::endl;
 
             continue;
         }

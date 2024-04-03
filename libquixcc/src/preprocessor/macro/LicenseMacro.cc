@@ -635,7 +635,7 @@ bool libquixcc::macro::ParseLicense(quixcc_job_t *job, const Token &tok, const s
     // Force coders to choose a SPDX license identifier if they use the macro
     if (!spdx_licenses.contains(lower))
     {
-        PREPMSG(tok, E::ERROR, "Invalid SPDX license identifier: '%s'. All License macros must use a valid SPDX license identifier.", lower.c_str());
+        LOG(ERROR) << "Invalid SPDX license identifier: '{}'. All License macros must use a valid SPDX license identifier." << lower << tok << std::endl;
         return false;
     }
 

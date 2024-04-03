@@ -67,7 +67,7 @@ extern "C"
         bool m_success;
     };
 
-#if defined(__cplusplus) && defined(QUIXCC_INTERNAL)
+#if defined(__cplusplus)
 }
 
 #include <map>
@@ -93,7 +93,7 @@ typedef struct quixcc_job_t
     libquixcc::LLVMContext m_inner;
     quixcc_uuid_t m_id;
     quixcc_options_t m_options;
-    quixcc_result_t *m_result;
+    quixcc_result_t m_result;
     FILE *m_in;
     FILE *m_out;
     char *m_filename;

@@ -115,7 +115,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
             auto key = std::make_pair((*node)->ntype, tmp);
             if (named_construct_map.contains(key))
             {
-                SemanticMessage(*job, E::ERROR, false, feedback[error_message_index[(*node)->ntype]], tmp.c_str());
+                LOG(ERROR) << feedback[error_message_index[(*node)->ntype]] << tmp << std::endl;
                 return;
             }
 

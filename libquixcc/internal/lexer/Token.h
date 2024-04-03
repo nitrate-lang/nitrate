@@ -191,6 +191,11 @@ namespace libquixcc
         std::string serialize(bool human_readable = true) const;
 
         bool operator==(const Token &rhs) const;
+
+        bool nil() const
+        {
+            return m_type == TokenType::Unknown;
+        }
     };
 };
 

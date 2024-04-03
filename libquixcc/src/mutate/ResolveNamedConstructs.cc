@@ -42,7 +42,7 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
 
             if (!job->m_inner.m_named_types.contains(user_type->m_name))
             {
-                SemanticMessage(*job, E::ERROR, false, feedback[UNRESOLVED_TYPE], user_type->m_name.c_str());
+                LOG(ERROR) << feedback[UNRESOLVED_TYPE] << user_type->m_name << std::endl;
                 return;
             }
 
@@ -69,7 +69,7 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
 
             *user_type_ptr = reinterpret_cast<libquixcc::UserTypeNode *>(type);
 
-            SemanticMessage(*job, E::DEBUG, false, feedback[RESOLVED_TYPE], name.c_str(), type->to_json(ParseNodeJsonSerializerVisitor()).c_str());
+            LOG(DEBUG) << feedback[RESOLVED_TYPE] << name << type->to_json(ParseNodeJsonSerializerVisitor()) << std::endl;
         },
         job->m_inner.prefix));
 }
