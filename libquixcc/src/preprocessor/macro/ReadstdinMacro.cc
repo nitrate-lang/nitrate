@@ -20,7 +20,7 @@
 
 #include <preprocessor/macro/ReadstdinMacro.h>
 #include <lexer/Lex.h>
-#include <error/Message.h>
+#include <error/Logger.h>
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>

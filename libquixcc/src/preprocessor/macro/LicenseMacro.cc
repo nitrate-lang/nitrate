@@ -19,7 +19,7 @@
 #define QUIXCC_INTERNAL
 
 #include <preprocessor/macro/LicenseMacro.h>
-#include <error/Message.h>
+#include <error/Logger.h>
 #include <LibMacro.h>
 
 static std::set<std::string> spdx_licenses = {

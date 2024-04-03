@@ -18,11 +18,8 @@
 
 #define QUIXCC_INTERNAL
 
-#include <error/Message.h>
+#include <error/Logger.h>
 #include <error/Exception.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdlib.h>
 
 LOGGER_SETUP();
 

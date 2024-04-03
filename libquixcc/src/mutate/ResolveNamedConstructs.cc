@@ -19,7 +19,7 @@
 #define QUIXCC_INTERNAL
 
 #include <mutate/Routine.h>
-#include <error/Message.h>
+#include <error/Logger.h>
 #include <mutex>
 #include <set>
 #include <quixcc.h>

@@ -26,7 +26,7 @@
 #include <iomanip>
 #include <regex>
 #include <cmath>
-#include <error/Message.h>
+#include <error/Logger.h>
 #include <LibMacro.h>
 #include <filesystem>
 #include <preprocessor/AllMacros.h>

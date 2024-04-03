@@ -22,7 +22,7 @@
 #include <stdexcept>
 #include <map>
 #include <LibMacro.h>
-#include <error/Message.h>
+#include <error/Logger.h>
 
 static std::string trim(const std::string &str)
 {

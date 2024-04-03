@@ -21,7 +21,7 @@
 #include <preprocessor/macro/PrintMacro.h>
 #include <error/Exception.h>
 #include <lexer/Lex.h>
-#include <error/Message.h>
+#include <error/Logger.h>
 #include <iostream>
 
 bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp)

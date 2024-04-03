@@ -20,7 +20,7 @@
 
 #include <parse/Parser.h>
 #include <LibMacro.h>
-#include <error/Message.h>
+#include <error/Logger.h>
 
 using namespace libquixcc;
 

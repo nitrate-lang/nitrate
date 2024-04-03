@@ -22,7 +22,7 @@
 #include <generate/CodeGen.h>
 #include <stdlib.h>
 #include "llvm/LLVMWrapper.h"
-#include <error/Message.h>
+#include <error/Logger.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>

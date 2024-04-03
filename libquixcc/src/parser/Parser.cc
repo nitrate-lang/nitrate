@@ -19,7 +19,7 @@
 #define QUIXCC_INTERNAL
 
 #include <parse/Parser.h>
-#include <error/Message.h>
+#include <error/Logger.h>
 #include <LibMacro.h>
 
 using namespace libquixcc;
