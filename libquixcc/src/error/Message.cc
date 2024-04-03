@@ -114,26 +114,3 @@ std::string libquixcc::LoggerGroup::format_message_nocolor(const std::string &me
 
     return msg;
 }
-
-void libquixcc::Message(quixcc_job_t &job, E type, const std::string &format, ...)
-{
-    (void)job;
-    (void)type;
-    (void)format;
-
-    // if (!job.m_debug && type == E::DEBUG)
-    //     return;
-
-    // va_list args;
-    // va_start(args, format);
-    // std::string msg;
-
-    // if (is_color_enabled())
-    //     msg = make_message_colored(type, format, args);
-    // else
-    //     msg = make_message_nocolor(type, format, args);
-
-    // va_end(args);
-
-    // push_message_to_job(job, type, msg);
-}

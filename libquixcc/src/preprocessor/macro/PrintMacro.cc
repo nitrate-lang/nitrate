@@ -33,13 +33,13 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
     std::vector<libquixcc::Token> tokens;
     if (!libquixcc::StringLexer::QuickLex(parameter, tokens))
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "Failed to lex print message");
+        LOG(ERROR) << "Failed to lex print message" << std::endl;
         return false;
     }
 
     if (tokens.empty())
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "Empty print message");
+        LOG(ERROR) << "Empty print message" << std::endl;
         return false;
     }
 
@@ -65,13 +65,13 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
             level = E::RAW;
         else
         {
-            libquixcc::Message(*job, libquixcc::E::ERROR, "Invalid print level");
+            LOG(ERROR) << "Invalid print level" << std::endl;
             return false;
         }
 
         if (tokens[1].type() != TokenType::Punctor || std::get<Punctor>(tokens[1].val()) != Punctor::Comma)
         {
-            libquixcc::Message(*job, libquixcc::E::ERROR, "Expected comma after print level");
+            LOG(ERROR) << "Expected comma after print level" << std::endl;
             return false;
         }
 

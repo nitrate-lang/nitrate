@@ -42,6 +42,8 @@
 #include <libquixcc.h>
 #include <mutate/Routine.h>
 
+using namespace libquixcc;
+
 static void *safe_realloc(void *ptr, size_t size)
 {
     void *new_ptr = realloc(ptr, size);
@@ -127,7 +129,7 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
     job->m_priority = 0;
     job->m_debug = job->m_tainted = false;
 
-    libquixcc::LoggerConfigure(*job);
+    LoggerConfigure(*job);
 
     return job;
 }
@@ -290,23 +292,23 @@ static std::string base64_encode(const std::string &in)
     return out;
 }
 
-static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
+static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
 {
-    libquixcc::Mutation mutator;
-    mutator.add_routine(libquixcc::mutate::StripUnderscoreNames);
-    mutator.add_routine(libquixcc::mutate::ExtrapolateEnumFields);
-    mutator.add_routine(libquixcc::mutate::DiscoverNamedConstructs);
-    mutator.add_routine(libquixcc::mutate::ResolveNamedConstructs);
-    mutator.add_routine(libquixcc::mutate::ConvertTypes);
-    mutator.add_routine(libquixcc::mutate::FoldConstExpr);
-    mutator.add_routine(libquixcc::mutate::InferTypes);
-    mutator.add_routine(libquixcc::mutate::FilterNonGeneratable);
+    Mutation mutator;
+    mutator.add_routine(mutate::StripUnderscoreNames);
+    mutator.add_routine(mutate::ExtrapolateEnumFields);
+    mutator.add_routine(mutate::DiscoverNamedConstructs);
+    mutator.add_routine(mutate::ResolveNamedConstructs);
+    mutator.add_routine(mutate::ConvertTypes);
+    mutator.add_routine(mutate::FoldConstExpr);
+    mutator.add_routine(mutate::InferTypes);
+    mutator.add_routine(mutate::FilterNonGeneratable);
     mutator.run(job, ast);
 
     return true;
 }
 
-static bool quixcc_verify_semantics(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
+static bool quixcc_verify_semantics(quixcc_job_t *job, std::shared_ptr<AST> ast)
 {
     (void)job;
     (void)ast;
@@ -326,7 +328,7 @@ static bool quixcc_verify_semantics(quixcc_job_t *job, std::shared_ptr<libquixcc
     return true;
 }
 
-static bool quixcc_optimize_ast(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
+static bool quixcc_optimize_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
 {
     (void)job;
     (void)ast;
@@ -456,7 +458,7 @@ static bool get_compile_time_user_constants(quixcc_job_t *job, std::map<std::str
 
             if (!verify_user_constant(key, value))
             {
-                libquixcc::Message(*job, libquixcc::E::ERROR, "invalid user constant: " + key);
+                LOG(ERROR) << "invalid user constant: " << key << std::endl;
                 return false;
             }
             constants[key] = value;
@@ -481,7 +483,7 @@ static bool get_env_constants(quixcc_job_t *job, std::map<std::string, std::stri
 
                 if (!verify_user_constant(key, value))
                 {
-                    libquixcc::Message(*job, libquixcc::E::ERROR, "invalid user constant: " + key);
+                    LOG(ERROR) << "invalid user constant: " << key << std::endl;
                     return false;
                 }
                 constants[key] = value;
@@ -492,21 +494,21 @@ static bool get_env_constants(quixcc_job_t *job, std::map<std::string, std::stri
     return true;
 }
 
-static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<libquixcc::PrepEngine> prep)
+static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<PrepEngine> prep)
 {
     std::set<std::string> dirs;
     std::map<std::string, std::string> constants;
 
     if (!get_include_directories(job, dirs))
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "failed to get include directories");
+        LOG(ERROR) << "failed to get include directories" << std::endl;
         return false;
     }
     for (auto &dir : dirs)
         prep->addpath(dir);
     if (!get_compile_time_user_constants(job, constants))
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "failed to get compile time user constants");
+        LOG(ERROR) << "failed to get compile time user constants" << std::endl;
         return false;
     }
     for (auto &constant : constants)
@@ -514,7 +516,7 @@ static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<libquixcc::PrepE
 
     if (!get_env_constants(job, constants))
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "failed to get environment constants");
+        LOG(ERROR) << "failed to get environment constants" << std::endl;
         return false;
     }
     for (auto &constant : constants)
@@ -522,7 +524,7 @@ static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<libquixcc::PrepE
 
     if (!prep->set_source(job->m_in, job->m_filename))
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "failed to set source");
+        LOG(ERROR) << "failed to set source" << std::endl;
         return false;
     }
 
@@ -532,21 +534,21 @@ static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<libquixcc::PrepE
 static bool compile(quixcc_job_t *job)
 {
     // Create an AST before goto statements
-    // libquixcc::AST ast;
-    std::shared_ptr<libquixcc::AST> ast = std::make_shared<libquixcc::AST>();
+    // AST ast;
+    std::shared_ptr<AST> ast = std::make_shared<AST>();
 
     if (job->m_argset.contains("-PREP"))
     {
-        libquixcc::Message(*job, libquixcc::E::DEBUG, "Preprocessing only");
-        std::shared_ptr<libquixcc::PrepEngine> prep = std::make_shared<libquixcc::PrepEngine>(*job);
+        LOG(DEBUG) << "Preprocessing only" << std::endl;
+        std::shared_ptr<PrepEngine> prep = std::make_shared<PrepEngine>(*job);
         prep->setup();
         if (!preprocess_phase(job, prep))
             return false;
 
         // Generate output
         std::string tmp;
-        std::optional<libquixcc::Token> tok;
-        while ((tok = prep->next())->type() != libquixcc::TokenType::Eof)
+        std::optional<Token> tok;
+        while ((tok = prep->next())->type() != TokenType::Eof)
         {
             tmp = tok->serialize();
             fwrite(tmp.c_str(), 1, tmp.size(), job->m_out);
@@ -558,19 +560,19 @@ static bool compile(quixcc_job_t *job)
 
     if (job->m_argset.contains("-LEX"))
     {
-        libquixcc::Message(*job, libquixcc::E::DEBUG, "Lexing only");
-        libquixcc::StreamLexer lexer;
+        LOG(DEBUG) << "Lexing only" << std::endl;
+        StreamLexer lexer;
 
         if (!lexer.set_source(job->m_in, job->m_filename))
         {
-            libquixcc::Message(*job, libquixcc::E::ERROR, "failed to set source");
+            LOG(ERROR) << "failed to set source" << std::endl;
             return false;
         }
 
         // Generate output
         std::string tmp;
-        libquixcc::Token tok;
-        while ((tok = lexer.next()).type() != libquixcc::TokenType::Eof)
+        Token tok;
+        while ((tok = lexer.next()).type() != TokenType::Eof)
         {
             tmp = tok.serialize();
             fwrite(tmp.c_str(), 1, tmp.size(), job->m_out);
@@ -583,12 +585,12 @@ static bool compile(quixcc_job_t *job)
     ///=========================================
     /// BEGIN: PREPROCESSOR/LEXER
     ///=========================================
-    std::shared_ptr<libquixcc::PrepEngine> prep = std::make_shared<libquixcc::PrepEngine>(*job);
-    libquixcc::Message(*job, libquixcc::E::DEBUG, "Preprocessing source");
+    std::shared_ptr<PrepEngine> prep = std::make_shared<PrepEngine>(*job);
+    LOG(DEBUG) << "Preprocessing source" << std::endl;
     prep->setup();
     if (!preprocess_phase(job, prep))
         return false;
-    libquixcc::Message(*job, libquixcc::E::DEBUG, "Finished preprocessing source");
+    LOG(DEBUG) << "Finished preprocessing source" << std::endl;
     ///=========================================
     /// END: PREPROCESSOR/LEXER
     ///=========================================
@@ -596,12 +598,12 @@ static bool compile(quixcc_job_t *job)
     ///=========================================
     /// BEGIN: PARSER
     ///=========================================
-    libquixcc::Message(*job, libquixcc::E::DEBUG, "Building AST 1");
+    LOG(DEBUG) << "Building AST 1" << std::endl;
     if (!parse(*job, prep, ast, false))
         return false;
-    libquixcc::Message(*job, libquixcc::E::DEBUG, "Finished building AST 1");
+    LOG(DEBUG) << "Finished building AST 1" << std::endl;
     if (job->m_debug)
-        libquixcc::Message(*job, libquixcc::E::DEBUG, "Dumping AST 1 (JSON): " + base64_encode(ast->to_json(libquixcc::ParseNodeJsonSerializerVisitor())));
+        LOG(DEBUG) << "Dumping AST 1 (JSON): " << base64_encode(ast->to_json(ParseNodeJsonSerializerVisitor())) << std::endl;
     ///=========================================
     /// END: PARSER
     ///=========================================
@@ -619,7 +621,7 @@ static bool compile(quixcc_job_t *job)
         return false;
 
     if (job->m_debug)
-        libquixcc::Message(*job, libquixcc::E::DEBUG, "Dumping AST 2 (JSON): " + base64_encode(ast->to_json(libquixcc::ParseNodeJsonSerializerVisitor())));
+        LOG(DEBUG) << "Dumping AST 2 (JSON): " << base64_encode(ast->to_json(ParseNodeJsonSerializerVisitor())) << std::endl;
 
     ///=========================================
     /// END: INTERMEDIATE PROCESSING
@@ -628,11 +630,11 @@ static bool compile(quixcc_job_t *job)
     ///=========================================
     /// BEGIN: GENERATOR
     ///=========================================
-    libquixcc::Message(*job, libquixcc::E::DEBUG, "Generating output");
-    if (!libquixcc::generate(*job, ast))
+    LOG(DEBUG) << "Generating output" << std::endl;
+    if (!generate(*job, ast))
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "failed to generate output");
-        return false;
+            LOG(ERROR) << "failed to generate output" << std::endl;
+            return false;
     }
 
     ///=========================================
@@ -704,7 +706,7 @@ static bool build_argmap(quixcc_job_t *job)
 
         if (option.size() == 2 && option[0] == '-' && !okay_prefixes.contains(option[1]))
         {
-            libquixcc::Message(*job, libquixcc::E::ERROR, "invalid build option: " + option);
+            LOG(ERROR) << "invalid build option: " << option << std::endl;
             return false;
         }
 
@@ -717,7 +719,7 @@ static bool build_argmap(quixcc_job_t *job)
 
         if (!verify_build_option(key, value))
         {
-            libquixcc::Message(*job, libquixcc::E::ERROR, "invalid build option: " + key);
+            LOG(ERROR) << "invalid build option: " << key << std::endl;
             return false;
         }
 
@@ -727,9 +729,9 @@ static bool build_argmap(quixcc_job_t *job)
         job->m_argset.insert({key, value});
 
         if (!value.empty())
-            libquixcc::Message(*job, libquixcc::E::DEBUG, "Added switch entry: " + key + "=" + value);
+            LOG(DEBUG) << "Added switch entry: " << key << "=" << value << std::endl;
         else
-            libquixcc::Message(*job, libquixcc::E::DEBUG, "Added switch entry: " + key);
+            LOG(DEBUG) << "Added switch entry: " << key << std::endl;
     }
 
     return verify_build_option_conflicts(job);
@@ -742,11 +744,11 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
 
     job->m_inner.setup(job->m_filename);
 
-    libquixcc::Message(*job, libquixcc::E::DEBUG, "Starting quixcc run @ %s", get_datetime().c_str());
+    LOG(DEBUG) << "Starting quixcc run @ " << get_datetime() << std::endl;
 
     if (!build_argmap(job))
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "failed to build argmap");
+        LOG(ERROR) << "failed to build argmap" << std::endl;
         return false;
     }
 
@@ -755,32 +757,32 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     {
         if (compile(job))
         {
-            libquixcc::Message(*job, libquixcc::E::DEBUG, "Compilation successful");
+            LOG(DEBUG) << "Compilation successful" << std::endl;
             success = true;
         }
         else
         {
-            libquixcc::Message(*job, libquixcc::E::ERROR, "Compilation failed");
+            LOG(ERROR) << "Compilation failed" << std::endl;
         }
     }
-    catch (libquixcc::ProgrammaticPreprocessorException &)
+    catch (ProgrammaticPreprocessorException &)
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "Compilation was programmatically aborted while preprocessing source");
+        LOG(ERROR) << "Compilation was programmatically aborted while preprocessing source" << std::endl;
     }
-    catch (libquixcc::PreprocessorException &)
+    catch (PreprocessorException &)
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "Compilation was aborted while preprocessing source");
+        LOG(ERROR) << "Compilation was aborted while preprocessing source" << std::endl;
     }
-    catch (libquixcc::ParseException &)
+    catch (ParseException &)
     {
-        libquixcc::Message(*job, libquixcc::E::ERROR, "Compilation was aborted while parsing source");
+        LOG(ERROR) << "Compilation was aborted while parsing source" << std::endl;
     }
     catch (std::exception &e)
     {
-        libquixcc::Message(*job, libquixcc::E::FATAL, "Compilation failed: %s", e.what());
+        LOG(ERROR) << "Compilation failed: " << e.what() << std::endl;
     }
 
-    libquixcc::Message(*job, libquixcc::E::DEBUG, "Finished quixcc run @ %s", get_datetime().c_str());
+    LOG(DEBUG) << "Finished quixcc run @ " << get_datetime() << std::endl;
 
     return job->m_result.m_success = success;
 }
