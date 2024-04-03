@@ -1,5 +1,0 @@
-# Contributing
-
----
-
-***In development***
