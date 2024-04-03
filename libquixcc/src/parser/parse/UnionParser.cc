@@ -29,7 +29,7 @@ static bool parse_union_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     Token tok = scanner->next();
     if (tok.type() != TokenType::Identifier)
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[UNION_FIELD_MISSING_IDENTIFIER]);
+        LOG(ERROR) << feedback[UNION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
@@ -40,20 +40,20 @@ static bool parse_union_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Colon))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[UNION_FIELD_MISSING_COLON]);
+        LOG(ERROR) << feedback[UNION_FIELD_MISSING_COLON] << tok << std::endl;
         return false;
     }
 
     if (!parse_type(job, scanner, &node->m_type))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[UNION_FIELD_TYPE_ERR], node->m_name.c_str());
+        LOG(ERROR) << feedback[UNION_FIELD_TYPE_ERR] << node->m_name << tok << std::endl;
         return false;
     }
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[UNION_FIELD_MISSING_PUNCTOR]);
+        LOG(ERROR) << feedback[UNION_FIELD_MISSING_PUNCTOR] << tok << std::endl;
         return false;
     }
 
@@ -65,7 +65,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     Token tok = scanner->next();
     if (tok.type() != TokenType::Identifier)
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[UNION_DECL_MISSING_IDENTIFIER]);
+        LOG(ERROR) << feedback[UNION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
@@ -80,7 +80,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     }
     else if (!tok.is<Punctor>(Punctor::OpenBrace))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[UNION_DEF_EXPECTED_OPEN_BRACE]);
+        LOG(ERROR) << feedback[UNION_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
         return false;
     }
 
@@ -104,7 +104,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[UNION_DEF_EXPECTED_SEMICOLON]);
+        LOG(ERROR) << feedback[UNION_DEF_EXPECTED_SEMICOLON] << tok << std::endl;
         return false;
     }
 

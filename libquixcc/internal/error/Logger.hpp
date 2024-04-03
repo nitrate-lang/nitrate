@@ -211,7 +211,7 @@ namespace libquixcc
     }
 
     static inline void operator<<(Logger &log, std::ostream &(*var)(std::ostream &)) { log.flush(); }
-    static inline Logger &operator<<(Logger &log, const Token &tok)
+    static inline Logger &operator<<(Logger &log, const Token& tok)
     {
         log.base(tok);
         return log;

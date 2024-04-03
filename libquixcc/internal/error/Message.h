@@ -31,7 +31,6 @@
 namespace libquixcc
 {
     void Message(quixcc_job_t &job, E type, const std::string &format, ...);
-    void ParserMessage(quixcc_job_t &job, const Token &tok, E type, const std::string &format, ...);
 };
 
 #endif // __QUIXCC_ERROR_H__

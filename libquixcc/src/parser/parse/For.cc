@@ -39,7 +39,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::Semicolon))
         {
-            PARMSG(tok, E::ERROR, feedback[FOR_EXPECTED_SEMICOLON]);
+            LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
             return false;
         }
 
@@ -49,7 +49,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::Semicolon))
         {
-            PARMSG(tok, E::ERROR, feedback[FOR_EXPECTED_SEMICOLON]);
+            LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
             return false;
         }
 
@@ -59,7 +59,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::CloseParen))
         {
-            PARMSG(tok, E::ERROR, feedback[FOR_EXPECTED_CLOSING_PARANTHESIS]);
+            LOG(ERROR) << feedback[FOR_EXPECTED_CLOSING_PARANTHESIS] << tok << std::endl;
             return false;
         }
 
@@ -79,7 +79,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::Semicolon))
         {
-            PARMSG(tok, E::ERROR, feedback[FOR_EXPECTED_SEMICOLON]);
+            LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
             return false;
         }
 
@@ -89,7 +89,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::Semicolon))
         {
-            PARMSG(tok, E::ERROR, feedback[FOR_EXPECTED_SEMICOLON]);
+            LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
             return false;
         }
 

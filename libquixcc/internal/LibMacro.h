@@ -19,7 +19,6 @@
 #ifndef __QUIXCC_MACRO_H__
 #define __QUIXCC_MACRO_H__
 
-#define PARMSG(tok, tp, fmt, ...) ParserMessage(job, tok, tp, fmt, ##__VA_ARGS__)
 #define LIB_EXPORT extern "C" __attribute__((visibility("default")))
 #define LIB_CXX_EXPORT __attribute__((visibility("default")))
 

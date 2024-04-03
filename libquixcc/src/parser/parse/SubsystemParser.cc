@@ -25,7 +25,7 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Sc
     Token tok = scanner->next();
     if (tok.type() != TokenType::Identifier)
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[SUBSYSTEM_MISSING_IDENTIFIER]);
+        LOG(ERROR) << feedback[SUBSYSTEM_MISSING_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
@@ -41,7 +41,7 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Sc
         tok = scanner->next();
         if (tok.type() != TokenType::Identifier)
         {
-            PARMSG(tok, libquixcc::E::ERROR, feedback[SUBSYSTEM_EXPECTED_IDENTIFIER]);
+            LOG(ERROR) << feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
             return false;
         }
         deps.insert(std::get<std::string>(tok.val()));
@@ -53,7 +53,7 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Sc
             tok = scanner->next();
             if (tok.type() != TokenType::Identifier)
             {
-                PARMSG(tok, libquixcc::E::ERROR, feedback[SUBSYSTEM_EXPECTED_IDENTIFIER]);
+                LOG(ERROR) << feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
                 return false;
             }
             deps.insert(std::get<std::string>(tok.val()));
@@ -68,7 +68,7 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Sc
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[SUBSYSTEM_EXPECTED_SEMICOLON], tok.serialize().c_str());
+        LOG(ERROR) << feedback[SUBSYSTEM_EXPECTED_SEMICOLON] << tok << std::endl;
         return false;
     }
 

@@ -44,7 +44,7 @@ bool libquixcc::parse_return(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
 
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[RETIF_MISSING_SEMICOLON]);
+        LOG(ERROR) << feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
         return false;
     }
 
@@ -73,7 +73,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Comma))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[RETIF_MISSING_COMMA]);
+        LOG(ERROR) << feedback[RETIF_MISSING_COMMA] << tok << std::endl;
         return false;
     }
 
@@ -84,7 +84,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[RETIF_MISSING_SEMICOLON]);
+        LOG(ERROR) << feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
         return false;
     }
     node = std::make_shared<RetifStmtNode>(condition, return_expr);
@@ -114,7 +114,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Comma))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[RETZ_MISSING_COMMA]);
+        LOG(ERROR) << feedback[RETZ_MISSING_COMMA] << tok << std::endl;
         return false;
     }
 
@@ -125,7 +125,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[RETZ_MISSING_SEMICOLON]);
+        LOG(ERROR) << feedback[RETZ_MISSING_SEMICOLON] << tok << std::endl;
         return false;
     }
     node = std::make_shared<RetzStmtNode>(condition, return_expr);
@@ -155,7 +155,7 @@ bool libquixcc::parse_retv(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[RETV_MISSING_SEMICOLON]);
+        LOG(ERROR) << feedback[RETV_MISSING_SEMICOLON] << tok << std::endl;
         return false;
     }
 

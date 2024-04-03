@@ -137,33 +137,3 @@ void libquixcc::Message(quixcc_job_t &job, E type, const std::string &format, ..
 
     // push_message_to_job(job, type, msg);
 }
-
-void libquixcc::ParserMessage(quixcc_job_t &job, const libquixcc::Token &tok, libquixcc::E type, const std::string &format, ...)
-{
-    (void)job;
-    (void)tok;
-    (void)type;
-    (void)format;
-
-    // if (!job.m_debug && type == E::DEBUG)
-    //     return;
-
-    // va_list args;
-    // va_start(args, format);
-    // std::string msg;
-    // std::string filename = tok.loc().file;
-    // if (filename.empty())
-    //     filename = job.m_filename;
-
-    // if (is_color_enabled())
-    //     msg = make_parser_message_colored(filename, tok, type, format, args);
-    // else
-    //     msg = make_parser_message_nocolor(filename, tok, type, format, args);
-
-    // va_end(args);
-
-    // push_message_to_job(job, type, msg);
-
-    // if (type == E::FATAL || type == E::ERROR)
-    //     throw libquixcc::ParseException();
-}

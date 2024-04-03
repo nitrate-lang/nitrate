@@ -31,7 +31,7 @@ static bool parse_decl(quixcc_job_t &job, Token tok, std::shared_ptr<libquixcc::
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Colon))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[LET_DECL_MISSING_COLON]);
+        LOG(ERROR) << feedback[LET_DECL_MISSING_COLON] << tok << std::endl;
         return false;
     }
 
@@ -39,7 +39,7 @@ static bool parse_decl(quixcc_job_t &job, Token tok, std::shared_ptr<libquixcc::
 
     if (!parse_type(job, scanner, &type))
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[LET_DECL_TYPE_ERR], name.c_str());
+        LOG(ERROR) << feedback[LET_DECL_TYPE_ERR] << name << tok << std::endl;
         return false;
     }
 
@@ -77,7 +77,7 @@ bool libquixcc::parse_let(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
                 break;
             else
             {
-                PARMSG(tok, libquixcc::E::ERROR, feedback[LET_DECL_MISSING_PUNCTOR], decl.first.c_str());
+                LOG(ERROR) << feedback[LET_DECL_MISSING_PUNCTOR] << decl.first << tok << std::endl;
                 return false;
             }
         }
@@ -93,13 +93,13 @@ bool libquixcc::parse_let(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     }
     else
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[LET_DECL_MISSING_IDENTIFIER]);
+        LOG(ERROR) << feedback[LET_DECL_MISSING_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
     if (decls.empty())
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[LET_DECL_MISSING_IDENTIFIER]);
+        LOG(ERROR) << feedback[LET_DECL_MISSING_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
@@ -123,7 +123,7 @@ bool libquixcc::parse_let(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::Semicolon))
         {
-            PARMSG(tok, libquixcc::E::ERROR, feedback[LET_DECL_MISSING_PUNCTOR], decls[0].first.c_str());
+            LOG(ERROR) << feedback[LET_DECL_MISSING_PUNCTOR] << decls[0].first << tok << std::endl;
             return false;
         }
 
@@ -131,7 +131,7 @@ bool libquixcc::parse_let(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     }
     else
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[LET_DECL_MISSING_PUNCTOR]);
+        LOG(ERROR) << feedback[LET_DECL_MISSING_PUNCTOR] << tok << std::endl;
         return false;
     }
 

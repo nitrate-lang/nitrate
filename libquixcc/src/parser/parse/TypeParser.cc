@@ -54,13 +54,13 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         case Keyword::Fn:
             if (!parse_function(job, scanner, fn))
             {
-                PARMSG(tok, libquixcc::E::ERROR, feedback[TYPE_EXPECTED_FUNCTION]);
+                LOG(ERROR) << feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
                 return false;
             }
 
             if (fn->ntype != NodeType::FunctionDeclNode)
             {
-                PARMSG(tok, libquixcc::E::ERROR, feedback[TYPE_EXPECTED_FUNCTION]);
+                LOG(ERROR) << feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
                 return false;
             }
 
@@ -91,28 +91,28 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         TypeNode *type;
         if (!parse_type(job, scanner, &type))
         {
-            PARMSG(tok, libquixcc::E::ERROR, feedback[TYPE_EXPECTED_TYPE]);
+            LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
             return false;
         }
 
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::Semicolon))
         {
-            PARMSG(tok, libquixcc::E::ERROR, feedback[TYPE_EXPECTED_SEMICOLON]);
+            LOG(ERROR) << feedback[TYPE_EXPECTED_SEMICOLON] << tok << std::endl;
             return false;
         }
 
         std::shared_ptr<ConstExprNode> size;
         if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::CloseBracket), size))
         {
-            PARMSG(tok, libquixcc::E::ERROR, feedback[TYPE_EXPECTED_CONST_EXPR]);
+            LOG(ERROR) << feedback[TYPE_EXPECTED_CONST_EXPR] << tok << std::endl;
             return false;
         }
 
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::CloseBracket))
         {
-            PARMSG(tok, libquixcc::E::ERROR, feedback[TYPE_EXPECTED_CLOSE_BRACKET]);
+            LOG(ERROR) << feedback[TYPE_EXPECTED_CLOSE_BRACKET] << tok << std::endl;
             return false;
         }
 
@@ -125,7 +125,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         TypeNode *type;
         if (!parse_type(job, scanner, &type))
         {
-            PARMSG(tok, libquixcc::E::ERROR, feedback[TYPE_EXPECTED_TYPE]);
+            LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
             return false;
         }
 
@@ -138,7 +138,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         TypeNode *type;
         if (!parse_type(job, scanner, &type))
         {
-            PARMSG(tok, libquixcc::E::ERROR, feedback[TYPE_EXPECTED_TYPE]);
+            LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
             return false;
         }
 
@@ -148,7 +148,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     }
     else
     {
-        PARMSG(tok, libquixcc::E::ERROR, feedback[TYPE_EXPECTED_IDENTIFIER_OR_BRACKET]);
+        LOG(ERROR) << feedback[TYPE_EXPECTED_IDENTIFIER_OR_BRACKET] << tok << std::endl;
         return false;
     }
 }
