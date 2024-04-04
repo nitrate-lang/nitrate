@@ -144,6 +144,12 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
 
         return "u" + s;
     }
+    else if (type->ntype == NodeType::EnumTypeNode)
+    {
+        const libquixcc::EnumTypeNode *st = static_cast<const EnumTypeNode *>(type);
+        std::string s = wrap_tag(serialize_type(st->m_member_type)) + wrap_tag(st->m_name);
+        return "k" + s;
+    }
     else if (type->ntype == NodeType::ArrayTypeNode)
     {
         const libquixcc::ArrayTypeNode *st = static_cast<const ArrayTypeNode *>(type);
@@ -243,6 +249,24 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         }
 
         return UnionTypeNode::create(fields_nodes);
+    } else if (type[0] == 'k')
+    {
+        TypeNode* m_type;
+        std::string name;
+
+        std::vector<std::string> fields;
+        if (!unwrap_tags(type.substr(1), fields))
+            return nullptr;
+
+        if (fields.size() != 2)
+            return nullptr;
+
+        if ((m_type = deserialize_type(fields[0])) == nullptr)
+            return nullptr;
+        
+        name = fields[1];
+
+        return EnumTypeNode::create(name, m_type);
     }
     else if (type[0] == 'a')
     {
@@ -401,7 +425,7 @@ std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_quix(std::strin
     try
     {
         input = input.substr(quix_abiprefix.size());
-        
+
         std::vector<std::string> parts;
 
         switch (input[0])

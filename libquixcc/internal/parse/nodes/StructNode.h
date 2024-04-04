@@ -50,8 +50,24 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return true; }
+        virtual size_t size(size_t ptr_size) const override
+        {
+            /// TODO: adjust for padding
+            size_t size = 0;
+            for (auto &field : m_fields)
+                size += field->size(ptr_size);
+            return size;
+        }
+        virtual std::string to_source() const override
+        {
+            std::string source = "struct { ";
+            for (auto &field : m_fields)
+                source += field->to_source() + "; ";
+            source += "}";
+            return source;
+        }
 
         std::vector<TypeNode *> m_fields;
     };

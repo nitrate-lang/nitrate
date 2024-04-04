@@ -136,11 +136,6 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Bl
     return str + "]}";
 }
 
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::BasicTypeNode *node) const
-{
-    return "{\"ntype\":\"BasicTypeNode\"}";
-}
-
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UnaryExprNode *node) const
 {
     std::string str = "{\"ntype\":\"UnaryExprNode\",\"op\":\"";

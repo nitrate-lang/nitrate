@@ -91,11 +91,6 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::BlockNode *node)
     return count + 1;
 }
 
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::BasicTypeNode *node)
-{
-    return 1;
-}
-
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::UnaryExprNode *node)
 {
     m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_expr));

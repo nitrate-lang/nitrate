@@ -32,7 +32,7 @@
 
 namespace libquixcc
 {
-    class U8TypeNode : public BasicTypeNode
+    class U8TypeNode : public TypeNode
     {
         U8TypeNode() { ntype = NodeType::U8TypeNode; }
         static U8TypeNode *m_instance;
@@ -47,11 +47,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 1; }
+        virtual std::string to_source() const override { return "u8"; }
     };
 
-    class U16TypeNode : public BasicTypeNode
+    class U16TypeNode : public TypeNode
     {
         U16TypeNode() { ntype = NodeType::U16TypeNode; }
         static U16TypeNode *m_instance;
@@ -66,11 +68,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 2; }
+        virtual std::string to_source() const override { return "u16"; }
     };
 
-    class U32TypeNode : public BasicTypeNode
+    class U32TypeNode : public TypeNode
     {
         U32TypeNode() { ntype = NodeType::U32TypeNode; }
         static U32TypeNode *m_instance;
@@ -85,11 +89,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 4; }
+        virtual std::string to_source() const override { return "u32"; }
     };
 
-    class U64TypeNode : public BasicTypeNode
+    class U64TypeNode : public TypeNode
     {
         U64TypeNode() { ntype = NodeType::U64TypeNode; }
         static U64TypeNode *m_instance;
@@ -104,11 +110,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 8; }
+        virtual std::string to_source() const override { return "u64"; }
     };
 
-    class I8TypeNode : public BasicTypeNode
+    class I8TypeNode : public TypeNode
     {
         I8TypeNode() { ntype = NodeType::I8TypeNode; }
         static I8TypeNode *m_instance;
@@ -123,11 +131,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 1; }
+        virtual std::string to_source() const override { return "i8"; }
     };
 
-    class I16TypeNode : public BasicTypeNode
+    class I16TypeNode : public TypeNode
     {
         I16TypeNode() { ntype = NodeType::I16TypeNode; }
         static I16TypeNode *m_instance;
@@ -142,11 +152,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 2; }
+        virtual std::string to_source() const override { return "i16"; }
     };
 
-    class I32TypeNode : public BasicTypeNode
+    class I32TypeNode : public TypeNode
     {
         I32TypeNode() { ntype = NodeType::I32TypeNode; }
         static I32TypeNode *m_instance;
@@ -161,11 +173,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 4; }
+        virtual std::string to_source() const override { return "i32"; }
     };
 
-    class I64TypeNode : public BasicTypeNode
+    class I64TypeNode : public TypeNode
     {
         I64TypeNode() { ntype = NodeType::I64TypeNode; }
         static I64TypeNode *m_instance;
@@ -180,11 +194,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 8; }
+        virtual std::string to_source() const override { return "i64"; }
     };
 
-    class F32TypeNode : public BasicTypeNode
+    class F32TypeNode : public TypeNode
     {
         F32TypeNode() { ntype = NodeType::F32TypeNode; }
         static F32TypeNode *m_instance;
@@ -199,11 +215,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 4; }
+        virtual std::string to_source() const override { return "f32"; }
     };
 
-    class F64TypeNode : public BasicTypeNode
+    class F64TypeNode : public TypeNode
     {
         F64TypeNode() { ntype = NodeType::F64TypeNode; }
         static F64TypeNode *m_instance;
@@ -218,11 +236,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 8; }
+        virtual std::string to_source() const override { return "f64"; }
     };
 
-    class BoolTypeNode : public BasicTypeNode
+    class BoolTypeNode : public TypeNode
     {
         BoolTypeNode() { ntype = NodeType::BoolTypeNode; }
         static BoolTypeNode *m_instance;
@@ -237,11 +257,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 1; }
+        virtual std::string to_source() const override { return "bool"; }
     };
 
-    class VoidTypeNode : public BasicTypeNode
+    class VoidTypeNode : public TypeNode
     {
         VoidTypeNode() { ntype = NodeType::VoidTypeNode; }
         static VoidTypeNode *m_instance;
@@ -256,11 +278,13 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 0; }
+        virtual std::string to_source() const override { return "void"; }
     };
 
-    class PointerTypeNode : public BasicTypeNode
+    class PointerTypeNode : public TypeNode
     {
         PointerTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::PointerTypeNode; }
         static std::map<TypeNode *, PointerTypeNode *> m_instances;
@@ -275,8 +299,10 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return ptr_size; }
+        virtual std::string to_source() const override { return "*" + m_type->to_source(); }
 
         TypeNode *m_type;
     };

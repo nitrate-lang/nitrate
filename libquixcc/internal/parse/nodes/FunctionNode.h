@@ -83,8 +83,31 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return ptr_size; }
+        virtual std::string to_source() const override
+        {
+            std::string source = "fn ";
+            if (m_pure)
+                source += "pure ";
+            if (m_thread_safe)
+                source += "tsafe ";
+            if (m_foreign)
+                source += "foreign ";
+            if (m_nothrow)
+                source += "nothrow ";
+            source += "(";
+            for (size_t i = 0; i < m_params.size(); i++)
+            {
+                source += m_params[i]->to_source();
+                if (i < m_params.size() - 1)
+                    source += ", ";
+            }
+            source += "): ";
+            source += m_return_type->to_source();
+            return source;
+        }
 
         TypeNode *m_return_type;
         std::vector<TypeNode *> m_params;
@@ -98,7 +121,7 @@ namespace libquixcc
     class FunctionParamNode : public ParseNode
     {
     public:
-        FunctionParamNode(): m_optional(false) { ntype = NodeType::FunctionParamNode; }
+        FunctionParamNode() : m_optional(false) { ntype = NodeType::FunctionParamNode; }
         FunctionParamNode(const std::string &name, TypeNode *type, std::shared_ptr<ExprNode> value, bool optional = false)
             : m_name(name), m_type(type), m_value(value), m_optional(optional) { ntype = NodeType::FunctionParamNode; }
 

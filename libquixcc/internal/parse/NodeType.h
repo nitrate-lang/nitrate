@@ -40,7 +40,6 @@ namespace libquixcc
         DeclNode,
         DefNode,
         BlockNode,
-        BasicTypeNode,
 
         ConstUnaryExprNode,
         ConstBinaryExprNode,
@@ -123,7 +122,6 @@ namespace libquixcc
     class DeclNode;
     class DefNode;
     class BlockNode;
-    class BasicTypeNode;
     class UnaryExprNode;
     class BinaryExprNode;
     class CallExprNode;
