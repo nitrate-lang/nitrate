@@ -14,6 +14,7 @@ main:
 	xorl	%eax, %eax
 	callq	printf@PLT
 	leaq	.L_BWDxS22Jjz(%rip), %rdi
+	movl	$1000, %esi
 	xorl	%eax, %eax
 	callq	printf@PLT
 	movb	$0, 7(%rsp)
@@ -41,7 +42,7 @@ main:
 	.type	.L_BWDxS22Jjz,@object
 	.p2align	4
 .L_BWDxS22Jjz:
-	.asciz	"Long live QUIX!\n"
-	.size	.L_BWDxS22Jjz, 17
+	.asciz	"Long live QUIX! May it reign supreme for %d years to come!\n"
+	.size	.L_BWDxS22Jjz, 60
 
 	.section	".note.GNU-stack","",@progbits

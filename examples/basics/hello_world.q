@@ -22,7 +22,7 @@ pub "c" fn printf(format: *i8, ...): i32;
 fn main(): i8 {
     printf("Hi. Behold, the first Hello World program for the QUIX language!\n");
     printf("This is the first of many programs to come.\n");
-    printf("Long live QUIX!\n");
+    printf("Long live QUIX! May it reign supreme for %d years to come!\n", 1000);
 
     return 0;
 }
