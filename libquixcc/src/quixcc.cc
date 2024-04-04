@@ -861,6 +861,13 @@ LIB_EXPORT void quixcc_fault_handler(int sig)
     static std::mutex mutex;
     std::lock_guard<std::mutex> lock(mutex);
 
+    signal(SIGINT, SIG_IGN);
+    signal(SIGILL, SIG_IGN);
+    signal(SIGFPE, SIG_IGN);
+    signal(SIGSEGV, SIG_IGN);
+    signal(SIGTERM, SIG_IGN);
+    signal(SIGABRT, SIG_IGN);
+
     switch (sig)
     {
     case SIGINT:
@@ -880,7 +887,6 @@ LIB_EXPORT void quixcc_fault_handler(int sig)
         break;
     case SIGABRT:
         std::cerr << "SIGABRT: libquixcc encountered an internal error. compilation aborted." << std::endl;
-        signal(SIGABRT, SIG_IGN); // prevent infinite loop
         break;
     default:
         std::cerr << "libquixcc encountered an unexpected signal. compilation aborted." << std::endl;

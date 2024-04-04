@@ -50,6 +50,7 @@ namespace libquixcc
         llvm::Value *visit(const NopStmtNode *node) const;
         llvm::Value *visit(const UnaryExprNode *node) const;
         llvm::Value *visit(const BinaryExprNode *node) const;
+        llvm::Value *visit(const CallExprNode *node) const;
         llvm::Constant *visit(const ConstUnaryExprNode *node) const;
         llvm::Constant *visit(const ConstBinaryExprNode *node) const;
         llvm::Value *visit(const IdentifierNode *node) const;

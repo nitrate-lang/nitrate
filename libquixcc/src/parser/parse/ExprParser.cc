@@ -166,16 +166,16 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                     }
 
                     std::shared_ptr<libquixcc::ExprNode> arg;
-                    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma)}, arg, depth + 1))
+                    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseParen)}, arg, depth + 1))
                         return false;
 
                     args.push_back(arg);
                 }
+                
+                auto ivk = std::make_shared<libquixcc::InvokeFnCall>(ident, std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>>(), args);
+                stack.push(std::make_shared<libquixcc::CallExprNode>(ivk));
 
-                // stack.push(std::make_shared<libquixcc::CallExprNode>(ident, args));
-                // continue;
-                /// TODO: Implement function calls
-                throw std::runtime_error("Function calls are not yet implemented");
+                continue;
             }
             else
             {

@@ -161,6 +161,40 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
     }
 }
 
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *node) const
+{
+    if (!m_ctx->m_named_functions.contains(node->m_decl.get()))
+    {
+        std::string msg = "Unknown function referenced: " + node->m_decl->m_name;
+        throw CodegenException(msg);
+    }
+
+    auto callee = m_ctx->m_named_functions[node->m_decl.get()];
+
+    auto fn = m_ctx->m_module->getFunction(callee);
+    if (!fn)
+    {
+        std::string msg = "Unknown function referenced: " + callee;
+        throw CodegenException(msg);
+    }
+
+    if (fn->arg_size() != node->m_invoke->m_positional_args.size())
+    {
+        std::string msg = "Incorrect number of arguments passed to function: " + callee;
+        throw CodegenException(msg);
+    }
+
+    std::vector<llvm::Value *> args;
+    for (auto &arg : node->m_invoke->m_positional_args)
+    {
+        args.push_back(arg->codegen(*this));
+        if (!args.back())
+            return nullptr;
+    }
+
+    return m_ctx->m_builder->CreateCall(fn, args, "calltmp");
+}
+
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstUnaryExprNode *node) const
 {
     llvm::Constant *expr = node->m_expr->codegen(*this);
@@ -549,12 +583,16 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
     }
     else
     {
+        std::string name = Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang);
+        
         if (m_ctx->m_pub)
-            func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), *m_ctx->m_module);
+            func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, name, *m_ctx->m_module);
         else
-            func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), *m_ctx->m_module);
+            func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, name, *m_ctx->m_module);
+
+        m_ctx->m_named_functions[node] = name;
     }
-    
+
     size_t i = 0;
     for (auto &arg : func->args())
     {

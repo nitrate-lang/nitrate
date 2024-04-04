@@ -158,6 +158,38 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Bi
     return str + "}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::InvokeFnCall *node) const
+{
+    std::string str = "{\"ntype\":\"InvokeFnCall\",\"name\":\"";
+    str += escape_json(node->m_name);
+    str += "\",\"named_args\":[";
+    for (auto it = node->m_named_args.begin(); it != node->m_named_args.end(); ++it)
+    {
+        str += "{\"name\":\"" + escape_json(it->first) + "\",\"value\":" + it->second->to_json(*this) + "}";
+        if (it != node->m_named_args.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    str += "],\"positional_args\":[";
+    for (auto it = node->m_positional_args.begin(); it != node->m_positional_args.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_positional_args.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    return str + "]}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::CallExprNode *node) const
+{
+    return "{\"ntype\":\"CallExprNode\",\"callee\":" + node->m_invoke->to_json(*this) + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ConstUnaryExprNode *node) const
 {
     std::string str = "{\"ntype\":\"ConstUnaryExprNode\",\"op\":\"";

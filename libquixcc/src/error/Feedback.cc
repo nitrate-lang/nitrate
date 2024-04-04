@@ -129,6 +129,7 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {FOR_EXPECTED_SEMICOLON, "Expected a semicolon after the for loop condition. To fix the issue, insert a semicolon after the for loop condition"},
     {FOR_EXPECTED_CLOSING_PARANTHESIS, "Expected a closing parenthesis after the for loop condition. To fix the issue, insert a closing parenthesis after the for loop condition"},
 
+    {UNRESOLVED_FUNCTION, "Function '{}' is not defined in the current scope. To fix the issue, define the function or import the module that defines the function"},
     {UNRESOLVED_TYPE, "Type '{}' is not defined in the current scope. To fix the issue, define the type or import the module that defines the type"},
     {RESOLVED_TYPE, "Resolved type '{}' into '{}'"},
 };

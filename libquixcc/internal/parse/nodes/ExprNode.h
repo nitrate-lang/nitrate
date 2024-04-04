@@ -76,7 +76,7 @@ namespace libquixcc
         std::vector<std::shared_ptr<ExprNode>> m_positional_args;
     };
 
-    /// TODO: Implement CallExprNode
+    class FunctionDeclNode;
 
     class CallExprNode : public ExprNode
     {
@@ -85,9 +85,10 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
         std::shared_ptr<InvokeFnCall> m_invoke;
-        TypeNode *m_type;
+        std::shared_ptr<FunctionDeclNode> m_decl;
     };
 }
 

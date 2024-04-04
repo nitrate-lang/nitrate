@@ -94,8 +94,31 @@ static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::Bl
         job->m_inner.prefix));
 }
 
+static void resolve_function_decls_to_calls(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
+{
+    ast->dfs_preorder(ParseNodePreorderVisitor(
+        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        {
+            if ((*node)->ntype != NodeType::CallExprNode)
+                return;
+
+            auto expr = std::static_pointer_cast<libquixcc::CallExprNode>(*node);
+
+            if (!job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::FunctionDeclNode, expr->m_invoke->m_name)))
+            {
+                LOG(ERROR) << feedback[UNRESOLVED_FUNCTION] << expr->m_invoke->m_name << std::endl;
+                return;
+            }
+
+            auto func_decl = std::static_pointer_cast<libquixcc::FunctionDeclNode>(job->m_inner.m_named_construsts[std::make_pair(NodeType::FunctionDeclNode, expr->m_invoke->m_name)]);
+            expr->m_decl = func_decl;
+        },
+        job->m_inner.prefix));
+}
+
 void libquixcc::mutate::ResolveNamedConstructs(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     resolve_user_type_nodes(job, ast);
     resolve_enum_values(job, ast);
+    resolve_function_decls_to_calls(job, ast);
 }

@@ -138,6 +138,7 @@ namespace libquixcc
         FOR_EXPECTED_CLOSING_PARANTHESIS,
 
         UNRESOLVED_TYPE,
+        UNRESOLVED_FUNCTION,
         RESOLVED_TYPE,
 
         GENERIC_ERROR,
