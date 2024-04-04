@@ -106,6 +106,27 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
         return llvm::BinaryOperator::CreateAdd(expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 1, false)), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Decrement:
         return llvm::BinaryOperator::CreateSub(expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 1, false)), "", m_ctx->m_builder->GetInsertBlock());
+    case Operator::BitAnd:
+    {
+        if (node->m_expr->ntype != NodeType::IdentifierNode)
+            return nullptr;
+
+        auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(node->m_expr.get())->m_name);
+        if (m_ctx->m_named_stack_vars.contains(name))
+            return m_ctx->m_named_stack_vars[name].first;
+        else if (m_ctx->m_named_global_vars.contains(name))
+            return m_ctx->m_named_global_vars[name];
+        else if (m_ctx->m_named_params.contains(name))
+            return m_ctx->m_named_params[name].first;
+
+        for (auto &pair : m_ctx->m_named_functions)
+        {
+            if (pair.second->m_name == name)
+                return pair.first;
+        }
+
+        return nullptr;
+    }
     default:
         return nullptr;
     }
@@ -168,18 +189,22 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *node) const
 {
-    if (!m_ctx->m_named_functions.contains(node->m_decl.get()))
-    {
-        std::string msg = "Unknown function referenced: " + node->m_decl->m_name;
-        throw CodegenException(msg);
-    }
+    std::string name;
+    llvm::Function *fn = nullptr;
 
-    auto callee = m_ctx->m_named_functions[node->m_decl.get()];
+    bool found = std::any_of(m_ctx->m_named_functions.begin(), m_ctx->m_named_functions.end(), [&](const auto &pair)
+                             {
+        if (pair.second->m_name == node->m_name)
+        {
+            name = pair.second->m_name;
+            fn = pair.first;
+            return true;
+        }
+        return false; });
 
-    auto fn = m_ctx->m_module->getFunction(callee);
-    if (!fn)
+    if (!found)
     {
-        std::string msg = "Unknown function referenced: " + callee;
+        std::string msg = "Unknown function referenced: " + name;
         throw CodegenException(msg);
     }
 
@@ -187,7 +212,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *nod
     {
         if (fn->arg_size() > node->m_positional_args.size())
         {
-            std::string msg = "Incorrect number of arguments passed to function: " + callee;
+            std::string msg = "Incorrect number of arguments passed to function: " + name;
             throw CodegenException(msg);
         }
     }
@@ -195,7 +220,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *nod
     {
         if (fn->arg_size() != node->m_positional_args.size())
         {
-            std::string msg = "Incorrect number of arguments passed to function: " + callee;
+            std::string msg = "Incorrect number of arguments passed to function: " + name;
             throw CodegenException(msg);
         }
     }
@@ -606,7 +631,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
         else
             func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, name, *m_ctx->m_module);
 
-        m_ctx->m_named_functions[node] = name;
+        m_ctx->m_named_functions.push_back(std::make_pair(func, node));
     }
 
     size_t i = 0;
