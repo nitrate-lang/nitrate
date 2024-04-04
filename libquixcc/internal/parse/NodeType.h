@@ -47,7 +47,6 @@ namespace libquixcc
 
         UnaryExprNode,
         BinaryExprNode,
-        InvokeFnCall,
         CallExprNode,
 
         IdentifierNode,
@@ -127,7 +126,6 @@ namespace libquixcc
     class BasicTypeNode;
     class UnaryExprNode;
     class BinaryExprNode;
-    class InvokeFnCall;
     class CallExprNode;
     class ConstUnaryExprNode;
     class ConstBinaryExprNode;

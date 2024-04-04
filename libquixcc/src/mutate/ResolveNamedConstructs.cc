@@ -104,13 +104,13 @@ static void resolve_function_decls_to_calls(quixcc_job_t *job, std::shared_ptr<l
 
             auto expr = std::static_pointer_cast<libquixcc::CallExprNode>(*node);
 
-            if (!job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::FunctionDeclNode, expr->m_invoke->m_name)))
+            if (!job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::FunctionDeclNode, expr->m_name)))
             {
-                LOG(ERROR) << feedback[UNRESOLVED_FUNCTION] << expr->m_invoke->m_name << std::endl;
+                LOG(ERROR) << feedback[UNRESOLVED_FUNCTION] << expr->m_name << std::endl;
                 return;
             }
 
-            auto func_decl = std::static_pointer_cast<libquixcc::FunctionDeclNode>(job->m_inner.m_named_construsts[std::make_pair(NodeType::FunctionDeclNode, expr->m_invoke->m_name)]);
+            auto func_decl = std::static_pointer_cast<libquixcc::FunctionDeclNode>(job->m_inner.m_named_construsts[std::make_pair(NodeType::FunctionDeclNode, expr->m_name)]);
             expr->m_decl = func_decl;
         },
         job->m_inner.prefix));

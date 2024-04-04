@@ -185,7 +185,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *nod
 
     if (fn->isVarArg())
     {
-        if (fn->arg_size() > node->m_invoke->m_positional_args.size())
+        if (fn->arg_size() > node->m_positional_args.size())
         {
             std::string msg = "Incorrect number of arguments passed to function: " + callee;
             throw CodegenException(msg);
@@ -193,7 +193,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *nod
     }
     else
     {
-        if (fn->arg_size() != node->m_invoke->m_positional_args.size())
+        if (fn->arg_size() != node->m_positional_args.size())
         {
             std::string msg = "Incorrect number of arguments passed to function: " + callee;
             throw CodegenException(msg);
@@ -201,7 +201,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *nod
     }
 
     std::vector<llvm::Value *> args;
-    for (auto &arg : node->m_invoke->m_positional_args)
+    for (auto &arg : node->m_positional_args)
     {
         args.push_back(arg->codegen(*this));
         if (!args.back())

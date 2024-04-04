@@ -171,8 +171,10 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                     }
                 }
 
-                auto ivk = std::make_shared<libquixcc::InvokeFnCall>(ident, std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>>(), args);
-                stack.push(std::make_shared<libquixcc::CallExprNode>(ivk));
+                auto expr = std::make_shared<libquixcc::CallExprNode>();
+                expr->m_name = ident;
+                expr->m_positional_args = args;
+                stack.push(expr);
 
                 continue;
             }

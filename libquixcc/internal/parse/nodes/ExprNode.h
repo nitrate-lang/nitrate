@@ -62,32 +62,20 @@ namespace libquixcc
         std::shared_ptr<ExprNode> m_rhs;
     };
 
-    class InvokeFnCall : public ParseNode
-    {
-    public:
-        InvokeFnCall(const std::string &name, const std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &named_args, const std::vector<std::shared_ptr<ExprNode>> &positional_args)
-            : m_name(name), m_named_args(named_args), m_positional_args(positional_args) { ntype = NodeType::InvokeFnCall; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
-        std::string m_name;
-        std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_named_args;
-        std::vector<std::shared_ptr<ExprNode>> m_positional_args;
-    };
-
     class FunctionDeclNode;
 
     class CallExprNode : public ExprNode
     {
     public:
-        CallExprNode(const std::shared_ptr<InvokeFnCall> &callee) : m_invoke(callee) { ntype = NodeType::CallExprNode; }
+        CallExprNode() { ntype = NodeType::CallExprNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
-        std::shared_ptr<InvokeFnCall> m_invoke;
+        std::string m_name;
+        std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_named_args;
+        std::vector<std::shared_ptr<ExprNode>> m_positional_args;
         std::shared_ptr<FunctionDeclNode> m_decl;
     };
 }
