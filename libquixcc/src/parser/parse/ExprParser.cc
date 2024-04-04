@@ -153,12 +153,6 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 while (true)
                 {
                     auto tok = scanner->peek();
-                    if (tok.type() == TokenType::Eof)
-                    {
-                        LOG(ERROR) << "Unexpected EOF" << tok << std::endl;
-                        return false;
-                    }
-
                     if (tok == Token(TokenType::Punctor, Punctor::CloseParen))
                     {
                         scanner->next();
@@ -168,10 +162,15 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                     std::shared_ptr<libquixcc::ExprNode> arg;
                     if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseParen)}, arg, depth + 1))
                         return false;
-
                     args.push_back(arg);
+
+                    tok = scanner->peek();
+                    if (tok.is<Punctor>(Punctor::Comma))
+                    {
+                        scanner->next();
+                    }
                 }
-                
+
                 auto ivk = std::make_shared<libquixcc::InvokeFnCall>(ident, std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>>(), args);
                 stack.push(std::make_shared<libquixcc::CallExprNode>(ivk));
 

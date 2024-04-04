@@ -105,6 +105,7 @@ namespace libquixcc
         FN_PARAM_EXPECTED_COLON,
         FN_PARAM_TYPE_ERR,
         FN_PARAM_INIT_ERR,
+        FN_EXPECTED_VARARG,
 
         PREP_DUPLICATE_IMPORT,
 

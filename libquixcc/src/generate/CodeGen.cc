@@ -178,10 +178,21 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *nod
         throw CodegenException(msg);
     }
 
-    if (fn->arg_size() != node->m_invoke->m_positional_args.size())
+    if (fn->isVarArg())
     {
-        std::string msg = "Incorrect number of arguments passed to function: " + callee;
-        throw CodegenException(msg);
+        if (fn->arg_size() > node->m_invoke->m_positional_args.size())
+        {
+            std::string msg = "Incorrect number of arguments passed to function: " + callee;
+            throw CodegenException(msg);
+        }
+    }
+    else
+    {
+        if (fn->arg_size() != node->m_invoke->m_positional_args.size())
+        {
+            std::string msg = "Incorrect number of arguments passed to function: " + callee;
+            throw CodegenException(msg);
+        }
     }
 
     std::vector<llvm::Value *> args;
@@ -584,7 +595,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
     else
     {
         std::string name = Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang);
-        
+
         if (m_ctx->m_pub)
             func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, name, *m_ctx->m_module);
         else

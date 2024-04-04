@@ -97,7 +97,8 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {FN_PARAM_EXPECTED_COLON, "Expected colon separator in function parameter declaration. To fix the issue, insert a colon between the parameter name and the typename. Syntax: name: type [= expr];"},
     {FN_PARAM_TYPE_ERR, "An error occurred while parsing the type of parameter '{}'. Syntax: name: type [= expr];"},
     {FN_PARAM_INIT_ERR, "Declaration of parameter '{}' requires an initializer, but an error occurred while parsing the initializer. Syntax: name: type [= expr];"},
-    
+    {FN_EXPECTED_VARARG, "Expected '...' after the last parameter in the function parameter list. To fix the issue, insert '...' after the last parameter in the function parameter list"},
+
     {PREP_DUPLICATE_IMPORT, "Source file \"{}\" contains duplicate import of \"{}\""},
 
     {VAR_NAME_DUPLICATE, "Variable name '{}' is already in use. To fix the issue, rename the variable to something unique"},
