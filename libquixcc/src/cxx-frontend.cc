@@ -334,7 +334,7 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
         quixcc_set_input(job, entry.first, entry.second.c_str());
 
         if (!quixcc_set_triple(job, m_target.triple().c_str()))
-            throw std::runtime_error("Failed to set target triple.");
+            throw TargetTripleException("Invalid or unsupported LLVM target triple: " + m_target.triple());
 
         /// TODO: Implement other targets
 

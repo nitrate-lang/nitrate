@@ -39,7 +39,7 @@ namespace quixcc
         std::string m_triple;
 
     public:
-        TargetTriple(const std::string &triple = "") : m_triple(triple.c_str()) {}
+        TargetTriple(const std::string &triple = "") : TargetTriple(triple.c_str()) {}
 
         TargetTriple(const char *triple);
 
