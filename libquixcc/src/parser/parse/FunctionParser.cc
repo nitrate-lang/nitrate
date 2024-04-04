@@ -134,7 +134,7 @@ static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
         scanner->next();
 
         std::shared_ptr<ExprNode> value;
-        if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), value))
+        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseParen)}, value))
         {
             LOG(ERROR) << feedback[FN_PARAM_INIT_ERR] << tok << std::endl;
             return false;

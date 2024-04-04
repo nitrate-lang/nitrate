@@ -36,7 +36,7 @@ bool libquixcc::parse_return(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     }
 
     std::shared_ptr<ExprNode> expr;
-    if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Semicolon), expr))
+    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, expr))
         return false;
     node = std::make_shared<ReturnStmtNode>(expr);
 
@@ -67,7 +67,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     Token tok;
 
     std::shared_ptr<ExprNode> return_expr;
-    if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), return_expr))
+    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma)}, return_expr))
         return false;
 
     tok = scanner->next();
@@ -78,7 +78,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     }
 
     std::shared_ptr<ExprNode> condition;
-    if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Semicolon), condition))
+    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, condition))
         return false;
 
     tok = scanner->next();
@@ -108,7 +108,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     Token tok;
 
     std::shared_ptr<ExprNode> return_expr;
-    if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), return_expr))
+    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma)}, return_expr))
         return false;
 
     tok = scanner->next();
@@ -119,7 +119,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     }
 
     std::shared_ptr<ExprNode> condition;
-    if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Semicolon), condition))
+    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, condition))
         return false;
 
     tok = scanner->next();
@@ -149,7 +149,7 @@ bool libquixcc::parse_retv(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     Token tok;
 
     std::shared_ptr<ExprNode> cond;
-    if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Semicolon), cond))
+    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, cond))
         return false;
 
     tok = scanner->next();

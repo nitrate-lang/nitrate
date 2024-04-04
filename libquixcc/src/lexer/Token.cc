@@ -119,3 +119,10 @@ bool libquixcc::Token::operator==(const libquixcc::Token &rhs) const
 {
     return m_type == rhs.m_type && m_value == rhs.m_value;
 }
+
+bool libquixcc::Token::operator<(const libquixcc::Token &rhs) const
+{
+    if (m_type != rhs.m_type)
+        return m_type < rhs.m_type;
+    return m_value < rhs.m_value;
+}

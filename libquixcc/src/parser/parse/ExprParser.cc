@@ -25,7 +25,7 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, Token terminator, std::shared_ptr<libquixcc::ExprNode> &node)
+bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::set<Token> terminators, std::shared_ptr<libquixcc::ExprNode> &node, size_t depth)
 {
     std::stack<std::shared_ptr<libquixcc::ExprNode>> stack;
 
@@ -35,7 +35,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         if (tok.type() == TokenType::Eof)
             return false;
 
-        if (tok == terminator)
+        if (terminators.contains(tok))
         {
             if (stack.empty())
             {
@@ -92,7 +92,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             case Punctor::OpenParen:
             {
                 std::shared_ptr<libquixcc::ExprNode> expr;
-                if (!parse_expr(job, scanner, terminator, expr))
+                if (!parse_expr(job, scanner, terminators, expr, depth + 1))
                     return false;
                 stack.push(expr);
                 continue;
@@ -118,7 +118,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         {
             auto op = std::get<Operator>(tok.val());
             std::shared_ptr<libquixcc::ExprNode> expr;
-            if (!parse_expr(job, scanner, terminator, expr))
+            if (!parse_expr(job, scanner, terminators, expr, depth + 1))
                 return false;
 
             if (stack.empty())
@@ -166,7 +166,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                     }
 
                     std::shared_ptr<libquixcc::ExprNode> arg;
-                    if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), arg))
+                    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma)}, arg, depth + 1))
                         return false;
 
                     args.push_back(arg);
