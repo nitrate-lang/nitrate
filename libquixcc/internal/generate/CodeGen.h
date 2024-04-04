@@ -47,6 +47,7 @@ namespace libquixcc
         CodegenVisitor(LLVMContext &llvm) : m_ctx(&llvm) {}
 
         llvm::Value *visit(const BlockNode *node) const;
+        llvm::Value *visit(const ExprStmtNode *node) const;
         llvm::Value *visit(const NopStmtNode *node) const;
         llvm::Value *visit(const UnaryExprNode *node) const;
         llvm::Value *visit(const BinaryExprNode *node) const;

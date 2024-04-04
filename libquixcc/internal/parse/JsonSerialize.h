@@ -37,6 +37,7 @@ namespace libquixcc
         std::string visit(const ExprNode *node) const;
         std::string visit(const ConstExprNode *node) const;
         std::string visit(const StmtNode *node) const;
+        std::string visit(const ExprStmtNode *node) const;
         std::string visit(const NopStmtNode *node) const;
         std::string visit(const TypeNode *node) const;
         std::string visit(const DeclNode *node) const;

@@ -34,6 +34,7 @@ namespace libquixcc
         ExprNode,
         ConstExprNode,
         StmtNode,
+        ExprStmtNode,
         NopStmtNode,
         TypeNode,
         DeclNode,
@@ -117,6 +118,7 @@ namespace libquixcc
     class ExprNode;
     class ConstExprNode;
     class StmtNode;
+    class ExprStmtNode;
     class NopStmtNode;
     class TypeNode;
     class DeclNode;

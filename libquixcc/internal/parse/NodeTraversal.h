@@ -47,6 +47,7 @@ namespace libquixcc
         size_t visit(ExprNode *node);
         size_t visit(ConstExprNode *node);
         size_t visit(StmtNode *node);
+        size_t visit(ExprStmtNode *node);
         size_t visit(NopStmtNode *node);
         size_t visit(TypeNode *node);
         size_t visit(DeclNode *node);

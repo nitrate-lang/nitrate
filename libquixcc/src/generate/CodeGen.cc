@@ -76,6 +76,11 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BlockNode *node) 
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExprStmtNode *node) const
+{
+    return node->m_expr->codegen(*this);
+}
+
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::NopStmtNode *node) const
 {
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
@@ -720,32 +725,10 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
             }
             break;
         }
-        case NodeType::IfStmtNode:
-            if (!std::static_pointer_cast<IfStmtNode>(stmt)->codegen(*this))
-                return nullptr;
-            break;
-        case NodeType::RetifStmtNode:
-            if (!std::static_pointer_cast<RetifStmtNode>(stmt)->codegen(*this))
-                return nullptr;
-            break;
-        case NodeType::RetzStmtNode:
-            if (!std::static_pointer_cast<RetzStmtNode>(stmt)->codegen(*this))
-                return nullptr;
-            break;
-        case NodeType::RetvStmtNode:
-            if (!std::static_pointer_cast<RetvStmtNode>(stmt)->codegen(*this))
-                return nullptr;
-            break;
-        case NodeType::WhileStmtNode:
-            if (!std::static_pointer_cast<WhileStmtNode>(stmt)->codegen(*this))
-                return nullptr;
-            break;
-        case NodeType::ForStmtNode:
-            if (!std::static_pointer_cast<ForStmtNode>(stmt)->codegen(*this))
-                return nullptr;
-            break;
         default:
-            throw std::runtime_error("Invalid statement type");
+            if (!stmt->codegen(*this))
+                return nullptr;
+            break;
         }
     }
 

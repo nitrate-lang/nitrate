@@ -19,6 +19,10 @@
 
 pub "c" fn printf(format: *i8, ...): i32;
 
-fn main(): i32 {
-    return printf("Hello, %s\n", "Wesley");
+fn main(): i8 {
+    printf("Hi. Behold, the first Hello World program for the QUIX language!\n");
+    printf("This is the first of many programs to come.\n");
+    printf("Long live QUIX!\n");
+
+    return 0;
 }

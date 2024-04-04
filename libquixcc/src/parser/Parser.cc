@@ -40,19 +40,35 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
 
     group = std::make_shared<BlockNode>();
 
-    while ((tok = scanner->next()).type() != TokenType::Eof)
+    while ((tok = scanner->peek()).type() != TokenType::Eof)
     {
         if (expect_braces)
         {
             if (tok.is<Punctor>(Punctor::CloseBrace))
+            {
+                scanner->next();
                 break;
+            }
         }
 
         if (tok.type() != TokenType::Keyword)
         {
-            LOG(ERROR) << feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok << std::endl;
-            return false;
+            std::shared_ptr<ExprNode> expr;
+            if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, expr))
+                return false;
+
+            tok = scanner->next();
+            if (!tok.is<Punctor>(Punctor::Semicolon))
+            {
+                LOG(ERROR) << feedback[PARSER_EXPECTED_SEMICOLON] << tok.serialize() << tok << std::endl;
+                return false;
+            }
+
+            group->m_stmts.push_back(std::make_shared<ExprStmtNode>(expr));
+            continue;
         }
+
+        scanner->next();
 
         std::shared_ptr<StmtNode> node;
 

@@ -96,6 +96,11 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::St
     return "{\"ntype\":\"StmtNode\"}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ExprStmtNode *node) const
+{
+    return "{\"ntype\":\"ExprStmtNode\",\"expr\":" + node->m_expr->to_json(*this) + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::NopStmtNode *node) const
 {
     return "{\"ntype\":\"nop\"}";
