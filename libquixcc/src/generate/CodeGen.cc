@@ -252,8 +252,12 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IdentifierNode *n
 
         return load;
     }
-
-    if (m_ctx->m_named_global_vars.contains(name))
+    else if (m_ctx->m_named_params.contains(name))
+    {
+        /// TODO: fix function parameters
+        return m_ctx->m_named_params[name].first;
+    }
+    else if (m_ctx->m_named_global_vars.contains(name))
     {
         return m_ctx->m_builder->CreateLoad(m_ctx->m_named_global_vars[name]->getValueType(), m_ctx->m_named_global_vars[name], name);
     }
@@ -550,7 +554,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
         else
             func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), *m_ctx->m_module);
     }
-
+    
     size_t i = 0;
     for (auto &arg : func->args())
     {
@@ -601,6 +605,10 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::EnumFieldNode *no
 llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNode *node) const
 {
     llvm::Function *func = node->m_decl->codegen(*this);
+
+    m_ctx->m_named_params.clear();
+    for (auto &arg : func->args())
+        m_ctx->m_named_params[arg.getName().str()] = std::make_pair(&arg, arg.getType());
 
     llvm::BasicBlock *EntryBlock = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
     m_ctx->m_builder->SetInsertPoint(EntryBlock);
