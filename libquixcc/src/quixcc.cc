@@ -27,6 +27,8 @@
 #include <regex>
 #include <filesystem>
 #include <random>
+#include <signal.h>
+#include <execinfo.h>
 
 #include <LibMacro.h>
 #include <llvm/LLVMWrapper.h>
@@ -41,6 +43,8 @@
 #include <parse/Parser.h>
 #include <libquixcc.h>
 #include <mutate/Routine.h>
+
+#define PROJECT_REPO_URL "https://github.com/Kracken256/quixcc"
 
 using namespace libquixcc;
 
@@ -753,7 +757,147 @@ static bool build_argmap(quixcc_job_t *job)
     return verify_build_option_conflicts(job);
 }
 
-LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
+static void print_stacktrace()
+{
+    // UTF-8 support
+    setlocale(LC_ALL, "");
+
+    std::cerr << "\x1b[31;1m┏━━━━━━┫ INTERNAL COMPILER ERROR ┣━━\x1b[0m\n";
+    std::cerr << "\x1b[31;1m┃\x1b[0m\n";
+
+    void *array[48];
+    size_t size = backtrace(array, 48);
+    char **strings = backtrace_symbols(array, size);
+
+    for (size_t i = 0; i < size && strings[i]; i++)
+        std::cerr << "\x1b[31;1m┣╸╸\x1b[0m \x1b[37;1m" << strings[i] << "\x1b[0m\n";
+
+    free(strings);
+
+    std::cerr << "\x1b[31;1m┃\x1b[0m\n";
+    std::cerr << "\x1b[31;1m┗━━━━━━┫ END STACK TRACE ┣━━\x1b[0m" << std::endl;
+}
+
+static std::string escape_json_string(const std::string &s)
+{
+    std::string out;
+    for (char c : s)
+    {
+        switch (c)
+        {
+        case '\b':
+            out += "\\b";
+            break;
+        case '\f':
+            out += "\\f";
+            break;
+        case '\n':
+            out += "\\n";
+            break;
+        case '\r':
+            out += "\\r";
+            break;
+        case '\t':
+            out += "\\t";
+            break;
+        case '\\':
+            out += "\\\\";
+            break;
+        case '\"':
+            out += "\\\"";
+            break;
+        default:
+            out += c;
+            break;
+        }
+    }
+    return out;
+}
+
+static std::string geterror_report_string()
+{
+    std::vector<std::string> trace;
+
+    void *array[48];
+    size_t size = backtrace(array, 48);
+    char **strings = backtrace_symbols(array, size);
+
+    for (size_t i = 0; i < size && strings[i]; i++)
+        trace.push_back(strings[i]);
+
+    free(strings);
+
+    std::string report = "{\"version\":\"1.0\",\"quixcc_run\":\"";
+
+    char buf[17];
+    snprintf(buf, sizeof(buf), "%p", (void *)quixcc_run);
+    report += buf;
+
+    report += "\",\"trace\":[";
+    for (size_t i = 0; i < trace.size(); i++)
+    {
+        report += "\"" + escape_json_string(trace[i]) + "\"";
+        if (i + 1 < trace.size())
+            report += ",";
+    }
+
+    report += "]}";
+
+    return "QUIXCC_TRACE-{" + base64_encode(report) + "}";
+}
+
+static void print_general_fault_message()
+{
+    std::cerr << "The compiler (libquixcc backend) encountered a fatal internal error.\n";
+    std::cerr << "Please report this error to the QuixCC developers at " PROJECT_REPO_URL ".\n\n";
+    std::cerr << "Please include the following report code: \n  " << geterror_report_string() << std::endl;
+}
+
+LIB_EXPORT void quixcc_fault_handler(int sig)
+{
+    /*
+        Lock all threads to prevent multiple error messages
+    */
+    static std::mutex mutex;
+    std::lock_guard<std::mutex> lock(mutex);
+
+    switch (sig)
+    {
+    case SIGINT:
+        std::cerr << "SIGINT: libquixcc was interrupted. compilation aborted." << std::endl;
+        break;
+    case SIGILL:
+        std::cerr << "SIGILL: libquixcc tried to execute an illegal instruction. compilation aborted." << std::endl;
+        break;
+    case SIGFPE:
+        std::cerr << "SIGFPE: libquixcc tried to execute an illegal floating point operation. compilation aborted." << std::endl;
+        break;
+    case SIGSEGV:
+        std::cerr << "SIGSEGV: libquixcc tried to access an invalid memory location leading to a segmentation fault. compilation aborted." << std::endl;
+        break;
+    case SIGTERM:
+        std::cerr << "SIGTERM: libquixcc was terminated. compilation aborted." << std::endl;
+        break;
+    case SIGABRT:
+        std::cerr << "SIGABRT: libquixcc encountered an internal error. compilation aborted." << std::endl;
+        signal(SIGABRT, SIG_IGN); // prevent infinite loop
+        break;
+    default:
+        std::cerr << "libquixcc encountered an unexpected signal. compilation aborted." << std::endl;
+        break;
+    }
+
+    std::cerr << '\n';
+    print_general_fault_message();
+    std::cerr << "\n";
+    print_stacktrace();
+    std::cerr << "\n";
+    std::cerr << "The compiler will now abort." << std::endl;
+
+    abort();
+}
+
+static bool execute_job(quixcc_job_t *job)
 {
     if (!job->m_in || !job->m_out || !job->m_filename)
         return false;
@@ -801,6 +945,33 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     LOG(DEBUG) << "Finished quixcc run @ " << get_datetime() << std::endl;
 
     return job->m_result.m_success = success;
+}
+
+LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
+{
+    /*
+        Catch crashes and pretty print them
+    */
+
+    sighandler_t old_handlers[6];
+
+    old_handlers[0] = signal(SIGINT, quixcc_fault_handler);
+    old_handlers[1] = signal(SIGILL, quixcc_fault_handler);
+    old_handlers[2] = signal(SIGFPE, quixcc_fault_handler);
+    old_handlers[3] = signal(SIGSEGV, quixcc_fault_handler);
+    old_handlers[4] = signal(SIGTERM, quixcc_fault_handler);
+    old_handlers[5] = signal(SIGABRT, quixcc_fault_handler);
+
+    bool success = execute_job(job);
+
+    signal(SIGINT, old_handlers[0]);
+    signal(SIGILL, old_handlers[1]);
+    signal(SIGFPE, old_handlers[2]);
+    signal(SIGSEGV, old_handlers[3]);
+    signal(SIGTERM, old_handlers[4]);
+    signal(SIGABRT, old_handlers[5]);
+
+    return success;
 }
 
 LIB_EXPORT const quixcc_result_t *quixcc_result(quixcc_job_t *job)
