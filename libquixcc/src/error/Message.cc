@@ -27,21 +27,24 @@ using namespace libquixcc;
 
 void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job, libquixcc::E type, const std::string &message)
 {
-     job.m_result.m_messages = (quixcc_msg_t **)realloc(job.m_result.m_messages, (job.m_result.m_count + 1) * sizeof(quixcc_msg_t *));
-            quixcc_msg_t *msg = (quixcc_msg_t *)malloc(sizeof(quixcc_msg_t));
-            msg->line = 0;
-            msg->column = 0;
-            msg->message = strdup(message.c_str());
-            msg->m_level = (quixcc_msg_level_t)type;
-            job.m_result.m_messages[job.m_result.m_count] = msg;
-            job.m_result.m_count++;
+    job.m_result.m_messages = (quixcc_msg_t **)realloc(job.m_result.m_messages, (job.m_result.m_count + 1) * sizeof(quixcc_msg_t *));
+    quixcc_msg_t *msg = (quixcc_msg_t *)malloc(sizeof(quixcc_msg_t));
+    msg->line = 0;
+    msg->column = 0;
+    msg->message = strdup(message.c_str());
+    msg->m_level = (quixcc_msg_level_t)type;
+    job.m_result.m_messages[job.m_result.m_count] = msg;
+    job.m_result.m_count++;
+
+    if (type == E::ERROR || type == E::FATAL)
+        job.m_tainted = true;
 }
 
-libquixcc::Logger &libquixcc::LoggerGroup::operator[](libquixcc::E level){
-
-            if (!m_job->m_debug && level == E::DEBUG)
-                return *m_hole;
-            return *m_loggers[level];
+libquixcc::Logger &libquixcc::LoggerGroup::operator[](libquixcc::E level)
+{
+    if (!m_job->m_debug && level == E::DEBUG)
+        return *m_hole;
+    return *m_loggers[level];
 }
 
 bool libquixcc::LoggerGroup::is_color_enabled()
