@@ -98,7 +98,9 @@ namespace libquixcc
     class FunctionParamNode : public ParseNode
     {
     public:
-        FunctionParamNode() { ntype = NodeType::FunctionParamNode; }
+        FunctionParamNode(): m_optional(false) { ntype = NodeType::FunctionParamNode; }
+        FunctionParamNode(const std::string &name, TypeNode *type, std::shared_ptr<ExprNode> value, bool optional = false)
+            : m_name(name), m_type(type), m_value(value), m_optional(optional) { ntype = NodeType::FunctionParamNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
@@ -107,7 +109,8 @@ namespace libquixcc
 
         std::string m_name;
         TypeNode *m_type;
-        std::shared_ptr<ConstExprNode> m_value;
+        std::shared_ptr<ExprNode> m_value;
+        bool m_optional = false;
     };
 
     class FunctionDeclNode : public DeclNode

@@ -90,12 +90,69 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
 
 static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<FunctionParamNode> &param)
 {
-    return false;
+    /*
+     <name> : <type> [?] [= <value>]
+    */
+
+    auto tok = scanner->next();
+
+    if (tok.type() != TokenType::Identifier)
+    {
+        LOG(ERROR) << feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
+
+    std::string name = std::get<std::string>(tok.val());
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Colon))
+    {
+        LOG(ERROR) << feedback[FN_PARAM_EXPECTED_COLON] << tok << std::endl;
+        return false;
+    }
+
+    TypeNode *type;
+
+    if (!parse_type(job, scanner, &type))
+    {
+        LOG(ERROR) << feedback[FN_PARAM_TYPE_ERR] << tok << std::endl;
+        return false;
+    }
+
+    tok = scanner->peek();
+    bool is_optional = false;
+    if (tok.is<Operator>(Operator::Question))
+    {
+        scanner->next();
+        is_optional = true;
+
+        tok = scanner->peek();
+    }
+
+    if (tok.is<Operator>(Operator::Assign))
+    {
+        scanner->next();
+
+        std::shared_ptr<ExprNode> value;
+        if (!parse_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), value))
+        {
+            LOG(ERROR) << feedback[FN_PARAM_INIT_ERR] << tok << std::endl;
+            return false;
+        }
+
+        param = std::make_shared<FunctionParamNode>(name, type, value, is_optional);
+    }
+    else
+    {
+        param = std::make_shared<FunctionParamNode>(name, type, nullptr, is_optional);
+    }
+
+    return true;
 }
 
 bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    // fn [nothrow] [foreign] [impure] [tsafe] <name> ( [param]... ) [: <type>]; or {}
+    // fn [nothrow] [foreign] [pure] [tsafe] <name> ( [param]... ) [: <type>]; or {}
     auto fndecl = std::make_shared<FunctionDeclNode>();
 
     GetPropState state = {false, false, false, false};
@@ -123,21 +180,28 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
         return false;
     }
 
-    while ((tok = scanner->next()).type() != TokenType::Punctor || std::get<Punctor>(tok.val()) != Punctor::CloseParen)
+    while (1)
     {
+        tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::CloseParen))
+        {
+            scanner->next();
+            break;
+        }
+
         std::shared_ptr<FunctionParamNode> param;
-
         if (!parse_fn_parameter(job, scanner, param))
+        {
+            LOG(ERROR) << feedback[FN_PARAM_PARSE_ERROR] << tok << std::endl;
             return false;
-
+        }
         fndecl->m_params.push_back(param);
 
         tok = scanner->peek();
-
-        if (tok.type() != TokenType::Punctor || (std::get<Punctor>(tok.val()) != Punctor::Comma && std::get<Punctor>(tok.val()) != Punctor::CloseParen))
+        if (tok.is<Punctor>(Punctor::Comma))
         {
-            LOG(ERROR) << feedback[FN_EXPECTED_CLOSE_PAREN_OR_COMMA] << tok << std::endl;
-            return false;
+            scanner->next();
+            continue;
         }
     }
 

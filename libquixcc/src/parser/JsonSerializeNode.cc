@@ -562,6 +562,22 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Fu
     return str + "}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::FunctionParamNode *node) const
+{
+    std::string str = "{\"ntype\":\"FunctionParamNode\",\"name\":\"";
+    str += escape_json(node->m_name);
+    str += "\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"value\":";
+    if (node->m_value)
+        str += node->m_value->to_json(*this);
+    else
+        str += "null";
+    str += ",\"optional\":";
+    str += std::string(node->m_optional ? "true" : "false");
+    return str + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::SubsystemNode *node) const
 {
     std::string str = "{\"ntype\":\"SubsystemNode\",\"name\":\"";

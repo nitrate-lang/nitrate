@@ -92,7 +92,12 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {FN_PURE_ALREADY_SPECIFIED, "The 'pure' specifier was already specified for this function. To fix the issue, remove the duplicate 'pure' specifier"},
     {FN_IMPURE_ALREADY_SPECIFIED, "The 'impure' specifier was already specified for this function. To fix the issue, remove the duplicate 'impure' specifier"},
     {FN_PURE_AND_IMPURE_SPECIFIED, "The 'pure' and 'impure' specifiers were both specified for this function. To fix the issue, remove one of the duplicate specifiers"},
-
+    {FN_PARAM_PARSE_ERROR, "An error occurred while parsing the function parameter. To fix the issue, check the syntax of the function parameter"},
+    {FN_PARAM_EXPECTED_IDENTIFIER, "Expected identifier in function parameter declaration. To fix the issue, name your parameter. Syntax: name: type [= expr];"},
+    {FN_PARAM_EXPECTED_COLON, "Expected colon separator in function parameter declaration. To fix the issue, insert a colon between the parameter name and the typename. Syntax: name: type [= expr];"},
+    {FN_PARAM_TYPE_ERR, "An error occurred while parsing the type of parameter '{}'. Syntax: name: type [= expr];"},
+    {FN_PARAM_INIT_ERR, "Declaration of parameter '{}' requires an initializer, but an error occurred while parsing the initializer. Syntax: name: type [= expr];"},
+    
     {PREP_DUPLICATE_IMPORT, "Source file \"{}\" contains duplicate import of \"{}\""},
 
     {VAR_NAME_DUPLICATE, "Variable name '{}' is already in use. To fix the issue, rename the variable to something unique"},

@@ -182,7 +182,6 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 stack.push(std::make_shared<libquixcc::IdentifierNode>(ident));
                 continue;
             }
-            break;
         }
         default:
             LOG(ERROR) << "Unexpected token {}" << tok.serialize() << tok << std::endl;
