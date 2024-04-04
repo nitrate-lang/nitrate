@@ -252,6 +252,22 @@ LIB_EXPORT bool quixcc_triple(const char *_triple)
     }
 }
 
+LIB_EXPORT bool quixcc_set_cpu(quixcc_job_t *job, const char *cpu)
+{
+    if (!job || !cpu)
+        return false;
+
+    /// TODO: find a way to validate the CPU
+    /*
+    if (!quixcc_cpu(cpu))
+        return false;
+    */
+
+    job->m_cpu = cpu;
+
+    return true;
+}
+
 LIB_EXPORT void quixcc_set_output(quixcc_job_t *job, FILE *out)
 {
     if (!job || !out)
@@ -633,8 +649,8 @@ static bool compile(quixcc_job_t *job)
     LOG(DEBUG) << "Generating output" << std::endl;
     if (!generate(*job, ast))
     {
-            LOG(ERROR) << "failed to generate output" << std::endl;
-            return false;
+        LOG(ERROR) << "failed to generate output" << std::endl;
+        return false;
     }
 
     ///=========================================

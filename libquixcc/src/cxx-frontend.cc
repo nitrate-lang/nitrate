@@ -24,7 +24,7 @@
 #include <fstream>
 #include <filesystem>
 #include <llvm/Support/Host.h>
-#include "llvm/MC/TargetRegistry.h"
+#include <llvm/MC/TargetRegistry.h>
 
 #include <sys/mman.h>
 
@@ -46,6 +46,23 @@ LIB_CXX_EXPORT quixcc::TargetTriple::TargetTriple(const char *_triple)
             throw TargetTripleException("Invalid or unsupported LLVM target triple: " + triple);
 
         m_triple = triple;
+    }
+}
+
+LIB_CXX_EXPORT quixcc::CPU::CPU(const char *cpu)
+{
+    if (!cpu)
+        throw CpuException("Invalid or unsupported LLVM CPU: (null)");
+
+    if (cpu[0] == '\0')
+    {
+        m_cpu = llvm::sys::getHostCPUName().str();
+        if (m_cpu.empty())
+            m_cpu = "generic";
+    }
+    else
+    {
+        m_cpu = cpu; // cpu is not validated. idk how
     }
 }
 
@@ -288,6 +305,12 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::target(quixcc::
     return *this;
 }
 
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::cpu(quixcc::CPU cpu)
+{
+    m_cpu = cpu;
+    return *this;
+}
+
 bool quixcc::CompilerBuilder::verify()
 {
     if (m_files.empty() && !m_input)
@@ -335,6 +358,9 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
 
         if (!quixcc_set_triple(job, m_target.triple().c_str()))
             throw TargetTripleException("Invalid or unsupported LLVM target triple: " + m_target.triple());
+
+        if (!quixcc_set_cpu(job, m_cpu.cpu().c_str()))
+            throw CpuException("Invalid or unsupported LLVM CPU: " + m_cpu.cpu());
 
         /// TODO: Implement other targets
 

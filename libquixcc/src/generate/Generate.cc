@@ -142,11 +142,10 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
         return false;
     }
 
-    auto CPU = "generic";
     auto Features = "";
 
     llvm::TargetOptions opt;
-    auto TargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, llvm::Reloc::PIC_);
+    auto TargetMachine = Target->createTargetMachine(TargetTriple, ctx.m_cpu, Features, opt, llvm::Reloc::PIC_);
 
     ctx.m_inner.m_module->setDataLayout(TargetMachine->createDataLayout());
     ctx.m_inner.m_module->setTargetTriple(TargetTriple);

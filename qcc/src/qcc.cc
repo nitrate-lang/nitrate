@@ -65,6 +65,7 @@ struct Options
     std::vector<std::string> settings;
     std::vector<std::string> sources;
     std::string target_triple;
+    std::string cpu;
     std::map<std::string, std::string> defines;
     std::string output;
     quixcc::Verbosity verbosity;
@@ -174,6 +175,7 @@ static void print_help()
     println("  -D<name>[=<value>]        Define macro <name> with optional <value>");
     println("  -U<name>                  Undefine macro <name>");
     println("  -T, --target <triple>     Specify the LLVM target triple");
+    println("  -C, --cpu <cpu>           Specify the LLVM target CPU");
     println("  -emit-ir                  Emit the intermediate representation (LLVM IR)");
     println("  -emit-bc                  Emit the intermediate representation (LLVM bitcode)");
     println("  -S                        Compile only; do not assemble or link");
@@ -348,6 +350,16 @@ static std::optional<Options> parse_options(const std::vector<std::string> &args
 
             options.target_triple = *it;
         }
+        else if (*it == "-C" || *it == "--cpu")
+        {
+            if (++it == args.end())
+            {
+                std::cerr << "Error: missing argument for -C" << std::endl;
+                return std::nullopt;
+            }
+
+            options.cpu = *it;
+        }
         else if (*it == "-emit-ir")
         {
             options.mode = OperatingMode::IR;
@@ -484,11 +496,19 @@ int main(int argc, char *argv[])
     {
         if (!options->target_triple.empty())
             builder.target(options->target_triple);
+
+        if (!options->cpu.empty())
+            builder.cpu(options->cpu);
     }
     catch (const quixcc::TargetTripleException &e)
     {
         std::cerr << "Error: " << e.what() << std::endl;
         return 5;
+    }
+    catch (const quixcc::CpuException &e)
+    {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 6;
     }
 
     switch (options->mode)

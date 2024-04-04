@@ -90,6 +90,7 @@ typedef struct quixcc_job_t
 {
     std::map<std::string, std::string> m_argset;
     std::string m_triple;
+    std::string m_cpu;
     libquixcc::LLVMContext m_inner;
     quixcc_uuid_t m_id;
     quixcc_options_t m_options;
@@ -199,6 +200,20 @@ typedef struct quixcc_job_t quixcc_job_t;
      * @note This function is thread-safe.
      */
     bool quixcc_set_triple(quixcc_job_t *job, const char *triple);
+
+    /**
+     * @brief Set the LLVM Target CPU for a compiler job.
+     *
+     * This function sets the LLVM Target CPU for the given compiler job.
+     *
+     * @param job The compiler job.
+     * @param cpu The LLVM Target CPU.
+     * @return true if the CPU was set successfully. false if the CPU is invalid or unknown.
+     * @note This function will validate the CPU before setting it and will check if it is supported.
+     * @note Is is okay to set the CPU multiple times. The last valid CPU will be used.
+     * @note This function is thread-safe.
+     */
+    bool quixcc_set_cpu(quixcc_job_t *job, const char *cpu);
 
     /**
      * @brief Check if a LLVM Target Triple is valid.

@@ -34,6 +34,12 @@ namespace quixcc
         TargetTripleException(const std::string &msg) : std::runtime_error(msg) {}
     };
 
+    class CpuException : public std::runtime_error
+    {
+    public:
+        CpuException(const std::string &msg) : std::runtime_error(msg) {}
+    };
+
     class TargetTriple
     {
         std::string m_triple;
@@ -44,6 +50,18 @@ namespace quixcc
         TargetTriple(const char *triple);
 
         const std::string &triple() const { return m_triple; }
+    };
+
+    class CPU
+    {
+        std::string m_cpu;
+
+    public:
+        CPU(const std::string &cpu = "") : CPU(cpu.c_str()) {}
+
+        CPU(const char *cpu);
+
+        const std::string &cpu() const { return m_cpu; }
     };
 
     enum class Verbosity
@@ -97,6 +115,7 @@ namespace quixcc
         FILE *m_output;
         Verbosity m_verbose;
         TargetTriple m_target;
+        CPU m_cpu;
         bool m_disregard;
 
     public:
@@ -122,7 +141,9 @@ namespace quixcc
 
         CompilerBuilder &opt(const std::string &flag);
         CompilerBuilder &disregard(bool disregard = true);
+
         CompilerBuilder &target(TargetTriple target);
+        CompilerBuilder &cpu(CPU cpu);
 
         bool verify();
 
