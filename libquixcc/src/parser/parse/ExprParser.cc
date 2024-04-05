@@ -29,6 +29,48 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
 {
     std::stack<std::shared_ptr<libquixcc::ExprNode>> stack;
 
+    // Operator precedence
+    static std::map<Operator, int> operator_precedence = {
+        {Operator::LessThan, 10},
+        {Operator::GreaterThan, 10},
+        {Operator::Assign, 10},
+        {Operator::At, 10},
+        {Operator::Minus, 20},
+        {Operator::Plus, 20},
+        {Operator::Multiply, 30},
+        {Operator::Divide, 30},
+        {Operator::Modulo, 30},
+        {Operator::BitAnd, 5},
+        {Operator::BitOr, 3},
+        {Operator::BitXor, 4},
+        {Operator::BitNot, 35},
+        {Operator::Not, 35},
+        {Operator::Question, 1},
+        {Operator::PlusAssign, 10},
+        {Operator::MinusAssign, 10},
+        {Operator::MultiplyAssign, 10},
+        {Operator::DivideAssign, 10},
+        {Operator::ModuloAssign, 10},
+        {Operator::BitOrAssign, 10},
+        {Operator::BitAndAssign, 10},
+        {Operator::BitXorAssign, 10},
+        {Operator::LeftShift, 25},
+        {Operator::RightShift, 25},
+        {Operator::Equal, 9},
+        {Operator::NotEqual, 9},
+        {Operator::And, 8},
+        {Operator::Or, 7},
+        {Operator::Xor, 6},
+        {Operator::LessThanEqual, 9},
+        {Operator::GreaterThanEqual, 9},
+        {Operator::Increment, 40},
+        {Operator::Decrement, 40},
+        {Operator::XorAssign, 10},
+        {Operator::OrAssign, 10},
+        {Operator::AndAssign, 10},
+        {Operator::LeftShiftAssign, 10},
+        {Operator::RightShiftAssign, 10}};
+
     while (true)
     {
         auto tok = scanner->peek();

@@ -21,6 +21,7 @@
 #include <generate/CodeGen.h>
 #include <parse/nodes/AllNodes.h>
 #include <mangle/Symbol.h>
+#include <error/Logger.h>
 
 static uint8_t get_numbits(const std::string &s)
 {
@@ -127,6 +128,25 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
 
         return nullptr;
     }
+    case Operator::Multiply:
+    {
+        if (node->m_expr->ntype == NodeType::IdentifierNode)
+        {
+            auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(node->m_expr.get())->m_name);
+            if (m_ctx->m_named_stack_vars.contains(name))
+            {
+                auto target_val_ptr = m_ctx->m_builder->CreateLoad(m_ctx->m_named_stack_vars[name].second, m_ctx->m_named_stack_vars[name].first);
+                auto target_val = m_ctx->m_builder->CreateLoad(target_val_ptr->getType(), target_val_ptr);
+                return target_val;
+            }
+
+            return nullptr;
+        }
+        else
+        {
+            return m_ctx->m_builder->CreateLoad(expr->getType(), m_ctx->m_builder->CreateZExtOrBitCast(expr, llvm::PointerType::get(expr->getType(), 0)));
+        }
+    }
     default:
         return nullptr;
     }
@@ -134,54 +154,101 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *node) const
 {
-    llvm::Value *lhs = node->m_lhs->codegen(*this);
-    if (!lhs)
-        return nullptr;
-
-    llvm::Value *rhs = node->m_rhs->codegen(*this);
-    if (!rhs)
-        return nullptr;
-
     switch (node->m_op)
     {
     case Operator::LessThan:
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLT, lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLT, node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::GreaterThan:
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT, lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGT, node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::LessThanEqual:
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLE, lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SLE, node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::GreaterThanEqual:
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGE, lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_SGE, node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Equal:
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_EQ, lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_EQ, node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::NotEqual:
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
 
     case Operator::Plus:
-        return llvm::BinaryOperator::CreateAdd(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::BinaryOperator::CreateAdd(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Minus:
-        return llvm::BinaryOperator::CreateSub(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::BinaryOperator::CreateSub(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Multiply:
-        return llvm::BinaryOperator::CreateMul(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::BinaryOperator::CreateMul(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
 
     case Operator::BitAnd:
-        return llvm::BinaryOperator::CreateAnd(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::BinaryOperator::CreateAnd(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::BitOr:
-        return llvm::BinaryOperator::CreateOr(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::BinaryOperator::CreateOr(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::BitXor:
-        return llvm::BinaryOperator::CreateXor(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::BinaryOperator::CreateXor(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::LeftShift:
-        return llvm::BinaryOperator::CreateShl(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::BinaryOperator::CreateShl(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::RightShift:
-        return llvm::BinaryOperator::CreateLShr(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::BinaryOperator::CreateLShr(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
 
     case Operator::And:
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, llvm::BinaryOperator::CreateAnd(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock()), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)), "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, llvm::BinaryOperator::CreateAnd(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock()), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Or:
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, llvm::BinaryOperator::CreateOr(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock()), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)), "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, llvm::BinaryOperator::CreateOr(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock()), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Xor:
-        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, llvm::BinaryOperator::CreateXor(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock()), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)), "", m_ctx->m_builder->GetInsertBlock());
+        return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, llvm::BinaryOperator::CreateXor(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock()), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)), "", m_ctx->m_builder->GetInsertBlock());
 
+    case Operator::Assign:
+    {
+        if (node->m_lhs->ntype == NodeType::IdentifierNode)
+        {
+            auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(node->m_lhs.get())->m_name);
+            auto rhs = node->m_rhs->codegen(*this);
+            if (!rhs)
+                return nullptr;
+
+            if (m_ctx->m_named_stack_vars.contains(name))
+            {
+                m_ctx->m_builder->CreateStore(rhs, m_ctx->m_named_stack_vars[name].first);
+                return rhs;
+            }
+            else if (m_ctx->m_named_global_vars.contains(name))
+            {
+                m_ctx->m_builder->CreateStore(rhs, m_ctx->m_named_global_vars[name]);
+                return rhs;
+            }
+            else if (m_ctx->m_named_params.contains(name))
+            {
+                m_ctx->m_builder->CreateStore(rhs, m_ctx->m_named_params[name].first);
+                return rhs;
+            }
+
+            return nullptr;
+        }
+        else if (node->m_lhs->ntype == NodeType::UnaryExprNode)
+        {
+            auto unary = static_cast<UnaryExprNode *>(node->m_lhs.get());
+            if (unary->m_op == Operator::Multiply)
+            {
+                auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(unary->m_expr.get())->m_name);
+                if (!m_ctx->m_named_stack_vars.contains(name))
+                {
+                    return nullptr;
+                }
+                auto target_val = m_ctx->m_builder->CreateLoad(m_ctx->m_named_stack_vars[name].second, m_ctx->m_named_stack_vars[name].first);
+                auto rhs = node->m_rhs->codegen(*this);
+                if (!rhs)
+                    return nullptr;
+
+                m_ctx->m_builder->CreateStore(rhs, target_val);
+                return rhs;
+            }
+
+            auto lhs = unary->codegen(*this);
+            if (!lhs)
+                return nullptr;
+            auto rhs = node->m_rhs->codegen(*this);
+            m_ctx->m_builder->CreateStore(rhs, lhs);
+            return rhs;
+        }
+        return nullptr;
+    }
     default:
         return nullptr;
     }

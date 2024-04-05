@@ -75,67 +75,92 @@ class Literal(Node):
         return self.__str__()
 
 
+def precedence(op):
+    precedence_table = {
+        '=': 0,
+        '+': 1,
+        '-': 1,
+        '*': 2,
+        '/': 2,
+    }
+    return precedence_table.get(op, -1)
+
+
 def parse_expr(scanner: Scanner) -> Node:
-    stack = []
+    output_queue = []
+    operator_stack = []
 
     while True:
         tok = scanner.peek()
         if tok is None:
-            return None
+            break
 
         if tok.type == 'Punctuation' and tok.value == ';':
-            if len(stack) == 1:
-                return stack.pop()
-            else:
-                return None
+            break
 
         scanner.next()
 
         if tok.type == 'Literal':
-            stack.append(Literal(tok.value))
-            continue
+            output_queue.append(Literal(tok.value))
 
-        if tok.type == 'Punctuation' and tok.value == '(':
+        elif tok.type == 'Punctuation' and tok.value == '(':
             r = parse_expr(scanner)
             if r is None:
                 return None
-            stack.append(r)
-            continue
+            output_queue.append(r)
 
-        if tok.type == 'Punctuation' and tok.value == ')':
-            if len(stack) == 1:
-                return stack.pop()
+        elif tok.type == 'Punctuation' and tok.value == ')':
+            while operator_stack and operator_stack[-1].type != 'Punctuation' and operator_stack[-1].value != '(':
+                output_queue.append(operator_stack.pop())
+            if operator_stack and operator_stack[-1].type == 'Punctuation' and operator_stack[-1].value == '(':
+                operator_stack.pop()  # Discard the left parenthesis
             else:
                 return None
 
-        if tok.type == 'Operator':
-            op = tok.value
-            r = parse_expr(scanner)
-            if r is None:
-                return None
-            if len(stack) == 0:
-                # Unary operator
-                stack.append(UnaryNode(op, r))
-                continue
-            if len(stack) == 1:
+        elif tok.type == 'Operator':
+            while operator_stack and precedence(operator_stack[-1].value) >= precedence(tok.value):
+                output_queue.append(operator_stack.pop())
+            operator_stack.append(tok)
+
+    while operator_stack:
+        output_queue.append(operator_stack.pop())
+
+    return build_ast(output_queue)
+
+
+def build_ast(output_queue):
+    stack = []
+
+    for token in output_queue:
+        if isinstance(token, Literal):
+            stack.append(token)
+        elif isinstance(token, Token):
+            if token.type == 'Operator':
+                if len(stack) < 2:
+                    return None
+                right = stack.pop()
                 left = stack.pop()
-                stack.append(BinaryNode(op, left, r))
-                continue
-            else:
-                return None
+                if token.value == '=':
+                    stack.append(BinaryNode(token.value, left, right))
+                else:
+                    stack.append(BinaryNode(token.value, left, right))
+            elif isinstance(token, Node):
+                stack.append(token)
 
-    return None
+    if len(stack) != 1:
+        return None
+
+    return stack[0]
 
 
 def main():
-    # tokens = [Token('Operator', '-'),
-    #           Token('Literal', 2), Token('Punctuation', ';')]
-    # (4+4)
-    tokens = [Token('Punctuation', '('), Token('Literal', 4),
-                Token('Operator', '+'), Token('Literal', 4), Token('Punctuation', ')'), Token('Punctuation', ';')]
+    tokens = [Token('Literal', 4),
+              Token('Operator', '+'),
+              Token('Literal', 4)]
     scanner = Scanner(tokens)
-    node = parse_expr(scanner)
-    print(json.dumps(node, default=lambda o: o.__dict__))
+
+    ast = parse_expr(scanner)
+    print(ast)
 
 
 if __name__ == '__main__':
