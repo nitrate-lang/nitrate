@@ -23,8 +23,11 @@
 #include <mangle/Symbol.h>
 #include <error/Logger.h>
 
-static uint8_t get_numbits(const std::string &s)
+uint8_t get_numbits(std::string s)
 {
+    if (s.starts_with("-"))
+        s = s.substr(1);
+
     if (s.find('.') != std::string::npos)
     {
         float f0 = std::stof(s);

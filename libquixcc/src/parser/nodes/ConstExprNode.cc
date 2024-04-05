@@ -19,87 +19,60 @@
 #define QUIXCC_INTERNAL
 
 #include <parse/nodes/AllNodes.h>
+#include <error/Logger.h>
 
-std::unordered_map<std::string, std::shared_ptr<libquixcc::StringLiteralNode>> libquixcc::StringLiteralNode::m_instances;
-std::unordered_map<std::string, std::shared_ptr<libquixcc::CharLiteralNode>> libquixcc::CharLiteralNode::m_instances;
-std::shared_ptr<libquixcc::BoolLiteralNode> libquixcc::BoolLiteralNode::m_true_instance;
-std::shared_ptr<libquixcc::BoolLiteralNode> libquixcc::BoolLiteralNode::m_false_instance;
-std::unordered_map<std::string, std::shared_ptr<libquixcc::FloatLiteralNode>> libquixcc::FloatLiteralNode::m_instances;
-std::unordered_map<std::string, std::shared_ptr<libquixcc::IntegerLiteralNode>> libquixcc::IntegerLiteralNode::m_instances;
-std::shared_ptr<libquixcc::NullLiteralNode> libquixcc::NullLiteralNode::m_instance;
-
-uint8_t get_numbits(std::string s);
-
-libquixcc::TypeNode *libquixcc::IntegerLiteralNode::type() const
+libquixcc::TypeNode *libquixcc::ConstUnaryExprNode::type() const
 {
-    bool _signed = m_val.front() == '-';
-    uint8_t numbits = get_numbits(m_val);
+    /// TODO: correct this code
 
-    if (_signed)
-    {
-        switch (numbits)
-        {
-        case 8:
-            return I8TypeNode::create();
-        case 16:
-            return I16TypeNode::create();
-        case 32:
-            return I32TypeNode::create();
-        case 64:
-            return I64TypeNode::create();
-        default:
-            throw std::runtime_error("Invalid integer literal size");
-        }
-    }
-    else
-    {
-        switch (numbits)
-        {
-        case 8:
-            return U8TypeNode::create();
-        case 16:
-            return U16TypeNode::create();
-        case 32:
-            return U32TypeNode::create();
-        case 64:
-            return U64TypeNode::create();
-        default:
-            throw std::runtime_error("Invalid integer literal size");
-        }
-    }
-}
+    if (!m_expr->is_primitive())
+        LOG(ERROR) << "Cannot apply unary operator to non-primitive type within a constant expression" << std::endl;
 
-libquixcc::TypeNode *libquixcc::FloatLiteralNode::type() const
-{
-    uint8_t numbits = get_numbits(m_val);
-
-    switch (numbits)
+    switch (m_op)
     {
-    case 32:
-        return F32TypeNode::create();
-    case 64:
-        return F64TypeNode::create();
+    case Operator::Multiply: // dereference
+        LOG(ERROR) << "Dereference operator is illegal in a constant expression" << std::endl;
+        return nullptr;
+    case Operator::BitAnd: // address-of
+        LOG(ERROR) << "Address-of operator is illegal in a constant expression" << std::endl;
+        return nullptr;
+    case Operator::Plus:
+    case Operator::Minus:
+    case Operator::BitNot:
+    case Operator::Not:
+    case Operator::Increment:
+    case Operator::Decrement:
+        return m_expr->type();
+
     default:
-        throw std::runtime_error("Invalid float literal size");
+        LOG(FATAL) << "Unhandeled unary operator in constant expression type deduction" << std::endl;
+        return nullptr;
     }
 }
 
-libquixcc::TypeNode *libquixcc::StringLiteralNode::type() const
+bool libquixcc::ConstUnaryExprNode::is_signed() const
 {
-    return StringTypeNode::create();
+    /// TODO: correct this code
+    return m_expr->is_signed();
 }
 
-libquixcc::TypeNode *libquixcc::CharLiteralNode::type() const
+libquixcc::TypeNode *libquixcc::ConstBinaryExprNode::type() const
 {
-    return I8TypeNode::create();
+    /// TODO: correct this code
+
+    if (!m_lhs->is_primitive() || !m_rhs->is_primitive())
+        LOG(ERROR) << "Cannot apply binary operator to non-primitive types within a constant expression" << std::endl;
+
+    if (m_lhs->type() != m_rhs->type())
+        LOG(ERROR) << "Cannot apply binary operator to two different types within a constant expression" << std::endl;
+
+    return m_lhs->type();
 }
 
-libquixcc::TypeNode *libquixcc::BoolLiteralNode::type() const
+bool libquixcc::ConstBinaryExprNode::is_signed() const
 {
-    return BoolTypeNode::create();
-}
+    if (!m_lhs->is_signed() && !m_rhs->is_signed())
+        return false;
 
-libquixcc::TypeNode *libquixcc::NullLiteralNode::type() const
-{
-    return PointerTypeNode::create(VoidTypeNode::create());
+    return true;
 }

@@ -61,6 +61,8 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual TypeNode *type() const override;
+        virtual bool is_signed() const override { return m_val.front() == '-'; }
 
         virtual int64_t GetInt64() const override { return std::stoll(m_val); }
 
@@ -86,6 +88,8 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual TypeNode *type() const override;
+        virtual bool is_signed() const override { return true; }
 
         std::string m_val;
     };
@@ -109,6 +113,8 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual TypeNode *type() const override;
+        virtual bool is_signed() const override { throw std::runtime_error("StringLiteralNode::is_signed() not implemented"); }
 
         std::string m_val;
     };
@@ -132,6 +138,8 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual TypeNode *type() const override;
+        virtual bool is_signed() const override { return true; }
 
         std::string m_val;
     };
@@ -163,6 +171,8 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual TypeNode *type() const override;
+        virtual bool is_signed() const override { return false; }
 
         bool m_val;
     };
@@ -183,6 +193,8 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual TypeNode *type() const override;
+        virtual bool is_signed() const override { throw std::runtime_error("NullLiteralNode::is_signed() not implemented"); }
     };
 }
 

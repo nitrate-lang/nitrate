@@ -83,9 +83,14 @@ namespace libquixcc
     public:
         ConstExprNode() { ntype = NodeType::ConstExprNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override = 0;
+        virtual TypeNode *type() const = 0;
+        bool is_primitive() const;
+        virtual bool is_signed() const = 0;
+
+        bool is(TypeNode *tp) const { return type() == tp; }
 
         virtual int64_t GetInt64() const { throw std::runtime_error("ConstExprNode::GetInt64() not implemented"); }
     };
