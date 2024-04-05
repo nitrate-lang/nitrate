@@ -36,6 +36,9 @@ void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job, libquixcc::E
     job.m_result.m_messages[job.m_result.m_count] = msg;
     job.m_result.m_count++;
 
+    if (type == E::DEBUG && job.m_debug)
+        std::cerr << message << std::endl;
+
     if (type == E::ERROR || type == E::FATAL)
         job.m_tainted = true;
 }
