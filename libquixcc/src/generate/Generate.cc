@@ -102,7 +102,7 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
 
     // Verify the module
     if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
-        throw std::runtime_error("LLVM IR generation failed. The AST must have been semantically incorrect: " + err_stream.str());
+        LOG(ERROR) << "LLVM IR generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
 
     LOG(DEBUG) << "Generating LLVM IR" << std::endl;
 
@@ -166,7 +166,7 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
 
     // Verify the module
     if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
-        throw std::runtime_error("LLVM Code generation failed. The AST must have been semantically incorrect: " + err_stream.str());
+        LOG(ERROR) << "LLVM Code generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
 
     llvm::legacy::PassManager pass;
 

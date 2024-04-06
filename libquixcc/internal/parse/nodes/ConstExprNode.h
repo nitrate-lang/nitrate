@@ -43,7 +43,8 @@ namespace libquixcc
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
-        virtual bool is_signed() const override;
+        virtual bool is_negative() const override;
+        virtual std::unique_ptr<ConstExprNode> reduce() const override;
 
         Operator m_op;
         std::shared_ptr<ConstExprNode> m_expr;
@@ -59,7 +60,8 @@ namespace libquixcc
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
-        virtual bool is_signed() const override;
+        virtual bool is_negative() const override;
+        virtual std::unique_ptr<ConstExprNode> reduce() const override;
 
         Operator m_op;
         std::shared_ptr<ConstExprNode> m_lhs;

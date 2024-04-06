@@ -943,10 +943,6 @@ static bool execute_job(quixcc_job_t *job)
     {
         LOG(ERROR) << "Compilation was aborted while parsing source" << std::endl;
     }
-    catch (std::exception &e)
-    {
-        LOG(ERROR) << "Compilation failed: " << e.what() << std::endl;
-    }
 
     LOG(DEBUG) << "Finished quixcc run @ " << get_datetime() << std::endl;
 

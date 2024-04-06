@@ -23,56 +23,252 @@
 
 libquixcc::TypeNode *libquixcc::ConstUnaryExprNode::type() const
 {
-    /// TODO: correct this code
+    return reduce()->type();
+}
 
-    if (!m_expr->is_primitive())
-        LOG(ERROR) << "Cannot apply unary operator to non-primitive type within a constant expression" << std::endl;
+bool libquixcc::ConstUnaryExprNode::is_negative() const
+{
+    return reduce()->is_negative();
+}
 
-    switch (m_op)
+template <typename T>
+static T getval_and_cast(const libquixcc::ConstExprNode *node)
+{
+    using namespace libquixcc;
+
+    switch (node->ntype)
     {
-    case Operator::Multiply: // dereference
-        LOG(ERROR) << "Dereference operator is illegal in a constant expression" << std::endl;
-        return nullptr;
-    case Operator::BitAnd: // address-of
-        LOG(ERROR) << "Address-of operator is illegal in a constant expression" << std::endl;
-        return nullptr;
-    case Operator::Plus:
-    case Operator::Minus:
-    case Operator::BitNot:
-    case Operator::Not:
-    case Operator::Increment:
-    case Operator::Decrement:
-        return m_expr->type();
-
+    case NodeType::IntegerLiteralNode:
+    {
+        auto n = static_cast<const IntegerLiteralNode *>(node);
+        switch (n->m_val_type->ntype)
+        {
+        case NodeType::I32TypeNode:
+            return static_cast<T>(std::get<int32_t>(n->m_value));
+        case NodeType::I64TypeNode:
+            return static_cast<T>(std::get<int64_t>(n->m_value));
+        case NodeType::U32TypeNode:
+            return static_cast<T>(std::get<uint32_t>(n->m_value));
+        case NodeType::U64TypeNode:
+            return static_cast<T>(std::get<uint64_t>(n->m_value));
+        default:
+            throw std::runtime_error("Invalid integer type");
+        }
+    }
+    case NodeType::FloatLiteralNode:
+        return static_cast<T>(static_cast<const FloatLiteralNode *>(node)->m_value);
+    case NodeType::BoolLiteralNode:
+        return static_cast<T>(static_cast<const BoolLiteralNode *>(node)->m_val);
+    case NodeType::CharLiteralNode:
+        return static_cast<T>(std::stoi(static_cast<const CharLiteralNode *>(node)->m_val));
+    case NodeType::StringLiteralNode:
+        throw std::runtime_error("string literals cannot be used in binary expressions");
+    case NodeType::NullLiteralNode:
+        throw std::runtime_error("null literals cannot be used in binary expressions");
     default:
-        LOG(FATAL) << "Unhandeled unary operator in constant expression type deduction" << std::endl;
+        throw std::runtime_error("Invalid type");
+    }
+}
+
+template <typename T>
+static std::unique_ptr<libquixcc::ConstExprNode> reduce_unary_expr(T val, libquixcc::Operator op)
+{
+    using namespace libquixcc;
+
+    switch (op)
+    {
+    case Operator::Minus:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(-val));
+    case Operator::Plus:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(+val));
+    case Operator::Not:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(!val));
+    case Operator::BitwiseNot:
+    {
+        if (std::is_same_v<T, bool>)
+            return std::make_unique<IntegerLiteralNode>(std::to_string(!val));
+        return std::make_unique<IntegerLiteralNode>(std::to_string(~val));
+    }
+    case Operator::Increment:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(val + 1));
+    case Operator::Decrement:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(val - 1));
+    default:
+        LOG(FATAL) << "const-expr reduction error: invalid operator in unary expression" << std::endl;
         return nullptr;
     }
 }
 
-bool libquixcc::ConstUnaryExprNode::is_signed() const
+static std::unique_ptr<libquixcc::ConstExprNode> reduce_unary_expr_float_point(double val, libquixcc::Operator op)
 {
-    /// TODO: correct this code
-    return m_expr->is_signed();
+    using namespace libquixcc;
+
+    switch (op)
+    {
+    case Operator::Minus:
+        return std::make_unique<FloatLiteralNode>(std::to_string(-val));
+    case Operator::Plus:
+        return std::make_unique<FloatLiteralNode>(std::to_string(+val));
+    case Operator::Not:
+        return std::make_unique<FloatLiteralNode>(std::to_string(!val));
+    case Operator::BitwiseNot:
+        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(~std::bit_cast<uint64_t>(val))));
+    case Operator::Increment:
+        return std::make_unique<FloatLiteralNode>(std::to_string(val + 1));
+    case Operator::Decrement:
+        return std::make_unique<FloatLiteralNode>(std::to_string(val - 1));
+    default:
+        LOG(FATAL) << "const-expr reduction error: invalid operator in unary expression" << std::endl;
+        return nullptr;
+    }
+}
+
+std::unique_ptr<libquixcc::ConstExprNode> libquixcc::ConstUnaryExprNode::reduce() const
+{
+    auto x = m_expr->reduce();
+
+    if (x->ntype == NodeType::FloatLiteralNode)
+        return reduce_unary_expr_float_point(getval_and_cast<double>(x.get()), m_op);
+
+    if (x->is_negative())
+        return reduce_unary_expr(getval_and_cast<int64_t>(x.get()), m_op);
+
+    return reduce_unary_expr(getval_and_cast<uint64_t>(x.get()), m_op);
 }
 
 libquixcc::TypeNode *libquixcc::ConstBinaryExprNode::type() const
 {
-    /// TODO: correct this code
-
-    if (!m_lhs->is_primitive() || !m_rhs->is_primitive())
-        LOG(ERROR) << "Cannot apply binary operator to non-primitive types within a constant expression" << std::endl;
-
-    if (m_lhs->type() != m_rhs->type())
-        LOG(ERROR) << "Cannot apply binary operator to two different types within a constant expression" << std::endl;
-
-    return m_lhs->type();
+    return reduce()->type();
 }
 
-bool libquixcc::ConstBinaryExprNode::is_signed() const
+bool libquixcc::ConstBinaryExprNode::is_negative() const
 {
-    if (!m_lhs->is_signed() && !m_rhs->is_signed())
-        return false;
+    return reduce()->is_negative();
+}
 
-    return true;
+template <typename T>
+static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr(T lhs, T rhs, libquixcc::Operator op)
+{
+    using namespace libquixcc;
+
+    switch (op)
+    {
+    case Operator::LessThan:
+        return std::make_unique<BoolLiteralNode>(lhs < rhs);
+    case Operator::GreaterThan:
+        return std::make_unique<BoolLiteralNode>(lhs > rhs);
+    case Operator::Minus:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs - rhs));
+    case Operator::Plus:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs + rhs));
+    case Operator::Multiply:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs * rhs));
+    case Operator::Divide:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs / rhs));
+    case Operator::Modulo:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs % rhs));
+    case Operator::BitwiseAnd:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs & rhs));
+    case Operator::BitwiseOr:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs | rhs));
+    case Operator::BitwiseXor:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs ^ rhs));
+    case Operator::LeftShift:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs << rhs));
+    case Operator::RightShift:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs >> rhs));
+    case Operator::Equal:
+        return std::make_unique<BoolLiteralNode>(lhs == rhs);
+    case Operator::NotEqual:
+        return std::make_unique<BoolLiteralNode>(lhs != rhs);
+    case Operator::And:
+        return std::make_unique<BoolLiteralNode>(lhs && rhs);
+    case Operator::Or:
+        return std::make_unique<BoolLiteralNode>(lhs || rhs);
+    case Operator::Xor:
+        return std::make_unique<BoolLiteralNode>(lhs ^ rhs);
+    case Operator::LessThanEqual:
+        return std::make_unique<BoolLiteralNode>(lhs <= rhs);
+    case Operator::GreaterThanEqual:
+        return std::make_unique<BoolLiteralNode>(lhs >= rhs);
+    case Operator::Increment:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs + 1));
+    case Operator::Decrement:
+        return std::make_unique<IntegerLiteralNode>(std::to_string(lhs - 1));
+    default:
+        LOG(FATAL) << "const-expr reduction error: invalid operator in binary expression" << std::endl;
+        return nullptr;
+    }
+}
+
+static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr_float_point(double lhs, double rhs, libquixcc::Operator op)
+{
+    using namespace libquixcc;
+
+    /// TODO: determine if bitwise floating point operations make sense/are useful/should be included in the language
+
+    // const double i = std::bit_cast<double>(std::bit_cast<uint64_t>(1.0) ^ std::bit_cast<uint64_t>(8913.8180));
+
+    switch (op)
+    {
+    case Operator::LessThan:
+        return std::make_unique<BoolLiteralNode>(lhs < rhs);
+    case Operator::GreaterThan:
+        return std::make_unique<BoolLiteralNode>(lhs > rhs);
+    case Operator::Minus:
+        return std::make_unique<FloatLiteralNode>(std::to_string(lhs - rhs));
+    case Operator::Plus:
+        return std::make_unique<FloatLiteralNode>(std::to_string(lhs + rhs));
+    case Operator::Multiply:
+        return std::make_unique<FloatLiteralNode>(std::to_string(lhs * rhs));
+    case Operator::Divide:
+        return std::make_unique<FloatLiteralNode>(std::to_string(lhs / rhs));
+    case Operator::Modulo:
+        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) % (uint64_t)rhs)));
+    case Operator::BitwiseAnd:
+        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) & std::bit_cast<uint64_t>(rhs))));
+    case Operator::BitwiseOr:
+        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) | std::bit_cast<uint64_t>(rhs))));
+    case Operator::BitwiseXor:
+        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) ^ std::bit_cast<uint64_t>(rhs))));
+    case Operator::LeftShift:
+        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) << (uint64_t)rhs)));
+    case Operator::RightShift:
+        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) >> (uint64_t)rhs)));
+    case Operator::Equal:
+        return std::make_unique<BoolLiteralNode>(lhs == rhs);
+    case Operator::NotEqual:
+        return std::make_unique<BoolLiteralNode>(lhs != rhs);
+    case Operator::And:
+        return std::make_unique<BoolLiteralNode>(lhs && rhs);
+    case Operator::Or:
+        return std::make_unique<BoolLiteralNode>(lhs || rhs);
+    case Operator::Xor:
+        return std::make_unique<BoolLiteralNode>(std::bit_cast<uint64_t>(lhs) ^ std::bit_cast<uint64_t>(rhs));
+    case Operator::LessThanEqual:
+        return std::make_unique<BoolLiteralNode>(lhs <= rhs);
+    case Operator::GreaterThanEqual:
+        return std::make_unique<BoolLiteralNode>(lhs >= rhs);
+    case Operator::Increment:
+        return std::make_unique<FloatLiteralNode>(std::to_string(lhs + 1));
+    case Operator::Decrement:
+        return std::make_unique<FloatLiteralNode>(std::to_string(lhs - 1));
+    default:
+        LOG(FATAL) << "const-expr reduction error: invalid operator in binary expression" << std::endl;
+        return nullptr;
+    }
+}
+
+std::unique_ptr<libquixcc::ConstExprNode> libquixcc::ConstBinaryExprNode::reduce() const
+{
+    auto l = m_lhs->reduce();
+    auto r = m_rhs->reduce();
+
+    if (l->ntype == NodeType::FloatLiteralNode || r->ntype == NodeType::FloatLiteralNode)
+        return reduce_binary_expr_float_point(getval_and_cast<double>(l.get()), getval_and_cast<double>(r.get()), m_op);
+
+    if (l->is_negative() || r->is_negative())
+        return reduce_binary_expr<int64_t>(getval_and_cast<int64_t>(l.get()), getval_and_cast<int64_t>(r.get()), m_op);
+
+    return reduce_binary_expr<uint64_t>(getval_and_cast<uint64_t>(l.get()), getval_and_cast<uint64_t>(r.get()), m_op);
 }

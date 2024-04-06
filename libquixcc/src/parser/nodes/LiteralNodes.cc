@@ -30,58 +30,55 @@ std::shared_ptr<libquixcc::NullLiteralNode> libquixcc::NullLiteralNode::m_instan
 
 uint8_t get_numbits(std::string s);
 
-libquixcc::TypeNode *libquixcc::IntegerLiteralNode::type() const
+libquixcc::IntegerLiteralNode::IntegerLiteralNode(const std::string &val)
 {
-    bool _signed = m_val.front() == '-';
-    uint8_t numbits = get_numbits(m_val);
+    ntype = NodeType::IntegerLiteralNode;
+    m_val = val;
 
-    if (_signed)
+    uint8_t numbits = get_numbits(val);
+
+    if (val.starts_with("-"))
     {
-        switch (numbits)
+        int64_t value = std::stoll(val);
+        if (numbits > 32)
         {
-        case 8:
-            return I8TypeNode::create();
-        case 16:
-            return I16TypeNode::create();
-        case 32:
-            return I32TypeNode::create();
-        case 64:
-            return I64TypeNode::create();
-        default:
-            throw std::runtime_error("Invalid integer literal size");
+            m_val_type = I64TypeNode::create();
+            m_value = (int64_t)value;
+        }
+        else
+        {
+            m_val_type = I32TypeNode::create();
+            m_value = (int32_t)value;
         }
     }
     else
     {
-        switch (numbits)
+        uint64_t value = std::stoull(val);
+        if (numbits > 32)
         {
-        case 8:
-            return U8TypeNode::create();
-        case 16:
-            return U16TypeNode::create();
-        case 32:
-            return U32TypeNode::create();
-        case 64:
-            return U64TypeNode::create();
-        default:
-            throw std::runtime_error("Invalid integer literal size");
+            m_val_type = U64TypeNode::create();
+            m_value = (uint64_t)value;
+        }
+        else
+        {
+            m_val_type = U32TypeNode::create();
+            m_value = (uint32_t)value;
         }
     }
 }
 
-libquixcc::TypeNode *libquixcc::FloatLiteralNode::type() const
+libquixcc::FloatLiteralNode::FloatLiteralNode(const std::string &val)
 {
-    uint8_t numbits = get_numbits(m_val);
+    ntype = NodeType::FloatLiteralNode;
+    m_val = val;
+    m_value = std::stod(val);
 
-    switch (numbits)
-    {
-    case 32:
-        return F32TypeNode::create();
-    case 64:
-        return F64TypeNode::create();
-    default:
-        throw std::runtime_error("Invalid float literal size");
-    }
+    uint8_t numbits = get_numbits(val);
+
+    if (numbits == 32)
+        m_val_type = F32TypeNode::create();
+    else if (numbits == 64)
+        m_val_type = F64TypeNode::create();
 }
 
 libquixcc::TypeNode *libquixcc::StringLiteralNode::type() const

@@ -30,7 +30,15 @@ uint8_t get_numbits(std::string s)
 
     if (s.find('.') != std::string::npos)
     {
-        float f0 = std::stof(s);
+        float f0;
+        try
+        {
+            f0 = std::stof(s);
+        }
+        catch (const std::out_of_range &e)
+        {
+            return 64;
+        }
         double f1 = std::stod(s);
         const double delta = 0.0000001;
 
@@ -102,7 +110,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
         return llvm::BinaryOperator::CreateNeg(expr, "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Plus:
         return expr;
-    case Operator::BitNot:
+    case Operator::BitwiseNot:
         return llvm::BinaryOperator::CreateNot(expr, "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Not:
         return llvm::BinaryOperator::CreateNot(expr, "", m_ctx->m_builder->GetInsertBlock());
@@ -110,7 +118,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
         return llvm::BinaryOperator::CreateAdd(expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 1, false)), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Decrement:
         return llvm::BinaryOperator::CreateSub(expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 1, false)), "", m_ctx->m_builder->GetInsertBlock());
-    case Operator::BitAnd:
+    case Operator::BitwiseAnd:
     {
         if (node->m_expr->ntype != NodeType::IdentifierNode)
             return nullptr;
@@ -179,11 +187,11 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
     case Operator::Multiply:
         return llvm::BinaryOperator::CreateMul(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
 
-    case Operator::BitAnd:
+    case Operator::BitwiseAnd:
         return llvm::BinaryOperator::CreateAnd(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
-    case Operator::BitOr:
+    case Operator::BitwiseOr:
         return llvm::BinaryOperator::CreateOr(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
-    case Operator::BitXor:
+    case Operator::BitwiseXor:
         return llvm::BinaryOperator::CreateXor(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::LeftShift:
         return llvm::BinaryOperator::CreateShl(node->m_lhs->codegen(*this), node->m_rhs->codegen(*this), "", m_ctx->m_builder->GetInsertBlock());
@@ -318,7 +326,7 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstUnaryExpr
         return llvm::ConstantExpr::getNeg(expr);
     case Operator::Plus:
         return expr;
-    case Operator::BitNot:
+    case Operator::BitwiseNot:
         return llvm::ConstantExpr::getNot(expr);
     case Operator::Not:
         return llvm::ConstantExpr::getICmp(llvm::CmpInst::Predicate::ICMP_EQ, expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)));
@@ -363,11 +371,11 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstBinaryExp
     case Operator::Multiply:
         return llvm::ConstantExpr::getMul(lhs, rhs);
 
-    case Operator::BitAnd:
+    case Operator::BitwiseAnd:
         return llvm::ConstantExpr::getAnd(lhs, rhs);
-    case Operator::BitOr:
+    case Operator::BitwiseOr:
         return llvm::ConstantExpr::getOr(lhs, rhs);
-    case Operator::BitXor:
+    case Operator::BitwiseXor:
         return llvm::ConstantExpr::getXor(lhs, rhs);
     case Operator::LeftShift:
         return llvm::ConstantExpr::getShl(lhs, rhs);
