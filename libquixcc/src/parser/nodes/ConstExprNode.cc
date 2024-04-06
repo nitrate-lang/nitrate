@@ -21,16 +21,6 @@
 #include <parse/nodes/AllNodes.h>
 #include <error/Logger.h>
 
-libquixcc::TypeNode *libquixcc::ConstUnaryExprNode::type() const
-{
-    return reduce()->type();
-}
-
-bool libquixcc::ConstUnaryExprNode::is_negative() const
-{
-    return reduce()->is_negative();
-}
-
 template <typename T>
 static T getval_and_cast(const libquixcc::ConstExprNode *node)
 {
@@ -71,7 +61,7 @@ static T getval_and_cast(const libquixcc::ConstExprNode *node)
 }
 
 template <typename T>
-static std::unique_ptr<libquixcc::ConstExprNode> reduce_unary_expr(T val, libquixcc::Operator op)
+static std::unique_ptr<libquixcc::LiteralNode> reduce_unary_expr(T val, libquixcc::Operator op)
 {
     using namespace libquixcc;
 
@@ -99,7 +89,7 @@ static std::unique_ptr<libquixcc::ConstExprNode> reduce_unary_expr(T val, libqui
     }
 }
 
-static std::unique_ptr<libquixcc::ConstExprNode> reduce_unary_expr_float_point(double val, libquixcc::Operator op)
+static std::unique_ptr<libquixcc::LiteralNode> reduce_unary_expr_float_point(double val, libquixcc::Operator op)
 {
     using namespace libquixcc;
 
@@ -124,7 +114,7 @@ static std::unique_ptr<libquixcc::ConstExprNode> reduce_unary_expr_float_point(d
     }
 }
 
-std::unique_ptr<libquixcc::ConstExprNode> libquixcc::ConstUnaryExprNode::reduce() const
+std::unique_ptr<libquixcc::LiteralNode> libquixcc::ConstUnaryExprNode::reduce() const
 {
     auto x = m_expr->reduce();
 
@@ -137,18 +127,8 @@ std::unique_ptr<libquixcc::ConstExprNode> libquixcc::ConstUnaryExprNode::reduce(
     return reduce_unary_expr(getval_and_cast<uint64_t>(x.get()), m_op);
 }
 
-libquixcc::TypeNode *libquixcc::ConstBinaryExprNode::type() const
-{
-    return reduce()->type();
-}
-
-bool libquixcc::ConstBinaryExprNode::is_negative() const
-{
-    return reduce()->is_negative();
-}
-
 template <typename T>
-static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr(T lhs, T rhs, libquixcc::Operator op)
+static std::unique_ptr<libquixcc::LiteralNode> reduce_binary_expr(T lhs, T rhs, libquixcc::Operator op)
 {
     using namespace libquixcc;
 
@@ -206,7 +186,7 @@ static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr(T lhs, T rhs
     }
 }
 
-static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr_float_point(double lhs, double rhs, libquixcc::Operator op)
+static std::unique_ptr<libquixcc::LiteralNode> reduce_binary_expr_float_point(double lhs, double rhs, libquixcc::Operator op)
 {
     using namespace libquixcc;
 
@@ -266,7 +246,7 @@ static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr_float_point(
     }
 }
 
-std::unique_ptr<libquixcc::ConstExprNode> libquixcc::ConstBinaryExprNode::reduce() const
+std::unique_ptr<libquixcc::LiteralNode> libquixcc::ConstBinaryExprNode::reduce() const
 {
     auto l = m_lhs->reduce();
     auto r = m_rhs->reduce();

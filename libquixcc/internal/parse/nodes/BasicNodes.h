@@ -86,9 +86,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override = 0;
-        virtual TypeNode *type() const = 0;
-        virtual bool is_negative() const { return false; }
-        virtual std::unique_ptr<ConstExprNode> reduce() const = 0;
+        virtual std::unique_ptr<LiteralNode> reduce() const = 0;
 
         virtual int64_t GetInt64() const { throw std::runtime_error("ConstExprNode::GetInt64() not implemented"); }
     };

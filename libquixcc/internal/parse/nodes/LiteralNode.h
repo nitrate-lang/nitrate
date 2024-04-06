@@ -41,6 +41,8 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual bool is_negative() const = 0;
+        virtual TypeNode *type() const = 0;
     };
 
     typedef std::variant<int64_t, uint64_t, int32_t, uint32_t> NumbericLiteralNode;
@@ -66,7 +68,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override { return m_val_type; }
         virtual bool is_negative() const override { return m_val.front() == '-'; }
-        virtual std::unique_ptr<ConstExprNode> reduce() const override { return std::unique_ptr<IntegerLiteralNode>(new IntegerLiteralNode(m_val)); }
+        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<IntegerLiteralNode>(new IntegerLiteralNode(m_val)); }
 
         virtual int64_t GetInt64() const override { return std::stoll(m_val); }
 
@@ -96,7 +98,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override { return m_val_type; }
         virtual bool is_negative() const override { return true; }
-        virtual std::unique_ptr<ConstExprNode> reduce() const override { return std::unique_ptr<FloatLiteralNode>(new FloatLiteralNode(m_val)); }
+        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<FloatLiteralNode>(new FloatLiteralNode(m_val)); }
 
         std::string m_val;
         TypeNode *m_val_type;
@@ -124,7 +126,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
-        virtual std::unique_ptr<ConstExprNode> reduce() const override { return std::unique_ptr<StringLiteralNode>(new StringLiteralNode(m_val)); }
+        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<StringLiteralNode>(new StringLiteralNode(m_val)); }
 
         std::string m_val;
     };
@@ -150,7 +152,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
-        virtual std::unique_ptr<ConstExprNode> reduce() const override { return std::unique_ptr<CharLiteralNode>(new CharLiteralNode(m_val)); }
+        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<CharLiteralNode>(new CharLiteralNode(m_val)); }
 
         std::string m_val;
     };
@@ -184,7 +186,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
-        virtual std::unique_ptr<ConstExprNode> reduce() const override { return std::unique_ptr<BoolLiteralNode>(new BoolLiteralNode(m_val)); }
+        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<BoolLiteralNode>(new BoolLiteralNode(m_val)); }
 
         bool m_val;
     };
@@ -208,7 +210,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
-        virtual std::unique_ptr<ConstExprNode> reduce() const override { return std::unique_ptr<NullLiteralNode>(new NullLiteralNode()); }
+        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<NullLiteralNode>(new NullLiteralNode()); }
     };
 }
 
