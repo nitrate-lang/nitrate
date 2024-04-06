@@ -933,15 +933,19 @@ static bool execute_job(quixcc_job_t *job)
     }
     catch (ProgrammaticPreprocessorException &)
     {
-        LOG(ERROR) << "Compilation was programmatically aborted while preprocessing source" << std::endl;
+        LOG(FAILED) << "Compilation was programmatically aborted while preprocessing source" << std::endl;
     }
     catch (PreprocessorException &)
     {
-        LOG(ERROR) << "Compilation was aborted while preprocessing source" << std::endl;
+        LOG(FAILED) << "Compilation was aborted while preprocessing source" << std::endl;
     }
     catch (ParseException &)
     {
-        LOG(ERROR) << "Compilation was aborted while parsing source" << std::endl;
+        LOG(FAILED) << "Compilation was aborted while parsing source" << std::endl;
+    }
+    catch (Exception &)
+    {
+        LOG(FAILED) << "Compilation failed" << std::endl;
     }
 
     LOG(DEBUG) << "Finished quixcc run @ " << get_datetime() << std::endl;

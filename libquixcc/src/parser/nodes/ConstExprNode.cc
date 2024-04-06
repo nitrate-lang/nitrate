@@ -112,7 +112,8 @@ static std::unique_ptr<libquixcc::ConstExprNode> reduce_unary_expr_float_point(d
     case Operator::Not:
         return std::make_unique<FloatLiteralNode>(std::to_string(!val));
     case Operator::BitwiseNot:
-        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(~std::bit_cast<uint64_t>(val))));
+        LOG(ERROR) << "const-expr reduction error: bitwise not operation is not supported for floating point numbers" << std::endl;
+        return nullptr;
     case Operator::Increment:
         return std::make_unique<FloatLiteralNode>(std::to_string(val + 1));
     case Operator::Decrement:
@@ -164,8 +165,12 @@ static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr(T lhs, T rhs
     case Operator::Multiply:
         return std::make_unique<IntegerLiteralNode>(std::to_string(lhs * rhs));
     case Operator::Divide:
+        if (rhs == 0)
+            LOG(ERROR) << "const-expr reduction error: division by zero is mathematically undefined" << std::endl;
         return std::make_unique<IntegerLiteralNode>(std::to_string(lhs / rhs));
     case Operator::Modulo:
+        if (rhs == 0)
+            LOG(ERROR) << "const-expr reduction error: modulo by zero is mathematically undefined" << std::endl;
         return std::make_unique<IntegerLiteralNode>(std::to_string(lhs % rhs));
     case Operator::BitwiseAnd:
         return std::make_unique<IntegerLiteralNode>(std::to_string(lhs & rhs));
@@ -205,10 +210,6 @@ static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr_float_point(
 {
     using namespace libquixcc;
 
-    /// TODO: determine if bitwise floating point operations make sense/are useful/should be included in the language
-
-    // const double i = std::bit_cast<double>(std::bit_cast<uint64_t>(1.0) ^ std::bit_cast<uint64_t>(8913.8180));
-
     switch (op)
     {
     case Operator::LessThan:
@@ -222,19 +223,21 @@ static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr_float_point(
     case Operator::Multiply:
         return std::make_unique<FloatLiteralNode>(std::to_string(lhs * rhs));
     case Operator::Divide:
+        if (rhs == 0)
+            LOG(ERROR) << "const-expr reduction error: division by zero is mathematically undefined" << std::endl;
         return std::make_unique<FloatLiteralNode>(std::to_string(lhs / rhs));
     case Operator::Modulo:
-        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) % (uint64_t)rhs)));
+        LOG(ERROR) << "const-expr reduction error: modulo operation is not supported for floating point numbers" << std::endl;
+        return nullptr;
     case Operator::BitwiseAnd:
-        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) & std::bit_cast<uint64_t>(rhs))));
     case Operator::BitwiseOr:
-        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) | std::bit_cast<uint64_t>(rhs))));
     case Operator::BitwiseXor:
-        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) ^ std::bit_cast<uint64_t>(rhs))));
+        LOG(ERROR) << "const-expr reduction error: bitwise operations are not supported for floating point numbers" << std::endl;
+        return nullptr;
     case Operator::LeftShift:
-        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) << (uint64_t)rhs)));
     case Operator::RightShift:
-        return std::make_unique<FloatLiteralNode>(std::to_string(std::bit_cast<double>(std::bit_cast<uint64_t>(lhs) >> (uint64_t)rhs)));
+        LOG(ERROR) << "const-expr reduction error: bitwise shift operations are not supported for floating point numbers" << std::endl;
+        return nullptr;
     case Operator::Equal:
         return std::make_unique<BoolLiteralNode>(lhs == rhs);
     case Operator::NotEqual:
@@ -244,7 +247,11 @@ static std::unique_ptr<libquixcc::ConstExprNode> reduce_binary_expr_float_point(
     case Operator::Or:
         return std::make_unique<BoolLiteralNode>(lhs || rhs);
     case Operator::Xor:
-        return std::make_unique<BoolLiteralNode>(std::bit_cast<uint64_t>(lhs) ^ std::bit_cast<uint64_t>(rhs));
+    {
+        if ((lhs == 0 && rhs == 0) || (lhs != 0 && rhs != 0))
+            return std::make_unique<BoolLiteralNode>(false);
+        return std::make_unique<BoolLiteralNode>(true);
+    }
     case Operator::LessThanEqual:
         return std::make_unique<BoolLiteralNode>(lhs <= rhs);
     case Operator::GreaterThanEqual:

@@ -19,7 +19,7 @@ OUTPUT_VARIABLE LLVM_LD_FLAGS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Get LLVM flags from llvm-config-14 --link-static --libfiles
-execute_process(COMMAND llvm-config-14 --link-static --system-libs --libfiles
+execute_process(COMMAND llvm-config-14 --system-libs --libfiles
 OUTPUT_VARIABLE LLVM_LIBS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 

@@ -43,6 +43,7 @@ namespace libquixcc
         INFO,
         WARN,
         ERROR,
+        FAILED, // Just like error, but doesn't throw an exception
         FATAL
     };
 
@@ -158,6 +159,7 @@ namespace libquixcc
             m_loggers[INFO] = new Logger(INFO);
             m_loggers[WARN] = new Logger(WARN);
             m_loggers[ERROR] = new Logger(ERROR);
+            m_loggers[FAILED] = new Logger(FAILED);
             m_loggers[FATAL] = new Logger(FATAL);
             m_hole = new Logger(DEBUG);
         }

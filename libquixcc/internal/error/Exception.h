@@ -27,7 +27,13 @@
 
 namespace libquixcc
 {
-    class PreprocessorException : public std::exception
+    class Exception : public std::exception
+    {
+    public:
+        const char *what() const noexcept override { return "Error"; }
+    };
+
+    class PreprocessorException : public Exception
     {
     public:
         const char *what() const noexcept override { return "Preprocessor error"; }
@@ -39,13 +45,13 @@ namespace libquixcc
         const char *what() const noexcept override { return "Programmatic preprocessor error"; }
     };
 
-    class ParseException : public std::exception
+    class ParseException : public Exception
     {
     public:
         const char *what() const noexcept override { return "Parse error"; }
     };
 
-    class SemanticException : public std::exception
+    class SemanticException : public Exception
     {
     public:
         const char *what() const noexcept override { return "Semantic error"; }

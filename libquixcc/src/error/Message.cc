@@ -40,7 +40,14 @@ void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job, libquixcc::E
         std::cerr << message << std::endl;
 
     if (type == E::ERROR || type == E::FATAL)
+    {
         job.m_tainted = true;
+        throw Exception();
+    }
+    else if (type == E::FAILED)
+    {
+        job.m_tainted = true;
+    }
 }
 
 libquixcc::Logger &libquixcc::LoggerGroup::operator[](libquixcc::E level)
@@ -86,6 +93,7 @@ std::string libquixcc::LoggerGroup::format_message_ansi(const std::string &messa
         msg += "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
         break;
     case E::ERROR:
+    case E::FAILED:
         msg += "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
         break;
     case E::FATAL:
@@ -124,6 +132,7 @@ std::string libquixcc::LoggerGroup::format_message_nocolor(const std::string &me
         msg += "(warn): " + message;
         break;
     case E::ERROR:
+    case E::FAILED:
         msg += "(ERROR): " + message;
         break;
     case E::FATAL:
