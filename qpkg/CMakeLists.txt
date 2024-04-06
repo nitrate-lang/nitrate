@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 file(GLOB_RECURSE QUIXCC_CXX_SOURCES "src/*.cc")
 
 add_executable(qpkg ${QUIXCC_CXX_SOURCES})
-target_include_directories(qpkg PRIVATE "src" ${CMAKE_CURRENT_SOURCE_DIR}/../libquixcc/include)
+target_include_directories(qpkg PRIVATE src)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release") 
     target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror -O3 -flto)
@@ -18,8 +18,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
 else()
     target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror)
 endif()
-target_link_directories(qpkg PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../libquixcc)
-target_link_libraries(qpkg PRIVATE libquixcc ${LLVM_LIBS} ${LLVM_LD_FLAGS} ${LLVM_CXX_FLAGS} -lstdc++fs)
+target_link_libraries(qpkg PRIVATE -lstdc++fs libstdc++.a)
 
 if (BUILD_TESTING)
     add_subdirectory(test)
