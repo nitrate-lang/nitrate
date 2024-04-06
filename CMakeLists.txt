@@ -5,3 +5,7 @@ add_subdirectory(libquixcc)
 add_subdirectory(qcc)
 add_subdirectory(qld)
 add_subdirectory(qpkg)
+
+if (BUILD_TESTING)
+    add_subdirectory(test)
+endif()

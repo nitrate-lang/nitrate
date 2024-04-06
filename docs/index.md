@@ -5,6 +5,8 @@ layout: home
 
 # Welcome to the QUIX website!
 
+# THIS IS COMPLETELY OUTDATED. THE LANGUAGE HAS CHANGED SIGNIFICANTLY SINCE THIS WAS WRITTEN. NEW DOCUMENTATION HAS NOT BEEN WRITTEN YET.
+
 1. [What is QUIX?](/about)
 1. [Getting Started](/getting-started)
     1. [Environment Setup](/environment-setup)
