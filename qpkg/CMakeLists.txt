@@ -18,7 +18,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
 else()
     target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror)
 endif()
-target_link_libraries(qpkg PRIVATE -lstdc++fs libstdc++.a)
+target_link_libraries(qpkg PRIVATE -lstdc++fs libstdc++.a crypto yaml-cpp)
 
 if (BUILD_TESTING)
     add_subdirectory(test)

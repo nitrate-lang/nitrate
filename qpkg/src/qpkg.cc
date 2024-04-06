@@ -8,6 +8,8 @@
 #include <optional>
 #include <argparse.h>
 
+#include <conf/Parser.hh>
+
 constexpr const char *COPYRIGHT = "Copyright (C) 2024 Wesley C. Jones";
 constexpr const char *VERSION_STR = "qpkg version 0.1.0 [2024-03] (generic)";
 constexpr const char *FULL_LICENSE = R"(This file is part of QUIX Compiler Suite.
@@ -519,8 +521,16 @@ static int run_test_mode(const argparse::ArgumentParser &parser)
     return 1;
 }
 
+static void quick_test()
+{
+    
+}
+
 int main(int argc, char *argv[])
 {
+    quick_test();
+    return 0;
+
     std::vector<std::string> args(argv, argv + argc);
     argparse::ArgumentParser program("qpkg", VERSION_STR);
     setup_argparse(program);
