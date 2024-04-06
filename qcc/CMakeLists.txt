@@ -22,3 +22,6 @@ target_link_directories(qcc PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/../libquixcc)
 target_link_libraries(qcc PRIVATE libquixcc ${LLVM_LIBS} ${LLVM_LD_FLAGS} ${LLVM_CXX_FLAGS} -lstdc++fs)
 add_dependencies(qcc libquixcc)
 
+if (BUILD_TESTING)
+    add_subdirectory(test)
+endif()

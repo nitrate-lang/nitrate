@@ -16,6 +16,7 @@ os.chdir('..')
 
 os.makedirs('bin', exist_ok=True)
 os.system('cp build/qcc/qcc bin/')
+os.system('cp build/qld/qld bin/')
 os.system('cp -r build/tools/quixcc-* bin/')
 os.system('cp -r build/libquixcc/test/qcc-* bin/')
 
