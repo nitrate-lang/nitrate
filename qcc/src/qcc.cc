@@ -10,27 +10,21 @@
 
 constexpr const char *COPYRIGHT = "Copyright (C) 2024 Wesley C. Jones";
 constexpr const char *VERSION_STR = "qcc version 0.1.0 [2024-03] (Debian 10.0.0-1)";
-constexpr const char *FULL_LICENSE = R"(Copyright (C) 2023 Wesley C. Jones All rights reserved.
+constexpr const char *FULL_LICENSE = R"(This file is part of QUIX Compiler Suite.
+Copyright (C) 2024 Wesley C. Jones
 
-This work is a part of the QUIX Language compiler suite and is proprietary.
-Any unauthorized use, copying, redistribution, derivation, modification,
-or any other utilization of this work without the express written consent
-of the Deltasploit Development Team is strictly prohibited.
+The QUIX Compiler Suite is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 2.1 of the License, or
+(at your option) any later version.
 
-For inquiries, open an issue at <https://github.com/Kracken256/quixcc>. The
-Deltasploit Development Team will respond to your request in time.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
-BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
-THE POSSIBILITY OF SUCH DAMAGE.)";
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.)";
 
 static std::string program_name;
 
