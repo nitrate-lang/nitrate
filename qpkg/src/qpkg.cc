@@ -8,7 +8,7 @@
 #include <optional>
 #include <argparse.h>
 
-#include <conf/Parser.hh>
+#include <cache/CacheDirectory.hh>
 
 constexpr const char *COPYRIGHT = "Copyright (C) 2024 Wesley C. Jones";
 constexpr const char *VERSION_STR = "qpkg version 0.1.0 [2024-03] (generic)";
@@ -523,7 +523,6 @@ static int run_test_mode(const argparse::ArgumentParser &parser)
 
 static void quick_test()
 {
-    
 }
 
 int main(int argc, char *argv[])
