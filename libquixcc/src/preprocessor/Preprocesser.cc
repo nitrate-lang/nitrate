@@ -166,6 +166,10 @@ bool libquixcc::PrepEngine::handle_import()
             return false;
         }
     }
+    else
+    {
+        filename += QUIX_HEADER_EXTENSION;
+    }
 
     LOG(INFO) << "Requested import of file: " << filename << std::endl;
 

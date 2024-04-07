@@ -28,7 +28,7 @@
 #include <unordered_map>
 #include <sstream>
 #include <functional>
-#include <stack>
+#include <queue>
 #include <lexer/Token.h>
 #include <error/Messages.h>
 #include <quixcc.h>
@@ -53,7 +53,7 @@ namespace libquixcc
     class Logger
     {
         std::stringstream m_buf;
-        std::stack<size_t> m_replacement_idx;
+        std::queue<size_t> m_replacement_idx;
         std::vector<std::string> m_parts;
         Token m_tok;
         LogDispatchFunc m_dispatch;
@@ -68,7 +68,7 @@ namespace libquixcc
         {
             if (!m_replacement_idx.empty())
             {
-                m_parts[m_replacement_idx.top()] = msg;
+                m_parts[m_replacement_idx.front()] = msg;
                 m_replacement_idx.pop();
                 if (m_replacement_idx.empty())
                 {
