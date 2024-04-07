@@ -30,6 +30,23 @@ std::optional<qpkg::conf::Config> qpkg::conf::JsonConfigParser::parse(const std:
             grp.set(it->name.GetString(), it->value.GetInt64());
         else if (it->value.IsBool())
             grp.set(it->name.GetString(), it->value.GetBool());
+        else if (it->value.IsArray())
+        {
+            std::vector<std::string> v;
+
+            for (auto &e : it->value.GetArray())
+            {
+                if (e.IsString())
+                    v.push_back(e.GetString());
+                else
+                {
+                    LOG(core::ERROR) << "Invalid JSON configuration: unsupported value type" << std::endl;
+                    return std::nullopt;
+                }
+            }
+
+            grp.set(it->name.GetString(), v);
+        }
         else
         {
             LOG(core::ERROR) << "Invalid JSON configuration: unsupported value type" << std::endl;

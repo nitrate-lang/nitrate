@@ -33,6 +33,7 @@
 
 # Cmake
 build/
+qpkg/example-project
 
 # Temporary files
 temp/

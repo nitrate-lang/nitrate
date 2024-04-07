@@ -46,6 +46,23 @@ std::optional<qpkg::conf::Config> qpkg::conf::YamlConfigParser::parse(const std:
                 }
             }
         }
+        else if (it->second.IsSequence())
+        {
+            std::vector<std::string> v;
+
+            for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2)
+            {
+                if (it2->IsScalar())
+                    v.push_back(it2->as<std::string>());
+                else
+                {
+                    LOG(core::ERROR) << "Invalid YAML configuration: unsupported value type" << std::endl;
+                    return std::nullopt;
+                }
+            }
+
+            grp.set(it->first.as<std::string>(), v);
+        }
         else
         {
             LOG(core::ERROR) << "Invalid YAML configuration: unsupported value type" << std::endl;

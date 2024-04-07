@@ -305,6 +305,8 @@ static void pushlog_onfault(int sig)
 
     std::cerr << "Fault. Dumping logs to " << qpkg::core::LoggerSpool::LOG_FILE << std::endl;
 
+    signal(SIGABRT, SIG_IGN);
+
     /* Kill process and generate core dump */
     abort();
 }

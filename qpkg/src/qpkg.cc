@@ -8,7 +8,7 @@
 #include <optional>
 #include <argparse.h>
 
-#include <cache/CacheDirectory.hh>
+#include <build/EngineBuilder.hh>
 
 constexpr const char *COPYRIGHT = "Copyright (C) 2024 Wesley C. Jones";
 constexpr const char *VERSION_STR = "qpkg version 0.1.0 [2024-03] (generic)";
@@ -28,10 +28,21 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.)";
 
-static void setup_argparse_build(argparse::ArgumentParser &parser)
-{
-    (void)parser;
+using namespace argparse;
 
+static ArgumentParser build_parser("build", "compile packages and dependencies");
+static ArgumentParser clean_parser("clean", "remove object files and cached files");
+static ArgumentParser update_parser("update", "update package dependencies");
+static ArgumentParser install_parser("install", "download and compile remote source");
+static ArgumentParser doc_parser("doc", "show documentation for package or symbol");
+static ArgumentParser env_parser("env", "print QUIX environment information");
+static ArgumentParser fmt_parser("fmt", "reformat package sources");
+static ArgumentParser list_parser("list", "list packages or modules");
+static ArgumentParser run_parser("run", "compile and run QUIX program");
+static ArgumentParser test_parser("test", "test packages");
+
+static void setup_argparse_build(ArgumentParser &parser)
+{
     parser.add_argument("package-src")
         .help("path to package source")
         .nargs(1);
@@ -47,8 +58,8 @@ static void setup_argparse_build(argparse::ArgumentParser &parser)
         .implicit_value(true);
 
     parser.add_argument("-j", "--jobs")
-        .help("number of jobs to run simultaneously. -1 for auto")
-        .default_value(-1)
+        .help("number of jobs to run simultaneously. 0 for auto")
+        .default_value(0)
         .nargs(1);
 
     parser.add_argument("-v", "--verbose")
@@ -56,12 +67,13 @@ static void setup_argparse_build(argparse::ArgumentParser &parser)
         .default_value(false)
         .implicit_value(true);
 
-    parser.add_argument("-O", "--optimize")
+    auto &optimization_group = parser.add_mutually_exclusive_group();
+    optimization_group.add_argument("-O", "--optimize")
         .help("request optimization from build pipeline. not all pipelines will support this, and it may be ignored")
         .default_value(false)
         .implicit_value(true);
 
-    parser.add_argument("-OS", "--optimize-size")
+    optimization_group.add_argument("-Os", "--optimize-size")
         .help("request size optimization from build pipeline. not all pipelines will support this, and it may be ignored")
         .default_value(false)
         .implicit_value(true);
@@ -97,7 +109,7 @@ static void setup_argparse_build(argparse::ArgumentParser &parser)
         .nargs(1);
 }
 
-static void setup_argparse_clean(argparse::ArgumentParser &parser)
+static void setup_argparse_clean(ArgumentParser &parser)
 {
     parser.add_argument("package-src")
         .help("path to package source")
@@ -109,7 +121,7 @@ static void setup_argparse_clean(argparse::ArgumentParser &parser)
         .implicit_value(true);
 }
 
-static void setup_argparse_update(argparse::ArgumentParser &parser)
+static void setup_argparse_update(ArgumentParser &parser)
 {
     parser.add_argument("package-name")
         .help("name of package to update")
@@ -136,7 +148,7 @@ static void setup_argparse_update(argparse::ArgumentParser &parser)
         .nargs(1);
 }
 
-static void setup_argparse_install(argparse::ArgumentParser &parser)
+static void setup_argparse_install(ArgumentParser &parser)
 {
     parser.add_argument("src")
         .help("source of package to install")
@@ -178,7 +190,7 @@ static void setup_argparse_install(argparse::ArgumentParser &parser)
         .nargs(1);
 }
 
-static void setup_argparse_doc(argparse::ArgumentParser &parser)
+static void setup_argparse_doc(ArgumentParser &parser)
 {
     parser.add_argument("package-src")
         .help("name of package to document")
@@ -236,7 +248,7 @@ static void setup_argparse_doc(argparse::ArgumentParser &parser)
         .nargs(1);
 }
 
-static void setup_argparse_env(argparse::ArgumentParser &parser)
+static void setup_argparse_env(ArgumentParser &parser)
 {
     parser.add_argument("key")
         .help("environment variable to query")
@@ -283,7 +295,7 @@ static void setup_argparse_env(argparse::ArgumentParser &parser)
         .implicit_value(true);
 }
 
-static void setup_argparse_fmt(argparse::ArgumentParser &parser)
+static void setup_argparse_fmt(ArgumentParser &parser)
 {
     parser.add_argument("package-src")
         .help("path to package source")
@@ -305,7 +317,7 @@ static void setup_argparse_fmt(argparse::ArgumentParser &parser)
         .nargs(1);
 }
 
-static void setup_argparse_list(argparse::ArgumentParser &parser)
+static void setup_argparse_list(ArgumentParser &parser)
 {
     parser.add_argument("-p", "--packages")
         .help("list all packages installed")
@@ -313,7 +325,7 @@ static void setup_argparse_list(argparse::ArgumentParser &parser)
         .implicit_value(true);
 }
 
-static void setup_argparse_run(argparse::ArgumentParser &parser)
+static void setup_argparse_run(ArgumentParser &parser)
 {
     parser.add_argument("package-name")
         .help("name of package to run")
@@ -340,7 +352,7 @@ static void setup_argparse_run(argparse::ArgumentParser &parser)
         .nargs(1);
 }
 
-static void setup_argparse_test(argparse::ArgumentParser &parser)
+static void setup_argparse_test(ArgumentParser &parser)
 {
     parser.add_argument("package-name")
         .help("name of package to test")
@@ -408,42 +420,31 @@ static void setup_argparse_test(argparse::ArgumentParser &parser)
         .nargs(1);
 }
 
-static void setup_argparse(argparse::ArgumentParser &parser)
+static void setup_argparse(ArgumentParser &parser)
 {
     using namespace argparse;
 
-    static ArgumentParser build("build", "compile packages and dependencies");
-    static ArgumentParser clean("clean", "remove object files and cached files");
-    static ArgumentParser update("update", "update package dependencies");
-    static ArgumentParser install("install", "download and compile remote source");
-    static ArgumentParser doc("doc", "show documentation for package or symbol");
-    static ArgumentParser env("env", "print QUIX environment information");
-    static ArgumentParser fmt("fmt", "reformat package sources");
-    static ArgumentParser list("list", "list packages or modules");
-    static ArgumentParser run("run", "compile and run QUIX program");
-    static ArgumentParser test("test", "test packages");
+    setup_argparse_build(build_parser);
+    setup_argparse_clean(clean_parser);
+    setup_argparse_update(update_parser);
+    setup_argparse_install(install_parser);
+    setup_argparse_doc(doc_parser);
+    setup_argparse_env(env_parser);
+    setup_argparse_fmt(fmt_parser);
+    setup_argparse_list(list_parser);
+    setup_argparse_run(run_parser);
+    setup_argparse_test(test_parser);
 
-    setup_argparse_build(build);
-    setup_argparse_clean(clean);
-    setup_argparse_update(update);
-    setup_argparse_install(install);
-    setup_argparse_doc(doc);
-    setup_argparse_env(env);
-    setup_argparse_fmt(fmt);
-    setup_argparse_list(list);
-    setup_argparse_run(run);
-    setup_argparse_test(test);
-
-    parser.add_subparser(build);
-    parser.add_subparser(clean);
-    parser.add_subparser(update);
-    parser.add_subparser(install);
-    parser.add_subparser(doc);
-    parser.add_subparser(env);
-    parser.add_subparser(fmt);
-    parser.add_subparser(list);
-    parser.add_subparser(run);
-    parser.add_subparser(test);
+    parser.add_subparser(build_parser);
+    parser.add_subparser(clean_parser);
+    parser.add_subparser(update_parser);
+    parser.add_subparser(install_parser);
+    parser.add_subparser(doc_parser);
+    parser.add_subparser(env_parser);
+    parser.add_subparser(fmt_parser);
+    parser.add_subparser(list_parser);
+    parser.add_subparser(run_parser);
+    parser.add_subparser(test_parser);
 
     parser.add_argument("--license")
         .help("show license information")
@@ -451,87 +452,118 @@ static void setup_argparse(argparse::ArgumentParser &parser)
         .implicit_value(true);
 }
 
-static int run_build_mode(const argparse::ArgumentParser &parser)
+static int run_build_mode(const ArgumentParser &parser)
 {
-    (void)parser;
-    std::cerr << "build not implemented yet" << std::endl;
-    return 1;
+    qpkg::build::EngineBuilder builder;
+
+    builder.set_package_src(parser.get<std::string>("package-src"));
+
+    if (parser.is_used("--output"))
+        builder.set_output(parser.get<std::string>("--output"));
+
+    if (parser["--no-cache"] == true)
+        builder.disable_cache();
+
+    if (parser.is_used("--jobs"))
+        builder.jobs(parser.get<int>("--jobs"));
+
+    if (parser["--verbose"] == true)
+        builder.verbose();
+
+    if (parser["--optimize"] == true)
+        builder.optimize();
+
+    if (parser["--optimize-size"] == true)
+        builder.optimize_size();
+
+    if (parser["--debug"] == true)
+        builder.debug();
+
+    if (parser.is_used("--certify"))
+        builder.certify(parser.get<std::string>("--certify"));
+
+    if (parser.is_used("--certify-password"))
+        builder.certify_password(parser.get<std::string>("--certify-password"));
+
+    if (parser["--supply-chain-insecure"] == true)
+        builder.disable_sigcheck();
+
+    if (parser.is_used("--trustkey"))
+        builder.trustkey(parser.get<std::string>("--trustkey"));
+
+    if (parser.is_used("--trustkeys"))
+        builder.trustkeys(parser.get<std::string>("--trustkeys"));
+
+    return builder.build().run() ? 0 : -1;
 }
 
-static int run_clean_mode(const argparse::ArgumentParser &parser)
+static int run_clean_mode(const ArgumentParser &parser)
 {
     (void)parser;
     std::cerr << "clean not implemented yet" << std::endl;
     return 1;
 }
 
-static int run_update_mode(const argparse::ArgumentParser &parser)
+static int run_update_mode(const ArgumentParser &parser)
 {
     (void)parser;
     std::cerr << "update not implemented yet" << std::endl;
     return 1;
 }
 
-static int run_install_mode(const argparse::ArgumentParser &parser)
+static int run_install_mode(const ArgumentParser &parser)
 {
     (void)parser;
     std::cerr << "install not implemented yet" << std::endl;
     return 1;
 }
 
-static int run_doc_mode(const argparse::ArgumentParser &parser)
+static int run_doc_mode(const ArgumentParser &parser)
 {
     (void)parser;
     std::cerr << "doc not implemented yet" << std::endl;
     return 1;
 }
 
-static int run_env_mode(const argparse::ArgumentParser &parser)
+static int run_env_mode(const ArgumentParser &parser)
 {
     (void)parser;
     std::cerr << "env not implemented yet" << std::endl;
     return 1;
 }
 
-static int run_fmt_mode(const argparse::ArgumentParser &parser)
+static int run_fmt_mode(const ArgumentParser &parser)
 {
     (void)parser;
     std::cerr << "fmt not implemented yet" << std::endl;
     return 1;
 }
 
-static int run_list_mode(const argparse::ArgumentParser &parser)
+static int run_list_mode(const ArgumentParser &parser)
 {
     (void)parser;
     std::cerr << "list not implemented yet" << std::endl;
     return 1;
 }
 
-static int run_run_mode(const argparse::ArgumentParser &parser)
+static int run_run_mode(const ArgumentParser &parser)
 {
     (void)parser;
     std::cerr << "run not implemented yet" << std::endl;
     return 1;
 }
 
-static int run_test_mode(const argparse::ArgumentParser &parser)
+static int run_test_mode(const ArgumentParser &parser)
 {
     (void)parser;
     std::cerr << "test not implemented yet" << std::endl;
     return 1;
 }
 
-static void quick_test()
-{
-}
-
 int main(int argc, char *argv[])
 {
-    quick_test();
-    return 0;
-
     std::vector<std::string> args(argv, argv + argc);
-    argparse::ArgumentParser program("qpkg", VERSION_STR);
+    ArgumentParser program("qpkg", VERSION_STR);
     setup_argparse(program);
 
     try
@@ -552,25 +584,25 @@ int main(int argc, char *argv[])
     }
 
     if (program.is_subcommand_used("build"))
-        return run_build_mode(program);
+        return run_build_mode(build_parser);
     else if (program.is_subcommand_used("clean"))
-        return run_clean_mode(program);
+        return run_clean_mode(clean_parser);
     else if (program.is_subcommand_used("update"))
-        return run_update_mode(program);
+        return run_update_mode(update_parser);
     else if (program.is_subcommand_used("install"))
-        return run_install_mode(program);
+        return run_install_mode(install_parser);
     else if (program.is_subcommand_used("doc"))
-        return run_doc_mode(program);
+        return run_doc_mode(doc_parser);
     else if (program.is_subcommand_used("env"))
-        return run_env_mode(program);
+        return run_env_mode(env_parser);
     else if (program.is_subcommand_used("fmt"))
-        return run_fmt_mode(program);
+        return run_fmt_mode(fmt_parser);
     else if (program.is_subcommand_used("list"))
-        return run_list_mode(program);
+        return run_list_mode(list_parser);
     else if (program.is_subcommand_used("run"))
-        return run_run_mode(program);
+        return run_run_mode(run_parser);
     else if (program.is_subcommand_used("test"))
-        return run_test_mode(program);
+        return run_test_mode(test_parser);
     else
     {
         std::cerr << "No command specified" << std::endl;
