@@ -191,7 +191,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
         return "f" + s;
     }
 
-    throw std::runtime_error("Unknown type");
+    throw std::runtime_error("Unknown type: " + std::to_string((int)type->ntype));
 }
 
 static libquixcc::TypeNode *deserialize_type(const std::string &type)
