@@ -67,8 +67,10 @@ struct Options
     Options()
     {
         verbose = false;
-        optimization = OptimizationLevel::DEFAULT;
         debug = false;
+        strip = false;
+        pack = false;
+        optimization = OptimizationLevel::DEFAULT;
         mode = OperatingMode::QUIXCC_TARGET_DEFAULT;
     }
 
