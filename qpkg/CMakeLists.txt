@@ -22,7 +22,7 @@ else()
 endif()
 target_link_directories(qpkg PRIVATE ${CMAKE_BINARY_DIR}/libquixcc)
 target_link_libraries(qpkg PRIVATE -lstdc++fs libstdc++.a crypto yaml-cpp blake3 quixcc ncurses)
-add_dependencies(qpkg blake3)
+add_dependencies(qpkg blake3 libquixcc)
 
 if (BUILD_TESTING)
     add_subdirectory(test)
