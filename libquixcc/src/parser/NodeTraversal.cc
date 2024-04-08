@@ -363,13 +363,18 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::EnumDeclNode *node)
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::FunctionDeclNode *node)
 {
     size_t count = 0;
+    std::string old_prefix = m_prefix;
+    push_prefix(node->m_name);
+
     for (auto &param : node->m_params)
     {
         m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&param));
         count += param->dfs_preorder(*this);
     }
-    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type->m_return_type));
-    count += node->m_type->m_return_type->dfs_preorder(*this);
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type));
+    count += node->m_type->dfs_preorder(*this);
+
+    m_prefix = old_prefix;
     return count + 1;
 }
 
