@@ -311,8 +311,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
 
     auto compiler = builder.build();
 
-    compiler.run(1).puts();
-    if (!compiler.ok())
+    if (!compiler.run(1).puts().ok())
     {
         LOG(core::ERROR) << "Failed to compile source file " << file << std::endl;
         return false;
