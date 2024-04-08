@@ -14,8 +14,11 @@ enum class KeyName
     SOURCES,
     HEADERS,
     TARGET,
+    TRIPLE,
+    CPU,
     CFLAGS,
     LFLAGS,
+    NOLINK
 };
 
 enum class ValueType
@@ -36,8 +39,11 @@ static std::unordered_map<std::string, KeyName> key_map = {
     {"sources", KeyName::SOURCES},
     {"headers", KeyName::HEADERS},
     {"target", KeyName::TARGET},
+    {"triple", KeyName::TRIPLE},
+    {"cpu", KeyName::CPU},
     {"cflags", KeyName::CFLAGS},
     {"lflags", KeyName::LFLAGS},
+    {"nolink", KeyName::NOLINK}
 };
 
 static std::set<std::string> required_keys = {
@@ -47,6 +53,11 @@ static std::set<std::string> required_keys = {
     "sources",
     "target",
 };
+
+static std::set<std::string> target_valid_values = {
+    "sharedlib",
+    "staticlib",
+    "executable"};
 
 /// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
 bool is_utf8(const char *string)
@@ -246,9 +257,33 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config, const std::fil
                 LOG(core::ERROR) << "Invalid value type for key 'target' in configuration" << std::endl;
                 return false;
             }
+            if (!target_valid_values.contains(config[key].as<std::string>()))
+            {
+                LOG(core::ERROR) << "Invalid value for key 'triple' in configuration: must be one of 'sharedlib', 'staticlib', or 'executable'" << std::endl;
+                return false;
+            }
+            break;
+        case KeyName::TRIPLE:
+            if (!config[key].is<std::string>())
+            {
+                LOG(core::ERROR) << "Invalid value type for key 'triple' in configuration" << std::endl;
+                return false;
+            }
             if (!is_utf8(config[key].as<std::string>().c_str()))
             {
-                LOG(core::ERROR) << "Invalid value for key 'target' in configuration: must be UTF-8" << std::endl;
+                LOG(core::ERROR) << "Invalid value for key 'triple' in configuration: must be UTF-8" << std::endl;
+                return false;
+            }
+            break;
+        case KeyName::CPU:
+            if (!config[key].is<std::string>())
+            {
+                LOG(core::ERROR) << "Invalid value type for key 'cpu' in configuration" << std::endl;
+                return false;
+            }
+            if (!is_utf8(config[key].as<std::string>().c_str()))
+            {
+                LOG(core::ERROR) << "Invalid value for key 'cpu' in configuration: must be UTF-8" << std::endl;
                 return false;
             }
             break;
@@ -263,6 +298,13 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config, const std::fil
             if (!config[key].is<std::vector<std::string>>())
             {
                 LOG(core::ERROR) << "Invalid value type for key 'lflags' in configuration" << std::endl;
+                return false;
+            }
+            break;
+        case KeyName::NOLINK:
+            if (!config[key].is<bool>())
+            {
+                LOG(core::ERROR) << "Invalid value type for key 'nolink' in configuration" << std::endl;
                 return false;
             }
             break;
@@ -282,4 +324,34 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config, const std::fil
     }
 
     return true;
+}
+
+void qpkg::conf::PopulateConfig(qpkg::conf::Config &config)
+{
+    if (!config.m_root.has<std::vector<std::string>>("authors"))
+        config.m_root.set("authors", std::vector<std::string>());
+    
+    if (!config.m_root.has<std::vector<std::string>>("licenses"))
+        config.m_root.set("licenses", std::vector<std::string>());
+    
+    if (!config.m_root.has<std::vector<std::string>>("depends"))
+        config.m_root.set("depends", std::vector<std::string>());
+
+    if (!config.m_root.has<std::vector<std::string>>("headers"))
+        config.m_root.set("headers", std::vector<std::string>());
+
+    if (!config.m_root.has<std::string>("triple"))
+        config.m_root.set("triple", "");
+    
+    if (!config.m_root.has<std::string>("cpu"))
+        config.m_root.set("cpu", "");
+
+    if (!config.m_root.has<std::vector<std::string>>("cflags"))
+        config.m_root.set("cflags", std::vector<std::string>());
+
+    if (!config.m_root.has<std::vector<std::string>>("lflags"))
+        config.m_root.set("lflags", std::vector<std::string>());
+
+    if (!config.m_root.has<bool>("nolink"))
+        config.m_root.set("nolink", false);
 }

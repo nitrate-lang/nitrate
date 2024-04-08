@@ -353,6 +353,9 @@ int main(int argc, char *argv[])
 
     program_name = args[0];
 
+    if (args.size() > 1 && args[1] == "--")
+        return 0;
+
     std::optional<Options> options;
 
     if (options = parse_options(args), !options.has_value())

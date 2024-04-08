@@ -415,6 +415,12 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IdentifierNode *n
         return m_ctx->m_builder->CreateLoad(m_ctx->m_named_global_vars[name]->getValueType(), m_ctx->m_named_global_vars[name], name);
     }
 
+    for (auto &pair : m_ctx->m_named_functions)
+    {
+        if (pair.second->m_name == name)
+            return pair.first;
+    }
+
     return nullptr;
 }
 

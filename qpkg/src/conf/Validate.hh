@@ -9,6 +9,7 @@ namespace qpkg
     namespace conf
     {
         bool ValidateConfig(const Config &config, const std::filesystem::path &base);
+        void PopulateConfig(Config &config);
     }
 }
 

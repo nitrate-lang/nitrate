@@ -140,9 +140,6 @@ qpkg::build::Engine qpkg::build::EngineBuilder::build()
         throw std::runtime_error("Package source directory does not exist");
     }
 
-    if (m_output.empty())
-        m_output = m_package_src + "/output.bin";
-
     if (m_jobs < 0)
     {
         LOG(core::ERROR) << "Invalid number of jobs" << std::endl;

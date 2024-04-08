@@ -37,6 +37,13 @@ namespace qpkg
 
         class Engine
         {
+            enum class BuildType
+            {
+                SHAREDLIB,
+                STATICLIB,
+                EXECUTABLE
+            };
+
             std::string m_package_src;
             std::unique_ptr<cache::ICache> m_cache;
             conf::Config m_config;
@@ -46,13 +53,15 @@ namespace qpkg
             Optimization m_optimization;
             bool m_debug;
             bool m_verbose;
+            BuildType m_build_type;
 
             std::optional<qpkg::conf::Config> load_config(const std::filesystem::path &base);
             std::vector<std::string> get_source_files(const std::filesystem::path &base);
+            void run_threads(const std::filesystem::__cxx11::path &base, const std::vector<std::string> &source_files, const std::filesystem::__cxx11::path &build_dir) const;
             bool build_package(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir);
             bool build_source_file(const std::filesystem::__cxx11::path &base, const std::filesystem::__cxx11::path &build_dir, const std::filesystem::path &file) const;
             bool link_objects(const std::vector<std::filesystem::path> &objects) const;
-       
+
         public:
             Engine(const std::string &package_src,
                    const std::string &output,

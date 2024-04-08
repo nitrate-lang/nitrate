@@ -308,6 +308,16 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
     builder.add_include(build_dir.string());
     builder.add_source(file.string());
     builder.opt("-c");
+    for (const auto &flag : m_config["cflags"].as<std::vector<std::string>>())
+        builder.opt(flag);
+
+    if (m_build_type == BuildType::SHAREDLIB)
+        builder.opt("-shared");
+    else if (m_build_type == BuildType::STATICLIB)
+        builder.opt("-fPIC");
+
+    builder.target(m_config["triple"].as<std::string>());
+    builder.cpu(m_config["cpu"].as<std::string>());
 
     auto compiler = builder.build();
 
@@ -329,7 +339,24 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
 
 bool qpkg::build::Engine::link_objects(const std::vector<std::filesystem::__cxx11::path> &objects) const
 {
-    std::string cmd = "qld -o " + m_output;
+    std::string cmd = "qld";
+
+    for (const auto &flag : m_config["lflags"].as<std::vector<std::string>>())
+        cmd += " " + flag;
+
+    cmd += " -o '" + m_output + "'";
+
+    switch (m_build_type)
+    {
+    case BuildType::SHAREDLIB:
+        cmd += " -sharedlib";
+        break;
+    case BuildType::STATICLIB:
+        cmd += " -staticlib";
+        break;
+    case BuildType::EXECUTABLE:
+        break;
+    }
 
     for (const auto &file : objects)
         cmd += " '" + file.string() + "'";
@@ -348,7 +375,7 @@ bool qpkg::build::Engine::link_objects(const std::vector<std::filesystem::__cxx1
     return true;
 }
 
-bool qpkg::build::Engine::build_package(const std::filesystem::__cxx11::path &base, const std::vector<std::string> &source_files, const std::filesystem::__cxx11::path &build_dir)
+void qpkg::build::Engine::run_threads(const std::filesystem::__cxx11::path &base, const std::vector<std::string> &source_files, const std::filesystem::__cxx11::path &build_dir) const
 {
     size_t i, tcount;
     std::vector<std::thread> threads;
@@ -388,21 +415,31 @@ bool qpkg::build::Engine::build_package(const std::filesystem::__cxx11::path &ba
 
     for (auto &thread : threads)
         thread.join();
+}
+
+bool qpkg::build::Engine::build_package(const std::filesystem::__cxx11::path &base, const std::vector<std::string> &source_files, const std::filesystem::__cxx11::path &build_dir)
+{
+    run_threads(base, source_files, build_dir);
 
     std::vector<std::filesystem::path> objects;
-
     for (const auto &file : source_files)
         objects.push_back(build_dir / (std::filesystem::path(file).filename().string() + ".o"));
 
-    g_cc_printer.linking();
-
-    if (!link_objects(objects))
+    if (m_config["nolink"].as<bool>() == false)
     {
-        LOG(core::ERROR) << "Failed to link object files" << std::endl;
-        return false;
+        g_cc_printer.linking();
+        if (!link_objects(objects))
+        {
+            LOG(core::ERROR) << "Failed to link object files" << std::endl;
+            return false;
+        }
+        g_cc_printer.linked();
     }
-
-    g_cc_printer.linked();
+    else
+    {
+        LOG(core::INFO) << "Skipping linking" << std::endl;
+        g_cc_printer.linked();
+    }
 
     while (!g_cc_printer.is_done())
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -420,11 +457,40 @@ bool qpkg::build::Engine::run()
         return false;
 
     m_config = *_config;
+    conf::PopulateConfig(m_config);
 
     std::filesystem::path build_dir = base / ".qpkg" / "build";
 
     if (!std::filesystem::exists(build_dir))
         std::filesystem::create_directories(build_dir);
+
+    if (m_config["target"].as<std::string>() == "sharedlib")
+        m_build_type = BuildType::SHAREDLIB;
+    else if (m_config["target"].as<std::string>() == "staticlib")
+        m_build_type = BuildType::STATICLIB;
+    else if (m_config["target"].as<std::string>() == "executable")
+        m_build_type = BuildType::EXECUTABLE;
+    else
+    {
+        LOG(core::ERROR) << "Invalid target type" << std::endl;
+        return false;
+    }
+
+    if (m_output.empty())
+    {
+        switch (m_build_type)
+        {
+        case BuildType::SHAREDLIB:
+            m_output = base / ("lib" + m_config["name"].as<std::string>() + ".so");
+            break;
+        case BuildType::STATICLIB:
+            m_output = base / ("lib" + m_config["name"].as<std::string>() + ".a");
+            break;
+        case BuildType::EXECUTABLE:
+            m_output = base / m_config["name"].as<std::string>();
+            break;
+        }
+    }
 
     return build_package(base, get_source_files(base), build_dir);
 }
