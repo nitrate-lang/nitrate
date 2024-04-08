@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <filesystem>
+#include <mutex>
 
 namespace qpkg
 {
@@ -15,14 +16,20 @@ namespace qpkg
             std::filesystem::path m_cacheDir;
             std::map<CacheKey, std::pair<std::string, std::chrono::system_clock::time_point>> m_cacheMap;
             std::set<CacheKey> m_keys;
+            std::mutex m_mutex;
 
             bool init();
             bool discover();
+
+            DirectoryCache(const DirectoryCache &) = delete;
+            DirectoryCache &operator=(const DirectoryCache &) = delete;
 
         public:
             DirectoryCache() = default;
             ~DirectoryCache();
 
+            void acquire_lock() override;
+            void release_lock() override;
             bool setup(const std::string &location, bool init = false) override;
             bool contains(const CacheKey &key) override;
             std::set<CacheKey> keys() override;

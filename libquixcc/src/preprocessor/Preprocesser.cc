@@ -171,7 +171,7 @@ bool libquixcc::PrepEngine::handle_import()
         filename += QUIX_HEADER_EXTENSION;
     }
 
-    LOG(INFO) << "Requested import of file: " << filename << std::endl;
+    LOG(DEBUG) << "Requested import of file: " << filename << std::endl;
 
     tok = m_stack.top().lexer.next();
     if (!tok.is<Punctor>(Punctor::Semicolon))

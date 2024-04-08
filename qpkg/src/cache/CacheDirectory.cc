@@ -11,6 +11,16 @@ qpkg::cache::DirectoryCache::~DirectoryCache()
         this->sync();
 }
 
+void qpkg::cache::DirectoryCache::acquire_lock()
+{
+    m_mutex.lock();
+}
+
+void qpkg::cache::DirectoryCache::release_lock()
+{
+    m_mutex.unlock();
+}
+
 bool qpkg::cache::DirectoryCache::init()
 {
     LOG(core::INFO) << "Initializing cache directory: " << m_cacheDir << std::endl;
@@ -54,7 +64,6 @@ struct Record
 {
     uint8_t key[qpkg::cache::CacheKeySize];
     uint32_t timestamp;
-    uint16_t size;
 } __attribute__((packed));
 
 bool qpkg::cache::DirectoryCache::discover()
@@ -85,15 +94,15 @@ bool qpkg::cache::DirectoryCache::discover()
             CacheKey key;
             std::copy(std::begin(entry.key), std::end(entry.key), std::begin(key));
 
-            std::string value;
-            value.resize(entry.size);
-            if (record.readsome(value.data(), entry.size) != entry.size)
+            std::string filepath = m_cacheDir / "data" / keyToString(key);
+
+            if (!std::filesystem::exists(filepath))
             {
-                LOG(core::ERROR) << "Failed to read cache entry: " << keyToString(key) << std::endl;
+                LOG(core::ERROR) << "Cache corrupted. Unable to locate file: " << filepath << std::endl;
                 return false;
             }
 
-            m_cacheMap[key] = std::make_pair(value, std::chrono::system_clock::from_time_t(entry.timestamp));
+            m_cacheMap[key] = std::make_pair(filepath, std::chrono::system_clock::from_time_t(entry.timestamp));
             m_keys.insert(key);
         }
 
@@ -204,10 +213,29 @@ void qpkg::cache::DirectoryCache::storeb(const CacheKey &key, const std::vector<
     }
 }
 
+#include <iostream>
+
 void qpkg::cache::DirectoryCache::storef(const CacheKey &key, const std::string &filepath)
 {
-    m_cacheMap[key] = std::make_pair(filepath, std::chrono::system_clock::now());
-    m_keys.insert(key);
+    std::string cache_file = m_cacheDir / "data" / keyToString(key);
+
+    if (!std::filesystem::exists(filepath))
+    {
+        LOG(core::ERROR) << "File not found: " << filepath << std::endl;
+        throw std::runtime_error("File not found: " + filepath);
+    }
+
+    try
+    {
+        std::filesystem::copy_file(filepath, cache_file, std::filesystem::copy_options::overwrite_existing);
+        m_cacheMap[key] = std::make_pair(cache_file, std::chrono::system_clock::now());
+        m_keys.insert(key);
+    }
+    catch (const std::exception &e)
+    {
+        LOG(core::ERROR) << "Failed to store cache entry: " << keyToString(key) << std::endl;
+        throw std::runtime_error("Failed to store cache entry: " + keyToString(key));
+    }
 }
 
 void qpkg::cache::DirectoryCache::remove(const CacheKey &key)
@@ -274,11 +302,9 @@ void qpkg::cache::DirectoryCache::sync()
 
             Record entry;
             std::copy(std::begin(key), std::end(key), std::begin(entry.key));
-            entry.size = value.first.size();
             entry.timestamp = std::chrono::system_clock::to_time_t(value.second);
 
             record.write(reinterpret_cast<const char *>(&entry), sizeof(entry));
-            record.write(value.first.data(), value.first.size());
         }
 
         LOG(core::INFO) << "Synced " << m_cacheMap.size() << " cache entries" << std::endl;

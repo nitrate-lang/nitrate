@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
     std::string cmd = "cc -o " + options->output;
 
     for (const auto &obj : options->objects)
-        cmd += " " + obj;
+        cmd += " '" + obj + "'";
 
     for (const auto &lib : options->libraries)
         cmd += " -l" + lib;

@@ -12,6 +12,7 @@ enum class KeyName
     LICENSES,
     DEPENDS,
     SOURCES,
+    HEADERS,
     TARGET,
     CFLAGS,
     LFLAGS,
@@ -33,22 +34,10 @@ static std::unordered_map<std::string, KeyName> key_map = {
     {"licenses", KeyName::LICENSES},
     {"depends", KeyName::DEPENDS},
     {"sources", KeyName::SOURCES},
+    {"headers", KeyName::HEADERS},
     {"target", KeyName::TARGET},
     {"cflags", KeyName::CFLAGS},
     {"lflags", KeyName::LFLAGS},
-};
-
-static std::set<std::string> valid_keys = {
-    "name",
-    "version",
-    "description",
-    "authors",
-    "licenses",
-    "depends",
-    "sources",
-    "target",
-    "cflags",
-    "lflags",
 };
 
 static std::set<std::string> required_keys = {
@@ -140,7 +129,7 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config, const std::fil
 
     for (const auto &key : keys)
     {
-        if (!valid_keys.contains(key))
+        if (!key_map.contains(key))
         {
             LOG(core::ERROR) << "Invalid key in configuration: " << key << std::endl;
             return false;
@@ -232,6 +221,21 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config, const std::fil
                 if (!std::filesystem::exists(base / source))
                 {
                     LOG(core::ERROR) << "Source does not exist: " << source << std::endl;
+                    return false;
+                }
+            }
+            break;
+        case KeyName::HEADERS:
+            if (!config[key].is<std::vector<std::string>>())
+            {
+                LOG(core::ERROR) << "Invalid value type for key 'headers' in configuration" << std::endl;
+                return false;
+            }
+            for (const auto &source : config[key].as<std::vector<std::string>>())
+            {
+                if (!std::filesystem::exists(base / source) || !std::filesystem::is_directory(base / source))
+                {
+                    LOG(core::ERROR) << "Directory does not exist: " << source << std::endl;
                     return false;
                 }
             }

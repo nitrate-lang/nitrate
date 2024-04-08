@@ -311,7 +311,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *nod
             return nullptr;
     }
 
-    return m_ctx->m_builder->CreateCall(fn, args, "calltmp");
+    return m_ctx->m_builder->CreateCall(fn, args);
 }
 
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstUnaryExprNode *node) const

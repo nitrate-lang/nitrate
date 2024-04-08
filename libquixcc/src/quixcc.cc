@@ -661,6 +661,7 @@ static bool compile(quixcc_job_t *job)
     /// END: GENERATOR
     ///=========================================
 
+    fflush(job->m_out);
     return true;
 }
 

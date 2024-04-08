@@ -60,7 +60,8 @@ static void setup_argparse_build(ArgumentParser &parser)
     parser.add_argument("-j", "--jobs")
         .help("number of jobs to run simultaneously. 0 for auto")
         .default_value(0)
-        .nargs(1);
+        .nargs(1)
+        .scan<'u', uint32_t>();
 
     parser.add_argument("-v", "--verbose")
         .help("print verbose output")
@@ -465,7 +466,7 @@ static int run_build_mode(const ArgumentParser &parser)
         builder.disable_cache();
 
     if (parser.is_used("--jobs"))
-        builder.jobs(parser.get<int>("--jobs"));
+        builder.jobs(parser.get<uint32_t>("--jobs"));
 
     if (parser["--verbose"] == true)
         builder.verbose();

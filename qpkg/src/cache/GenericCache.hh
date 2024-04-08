@@ -15,13 +15,12 @@ namespace qpkg
         const size_t CacheKeySize = 16;
         typedef std::array<uint8_t, CacheKeySize> CacheKey;
 
-
         enum class Format
         {
             HEX,
             BASE64
         };
-        
+
         std::string keyToString(const CacheKey &key, Format format = Format::HEX);
 
         class CacheHasher
@@ -78,6 +77,9 @@ namespace qpkg
         public:
             virtual ~ICache() = default;
 
+            virtual void acquire_lock() = 0;
+            virtual void release_lock() = 0;
+
             /**
              * @brief Setup the cache instance
              *
@@ -97,7 +99,7 @@ namespace qpkg
 
             /**
              * @brief Get a set of all keys in the cache
-             * 
+             *
              * @return A set of all keys in the cache
              */
             virtual std::set<CacheKey> keys() = 0;
@@ -121,7 +123,7 @@ namespace qpkg
 
             /**
              * @brief Get last modified/created timestamp of the cache entry
-             * 
+             *
              * @param key The key to get the timestamp for
              * @return The last modified/created timestamp of the cache entry
              * @throws std::out_of_range if the key is not in the cache
@@ -185,7 +187,8 @@ namespace qpkg
     }
 }
 
-namespace std {
+namespace std
+{
     std::ostream &operator<<(std::ostream &os, const qpkg::cache::CacheKey &key);
 }
 

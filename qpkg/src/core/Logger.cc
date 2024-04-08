@@ -31,7 +31,8 @@
 #include <openssl/rand.h>
 #include <map>
 
-#define LOGGER_MASK_SRC 0
+#define LOGGER_MASK_SRC 1
+#define LOGGER_ECHO 0
 
 thread_local std::ostringstream qpkg::core::Logger::m_buffer;
 thread_local const char *qpkg::core::Logger::m_func = nullptr;
@@ -236,8 +237,10 @@ void qpkg::core::Logger::flush(std::ofstream &file)
 
     while (!m_queue.empty())
     {
-        /* Write log entry to stderr and log file */
+/* Write log entry to stderr and log file */
+#if LOGGER_ECHO == 1
         std::cerr << m_queue.front() << std::endl;
+#endif
         file << m_queue.front() << "\n";
 
         /* Pop log entry */
