@@ -24,6 +24,7 @@ using namespace libquixcc;
 
 std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {PARSER_EXPECTED_KEYWORD, "Parser failed because a keyword was expected, but the token {} was found"},
+    {PARSER_ILLEGAL_KEYWORD, "Parser failed because the keyword {} is not allowed in this context"},
     {PARSER_EXPECTED_LEFT_BRACE, "Parser failed because an open brace was expected, but the token {} was found"},
     {PARSER_EXPECTED_RIGHT_BRACE, "Parser failed because a close brace was expected, but the token {} was found"},
     {PARSER_EXPECTED_SEMICOLON, "Parser failed because a semicolon was expected, but the token {} was found"},
@@ -126,7 +127,7 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {TYPEDEF_INVALID_TYPE, "An error occurred while parsing the type of type '{}'. Syntax: type name = type;"},
     {TYPEDEF_EXPECTED_SEMICOLON, "Expected a semicolon after the type definition. To fix the issue, insert a semicolon after the type definition. Syntax: type name = type;"},
     {TYPEDEF_NAME_DUPLICATE, "Type name '{}' is already in use. To fix the issue, rename the type to something unique"},
-    
+
     {FOR_EXPECTED_SEMICOLON, "Expected a semicolon after the for loop condition. To fix the issue, insert a semicolon after the for loop condition"},
     {FOR_EXPECTED_CLOSING_PARANTHESIS, "Expected a closing parenthesis after the for loop condition. To fix the issue, insert a closing parenthesis after the for loop condition"},
 

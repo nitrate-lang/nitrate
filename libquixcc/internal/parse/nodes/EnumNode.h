@@ -60,19 +60,6 @@ namespace libquixcc
         TypeNode *m_member_type;
     };
 
-    class EnumDeclNode : public DeclNode
-    {
-    public:
-        EnumDeclNode() { ntype = NodeType::EnumDeclNode; }
-        EnumDeclNode(EnumTypeNode *type) : m_type(type) { ntype = NodeType::EnumDeclNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("EnumDeclNode is not codegenable"); }
-
-        EnumTypeNode *m_type;
-    };
-
     class EnumFieldNode : public ParseNode
     {
     public:
@@ -82,7 +69,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { throw CodegenException("EnumDeclNode is not codegenable"); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { throw CodegenException("EnumFieldNode is not codegenable"); }
 
         std::string m_name;
         std::shared_ptr<ConstExprNode> m_value;
@@ -92,15 +79,15 @@ namespace libquixcc
     {
     public:
         EnumDefNode() { ntype = NodeType::EnumDefNode; }
-        EnumDefNode(std::shared_ptr<EnumDeclNode> decl, bool scoped, const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {}) : m_decl(decl), m_fields(fields), m_scoped(scoped) { ntype = NodeType::EnumDefNode; }
+        EnumDefNode(EnumTypeNode* type, bool scoped, const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {}) : m_type(type), m_fields(fields), m_scoped(scoped) { ntype = NodeType::EnumDefNode; }
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("EnumDeclNode is not codegenable"); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("EnumDefNode is not codegenable"); }
 
-        virtual TypeNode *get_type() const { return m_decl->m_type; }
+        virtual TypeNode *get_type() const { return m_type; }
 
-        std::shared_ptr<EnumDeclNode> m_decl;
+        EnumTypeNode *m_type;
         std::vector<std::shared_ptr<EnumFieldNode>> m_fields;
         bool m_scoped = false;
     };

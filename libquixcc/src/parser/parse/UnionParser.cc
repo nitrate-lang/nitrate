@@ -72,13 +72,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     std::string name = std::get<std::string>(tok.val());
 
     tok = scanner->next();
-    if (tok.is<Punctor>(Punctor::Semicolon))
-    {
-        node = std::make_shared<UnionDeclNode>();
-        std::static_pointer_cast<UnionDeclNode>(node)->m_name = name;
-        return true;
-    }
-    else if (!tok.is<Punctor>(Punctor::OpenBrace))
+    if (!tok.is<Punctor>(Punctor::OpenBrace))
     {
         LOG(ERROR) << feedback[UNION_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
         return false;

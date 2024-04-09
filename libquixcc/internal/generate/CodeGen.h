@@ -82,9 +82,6 @@ namespace libquixcc
         llvm::Constant *visit(const NullLiteralNode *node) const;
         llvm::Value *visit(const VarDeclNode *node) const;
         llvm::Value *visit(const LetDeclNode *node) const;
-        llvm::Value *visit(const StructDeclNode *node) const;
-        llvm::Value *visit(const UnionDeclNode *node) const;
-        llvm::Value *visit(const EnumDeclNode *node) const;
         llvm::Function *visit(const FunctionDeclNode *node) const;
         llvm::Value *visit(const StructDefNode *node) const;
         llvm::Value *visit(const UnionDefNode *node) const;

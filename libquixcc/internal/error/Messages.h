@@ -30,6 +30,7 @@ namespace libquixcc
     enum Msg
     {
         PARSER_EXPECTED_KEYWORD,
+        PARSER_ILLEGAL_KEYWORD,
         PARSER_EXPECTED_LEFT_BRACE,
         PARSER_EXPECTED_RIGHT_BRACE,
         PARSER_EXPECTED_SEMICOLON,

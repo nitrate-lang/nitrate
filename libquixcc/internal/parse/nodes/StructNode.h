@@ -72,20 +72,6 @@ namespace libquixcc
         std::vector<TypeNode *> m_fields;
     };
 
-    class StructDeclNode : public DeclNode
-    {
-    public:
-        StructDeclNode() { ntype = NodeType::StructDeclNode; }
-        StructDeclNode(const std::string &name) : m_name(name) { ntype = NodeType::StructDeclNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
-
-        std::string m_name;
-    };
-
     class StructFieldNode : public ParseNode
     {
     public:

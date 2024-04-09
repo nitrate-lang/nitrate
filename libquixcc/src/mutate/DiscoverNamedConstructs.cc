@@ -39,9 +39,6 @@ static std::string ConstructName(const std::string &prefix, const std::string &n
 static std::map<libquixcc::NodeType, libquixcc::Msg> error_message_index = {
     {NodeType::VarDeclNode, VAR_NAME_DUPLICATE},
     {NodeType::LetDeclNode, LET_NAME_DUPLICATE},
-    {NodeType::StructDeclNode, STRUCT_NAME_DUPLICATE},
-    {NodeType::UnionDeclNode, UNION_NAME_DUPLICATE},
-    {NodeType::EnumDeclNode, ENUM_NAME_DUPLICATE},
     {NodeType::FunctionDeclNode, FUNC_NAME_DUPLICATE},
     {NodeType::StructDefNode, STRUCT_NAME_DUPLICATE},
     {NodeType::StructFieldNode, STRUCT_FIELD_DUPLICATE},
@@ -91,7 +88,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::UnionFieldNode>(*node)->m_name);
                 break;
             case NodeType::EnumDefNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::EnumDefNode>(*node)->m_decl->m_type->m_name);
+                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::EnumDefNode>(*node)->m_type->m_name);
                 is_type = true;
                 break;
             case NodeType::EnumFieldNode:

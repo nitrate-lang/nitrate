@@ -117,6 +117,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
                 return false;
             break;
         case Keyword::Pub:
+        case Keyword::Import: // they both declare external functions
             if (!parse_pub(job, scanner, node))
                 return false;
             break;
@@ -149,7 +150,8 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
                 return false;
             break;
         default:
-            break;
+            LOG(ERROR) << feedback[PARSER_ILLEGAL_KEYWORD] << tok.serialize() << tok << std::endl;
+            return false;
         }
 
         if (node)

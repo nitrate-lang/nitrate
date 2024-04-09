@@ -677,21 +677,6 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::LetDeclNode *node
     return gvar;
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StructDeclNode *node) const
-{
-    return nullptr;
-}
-
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnionDeclNode *node) const
-{
-    return nullptr;
-}
-
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::EnumDeclNode *node) const
-{
-    return nullptr;
-}
-
 llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNode *node) const
 {
     std::vector<llvm::Type *> params;

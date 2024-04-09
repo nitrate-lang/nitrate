@@ -89,9 +89,6 @@ namespace libquixcc
         size_t visit(TypedefNode *node);
         size_t visit(VarDeclNode *node);
         size_t visit(LetDeclNode *node);
-        size_t visit(StructDeclNode *node);
-        size_t visit(UnionDeclNode *node);
-        size_t visit(EnumDeclNode *node);
         size_t visit(FunctionDeclNode *node);
         size_t visit(StructDefNode *node);
         size_t visit(StructFieldNode *node);

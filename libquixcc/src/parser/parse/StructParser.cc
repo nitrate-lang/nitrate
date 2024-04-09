@@ -95,12 +95,7 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     std::string name = std::get<std::string>(tok.val());
 
     tok = scanner->next();
-    if (tok.is<Punctor>(Punctor::Semicolon))
-    {
-        node = std::make_shared<StructDeclNode>(name);
-        return true;
-    }
-    else if (!tok.is<Punctor>(Punctor::OpenBrace))
+    if (!tok.is<Punctor>(Punctor::OpenBrace))
     {
         LOG(ERROR) << feedback[STRUCT_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
         return false;

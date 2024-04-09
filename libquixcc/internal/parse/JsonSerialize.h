@@ -79,9 +79,6 @@ namespace libquixcc
         std::string visit(const TypedefNode *node) const;
         std::string visit(const VarDeclNode *node) const;
         std::string visit(const LetDeclNode *node) const;
-        std::string visit(const StructDeclNode *node) const;
-        std::string visit(const UnionDeclNode *node) const;
-        std::string visit(const EnumDeclNode *node) const;
         std::string visit(const FunctionDeclNode *node) const;
         std::string visit(const StructDefNode *node) const;
         std::string visit(const StructFieldNode *node) const;

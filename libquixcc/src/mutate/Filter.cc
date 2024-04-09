@@ -38,15 +38,6 @@ static void filter_tree(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode>
             case NodeType::TypedefNode:
                 *node = std::make_shared<NopStmtNode>();
                 break;
-            case NodeType::StructDeclNode:
-                *node = std::make_shared<NopStmtNode>();
-                break;
-            case NodeType::UnionDeclNode:
-                *node = std::make_shared<NopStmtNode>();
-                break;
-            case NodeType::EnumDeclNode:
-                *node = std::make_shared<NopStmtNode>();
-                break;
             case NodeType::EnumDefNode:
                 *node = std::make_shared<NopStmtNode>();
                 break;

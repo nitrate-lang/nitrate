@@ -344,22 +344,6 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::LetDeclNode *node)
     return count + 1;
 }
 
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StructDeclNode *node)
-{
-    return 1;
-}
-
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::UnionDeclNode *node)
-{
-    return 1;
-}
-
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::EnumDeclNode *node)
-{
-    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type));
-    return node->m_type->dfs_preorder(*this) + 1;
-}
-
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::FunctionDeclNode *node)
 {
     size_t count = 0;
@@ -438,10 +422,10 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::EnumDefNode *node)
 {
     std::string old_prefix = m_prefix;
     if (node->m_scoped)
-        push_prefix(node->m_decl->m_type->m_name);
+        push_prefix(node->m_type->m_name);
 
-    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_decl));
-    size_t count = node->m_decl->dfs_preorder(*this);
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type));
+    size_t count = node->m_type->dfs_preorder(*this);
     for (auto &field : node->m_fields)
     {
         m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&field));

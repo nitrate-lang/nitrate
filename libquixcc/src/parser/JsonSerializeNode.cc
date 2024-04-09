@@ -451,21 +451,6 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Le
     return str + "}";
 }
 
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StructDeclNode *node) const
-{
-    return "{\"ntype\":\"StructDeclNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UnionDeclNode *node) const
-{
-    return "{\"ntype\":\"UnionDeclNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::EnumDeclNode *node) const
-{
-    return "{\"ntype\":\"EnumDeclNode\",\"type\":" + node->m_type->to_json(*this) + "}";
-}
-
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::FunctionDeclNode *node) const
 {
     std::string str = "{\"ntype\":\"FunctionDeclNode\",\"name\":\"";
@@ -554,7 +539,7 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Un
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::EnumDefNode *node) const
 {
     std::string str = "{\"ntype\":\"EnumDefNode\",\"type\":";
-    str += node->m_decl->m_type->to_json(*this);
+    str += node->m_type->to_json(*this);
     str += ",\"fields\":[";
     for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it)
     {

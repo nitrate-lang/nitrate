@@ -85,9 +85,6 @@ namespace libquixcc
         VarDeclNode,
         LetDeclNode,
 
-        StructDeclNode,
-        UnionDeclNode,
-        EnumDeclNode,
         FunctionDeclNode,
 
         StructDefNode,
@@ -158,9 +155,6 @@ namespace libquixcc
     class TypedefNode;
     class VarDeclNode;
     class LetDeclNode;
-    class StructDeclNode;
-    class UnionDeclNode;
-    class EnumDeclNode;
     class FunctionDeclNode;
     class StructDefNode;
     class StructFieldNode;
