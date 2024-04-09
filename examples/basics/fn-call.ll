@@ -28,13 +28,13 @@ end:                                              ; preds = %entry
 define i8 @main(i32 %argc) {
 entry:
   %ret = alloca i8, align 1
-  %calltmp = call i8 @_ZJ0f11CallMeFirst7f1c1c1p1p(i8 10)
-  %calltmp1 = call i8 @_ZJ0f12CallMeSecond7f1c1c1p1p(i8 %calltmp)
-  %0 = add i8 60, %calltmp1
-  store i8 %0, i8* %ret, align 1
+  %0 = call i8 @_ZJ0f11CallMeFirst7f1c1c1p1p(i8 10)
+  %1 = call i8 @_ZJ0f12CallMeSecond7f1c1c1p1p(i8 %0)
+  %2 = add i8 60, %1
+  store i8 %2, i8* %ret, align 1
   br label %end
 
 end:                                              ; preds = %entry
-  %1 = load i8, i8* %ret, align 1
-  ret i8 %1
+  %3 = load i8, i8* %ret, align 1
+  ret i8 %3
 }
