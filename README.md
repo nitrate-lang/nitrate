@@ -31,11 +31,11 @@ To build the Quix compiler from source, follow these steps:
 1. **Install Dependencies**: Make sure you have all necessary dependencies installed on your system.
 2. **Clone the Repository**: Clone the Quix compiler repository from GitHub using the following command:
    ```
-   git clone https://github.com/Kracken256/quixcc
+   git clone https://github.com/Kracken256/quix
    ```
 3. **Navigate to the Repository**: Change your current directory to the cloned repository directory:
    ```
-   cd quixcc
+   cd quix
    ```
 4. **Build the Compiler**: Build the Quix compiler by running the `build.py` script:
 5. **Verify Installation**: After the build process completes successfully, verify that the compiler executable is generated.
@@ -51,9 +51,9 @@ Contributions to the Quix compiler are welcome! If you'd like to contribute, ple
 
 ## License
 
-The Quix compiler is propietary software. All rights reserved. For more information, see the [LICENSE.md](LICENSE.md) file.
+The Quix compiler is free software released under the GNU Lesser General Public License 2.1 (LGPL 2.1). See the `LICENSE` file for more information.
 
 ---
 
 **Author**: Wesley Jones  
-**Date**: 2024-03-05
+**Date**: 2024-04-09
