@@ -9,7 +9,7 @@ nav_order: 5
 Type System
 ---
 
-J is a statically-typed language. J requires EVERYTHING to have an explicit type (no type inference). J has a rich type system that includes the following types:
+QUIX is a statically-typed language. QUIX requires EVERYTHING to have an explicit type (no type inference). QUIX has a rich type system that includes the following types:
 
 - [Primitives](#primitive-types)
 - [Composites](#composite-types)
@@ -20,7 +20,7 @@ J is a statically-typed language. J requires EVERYTHING to have an explicit type
 - [Optional](#optional-types)
 
 ### Primitive Types
-Primitive types are the basic building blocks of J. They are the simplest types and cannot be broken down further. Some of the primitive types in J include:
+Primitive types are the basic building blocks of J. They are the simplest types and cannot be broken down further. Some of the primitive types in QUIX include:
 - 8, 16, 32, 64, 128, 256-bit signed and unsigned integers
 - 32, 64, 128, 256-bit floating point numbers
 - `bool` (true or false)
@@ -141,8 +141,8 @@ fn hello(): void {
 }
 ```
 
-## J Default Serialization V1
-J has a standard type serialization format that can be used to serialize types to a string and deserialize types from a string. The serialization format is as follows:
+## QUIX Default Serialization V1
+QUIX has a standard type serialization format that can be used to serialize types to a string and deserialize types from a string. The serialization format is as follows:
 1. Get human-readable type name
 1. Reduce type name by removing all whitespace
 1. Base58 encode the above string with the following alphabet: `123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz`

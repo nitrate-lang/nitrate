@@ -10,7 +10,6 @@ Documentation starts here
 ---
 
 1. [Source File Encoding](/docs/source-file-encoding)
-1. [Naming Conventions](/docs/naming-conventions)
 1. [Lexical Structure](/docs/lexical-structure)
 1. [Comments](/docs/comments)
 1. [Type System](/docs/type-system)
@@ -85,12 +84,6 @@ Documentation starts here
     1. [Function Calls](/docs/function-calls)
     1. [Type Conversions](/docs/type-conversions)
     1. [Precedence and Associativity](/docs/precedence-associativity)
-1. [Modules](/docs/modules)
-    1. [Importing](/docs/importing)
-    1. [Exporting](/docs/exporting)
-    1. [Renaming](/docs/renaming)
-    1. [Stripping](/docs/stripping)
-    1. [Metadata](/docs/metadata)
 1. [Packages](/docs/packages)
     1. [Package Structure](/docs/package-structure)
     1. [Package Metadata](/docs/package-metadata)

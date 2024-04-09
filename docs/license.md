@@ -7,7 +7,7 @@ permalink: /license/
 License
 ---
 
-The J Programming Language © 2024 by Wesley C. Jones is licensed under Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0).
+The QUIX Programming Language © 2024 by Wesley C. Jones is licensed under Attribution-NoDerivatives 4.0 International (CC BY-ND 4.0).
 
 Legal Code
 ---

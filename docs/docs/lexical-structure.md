@@ -56,29 +56,19 @@ This table contains the types of tokens that are used in J:
 | subsystem | keyword | Create an annotated namespace |
 | import | keyword | Import modules |
 | export | keyword | Export items |
+| type | keyword | Alias a type name |
 | let | keyword | Declare variable on the stack |
 | var | keyword | Declare a variable on the heap |
-| struct | keyword | Define or declare a structure |
-| region | keyword | Define or declare a packed structure |
-| union | keyword | Define or declare a union |
-| packet | keyword | Define or declare a packed union |
-| fn | keyword | Define or declare a function |
-| typedef | keyword | Alias a type name |
 | const | keyword | Declare a constant |
-| static | keyword | Create a region of shared memory (like in C) |
-| volatile | keyword | Define a block optimization-excempt code |
+| struct | keyword | Define or declare a structure |
+| union | keyword | Define or declare a union |
+| fn | keyword | Define or declare a function |
+| nothrow | keyword | Declare a function that does not throw exceptions |
+| foreign | keyword | Declare a foreign function |
+| impure | keyword | Declare a function that has side effects |
+| tsafe | keyword | Declare a function that is thread safe |
 | enum | keyword | Define or declare an enum |
-| class | keyword | Define or declare a class |
-| bundle | keyword | Define or declare a packed class |
-| public | keyword | Set visibility to public |
-| private | keyword | Set visibility to private |
-| protected | keyword | Set visibility to protected |
-| override | keyword | Override an inherited method |
-| virtual | keyword | Declare a virtual method |
-| abstract | keyword | Define or declare an abstract class |
-| friend | keyword | Mark class as a friend |
-| interface | keyword | Define or declare an interface |
-| delete | keyword | Delete construct |
+| pub | keyword | Set visibility to public |
 | if | keyword | Create an if statement |
 | else | keyword | Create an else statement |
 | for | keyword | Create a for loop |
@@ -91,32 +81,23 @@ This table contains the types of tokens that are used in J:
 | continue | keyword | Jump to next iteration |
 | return | keyword | Return from function |
 | retif | keyword | Return from function if an expression evaluates to true |
-| abortif | keyword | Abort function if an expression evaluates to true |
-| retz | keyword | Return if an expression evaluates to 0 |
+| retz | keyword | Return from function if an expression evaluates to false |
+| retv | keyword | Return void from function if an expression evaluates to true |
 | void | keyword | Absence of value (like in C) |
-| null | type | Null Object |
-| true | type | True |
-| false | type | False |
+| undef | keyword | Undefined value |
+| null | keyword | Null Object |
+| true | keyword | True |
+| false | keyword | False |
 | u8 | type | Unsigned 8-bit integer |
 | u16 | type | Unsigned 16-bit integer |
 | u32 | type | Unsigned 32-bit integer |
 | u64 | type | Unsigned 64-bit integer |
-| u128 | type | Unsigned 128-bit integer |
-| u256 | type | Unsigned 256-bit integer |
 | i8 | type | Signed 8-bit integer |
 | i16 | type | Signed 16-bit integer |
 | i32 | type | Signed 32-bit integer |
 | i64 | type | Signed 64-bit integer |
-| i128 | type | Signed 128-bit integer |
-| i256 | type | Signed 256-bit integer |
 | f32 | type | Signed 32-bit floating point |
 | f64 | type | Signed 64-bit floating point |
-| f128 | type | Signed 128-bit floating point |
-| f256 | type | Signed 256-bit floating point |
-| char | type | Can store any UTF-8 character |
-| real | type | Arbitrary precision floating point |
-| unsafe_ptr | type | Can store any non-executable memory address |
-| unsafe_exec_ptr | type | Can store any memory address |
 | buildconf | reserved | Reserved |
 | cti | reserved | Reserved |
 | j_* | reserved | Reserved |
