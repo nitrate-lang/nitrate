@@ -10,7 +10,7 @@ has_children: true
 
 In the QUIX programming language, composite types play a crucial role in organizing and managing data effectively. These types offer diverse features tailored to different programming scenarios, providing developers with flexibility and efficiency. Let's delve deeper into each of the QUIX composite types:
 
-- [**Struct:**](docs/composites/struct) Structs in QUIX maintain the order of their members, similar to structures in C-like languages. They provide a straightforward way to group related data elements into a single unit. While member order is preserved, QUIX allows for the insertion of padding between members for memory alignment purposes, optimizing memory usage and access efficiency.
+- [**Struct:**](struct) Structs in QUIX maintain the order of their members, similar to structures in C-like languages. They provide a straightforward way to group related data elements into a single unit. While member order is preserved, QUIX allows for the insertion of padding between members for memory alignment purposes, optimizing memory usage and access efficiency.
 
     A struct definition in QUIX follows the syntax:
 
@@ -32,7 +32,7 @@ In the QUIX programming language, composite types play a crucial role in organiz
     1. Use the `bitcount()` function to determine the size of a struct in **bits** taking into account bitfields.
 
 
-- [**Group:**](docs/composites/group) QUIX groups offer a more optimized approach compared to structs. Unlike structs, member order is not preserved in groups, allowing the compiler to optimize the layout for better memory utilization. Padding may or may not be inserted between members to align data properly. Despite potential variations in memory layout, QUIX guarantees ABI correctness at link time through mangled symbols, ensuring compatibility across different modules.
+- [**Group:**](group) QUIX groups offer a more optimized approach compared to structs. Unlike structs, member order is not preserved in groups, allowing the compiler to optimize the layout for better memory utilization. Padding may or may not be inserted between members to align data properly. Despite potential variations in memory layout, QUIX guarantees ABI correctness at link time through mangled symbols, ensuring compatibility across different modules.
 
     ```quix
     group MyGroup {
@@ -52,11 +52,11 @@ In the QUIX programming language, composite types play a crucial role in organiz
     1. Use the `bitcount()` function to determine the size of a group in **bits** taking into account bitfields.
 
 
-- [**Class:**](docs/composites/class) Drawing inspiration from C++ classes, QUIX classes provide a versatile tool for object-oriented programming. In addition to data storage capabilities similar to structs and groups, classes in QUIX can encapsulate methods, constructors, and destructors. This versatility enables developers to create complex data structures and implement sophisticated behavior within their programs.
+- [**Class:**](class) Drawing inspiration from C++ classes, QUIX classes provide a versatile tool for object-oriented programming. In addition to data storage capabilities similar to structs and groups, classes in QUIX can encapsulate methods, constructors, and destructors. This versatility enables developers to create complex data structures and implement sophisticated behavior within their programs.
 
     **docs coming soon**
 
-- [**Region:**](docs/composites/region) Regions in QUIX represent contiguous binary packed structures with precise control over memory layout. These structures have no padding inserted between members, and member order is preserved exactly as defined by the programmer. This feature ensures that what you define is precisely what you get in memory, making regions ideal for scenarios where memory layout precision is crucial. When combined with Bitfields, regions excel in implementing binary packet protocols, offering efficient memory usage and streamlined data transmission.
+- [**Region:**](region) Regions in QUIX represent contiguous binary packed structures with precise control over memory layout. These structures have no padding inserted between members, and member order is preserved exactly as defined by the programmer. This feature ensures that what you define is precisely what you get in memory, making regions ideal for scenarios where memory layout precision is crucial. When combined with Bitfields, regions excel in implementing binary packet protocols, offering efficient memory usage and streamlined data transmission.
 
     ```quix
     region MyRegion {
@@ -75,7 +75,7 @@ In the QUIX programming language, composite types play a crucial role in organiz
     1. Although the `sizeof` operator is defined for regions, it is not recommended to use it. The size of a region is not guaranteed to be a multiple of 8 bits, making it unsuitable for some calculations. Use the `bitcount()` function to determine the size of a region in **bits** taking into account bitfields. Of course, the size of a region in memory will be a multiple of 8 bits, but QUIX enables more precise control giving the abstraction that the minimum unit of memory is the bit.
     1. Use the `bitcount()` function to determine the size of a group in **bits** taking into account bitfields.
 
-- [**Union:**](docs/composites/union) QUIX unions provide a low-level construct for managing overlapping memory regions, akin to C unions. In unions, different data members share the same memory space, allowing for efficient memory utilization. However, QUIX unions lack type safety and member selection mechanisms, requiring careful handling to prevent unintended memory overlaps and ensure data integrity. Despite their low-level nature, unions offer valuable flexibility for scenarios where memory optimization is paramount.
+- [**Union:**](union) QUIX unions provide a low-level construct for managing overlapping memory regions, akin to C unions. In unions, different data members share the same memory space, allowing for efficient memory utilization. However, QUIX unions lack type safety and member selection mechanisms, requiring careful handling to prevent unintended memory overlaps and ensure data integrity. Despite their low-level nature, unions offer valuable flexibility for scenarios where memory optimization is paramount.
 
     ```quix
     union MyUnion {
