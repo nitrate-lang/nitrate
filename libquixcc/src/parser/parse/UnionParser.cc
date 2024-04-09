@@ -51,7 +51,7 @@ static bool parse_union_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     }
 
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Semicolon))
+    if (!tok.is<Punctor>(Punctor::Comma))
     {
         LOG(ERROR) << feedback[UNION_FIELD_MISSING_PUNCTOR] << tok << std::endl;
         return false;
@@ -93,13 +93,6 @@ bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         if (!parse_union_field(job, scanner, field))
             return false;
         fields.push_back(field);
-    }
-
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Semicolon))
-    {
-        LOG(ERROR) << feedback[UNION_DEF_EXPECTED_SEMICOLON] << tok << std::endl;
-        return false;
     }
 
     auto sdef = std::make_shared<UnionDefNode>();

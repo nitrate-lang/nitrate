@@ -57,6 +57,9 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, expr))
                 return false;
 
+            if (!expr)
+                LOG(ERROR) << "Null expressions are illegal in ExprStmtNode." << tok << std::endl;
+
             tok = scanner->next();
             if (!tok.is<Punctor>(Punctor::Semicolon))
             {
