@@ -49,6 +49,10 @@
 #include <llvm/IR/LegacyPassManager.h>
 #include <stdlib.h>
 
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm/Transforms/IPO.h>
+
 static std::map<std::string, std::string> acceptable_objgen_flags = {
     {"-O0", "-O0"},
     {"-O1", "-O1"},
@@ -181,9 +185,39 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNod
     if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
         LOG(ERROR) << "LLVM Code generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
 
+    llvm::PassManagerBuilder builder;
     llvm::legacy::PassManager pass;
 
-    /// TODO: Add optimization levels
+    if (ctx.m_argset.contains("-O0"))
+    {
+        builder.OptLevel = 0;
+        builder.SizeLevel = 0;
+
+        builder.populateModulePassManager(pass);
+    }
+    else if (ctx.m_argset.contains("-Os"))
+    {
+        builder.SizeLevel = 1;
+        builder.populateModulePassManager(pass);
+    }
+    else if (ctx.m_argset.contains("-Oz"))
+    {
+        builder.SizeLevel = 2;
+        builder.populateModulePassManager(pass);
+    }
+    else
+    {
+        builder.Inliner = llvm::createFunctionInliningPass();
+
+        if (ctx.m_argset.contains("-O1"))
+            builder.OptLevel = 1;
+        else if (ctx.m_argset.contains("-O2"))
+            builder.OptLevel = 2;
+        else if (ctx.m_argset.contains("-O3"))
+            builder.OptLevel = 3;
+
+        builder.populateModulePassManager(pass);
+    }
 
     if (TargetMachine->addPassesToEmitFile(pass, os, nullptr, mode))
     {

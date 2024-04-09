@@ -4,11 +4,9 @@
 	.p2align	4, 0x90
 	.type	main,@function
 main:
-	.cfi_startproc
 	retq
 .Lfunc_end0:
 	.size	main, .Lfunc_end0-main
-	.cfi_endproc
 
 	.type	_ZJ0l4data54t10a5t1i1i2x820a13t5t1i1i5t1i1i3x1217a11p9t3p1b1i1i2x60,@object
 	.bss

@@ -4,9 +4,7 @@
 	.p2align	4, 0x90
 	.type	main,@function
 main:
-	.cfi_startproc
 	pushq	%rax
-	.cfi_def_cfa_offset 16
 	leaq	.L_fa37JncCHr(%rip), %rdi
 	xorl	%eax, %eax
 	callq	printf@PLT
@@ -17,14 +15,11 @@ main:
 	movl	$1000, %esi
 	xorl	%eax, %eax
 	callq	printf@PLT
-	movb	$0, 7(%rsp)
-	movb	7(%rsp), %al
+	xorl	%eax, %eax
 	popq	%rcx
-	.cfi_def_cfa_offset 8
 	retq
 .Lfunc_end0:
 	.size	main, .Lfunc_end0-main
-	.cfi_endproc
 
 	.type	.L_fa37JncCHr,@object
 	.data
