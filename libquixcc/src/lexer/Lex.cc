@@ -38,7 +38,6 @@ namespace libquixcc
     std::map<std::string, libquixcc::Keyword> keyword_map = {
         {"subsystem", libquixcc::Keyword::Subsystem},
         {"import", libquixcc::Keyword::Import},
-        {"export", libquixcc::Keyword::Export},
         {"type", libquixcc::Keyword::Type},
         {"let", libquixcc::Keyword::Let},
         {"var", libquixcc::Keyword::Var},
@@ -50,7 +49,6 @@ namespace libquixcc
         {"impure", libquixcc::Keyword::Impure},
         {"tsafe", libquixcc::Keyword::Tsafe},
         {"const", libquixcc::Keyword::Const},
-        {"static", libquixcc::Keyword::Static},
         {"enum", libquixcc::Keyword::Enum},
         {"pub", libquixcc::Keyword::Pub},
         {"if", libquixcc::Keyword::If},
@@ -76,7 +74,6 @@ namespace libquixcc
     std::map<libquixcc::Keyword, std::string> keyword_map_inverse = {
         {libquixcc::Keyword::Subsystem, "subsystem"},
         {libquixcc::Keyword::Import, "import"},
-        {libquixcc::Keyword::Export, "export"},
         {libquixcc::Keyword::Type, "type"},
         {libquixcc::Keyword::Let, "let"},
         {libquixcc::Keyword::Var, "var"},
@@ -88,7 +85,6 @@ namespace libquixcc
         {libquixcc::Keyword::Impure, "impure"},
         {libquixcc::Keyword::Tsafe, "tsafe"},
         {libquixcc::Keyword::Const, "const"},
-        {libquixcc::Keyword::Static, "static"},
         {libquixcc::Keyword::Enum, "enum"},
         {libquixcc::Keyword::Pub, "pub"},
         {libquixcc::Keyword::If, "if"},
@@ -982,7 +978,7 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
                     m_tok = Token(TokenType::MacroSingleLine, buffer, m_loc - buffer.size());
                     return m_tok.value();
                 }
-                else if (std::isalnum(c) || c == '_' || std::isspace(c) || c == '.')
+                else if (c != '(')
                 {
                     buffer += c;
                     continue;

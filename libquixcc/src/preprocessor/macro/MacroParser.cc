@@ -38,29 +38,43 @@ bool libquixcc::MacroParser::parse(const libquixcc::Token &macro, std::vector<li
         std::string directive;
         std::string parameter;
         size_t start = content.find('(');
-        if (start == std::string::npos)
+        if (start != std::string::npos)
         {
-            LOG(ERROR) << "Invalid macro directive: {}" << content << macro << std::endl;
+            size_t end = content.find(')', start);
+            if (end == std::string::npos)
+            {
+                LOG(ERROR) << "Invalid macro directive: {}" << content << macro << std::endl;
+                return false;
+            }
+
+            directive = trim(content.substr(0, start));
+            if (start + 1 < content.size())
+                parameter = content.substr(start + 1, end - start - 1);
+
+            if (!m_routines.contains(directive))
+                LOG(ERROR) << "Unknown macro directive: {}" << directive << macro << std::endl;
+
+            if (!m_routines.at(directive)(job, macro, directive, parameter, exp))
+                LOG(ERROR) << "Failed to process macro directive: {}" << directive << macro << std::endl;
+
+            return true;
+        }
+        else
+        {
+            for (auto &routine : m_routines)
+            {
+                if (content.starts_with(routine.first))
+                {
+                    if (!routine.second(job, macro, routine.first, content.substr(routine.first.size()), exp))
+                        LOG(ERROR) << "Failed to process macro directive: {}" << routine.first << macro << std::endl;
+
+                    return true;
+                }
+            }
+
+            LOG(ERROR) << "Unknown macro directive: {}" << content << macro << std::endl;
             return false;
         }
-        size_t end = content.find(')', start);
-        if (end == std::string::npos)
-        {
-            LOG(ERROR) << "Invalid macro directive: {}" << content << macro << std::endl;
-            return false;
-        }
-
-        directive = trim(content.substr(0, start));
-        if (start + 1 < content.size())
-            parameter = content.substr(start + 1, end - start - 1);
-
-        if (!m_routines.contains(directive))
-            LOG(ERROR) << "Unknown macro directive: {}" << directive << macro << std::endl;
-
-        if (!m_routines.at(directive)(job, macro, directive, parameter, exp))
-            LOG(ERROR) << "Failed to process macro directive: {}" << directive << macro << std::endl;
-
-        return true;
     }
     else if (macro.type() == TokenType::MacroBlock)
     {

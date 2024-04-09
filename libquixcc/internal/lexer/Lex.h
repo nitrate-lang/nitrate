@@ -42,10 +42,9 @@ namespace libquixcc
 
     typedef std::pair<const char *, int> KWPair;
 
-    constexpr std::array<KWPair, 36> keywords = {
+    constexpr std::array<KWPair, 34> keywords = {
         KWPair("subsystem", 9),
         KWPair("import", 6),
-        KWPair("export", 6),
         KWPair("type", 4),
         KWPair("let", 3),
         KWPair("var", 3),
@@ -57,7 +56,6 @@ namespace libquixcc
         KWPair("impure", 6),
         KWPair("tsafe", 5),
         KWPair("const", 5),
-        KWPair("static", 6),
         KWPair("enum", 4),
         KWPair("pub", 3),
         KWPair("if", 2),
@@ -149,7 +147,7 @@ namespace libquixcc
         void push(Token tok) override;
     };
 
-    class StringLexer : StreamLexer
+    class StringLexer : public StreamLexer
     {
     private:
         std::string m_src;

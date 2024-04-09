@@ -305,7 +305,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
     for (const auto &header : m_config["headers"].as<std::vector<std::string>>())
         builder.add_include((base / header).string());
 
-    builder.add_include(build_dir.string());
+    builder.add_include(base.string());
     builder.add_source(file.string());
     builder.opt("-c");
     for (const auto &flag : m_config["cflags"].as<std::vector<std::string>>())

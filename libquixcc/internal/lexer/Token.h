@@ -33,7 +33,6 @@ namespace libquixcc
     {
         Subsystem,
         Import,
-        Export,
         Type,
         Let,
         Var,
@@ -45,7 +44,6 @@ namespace libquixcc
         Foreign,
         Impure,
         Tsafe,
-        Static,
         Enum,
         Pub,
         If,

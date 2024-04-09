@@ -128,9 +128,12 @@ bool libquixcc::PrepEngine::get_static(const std::string &name, std::string &val
     return true;
 }
 
-bool libquixcc::PrepEngine::handle_import()
+bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok)
 {
-    Token tok = m_stack.top().lexer.next();
+    StringLexer lexer;
+    assert(lexer.set_source(std::get<std::string>(input_tok.val()).substr(6), "import"));
+
+    Token tok = lexer.next();
     if (tok.type() != TokenType::Identifier)
     {
         LOG(ERROR) << "Expected identifier after import" << tok << std::endl;
@@ -139,12 +142,12 @@ bool libquixcc::PrepEngine::handle_import()
 
     std::string filename = std::regex_replace(std::get<std::string>(tok.val()), std::regex("::"), "/");
 
-    tok = m_stack.top().lexer.peek();
+    tok = lexer.peek();
     if (tok.is<Punctor>(Punctor::OpenParen))
     {
         // <name>(version)
-        m_stack.top().lexer.next();
-        tok = m_stack.top().lexer.next();
+        lexer.next();
+        tok = lexer.next();
         if (tok.type() == TokenType::Identifier)
         {
             filename = filename + "/" + std::get<std::string>(tok.val()) + QUIX_HEADER_EXTENSION;
@@ -159,7 +162,7 @@ bool libquixcc::PrepEngine::handle_import()
             return false;
         }
 
-        tok = m_stack.top().lexer.next();
+        tok = lexer.next();
         if (!tok.is<Punctor>(Punctor::CloseParen))
         {
             LOG(ERROR) << "Expected closing parenthesis after import" << tok << std::endl;
@@ -173,7 +176,7 @@ bool libquixcc::PrepEngine::handle_import()
 
     LOG(DEBUG) << "Requested import of file: " << filename << std::endl;
 
-    tok = m_stack.top().lexer.next();
+    tok = lexer.next();
     if (!tok.is<Punctor>(Punctor::Semicolon))
     {
         LOG(ERROR) << "Expected semicolon after import" << tok << std::endl;
@@ -239,8 +242,6 @@ bool libquixcc::PrepEngine::handle_import()
     return true;
 }
 
-#include <iostream>
-
 bool libquixcc::PrepEngine::handle_macro(const libquixcc::Token &tok)
 {
     std::vector<libquixcc::Token> expanded;
@@ -287,15 +288,18 @@ libquixcc::Token libquixcc::PrepEngine::read_token()
 
         tok = m_stack.top().lexer.next();
 
-        if (tok.is<Keyword>(Keyword::Import))
+        if (tok.type() == TokenType::MacroSingleLine || tok.type() == TokenType::MacroBlock)
         {
-            if (!handle_import())
-                LOG(ERROR) << "Failed to handle import" << tok << std::endl;
+            if (std::get<std::string>(tok.val()).starts_with("import"))
+            {
+                if (!handle_import(tok))
+                {
+                    LOG(ERROR) << "Failed to process import" << tok << std::endl;
+                    continue;
+                }
+                continue;
+            }
 
-            continue;
-        }
-        else if (tok.type() == TokenType::MacroSingleLine || tok.type() == TokenType::MacroBlock)
-        {
             if (!handle_macro(tok))
                 LOG(ERROR) << "Failed to process macro" << tok << std::endl;
 

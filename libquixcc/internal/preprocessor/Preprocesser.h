@@ -63,8 +63,8 @@ namespace libquixcc
 
         Token read_token();
 
-        bool handle_import();
         bool handle_macro(const Token &tok);
+        bool handle_import(const Token &tok);
 
         Entry build_statics_decl();
 

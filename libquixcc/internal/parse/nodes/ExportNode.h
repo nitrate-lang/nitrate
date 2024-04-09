@@ -45,6 +45,8 @@ namespace libquixcc
         std::vector<std::shared_ptr<libquixcc::StmtNode>> m_stmts;
         ExportLangType m_lang_type;
     };
+
+    typedef ExportNode ExternalImportNode;
 }
 
 #endif // __QUIXCC_PARSE_NODES_EXPORTED_H__
