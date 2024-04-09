@@ -136,6 +136,22 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Bl
     return str + "]}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StmtGroupNode *node) const
+{
+    std::string str;
+
+    for (auto it = node->m_stmts.begin(); it != node->m_stmts.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_stmts.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    return str;
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UnaryExprNode *node) const
 {
     std::string str = "{\"ntype\":\"UnaryExprNode\",\"op\":\"";

@@ -91,6 +91,17 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::BlockNode *node)
     return count + 1;
 }
 
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StmtGroupNode *node)
+{
+    size_t count = 0;
+    for (auto &stmt : node->m_stmts)
+    {
+        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&stmt));
+        count += stmt->dfs_preorder(*this);
+    }
+    return count + 1;
+}
+
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::UnaryExprNode *node)
 {
     m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_expr));

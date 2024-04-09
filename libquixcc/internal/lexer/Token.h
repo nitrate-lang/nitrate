@@ -38,6 +38,7 @@ namespace libquixcc
         Var,
         Const,
         Struct,
+        Group,
         Union,
         Fn,
         Nothrow,

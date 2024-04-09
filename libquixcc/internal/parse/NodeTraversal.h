@@ -53,6 +53,7 @@ namespace libquixcc
         size_t visit(DeclNode *node);
         size_t visit(DefNode *node);
         size_t visit(BlockNode *node);
+        size_t visit(StmtGroupNode *node);
         size_t visit(UnaryExprNode *node);
         size_t visit(BinaryExprNode *node);
         size_t visit(CallExprNode *node);

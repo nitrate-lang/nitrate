@@ -40,6 +40,7 @@ namespace libquixcc
         DeclNode,
         DefNode,
         BlockNode,
+        StmtGroupNode,
 
         ConstUnaryExprNode,
         ConstBinaryExprNode,
@@ -67,6 +68,7 @@ namespace libquixcc
 
         EnumTypeNode,
         StructTypeNode,
+        GroupTypeNode,
         UnionTypeNode,
         ArrayTypeNode,
         FunctionTypeNode,
@@ -89,6 +91,8 @@ namespace libquixcc
 
         StructDefNode,
         StructFieldNode,
+        GroupDefNode,
+        GroupFieldNode,
         UnionDefNode,
         UnionFieldNode,
         EnumDefNode,
@@ -119,6 +123,7 @@ namespace libquixcc
     class DeclNode;
     class DefNode;
     class BlockNode;
+    class StmtGroupNode;
     class UnaryExprNode;
     class BinaryExprNode;
     class CallExprNode;
@@ -141,6 +146,7 @@ namespace libquixcc
     class StringTypeNode;
     class EnumTypeNode;
     class StructTypeNode;
+    class GroupTypeNode;
     class UnionTypeNode;
     class ArrayTypeNode;
     class FunctionTypeNode;
@@ -158,6 +164,8 @@ namespace libquixcc
     class FunctionDeclNode;
     class StructDefNode;
     class StructFieldNode;
+    class GroupDefNode;
+    class GroupFieldNode;
     class UnionDefNode;
     class UnionFieldNode;
     class EnumDefNode;

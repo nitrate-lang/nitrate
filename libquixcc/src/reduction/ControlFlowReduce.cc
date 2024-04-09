@@ -16,37 +16,41 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_EXPORTED_H__
-#define __QUIXCC_PARSE_NODES_EXPORTED_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parse/nodes/ControlFlow.h>
 
-#include <string>
-#include <vector>
-#include <memory>
-
-#include <llvm/LLVMWrapper.h>
-#include <parse/nodes/BasicNodes.h>
-
-namespace libquixcc
+std::unique_ptr<libquixcc::StmtNode> libquixcc::ReturnStmtNode::reduce() const
 {
-    class ExportNode : public StmtNode
-    {
-    public:
-        ExportNode(std::vector<std::shared_ptr<libquixcc::StmtNode>> stmts, ExportLangType lang) : m_stmts(stmts), m_lang_type(lang) { ntype = NodeType::ExportNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
-        virtual std::unique_ptr<StmtNode> reduce() const override;
-
-        std::vector<std::shared_ptr<libquixcc::StmtNode>> m_stmts;
-        ExportLangType m_lang_type;
-    };
-
-    typedef ExportNode ExternalImportNode;
+    return std::make_unique<libquixcc::ReturnStmtNode>(m_expr);
 }
 
-#endif // __QUIXCC_PARSE_NODES_EXPORTED_H__
+std::unique_ptr<libquixcc::StmtNode> libquixcc::RetifStmtNode::reduce() const
+{
+    return nullptr;
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::RetzStmtNode::reduce() const
+{
+    return nullptr;
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::RetvStmtNode::reduce() const
+{
+    return nullptr;
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::IfStmtNode::reduce() const
+{
+    return nullptr;
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::WhileStmtNode::reduce() const
+{
+    return nullptr;
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::ForStmtNode::reduce() const
+{
+    return nullptr;
+}
