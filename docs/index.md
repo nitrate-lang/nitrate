@@ -21,8 +21,8 @@ Why QUIX?
 1. **Performance**: QUIX is fast. QUIX is designed to be as fast as C++. Memory is managed automatically using reference counting.
 1. **Expressiveness**: QUIX uses human readable keywords. QUIX avoids strange symbols and cryptic syntax. QUIX is designed to be easy to read.
 1. **Prety**: C++ is beautiful, but it is not safe. Rust is hideous, but it is safe. Go is nice, but it is limited. QUIX is designed to be safe, pretty, and feature-rich.
-1. **Compatibile**: QUIX links to C, C++, Go, and DLang objects out of the box. No need for annoying and ugly bindings or wrappers. There is no overhead when calling C, C++, or DLang functions.
+1. **Compatibile**: QUIX links to C, C++, and DLang objects out of the box. No need for annoying and ugly bindings or wrappers. There is no overhead when calling C, C++, or DLang functions.
 1. **Reusability**: Because QUIX plays well with C++, the QUIX standard library is vast. The library contains a lot of useful tools such as Math, File I/O, Networking, Compression, Cryptography (OpenSSL wrapper), and more.
 1. **Small Binaries**: QUIX produces small packed binaries. The standard library is modular and unrelated code is not linked into the final binary. If you don't call it, it's not there. Binaries start at ~8KB.
 
-1. [Documentation](/docs/)
+[Read the Documentation](/docs/)
