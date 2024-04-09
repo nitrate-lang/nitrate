@@ -26,6 +26,9 @@ qpkg::build::Engine::Engine(const std::string &package_src,
                             bool debug,
                             bool verbose)
 {
+    if (verbose)
+        LOG(core::DEBUG).on();
+
     m_package_src = package_src;
     m_output = output;
     m_cache = std::move(cache);
@@ -271,7 +274,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
 
         if (m_cache->contains(key))
         {
-            LOG(core::INFO) << "Using cached object file for " << file << std::endl;
+            LOG(core::DEBUG) << "Using cached object file for " << file << std::endl;
 
             auto cache_file = m_cache->loadf(key);
             std::filesystem::copy_file(cache_file, outfile, std::filesystem::copy_options::overwrite_existing);
@@ -283,7 +286,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
         m_cache->release_lock();
     }
 
-    LOG(core::INFO) << "Compiling source file " << file << std::endl;
+    LOG(core::DEBUG) << "Compiling source file " << file << std::endl;
 
     quixcc::CompilerBuilder builder;
     builder.set_output(outfile);
@@ -367,7 +370,7 @@ bool qpkg::build::Engine::link_objects(const std::vector<std::filesystem::__cxx1
     if (m_verbose)
         cmd += " -vv";
 
-    LOG(core::INFO) << "Invoking linker: " << cmd << std::endl;
+    LOG(core::DEBUG) << "Invoking linker: " << cmd << std::endl;
 
     if (system(cmd.c_str()) != 0)
         return false;
@@ -437,7 +440,7 @@ bool qpkg::build::Engine::build_package(const std::filesystem::__cxx11::path &ba
     }
     else
     {
-        LOG(core::INFO) << "Skipping linking" << std::endl;
+        LOG(core::DEBUG) << "Skipping linking" << std::endl;
         g_cc_printer.linked();
     }
 

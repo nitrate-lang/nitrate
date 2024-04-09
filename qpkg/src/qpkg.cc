@@ -9,6 +9,7 @@
 #include <argparse.h>
 
 #include <build/EngineBuilder.hh>
+#include <clean/Cleanup.hh>
 
 constexpr const char *COPYRIGHT = "Copyright (C) 2024 Wesley C. Jones";
 constexpr const char *VERSION_STR = "qpkg version 0.1.0 [2024-03] (generic)";
@@ -115,6 +116,11 @@ static void setup_argparse_clean(ArgumentParser &parser)
     parser.add_argument("package-src")
         .help("path to package source")
         .nargs(1);
+
+    parser.add_argument("-v", "--verbose")
+        .help("print verbose output")
+        .default_value(false)
+        .implicit_value(true);
 
     parser.add_argument("-r", "--recursive")
         .help("remove all cached files in the package and its dependencies")
@@ -500,9 +506,7 @@ static int run_build_mode(const ArgumentParser &parser)
 
 static int run_clean_mode(const ArgumentParser &parser)
 {
-    (void)parser;
-    std::cerr << "clean not implemented yet" << std::endl;
-    return 1;
+    return qpkg::clean::CleanPackageSource(parser.get<std::string>("package-src"), parser["--recursive"] == true, parser["--verbose"] == true) ? 0 : -1;
 }
 
 static int run_update_mode(const ArgumentParser &parser)

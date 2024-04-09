@@ -32,44 +32,49 @@
 #include <map>
 
 #define LOGGER_MASK_SRC 1
-#define LOGGER_ECHO 0
+#define LOGGER_ECHO 1
+#define DEBUG_MODE 0
 
 thread_local std::ostringstream qpkg::core::Logger::m_buffer;
 thread_local const char *qpkg::core::Logger::m_func = nullptr;
 thread_local const char *qpkg::core::Logger::m_file = nullptr;
 thread_local int qpkg::core::Logger::m_line = 0;
 
-static std::string generate_logprefix()
-{
-    /*
-     * Generate a random 6 byte tag to prepend in each log entry.
-     * This will make it easier to group logs from the same process
-     */
+// static std::string generate_logprefix()
+// {
+//     /*
+//      * Generate a random 6 byte tag to prepend in each log entry.
+//      * This will make it easier to group logs from the same process
+//      */
 
-    uint8_t buf[6];
-    if (RAND_bytes((uint8_t *)buf, sizeof(buf)) != 1)
-        throw std::runtime_error("logger: unable to generate random log prefix");
+//     uint8_t buf[6];
+//     if (RAND_bytes((uint8_t *)buf, sizeof(buf)) != 1)
+//         throw std::runtime_error("logger: unable to generate random log prefix");
 
-    /* HEX ENCODE */
-    std::stringstream ss;
-    for (auto c : buf)
-        ss << std::hex << std::setw(2) << std::setfill('0') << (int)c;
+//     /* HEX ENCODE */
+//     std::stringstream ss;
+//     for (auto c : buf)
+//         ss << std::hex << std::setw(2) << std::setfill('0') << (int)c;
 
-    return ss.str();
-}
+//     return ss.str();
+// }
 
-static std::string get_runtime_logprefix()
-{
-    /*
-     * This function is called once per process
-     * It will generate a random log prefix and save it
-     */
-    static std::string prefix = generate_logprefix();
-    return prefix;
-}
+// static std::string get_runtime_logprefix()
+// {
+//     /*
+//      * This function is called once per process
+//      * It will generate a random log prefix and save it
+//      */
+//     static std::string prefix = generate_logprefix();
+//     return prefix;
+// }
 
 static std::string get_timestamp()
 {
+    static size_t counter = 0;
+    static std::mutex m;
+    std::lock_guard<std::mutex> lock(m);
+
     /*
      * Get current time in UTC
      */
@@ -79,9 +84,9 @@ static std::string get_timestamp()
     auto now_tm = std::gmtime(&now_time_t);
     std::array<char, 30> timestamp;
 
-    std::strftime(timestamp.data(), timestamp.size(), "%Y-%m-%d %H:%M:%S", now_tm);
+    std::strftime(timestamp.data(), timestamp.size(), "%H:%M:%S", now_tm);
 
-    return timestamp.data();
+    return timestamp.data() + std::string(".") + std::to_string(counter++);
 }
 
 static std::unordered_map<qpkg::core::E, std::string> level_to_str = {
@@ -93,69 +98,70 @@ static std::unordered_map<qpkg::core::E, std::string> level_to_str = {
 static std::map<std::pair<const char *, int>, std::string> file_to_str_mapping;
 static std::unordered_map<const char *, std::string> func_to_str_mapping;
 
-static std::string mask_source(const std::string &str)
-{
-    /*
-        Hex encoded CRC32 hash the source data
-    */
+// static std::string mask_source(const std::string &str)
+// {
+//     /*
+//         Hex encoded CRC32 hash the source data
+//     */
 
-#if LOGGER_MASK_SRC == 0
-    return str;
-#else
+// #if LOGGER_MASK_SRC == 0
+//     return str;
+// #else
 
-    uint32_t crc = 0xffffffff;
-    for (auto c : str)
-    {
-        crc ^= c;
-        for (int j = 0; j < 8; j++)
-            crc = (crc >> 1) ^ (0xEDB88320 & (-(crc & 1)));
-    }
+//     uint32_t crc = 0xffffffff;
+//     for (auto c : str)
+//     {
+//         crc ^= c;
+//         for (int j = 0; j < 8; j++)
+//             crc = (crc >> 1) ^ (0xEDB88320 & (-(crc & 1)));
+//     }
 
-    std::stringstream ss;
-    ss << std::hex << std::setw(8) << std::setfill('0') << crc;
-    return ss.str();
+//     std::stringstream ss;
+//     ss << std::hex << std::setw(8) << std::setfill('0') << crc;
+//     return ss.str();
 
-#endif
-}
+// #endif
+// }
 
-static std::string get_file_str(const char *file, int line)
-{
-    /*
-     * This function is called once per source file path
-     * It will strip out the path before the src/ directory
-     * and cache the result
-     */
+// static std::string get_file_str(const char *file, int line)
+// {
+//     /*
+//      * This function is called once per source file path
+//      * It will strip out the path before the src/ directory
+//      * and cache the result
+//      */
 
-    auto p = std::make_pair(file, line);
-    if (!file_to_str_mapping.contains(p))
-    {
-        // strip out stuff before src/ directory
-        std::string file_str(file);
-        auto pos = file_str.find("src/");
-        if (pos == std::string::npos)
-            throw std::runtime_error("logger: file not in src/ directory. unable to format");
+//     auto p = std::make_pair(file, line);
+//     if (!file_to_str_mapping.contains(p))
+//     {
+//         // strip out stuff before src/ directory
+//         std::string file_str(file);
+//         auto pos = file_str.find("src/");
+//         if (pos == std::string::npos)
+//             throw std::runtime_error("logger: file not in src/ directory. unable to format");
 
-        file_to_str_mapping[p] = mask_source(file_str.substr(pos) + ":" + std::to_string(line));
-    }
+//         file_to_str_mapping[p] = mask_source(file_str.substr(pos) + ":" + std::to_string(line));
+//     }
 
-    return file_to_str_mapping[p];
-}
+//     return file_to_str_mapping[p];
+// }
 
-static std::string get_func_str(const char *func)
-{
-    /*
-     * This function is called once per function name
-     * It will cache the result
-     */
-    if (!func_to_str_mapping.contains(func))
-        func_to_str_mapping[func] = mask_source(func);
+// static std::string get_func_str(const char *func)
+// {
+//     /*
+//      * This function is called once per function name
+//      * It will cache the result
+//      */
+//     if (!func_to_str_mapping.contains(func))
+//         func_to_str_mapping[func] = mask_source(func);
 
-    return func_to_str_mapping[func];
-}
+//     return func_to_str_mapping[func];
+// }
 
 qpkg::core::Logger::Logger(qpkg::core::E level)
 {
     m_level = level;
+    m_verbose = false;
 }
 
 static std::string escape_log_message(const std::string &str)
@@ -188,18 +194,15 @@ void qpkg::core::Logger::push()
      *   [logprefix] [timestamp] LEVEL [function] [file:line] message
      */
 
+    if (DEBUG_MODE == 0 && m_level == DEBUG && !m_verbose)
+        return;
+
     std::stringstream log;
 
     /* Build message */
-    log << '[' << get_runtime_logprefix() << "] ";
     log << '[' << get_timestamp() << ']';
     log << " ";
-    log << level_to_str[m_level];
-#if LOGGER_MASK_SRC == 1
-    log << " <" << get_func_str(m_func) << get_file_str(m_file, m_line) << "> ";
-#else
-    log << " <" << get_func_str(m_func) << " | " << get_file_str(m_file, m_line) << "> ";
-#endif
+    log << level_to_str[m_level] << " ";
     log << escape_log_message(m_buffer.str());
     m_buffer.str("");
 

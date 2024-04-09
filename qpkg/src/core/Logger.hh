@@ -32,12 +32,15 @@ namespace qpkg
             thread_local static const char *m_file;
             thread_local static int m_line;
             E m_level;
+            bool m_verbose;
             void flush(std::ofstream &file);
 
             friend class LoggerSpool;
 
         public:
             Logger(E level = DEBUG);
+
+            inline void on(bool v = true) { m_verbose = v; }
 
             template <class T>
             Logger &operator+=(const T &msg) // append to thread-local buffer

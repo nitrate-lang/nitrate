@@ -23,7 +23,7 @@ void qpkg::cache::DirectoryCache::release_lock()
 
 bool qpkg::cache::DirectoryCache::init()
 {
-    LOG(core::INFO) << "Initializing cache directory: " << m_cacheDir << std::endl;
+    LOG(core::DEBUG) << "Initializing cache directory: " << m_cacheDir << std::endl;
 
     try
     {
@@ -50,7 +50,7 @@ bool qpkg::cache::DirectoryCache::init()
             return false;
         }
 
-        LOG(core::INFO) << "Cache directory created: " << m_cacheDir << std::endl;
+        LOG(core::DEBUG) << "Cache directory created: " << m_cacheDir << std::endl;
         return true;
     }
     catch (const std::exception &e)
@@ -68,7 +68,7 @@ struct Record
 
 bool qpkg::cache::DirectoryCache::discover()
 {
-    LOG(core::INFO) << "Discovering cache directory: " << m_cacheDir << std::endl;
+    LOG(core::DEBUG) << "Discovering cache directory: " << m_cacheDir << std::endl;
 
     std::string record_file = std::filesystem::path(m_cacheDir) / "index.db";
 
@@ -106,7 +106,7 @@ bool qpkg::cache::DirectoryCache::discover()
             m_keys.insert(key);
         }
 
-        LOG(core::INFO) << "Found " << m_cacheMap.size() << " cache entries" << std::endl;
+        LOG(core::DEBUG) << "Found " << m_cacheMap.size() << " cache entries" << std::endl;
 
         return true;
     }
@@ -277,7 +277,7 @@ size_t qpkg::cache::DirectoryCache::size()
 
 void qpkg::cache::DirectoryCache::sync()
 {
-    LOG(core::INFO) << "Syncing cache directory: " << m_cacheDir << std::endl;
+    LOG(core::DEBUG) << "Syncing cache directory: " << m_cacheDir << std::endl;
 
     std::string record_file = std::filesystem::path(m_cacheDir) / "index.db";
 
@@ -307,8 +307,8 @@ void qpkg::cache::DirectoryCache::sync()
             record.write(reinterpret_cast<const char *>(&entry), sizeof(entry));
         }
 
-        LOG(core::INFO) << "Synced " << m_cacheMap.size() << " cache entries" << std::endl;
-        LOG(core::INFO) << "Cache directory synced: " << m_cacheDir << std::endl;
+        LOG(core::DEBUG) << "Synced " << m_cacheMap.size() << " cache entries" << std::endl;
+        LOG(core::DEBUG) << "Cache directory synced: " << m_cacheDir << std::endl;
     }
     catch (const std::exception &e)
     {
