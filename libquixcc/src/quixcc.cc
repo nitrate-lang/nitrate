@@ -648,10 +648,28 @@ static bool compile(quixcc_job_t *job)
     ///=========================================
 
     ///=========================================
+    /// BEGIN: AST REDUCTION
+    ///=========================================
+
+    auto ast_reduced = ast->reduce();
+    if (!ast_reduced)
+    {
+        LOG(ERROR) << "failed to reduce AST" << std::endl;
+        return false;
+    }
+
+    if (job->m_debug)
+        LOG(DEBUG) << "Dumping AST 3 (JSON): " << base64_encode(ast_reduced->to_json(ParseNodeJsonSerializerVisitor())) << std::endl;
+
+    ///=========================================
+    /// END: AST REDUCTION
+    ///=========================================
+
+    ///=========================================
     /// BEGIN: GENERATOR
     ///=========================================
     LOG(DEBUG) << "Generating output" << std::endl;
-    if (!generate(*job, ast))
+    if (!generate(*job, std::move(ast_reduced)))
     {
         LOG(ERROR) << "failed to generate output" << std::endl;
         return false;

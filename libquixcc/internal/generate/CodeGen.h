@@ -47,8 +47,8 @@ namespace libquixcc
         CodegenVisitor(LLVMContext &llvm) : m_ctx(&llvm) {}
 
         llvm::Value *visit(const BlockNode *node) const;
+        llvm::Value *visit(const StmtGroupNode *node) const;
         llvm::Value *visit(const ExprStmtNode *node) const;
-        llvm::Value *visit(const NopStmtNode *node) const;
         llvm::Value *visit(const UnaryExprNode *node) const;
         llvm::Value *visit(const BinaryExprNode *node) const;
         llvm::Value *visit(const CallExprNode *node) const;
@@ -86,19 +86,13 @@ namespace libquixcc
         llvm::Value *visit(const StructDefNode *node) const;
         llvm::Value *visit(const UnionDefNode *node) const;
         llvm::Value *visit(const UnionFieldNode *node) const;
-        llvm::Value *visit(const EnumDefNode *node) const;
-        llvm::Value *visit(const EnumFieldNode *node) const;
         llvm::Function *visit(const FunctionDefNode *node) const;
         llvm::Value *visit(const FunctionParamNode *node) const;
         llvm::Value *visit(const SubsystemNode *node) const;
         llvm::Value *visit(const ExportNode *node) const;
         llvm::Value *visit(const ReturnStmtNode *node) const;
-        llvm::Value *visit(const RetifStmtNode *node) const;
-        llvm::Value *visit(const RetzStmtNode *node) const;
-        llvm::Value *visit(const RetvStmtNode *node) const;
         llvm::Value *visit(const IfStmtNode *node) const;
         llvm::Value *visit(const WhileStmtNode *node) const;
-        llvm::Value *visit(const ForStmtNode *node) const;
     };
 };
 

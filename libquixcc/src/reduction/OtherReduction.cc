@@ -16,35 +16,59 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_TYPEDEF_H__
-#define __QUIXCC_PARSE_NODES_TYPEDEF_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parse/nodes/EnumNode.h>
+#include <parse/nodes/FunctionNode.h>
+#include <parse/nodes/GroupNode.h>
+#include <parse/nodes/StructNode.h>
+#include <parse/nodes/UnionNode.h>
+#include <parse/nodes/TypedefNode.h>
+#include <parse/nodes/VariableNode.h>
 
-#include <string>
-#include <vector>
-#include <memory>
-
-#include <llvm/LLVMWrapper.h>
-#include <parse/nodes/BasicNodes.h>
-
-namespace libquixcc
+std::unique_ptr<libquixcc::StmtNode> libquixcc::EnumDefNode::reduce() const
 {
-    class TypedefNode : public DeclNode
-    {
-    public:
-        TypedefNode(TypeNode *orig, const std::string &name) : m_orig(orig), m_name(name) { ntype = NodeType::TypedefNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("TypedefNode is not codegen-able"); }
-        std::unique_ptr<StmtNode> reduce() const override;
-
-        TypeNode *m_orig;
-        std::string m_name;
-    };
+    return nullptr;
 }
 
-#endif // __QUIXCC_PARSE_NODES_TYPEDEF_H__
+std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDeclNode::reduce() const
+{
+    return std::make_unique<libquixcc::FunctionDeclNode>(*this);
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDefNode::reduce() const
+{
+    std::shared_ptr<StmtNode> block = m_body->reduce();
+
+    return std::make_unique<libquixcc::FunctionDefNode>(m_decl, std::static_pointer_cast<BlockNode>(block));
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce() const
+{
+    return std::make_unique<libquixcc::GroupDefNode>(*this);
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce() const
+{
+    return std::make_unique<libquixcc::StructDefNode>(*this);
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::UnionDefNode::reduce() const
+{
+    return std::make_unique<libquixcc::UnionDefNode>(*this);
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::TypedefNode::reduce() const
+{
+    return nullptr;
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::VarDeclNode::reduce() const
+{
+    return std::make_unique<libquixcc::VarDeclNode>(*this);
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::LetDeclNode::reduce() const
+{
+    return std::make_unique<libquixcc::LetDeclNode>(*this);
+}

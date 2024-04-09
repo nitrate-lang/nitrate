@@ -84,7 +84,7 @@ protected:
     }
 };
 
-bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST> ast, FILE *out, bool generate_bitcode)
+bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast, FILE *out, bool generate_bitcode)
 {
     std::error_code ec;
     CFILE_raw_pwrite_ostream os(out);
@@ -123,7 +123,7 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, const std::shared_ptr<libquixcc::AST
     return true;
 }
 
-bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNode> ast, FILE *out, llvm::CodeGenFileType mode)
+bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast, FILE *out, llvm::CodeGenFileType mode)
 {
 #if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
     LOG(FATAL) << "Unsupported operating system" << std::endl;
@@ -185,19 +185,19 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::shared_ptr<libquixcc::BlockNo
 #endif
 }
 
-bool libquixcc::generate(quixcc_job_t &job, std::shared_ptr<libquixcc::BlockNode> ast)
+bool libquixcc::generate(quixcc_job_t &job, std::unique_ptr<libquixcc::StmtNode> ast)
 {
     if (job.m_argset.contains("-emit-ir"))
-        return write_IR(job, ast, job.m_out, false);
+        return write_IR(job, std::move(ast), job.m_out, false);
 
     if (job.m_argset.contains("-emit-bc"))
-        return write_IR(job, ast, job.m_out, true);
+        return write_IR(job, std::move(ast), job.m_out, true);
 
     if (job.m_argset.contains("-S"))
-        return write_llvm(job, ast, job.m_out, llvm::CGFT_AssemblyFile);
+        return write_llvm(job, std::move(ast), job.m_out, llvm::CGFT_AssemblyFile);
 
     if (job.m_argset.contains("-c"))
-        return write_llvm(job, ast, job.m_out, llvm::CGFT_ObjectFile);
+        return write_llvm(job, std::move(ast), job.m_out, llvm::CGFT_ObjectFile);
 
     LOG(FATAL) << "Output format was not specified. Expected: [-emit-ir, -emit-bc, -S, -c]" << std::endl;
 

@@ -94,8 +94,8 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        std::unique_ptr<StmtNode> reduce() const override;
 
         virtual StructTypeNode *get_type() const
         {

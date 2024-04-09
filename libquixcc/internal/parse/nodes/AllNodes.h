@@ -32,6 +32,7 @@
 #include <parse/nodes/StringNode.h>
 #include <parse/nodes/VariableNode.h>
 #include <parse/nodes/StructNode.h>
+#include <parse/nodes/GroupNode.h>
 #include <parse/nodes/ArrayNode.h>
 #include <parse/nodes/SubsystemNode.h>
 #include <parse/nodes/EnumNode.h>

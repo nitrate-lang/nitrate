@@ -122,7 +122,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { throw std::runtime_error("NopStmtNode::codegen not implemented"); }
         virtual std::unique_ptr<StmtNode> reduce() const override;
     };
 
@@ -178,7 +178,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual std::unique_ptr<StmtNode> reduce() const override;
+        virtual std::unique_ptr<StmtNode> reduce() const override = 0;
     };
 
     class DefNode : public StmtNode
@@ -188,7 +188,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual std::unique_ptr<StmtNode> reduce() const override;
+        virtual std::unique_ptr<StmtNode> reduce() const override = 0;
     };
 
     class BlockNode : public StmtNode
@@ -211,7 +211,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { throw std::runtime_error("StmtGroupNode::codegen not implemented"); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce() const override;
 
         std::vector<std::shared_ptr<StmtNode>> m_stmts;
