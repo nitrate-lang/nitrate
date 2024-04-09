@@ -75,21 +75,6 @@ uint8_t get_numbits(std::string s)
     return 8;
 }
 
-static std::string getRandomIdentifier()
-{
-    static const char alphanum[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    static const size_t alphanum_size = sizeof(alphanum) - 1;
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    std::string s;
-    for (size_t i = 0; i < 10; ++i)
-    {
-        s += alphanum[rand() % alphanum_size];
-    }
-    return "_" + s;
-}
-
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BlockNode *node) const
 {
     for (auto &stmt : node->m_stmts)
@@ -594,20 +579,14 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::FloatLiteralNo
 
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::StringLiteralNode *node) const
 {
-    const auto randId = getRandomIdentifier();
-    auto str = llvm::ConstantDataArray::getString(*m_ctx->m_ctx, node->m_val);
-
     llvm::Constant *zero = llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(*m_ctx->m_ctx));
     llvm::Constant *indices[] = {zero, zero};
 
-    auto global = m_ctx->m_module->getOrInsertGlobal(randId, str->getType());
-    auto gvar = m_ctx->m_module->getGlobalVariable(randId);
+    auto gvar = m_ctx->m_builder->CreateGlobalString(node->m_val);
 
     gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
 
-    gvar->setInitializer(str);
-
-    return llvm::ConstantExpr::getGetElementPtr(str->getType(), global, indices);
+    return llvm::ConstantExpr::getGetElementPtr(gvar->getValueType(), gvar, indices);
 }
 
 llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::CharLiteralNode *node) const

@@ -5,13 +5,11 @@
 	.type	main,@function
 main:
 	pushq	%rax
-	leaq	.L_fa37JncCHr(%rip), %rdi
-	xorl	%eax, %eax
-	callq	printf@PLT
-	leaq	.L_yDsbzayy4c(%rip), %rdi
-	xorl	%eax, %eax
-	callq	printf@PLT
-	leaq	.L_BWDxS22Jjz(%rip), %rdi
+	leaq	.Lstr(%rip), %rdi
+	callq	puts@PLT
+	leaq	.Lstr.1(%rip), %rdi
+	callq	puts@PLT
+	leaq	.L__unnamed_1(%rip), %rdi
 	movl	$1000, %esi
 	xorl	%eax, %eax
 	callq	printf@PLT
@@ -21,23 +19,20 @@ main:
 .Lfunc_end0:
 	.size	main, .Lfunc_end0-main
 
-	.type	.L_fa37JncCHr,@object
-	.data
-	.p2align	4
-.L_fa37JncCHr:
-	.asciz	"Hi. Behold, the first Hello World program for the QUIX language!\n"
-	.size	.L_fa37JncCHr, 66
-
-	.type	.L_yDsbzayy4c,@object
-	.p2align	4
-.L_yDsbzayy4c:
-	.asciz	"This is the first of many programs to come.\n"
-	.size	.L_yDsbzayy4c, 45
-
-	.type	.L_BWDxS22Jjz,@object
-	.p2align	4
-.L_BWDxS22Jjz:
+	.type	.L__unnamed_1,@object
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.L__unnamed_1:
 	.asciz	"Long live QUIX! May it reign supreme for %d years to come!\n"
-	.size	.L_BWDxS22Jjz, 60
+	.size	.L__unnamed_1, 60
+
+	.type	.Lstr,@object
+.Lstr:
+	.asciz	"Hi. Behold, the first Hello World program for the QUIX language!"
+	.size	.Lstr, 65
+
+	.type	.Lstr.1,@object
+.Lstr.1:
+	.asciz	"This is the first of many programs to come."
+	.size	.Lstr.1, 44
 
 	.section	".note.GNU-stack","",@progbits

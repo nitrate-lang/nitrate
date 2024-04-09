@@ -14,7 +14,7 @@ main:
 	leaq	4(%rsp), %rbx
 	movq	%rbx, 8(%rsp)
 	movq	4(%rsp), %r8
-	leaq	.L_fa37JncCHr(%rip), %rdi
+	leaq	.L__unnamed_1(%rip), %rdi
 	movl	$10000000, %esi
 	movq	%rbx, %rdx
 	movq	%rbx, %rcx
@@ -23,7 +23,7 @@ main:
 	movl	$20000000, 4(%rsp)
 	movq	8(%rsp), %rcx
 	movq	(%rcx), %r8
-	leaq	.L_yDsbzayy4c(%rip), %rdi
+	leaq	.L__unnamed_2(%rip), %rdi
 	movl	$20000000, %esi
 	movq	%rbx, %rdx
 	xorl	%eax, %eax
@@ -33,7 +33,7 @@ main:
 	movl	4(%rsp), %esi
 	movq	8(%rsp), %rcx
 	movq	(%rcx), %r8
-	leaq	.L_BWDxS22Jjz(%rip), %rdi
+	leaq	.L__unnamed_3(%rip), %rdi
 	movq	%rbx, %rdx
 	xorl	%eax, %eax
 	callq	printf@PLT
@@ -46,23 +46,20 @@ main:
 	.size	main, .Lfunc_end0-main
 	.cfi_endproc
 
-	.type	.L_fa37JncCHr,@object
-	.data
-	.p2align	4
-.L_fa37JncCHr:
+	.type	.L__unnamed_1,@object
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.L__unnamed_1:
 	.asciz	"x = %d, &x = %p, x_ptr = %p, *x_ptr = %d\n"
-	.size	.L_fa37JncCHr, 42
+	.size	.L__unnamed_1, 42
 
-	.type	.L_yDsbzayy4c,@object
-	.p2align	4
-.L_yDsbzayy4c:
+	.type	.L__unnamed_2,@object
+.L__unnamed_2:
 	.asciz	"x = %d, &x = %p, x_ptr = %p, *x_ptr = %d\n"
-	.size	.L_yDsbzayy4c, 42
+	.size	.L__unnamed_2, 42
 
-	.type	.L_BWDxS22Jjz,@object
-	.p2align	4
-.L_BWDxS22Jjz:
+	.type	.L__unnamed_3,@object
+.L__unnamed_3:
 	.asciz	"x = %d, &x = %p, x_ptr = %p, *x_ptr = %d\n"
-	.size	.L_BWDxS22Jjz, 42
+	.size	.L__unnamed_3, 42
 
 	.section	".note.GNU-stack","",@progbits

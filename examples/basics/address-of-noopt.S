@@ -8,7 +8,7 @@ main:
 	pushq	%rax
 	.cfi_def_cfa_offset 16
 	movb	$10, 7(%rsp)
-	leaq	.L_fa37JncCHr(%rip), %rdi
+	leaq	.L__unnamed_1(%rip), %rdi
 	leaq	7(%rsp), %rsi
 	xorl	%eax, %eax
 	callq	printf@PLT
@@ -19,11 +19,10 @@ main:
 	.size	main, .Lfunc_end0-main
 	.cfi_endproc
 
-	.type	.L_fa37JncCHr,@object
-	.data
-	.p2align	4
-.L_fa37JncCHr:
+	.type	.L__unnamed_1,@object
+	.section	.rodata.str1.1,"aMS",@progbits,1
+.L__unnamed_1:
 	.asciz	"address of x: %p\n"
-	.size	.L_fa37JncCHr, 18
+	.size	.L__unnamed_1, 18
 
 	.section	".note.GNU-stack","",@progbits
