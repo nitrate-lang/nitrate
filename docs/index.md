@@ -25,4 +25,4 @@ Why QUIX?
 1. **Reusability**: Because QUIX plays well with C++, the QUIX standard library is vast. The library contains a lot of useful tools such as Math, File I/O, Networking, Compression, Cryptography (OpenSSL wrapper), and more.
 1. **Small Binaries**: QUIX produces small packed binaries. The standard library is modular and unrelated code is not linked into the final binary. If you don't call it, it's not there. Binaries start at ~8KB.
 
-[Read the Documentation](docs/)
+[Read the Documentation](/docs/)
