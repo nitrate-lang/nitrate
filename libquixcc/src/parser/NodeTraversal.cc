@@ -414,6 +414,34 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StructFieldNode *no
     return count + 1;
 }
 
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::GroupDefNode *node)
+{
+    size_t count = 0;
+    std::string old_prefix = m_prefix;
+    push_prefix(node->m_name);
+
+    for (auto &field : node->m_fields)
+    {
+        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&field));
+        count += field->dfs_preorder(*this);
+    }
+
+    m_prefix = old_prefix;
+    return count + 1;
+}
+
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::GroupFieldNode *node)
+{
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type));
+    size_t count = node->m_type->dfs_preorder(*this);
+    if (node->m_value)
+    {
+        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_value));
+        count += node->m_value->dfs_preorder(*this);
+    }
+    return count + 1;
+}
+
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::UnionDefNode *node)
 {
     size_t count = 0;

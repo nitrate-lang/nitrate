@@ -29,53 +29,30 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_MUTATE_ROUTINES_H__
-#define __QUIXCC_MUTATE_ROUTINES_H__
-
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <memory>
-#include <functional>
-#include <vector>
-#include <parse/Parser.h>
-#include <quixcc.h>
-
-namespace libquixcc
-{
-    namespace mutate
-    {
-        void StripUnderscoreNames(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void DiscoverNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ExtrapolateEnumFields(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ResolveNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void FoldConstExpr(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ConvertTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        inline void InferTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
-    }
-
-    typedef std::function<void(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>)> ASTMutateRoutine;
-
-    class Mutation
-    {
-    public:
-        /// @brief Run rountines in the order they were added.
-        void run(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
-        {
-            for (auto routine : m_routines)
-            {
-                routine(job, ast);
-            }
-        }
-
-        void add_routine(ASTMutateRoutine routine)
-        {
-            m_routines.push_back(routine);
-        }
-
-        std::vector<ASTMutateRoutine> m_routines;
-    };
+group Point {
+    x: i32,
+    y: i32,
 }
 
-#endif // __QUIXCC_MUTATE_ROUTINES_H__
+group Line {
+    start: Point,
+    end: Point,
+}
+
+group Texture {
+    data: *u8,
+    width: i32,
+    height: i32,
+}
+
+group RectanglurPrism3d {
+    vertices: [Point; 8],
+    lines: [Line; 12],
+    textures: [*Texture; 6],
+}
+
+pub let data: RectanglurPrism3d;
+
+fn main(): void {
+    return;
+}

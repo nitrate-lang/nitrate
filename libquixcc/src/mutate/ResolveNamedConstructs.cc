@@ -67,6 +67,9 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
             case NodeType::StructDefNode:
                 type = std::static_pointer_cast<libquixcc::StructDefNode>(named_type)->get_type();
                 break;
+            case NodeType::GroupDefNode:
+                type = std::static_pointer_cast<libquixcc::GroupDefNode>(named_type)->get_type();
+                break;
             case NodeType::UnionDefNode:
                 type = std::static_pointer_cast<libquixcc::UnionDefNode>(named_type)->get_type();
                 break;

@@ -31,37 +31,109 @@
 
 #define QUIXCC_INTERNAL
 
-#include <mutate/Routine.h>
+#include <parse/Parser.h>
+#include <LibMacro.h>
 #include <error/Logger.h>
-#include <mutex>
-#include <set>
-#include <quixcc.h>
-#include <iostream>
-#include <algorithm>
 
 using namespace libquixcc;
 
-static void filter_tree(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
+static bool parse_group_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<GroupFieldNode> &node)
 {
-    ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+    Token tok = scanner->next();
+    if (tok.type() != TokenType::Identifier)
+    {
+        LOG(ERROR) << feedback[GROUP_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
+
+    auto name = std::get<std::string>(tok.val());
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Colon))
+    {
+        LOG(ERROR) << feedback[GROUP_FIELD_MISSING_COLON] << tok << std::endl;
+        return false;
+    }
+
+    TypeNode *type;
+    if (!parse_type(job, scanner, &type))
+    {
+        LOG(ERROR) << feedback[GROUP_FIELD_TYPE_ERR] << name << tok << std::endl;
+        return false;
+    }
+
+    std::shared_ptr<ConstExprNode> value;
+
+    tok = scanner->next();
+    if (tok.is<Punctor>(Punctor::Comma))
+    {
+        node = std::make_shared<GroupFieldNode>(name, type);
+        return true;
+    }
+    else if (tok.is<Operator>(Operator::Assign))
+    {
+        if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), value))
         {
-            switch ((*node)->ntype)
-            {
-            case NodeType::TypedefNode:
-                *node = std::make_shared<NopStmtNode>();
-                break;
-            case NodeType::EnumDefNode:
-                *node = std::make_shared<NopStmtNode>();
-                break;
-            default:
-                break;
-            }
-        },
-        job->m_inner.prefix));
+            LOG(ERROR) << feedback[GROUP_FIELD_INIT_ERR] << name << tok << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        LOG(ERROR) << feedback[GROUP_FIELD_MISSING_PUNCTOR] << name << tok << std::endl;
+        return false;
+    }
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Comma))
+    {
+        LOG(ERROR) << feedback[GROUP_FIELD_MISSING_PUNCTOR] << name << tok << std::endl;
+        return false;
+    }
+
+    node = std::make_shared<GroupFieldNode>(name, type, value);
+
+    return true;
 }
 
-void libquixcc::mutate::FilterNonGeneratable(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
+bool libquixcc::parse_group(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    filter_tree(job, ast);
+    Token tok = scanner->next();
+    if (tok.type() != TokenType::Identifier)
+    {
+        LOG(ERROR) << feedback[GROUP_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
+
+    std::string name = std::get<std::string>(tok.val());
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::OpenBrace))
+    {
+        LOG(ERROR) << feedback[GROUP_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
+        return false;
+    }
+
+    std::vector<std::shared_ptr<GroupFieldNode>> fields;
+
+    while (true)
+    {
+        tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::CloseBrace))
+        {
+            scanner->next();
+            break;
+        }
+
+        std::shared_ptr<GroupFieldNode> field;
+        if (!parse_group_field(job, scanner, field))
+            return false;
+        fields.push_back(field);
+    }
+
+    auto sdef = std::make_shared<GroupDefNode>();
+    sdef->m_name = name;
+    sdef->m_fields = fields;
+    node = sdef;
+    return true;
 }

@@ -106,6 +106,8 @@ namespace libquixcc
         size_t visit(FunctionDeclNode *node);
         size_t visit(StructDefNode *node);
         size_t visit(StructFieldNode *node);
+        size_t visit(GroupDefNode *node);
+        size_t visit(GroupFieldNode *node);
         size_t visit(UnionDefNode *node);
         size_t visit(UnionFieldNode *node);
         size_t visit(EnumDefNode *node);

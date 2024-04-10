@@ -58,7 +58,16 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDefNode::reduce() const
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce() const
 {
-    return std::make_unique<libquixcc::GroupDefNode>(*this);
+    std::vector<std::shared_ptr<libquixcc::StructFieldNode>> fields;
+
+    for (auto &field : m_fields)
+    {
+        auto copy = std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value);
+        fields.push_back(copy);
+    }
+
+    /// TODO: optimize layout of Groups
+    return std::make_unique<libquixcc::StructDefNode>(m_name, fields);
 }
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce() const

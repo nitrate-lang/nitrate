@@ -81,7 +81,6 @@ namespace libquixcc
 
         EnumTypeNode,
         StructTypeNode,
-        GroupTypeNode,
         UnionTypeNode,
         ArrayTypeNode,
         FunctionTypeNode,
@@ -159,7 +158,6 @@ namespace libquixcc
     class StringTypeNode;
     class EnumTypeNode;
     class StructTypeNode;
-    class GroupTypeNode;
     class UnionTypeNode;
     class ArrayTypeNode;
     class FunctionTypeNode;
