@@ -69,16 +69,26 @@ for test_case in test_cases_manifest['test_cases']:
 
     content += f"    if ((output = fopen(output_file, \"w+\")) == NULL) {{ FAIL() << \"Could not open file: \" << output_file; }}\n"
 
-    if build_mode == 'asm' or build_mode == 'asm-sha1':
+    if build_mode == 'asm-sha1':
         content += f"""    ASSERT_TRUE(quixcc::CompilerBuilder().add_source(source_file).set_output(output).opt(\"-S\")"""
         for flag in flags:
             content += f".opt(\"{flag}\")"
         content += f".build().run().ok());\n"
-    elif build_mode == 'obj' or build_mode == 'obj-sha1':
+    elif build_mode == 'obj-sha1':
         content += f"""    ASSERT_TRUE(quixcc::CompilerBuilder().add_source(source_file).set_output(output).opt(\"-c\")"""
         for flag in flags:
             content += f".opt(\"{flag}\")"
         content += f".build().run().ok());\n"
+    elif build_mode == 'asm':
+        content += f"""    ASSERT_EQ(quixcc::CompilerBuilder().add_source(source_file).set_output(output).opt(\"-S\")"""
+        for flag in flags:
+            content += f".opt(\"{flag}\")"
+        content += f".build().run().ok(), {expected_output});\n"
+    elif build_mode == 'obj':
+        content += f"""    ASSERT_EQ(quixcc::CompilerBuilder().add_source(source_file).set_output(output).opt(\"-c\")"""
+        for flag in flags:
+            content += f".opt(\"{flag}\")"
+        content += f".build().run().ok(), {expected_output});\n"
     else:
         raise Exception(f'Unknown build mode {build_mode}')
 
