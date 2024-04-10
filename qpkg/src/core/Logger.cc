@@ -310,7 +310,7 @@ static void pushlog_onfault(int sig)
 
     std::cerr << "Fault. Dumping logs to " << qpkg::core::LoggerSpool::LOG_FILE << std::endl;
 
-    signal(SIGABRT, SIG_IGN);
+    signal(SIGABRT, SIG_DFL);
 
     /* Kill process and generate core dump */
     abort();
@@ -329,6 +329,8 @@ static void pushlog_nonfatal(int sig)
     qpkg::core::LoggerSpool::getInst().flush(qpkg::core::LoggerSpool::LOG_FILE);
 
     std::cerr << "Exiting... Dumping logs to " << qpkg::core::LoggerSpool::LOG_FILE << std::endl;
+
+    signal(sig, SIG_DFL);
 
     /* Kill process and don't generate core dump */
     exit(1);
@@ -378,11 +380,24 @@ qpkg::core::LoggerSpool::LoggerSpool(std::chrono::duration<int> flushInterval)
         if (!std::filesystem::exists(path.parent_path()))
             std::filesystem::create_directories(path.parent_path());
 
-        // check access
         if (std::filesystem::exists(path.parent_path()) && !std::filesystem::is_directory(path.parent_path()))
         {
             std::cerr << "logger: unable to create log file directories: " << path.parent_path() << " is not a directory" << std::endl;
             _exit(1); // exit to avoid recursive call to terminate
+        }
+
+        if (!std::filesystem::exists(LOG_FILE))
+        {
+            std::ofstream file(LOG_FILE);
+            if (!file.is_open())
+            {
+                std::cerr << "logger: unable to create log file: " << LOG_FILE << std::endl;
+                _exit(1); // exit to avoid recursive call to terminate
+            }
+            file.close();
+
+            // set permissions
+            std::filesystem::permissions(path, std::filesystem::perms::owner_read | std::filesystem::perms::owner_write | std::filesystem::perms::group_read | std::filesystem::perms::group_write | std::filesystem::perms::others_read | std::filesystem::perms::others_write);
         }
 
         // check write access
