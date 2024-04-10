@@ -84,6 +84,7 @@ namespace libquixcc
         llvm::Type *visit(const StringTypeNode *node) const;
         llvm::Type *visit(const EnumTypeNode *node) const;
         llvm::Type *visit(const StructTypeNode *node) const;
+        llvm::Type *visit(const RegionTypeNode *node) const;
         llvm::Type *visit(const UnionTypeNode *node) const;
         llvm::Type *visit(const ArrayTypeNode *node) const;
         llvm::Type *visit(const FunctionTypeNode *node) const;
@@ -97,6 +98,7 @@ namespace libquixcc
         llvm::Value *visit(const LetDeclNode *node) const;
         llvm::Function *visit(const FunctionDeclNode *node) const;
         llvm::Value *visit(const StructDefNode *node) const;
+        llvm::Value *visit(const RegionDefNode *node) const;
         llvm::Value *visit(const UnionDefNode *node) const;
         llvm::Function *visit(const FunctionDefNode *node) const;
         llvm::Value *visit(const FunctionParamNode *node) const;

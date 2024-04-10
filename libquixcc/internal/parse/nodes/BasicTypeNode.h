@@ -53,6 +53,9 @@ namespace libquixcc
     public:
         static U8TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new U8TypeNode();
             return m_instance;
@@ -74,6 +77,9 @@ namespace libquixcc
     public:
         static U16TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new U16TypeNode();
             return m_instance;
@@ -95,6 +101,9 @@ namespace libquixcc
     public:
         static U32TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new U32TypeNode();
             return m_instance;
@@ -116,6 +125,9 @@ namespace libquixcc
     public:
         static U64TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new U64TypeNode();
             return m_instance;
@@ -137,6 +149,9 @@ namespace libquixcc
     public:
         static I8TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new I8TypeNode();
             return m_instance;
@@ -158,6 +173,9 @@ namespace libquixcc
     public:
         static I16TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new I16TypeNode();
             return m_instance;
@@ -179,6 +197,9 @@ namespace libquixcc
     public:
         static I32TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new I32TypeNode();
             return m_instance;
@@ -200,6 +221,9 @@ namespace libquixcc
     public:
         static I64TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new I64TypeNode();
             return m_instance;
@@ -221,6 +245,9 @@ namespace libquixcc
     public:
         static F32TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new F32TypeNode();
             return m_instance;
@@ -242,6 +269,9 @@ namespace libquixcc
     public:
         static F64TypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new F64TypeNode();
             return m_instance;
@@ -263,6 +293,9 @@ namespace libquixcc
     public:
         static BoolTypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new BoolTypeNode();
             return m_instance;
@@ -284,6 +317,9 @@ namespace libquixcc
     public:
         static VoidTypeNode *create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = new VoidTypeNode();
             return m_instance;
@@ -305,6 +341,9 @@ namespace libquixcc
     public:
         static PointerTypeNode *create(TypeNode *type)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (!m_instances.contains(type))
                 m_instances[type] = new PointerTypeNode(type);
             return m_instances[type];
@@ -328,6 +367,9 @@ namespace libquixcc
     public:
         static OpaqueTypeNode *create(std::string name)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (!m_instances.contains(name))
                 m_instances[name] = new OpaqueTypeNode(name);
             return m_instances[name];

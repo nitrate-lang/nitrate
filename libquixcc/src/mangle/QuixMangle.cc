@@ -149,6 +149,15 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
 
         return "t" + s;
     }
+    else if (type->ntype == NodeType::RegionTypeNode)
+    {
+        const libquixcc::RegionTypeNode *st = static_cast<const RegionTypeNode *>(type);
+        std::string s;
+        for (auto &field : st->m_fields)
+            s += wrap_tag(serialize_type(field));
+
+        return "j" + s;
+    }
     else if (type->ntype == NodeType::UnionTypeNode)
     {
         const libquixcc::UnionTypeNode *st = static_cast<const UnionTypeNode *>(type);
@@ -250,6 +259,23 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         }
 
         return StructTypeNode::create(fields_nodes);
+    }
+    else if (type[0] == 'j')
+    {
+        std::vector<std::string> fields;
+        if (!unwrap_tags(type.substr(1), fields))
+            return nullptr;
+
+        std::vector<TypeNode *> fields_nodes;
+        for (auto &field : fields)
+        {
+            TypeNode *t;
+            if ((t = deserialize_type(field)) == nullptr)
+                return nullptr;
+            fields_nodes.push_back(t);
+        }
+
+        return RegionTypeNode::create(fields_nodes);
     }
     else if (type[0] == 'u')
     {

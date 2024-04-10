@@ -53,6 +53,9 @@ namespace libquixcc
     public:
         static UnionTypeNode *create(const std::vector<TypeNode *> &fields)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instances.contains(fields))
                 return m_instances[fields];
             auto instance = new UnionTypeNode();

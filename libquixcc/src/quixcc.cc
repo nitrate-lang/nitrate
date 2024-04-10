@@ -40,6 +40,7 @@
 #include <regex>
 #include <filesystem>
 #include <random>
+#include <thread>
 #include <signal.h>
 #include <execinfo.h>
 
@@ -145,8 +146,6 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
     job->m_filename = nullptr;
     job->m_priority = 0;
     job->m_debug = job->m_tainted = false;
-
-    LoggerConfigure(*job);
 
     return job;
 }
@@ -940,6 +939,8 @@ static bool execute_job(quixcc_job_t *job)
     if (!job->m_in || !job->m_out || !job->m_filename)
         return false;
 
+    LoggerConfigure(*job);
+
     job->m_inner.setup(job->m_filename);
 
     LOG(DEBUG) << "Starting quixcc run @ " << get_datetime() << std::endl;
@@ -1000,7 +1001,18 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     old_handlers[4] = signal(SIGTERM, quixcc_fault_handler);
     old_handlers[5] = signal(SIGABRT, quixcc_fault_handler);
 
-    bool success = execute_job(job);
+    /*
+        This guarantees that every job will run in a seperate thread:
+            1. Every compilation unit has its own thread local storage
+            1. Every compilation unit has its own cache
+    */
+
+    bool success = false;
+    std::thread t([&] {
+        success = execute_job(job);
+    });
+
+    t.join();
 
     signal(SIGINT, old_handlers[0]);
     signal(SIGILL, old_handlers[1]);

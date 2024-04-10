@@ -53,6 +53,9 @@ namespace libquixcc
     public:
         static RegionTypeNode *create(const std::vector<TypeNode *> &fields)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instances.contains(fields))
                 return m_instances[fields];
             auto instance = new RegionTypeNode();
@@ -63,11 +66,10 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("RegionTypeNode::codegen() not implemented"); }
+        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return true; }
         virtual size_t size(size_t ptr_size) const override
         {
-            /// TODO: adjust for padding
             size_t size = 0;
             for (auto &field : m_fields)
                 size += field->size(ptr_size);
@@ -88,7 +90,7 @@ namespace libquixcc
     class RegionFieldNode : public ParseNode
     {
     public:
-        RegionFieldNode() { ntype = NodeType::RegionFieldNode; }
+        RegionFieldNode() : m_type(nullptr) { ntype = NodeType::RegionFieldNode; }
         RegionFieldNode(const std::string &name, TypeNode *type, std::shared_ptr<ConstExprNode> value = nullptr) : m_name(name), m_type(type), m_value(value) { ntype = NodeType::RegionFieldNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
@@ -107,15 +109,15 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("RegionTypeNode::codegen() not implemented"); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
-        virtual StructTypeNode *get_type() const
+        virtual RegionTypeNode *get_type() const
         {
             std::vector<TypeNode *> fields;
             for (auto &field : m_fields)
                 fields.push_back(field->m_type);
-            return StructTypeNode::create(fields);
+            return RegionTypeNode::create(fields);
         }
 
         std::string m_name;

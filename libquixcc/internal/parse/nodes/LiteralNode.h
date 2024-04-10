@@ -63,12 +63,14 @@ namespace libquixcc
     class IntegerLiteralNode : public LiteralNode
     {
         static std::unordered_map<std::string, std::shared_ptr<IntegerLiteralNode>> m_instances;
-
-    public:
         IntegerLiteralNode(const std::string &val);
 
-        static std::shared_ptr<IntegerLiteralNode> create(const std::string &val)
+    public:
+        static const std::shared_ptr<IntegerLiteralNode> create(const std::string &val)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instances.find(val) != m_instances.end())
                 return m_instances[val];
 
@@ -81,7 +83,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override { return m_val_type; }
         virtual bool is_negative() const override { return m_val.front() == '-'; }
-        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<IntegerLiteralNode>(new IntegerLiteralNode(m_val)); }
+        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
 
         virtual int64_t GetInt64() const override { return std::stoll(m_val); }
 
@@ -93,12 +95,14 @@ namespace libquixcc
     class FloatLiteralNode : public LiteralNode
     {
         static std::unordered_map<std::string, std::shared_ptr<FloatLiteralNode>> m_instances;
-
-    public:
         FloatLiteralNode(const std::string &val);
 
-        static std::shared_ptr<FloatLiteralNode> create(const std::string &val)
+    public:
+        static const std::shared_ptr<FloatLiteralNode> create(const std::string &val)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instances.find(val) != m_instances.end())
                 return m_instances[val];
 
@@ -111,7 +115,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override { return m_val_type; }
         virtual bool is_negative() const override { return true; }
-        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<FloatLiteralNode>(new FloatLiteralNode(m_val)); }
+        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
 
         std::string m_val;
         TypeNode *m_val_type;
@@ -121,12 +125,14 @@ namespace libquixcc
     class StringLiteralNode : public LiteralNode
     {
         static std::unordered_map<std::string, std::shared_ptr<StringLiteralNode>> m_instances;
-
-    public:
         StringLiteralNode(const std::string &val) : m_val(val) { ntype = NodeType::StringLiteralNode; }
 
-        static std::shared_ptr<StringLiteralNode> create(const std::string &val)
+    public:
+        static const std::shared_ptr<StringLiteralNode> create(const std::string &val)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instances.find(val) != m_instances.end())
                 return m_instances[val];
 
@@ -139,7 +145,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
-        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<StringLiteralNode>(new StringLiteralNode(m_val)); }
+        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
 
         std::string m_val;
     };
@@ -147,12 +153,14 @@ namespace libquixcc
     class CharLiteralNode : public LiteralNode
     {
         static std::unordered_map<std::string, std::shared_ptr<CharLiteralNode>> m_instances;
-
-    public:
         CharLiteralNode(const std::string &val) : m_val(val) { ntype = NodeType::CharLiteralNode; }
 
-        static std::shared_ptr<CharLiteralNode> create(const std::string &val)
+    public:
+        static const std::shared_ptr<CharLiteralNode> create(const std::string &val)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instances.find(val) != m_instances.end())
                 return m_instances[val];
 
@@ -165,7 +173,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
-        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<CharLiteralNode>(new CharLiteralNode(m_val)); }
+        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
 
         std::string m_val;
     };
@@ -174,12 +182,14 @@ namespace libquixcc
     {
         static std::shared_ptr<BoolLiteralNode> m_true_instance;
         static std::shared_ptr<BoolLiteralNode> m_false_instance;
-
-    public:
         BoolLiteralNode(bool val) : m_val(val) { ntype = NodeType::BoolLiteralNode; }
 
-        static std::shared_ptr<BoolLiteralNode> create(bool val)
+    public:
+        static const std::shared_ptr<BoolLiteralNode> create(bool val)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (val)
             {
                 if (m_true_instance == nullptr)
@@ -199,7 +209,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
-        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<BoolLiteralNode>(new BoolLiteralNode(m_val)); }
+        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
 
         bool m_val;
     };
@@ -207,12 +217,14 @@ namespace libquixcc
     class NullLiteralNode : public LiteralNode
     {
         static std::shared_ptr<NullLiteralNode> m_instance;
-
-    public:
         NullLiteralNode() { ntype = NodeType::NullLiteralNode; }
 
-        static std::shared_ptr<NullLiteralNode> create()
+    public:
+        static const std::shared_ptr<NullLiteralNode> create()
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             if (m_instance == nullptr)
                 m_instance = std::shared_ptr<NullLiteralNode>(new NullLiteralNode());
             return m_instance;
@@ -223,7 +235,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
-        virtual std::unique_ptr<LiteralNode> reduce() const override { return std::unique_ptr<NullLiteralNode>(new NullLiteralNode()); }
+        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(); }
     };
 }
 

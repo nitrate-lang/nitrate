@@ -40,7 +40,7 @@ using namespace libquixcc;
 
 bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, Token terminator, std::shared_ptr<libquixcc::ConstExprNode> &node)
 {
-    std::stack<std::shared_ptr<libquixcc::ConstExprNode>> stack;
+    std::stack<std::shared_ptr<ConstExprNode>> stack;
 
     while (true)
     {
@@ -65,28 +65,28 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
         switch (tok.type())
         {
         case TokenType::IntegerLiteral:
-            stack.push(libquixcc::IntegerLiteralNode::create(std::get<std::string>(tok.val())));
+            stack.push(IntegerLiteralNode::create(std::get<std::string>(tok.val())));
             continue;
         case TokenType::FloatingLiteral:
-            stack.push(libquixcc::FloatLiteralNode::create(std::get<std::string>(tok.val())));
+            stack.push(FloatLiteralNode::create(std::get<std::string>(tok.val())));
             continue;
         case TokenType::StringLiteral:
-            stack.push(libquixcc::StringLiteralNode::create(std::get<std::string>(tok.val())));
+            stack.push(StringLiteralNode::create(std::get<std::string>(tok.val())));
             continue;
         case TokenType::CharLiteral:
-            stack.push(libquixcc::CharLiteralNode::create(std::get<std::string>(tok.val())));
+            stack.push(CharLiteralNode::create(std::get<std::string>(tok.val())));
             continue;
         case TokenType::Keyword:
             switch (std::get<Keyword>(tok.val()))
             {
             case Keyword::True:
-                stack.push(libquixcc::BoolLiteralNode::create(true));
+                stack.push(BoolLiteralNode::create(true));
                 continue;
             case Keyword::False:
-                stack.push(libquixcc::BoolLiteralNode::create(false));
+                stack.push(BoolLiteralNode::create(false));
                 continue;
             case Keyword::Null:
-                stack.push(libquixcc::NullLiteralNode::create());
+                stack.push(NullLiteralNode::create());
                 continue;
             default:
                 LOG(ERROR) << "Unexpected token {} 1" << tok.serialize() << tok << std::endl;
@@ -98,7 +98,7 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
             {
             case Punctor::OpenParen:
             {
-                std::shared_ptr<libquixcc::ConstExprNode> expr;
+                std::shared_ptr<ConstExprNode> expr;
                 if (!parse_const_expr(job, scanner, terminator, expr))
                     return false;
                 stack.push(expr);
@@ -124,14 +124,14 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
         case TokenType::Operator:
         {
             auto op = std::get<Operator>(tok.val());
-            std::shared_ptr<libquixcc::ConstExprNode> expr;
+            std::shared_ptr<ConstExprNode> expr;
             if (!parse_const_expr(job, scanner, terminator, expr))
                 return false;
 
             if (stack.empty())
             {
                 // Unary operator
-                stack.push(std::make_shared<libquixcc::ConstUnaryExprNode>(op, expr));
+                stack.push(std::make_shared<ConstUnaryExprNode>(op, expr));
                 continue;
             }
             else if (stack.size() == 1)
@@ -139,7 +139,7 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
                 // Binary operator
                 auto left = stack.top();
                 stack.pop();
-                stack.push(std::make_shared<libquixcc::ConstBinaryExprNode>(op, left, expr));
+                stack.push(std::make_shared<ConstBinaryExprNode>(op, left, expr));
                 continue;
             }
             else

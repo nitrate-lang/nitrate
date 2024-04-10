@@ -520,6 +520,16 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StructTypeNode *no
     return llvm::StructType::create(*m_ctx->m_ctx, fields);
 }
 
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::RegionTypeNode *node) const
+{
+    std::vector<llvm::Type *> fields;
+
+    for (auto &field : node->m_fields)
+        fields.push_back(field->codegen(*this));
+
+    return llvm::StructType::create(*m_ctx->m_ctx, fields);
+}
+
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::UnionTypeNode *node) const
 {
     std::vector<llvm::Type *> fields;
@@ -723,6 +733,23 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
 }
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StructDefNode *node) const
+{
+    llvm::Type *f;
+    std::vector<llvm::Type *> fields;
+
+    for (auto &field : node->m_fields)
+    {
+        if (!(f = field->m_type->codegen(*this)))
+            return nullptr;
+        fields.push_back(f);
+    }
+
+    llvm::StructType::create(fields, node->m_name, true);
+
+    return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::RegionDefNode *node) const
 {
     llvm::Type *f;
     std::vector<llvm::Type *> fields;

@@ -88,6 +88,9 @@ namespace libquixcc
     public:
         static FunctionTypeNode *create(TypeNode *return_type, std::vector<TypeNode *> params, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             Inner inner(return_type, params, variadic, pure, thread_safe, foreign, nothrow);
             if (s_instances.find(inner) == s_instances.end())
                 s_instances[inner] = new FunctionTypeNode(return_type, params, variadic, pure, thread_safe, foreign, nothrow);

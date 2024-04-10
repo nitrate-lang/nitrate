@@ -53,6 +53,9 @@ namespace libquixcc
     public:
         static EnumTypeNode *create(const std::string &name, TypeNode *member_type)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             auto key = std::make_pair(name, member_type);
             if (m_instances.find(key) == m_instances.end())
                 m_instances[key] = new EnumTypeNode(name, member_type);

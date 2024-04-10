@@ -87,15 +87,7 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce(libquixcc::
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::RegionDefNode::reduce(libquixcc::ReductionState &state) const
 {
-    std::vector<std::shared_ptr<libquixcc::StructFieldNode>> fields;
-
-    for (auto &field : m_fields)
-    {
-        auto copy = std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value);
-        fields.push_back(copy);
-    }
-
-    return std::make_unique<libquixcc::StructDefNode>(m_name, fields);
+    return std::make_unique<libquixcc::RegionDefNode>(*this);
 }
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc::ReductionState &state) const

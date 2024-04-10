@@ -53,6 +53,9 @@ namespace libquixcc
     public:
         static ArrayTypeNode *create(TypeNode *type, std::shared_ptr<ConstExprNode> size)
         {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
             auto key = std::make_pair(type, size);
             if (m_instances.contains(key))
                 return m_instances[key];
