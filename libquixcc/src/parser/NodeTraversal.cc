@@ -42,29 +42,9 @@ void libquixcc::ParseNodePreorderVisitor::push_prefix(const std::string &name)
         m_prefix += "::" + name;
 }
 
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ParseNode *node)
-{
-    return 1;
-}
-
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ASTNopNode *node)
 {
     return 0;
-}
-
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ExprNode *node)
-{
-    return 1;
-}
-
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ConstExprNode *node)
-{
-    return 1;
-}
-
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StmtNode *node)
-{
-    return 1;
 }
 
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ExprStmtNode *node)
@@ -76,21 +56,6 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::ExprStmtNode *node)
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::NopStmtNode *node)
 {
     return 0;
-}
-
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::TypeNode *node)
-{
-    return 1;
-}
-
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::DeclNode *node)
-{
-    return 1;
-}
-
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::DefNode *node)
-{
-    return 1;
 }
 
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::BlockNode *node)
@@ -299,11 +264,6 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::FunctionTypeNode *n
 }
 
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::UserTypeNode *node)
-{
-    return 1;
-}
-
-size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::LiteralNode *node)
 {
     return 1;
 }

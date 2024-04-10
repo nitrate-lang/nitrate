@@ -45,16 +45,9 @@ namespace libquixcc
     class ParseNodeJsonSerializerVisitor
     {
     public:
-        std::string visit(const ParseNode *node) const;
         std::string visit(const ASTNopNode *node) const;
-        std::string visit(const ExprNode *node) const;
-        std::string visit(const ConstExprNode *node) const;
-        std::string visit(const StmtNode *node) const;
         std::string visit(const ExprStmtNode *node) const;
         std::string visit(const NopStmtNode *node) const;
-        std::string visit(const TypeNode *node) const;
-        std::string visit(const DeclNode *node) const;
-        std::string visit(const DefNode *node) const;
         std::string visit(const BlockNode *node) const;
         std::string visit(const StmtGroupNode *node) const;
         std::string visit(const UnaryExprNode *node) const;
@@ -83,7 +76,6 @@ namespace libquixcc
         std::string visit(const ArrayTypeNode *node) const;
         std::string visit(const FunctionTypeNode *node) const;
         std::string visit(const UserTypeNode *node) const;
-        std::string visit(const LiteralNode *node) const;
         std::string visit(const IntegerLiteralNode *node) const;
         std::string visit(const FloatLiteralNode *node) const;
         std::string visit(const StringLiteralNode *node) const;

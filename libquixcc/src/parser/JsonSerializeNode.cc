@@ -84,31 +84,6 @@ std::string escape_json(const std::string &input)
     return output;
 }
 
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ParseNode *node) const
-{
-    return "{\"ntype\":\"ParseNode\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ASTNopNode *node) const
-{
-    return "{\"ntype\":\"nop\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ExprNode *node) const
-{
-    return "{\"ntype\":\"ExprNode\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ConstExprNode *node) const
-{
-    return "{\"ntype\":\"ConstExprNode\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StmtNode *node) const
-{
-    return "{\"ntype\":\"StmtNode\"}";
-}
-
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ExprStmtNode *node) const
 {
     return "{\"ntype\":\"ExprStmtNode\",\"expr\":" + node->m_expr->to_json(*this) + "}";
@@ -117,21 +92,6 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Ex
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::NopStmtNode *node) const
 {
     return "{\"ntype\":\"nop\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::TypeNode *node) const
-{
-    return "{\"ntype\":\"TypeNode\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::DeclNode *node) const
-{
-    return "{\"ntype\":\"DeclNode\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::DefNode *node) const
-{
-    return "{\"ntype\":\"DefNode\"}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::BlockNode *node) const
@@ -391,11 +351,6 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Fu
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UserTypeNode *node) const
 {
     return "{\"ntype\":\"UserTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
-}
-
-std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::LiteralNode *node) const
-{
-    return "{\"ntype\":\"LiteralNode\"}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::IntegerLiteralNode *node) const

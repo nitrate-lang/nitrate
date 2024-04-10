@@ -55,16 +55,9 @@ namespace libquixcc
     public:
         ParseNodePreorderVisitor(ParseNodePreorderVisitorCallback callback, std::string _namespace) : m_callback(callback), m_prefix(_namespace) {}
 
-        size_t visit(ParseNode *node);
         size_t visit(ASTNopNode *node);
-        size_t visit(ExprNode *node);
-        size_t visit(ConstExprNode *node);
-        size_t visit(StmtNode *node);
         size_t visit(ExprStmtNode *node);
         size_t visit(NopStmtNode *node);
-        size_t visit(TypeNode *node);
-        size_t visit(DeclNode *node);
-        size_t visit(DefNode *node);
         size_t visit(BlockNode *node);
         size_t visit(StmtGroupNode *node);
         size_t visit(UnaryExprNode *node);
@@ -93,7 +86,6 @@ namespace libquixcc
         size_t visit(ArrayTypeNode *node);
         size_t visit(FunctionTypeNode *node);
         size_t visit(UserTypeNode *node);
-        size_t visit(LiteralNode *node);
         size_t visit(IntegerLiteralNode *node);
         size_t visit(FloatLiteralNode *node);
         size_t visit(StringLiteralNode *node);

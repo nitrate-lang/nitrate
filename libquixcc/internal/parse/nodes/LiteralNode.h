@@ -52,8 +52,8 @@ namespace libquixcc
     public:
         LiteralNode() { ntype = NodeType::LiteralNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual bool is_negative() const = 0;
         virtual TypeNode *type() const = 0;
     };
