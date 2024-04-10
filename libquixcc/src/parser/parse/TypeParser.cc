@@ -161,7 +161,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     }
     else
     {
-        LOG(ERROR) << feedback[TYPE_EXPECTED_IDENTIFIER_OR_BRACKET] << tok << std::endl;
+        LOG(ERROR) << feedback[EXPECTED_TYPE] << tok << std::endl;
         return false;
     }
 }
