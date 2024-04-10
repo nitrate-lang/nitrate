@@ -60,7 +60,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             if (tok.is<Punctor>(Punctor::CloseBrace))
             {
                 scanner->next();
-                break;
+                return true;
             }
         }
 
@@ -176,6 +176,12 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
 
         if (node)
             group->m_stmts.push_back(node);
+    }
+
+    if (expect_braces)
+    {
+        LOG(ERROR) << feedback[PARSER_EXPECTED_RIGHT_BRACE] << tok.serialize() << tok << std::endl;
+        return false;
     }
 
     return true;

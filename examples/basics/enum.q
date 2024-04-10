@@ -43,8 +43,9 @@ subsystem libquixcc {
         PARAM_NAME_DUPLICATE,
         SUBSYSTEM_NAME_DUPLICATE,
         TYPEDEF_NAME_DUPLICATE,
-    };
-};
+    }
+}
+
 
 fn main(): i8 {
     return libquixcc::error_message_index::LET_NAME_DUPLICATE;

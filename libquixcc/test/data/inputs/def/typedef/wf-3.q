@@ -1,0 +1,1 @@
+type OpaqueDatabaseHandle = opaque(struct);

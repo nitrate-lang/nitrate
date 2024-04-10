@@ -590,7 +590,7 @@ static bool compile(quixcc_job_t *job)
         return true;
     }
 
-    if (job->m_argset.contains("-LEX"))
+    if (job->m_argset.contains("-emit-tokens"))
     {
         LOG(DEBUG) << "Lexing only" << std::endl;
         StreamLexer lexer;
@@ -663,7 +663,8 @@ static bool compile(quixcc_job_t *job)
     /// BEGIN: AST REDUCTION
     ///=========================================
 
-    auto ast_reduced = ast->reduce();
+    ReductionState state;
+    auto ast_reduced = ast->reduce(state);
     if (!ast_reduced)
     {
         LOG(ERROR) << "failed to reduce AST" << std::endl;
@@ -700,7 +701,7 @@ static bool verify_build_option(const std::string &option, const std::string &va
     const static std::set<std::string> static_options = {
         "-S",            // assembly output
         "-PREP",         // preprocessor/Lexer output
-        "-LEX",          // lexer output (no preprocessing)
+        "-emit-tokens",          // lexer output (no preprocessing)
         "-emit-ir",      // IR output
         "-emit-bc",      // bitcode output
         "-c",            // compile only

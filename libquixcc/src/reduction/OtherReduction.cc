@@ -39,24 +39,38 @@
 #include <parse/nodes/TypedefNode.h>
 #include <parse/nodes/VariableNode.h>
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::EnumDefNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::EnumDefNode::reduce(libquixcc::ReductionState &state) const
 {
     return nullptr;
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDeclNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDeclNode::reduce(libquixcc::ReductionState &state) const
 {
+    // if not in a function definition or export block don't gen func decl
+    // LLVM IR does not require function declarations for internal linkage
+
+    if (!state.m_export && !state.m_fn_def)
+        return nullptr;
+
     return std::make_unique<libquixcc::FunctionDeclNode>(*this);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDefNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDefNode::reduce(libquixcc::ReductionState &state) const
 {
-    std::shared_ptr<StmtNode> block = m_body->reduce();
+    bool x = state.m_fn_def;
 
-    return std::make_unique<libquixcc::FunctionDefNode>(m_decl, std::static_pointer_cast<BlockNode>(block));
+    state.m_fn_def = true;
+
+    std::shared_ptr<StmtNode> block = m_body->reduce(state);
+
+    auto ret = std::make_unique<libquixcc::FunctionDefNode>(m_decl, std::static_pointer_cast<BlockNode>(block));
+
+    state.m_fn_def = x;
+
+    return ret;
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce(libquixcc::ReductionState &state) const
 {
     std::vector<std::shared_ptr<libquixcc::StructFieldNode>> fields;
 
@@ -70,27 +84,27 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce() const
     return std::make_unique<libquixcc::StructDefNode>(m_name, fields);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc::ReductionState &state) const
 {
     return std::make_unique<libquixcc::StructDefNode>(*this);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::UnionDefNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::UnionDefNode::reduce(libquixcc::ReductionState &state) const
 {
     return std::make_unique<libquixcc::UnionDefNode>(*this);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::TypedefNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::TypedefNode::reduce(libquixcc::ReductionState &state) const
 {
     return nullptr;
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::VarDeclNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::VarDeclNode::reduce(libquixcc::ReductionState &state) const
 {
     return std::make_unique<libquixcc::VarDeclNode>(*this);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::LetDeclNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::LetDeclNode::reduce(libquixcc::ReductionState &state) const
 {
     return std::make_unique<libquixcc::LetDeclNode>(*this);
 }

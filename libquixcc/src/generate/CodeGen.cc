@@ -669,7 +669,16 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::LetDeclNode *node
     }
     else
     {
-        gvar->setInitializer(llvm::Constant::getNullValue(type));
+        if (type->isIntegerTy())
+            gvar->setInitializer(llvm::ConstantInt::get(type, llvm::APInt(type->getPrimitiveSizeInBits(), 0, true)));
+        else if (type->isFloatTy())
+            gvar->setInitializer(llvm::ConstantFP::get(type, 0.0));
+        else if (type->isPointerTy())
+            gvar->setInitializer(llvm::ConstantPointerNull::get(static_cast<llvm::PointerType *>(type)));
+        else if (type->isArrayTy() || type->isStructTy())
+            gvar->setInitializer(llvm::ConstantAggregateZero::get(type));
+        else
+            gvar->setInitializer(llvm::Constant::getNullValue(type));
     }
 
     return gvar;

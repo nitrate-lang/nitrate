@@ -75,15 +75,8 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Sc
     }
 
     std::shared_ptr<BlockNode> block;
-    if (!parse(job, scanner, block))
+    if (!parse(job, scanner, block, true))
         return false;
-
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Semicolon))
-    {
-        LOG(ERROR) << feedback[SUBSYSTEM_EXPECTED_SEMICOLON] << tok << std::endl;
-        return false;
-    }
 
     node = std::make_shared<SubsystemNode>(name, deps, block);
 

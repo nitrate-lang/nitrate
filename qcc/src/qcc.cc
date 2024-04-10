@@ -37,6 +37,7 @@ enum class OperatingMode
 
     IR,
     IR_BITCODE,
+    LEX,
 
     ASSEMBLY,
     OBJECT,
@@ -88,6 +89,7 @@ struct Options
             return true;
         case OperatingMode::IR:
         case OperatingMode::IR_BITCODE:
+        case OperatingMode::LEX:
             if (output.empty())
             {
                 std::cerr << "Error: missing output file" << std::endl;
@@ -172,6 +174,7 @@ static void print_help()
     println("  -C, --cpu <cpu>           Specify the LLVM target CPU");
     println("  -emit-ir                  Emit the intermediate representation (LLVM IR)");
     println("  -emit-bc                  Emit the intermediate representation (LLVM bitcode)");
+    println("  -emit-tokens              Emit the tokenized source");
     println("  -S                        Compile only; do not assemble or link");
     println("  -c                        Compile and assemble, but do not link");
     println("  -g                        Generate debug information");
@@ -362,6 +365,10 @@ static std::optional<Options> parse_options(const std::vector<std::string> &args
         {
             options.mode = OperatingMode::IR_BITCODE;
         }
+        else if (*it == "-emit-tokens")
+        {
+            options.mode = OperatingMode::LEX;
+        }
         else if (*it == "-S")
         {
             options.mode = OperatingMode::ASSEMBLY;
@@ -512,6 +519,9 @@ int main(int argc, char *argv[])
         break;
     case OperatingMode::IR_BITCODE:
         builder.opt("-emit-bc");
+        break;
+    case OperatingMode::LEX:
+        builder.opt("-emit-tokens");
         break;
     case OperatingMode::ASSEMBLY:
         builder.opt("-S");

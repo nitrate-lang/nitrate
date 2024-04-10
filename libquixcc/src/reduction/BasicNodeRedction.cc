@@ -35,23 +35,23 @@
 #include <parse/nodes/SubsystemNode.h>
 #include <parse/nodes/ExportNode.h>
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::ExprStmtNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::ExprStmtNode::reduce(libquixcc::ReductionState &state) const
 {
     return std::make_unique<libquixcc::ExprStmtNode>(m_expr);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::NopStmtNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::NopStmtNode::reduce(libquixcc::ReductionState &state) const
 {
     return nullptr;
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::BlockNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::BlockNode::reduce(libquixcc::ReductionState &state) const
 {
     std::unique_ptr<libquixcc::BlockNode> block = std::make_unique<libquixcc::BlockNode>();
 
     for (const auto &stmt : m_stmts)
     {
-        auto reduced_stmt = stmt->reduce();
+        auto reduced_stmt = stmt->reduce(state);
         if (reduced_stmt)
             block->m_stmts.push_back(std::move(reduced_stmt));
     }
@@ -59,13 +59,13 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::BlockNode::reduce() const
     return block;
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::StmtGroupNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::StmtGroupNode::reduce(libquixcc::ReductionState &state) const
 {
     std::unique_ptr<libquixcc::StmtGroupNode> stmt_group = std::make_unique<libquixcc::StmtGroupNode>();
 
     for (const auto &stmt : m_stmts)
     {
-        auto reduced_stmt = stmt->reduce();
+        auto reduced_stmt = stmt->reduce(state);
         if (reduced_stmt)
             stmt_group->m_stmts.push_back(std::move(reduced_stmt));
     }
@@ -73,9 +73,9 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::StmtGroupNode::reduce() const
     return stmt_group;
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::SubsystemNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::SubsystemNode::reduce(libquixcc::ReductionState &state) const
 {
-    auto reduced_block = m_block->reduce();
+    auto reduced_block = m_block->reduce(state);
 
     if (!reduced_block)
         return nullptr;
@@ -83,16 +83,21 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::SubsystemNode::reduce() const
     return std::make_unique<libquixcc::SubsystemNode>(m_name, m_deps, std::shared_ptr<libquixcc::BlockNode>(dynamic_cast<libquixcc::BlockNode *>(reduced_block.release())));
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::ExportNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::ExportNode::reduce(libquixcc::ReductionState &state) const
 {
     std::vector<std::shared_ptr<libquixcc::StmtNode>> reduced_stmts;
 
+    bool x = state.m_export;
+    state.m_export = true;
+
     for (const auto &stmt : m_stmts)
     {
-        auto reduced_stmt = stmt->reduce();
+        auto reduced_stmt = stmt->reduce(state);
         if (reduced_stmt)
             reduced_stmts.push_back(std::move(reduced_stmt));
     }
+
+    state.m_export = x;
 
     return std::make_unique<libquixcc::ExportNode>(reduced_stmts, m_lang_type);
 }

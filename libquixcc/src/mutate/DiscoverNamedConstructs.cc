@@ -52,7 +52,6 @@ static std::string ConstructName(const std::string &prefix, const std::string &n
 static std::map<libquixcc::NodeType, libquixcc::Msg> error_message_index = {
     {NodeType::VarDeclNode, VAR_NAME_DUPLICATE},
     {NodeType::LetDeclNode, LET_NAME_DUPLICATE},
-    {NodeType::FunctionDeclNode, FUNC_NAME_DUPLICATE},
     {NodeType::StructDefNode, STRUCT_NAME_DUPLICATE},
     {NodeType::StructFieldNode, STRUCT_FIELD_DUPLICATE},
     {NodeType::GroupDefNode, GROUP_NAME_DUPLICATE},
@@ -132,7 +131,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
             }
 
             auto key = std::make_pair((*node)->ntype, tmp);
-            if (named_construct_map.contains(key))
+            if (named_construct_map.contains(key) && (*node)->ntype != NodeType::FunctionDeclNode)
             {
                 LOG(ERROR) << feedback[error_message_index[(*node)->ntype]] << tmp << std::endl;
                 return;

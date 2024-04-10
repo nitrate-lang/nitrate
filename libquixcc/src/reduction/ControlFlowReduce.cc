@@ -34,41 +34,41 @@
 #include <parse/nodes/ControlFlow.h>
 #include <parse/nodes/ExprNode.h>
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::ReturnStmtNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::ReturnStmtNode::reduce(libquixcc::ReductionState &state) const
 {
     return std::make_unique<libquixcc::ReturnStmtNode>(*this);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::RetifStmtNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::RetifStmtNode::reduce(libquixcc::ReductionState &state) const
 {
     auto stmt = std::make_shared<ReturnStmtNode>(m_return);
     return std::make_unique<IfStmtNode>(m_cond, stmt, nullptr);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::RetzStmtNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::RetzStmtNode::reduce(libquixcc::ReductionState &state) const
 {
     auto inv_expr = std::make_shared<UnaryExprNode>(Operator::Not, m_cond);
     auto stmt = std::make_shared<ReturnStmtNode>(m_return);
     return std::make_unique<IfStmtNode>(inv_expr, stmt, nullptr);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::RetvStmtNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::RetvStmtNode::reduce(libquixcc::ReductionState &state) const
 {
     auto stmt = std::make_shared<ReturnStmtNode>(nullptr);
     return std::make_unique<IfStmtNode>(m_cond, stmt, nullptr);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::IfStmtNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::IfStmtNode::reduce(libquixcc::ReductionState &state) const
 {
     return std::make_unique<IfStmtNode>(*this);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::WhileStmtNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::WhileStmtNode::reduce(libquixcc::ReductionState &state) const
 {
     return std::make_unique<WhileStmtNode>(*this);
 }
 
-std::unique_ptr<libquixcc::StmtNode> libquixcc::ForStmtNode::reduce() const
+std::unique_ptr<libquixcc::StmtNode> libquixcc::ForStmtNode::reduce(libquixcc::ReductionState &state) const
 {
     /*
     Any for loop of the form:
@@ -89,7 +89,7 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::ForStmtNode::reduce() const
     auto group = std::make_shared<StmtGroupNode>();
 
     if (m_stmt)
-        group->m_stmts.push_back(m_stmt->reduce());
+        group->m_stmts.push_back(m_stmt->reduce(state));
 
     if (m_step)
         group->m_stmts.push_back(std::make_shared<ExprStmtNode>(m_step));

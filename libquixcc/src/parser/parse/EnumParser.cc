@@ -126,13 +126,6 @@ bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         fields.push_back(field);
     }
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Semicolon))
-    {
-        LOG(ERROR) << feedback[ENUM_DEF_EXPECTED_SEMICOLON] << tok << std::endl;
-        return false;
-    }
-
     node = std::make_shared<EnumDefNode>(EnumTypeNode::create(name, type), true, fields);
     return true;
 }

@@ -49,6 +49,12 @@ namespace libquixcc
 {
     class TypeNode;
 
+    struct ReductionState
+    {
+        bool m_export = false;
+        bool m_fn_def = false;
+    };
+
     class ParseNode
     {
     public:
@@ -112,7 +118,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const = 0;
-        virtual std::unique_ptr<StmtNode> reduce() const = 0;
+        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const = 0;
     };
 
     class ExprStmtNode : public StmtNode
@@ -123,7 +129,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
-        virtual std::unique_ptr<StmtNode> reduce() const override;
+        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_expr;
     };
@@ -136,7 +142,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { throw std::runtime_error("NopStmtNode::codegen not implemented"); }
-        virtual std::unique_ptr<StmtNode> reduce() const override;
+        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
     };
 
     class TypeNode : public ParseNode
@@ -191,7 +197,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
-        virtual std::unique_ptr<StmtNode> reduce() const override = 0;
+        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override = 0;
     };
 
     class DefNode : public StmtNode
@@ -201,7 +207,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
-        virtual std::unique_ptr<StmtNode> reduce() const override = 0;
+        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override = 0;
     };
 
     class BlockNode : public StmtNode
@@ -212,7 +218,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
-        virtual std::unique_ptr<StmtNode> reduce() const override;
+        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::vector<std::shared_ptr<StmtNode>> m_stmts;
     };
@@ -225,7 +231,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
-        virtual std::unique_ptr<StmtNode> reduce() const override;
+        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::vector<std::shared_ptr<StmtNode>> m_stmts;
     };

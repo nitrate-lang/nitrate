@@ -32,7 +32,7 @@
 subsystem Number {
     let CONSTANT_A: i8 = 10;
     let CONSTANT_B: i8 = 20;
-};
+}
 
 fn main(): i8 {
     let x: i8 = Number::CONSTANT_A;

@@ -53,7 +53,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("TypedefNode is not codegen-able"); }
-        std::unique_ptr<StmtNode> reduce() const override;
+        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         TypeNode *m_orig;
         std::string m_name;

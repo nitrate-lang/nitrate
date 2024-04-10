@@ -433,6 +433,17 @@ static bool reduce_identifier(std::string &str)
         return true;
     }
 
+    // Replace all `<<string>>` syntax should be replaced with _Z0<string>_
+    size_t first = str.find('<');
+    size_t last = str.find('>');
+
+    while (first != std::string::npos && last != std::string::npos)
+    {
+        str.replace(first, last - first + 1, "::_" + str.substr(first + 1, last - first - 1));
+        first = str.find('<');
+        last = str.find('>');
+    }
+
     if (validate_identifier_type_1(str))
     {
         cache[str] = str;
@@ -763,22 +774,20 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
         }
         case LexState::Identifier:
         {
-            if (std::isalnum(c) || c == '_' || c == '.' || c == ':')
+            if (std::isalnum(c) || c == '_' || c == ':' || c == '<' || c == '>')
             {
                 buffer += c;
                 continue;
             }
 
+            m_last = c;
+
             if (buffer.size() > 0 && buffer.back() == ':')
             {
-                m_last = c;
-                buffer.pop_back();
-
-                pushback(':');
+                char tc;
+                pushback((tc = buffer.back(), buffer.pop_back(), tc));
                 continue;
             }
-
-            m_last = c;
 
             // check if it's a keyword
             for (const auto &kw : keywords)
