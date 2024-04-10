@@ -497,6 +497,32 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::St
     return str + "}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::RegionDefNode *node) const
+{
+    std::string str = "{\"ntype\":\"RegionDefNode\",\"fields\":[";
+    for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_fields.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    return str + "}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::RegionFieldNode *node) const
+{
+    std::string str = "{\"ntype\":\"RegionFieldNode\",\"name\":\"";
+    str += escape_json(node->m_name);
+    str += "\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"value\":";
+    str += (node->m_value ? node->m_value->to_json(*this) : "null");
+    return str + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::GroupDefNode *node) const
 {
     std::string str = "{\"ntype\":\"GroupDefNode\",\"name\":\"";

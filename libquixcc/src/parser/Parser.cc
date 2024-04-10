@@ -116,6 +116,10 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             if (!parse_struct(job, scanner, node))
                 return false;
             break;
+        case Keyword::Region:
+            if (!parse_region(job, scanner, node))
+                return false;
+            break;
         case Keyword::Group:
             if (!parse_group(job, scanner, node))
                 return false;

@@ -35,6 +35,7 @@
 #include <parse/nodes/FunctionNode.h>
 #include <parse/nodes/GroupNode.h>
 #include <parse/nodes/StructNode.h>
+#include <parse/nodes/RegionNode.h>
 #include <parse/nodes/UnionNode.h>
 #include <parse/nodes/TypedefNode.h>
 #include <parse/nodes/VariableNode.h>
@@ -81,6 +82,19 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce(libquixcc::
     }
 
     /// TODO: optimize layout of Groups
+    return std::make_unique<libquixcc::StructDefNode>(m_name, fields);
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::RegionDefNode::reduce(libquixcc::ReductionState &state) const
+{
+    std::vector<std::shared_ptr<libquixcc::StructFieldNode>> fields;
+
+    for (auto &field : m_fields)
+    {
+        auto copy = std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value);
+        fields.push_back(copy);
+    }
+
     return std::make_unique<libquixcc::StructDefNode>(m_name, fields);
 }
 

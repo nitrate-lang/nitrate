@@ -82,6 +82,7 @@ namespace libquixcc
 
         EnumTypeNode,
         StructTypeNode,
+        RegionTypeNode,
         UnionTypeNode,
         ArrayTypeNode,
         FunctionTypeNode,
@@ -104,6 +105,8 @@ namespace libquixcc
 
         StructDefNode,
         StructFieldNode,
+        RegionDefNode,
+        RegionFieldNode,
         GroupDefNode,
         GroupFieldNode,
         UnionDefNode,
@@ -160,6 +163,7 @@ namespace libquixcc
     class StringTypeNode;
     class EnumTypeNode;
     class StructTypeNode;
+    class RegionTypeNode;
     class UnionTypeNode;
     class ArrayTypeNode;
     class FunctionTypeNode;
@@ -177,6 +181,8 @@ namespace libquixcc
     class FunctionDeclNode;
     class StructDefNode;
     class StructFieldNode;
+    class RegionDefNode;
+    class RegionFieldNode;
     class GroupDefNode;
     class GroupFieldNode;
     class UnionDefNode;

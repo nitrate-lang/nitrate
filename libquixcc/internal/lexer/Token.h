@@ -51,6 +51,7 @@ namespace libquixcc
         Var,
         Const,
         Struct,
+        Region,
         Group,
         Union,
         Opaque,

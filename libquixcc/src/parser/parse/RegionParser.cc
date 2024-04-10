@@ -29,44 +29,111 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_H__
-#define __QUIXCC_PARSE_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parse/Parser.h>
+#include <LibMacro.h>
+#include <error/Logger.h>
 
-#include <lexer/Lex.h>
-#include <parse/nodes/AllNodes.h>
-#include <quixcc.h>
+using namespace libquixcc;
 
-namespace libquixcc
+static bool parse_region_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<RegionFieldNode> &node)
 {
-    typedef BlockNode AST;
+    Token tok = scanner->next();
+    if (tok.type() != TokenType::Identifier)
+    {
+        LOG(ERROR) << feedback[REGION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
 
-    bool parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<BlockNode> &node, bool expect_braces = true);
-    bool parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    auto name = std::get<std::string>(tok.val());
 
-    bool parse_let(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
-    bool parse_var(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
-    bool parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_region(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_group(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, Token terminator, std::shared_ptr<libquixcc::ConstExprNode> &node);
-    bool parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::set<Token> terminators, std::shared_ptr<libquixcc::ExprNode> &node, size_t depth = 0);
-    bool parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, TypeNode **node);
-    bool parse_typedef(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_return(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_retv(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_if(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_while(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-};
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Colon))
+    {
+        LOG(ERROR) << feedback[REGION_FIELD_MISSING_COLON] << tok << std::endl;
+        return false;
+    }
 
-#endif // __QUIXCC_PARSE_H__
+    TypeNode *type;
+    if (!parse_type(job, scanner, &type))
+    {
+        LOG(ERROR) << feedback[REGION_FIELD_TYPE_ERR] << name << tok << std::endl;
+        return false;
+    }
+
+    std::shared_ptr<ConstExprNode> value;
+
+    tok = scanner->next();
+    if (tok.is<Punctor>(Punctor::Comma))
+    {
+        node = std::make_shared<RegionFieldNode>(name, type);
+        return true;
+    }
+    else if (tok.is<Operator>(Operator::Assign))
+    {
+        if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), value))
+        {
+            LOG(ERROR) << feedback[REGION_FIELD_INIT_ERR] << name << tok << std::endl;
+            return false;
+        }
+    }
+    else
+    {
+        LOG(ERROR) << feedback[REGION_FIELD_MISSING_PUNCTOR] << name << tok << std::endl;
+        return false;
+    }
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Comma))
+    {
+        LOG(ERROR) << feedback[REGION_FIELD_MISSING_PUNCTOR] << name << tok << std::endl;
+        return false;
+    }
+
+    node = std::make_shared<RegionFieldNode>(name, type, value);
+
+    return true;
+}
+
+bool libquixcc::parse_region(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+{
+    Token tok = scanner->next();
+    if (tok.type() != TokenType::Identifier)
+    {
+        LOG(ERROR) << feedback[REGION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
+
+    std::string name = std::get<std::string>(tok.val());
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::OpenBrace))
+    {
+        LOG(ERROR) << feedback[REGION_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
+        return false;
+    }
+
+    std::vector<std::shared_ptr<RegionFieldNode>> fields;
+
+    while (true)
+    {
+        tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::CloseBrace))
+        {
+            scanner->next();
+            break;
+        }
+
+        std::shared_ptr<RegionFieldNode> field;
+        if (!parse_region_field(job, scanner, field))
+            return false;
+        fields.push_back(field);
+    }
+
+    auto sdef = std::make_shared<RegionDefNode>();
+    sdef->m_name = name;
+    sdef->m_fields = fields;
+    node = sdef;
+    return true;
+}

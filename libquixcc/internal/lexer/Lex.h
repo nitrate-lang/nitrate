@@ -55,13 +55,14 @@ namespace libquixcc
 
     typedef std::pair<const char *, int> KWPair;
 
-    constexpr std::array<KWPair, 36> keywords = {
+    constexpr std::array<KWPair, 37> keywords = {
         KWPair("subsystem", 9),
         KWPair("import", 6),
         KWPair("type", 4),
         KWPair("let", 3),
         KWPair("var", 3),
         KWPair("struct", 6),
+        KWPair("region", 6),
         KWPair("group", 5),
         KWPair("union", 5),
         KWPair("opaque", 6),

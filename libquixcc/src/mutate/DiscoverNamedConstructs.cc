@@ -54,6 +54,8 @@ static std::map<libquixcc::NodeType, libquixcc::Msg> error_message_index = {
     {NodeType::LetDeclNode, LET_NAME_DUPLICATE},
     {NodeType::StructDefNode, STRUCT_NAME_DUPLICATE},
     {NodeType::StructFieldNode, STRUCT_FIELD_DUPLICATE},
+    {NodeType::RegionDefNode, REGION_NAME_DUPLICATE},
+    {NodeType::RegionFieldNode, REGION_FIELD_DUPLICATE},
     {NodeType::GroupDefNode, GROUP_NAME_DUPLICATE},
     {NodeType::GroupFieldNode, GROUP_FIELD_DUPLICATE},
     {NodeType::UnionDefNode, UNION_NAME_DUPLICATE},
@@ -93,6 +95,13 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
                 break;
             case NodeType::StructFieldNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::StructFieldNode>(*node)->m_name);
+                break;
+            case NodeType::RegionDefNode:
+                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::RegionDefNode>(*node)->m_name);
+                is_type = true;
+                break;
+            case NodeType::RegionFieldNode:
+                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::RegionFieldNode>(*node)->m_name);
                 break;
             case NodeType::GroupDefNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::GroupDefNode>(*node)->m_name);
