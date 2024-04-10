@@ -20,7 +20,4 @@ os.system('cp build/qld/qld bin/')
 os.system('cp build/qpkg/qpkg bin/')
 os.system('cp build/libquixcc/libquixcc.so bin/')
 
-# os.system('cp -r build/tools/quixcc-* bin/')
-# os.system('cp -r build/libquixcc/test/qcc-* bin/')
-
 print('Build complete')

@@ -8,16 +8,20 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Find C++20 source files
 file(GLOB_RECURSE QUIXCC_CXX_SOURCES "src/*.cc")
 
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_EXE_LINKER_FLAGS "-static")
+
 add_executable(qld ${QUIXCC_CXX_SOURCES})
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release") 
     target_compile_options(qld PRIVATE -g -Wall -Wextra -Wpedantic -Werror -O3 -flto)
     target_link_options(qld PRIVATE -flto)
     add_custom_command(TARGET qld POST_BUILD COMMAND strip $<TARGET_FILE:qld>)
+    add_custom_command(TARGET qld POST_BUILD COMMAND upx $<TARGET_FILE:qld>)
 else()
     target_compile_options(qld PRIVATE -g -Wall -Wextra -Wpedantic -Werror)
 endif()
-target_link_libraries(qld PRIVATE -lstdc++fs libstdc++.a)
 
 if (BUILD_TESTING)
     add_subdirectory(test)
