@@ -729,12 +729,23 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StructDefNode *no
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnionDefNode *node) const
 {
-    return nullptr;
-}
+    std::vector<llvm::Type *> fields;
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnionFieldNode *node) const
-{
-    return nullptr;
+    fields.push_back(llvm::Type::getInt32Ty(*m_ctx->m_ctx)); // selector
+
+    size_t largest = 0;
+    for (auto &field : node->get_type()->m_fields)
+    {
+        auto type = field->codegen(*this);
+        if (type->getPrimitiveSizeInBits() > largest)
+            largest = type->getPrimitiveSizeInBits();
+    }
+
+    fields.push_back(llvm::ArrayType::get(llvm::Type::getInt8Ty(*m_ctx->m_ctx), largest / 8));
+
+    llvm::StructType::create(fields, node->m_name, true);
+
+    return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
 llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNode *node) const
