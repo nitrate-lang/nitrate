@@ -91,6 +91,9 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {TYPE_EXPECTED_CLOSE_BRACKET, "Expected a close bracket after the constant expression. To fix the issue, insert a close bracket after the constant expression. Syntax: [type; size]"},
     {EXPECTED_TYPE, "Failed to parse type. Expected a type name, but none was found. To fix the issue, insert a type name"},
     {TYPE_EXPECTED_FUNCTION, "Expected a function name after the keyword 'fn'. To fix the issue, insert a function name after the keyword 'fn'"},
+    {TYPE_OPAQUE_EXPECTED_IDENTIFIER, "Expected identifier to name the opaque type. Syntax: opaque (name)"},
+    {TYPE_OPAQUE_EXPECTED_PAREN, "Expected an open parenthesis in the opaque type definition. Syntax: opaque (name)"},
+    {TYPE_OPAQUE_EXPECTED_CLOSE_PAREN, "Expected a close parenthesis in the opaque type definition. Syntax: opaque (name)"},
 
     {SUBSYSTEM_MISSING_IDENTIFIER, "Expected identifier after the keyword 'subsystem'. To fix the issue, insert an identifier after the keyword 'subsystem'"},
     {SUBSYSTEM_EXPECTED_IDENTIFIER, "Expected identifier after the colon in the subsystem declaration. To fix the issue, insert an identifier after the colon in the subsystem declaration"},

@@ -1,1 +1,1 @@
-type OpaqueDatabaseHandle = opaque(struct);
+type OpaqueDatabaseHandle = opaque(myType);

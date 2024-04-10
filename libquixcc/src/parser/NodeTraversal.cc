@@ -204,6 +204,11 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::PointerTypeNode *no
     return node->m_type->dfs_preorder(*this) + 1;
 }
 
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::OpaqueTypeNode *node)
+{
+    return 1;
+}
+
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StringTypeNode *node)
 {
     return 1;

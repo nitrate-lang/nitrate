@@ -319,6 +319,29 @@ namespace libquixcc
 
         TypeNode *m_type;
     };
+
+    class OpaqueTypeNode : public TypeNode
+    {
+        OpaqueTypeNode(std::string name) : m_name(name) { ntype = NodeType::OpaqueTypeNode; }
+        static std::map<std::string, OpaqueTypeNode *> m_instances;
+
+    public:
+        static OpaqueTypeNode *create(std::string name)
+        {
+            if (!m_instances.contains(name))
+                m_instances[name] = new OpaqueTypeNode(name);
+            return m_instances[name];
+        }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("Cannot codegen opaque type"); }
+        virtual bool is_composite() const override { return false; }
+        virtual size_t size(size_t ptr_size) const override { return 0; }
+        virtual std::string to_source() const override { return "opaque(" + m_name + ")"; }
+
+        std::string m_name;
+    };
 }
 
 #endif // __QUIXCC_PARSE_NODES_INTEGER_H__

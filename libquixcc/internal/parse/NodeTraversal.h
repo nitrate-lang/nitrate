@@ -79,6 +79,7 @@ namespace libquixcc
         size_t visit(BoolTypeNode *node);
         size_t visit(VoidTypeNode *node);
         size_t visit(PointerTypeNode *node);
+        size_t visit(OpaqueTypeNode *node);
         size_t visit(StringTypeNode *node);
         size_t visit(EnumTypeNode *node);
         size_t visit(StructTypeNode *node);

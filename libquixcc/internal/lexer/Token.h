@@ -53,6 +53,7 @@ namespace libquixcc
         Struct,
         Group,
         Union,
+        Opaque,
         Fn,
         Nothrow,
         Foreign,

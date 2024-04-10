@@ -34,6 +34,7 @@
 #include <LibMacro.h>
 #include <mangle/Symbol.h>
 #include <parse/nodes/AllNodes.h>
+#include <error/Logger.h>
 
 /// TODO: Add a construct to the mangling system that indicates mutability.
 
@@ -203,6 +204,10 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
 
         return "f" + s;
     }
+    else if (type->ntype == NodeType::OpaqueTypeNode)
+    {
+        LOG(FATAL) << "Opaque types are not supported in the mangling system." << std::endl;
+    }
 
     throw std::runtime_error("Unknown type: " + std::to_string((int)type->ntype));
 }
@@ -262,9 +267,10 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         }
 
         return UnionTypeNode::create(fields_nodes);
-    } else if (type[0] == 'k')
+    }
+    else if (type[0] == 'k')
     {
-        TypeNode* m_type;
+        TypeNode *m_type;
         std::string name;
 
         std::vector<std::string> fields;
@@ -276,7 +282,7 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
 
         if ((m_type = deserialize_type(fields[0])) == nullptr)
             return nullptr;
-        
+
         name = fields[1];
 
         return EnumTypeNode::create(name, m_type);

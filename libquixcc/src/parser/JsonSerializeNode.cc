@@ -268,6 +268,11 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Po
     return str + "}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::OpaqueTypeNode *node) const
+{
+    return "{\"ntype\":\"OpaqueTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StringTypeNode *node) const
 {
     return "{\"ntype\":\"StringTypeNode\"}";

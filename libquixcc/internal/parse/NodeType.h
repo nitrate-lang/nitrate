@@ -77,6 +77,7 @@ namespace libquixcc
         BoolTypeNode,
         VoidTypeNode,
         PointerTypeNode,
+        OpaqueTypeNode,
         StringTypeNode,
 
         EnumTypeNode,
@@ -155,6 +156,7 @@ namespace libquixcc
     class BoolTypeNode;
     class VoidTypeNode;
     class PointerTypeNode;
+    class OpaqueTypeNode;
     class StringTypeNode;
     class EnumTypeNode;
     class StructTypeNode;

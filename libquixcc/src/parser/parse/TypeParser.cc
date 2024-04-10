@@ -80,6 +80,31 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             *node = std::static_pointer_cast<FunctionDeclNode>(fn)->m_type;
             scanner->push(Token(TokenType::Punctor, Punctor::Semicolon));
             return true;
+        case Keyword::Opaque:
+        {
+            tok = scanner->next();
+            if (!tok.is<Punctor>(Punctor::OpenParen))
+            {
+                LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_PAREN] << tok << std::endl;
+                return false;
+            }
+            tok = scanner->next();
+            if (tok.type() != TokenType::Identifier)
+            {
+                LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_IDENTIFIER] << tok << std::endl;
+                return false;
+            }
+            std::string name = std::get<std::string>(tok.val());
+            tok = scanner->next();
+            if (!tok.is<Punctor>(Punctor::CloseParen))
+            {
+                LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_CLOSE_PAREN] << tok << std::endl;
+                return false;
+            }
+
+            *node = OpaqueTypeNode::create(name);
+            return true;
+        }
         default:
             return false;
         }

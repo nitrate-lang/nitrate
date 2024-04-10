@@ -490,6 +490,9 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::VoidTypeNode *node
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::PointerTypeNode *node) const
 {
+    if (node->m_type->ntype == NodeType::OpaqueTypeNode)
+        return llvm::Type::getInt8PtrTy(*m_ctx->m_ctx);
+
     auto type = node->m_type->codegen(*this);
     if (!type)
         return nullptr;
