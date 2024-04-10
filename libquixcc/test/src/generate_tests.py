@@ -92,5 +92,5 @@ for test_case in test_cases_manifest['test_cases']:
     content += f"}}\n"
 
 
-with open(sys.argv[1], 'w') as f:
+with open(sys.argv[3], 'w') as f:
     f.write(content)

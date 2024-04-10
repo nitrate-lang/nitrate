@@ -29,7 +29,7 @@ endforeach()
 
 # Must rebuild the test if ${CMAKE_CURRENT_SOURCE_DIR}/data/manifest.json changes
 add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/src/generate_tests.py ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc ${CMAKE_CURRENT_SOURCE_DIR}/data
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/src/generate_tests.py ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite-proto.cc ${CMAKE_CURRENT_SOURCE_DIR}/data ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/data/manifest.json ${CMAKE_CURRENT_SOURCE_DIR}/src/generate_tests.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src
     COMMENT "Generating test suite"
