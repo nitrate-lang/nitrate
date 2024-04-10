@@ -19,7 +19,7 @@ OUTPUT_VARIABLE LLVM_LD_FLAGS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 # Get LLVM flags from llvm-config-14 --link-static --libfiles
-execute_process(COMMAND llvm-config-14 --system-libs --libfiles
+execute_process(COMMAND llvm-config-14 --link-static --system-libs --libfiles
 OUTPUT_VARIABLE LLVM_LIBS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
@@ -31,8 +31,10 @@ execute_process(COMMAND echo -n 0x | openssl rand -hex 4
 OUTPUT_VARIABLE RANDOM_NUMBER
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-SET(PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete)
+SET(PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete -flto)
 SET(PROJECT_DEBUG_FLAGS -g -Wall -Wextra -Werror -Wno-unused-parameter -Wno-error=unused-parameter -pedantic ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC  -Wno-error=mismatched-new-delete)
+
+SET(STATIC_PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC -O3  -Wno-error=mismatched-new-delete)
 
 add_library(libquixcc SHARED ${LIBQUIX_CXX_SOURCES})
 target_include_directories(libquixcc PUBLIC "internal" include)
@@ -48,8 +50,18 @@ foreach(lib ${LLVM_LIBS})
     message(STATUS "Linking with ${lib}")
     target_link_libraries(libquixcc PRIVATE ${lib})
 endforeach()
-target_link_libraries(libquixcc PRIVATE libstdc++.a)
 set_target_properties(libquixcc PROPERTIES OUTPUT_NAME quixcc)
+
+add_library(libquixcc-static STATIC ${LIBQUIX_CXX_SOURCES})
+target_include_directories(libquixcc-static PUBLIC "internal" include)
+if (CMAKE_BUILD_TYPE STREQUAL "Release") 
+    target_compile_options(libquixcc-static PRIVATE ${STATIC_PROJECT_RELEASE_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS)
+    target_link_options(libquixcc-static PRIVATE ${LLVM_LD_FLAGS} -O3 -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
+else()
+    target_compile_options(libquixcc-static PRIVATE ${PROJECT_DEBUG_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS)
+    target_link_options(libquixcc-static PRIVATE ${LLVM_LD_FLAGS})
+endif()
+set_target_properties(libquixcc-static PROPERTIES OUTPUT_NAME quixcc)
 
 if (BUILD_TESTING)
     add_subdirectory(test)

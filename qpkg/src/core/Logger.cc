@@ -28,7 +28,6 @@
 #include <iostream>
 #include <signal.h>
 #include <execinfo.h>
-#include <openssl/rand.h>
 #include <map>
 
 #define LOGGER_MASK_SRC 1
