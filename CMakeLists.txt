@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 project(quix-compiler-suite)
 
+if (BUILD_TESTING)
+    enable_testing()
+endif()
+
 add_subdirectory(libquixcc)
 add_subdirectory(qcc)
 add_subdirectory(qld)
