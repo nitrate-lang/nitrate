@@ -48,14 +48,11 @@ namespace libquixcc
     class ArrayTypeNode : public TypeNode
     {
         ArrayTypeNode(TypeNode *type, std::shared_ptr<ConstExprNode> size) : m_type(type), m_size(size) { ntype = NodeType::ArrayTypeNode; }
-        static std::map<std::pair<TypeNode *, std::shared_ptr<ConstExprNode>>, ArrayTypeNode *> m_instances;
+        static thread_local std::map<std::pair<TypeNode *, std::shared_ptr<ConstExprNode>>, ArrayTypeNode *> m_instances;
 
     public:
         static ArrayTypeNode *create(TypeNode *type, std::shared_ptr<ConstExprNode> size)
         {
-            static std::mutex mutex;
-            std::lock_guard<std::mutex> lock(mutex);
-
             auto key = std::make_pair(type, size);
             if (m_instances.contains(key))
                 return m_instances[key];
