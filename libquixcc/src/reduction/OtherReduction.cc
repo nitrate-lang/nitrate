@@ -39,6 +39,7 @@
 #include <parse/nodes/UnionNode.h>
 #include <parse/nodes/TypedefNode.h>
 #include <parse/nodes/VariableNode.h>
+#include <parse/nodes/InlineAsmNode.h>
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::EnumDefNode::reduce(libquixcc::ReductionState &state) const
 {
@@ -113,4 +114,9 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::VarDeclNode::reduce(libquixcc::R
 std::unique_ptr<libquixcc::StmtNode> libquixcc::LetDeclNode::reduce(libquixcc::ReductionState &state) const
 {
     return std::make_unique<libquixcc::LetDeclNode>(*this);
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::InlineAsmNode::reduce(libquixcc::ReductionState &state) const
+{
+    return std::make_unique<libquixcc::InlineAsmNode>(*this);
 }

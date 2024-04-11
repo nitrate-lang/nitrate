@@ -29,35 +29,20 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_EXPORTED_H__
-#define __QUIXCC_PARSE_NODES_EXPORTED_H__
+import "C" fn printf(format: *i8, ...): i32;
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+fn do_inline_asm(): i32 {
+    let x: i32;
 
-#include <string>
-#include <vector>
-#include <memory>
+    __asm__("mov $$42, $0", {"=r": &x}, {}, ["esi"]);
 
-#include <llvm/LLVMWrapper.h>
-#include <parse/nodes/BasicNodes.h>
-
-namespace libquixcc
-{
-    class ExportNode : public StmtNode
-    {
-    public:
-        ExportNode(std::vector<std::shared_ptr<libquixcc::StmtNode>> stmts, ExportLangType lang) : m_stmts(stmts), m_lang_type(lang) { ntype = NodeType::ExportNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
-        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
-
-        std::vector<std::shared_ptr<libquixcc::StmtNode>> m_stmts;
-        ExportLangType m_lang_type;
-    };
+    return x;
 }
 
-#endif // __QUIXCC_PARSE_NODES_EXPORTED_H__
+fn main(): void {
+    let x: i32 = do_inline_asm();
+
+    printf("x = %d\n", x);
+
+    return;
+}

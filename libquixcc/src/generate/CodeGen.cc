@@ -36,6 +36,8 @@
 #include <mangle/Symbol.h>
 #include <error/Logger.h>
 
+#include <llvm/IR/InlineAsm.h>
+
 uint8_t get_numbits(std::string s)
 {
     if (s.starts_with("-"))
@@ -900,6 +902,103 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExportNode *node)
     m_ctx->m_lang = lang;
 
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::InlineAsmNode *node) const
+{
+    /*
+        What were doing here:
+         1. Gencode the input expressions and compute their types
+         1. Generate the output expressions and compute their types
+         1. Generate LLVM IR function using this signature
+         1. Translate ASM constraints to LLVM IR constraints
+         1. Create ASM call
+         1. If any outputs, store the values in the output expressions
+    */
+
+    /// Make inputs/codegen inputs
+    std::vector<llvm::Type *> params;
+    std::vector<llvm::Value *> args;
+    for (const auto &param : node->m_inputs)
+    {
+        auto val = param.second->codegen(*this);
+        if (!val)
+            return nullptr;
+
+        params.push_back(val->getType());
+        args.push_back(val);
+    }
+
+    /// Make outputs/codegen outputs
+    std::vector<llvm::Value *> outputs;
+    llvm::Type *ret = nullptr;
+    if (node->m_outputs.empty())
+    {
+        ret = llvm::Type::getVoidTy(*m_ctx->m_ctx);
+    }
+    else if (node->m_outputs.size() == 1)
+    {
+        auto val = node->m_outputs.begin()->second->codegen(*this);
+        if (!val)
+            return nullptr;
+
+        // It is a pointer, get element type
+        if (val->getType()->isPointerTy())
+            ret = val->getType()->getPointerElementType();
+        else
+            ret = val->getType();
+
+        outputs.push_back(val);
+    }
+    else
+    {
+        std::vector<llvm::Type *> types;
+        for (const auto &param : node->m_outputs)
+        {
+            auto val = param.second->codegen(*this);
+            if (!val)
+                return nullptr;
+            types.push_back(val->getType());
+            outputs.push_back(val);
+        }
+        ret = llvm::StructType::get(*m_ctx->m_ctx, types);
+    }
+
+    llvm::FunctionType *ftype = llvm::FunctionType::get(ret, params, false);
+
+    std::string constraints = "";
+    for (const auto &param : node->m_outputs)
+    {
+        constraints += param.first + ",";
+    }
+    for (const auto &param : node->m_inputs)
+    {
+        constraints += param.first + ",";
+    }
+    for (const auto &param : node->m_clobbers)
+    {
+        constraints += "~{" + param + "},";
+    }
+
+    constraints += "~{dirflag},~{fpsr},~{flags}";
+
+    llvm::InlineAsm *asmcode = llvm::InlineAsm::get(ftype, node->m_asm, constraints, true, false, llvm::InlineAsm::AD_ATT);
+
+    auto call = m_ctx->m_builder->CreateCall(asmcode, args);
+
+    if (outputs.empty())
+    {
+        return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+    }
+    else
+    {
+        for (size_t i = 0; i < outputs.size(); i++)
+        {
+            m_ctx->m_builder->CreateStore(call, outputs[i]);
+        }
+
+        return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+    }
 }
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ReturnStmtNode *node) const

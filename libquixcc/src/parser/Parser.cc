@@ -173,6 +173,10 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             if (!parse_for(job, scanner, node))
                 return false;
             break;
+        case Keyword::__Asm__: // inline assembly
+            if (!parse_inline_asm(job, scanner, node))
+                return false;
+            break;
         default:
             LOG(ERROR) << feedback[PARSER_ILLEGAL_KEYWORD] << tok.serialize() << tok << std::endl;
             return false;

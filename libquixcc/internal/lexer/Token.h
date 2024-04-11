@@ -76,6 +76,7 @@ namespace libquixcc
         Retif,
         Retz,
         Retv,
+        __Asm__,
         Void,
         Undef,
         Null,

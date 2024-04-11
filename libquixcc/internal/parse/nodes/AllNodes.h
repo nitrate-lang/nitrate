@@ -53,6 +53,7 @@
 #include <parse/nodes/UnionNode.h>
 #include <parse/nodes/FunctionNode.h>
 #include <parse/nodes/ExportNode.h>
+#include <parse/nodes/InlineAsmNode.h>
 #include <parse/nodes/ControlFlow.h>
 #include <parse/nodes/TypedefNode.h>
 

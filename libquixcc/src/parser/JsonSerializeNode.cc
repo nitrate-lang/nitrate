@@ -682,6 +682,50 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Ex
     return str + "]}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::InlineAsmNode *node) const
+{
+    std::string str = "{\"ntype\":\"InlineAsmNode\",\"asm\":\"";
+    str += escape_json(node->m_asm);
+    str += "\",\"outputs\":[";
+    for (auto it = node->m_outputs.begin(); it != node->m_outputs.end(); ++it)
+    {
+        str += (*it).second->to_json(*this);
+
+        if (it != node->m_outputs.end())
+        {
+            str += ",";
+        }
+    }
+
+    str += "],\"inputs\":[";
+
+    for (auto it = node->m_inputs.begin(); it != node->m_inputs.end(); ++it)
+    {
+        str += (*it).second->to_json(*this);
+
+        if (it != node->m_inputs.end())
+        {
+            str += ",";
+        }
+    }
+
+    str += "],\"clobbers\":[";
+
+    for (auto it = node->m_clobbers.begin(); it != node->m_clobbers.end(); ++it)
+    {
+        str += *it;
+
+        if (it != node->m_clobbers.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    str += "]}";
+
+    return str;
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ReturnStmtNode *node) const
 {
     if (node->m_expr)

@@ -29,86 +29,39 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CODEGEN_H__
-#define __QUIXCC_LLVM_CODEGEN_H__
+#ifndef __QUIXCC_PARSE_NODES_INLINEASM_H__
+#define __QUIXCC_PARSE_NODES_INLINEASM_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <parse/NodeType.h>
-#include <llvm/IR/Value.h>
+#include <string>
+#include <vector>
+#include <unordered_map>
+#include <memory>
+
 #include <llvm/LLVMWrapper.h>
+#include <parse/nodes/BasicNodes.h>
 
 namespace libquixcc
 {
-    class CodegenException : public std::exception
+    class InlineAsmNode : public StmtNode
     {
-        std::string m_msg;
-
     public:
-        CodegenException(const std::string &msg) : m_msg(msg) {}
+        InlineAsmNode(const std::string &asmcode, const std::unordered_map<std::string, std::shared_ptr<ExprNode>> &outputs, const std::unordered_map<std::string, std::shared_ptr<ExprNode>> &inputs, const std::vector<std::string> &clobbers)
+            : m_asm(asmcode), m_outputs(outputs), m_inputs(inputs), m_clobbers(clobbers) { ntype = NodeType::InlineAsmNode; }
 
-        virtual const char *what() const noexcept override { return m_msg.c_str(); }
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
+
+        std::string m_asm;
+        std::unordered_map<std::string, std::shared_ptr<ExprNode>> m_outputs;
+        std::unordered_map<std::string, std::shared_ptr<ExprNode>> m_inputs;
+        std::vector<std::string> m_clobbers;
     };
+}
 
-    class CodegenVisitor
-    {
-        LLVMContext *m_ctx;
-
-    public:
-        CodegenVisitor(LLVMContext &llvm) : m_ctx(&llvm) {}
-
-        llvm::Value *visit(const BlockNode *node) const;
-        llvm::Value *visit(const StmtGroupNode *node) const;
-        llvm::Value *visit(const ExprStmtNode *node) const;
-        llvm::Value *visit(const UnaryExprNode *node) const;
-        llvm::Value *visit(const BinaryExprNode *node) const;
-        llvm::Value *visit(const CallExprNode *node) const;
-        llvm::Constant *visit(const ConstUnaryExprNode *node) const;
-        llvm::Constant *visit(const ConstBinaryExprNode *node) const;
-        llvm::Value *visit(const IdentifierNode *node) const;
-        llvm::Type *visit(const U8TypeNode *node) const;
-        llvm::Type *visit(const U16TypeNode *node) const;
-        llvm::Type *visit(const U32TypeNode *node) const;
-        llvm::Type *visit(const U64TypeNode *node) const;
-        llvm::Type *visit(const I8TypeNode *node) const;
-        llvm::Type *visit(const I16TypeNode *node) const;
-        llvm::Type *visit(const I32TypeNode *node) const;
-        llvm::Type *visit(const I64TypeNode *node) const;
-        llvm::Type *visit(const F32TypeNode *node) const;
-        llvm::Type *visit(const F64TypeNode *node) const;
-        llvm::Type *visit(const BoolTypeNode *node) const;
-        llvm::Type *visit(const VoidTypeNode *node) const;
-        llvm::Type *visit(const PointerTypeNode *node) const;
-        llvm::Type *visit(const StringTypeNode *node) const;
-        llvm::Type *visit(const EnumTypeNode *node) const;
-        llvm::Type *visit(const StructTypeNode *node) const;
-        llvm::Type *visit(const RegionTypeNode *node) const;
-        llvm::Type *visit(const UnionTypeNode *node) const;
-        llvm::Type *visit(const ArrayTypeNode *node) const;
-        llvm::Type *visit(const FunctionTypeNode *node) const;
-        llvm::Constant *visit(const IntegerLiteralNode *node) const;
-        llvm::Constant *visit(const FloatLiteralNode *node) const;
-        llvm::Constant *visit(const StringLiteralNode *node) const;
-        llvm::Constant *visit(const CharLiteralNode *node) const;
-        llvm::Constant *visit(const BoolLiteralNode *node) const;
-        llvm::Constant *visit(const NullLiteralNode *node) const;
-        llvm::Value *visit(const VarDeclNode *node) const;
-        llvm::Value *visit(const LetDeclNode *node) const;
-        llvm::Function *visit(const FunctionDeclNode *node) const;
-        llvm::Value *visit(const StructDefNode *node) const;
-        llvm::Value *visit(const RegionDefNode *node) const;
-        llvm::Value *visit(const UnionDefNode *node) const;
-        llvm::Function *visit(const FunctionDefNode *node) const;
-        llvm::Value *visit(const FunctionParamNode *node) const;
-        llvm::Value *visit(const SubsystemNode *node) const;
-        llvm::Value *visit(const ExportNode *node) const;
-        llvm::Value *visit(const InlineAsmNode *node) const;
-        llvm::Value *visit(const ReturnStmtNode *node) const;
-        llvm::Value *visit(const IfStmtNode *node) const;
-        llvm::Value *visit(const WhileStmtNode *node) const;
-    };
-};
-
-#endif // __QUIXCC_LLVM_CODEGEN_H__
+#endif // __QUIXCC_PARSE_NODES_INLINEASM_H__

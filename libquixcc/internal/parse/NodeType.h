@@ -118,6 +118,7 @@ namespace libquixcc
 
         SubsystemNode,
         ExportNode,
+        InlineAsmNode,
 
         ReturnStmtNode,
         RetifStmtNode,
@@ -193,6 +194,7 @@ namespace libquixcc
     class FunctionParamNode;
     class SubsystemNode;
     class ExportNode;
+    class InlineAsmNode;
     class ReturnStmtNode;
     class RetifStmtNode;
     class RetzStmtNode;
