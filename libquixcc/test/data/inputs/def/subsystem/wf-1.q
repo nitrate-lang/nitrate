@@ -6,9 +6,9 @@ subsystem MyAPI<v1>: dep1, dep2 {
     }
 }
 
-fn main() {
-    import "C" fn printf(format: *i8, ...);
+import "C" fn printf(format: *i8, ...);
 
+fn main() {
     printf("The value is %x\n", MyAPI<v1>::Nested<another_version>::x);
 
     return;
