@@ -62,6 +62,49 @@ void libquixcc::mutate::StripUnderscoreNames(quixcc_job_t *job, std::shared_ptr<
                     *node = std::make_shared<NopStmtNode>();
                 break;
             }
+            case NodeType::FunctionDeclNode:
+            {
+                auto func = std::dynamic_pointer_cast<FunctionDeclNode>(*node);
+                if (func->m_name == "_")
+                    *node = std::make_shared<NopStmtNode>();
+                break;
+            }
+            case NodeType::StructDefNode:
+            {
+                auto struc = std::dynamic_pointer_cast<StructDefNode>(*node);
+                if (struc->m_name == "_")
+                    *node = std::make_shared<NopStmtNode>();
+                break;
+            }
+            case NodeType::EnumDefNode:
+            {
+                auto enm = std::dynamic_pointer_cast<EnumDefNode>(*node);
+                if (enm->m_type->m_name == "_")
+                    *node = std::make_shared<NopStmtNode>();
+                break;
+            }
+            case NodeType::GroupDefNode:
+            {
+                auto group = std::dynamic_pointer_cast<GroupDefNode>(*node);
+                if (group->m_name == "_")
+                    *node = std::make_shared<NopStmtNode>();
+                break;
+            }
+            case NodeType::RegionDefNode:
+            {
+                auto region = std::dynamic_pointer_cast<RegionDefNode>(*node);
+                if (region->m_name == "_")
+                    *node = std::make_shared<NopStmtNode>();
+                break;
+            }
+            case NodeType::UnionDefNode:
+            {
+                auto uni = std::dynamic_pointer_cast<UnionDefNode>(*node);
+                if (uni->m_name == "_")
+                    *node = std::make_shared<NopStmtNode>();
+                break;
+            }
+
             default:
                 /// TODO: Implement more cases.
                 break;

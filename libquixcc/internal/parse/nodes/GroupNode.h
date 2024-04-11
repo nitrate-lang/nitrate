@@ -62,26 +62,34 @@ namespace libquixcc
 
     class GroupDefNode : public DefNode
     {
+        std::vector<std::shared_ptr<GroupFieldNode>> m_fields;
+        static std::vector<std::shared_ptr<GroupFieldNode>> optimize_layout(const std::vector<std::shared_ptr<GroupFieldNode>> &fields);
+
     public:
-        GroupDefNode() { ntype = NodeType::GroupDefNode; }
-        GroupDefNode(const std::string &name, const std::vector<std::shared_ptr<GroupFieldNode>> &fields) : m_name(name), m_fields(fields) { ntype = NodeType::GroupDefNode; }
+        GroupDefNode(const std::string &name, const std::vector<std::shared_ptr<GroupFieldNode>> &fields) : m_name(name)
+        {
+            ntype = NodeType::GroupDefNode;
+            m_fields = optimize_layout(fields);
+        }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw std::runtime_error("GroupDefNode::codegen not implemented"); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
+        static std::vector<std::shared_ptr<GroupFieldNode>> group_optimize(const std::vector<std::shared_ptr<GroupFieldNode>> &fields);
+        const std::vector<std::shared_ptr<GroupFieldNode>> &get_fields() const { return m_fields; }
+        std::vector<std::shared_ptr<GroupFieldNode>> &get_fields_mut() { return m_fields; }
 
         virtual StructTypeNode *get_type() const
         {
-            /// TODO: implement layout optimization
-            std::vector<TypeNode *> fields;
-            for (auto &field : m_fields)
-                fields.push_back(field->m_type);
-            return StructTypeNode::create(fields);
+            std::vector<TypeNode *> types;
+            for (auto &field : optimize_layout(m_fields))
+                types.push_back(field->m_type);
+
+            return StructTypeNode::create(types);
         }
 
         std::string m_name;
-        std::vector<std::shared_ptr<GroupFieldNode>> m_fields;
     };
 }
 

@@ -55,3 +55,21 @@ thread_local std::map<std::pair<libquixcc::TypeNode *, std::shared_ptr<libquixcc
 thread_local std::unordered_map<std::string, std::shared_ptr<libquixcc::UserTypeNode>> libquixcc::UserTypeNode::m_instances;
 std::map<libquixcc::FunctionTypeNode::Inner, libquixcc::FunctionTypeNode *> libquixcc::FunctionTypeNode::s_instances;
 std::map<std::pair<std::string, libquixcc::TypeNode *>, libquixcc::EnumTypeNode *> libquixcc::EnumTypeNode::m_instances;
+
+std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> libquixcc::GroupDefNode::optimize_layout(const std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> &fields)
+{
+    /*
+     * A heuristic for optimizing the layout of a group's fields is to sort them in descending order of size.
+     * Downsides:
+     * - Does not take custom padding into account
+     * - Does not take alignment into account
+     * - Does not take bitfields into account
+    */
+    std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> copy = fields;
+    size_t ptr_size = sizeof(void *);
+
+    std::sort(copy.begin(), copy.end(), [ptr_size](const std::shared_ptr<GroupFieldNode> &a, const std::shared_ptr<GroupFieldNode> &b)
+              { return a->m_type->size(ptr_size) > b->m_type->size(ptr_size); });
+            
+    return copy;
+}

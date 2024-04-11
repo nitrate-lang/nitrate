@@ -424,7 +424,7 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::GroupDefNode *node)
     std::string old_prefix = m_prefix;
     push_prefix(node->m_name);
 
-    for (auto &field : node->m_fields)
+    for (auto &field : node->get_fields_mut())
     {
         m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&field));
         count += field->dfs_preorder(*this);

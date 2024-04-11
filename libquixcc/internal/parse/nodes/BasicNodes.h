@@ -178,7 +178,7 @@ namespace libquixcc
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual llvm::Type *codegen(const CodegenVisitor &visitor) const { throw std::runtime_error("UserTypeNode::codegen() not implemented"); }
         virtual bool is_composite() const override { throw std::runtime_error("UserTypeNode::is_composite() not implemented"); }
-        virtual size_t size(size_t ptr_size) const { throw std::runtime_error("UserTypeNode::size() not implemented"); }
+        virtual size_t size(size_t ptr_size) const { return 0; }
         virtual std::string to_source() const override { return m_name; }
 
         std::string m_name;

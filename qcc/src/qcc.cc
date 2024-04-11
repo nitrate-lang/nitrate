@@ -42,10 +42,6 @@ enum class OperatingMode
     ASSEMBLY,
     OBJECT,
     EXECUTABLE,
-    SHELLCODE,
-
-    SHARED_LIBRARY,
-    STATIC_LIBRARY,
 
     DOCUMENTATION,
     QUIXCC_TARGET_DEFAULT = OperatingMode::EXECUTABLE
@@ -136,15 +132,6 @@ struct Options
                 return false;
             }
             return true;
-        case OperatingMode::SHELLCODE:
-            /// TODO: IMPLEMENT
-            return false;
-        case OperatingMode::SHARED_LIBRARY:
-            /// TODO: validate
-            return false;
-        case OperatingMode::STATIC_LIBRARY:
-            /// TODO: validate
-            return false;
         default:
             return false;
         }
@@ -531,12 +518,6 @@ int main(int argc, char *argv[])
         break;
     case OperatingMode::EXECUTABLE:
         break;
-    case OperatingMode::SHELLCODE:
-        throw std::runtime_error("Not implemented");
-    case OperatingMode::SHARED_LIBRARY:
-        throw std::runtime_error("Not implemented");
-    case OperatingMode::STATIC_LIBRARY:
-        throw std::runtime_error("Not implemented");
     case OperatingMode::DOCUMENTATION:
         throw std::runtime_error("Not implemented");
 

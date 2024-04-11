@@ -8,6 +8,7 @@ group Gathering {
     location: string,
     timestamp: u64,
     attendees: [Person; 10],
+    p: u8,
 }
 
 pub let x: Gathering;

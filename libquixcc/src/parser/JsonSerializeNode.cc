@@ -544,11 +544,12 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Gr
 {
     std::string str = "{\"ntype\":\"GroupDefNode\",\"name\":\"";
     str += escape_json(node->m_name);
+    auto fields = node->get_fields();
     str += "\",\"fields\":[";
-    for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it)
+    for (auto it = fields.begin(); it != fields.end(); ++it)
     {
         str += (*it)->to_json(*this);
-        if (it != node->m_fields.end() - 1)
+        if (it != fields.end() - 1)
         {
             str += ",";
         }

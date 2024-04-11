@@ -131,9 +131,6 @@ bool libquixcc::parse_group(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         fields.push_back(field);
     }
 
-    auto sdef = std::make_shared<GroupDefNode>();
-    sdef->m_name = name;
-    sdef->m_fields = fields;
-    node = sdef;
+    node = std::make_shared<GroupDefNode>(name, fields);
     return true;
 }

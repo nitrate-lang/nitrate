@@ -375,17 +375,6 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
         if (!quixcc_set_cpu(job, m_cpu.cpu().c_str()))
             throw CpuException("Invalid or unsupported LLVM CPU: " + m_cpu.cpu());
 
-        /// TODO: Implement other targets
-
-        /*
-            Handle this:
-                src_0 -> job_0 -> out_0   ->
-                src_1 -> job_1 -> out_1      ->
-                                                 -> Custom linker command
-                src_2 -> job_2 -> out_2      ->
-                src_n -> job_n -> out_n   ->
-        */
-
         quixcc_set_output(job, m_output);
 
         jobs.push_back(job);
