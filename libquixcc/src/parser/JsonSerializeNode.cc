@@ -174,6 +174,30 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Ca
     return str + "]}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ListExprNode *node) const
+{
+    std::string str = "{\"ntype\":\"ListExprNode\",\"elements\":[";
+    for (auto it = node->m_elements.begin(); it != node->m_elements.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_elements.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    return str + "]}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::MemberAccessNode *node) const
+{
+    std::string str = "{\"ntype\":\"MemberAccessNode\",\"lhs\":";
+    str += node->m_expr->to_json(*this);
+    str += ",\"field\":\"" + escape_json(node->m_field) + "\"";
+
+    return str + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::ConstUnaryExprNode *node) const
 {
     std::string str = "{\"ntype\":\"ConstUnaryExprNode\",\"op\":\"";
@@ -299,7 +323,9 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::St
         }
     }
 
-    return str + "]}";
+    str += "],\"name\":\"" + escape_json(node->m_name) + "\"";
+
+    return str + "}";
 }
 
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::RegionTypeNode *node) const

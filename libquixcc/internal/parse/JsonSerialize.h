@@ -53,6 +53,8 @@ namespace libquixcc
         std::string visit(const UnaryExprNode *node) const;
         std::string visit(const BinaryExprNode *node) const;
         std::string visit(const CallExprNode *node) const;
+        std::string visit(const ListExprNode *node) const;
+        std::string visit(const MemberAccessNode *node) const;
         std::string visit(const ConstUnaryExprNode *node) const;
         std::string visit(const ConstBinaryExprNode *node) const;
         std::string visit(const IdentifierNode *node) const;

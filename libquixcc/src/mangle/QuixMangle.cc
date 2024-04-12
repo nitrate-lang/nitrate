@@ -143,7 +143,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
     if (type->ntype == NodeType::StructTypeNode)
     {
         const libquixcc::StructTypeNode *st = static_cast<const StructTypeNode *>(type);
-        std::string s;
+        std::string s = wrap_tag(st->m_name);
         for (auto &field : st->m_fields)
             s += wrap_tag(serialize_type(field));
 
@@ -244,21 +244,23 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         return basic_typesmap[type];
 
     if (type[0] == 't')
-    {
+    {        
         std::vector<std::string> fields;
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
 
+        std::string name = deserialize_ns(fields[0]);
+
         std::vector<TypeNode *> fields_nodes;
-        for (auto &field : fields)
+        for (size_t i = 1; i < fields.size(); i++)
         {
             TypeNode *t;
-            if ((t = deserialize_type(field)) == nullptr)
+            if ((t = deserialize_type(fields[i])) == nullptr)
                 return nullptr;
             fields_nodes.push_back(t);
         }
 
-        return StructTypeNode::create(fields_nodes);
+        return StructTypeNode::create(fields_nodes, name);
     }
     else if (type[0] == 'j')
     {

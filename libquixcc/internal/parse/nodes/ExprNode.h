@@ -91,6 +91,31 @@ namespace libquixcc
         std::vector<std::shared_ptr<ExprNode>> m_positional_args;
         std::shared_ptr<FunctionDeclNode> m_decl;
     };
+
+    class ListExprNode : public ExprNode
+    {
+    public:
+        ListExprNode(std::vector<std::shared_ptr<ExprNode>> elements) : m_elements(elements) { ntype = NodeType::ListExprNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        std::vector<std::shared_ptr<ExprNode>> m_elements;
+    };
+
+    class MemberAccessNode : public ExprNode
+    {
+    public:
+        MemberAccessNode(const std::shared_ptr<ExprNode> &expr, const std::string &field) : m_expr(expr), m_field(field) { ntype = NodeType::MemberAccessNode; }
+
+        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
+        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+
+        std::shared_ptr<ExprNode> m_expr;
+        std::string m_field;
+    };
 }
 
 #endif // __QUIXCC_PARSE_NODES_EXPR_H__

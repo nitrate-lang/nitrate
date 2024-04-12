@@ -178,7 +178,7 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNod
     // Generate code for AST
     if (!ast->codegen(CodegenVisitor(ctx.m_inner)))
     {
-        LOG(ERROR) << "Failed to generate LLVM Code" << std::endl;
+        LOG(ERROR) << "Failed to generate LLVM Code for file" << ctx.m_filename << std::endl;
         return false;
     }
 

@@ -74,6 +74,7 @@ namespace libquixcc
         std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
         std::map<std::string, llvm::BasicBlock *> m_named_blocks;
         std::vector<std::pair<llvm::Function *, const FunctionDeclNode *>> m_named_functions;
+        std::map<std::string, llvm::StructType *> m_named_structs;
         std::string prefix;
         bool m_pub = false;
         size_t m_skipbr = 0;

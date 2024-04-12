@@ -29,14 +29,34 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-subsystem Number {
-    let CONSTANT_A: i8 = 10;
-    let CONSTANT_B: i8 = 20;
+
+type char = i8;
+
+struct PersonInfo {
+    name: string,
+    age: u8,
 }
 
-fn main(): i8 {
-    let x: i8 = Number::CONSTANT_A;
-    let y: i8 = Number::CONSTANT_B;
+import "C" {
+    fn printf(format: *u8, ...): i32;
+    fn gets(buffer: *u8): *u8;
+    fn scanf(format: *u8, ...): i32;
+    fn malloc(size: u64): *u8;
+}
 
-    return 9;
+fn get_person_info(): PersonInfo {
+    let info: PersonInfo;
+
+    scanf("%d", info.age);
+
+    return info;
+}
+
+fn main() {
+    let res: PersonInfo;
+
+    res = get_person_info();
+
+    printf("Age: %d\n", res.age);
+    return;
 }

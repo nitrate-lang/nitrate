@@ -8,9 +8,9 @@ entry:
   store i8 10, i8* %x, align 1
   %y = alloca i8, align 1
   store i8 20, i8* %y, align 1
-  %y1 = load i8, i8* %y, align 1
-  %x2 = load i8, i8* %x, align 1
-  %0 = add i8 %x2, %y1
+  %x1 = load i8, i8* %x, align 1
+  %y2 = load i8, i8* %y, align 1
+  %0 = add i8 %x1, %y2
   store i8 %0, i8* %ret, align 1
   br label %end
 

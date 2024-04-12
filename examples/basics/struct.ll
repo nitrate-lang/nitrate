@@ -1,14 +1,12 @@
 ; ModuleID = 'examples/basics/struct.q'
 source_filename = "examples/basics/struct.q"
 
-%0 = type { [8 x %1], [12 x %2], [6 x %5*] }
-%1 = type { i32, i32 }
-%2 = type { %3, %4 }
-%3 = type { i32, i32 }
-%4 = type { i32, i32 }
-%5 = type { i8*, i32, i32 }
+%RectanglurPrism3d.3 = type { [8 x %Point.0], [12 x %Line.1], [6 x %Texture.2*] }
+%Point.0 = type { i32, i32 }
+%Line.1 = type { %Point.0, %Point.0 }
+%Texture.2 = type { i8*, i32, i32 }
 
-@_ZJ0l4data54t10a5t1i1i2x820a13t5t1i1i5t1i1i3x1217a11p9t3p1b1i1i2x60 = global %0 zeroinitializer
+@_ZJ0l4data108t17RectanglurPrism3d17a11t5Point1i1i2x839a32t4Line11t5Point1i1i11t5Point1i1i3x1226a20p17t7Texture3p1b1i1i2x60 = global %RectanglurPrism3d.3 zeroinitializer
 
 define void @main() {
 entry:

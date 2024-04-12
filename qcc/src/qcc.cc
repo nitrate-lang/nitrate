@@ -530,6 +530,5 @@ int main(int argc, char *argv[])
     if (compiler.run().puts().ok())
         return 0;
 
-    std::remove(options->output.c_str());
     return -1;
 }

@@ -86,7 +86,7 @@ namespace libquixcc
             for (auto &field : optimize_layout(m_fields))
                 types.push_back(field->m_type);
 
-            return StructTypeNode::create(types);
+            return StructTypeNode::create(types, m_name);
         }
 
         std::string m_name;

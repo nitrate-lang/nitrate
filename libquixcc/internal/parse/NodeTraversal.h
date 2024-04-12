@@ -63,6 +63,8 @@ namespace libquixcc
         size_t visit(UnaryExprNode *node);
         size_t visit(BinaryExprNode *node);
         size_t visit(CallExprNode *node);
+        size_t visit(ListExprNode *node);
+        size_t visit(MemberAccessNode *node);
         size_t visit(ConstUnaryExprNode *node);
         size_t visit(ConstBinaryExprNode *node);
         size_t visit(IdentifierNode *node);

@@ -164,6 +164,56 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 stack.pop();
                 return true;
             }
+            case Punctor::OpenBrace:
+            {
+                std::vector<std::shared_ptr<libquixcc::ExprNode>> elements;
+                while (true)
+                {
+                    auto tok = scanner->peek();
+                    if (tok == Token(TokenType::Punctor, Punctor::CloseBrace))
+                    {
+                        scanner->next();
+                        break;
+                    }
+
+                    std::shared_ptr<libquixcc::ExprNode> element;
+                    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseBrace)}, element, depth + 1))
+                        return false;
+                    elements.push_back(element);
+
+                    tok = scanner->peek();
+                    if (tok.is<Punctor>(Punctor::Comma))
+                    {
+                        scanner->next();
+                    }
+                }
+
+                stack.push(std::make_shared<libquixcc::ListExprNode>(elements));
+                continue;
+            }
+            case Punctor::Dot:
+            {
+                if (stack.size() != 1)
+                {
+                    LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+                    return false;
+                }
+
+                auto left = stack.top();
+                stack.pop();
+
+                auto tok = scanner->peek();
+                if (tok.type() != TokenType::Identifier)
+                {
+                    LOG(ERROR) << "Expected an identifier" << tok << std::endl;
+                    return false;
+                }
+
+                auto ident = std::get<std::string>(tok.val());
+                stack.push(std::make_shared<libquixcc::MemberAccessNode>(left, ident));
+                scanner->next();
+                continue;
+            }
             default:
                 LOG(ERROR) << "Unexpected token in non-constant expression '{}'" << tok.serialize() << tok << std::endl;
                 return false;

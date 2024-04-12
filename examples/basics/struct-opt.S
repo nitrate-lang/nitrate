@@ -8,12 +8,12 @@ main:
 .Lfunc_end0:
 	.size	main, .Lfunc_end0-main
 
-	.type	_ZJ0l4data54t10a5t1i1i2x820a13t5t1i1i5t1i1i3x1217a11p9t3p1b1i1i2x60,@object
+	.type	_ZJ0l4data108t17RectanglurPrism3d17a11t5Point1i1i2x839a32t4Line11t5Point1i1i11t5Point1i1i3x1226a20p17t7Texture3p1b1i1i2x60,@object
 	.bss
-	.globl	_ZJ0l4data54t10a5t1i1i2x820a13t5t1i1i5t1i1i3x1217a11p9t3p1b1i1i2x60
+	.globl	_ZJ0l4data108t17RectanglurPrism3d17a11t5Point1i1i2x839a32t4Line11t5Point1i1i11t5Point1i1i3x1226a20p17t7Texture3p1b1i1i2x60
 	.p2align	4
-_ZJ0l4data54t10a5t1i1i2x820a13t5t1i1i5t1i1i3x1217a11p9t3p1b1i1i2x60:
+_ZJ0l4data108t17RectanglurPrism3d17a11t5Point1i1i2x839a32t4Line11t5Point1i1i11t5Point1i1i3x1226a20p17t7Texture3p1b1i1i2x60:
 	.zero	304
-	.size	_ZJ0l4data54t10a5t1i1i2x820a13t5t1i1i5t1i1i3x1217a11p9t3p1b1i1i2x60, 304
+	.size	_ZJ0l4data108t17RectanglurPrism3d17a11t5Point1i1i2x839a32t4Line11t5Point1i1i11t5Point1i1i3x1226a20p17t7Texture3p1b1i1i2x60, 304
 
 	.section	".note.GNU-stack","",@progbits

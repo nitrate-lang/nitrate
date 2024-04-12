@@ -7,10 +7,9 @@ main:
 	.cfi_startproc
 	movb	.L_ZJ0l18Number_CONSTANT__A1c0(%rip), %al
 	movb	%al, -1(%rsp)
-	movb	.L_ZJ0l18Number_CONSTANT__B1c0(%rip), %cl
-	movb	%cl, -2(%rsp)
-	addb	%cl, %al
-	movb	%al, -3(%rsp)
+	movb	.L_ZJ0l18Number_CONSTANT__B1c0(%rip), %al
+	movb	%al, -2(%rsp)
+	movb	$9, -3(%rsp)
 	movb	-3(%rsp), %al
 	retq
 .Lfunc_end0:

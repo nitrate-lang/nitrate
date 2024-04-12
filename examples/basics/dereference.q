@@ -44,6 +44,6 @@ fn main(): void {
     (*x_ptr) = 30000000; // Must be in parentheses fo now, because operator precedence is not implemented yet.
 
     printf("x = %d, &x = %p, x_ptr = %p, *x_ptr = %d\n", x, &x, x_ptr, *x_ptr);
-
+    
     return;
 }

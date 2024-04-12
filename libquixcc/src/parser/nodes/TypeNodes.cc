@@ -48,7 +48,7 @@ libquixcc::VoidTypeNode *libquixcc::VoidTypeNode::m_instance = nullptr;
 std::map<libquixcc::TypeNode *, libquixcc::PointerTypeNode *> libquixcc::PointerTypeNode::m_instances;
 std::map<std::string, libquixcc::OpaqueTypeNode *> libquixcc::OpaqueTypeNode::m_instances;
 libquixcc::StringTypeNode *libquixcc::StringTypeNode::m_instance = nullptr;
-std::map<std::vector<libquixcc::TypeNode *>, libquixcc::StructTypeNode *> libquixcc::StructTypeNode::m_instances;
+std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::StructTypeNode *> libquixcc::StructTypeNode::m_instances;
 std::map<std::vector<libquixcc::TypeNode *>, libquixcc::RegionTypeNode *> libquixcc::RegionTypeNode::m_instances;
 std::map<std::vector<libquixcc::TypeNode *>, libquixcc::UnionTypeNode *> libquixcc::UnionTypeNode::m_instances;
 thread_local std::map<std::pair<libquixcc::TypeNode *, std::shared_ptr<libquixcc::ConstExprNode>>, libquixcc::ArrayTypeNode *> libquixcc::ArrayTypeNode::m_instances;
@@ -64,12 +64,12 @@ std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> libquixcc::GroupDefNode:
      * - Does not take custom padding into account
      * - Does not take alignment into account
      * - Does not take bitfields into account
-    */
+     */
     std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> copy = fields;
     size_t ptr_size = sizeof(void *);
 
     std::sort(copy.begin(), copy.end(), [ptr_size](const std::shared_ptr<GroupFieldNode> &a, const std::shared_ptr<GroupFieldNode> &b)
               { return a->m_type->size(ptr_size) > b->m_type->size(ptr_size); });
-            
+
     return copy;
 }

@@ -1,14 +1,12 @@
 ; ModuleID = 'examples/basics/group.q'
 source_filename = "examples/basics/group.q"
 
-%0 = type { [12 x %1], [8 x %4], [6 x %5*] }
-%1 = type { %2, %3 }
-%2 = type { i32, i32 }
-%3 = type { i32, i32 }
-%4 = type { i32, i32 }
-%5 = type { i8*, i32, i32 }
+%RectanglurPrism3d.3 = type { [12 x %Line.2], [8 x %Point.0], [6 x %Texture.1*] }
+%Line.2 = type { %Point.0, %Point.0 }
+%Point.0 = type { i32, i32 }
+%Texture.1 = type { i8*, i32, i32 }
 
-@_ZJ0l4data54t20a13t5t1i1i5t1i1i3x1210a5t1i1i2x817a11p9t3p1b1i1i2x60 = global %0 zeroinitializer
+@_ZJ0l4data108t17RectanglurPrism3d39a32t4Line11t5Point1i1i11t5Point1i1i3x1217a11t5Point1i1i2x826a20p17t7Texture3p1b1i1i2x60 = global %RectanglurPrism3d.3 zeroinitializer
 
 define void @main() {
 entry:
