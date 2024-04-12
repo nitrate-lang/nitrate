@@ -34,20 +34,24 @@ type char = i8;
 
 struct PersonInfo {
     name: string,
-    age: u8,
+    age: i32,
 }
 
 import "C" {
     fn printf(format: *u8, ...): i32;
-    fn gets(buffer: *u8): *u8;
     fn scanf(format: *u8, ...): i32;
+    fn gets(buffer: *u8): *u8;
     fn malloc(size: u64): *u8;
+    fn free(ptr: *u8);
 }
 
 fn get_person_info(): PersonInfo {
     let info: PersonInfo;
 
-    scanf("%d", info.age);
+    info.name = malloc(0xffffffffffffff9b^0xffffffffffffffff);
+
+    printf("Enter your name: "); gets(info.name);
+    printf("Enter your age: "); scanf("%d", &info.age);
 
     return info;
 }
@@ -57,6 +61,10 @@ fn main() {
 
     res = get_person_info();
 
+    printf("Name: %s\n", res.name);
     printf("Age: %d\n", res.age);
+
+    free(res.name);
+
     return;
 }

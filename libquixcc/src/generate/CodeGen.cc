@@ -29,6 +29,10 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
+/*
+    TODO: make this code less shitty
+*/
+
 #define QUIXCC_INTERNAL
 
 #include <generate/CodeGen.h>
@@ -143,6 +147,74 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
             }
 
             return nullptr;
+        }
+        else if (node->m_expr->ntype == NodeType::MemberAccessNode)
+        {
+            auto access_node = static_cast<MemberAccessNode *>(node->m_expr.get());
+
+            auto lhs = access_node->m_expr->codegen(*this);
+            if (!lhs)
+                return nullptr;
+
+            auto struct_type = lhs->getType();
+            if (!struct_type->isStructTy())
+                return nullptr;
+
+            std::string name = struct_type->getStructName().str();
+
+            // Remove the suffic '.num' from the struct name
+            if (name.find_last_of('.') != std::string::npos)
+                name = name.substr(0, name.find_last_of('.'));
+
+            auto key = std::make_pair(NodeType::StructDefNode, name);
+            if (!m_ctx->m_named_construsts.contains(key))
+                return nullptr;
+
+            auto struct_def = m_ctx->m_named_construsts[key];
+            if (!struct_def)
+                return nullptr;
+
+            if (struct_def->ntype != NodeType::StructDefNode)
+                return nullptr;
+
+            auto struct_node = std::static_pointer_cast<StructDefNode>(struct_def);
+
+            size_t index = std::find_if(struct_node->m_fields.begin(), struct_node->m_fields.end(), [&](const auto &field)
+                                        { return field->m_name == access_node->m_field; }) -
+                           struct_node->m_fields.begin();
+
+            if (index == struct_node->m_fields.size())
+                return nullptr;
+
+            llvm::Value *struct_ptr = nullptr;
+
+            if (access_node->m_expr->ntype == NodeType::IdentifierNode)
+            {
+                auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(access_node->m_expr.get())->m_name);
+                if (m_ctx->m_named_stack_vars.contains(name))
+                {
+                    struct_ptr = m_ctx->m_named_stack_vars[name].first;
+                }
+                else if (m_ctx->m_named_global_vars.contains(name))
+                {
+                    struct_ptr = m_ctx->m_named_global_vars[name];
+                }
+                else if (m_ctx->m_named_params.contains(name))
+                {
+                    struct_ptr = m_ctx->m_named_params[name].first;
+                }
+                else
+                {
+                    return nullptr;
+                }
+            }
+            else
+            {
+                struct_ptr = lhs;
+            }
+
+            auto gep = m_ctx->m_builder->CreateStructGEP(struct_type, struct_ptr, index);
+            return gep;
         }
 
         return nullptr;
@@ -273,6 +345,78 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
                 return nullptr;
 
             return m_ctx->m_builder->CreateStore(rhs, lhs);
+        }
+        else if (node->m_lhs->ntype == NodeType::MemberAccessNode)
+        {
+            auto access_node = static_cast<MemberAccessNode *>(node->m_lhs.get());
+
+            auto lhs = access_node->m_expr->codegen(*this);
+            if (!lhs)
+                return nullptr;
+
+            auto struct_type = lhs->getType();
+            if (!struct_type->isStructTy())
+                return nullptr;
+
+            std::string name = struct_type->getStructName().str();
+
+            // Remove the suffic '.num' from the struct name
+            if (name.find_last_of('.') != std::string::npos)
+                name = name.substr(0, name.find_last_of('.'));
+
+            auto key = std::make_pair(NodeType::StructDefNode, name);
+            if (!m_ctx->m_named_construsts.contains(key))
+                return nullptr;
+
+            auto struct_def = m_ctx->m_named_construsts[key];
+            if (!struct_def)
+                return nullptr;
+
+            if (struct_def->ntype != NodeType::StructDefNode)
+                return nullptr;
+
+            auto struct_node = std::static_pointer_cast<StructDefNode>(struct_def);
+
+            size_t index = std::find_if(struct_node->m_fields.begin(), struct_node->m_fields.end(), [&](const auto &field)
+                                        { return field->m_name == access_node->m_field; }) -
+                           struct_node->m_fields.begin();
+
+            if (index == struct_node->m_fields.size())
+                return nullptr;
+
+            llvm::Value *struct_ptr = nullptr;
+
+            if (access_node->m_expr->ntype == NodeType::IdentifierNode)
+            {
+                auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(access_node->m_expr.get())->m_name);
+                if (m_ctx->m_named_stack_vars.contains(name))
+                {
+                    struct_ptr = m_ctx->m_named_stack_vars[name].first;
+                }
+                else if (m_ctx->m_named_global_vars.contains(name))
+                {
+                    struct_ptr = m_ctx->m_named_global_vars[name];
+                }
+                else if (m_ctx->m_named_params.contains(name))
+                {
+                    struct_ptr = m_ctx->m_named_params[name].first;
+                }
+                else
+                {
+                    return nullptr;
+                }
+            }
+            else
+            {
+                struct_ptr = lhs;
+            }
+
+            auto gep = m_ctx->m_builder->CreateStructGEP(struct_type, struct_ptr, index);
+            auto rhs = node->m_rhs->codegen(*this);
+            if (!rhs)
+                return nullptr;
+
+            return m_ctx->m_builder->CreateStore(rhs, gep);
         }
         else
         {
