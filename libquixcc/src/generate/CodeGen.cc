@@ -59,7 +59,7 @@ uint8_t get_numbits(std::string s)
             return 64;
         }
         double f1 = std::stod(s);
-        const double delta = 0.0000001;
+        double delta = 0.0000001;
 
         return std::abs(f0 - f1) < delta ? 64 : 32;
     }
@@ -81,7 +81,7 @@ uint8_t get_numbits(std::string s)
     return 8;
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BlockNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BlockNode *node)
 {
     for (auto &stmt : node->m_stmts)
     {
@@ -92,7 +92,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BlockNode *node) 
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StmtGroupNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StmtGroupNode *node)
 {
     for (auto &stmt : node->m_stmts)
     {
@@ -103,12 +103,12 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StmtGroupNode *no
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExprStmtNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExprStmtNode *node)
 {
     return node->m_expr->codegen(*this);
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *node)
 {
     llvm::Value *expr = node->m_expr->codegen(*this);
     if (!expr)
@@ -130,94 +130,30 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
         return llvm::BinaryOperator::CreateSub(expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 1, false)), "", m_ctx->m_builder->GetInsertBlock());
     case Operator::BitwiseAnd:
     {
+        llvm::Value *address = nullptr;
         if (node->m_expr->ntype == NodeType::IdentifierNode)
         {
-            auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(node->m_expr.get())->m_name);
-            if (m_ctx->m_named_stack_vars.contains(name))
-                return m_ctx->m_named_stack_vars[name].first;
-            else if (m_ctx->m_named_global_vars.contains(name))
-                return m_ctx->m_named_global_vars[name];
-            else if (m_ctx->m_named_params.contains(name))
-                return m_ctx->m_named_params[name].first;
-
-            for (auto &pair : m_ctx->m_named_functions)
-            {
-                if (pair.second->m_name == name)
-                    return pair.first;
-            }
-
-            return nullptr;
+            bool state = m_state.implicit_load;
+            m_state.implicit_load = false;
+            address = node->m_expr->codegen(*this);
+            m_state.implicit_load = state;
         }
         else if (node->m_expr->ntype == NodeType::MemberAccessNode)
         {
-            auto access_node = static_cast<MemberAccessNode *>(node->m_expr.get());
-
-            auto lhs = access_node->m_expr->codegen(*this);
-            if (!lhs)
-                return nullptr;
-
-            auto struct_type = lhs->getType();
-            if (!struct_type->isStructTy())
-                return nullptr;
-
-            std::string name = struct_type->getStructName().str();
-
-            // Remove the suffic '.num' from the struct name
-            if (name.find_last_of('.') != std::string::npos)
-                name = name.substr(0, name.find_last_of('.'));
-
-            auto key = std::make_pair(NodeType::StructDefNode, name);
-            if (!m_ctx->m_named_construsts.contains(key))
-                return nullptr;
-
-            auto struct_def = m_ctx->m_named_construsts[key];
-            if (!struct_def)
-                return nullptr;
-
-            if (struct_def->ntype != NodeType::StructDefNode)
-                return nullptr;
-
-            auto struct_node = std::static_pointer_cast<StructDefNode>(struct_def);
-
-            size_t index = std::find_if(struct_node->m_fields.begin(), struct_node->m_fields.end(), [&](const auto &field)
-                                        { return field->m_name == access_node->m_field; }) -
-                           struct_node->m_fields.begin();
-
-            if (index == struct_node->m_fields.size())
-                return nullptr;
-
-            llvm::Value *struct_ptr = nullptr;
-
-            if (access_node->m_expr->ntype == NodeType::IdentifierNode)
-            {
-                auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(access_node->m_expr.get())->m_name);
-                if (m_ctx->m_named_stack_vars.contains(name))
-                {
-                    struct_ptr = m_ctx->m_named_stack_vars[name].first;
-                }
-                else if (m_ctx->m_named_global_vars.contains(name))
-                {
-                    struct_ptr = m_ctx->m_named_global_vars[name];
-                }
-                else if (m_ctx->m_named_params.contains(name))
-                {
-                    struct_ptr = m_ctx->m_named_params[name].first;
-                }
-                else
-                {
-                    return nullptr;
-                }
-            }
-            else
-            {
-                struct_ptr = lhs;
-            }
-
-            auto gep = m_ctx->m_builder->CreateStructGEP(struct_type, struct_ptr, index);
-            return gep;
+            bool state = m_state.implicit_load;
+            m_state.implicit_load = false;
+            address = node->m_expr->codegen(*this);
+            m_state.implicit_load = state;
+        }
+        else
+        {
+            return nullptr;
         }
 
-        return nullptr;
+        if (!address)
+            return nullptr;
+
+        return address;
     }
     case Operator::Multiply:
     {
@@ -228,7 +164,63 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
     }
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *node) const
+std::optional<std::pair<llvm::Value *, llvm::Type *>> libquixcc::CodegenVisitor::create_struct_gep(llvm::Value *struct_ptr, const std::string &field_name)
+{
+    if (!struct_ptr->getType()->isPointerTy())
+        return std::nullopt;
+
+    auto struct_type = struct_ptr->getType()->getPointerElementType();
+    if (!struct_type->isStructTy())
+        return std::nullopt;
+
+    std::string name = struct_type->getStructName().str();
+
+    // Remove the suffic '.num' from the struct name
+    if (name.find_last_of('.') != std::string::npos)
+        name = name.substr(0, name.find_last_of('.'));
+
+    auto key = std::make_pair(NodeType::StructDefNode, name);
+    if (!m_ctx->m_named_construsts.contains(key))
+        return std::nullopt;
+    auto struct_def = m_ctx->m_named_construsts[key];
+
+    auto struct_node = std::static_pointer_cast<StructDefNode>(struct_def);
+
+    size_t index = std::find_if(struct_node->m_fields.begin(), struct_node->m_fields.end(), [&](const auto &field)
+                                { return field->m_name == field_name; }) -
+                   struct_node->m_fields.begin();
+
+    if (index == struct_node->m_fields.size())
+        return std::nullopt;
+
+    return std::make_pair(m_ctx->m_builder->CreateStructGEP(struct_type, struct_ptr, index), struct_node->m_fields[index]->m_type->codegen(*this));
+}
+
+std::optional<std::tuple<llvm::Value *, llvm::Type *, libquixcc::CodegenVisitor::AORLocality>> libquixcc::CodegenVisitor::address_of_identifier(const std::string &name)
+{
+    if (m_ctx->m_named_stack_vars.contains(name))
+    {
+        return std::make_tuple(static_cast<llvm::Value *>(m_ctx->m_named_stack_vars[name].first), m_ctx->m_named_stack_vars[name].second, AORLocality::Local);
+    }
+    else if (m_ctx->m_named_params.contains(name))
+    {
+        return std::make_tuple(m_ctx->m_named_params[name].first, m_ctx->m_named_params[name].first->getType(), AORLocality::Parameter);
+    }
+    else if (m_ctx->m_named_global_vars.contains(name))
+    {
+        return std::make_tuple(m_ctx->m_named_global_vars[name], m_ctx->m_named_global_vars[name]->getValueType(), AORLocality::Global);
+    }
+
+    for (auto &pair : m_ctx->m_named_functions)
+    {
+        if (pair.second->m_name == name)
+            return std::make_tuple(pair.first, pair.first->getType(), AORLocality::Function);
+    }
+
+    return std::nullopt;
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *node)
 {
     static std::set<Operator> normal_ops = {
         Operator::LessThan,
@@ -301,35 +293,14 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
 
     if (node->m_op == Operator::Assign)
     {
+        llvm::Value *address = nullptr;
+
         if (node->m_lhs->ntype == NodeType::IdentifierNode)
         {
-            auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(node->m_lhs.get())->m_name);
-            if (m_ctx->m_named_stack_vars.contains(name))
-            {
-                auto rhs = node->m_rhs->codegen(*this);
-                if (!rhs)
-                    return nullptr;
-
-                return m_ctx->m_builder->CreateStore(rhs, m_ctx->m_named_stack_vars[name].first);
-            }
-            else if (m_ctx->m_named_global_vars.contains(name))
-            {
-                auto rhs = node->m_rhs->codegen(*this);
-                if (!rhs)
-                    return nullptr;
-
-                return m_ctx->m_builder->CreateStore(rhs, m_ctx->m_named_global_vars[name]);
-            }
-            else if (m_ctx->m_named_params.contains(name))
-            {
-                auto rhs = node->m_rhs->codegen(*this);
-                if (!rhs)
-                    return nullptr;
-
-                return m_ctx->m_builder->CreateStore(rhs, m_ctx->m_named_params[name].first);
-            }
-
-            return nullptr;
+            bool state = m_state.implicit_load;
+            m_state.implicit_load = false;
+            address = node->m_lhs->codegen(*this);
+            m_state.implicit_load = state;
         }
         else if (node->m_lhs->ntype == NodeType::UnaryExprNode &&
                  static_cast<UnaryExprNode *>(node->m_lhs.get())->m_op == Operator::Multiply)
@@ -348,94 +319,30 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
         }
         else if (node->m_lhs->ntype == NodeType::MemberAccessNode)
         {
-            auto access_node = static_cast<MemberAccessNode *>(node->m_lhs.get());
-
-            auto lhs = access_node->m_expr->codegen(*this);
-            if (!lhs)
-                return nullptr;
-
-            auto struct_type = lhs->getType();
-            if (!struct_type->isStructTy())
-                return nullptr;
-
-            std::string name = struct_type->getStructName().str();
-
-            // Remove the suffic '.num' from the struct name
-            if (name.find_last_of('.') != std::string::npos)
-                name = name.substr(0, name.find_last_of('.'));
-
-            auto key = std::make_pair(NodeType::StructDefNode, name);
-            if (!m_ctx->m_named_construsts.contains(key))
-                return nullptr;
-
-            auto struct_def = m_ctx->m_named_construsts[key];
-            if (!struct_def)
-                return nullptr;
-
-            if (struct_def->ntype != NodeType::StructDefNode)
-                return nullptr;
-
-            auto struct_node = std::static_pointer_cast<StructDefNode>(struct_def);
-
-            size_t index = std::find_if(struct_node->m_fields.begin(), struct_node->m_fields.end(), [&](const auto &field)
-                                        { return field->m_name == access_node->m_field; }) -
-                           struct_node->m_fields.begin();
-
-            if (index == struct_node->m_fields.size())
-                return nullptr;
-
-            llvm::Value *struct_ptr = nullptr;
-
-            if (access_node->m_expr->ntype == NodeType::IdentifierNode)
-            {
-                auto name = Symbol::join(m_ctx->prefix, static_cast<IdentifierNode *>(access_node->m_expr.get())->m_name);
-                if (m_ctx->m_named_stack_vars.contains(name))
-                {
-                    struct_ptr = m_ctx->m_named_stack_vars[name].first;
-                }
-                else if (m_ctx->m_named_global_vars.contains(name))
-                {
-                    struct_ptr = m_ctx->m_named_global_vars[name];
-                }
-                else if (m_ctx->m_named_params.contains(name))
-                {
-                    struct_ptr = m_ctx->m_named_params[name].first;
-                }
-                else
-                {
-                    return nullptr;
-                }
-            }
-            else
-            {
-                struct_ptr = lhs;
-            }
-
-            auto gep = m_ctx->m_builder->CreateStructGEP(struct_type, struct_ptr, index);
-            auto rhs = node->m_rhs->codegen(*this);
-            if (!rhs)
-                return nullptr;
-
-            return m_ctx->m_builder->CreateStore(rhs, gep);
+            bool state = m_state.implicit_load;
+            m_state.implicit_load = false;
+            address = node->m_lhs->codegen(*this);
+            m_state.implicit_load = state;
         }
         else
         {
-            auto lhs = node->m_lhs->codegen(*this);
-            if (!lhs)
-                return nullptr;
-
-            auto rhs = node->m_rhs->codegen(*this);
-            if (!rhs)
-                return nullptr;
-
-            return m_ctx->m_builder->CreateStore(rhs, lhs);
+            address = node->m_lhs->codegen(*this);
         }
+
+        if (!address)
+            return nullptr;
+
+        auto rhs = node->m_rhs->codegen(*this);
+        if (!rhs)
+            return nullptr;
+
+        return m_ctx->m_builder->CreateStore(rhs, address);
     }
 
     return nullptr;
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *node)
 {
     std::string name;
     llvm::Function *fn = nullptr;
@@ -486,7 +393,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::CallExprNode *nod
     return m_ctx->m_builder->CreateCall(fn, args);
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ListExprNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ListExprNode *node)
 {
     std::vector<llvm::Value *> values;
     std::vector<llvm::Type *> types;
@@ -516,49 +423,26 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ListExprNode *nod
     return val;
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::MemberAccessNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::MemberAccessNode *node)
 {
-    auto lhs = node->m_expr->codegen(*this);
-    if (!lhs)
+    llvm::Value *struct_ptr = nullptr;
+
+    bool state = m_state.implicit_load;
+    m_state.implicit_load = false;
+    struct_ptr = node->m_expr->codegen(*this);
+    m_state.implicit_load = state;
+
+    auto result = create_struct_gep(struct_ptr, node->m_field);
+    if (!result)
         return nullptr;
 
-    auto struct_type = lhs->getType();
-    if (!struct_type->isStructTy())
-        return nullptr;
+    if (m_state.implicit_load)
+        return m_ctx->m_builder->CreateLoad(std::get<1>(*result), std::get<0>(*result));
 
-    std::string name = struct_type->getStructName().str();
-
-    // Remove the suffic '.num' from the struct name
-    if (name.find_last_of('.') != std::string::npos)
-        name = name.substr(0, name.find_last_of('.'));
-
-    auto key = std::make_pair(NodeType::StructDefNode, name);
-    if (!m_ctx->m_named_construsts.contains(key))
-        return nullptr;
-
-    auto struct_def = m_ctx->m_named_construsts[key];
-    if (!struct_def)
-        return nullptr;
-
-    if (struct_def->ntype != NodeType::StructDefNode)
-        return nullptr;
-
-    auto struct_node = std::static_pointer_cast<StructDefNode>(struct_def);
-
-    size_t index = std::find_if(struct_node->m_fields.begin(), struct_node->m_fields.end(), [&](const auto &field)
-                                { return field->m_name == node->m_field; }) -
-                   struct_node->m_fields.begin();
-
-    if (index == struct_node->m_fields.size())
-        return nullptr;
-
-    auto ptr = m_ctx->m_builder->CreateAlloca(struct_type);
-    m_ctx->m_builder->CreateStore(lhs, ptr);
-    auto gep = m_ctx->m_builder->CreateStructGEP(struct_type, ptr, index);
-    return m_ctx->m_builder->CreateLoad(struct_node->m_fields[index]->m_type->codegen(*this), gep);
+    return std::get<0>(*result);
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstUnaryExprNode *node) const
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstUnaryExprNode *node)
 {
     llvm::Constant *expr = node->m_expr->codegen(*this);
     if (!expr)
@@ -583,7 +467,7 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstUnaryExpr
     }
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstBinaryExprNode *node) const
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstBinaryExprNode *node)
 {
     llvm::Constant *lhs = node->m_lhs->codegen(*this);
     if (!lhs)
@@ -638,93 +522,99 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstBinaryExp
     }
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IdentifierNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IdentifierNode *node)
 {
     auto name = Symbol::join(m_ctx->prefix, node->m_name);
 
-    if (m_ctx->m_named_stack_vars.contains(name))
-    {
-        return m_ctx->m_builder->CreateLoad(m_ctx->m_named_stack_vars[name].second, static_cast<llvm::Value *>(m_ctx->m_named_stack_vars[name].first), name);
-    }
-    else if (m_ctx->m_named_params.contains(name))
-    {
-        return m_ctx->m_named_params[name].first;
-    }
-    else if (m_ctx->m_named_global_vars.contains(name))
-    {
-        return m_ctx->m_builder->CreateLoad(m_ctx->m_named_global_vars[name]->getValueType(), m_ctx->m_named_global_vars[name], name);
-    }
+    auto ret = address_of_identifier(name);
+    if (!ret)
+        return nullptr;
 
-    for (auto &pair : m_ctx->m_named_functions)
+    auto ptr = std::get<0>(*ret);
+    auto type = std::get<1>(*ret);
+    auto locality = std::get<2>(*ret);
+
+    if (!m_state.implicit_load)
+        return ptr;
+
+    switch (locality)
     {
-        if (pair.second->m_name == name)
-            return pair.first;
+    case AORLocality::Local:
+        return m_ctx->m_builder->CreateLoad(type, ptr);
+    case AORLocality::Parameter:
+        return ptr;
+    case AORLocality::Global:
+        return m_ctx->m_builder->CreateLoad(type, ptr);
+    case AORLocality::Function:
+        return ptr;
+    default:
+        return nullptr;
     }
 
     return nullptr;
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U8TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U8TypeNode *node)
 {
     return m_ctx->m_builder->getInt8Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U16TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U16TypeNode *node)
 {
     return m_ctx->m_builder->getInt16Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U32TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U32TypeNode *node)
 {
     return m_ctx->m_builder->getInt32Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U64TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U64TypeNode *node)
 {
     return m_ctx->m_builder->getInt64Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I8TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I8TypeNode *node)
 {
     return m_ctx->m_builder->getInt8Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I16TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I16TypeNode *node)
 {
     return m_ctx->m_builder->getInt16Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I32TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I32TypeNode *node)
 {
     return m_ctx->m_builder->getInt32Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I64TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::I64TypeNode *node)
 {
     return m_ctx->m_builder->getInt64Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::F32TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::F32TypeNode *node)
 {
     return m_ctx->m_builder->getFloatTy();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::F64TypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::F64TypeNode *node)
 {
     return m_ctx->m_builder->getDoubleTy();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::BoolTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::BoolTypeNode *node)
 {
     return m_ctx->m_builder->getInt1Ty();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::VoidTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::VoidTypeNode *node)
 {
     return m_ctx->m_builder->getVoidTy();
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::PointerTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::PointerTypeNode *node)
 {
     if (node->m_type->ntype == NodeType::OpaqueTypeNode)
         return llvm::Type::getInt8PtrTy(*m_ctx->m_ctx);
@@ -736,17 +626,17 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::PointerTypeNode *n
     return llvm::PointerType::get(type, 0);
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StringTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StringTypeNode *node)
 {
     return llvm::Type::getInt8PtrTy(*m_ctx->m_ctx);
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::EnumTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::EnumTypeNode *node)
 {
     return node->m_member_type->codegen(*this);
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StructTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StructTypeNode *node)
 {
     if (m_ctx->m_named_structs.contains(node->m_name))
         return m_ctx->m_named_structs[node->m_name];
@@ -761,7 +651,7 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::StructTypeNode *no
     return m_ctx->m_named_structs[node->m_name];
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::RegionTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::RegionTypeNode *node)
 {
     std::vector<llvm::Type *> fields;
 
@@ -771,7 +661,7 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::RegionTypeNode *no
     return llvm::StructType::get(*m_ctx->m_ctx, fields);
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::UnionTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::UnionTypeNode *node)
 {
     std::vector<llvm::Type *> fields;
 
@@ -790,7 +680,7 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::UnionTypeNode *nod
     return llvm::StructType::create(*m_ctx->m_ctx, fields);
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::ArrayTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::ArrayTypeNode *node)
 {
     auto sz = node->m_size->codegen(*this);
     if (!sz)
@@ -805,7 +695,7 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::ArrayTypeNode *nod
     return llvm::ArrayType::get(type, static_cast<llvm::ConstantInt *>(sz)->getZExtValue());
 }
 
-llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *node) const
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *node)
 {
     std::vector<llvm::Type *> params;
     for (const auto &param : node->m_params)
@@ -816,22 +706,22 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *
     return llvm::FunctionType::get(node->m_return_type->codegen(*this), params, node->m_variadic);
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::IntegerLiteralNode *node) const
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::IntegerLiteralNode *node)
 {
     return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(get_numbits(node->m_val), node->m_val, 10));
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::FloatLiteralNode *node) const
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::FloatLiteralNode *node)
 {
-    if (get_numbits(node->m_val) > 32)
-    {
+    if (node->m_val_type == F32TypeNode::create())
+        return llvm::ConstantFP::get(*m_ctx->m_ctx, llvm::APFloat(llvm::APFloat::IEEEsingle(), node->m_val));
+    else if (node->m_val_type == F64TypeNode::create())
         return llvm::ConstantFP::get(*m_ctx->m_ctx, llvm::APFloat(llvm::APFloat::IEEEdouble(), node->m_val));
-    }
-
-    return llvm::ConstantFP::get(*m_ctx->m_ctx, llvm::APFloat(llvm::APFloat::IEEEsingle(), node->m_val));
+    else
+        return nullptr;
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::StringLiteralNode *node) const
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::StringLiteralNode *node)
 {
     llvm::Constant *zero = llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(*m_ctx->m_ctx));
     llvm::Constant *indices[] = {zero, zero};
@@ -843,102 +733,84 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::StringLiteralN
     return llvm::ConstantExpr::getGetElementPtr(gvar->getValueType(), gvar, indices);
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::CharLiteralNode *node) const
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::CharLiteralNode *node)
 {
     return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(8, node->m_val[0]));
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::BoolLiteralNode *node) const
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::BoolLiteralNode *node)
 {
     return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, node->m_val));
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::NullLiteralNode *node) const
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::NullLiteralNode *node)
 {
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::VarDeclNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::LetDeclNode *node)
 {
-    llvm::Type *type;
-
-    if (!(type = node->m_type->codegen(*this)))
-        return nullptr;
-
-    m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), type);
-    llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang));
-
-    if (!gvar)
-        return nullptr;
-
-    m_ctx->m_named_global_vars[Symbol::join(m_ctx->prefix, node->m_name)] = gvar;
-
-    if (m_ctx->m_pub)
-        gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
-    else
-        gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
-
-    if (node->m_init)
+    if (m_state.inside_function)
     {
-        llvm::Constant *init;
-        if (!(init = static_cast<llvm::Constant *>(node->m_init->codegen(*this))))
+        std::string name = Symbol::join(m_ctx->prefix, node->m_name);
+        auto ptr = m_ctx->m_builder->CreateAlloca(node->m_type->codegen(*this), nullptr, name);
+        m_ctx->m_named_stack_vars[name] = std::make_pair(ptr, node->m_type->codegen(*this));
+        if (node->m_init)
+        {
+            auto val = node->m_init->codegen(*this);
+            if (!val)
+                return nullptr;
+            m_ctx->m_builder->CreateStore(val, ptr);
+        }
+
+        return ptr;
+    }
+    else
+    {
+        llvm::Type *type;
+
+        if (!(type = node->m_type->codegen(*this)))
             return nullptr;
 
-        gvar->setInitializer(init);
-    }
-    else
-    {
-        gvar->setInitializer(llvm::Constant::getNullValue(type));
-    }
-
-    return gvar;
-}
-
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::LetDeclNode *node) const
-{
-    llvm::Type *type;
-
-    if (!(type = node->m_type->codegen(*this)))
-        return nullptr;
-
-    m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), type);
-    llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang));
-    if (!gvar)
-        return nullptr;
-
-    m_ctx->m_named_global_vars[Symbol::join(m_ctx->prefix, node->m_name)] = gvar;
-
-    if (m_ctx->m_pub)
-        gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
-    else
-        gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
-
-    if (node->m_init)
-    {
-        llvm::Constant *init;
-        if (!(init = static_cast<llvm::Constant *>(node->m_init->codegen(*this))))
+        m_ctx->m_module->getOrInsertGlobal(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang), type);
+        llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(Symbol::mangle(node, m_ctx->prefix, m_ctx->m_lang));
+        if (!gvar)
             return nullptr;
 
-        gvar->setInitializer(init);
-    }
-    else
-    {
-        if (type->isIntegerTy())
-            gvar->setInitializer(llvm::ConstantInt::get(type, llvm::APInt(type->getPrimitiveSizeInBits(), 0, true)));
-        else if (type->isFloatTy())
-            gvar->setInitializer(llvm::ConstantFP::get(type, 0.0));
-        else if (type->isPointerTy())
-            gvar->setInitializer(llvm::ConstantPointerNull::get(static_cast<llvm::PointerType *>(type)));
-        else if (type->isArrayTy() || type->isStructTy())
-            gvar->setInitializer(llvm::ConstantAggregateZero::get(type));
+        m_ctx->m_named_global_vars[Symbol::join(m_ctx->prefix, node->m_name)] = gvar;
+
+        if (m_ctx->m_pub)
+            gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
         else
-            gvar->setInitializer(llvm::Constant::getNullValue(type));
-    }
+            gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
 
-    return gvar;
+        if (node->m_init)
+        {
+            llvm::Constant *init;
+            if (!(init = static_cast<llvm::Constant *>(node->m_init->codegen(*this))))
+                return nullptr;
+
+            gvar->setInitializer(init);
+        }
+        else
+        {
+            if (type->isIntegerTy())
+                gvar->setInitializer(llvm::ConstantInt::get(type, llvm::APInt(type->getPrimitiveSizeInBits(), 0, true)));
+            else if (type->isFloatTy())
+                gvar->setInitializer(llvm::ConstantFP::get(type, 0.0));
+            else if (type->isPointerTy())
+                gvar->setInitializer(llvm::ConstantPointerNull::get(static_cast<llvm::PointerType *>(type)));
+            else if (type->isArrayTy() || type->isStructTy())
+                gvar->setInitializer(llvm::ConstantAggregateZero::get(type));
+            else
+                gvar->setInitializer(llvm::Constant::getNullValue(type));
+        }
+
+        return gvar;
+    }
 }
 
-llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNode *node) const
+llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNode *node)
 {
     std::vector<llvm::Type *> params;
     for (const auto &param : node->m_params)
@@ -973,7 +845,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDeclNo
     return func;
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StructDefNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StructDefNode *node)
 {
     llvm::Type *f;
     std::vector<llvm::Type *> fields;
@@ -990,7 +862,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StructDefNode *no
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::RegionDefNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::RegionDefNode *node)
 {
     llvm::Type *f;
     std::vector<llvm::Type *> fields;
@@ -1007,7 +879,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::RegionDefNode *no
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnionDefNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnionDefNode *node)
 {
     std::vector<llvm::Type *> fields;
 
@@ -1028,8 +900,11 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnionDefNode *nod
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
-llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNode *node) const
+llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNode *node)
 {
+    bool state = m_state.inside_function;
+    m_state.inside_function = true;
+
     llvm::Function *func = node->m_decl->codegen(*this);
 
     m_ctx->m_named_params.clear();
@@ -1056,62 +931,20 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
 
     m_ctx->m_builder->SetInsertPoint(EntryBlock);
 
-    for (const auto &stmt : node->m_body->m_stmts)
-    {
-        switch (stmt->ntype)
-        {
-        case NodeType::ReturnStmtNode:
-            if (!std::static_pointer_cast<ReturnStmtNode>(stmt)->codegen(*this))
-                return nullptr;
-            break;
-        case NodeType::VarDeclNode:
-        {
-            auto n = std::static_pointer_cast<VarDeclNode>(stmt);
+    if (!node->m_body->codegen(*this))
+        return nullptr;
 
-            std::string name = Symbol::join(m_ctx->prefix, n->m_name);
-            auto ptr = m_ctx->m_builder->CreateAlloca(n->m_type->codegen(*this), nullptr, name);
-            m_ctx->m_named_stack_vars[name] = std::make_pair(ptr, n->m_type->codegen(*this));
-            if (n->m_init)
-            {
-                auto val = n->m_init->codegen(*this);
-                if (!val)
-                    return nullptr;
-                m_ctx->m_builder->CreateStore(val, ptr);
-            }
-            break;
-        }
-        case NodeType::LetDeclNode:
-        {
-            auto n = std::static_pointer_cast<LetDeclNode>(stmt);
-
-            std::string name = Symbol::join(m_ctx->prefix, n->m_name);
-            auto ptr = m_ctx->m_builder->CreateAlloca(n->m_type->codegen(*this), nullptr, name);
-            m_ctx->m_named_stack_vars[name] = std::make_pair(ptr, n->m_type->codegen(*this));
-            if (n->m_init)
-            {
-                auto val = n->m_init->codegen(*this);
-                if (!val)
-                    return nullptr;
-                m_ctx->m_builder->CreateStore(val, ptr);
-            }
-            break;
-        }
-        default:
-            if (!stmt->codegen(*this))
-                return nullptr;
-            break;
-        }
-    }
+    m_state.inside_function = state;
 
     return func;
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionParamNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionParamNode *node)
 {
     return nullptr;
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::SubsystemNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::SubsystemNode *node)
 {
     size_t len = m_ctx->prefix.size();
     if (len == 0)
@@ -1124,7 +957,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::SubsystemNode *no
     return block;
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExportNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExportNode *node)
 {
     bool pub = m_ctx->m_pub;
     ExportLangType lang = m_ctx->m_lang;
@@ -1143,7 +976,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExportNode *node)
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::InlineAsmNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::InlineAsmNode *node)
 {
     /*
         What were doing here:
@@ -1240,7 +1073,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::InlineAsmNode *no
     }
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ReturnStmtNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ReturnStmtNode *node)
 {
     if (node->m_expr)
     {
@@ -1259,7 +1092,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ReturnStmtNode *n
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IfStmtNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IfStmtNode *node)
 {
     llvm::Value *cond = node->m_cond->codegen(*this);
     if (!cond)
@@ -1321,7 +1154,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IfStmtNode *node)
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
 }
 
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::WhileStmtNode *node) const
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::WhileStmtNode *node)
 {
     llvm::Function *func = m_ctx->m_builder->GetInsertBlock()->getParent();
 

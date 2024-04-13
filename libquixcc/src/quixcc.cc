@@ -327,13 +327,13 @@ static std::string base64_encode(const std::string &in)
 static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
 {
     Mutation mutator;
-    mutator.add_routine(mutate::StripUnderscoreNames);
-    mutator.add_routine(mutate::ExtrapolateEnumFields);
-    mutator.add_routine(mutate::DiscoverNamedConstructs);
-    mutator.add_routine(mutate::ResolveNamedConstructs);
-    mutator.add_routine(mutate::ConvertTypes);
-    mutator.add_routine(mutate::FoldConstExpr);
-    mutator.add_routine(mutate::InferTypes);
+    mutator.add_routine(mutate::StripUnderscoreNames);    ///> Remove all constructs named '_'
+    mutator.add_routine(mutate::ExtrapolateEnumFields);   ///> Derive enum field values
+    mutator.add_routine(mutate::DiscoverNamedConstructs); ///> Map named constructs to their respective AST nodes
+    mutator.add_routine(mutate::ResolveNamedConstructs);  ///> Resolve named constructs to their respective AST nodes
+    mutator.add_routine(mutate::ConvertTypes);            ///> Perform implicit type conversions
+    mutator.add_routine(mutate::FoldConstExpr);           ///> Fold constant expressions
+    mutator.add_routine(mutate::InferTypes);              ///> Type inference
     mutator.run(job, ast);
 
     return true;
@@ -343,18 +343,26 @@ static bool quixcc_verify_semantics(quixcc_job_t *job, std::shared_ptr<AST> ast)
 {
     (void)job;
     (void)ast;
-    /// TODO: Verify that all identifiers are defined
-    /// TODO: Verify that all types are defined
-    /// TODO: Verify that all functions are defined
-    /// TODO: Type checking
-    /// TODO: Integer overflow/underflow checking
-    /// TODO: Array bounds checking
-    /// TODO: NULL value checking
-    /// TODO: Veirfy struct/union members are non cyclic
-    /// TODO: Verify mutability of variables
-    /// TODO: Item alignment checking
-    /// TODO: verify definitions match declarations
-    /// TODO: identifiers don't conflict with reserved words
+
+    /* 
+     * TODO: Implement function argument type verification
+     * TODO: Implement function return type verification
+    */
+
+    /* old stuff
+        /// TODO: Verify that all identifiers are defined
+        /// TODO: Verify that all types are defined
+        /// TODO: Verify that all functions are defined
+        /// TODO: Type checking
+        /// TODO: Integer overflow/underflow checking
+        /// TODO: Array bounds checking
+        /// TODO: NULL value checking
+        /// TODO: Veirfy struct/union members are non cyclic
+        /// TODO: Verify mutability of variables
+        /// TODO: Item alignment checking
+        /// TODO: verify definitions match declarations
+        /// TODO: identifiers don't conflict with reserved words
+    */
 
     return true;
 }
@@ -700,7 +708,7 @@ static bool verify_build_option(const std::string &option, const std::string &va
     const static std::set<std::string> static_options = {
         "-S",            // assembly output
         "-PREP",         // preprocessor/Lexer output
-        "-emit-tokens",          // lexer output (no preprocessing)
+        "-emit-tokens",  // lexer output (no preprocessing)
         "-emit-ir",      // IR output
         "-emit-bc",      // bitcode output
         "-c",            // compile only
@@ -1008,9 +1016,8 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     */
 
     bool success = false;
-    std::thread t([&] {
-        success = execute_job(job);
-    });
+    std::thread t([&]
+                  { success = execute_job(job); });
 
     t.join();
 

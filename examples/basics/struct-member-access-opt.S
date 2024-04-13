@@ -5,28 +5,26 @@
 	.type	main,@function
 main:
 	pushq	%rbp
-	pushq	%r14
 	pushq	%rbx
-	subq	$16, %rsp
+	subq	$24, %rsp
 	movl	$100, %edi
 	callq	malloc@PLT
 	movq	%rax, %rbx
-	movq	%rax, (%rsp)
+	movq	%rax, 8(%rsp)
 	leaq	.L__unnamed_1(%rip), %rdi
 	xorl	%eax, %eax
 	callq	printf@PLT
-	leaq	8(%rsp), %r14
 	movq	%rbx, %rdi
 	callq	gets@PLT
 	leaq	.L__unnamed_2(%rip), %rdi
 	xorl	%eax, %eax
 	callq	printf@PLT
+	leaq	16(%rsp), %rsi
 	leaq	.L__unnamed_3(%rip), %rdi
-	movq	%r14, %rsi
 	xorl	%eax, %eax
 	callq	scanf@PLT
-	movq	(%rsp), %rbx
-	movl	8(%rsp), %ebp
+	movq	8(%rsp), %rbx
+	movl	16(%rsp), %ebp
 	leaq	.L__unnamed_4(%rip), %rdi
 	movq	%rbx, %rsi
 	xorl	%eax, %eax
@@ -37,9 +35,8 @@ main:
 	callq	printf@PLT
 	movq	%rbx, %rdi
 	callq	free@PLT
-	addq	$16, %rsp
+	addq	$24, %rsp
 	popq	%rbx
-	popq	%r14
 	popq	%rbp
 	retq
 .Lfunc_end0:

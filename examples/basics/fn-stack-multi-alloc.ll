@@ -8,15 +8,15 @@ entry:
   %y = alloca i8, align 1
   %z = alloca i8, align 1
   store i8 6, i8* %z, align 1
-  %x1 = load i8, i8* %x, align 1
-  %y2 = load i8, i8* %y, align 1
-  %z3 = load i8, i8* %z, align 1
-  %0 = add i8 %y2, %z3
-  %1 = add i8 %x1, %0
-  store i8 %1, i8* %ret, align 1
+  %0 = load i8, i8* %x, align 1
+  %1 = load i8, i8* %y, align 1
+  %2 = load i8, i8* %z, align 1
+  %3 = add i8 %1, %2
+  %4 = add i8 %0, %3
+  store i8 %4, i8* %ret, align 1
   br label %end
 
 end:                                              ; preds = %entry
-  %2 = load i8, i8* %ret, align 1
-  ret i8 %2
+  %5 = load i8, i8* %ret, align 1
+  ret i8 %5
 }

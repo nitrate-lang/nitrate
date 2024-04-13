@@ -66,7 +66,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return true; }
         virtual size_t size(size_t ptr_size) const override { 
             size_t size = 0;
@@ -106,7 +106,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         virtual UnionTypeNode *get_type() const

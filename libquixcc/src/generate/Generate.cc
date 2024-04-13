@@ -107,7 +107,8 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode>
     CFILE_raw_pwrite_ostream os(out);
 
     // Generate code for AST
-    if (!ast->codegen(CodegenVisitor(ctx.m_inner)))
+    CodegenVisitor codegen(ctx.m_inner);
+    if (!ast->codegen(codegen))
     {
         LOG(ERROR) << "Failed to generate LLVM IR" << std::endl;
         return false;
@@ -176,7 +177,8 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNod
     CFILE_raw_pwrite_ostream os(out);
 
     // Generate code for AST
-    if (!ast->codegen(CodegenVisitor(ctx.m_inner)))
+    CodegenVisitor codegen(ctx.m_inner);
+    if (!ast->codegen(codegen))
     {
         LOG(ERROR) << "Failed to generate LLVM Code for file" << ctx.m_filename << std::endl;
         return false;

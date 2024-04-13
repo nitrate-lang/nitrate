@@ -4,41 +4,28 @@
 	.type	.L_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p,@function
 .L_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p:
 	.cfi_startproc
-	pushq	%rbx
-	.cfi_def_cfa_offset 16
-	subq	$64, %rsp
-	.cfi_def_cfa_offset 80
-	.cfi_offset %rbx, -16
-	leaq	8(%rsp), %rbx
+	subq	$40, %rsp
+	.cfi_def_cfa_offset 48
 	movl	$100, %edi
 	callq	malloc@PLT
-	movq	%rax, (%rsp)
+	movq	%rax, 8(%rsp)
 	leaq	.L__unnamed_1(%rip), %rdi
 	xorl	%eax, %eax
 	callq	printf@PLT
-	movl	8(%rsp), %eax
-	movq	(%rsp), %rdi
-	movq	%rdi, 32(%rsp)
-	movl	%eax, 40(%rsp)
+	movq	8(%rsp), %rdi
 	callq	gets@PLT
 	leaq	.L__unnamed_2(%rip), %rdi
 	xorl	%eax, %eax
 	callq	printf@PLT
-	movl	8(%rsp), %eax
-	movq	(%rsp), %rcx
-	movq	%rcx, 16(%rsp)
-	movl	%eax, 24(%rsp)
+	leaq	16(%rsp), %rsi
 	leaq	.L__unnamed_3(%rip), %rdi
-	movq	%rbx, %rsi
 	xorl	%eax, %eax
 	callq	scanf@PLT
-	movq	(%rsp), %rax
-	movl	8(%rsp), %edx
-	movl	%edx, 56(%rsp)
-	movq	%rax, 48(%rsp)
-	addq	$64, %rsp
-	.cfi_def_cfa_offset 16
-	popq	%rbx
+	movq	8(%rsp), %rax
+	movl	16(%rsp), %edx
+	movl	%edx, 32(%rsp)
+	movq	%rax, 24(%rsp)
+	addq	$40, %rsp
 	.cfi_def_cfa_offset 8
 	retq
 .Lfunc_end0:
@@ -50,30 +37,22 @@
 	.type	main,@function
 main:
 	.cfi_startproc
-	subq	$72, %rsp
-	.cfi_def_cfa_offset 80
+	subq	$24, %rsp
+	.cfi_def_cfa_offset 32
 	callq	.L_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p
 	movq	%rax, 8(%rsp)
 	movl	%edx, 16(%rsp)
-	movq	%rax, 56(%rsp)
-	movl	%edx, 64(%rsp)
 	leaq	.L__unnamed_4(%rip), %rdi
 	movq	%rax, %rsi
 	xorl	%eax, %eax
 	callq	printf@PLT
 	movl	16(%rsp), %esi
-	movq	8(%rsp), %rax
-	movq	%rax, 40(%rsp)
-	movl	%esi, 48(%rsp)
 	leaq	.L__unnamed_5(%rip), %rdi
 	xorl	%eax, %eax
 	callq	printf@PLT
-	movl	16(%rsp), %eax
 	movq	8(%rsp), %rdi
-	movq	%rdi, 24(%rsp)
-	movl	%eax, 32(%rsp)
 	callq	free@PLT
-	addq	$72, %rsp
+	addq	$24, %rsp
 	.cfi_def_cfa_offset 8
 	retq
 .Lfunc_end1:

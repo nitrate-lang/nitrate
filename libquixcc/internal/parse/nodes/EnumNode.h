@@ -64,7 +64,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return m_member_type->size(ptr_size); }
         virtual std::string to_source() const override
@@ -85,7 +85,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { throw CodegenException("EnumFieldNode is not codegenable"); }
+        virtual llvm::Value *codegen(CodegenVisitor &visitor) const { throw CodegenException("EnumFieldNode is not codegenable"); }
 
         std::string m_name;
         std::shared_ptr<ConstExprNode> m_value;
@@ -98,7 +98,7 @@ namespace libquixcc
         EnumDefNode(EnumTypeNode *type, bool scoped, const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {}) : m_type(type), m_fields(fields), m_scoped(scoped) { ntype = NodeType::EnumDefNode; }
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { throw CodegenException("EnumDefNode is not codegenable"); }
+        virtual llvm::Value *codegen(CodegenVisitor &visitor) const override { throw CodegenException("EnumDefNode is not codegenable"); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
         
         virtual TypeNode *get_type() const { return m_type; }

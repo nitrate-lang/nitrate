@@ -99,7 +99,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
+        virtual llvm::Type *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return ptr_size; }
         virtual std::string to_source() const override
@@ -144,7 +144,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const { return visitor.visit(this); }
+        virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
 
         std::string m_name;
         TypeNode *m_type;
@@ -159,7 +159,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Function *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual llvm::Function *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::string m_name;
@@ -176,7 +176,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(const CodegenVisitor &visitor) const override { return visitor.visit(this); }
+        virtual llvm::Value *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::shared_ptr<FunctionDeclNode> m_decl;

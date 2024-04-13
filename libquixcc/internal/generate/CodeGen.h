@@ -39,6 +39,7 @@
 #include <parse/NodeType.h>
 #include <llvm/IR/Value.h>
 #include <llvm/LLVMWrapper.h>
+#include <optional>
 
 namespace libquixcc
 {
@@ -54,62 +55,79 @@ namespace libquixcc
 
     class CodegenVisitor
     {
+        struct CodegenState
+        {
+            bool implicit_load = true;
+            bool inside_function = false;
+        };
+
         LLVMContext *m_ctx;
+        CodegenState m_state;
+
+        std::optional<std::pair<llvm::Value *, llvm::Type *>> create_struct_gep(llvm::Value *struct_ptr, const std::string &field_name);
+
+        enum class AORLocality
+        {
+            Global,
+            Local,
+            Parameter,
+            Function
+        };
+        std::optional<std::tuple<llvm::Value *, llvm::Type *, AORLocality>> address_of_identifier(const std::string &name);
 
     public:
         CodegenVisitor(LLVMContext &llvm) : m_ctx(&llvm) {}
 
-        llvm::Value *visit(const BlockNode *node) const;
-        llvm::Value *visit(const StmtGroupNode *node) const;
-        llvm::Value *visit(const ExprStmtNode *node) const;
-        llvm::Value *visit(const UnaryExprNode *node) const;
-        llvm::Value *visit(const BinaryExprNode *node) const;
-        llvm::Value *visit(const CallExprNode *node) const;
-        llvm::Value *visit(const ListExprNode *node) const;
-        llvm::Value *visit(const MemberAccessNode *node) const;
-        llvm::Constant *visit(const ConstUnaryExprNode *node) const;
-        llvm::Constant *visit(const ConstBinaryExprNode *node) const;
-        llvm::Value *visit(const IdentifierNode *node) const;
-        llvm::Type *visit(const U8TypeNode *node) const;
-        llvm::Type *visit(const U16TypeNode *node) const;
-        llvm::Type *visit(const U32TypeNode *node) const;
-        llvm::Type *visit(const U64TypeNode *node) const;
-        llvm::Type *visit(const I8TypeNode *node) const;
-        llvm::Type *visit(const I16TypeNode *node) const;
-        llvm::Type *visit(const I32TypeNode *node) const;
-        llvm::Type *visit(const I64TypeNode *node) const;
-        llvm::Type *visit(const F32TypeNode *node) const;
-        llvm::Type *visit(const F64TypeNode *node) const;
-        llvm::Type *visit(const BoolTypeNode *node) const;
-        llvm::Type *visit(const VoidTypeNode *node) const;
-        llvm::Type *visit(const PointerTypeNode *node) const;
-        llvm::Type *visit(const StringTypeNode *node) const;
-        llvm::Type *visit(const EnumTypeNode *node) const;
-        llvm::Type *visit(const StructTypeNode *node) const;
-        llvm::Type *visit(const RegionTypeNode *node) const;
-        llvm::Type *visit(const UnionTypeNode *node) const;
-        llvm::Type *visit(const ArrayTypeNode *node) const;
-        llvm::Type *visit(const FunctionTypeNode *node) const;
-        llvm::Constant *visit(const IntegerLiteralNode *node) const;
-        llvm::Constant *visit(const FloatLiteralNode *node) const;
-        llvm::Constant *visit(const StringLiteralNode *node) const;
-        llvm::Constant *visit(const CharLiteralNode *node) const;
-        llvm::Constant *visit(const BoolLiteralNode *node) const;
-        llvm::Constant *visit(const NullLiteralNode *node) const;
-        llvm::Value *visit(const VarDeclNode *node) const;
-        llvm::Value *visit(const LetDeclNode *node) const;
-        llvm::Function *visit(const FunctionDeclNode *node) const;
-        llvm::Value *visit(const StructDefNode *node) const;
-        llvm::Value *visit(const RegionDefNode *node) const;
-        llvm::Value *visit(const UnionDefNode *node) const;
-        llvm::Function *visit(const FunctionDefNode *node) const;
-        llvm::Value *visit(const FunctionParamNode *node) const;
-        llvm::Value *visit(const SubsystemNode *node) const;
-        llvm::Value *visit(const ExportNode *node) const;
-        llvm::Value *visit(const InlineAsmNode *node) const;
-        llvm::Value *visit(const ReturnStmtNode *node) const;
-        llvm::Value *visit(const IfStmtNode *node) const;
-        llvm::Value *visit(const WhileStmtNode *node) const;
+        llvm::Value *visit(const BlockNode *node);
+        llvm::Value *visit(const StmtGroupNode *node);
+        llvm::Value *visit(const ExprStmtNode *node);
+        llvm::Value *visit(const UnaryExprNode *node);
+        llvm::Value *visit(const BinaryExprNode *node);
+        llvm::Value *visit(const CallExprNode *node);
+        llvm::Value *visit(const ListExprNode *node);
+        llvm::Value *visit(const MemberAccessNode *node);
+        llvm::Constant *visit(const ConstUnaryExprNode *node);
+        llvm::Constant *visit(const ConstBinaryExprNode *node);
+        llvm::Value *visit(const IdentifierNode *node);
+        llvm::Type *visit(const U8TypeNode *node);
+        llvm::Type *visit(const U16TypeNode *node);
+        llvm::Type *visit(const U32TypeNode *node);
+        llvm::Type *visit(const U64TypeNode *node);
+        llvm::Type *visit(const I8TypeNode *node);
+        llvm::Type *visit(const I16TypeNode *node);
+        llvm::Type *visit(const I32TypeNode *node);
+        llvm::Type *visit(const I64TypeNode *node);
+        llvm::Type *visit(const F32TypeNode *node);
+        llvm::Type *visit(const F64TypeNode *node);
+        llvm::Type *visit(const BoolTypeNode *node);
+        llvm::Type *visit(const VoidTypeNode *node);
+        llvm::Type *visit(const PointerTypeNode *node);
+        llvm::Type *visit(const StringTypeNode *node);
+        llvm::Type *visit(const EnumTypeNode *node);
+        llvm::Type *visit(const StructTypeNode *node);
+        llvm::Type *visit(const RegionTypeNode *node);
+        llvm::Type *visit(const UnionTypeNode *node);
+        llvm::Type *visit(const ArrayTypeNode *node);
+        llvm::Type *visit(const FunctionTypeNode *node);
+        llvm::Constant *visit(const IntegerLiteralNode *node);
+        llvm::Constant *visit(const FloatLiteralNode *node);
+        llvm::Constant *visit(const StringLiteralNode *node);
+        llvm::Constant *visit(const CharLiteralNode *node);
+        llvm::Constant *visit(const BoolLiteralNode *node);
+        llvm::Constant *visit(const NullLiteralNode *node);
+        llvm::Value *visit(const LetDeclNode *node);
+        llvm::Function *visit(const FunctionDeclNode *node);
+        llvm::Value *visit(const StructDefNode *node);
+        llvm::Value *visit(const RegionDefNode *node);
+        llvm::Value *visit(const UnionDefNode *node);
+        llvm::Function *visit(const FunctionDefNode *node);
+        llvm::Value *visit(const FunctionParamNode *node);
+        llvm::Value *visit(const SubsystemNode *node);
+        llvm::Value *visit(const ExportNode *node);
+        llvm::Value *visit(const InlineAsmNode *node);
+        llvm::Value *visit(const ReturnStmtNode *node);
+        llvm::Value *visit(const IfStmtNode *node);
+        llvm::Value *visit(const WhileStmtNode *node);
     };
 };
 
