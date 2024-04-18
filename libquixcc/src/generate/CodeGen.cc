@@ -181,7 +181,10 @@ std::optional<std::pair<llvm::Value *, llvm::Type *>> libquixcc::CodegenVisitor:
 
     auto key = std::make_pair(NodeType::StructDefNode, name);
     if (!m_ctx->m_named_construsts.contains(key))
+    {
+        throw CodegenException("Struct not found: " + name);
         return std::nullopt;
+    }
     auto struct_def = m_ctx->m_named_construsts[key];
 
     auto struct_node = std::static_pointer_cast<StructDefNode>(struct_def);

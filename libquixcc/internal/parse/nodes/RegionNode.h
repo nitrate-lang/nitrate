@@ -120,6 +120,8 @@ namespace libquixcc
             return RegionTypeNode::create(fields);
         }
 
+        std::shared_ptr<StructDefNode> to_struct_def() const;
+
         std::string m_name;
         std::vector<std::shared_ptr<RegionFieldNode>> m_fields;
     };

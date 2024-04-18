@@ -344,10 +344,10 @@ static bool quixcc_verify_semantics(quixcc_job_t *job, std::shared_ptr<AST> ast)
     (void)job;
     (void)ast;
 
-    /* 
+    /*
      * TODO: Implement function argument type verification
      * TODO: Implement function return type verification
-    */
+     */
 
     /* old stuff
         /// TODO: Verify that all identifiers are defined
@@ -570,6 +570,37 @@ static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<PrepEngine> prep
     return true;
 }
 
+static void reduce_named_mappings(quixcc_job_t &ctx)
+{
+    /// TODO: mutate m_named_construsts to replace high level constructs with low level constructs
+
+    auto it = ctx.m_inner.m_named_construsts.begin();
+
+    while (it != ctx.m_inner.m_named_construsts.end())
+    {
+        switch (it->first.first)
+        {
+        case NodeType::GroupDefNode:
+        {
+            auto group = std::static_pointer_cast<GroupDefNode>(it->second);
+            ctx.m_inner.m_named_construsts[std::make_pair(NodeType::StructDefNode, it->first.second)] = group->to_struct_def();
+            it = ctx.m_inner.m_named_construsts.erase(it);
+            break;
+        }
+        case NodeType::RegionDefNode:
+        {
+            auto region = std::static_pointer_cast<RegionDefNode>(it->second);
+            ctx.m_inner.m_named_construsts[std::make_pair(NodeType::StructDefNode, it->first.second)] = region->to_struct_def();
+            it = ctx.m_inner.m_named_construsts.erase(it);
+            break;
+        }
+        default:
+            it++;
+            break;
+        }
+    }
+}
+
 static bool compile(quixcc_job_t *job)
 {
     // Create an AST before goto statements
@@ -680,6 +711,8 @@ static bool compile(quixcc_job_t *job)
 
     if (job->m_debug)
         LOG(DEBUG) << "Dumping AST 3 (JSON): " << base64_encode(ast_reduced->to_json(ParseNodeJsonSerializerVisitor())) << std::endl;
+
+    reduce_named_mappings(*job);
 
     ///=========================================
     /// END: AST REDUCTION

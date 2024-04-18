@@ -89,6 +89,8 @@ namespace libquixcc
             return StructTypeNode::create(types, m_name);
         }
 
+        std::shared_ptr<StructDefNode> to_struct_def() const;
+
         std::string m_name;
     };
 }

@@ -73,3 +73,25 @@ std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> libquixcc::GroupDefNode:
 
     return copy;
 }
+
+std::shared_ptr<libquixcc::StructDefNode> libquixcc::GroupDefNode::to_struct_def() const
+{
+    std::vector<std::shared_ptr<libquixcc::StructFieldNode>> fields;
+    for (const auto &field : optimize_layout(m_fields))
+    {
+        fields.push_back(std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value));
+    }
+
+    return std::make_shared<libquixcc::StructDefNode>(m_name, fields);
+}
+
+std::shared_ptr<libquixcc::StructDefNode> libquixcc::RegionDefNode::to_struct_def() const
+{
+    std::vector<std::shared_ptr<libquixcc::StructFieldNode>> fields;
+    for (const auto &field : m_fields)
+    {
+        fields.push_back(std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value));
+    }
+
+    return std::make_shared<libquixcc::StructDefNode>(m_name, fields);
+}
