@@ -37,5 +37,5 @@ fn main(): i8 {
     printf("This is the first of many programs to come.\n");
     printf("Long live QUIX! May it reign supreme for %d years to come!\n", 1000);
 
-    return 0;
+    ret 0;
 }

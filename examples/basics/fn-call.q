@@ -30,13 +30,13 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 fn CallMeFirst(a: i8): i8 {
-  return a + 10;
+  ret a + 10;
 }
 
 fn CallMeSecond(b: i8): i8 {
-    return b * 20;
+    ret b * 20;
 }
 
 fn main(argc: i32 = 0): i8 {
-    return 60 + CallMeSecond(CallMeFirst(10));
+    ret 60 + CallMeSecond(CallMeFirst(10));
 }

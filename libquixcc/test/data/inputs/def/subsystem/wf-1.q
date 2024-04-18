@@ -11,5 +11,5 @@ import "C" fn printf(format: *i8, ...);
 fn main() {
     printf("The value is %x\n", MyAPI<v1>::Nested<another_version>::x);
 
-    return;
+    ret;
 }

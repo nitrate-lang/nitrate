@@ -295,8 +295,7 @@ typedef struct quixcc_job_t quixcc_job_t;
      * @warning Ensure that the options array is properly NULL-terminated.
      * @note The FILE handles for input and output streams are owned by the caller.
      *       The caller may need to flush the streams.
-     * @note The FILE handles are not required to support seeking.
-     *       It is acceptable to use `fmemopen` and `open_memstream` to create the IO streams.
+     * @note It is acceptable to use `fmemopen` and `open_memstream` to create the IO streams.
      */
     char *quixcc_compile(FILE *in, FILE *out, const char *options[]);
 

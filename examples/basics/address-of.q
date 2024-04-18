@@ -36,5 +36,5 @@ fn main(): void {
 
     printf("address of x: %p\n", &x);
 
-    return;
+    ret;
 }

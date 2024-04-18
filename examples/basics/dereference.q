@@ -45,5 +45,5 @@ fn main(): void {
 
     printf("x = %d, &x = %p, x_ptr = %p, *x_ptr = %d\n", x, &x, x_ptr, *x_ptr);
     
-    return;
+    ret;
 }

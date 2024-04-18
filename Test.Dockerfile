@@ -15,6 +15,11 @@ VOLUME /app/
 RUN echo "#!/bin/sh" > /opt/test.sh
 RUN echo "cmake -S /app -B /app/build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=On" >> /opt/test.sh
 RUN echo "cmake --build /app/build -j`nproc`" >> /opt/test.sh
+RUN echo "mkdir -p /app/bin" >> /opt/test.sh
+RUN echo "cp /app/build/qcc/qcc /app/bin/qcc" >> /opt/test.sh
+RUN echo "cp /app/build/qld/qld /app/bin/qld" >> /opt/test.sh  
+RUN echo "cp /app/build/qpkg/qpkg /app/bin/qpkg" >> /opt/test.sh
+RUN echo "cp /app/build/libquixcc/libquixcc.so /app/bin/libquixcc.so" >> /opt/test.sh
 RUN echo "/app/build/libquixcc/test/libquixcc-test-suite" >> /opt/test.sh
 RUN chmod +x /opt/test.sh
 

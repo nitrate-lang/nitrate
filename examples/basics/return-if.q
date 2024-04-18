@@ -34,5 +34,5 @@ fn main(): i8 {
     retif 10, true;
     retz 20, false;
 
-    return 60;
+    ret 60;
 }

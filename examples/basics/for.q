@@ -36,5 +36,5 @@ fn main(): i8 {
         
     }
 
-    return 60;
+    ret 60;
 }

@@ -33,5 +33,5 @@ fn main(): i8 {
     let x: i8 = 10;
     let y: i8 = 20;
 
-    return x+y;
+    ret x+y;
 }

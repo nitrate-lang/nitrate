@@ -36,7 +36,7 @@ fn do_inline_asm(): i32 {
 
     __asm__("mov $$42, $0", {"=r": &x}, {}, ["esi"]);
 
-    return x;
+    ret x;
 }
 
 fn main(): void {
@@ -44,5 +44,5 @@ fn main(): void {
 
     printf("x = %d\n", x);
 
-    return;
+    ret;
 }

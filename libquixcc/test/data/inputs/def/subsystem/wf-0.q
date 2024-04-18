@@ -5,17 +5,17 @@ subsystem MyAPI<v1>: dep1, dep2 {
 }
 
 pub fn MyAPI<v1>::init() {
-    return;
+    ret;
 }
 
 pub fn MyAPI<v1>::deinit() {
-    return;
+    ret;
 }
 
 pub fn MyAPI<v1>::do_something_super_important(): i32 {
-    return 0xdeadbeef;
+    ret 0xdeadbeef;
 }
 
 fn main() {
-    return;
+    ret;
 }

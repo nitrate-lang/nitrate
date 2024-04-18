@@ -53,7 +53,7 @@ fn get_person_info(): PersonInfo {
     printf("Enter your name: "); gets(info.name);
     printf("Enter your age: "); scanf("%d", &info.age);
 
-    return info;
+    ret info;
 }
 
 fn main() {
@@ -66,5 +66,5 @@ fn main() {
 
     free(res.name);
 
-    return;
+    ret;
 }

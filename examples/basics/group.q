@@ -54,5 +54,5 @@ group RectanglurPrism3d {
 pub let data: RectanglurPrism3d;
 
 fn main(): void {
-    return;
+    ret;
 }

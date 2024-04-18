@@ -48,6 +48,6 @@ subsystem libquixcc {
 
 
 fn main(): i8 {
-    return libquixcc::error_message_index::LET_NAME_DUPLICATE;
+    ret libquixcc::error_message_index::LET_NAME_DUPLICATE;
 }
     

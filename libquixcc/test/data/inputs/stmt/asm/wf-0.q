@@ -13,5 +13,5 @@ fn main(): void {
 
     printf("x = %d\n", x);
 
-    return;
+    ret;
 }

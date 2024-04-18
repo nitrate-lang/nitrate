@@ -36,5 +36,5 @@ fn main(): bit32 {
     let y: bit32 = 20;
     let z: bit32 = x + y;
 
-    return z;
+    ret z;
 }

@@ -84,7 +84,7 @@ namespace libquixcc
         KWPair("default", 7),
         KWPair("break", 5),
         KWPair("continue", 8),
-        KWPair("return", 6),
+        KWPair("ret", 3),
         KWPair("retif", 5),
         KWPair("retz", 4),
         KWPair("retv", 4),

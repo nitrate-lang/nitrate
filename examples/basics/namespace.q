@@ -38,5 +38,5 @@ fn main(): i8 {
     let x: i8 = Number::CONSTANT_A;
     let y: i8 = Number::CONSTANT_B;
 
-    return 9;
+    ret 9;
 }

@@ -34,9 +34,9 @@ fn main(): i8 {
 
     while (1==1) {
         if x == 21 {
-            return 20;
+            ret 20;
         }
     }
 
-    return 60;
+    ret 60;
 }

@@ -45,5 +45,5 @@ pub let x0: F32_I32U;
 pub let x1: F64_I64U;
 
 fn main(): void {
-    return;
+    ret;
 }
