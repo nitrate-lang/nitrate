@@ -57,6 +57,11 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDeclNode::reduce(libquix
     return std::make_unique<libquixcc::FunctionDeclNode>(*this);
 }
 
+std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionParamNode::reduce(libquixcc::ReductionState &state) const
+{
+    return std::make_unique<libquixcc::FunctionParamNode>(*this);
+}
+
 std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDefNode::reduce(libquixcc::ReductionState &state) const
 {
     bool x = state.m_fn_def;

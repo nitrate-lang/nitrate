@@ -75,9 +75,6 @@ namespace libquixcc
         };
         std::optional<std::tuple<llvm::Value *, llvm::Type *, AORLocality>> address_of_identifier(const std::string &name);
 
-    public:
-        CodegenVisitor(LLVMContext &llvm) : m_ctx(&llvm) {}
-
         llvm::Value *visit(const BlockNode *node);
         llvm::Value *visit(const StmtGroupNode *node);
         llvm::Value *visit(const ExprStmtNode *node);
@@ -128,6 +125,83 @@ namespace libquixcc
         llvm::Value *visit(const ReturnStmtNode *node);
         llvm::Value *visit(const IfStmtNode *node);
         llvm::Value *visit(const WhileStmtNode *node);
+
+    public:
+        CodegenVisitor(LLVMContext &llvm) : m_ctx(&llvm) {}
+
+        llvm::Value *visit(const ExprNode *node);
+        llvm::Value *visit(const StmtNode *node);
+        llvm::Type *visit(const TypeNode *node);
+    };
+
+    class C11CodegenVisitor
+    {
+        struct CodegenState
+        {
+            bool implicit_load = true;
+            bool inside_function = false;
+        };
+
+        CodegenState m_state;
+        std::unique_ptr<libquixcc::StmtNode> m_ast;
+
+        std::string visit(const BlockNode *node);
+        std::string visit(const StmtGroupNode *node);
+        std::string visit(const ExprStmtNode *node);
+        std::string visit(const UnaryExprNode *node);
+        std::string visit(const BinaryExprNode *node);
+        std::string visit(const CallExprNode *node);
+        std::string visit(const ListExprNode *node);
+        std::string visit(const MemberAccessNode *node);
+        std::string visit(const ConstUnaryExprNode *node);
+        std::string visit(const ConstBinaryExprNode *node);
+        std::string visit(const IdentifierNode *node);
+        std::string visit(const U8TypeNode *node);
+        std::string visit(const U16TypeNode *node);
+        std::string visit(const U32TypeNode *node);
+        std::string visit(const U64TypeNode *node);
+        std::string visit(const I8TypeNode *node);
+        std::string visit(const I16TypeNode *node);
+        std::string visit(const I32TypeNode *node);
+        std::string visit(const I64TypeNode *node);
+        std::string visit(const F32TypeNode *node);
+        std::string visit(const F64TypeNode *node);
+        std::string visit(const BoolTypeNode *node);
+        std::string visit(const VoidTypeNode *node);
+        std::string visit(const PointerTypeNode *node);
+        std::string visit(const StringTypeNode *node);
+        std::string visit(const EnumTypeNode *node);
+        std::string visit(const StructTypeNode *node);
+        std::string visit(const RegionTypeNode *node);
+        std::string visit(const UnionTypeNode *node);
+        std::string visit(const ArrayTypeNode *node);
+        std::string visit(const FunctionTypeNode *node);
+        std::string visit(const IntegerLiteralNode *node);
+        std::string visit(const FloatLiteralNode *node);
+        std::string visit(const StringLiteralNode *node);
+        std::string visit(const CharLiteralNode *node);
+        std::string visit(const BoolLiteralNode *node);
+        std::string visit(const NullLiteralNode *node);
+        std::string visit(const LetDeclNode *node);
+        std::string visit(const FunctionDeclNode *node);
+        std::string visit(const StructDefNode *node);
+        std::string visit(const RegionDefNode *node);
+        std::string visit(const UnionDefNode *node);
+        std::string visit(const FunctionDefNode *node);
+        std::string visit(const FunctionParamNode *node);
+        std::string visit(const SubsystemNode *node);
+        std::string visit(const ExportNode *node);
+        std::string visit(const InlineAsmNode *node);
+        std::string visit(const ReturnStmtNode *node);
+        std::string visit(const IfStmtNode *node);
+        std::string visit(const WhileStmtNode *node);
+
+    public:
+        C11CodegenVisitor(std::unique_ptr<libquixcc::StmtNode> ast) : m_ast(std::move(ast)) {}
+
+        llvm::Value *visit(const ExprNode *node);
+        llvm::Value *visit(const StmtNode *node);
+        llvm::Type *visit(const TypeNode *node);
     };
 };
 

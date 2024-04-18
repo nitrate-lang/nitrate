@@ -63,7 +63,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 1; }
         virtual std::string to_source() const override { return "u8"; }
@@ -87,7 +86,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 2; }
         virtual std::string to_source() const override { return "u16"; }
@@ -111,7 +109,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 4; }
         virtual std::string to_source() const override { return "u32"; }
@@ -135,7 +132,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 8; }
         virtual std::string to_source() const override { return "u64"; }
@@ -159,7 +155,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 1; }
         virtual std::string to_source() const override { return "i8"; }
@@ -183,7 +178,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 2; }
         virtual std::string to_source() const override { return "i16"; }
@@ -207,7 +201,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 4; }
         virtual std::string to_source() const override { return "i32"; }
@@ -231,7 +224,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 8; }
         virtual std::string to_source() const override { return "i64"; }
@@ -255,7 +247,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 4; }
         virtual std::string to_source() const override { return "f32"; }
@@ -279,7 +270,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 8; }
         virtual std::string to_source() const override { return "f64"; }
@@ -303,7 +293,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 1; }
         virtual std::string to_source() const override { return "bool"; }
@@ -327,7 +316,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 0; }
         virtual std::string to_source() const override { return "void"; }
@@ -351,7 +339,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return ptr_size; }
         virtual std::string to_source() const override { return "*" + m_type->to_source(); }
@@ -377,7 +364,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const override { throw CodegenException("Cannot codegen opaque type"); }
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 0; }
         virtual std::string to_source() const override { return "opaque(" + m_name + ")"; }

@@ -572,8 +572,6 @@ static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<PrepEngine> prep
 
 static void reduce_named_mappings(quixcc_job_t &ctx)
 {
-    /// TODO: mutate m_named_construsts to replace high level constructs with low level constructs
-
     auto it = ctx.m_inner.m_named_construsts.begin();
 
     while (it != ctx.m_inner.m_named_construsts.end())

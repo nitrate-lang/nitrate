@@ -908,7 +908,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
     bool state = m_state.inside_function;
     m_state.inside_function = true;
 
-    llvm::Function *func = node->m_decl->codegen(*this);
+    llvm::Function *func = static_cast<llvm::Function *>(node->m_decl->codegen(*this));
 
     m_ctx->m_named_params.clear();
     for (auto &arg : func->args())
@@ -1187,4 +1187,133 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::WhileStmtNode *no
     m_ctx->m_builder->SetInsertPoint(MergeBB);
 
     return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+}
+
+///=============================================================================
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExprNode *node)
+{
+    switch (node->ntype)
+    {
+    case NodeType::UnaryExprNode:
+        return visit(static_cast<const UnaryExprNode *>(node));
+    case NodeType::BinaryExprNode:
+        return visit(static_cast<const BinaryExprNode *>(node));
+    case NodeType::CallExprNode:
+        return visit(static_cast<const CallExprNode *>(node));
+    case NodeType::ListExprNode:
+        return visit(static_cast<const ListExprNode *>(node));
+    case NodeType::MemberAccessNode:
+        return visit(static_cast<const MemberAccessNode *>(node));
+    case NodeType::ConstUnaryExprNode:
+        return visit(static_cast<const ConstUnaryExprNode *>(node));
+    case NodeType::ConstBinaryExprNode:
+        return visit(static_cast<const ConstBinaryExprNode *>(node));
+    case NodeType::IdentifierNode:
+        return visit(static_cast<const IdentifierNode *>(node));
+    case NodeType::IntegerLiteralNode:
+        return visit(static_cast<const IntegerLiteralNode *>(node));
+    case NodeType::FloatLiteralNode:
+        return visit(static_cast<const FloatLiteralNode *>(node));
+    case NodeType::StringLiteralNode:
+        return visit(static_cast<const StringLiteralNode *>(node));
+    case NodeType::CharLiteralNode:
+        return visit(static_cast<const CharLiteralNode *>(node));
+    case NodeType::BoolLiteralNode:
+        return visit(static_cast<const BoolLiteralNode *>(node));
+    case NodeType::NullLiteralNode:
+        return visit(static_cast<const NullLiteralNode *>(node));
+    default:
+        throw CodegenException("NodeType: " + std::to_string(static_cast<int>(node->ntype)) + " is not codegenable");
+    }
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StmtNode *node)
+{
+    switch (node->ntype)
+    {
+    case NodeType::BlockNode:
+        return visit(static_cast<const BlockNode *>(node));
+    case NodeType::StmtGroupNode:
+        return visit(static_cast<const StmtGroupNode *>(node));
+    case NodeType::ExprStmtNode:
+        return visit(static_cast<const ExprStmtNode *>(node));
+    case NodeType::LetDeclNode:
+        return visit(static_cast<const LetDeclNode *>(node));
+    case NodeType::FunctionDeclNode:
+        return visit(static_cast<const FunctionDeclNode *>(node));
+    case NodeType::StructDefNode:
+        return visit(static_cast<const StructDefNode *>(node));
+    case NodeType::RegionDefNode:
+        return visit(static_cast<const RegionDefNode *>(node));
+    case NodeType::UnionDefNode:
+        return visit(static_cast<const UnionDefNode *>(node));
+    case NodeType::FunctionDefNode:
+        return visit(static_cast<const FunctionDefNode *>(node));
+    case NodeType::FunctionParamNode:
+        return visit(static_cast<const FunctionParamNode *>(node));
+    case NodeType::SubsystemNode:
+        return visit(static_cast<const SubsystemNode *>(node));
+    case NodeType::ExportNode:
+        return visit(static_cast<const ExportNode *>(node));
+    case NodeType::InlineAsmNode:
+        return visit(static_cast<const InlineAsmNode *>(node));
+    case NodeType::ReturnStmtNode:
+        return visit(static_cast<const ReturnStmtNode *>(node));
+    case NodeType::IfStmtNode:
+        return visit(static_cast<const IfStmtNode *>(node));
+    case NodeType::WhileStmtNode:
+        return visit(static_cast<const WhileStmtNode *>(node));
+    default:
+        throw CodegenException("NodeType: " + std::to_string(static_cast<int>(node->ntype)) + " is not codegenable");
+    }
+}
+
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::TypeNode *node)
+{
+    switch (node->ntype)
+    {
+    case NodeType::U8TypeNode:
+        return visit(static_cast<const U8TypeNode *>(node));
+    case NodeType::U16TypeNode:
+        return visit(static_cast<const U16TypeNode *>(node));
+    case NodeType::U32TypeNode:
+        return visit(static_cast<const U32TypeNode *>(node));
+    case NodeType::U64TypeNode:
+        return visit(static_cast<const U64TypeNode *>(node));
+    case NodeType::I8TypeNode:
+        return visit(static_cast<const I8TypeNode *>(node));
+    case NodeType::I16TypeNode:
+        return visit(static_cast<const I16TypeNode *>(node));
+    case NodeType::I32TypeNode:
+        return visit(static_cast<const I32TypeNode *>(node));
+    case NodeType::I64TypeNode:
+        return visit(static_cast<const I64TypeNode *>(node));
+    case NodeType::F32TypeNode:
+        return visit(static_cast<const F32TypeNode *>(node));
+    case NodeType::F64TypeNode:
+        return visit(static_cast<const F64TypeNode *>(node));
+    case NodeType::BoolTypeNode:
+        return visit(static_cast<const BoolTypeNode *>(node));
+    case NodeType::VoidTypeNode:
+        return visit(static_cast<const VoidTypeNode *>(node));
+    case NodeType::PointerTypeNode:
+        return visit(static_cast<const PointerTypeNode *>(node));
+    case NodeType::StringTypeNode:
+        return visit(static_cast<const StringTypeNode *>(node));
+    case NodeType::EnumTypeNode:
+        return visit(static_cast<const EnumTypeNode *>(node));
+    case NodeType::StructTypeNode:
+        return visit(static_cast<const StructTypeNode *>(node));
+    case NodeType::RegionTypeNode:
+        return visit(static_cast<const RegionTypeNode *>(node));
+    case NodeType::UnionTypeNode:
+        return visit(static_cast<const UnionTypeNode *>(node));
+    case NodeType::ArrayTypeNode:
+        return visit(static_cast<const ArrayTypeNode *>(node));
+    case NodeType::FunctionTypeNode:
+        return visit(static_cast<const FunctionTypeNode *>(node));
+    default:
+        throw CodegenException("NodeType: " + std::to_string(static_cast<int>(node->ntype)) + " is not codegenable");
+    }
 }

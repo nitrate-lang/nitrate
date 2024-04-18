@@ -54,7 +54,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
         Operator m_op;
         std::shared_ptr<ExprNode> m_expr;
@@ -68,7 +67,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
         Operator m_op;
         std::shared_ptr<ExprNode> m_lhs;
@@ -84,7 +82,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
         std::string m_name;
         std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_named_args;
@@ -99,7 +96,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
         std::vector<std::shared_ptr<ExprNode>> m_elements;
     };
@@ -111,7 +107,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Value *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
 
         std::shared_ptr<ExprNode> m_expr;
         std::string m_field;

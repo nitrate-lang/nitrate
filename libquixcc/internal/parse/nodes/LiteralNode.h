@@ -80,7 +80,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Constant *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override { return m_val_type; }
         virtual bool is_negative() const override { return m_val.front() == '-'; }
         virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
@@ -112,7 +111,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Constant *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override { return m_val_type; }
         virtual bool is_negative() const override { return true; }
         virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
@@ -142,7 +140,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Constant *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
         virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
@@ -170,7 +167,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Constant *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
         virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
@@ -206,7 +202,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Constant *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
         virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
@@ -232,7 +227,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual llvm::Constant *codegen(CodegenVisitor &visitor) const override { return visitor.visit(this); }
         virtual TypeNode *type() const override;
         virtual bool is_negative() const override { return false; }
         virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(); }
