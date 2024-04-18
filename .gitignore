@@ -41,6 +41,5 @@ temp/
 docs/Testing/Temporary/LastTest.log
 bin/
 memory-optimization/
-*.json
 TODO
 libquixcc/test/src/test-suite.cc
