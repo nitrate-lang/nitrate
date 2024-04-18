@@ -1,0 +1,152 @@
+{
+    "version": "1.0",
+    "test_cases": [
+        {
+            "name": "Union test 0",
+            "note": "",
+            "input": "def/union/il-0.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 1",
+            "note": "",
+            "input": "def/union/il-1.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 2",
+            "note": "",
+            "input": "def/union/il-2.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 3",
+            "note": "",
+            "input": "def/union/il-3.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 4",
+            "note": "",
+            "input": "def/union/il-4.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 5",
+            "note": "",
+            "input": "def/union/il-5.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 6",
+            "note": "",
+            "input": "def/union/il-6.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 7",
+            "note": "",
+            "input": "def/union/il-7.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 8",
+            "note": "",
+            "input": "def/union/il-8.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 9",
+            "note": "",
+            "input": "def/union/il-9.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 10",
+            "note": "",
+            "input": "def/union/il-10.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 11",
+            "note": "",
+            "input": "def/union/il-11.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 12",
+            "note": "",
+            "input": "def/union/il-12.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 13",
+            "note": "",
+            "input": "def/union/il-13.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 14",
+            "note": "",
+            "input": "def/union/il-14.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 15",
+            "note": "",
+            "input": "def/union/il-15.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 16",
+            "note": "",
+            "input": "def/union/wf-0.q",
+            "build": "asm",
+            "expected": "true"
+        },
+        {
+            "name": "Union test 17",
+            "note": "",
+            "input": "def/union/wf-1.q",
+            "build": "asm",
+            "expected": "true"
+        },
+        {
+            "name": "Union test 18",
+            "note": "",
+            "input": "def/union/il-init-0.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union test 19",
+            "note": "",
+            "input": "def/union/il-init-1.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Union ABI 0",
+            "note": "",
+            "input": "def/union/abi-0.q",
+            "build": "asm-sha1",
+            "expected": "2494c75ac3184fb6c184f24bd0bda1426b01432a"
+        }
+    ]
+}

@@ -1,0 +1,152 @@
+{
+    "version": "1.0",
+    "test_cases": [
+        {
+            "name": "Group test 0",
+            "note": "",
+            "input": "def/group/il-0.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 1",
+            "note": "",
+            "input": "def/group/il-1.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 2",
+            "note": "",
+            "input": "def/group/il-2.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 3",
+            "note": "",
+            "input": "def/group/il-3.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 4",
+            "note": "",
+            "input": "def/group/il-4.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 5",
+            "note": "",
+            "input": "def/group/il-5.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 6",
+            "note": "",
+            "input": "def/group/il-6.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 7",
+            "note": "",
+            "input": "def/group/il-7.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 8",
+            "note": "",
+            "input": "def/group/il-8.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 9",
+            "note": "",
+            "input": "def/group/il-9.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 10",
+            "note": "",
+            "input": "def/group/il-10.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 11",
+            "note": "",
+            "input": "def/group/il-11.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 12",
+            "note": "",
+            "input": "def/group/il-12.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 13",
+            "note": "",
+            "input": "def/group/il-13.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 14",
+            "note": "",
+            "input": "def/group/il-14.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 15",
+            "note": "",
+            "input": "def/group/il-15.q",
+            "build": "asm",
+            "expected": "false"
+        },
+        {
+            "name": "Group test 16",
+            "note": "",
+            "input": "def/group/wf-0.q",
+            "build": "asm",
+            "expected": "true"
+        },
+        {
+            "name": "Group test 17",
+            "note": "",
+            "input": "def/group/wf-1.q",
+            "build": "asm",
+            "expected": "true"
+        },
+        {
+            "name": "Group test 18",
+            "note": "",
+            "input": "def/group/wf-init-0.q",
+            "build": "asm",
+            "expected": "true"
+        },
+        {
+            "name": "Group test 19",
+            "note": "",
+            "input": "def/group/wf-init-1.q",
+            "build": "asm",
+            "expected": "true"
+        },
+        {
+            "name": "Group ABI 0",
+            "note": "",
+            "input": "def/group/abi-0.q",
+            "build": "asm-sha1",
+            "expected": "f582976131f2c748a59af3a07573774146ecbe85"
+        }
+    ]
+}
