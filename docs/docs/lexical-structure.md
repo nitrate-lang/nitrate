@@ -9,7 +9,7 @@ nav_order: 3
 Lexical Structure
 ---
 
-This table contains the types of tokens that are used in J:
+This table contains the types of tokens that are used in QUIX:
 
 | Token | Type | Description |
 | ---- | ---- | ---- |
@@ -100,9 +100,10 @@ This table contains the types of tokens that are used in J:
 | f64 | type | Signed 64-bit floating point |
 | buildconf | reserved | Reserved |
 | cti | reserved | Reserved |
+| this list is incomplete. more reserved words will be added as the language is developed | reserved | Reserved |
 | j_* | reserved | Reserved |
 | _Z* | reserved | Reserved |
-| _ | keyword | Discard something |
+| _ | identifier | Discard something |
 | \[a-zA-Z_]\[a-zA-Z0-9_]* | identifier | Names for things |
 | ( | punctuator | Opening parenthesis |
 | ) | punctuator | Closing  parenthesis |

@@ -9,7 +9,7 @@ nav_order: 4
 Comments
 ---
 
-QUIX allows you to add comments to your code. Comments are ignored by the compiler and may be used to provide additional information about the code. Comments may contain UTF-8 Unicode characters in them. There are two classes of comments in J:
+QUIX allows you to add comments to your code. Comments are ignored by the compiler and may be used to provide additional information about the code. Comments may contain UTF-8 Unicode characters in them. There are two classes of comments:
 - Single-line comments
 - Multi-line comments
 

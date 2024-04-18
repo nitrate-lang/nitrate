@@ -9,6 +9,7 @@ nav_order: 1
 Source file encoding
 ---
 
-All QUIX source files must be encoded in UTF-8. Newlines must be encoded as LF (line feed) characters (0x0A). Basically, source files should be a Linux UTF-8 text file.
-
-QUIX requires that an additional newline character be present at the end of the file. This may be handled automatically by the compiler, but it is a requirement for the source file to be considered truely valid.
+- All QUIX source files must be encoded in UTF-8. 
+- Newlines must be encoded as LF (line feed) characters (0x0A). 
+- White space characters are not significant in QUIX, the compiler will only use them as separators between tokens. QUIX is a whitespace insensitive language, so the compiler will ignore any white space characters that are not necessary for tokenization.
+- QUIX requires that an additional newline character be present at the end of the file.
