@@ -133,14 +133,6 @@ static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     }
 
     tok = scanner->peek();
-    bool is_optional = false;
-    if (tok.is<Operator>(Operator::Question))
-    {
-        scanner->next();
-        is_optional = true;
-
-        tok = scanner->peek();
-    }
 
     if (tok.is<Operator>(Operator::Assign))
     {
@@ -153,11 +145,11 @@ static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
             return false;
         }
 
-        param = std::make_shared<FunctionParamNode>(name, type, value, is_optional);
+        param = std::make_shared<FunctionParamNode>(name, type, value);
     }
     else
     {
-        param = std::make_shared<FunctionParamNode>(name, type, nullptr, is_optional);
+        param = std::make_shared<FunctionParamNode>(name, type, nullptr);
     }
 
     return true;
@@ -247,9 +239,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
         }
     }
 
-    std::vector<TypeNode *> params;
+    std::vector<std::pair<std::string, TypeNode *>> params;
     for (auto &param : fndecl->m_params)
-        params.push_back(param->m_type);
+        params.push_back({param->m_name, param->m_type});
 
     tok = scanner->peek();
 

@@ -36,7 +36,7 @@ import "C" {
 fn main(): i8 {
     let x: %i8;
 
-    for (x = 0; x < 100; x+=1) {
+    for (x = 0; x < 100; x += 1) {
         printf("Hello, World! i=%d\n", x);
     }
 

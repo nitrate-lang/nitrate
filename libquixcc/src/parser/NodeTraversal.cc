@@ -309,8 +309,8 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::FunctionTypeNode *n
     size_t count = 0;
     for (auto &param : node->m_params)
     {
-        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&param));
-        count += param->dfs_preorder(*this);
+        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&param.second));
+        count += param.second->dfs_preorder(*this);
     }
     m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_return_type));
     count += node->m_return_type->dfs_preorder(*this);

@@ -1,20 +1,20 @@
 	.text
 	.file	"fn-call.q"
 	.p2align	4, 0x90
-	.type	.L_ZJ0f11CallMeFirst7f1c1c1p1p,@function
-.L_ZJ0f11CallMeFirst7f1c1c1p1p:
+	.type	.L_ZJ0f11CallMeFirst9f1c1a1c1p1p,@function
+.L_ZJ0f11CallMeFirst9f1c1a1c1p1p:
 	.cfi_startproc
 	addb	$10, %dil
 	movb	%dil, -1(%rsp)
 	movb	-1(%rsp), %al
 	retq
 .Lfunc_end0:
-	.size	.L_ZJ0f11CallMeFirst7f1c1c1p1p, .Lfunc_end0-.L_ZJ0f11CallMeFirst7f1c1c1p1p
+	.size	.L_ZJ0f11CallMeFirst9f1c1a1c1p1p, .Lfunc_end0-.L_ZJ0f11CallMeFirst9f1c1a1c1p1p
 	.cfi_endproc
 
 	.p2align	4, 0x90
-	.type	.L_ZJ0f12CallMeSecond7f1c1c1p1p,@function
-.L_ZJ0f12CallMeSecond7f1c1c1p1p:
+	.type	.L_ZJ0f12CallMeSecond9f1c1b1c1p1p,@function
+.L_ZJ0f12CallMeSecond9f1c1b1c1p1p:
 	.cfi_startproc
 	shll	$2, %edi
 	leal	(%rdi,%rdi,4), %eax
@@ -22,7 +22,7 @@
 	movb	-1(%rsp), %al
 	retq
 .Lfunc_end1:
-	.size	.L_ZJ0f12CallMeSecond7f1c1c1p1p, .Lfunc_end1-.L_ZJ0f12CallMeSecond7f1c1c1p1p
+	.size	.L_ZJ0f12CallMeSecond9f1c1b1c1p1p, .Lfunc_end1-.L_ZJ0f12CallMeSecond9f1c1b1c1p1p
 	.cfi_endproc
 
 	.globl	main
@@ -33,9 +33,9 @@ main:
 	pushq	%rax
 	.cfi_def_cfa_offset 16
 	movl	$10, %edi
-	callq	.L_ZJ0f11CallMeFirst7f1c1c1p1p
+	callq	.L_ZJ0f11CallMeFirst9f1c1a1c1p1p
 	movzbl	%al, %edi
-	callq	.L_ZJ0f12CallMeSecond7f1c1c1p1p
+	callq	.L_ZJ0f12CallMeSecond9f1c1b1c1p1p
 	addb	$60, %al
 	movb	%al, 7(%rsp)
 	movb	7(%rsp), %al

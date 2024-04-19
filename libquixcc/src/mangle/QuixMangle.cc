@@ -137,11 +137,23 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
         {NodeType::VoidTypeNode, "v"},
     };
 
-    if (visited.contains(type))
-        return "r";
-
     if (basic_typesmap.contains(type->ntype))
         return basic_typesmap[type->ntype];
+
+    if (visited.contains(type))
+    {
+        switch (type->ntype)
+        {
+        case NodeType::StructTypeNode:
+            return "t" + wrap_tag(static_cast<const StructTypeNode *>(type)->m_name);
+        case NodeType::RegionTypeNode:
+            return "j" + wrap_tag(static_cast<const RegionTypeNode *>(type)->m_name);
+        case NodeType::UnionTypeNode:
+            return "u" + wrap_tag(static_cast<const UnionTypeNode *>(type)->m_name);
+        default:
+            throw std::runtime_error("Unknown type: " + std::to_string((int)type->ntype));
+        }
+    }
 
     if (type->ntype == NodeType::StructTypeNode)
     {
@@ -157,7 +169,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
     else if (type->ntype == NodeType::RegionTypeNode)
     {
         visited.insert(type);
-        
+
         const libquixcc::RegionTypeNode *st = static_cast<const RegionTypeNode *>(type);
         std::string s = wrap_tag(st->m_name);
         for (auto &field : st->m_fields)
@@ -168,7 +180,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
     else if (type->ntype == NodeType::UnionTypeNode)
     {
         visited.insert(type);
-        
+
         const libquixcc::UnionTypeNode *st = static_cast<const UnionTypeNode *>(type);
         std::string s = wrap_tag(st->m_name);
         for (auto &field : st->m_fields)
@@ -203,7 +215,10 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
         std::string s;
         s += wrap_tag(serialize_type(st->m_return_type, visited));
         for (auto &param : st->m_params)
-            s += wrap_tag(serialize_type(param, visited));
+        {
+            s += wrap_tag(serialize_ns(param.first));
+            s += wrap_tag(serialize_type(param.second, visited));
+        }
 
         std::string prop;
 
@@ -237,7 +252,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
     throw std::runtime_error("Unknown type: " + std::to_string((int)type->ntype));
 }
 
-static libquixcc::TypeNode *deserialize_type(const std::string &type)
+static libquixcc::TypeNode *deserialize_type_inner(const std::string &type, std::map<std::string, libquixcc::TypeNode *> &prev)
 {
     using namespace libquixcc;
 
@@ -267,16 +282,19 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
 
         std::string name = deserialize_ns(fields[0]);
 
+        if (fields.size() == 1)
+            return UserTypeNode::create(name);
+
         std::vector<TypeNode *> fields_nodes;
         for (size_t i = 1; i < fields.size(); i++)
         {
             TypeNode *t;
-            if ((t = deserialize_type(fields[i])) == nullptr)
+            if ((t = deserialize_type_inner(fields[i], prev)) == nullptr)
                 return nullptr;
             fields_nodes.push_back(t);
         }
 
-        return StructTypeNode::create(fields_nodes, name);
+        return prev[name] = StructTypeNode::create(fields_nodes, name);
     }
     else if (type[0] == 'j')
     {
@@ -286,16 +304,19 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
 
         std::string name = deserialize_ns(fields[0]);
 
+        if (fields.size() == 1)
+            return UserTypeNode::create(name);
+
         std::vector<TypeNode *> fields_nodes;
         for (size_t i = 1; i < fields.size(); i++)
         {
             TypeNode *t;
-            if ((t = deserialize_type(fields[i])) == nullptr)
+            if ((t = deserialize_type_inner(fields[i], prev)) == nullptr)
                 return nullptr;
             fields_nodes.push_back(t);
         }
 
-        return RegionTypeNode::create(fields_nodes, name);
+        return prev[name] = RegionTypeNode::create(fields_nodes, name);
     }
     else if (type[0] == 'u')
     {
@@ -305,16 +326,19 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
 
         std::string name = deserialize_ns(fields[0]);
 
+        if (fields.size() == 1)
+            return UserTypeNode::create(name);
+
         std::vector<TypeNode *> fields_nodes;
         for (size_t i = 1; i < fields.size(); i++)
         {
             TypeNode *t;
-            if ((t = deserialize_type(fields[i])) == nullptr)
+            if ((t = deserialize_type_inner(fields[i], prev)) == nullptr)
                 return nullptr;
             fields_nodes.push_back(t);
         }
 
-        return UnionTypeNode::create(fields_nodes, name);
+        return prev[name] = UnionTypeNode::create(fields_nodes, name);
     }
     else if (type[0] == 'k')
     {
@@ -328,7 +352,7 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         if (fields.size() != 2)
             return nullptr;
 
-        if ((m_type = deserialize_type(fields[0])) == nullptr)
+        if ((m_type = deserialize_type_inner(fields[0], prev)) == nullptr)
             return nullptr;
 
         name = fields[1];
@@ -342,7 +366,7 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
             return nullptr;
 
         TypeNode *t;
-        if ((t = deserialize_type(fields[0])) == nullptr)
+        if ((t = deserialize_type_inner(fields[0], prev)) == nullptr)
             return nullptr;
 
         return ArrayTypeNode::create(t, libquixcc::IntegerLiteralNode::create(fields[1].substr(1)));
@@ -354,7 +378,7 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
             return nullptr;
 
         TypeNode *t;
-        if ((t = deserialize_type(fields[0])) == nullptr)
+        if ((t = deserialize_type_inner(fields[0], prev)) == nullptr)
             return nullptr;
 
         return PointerTypeNode::create(t);
@@ -366,16 +390,18 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
             return nullptr;
 
         TypeNode *ret;
-        if ((ret = deserialize_type(fields[0])) == nullptr)
+        if ((ret = deserialize_type_inner(fields[0], prev)) == nullptr)
             return nullptr;
 
-        std::vector<TypeNode *> params;
-        for (size_t i = 1; i < fields.size() - 1; i++)
+        std::vector<std::pair<std::string, TypeNode *>> params;
+        for (size_t i = 1; i < fields.size() - 1; i += 2)
         {
+            std::string name = fields[i];
             TypeNode *t;
-            if ((t = deserialize_type(fields[i])) == nullptr)
+            if ((t = deserialize_type_inner(fields[i + 1], prev)) == nullptr)
                 return nullptr;
-            params.push_back(t);
+
+            params.push_back({name, t});
         }
 
         std::string prop = fields.back();
@@ -413,13 +439,40 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
             return nullptr;
 
         TypeNode *t;
-        if ((t = deserialize_type(fields[0])) == nullptr)
+        if ((t = deserialize_type_inner(fields[0], prev)) == nullptr)
             return nullptr;
 
         return MutTypeNode::create(t);
     }
 
-    throw std::runtime_error("Unknown type");
+    throw std::runtime_error("Unknown type 2");
+}
+
+static libquixcc::TypeNode *deserialize_type(const std::string &input)
+{
+    std::map<std::string, libquixcc::TypeNode *> prev;
+
+    auto type = deserialize_type_inner(input, prev);
+    if (!type)
+        return nullptr;
+
+    type->dfs_preorder(libquixcc::ParseNodePreorderVisitor(
+        [&](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *current)
+        {
+            libquixcc::TypeNode **t = reinterpret_cast<libquixcc::TypeNode **>(current);
+            if ((*t)->ntype != libquixcc::NodeType::UserTypeNode)
+                return;
+
+            auto ut = static_cast<libquixcc::UserTypeNode *>(*t);
+
+            if (!prev.contains(ut->m_name))
+                return;
+
+            *t = prev[ut->m_name];
+        },
+        ""));
+
+    return type;
 }
 
 std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, const std::string &prefix)
@@ -590,6 +643,11 @@ std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_quix(std::strin
 
             auto tp = static_cast<libquixcc::FunctionTypeNode *>(fun->m_type);
 
+            for (auto p : tp->m_params)
+            {
+                fun->m_params.push_back(std::make_shared<libquixcc::FunctionParamNode>(p.first, p.second, nullptr));
+            }
+
             std::string flags = parts[2];
             for (size_t i = 0; i < flags.size(); i++)
             {
@@ -624,6 +682,7 @@ std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_quix(std::strin
     }
     catch (std::exception &e)
     {
+        throw std::runtime_error("Error demangling: " + std::string(e.what()));
         return nullptr;
     }
 }

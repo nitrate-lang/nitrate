@@ -17,7 +17,7 @@ struct Person {
   struct Address address;
 };
 
-static const void _ZJ0f13print__person44f1v37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p(const struct Person* const person) {
+static const void _ZJ0f13print__person51f1v6person37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p(const struct Person* const person) {
   printf("Name: %s\n", person->name);
   printf("Age: %d\n", person->age);
   printf("Address: %s\n", person->address.street);
@@ -29,7 +29,7 @@ static const void _ZJ0f13print__person44f1v37p34t6Person20m17t7Address1x1x1x1x1x
 
 __attribute__((visibility("default"))) const void main() {
   const struct Person p;
-  _ZJ0f13print__person44f1v37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p(&p);
+  _ZJ0f13print__person51f1v6person37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p(&p);
   printf("&p: %p\n", &p);
   return;
 }

@@ -1,8 +1,8 @@
 	.text
 	.file	"struct-defaults.q"
 	.p2align	4, 0x90
-	.type	.L_ZJ0f13print__person44f1v37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p,@function
-.L_ZJ0f13print__person44f1v37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p:
+	.type	.L_ZJ0f13print__person51f1v6person37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p,@function
+.L_ZJ0f13print__person51f1v6person37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p:
 	.cfi_startproc
 	pushq	%rbx
 	.cfi_def_cfa_offset 16
@@ -36,7 +36,7 @@
 	.cfi_def_cfa_offset 8
 	retq
 .Lfunc_end0:
-	.size	.L_ZJ0f13print__person44f1v37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p, .Lfunc_end0-.L_ZJ0f13print__person44f1v37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p
+	.size	.L_ZJ0f13print__person51f1v6person37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p, .Lfunc_end0-.L_ZJ0f13print__person51f1v6person37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p
 	.cfi_endproc
 
 	.globl	main
@@ -51,7 +51,7 @@ main:
 	.cfi_offset %rbx, -16
 	movq	%rsp, %rbx
 	movq	%rbx, %rdi
-	callq	.L_ZJ0f13print__person44f1v37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p
+	callq	.L_ZJ0f13print__person51f1v6person37p34t6Person20m17t7Address1x1x1x1x1x1b1p1p
 	leaq	.L__unnamed_7(%rip), %rdi
 	movq	%rbx, %rsi
 	xorl	%eax, %eax

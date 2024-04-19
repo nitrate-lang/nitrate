@@ -392,7 +392,7 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Fu
     std::string str = "{\"ntype\":\"FunctionTypeNode\",\"params\":[";
     for (auto it = node->m_params.begin(); it != node->m_params.end(); ++it)
     {
-        str += (*it)->to_json(*this);
+        str += (*it).second->to_json(*this);
         if (it != node->m_params.end() - 1)
         {
             str += ",";
@@ -700,8 +700,6 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Fu
         str += node->m_value->to_json(*this);
     else
         str += "null";
-    str += ",\"optional\":";
-    str += std::string(node->m_optional ? "true" : "false");
     return str + "}";
 }
 

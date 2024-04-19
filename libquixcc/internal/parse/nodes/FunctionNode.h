@@ -47,20 +47,20 @@ namespace libquixcc
 {
     class FunctionTypeNode : public TypeNode
     {
-        FunctionTypeNode(TypeNode *return_type, std::vector<TypeNode *> params, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false)
+        FunctionTypeNode(TypeNode *return_type, std::vector<std::pair<std::string, TypeNode *>> params, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false)
             : m_return_type(return_type), m_params(params), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_nothrow(nothrow) { ntype = NodeType::FunctionTypeNode; }
 
         struct Inner
         {
             TypeNode *return_type;
-            std::vector<TypeNode *> params;
+            std::vector<std::pair<std::string, TypeNode *>> params;
             bool variadic;
             bool pure;
             bool thread_safe;
             bool foreign;
             bool nothrow;
 
-            Inner(TypeNode *return_type, std::vector<TypeNode *> params, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
+            Inner(TypeNode *return_type, std::vector<std::pair<std::string, TypeNode *>> params, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
                 : return_type(return_type), params(params), variadic(variadic), pure(pure), thread_safe(thread_safe), foreign(foreign), nothrow(nothrow) {}
 
             bool operator<(const Inner &other) const
@@ -86,7 +86,7 @@ namespace libquixcc
         static std::map<Inner, FunctionTypeNode *> s_instances;
 
     public:
-        static FunctionTypeNode *create(TypeNode *return_type, std::vector<TypeNode *> params, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false)
+        static FunctionTypeNode *create(TypeNode *return_type, std::vector<std::pair<std::string, TypeNode *>> params, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false)
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);
@@ -115,7 +115,7 @@ namespace libquixcc
             source += "(";
             for (size_t i = 0; i < m_params.size(); i++)
             {
-                source += m_params[i]->to_source();
+                source += m_params[i].first + ": " + m_params[i].second->to_source();
                 if (i < m_params.size() - 1)
                     source += ", ";
             }
@@ -125,7 +125,7 @@ namespace libquixcc
         }
 
         TypeNode *m_return_type;
-        std::vector<TypeNode *> m_params;
+        std::vector<std::pair<std::string, TypeNode *>> m_params;
         bool m_variadic = false;
         bool m_pure = false;
         bool m_thread_safe = false;
@@ -136,18 +136,17 @@ namespace libquixcc
     class FunctionParamNode : public DeclNode
     {
     public:
-        FunctionParamNode() : m_optional(false) { ntype = NodeType::FunctionParamNode; }
-        FunctionParamNode(const std::string &name, TypeNode *type, std::shared_ptr<ExprNode> value, bool optional = false)
-            : m_name(name), m_type(type), m_value(value), m_optional(optional) { ntype = NodeType::FunctionParamNode; }
+        FunctionParamNode() : m_type(nullptr) { ntype = NodeType::FunctionParamNode; }
+        FunctionParamNode(const std::string &name, TypeNode *type, std::shared_ptr<ExprNode> value)
+            : m_name(name), m_type(type), m_value(value) { ntype = NodeType::FunctionParamNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
-        
+
         std::string m_name;
         TypeNode *m_type;
         std::shared_ptr<ExprNode> m_value;
-        bool m_optional = false;
     };
 
     class FunctionDeclNode : public DeclNode

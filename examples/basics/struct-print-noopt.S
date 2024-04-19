@@ -1,8 +1,8 @@
 	.text
 	.file	"struct-print.q"
 	.p2align	4, 0x90
-	.type	.L_ZJ0f12init__person59f1v52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p,@function
-.L_ZJ0f12init__person59f1v52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p:
+	.type	.L_ZJ0f12init__person66f1v6person52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p,@function
+.L_ZJ0f12init__person66f1v6person52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p:
 	.cfi_startproc
 	leaq	.L__unnamed_1(%rip), %rax
 	movq	%rax, 32(%rdi)
@@ -17,12 +17,12 @@
 	movq	%rax, 24(%rdi)
 	retq
 .Lfunc_end0:
-	.size	.L_ZJ0f12init__person59f1v52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p, .Lfunc_end0-.L_ZJ0f12init__person59f1v52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p
+	.size	.L_ZJ0f12init__person66f1v6person52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p, .Lfunc_end0-.L_ZJ0f12init__person66f1v6person52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p
 	.cfi_endproc
 
 	.p2align	4, 0x90
-	.type	.L_ZJ0f13print__person56f1v49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p,@function
-.L_ZJ0f13print__person56f1v49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p:
+	.type	.L_ZJ0f13print__person63f1v6person49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p,@function
+.L_ZJ0f13print__person63f1v6person49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p:
 	.cfi_startproc
 	pushq	%rbx
 	.cfi_def_cfa_offset 16
@@ -56,7 +56,7 @@
 	.cfi_def_cfa_offset 8
 	retq
 .Lfunc_end1:
-	.size	.L_ZJ0f13print__person56f1v49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p, .Lfunc_end1-.L_ZJ0f13print__person56f1v49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p
+	.size	.L_ZJ0f13print__person63f1v6person49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p, .Lfunc_end1-.L_ZJ0f13print__person63f1v6person49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p
 	.cfi_endproc
 
 	.globl	main
@@ -71,9 +71,9 @@ main:
 	.cfi_offset %rbx, -16
 	leaq	16(%rsp), %rbx
 	movq	%rbx, %rdi
-	callq	.L_ZJ0f12init__person59f1v52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p
+	callq	.L_ZJ0f12init__person66f1v6person52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p
 	movq	%rbx, %rdi
-	callq	.L_ZJ0f13print__person56f1v49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p
+	callq	.L_ZJ0f13print__person63f1v6person49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p
 	leaq	.L__unnamed_12(%rip), %rdi
 	movq	%rbx, %rsi
 	xorl	%eax, %eax

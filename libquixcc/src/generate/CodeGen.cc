@@ -708,7 +708,7 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *
     std::vector<llvm::Type *> params;
     for (const auto &param : node->m_params)
     {
-        params.push_back(param->codegen(*this));
+        params.push_back(param.second->codegen(*this));
     }
 
     return llvm::FunctionType::get(node->m_return_type->codegen(*this), params, node->m_variadic);

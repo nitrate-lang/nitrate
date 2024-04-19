@@ -29,6 +29,17 @@ fn list_create(): *Node {
     ret n;
 }
 
+fn list_free(head: %*Node) {
+    let current: %*Node = head;
+    let next: %*Node = null;
+
+    while current != null {
+        next = current.right;
+        free(current);
+        current = next;
+    }
+}
+
 fn list_append(head: %*Node, data: i32) {
     let n: %*Node;
     node_init(&n, data);
@@ -100,4 +111,6 @@ fn main(): i32 {
     list_reverse(&head);
 
     list_print(head);
+
+    list_free(head);
 }

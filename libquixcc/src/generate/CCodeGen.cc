@@ -557,7 +557,7 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::FunctionTypeNod
     code += node->m_return_type->codegen(*this) + " (*)(";
     for (auto it = node->m_params.begin(); it != node->m_params.end(); ++it)
     {
-        code += (*it)->codegen(*this);
+        code += (*it).second->codegen(*this);
         if (it != node->m_params.end() - 1)
             code += ", ";
     }
