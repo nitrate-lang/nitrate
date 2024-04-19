@@ -89,6 +89,19 @@ static std::string c_escape_string_literal(const std::string &str)
     return out;
 }
 
+static bool is_pointer(const libquixcc::TypeNode *node)
+{
+    if (node->ntype == libquixcc::NodeType::PointerTypeNode)
+        return true;
+
+    if (node->ntype != libquixcc::NodeType::MutTypeNode)
+        return false;
+
+    libquixcc::MutTypeNode *mut = (libquixcc::MutTypeNode *)node;
+
+    return is_pointer(mut->m_type);
+}
+
 #define INDENT getind(m_state.indent)
 
 #define STEP 2
@@ -601,7 +614,7 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::LetDeclNode *no
 
     code += node->m_type->codegen(*this) + " ";
 
-    m_state.is_pointers[node->m_name] = node->m_type->ntype == NodeType::PointerTypeNode;
+    m_state.is_pointers[node->m_name] = is_pointer(node->m_type);
 
     std::string name;
 
@@ -725,7 +738,7 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::FunctionDefNode
 
 std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::FunctionParamNode *node)
 {
-    m_state.is_pointers[node->m_name] = node->m_type->ntype == NodeType::PointerTypeNode;
+    m_state.is_pointers[node->m_name] = is_pointer(node->m_type);
 
     return node->m_type->codegen(*this) + " " + node->m_name;
 }
