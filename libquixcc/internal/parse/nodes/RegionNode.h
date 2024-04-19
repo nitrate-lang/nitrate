@@ -47,20 +47,21 @@ namespace libquixcc
 {
     class RegionTypeNode : public TypeNode
     {
-        RegionTypeNode() { ntype = NodeType::RegionTypeNode; }
-        static std::map<std::vector<TypeNode *>, RegionTypeNode *> m_instances;
+        RegionTypeNode(std::vector<TypeNode *> fields, const std::string &name) : m_fields(fields), m_name(name) { ntype = NodeType::RegionTypeNode; }
+        static std::map<std::pair<std::vector<TypeNode *>, std::string>, RegionTypeNode *> m_instances;
 
     public:
-        static RegionTypeNode *create(const std::vector<TypeNode *> &fields)
+        static RegionTypeNode *create(const std::vector<TypeNode *> &fields, const std::string &name)
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);
 
-            if (m_instances.contains(fields))
-                return m_instances[fields];
-            auto instance = new RegionTypeNode();
+            auto key = std::make_pair(fields, name);
+            if (m_instances.contains(key))
+                return m_instances[key];
+            auto instance = new RegionTypeNode(fields, name);
             instance->m_fields = fields;
-            m_instances[fields] = instance;
+            m_instances[key] = instance;
             return instance;
         }
 
@@ -76,7 +77,7 @@ namespace libquixcc
         }
         virtual std::string to_source() const override
         {
-            std::string source = "region { ";
+            std::string source = "region " + m_name + " {";
             for (auto &field : m_fields)
                 source += field->to_source() + "; ";
             source += "}";
@@ -84,6 +85,7 @@ namespace libquixcc
         }
 
         std::vector<TypeNode *> m_fields;
+        std::string m_name;
     };
 
     class RegionFieldNode : public ParseNode
@@ -115,7 +117,7 @@ namespace libquixcc
             std::vector<TypeNode *> fields;
             for (auto &field : m_fields)
                 fields.push_back(field->m_type);
-            return RegionTypeNode::create(fields);
+            return RegionTypeNode::create(fields, m_name);
         }
 
         std::shared_ptr<StructDefNode> to_struct_def() const;

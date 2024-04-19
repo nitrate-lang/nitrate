@@ -67,7 +67,7 @@ static bool parse_struct_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     tok = scanner->next();
     if (tok.is<Punctor>(Punctor::Comma))
     {
-        node = std::make_shared<StructFieldNode>(name, type);
+        node = std::make_shared<StructFieldNode>(name, MutTypeNode::create(type));
         return true;
     }
     else if (tok.is<Operator>(Operator::Assign))

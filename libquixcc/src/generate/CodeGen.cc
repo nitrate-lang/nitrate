@@ -557,6 +557,11 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IdentifierNode *n
     return nullptr;
 }
 
+llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::MutTypeNode *node)
+{
+    return node->m_type->codegen(*this);
+}
+
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::U8TypeNode *node)
 {
     return m_ctx->m_builder->getInt8Ty();
@@ -1273,6 +1278,8 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::TypeNode *node)
 {
     switch (node->ntype)
     {
+    case NodeType::MutTypeNode:
+        return visit(static_cast<const MutTypeNode *>(node));
     case NodeType::U8TypeNode:
         return visit(static_cast<const U8TypeNode *>(node));
     case NodeType::U16TypeNode:

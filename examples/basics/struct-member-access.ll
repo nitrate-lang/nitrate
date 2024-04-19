@@ -19,7 +19,7 @@ declare i8* @malloc(i64)
 
 declare void @free(i8*)
 
-define private %PersonInfo.0 @_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p() {
+define private %PersonInfo.0 @_ZJ0f17get__person__info26f21t10PersonInfo3m1x3m1i1p1p() {
 entry:
   %ret = alloca %PersonInfo.0, align 8
   %info = alloca %PersonInfo.0, align 8
@@ -48,7 +48,7 @@ end:                                              ; preds = %entry
 define void @main() {
 entry:
   %res = alloca %PersonInfo.0, align 8
-  %0 = call %PersonInfo.0 @_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p()
+  %0 = call %PersonInfo.0 @_ZJ0f17get__person__info26f21t10PersonInfo3m1x3m1i1p1p()
   store %PersonInfo.0 %0, %PersonInfo.0* %res, align 8
   %1 = getelementptr inbounds %PersonInfo.0, %PersonInfo.0* %res, i32 0, i32 0
   %2 = load i8*, i8** %1, align 8

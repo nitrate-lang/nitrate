@@ -1,8 +1,8 @@
 	.text
 	.file	"struct-member-access.q"
 	.p2align	4, 0x90
-	.type	.L_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p,@function
-.L_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p:
+	.type	.L_ZJ0f17get__person__info26f21t10PersonInfo3m1x3m1i1p1p,@function
+.L_ZJ0f17get__person__info26f21t10PersonInfo3m1x3m1i1p1p:
 	.cfi_startproc
 	subq	$40, %rsp
 	.cfi_def_cfa_offset 48
@@ -29,7 +29,7 @@
 	.cfi_def_cfa_offset 8
 	retq
 .Lfunc_end0:
-	.size	.L_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p, .Lfunc_end0-.L_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p
+	.size	.L_ZJ0f17get__person__info26f21t10PersonInfo3m1x3m1i1p1p, .Lfunc_end0-.L_ZJ0f17get__person__info26f21t10PersonInfo3m1x3m1i1p1p
 	.cfi_endproc
 
 	.globl	main
@@ -39,7 +39,7 @@ main:
 	.cfi_startproc
 	subq	$24, %rsp
 	.cfi_def_cfa_offset 32
-	callq	.L_ZJ0f17get__person__info22f17t10PersonInfo1x1i1p1p
+	callq	.L_ZJ0f17get__person__info26f21t10PersonInfo3m1x3m1i1p1p
 	movq	%rax, 8(%rsp)
 	movl	%edx, 16(%rsp)
 	leaq	.L__unnamed_4(%rip), %rdi

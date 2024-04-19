@@ -155,6 +155,12 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::IdentifierNode *nod
     return 1;
 }
 
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::MutTypeNode *node)
+{
+    m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&node->m_type));
+    return node->m_type->dfs_preorder(*this) + 1;
+}
+
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::U8TypeNode *node)
 {
     return 1;

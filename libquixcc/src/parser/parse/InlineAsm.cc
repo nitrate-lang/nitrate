@@ -41,7 +41,7 @@ using namespace libquixcc;
     Syntax: __asm__("mov x0, $0", {}, {'$0': x}, ["x0"]);
 */
 
-static bool asm_parse_param(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::unordered_map<std::string, std::shared_ptr<ExprNode>> &result)
+static bool asm_parse_param(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &result)
 {
     Token tok;
 
@@ -76,7 +76,7 @@ static bool asm_parse_param(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
             return false;
         }
 
-        result[name] = expr;
+        result.push_back({name, expr});
     }
 
     return true;
@@ -134,8 +134,8 @@ bool libquixcc::parse_inline_asm(quixcc_job_t &job, std::shared_ptr<libquixcc::S
         return false;
     }
 
-    std::unordered_map<std::string, std::shared_ptr<ExprNode>> outputs;
-    std::unordered_map<std::string, std::shared_ptr<ExprNode>> inputs;
+    std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> outputs;
+    std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> inputs;
 
     if (!asm_parse_param(job, scanner, outputs))
     {

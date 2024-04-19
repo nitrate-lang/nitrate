@@ -66,6 +66,7 @@ namespace libquixcc
 
         IdentifierNode,
 
+        MutTypeNode,
         U8TypeNode,
         U16TypeNode,
         U32TypeNode,
@@ -151,6 +152,7 @@ namespace libquixcc
     class ConstUnaryExprNode;
     class ConstBinaryExprNode;
     class IdentifierNode;
+    class MutTypeNode;
     class U8TypeNode;
     class U16TypeNode;
     class U32TypeNode;

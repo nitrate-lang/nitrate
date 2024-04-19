@@ -741,6 +741,7 @@ static bool verify_build_option(const std::string &option, const std::string &va
         "-PREP",         // preprocessor/Lexer output
         "-emit-tokens",  // lexer output (no preprocessing)
         "-emit-ir",      // IR output
+        "-emit-c11",     // C11 output
         "-emit-bc",      // bitcode output
         "-c",            // compile only
         "-O0",           // optimization levels
@@ -750,11 +751,8 @@ static bool verify_build_option(const std::string &option, const std::string &va
         "-Os",           // optimization levels
         "-g",            // debug information
         "-flto",         // link time optimization
-        "-static",       // static linking
-        "-shared",       // shared library
         "-fPIC",         // position independent code
         "-fPIE",         // position independent executable
-        "-staticlib",    // build static library
         "-v",            // verbose
         "-s",            // strip
         "-nostdlib",     // no standard library

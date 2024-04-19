@@ -1,5 +1,5 @@
 import "c" {
-    fn printf(fmt: *i8, ...): i32;
+    fn printf(fmt: string, ...): i32;
 }
 
 group Address {
@@ -15,7 +15,7 @@ group Person {
     address: Address,
 }
 
-fn init_person(person: *Person) {
+fn init_person(person: %*Person) {
     person.name = "John Doe";
     person.age = 30;
     person.address.street = "123 Main St";
@@ -35,7 +35,7 @@ fn print_person(person: *Person) {
     ret;
 }
 
-fn main() {
+pub "c" fn main(): i32 {
     let p: Person;
 
     init_person(&p);

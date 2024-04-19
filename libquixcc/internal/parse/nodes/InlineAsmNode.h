@@ -49,7 +49,7 @@ namespace libquixcc
     class InlineAsmNode : public StmtNode
     {
     public:
-        InlineAsmNode(const std::string &asmcode, const std::unordered_map<std::string, std::shared_ptr<ExprNode>> &outputs, const std::unordered_map<std::string, std::shared_ptr<ExprNode>> &inputs, const std::vector<std::string> &clobbers)
+        InlineAsmNode(const std::string &asmcode, const std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &outputs, const std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &inputs, const std::vector<std::string> &clobbers)
             : m_asm(asmcode), m_outputs(outputs), m_inputs(inputs), m_clobbers(clobbers) { ntype = NodeType::InlineAsmNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
@@ -57,8 +57,8 @@ namespace libquixcc
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::string m_asm;
-        std::unordered_map<std::string, std::shared_ptr<ExprNode>> m_outputs;
-        std::unordered_map<std::string, std::shared_ptr<ExprNode>> m_inputs;
+        std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_outputs;
+        std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_inputs;
         std::vector<std::string> m_clobbers;
     };
 }

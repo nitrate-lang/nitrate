@@ -180,8 +180,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             return false;
         }
 
-        type->m_mut = true;
-        *node = type;
+        *node = MutTypeNode::create(type);
         return true;
     }
     else

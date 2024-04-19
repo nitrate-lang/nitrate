@@ -33,6 +33,7 @@
 
 #include <parse/nodes/AllNodes.h>
 
+std::map<libquixcc::TypeNode *, libquixcc::MutTypeNode *> libquixcc::MutTypeNode::m_instances;
 libquixcc::U8TypeNode *libquixcc::U8TypeNode::m_instance = nullptr;
 libquixcc::U16TypeNode *libquixcc::U16TypeNode::m_instance = nullptr;
 libquixcc::U32TypeNode *libquixcc::U32TypeNode::m_instance = nullptr;
@@ -49,8 +50,8 @@ std::map<libquixcc::TypeNode *, libquixcc::PointerTypeNode *> libquixcc::Pointer
 std::map<std::string, libquixcc::OpaqueTypeNode *> libquixcc::OpaqueTypeNode::m_instances;
 libquixcc::StringTypeNode *libquixcc::StringTypeNode::m_instance = nullptr;
 std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::StructTypeNode *> libquixcc::StructTypeNode::m_instances;
-std::map<std::vector<libquixcc::TypeNode *>, libquixcc::RegionTypeNode *> libquixcc::RegionTypeNode::m_instances;
-std::map<std::vector<libquixcc::TypeNode *>, libquixcc::UnionTypeNode *> libquixcc::UnionTypeNode::m_instances;
+std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::RegionTypeNode *> libquixcc::RegionTypeNode::m_instances;
+std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::UnionTypeNode *> libquixcc::UnionTypeNode::m_instances;
 thread_local std::map<std::pair<libquixcc::TypeNode *, std::shared_ptr<libquixcc::ConstExprNode>>, libquixcc::ArrayTypeNode *> libquixcc::ArrayTypeNode::m_instances;
 thread_local std::unordered_map<std::string, std::shared_ptr<libquixcc::UserTypeNode>> libquixcc::UserTypeNode::m_instances;
 std::map<libquixcc::FunctionTypeNode::Inner, libquixcc::FunctionTypeNode *> libquixcc::FunctionTypeNode::s_instances;

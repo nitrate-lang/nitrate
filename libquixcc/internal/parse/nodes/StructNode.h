@@ -78,7 +78,7 @@ namespace libquixcc
         }
         virtual std::string to_source() const override
         {
-            std::string source = "struct { ";
+            std::string source = "struct " + m_name + " { ";
             for (auto &field : m_fields)
                 source += field->to_source() + "; ";
             source += "}";

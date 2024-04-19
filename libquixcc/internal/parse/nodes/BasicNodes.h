@@ -95,6 +95,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
+        virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
     };
 
     class ConstExprNode : public ExprNode
@@ -105,6 +106,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Constant *codegen(CodegenVisitor &visitor) const { return static_cast<llvm::Constant *>(visitor.visit(static_cast<const ExprNode *>(this))); }
+        virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(static_cast<const ExprNode *>(this)); }
         virtual const std::shared_ptr<LiteralNode> reduce() const = 0;
 
         virtual int64_t GetInt64() const { throw std::runtime_error("ConstExprNode::GetInt64() not implemented"); }
@@ -118,6 +120,7 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
+        virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const = 0;
     };
 
@@ -151,11 +154,10 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Type *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
+        virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual bool is_composite() const = 0;
         virtual size_t size(size_t ptr_size) const = 0;
         virtual std::string to_source() const = 0;
-
-        bool m_mut = false;
     };
 
     class UserTypeNode : public TypeNode
@@ -216,7 +218,7 @@ namespace libquixcc
     class StmtGroupNode : public StmtNode
     {
     public:
-        StmtGroupNode() { ntype = NodeType::StmtGroupNode; }
+        StmtGroupNode(std::vector<std::shared_ptr<StmtNode>> stmts = {}) : m_stmts(stmts) { ntype = NodeType::StmtGroupNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }

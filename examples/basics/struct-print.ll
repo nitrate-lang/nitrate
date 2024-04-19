@@ -19,7 +19,7 @@ source_filename = "examples/basics/struct-print.q"
 
 declare i32 @printf(i8*, ...)
 
-define private void @_ZJ0f12init__person41f1v34p31t6Person17t7Address1x1x1x1x1x1b1p1p(%Person.1* %person) {
+define private void @_ZJ0f12init__person59f1v52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p(%Person.1* %person) {
 entry:
   %0 = getelementptr inbounds %Person.1, %Person.1* %person, i32 0, i32 1
   store i8* getelementptr inbounds ([9 x i8], [9 x i8]* @0, i32 0, i32 0), i8** %0, align 8
@@ -43,7 +43,7 @@ end:                                              ; preds = %entry
   ret void
 }
 
-define private void @_ZJ0f13print__person41f1v34p31t6Person17t7Address1x1x1x1x1x1b1p1p(%Person.1* %person) {
+define private void @_ZJ0f13print__person56f1v49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p(%Person.1* %person) {
 entry:
   %0 = getelementptr inbounds %Person.1, %Person.1* %person, i32 0, i32 1
   %1 = load i8*, i8** %0, align 8
@@ -73,17 +73,19 @@ end:                                              ; preds = %entry
   ret void
 }
 
-define void @main() {
+define i32 @main() {
 entry:
+  %ret = alloca i32, align 4
   %p = alloca %Person.1, align 8
   %0 = load %Person.1, %Person.1* %p, align 8
-  call void @_ZJ0f12init__person41f1v34p31t6Person17t7Address1x1x1x1x1x1b1p1p(%Person.1* %p)
+  call void @_ZJ0f12init__person59f1v52m49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p(%Person.1* %p)
   %1 = load %Person.1, %Person.1* %p, align 8
-  call void @_ZJ0f13print__person41f1v34p31t6Person17t7Address1x1x1x1x1x1b1p1p(%Person.1* %p)
+  call void @_ZJ0f13print__person56f1v49p46t6Person28m25t7Address3m1x3m1x3m1x3m1x3m1x3m1b1p1p(%Person.1* %p)
   %2 = load %Person.1, %Person.1* %p, align 8
   %3 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([8 x i8], [8 x i8]* @11, i32 0, i32 0), %Person.1* %p)
   br label %end
 
 end:                                              ; preds = %entry
-  ret void
+  %4 = load i32, i32* %ret, align 4
+  ret i32 %4
 }

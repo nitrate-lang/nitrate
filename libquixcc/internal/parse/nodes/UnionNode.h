@@ -47,27 +47,29 @@ namespace libquixcc
 {
     class UnionTypeNode : public TypeNode
     {
-        UnionTypeNode() { ntype = NodeType::UnionTypeNode; }
-        static std::map<std::vector<TypeNode *>, UnionTypeNode *> m_instances;
+        UnionTypeNode(std::vector<TypeNode *> fields, const std::string &name) : m_fields(fields), m_name(name) { ntype = NodeType::UnionTypeNode; }
+        static std::map<std::pair<std::vector<TypeNode *>, std::string>, UnionTypeNode *> m_instances;
 
     public:
-        static UnionTypeNode *create(const std::vector<TypeNode *> &fields)
+        static UnionTypeNode *create(const std::vector<TypeNode *> &fields, const std::string &name)
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);
 
-            if (m_instances.contains(fields))
-                return m_instances[fields];
-            auto instance = new UnionTypeNode();
-            m_instances[fields] = instance;
+            auto key = std::make_pair(fields, name);
+            if (m_instances.contains(key))
+                return m_instances[key];
+            auto instance = new UnionTypeNode(fields, name);
             instance->m_fields = fields;
+            m_instances[key] = instance;
             return instance;
         }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual bool is_composite() const override { return true; }
-        virtual size_t size(size_t ptr_size) const override { 
+        virtual size_t size(size_t ptr_size) const override
+        {
             size_t size = 0;
             for (auto &field : m_fields)
                 size = std::max(size, field->size(ptr_size));
@@ -81,8 +83,9 @@ namespace libquixcc
             source += "}";
             return source;
         }
-       
+
         std::vector<TypeNode *> m_fields;
+        std::string m_name;
     };
 
     class UnionFieldNode : public ParseNode
@@ -112,7 +115,7 @@ namespace libquixcc
             std::vector<TypeNode *> fields;
             for (auto &field : m_fields)
                 fields.push_back(field->m_type);
-            return UnionTypeNode::create(fields);
+            return UnionTypeNode::create(fields, m_name);
         }
 
         std::string m_name;

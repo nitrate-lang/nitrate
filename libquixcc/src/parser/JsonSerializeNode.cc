@@ -225,6 +225,11 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Id
     return "{\"ntype\":\"IdentifierNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::MutTypeNode *node) const
+{
+    return "{\"ntype\":\"MutTypeNode\",\"type\":" + node->m_type->to_json(*this) + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::U8TypeNode *node) const
 {
     return "{\"ntype\":\"U8TypeNode\"}";

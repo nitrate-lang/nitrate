@@ -152,7 +152,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
     else if (type->ntype == NodeType::RegionTypeNode)
     {
         const libquixcc::RegionTypeNode *st = static_cast<const RegionTypeNode *>(type);
-        std::string s;
+        std::string s = wrap_tag(st->m_name);
         for (auto &field : st->m_fields)
             s += wrap_tag(serialize_type(field));
 
@@ -161,7 +161,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
     else if (type->ntype == NodeType::UnionTypeNode)
     {
         const libquixcc::UnionTypeNode *st = static_cast<const UnionTypeNode *>(type);
-        std::string s;
+        std::string s = wrap_tag(st->m_name);
         for (auto &field : st->m_fields)
             s += wrap_tag(serialize_type(field));
 
@@ -213,6 +213,13 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
 
         return "f" + s;
     }
+    else if (type->ntype == NodeType::MutTypeNode)
+    {
+        const libquixcc::MutTypeNode *st = static_cast<const MutTypeNode *>(type);
+        std::string s;
+        s += wrap_tag(serialize_type(st->m_type));
+        return "m" + s;
+    }
     else if (type->ntype == NodeType::OpaqueTypeNode)
     {
         LOG(FATAL) << "Opaque types are not supported in the mangling system." << std::endl;
@@ -244,7 +251,7 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         return basic_typesmap[type];
 
     if (type[0] == 't')
-    {        
+    {
         std::vector<std::string> fields;
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
@@ -268,16 +275,18 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
 
+        std::string name = deserialize_ns(fields[0]);
+
         std::vector<TypeNode *> fields_nodes;
-        for (auto &field : fields)
+        for (size_t i = 1; i < fields.size(); i++)
         {
             TypeNode *t;
-            if ((t = deserialize_type(field)) == nullptr)
+            if ((t = deserialize_type(fields[i])) == nullptr)
                 return nullptr;
             fields_nodes.push_back(t);
         }
 
-        return RegionTypeNode::create(fields_nodes);
+        return RegionTypeNode::create(fields_nodes, name);
     }
     else if (type[0] == 'u')
     {
@@ -285,16 +294,18 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
 
+        std::string name = deserialize_ns(fields[0]);
+
         std::vector<TypeNode *> fields_nodes;
-        for (auto &field : fields)
+        for (size_t i = 1; i < fields.size(); i++)
         {
             TypeNode *t;
-            if ((t = deserialize_type(field)) == nullptr)
+            if ((t = deserialize_type(fields[i])) == nullptr)
                 return nullptr;
             fields_nodes.push_back(t);
         }
 
-        return UnionTypeNode::create(fields_nodes);
+        return UnionTypeNode::create(fields_nodes, name);
     }
     else if (type[0] == 'k')
     {
@@ -385,6 +396,18 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
         }
 
         return FunctionTypeNode::create(ret, params, variadic, pure, thread_safe, foreign, nothrow);
+    }
+    else if (type[0] == 'm')
+    {
+        std::vector<std::string> fields;
+        if (!unwrap_tags(type.substr(1), fields))
+            return nullptr;
+
+        TypeNode *t;
+        if ((t = deserialize_type(fields[0])) == nullptr)
+            return nullptr;
+
+        return MutTypeNode::create(t);
     }
 
     throw std::runtime_error("Unknown type");

@@ -110,7 +110,7 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode>
     CodegenVisitor codegen(ctx.m_inner);
     if (!ast->codegen(codegen))
     {
-        LOG(ERROR) << "Failed to generate LLVM IR" << std::endl;
+        LOG(ERROR) << ctx.m_filename << "Failed to generate LLVM IR" << std::endl;
         return false;
     }
 
@@ -122,9 +122,9 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode>
     if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
     {
         if (ctx.m_debug)
-            LOG(FAILED) << "LLVM IR generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
+            LOG(FAILED) << ctx.m_filename << "LLVM IR generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
         else
-            LOG(ERROR) << "LLVM IR generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
+            LOG(ERROR) << ctx.m_filename << "LLVM IR generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
     }
 
     LOG(DEBUG) << "Generating LLVM IR" << std::endl;
@@ -142,6 +142,24 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode>
     }
 
     LOG(DEBUG) << "Finished generating LLVM IR" << std::endl;
+
+    return true;
+}
+
+bool libquixcc::write_c11(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast, FILE *out)
+{
+    LOG(DEBUG) << "Generating C" << std::endl;
+
+    C11CodegenVisitor codegen;
+
+    std::string code = "#include <stdint.h>\n#include <stddef.h>\n\n" + ast->codegen(codegen);
+    if (fwrite(code.c_str(), 1, code.size(), out) != code.size())
+    {
+        LOG(ERROR) << "Failed to write C11 code to file" << std::endl;
+        return false;
+    }
+
+    LOG(DEBUG) << "Finished generating C" << std::endl;
 
     return true;
 }
@@ -246,19 +264,27 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNod
 
 bool libquixcc::generate(quixcc_job_t &job, std::unique_ptr<libquixcc::StmtNode> ast)
 {
+    libquixcc::BlockNode *block = static_cast<libquixcc::BlockNode *>(ast.get());
+    ast.release();
+
+    std::unique_ptr<libquixcc::StmtGroupNode> block_ptr = std::make_unique<libquixcc::StmtGroupNode>(block->m_stmts);
+
     if (job.m_argset.contains("-emit-ir"))
-        return write_IR(job, std::move(ast), job.m_out, false);
+        return write_IR(job, std::move(block_ptr), job.m_out, false);
 
     if (job.m_argset.contains("-emit-bc"))
-        return write_IR(job, std::move(ast), job.m_out, true);
+        return write_IR(job, std::move(block_ptr), job.m_out, true);
+
+    if (job.m_argset.contains("-emit-c11"))
+        return write_c11(job, std::move(block_ptr), job.m_out);
 
     if (job.m_argset.contains("-S"))
-        return write_llvm(job, std::move(ast), job.m_out, llvm::CGFT_AssemblyFile);
+        return write_llvm(job, std::move(block_ptr), job.m_out, llvm::CGFT_AssemblyFile);
 
     if (job.m_argset.contains("-c"))
-        return write_llvm(job, std::move(ast), job.m_out, llvm::CGFT_ObjectFile);
+        return write_llvm(job, std::move(block_ptr), job.m_out, llvm::CGFT_ObjectFile);
 
-    LOG(FATAL) << "Output format was not specified. Expected: [-emit-ir, -emit-bc, -S, -c]" << std::endl;
+    LOG(FATAL) << "Output format was not specified. Expected: [-emit-ir, -emit-c11, -emit-bc, -S, -c]" << std::endl;
 
     return false;
 }

@@ -36,6 +36,7 @@ enum class OperatingMode
     DISP_LICENSE,
 
     IR,
+    C11,
     IR_BITCODE,
     LEX,
 
@@ -85,6 +86,7 @@ struct Options
             return true;
         case OperatingMode::IR:
         case OperatingMode::IR_BITCODE:
+        case OperatingMode::C11:
         case OperatingMode::LEX:
             if (output.empty())
             {
@@ -160,6 +162,7 @@ static void print_help()
     println("  -T, --target <triple>     Specify the LLVM target triple");
     println("  -C, --cpu <cpu>           Specify the LLVM target CPU");
     println("  -emit-ir                  Emit the intermediate representation (LLVM IR)");
+    println("  -emit-c11                 Emit the intermediate representation (LLVM IR)");
     println("  -emit-bc                  Emit the intermediate representation (LLVM bitcode)");
     println("  -emit-tokens              Emit the tokenized source");
     println("  -S                        Compile only; do not assemble or link");
@@ -348,6 +351,10 @@ static std::optional<Options> parse_options(const std::vector<std::string> &args
         {
             options.mode = OperatingMode::IR;
         }
+        else if (*it == "-emit-c11")
+        {
+            options.mode = OperatingMode::C11;
+        }
         else if (*it == "-emit-bc")
         {
             options.mode = OperatingMode::IR_BITCODE;
@@ -503,6 +510,9 @@ int main(int argc, char *argv[])
     {
     case OperatingMode::IR:
         builder.opt("-emit-ir");
+        break;
+    case OperatingMode::C11:
+        builder.opt("-emit-c11");
         break;
     case OperatingMode::IR_BITCODE:
         builder.opt("-emit-bc");

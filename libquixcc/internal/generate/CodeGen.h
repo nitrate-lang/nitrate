@@ -86,6 +86,7 @@ namespace libquixcc
         llvm::Constant *visit(const ConstUnaryExprNode *node);
         llvm::Constant *visit(const ConstBinaryExprNode *node);
         llvm::Value *visit(const IdentifierNode *node);
+        llvm::Type *visit(const MutTypeNode *node);
         llvm::Type *visit(const U8TypeNode *node);
         llvm::Type *visit(const U16TypeNode *node);
         llvm::Type *visit(const U32TypeNode *node);
@@ -138,12 +139,17 @@ namespace libquixcc
     {
         struct CodegenState
         {
-            bool implicit_load = true;
-            bool inside_function = false;
+            std::map<std::string, std::string> variables;
+            std::map<std::string, bool> is_pointers;
+            std::string subsystem;
+            ExportLangType export_lang = ExportLangType::Default;
+            size_t indent = 0;
+            bool function_def = false;
+            bool pub = false;
+            bool mut = false;
         };
 
         CodegenState m_state;
-        std::unique_ptr<libquixcc::StmtNode> m_ast;
 
         std::string visit(const BlockNode *node);
         std::string visit(const StmtGroupNode *node);
@@ -156,6 +162,7 @@ namespace libquixcc
         std::string visit(const ConstUnaryExprNode *node);
         std::string visit(const ConstBinaryExprNode *node);
         std::string visit(const IdentifierNode *node);
+        std::string visit(const MutTypeNode *node);
         std::string visit(const U8TypeNode *node);
         std::string visit(const U16TypeNode *node);
         std::string visit(const U32TypeNode *node);
@@ -197,11 +204,11 @@ namespace libquixcc
         std::string visit(const WhileStmtNode *node);
 
     public:
-        C11CodegenVisitor(std::unique_ptr<libquixcc::StmtNode> ast) : m_ast(std::move(ast)) {}
+        C11CodegenVisitor() = default;
 
-        llvm::Value *visit(const ExprNode *node);
-        llvm::Value *visit(const StmtNode *node);
-        llvm::Type *visit(const TypeNode *node);
+        std::string visit(const ExprNode *node);
+        std::string visit(const StmtNode *node);
+        std::string visit(const TypeNode *node);
     };
 };
 
