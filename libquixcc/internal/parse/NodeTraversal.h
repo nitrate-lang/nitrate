@@ -37,6 +37,7 @@
 #endif
 
 #include <string>
+#include <set>
 #include <memory>
 #include <functional>
 #include <parse/NodeType.h>
@@ -49,6 +50,7 @@ namespace libquixcc
     {
         ParseNodePreorderVisitorCallback m_callback;
         std::string m_prefix;
+        std::set<TypeNode *> m_visited;
 
         void push_prefix(const std::string &name);
 

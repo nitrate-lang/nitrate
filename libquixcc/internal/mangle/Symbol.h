@@ -37,6 +37,7 @@
 #endif
 
 #include <memory>
+#include <set>
 #include <string>
 #include <parse/nodes/BasicNodes.h>
 

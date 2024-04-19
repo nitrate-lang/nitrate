@@ -117,7 +117,7 @@ static std::string deserialize_ns(const std::string &ns)
     return s;
 }
 
-static std::string serialize_type(const libquixcc::TypeNode *type)
+static std::string serialize_type(const libquixcc::TypeNode *type, std::set<const libquixcc::TypeNode *> visited)
 {
     using namespace libquixcc;
 
@@ -137,47 +137,56 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
         {NodeType::VoidTypeNode, "v"},
     };
 
+    if (visited.contains(type))
+        return "r";
+
     if (basic_typesmap.contains(type->ntype))
         return basic_typesmap[type->ntype];
 
     if (type->ntype == NodeType::StructTypeNode)
     {
+        visited.insert(type);
+
         const libquixcc::StructTypeNode *st = static_cast<const StructTypeNode *>(type);
         std::string s = wrap_tag(st->m_name);
         for (auto &field : st->m_fields)
-            s += wrap_tag(serialize_type(field));
+            s += wrap_tag(serialize_type(field, visited));
 
         return "t" + s;
     }
     else if (type->ntype == NodeType::RegionTypeNode)
     {
+        visited.insert(type);
+        
         const libquixcc::RegionTypeNode *st = static_cast<const RegionTypeNode *>(type);
         std::string s = wrap_tag(st->m_name);
         for (auto &field : st->m_fields)
-            s += wrap_tag(serialize_type(field));
+            s += wrap_tag(serialize_type(field, visited));
 
         return "j" + s;
     }
     else if (type->ntype == NodeType::UnionTypeNode)
     {
+        visited.insert(type);
+        
         const libquixcc::UnionTypeNode *st = static_cast<const UnionTypeNode *>(type);
         std::string s = wrap_tag(st->m_name);
         for (auto &field : st->m_fields)
-            s += wrap_tag(serialize_type(field));
+            s += wrap_tag(serialize_type(field, visited));
 
         return "u" + s;
     }
     else if (type->ntype == NodeType::EnumTypeNode)
     {
         const libquixcc::EnumTypeNode *st = static_cast<const EnumTypeNode *>(type);
-        std::string s = wrap_tag(serialize_type(st->m_member_type)) + wrap_tag(st->m_name);
+        std::string s = wrap_tag(serialize_type(st->m_member_type, visited)) + wrap_tag(st->m_name);
         return "k" + s;
     }
     else if (type->ntype == NodeType::ArrayTypeNode)
     {
         const libquixcc::ArrayTypeNode *st = static_cast<const ArrayTypeNode *>(type);
         std::string s;
-        s += wrap_tag(serialize_type(st->m_type));
+        s += wrap_tag(serialize_type(st->m_type, visited));
         s += wrap_tag("x" + std::to_string(st->m_size->GetInt64()));
         return "a" + s;
     }
@@ -185,16 +194,16 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
     {
         const libquixcc::PointerTypeNode *st = static_cast<const PointerTypeNode *>(type);
         std::string s;
-        s += wrap_tag(serialize_type(st->m_type));
+        s += wrap_tag(serialize_type(st->m_type, visited));
         return "p" + s;
     }
     else if (type->ntype == NodeType::FunctionTypeNode)
     {
         const libquixcc::FunctionTypeNode *st = static_cast<const FunctionTypeNode *>(type);
         std::string s;
-        s += wrap_tag(serialize_type(st->m_return_type));
+        s += wrap_tag(serialize_type(st->m_return_type, visited));
         for (auto &param : st->m_params)
-            s += wrap_tag(serialize_type(param));
+            s += wrap_tag(serialize_type(param, visited));
 
         std::string prop;
 
@@ -217,7 +226,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type)
     {
         const libquixcc::MutTypeNode *st = static_cast<const MutTypeNode *>(type);
         std::string s;
-        s += wrap_tag(serialize_type(st->m_type));
+        s += wrap_tag(serialize_type(st->m_type, visited));
         return "m" + s;
     }
     else if (type->ntype == NodeType::OpaqueTypeNode)
@@ -416,6 +425,7 @@ static libquixcc::TypeNode *deserialize_type(const std::string &type)
 std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, const std::string &prefix)
 {
     std::string res = quix_abiprefix;
+    std::set<const libquixcc::TypeNode *> visited;
 
     switch (node->ntype)
     {
@@ -424,7 +434,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
         res += "v";
         auto var = static_cast<const libquixcc::VarDeclNode *>(node);
         res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
-        res += wrap_tag(serialize_type(var->m_type));
+        res += wrap_tag(serialize_type(var->m_type, visited));
 
         std::string flags;
         if (var->m_is_mut)
@@ -444,7 +454,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
         res += "l";
         auto var = static_cast<const libquixcc::LetDeclNode *>(node);
         res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
-        res += wrap_tag(serialize_type(var->m_type));
+        res += wrap_tag(serialize_type(var->m_type, visited));
 
         std::string flags;
         if (var->m_is_mut)
@@ -465,7 +475,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
         auto var = static_cast<const libquixcc::FunctionDeclNode *>(node);
         auto tp = static_cast<const libquixcc::FunctionTypeNode *>(var->m_type);
         res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
-        res += wrap_tag(serialize_type(var->m_type));
+        res += wrap_tag(serialize_type(var->m_type, visited));
 
         std::string flags;
         if (tp->m_foreign)
