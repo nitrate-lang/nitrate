@@ -28,12 +28,16 @@
 ///     <https://www.gnu.org/licenses/>.                                         ///
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
-                                              
-fn main(): i8 {
-    let x: i8 = 20;
 
-    for (; x < 100;) {
-        
+import "C" {
+    fn printf(format: *i8, ...): i32;
+}
+
+fn main(): i8 {
+    let x: %i8;
+
+    for (x = 0; x < 100; x+=1) {
+        printf("Hello, World! i=%d\n", x);
     }
 
     ret 60;

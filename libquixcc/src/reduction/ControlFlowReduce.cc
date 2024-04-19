@@ -70,36 +70,30 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::WhileStmtNode::reduce(libquixcc:
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::ForStmtNode::reduce(libquixcc::ReductionState &state) const
 {
-    /*
-    Any for loop of the form:
-        for (init; cond; step) stmt;
+    std::shared_ptr<BlockNode> body = std::make_shared<BlockNode>();
 
-    can be mapped to:
-        {
-            init;
-            while (cond) {
-                stmt;
-                step;
-            }
-        }
-    Note the scope block. the init is its own scope.
-    */
-    std::unique_ptr<BlockNode> block = std::make_unique<BlockNode>();
-
-    auto group = std::make_shared<StmtGroupNode>();
-
-    if (m_stmt)
-        group->m_stmts.push_back(m_stmt->reduce(state));
+    if (m_stmt->ntype == NodeType::BlockNode)
+    {
+        auto block_node = std::static_pointer_cast<BlockNode>(m_stmt);
+        for (auto &stmt : block_node->m_stmts)
+            body->m_stmts.push_back(stmt->reduce(state));
+    }
+    else
+    {
+        body->m_stmts.push_back(m_stmt->reduce(state));
+    }
 
     if (m_step)
-        group->m_stmts.push_back(std::make_shared<ExprStmtNode>(m_step));
+        body->m_stmts.push_back(std::make_shared<ExprStmtNode>(m_step));
 
-    auto while_loop = std::make_shared<WhileStmtNode>(m_cond, group);
+    std::unique_ptr<BlockNode> group = std::make_unique<BlockNode>();
+
+    auto while_loop = std::make_shared<WhileStmtNode>(m_cond, body);
 
     if (m_init)
-        block->m_stmts.push_back(std::make_shared<ExprStmtNode>(m_init));
+        group->m_stmts.push_back(std::make_shared<ExprStmtNode>(m_init));
 
-    block->m_stmts.push_back(while_loop);
+    group->m_stmts.push_back(while_loop);
 
-    return block;
+    return group;
 }

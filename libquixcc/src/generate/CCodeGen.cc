@@ -816,7 +816,7 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::ReturnStmtNode 
 
 std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::IfStmtNode *node)
 {
-    std::string code = "if (" + node->m_cond->codegen(*this) + ")\n";
+    std::string code = "if (" + node->m_cond->codegen(*this) + ") ";
     code += node->m_then->codegen(*this);
     if (node->m_else)
         code += " else\n" + node->m_else->codegen(*this);
@@ -826,7 +826,7 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::IfStmtNode *nod
 
 std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::WhileStmtNode *node)
 {
-    return "while (" + node->m_cond->codegen(*this) + ")\n" + node->m_stmt->codegen(*this);
+    return "while (" + node->m_cond->codegen(*this) + ") " + node->m_stmt->codegen(*this);
 }
 
 std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::ExprNode *node)
