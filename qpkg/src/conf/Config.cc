@@ -45,50 +45,100 @@ static std::string JsonEscapeString(const std::string &str)
 
 std::string qpkg::conf::ConfigGroup::dump(qpkg::conf::ConfigItemSerializationTarget target) const
 {
-    if (target != ConfigItemSerializationTarget::JSON)
-        throw ConfigSerializerException("Unsupported serialization target");
-
     std::stringstream ss;
 
-    ss << "{";
-
-    for (auto it = m_items.begin(); it != m_items.end(); ++it)
+    if (target == ConfigItemSerializationTarget::JSON)
     {
-        ss << "\"" << it->first << "\":";
-        if (it->second.is<std::string>())
+
+        ss << "{";
+
+        for (auto it = m_items.begin(); it != m_items.end(); ++it)
         {
-            ss << "\"" << JsonEscapeString(it->second.as<std::string>()) << "\"";
-        }
-        else if (it->second.is<int64_t>())
-        {
-            ss << it->second.as<int64_t>();
-        }
-        else if (it->second.is<bool>())
-        {
-            ss << (it->second.as<bool>() ? "true" : "false");
+            ss << "\"" << it->first << "\":";
+            if (it->second.is<std::vector<std::string>>())
+            {
+                ss << "[";
+
+                auto v = it->second.as<std::vector<std::string>>();
+
+                for (auto it2 = v.begin(); it2 != v.end(); ++it2)
+                {
+                    ss << "\"" << JsonEscapeString(*it2) << "\"";
+                    if (std::next(it2) != v.end())
+                        ss << ",";
+                }
+
+                ss << "]";
+            }
+            else if (it->second.is<std::string>())
+            {
+                ss << "\"" << JsonEscapeString(it->second.as<std::string>()) << "\"";
+            }
+            else if (it->second.is<int64_t>())
+            {
+                ss << it->second.as<int64_t>();
+            }
+            else if (it->second.is<bool>())
+            {
+                ss << (it->second.as<bool>() ? "true" : "false");
+            }
+
+            if (std::next(it) != m_items.end())
+                ss << ",";
         }
 
-        if (std::next(it) != m_items.end())
-            ss << ",";
+        ss << "}";
     }
+    else if (target == ConfigItemSerializationTarget::YAML)
+    {
+        for (auto it = m_items.begin(); it != m_items.end(); ++it)
+        {
+            ss << it->first << ": ";
+            if (it->second.is<std::vector<std::string>>())
+            {
+                ss << "[";
 
-    ss << "}";
+                auto v = it->second.as<std::vector<std::string>>();
+
+                for (auto it2 = v.begin(); it2 != v.end(); ++it2)
+                {
+                    ss << "\"" << JsonEscapeString(*it2) << "\"";
+                    if (std::next(it2) != v.end())
+                        ss << ",";
+                }
+
+                ss << "]";
+            }
+            else if (it->second.is<std::string>())
+            {
+                ss << "\"" << JsonEscapeString(it->second.as<std::string>()) << "\"";
+            }
+            else if (it->second.is<int64_t>())
+            {
+                ss << it->second.as<int64_t>();
+            }
+            else if (it->second.is<bool>())
+            {
+                ss << (it->second.as<bool>() ? "true" : "false");
+            }
+
+            if (std::next(it) != m_items.end())
+                ss << std::endl;
+        }
+    }
+    else
+    {
+        throw ConfigSerializerException("Unsupported serialization target");
+    }
 
     return ss.str();
 }
 
 std::string qpkg::conf::Config::dump(qpkg::conf::ConfigItemSerializationTarget target) const
 {
-    if (target != ConfigItemSerializationTarget::JSON)
-        throw ConfigSerializerException("Unsupported serialization target");
-
     std::stringstream ss;
 
-    ss << "{";
-    ss << "\"config\":{";
-    ss << "\"version\":" << m_version << ",";
-    ss << "\"root\":" << m_root.dump(target);
-    ss << "}}";
+    ss << m_root.dump(target);
 
     return ss.str();
 }

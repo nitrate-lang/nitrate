@@ -16,7 +16,8 @@ namespace qpkg
     {
         enum class ConfigItemSerializationTarget
         {
-            JSON
+            JSON,
+            YAML,
         };
 
         class ConfigSerializerException : public std::runtime_error

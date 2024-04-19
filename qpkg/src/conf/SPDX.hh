@@ -8,7 +8,7 @@ namespace qpkg
 {
     namespace conf
     {
-        extern const std::map<std::string, std::string> valid_licenses;
+        extern const std::map<std::string, const char*> valid_licenses;
     }
 }
 

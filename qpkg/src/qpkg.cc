@@ -8,6 +8,7 @@
 #include <optional>
 #include <argparse.h>
 
+#include <init/Package.hh>
 #include <build/EngineBuilder.hh>
 #include <clean/Cleanup.hh>
 
@@ -31,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.)";
 
 using namespace argparse;
 
+static ArgumentParser init_parser("init", "initialize a new package");
 static ArgumentParser build_parser("build", "compile packages and dependencies");
 static ArgumentParser clean_parser("clean", "remove object files and cached files");
 static ArgumentParser update_parser("update", "update package dependencies");
@@ -41,6 +43,69 @@ static ArgumentParser fmt_parser("fmt", "reformat package sources");
 static ArgumentParser list_parser("list", "list packages or modules");
 static ArgumentParser run_parser("run", "compile and run QUIX program");
 static ArgumentParser test_parser("test", "test packages");
+
+static void setup_argparse_init(ArgumentParser &parser)
+{
+    parser.add_argument("package-name")
+        .help("name of package to initialize")
+        .nargs(1);
+
+    parser.add_argument("-o", "--output")
+        .help("output directory")
+        .default_value(std::string("."))
+        .nargs(1);
+
+    parser.add_argument("-v", "--verbose")
+        .help("print verbose output")
+        .default_value(false)
+        .implicit_value(true);
+
+    parser.add_argument("-f", "--force")
+        .help("force overwrite of existing package")
+        .default_value(false)
+        .implicit_value(true);
+
+    parser.add_argument("-t", "--type")
+        .help("type of package to initialize")
+        .choices("program", "staticlib", "sharedlib")
+        .default_value(std::string("program"))
+        .nargs(1);
+
+    parser.add_argument("-V", "--version")
+        .help("version of package")
+        .default_value(std::string("1.0.0"))
+        .nargs(1);
+
+    parser.add_argument("-l", "--license")
+        .help("license to use for package")
+        .default_value(std::string(""))
+        .nargs(1);
+
+    parser.add_argument("-a", "--author")
+        .help("author of package")
+        .default_value(std::string(""))
+        .nargs(1);
+
+    parser.add_argument("-e", "--email")
+        .help("email of author")
+        .default_value(std::string(""))
+        .nargs(1);
+
+    parser.add_argument("-u", "--url")
+        .help("URL of package")
+        .default_value(std::string(""))
+        .nargs(1);
+
+    parser.add_argument("-d", "--description")
+        .help("description of package")
+        .default_value(std::string(""))
+        .nargs(1);
+
+    parser.add_argument("-r", "--repository")
+        .help("URL of repository")
+        .default_value(std::string(""))
+        .nargs(1);
+}
 
 static void setup_argparse_build(ArgumentParser &parser)
 {
@@ -431,6 +496,7 @@ static void setup_argparse(ArgumentParser &parser)
 {
     using namespace argparse;
 
+    setup_argparse_init(init_parser);
     setup_argparse_build(build_parser);
     setup_argparse_clean(clean_parser);
     setup_argparse_update(update_parser);
@@ -442,6 +508,7 @@ static void setup_argparse(ArgumentParser &parser)
     setup_argparse_run(run_parser);
     setup_argparse_test(test_parser);
 
+    parser.add_subparser(init_parser);
     parser.add_subparser(build_parser);
     parser.add_subparser(clean_parser);
     parser.add_subparser(update_parser);
@@ -457,6 +524,32 @@ static void setup_argparse(ArgumentParser &parser)
         .help("show license information")
         .default_value(false)
         .implicit_value(true);
+}
+
+static int run_init_mode(const ArgumentParser &parser)
+{
+    using namespace qpkg::init;
+
+    PackageBuilder builder =
+        PackageBuilder()
+            .output(parser.get<std::string>("--output"))
+            .name(parser.get<std::string>("package-name"))
+            .license(parser.get<std::string>("--license"))
+            .author(parser.get<std::string>("--author"))
+            .email(parser.get<std::string>("--email"))
+            .url(parser.get<std::string>("--url"))
+            .version(parser.get<std::string>("--version"))
+            .verbose(parser["--verbose"] == true)
+            .force(parser["--force"] == true);
+
+    if (parser.get<std::string>("--type") == "program")
+        builder.type(PackageType::PROGRAM);
+    else if (parser.get<std::string>("--type") == "staticlib")
+        builder.type(PackageType::STATICLIB);
+    else if (parser.get<std::string>("--type") == "sharedlib")
+        builder.type(PackageType::SHAREDLIB);
+
+    return builder.build().create() ? 0 : -1;
 }
 
 static int run_build_mode(const ArgumentParser &parser)
@@ -588,7 +681,9 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    if (program.is_subcommand_used("build"))
+    if (program.is_subcommand_used("init"))
+        return run_init_mode(init_parser);
+    else if (program.is_subcommand_used("build"))
         return run_build_mode(build_parser);
     else if (program.is_subcommand_used("clean"))
         return run_clean_mode(clean_parser);

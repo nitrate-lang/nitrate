@@ -72,7 +72,7 @@ std::optional<qpkg::conf::Config> qpkg::conf::YamlConfigParser::parse(const std:
 
     if (!grp.has<int64_t>("version"))
     {
-        LOG(core::ERROR) << "Invalid JSON configuration: missing 'version' key" << std::endl;
+        LOG(core::ERROR) << "Invalid YAML configuration: missing 'version' key" << std::endl;
         return std::nullopt;
     }
 

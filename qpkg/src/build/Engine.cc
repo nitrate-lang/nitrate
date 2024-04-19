@@ -60,12 +60,8 @@ qpkg::build::Engine::Engine(const std::string &package_src,
 
 std::optional<qpkg::conf::Config> qpkg::build::Engine::load_config(const std::filesystem::__cxx11::path &base)
 {
-    if (std::filesystem::exists(base / "qpkg.json"))
-        return conf::JsonConfigParser().parsef(base / "qpkg.json");
-    else if (std::filesystem::exists(base / "qpkg.yaml"))
+    if (std::filesystem::exists(base / "qpkg.yaml"))
         return conf::YamlConfigParser().parsef(base / "qpkg.yaml");
-    else if (std::filesystem::exists(base / "qpkg.xml"))
-        return conf::XmlConfigParser().parsef(base / "qpkg.xml");
     else
     {
         LOG(core::ERROR) << "No configuration file found in package source directory" << std::endl;

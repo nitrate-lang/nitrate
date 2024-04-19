@@ -38,33 +38,7 @@ namespace qpkg
             virtual std::optional<Config> parse(const std::string &content) = 0;
         };
 
-        class JsonConfigParser : public IParser
-        {
-        public:
-            /**
-             * @brief Parse QPKG package configuration content
-             *
-             * @param data Configuration file content
-             * @return std::optional<Config> Configuration object
-             * @note If any error occurs, the function returns an empty optional.
-             */
-            std::optional<Config> parse(const std::string &content) override;
-        };
-
         class YamlConfigParser : public IParser
-        {
-        public:
-            /**
-             * @brief Parse QPKG package configuration content
-             *
-             * @param data Configuration file content
-             * @return std::optional<Config> Configuration object
-             * @note If any error occurs, the function returns an empty optional.
-             */
-            std::optional<Config> parse(const std::string &content) override;
-        };
-
-        class XmlConfigParser : public IParser
         {
         public:
             /**

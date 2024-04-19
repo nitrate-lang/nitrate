@@ -9,6 +9,8 @@ enum class KeyName
     VERSION,
     DESCRIPTION,
     AUTHORS,
+    EMAILS,
+    URL,
     LICENSES,
     DEPENDS,
     SOURCES,
@@ -34,6 +36,8 @@ static std::unordered_map<std::string, KeyName> key_map = {
     {"version", KeyName::VERSION},
     {"description", KeyName::DESCRIPTION},
     {"authors", KeyName::AUTHORS},
+    {"emails", KeyName::EMAILS},
+    {"url", KeyName::URL},
     {"licenses", KeyName::LICENSES},
     {"depends", KeyName::DEPENDS},
     {"sources", KeyName::SOURCES},
@@ -43,8 +47,7 @@ static std::unordered_map<std::string, KeyName> key_map = {
     {"cpu", KeyName::CPU},
     {"cflags", KeyName::CFLAGS},
     {"lflags", KeyName::LFLAGS},
-    {"nolink", KeyName::NOLINK}
-};
+    {"nolink", KeyName::NOLINK}};
 
 static std::set<std::string> required_keys = {
     "name",
@@ -199,6 +202,33 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config, const std::fil
                 }
             }
             break;
+        case KeyName::EMAILS:
+            if (!config[key].is<std::vector<std::string>>())
+            {
+                LOG(core::ERROR) << "Invalid value type for key 'emails' in configuration" << std::endl;
+                return false;
+            }
+            for (const auto &email : config[key].as<std::vector<std::string>>())
+            {
+                if (!is_utf8(email.c_str()))
+                {
+                    LOG(core::ERROR) << "Invalid value for key 'emails' in configuration: must be UTF-8" << std::endl;
+                    return false;
+                }
+            }
+            break;
+        case KeyName::URL:
+            if (!config[key].is<std::string>())
+            {
+                LOG(core::ERROR) << "Invalid value type for key 'url' in configuration" << std::endl;
+                return false;
+            }
+            if (!is_utf8(config[key].as<std::string>().c_str()))
+            {
+                LOG(core::ERROR) << "Invalid value for key 'url' in configuration: must be UTF-8" << std::endl;
+                return false;
+            }
+            break;
         case KeyName::LICENSES:
             if (!config[key].is<std::vector<std::string>>())
             {
@@ -259,7 +289,7 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config, const std::fil
             }
             if (!target_valid_values.contains(config[key].as<std::string>()))
             {
-                LOG(core::ERROR) << "Invalid value for key 'triple' in configuration: must be one of 'sharedlib', 'staticlib', or 'executable'" << std::endl;
+                LOG(core::ERROR) << "Invalid value for key 'target' in configuration: must be one of 'sharedlib', 'staticlib', or 'executable'" << std::endl;
                 return false;
             }
             break;
@@ -330,10 +360,10 @@ void qpkg::conf::PopulateConfig(qpkg::conf::Config &config)
 {
     if (!config.m_root.has<std::vector<std::string>>("authors"))
         config.m_root.set("authors", std::vector<std::string>());
-    
+
     if (!config.m_root.has<std::vector<std::string>>("licenses"))
         config.m_root.set("licenses", std::vector<std::string>());
-    
+
     if (!config.m_root.has<std::vector<std::string>>("depends"))
         config.m_root.set("depends", std::vector<std::string>());
 
@@ -342,7 +372,7 @@ void qpkg::conf::PopulateConfig(qpkg::conf::Config &config)
 
     if (!config.m_root.has<std::string>("triple"))
         config.m_root.set("triple", "");
-    
+
     if (!config.m_root.has<std::string>("cpu"))
         config.m_root.set("cpu", "");
 
