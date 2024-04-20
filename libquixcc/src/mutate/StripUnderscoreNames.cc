@@ -44,7 +44,7 @@ using namespace libquixcc;
 void libquixcc::mutate::StripUnderscoreNames(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
             switch ((*node)->ntype)
             {
@@ -110,5 +110,5 @@ void libquixcc::mutate::StripUnderscoreNames(quixcc_job_t *job, std::shared_ptr<
                 break;
             }
         },
-        job->m_inner.prefix));
+        {}));
 }

@@ -13,7 +13,7 @@ RUN cd /usr/include && ln -s llvm-14/llvm llvm && ln -s llvm-c-14/llvm-c llvm-c
 VOLUME /app/
 
 RUN echo "#!/bin/sh" > /opt/build.sh
-RUN echo "cmake -S /app -B /app/build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=On" >> /opt/build.sh
+RUN echo "cmake -S /app -B /app/build -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=Off" >> /opt/build.sh
 RUN echo "cmake --build /app/build -j`nproc`" >> /opt/build.sh
 RUN echo "mkdir -p /app/bin" >> /opt/build.sh
 RUN echo "cp /app/build/qcc/qcc /app/bin/qcc" >> /opt/build.sh

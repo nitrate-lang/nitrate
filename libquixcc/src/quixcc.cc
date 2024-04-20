@@ -334,6 +334,9 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
     mutator.add_routine(mutate::ConvertTypes);            ///> Perform implicit type conversions
     mutator.add_routine(mutate::FoldConstExpr);           ///> Fold constant expressions
     mutator.add_routine(mutate::InferTypes);              ///> Type inference
+    mutator.add_routine(mutate::ObjectConstruction);      ///> Object construction
+    mutator.add_routine(mutate::ObjectDestruction);       ///> Object destruction
+    mutator.add_routine(mutate::MethodToFunc);            ///> Convert method calls to function calls
     mutator.run(job, ast);
 
     return true;

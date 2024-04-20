@@ -44,18 +44,16 @@
 
 namespace libquixcc
 {
-    typedef std::function<void(std::string _namespace, libquixcc::ParseNode *, std::shared_ptr<libquixcc::ParseNode> *)> ParseNodePreorderVisitorCallback;
+    typedef std::function<void(const std::vector<std::string> &_namespace, libquixcc::ParseNode *, std::shared_ptr<libquixcc::ParseNode> *)> ParseNodePreorderVisitorCallback;
 
     class ParseNodePreorderVisitor
     {
         ParseNodePreorderVisitorCallback m_callback;
-        std::string m_prefix;
+        std::vector<std::string> m_prefix;
         std::set<TypeNode *> m_visited;
 
-        void push_prefix(const std::string &name);
-
     public:
-        ParseNodePreorderVisitor(ParseNodePreorderVisitorCallback callback, std::string _namespace) : m_callback(callback), m_prefix(_namespace) {}
+        ParseNodePreorderVisitor(ParseNodePreorderVisitorCallback callback, const std::vector<std::string> &_namespace) : m_callback(callback), m_prefix(_namespace) {}
 
         size_t visit(ASTNopNode *node);
         size_t visit(ExprStmtNode *node);

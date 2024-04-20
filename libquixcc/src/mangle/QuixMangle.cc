@@ -457,7 +457,7 @@ static libquixcc::TypeNode *deserialize_type(const std::string &input)
         return nullptr;
 
     type->dfs_preorder(libquixcc::ParseNodePreorderVisitor(
-        [&](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *current)
+        [&](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *current)
         {
             libquixcc::TypeNode **t = reinterpret_cast<libquixcc::TypeNode **>(current);
             if ((*t)->ntype != libquixcc::NodeType::UserTypeNode)
@@ -470,7 +470,7 @@ static libquixcc::TypeNode *deserialize_type(const std::string &input)
 
             *t = prev[ut->m_name];
         },
-        ""));
+        {}));
 
     return type;
 }

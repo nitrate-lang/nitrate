@@ -41,12 +41,17 @@
 
 using namespace libquixcc;
 
-static std::string ConstructName(const std::string &prefix, const std::string &name)
+static std::string ConstructName(const std::vector<std::string> &prefix, const std::string &name)
 {
     if (prefix.empty())
         return name;
     else
-        return prefix + "::" + name;
+    {
+        std::string tmp;
+        for (auto &p : prefix)
+            tmp += p + "::";
+        return tmp + name;
+    }
 }
 
 static std::map<libquixcc::NodeType, libquixcc::Msg> error_message_index = {
@@ -73,7 +78,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
     std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> named_types_map;
 
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [&named_construct_map, job, &named_types_map](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [&named_construct_map, job, &named_types_map](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
             std::string tmp;
             bool is_type = false;
@@ -151,7 +156,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
             if (is_type)
                 named_types_map[tmp] = *node;
         },
-        job->m_inner.prefix));
+        {}));
 
     for (auto &pair : named_construct_map)
         LOG(DEBUG) << "Found named construct: " << pair.first.second << std::endl;

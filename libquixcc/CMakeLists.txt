@@ -32,7 +32,7 @@ OUTPUT_VARIABLE RANDOM_NUMBER
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 SET(PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete -flto)
-SET(PROJECT_DEBUG_FLAGS -g -O1 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-error=unused-parameter -pedantic ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC  -Wno-error=mismatched-new-delete -fprofile-arcs -ftest-coverage)
+SET(PROJECT_DEBUG_FLAGS -g -O1 -Wall -Wextra -Werror -Wno-unused-parameter -Wno-error=unused-parameter -pedantic ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC  -Wno-error=mismatched-new-delete)
 
 SET(STATIC_PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter ${LLVM_CXX_FLAGS} -frandom-seed=${RANDOM_NUMBER} -Wno-error=unused-variable -fPIC -O3  -Wno-error=mismatched-new-delete)
 
@@ -44,10 +44,15 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_command(TARGET libquixcc POST_BUILD COMMAND ${CMAKE_STRIP} $<TARGET_FILE:libquixcc>)
 else()
     target_compile_options(libquixcc PRIVATE ${PROJECT_DEBUG_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS)
-    target_link_options(libquixcc PRIVATE ${LLVM_LD_FLAGS} -fprofile-arcs -ftest-coverage)
+    target_link_options(libquixcc PRIVATE ${LLVM_LD_FLAGS})
 endif()
+
+if (BUILD_TESTING)
+    target_compile_options(libquixcc PRIVATE -fprofile-arcs -ftest-coverage)
+    target_link_options(libquixcc PRIVATE -fprofile-arcs -ftest-coverage)
+endif()
+
 foreach(lib ${LLVM_LIBS})
-    # message(STATUS "Linking with ${lib}")
     target_link_libraries(libquixcc PRIVATE ${lib})
 endforeach()
 target_link_libraries(libquixcc PRIVATE pthread)
@@ -60,9 +65,14 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     target_link_options(libquixcc-static PRIVATE ${LLVM_LD_FLAGS} -O3 -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
 else()
     target_compile_options(libquixcc-static PRIVATE ${PROJECT_DEBUG_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS)
-    target_link_options(libquixcc-static PRIVATE ${LLVM_LD_FLAGS} -fprofile-arcs -ftest-coverage)
+    target_link_options(libquixcc-static PRIVATE ${LLVM_LD_FLAGS})
 endif()
 set_target_properties(libquixcc-static PROPERTIES OUTPUT_NAME quixcc)
+
+if (BUILD_TESTING)
+    target_compile_options(libquixcc-static PRIVATE -fprofile-arcs -ftest-coverage)
+    target_link_options(libquixcc-static PRIVATE -fprofile-arcs -ftest-coverage)
+endif()
 
 if (BUILD_TESTING)
     add_subdirectory(test)

@@ -53,6 +53,9 @@ namespace libquixcc
         void FoldConstExpr(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
         void ConvertTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
         inline void InferTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
+        inline void ObjectConstruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
+        inline void ObjectDestruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
+        inline void MethodToFunc(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
     }
 
     typedef std::function<void(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>)> ASTMutateRoutine;

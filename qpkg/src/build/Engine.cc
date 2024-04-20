@@ -481,12 +481,15 @@ bool qpkg::build::Engine::run()
         {
         case BuildType::SHAREDLIB:
             m_output = base / ("lib" + m_config["name"].as<std::string>() + ".so");
+            std::filesystem::remove(m_output);
             break;
         case BuildType::STATICLIB:
             m_output = base / ("lib" + m_config["name"].as<std::string>() + ".a");
+            std::filesystem::remove(m_output);
             break;
         case BuildType::EXECUTABLE:
             m_output = base / m_config["name"].as<std::string>();
+            std::filesystem::remove(m_output);
             break;
         }
     }

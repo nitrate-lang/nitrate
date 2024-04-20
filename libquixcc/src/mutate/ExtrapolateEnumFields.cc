@@ -44,7 +44,7 @@ using namespace libquixcc;
 void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
             if ((*node)->ntype != NodeType::EnumDefNode)
                 return;
@@ -72,5 +72,5 @@ void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr
                 def->m_fields[i]->m_value = last;
             }
         },
-        job->m_inner.prefix));
+        {}));
 }

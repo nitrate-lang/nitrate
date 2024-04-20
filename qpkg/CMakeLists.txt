@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Find C++20 source files
-file(GLOB_RECURSE QUIXCC_CXX_SOURCES "src/*.cc")
+file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
 
 add_subdirectory(src/cache/blake3)
 
@@ -31,7 +31,7 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_EXE_LINKER_FLAGS "-static")
 
-add_executable(qpkg ${QUIXCC_CXX_SOURCES})
+add_executable(qpkg ${QPKG_CXX_SOURCES})
 target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquixcc/include)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release") 
@@ -41,10 +41,14 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_command(TARGET qpkg POST_BUILD COMMAND upx $<TARGET_FILE:qpkg>)
 else()
     target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror ${LLVM_CXX_FLAGS})
+endif()
+
+if (BUILD_TESTING)
     target_link_options(qpkg PRIVATE -fprofile-arcs -ftest-coverage)
 endif()
+
 target_link_directories(qpkg PRIVATE ${CMAKE_BINARY_DIR}/libquixcc)
-target_link_libraries(qpkg PRIVATE yaml-cpp blake3 quixcc ${LLVM_LIBS} tinfo z)
+target_link_libraries(qpkg PRIVATE yaml-cpp blake3 libquixcc-static ${LLVM_LIBS} tinfo z)
 target_link_options(qpkg PRIVATE ${LLVM_LD_FLAGS})
 add_dependencies(qpkg blake3 libquixcc-static)
 

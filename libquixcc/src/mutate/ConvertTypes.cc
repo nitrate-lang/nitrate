@@ -44,12 +44,12 @@ using namespace libquixcc;
 void libquixcc::mutate::ConvertTypes(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](std::string _namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
             if ((*node)->ntype != NodeType::LetDeclNode)
                 return;
 
             /// TODO: Implement type conversion logic here.
         },
-        job->m_inner.prefix));
+        {}));
 }

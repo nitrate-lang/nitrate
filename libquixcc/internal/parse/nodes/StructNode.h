@@ -86,6 +86,7 @@ namespace libquixcc
         }
 
         std::vector<TypeNode *> m_fields;
+        std::map<std::string, FunctionTypeNode *> m_methods;
         std::string m_name;
     };
 
