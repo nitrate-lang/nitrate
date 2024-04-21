@@ -70,6 +70,7 @@ namespace libquixcc
         {
             return "enum {" + m_member_type->to_source() + "}";
         }
+        virtual std::string name() const override { return m_name; }
 
         std::string m_name;
         TypeNode *m_member_type;

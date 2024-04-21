@@ -83,6 +83,7 @@ namespace libquixcc
             source += "}";
             return source;
         }
+        virtual std::string name() const override { return m_name; }
 
         std::vector<TypeNode *> m_fields;
         std::string m_name;

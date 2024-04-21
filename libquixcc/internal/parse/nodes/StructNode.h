@@ -84,9 +84,9 @@ namespace libquixcc
             source += "}";
             return source;
         }
+        virtual std::string name() const override { return m_name; }
 
         std::vector<TypeNode *> m_fields;
-        std::map<std::string, FunctionTypeNode *> m_methods;
         std::string m_name;
     };
 
@@ -124,6 +124,8 @@ namespace libquixcc
 
         std::string m_name;
         std::vector<std::shared_ptr<StructFieldNode>> m_fields;
+        std::vector<std::shared_ptr<StmtNode>> m_methods;
+        std::vector<std::shared_ptr<StmtNode>> m_static_methods;
     };
 }
 

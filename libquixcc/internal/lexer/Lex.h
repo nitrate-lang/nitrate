@@ -53,49 +53,6 @@ namespace libquixcc
     constexpr std::array<char, 10> punctors = {
         '(', ')', '{', '}', '[', ']', '.', ',', ':', ';'};
 
-    typedef std::pair<const char *, int> KWPair;
-
-    constexpr std::array<KWPair, 38> keywords = {
-        KWPair("subsystem", 9),
-        KWPair("import", 6),
-        KWPair("type", 4),
-        KWPair("let", 3),
-        KWPair("var", 3),
-        KWPair("struct", 6),
-        KWPair("region", 6),
-        KWPair("group", 5),
-        KWPair("union", 5),
-        KWPair("opaque", 6),
-        KWPair("fn", 2),
-        KWPair("nothrow", 7),
-        KWPair("foreign", 7),
-        KWPair("impure", 6),
-        KWPair("tsafe", 5),
-        KWPair("const", 5),
-        KWPair("enum", 4),
-        KWPair("pub", 3),
-        KWPair("if", 2),
-        KWPair("else", 4),
-        KWPair("for", 3),
-        KWPair("while", 5),
-        KWPair("do", 2),
-        KWPair("switch", 6),
-        KWPair("case", 4),
-        KWPair("default", 7),
-        KWPair("break", 5),
-        KWPair("continue", 8),
-        KWPair("ret", 3),
-        KWPair("retif", 5),
-        KWPair("retz", 4),
-        KWPair("retv", 4),
-        KWPair("__asm__", 7),
-        KWPair("void", 4),
-        KWPair("undef", 5),
-        KWPair("null", 4),
-        KWPair("true", 4),
-        KWPair("false", 5),
-    };
-
     extern std::map<std::string, libquixcc::Keyword> keyword_map;
     extern std::map<libquixcc::Keyword, std::string> keyword_map_inverse;
     extern std::map<std::string, libquixcc::Punctor> punctor_map;

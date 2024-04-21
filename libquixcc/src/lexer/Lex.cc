@@ -65,6 +65,7 @@ namespace libquixcc
         {"impure", libquixcc::Keyword::Impure},
         {"tsafe", libquixcc::Keyword::Tsafe},
         {"const", libquixcc::Keyword::Const},
+        {"static", libquixcc::Keyword::Static},
         {"enum", libquixcc::Keyword::Enum},
         {"pub", libquixcc::Keyword::Pub},
         {"if", libquixcc::Keyword::If},
@@ -105,6 +106,7 @@ namespace libquixcc
         {libquixcc::Keyword::Impure, "impure"},
         {libquixcc::Keyword::Tsafe, "tsafe"},
         {libquixcc::Keyword::Const, "const"},
+        {libquixcc::Keyword::Static, "static"},
         {libquixcc::Keyword::Enum, "enum"},
         {libquixcc::Keyword::Pub, "pub"},
         {libquixcc::Keyword::If, "if"},
@@ -796,9 +798,9 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
             }
 
             // check if it's a keyword
-            for (const auto &kw : keywords)
+            for (const auto &kw : keyword_map)
             {
-                if ((int)buffer.size() == kw.second && memcmp(buffer.c_str(), kw.first, kw.second) == 0)
+                if (buffer == kw.first)
                 {
                     m_tok = Token(TokenType::Keyword, keyword_map[buffer], m_loc - buffer.size());
                     return m_tok.value();

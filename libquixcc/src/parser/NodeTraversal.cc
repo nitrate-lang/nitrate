@@ -408,6 +408,18 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StructDefNode *node
         count += field->dfs_preorder(*this);
     }
 
+    for (auto &method : node->m_methods)
+    {
+        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&method));
+        count += method->dfs_preorder(*this);
+    }
+
+    for (auto &method : node->m_static_methods)
+    {
+        m_callback(m_prefix, node, reinterpret_cast<std::shared_ptr<libquixcc::ParseNode> *>(&method));
+        count += method->dfs_preorder(*this);
+    }
+
     m_prefix.pop_back();
     return count + 1;
 }

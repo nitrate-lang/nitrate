@@ -6,6 +6,8 @@ struct PersonInfo {
   int32_t age;
 };
 
+
+
 extern const int32_t printf(const uint8_t* const format, ...);
 extern const int32_t scanf(const uint8_t* const format, ...);
 extern const uint8_t* const gets(const uint8_t* const buffer);

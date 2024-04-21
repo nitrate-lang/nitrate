@@ -158,6 +158,7 @@ namespace libquixcc
         virtual bool is_composite() const = 0;
         virtual size_t size(size_t ptr_size) const = 0;
         virtual std::string to_source() const = 0;
+        virtual std::string name() const { return ""; }
     };
 
     class UserTypeNode : public TypeNode
@@ -179,6 +180,7 @@ namespace libquixcc
         virtual bool is_composite() const override { throw std::runtime_error("UserTypeNode::is_composite() not implemented"); }
         virtual size_t size(size_t ptr_size) const { return 0; }
         virtual std::string to_source() const override { return m_name; }
+        virtual std::string name() const override { return m_name; }
 
         std::string m_name;
     };

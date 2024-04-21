@@ -97,7 +97,43 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::RegionDefNode::reduce(libquixcc:
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc::ReductionState &state) const
 {
-    return std::make_unique<libquixcc::StructDefNode>(*this);
+    std::unique_ptr<StmtGroupNode> group = std::make_unique<StmtGroupNode>();
+
+    group->m_stmts.push_back(std::make_unique<StructDefNode>(m_name, m_fields));
+
+    for (auto &method : m_methods)
+    {
+        if (method->ntype == NodeType::FunctionDeclNode)
+        {
+            auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);
+            fdecl->m_name = m_name + "::" + fdecl->m_name;
+        }
+        else
+        {
+            auto fdef = std::static_pointer_cast<FunctionDefNode>(method);
+            fdef->m_decl->m_name = m_name + "::" + fdef->m_decl->m_name;
+        }
+
+        group->m_stmts.push_back(method);
+    }
+
+    for (auto &static_method : m_static_methods)
+    {
+        if (static_method->ntype == NodeType::FunctionDeclNode)
+        {
+            auto fdecl = std::static_pointer_cast<FunctionDeclNode>(static_method);
+            fdecl->m_name = m_name + "::" + fdecl->m_name;
+        }
+        else
+        {
+            auto fdef = std::static_pointer_cast<FunctionDefNode>(static_method);
+            fdef->m_decl->m_name = m_name + "::" + fdef->m_decl->m_name;
+        }
+
+        group->m_stmts.push_back(static_method);
+    }
+
+    return group;
 }
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::UnionDefNode::reduce(libquixcc::ReductionState &state) const

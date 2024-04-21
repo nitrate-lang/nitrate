@@ -38,6 +38,61 @@
 
 using namespace libquixcc;
 
+static std::shared_ptr<libquixcc::CallExprNode> parse_function_call(quixcc_job_t &job, std::shared_ptr<ExprNode> callee, std::shared_ptr<libquixcc::Scanner> scanner, size_t depth)
+{
+    Token tok;
+
+    std::vector<std::shared_ptr<libquixcc::ExprNode>> args;
+    while (true)
+    {
+        auto tok = scanner->peek();
+        if (tok == Token(TokenType::Punctor, Punctor::CloseParen))
+        {
+            scanner->next();
+            break;
+        }
+
+        std::shared_ptr<libquixcc::ExprNode> arg;
+        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseParen)}, arg, depth + 1))
+            return nullptr;
+        args.push_back(arg);
+
+        tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::Comma))
+        {
+            scanner->next();
+        }
+    }
+
+    auto expr = std::make_shared<libquixcc::CallExprNode>();
+
+    if (callee->ntype == NodeType::IdentifierNode)
+    {
+        expr->m_name = std::dynamic_pointer_cast<libquixcc::IdentifierNode>(callee)->m_name;
+    }
+    else if (callee->ntype == NodeType::MemberAccessNode)
+    {
+        auto member = std::dynamic_pointer_cast<libquixcc::MemberAccessNode>(callee);
+        if (member->m_expr->ntype != NodeType::IdentifierNode)
+        {
+            LOG(ERROR) << "Expected an identifier" << tok << std::endl;
+            return nullptr;
+        }
+
+        std::string name = std::dynamic_pointer_cast<libquixcc::IdentifierNode>(member->m_expr)->m_name;
+        expr->m_name = name + "." + member->m_field;
+    }
+    else
+    {
+        LOG(ERROR) << "Expected an identifier or member access expression" << tok << std::endl;
+        return nullptr;
+    }
+
+    expr->m_positional_args = args;
+
+    return expr;
+}
+
 bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::set<Token> terminators, std::shared_ptr<libquixcc::ExprNode> &node, size_t depth)
 {
     std::stack<std::shared_ptr<libquixcc::ExprNode>> stack;
@@ -146,6 +201,18 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             {
             case Punctor::OpenParen:
             {
+                if (!stack.empty() && stack.top()->ntype == NodeType::MemberAccessNode)
+                {
+                    // Method call
+                    auto fcall = parse_function_call(job, stack.top(), scanner, depth);
+                    if (fcall == nullptr)
+                        return false;
+
+                    stack.pop();
+                    stack.push(fcall);
+                    continue;
+                }
+
                 std::shared_ptr<libquixcc::ExprNode> expr;
                 if (!parse_expr(job, scanner, terminators, expr, depth + 1))
                     return false;
@@ -252,35 +319,12 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             auto ident = std::get<std::string>(tok.val());
             if (scanner->peek().type() == TokenType::Punctor && std::get<Punctor>(scanner->peek().val()) == Punctor::OpenParen)
             {
-                // Function call
                 scanner->next();
-                std::vector<std::shared_ptr<libquixcc::ExprNode>> args;
-                while (true)
-                {
-                    auto tok = scanner->peek();
-                    if (tok == Token(TokenType::Punctor, Punctor::CloseParen))
-                    {
-                        scanner->next();
-                        break;
-                    }
+                auto fcall = parse_function_call(job, std::make_shared<IdentifierNode>(ident), scanner, depth);
+                if (fcall == nullptr)
+                    return false;
 
-                    std::shared_ptr<libquixcc::ExprNode> arg;
-                    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseParen)}, arg, depth + 1))
-                        return false;
-                    args.push_back(arg);
-
-                    tok = scanner->peek();
-                    if (tok.is<Punctor>(Punctor::Comma))
-                    {
-                        scanner->next();
-                    }
-                }
-
-                auto expr = std::make_shared<libquixcc::CallExprNode>();
-                expr->m_name = ident;
-                expr->m_positional_args = args;
-                stack.push(expr);
-
+                stack.push(fcall);
                 continue;
             }
             else

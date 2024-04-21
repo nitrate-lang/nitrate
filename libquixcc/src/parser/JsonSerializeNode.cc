@@ -550,6 +550,25 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::St
         }
     }
 
+    str += "],\"methods\":[";
+    for (auto it = node->m_methods.begin(); it != node->m_methods.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_methods.end() - 1)
+        {
+            str += ",";
+        }
+    }
+    str += "],\"static_methods\":[";
+    for (auto it = node->m_static_methods.begin(); it != node->m_static_methods.end(); ++it)
+    {
+        str += (*it)->to_json(*this);
+        if (it != node->m_static_methods.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
     return str + "]}";
 }
 

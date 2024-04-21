@@ -115,6 +115,8 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     }
 
     std::vector<std::shared_ptr<StructFieldNode>> fields;
+    std::vector<std::shared_ptr<StmtNode>> methods;
+    std::vector<std::shared_ptr<StmtNode>> static_methods;
 
     while (true)
     {
@@ -125,15 +127,59 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
             break;
         }
 
-        std::shared_ptr<StructFieldNode> field;
-        if (!parse_struct_field(job, scanner, field))
-            return false;
-        fields.push_back(field);
+        if (tok.is<Keyword>(Keyword::Fn))
+        {
+            scanner->next();
+
+            std::shared_ptr<StmtNode> method;
+            if (!parse_function(job, scanner, method))
+                return false;
+
+            auto fn_this = std::make_shared<FunctionParamNode>("this", MutTypeNode::create(PointerTypeNode::create(UserTypeNode::create(name))), nullptr);
+
+            if (method->ntype == NodeType::FunctionDeclNode)
+            {
+                auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);
+                fdecl->m_params.insert(fdecl->m_params.begin(), fn_this);
+            }
+            else
+            {
+                auto fdef = std::static_pointer_cast<FunctionDefNode>(method);
+                fdef->m_decl->m_params.insert(fdef->m_decl->m_params.begin(), fn_this);
+            }
+
+            methods.push_back(method);
+        }
+        else if (tok.is<Keyword>(Keyword::Static))
+        {
+            scanner->next();
+            tok = scanner->next();
+            if (!tok.is<Keyword>(Keyword::Fn))
+            {
+                LOG(ERROR) << feedback[STRUCT_DEF_EXPECTED_FN] << tok << std::endl;
+                return false;
+            }
+
+            std::shared_ptr<StmtNode> method;
+            if (!parse_function(job, scanner, method))
+                return false;
+
+            static_methods.push_back(method);
+        }
+        else
+        {
+            std::shared_ptr<StructFieldNode> field;
+            if (!parse_struct_field(job, scanner, field))
+                return false;
+            fields.push_back(field);
+        }
     }
 
     auto sdef = std::make_shared<StructDefNode>();
     sdef->m_name = name;
     sdef->m_fields = fields;
+    sdef->m_methods = methods;
+    sdef->m_static_methods = static_methods;
     node = sdef;
     return true;
 }

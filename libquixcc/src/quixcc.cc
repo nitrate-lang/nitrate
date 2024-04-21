@@ -329,6 +329,7 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
     Mutation mutator;
     mutator.add_routine(mutate::StripUnderscoreNames);    ///> Remove all constructs named '_'
     mutator.add_routine(mutate::ExtrapolateEnumFields);   ///> Derive enum field values
+    mutator.add_routine(mutate::MethodToFunc);            ///> Convert method calls to function calls
     mutator.add_routine(mutate::DiscoverNamedConstructs); ///> Map named constructs to their respective AST nodes
     mutator.add_routine(mutate::ResolveNamedConstructs);  ///> Resolve named constructs to their respective AST nodes
     mutator.add_routine(mutate::ConvertTypes);            ///> Perform implicit type conversions
@@ -336,7 +337,6 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
     mutator.add_routine(mutate::InferTypes);              ///> Type inference
     mutator.add_routine(mutate::ObjectConstruction);      ///> Object construction
     mutator.add_routine(mutate::ObjectDestruction);       ///> Object destruction
-    mutator.add_routine(mutate::MethodToFunc);            ///> Convert method calls to function calls
     mutator.run(job, ast);
 
     return true;

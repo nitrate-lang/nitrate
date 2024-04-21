@@ -50,6 +50,7 @@ namespace libquixcc
         Let,
         Var,
         Const,
+        Static,
         Struct,
         Region,
         Group,

@@ -68,6 +68,7 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {STRUCT_FIELD_TYPE_ERR, "An error occurred while parsing the type of field '{}'. Syntax: name: type [= expr];"},
     {STRUCT_FIELD_INIT_ERR, "Declaration of field '{}' requires an initializer, but an error occurred while parsing the initializer. Syntax: name: type [= expr];"},
     {STRUCT_FIELD_MISSING_PUNCTOR, "Declaration of field '{}' requires an initializer OR a semicolon punctuator, but neither was found. Make sure to terminate all statements with a semicolon. Syntax: name: type [= expr];"},
+    {STRUCT_DEF_EXPECTED_FN, "Expected a function declaration after the struct definition. To fix the issue, insert a function declaration after the struct definition. Syntax: struct name { ... }; fn name() { ... };"},
 
     {REGION_DECL_MISSING_IDENTIFIER, "Expected identifier in region declaration. To fix the issue, name your region. Syntax: region name { ... };"},
     {REGION_FIELD_MISSING_IDENTIFIER, "Expected identifier in region field declaration. To fix the issue, name your field. Syntax: name: type [= expr];"},
