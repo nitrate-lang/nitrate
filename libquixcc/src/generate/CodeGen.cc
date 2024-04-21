@@ -915,12 +915,32 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
 
     llvm::Function *func = static_cast<llvm::Function *>(node->m_decl->codegen(*this));
 
-    m_ctx->m_named_params.clear();
-    for (auto &arg : func->args())
-        m_ctx->m_named_params[arg.getName().str()] = std::make_pair(&arg, arg.getType());
-
     llvm::BasicBlock *EntryBlock = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
     m_ctx->m_builder->SetInsertPoint(EntryBlock);
+
+    m_ctx->m_named_params.clear();
+    for (auto &arg : func->args())
+    {
+        if (!arg.getType()->isStructTy())
+        {
+            m_ctx->m_named_params[arg.getName().str()] = std::make_pair(&arg, arg.getType());
+        }
+        else
+        {
+            // Copy composite value types
+            auto old = arg.getName().str();
+            auto alias = "_Z" + old;
+            arg.setName(alias);
+
+            auto alloc = m_ctx->m_builder->CreateAlloca(arg.getType(), nullptr, old);
+            if (!alloc)
+                return nullptr;
+
+            m_ctx->m_builder->CreateStore(&arg, alloc);
+
+            m_ctx->m_named_params[old] = std::make_pair(alloc, alloc->getType());
+        }
+    }
 
     if (node->m_decl->m_type->m_return_type->ntype != NodeType::VoidTypeNode)
     {

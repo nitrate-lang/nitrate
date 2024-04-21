@@ -35,17 +35,26 @@
 #include <mangle/Symbol.h>
 #include <parse/nodes/AllNodes.h>
 
+static std::string filter(const std::string &input)
+{
+    std::string output;
+    for (char c : input)
+        output += c == ':' ? '_' : c;
+
+    return output;
+}
+
 std::string libquixcc::Symbol::mangle_c(const libquixcc::DeclNode *node, const std::string &prefix)
 {
     /// TODO: verify this is correct
     switch (node->ntype)
     {
     case libquixcc::NodeType::VarDeclNode:
-        return static_cast<const libquixcc::VarDeclNode *>(node)->m_name;
+        return filter(static_cast<const libquixcc::VarDeclNode *>(node)->m_name);
     case libquixcc::NodeType::LetDeclNode:
-        return static_cast<const libquixcc::LetDeclNode *>(node)->m_name;
+        return filter(static_cast<const libquixcc::LetDeclNode *>(node)->m_name);
     case libquixcc::NodeType::FunctionDeclNode:
-        return static_cast<const libquixcc::FunctionDeclNode *>(node)->m_name;
+        return filter(static_cast<const libquixcc::FunctionDeclNode *>(node)->m_name);
     default:
         throw std::runtime_error("Invalid node type");
     }

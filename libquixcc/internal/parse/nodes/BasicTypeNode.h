@@ -66,6 +66,7 @@ namespace libquixcc
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return m_type->size(ptr_size); }
         virtual std::string to_source() const override { return "%" + m_type->to_source(); }
+        virtual std::string name() const { return m_type->name(); }
 
         TypeNode *m_type;
     };
@@ -367,6 +368,7 @@ namespace libquixcc
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return ptr_size; }
         virtual std::string to_source() const override { return "*" + m_type->to_source(); }
+        virtual std::string name() const { return m_type->name(); }
 
         TypeNode *m_type;
     };
@@ -392,6 +394,7 @@ namespace libquixcc
         virtual bool is_composite() const override { return false; }
         virtual size_t size(size_t ptr_size) const override { return 0; }
         virtual std::string to_source() const override { return "opaque(" + m_name + ")"; }
+        virtual std::string name() const { return m_name; }
 
         std::string m_name;
     };

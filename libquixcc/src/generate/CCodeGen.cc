@@ -768,9 +768,11 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::ExportNode *nod
     for (auto &stmt : node->m_stmts)
     {
         if (stmt->ntype == NodeType::FunctionDefNode)
-            code += stmt->codegen(*this);
+            code += stmt->codegen(*this) + "\n";
+        else if (stmt->ntype == NodeType::LetDeclNode)
+            code += "extern " + stmt->codegen(*this) + ";\n";
         else
-            code += "extern " + stmt->codegen(*this) + "\n";
+            code += stmt->codegen(*this) + "\n";
     }
 
     m_state.pub = pub;
