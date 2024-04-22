@@ -48,23 +48,23 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
     ast->dfs_preorder(ParseNodePreorderVisitor(
         [&](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
-            if ((*node)->ntype == NodeType::LetDeclNode)
+            if ((*node)->is<LetDeclNode>())
             {
                 vars[std::static_pointer_cast<LetDeclNode>(*node)->m_name] = *node;
                 return;
             }
-            if ((*node)->ntype == NodeType::VarDeclNode)
+            if ((*node)->is<VarDeclNode>())
             {
                 vars[std::static_pointer_cast<VarDeclNode>(*node)->m_name] = *node;
                 return;
             }
-            if ((*node)->ntype == NodeType::FunctionParamNode)
+            if ((*node)->is<FunctionParamNode>())
             {
                 vars[std::static_pointer_cast<FunctionParamNode>(*node)->m_name] = *node;
                 return;
             }
 
-            if ((*node)->ntype != NodeType::CallExprNode)
+            if (!(*node)->is<CallExprNode>())
                 return;
 
             auto call = std::static_pointer_cast<CallExprNode>(*node);

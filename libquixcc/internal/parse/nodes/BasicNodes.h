@@ -312,7 +312,7 @@ namespace libquixcc
         }
 
         virtual TypeNode *infer(TIState &state) const = 0;
-        bool is_const_expr() const { return reduce<ExprNode>()->ntype == NodeType::LiteralNode; }
+        bool is_const_expr() const { return reduce<ExprNode>()->is<LiteralNode>(); }
     };
 
     class ConstExprNode : public ExprNode

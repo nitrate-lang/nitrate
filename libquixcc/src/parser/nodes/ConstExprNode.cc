@@ -132,7 +132,7 @@ std::shared_ptr<libquixcc::ExprNode> libquixcc::ConstUnaryExprNode::reduce_impl(
 {
     auto x = m_expr->reduce<ConstExprNode>(state);
 
-    if (x->ntype == NodeType::FloatLiteralNode)
+    if (x->is<FloatLiteralNode>())
         return reduce_unary_expr_float_point(getval_and_cast<double>(x), m_op);
 
     if (x->is_negative())
@@ -265,7 +265,7 @@ std::shared_ptr<libquixcc::ExprNode> libquixcc::ConstBinaryExprNode::reduce_impl
     auto l = m_lhs->reduce<ConstExprNode>(state);
     auto r = m_rhs->reduce<ConstExprNode>(state);
 
-    if (l->ntype == NodeType::FloatLiteralNode || r->ntype == NodeType::FloatLiteralNode)
+    if (l->is<FloatLiteralNode>() || r->is<FloatLiteralNode>())
         return reduce_binary_expr_float_point(getval_and_cast<double>(l), getval_and_cast<double>(r), m_op);
 
     if (l->is_negative() || r->is_negative())

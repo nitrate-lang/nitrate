@@ -103,7 +103,7 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc:
 
     for (auto &method : m_methods)
     {
-        if (method->ntype == NodeType::FunctionDeclNode)
+        if (method->is<FunctionDeclNode>())
         {
             auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);
             fdecl->m_name = m_name + "::" + fdecl->m_name;
@@ -119,7 +119,7 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc:
 
     for (auto &static_method : m_static_methods)
     {
-        if (static_method->ntype == NodeType::FunctionDeclNode)
+        if (static_method->is<FunctionDeclNode>())
         {
             auto fdecl = std::static_pointer_cast<FunctionDeclNode>(static_method);
             fdecl->m_name = m_name + "::" + fdecl->m_name;

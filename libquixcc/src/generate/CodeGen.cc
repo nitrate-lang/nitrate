@@ -131,14 +131,14 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
     case Operator::BitwiseAnd:
     {
         llvm::Value *address = nullptr;
-        if (node->m_expr->ntype == NodeType::IdentifierNode)
+        if (node->m_expr->is<IdentifierNode>())
         {
             bool state = m_state.implicit_load;
             m_state.implicit_load = false;
             address = node->m_expr->codegen(*this);
             m_state.implicit_load = state;
         }
-        else if (node->m_expr->ntype == NodeType::MemberAccessNode)
+        else if (node->m_expr->is<MemberAccessNode>())
         {
             bool state = m_state.implicit_load;
             m_state.implicit_load = false;
@@ -158,14 +158,14 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
     case Operator::Multiply:
     {
         llvm::Value *address = nullptr;
-        if (node->m_expr->ntype == NodeType::IdentifierNode)
+        if (node->m_expr->is<IdentifierNode>())
         {
             bool state = m_state.implicit_load;
             m_state.implicit_load = false;
             address = node->m_expr->codegen(*this);
             m_state.implicit_load = state;
         }
-        else if (node->m_expr->ntype == NodeType::MemberAccessNode)
+        else if (node->m_expr->is<MemberAccessNode>())
         {
             bool state = m_state.implicit_load;
             m_state.implicit_load = false;
@@ -324,14 +324,14 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
     {
         llvm::Value *address = nullptr;
 
-        if (node->m_lhs->ntype == NodeType::IdentifierNode)
+        if (node->m_lhs->is<IdentifierNode>())
         {
             bool state = m_state.implicit_load;
             m_state.implicit_load = false;
             address = node->m_lhs->codegen(*this);
             m_state.implicit_load = state;
         }
-        else if (node->m_lhs->ntype == NodeType::UnaryExprNode &&
+        else if (node->m_lhs->is<UnaryExprNode>() &&
                  static_cast<UnaryExprNode *>(node->m_lhs.get())->m_op == Operator::Multiply)
         {
             auto lhs_expr = static_cast<UnaryExprNode *>(node->m_lhs.get())->m_expr;
@@ -346,7 +346,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
 
             return m_ctx->m_builder->CreateStore(rhs, lhs);
         }
-        else if (node->m_lhs->ntype == NodeType::MemberAccessNode)
+        else if (node->m_lhs->is<MemberAccessNode>())
         {
             bool state = m_state.implicit_load;
             m_state.implicit_load = false;
@@ -650,7 +650,7 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::VoidTypeNode *node
 
 llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::PointerTypeNode *node)
 {
-    if (node->m_type->ntype == NodeType::OpaqueTypeNode)
+    if (node->m_type->is<OpaqueTypeNode>())
         return llvm::Type::getInt8PtrTy(*m_ctx->m_ctx);
 
     auto type = node->m_type->codegen(*this);
@@ -971,7 +971,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
         }
     }
 
-    if (node->m_decl->m_type->m_return_type->ntype != NodeType::VoidTypeNode)
+    if (!node->m_decl->m_type->m_return_type->is<VoidTypeNode>())
     {
         auto ret = m_ctx->m_builder->CreateAlloca(node->m_decl->m_type->m_return_type->codegen(*this), nullptr, "ret");
         m_ctx->m_named_stack_vars["ret"] = std::make_pair(ret, node->m_decl->m_type->m_return_type->codegen(*this));
@@ -981,7 +981,7 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
     m_ctx->m_builder->SetInsertPoint(EndBlock);
     m_ctx->m_named_blocks[func->getName().str() + ".end"] = EndBlock;
 
-    if (node->m_decl->m_type->m_return_type->ntype == NodeType::VoidTypeNode)
+    if (node->m_decl->m_type->m_return_type->is<VoidTypeNode>())
         m_ctx->m_builder->CreateRetVoid();
     else
         m_ctx->m_builder->CreateRet(m_ctx->m_builder->CreateLoad(m_ctx->m_named_stack_vars["ret"].second, m_ctx->m_named_stack_vars["ret"].first));

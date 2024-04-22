@@ -137,7 +137,7 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
 
             auto fn_this = std::make_shared<FunctionParamNode>("this", MutTypeNode::create(PointerTypeNode::create(UserTypeNode::create(name))), nullptr);
 
-            if (method->ntype == NodeType::FunctionDeclNode)
+            if (method->is<FunctionDeclNode>())
             {
                 auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);
                 fdecl->m_params.insert(fdecl->m_params.begin(), fn_this);

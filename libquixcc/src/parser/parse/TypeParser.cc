@@ -71,7 +71,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 return false;
             }
 
-            if (fn->ntype != NodeType::FunctionDeclNode)
+            if (!fn->is<FunctionDeclNode>())
             {
                 LOG(ERROR) << feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
                 return false;

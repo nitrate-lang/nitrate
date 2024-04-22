@@ -46,7 +46,7 @@ void libquixcc::mutate::ConvertTypes(quixcc_job_t *job, std::shared_ptr<libquixc
     ast->dfs_preorder(ParseNodePreorderVisitor(
         [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
-            if ((*node)->ntype != NodeType::LetDeclNode)
+            if (!(*node)->is<LetDeclNode>())
                 return;
 
             /// TODO: Implement type conversion logic here.

@@ -53,7 +53,7 @@ libquixcc::TypeNode *libquixcc::UnaryExprNode::infer(libquixcc::TIState &state) 
     case Operator::Multiply:
     {
         auto type = m_expr->infer(state);
-        if (type->ntype != NodeType::PointerTypeNode)
+        if (!type->is<PointerTypeNode>())
         {
             LOG(ERROR) << "Can not dereference a non-pointer type" << std::endl;
             return nullptr;

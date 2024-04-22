@@ -72,7 +72,7 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::ForStmtNode::reduce(libquixcc::R
 {
     std::shared_ptr<BlockNode> body = std::make_shared<BlockNode>();
 
-    if (m_stmt->ntype == NodeType::BlockNode)
+    if (m_stmt->is<BlockNode>())
     {
         auto block_node = std::static_pointer_cast<BlockNode>(m_stmt);
         for (auto &stmt : block_node->m_stmts)

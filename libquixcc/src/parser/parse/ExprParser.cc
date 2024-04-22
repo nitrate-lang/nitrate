@@ -66,14 +66,14 @@ static std::shared_ptr<libquixcc::CallExprNode> parse_function_call(quixcc_job_t
 
     auto expr = std::make_shared<libquixcc::CallExprNode>();
 
-    if (callee->ntype == NodeType::IdentifierNode)
+    if (callee->is<IdentifierNode>())
     {
         expr->m_name = std::dynamic_pointer_cast<libquixcc::IdentifierNode>(callee)->m_name;
     }
-    else if (callee->ntype == NodeType::MemberAccessNode)
+    else if (callee->is<MemberAccessNode>())
     {
         auto member = std::dynamic_pointer_cast<libquixcc::MemberAccessNode>(callee);
-        if (member->m_expr->ntype != NodeType::IdentifierNode)
+        if (!member->m_expr->is<IdentifierNode>())
         {
             LOG(ERROR) << "Expected an identifier" << tok << std::endl;
             return nullptr;
@@ -201,7 +201,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             {
             case Punctor::OpenParen:
             {
-                if (!stack.empty() && stack.top()->ntype == NodeType::MemberAccessNode)
+                if (!stack.empty() && stack.top()->is<MemberAccessNode>())
                 {
                     // Method call
                     auto fcall = parse_function_call(job, stack.top(), scanner, depth);

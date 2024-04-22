@@ -46,7 +46,7 @@ void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr
     ast->dfs_preorder(ParseNodePreorderVisitor(
         [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
         {
-            if ((*node)->ntype != NodeType::EnumDefNode)
+            if (!(*node)->is<EnumDefNode>())
                 return;
 
             auto def = std::static_pointer_cast<libquixcc::EnumDefNode>(*node);

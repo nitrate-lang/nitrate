@@ -155,7 +155,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
         }
     }
 
-    if (type->ntype == NodeType::StructTypeNode)
+    if (type->is<StructTypeNode>())
     {
         visited.insert(type);
 
@@ -166,7 +166,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
 
         return "t" + s;
     }
-    else if (type->ntype == NodeType::RegionTypeNode)
+    else if (type->is<RegionTypeNode>())
     {
         visited.insert(type);
 
@@ -177,7 +177,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
 
         return "j" + s;
     }
-    else if (type->ntype == NodeType::UnionTypeNode)
+    else if (type->is<UnionTypeNode>())
     {
         visited.insert(type);
 
@@ -188,13 +188,13 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
 
         return "u" + s;
     }
-    else if (type->ntype == NodeType::EnumTypeNode)
+    else if (type->is<EnumTypeNode>())
     {
         const libquixcc::EnumTypeNode *st = static_cast<const EnumTypeNode *>(type);
         std::string s = wrap_tag(serialize_type(st->m_member_type, visited)) + wrap_tag(st->m_name);
         return "k" + s;
     }
-    else if (type->ntype == NodeType::ArrayTypeNode)
+    else if (type->is<ArrayTypeNode>())
     {
         const libquixcc::ArrayTypeNode *st = static_cast<const ArrayTypeNode *>(type);
         std::string s;
@@ -202,14 +202,14 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
         s += wrap_tag("x" + st->m_size->reduce<IntegerLiteralNode>()->m_val);
         return "a" + s;
     }
-    else if (type->ntype == NodeType::PointerTypeNode)
+    else if (type->is<PointerTypeNode>())
     {
         const libquixcc::PointerTypeNode *st = static_cast<const PointerTypeNode *>(type);
         std::string s;
         s += wrap_tag(serialize_type(st->m_type, visited));
         return "p" + s;
     }
-    else if (type->ntype == NodeType::FunctionTypeNode)
+    else if (type->is<FunctionTypeNode>())
     {
         const libquixcc::FunctionTypeNode *st = static_cast<const FunctionTypeNode *>(type);
         std::string s;
@@ -237,14 +237,14 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
 
         return "f" + s;
     }
-    else if (type->ntype == NodeType::MutTypeNode)
+    else if (type->is<MutTypeNode>())
     {
         const libquixcc::MutTypeNode *st = static_cast<const MutTypeNode *>(type);
         std::string s;
         s += wrap_tag(serialize_type(st->m_type, visited));
         return "m" + s;
     }
-    else if (type->ntype == NodeType::OpaqueTypeNode)
+    else if (type->is<OpaqueTypeNode>())
     {
         LOG(FATAL) << "Opaque types are not supported in the mangling system." << std::endl;
     }
