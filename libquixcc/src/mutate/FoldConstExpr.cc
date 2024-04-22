@@ -37,19 +37,23 @@
 
 using namespace libquixcc;
 
-static void fold_const_string_expr(const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+static void fold_const_string_expr(const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
 {
     (void)_namespace;
 
-    switch ((*node)->ntype)
+    if (node.first != TraversePtrType::Smart)
+        return;
+    auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+
+    switch ((ptr)->ntype)
     {
     case NodeType::ConstUnaryExprNode:
     {
-        parent->replace_child(*node, std::static_pointer_cast<libquixcc::ConstUnaryExprNode>(*node)->reduce<LiteralNode>());
+        parent->replace_child(ptr, std::static_pointer_cast<libquixcc::ConstUnaryExprNode>(ptr)->reduce<LiteralNode>());
         return;
     }
     case NodeType::ConstBinaryExprNode:
-        parent->replace_child(*node, std::static_pointer_cast<libquixcc::ConstBinaryExprNode>(*node)->reduce<LiteralNode>());
+        parent->replace_child(ptr, std::static_pointer_cast<libquixcc::ConstBinaryExprNode>(ptr)->reduce<LiteralNode>());
         break;
     default:
         return;

@@ -39,7 +39,7 @@ void libquixcc::ParseNode::replace_child(std::shared_ptr<libquixcc::ParseNode> &
     old_node = new_node;
 }
 
-static void nop(const std::vector<std::string> &_namespace, libquixcc::ParseNode *parrent, std::shared_ptr<libquixcc::ParseNode> *node)
+static void nop(const std::vector<std::string> &_namespace, libquixcc::ParseNode *parrent, libquixcc::TraversePtr node)
 {
     (void)_namespace;
     (void)parrent;

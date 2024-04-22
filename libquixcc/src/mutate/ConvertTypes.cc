@@ -44,9 +44,13 @@ using namespace libquixcc;
 void libquixcc::mutate::ConvertTypes(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
         {
-            if (!(*node)->is<LetDeclNode>())
+            if (node.first != TraversePtrType::Smart)
+                return;
+            auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+            
+            if (!ptr->is<LetDeclNode>())
                 return;
 
             /// TODO: Implement type conversion logic here.

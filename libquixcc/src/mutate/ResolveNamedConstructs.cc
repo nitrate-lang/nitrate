@@ -52,12 +52,16 @@ static std::string join_ns(const std::vector<std::string> &ns)
 static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
         {
-            if (!(*node)->is<UserTypeNode>())
+            if (node.first != TraversePtrType::Raw)
+                return;
+            auto ptr = *std::get<ParseNode **>(node.second);
+
+            if (!(ptr)->is<UserTypeNode>())
                 return;
 
-            libquixcc::UserTypeNode **user_type_ptr = reinterpret_cast<libquixcc::UserTypeNode **>(node);
+            libquixcc::UserTypeNode **user_type_ptr = reinterpret_cast<libquixcc::UserTypeNode **>(std::get<ParseNode **>(node.second));
             libquixcc::UserTypeNode *user_type = *user_type_ptr;
             std::string name = user_type->m_name;
             std::shared_ptr<libquixcc::ParseNode> named_type;
@@ -131,19 +135,23 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
 static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
         {
-            if (!(*node)->is<IdentifierNode>())
+            if (node.first != TraversePtrType::Smart)
+                return;
+            auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+
+            if (!(ptr)->is<IdentifierNode>())
                 return;
 
-            auto ident = std::static_pointer_cast<libquixcc::IdentifierNode>(*node);
+            auto ident = std::static_pointer_cast<libquixcc::IdentifierNode>(ptr);
 
             if (!job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::EnumFieldNode, ident->m_name)))
                 return;
 
             auto enum_field = std::static_pointer_cast<libquixcc::EnumFieldNode>(job->m_inner.m_named_construsts[std::make_pair(NodeType::EnumFieldNode, ident->m_name)]);
 
-            *node = enum_field->m_value;
+            *std::get<std::shared_ptr<ParseNode> *>(node.second) = enum_field->m_value;
         },
         {}));
 }
@@ -151,12 +159,16 @@ static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::Bl
 static void resolve_function_decls_to_calls(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
         {
-            if (!(*node)->is<CallExprNode>())
+            if (node.first != TraversePtrType::Smart)
+                return;
+            auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+
+            if (!(ptr)->is<CallExprNode>())
                 return;
 
-            auto expr = std::static_pointer_cast<libquixcc::CallExprNode>(*node);
+            auto expr = std::static_pointer_cast<libquixcc::CallExprNode>(ptr);
 
             if (!job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::FunctionDeclNode, expr->m_name)))
             {

@@ -44,12 +44,16 @@ using namespace libquixcc;
 void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
         {
-            if (!(*node)->is<EnumDefNode>())
+            if (node.first != TraversePtrType::Smart)
+                return;
+            auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+
+            if (!(ptr)->is<EnumDefNode>())
                 return;
 
-            auto def = std::static_pointer_cast<libquixcc::EnumDefNode>(*node);
+            auto def = std::static_pointer_cast<libquixcc::EnumDefNode>(ptr);
 
             std::shared_ptr<ConstExprNode> last;
 
@@ -67,7 +71,7 @@ void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr
                 }
 
                 last = std::make_shared<ConstBinaryExprNode>(
-                    Operator::Plus, last, IntegerLiteralNode::create("1"));
+                    Operator::Plus, last, IntegerLiteralNode::create("1"))->reduce<LiteralNode>();
 
                 def->m_fields[i]->m_value = last;
             }

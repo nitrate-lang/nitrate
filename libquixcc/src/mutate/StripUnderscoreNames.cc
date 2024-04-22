@@ -44,64 +44,68 @@ using namespace libquixcc;
 void libquixcc::mutate::StripUnderscoreNames(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
         {
-            switch ((*node)->ntype)
+            if (node.first != TraversePtrType::Smart)
+                return;
+            auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+
+            switch ((ptr)->ntype)
             {
             case NodeType::LetDeclNode:
             {
-                auto let = std::dynamic_pointer_cast<LetDeclNode>(*node);
+                auto let = std::dynamic_pointer_cast<LetDeclNode>(ptr);
                 if (let->m_name == "_")
-                    *node = std::make_shared<NopStmtNode>();
+                    ptr = std::make_shared<NopStmtNode>();
                 break;
             }
             case NodeType::VarDeclNode:
             {
-                auto var = std::dynamic_pointer_cast<VarDeclNode>(*node);
+                auto var = std::dynamic_pointer_cast<VarDeclNode>(ptr);
                 if (var->m_name == "_")
-                    *node = std::make_shared<NopStmtNode>();
+                    ptr = std::make_shared<NopStmtNode>();
                 break;
             }
             case NodeType::FunctionDeclNode:
             {
-                auto func = std::dynamic_pointer_cast<FunctionDeclNode>(*node);
+                auto func = std::dynamic_pointer_cast<FunctionDeclNode>(ptr);
                 if (func->m_name == "_")
-                    *node = std::make_shared<NopStmtNode>();
+                    ptr = std::make_shared<NopStmtNode>();
                 break;
             }
             case NodeType::StructDefNode:
             {
-                auto struc = std::dynamic_pointer_cast<StructDefNode>(*node);
+                auto struc = std::dynamic_pointer_cast<StructDefNode>(ptr);
                 if (struc->m_name == "_")
-                    *node = std::make_shared<NopStmtNode>();
+                    ptr = std::make_shared<NopStmtNode>();
                 break;
             }
             case NodeType::EnumDefNode:
             {
-                auto enm = std::dynamic_pointer_cast<EnumDefNode>(*node);
+                auto enm = std::dynamic_pointer_cast<EnumDefNode>(ptr);
                 if (enm->m_type->m_name == "_")
-                    *node = std::make_shared<NopStmtNode>();
+                    ptr = std::make_shared<NopStmtNode>();
                 break;
             }
             case NodeType::GroupDefNode:
             {
-                auto group = std::dynamic_pointer_cast<GroupDefNode>(*node);
+                auto group = std::dynamic_pointer_cast<GroupDefNode>(ptr);
                 if (group->m_name == "_")
-                    *node = std::make_shared<NopStmtNode>();
+                    ptr = std::make_shared<NopStmtNode>();
                 break;
             }
             case NodeType::RegionDefNode:
             {
-                auto region = std::dynamic_pointer_cast<RegionDefNode>(*node);
+                auto region = std::dynamic_pointer_cast<RegionDefNode>(ptr);
                 if (region->m_name == "_")
-                    *node = std::make_shared<NopStmtNode>();
+                    ptr = std::make_shared<NopStmtNode>();
                 break;
             }
             case NodeType::UnionDefNode:
             {
-                auto uni = std::dynamic_pointer_cast<UnionDefNode>(*node);
+                auto uni = std::dynamic_pointer_cast<UnionDefNode>(ptr);
                 if (uni->m_name == "_")
-                    *node = std::make_shared<NopStmtNode>();
+                    ptr = std::make_shared<NopStmtNode>();
                 break;
             }
 

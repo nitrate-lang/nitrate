@@ -46,28 +46,32 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
     std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> vars;
 
     ast->dfs_preorder(ParseNodePreorderVisitor(
-        [&](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, std::shared_ptr<libquixcc::ParseNode> *node)
+        [&](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
         {
-            if ((*node)->is<LetDeclNode>())
+            if (node.first != TraversePtrType::Smart)
+                return;
+            auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+
+            if ((ptr)->is<LetDeclNode>())
             {
-                vars[std::static_pointer_cast<LetDeclNode>(*node)->m_name] = *node;
+                vars[std::static_pointer_cast<LetDeclNode>(ptr)->m_name] = ptr;
                 return;
             }
-            if ((*node)->is<VarDeclNode>())
+            if ((ptr)->is<VarDeclNode>())
             {
-                vars[std::static_pointer_cast<VarDeclNode>(*node)->m_name] = *node;
+                vars[std::static_pointer_cast<VarDeclNode>(ptr)->m_name] = ptr;
                 return;
             }
-            if ((*node)->is<FunctionParamNode>())
+            if ((ptr)->is<FunctionParamNode>())
             {
-                vars[std::static_pointer_cast<FunctionParamNode>(*node)->m_name] = *node;
+                vars[std::static_pointer_cast<FunctionParamNode>(ptr)->m_name] = ptr;
                 return;
             }
 
-            if (!(*node)->is<CallExprNode>())
+            if (!(ptr)->is<CallExprNode>())
                 return;
 
-            auto call = std::static_pointer_cast<CallExprNode>(*node);
+            auto call = std::static_pointer_cast<CallExprNode>(ptr);
 
             if (!call->m_name.contains("."))
                 return;

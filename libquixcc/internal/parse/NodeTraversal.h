@@ -38,13 +38,23 @@
 
 #include <string>
 #include <set>
+#include <vector>
+#include <variant>
 #include <memory>
 #include <functional>
 #include <parse/NodeType.h>
 
 namespace libquixcc
 {
-    typedef std::function<void(const std::vector<std::string> &_namespace, libquixcc::ParseNode *, std::shared_ptr<libquixcc::ParseNode> *)> ParseNodePreorderVisitorCallback;
+    enum class TraversePtrType
+    {
+        Smart,
+        Raw
+    };
+
+    typedef std::pair<TraversePtrType, std::variant<std::shared_ptr<libquixcc::ParseNode> *, libquixcc::ParseNode **>> TraversePtr;
+
+    typedef std::function<void(const std::vector<std::string> &_namespace, libquixcc::ParseNode *, TraversePtr)> ParseNodePreorderVisitorCallback;
 
     class ParseNodePreorderVisitor
     {
