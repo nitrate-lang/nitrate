@@ -272,7 +272,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 auto tok = scanner->peek();
                 if (tok.type() != TokenType::Identifier)
                 {
-                    LOG(ERROR) << "Expected an identifier" << tok << std::endl;
+                    LOG(ERROR) << "Expected an identifier in member access" << tok << std::endl;
                     return false;
                 }
 

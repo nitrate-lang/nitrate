@@ -157,7 +157,33 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
     }
     case Operator::Multiply:
     {
-        return m_ctx->m_builder->CreateLoad(expr->getType(), m_ctx->m_builder->CreateZExtOrBitCast(expr, llvm::PointerType::get(expr->getType(), 0)));
+        llvm::Value *address = nullptr;
+        if (node->m_expr->ntype == NodeType::IdentifierNode)
+        {
+            bool state = m_state.implicit_load;
+            m_state.implicit_load = false;
+            address = node->m_expr->codegen(*this);
+            m_state.implicit_load = state;
+        }
+        else if (node->m_expr->ntype == NodeType::MemberAccessNode)
+        {
+            bool state = m_state.implicit_load;
+            m_state.implicit_load = false;
+            address = node->m_expr->codegen(*this);
+            m_state.implicit_load = state;
+        }
+        else
+        {
+            return nullptr;
+        }
+
+        if (!address)
+            return nullptr;
+
+        if (!address->getType()->isPointerTy())
+            return nullptr;
+
+        return m_ctx->m_builder->CreateLoad(address->getType()->getPointerElementType(), address);
     }
     default:
         return nullptr;
@@ -912,6 +938,9 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
 {
     bool state = m_state.inside_function;
     m_state.inside_function = true;
+
+    m_ctx->m_named_stack_vars.clear();
+    m_ctx->m_named_params.clear();
 
     llvm::Function *func = static_cast<llvm::Function *>(node->m_decl->codegen(*this));
 
