@@ -33,7 +33,7 @@
 
 #include <parse/nodes/IdentifierNode.h>
 
-libquixcc::TypeNode *libquixcc::IdentifierNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::IdentifierNode::infer(libquixcc::TIState &state) const
 {
     /// TODO: Implement this function
     return nullptr;

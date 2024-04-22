@@ -36,7 +36,7 @@
 #include <parse/nodes/FunctionNode.h>
 #include <parse/nodes/StructNode.h>
 
-libquixcc::TypeNode *libquixcc::UnaryExprNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::UnaryExprNode::infer(libquixcc::TIState &state) const
 {
     switch (m_op)
     {
@@ -97,7 +97,7 @@ Here's a comprehensive table of C++20 type promotions (modified for Quix):
 
 */
 
-libquixcc::TypeNode *libquixcc::BinaryExprNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::BinaryExprNode::infer(libquixcc::TIState &state) const
 {
     auto lhs = m_lhs->infer(state);
     auto rhs = m_rhs->infer(state);
@@ -185,12 +185,12 @@ libquixcc::TypeNode *libquixcc::BinaryExprNode::infer(libquixcc::TypeInferenceSt
     return nullptr;
 }
 
-libquixcc::TypeNode *libquixcc::CallExprNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::CallExprNode::infer(libquixcc::TIState &state) const
 {
     return m_decl->m_type->m_return_type;
 }
 
-libquixcc::TypeNode *libquixcc::ListExprNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::ListExprNode::infer(libquixcc::TIState &state) const
 {
     std::vector<TypeNode *> types;
     for (auto &expr : m_elements)
@@ -201,7 +201,7 @@ libquixcc::TypeNode *libquixcc::ListExprNode::infer(libquixcc::TypeInferenceStat
     return StructTypeNode::create(types);
 }
 
-libquixcc::TypeNode *libquixcc::MemberAccessNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::MemberAccessNode::infer(libquixcc::TIState &state) const
 {
     /// TODO: Implement this function
     return nullptr;

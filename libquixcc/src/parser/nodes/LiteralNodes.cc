@@ -74,22 +74,22 @@ libquixcc::FloatLiteralNode::FloatLiteralNode(const std::string &val)
         m_val_type = F64TypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::StringLiteralNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::StringLiteralNode::infer(libquixcc::TIState &state) const
 {
     return StringTypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::CharLiteralNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::CharLiteralNode::infer(libquixcc::TIState &state) const
 {
     return I8TypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::BoolLiteralNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::BoolLiteralNode::infer(libquixcc::TIState &state) const
 {
     return BoolTypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::NullLiteralNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::NullLiteralNode::infer(libquixcc::TIState &state) const
 {
     return PointerTypeNode::create(VoidTypeNode::create());
 }

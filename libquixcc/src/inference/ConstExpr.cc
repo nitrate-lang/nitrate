@@ -33,12 +33,12 @@
 
 #include <parse/nodes/ConstExprNode.h>
 
-libquixcc::TypeNode *libquixcc::ConstUnaryExprNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::ConstUnaryExprNode::infer(libquixcc::TIState &state) const
 {
     return reduce<ConstExprNode>()->infer(state);
 }
 
-libquixcc::TypeNode *libquixcc::ConstBinaryExprNode::infer(libquixcc::TypeInferenceState &state) const
+libquixcc::TypeNode *libquixcc::ConstBinaryExprNode::infer(libquixcc::TIState &state) const
 {
     return reduce<ConstExprNode>()->infer(state);
 }

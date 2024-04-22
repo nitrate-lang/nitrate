@@ -269,7 +269,7 @@ namespace libquixcc
         NodeType ntype = NodeType::ParseNode;
     };
 
-    struct TypeInferenceState
+    struct TIState
     {
         std::shared_ptr<ParseNode> m_root;
     };
@@ -311,7 +311,7 @@ namespace libquixcc
             return std::static_pointer_cast<T>(reduce_impl(state));
         }
 
-        virtual TypeNode *infer(TypeInferenceState &state) const = 0;
+        virtual TypeNode *infer(TIState &state) const = 0;
         bool is_const_expr() const { return reduce<ExprNode>()->ntype == NodeType::LiteralNode; }
     };
 
@@ -328,7 +328,7 @@ namespace libquixcc
         virtual llvm::Constant *codegen(CodegenVisitor &visitor) const { return static_cast<llvm::Constant *>(visitor.visit(static_cast<const ExprNode *>(this))); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(static_cast<const ExprNode *>(this)); }
         virtual bool is_negative() const;
-        virtual TypeNode *infer(TypeInferenceState &state) const override = 0;
+        virtual TypeNode *infer(TIState &state) const override = 0;
     };
 
     class StmtNode : public ParseNode

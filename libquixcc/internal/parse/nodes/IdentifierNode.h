@@ -55,7 +55,7 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual TypeNode *infer(TypeInferenceState &state) const override;
+        virtual TypeNode *infer(TIState &state) const override;
 
         std::string m_name;
     };
