@@ -79,7 +79,6 @@ Here's a comprehensive table of C++20 type promotions (modified for Quix):
 |-------------|-------------|-------------|
 | bool        | any         | i32         |
 | i8          | any integer | i32         |
-| i8          | any integer | i32         |
 | u8          | any integer | i32         |
 | i16         | any integer | i32         |
 | u16         | any integer | i32         |
@@ -103,16 +102,86 @@ libquixcc::TypeNode *libquixcc::BinaryExprNode::infer(libquixcc::TypeInferenceSt
     auto lhs = m_lhs->infer(state);
     auto rhs = m_rhs->infer(state);
 
-
     /* Logical operations return bool */
-    // switch (m_op)
-    // {
-    //     // case 
-    // }
+    switch (m_op)
+    {
+    case Operator::LogicalNot:
+    case Operator::LogicalAnd:
+    case Operator::LogicalOr:
+    case Operator::LogicalXor:
+    case Operator::LessThan:
+    case Operator::GreaterThan:
+    case Operator::LessThanEqual:
+    case Operator::GreaterThanEqual:
+    case Operator::Equal:
+    case Operator::NotEqual:
+        return BoolTypeNode::create();
+    default:
+        break;
+    }
 
+    if (lhs->is_bool() || rhs->is_bool())
+        return I32TypeNode::create();
 
+    if ((lhs->is<I8TypeNode>() && rhs->is_integer()) || (rhs->is<I8TypeNode>() && lhs->is_integer()))
+        return I32TypeNode::create();
 
-    /// TODO: Implement this function
+    if ((lhs->is<U8TypeNode>() && rhs->is_integer()) || (rhs->is<U8TypeNode>() && lhs->is_integer()))
+        return I32TypeNode::create();
+
+    if ((lhs->is<I16TypeNode>() && rhs->is_integer()) || (rhs->is<I16TypeNode>() && lhs->is_integer()))
+        return I32TypeNode::create();
+
+    if ((lhs->is<U16TypeNode>() && rhs->is_integer()) || (rhs->is<U16TypeNode>() && lhs->is_integer()))
+        return I32TypeNode::create();
+
+    if ((lhs->is<I32TypeNode>() && rhs->is_integer()) || (rhs->is<I32TypeNode>() && lhs->is_integer()))
+        return I32TypeNode::create();
+
+    if ((lhs->is<U32TypeNode>() && rhs->is_integer()) || (rhs->is<U32TypeNode>() && lhs->is_integer()))
+        return U32TypeNode::create();
+
+    if ((lhs->is<I64TypeNode>() && rhs->is_integer()) || (rhs->is<I64TypeNode>() && lhs->is_integer()))
+        return I64TypeNode::create();
+
+    if ((lhs->is<U64TypeNode>() && rhs->is_integer()) || (rhs->is<U64TypeNode>() && lhs->is_integer()))
+        return U64TypeNode::create();
+
+    if ((lhs->is<F32TypeNode>() && rhs->is_integer()) || (rhs->is<F32TypeNode>() && lhs->is_integer()))
+        return F32TypeNode::create();
+
+    if ((lhs->is<F32TypeNode>() && rhs->is<F64TypeNode>()) || (rhs->is<F32TypeNode>() && lhs->is<F64TypeNode>()))
+        return F64TypeNode::create();
+
+    if ((lhs->is<F64TypeNode>() && rhs->is_integer()) || (rhs->is<F64TypeNode>() && lhs->is_integer()))
+        return F64TypeNode::create();
+
+    if ((lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr() &&
+         lhs->as<MutTypeNode>()->m_type->as<PointerTypeNode>()->m_type->is_void()) ||
+        (lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
+         lhs->as<MutTypeNode>()->m_type->as<PointerTypeNode>()->m_type->is_void() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr()))
+        return MutTypeNode::create(PointerTypeNode::create(VoidTypeNode::create()));
+
+    if ((lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
+         rhs->is<PointerTypeNode>() && rhs->as<PointerTypeNode>()->m_type->is_void()) ||
+        (lhs->is<PointerTypeNode>() && lhs->as<PointerTypeNode>()->m_type->is_void() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr()))
+        return PointerTypeNode::create(VoidTypeNode::create());
+
+    if ((lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr()))
+        return MutTypeNode::create(PointerTypeNode::create(VoidTypeNode::create()));
+
+    if ((lhs->is<PointerTypeNode>() && lhs->as<PointerTypeNode>()->m_type->is_void() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr()) ||
+        (lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
+         rhs->is<PointerTypeNode>() && rhs->as<PointerTypeNode>()->m_type->is_void()))
+        return PointerTypeNode::create(VoidTypeNode::create());
+
+    LOG(ERROR) << "No implicit conversion from " << lhs->to_source() << " to " << rhs->to_source() << std::endl;
+
     return nullptr;
 }
 

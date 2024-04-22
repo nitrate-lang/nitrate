@@ -40,6 +40,7 @@
 #include <vector>
 #include <memory>
 
+#include <error/Logger.h>
 #include <parse/NodeTraversal.h>
 #include <parse/JsonSerialize.h>
 #include <parse/NodeType.h>
@@ -71,6 +72,199 @@ namespace libquixcc
         /// @brief Count the number of nodes in the tree.
         /// @return The number of nodes in the tree.
         size_t count();
+
+        template <typename T>
+        T *as()
+        {
+            if (!is<T>())
+                LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
+
+            return static_cast<T *>(this);
+        }
+
+        template <typename T>
+        const T *as() const
+        {
+            if (!is<T>())
+                LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
+
+            return static_cast<const T *>(this);
+        }
+
+        template <typename T>
+        bool is() const
+        {
+            switch (ntype)
+            {
+            case NodeType::ParseNode:
+                return std::is_same_v<T, ParseNode>;
+            case NodeType::ASTNopNode:
+                return std::is_same_v<T, ASTNopNode>;
+            case NodeType::ExprNode:
+                return std::is_same_v<T, ExprNode>;
+            case NodeType::ConstExprNode:
+                return std::is_same_v<T, ConstExprNode>;
+            case NodeType::StmtNode:
+                return std::is_same_v<T, StmtNode>;
+            case NodeType::ExprStmtNode:
+                return std::is_same_v<T, ExprStmtNode>;
+            case NodeType::NopStmtNode:
+                return std::is_same_v<T, NopStmtNode>;
+            case NodeType::TypeNode:
+                return std::is_same_v<T, TypeNode>;
+            case NodeType::DeclNode:
+                return std::is_same_v<T, DeclNode>;
+            case NodeType::DefNode:
+                return std::is_same_v<T, DefNode>;
+            case NodeType::BlockNode:
+                return std::is_same_v<T, BlockNode>;
+            case NodeType::StmtGroupNode:
+                return std::is_same_v<T, StmtGroupNode>;
+
+            case NodeType::ConstUnaryExprNode:
+                return std::is_same_v<T, ConstUnaryExprNode>;
+            case NodeType::ConstBinaryExprNode:
+                return std::is_same_v<T, ConstBinaryExprNode>;
+
+            case NodeType::UnaryExprNode:
+                return std::is_same_v<T, UnaryExprNode>;
+            case NodeType::BinaryExprNode:
+                return std::is_same_v<T, BinaryExprNode>;
+            case NodeType::CallExprNode:
+                return std::is_same_v<T, CallExprNode>;
+            case NodeType::ListExprNode:
+                return std::is_same_v<T, ListExprNode>;
+            case NodeType::MemberAccessNode:
+                return std::is_same_v<T, MemberAccessNode>;
+
+            case NodeType::IdentifierNode:
+                return std::is_same_v<T, IdentifierNode>;
+
+            case NodeType::MutTypeNode:
+                return std::is_same_v<T, MutTypeNode>;
+            case NodeType::U8TypeNode:
+                return std::is_same_v<T, U8TypeNode>;
+            case NodeType::U16TypeNode:
+                return std::is_same_v<T, U16TypeNode>;
+            case NodeType::U32TypeNode:
+                return std::is_same_v<T, U32TypeNode>;
+            case NodeType::U64TypeNode:
+                return std::is_same_v<T, U64TypeNode>;
+            case NodeType::I8TypeNode:
+                return std::is_same_v<T, I8TypeNode>;
+            case NodeType::I16TypeNode:
+                return std::is_same_v<T, I16TypeNode>;
+            case NodeType::I32TypeNode:
+                return std::is_same_v<T, I32TypeNode>;
+            case NodeType::I64TypeNode:
+                return std::is_same_v<T, I64TypeNode>;
+            case NodeType::F32TypeNode:
+                return std::is_same_v<T, F32TypeNode>;
+            case NodeType::F64TypeNode:
+                return std::is_same_v<T, F64TypeNode>;
+            case NodeType::BoolTypeNode:
+                return std::is_same_v<T, BoolTypeNode>;
+            case NodeType::VoidTypeNode:
+                return std::is_same_v<T, VoidTypeNode>;
+            case NodeType::PointerTypeNode:
+                return std::is_same_v<T, PointerTypeNode>;
+            case NodeType::OpaqueTypeNode:
+                return std::is_same_v<T, OpaqueTypeNode>;
+            case NodeType::StringTypeNode:
+                return std::is_same_v<T, StringTypeNode>;
+
+            case NodeType::EnumTypeNode:
+                return std::is_same_v<T, EnumTypeNode>;
+            case NodeType::StructTypeNode:
+                return std::is_same_v<T, StructTypeNode>;
+            case NodeType::RegionTypeNode:
+                return std::is_same_v<T, RegionTypeNode>;
+            case NodeType::UnionTypeNode:
+                return std::is_same_v<T, UnionTypeNode>;
+            case NodeType::ArrayTypeNode:
+                return std::is_same_v<T, ArrayTypeNode>;
+            case NodeType::FunctionTypeNode:
+                return std::is_same_v<T, FunctionTypeNode>;
+            case NodeType::UserTypeNode:
+                return std::is_same_v<T, UserTypeNode>;
+
+            case NodeType::LiteralNode:
+                return std::is_same_v<T, LiteralNode>;
+            case NodeType::IntegerLiteralNode:
+                return std::is_same_v<T, IntegerLiteralNode>;
+            case NodeType::FloatLiteralNode:
+                return std::is_same_v<T, FloatLiteralNode>;
+            case NodeType::StringLiteralNode:
+                return std::is_same_v<T, StringLiteralNode>;
+            case NodeType::CharLiteralNode:
+                return std::is_same_v<T, CharLiteralNode>;
+            case NodeType::BoolLiteralNode:
+                return std::is_same_v<T, BoolLiteralNode>;
+            case NodeType::NullLiteralNode:
+                return std::is_same_v<T, NullLiteralNode>;
+
+            case NodeType::TypedefNode:
+                return std::is_same_v<T, TypedefNode>;
+
+            case NodeType::VarDeclNode:
+                return std::is_same_v<T, VarDeclNode>;
+            case NodeType::LetDeclNode:
+                return std::is_same_v<T, LetDeclNode>;
+
+            case NodeType::FunctionDeclNode:
+                return std::is_same_v<T, FunctionDeclNode>;
+
+            case NodeType::StructDefNode:
+                return std::is_same_v<T, StructDefNode>;
+            case NodeType::StructFieldNode:
+                return std::is_same_v<T, StructFieldNode>;
+            case NodeType::RegionDefNode:
+                return std::is_same_v<T, RegionDefNode>;
+            case NodeType::RegionFieldNode:
+                return std::is_same_v<T, RegionFieldNode>;
+            case NodeType::GroupDefNode:
+                return std::is_same_v<T, GroupDefNode>;
+            case NodeType::GroupFieldNode:
+                return std::is_same_v<T, GroupFieldNode>;
+            case NodeType::UnionDefNode:
+                return std::is_same_v<T, UnionDefNode>;
+            case NodeType::UnionFieldNode:
+                return std::is_same_v<T, UnionFieldNode>;
+            case NodeType::EnumDefNode:
+                return std::is_same_v<T, EnumDefNode>;
+            case NodeType::EnumFieldNode:
+                return std::is_same_v<T, EnumFieldNode>;
+            case NodeType::FunctionDefNode:
+                return std::is_same_v<T, FunctionDefNode>;
+            case NodeType::FunctionParamNode:
+                return std::is_same_v<T, FunctionParamNode>;
+
+            case NodeType::SubsystemNode:
+                return std::is_same_v<T, SubsystemNode>;
+            case NodeType::ExportNode:
+                return std::is_same_v<T, ExportNode>;
+            case NodeType::InlineAsmNode:
+                return std::is_same_v<T, InlineAsmNode>;
+
+            case NodeType::ReturnStmtNode:
+                return std::is_same_v<T, ReturnStmtNode>;
+            case NodeType::RetifStmtNode:
+                return std::is_same_v<T, RetifStmtNode>;
+            case NodeType::RetzStmtNode:
+                return std::is_same_v<T, RetzStmtNode>;
+            case NodeType::RetvStmtNode:
+                return std::is_same_v<T, RetvStmtNode>;
+            case NodeType::IfStmtNode:
+                return std::is_same_v<T, IfStmtNode>;
+            case NodeType::WhileStmtNode:
+                return std::is_same_v<T, WhileStmtNode>;
+            case NodeType::ForStmtNode:
+                return std::is_same_v<T, ForStmtNode>;
+            }
+
+            assert(false);
+            return false;
+        }
 
         NodeType ntype = NodeType::ParseNode;
     };
@@ -181,6 +375,15 @@ namespace libquixcc
         virtual llvm::Type *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual bool is_composite() const = 0;
+        bool is_ptr() const;
+        bool is_array() const;
+        bool is_func() const;
+        bool is_void() const;
+        bool is_signed() const;
+        bool is_integer() const;
+        bool is_floating() const;
+        bool is_bool() const;
+
         virtual size_t size(size_t ptr_size) const = 0;
         virtual std::string to_source() const = 0;
         virtual std::string name() const { return ""; }

@@ -117,8 +117,9 @@ namespace libquixcc
 
         LeftShift,
         RightShift,
-        Equal,
-        NotEqual,
+
+        Increment,
+        Decrement,
 
         Assign,
         PlusAssign,
@@ -144,8 +145,8 @@ namespace libquixcc
         GreaterThan,
         LessThanEqual,
         GreaterThanEqual,
-        Increment,
-        Decrement,
+        Equal,
+        NotEqual,
     };
 
     enum class TokenType

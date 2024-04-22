@@ -57,6 +57,68 @@ thread_local std::unordered_map<std::string, std::shared_ptr<libquixcc::UserType
 std::map<libquixcc::FunctionTypeNode::Inner, libquixcc::FunctionTypeNode *> libquixcc::FunctionTypeNode::s_instances;
 std::map<std::pair<std::string, libquixcc::TypeNode *>, libquixcc::EnumTypeNode *> libquixcc::EnumTypeNode::m_instances;
 
+bool libquixcc::TypeNode::is_ptr() const
+{
+    return ntype == NodeType::PointerTypeNode;
+}
+
+bool libquixcc::TypeNode::is_array() const
+{
+    return ntype == NodeType::ArrayTypeNode;
+}
+
+bool libquixcc::TypeNode::is_func() const
+{
+    return ntype == NodeType::FunctionTypeNode;
+}
+
+bool libquixcc::TypeNode::is_void() const
+{
+    return ntype == NodeType::VoidTypeNode;
+}
+
+bool libquixcc::TypeNode::is_signed() const
+{
+    switch (ntype)
+    {
+    case NodeType::I8TypeNode:
+    case NodeType::I16TypeNode:
+    case NodeType::I32TypeNode:
+    case NodeType::I64TypeNode:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool libquixcc::TypeNode::is_integer() const
+{
+    switch (ntype)
+    {
+    case NodeType::U8TypeNode:
+    case NodeType::U16TypeNode:
+    case NodeType::U32TypeNode:
+    case NodeType::U64TypeNode:
+    case NodeType::I8TypeNode:
+    case NodeType::I16TypeNode:
+    case NodeType::I32TypeNode:
+    case NodeType::I64TypeNode:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool libquixcc::TypeNode::is_floating() const
+{
+    return ntype == NodeType::F32TypeNode || ntype == NodeType::F64TypeNode;
+}
+
+bool libquixcc::TypeNode::is_bool() const
+{
+    return ntype == NodeType::BoolTypeNode;
+}
+
 std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> libquixcc::GroupDefNode::optimize_layout(const std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> &fields)
 {
     /*
