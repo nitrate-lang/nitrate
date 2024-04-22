@@ -51,7 +51,7 @@ namespace libquixcc
         static std::map<std::pair<std::vector<TypeNode *>, std::string>, StructTypeNode *> m_instances;
 
     public:
-        static StructTypeNode *create(const std::vector<TypeNode *> &fields, const std::string &name)
+        static StructTypeNode *create(const std::vector<TypeNode *> &fields, const std::string &name = "")
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);

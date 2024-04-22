@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-extern const int32_t printf(const char* fmt, ...);
+const int32_t printf(const char* fmt, ...);
 
 
 struct Address {
@@ -44,4 +44,5 @@ __attribute__((visibility("default"))) const int32_t main() {
   printf("&p: %p\n", &p);
   return;
 }
+
 

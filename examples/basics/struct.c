@@ -31,7 +31,7 @@ struct RectanglurPrism3d {
 
 
 
-extern const struct RectanglurPrism3d _ZJ0l4data141t17RectanglurPrism3d24m21a15t5Point3m1i3m1i2x856m53a46t4Line18m15t5Point3m1i3m1i18m15t5Point3m1i3m1i3x1235m32a26p23t7Texture5m3p1b3m1i3m1i2x60;
+extern const struct RectanglurPrism3d _ZJ0l4data141t17RectanglurPrism3d24m21a15t5Point3m1i3m1i2x856m53a46t4Line18m15t5Point3m1i3m1i18m15t5Point3m1i3m1i3x1235m32a26p23t7Texture5m3p1b3m1i3m1i2x60;;
 
 
 __attribute__((visibility("default"))) const void main() {

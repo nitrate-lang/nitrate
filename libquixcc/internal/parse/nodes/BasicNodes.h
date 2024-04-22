@@ -54,7 +54,6 @@ namespace libquixcc
         bool m_export = false;
         bool m_fn_def = false;
     };
-
     class ParseNode
     {
     public:
@@ -76,6 +75,11 @@ namespace libquixcc
         NodeType ntype = NodeType::ParseNode;
     };
 
+    struct TypeInferenceState
+    {
+        std::shared_ptr<ParseNode> m_root;
+    };
+
 #define PARSE_NODE_SIZE sizeof(ParseNode)
 
     class ASTNopNode : public ParseNode
@@ -89,6 +93,9 @@ namespace libquixcc
 
     class ExprNode : public ParseNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const = 0;
+
     public:
         ExprNode() = default;
 
@@ -96,10 +103,29 @@ namespace libquixcc
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
+
+        template <typename T>
+        std::shared_ptr<T> reduce(ReductionState &state) const
+        {
+            return std::static_pointer_cast<T>(reduce_impl(state));
+        }
+
+        template <typename T>
+        std::shared_ptr<T> reduce() const
+        {
+            ReductionState state;
+            return std::static_pointer_cast<T>(reduce_impl(state));
+        }
+
+        virtual TypeNode *infer(TypeInferenceState &state) const = 0;
+        bool is_const_expr() const { return reduce<ExprNode>()->ntype == NodeType::LiteralNode; }
     };
 
     class ConstExprNode : public ExprNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override = 0;
+
     public:
         ConstExprNode() { ntype = NodeType::ConstExprNode; }
 
@@ -107,9 +133,8 @@ namespace libquixcc
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Constant *codegen(CodegenVisitor &visitor) const { return static_cast<llvm::Constant *>(visitor.visit(static_cast<const ExprNode *>(this))); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(static_cast<const ExprNode *>(this)); }
-        virtual const std::shared_ptr<LiteralNode> reduce() const = 0;
-
-        virtual int64_t GetInt64() const { throw std::runtime_error("ConstExprNode::GetInt64() not implemented"); }
+        virtual bool is_negative() const;
+        virtual TypeNode *infer(TypeInferenceState &state) const override = 0;
     };
 
     class StmtNode : public ParseNode

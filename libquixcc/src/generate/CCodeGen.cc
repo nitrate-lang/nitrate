@@ -157,7 +157,7 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::UnaryExprNode *
         return "+" + node->m_expr->codegen(*this);
     case Operator::BitwiseNot:
         return "~" + node->m_expr->codegen(*this);
-    case Operator::Not:
+    case Operator::LogicalNot:
         return "!" + node->m_expr->codegen(*this);
     case Operator::Increment:
         return node->m_expr->codegen(*this) + "++";
@@ -204,11 +204,11 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::BinaryExprNode 
         return node->m_lhs->codegen(*this) + " << " + node->m_rhs->codegen(*this);
     case Operator::RightShift:
         return node->m_lhs->codegen(*this) + " >> " + node->m_rhs->codegen(*this);
-    case Operator::And:
+    case Operator::LogicalAnd:
         return node->m_lhs->codegen(*this) + " && " + node->m_rhs->codegen(*this);
-    case Operator::Or:
+    case Operator::LogicalOr:
         return node->m_lhs->codegen(*this) + " || " + node->m_rhs->codegen(*this);
-    case Operator::Xor:
+    case Operator::LogicalXor:
         return node->m_lhs->codegen(*this) + " ^^ " + node->m_rhs->codegen(*this);
     case Operator::Divide:
         return node->m_lhs->codegen(*this) + " / " + node->m_rhs->codegen(*this);
@@ -292,7 +292,7 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::ConstUnaryExprN
         return "+" + node->m_expr->codegen(*this);
     case Operator::BitwiseNot:
         return "~" + node->m_expr->codegen(*this);
-    case Operator::Not:
+    case Operator::LogicalNot:
         return "!" + node->m_expr->codegen(*this);
     case Operator::Increment:
         return node->m_expr->codegen(*this) + "++";
@@ -339,11 +339,11 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::ConstBinaryExpr
         return node->m_lhs->codegen(*this) + " << " + node->m_rhs->codegen(*this);
     case Operator::RightShift:
         return node->m_lhs->codegen(*this) + " >> " + node->m_rhs->codegen(*this);
-    case Operator::And:
+    case Operator::LogicalAnd:
         return node->m_lhs->codegen(*this) + " && " + node->m_rhs->codegen(*this);
-    case Operator::Or:
+    case Operator::LogicalOr:
         return node->m_lhs->codegen(*this) + " || " + node->m_rhs->codegen(*this);
-    case Operator::Xor:
+    case Operator::LogicalXor:
         return node->m_lhs->codegen(*this) + " ^^ " + node->m_rhs->codegen(*this);
     case Operator::Divide:
         return node->m_lhs->codegen(*this) + " / " + node->m_rhs->codegen(*this);

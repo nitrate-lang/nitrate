@@ -29,47 +29,111 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_ARRAY_H__
-#define __QUIXCC_PARSE_NODES_ARRAY_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <error/Logger.h>
+#include <parse/nodes/ExprNode.h>
+#include <parse/nodes/FunctionNode.h>
+#include <parse/nodes/StructNode.h>
 
-#include <string>
-#include <vector>
-#include <memory>
-
-#include <llvm/LLVMWrapper.h>
-#include <parse/nodes/BasicNodes.h>
-
-namespace libquixcc
+libquixcc::TypeNode *libquixcc::UnaryExprNode::infer(libquixcc::TypeInferenceState &state) const
 {
-    class ArrayTypeNode : public TypeNode
+    switch (m_op)
     {
-        ArrayTypeNode(TypeNode *type, std::shared_ptr<ConstExprNode> size) : m_type(type), m_size(size) { ntype = NodeType::ArrayTypeNode; }
-        static thread_local std::map<std::pair<TypeNode *, std::shared_ptr<ConstExprNode>>, ArrayTypeNode *> m_instances;
-
-    public:
-        static ArrayTypeNode *create(TypeNode *type, std::shared_ptr<ConstExprNode> size)
+    case Operator::Minus:
+    case Operator::Plus:
+    case Operator::BitwiseNot:
+    case Operator::Increment:
+    case Operator::Decrement:
+        return m_expr->infer(state);
+    case Operator::LogicalNot:
+        return BoolTypeNode::create();
+    case Operator::BitwiseAnd:
+        return PointerTypeNode::create(m_expr->infer(state));
+    case Operator::Multiply:
+    {
+        auto type = m_expr->infer(state);
+        if (type->ntype != NodeType::PointerTypeNode)
         {
-            auto key = std::make_pair(type, size);
-            if (m_instances.contains(key))
-                return m_instances[key];
-            auto instance = new ArrayTypeNode(type, size);
-            m_instances[key] = instance;
-            return instance;
+            LOG(ERROR) << "Can not dereference a non-pointer type" << std::endl;
+            return nullptr;
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual bool is_composite() const override { return false; }
-        virtual size_t size(size_t ptr_size) const override { return std::get<uint64_t>(m_size->reduce<IntegerLiteralNode>()->m_value) * m_type->size(ptr_size); }
-        virtual std::string to_source() const override { return "[" + m_type->to_source() + "; " + std::to_string(std::get<uint64_t>(m_size->reduce<IntegerLiteralNode>()->m_value)) + "]"; }
+        return static_cast<PointerTypeNode *>(type)->m_type;
+    }
+    default:
+        LOG(ERROR) << "Invalid unary operator" << std::endl;
+        return nullptr;
+    }
 
-        TypeNode *m_type;
-        std::shared_ptr<ConstExprNode> m_size;
-    };
+    return nullptr;
 }
 
-#endif // __QUIXCC_PARSE_NODES_ARRAY_H__
+/*
+
+I'm just going to copy C++20 for now.
+
+Here's a comprehensive table of C++20 type promotions (modified for Quix):
+
+| Type A      | Type B      | Result Type |
+|-------------|-------------|-------------|
+| bool        | any         | i32         |
+| i8          | any integer | i32         |
+| i8          | any integer | i32         |
+| u8          | any integer | i32         |
+| i16         | any integer | i32         |
+| u16         | any integer | i32         |
+| i32         | any integer | i32         |
+| u32         | any integer | u32         |
+| i64         | any integer | i64         |
+| u64         | any integer | u64         |
+| f32         | any integer | f32         |
+| f32         | f64         | f64         |
+| f64         | any integer | f64         |
+| %ptr to any | %ptr to void| %ptr to void|
+| %ptr to any | ptr to void | ptr to void |
+| %ptr to any | %ptr to any | %ptr to void|
+| ptr to any  | %ptr to any | ptr to void |
+| *           | *           | undefined   |
+
+*/
+
+libquixcc::TypeNode *libquixcc::BinaryExprNode::infer(libquixcc::TypeInferenceState &state) const
+{
+    auto lhs = m_lhs->infer(state);
+    auto rhs = m_rhs->infer(state);
+
+
+    /* Logical operations return bool */
+    // switch (m_op)
+    // {
+    //     // case 
+    // }
+
+
+
+    /// TODO: Implement this function
+    return nullptr;
+}
+
+libquixcc::TypeNode *libquixcc::CallExprNode::infer(libquixcc::TypeInferenceState &state) const
+{
+    return m_decl->m_type->m_return_type;
+}
+
+libquixcc::TypeNode *libquixcc::ListExprNode::infer(libquixcc::TypeInferenceState &state) const
+{
+    std::vector<TypeNode *> types;
+    for (auto &expr : m_elements)
+    {
+        types.push_back(expr->infer(state));
+    }
+
+    return StructTypeNode::create(types);
+}
+
+libquixcc::TypeNode *libquixcc::MemberAccessNode::infer(libquixcc::TypeInferenceState &state) const
+{
+    /// TODO: Implement this function
+    return nullptr;
+}

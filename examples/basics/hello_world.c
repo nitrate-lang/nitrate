@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-extern const int32_t printf(const int8_t* const format, ...);
+const int32_t printf(const int8_t* const format, ...);
 
 
 __attribute__((visibility("default"))) const int8_t main() {

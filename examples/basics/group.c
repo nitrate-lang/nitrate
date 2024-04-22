@@ -23,7 +23,7 @@ struct RectanglurPrism3d {
   struct Line[12] lines;
 };
 
-extern const struct RectanglurPrism3d _ZJ0l4data141t17RectanglurPrism3d56m53a46t4Line18m15t5Point3m1i3m1i18m15t5Point3m1i3m1i3x1224m21a15t5Point3m1i3m1i2x835m32a26p23t7Texture5m3p1b3m1i3m1i2x60;
+extern const struct RectanglurPrism3d _ZJ0l4data141t17RectanglurPrism3d56m53a46t4Line18m15t5Point3m1i3m1i18m15t5Point3m1i3m1i3x1224m21a15t5Point3m1i3m1i2x835m32a26p23t7Texture5m3p1b3m1i3m1i2x60;;
 
 
 __attribute__((visibility("default"))) const void main() {

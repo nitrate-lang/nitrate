@@ -49,19 +49,25 @@ namespace libquixcc
 {
     class LiteralNode : public ConstExprNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override = 0;
+
     public:
         LiteralNode() { ntype = NodeType::LiteralNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual bool is_negative() const = 0;
-        virtual TypeNode *type() const = 0;
+        virtual TypeNode *infer(TypeInferenceState &state) const override = 0;
     };
 
-    typedef std::variant<int64_t, uint64_t, int32_t, uint32_t> NumbericLiteralNode;
+    typedef std::variant<int64_t, uint64_t> NumbericLiteralNode;
 
     class IntegerLiteralNode : public LiteralNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+
         static std::unordered_map<std::string, std::shared_ptr<IntegerLiteralNode>> m_instances;
         IntegerLiteralNode(const std::string &val);
 
@@ -80,11 +86,8 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual TypeNode *type() const override { return m_val_type; }
+        virtual TypeNode *infer(TypeInferenceState &state) const override { return m_val_type; }
         virtual bool is_negative() const override { return m_val.front() == '-'; }
-        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
-
-        virtual int64_t GetInt64() const override { return std::stoll(m_val); }
 
         std::string m_val;
         TypeNode *m_val_type;
@@ -93,6 +96,9 @@ namespace libquixcc
 
     class FloatLiteralNode : public LiteralNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+
         static std::unordered_map<std::string, std::shared_ptr<FloatLiteralNode>> m_instances;
         FloatLiteralNode(const std::string &val);
 
@@ -111,9 +117,8 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual TypeNode *type() const override { return m_val_type; }
+        virtual TypeNode *infer(TypeInferenceState &state) const override { return m_val_type; }
         virtual bool is_negative() const override { return true; }
-        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
 
         std::string m_val;
         TypeNode *m_val_type;
@@ -122,6 +127,9 @@ namespace libquixcc
 
     class StringLiteralNode : public LiteralNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+
         static std::unordered_map<std::string, std::shared_ptr<StringLiteralNode>> m_instances;
         StringLiteralNode(const std::string &val) : m_val(val) { ntype = NodeType::StringLiteralNode; }
 
@@ -140,15 +148,17 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual TypeNode *type() const override;
+        virtual TypeNode *infer(TypeInferenceState &state) const override;
         virtual bool is_negative() const override { return false; }
-        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
 
         std::string m_val;
     };
 
     class CharLiteralNode : public LiteralNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+
         static std::unordered_map<std::string, std::shared_ptr<CharLiteralNode>> m_instances;
         CharLiteralNode(const std::string &val) : m_val(val) { ntype = NodeType::CharLiteralNode; }
 
@@ -167,15 +177,17 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual TypeNode *type() const override;
+        virtual TypeNode *infer(TypeInferenceState &state) const override;
         virtual bool is_negative() const override { return false; }
-        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
 
         std::string m_val;
     };
 
     class BoolLiteralNode : public LiteralNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+
         static std::shared_ptr<BoolLiteralNode> m_true_instance;
         static std::shared_ptr<BoolLiteralNode> m_false_instance;
         BoolLiteralNode(bool val) : m_val(val) { ntype = NodeType::BoolLiteralNode; }
@@ -202,15 +214,17 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual TypeNode *type() const override;
+        virtual TypeNode *infer(TypeInferenceState &state) const override;
         virtual bool is_negative() const override { return false; }
-        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(m_val); }
 
         bool m_val;
     };
 
     class NullLiteralNode : public LiteralNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(); }
+
         static std::shared_ptr<NullLiteralNode> m_instance;
         NullLiteralNode() { ntype = NodeType::NullLiteralNode; }
 
@@ -227,9 +241,8 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual TypeNode *type() const override;
+        virtual TypeNode *infer(TypeInferenceState &state) const override;
         virtual bool is_negative() const override { return false; }
-        virtual const std::shared_ptr<LiteralNode> reduce() const override { return this->create(); }
     };
 }
 

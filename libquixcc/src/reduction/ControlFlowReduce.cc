@@ -47,7 +47,7 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::RetifStmtNode::reduce(libquixcc:
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::RetzStmtNode::reduce(libquixcc::ReductionState &state) const
 {
-    auto inv_expr = std::make_shared<UnaryExprNode>(Operator::Not, m_cond);
+    auto inv_expr = std::make_shared<UnaryExprNode>(Operator::LogicalNot, m_cond);
     auto stmt = std::make_shared<ReturnStmtNode>(m_return);
     return std::make_unique<IfStmtNode>(inv_expr, stmt, nullptr);
 }

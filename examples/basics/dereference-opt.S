@@ -7,30 +7,30 @@ main:
 	pushq	%r14
 	pushq	%rbx
 	pushq	%rax
-	movl	$10000000, (%rsp)
-	movq	(%rsp), %r8
+	movl	$10000000, 4(%rsp)
 	leaq	.L__unnamed_1(%rip), %r14
-	movq	%rsp, %rbx
+	leaq	4(%rsp), %rbx
 	movq	%r14, %rdi
 	movl	$10000000, %esi
 	movq	%rbx, %rdx
 	movq	%rbx, %rcx
+	movq	%rbx, %r8
 	xorl	%eax, %eax
 	callq	printf@PLT
-	movl	$20000000, (%rsp)
-	movq	(%rsp), %r8
+	movl	$20000000, 4(%rsp)
 	movq	%r14, %rdi
 	movl	$20000000, %esi
 	movq	%rbx, %rdx
 	movq	%rbx, %rcx
+	movq	%rbx, %r8
 	xorl	%eax, %eax
 	callq	printf@PLT
-	movl	$30000000, (%rsp)
-	movq	(%rsp), %r8
+	movl	$30000000, 4(%rsp)
 	movq	%r14, %rdi
 	movl	$30000000, %esi
 	movq	%rbx, %rdx
 	movq	%rbx, %rcx
+	movq	%rbx, %r8
 	xorl	%eax, %eax
 	callq	printf@PLT
 	addq	$8, %rsp

@@ -18,26 +18,23 @@ entry:
   %2 = load i32, i32* %x, align 4
   %3 = load i32*, i32** %x_ptr, align 8
   %4 = load i32*, i32** %x_ptr, align 8
-  %5 = bitcast i32* %4 to i32**
-  %6 = load i32*, i32** %5, align 8
-  %7 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([42 x i8], [42 x i8]* @0, i32 0, i32 0), i32 %1, i32* %x, i32* %3, i32* %6)
+  %5 = load i32*, i32** %x_ptr, align 8
+  %6 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([42 x i8], [42 x i8]* @0, i32 0, i32 0), i32 %1, i32* %x, i32* %3, i32* %5)
   store i32 20000000, i32* %x, align 4
+  %7 = load i32, i32* %x, align 4
   %8 = load i32, i32* %x, align 4
-  %9 = load i32, i32* %x, align 4
+  %9 = load i32*, i32** %x_ptr, align 8
   %10 = load i32*, i32** %x_ptr, align 8
   %11 = load i32*, i32** %x_ptr, align 8
-  %12 = bitcast i32* %11 to i32**
-  %13 = load i32*, i32** %12, align 8
-  %14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([42 x i8], [42 x i8]* @1, i32 0, i32 0), i32 %8, i32* %x, i32* %10, i32* %13)
-  %15 = load i32*, i32** %x_ptr, align 8
-  store i32 30000000, i32* %15, align 4
-  %16 = load i32, i32* %x, align 4
-  %17 = load i32, i32* %x, align 4
+  %12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([42 x i8], [42 x i8]* @1, i32 0, i32 0), i32 %7, i32* %x, i32* %9, i32* %11)
+  %13 = load i32*, i32** %x_ptr, align 8
+  store i32 30000000, i32* %13, align 4
+  %14 = load i32, i32* %x, align 4
+  %15 = load i32, i32* %x, align 4
+  %16 = load i32*, i32** %x_ptr, align 8
+  %17 = load i32*, i32** %x_ptr, align 8
   %18 = load i32*, i32** %x_ptr, align 8
-  %19 = load i32*, i32** %x_ptr, align 8
-  %20 = bitcast i32* %19 to i32**
-  %21 = load i32*, i32** %20, align 8
-  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([42 x i8], [42 x i8]* @2, i32 0, i32 0), i32 %16, i32* %x, i32* %18, i32* %21)
+  %19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([42 x i8], [42 x i8]* @2, i32 0, i32 0), i32 %14, i32* %x, i32* %16, i32* %18)
   br label %end
 
 end:                                              ; preds = %entry

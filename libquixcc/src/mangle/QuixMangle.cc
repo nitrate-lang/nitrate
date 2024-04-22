@@ -199,7 +199,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
         const libquixcc::ArrayTypeNode *st = static_cast<const ArrayTypeNode *>(type);
         std::string s;
         s += wrap_tag(serialize_type(st->m_type, visited));
-        s += wrap_tag("x" + std::to_string(st->m_size->GetInt64()));
+        s += wrap_tag("x" + st->m_size->reduce<IntegerLiteralNode>()->m_val);
         return "a" + s;
     }
     else if (type->ntype == NodeType::PointerTypeNode)

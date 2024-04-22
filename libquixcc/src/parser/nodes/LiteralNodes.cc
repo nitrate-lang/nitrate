@@ -48,35 +48,15 @@ libquixcc::IntegerLiteralNode::IntegerLiteralNode(const std::string &val)
     ntype = NodeType::IntegerLiteralNode;
     m_val = val;
 
-    uint8_t numbits = get_numbits(val);
-
     if (val.starts_with("-"))
     {
-        int64_t value = std::stoll(val);
-        if (numbits > 32)
-        {
-            m_val_type = I64TypeNode::create();
-            m_value = (int64_t)value;
-        }
-        else
-        {
-            m_val_type = I32TypeNode::create();
-            m_value = (int32_t)value;
-        }
+        m_val_type = I64TypeNode::create();
+        m_value = (int64_t)std::stoll(val);
     }
     else
     {
-        uint64_t value = std::stoull(val);
-        if (numbits > 32)
-        {
-            m_val_type = U64TypeNode::create();
-            m_value = (uint64_t)value;
-        }
-        else
-        {
-            m_val_type = U32TypeNode::create();
-            m_value = (uint32_t)value;
-        }
+        m_val_type = U64TypeNode::create();
+        m_value = (uint64_t)std::stoull(val);
     }
 }
 
@@ -94,22 +74,22 @@ libquixcc::FloatLiteralNode::FloatLiteralNode(const std::string &val)
         m_val_type = F64TypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::StringLiteralNode::type() const
+libquixcc::TypeNode *libquixcc::StringLiteralNode::infer(libquixcc::TypeInferenceState &state) const
 {
     return StringTypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::CharLiteralNode::type() const
+libquixcc::TypeNode *libquixcc::CharLiteralNode::infer(libquixcc::TypeInferenceState &state) const
 {
     return I8TypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::BoolLiteralNode::type() const
+libquixcc::TypeNode *libquixcc::BoolLiteralNode::infer(libquixcc::TypeInferenceState &state) const
 {
     return BoolTypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::NullLiteralNode::type() const
+libquixcc::TypeNode *libquixcc::NullLiteralNode::infer(libquixcc::TypeInferenceState &state) const
 {
     return PointerTypeNode::create(VoidTypeNode::create());
 }

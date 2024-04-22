@@ -29,47 +29,38 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_ARRAY_H__
-#define __QUIXCC_PARSE_NODES_ARRAY_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <string>
-#include <vector>
-#include <memory>
-
-#include <llvm/LLVMWrapper.h>
+#include <parse/nodes/IdentifierNode.h>
 #include <parse/nodes/BasicNodes.h>
+#include <parse/nodes/ExprNode.h>
 
-namespace libquixcc
+std::shared_ptr<libquixcc::ExprNode> libquixcc::IdentifierNode::reduce_impl(libquixcc::ReductionState &state) const
 {
-    class ArrayTypeNode : public TypeNode
-    {
-        ArrayTypeNode(TypeNode *type, std::shared_ptr<ConstExprNode> size) : m_type(type), m_size(size) { ntype = NodeType::ArrayTypeNode; }
-        static thread_local std::map<std::pair<TypeNode *, std::shared_ptr<ConstExprNode>>, ArrayTypeNode *> m_instances;
-
-    public:
-        static ArrayTypeNode *create(TypeNode *type, std::shared_ptr<ConstExprNode> size)
-        {
-            auto key = std::make_pair(type, size);
-            if (m_instances.contains(key))
-                return m_instances[key];
-            auto instance = new ArrayTypeNode(type, size);
-            m_instances[key] = instance;
-            return instance;
-        }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual bool is_composite() const override { return false; }
-        virtual size_t size(size_t ptr_size) const override { return std::get<uint64_t>(m_size->reduce<IntegerLiteralNode>()->m_value) * m_type->size(ptr_size); }
-        virtual std::string to_source() const override { return "[" + m_type->to_source() + "; " + std::to_string(std::get<uint64_t>(m_size->reduce<IntegerLiteralNode>()->m_value)) + "]"; }
-
-        TypeNode *m_type;
-        std::shared_ptr<ConstExprNode> m_size;
-    };
+    return std::make_shared<IdentifierNode>(*this);
 }
 
-#endif // __QUIXCC_PARSE_NODES_ARRAY_H__
+std::shared_ptr<libquixcc::ExprNode> libquixcc::UnaryExprNode::reduce_impl(libquixcc::ReductionState &state) const
+{
+    return std::make_shared<UnaryExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::BinaryExprNode::reduce_impl(libquixcc::ReductionState &state) const
+{
+    return std::make_shared<BinaryExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::CallExprNode::reduce_impl(libquixcc::ReductionState &state) const
+{
+    return std::make_shared<CallExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::ListExprNode::reduce_impl(libquixcc::ReductionState &state) const
+{
+    return std::make_shared<ListExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::MemberAccessNode::reduce_impl(libquixcc::ReductionState &state) const 
+{
+    return std::make_shared<MemberAccessNode>(*this);
+}

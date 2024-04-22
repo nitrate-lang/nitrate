@@ -34,6 +34,11 @@
 #include <parse/nodes/AllNodes.h>
 #include <error/Logger.h>
 
+bool libquixcc::ConstExprNode::is_negative() const
+{
+    return reduce<LiteralNode>()->is_negative();
+}
+
 template <typename T>
 static T getval_and_cast(const std::shared_ptr<libquixcc::ConstExprNode> node)
 {
@@ -46,12 +51,8 @@ static T getval_and_cast(const std::shared_ptr<libquixcc::ConstExprNode> node)
         auto n = static_cast<const IntegerLiteralNode *>(node.get());
         switch (n->m_val_type->ntype)
         {
-        case NodeType::I32TypeNode:
-            return static_cast<T>(std::get<int32_t>(n->m_value));
         case NodeType::I64TypeNode:
             return static_cast<T>(std::get<int64_t>(n->m_value));
-        case NodeType::U32TypeNode:
-            return static_cast<T>(std::get<uint32_t>(n->m_value));
         case NodeType::U64TypeNode:
             return static_cast<T>(std::get<uint64_t>(n->m_value));
         default:
@@ -84,7 +85,7 @@ static const std::shared_ptr<libquixcc::LiteralNode> reduce_unary_expr(T val, li
         return IntegerLiteralNode::create(std::to_string(-val));
     case Operator::Plus:
         return IntegerLiteralNode::create(std::to_string(+val));
-    case Operator::Not:
+    case Operator::LogicalNot:
         return IntegerLiteralNode::create(std::to_string(!val));
     case Operator::BitwiseNot:
     {
@@ -112,7 +113,7 @@ static const std::shared_ptr<libquixcc::LiteralNode> reduce_unary_expr_float_poi
         return FloatLiteralNode::create(std::to_string(-val));
     case Operator::Plus:
         return FloatLiteralNode::create(std::to_string(+val));
-    case Operator::Not:
+    case Operator::LogicalNot:
         return FloatLiteralNode::create(std::to_string(!val));
     case Operator::BitwiseNot:
         LOG(ERROR) << "const-expr reduction error: bitwise not operation is not supported for floating point numbers" << std::endl;
@@ -127,9 +128,9 @@ static const std::shared_ptr<libquixcc::LiteralNode> reduce_unary_expr_float_poi
     }
 }
 
-const std::shared_ptr<libquixcc::LiteralNode> libquixcc::ConstUnaryExprNode::reduce() const
+std::shared_ptr<libquixcc::ExprNode> libquixcc::ConstUnaryExprNode::reduce_impl(libquixcc::ReductionState &state) const
 {
-    auto x = m_expr->reduce();
+    auto x = m_expr->reduce<ConstExprNode>(state);
 
     if (x->ntype == NodeType::FloatLiteralNode)
         return reduce_unary_expr_float_point(getval_and_cast<double>(x), m_op);
@@ -179,11 +180,11 @@ static const std::shared_ptr<libquixcc::LiteralNode> reduce_binary_expr(T lhs, T
         return BoolLiteralNode::create(lhs == rhs);
     case Operator::NotEqual:
         return BoolLiteralNode::create(lhs != rhs);
-    case Operator::And:
+    case Operator::LogicalAnd:
         return BoolLiteralNode::create(lhs && rhs);
-    case Operator::Or:
+    case Operator::LogicalOr:
         return BoolLiteralNode::create(lhs || rhs);
-    case Operator::Xor:
+    case Operator::LogicalXor:
         return BoolLiteralNode::create(lhs ^ rhs);
     case Operator::LessThanEqual:
         return BoolLiteralNode::create(lhs <= rhs);
@@ -235,11 +236,11 @@ static const std::shared_ptr<libquixcc::LiteralNode> reduce_binary_expr_float_po
         return BoolLiteralNode::create(lhs == rhs);
     case Operator::NotEqual:
         return BoolLiteralNode::create(lhs != rhs);
-    case Operator::And:
+    case Operator::LogicalAnd:
         return BoolLiteralNode::create(lhs && rhs);
-    case Operator::Or:
+    case Operator::LogicalOr:
         return BoolLiteralNode::create(lhs || rhs);
-    case Operator::Xor:
+    case Operator::LogicalXor:
     {
         if ((lhs == 0 && rhs == 0) || (lhs != 0 && rhs != 0))
             return BoolLiteralNode::create(false);
@@ -259,10 +260,10 @@ static const std::shared_ptr<libquixcc::LiteralNode> reduce_binary_expr_float_po
     }
 }
 
-const std::shared_ptr<libquixcc::LiteralNode> libquixcc::ConstBinaryExprNode::reduce() const
+std::shared_ptr<libquixcc::ExprNode> libquixcc::ConstBinaryExprNode::reduce_impl(libquixcc::ReductionState &state) const
 {
-    auto l = m_lhs->reduce();
-    auto r = m_rhs->reduce();
+    auto l = m_lhs->reduce<ConstExprNode>(state);
+    auto r = m_rhs->reduce<ConstExprNode>(state);
 
     if (l->ntype == NodeType::FloatLiteralNode || r->ntype == NodeType::FloatLiteralNode)
         return reduce_binary_expr_float_point(getval_and_cast<double>(l), getval_and_cast<double>(r), m_op);

@@ -101,21 +101,26 @@ namespace libquixcc
 
     enum class Operator
     {
-        LessThan,
-        GreaterThan,
-        Assign,
         At,
-        Minus,
+        Question,
+
         Plus,
+        Minus,
         Multiply,
         Divide,
         Modulo,
+
         BitwiseAnd,
         BitwiseOr,
         BitwiseXor,
         BitwiseNot,
-        Not,
-        Question,
+
+        LeftShift,
+        RightShift,
+        Equal,
+        NotEqual,
+
+        Assign,
         PlusAssign,
         MinusAssign,
         MultiplyAssign,
@@ -124,22 +129,23 @@ namespace libquixcc
         BitwiseOrAssign,
         BitwiseAndAssign,
         BitwiseXorAssign,
-        LeftShift,
-        RightShift,
-        Equal,
-        NotEqual,
-        And,
-        Or,
-        Xor,
-        LessThanEqual,
-        GreaterThanEqual,
-        Increment,
-        Decrement,
         XorAssign,
         OrAssign,
         AndAssign,
         LeftShiftAssign,
-        RightShiftAssign
+        RightShiftAssign,
+
+        LogicalNot,
+        LogicalAnd,
+        LogicalOr,
+        LogicalXor,
+
+        LessThan,
+        GreaterThan,
+        LessThanEqual,
+        GreaterThanEqual,
+        Increment,
+        Decrement,
     };
 
     enum class TokenType

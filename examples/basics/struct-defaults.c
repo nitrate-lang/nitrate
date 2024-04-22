@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-extern const int32_t printf(const int8_t* const fmt, ...);
+const int32_t printf(const int8_t* const fmt, ...);
 
 
 struct Address {

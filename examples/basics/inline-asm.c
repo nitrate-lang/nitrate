@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-extern const int32_t printf(const int8_t* const format, ...);
+const int32_t printf(const int8_t* const format, ...);
 
 
 static const int32_t _ZJ0f15do__inline__asm5f1i1p1p() {

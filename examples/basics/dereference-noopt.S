@@ -13,28 +13,28 @@ main:
 	movl	$10000000, 4(%rsp)
 	leaq	4(%rsp), %rbx
 	movq	%rbx, 8(%rsp)
-	movq	4(%rsp), %r8
 	leaq	.L__unnamed_1(%rip), %rdi
 	movl	$10000000, %esi
 	movq	%rbx, %rdx
 	movq	%rbx, %rcx
+	movq	%rbx, %r8
 	xorl	%eax, %eax
 	callq	printf@PLT
 	movl	$20000000, 4(%rsp)
 	movq	8(%rsp), %rcx
-	movq	(%rcx), %r8
 	leaq	.L__unnamed_2(%rip), %rdi
 	movl	$20000000, %esi
 	movq	%rbx, %rdx
+	movq	%rcx, %r8
 	xorl	%eax, %eax
 	callq	printf@PLT
 	movq	8(%rsp), %rax
 	movl	$30000000, (%rax)
 	movl	4(%rsp), %esi
 	movq	8(%rsp), %rcx
-	movq	(%rcx), %r8
 	leaq	.L__unnamed_3(%rip), %rdi
 	movq	%rbx, %rdx
+	movq	%rcx, %r8
 	xorl	%eax, %eax
 	callq	printf@PLT
 	addq	$16, %rsp

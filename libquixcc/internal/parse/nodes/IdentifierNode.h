@@ -47,11 +47,15 @@ namespace libquixcc
 {
     class IdentifierNode : public ExprNode
     {
+    protected:
+        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
+
     public:
         IdentifierNode(const std::string &name) : m_name(name) { ntype = NodeType::IdentifierNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
+        virtual TypeNode *infer(TypeInferenceState &state) const override;
 
         std::string m_name;
     };

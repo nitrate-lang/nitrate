@@ -122,7 +122,7 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *no
         return expr;
     case Operator::BitwiseNot:
         return llvm::BinaryOperator::CreateNot(expr, "", m_ctx->m_builder->GetInsertBlock());
-    case Operator::Not:
+    case Operator::LogicalNot:
         return llvm::BinaryOperator::CreateNot(expr, "", m_ctx->m_builder->GetInsertBlock());
     case Operator::Increment:
         return llvm::BinaryOperator::CreateAdd(expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 1, false)), "", m_ctx->m_builder->GetInsertBlock());
@@ -266,9 +266,9 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
         Operator::BitwiseXor,
         Operator::LeftShift,
         Operator::RightShift,
-        Operator::And,
-        Operator::Or,
-        Operator::Xor};
+        Operator::LogicalAnd,
+        Operator::LogicalOr,
+        Operator::LogicalXor};
 
     if (normal_ops.contains(node->m_op))
     {
@@ -309,11 +309,11 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BinaryExprNode *n
             return llvm::BinaryOperator::CreateShl(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
         case Operator::RightShift:
             return llvm::BinaryOperator::CreateLShr(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock());
-        case Operator::And:
+        case Operator::LogicalAnd:
             return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, llvm::BinaryOperator::CreateAnd(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock()), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)), "", m_ctx->m_builder->GetInsertBlock());
-        case Operator::Or:
+        case Operator::LogicalOr:
             return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, llvm::BinaryOperator::CreateOr(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock()), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)), "", m_ctx->m_builder->GetInsertBlock());
-        case Operator::Xor:
+        case Operator::LogicalXor:
             return llvm::CmpInst::Create(llvm::Instruction::ICmp, llvm::CmpInst::ICMP_NE, llvm::BinaryOperator::CreateXor(lhs, rhs, "", m_ctx->m_builder->GetInsertBlock()), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)), "", m_ctx->m_builder->GetInsertBlock());
         default:
             return nullptr;
@@ -485,7 +485,7 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstUnaryExpr
         return expr;
     case Operator::BitwiseNot:
         return llvm::ConstantExpr::getNot(expr);
-    case Operator::Not:
+    case Operator::LogicalNot:
         return llvm::ConstantExpr::getICmp(llvm::CmpInst::Predicate::ICMP_EQ, expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)));
     case Operator::Increment:
         return llvm::ConstantExpr::getAdd(expr, llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 1, false)));
@@ -539,11 +539,11 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::ConstBinaryExp
     case Operator::RightShift:
         return llvm::ConstantExpr::getLShr(lhs, rhs);
 
-    case Operator::And:
+    case Operator::LogicalAnd:
         return llvm::ConstantExpr::getICmp(llvm::CmpInst::Predicate::ICMP_NE, llvm::ConstantExpr::getAnd(lhs, rhs), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)));
-    case Operator::Or:
+    case Operator::LogicalOr:
         return llvm::ConstantExpr::getICmp(llvm::CmpInst::Predicate::ICMP_NE, llvm::ConstantExpr::getOr(lhs, rhs), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)));
-    case Operator::Xor:
+    case Operator::LogicalXor:
         return llvm::ConstantExpr::getICmp(llvm::CmpInst::Predicate::ICMP_NE, llvm::ConstantExpr::getXor(lhs, rhs), llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, 0, false)));
 
     default:
