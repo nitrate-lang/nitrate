@@ -86,7 +86,7 @@ namespace libquixcc
         {
             m_ctx = std::make_unique<llvm::LLVMContext>();
             m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);
+            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
         }
     };
 

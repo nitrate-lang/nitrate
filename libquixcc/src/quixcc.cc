@@ -327,6 +327,7 @@ static std::string base64_encode(const std::string &in)
 static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
 {
     Mutation mutator;
+    mutator.add_routine(mutate::SubsystemCollapse);       ///> Flatten AST by collapsing subsystems
     mutator.add_routine(mutate::StripUnderscoreNames);    ///> Remove all constructs named '_'
     mutator.add_routine(mutate::ExtrapolateEnumFields);   ///> Derive enum field values
     mutator.add_routine(mutate::MethodToFunc);            ///> Convert method calls to function calls

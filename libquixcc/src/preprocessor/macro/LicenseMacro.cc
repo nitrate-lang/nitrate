@@ -33,6 +33,7 @@
 
 #include <preprocessor/macro/LicenseMacro.h>
 #include <error/Logger.h>
+#include <lexer/Lex.h>
 #include <LibMacro.h>
 
 static std::set<std::string> spdx_licenses = {
@@ -642,7 +643,16 @@ bool libquixcc::macro::ParseLicense(quixcc_job_t *job, const Token &tok, const s
     (void)tok;
     (void)directive;
 
-    std::string lower = parameter;
+    StringLexer lexer(parameter);
+
+    Token tok2 = lexer.next();
+    if (tok2.type() != TokenType::StringLiteral)
+    {
+        LOG(ERROR) << "Invalid SPDX license identifier: '{}'. All License macros must use a valid SPDX license identifier." << parameter << tok << std::endl;
+        return false;
+    }
+
+    std::string lower = std::get<std::string>(tok2.val());
     std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
 
     // Force coders to choose a SPDX license identifier if they use the macro
@@ -661,7 +671,8 @@ bool libquixcc::macro::ParseLicense(quixcc_job_t *job, const Token &tok, const s
             identifier += '_';
     }
 
-    exp.push_back(Token(TokenType::Keyword, Keyword::Const));
+    exp.push_back(Token(TokenType::Keyword, Keyword::Pub));
+    exp.push_back(Token(TokenType::Keyword, Keyword::Let));
     exp.push_back(Token(TokenType::Identifier, identifier));
     exp.push_back(Token(TokenType::Punctor, Punctor::Colon));
     exp.push_back(Token(TokenType::Identifier, "string"));

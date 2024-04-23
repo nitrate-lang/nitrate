@@ -743,19 +743,6 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::FunctionParamNo
     return node->m_type->codegen(*this) + " " + node->m_name;
 }
 
-std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::SubsystemNode *node)
-{
-    std::string present = m_state.subsystem;
-
-    m_state.subsystem = Symbol::join(present, node->m_name);
-
-    std::string code = node->m_block->codegen(*this);
-
-    m_state.subsystem = present;
-
-    return code;
-}
-
 std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::ExportNode *node)
 {
     std::string code;
@@ -905,8 +892,6 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::StmtNode *node)
         return visit(static_cast<const FunctionDefNode *>(node));
     case NodeType::FunctionParamNode:
         return visit(static_cast<const FunctionParamNode *>(node));
-    case NodeType::SubsystemNode:
-        return visit(static_cast<const SubsystemNode *>(node));
     case NodeType::ExportNode:
         return visit(static_cast<const ExportNode *>(node));
     case NodeType::InlineAsmNode:

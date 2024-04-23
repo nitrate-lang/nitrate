@@ -156,28 +156,28 @@ libquixcc::TypeNode *libquixcc::BinaryExprNode::infer(libquixcc::TIState &state)
     if ((lhs->is<F64TypeNode>() && rhs->is_integer()) || (rhs->is<F64TypeNode>() && lhs->is_integer()))
         return F64TypeNode::create();
 
-    if ((lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
-         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr() &&
-         lhs->as<MutTypeNode>()->m_type->as<PointerTypeNode>()->m_type->is_void()) ||
-        (lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
-         lhs->as<MutTypeNode>()->m_type->as<PointerTypeNode>()->m_type->is_void() &&
-         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr()))
+    if ((lhs->is<MutTypeNode>() && lhs->as<MutTypeNode *>()->m_type->is_ptr() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode *>()->m_type->is_ptr() &&
+         lhs->as<MutTypeNode *>()->m_type->as<PointerTypeNode *>()->m_type->is_void()) ||
+        (lhs->is<MutTypeNode>() && lhs->as<MutTypeNode *>()->m_type->is_ptr() &&
+         lhs->as<MutTypeNode *>()->m_type->as<PointerTypeNode *>()->m_type->is_void() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode *>()->m_type->is_ptr()))
         return MutTypeNode::create(PointerTypeNode::create(VoidTypeNode::create()));
 
-    if ((lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
-         rhs->is<PointerTypeNode>() && rhs->as<PointerTypeNode>()->m_type->is_void()) ||
-        (lhs->is<PointerTypeNode>() && lhs->as<PointerTypeNode>()->m_type->is_void() &&
-         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr()))
+    if ((lhs->is<MutTypeNode>() && lhs->as<MutTypeNode *>()->m_type->is_ptr() &&
+         rhs->is<PointerTypeNode>() && rhs->as<PointerTypeNode *>()->m_type->is_void()) ||
+        (lhs->is<PointerTypeNode>() && lhs->as<PointerTypeNode *>()->m_type->is_void() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode *>()->m_type->is_ptr()))
         return PointerTypeNode::create(VoidTypeNode::create());
 
-    if ((lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
-         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr()))
+    if ((lhs->is<MutTypeNode>() && lhs->as<MutTypeNode *>()->m_type->is_ptr() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode *>()->m_type->is_ptr()))
         return MutTypeNode::create(PointerTypeNode::create(VoidTypeNode::create()));
 
-    if ((lhs->is<PointerTypeNode>() && lhs->as<PointerTypeNode>()->m_type->is_void() &&
-         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode>()->m_type->is_ptr()) ||
-        (lhs->is<MutTypeNode>() && lhs->as<MutTypeNode>()->m_type->is_ptr() &&
-         rhs->is<PointerTypeNode>() && rhs->as<PointerTypeNode>()->m_type->is_void()))
+    if ((lhs->is<PointerTypeNode>() && lhs->as<PointerTypeNode *>()->m_type->is_void() &&
+         rhs->is<MutTypeNode>() && rhs->as<MutTypeNode *>()->m_type->is_ptr()) ||
+        (lhs->is<MutTypeNode>() && lhs->as<MutTypeNode *>()->m_type->is_ptr() &&
+         rhs->is<PointerTypeNode>() && rhs->as<PointerTypeNode *>()->m_type->is_void()))
         return PointerTypeNode::create(VoidTypeNode::create());
 
     LOG(ERROR) << "No implicit conversion from " << lhs->to_source() << " to " << rhs->to_source() << std::endl;

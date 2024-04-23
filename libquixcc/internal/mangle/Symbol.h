@@ -63,6 +63,7 @@ namespace libquixcc
     public:
         static std::string mangle(const DeclNode *node, const std::string &prefix, ExportLangType lang);
         static std::string join(const std::string &prefix, const std::string &name);
+        static std::string join(const std::vector<std::string> &namespaces, const std::string &name = "");
 
         static std::shared_ptr<DeclNode> demangle(const std::string &mangled);
         static bool demangle_tojson(const std::string &mangled, std::string &output);

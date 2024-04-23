@@ -128,7 +128,8 @@ namespace libquixcc
         FILE *m_file;
 
     public:
-        StringLexer() = default;
+        StringLexer() : m_file(nullptr) {}
+        StringLexer(const std::string &source_code) { set_source(source_code, "stringlexer"); }
         ~StringLexer();
 
         /// @brief Set the source file

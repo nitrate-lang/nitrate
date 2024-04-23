@@ -32,11 +32,23 @@
 #define QUIXCC_INTERNAL
 
 #include <preprocessor/macro/AuthorMacro.h>
+#include <lexer/Lex.h>
+#include <error/Logger.h>
 
 bool libquixcc::macro::ParseAuthor(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp)
 {
     (void)tok;
     (void)directive;
+
+    StringLexer lexer(parameter);
+
+    Token tok2 = lexer.next();
+    if (tok2.type() != TokenType::StringLiteral)
+    {
+        LOG(ERROR) << "Invalid SPDX license identifier: '{}'. All License macros must use a valid SPDX license identifier." << parameter << tok << std::endl;
+        return false;
+    }
+    std::string name = std::get<std::string>(tok2.val());
 
     std::string identifier = "__AUTHOR__";
     for (auto &c : std::string(job->m_filename))
@@ -47,12 +59,13 @@ bool libquixcc::macro::ParseAuthor(quixcc_job_t *job, const Token &tok, const st
             identifier += '_';
     }
 
-    exp.push_back(Token(TokenType::Keyword, Keyword::Const));
+    exp.push_back(Token(TokenType::Keyword, Keyword::Pub));
+    exp.push_back(Token(TokenType::Keyword, Keyword::Let));
     exp.push_back(Token(TokenType::Identifier, identifier));
     exp.push_back(Token(TokenType::Punctor, Punctor::Colon));
     exp.push_back(Token(TokenType::Identifier, "string"));
     exp.push_back(Token(TokenType::Operator, Operator::Assign));
-    exp.push_back(Token(TokenType::StringLiteral, parameter));
+    exp.push_back(Token(TokenType::StringLiteral, name));
     exp.push_back(Token(TokenType::Punctor, Punctor::Semicolon));
 
     return true;

@@ -120,7 +120,6 @@ namespace libquixcc
         llvm::Value *visit(const UnionDefNode *node);
         llvm::Function *visit(const FunctionDefNode *node);
         llvm::Value *visit(const FunctionParamNode *node);
-        llvm::Value *visit(const SubsystemNode *node);
         llvm::Value *visit(const ExportNode *node);
         llvm::Value *visit(const InlineAsmNode *node);
         llvm::Value *visit(const ReturnStmtNode *node);
@@ -196,7 +195,6 @@ namespace libquixcc
         std::string visit(const UnionDefNode *node);
         std::string visit(const FunctionDefNode *node);
         std::string visit(const FunctionParamNode *node);
-        std::string visit(const SubsystemNode *node);
         std::string visit(const ExportNode *node);
         std::string visit(const InlineAsmNode *node);
         std::string visit(const ReturnStmtNode *node);

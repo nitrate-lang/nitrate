@@ -760,7 +760,7 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::StringLiteralN
     llvm::Constant *zero = llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(*m_ctx->m_ctx));
     llvm::Constant *indices[] = {zero, zero};
 
-    auto gvar = m_ctx->m_builder->CreateGlobalString(node->m_val);
+    auto gvar = m_ctx->m_builder->CreateGlobalString(node->m_val, "", 0, m_ctx->m_module.get());
 
     gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
 
@@ -999,19 +999,6 @@ llvm::Function *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionDefNod
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionParamNode *node)
 {
     return nullptr;
-}
-
-llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::SubsystemNode *node)
-{
-    size_t len = m_ctx->prefix.size();
-    if (len == 0)
-        m_ctx->prefix = node->m_name;
-    else
-        m_ctx->prefix += "::" + node->m_name;
-
-    auto block = node->m_block->codegen(*this);
-    m_ctx->prefix = m_ctx->prefix.substr(0, len);
-    return block;
 }
 
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExportNode *node)
@@ -1306,8 +1293,6 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::StmtNode *node)
         return visit(static_cast<const FunctionDefNode *>(node));
     case NodeType::FunctionParamNode:
         return visit(static_cast<const FunctionParamNode *>(node));
-    case NodeType::SubsystemNode:
-        return visit(static_cast<const SubsystemNode *>(node));
     case NodeType::ExportNode:
         return visit(static_cast<const ExportNode *>(node));
     case NodeType::InlineAsmNode:

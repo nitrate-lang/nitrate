@@ -48,6 +48,15 @@ std::string libquixcc::Symbol::join(const std::string &a, const std::string &b)
     return a + "::" + b;
 }
 
+std::string libquixcc::Symbol::join(const std::vector<std::string> &namespaces, const std::string &name)
+{
+    std::string result;
+    for (size_t i = 0; i < namespaces.size(); i++)
+        result = join(result, namespaces[i]);
+
+    return join(result, name);
+}
+
 std::string libquixcc::Symbol::mangle(const libquixcc::DeclNode *node, const std::string &prefix, ExportLangType lang)
 {
     switch (lang)

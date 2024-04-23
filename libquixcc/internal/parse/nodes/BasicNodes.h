@@ -74,21 +74,21 @@ namespace libquixcc
         size_t count();
 
         template <typename T>
-        T *as()
+        T as()
         {
             if (!is<T>())
                 LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
 
-            return static_cast<T *>(this);
+            return static_cast<T>(this);
         }
 
         template <typename T>
-        const T *as() const
+        const T as() const
         {
             if (!is<T>())
                 LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
 
-            return static_cast<const T *>(this);
+            return static_cast<const T>(this);
         }
 
         template <typename T>
