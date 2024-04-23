@@ -49,11 +49,11 @@ static void fold_const_string_expr(const std::vector<std::string> &_namespace, l
     {
     case NodeType::ConstUnaryExprNode:
     {
-        parent->replace_child(ptr, std::static_pointer_cast<libquixcc::ConstUnaryExprNode>(ptr)->reduce<LiteralNode>());
+        *std::get<std::shared_ptr<ParseNode> *>(node.second) = std::static_pointer_cast<libquixcc::ConstUnaryExprNode>(ptr)->reduce<LiteralNode>();
         return;
     }
     case NodeType::ConstBinaryExprNode:
-        parent->replace_child(ptr, std::static_pointer_cast<libquixcc::ConstBinaryExprNode>(ptr)->reduce<LiteralNode>());
+        *std::get<std::shared_ptr<ParseNode> *>(node.second) = std::static_pointer_cast<libquixcc::ConstBinaryExprNode>(ptr)->reduce<LiteralNode>();
         break;
     default:
         return;

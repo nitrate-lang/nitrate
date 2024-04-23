@@ -128,6 +128,15 @@ static void collapse(const std::vector<std::string> &__namespace, libquixcc::Par
             stmts->m_stmts.push_back(def);
             break;
         }
+        case NodeType::SubsystemNode:
+        {
+            auto def = std::static_pointer_cast<SubsystemNode>(child);
+            std::vector<std::string> __namespace2 = __namespace;
+            __namespace2.push_back(sub->m_name);
+            collapse(__namespace2, parent, std::make_pair(TraversePtrType::Smart, reinterpret_cast<std::shared_ptr<ParseNode> *>(&def)));
+            stmts->m_stmts.push_back(def);
+            break;
+        }
         default:
             stmts->m_stmts.push_back(child);
             break;

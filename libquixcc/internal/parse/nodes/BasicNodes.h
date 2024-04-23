@@ -63,12 +63,6 @@ namespace libquixcc
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const = 0;
 
-        /// @brief Replace a child node with a new node.
-        /// @warning Careful, this function depends on wierd reinterpretation stuff.
-        /// @param old_node **Reference** to the old node member in the parent node.
-        /// @param new_node The new node to replace with.
-        void replace_child(std::shared_ptr<libquixcc::ParseNode> &old_node, const std::shared_ptr<libquixcc::ParseNode> new_node);
-
         /// @brief Count the number of nodes in the tree.
         /// @return The number of nodes in the tree.
         size_t count();
