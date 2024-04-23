@@ -40,7 +40,6 @@ using namespace libquixcc;
 
 static void collapse(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
 {
-
     if (node.first != TraversePtrType::Smart)
         return;
     auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
@@ -146,7 +145,21 @@ static void collapse(const std::vector<std::string> &__namespace, libquixcc::Par
     *std::get<std::shared_ptr<ParseNode> *>(node.second) = stmts;
 }
 
+static void usertypenode_rename(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+{
+    if (node.first != TraversePtrType::Raw)
+        return;
+    auto ptr = *std::get<ParseNode **>(node.second);
+
+    auto user_type = static_cast<UserTypeNode *>(ptr);
+
+    std::string new_name = Symbol::join(__namespace, user_type->m_name);
+
+    *std::get<ParseNode **>(node.second) = UserTypeNode::create(new_name);
+}
+
 void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
+    ast->dfs_preorder(ParseNodePreorderVisitor(usertypenode_rename, {}));
     ast->dfs_preorder(ParseNodePreorderVisitor(collapse, {}));
 }

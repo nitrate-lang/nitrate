@@ -110,7 +110,7 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode>
     CodegenVisitor codegen(ctx.m_inner);
     if (!ast->codegen(codegen))
     {
-        LOG(ERROR) << ctx.m_filename << "Failed to generate LLVM IR" << std::endl;
+        LOG(ERROR) << ctx.m_filename << ": Failed to generate LLVM IR" << std::endl;
         return false;
     }
 
