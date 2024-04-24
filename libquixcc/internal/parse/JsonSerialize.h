@@ -53,6 +53,13 @@ namespace libquixcc
         std::string visit(const NopStmtNode *node);
         std::string visit(const BlockNode *node);
         std::string visit(const StmtGroupNode *node);
+        std::string visit(const StaticCastExprNode *node);
+        std::string visit(const BitCastExprNode *node);
+        std::string visit(const SignedUpcastExprNode *node);
+        std::string visit(const UnsignedUpcastExprNode *node);
+        std::string visit(const DowncastExprNode *node);
+        std::string visit(const PtrToIntCastExprNode *node);
+        std::string visit(const IntToPtrCastExprNode *node);
         std::string visit(const UnaryExprNode *node);
         std::string visit(const BinaryExprNode *node);
         std::string visit(const CallExprNode *node);

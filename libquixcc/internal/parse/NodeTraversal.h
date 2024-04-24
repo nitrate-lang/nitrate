@@ -70,6 +70,7 @@ namespace libquixcc
         size_t visit(NopStmtNode *node);
         size_t visit(BlockNode *node);
         size_t visit(StmtGroupNode *node);
+        size_t visit(CastExprNode *node);
         size_t visit(UnaryExprNode *node);
         size_t visit(BinaryExprNode *node);
         size_t visit(CallExprNode *node);

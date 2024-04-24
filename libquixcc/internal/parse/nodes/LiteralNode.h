@@ -51,6 +51,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override = 0;
+        virtual std::shared_ptr<ExprNode> promote_impl() const override = 0;
 
     public:
         LiteralNode() { ntype = NodeType::LiteralNode; }
@@ -67,6 +68,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+        virtual std::shared_ptr<ExprNode> promote_impl() const override { return this->create(m_val); }
 
         static std::unordered_map<std::string, std::shared_ptr<IntegerLiteralNode>> m_instances;
         IntegerLiteralNode(const std::string &val);
@@ -98,6 +100,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+        virtual std::shared_ptr<ExprNode> promote_impl() const override { return this->create(m_val); }
 
         static std::unordered_map<std::string, std::shared_ptr<FloatLiteralNode>> m_instances;
         FloatLiteralNode(const std::string &val);
@@ -129,6 +132,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+        virtual std::shared_ptr<ExprNode> promote_impl() const override { return this->create(m_val); }
 
         static std::unordered_map<std::string, std::shared_ptr<StringLiteralNode>> m_instances;
         StringLiteralNode(const std::string &val) : m_val(val) { ntype = NodeType::StringLiteralNode; }
@@ -158,6 +162,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+        virtual std::shared_ptr<ExprNode> promote_impl() const override { return this->create(m_val); }
 
         static std::unordered_map<std::string, std::shared_ptr<CharLiteralNode>> m_instances;
         CharLiteralNode(const std::string &val) : m_val(val) { ntype = NodeType::CharLiteralNode; }
@@ -187,6 +192,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
+        virtual std::shared_ptr<ExprNode> promote_impl() const override { return this->create(m_val); }
 
         static std::shared_ptr<BoolLiteralNode> m_true_instance;
         static std::shared_ptr<BoolLiteralNode> m_false_instance;
@@ -224,6 +230,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(); }
+        virtual std::shared_ptr<ExprNode> promote_impl() const override { return this->create(); }
 
         static std::shared_ptr<NullLiteralNode> m_instance;
         NullLiteralNode() { ntype = NodeType::NullLiteralNode; }

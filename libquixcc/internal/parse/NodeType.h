@@ -58,6 +58,15 @@ namespace libquixcc
         ConstUnaryExprNode,
         ConstBinaryExprNode,
 
+        CastExprNode,
+        StaticCastExprNode,
+        BitCastExprNode,
+        SignedUpcastExprNode,
+        UnsignedUpcastExprNode,
+        DowncastExprNode,
+        PtrToIntCastExprNode,
+        IntToPtrCastExprNode,
+
         UnaryExprNode,
         BinaryExprNode,
         CallExprNode,
@@ -144,6 +153,14 @@ namespace libquixcc
     class DefNode;
     class BlockNode;
     class StmtGroupNode;
+    class CastExprNode;
+    class StaticCastExprNode;
+    class BitCastExprNode;
+    class SignedUpcastExprNode;
+    class UnsignedUpcastExprNode;
+    class DowncastExprNode;
+    class PtrToIntCastExprNode;
+    class IntToPtrCastExprNode;
     class UnaryExprNode;
     class BinaryExprNode;
     class CallExprNode;

@@ -108,6 +108,84 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExprStmtNode *nod
     return node->m_expr->codegen(*this);
 }
 
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::BitCastExprNode *node)
+{
+    auto val = node->m_expr->codegen(*this);
+    if (!val)
+        return nullptr;
+
+    auto type = node->m_type->codegen(*this);
+    if (!type)
+        return nullptr;
+
+    return m_ctx->m_builder->CreateBitCast(val, type);
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::SignedUpcastExprNode *node)
+{
+    auto val = node->m_expr->codegen(*this);
+    if (!val)
+        return nullptr;
+
+    auto type = node->m_type->codegen(*this);
+    if (!type)
+        return nullptr;
+
+    return m_ctx->m_builder->CreateSExt(val, type);
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnsignedUpcastExprNode *node)
+{
+    auto val = node->m_expr->codegen(*this);
+    if (!val)
+        return nullptr;
+
+    auto type = node->m_type->codegen(*this);
+    if (!type)
+        return nullptr;
+
+    return m_ctx->m_builder->CreateZExt(val, type);
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::DowncastExprNode *node)
+{
+    auto val = node->m_expr->codegen(*this);
+    if (!val)
+        return nullptr;
+
+    auto type = node->m_type->codegen(*this);
+    if (!type)
+        return nullptr;
+
+    return m_ctx->m_builder->CreateTrunc(val, type);
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::IntToPtrCastExprNode *node)
+{
+    auto val = node->m_expr->codegen(*this);
+    if (!val)
+        return nullptr;
+
+    auto type = node->m_type->codegen(*this);
+    if (!type)
+        return nullptr;
+
+    return m_ctx->m_builder->CreateIntToPtr(val, type);
+}
+
+llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::PtrToIntCastExprNode *node)
+{
+    auto val = node->m_expr->codegen(*this);
+    if (!val)
+        return nullptr;
+
+    auto type = node->m_type->codegen(*this);
+    if (!type)
+        return nullptr;
+
+    return m_ctx->m_builder->CreatePtrToInt(val, type);
+}
+
 llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::UnaryExprNode *node)
 {
     llvm::Value *expr = node->m_expr->codegen(*this);
@@ -1236,6 +1314,18 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExprNode *node)
 {
     switch (node->ntype)
     {
+    case NodeType::BitCastExprNode:
+        return visit(static_cast<const BitCastExprNode *>(node));
+    case NodeType::SignedUpcastExprNode:
+        return visit(static_cast<const SignedUpcastExprNode *>(node));
+    case NodeType::UnsignedUpcastExprNode:
+        return visit(static_cast<const UnsignedUpcastExprNode *>(node));
+    case NodeType::DowncastExprNode:
+        return visit(static_cast<const DowncastExprNode *>(node));
+    case NodeType::IntToPtrCastExprNode:
+        return visit(static_cast<const IntToPtrCastExprNode *>(node));
+    case NodeType::PtrToIntCastExprNode:
+        return visit(static_cast<const PtrToIntCastExprNode *>(node));
     case NodeType::UnaryExprNode:
         return visit(static_cast<const UnaryExprNode *>(node));
     case NodeType::BinaryExprNode:

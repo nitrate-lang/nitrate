@@ -67,7 +67,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual bool is_composite() const override { return true; }
         virtual size_t size(size_t ptr_size) const override
         {
             size_t size = 0;
@@ -93,6 +92,8 @@ namespace libquixcc
     {
     public:
         UnionFieldNode() { ntype = NodeType::UnionFieldNode; }
+        UnionFieldNode(const std::string &name, TypeNode *type, const std::shared_ptr<ConstExprNode> value)
+            : m_name(name), m_type(type), m_value(value) { ntype = NodeType::UnionFieldNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
@@ -106,6 +107,8 @@ namespace libquixcc
     {
     public:
         UnionDefNode() { ntype = NodeType::UnionDefNode; }
+        UnionDefNode(const std::string &name, const std::vector<std::shared_ptr<UnionFieldNode>> &fields)
+            : m_name(name), m_fields(fields) { ntype = NodeType::UnionDefNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }

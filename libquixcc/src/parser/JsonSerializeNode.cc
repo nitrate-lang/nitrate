@@ -125,6 +125,69 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::St
     return str;
 }
 
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::StaticCastExprNode *node)
+{
+    std::string str = "{\"ntype\":\"StaticCastExprNode\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"expr\":";
+    str += node->m_expr->to_json(*this);
+    return str + "}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::BitCastExprNode *node)
+{
+    std::string str = "{\"ntype\":\"BitCastExprNode\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"expr\":";
+    str += node->m_expr->to_json(*this);
+    return str + "}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::SignedUpcastExprNode *node)
+{
+    std::string str = "{\"ntype\":\"SignedUpcastExprNode\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"expr\":";
+    str += node->m_expr->to_json(*this);
+    return str + "}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UnsignedUpcastExprNode *node)
+{
+    std::string str = "{\"ntype\":\"UnsignedUpcastExprNode\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"expr\":";
+    str += node->m_expr->to_json(*this);
+    return str + "}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::DowncastExprNode *node)
+{
+    std::string str = "{\"ntype\":\"DowncastExprNode\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"expr\":";
+    str += node->m_expr->to_json(*this);
+    return str + "}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::PtrToIntCastExprNode *node)
+{
+    std::string str = "{\"ntype\":\"PtrToIntCastExprNode\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"expr\":";
+    str += node->m_expr->to_json(*this);
+    return str + "}";
+}
+
+std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::IntToPtrCastExprNode *node)
+{
+    std::string str = "{\"ntype\":\"IntToPtrCastExprNode\",\"type\":";
+    str += node->m_type->to_json(*this);
+    str += ",\"expr\":";
+    str += node->m_expr->to_json(*this);
+    return str + "}";
+}
+
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::UnaryExprNode *node)
 {
     std::string str = "{\"ntype\":\"UnaryExprNode\",\"op\":\"";
@@ -342,7 +405,7 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Re
 {
     if (m_visited.contains(node))
         return "{\"ntype\":\"RegionTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
-    
+
     m_visited.insert(node); // Prevent infinite recursion
 
     std::string str = "{\"ntype\":\"RegionTypeNode\",\"fields\":[";
@@ -364,7 +427,7 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Un
         return "{\"ntype\":\"UnionTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
 
     m_visited.insert(node); // Prevent infinite recursion
-    
+
     std::string str = "{\"ntype\":\"UnionTypeNode\",\"fields\":[";
     for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it)
     {
@@ -484,7 +547,7 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Va
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::LetDeclNode *node)
 {
     m_visited.clear();
-    
+
     std::string str = "{\"ntype\":\"LetDeclNode\",\"name\":\"";
     str += escape_json(node->m_name);
     str += "\",\"type\":";
@@ -508,7 +571,7 @@ std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::Le
 std::string libquixcc::ParseNodeJsonSerializerVisitor::visit(const libquixcc::FunctionDeclNode *node)
 {
     m_visited.clear();
-    
+
     std::string str = "{\"ntype\":\"FunctionDeclNode\",\"name\":\"";
     str += escape_json(node->m_name);
     str += "\",\"params\":[";

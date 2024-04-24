@@ -49,6 +49,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
+        virtual std::shared_ptr<ExprNode> promote_impl() const override;
 
     public:
         IdentifierNode(const std::string &name) : m_name(name) { ntype = NodeType::IdentifierNode; }

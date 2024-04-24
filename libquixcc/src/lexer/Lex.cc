@@ -32,6 +32,7 @@
 #define QUIXCC_INTERNAL
 
 #include <lexer/Lex.h>
+#include <error/Logger.h>
 #include <cstdio>
 #include <cctype>
 #include <stdexcept>
@@ -679,11 +680,24 @@ bool normalize_number_literal(std::string &number, std::string &norm, NumberLite
         }
         break;
     case NumberLiteralType::DecimalExplicit:
-        x = std::stoull(number.substr(2));
+        try
+        {
+            x = std::stoull(number.substr(2));
+        }
+        catch (const std::exception &e)
+        {
+            return false;
+        }
         break;
     case NumberLiteralType::Decimal:
-        x = std::stoull(number);
-        break;
+        try
+        {
+            x = std::stoull(number);
+        }
+        catch (const std::exception &e)
+        {
+            return false;
+        }
     default:
         break;
     }
@@ -837,10 +851,13 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
                 std::string norm;
                 if (!normalize_number_literal(buffer, norm, type))
                 {
+                    LOG(ERROR) << "Tokenization error: Numeric literal is too large to fit in an integer type: '" << buffer << "'" << std::endl;
                     m_tok = Token(TokenType::Unknown, buffer, m_loc - buffer.size());
                 }
-
-                m_tok = Token(TokenType::IntegerLiteral, norm, m_loc - buffer.size());
+                else
+                {
+                    m_tok = Token(TokenType::IntegerLiteral, norm, m_loc - buffer.size());
+                }
             }
 
             m_last = c;

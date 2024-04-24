@@ -49,11 +49,20 @@
 namespace libquixcc
 {
     class TypeNode;
+    class ParseNode;
 
     struct ReductionState
     {
         bool m_export = false;
         bool m_fn_def = false;
+        std::shared_ptr<ParseNode> m_root;
+        size_t m_ptr_size = 8;
+
+        // ReductionState() = delete;
+        /// TODO: Add a constructor that takes a shared_ptr<ParseNode> and a size_t ptr_size.
+        ReductionState() = default;
+
+        ReductionState(std::shared_ptr<ParseNode> root, size_t ptr_size) : m_root(root), m_ptr_size(ptr_size) {}
     };
     class ParseNode
     {
@@ -119,6 +128,23 @@ namespace libquixcc
                 return std::is_same_v<T, ConstUnaryExprNode>;
             case NodeType::ConstBinaryExprNode:
                 return std::is_same_v<T, ConstBinaryExprNode>;
+
+            case NodeType::CastExprNode:
+                return std::is_same_v<T, CastExprNode>;
+            case NodeType::StaticCastExprNode:
+                return std::is_same_v<T, StaticCastExprNode>;
+            case NodeType::BitCastExprNode:
+                return std::is_same_v<T, BitCastExprNode>;
+            case NodeType::SignedUpcastExprNode:
+                return std::is_same_v<T, SignedUpcastExprNode>;
+            case NodeType::UnsignedUpcastExprNode:
+                return std::is_same_v<T, UnsignedUpcastExprNode>;
+            case NodeType::DowncastExprNode:
+                return std::is_same_v<T, DowncastExprNode>;
+            case NodeType::IntToPtrCastExprNode:
+                return std::is_same_v<T, IntToPtrCastExprNode>;
+            case NodeType::PtrToIntCastExprNode:
+                return std::is_same_v<T, PtrToIntCastExprNode>;
 
             case NodeType::UnaryExprNode:
                 return std::is_same_v<T, UnaryExprNode>;
@@ -260,12 +286,53 @@ namespace libquixcc
             return false;
         }
 
+        template <typename T>
+        bool isof() const
+        {
+            if (is<T>())
+                return true;
+
+            if (std::is_same_v<T, ConstExprNode>)
+                return is<ConstUnaryExprNode>() || is<ConstBinaryExprNode>();
+
+            if (std::is_same_v<T, LiteralNode>)
+                return is<IntegerLiteralNode>() || is<FloatLiteralNode>() || is<StringLiteralNode>() || is<CharLiteralNode>() || is<BoolLiteralNode>() || is<NullLiteralNode>();
+
+            if (std::is_same_v<T, CastExprNode>)
+                return is<StaticCastExprNode>() || is<BitCastExprNode>() || is<SignedUpcastExprNode>() || is<UnsignedUpcastExprNode>() || is<DowncastExprNode>() || is<IntToPtrCastExprNode>() || is<PtrToIntCastExprNode>();
+
+            if (std::is_same_v<T, ExprNode>)
+                return is<UnaryExprNode>() || is<BinaryExprNode>() || is<CallExprNode>() || is<ListExprNode>() || is<MemberAccessNode>() || isof<CastExprNode>() || isof<LiteralNode>();
+
+            if (std::is_same_v<T, TypeNode>)
+                return is<MutTypeNode>() || is<U8TypeNode>() || is<U16TypeNode>() || is<U32TypeNode>() || is<U64TypeNode>() || is<I8TypeNode>() || is<I16TypeNode>() || is<I32TypeNode>() || is<I64TypeNode>() || is<F32TypeNode>() || is<F64TypeNode>() || is<BoolTypeNode>() || is<VoidTypeNode>() || is<PointerTypeNode>() || is<OpaqueTypeNode>() || is<StringTypeNode>() || is<EnumTypeNode>() || is<StructTypeNode>() || is<RegionTypeNode>() || is<UnionTypeNode>() || is<ArrayTypeNode>() || is<FunctionTypeNode>() || is<UserTypeNode>();
+
+            if (std::is_same_v<T, StmtNode>)
+                return is<ExprStmtNode>() || is<NopStmtNode>() || is<DeclNode>() || is<DefNode>() || is<BlockNode>() || is<StmtGroupNode>() || is<ReturnStmtNode>() || is<RetifStmtNode>() || is<RetzStmtNode>() || is<RetvStmtNode>() || is<IfStmtNode>() || is<WhileStmtNode>() || is<ForStmtNode>() || is<SubsystemNode>() || is<ExportNode>() || is<InlineAsmNode>();
+
+            if (std::is_same_v<T, DeclNode>)
+                return is<VarDeclNode>() || is<LetDeclNode>() || is<FunctionDeclNode>() || is<FunctionParamNode>() || is<TypedefNode>();
+
+            if (std::is_same_v<T, DefNode>)
+                return is<EnumDefNode>() || is<FunctionDefNode>() || is<GroupDefNode>() || is<RegionDefNode>() || is<StructDefNode>() || is<UnionDefNode>();
+
+            return false;
+        }
+
+        template <typename T>
+        bool is_same(const T node) const
+        {
+            return ntype == node->ntype;
+        }
+
         NodeType ntype = NodeType::ParseNode;
     };
 
     struct TIState
     {
         std::shared_ptr<ParseNode> m_root;
+
+        TIState(std::shared_ptr<ParseNode> root) : m_root(root) {}
     };
 
 #define PARSE_NODE_SIZE sizeof(ParseNode)
@@ -283,6 +350,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const = 0;
+        virtual std::shared_ptr<ExprNode> promote_impl() const = 0;
 
     public:
         ExprNode() = default;
@@ -291,6 +359,14 @@ namespace libquixcc
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
+
+        /// @brief Do type promotion and insert casts if necessary.
+        /// @return The promoted expression.
+        template <typename T>
+        std::shared_ptr<T> promote() const
+        {
+            return std::static_pointer_cast<T>(promote_impl());
+        }
 
         template <typename T>
         std::shared_ptr<T> reduce(ReductionState &state) const
@@ -313,6 +389,7 @@ namespace libquixcc
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override = 0;
+        virtual std::shared_ptr<ExprNode> promote_impl() const override = 0;
 
     public:
         ConstExprNode() { ntype = NodeType::ConstExprNode; }
@@ -363,12 +440,14 @@ namespace libquixcc
     {
     public:
         TypeNode() { ntype = NodeType::TypeNode; }
+        ~TypeNode() = default;
+        TypeNode(const TypeNode &) = delete;
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Type *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
-        virtual bool is_composite() const = 0;
+        bool is_composite() const;
         bool is_ptr() const;
         bool is_array() const;
         bool is_func() const;
@@ -377,6 +456,7 @@ namespace libquixcc
         bool is_integer() const;
         bool is_floating() const;
         bool is_bool() const;
+        bool is_primitive() const;
 
         virtual size_t size(size_t ptr_size) const = 0;
         virtual std::string to_source() const = 0;
@@ -399,7 +479,6 @@ namespace libquixcc
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual bool is_composite() const override { throw std::runtime_error("UserTypeNode::is_composite() not implemented"); }
         virtual size_t size(size_t ptr_size) const { return 0; }
         virtual std::string to_source() const override { return m_name; }
         virtual std::string name() const override { return m_name; }

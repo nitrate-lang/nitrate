@@ -29,59 +29,86 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_CONST_EXPR_H__
-#define __QUIXCC_PARSE_NODES_CONST_EXPR_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <error/Logger.h>
+#include <parse/nodes/ExprNode.h>
+#include <parse/nodes/ConstExprNode.h>
+#include <parse/nodes/IdentifierNode.h>
+#include <parse/nodes/FunctionNode.h>
+#include <parse/nodes/StructNode.h>
 
-#include <string>
-#include <vector>
-#include <memory>
-
-#include <llvm/LLVMWrapper.h>
-#include <lexer/Token.h>
-#include <parse/nodes/BasicNodes.h>
-#include <parse/nodes/LiteralNode.h>
-
-namespace libquixcc
+std::shared_ptr<libquixcc::ExprNode> libquixcc::IdentifierNode::promote_impl() const
 {
-    class ConstUnaryExprNode : public ConstExprNode
-    {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
-    public:
-        ConstUnaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &expr) : m_op(op), m_expr(expr) { ntype = NodeType::ConstUnaryExprNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual TypeNode *infer(TIState &state) const override;
-
-        Operator m_op;
-        std::shared_ptr<ConstExprNode> m_expr;
-    };
-
-    class ConstBinaryExprNode : public ConstExprNode
-    {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
-    public:
-        ConstBinaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &lhs, const std::shared_ptr<ConstExprNode> &rhs)
-            : m_op(op), m_lhs(lhs), m_rhs(rhs) { ntype = NodeType::ConstBinaryExprNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
-        virtual TypeNode *infer(TIState &state) const override;
-
-        Operator m_op;
-        std::shared_ptr<ConstExprNode> m_lhs;
-        std::shared_ptr<ConstExprNode> m_rhs;
-    };
+    return std::make_shared<IdentifierNode>(*this);
 }
 
-#endif // __QUIXCC_PARSE_NODES_CONST_EXPR_H__
+std::shared_ptr<libquixcc::ExprNode> libquixcc::StaticCastExprNode::promote_impl() const
+{
+    return std::make_shared<StaticCastExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::BitCastExprNode::promote_impl() const
+{
+    return std::make_shared<BitCastExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::SignedUpcastExprNode::promote_impl() const
+{
+    return std::make_shared<SignedUpcastExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::UnsignedUpcastExprNode::promote_impl() const
+{
+    return std::make_shared<UnsignedUpcastExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::DowncastExprNode::promote_impl() const
+{
+    return std::make_shared<DowncastExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::IntToPtrCastExprNode::promote_impl() const
+{
+    return std::make_shared<IntToPtrCastExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::PtrToIntCastExprNode::promote_impl() const
+{
+    return std::make_shared<PtrToIntCastExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::UnaryExprNode::promote_impl() const
+{
+    return std::make_shared<UnaryExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::BinaryExprNode::promote_impl() const
+{
+    return std::make_shared<BinaryExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::CallExprNode::promote_impl() const
+{
+    return std::make_shared<CallExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::ListExprNode::promote_impl() const
+{
+    return std::make_shared<ListExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::MemberAccessNode::promote_impl() const
+{
+    return std::make_shared<MemberAccessNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::ConstUnaryExprNode::promote_impl() const
+{
+    return std::make_shared<ConstUnaryExprNode>(*this);
+}
+
+std::shared_ptr<libquixcc::ExprNode> libquixcc::ConstBinaryExprNode::promote_impl() const
+{
+    return std::make_shared<ConstBinaryExprNode>(*this);
+}

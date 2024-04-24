@@ -206,3 +206,8 @@ libquixcc::TypeNode *libquixcc::MemberAccessNode::infer(libquixcc::TIState &stat
     /// TODO: Implement this function
     return nullptr;
 }
+
+libquixcc::TypeNode *libquixcc::CastExprNode::infer(libquixcc::TIState &state) const
+{
+    return m_type;
+}

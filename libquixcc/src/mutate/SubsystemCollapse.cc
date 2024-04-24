@@ -145,21 +145,62 @@ static void collapse(const std::vector<std::string> &__namespace, libquixcc::Par
     *std::get<std::shared_ptr<ParseNode> *>(node.second) = stmts;
 }
 
-static void usertypenode_rename(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+static void typenode_rename(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
 {
     if (node.first != TraversePtrType::Raw)
         return;
     auto ptr = *std::get<ParseNode **>(node.second);
+    auto dobptr = std::get<ParseNode **>(node.second);
 
-    auto user_type = static_cast<UserTypeNode *>(ptr);
+    std::vector<std::string> _namespace = __namespace;
+    if (!_namespace.empty())
+        _namespace.pop_back();
 
-    std::string new_name = Symbol::join(__namespace, user_type->m_name);
-
-    *std::get<ParseNode **>(node.second) = UserTypeNode::create(new_name);
+    switch (ptr->ntype)
+    {
+    case NodeType::UserTypeNode:
+    {
+        *dobptr = UserTypeNode::create(Symbol::join(_namespace, static_cast<UserTypeNode *>(ptr)->m_name));
+        break;
+    }
+    // case NodeType::EnumTypeNode:
+    // {
+    //     _namespace.pop_back();
+    //     auto def = static_cast<EnumTypeNode *>(ptr);
+    //     *dobptr = EnumTypeNode::create(Symbol::join(_namespace, def->m_name), def->m_member_type);
+    //     break;
+    // }
+    case NodeType::UnionTypeNode:
+    {
+        auto def = static_cast<UnionTypeNode *>(ptr);
+        *dobptr = UnionTypeNode::create(def->m_fields, Symbol::join(_namespace, def->m_name));
+        break;
+    }
+    case NodeType::StructTypeNode:
+    {
+        auto def = static_cast<StructTypeNode *>(ptr);
+        *dobptr = StructTypeNode::create(def->m_fields, Symbol::join(_namespace, def->m_name));
+        break;
+    }
+    case NodeType::RegionTypeNode:
+    {
+        auto def = static_cast<RegionTypeNode *>(ptr);
+        *dobptr = RegionTypeNode::create(def->m_fields, Symbol::join(_namespace, def->m_name));
+        break;
+    }
+    case NodeType::OpaqueTypeNode:
+    {
+        auto def = static_cast<OpaqueTypeNode *>(ptr);
+        *dobptr = OpaqueTypeNode::create(Symbol::join(_namespace, def->m_name));
+        break;
+    }
+    default:
+        break;
+    }
 }
 
 void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(ParseNodePreorderVisitor(usertypenode_rename, {}));
+    ast->dfs_preorder(ParseNodePreorderVisitor(typenode_rename, {}));
     ast->dfs_preorder(ParseNodePreorderVisitor(collapse, {}));
 }

@@ -84,6 +84,15 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::StmtGroupNode *node
     return count + 1;
 }
 
+size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::CastExprNode *node)
+{
+    m_callback(m_prefix, node, mk_ptr(&node->m_type));
+    size_t count = node->m_type->dfs_preorder(*this);
+    m_callback(m_prefix, node, mk_ptr(&node->m_expr));
+    count += node->m_expr->dfs_preorder(*this);
+    return count + 1;
+}
+
 size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::UnaryExprNode *node)
 {
     m_callback(m_prefix, node, mk_ptr(&node->m_expr));
@@ -269,7 +278,7 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::RegionTypeNode *nod
         return 1;
 
     m_visited.insert(node); // Prevent infinite recursion
-    
+
     size_t count = 0;
     for (auto &field : node->m_fields)
     {
@@ -285,7 +294,7 @@ size_t libquixcc::ParseNodePreorderVisitor::visit(libquixcc::UnionTypeNode *node
         return 1;
 
     m_visited.insert(node); // Prevent infinite recursion
-    
+
     size_t count = 0;
     for (auto &field : node->m_fields)
     {

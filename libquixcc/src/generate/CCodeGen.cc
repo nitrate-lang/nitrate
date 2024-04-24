@@ -147,6 +147,42 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::ExprStmtNode *n
     return node->m_expr->codegen(*this) + ";";
 }
 
+std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::BitCastExprNode *node)
+{
+    // Create a union with the same size as the source type
+    // Assign the source value to the union
+    // Read the destination value from the union
+
+    // Syntax?: uint64_t x0 = union { double a, uint64_t b; }
+
+    throw CodegenException("BitCastExprNode not implemented for C");
+}
+
+std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::SignedUpcastExprNode *node)
+{
+    return "(" + node->m_type->codegen(*this) + ")" + node->m_expr->codegen(*this);
+}
+
+std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::UnsignedUpcastExprNode *node)
+{
+    return "(" + node->m_type->codegen(*this) + ")" + node->m_expr->codegen(*this);
+}
+
+std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::DowncastExprNode *node)
+{
+    return "(" + node->m_type->codegen(*this) + ")" + node->m_expr->codegen(*this);
+}
+
+std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::IntToPtrCastExprNode *node)
+{
+    return "(" + node->m_type->codegen(*this) + ")" + node->m_expr->codegen(*this);
+}
+
+std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::PtrToIntCastExprNode *node)
+{
+    return "(" + node->m_type->codegen(*this) + ")" + node->m_expr->codegen(*this);
+}
+
 std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::UnaryExprNode *node)
 {
     switch (node->m_op)
@@ -835,6 +871,18 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::ExprNode *node)
 {
     switch (node->ntype)
     {
+    case NodeType::BitCastExprNode:
+        return visit(static_cast<const BitCastExprNode *>(node));
+    case NodeType::SignedUpcastExprNode:
+        return visit(static_cast<const SignedUpcastExprNode *>(node));
+    case NodeType::UnsignedUpcastExprNode:
+        return visit(static_cast<const UnsignedUpcastExprNode *>(node));
+    case NodeType::DowncastExprNode:
+        return visit(static_cast<const DowncastExprNode *>(node));
+    case NodeType::IntToPtrCastExprNode:
+        return visit(static_cast<const IntToPtrCastExprNode *>(node));
+    case NodeType::PtrToIntCastExprNode:
+        return visit(static_cast<const PtrToIntCastExprNode *>(node));
     case NodeType::UnaryExprNode:
         return visit(static_cast<const UnaryExprNode *>(node));
     case NodeType::BinaryExprNode:

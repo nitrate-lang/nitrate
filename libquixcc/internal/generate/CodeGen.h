@@ -78,6 +78,12 @@ namespace libquixcc
         llvm::Value *visit(const BlockNode *node);
         llvm::Value *visit(const StmtGroupNode *node);
         llvm::Value *visit(const ExprStmtNode *node);
+        llvm::Value *visit(const BitCastExprNode *node);
+        llvm::Value *visit(const SignedUpcastExprNode *node);
+        llvm::Value *visit(const UnsignedUpcastExprNode *node);
+        llvm::Value *visit(const DowncastExprNode *node);
+        llvm::Value *visit(const PtrToIntCastExprNode *node);
+        llvm::Value *visit(const IntToPtrCastExprNode *node);
         llvm::Value *visit(const UnaryExprNode *node);
         llvm::Value *visit(const BinaryExprNode *node);
         llvm::Value *visit(const CallExprNode *node);
@@ -153,6 +159,12 @@ namespace libquixcc
         std::string visit(const BlockNode *node);
         std::string visit(const StmtGroupNode *node);
         std::string visit(const ExprStmtNode *node);
+        std::string visit(const BitCastExprNode *node);
+        std::string visit(const SignedUpcastExprNode *node);
+        std::string visit(const UnsignedUpcastExprNode *node);
+        std::string visit(const DowncastExprNode *node);
+        std::string visit(const PtrToIntCastExprNode *node);
+        std::string visit(const IntToPtrCastExprNode *node);
         std::string visit(const UnaryExprNode *node);
         std::string visit(const BinaryExprNode *node);
         std::string visit(const CallExprNode *node);

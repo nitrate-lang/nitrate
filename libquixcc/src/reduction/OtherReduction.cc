@@ -54,7 +54,18 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDeclNode::reduce(libquix
     if (!state.m_export && !state.m_fn_def)
         return nullptr;
 
-    return std::make_unique<libquixcc::FunctionDeclNode>(*this);
+    std::unique_ptr<FunctionDeclNode> decl = std::make_unique<FunctionDeclNode>();
+
+    decl->m_name = m_name;
+    decl->m_type = m_type;
+
+    for (auto &param : m_params)
+    {
+        std::shared_ptr<StmtNode> shared = param->reduce(state);
+        decl->m_params.push_back(std::static_pointer_cast<FunctionParamNode>(shared));
+    }
+
+    return decl;
 }
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionParamNode::reduce(libquixcc::ReductionState &state) const
@@ -65,12 +76,12 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionParamNode::reduce(libqui
 std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDefNode::reduce(libquixcc::ReductionState &state) const
 {
     bool x = state.m_fn_def;
-
     state.m_fn_def = true;
 
     std::shared_ptr<StmtNode> block = m_body->reduce(state);
+    std::shared_ptr<ParseNode> decl = m_decl->reduce(state);
 
-    auto ret = std::make_unique<libquixcc::FunctionDefNode>(m_decl, std::static_pointer_cast<BlockNode>(block));
+    auto ret = std::make_unique<libquixcc::FunctionDefNode>(std::static_pointer_cast<FunctionDeclNode>(decl), std::static_pointer_cast<BlockNode>(block));
 
     state.m_fn_def = x;
 
@@ -83,7 +94,7 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce(libquixcc::
 
     for (auto &field : get_fields())
     {
-        auto copy = std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value);
+        auto copy = std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value->reduce<ConstExprNode>());
         fields.push_back(copy);
     }
 
@@ -92,7 +103,15 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce(libquixcc::
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::RegionDefNode::reduce(libquixcc::ReductionState &state) const
 {
-    return std::make_unique<libquixcc::RegionDefNode>(*this);
+    std::vector<std::shared_ptr<libquixcc::RegionFieldNode>> fields;
+
+    for (auto &field : m_fields)
+    {
+        auto copy = std::make_shared<libquixcc::RegionFieldNode>(field->m_name, field->m_type, field->m_value->reduce<ConstExprNode>());
+        fields.push_back(copy);
+    }
+
+    return std::make_unique<libquixcc::RegionDefNode>(m_name, fields);
 }
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc::ReductionState &state) const
@@ -101,8 +120,10 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc:
 
     group->m_stmts.push_back(std::make_unique<StructDefNode>(m_name, m_fields));
 
-    for (auto &method : m_methods)
+    for (auto &_method : m_methods)
     {
+        std::shared_ptr<StmtNode> method = _method->reduce(state);
+
         if (method->is<FunctionDeclNode>())
         {
             auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);
@@ -117,8 +138,10 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc:
         group->m_stmts.push_back(method);
     }
 
-    for (auto &static_method : m_static_methods)
+    for (auto _static_method : m_static_methods)
     {
+        std::shared_ptr<StmtNode> static_method = _static_method->reduce(state);
+
         if (static_method->is<FunctionDeclNode>())
         {
             auto fdecl = std::static_pointer_cast<FunctionDeclNode>(static_method);
@@ -138,7 +161,15 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc:
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::UnionDefNode::reduce(libquixcc::ReductionState &state) const
 {
-    return std::make_unique<libquixcc::UnionDefNode>(*this);
+    std::vector<std::shared_ptr<libquixcc::UnionFieldNode>> fields;
+
+    for (auto &field : m_fields)
+    {
+        auto copy = std::make_shared<libquixcc::UnionFieldNode>(field->m_name, field->m_type, field->m_value->reduce<ConstExprNode>());
+        fields.push_back(copy);
+    }
+
+    return std::make_unique<libquixcc::UnionDefNode>(m_name, fields);
 }
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::TypedefNode::reduce(libquixcc::ReductionState &state) const
@@ -148,12 +179,32 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::TypedefNode::reduce(libquixcc::R
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::VarDeclNode::reduce(libquixcc::ReductionState &state) const
 {
-    return std::make_unique<libquixcc::VarDeclNode>(*this);
+    std::unique_ptr<VarDeclNode> decl = std::make_unique<VarDeclNode>();
+
+    decl->m_name = m_name;
+    decl->m_type = m_type;
+    decl->m_init = m_init->reduce<ExprNode>();
+    decl->m_is_mut = m_is_mut;
+    decl->m_is_thread_local = m_is_thread_local;
+    decl->m_is_static = m_is_static;
+    decl->m_is_deprecated = m_is_deprecated;
+
+    return decl;
 }
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::LetDeclNode::reduce(libquixcc::ReductionState &state) const
 {
-    return std::make_unique<libquixcc::LetDeclNode>(*this);
+    std::unique_ptr<LetDeclNode> decl = std::make_unique<LetDeclNode>();
+
+    decl->m_name = m_name;
+    decl->m_type = m_type;
+    decl->m_init = m_init->reduce<ExprNode>();
+    decl->m_is_mut = m_is_mut;
+    decl->m_is_thread_local = m_is_thread_local;
+    decl->m_is_static = m_is_static;
+    decl->m_is_deprecated = m_is_deprecated;
+
+    return decl;
 }
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::InlineAsmNode::reduce(libquixcc::ReductionState &state) const
