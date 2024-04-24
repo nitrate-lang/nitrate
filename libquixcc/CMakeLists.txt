@@ -48,8 +48,8 @@ else()
 endif()
 
 if (BUILD_TESTING)
-    target_compile_options(libquixcc PRIVATE -fprofile-arcs -ftest-coverage)
-    target_link_options(libquixcc PRIVATE -fprofile-arcs -ftest-coverage)
+    target_compile_options(libquixcc PRIVATE -fprofile-arcs -ftest-coverage -O3 -flto)
+    target_link_options(libquixcc PRIVATE -fprofile-arcs -ftest-coverage -O3 -flto)
 endif()
 
 foreach(lib ${LLVM_LIBS})
@@ -70,8 +70,8 @@ endif()
 set_target_properties(libquixcc-static PROPERTIES OUTPUT_NAME quixcc)
 
 if (BUILD_TESTING)
-    target_compile_options(libquixcc-static PRIVATE -fprofile-arcs -ftest-coverage)
-    target_link_options(libquixcc-static PRIVATE -fprofile-arcs -ftest-coverage)
+    target_compile_options(libquixcc-static PRIVATE -fprofile-arcs -ftest-coverage -O3 -flto)
+    target_link_options(libquixcc-static PRIVATE -fprofile-arcs -ftest-coverage -O3 -flto)
 endif()
 
 if (BUILD_TESTING)

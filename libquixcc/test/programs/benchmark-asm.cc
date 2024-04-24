@@ -40,7 +40,7 @@
 #include <iomanip>
 #include <code-example.hpp>
 
-constexpr size_t num_iterations = 100000;
+constexpr size_t num_iterations = 10000;
 
 struct GeneralDistributionStats
 {
@@ -198,7 +198,7 @@ static bool compile_single_source(std::vector<uint8_t> &out)
     auto &compiler = quixcc::CompilerBuilder()
                          .add_code(libquixcc::benchmark_source, libquixcc::benchmark_source_len)
                          .set_output(outf)
-                         .opt("-emit-ir")
+                         .opt("-S")
                          .set_optimization(quixcc::OptimizationLevel::SPEED_4)
                          .build()
                          .run()

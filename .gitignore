@@ -43,3 +43,4 @@ bin/
 memory-optimization/
 TODO
 libquixcc/test/src/test-suite.cc
+ct_*.json
