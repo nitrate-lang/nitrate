@@ -43,7 +43,7 @@
 #include <functional>
 #include <queue>
 #include <lexer/Token.h>
-#include <error/Messages.h>
+#include <core/Messages.h>
 #include <quixcc.h>
 
 namespace libquixcc

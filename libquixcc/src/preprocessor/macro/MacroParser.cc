@@ -35,7 +35,7 @@
 #include <stdexcept>
 #include <map>
 #include <LibMacro.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 
 static std::string trim(const std::string &str)
 {

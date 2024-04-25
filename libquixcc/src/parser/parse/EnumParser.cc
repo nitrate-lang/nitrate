@@ -33,7 +33,7 @@
 
 #include <parse/Parser.h>
 #include <LibMacro.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 
 using namespace libquixcc;
 

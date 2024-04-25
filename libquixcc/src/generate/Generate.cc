@@ -35,7 +35,7 @@
 #include <generate/CodeGen.h>
 #include <stdlib.h>
 #include "llvm/LLVMWrapper.h"
-#include <error/Logger.h>
+#include <core/Logger.h>
 #include <filesystem>
 #include <fstream>
 #include <iostream>

@@ -33,7 +33,7 @@
 
 #include <preprocessor/macro/AuthorMacro.h>
 #include <lexer/Lex.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 
 bool libquixcc::macro::ParseAuthor(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp)
 {

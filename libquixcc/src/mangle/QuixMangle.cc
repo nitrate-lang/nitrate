@@ -34,7 +34,7 @@
 #include <LibMacro.h>
 #include <mangle/Symbol.h>
 #include <parse/nodes/AllNodes.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 
 /// TODO: Add a construct to the mangling system that indicates mutability.
 

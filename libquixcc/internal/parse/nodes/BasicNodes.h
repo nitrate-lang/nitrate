@@ -40,7 +40,7 @@
 #include <vector>
 #include <memory>
 
-#include <error/Logger.h>
+#include <core/Logger.h>
 #include <parse/NodeTraversal.h>
 #include <parse/JsonSerialize.h>
 #include <parse/NodeType.h>

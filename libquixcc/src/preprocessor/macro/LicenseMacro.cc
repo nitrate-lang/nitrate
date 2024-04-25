@@ -32,7 +32,7 @@
 #define QUIXCC_INTERNAL
 
 #include <preprocessor/macro/LicenseMacro.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 #include <lexer/Lex.h>
 #include <LibMacro.h>
 

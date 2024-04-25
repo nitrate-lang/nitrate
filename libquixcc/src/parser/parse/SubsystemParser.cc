@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <parse/Parser.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 #include <LibMacro.h>
 
 bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)

@@ -39,7 +39,7 @@
 #include <iomanip>
 #include <regex>
 #include <cmath>
-#include <error/Logger.h>
+#include <core/Logger.h>
 #include <LibMacro.h>
 #include <filesystem>
 #include <preprocessor/AllMacros.h>

@@ -31,7 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <error/Messages.h>
+#include <core/Messages.h>
 
 using namespace libquixcc;
 

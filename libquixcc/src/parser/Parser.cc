@@ -32,7 +32,7 @@
 #define QUIXCC_INTERNAL
 
 #include <parse/Parser.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 #include <LibMacro.h>
 
 using namespace libquixcc;

@@ -32,7 +32,7 @@
 #define QUIXCC_INTERNAL
 
 #include <parse/nodes/AllNodes.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 
 bool libquixcc::ConstExprNode::is_negative() const
 {

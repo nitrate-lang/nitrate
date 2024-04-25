@@ -31,7 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <error/Logger.h>
+#include <core/Logger.h>
 #include <parse/nodes/ExprNode.h>
 #include <parse/nodes/FunctionNode.h>
 #include <parse/nodes/StructNode.h>

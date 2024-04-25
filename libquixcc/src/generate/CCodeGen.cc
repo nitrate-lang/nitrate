@@ -38,7 +38,7 @@
 #include <generate/CodeGen.h>
 #include <parse/nodes/AllNodes.h>
 #include <mangle/Symbol.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 
 static std::string getind(size_t ind)
 {

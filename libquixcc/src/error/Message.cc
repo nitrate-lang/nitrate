@@ -31,8 +31,8 @@
 
 #define QUIXCC_INTERNAL
 
-#include <error/Logger.h>
-#include <error/Exception.h>
+#include <core/Logger.h>
+#include <core/Exception.h>
 
 LOGGER_SETUP();
 

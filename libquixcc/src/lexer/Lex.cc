@@ -32,7 +32,7 @@
 #define QUIXCC_INTERNAL
 
 #include <lexer/Lex.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 #include <cstdio>
 #include <cctype>
 #include <stdexcept>

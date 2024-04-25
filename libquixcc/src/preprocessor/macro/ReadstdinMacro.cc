@@ -33,7 +33,7 @@
 
 #include <preprocessor/macro/ReadstdinMacro.h>
 #include <lexer/Lex.h>
-#include <error/Logger.h>
+#include <core/Logger.h>
 #include <iostream>
 #include <termios.h>
 #include <unistd.h>

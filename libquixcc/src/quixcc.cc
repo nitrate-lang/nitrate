@@ -52,8 +52,8 @@
 #include <generate/Generate.h>
 #include <lexer/Lex.h>
 #include <preprocessor/Preprocesser.h>
-#include <error/Logger.h>
-#include <error/Exception.h>
+#include <core/Logger.h>
+#include <core/Exception.h>
 #include <parse/Parser.h>
 #include <libquixcc.h>
 #include <mutate/Routine.h>
