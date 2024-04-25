@@ -54,7 +54,14 @@ std::shared_ptr<libquixcc::ExprNode> libquixcc::StaticCastExprNode::reduce_impl(
     */
    
     TIState ti_state(state.m_root);
-    auto from = m_expr->reduce<ExprNode>(state)->infer(ti_state);
+    auto red = m_expr->reduce<ExprNode>(state);
+    if (!red)
+        LOG(FATAL) << "Failed to reduce static_cast expression" << std::endl;
+
+    auto from = red->infer(ti_state);
+    if (!from)
+        LOG(FATAL) << "Failed to infer type of static_cast expression" << std::endl;
+    
     auto to = m_type;
 
     size_t from_size = from->size(state.m_ptr_size);

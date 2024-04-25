@@ -282,8 +282,7 @@ namespace libquixcc
                 return std::is_same_v<T, ForStmtNode>;
             }
 
-            assert(false);
-            return false;
+            throw std::runtime_error("Invalid node type: " + std::to_string((int)ntype));
         }
 
         template <typename T>

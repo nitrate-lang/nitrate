@@ -75,12 +75,15 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::StmtGroupNode::reduce(libquixcc:
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::SubsystemNode::reduce(libquixcc::ReductionState &state) const
 {
-    auto reduced_block = m_block->reduce(state);
+    LOG(FATAL) << "SubsystemNode::reduce() not implemented" << std::endl;
+    return nullptr;
+    
+    // auto reduced_block = m_block->reduce(state);
 
-    if (!reduced_block)
-        return nullptr;
+    // if (!reduced_block)
+    //     return nullptr;
 
-    return std::make_unique<libquixcc::SubsystemNode>(m_name, m_deps, std::shared_ptr<libquixcc::BlockNode>(dynamic_cast<libquixcc::BlockNode *>(reduced_block.release())));
+    // return std::make_unique<libquixcc::SubsystemNode>(m_name, m_deps, std::shared_ptr<libquixcc::BlockNode>(dynamic_cast<libquixcc::BlockNode *>(reduced_block.release())));
 }
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::ExportNode::reduce(libquixcc::ReductionState &state) const

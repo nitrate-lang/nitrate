@@ -43,6 +43,7 @@
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::EnumDefNode::reduce(libquixcc::ReductionState &state) const
 {
+    LOG(FATAL) << "EnumDefNode::reduce not implemented" << std::endl;
     return nullptr;
 }
 
@@ -62,6 +63,9 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDeclNode::reduce(libquix
     for (auto &param : m_params)
     {
         std::shared_ptr<StmtNode> shared = param->reduce(state);
+        if (!shared)
+            LOG(FATAL) << "Failed to reduce function parameter" << std::endl;
+
         decl->m_params.push_back(std::static_pointer_cast<FunctionParamNode>(shared));
     }
 
@@ -81,6 +85,9 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::FunctionDefNode::reduce(libquixc
     std::shared_ptr<StmtNode> block = m_body->reduce(state);
     std::shared_ptr<ParseNode> decl = m_decl->reduce(state);
 
+    if (!block || !decl)
+        LOG(FATAL) << "Failed to reduce function definition" << std::endl;
+
     auto ret = std::make_unique<libquixcc::FunctionDefNode>(std::static_pointer_cast<FunctionDeclNode>(decl), std::static_pointer_cast<BlockNode>(block));
 
     state.m_fn_def = x;
@@ -96,7 +103,11 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::GroupDefNode::reduce(libquixcc::
     {
         if (field->m_value)
         {
-            auto copy = std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value->reduce<ConstExprNode>());
+            auto red = field->m_value->reduce<ConstExprNode>();
+            if (!red)
+                LOG(FATAL) << "Failed to reduce group field" << std::endl;
+
+            auto copy = std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, red);
             fields.push_back(copy);
         }
         else
@@ -117,7 +128,11 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::RegionDefNode::reduce(libquixcc:
     {
         if (field->m_value)
         {
-            auto copy = std::make_shared<libquixcc::RegionFieldNode>(field->m_name, field->m_type, field->m_value->reduce<ConstExprNode>());
+            auto red = field->m_value->reduce<ConstExprNode>();
+            if (!red)
+                LOG(FATAL) << "Failed to reduce region field" << std::endl;
+
+            auto copy = std::make_shared<libquixcc::RegionFieldNode>(field->m_name, field->m_type, red);
             fields.push_back(copy);
         }
         else
@@ -134,11 +149,32 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc:
 {
     std::unique_ptr<StmtGroupNode> group = std::make_unique<StmtGroupNode>();
 
-    group->m_stmts.push_back(std::make_unique<StructDefNode>(m_name, m_fields));
+    std::vector<std::shared_ptr<StructFieldNode>> fields;
+    for (auto &field : m_fields)
+    {
+        if (field->m_value)
+        {
+            auto red = field->m_value->reduce<ConstExprNode>();
+            if (!red)
+                LOG(FATAL) << "Failed to reduce struct field" << std::endl;
+
+            auto copy = std::make_shared<StructFieldNode>(field->m_name, field->m_type, red);
+            fields.push_back(copy);
+        }
+        else
+        {
+            auto copy = std::make_shared<StructFieldNode>(field->m_name, field->m_type, nullptr);
+            fields.push_back(copy);
+        }
+    }
+
+    group->m_stmts.push_back(std::make_unique<StructDefNode>(m_name, fields));
 
     for (auto &_method : m_methods)
     {
         std::shared_ptr<StmtNode> method = _method->reduce(state);
+        if (!method)
+            LOG(FATAL) << "Failed to reduce struct method" << std::endl;
 
         if (method->is<FunctionDeclNode>())
         {
@@ -157,6 +193,8 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::StructDefNode::reduce(libquixcc:
     for (auto _static_method : m_static_methods)
     {
         std::shared_ptr<StmtNode> static_method = _static_method->reduce(state);
+        if (!static_method)
+            LOG(FATAL) << "Failed to reduce struct static method" << std::endl;
 
         if (static_method->is<FunctionDeclNode>())
         {
@@ -183,7 +221,11 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::UnionDefNode::reduce(libquixcc::
     {
         if (field->m_value)
         {
-            auto copy = std::make_shared<libquixcc::UnionFieldNode>(field->m_name, field->m_type, field->m_value->reduce<ConstExprNode>());
+            auto red = field->m_value->reduce<ConstExprNode>();
+            if (!red)
+                LOG(FATAL) << "Failed to reduce union field" << std::endl;
+            
+            auto copy = std::make_shared<libquixcc::UnionFieldNode>(field->m_name, field->m_type, red);
             fields.push_back(copy);
         }
         else
@@ -203,6 +245,8 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::TypedefNode::reduce(libquixcc::R
 
 std::unique_ptr<libquixcc::StmtNode> libquixcc::VarDeclNode::reduce(libquixcc::ReductionState &state) const
 {
+    LOG(FATAL) << "VarDeclNode::reduce not implemented" << std::endl;
+    
     std::unique_ptr<VarDeclNode> decl = std::make_unique<VarDeclNode>();
 
     decl->m_name = m_name;

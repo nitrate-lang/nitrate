@@ -102,6 +102,9 @@ libquixcc::TypeNode *libquixcc::BinaryExprNode::infer(libquixcc::TIState &state)
     auto lhs = m_lhs->infer(state);
     auto rhs = m_rhs->infer(state);
 
+    if (!lhs || !rhs)
+        return nullptr;
+
     /* Logical operations return bool */
     switch (m_op)
     {
