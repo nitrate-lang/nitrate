@@ -48,7 +48,7 @@ if (BUILD_TESTING)
 endif()
 
 target_link_directories(qpkg PRIVATE ${CMAKE_BINARY_DIR}/libquixcc)
-target_link_libraries(qpkg PRIVATE yaml-cpp blake3 libquixcc-static ${LLVM_LIBS} tinfo z)
+target_link_libraries(qpkg PRIVATE yaml-cpp blake3 libquixcc-static ${LLVM_LIBS} tinfo z boost_serialization)
 target_link_options(qpkg PRIVATE ${LLVM_LD_FLAGS})
 add_dependencies(qpkg blake3 libquixcc-static)
 

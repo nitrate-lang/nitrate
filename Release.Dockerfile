@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Install dependencies
 RUN apt update
-RUN apt install -y cmake g++ llvm-14 libclang-common-14-dev libssl-dev libyaml-cpp-dev librapidxml-dev zlib1g-dev rapidjson-dev upx
+RUN apt install -y cmake g++ llvm-14 libclang-common-14-dev libssl-dev libyaml-cpp-dev librapidxml-dev zlib1g-dev rapidjson-dev upx libboost-serialization-dev
 RUN cd /usr/include && ln -s llvm-14/llvm llvm && ln -s llvm-c-14/llvm-c llvm-c
 
 VOLUME /app/

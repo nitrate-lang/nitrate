@@ -55,7 +55,7 @@ endif()
 foreach(lib ${LLVM_LIBS})
     target_link_libraries(libquixcc PRIVATE ${lib})
 endforeach()
-target_link_libraries(libquixcc PRIVATE pthread)
+target_link_libraries(libquixcc PRIVATE pthread boost_serialization)
 set_target_properties(libquixcc PROPERTIES OUTPUT_NAME quixcc)
 
 add_library(libquixcc-static STATIC ${LIBQUIX_CXX_SOURCES})
