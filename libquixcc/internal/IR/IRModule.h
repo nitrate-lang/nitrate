@@ -42,8 +42,12 @@
 #include <stdexcept>
 #include <vector>
 #include <memory>
+#include <algorithm>
+#include <functional>
 #include <optional>
 #include <set>
+#include <stack>
+#include <queue>
 #include <chrono>
 
 #include <boost/serialization/access.hpp>
@@ -54,6 +58,8 @@
 #include <boost/serialization/optional.hpp>
 
 #include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 namespace libquixcc
 {
@@ -62,7 +68,6 @@ namespace libquixcc
         enum class PrintMode
         {
             Text = 1,
-            Bitcode = 2,
             Debug = 3,
             Unspecified = PrintMode::Text,
         };
@@ -70,7 +75,6 @@ namespace libquixcc
         enum class DeserializeMode
         {
             Text = 1,
-            Bitcode = 2,
             Unspecified = DeserializeMode::Text,
         };
 
@@ -169,7 +173,6 @@ namespace libquixcc
                 m_value = other.m_value;
                 other.m_diagnostic = nullptr;
             }
-            Result &operator=(const Result &other) = delete;
 
             T &get() { return m_value; }
             const T &get() const { return m_value; }
@@ -180,13 +183,9 @@ namespace libquixcc
             friend std::ostream &operator<<(std::ostream &os, const Result &result)
             {
                 if (result.is_ok())
-                {
                     os << result.get();
-                }
                 else
-                {
                     os << *result.problem();
-                }
                 return os;
             }
 
@@ -197,75 +196,44 @@ namespace libquixcc
         };
 
         template <auto T, auto U>
-        class IRGeneric;
+        class IRModule;
 
-        template <typename T>
-        class IRRegistry
+        template <typename X, typename Y>
+        X *qir_cast(Y *node)
         {
-            std::unordered_map<T, std::string_view> m_registry;
+            return reinterpret_cast<X *>(node);
+        }
 
-            IRRegistry() = default;
-            IRRegistry(const IRRegistry &other) = delete;
-            IRRegistry(IRRegistry &&other) = delete;
-            IRRegistry &operator=(const IRRegistry &other) = delete;
+        template <typename X, typename Y>
+        const X *qir_cast(const Y *node)
+        {
+            return reinterpret_cast<const X *>(node);
+        }
 
-        public:
-            static IRRegistry &getInstance()
-            {
-                static IRRegistry instance;
-                return instance;
-            }
+        template <typename X, typename Y>
+        std::shared_ptr<X> qir_cast(const std::shared_ptr<Y> &node)
+        {
+            return std::reinterpret_pointer_cast<X>(node);
+        }
 
-            template <auto U, auto V>
-            inline void registerIRType(const IRGeneric<U, V> &type)
-            {
-                m_registry[type.getIRType()] = type.dialect_name();
-            }
-
-            template <auto U, auto V>
-            inline void unregisterIRType(const IRGeneric<U, V> &type)
-            {
-                m_registry.erase(type.getIRType());
-            }
-
-            bool isRegistered(T type) const
-            {
-                return m_registry.contains(type);
-            }
-
-            std::string_view getIRTypeName(T type) const
-            {
-                if (!isRegistered(type))
-                    return "";
-
-                return m_registry.at(type);
-            }
-
-            std::set<T> getRegisteredIRTypes() const
-            {
-                std::set<T> types;
-                for (const auto &[type, name] : m_registry)
-                    types.insert(type);
-                return types;
-            }
-        };
+        template <typename X, typename Y>
+        std::shared_ptr<const X> qir_cast(const std::shared_ptr<const Y> &node)
+        {
+            return std::reinterpret_pointer_cast<const X>(node);
+        }
 
         template <auto T>
         class NodeIterator;
 
-        template <auto T>
+        template <auto T, typename W = double>
         class Value
         {
         protected:
-            const static auto m_kind = T;
-
             /* Node Serialization */
             virtual Result<bool> print_text_impl(std::ostream &os, bool debug) const = 0;
-            virtual Result<bool> print_bitcode_impl(std::ostream &os) const = 0;
 
             /* Node Deserialization */
             virtual Result<bool> deserialize_text_impl(std::istream &is) = 0;
-            virtual Result<bool> deserialize_bitcode_impl(std::istream &is) = 0;
 
             /* Graph Operations & Caching */
             virtual boost::uuids::uuid graph_hash_impl() const = 0;
@@ -273,7 +241,7 @@ namespace libquixcc
             /* IR Module Verification */
             virtual bool verify_impl() const = 0;
 
-            std::vector<std::shared_ptr<Value>> m_children;
+            std::vector<std::pair<std::shared_ptr<Value>, W>> m_children;
 
         public:
             Value() = default;
@@ -282,14 +250,18 @@ namespace libquixcc
             Value(Value &&other) = delete;
             Value &operator=(const Value &other) = delete;
 
+            template <typename U>
+            bool is() const
+            {
+                return typeid(*this) == typeid(U);
+            }
+
             /* Write IR to Output Stream */
             template <PrintMode mode = PrintMode::Unspecified>
             Result<bool> print(std::ostream &os) const
             {
                 switch (mode)
                 {
-                case PrintMode::Bitcode:
-                    return print_bitcode_impl(os);
                 case PrintMode::Debug:
                     return print_text_impl(os, true);
                 default:
@@ -303,8 +275,6 @@ namespace libquixcc
             {
                 switch (mode)
                 {
-                case DeserializeMode::Bitcode:
-                    return deserialize_bitcode_impl(is);
                 default:
                     return deserialize_text_impl(is);
                 }
@@ -320,27 +290,266 @@ namespace libquixcc
             inline boost::uuids::uuid hash() const { return graph_hash_impl(); }
 
             /* Iterate over the IR Graph */
-            bool hasChildren() const { return !m_children.empty(); }
+            bool has_children() const { return !m_children.empty(); }
+            bool empty() const { return m_children.empty(); }
 
-            NodeIterator<T> begin() { return NodeIterator(this, 0); }
-            NodeIterator<T> end() { return NodeIterator(this, m_children.size()); }
+            NodeIterator<T> begin() { return NodeIterator<T>(this, 0); }
+            NodeIterator<T> end() { return NodeIterator<T>(this, m_children.size()); }
+            const NodeIterator<T> cbegin() const { return NodeIterator<T>(this, 0); }
+            const NodeIterator<T> cend() const { return NodeIterator<T>(this, m_children.size()); }
 
-            Value &getChild(size_t index) { return *m_children.at(index); }
+            Value<T> &get_child(size_t index) { return *m_children.at(index).first; }
+            const Value<T> &get_child(size_t index) const { return *m_children.at(index).first; }
+
+            Value<T> &add_child(std::shared_ptr<Value<T>> child, W weight = W())
+            {
+                m_children.push_back(std::make_pair(child, weight));
+                return *this;
+            }
 
             bool operator==(const Value &other) const { return hash() == other.hash(); }
+            bool operator>(const Value &other) const { return hash() > other.hash(); }
 
-            template <auto U>
-            bool isof() const
+            /* Graph Algorithims */
+            bool is_cyclic() const
             {
-                static_assert(std::is_enum_v<decltype(U)>, "IR Type must be an enumeration");
-                static_assert(std::is_same_v<decltype(U), decltype(T)>, "IR Type must match Value Type");
+                std::set<const Value<T> *> visited;
+                std::stack<const Value<T> *> stack;
+                stack.push(this);
+
+                while (!stack.empty())
+                {
+                    const Value<T> *current = stack.top();
+                    stack.pop();
+
+                    if (visited.contains(current))
+                        return true;
+
+                    visited.insert(current);
+
+                    for (const auto &child : current->m_children)
+                    {
+                        stack.push(child.first.get());
+                    }
+                }
+
+                return false;
+            }
+
+            inline bool is_acyclic() const { return !is_cyclic(); }
+
+            bool contains(const Value<T> *node) const
+            {
+                std::set<const Value<T> *> visited;
+                std::stack<const Value<T> *> stack;
+                stack.push(this);
+
+                while (!stack.empty())
+                {
+                    const Value<T> *current = stack.top();
+                    stack.pop();
+
+                    if (visited.contains(current))
+                        continue;
+
+                    visited.insert(current);
+
+                    if (current == node)
+                        return true;
+
+                    for (const auto &child : current->m_children)
+                    {
+                        stack.push(child.first.get());
+                    }
+                }
+
                 return false;
             }
 
             template <typename U>
-            bool is() const
+            std::vector<const Value<T> *> find_shortest_path(const U *node) const
             {
-                return typeid(U) == typeid(*this);
+                assert(node != nullptr);
+
+                std::vector<const Value<T> *> path;
+                std::set<const Value<T> *> visited;
+                std::stack<const Value<T> *> stack;
+                std::unordered_map<const Value<T> *, const Value<T> *> parent;
+
+                stack.push(this);
+                parent[this] = nullptr;
+
+                while (!stack.empty())
+                {
+                    const Value<T> *current = stack.top();
+                    stack.pop();
+
+                    if (visited.contains(current))
+                        continue;
+
+                    visited.insert(current);
+
+                    if (typeid(*current) == typeid(*node) && *qir_cast<U>(current) == *node)
+                    {
+                        const Value<T> *current_node = current;
+                        while (current_node != nullptr)
+                        {
+                            path.push_back(current_node);
+                            current_node = parent[current_node];
+                        }
+
+                        std::reverse(path.begin(), path.end());
+                        return path;
+                    }
+
+                    for (const auto &child : current->m_children)
+                    {
+                        stack.push(child.first.get());
+                        parent[child.first.get()] = current;
+                    }
+                }
+
+                return path;
+            }
+
+            size_t dfs_preorder(std::function<void(Value<T> *)> callback)
+            {
+                size_t count = 0;
+                std::set<Value<T> *> visited;
+                std::stack<Value<T> *> stack;
+                stack.push(this);
+
+                while (!stack.empty())
+                {
+                    Value<T> *current = stack.top();
+                    stack.pop();
+
+                    if (visited.contains(current))
+                        continue;
+
+                    visited.insert(current);
+
+                    callback(current);
+                    count++;
+
+                    for (const auto &child : current->m_children)
+                    {
+                        stack.push(child.first.get());
+                    }
+                }
+
+                return count;
+            }
+
+            size_t dfs_preorder(std::function<void(const Value<T> *)> callback) const
+            {
+                return const_cast<Value<T> *>(this)->dfs_preorder([&callback](Value<T> *node)
+                                                                  { callback(node); });
+            }
+
+            size_t dfs_postorder(std::function<void(Value<T> *)> callback)
+            {
+                size_t count = 0;
+                std::set<Value<T> *> visited;
+                std::stack<Value<T> *> stack;
+                stack.push(this);
+
+                while (!stack.empty())
+                {
+                    Value<T> *current = stack.top();
+                    stack.pop();
+
+                    if (visited.contains(current))
+                        continue;
+
+                    visited.insert(current);
+
+                    for (const auto &child : current->m_children)
+                    {
+                        stack.push(child.first.get());
+                    }
+
+                    callback(current);
+                    count++;
+                }
+
+                return count;
+            }
+
+            size_t dfs_postorder(std::function<void(const Value<T> *)> callback) const
+            {
+                return const_cast<Value<T> *>(this)->dfs_postorder([&callback](Value<T> *node)
+                                                                   { callback(node); });
+            }
+
+            size_t bfs_preorder(std::function<void(Value<T> *)> callback)
+            {
+                size_t count = 0;
+                std::set<Value<T> *> visited;
+                std::queue<Value<T> *> queue;
+                queue.push(this);
+
+                while (!queue.empty())
+                {
+                    Value<T> *current = queue.front();
+                    queue.pop();
+
+                    if (visited.contains(current))
+                        continue;
+
+                    visited.insert(current);
+
+                    callback(current);
+                    count++;
+
+                    for (const auto &child : current->m_children)
+                    {
+                        queue.push(child.first.get());
+                    }
+                }
+
+                return count;
+            }
+
+            size_t bfs_preorder(std::function<void(const Value<T> *)> callback) const
+            {
+                return const_cast<Value<T> *>(this)->bfs_preorder([&callback](Value<T> *node)
+                                                                  { callback(node); });
+            }
+
+            size_t bfs_postorder(std::function<void(Value<T> *)> callback)
+            {
+                size_t count = 0;
+                std::set<Value<T> *> visited;
+                std::queue<Value<T> *> queue;
+                queue.push(this);
+
+                while (!queue.empty())
+                {
+                    Value<T> *current = queue.front();
+                    queue.pop();
+
+                    if (visited.contains(current))
+                        continue;
+
+                    visited.insert(current);
+
+                    for (const auto &child : current->m_children)
+                    {
+                        queue.push(child.first.get());
+                    }
+
+                    callback(current);
+                    count++;
+                }
+
+                return count;
+            }
+
+            size_t bfs_postorder(std::function<void(const Value<T> *)> callback) const
+            {
+                return const_cast<Value<T> *>(this)->bfs_postorder([&callback](Value<T> *node)
+                                                                   { callback(node); });
             }
         };
 
@@ -353,6 +562,7 @@ namespace libquixcc
             size_t m_index;
 
             NodeIterator(Value<T> *node, size_t index) : m_node(node), m_index(index) {}
+            NodeIterator(const Value<T> *node, size_t index) : m_node(const_cast<Value<T> *>(node)), m_index(index) {}
 
         public:
             NodeIterator(const NodeIterator &other) = default;
@@ -366,24 +576,24 @@ namespace libquixcc
             }
             inline NodeIterator<T> operator++(int)
             {
-                NodeIterator tmp(*this);
+                NodeIterator<T> tmp(*this);
                 operator++();
                 return tmp;
             }
-            inline bool operator==(const NodeIterator &other) const { return m_node == other.m_node && m_index == other.m_index; }
+            inline bool operator==(const NodeIterator<T> &other) const { return m_node == other.m_node && m_index == other.m_index; }
             Value<T> &operator*() const
             {
-                return m_node->getChild(m_index);
+                return m_node->get_child(m_index);
             }
 
             Value<T> *operator->() const
             {
-                return &m_node->getChild(m_index);
+                return &m_node->get_child(m_index);
             }
         };
 
         template <auto T, auto U>
-        class IRGeneric
+        class IRModule
         {
         protected:
             std::shared_ptr<Value<U>> m_root;
@@ -391,11 +601,9 @@ namespace libquixcc
 
             /* Module Serialization */
             virtual Result<bool> print_text_impl(std::ostream &os, bool debug) const = 0;
-            virtual Result<bool> print_bitcode_impl(std::ostream &os) const = 0;
 
             /* Module Deserialization */
             virtual Result<bool> deserialize_text_impl(std::istream &is) = 0;
-            virtual Result<bool> deserialize_bitcode_impl(std::istream &is) = 0;
 
             /* Graph Operations & Caching */
             virtual size_t node_count_impl() const = 0;
@@ -412,19 +620,17 @@ namespace libquixcc
             virtual bool verify_impl() const = 0;
 
         public:
-            IRGeneric()
+            IRModule()
             {
                 static_assert(std::is_enum_v<decltype(T)>, "IR Type must be an enumeration");
                 static_assert(std::is_enum_v<decltype(U)>, "IR Node Type must be an enumeration");
                 static_assert(!std::is_same_v<decltype(T), decltype(U)>, "IR Type and Node Type must be different enumerations");
-
-                IRRegistry<decltype(T)>::getInstance().registerIRType(*this);
             }
 
-            virtual ~IRGeneric() = default;
-            IRGeneric(const IRGeneric &other) = delete;
-            IRGeneric(IRGeneric &&other) = delete;
-            IRGeneric &operator=(const IRGeneric &other) = delete;
+            virtual ~IRModule() = default;
+            IRModule(const IRModule &other) = delete;
+            IRModule(IRModule &&other) = delete;
+            IRModule &operator=(const IRModule &other) = delete;
 
             auto getIRType() const { return m_ir_type; }
 
@@ -434,12 +640,18 @@ namespace libquixcc
             {
                 switch (mode)
                 {
-                case PrintMode::Bitcode:
-                    return print_bitcode_impl(os);
                 case PrintMode::Debug:
-                    return print_text_impl(os, true);
+                {
+                    Result<bool> result = print_text_impl(os, true);
+                    os.flush();
+                    return result;
+                }
                 default:
-                    return print_text_impl(os, false);
+                {
+                    Result<bool> result = print_text_impl(os, false);
+                    os.flush();
+                    return result;
+                }
                 }
             }
 
@@ -449,8 +661,6 @@ namespace libquixcc
             {
                 switch (mode)
                 {
-                case DeserializeMode::Bitcode:
-                    return deserialize_bitcode_impl(is);
                 default:
                     return deserialize_text_impl(is);
                 }
@@ -483,6 +693,21 @@ namespace libquixcc
             /* Get Entry Point for IR Graph */
             virtual std::shared_ptr<Value<U>> getRoot() { return m_root; }
             virtual const std::shared_ptr<Value<U>> getRoot() const { return m_root; }
+
+            IRModule<T, U> &assign(std::shared_ptr<Value<U>> root)
+            {
+                m_root = root;
+                return *this;
+            }
+
+            /* Graph Algorithims */
+            bool is_cyclic() const
+            {
+                if (!m_root)
+                    return false;
+
+                return m_root->is_cyclic();
+            }
         };
 
         template <typename T, typename U>
@@ -491,42 +716,9 @@ namespace libquixcc
             return std::reinterpret_pointer_cast<T>(_module->getRoot());
         }
 
-        template <typename T, typename U>
-        T *qir_cast(U *node)
-        {
-            T *c;
-            if ((c = dynamic_cast<T *>(node)))
-                return c;
-            throw std::bad_cast();
-        }
-
-        template <typename T, typename U>
-        const T *qir_cast(const U *node)
-        {
-            const T *c;
-            if ((c = dynamic_cast<const T *>(node)))
-                return c;
-            throw std::bad_cast();
-        }
-
-        template <typename T, typename U>
-        std::shared_ptr<T> qir_cast(const std::shared_ptr<U> &node)
-        {
-            std::shared_ptr<T> c;
-            if ((c = std::reinterpret_pointer_cast<T>(node)))
-                return c;
-            throw std::bad_cast();
-        }
-
-        template <typename T, typename U>
-        std::shared_ptr<const T> qir_cast(const std::shared_ptr<const U> &node)
-        {
-            std::shared_ptr<const T> c;
-            if ((c = std::reinterpret_pointer_cast<const T>(node)))
-                return c;
-            throw std::bad_cast();
-        }
     } // namespace ir
 } // namespace libquixcc
+
+void x();
 
 #endif // __QUIXCC_IR_GENERIC_H__

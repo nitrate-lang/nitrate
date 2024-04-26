@@ -29,9 +29,11 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/IRGeneric.h>
+#include <IR/IRModule.h>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+
+#include <map>
 
 enum class IR
 {
@@ -44,23 +46,26 @@ enum class IR
 enum class NodeType
 {
     Generic,
-    Subsystem,
+    Group,
+    Node,
 };
 
 using namespace libquixcc::ir;
 
-class IRAlpha : public libquixcc::ir::IRGeneric<IR::Alpha, NodeType::Generic>
+class GroupNode : public libquixcc::ir::Value<NodeType::Group>
 {
 protected:
     Result<bool> print_text_impl(std::ostream &os, bool debug) const override
     {
-        os << "IRAlpha";
-        return true;
-    }
+        os << "GroupNode(" << m_name << ", [";
+        for (auto it = cbegin(); it != cend(); ++it)
+        {
+            if (it != cbegin())
+                os << ", ";
+            it->print<PrintMode::Text>(os);
+        }
 
-    Result<bool> print_bitcode_impl(std::ostream &os) const override
-    {
-        os << "IRAlpha";
+        os << "])";
         return true;
     }
 
@@ -69,19 +74,97 @@ protected:
         return true;
     }
 
-    Result<bool> deserialize_bitcode_impl(std::istream &is) override
+    boost::uuids::uuid graph_hash_impl() const override
     {
+        return boost::uuids::nil_uuid();
+    }
+
+    bool verify_impl() const override
+    {
+        return true;
+    };
+
+public:
+    std::string m_name;
+};
+
+class NodeNode : public libquixcc::ir::Value<NodeType::Node>
+{
+protected:
+    Result<bool> print_text_impl(std::ostream &os, bool debug) const override
+    {
+        os << "NodeNode(" << m_name << ")";
         return true;
     }
 
-    size_t node_count_impl() const override
+    Result<bool> deserialize_text_impl(std::istream &is) override
     {
-        return 0;
+        return true;
     }
 
     boost::uuids::uuid graph_hash_impl() const override
     {
         return boost::uuids::nil_uuid();
+    }
+
+    bool verify_impl() const override
+    {
+        return true;
+    };
+
+public:
+    NodeNode() : Value<NodeType::Node>()
+    {
+    }
+
+    std::string m_name;
+};
+
+class IRAlpha : public libquixcc::ir::IRModule<IR::Alpha, NodeType::Group>
+{
+protected:
+    Result<bool> print_text_impl(std::ostream &os, bool debug) const override
+    {
+        if (!m_root)
+        {
+            os << "IRAlpha_1_0\n\n";
+            return true;
+        }
+
+        os << "IRAlpha_1_0\n\n";
+        if (debug)
+            return m_root->print<PrintMode::Debug>(os);
+        else
+            return m_root->print<PrintMode::Text>(os);
+    }
+
+    Result<bool> deserialize_text_impl(std::istream &is) override
+    {
+        char buf[13];
+        if (is.readsome(buf, 13) != 13)
+            return false;
+
+        if (memcmp(buf, "IRAlpha_1_0\n\n", 13) != 0)
+            return false;
+
+        m_root = std::make_shared<GroupNode>();
+        return m_root->deserialize<DeserializeMode::Text>(is);
+    }
+
+    size_t node_count_impl() const override
+    {
+        if (!m_root)
+            return 0;
+
+        return m_root->node_count();
+    }
+
+    boost::uuids::uuid graph_hash_impl() const override
+    {
+        if (!m_root)
+            return boost::uuids::nil_uuid();
+
+        return m_root->hash();
     }
 
     std::string_view graph_hash_algorithm_name_impl() const override
@@ -111,39 +194,82 @@ protected:
 
     bool verify_impl() const override
     {
-        return true;
+        if (!m_root)
+            return false;
+
+        return m_root->verify();
     };
 
 public:
-    IRAlpha() : IRGeneric<IR::Alpha, NodeType::Generic>()
+    IRAlpha() : IRModule<IR::Alpha, NodeType::Group>()
     {
     }
 
     ~IRAlpha() = default;
 };
 
-class SubsystemNode : public libquixcc::ir::Value<NodeType::Subsystem>
+static void setup_graph(std::shared_ptr<GroupNode> node)
 {
-public:
-    std::string m_name;
-};
+    std::shared_ptr<NodeNode> node1 = std::make_shared<NodeNode>();
+    std::shared_ptr<NodeNode> node2 = std::make_shared<NodeNode>();
+    std::shared_ptr<NodeNode> node3 = std::make_shared<NodeNode>();
+    std::shared_ptr<NodeNode> node4 = std::make_shared<NodeNode>();
+
+    node1->m_name = "Node1";
+    node2->m_name = "Node2";
+    node3->m_name = "Node3";
+
+    node4->m_name = "Node4";
+
+    node3->add_child(node4);
+
+    node->m_name = "GroupNode";
+
+    node->add_child(qir_cast<GroupNode>(node1));
+    node->add_child(qir_cast<GroupNode>(node2));
+    node->add_child(qir_cast<GroupNode>(node3));
+}
 
 void x()
 {
-    std::unique_ptr<libquixcc::ir::IRGeneric<IR::Alpha, NodeType::Generic>> ir(new IRAlpha());
+    std::shared_ptr<GroupNode> node = std::make_shared<GroupNode>();
 
-    if (!ir->print<PrintMode::Bitcode>(std::cout))
-        throw std::runtime_error("Failed to print IR");
+    setup_graph(node);
 
-    auto root = QIR_ROOT<SubsystemNode>(ir);
+    std::unique_ptr<libquixcc::ir::IRModule<IR::Alpha, NodeType::Group>> ir(new IRAlpha());
 
-    for (auto it = root->begin(); it != root->end(); ++it)
-    {
-        auto &node = *it;
+    ir->assign(node);
 
-        if (!node.is<SubsystemNode>())
-            continue;
+    std::cout << "Depth First Preorder Traversal" << std::endl;
+    ir->getRoot()->dfs_preorder(
+        [](Value<NodeType::Group> *node)
+        {
+            node->print<PrintMode::Text>(std::cout);
+            std::cout << std::endl;
+        });
 
-        auto sub = qir_cast<SubsystemNode>(&node);
-    }
+    std::cout << "Depth First Postorder Traversal" << std::endl;
+    ir->getRoot()->dfs_postorder(
+        [](Value<NodeType::Group> *node)
+        {
+            node->print<PrintMode::Text>(std::cout);
+            std::cout << std::endl;
+        });
+
+    std::cout << "Breadth First Preorder Traversal" << std::endl;
+    ir->getRoot()->bfs_preorder(
+        [](Value<NodeType::Group> *node)
+        {
+            node->print<PrintMode::Text>(std::cout);
+            std::cout << std::endl;
+        });
+
+    std::cout << "Breadth First Postorder Traversal" << std::endl;
+    ir->getRoot()->bfs_postorder(
+        [](Value<NodeType::Group> *node)
+        {
+            node->print<PrintMode::Text>(std::cout);
+            std::cout << std::endl;
+        });
+
 }

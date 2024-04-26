@@ -58,6 +58,8 @@
 #include <libquixcc.h>
 #include <mutate/Routine.h>
 
+#include <IR/IRModule.h>
+
 #define PROJECT_REPO_URL "https://github.com/Kracken256/quixcc"
 
 using namespace libquixcc;
@@ -605,6 +607,9 @@ static void reduce_named_mappings(quixcc_job_t &ctx)
 
 static bool compile(quixcc_job_t *job)
 {
+    /// TODO: test
+    x();
+
     // Create an AST before goto statements
     // AST ast;
     std::shared_ptr<AST> ast = std::make_shared<AST>();
