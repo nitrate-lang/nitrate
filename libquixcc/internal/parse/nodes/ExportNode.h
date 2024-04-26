@@ -50,7 +50,6 @@ namespace libquixcc
     public:
         ExportNode(std::vector<std::shared_ptr<libquixcc::StmtNode>> stmts, ExportLangType lang) : m_stmts(stmts), m_lang_type(lang) { ntype = NodeType::ExportNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::vector<std::shared_ptr<libquixcc::StmtNode>> m_stmts;

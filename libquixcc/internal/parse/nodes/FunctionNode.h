@@ -97,7 +97,6 @@ namespace libquixcc
             return s_instances[inner];
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t size(size_t ptr_size) const override { return ptr_size; }
         virtual std::string to_source() const override
         {
@@ -138,7 +137,6 @@ namespace libquixcc
         FunctionParamNode(const std::string &name, TypeNode *type, std::shared_ptr<ExprNode> value)
             : m_name(name), m_type(type), m_value(value) { ntype = NodeType::FunctionParamNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::string m_name;
@@ -151,7 +149,6 @@ namespace libquixcc
     public:
         FunctionDeclNode() : m_type(nullptr) { ntype = NodeType::FunctionDeclNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::string m_name;
@@ -166,7 +163,6 @@ namespace libquixcc
         FunctionDefNode(std::shared_ptr<FunctionDeclNode> decl, std::shared_ptr<BlockNode> body)
             : m_decl(decl), m_body(body) { ntype = NodeType::FunctionDefNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::shared_ptr<FunctionDeclNode> m_decl;

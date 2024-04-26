@@ -29,8 +29,8 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_JSON_SERIALIZE_H__
-#define __QUIXCC_PARSE_NODES_JSON_SERIALIZE_H__
+#ifndef __QUIXCC_SERIALIZE_AST_JSON_H__
+#define __QUIXCC_SERIALIZE_AST_JSON_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
@@ -133,7 +133,7 @@ namespace libquixcc
 
         public:
             template <typename T>
-            static std::string serialize(ASTJsonSerializerState &state, const T node)
+            static std::string next(ASTJsonSerializerState &state, const T node)
             {
                 if constexpr (std::is_pointer<T>::value)
                 {
@@ -148,4 +148,4 @@ namespace libquixcc
     }
 }
 
-#endif // __QUIXCC_PARSE_NODES_JSON_SERIALIZE_H__
+#endif // __QUIXCC_SERIALIZE_AST_JSON_H__

@@ -51,7 +51,6 @@ namespace libquixcc
         SubsystemNode() { ntype = NodeType::SubsystemNode; }
         SubsystemNode(const std::string &name, const std::set<std::string> &deps, const std::shared_ptr<BlockNode> &block) : m_name(name), m_deps(deps), m_block(block) { ntype = NodeType::SubsystemNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::string m_name;

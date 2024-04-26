@@ -61,7 +61,6 @@ namespace libquixcc
             return instance;
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t size(size_t ptr_size) const override { return std::get<uint64_t>(m_size->reduce<IntegerLiteralNode>()->m_value) * m_type->size(ptr_size); }
         virtual std::string to_source() const override { return "[" + m_type->to_source() + "; " + std::to_string(std::get<uint64_t>(m_size->reduce<IntegerLiteralNode>()->m_value)) + "]"; }
 

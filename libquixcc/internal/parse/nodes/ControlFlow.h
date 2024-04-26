@@ -52,7 +52,6 @@ namespace libquixcc
     public:
         ReturnStmtNode(const std::shared_ptr<ExprNode> &expr) : m_expr(expr) { ntype = NodeType::ReturnStmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_expr;
@@ -64,7 +63,6 @@ namespace libquixcc
         RetifStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &return_val)
             : m_cond(cond), m_return(return_val) { ntype = NodeType::RetifStmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_cond;
@@ -77,7 +75,6 @@ namespace libquixcc
         RetzStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &return_val)
             : m_cond(cond), m_return(return_val) { ntype = NodeType::RetzStmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_cond;
@@ -89,7 +86,6 @@ namespace libquixcc
     public:
         RetvStmtNode(const std::shared_ptr<ExprNode> &cond) : m_cond(cond) { ntype = NodeType::RetvStmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_cond;
@@ -101,7 +97,6 @@ namespace libquixcc
         IfStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<StmtNode> &then, const std::shared_ptr<StmtNode> &els)
             : m_cond(cond), m_then(then), m_else(els) { ntype = NodeType::IfStmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_cond;
@@ -115,7 +110,6 @@ namespace libquixcc
         WhileStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<StmtNode> &body)
             : m_cond(cond), m_stmt(body) { ntype = NodeType::WhileStmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_cond;
@@ -128,7 +122,6 @@ namespace libquixcc
         ForStmtNode(const std::shared_ptr<ExprNode> &init, const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &step, const std::shared_ptr<StmtNode> &body)
             : m_init(init), m_cond(cond), m_step(step), m_stmt(body) { ntype = NodeType::ForStmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_init;

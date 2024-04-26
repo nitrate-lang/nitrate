@@ -52,7 +52,6 @@ namespace libquixcc
         GroupFieldNode() { ntype = NodeType::GroupFieldNode; }
         GroupFieldNode(const std::string &name, TypeNode *type, std::shared_ptr<ConstExprNode> value = nullptr) : m_name(name), m_type(type), m_value(value) { ntype = NodeType::GroupFieldNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
 
         std::string m_name;
         TypeNode *m_type;
@@ -71,7 +70,6 @@ namespace libquixcc
             m_fields = optimize_layout(fields);
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
         static std::vector<std::shared_ptr<GroupFieldNode>> group_optimize(const std::vector<std::shared_ptr<GroupFieldNode>> &fields);
         const std::vector<std::shared_ptr<GroupFieldNode>> &get_fields() const { return m_fields; }

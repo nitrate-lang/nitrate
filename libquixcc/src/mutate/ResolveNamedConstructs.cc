@@ -51,10 +51,10 @@ static std::string join_ns(const std::vector<std::string> &ns)
 
 static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+    ast->dfs_preorder(traversal::ASTTraversalState(
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
-            if (node.first != TraversePtrType::Raw)
+            if (node.first != traversal::TraversePtrType::Raw)
                 return;
             auto ptr = *std::get<ParseNode **>(node.second);
 
@@ -134,10 +134,10 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
 
 static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+    ast->dfs_preorder(traversal::ASTTraversalState(
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
-            if (node.first != TraversePtrType::Smart)
+            if (node.first != traversal::TraversePtrType::Smart)
                 return;
             auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 
@@ -158,10 +158,10 @@ static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::Bl
 
 static void resolve_function_decls_to_calls(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+    ast->dfs_preorder(traversal::ASTTraversalState(
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
-            if (node.first != TraversePtrType::Smart)
+            if (node.first != traversal::TraversePtrType::Smart)
                 return;
             auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 

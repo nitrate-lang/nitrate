@@ -56,7 +56,6 @@ namespace libquixcc
     public:
         LiteralNode() { ntype = NodeType::LiteralNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual bool is_negative() const = 0;
         virtual TypeNode *infer(TIState &state) const override = 0;
     };
@@ -85,7 +84,6 @@ namespace libquixcc
             return m_instances[val];
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override { return m_val_type; }
         virtual bool is_negative() const override { return m_val.front() == '-'; }
 
@@ -116,7 +114,6 @@ namespace libquixcc
             return m_instances[val];
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override { return m_val_type; }
         virtual bool is_negative() const override { return true; }
 
@@ -147,7 +144,6 @@ namespace libquixcc
             return m_instances[val];
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
         virtual bool is_negative() const override { return false; }
 
@@ -176,7 +172,6 @@ namespace libquixcc
             return m_instances[val];
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
         virtual bool is_negative() const override { return false; }
 
@@ -213,7 +208,6 @@ namespace libquixcc
             }
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
         virtual bool is_negative() const override { return false; }
 
@@ -240,7 +234,6 @@ namespace libquixcc
             return m_instance;
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
         virtual bool is_negative() const override { return false; }
     };

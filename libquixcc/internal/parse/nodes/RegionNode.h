@@ -65,7 +65,6 @@ namespace libquixcc
             return instance;
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t size(size_t ptr_size) const override
         {
             size_t size = 0;
@@ -93,7 +92,6 @@ namespace libquixcc
         RegionFieldNode() : m_type(nullptr) { ntype = NodeType::RegionFieldNode; }
         RegionFieldNode(const std::string &name, TypeNode *type, std::shared_ptr<ConstExprNode> value = nullptr) : m_name(name), m_type(type), m_value(value) { ntype = NodeType::RegionFieldNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
 
         std::string m_name;
         TypeNode *m_type;
@@ -106,7 +104,6 @@ namespace libquixcc
         RegionDefNode() { ntype = NodeType::RegionDefNode; }
         RegionDefNode(const std::string &name, const std::vector<std::shared_ptr<RegionFieldNode>> &fields) : m_name(name), m_fields(fields) { ntype = NodeType::RegionDefNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         virtual RegionTypeNode *get_type() const

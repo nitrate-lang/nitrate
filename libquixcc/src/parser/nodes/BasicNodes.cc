@@ -34,7 +34,7 @@
 #include <parse/nodes/BasicNodes.h>
 #include <parse/nodes/AllNodes.h>
 
-static void nop(const std::vector<std::string> &_namespace, libquixcc::ParseNode *parrent, libquixcc::TraversePtr node)
+static void nop(const std::vector<std::string> &_namespace, libquixcc::ParseNode *parrent, libquixcc::traversal::TraversePtr node)
 {
     (void)_namespace;
     (void)parrent;
@@ -44,5 +44,5 @@ static void nop(const std::vector<std::string> &_namespace, libquixcc::ParseNode
 
 size_t libquixcc::ParseNode::count()
 {
-    return dfs_preorder(ParseNodePreorderVisitor(nop, {}));
+    return dfs_preorder(traversal::ASTTraversalState(nop, {}));
 }

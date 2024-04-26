@@ -52,7 +52,6 @@ namespace libquixcc
         InlineAsmNode(const std::string &asmcode, const std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &outputs, const std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &inputs, const std::vector<std::string> &clobbers)
             : m_asm(asmcode), m_outputs(outputs), m_inputs(inputs), m_clobbers(clobbers) { ntype = NodeType::InlineAsmNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::string m_asm;

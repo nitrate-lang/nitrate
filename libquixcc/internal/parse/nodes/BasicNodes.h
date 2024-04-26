@@ -41,9 +41,9 @@
 #include <memory>
 
 #include <core/Logger.h>
-#include <parse/NodeTraversal.h>
-#include <parse/JsonSerialize.h>
 #include <parse/NodeType.h>
+#include <traversal/AST.h>
+#include <serialize/ASTJson.h>
 #include <generate/CodeGen.h>
 
 namespace libquixcc
@@ -69,8 +69,8 @@ namespace libquixcc
     public:
         ParseNode() = default;
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) = 0;
-        virtual std::string to_json() const;
+        virtual size_t dfs_preorder(traversal::ASTTraversalState state);
+        virtual std::string to_json(serialize::ASTJsonSerializerState state = serialize::ASTJsonSerializerState()) const;
 
         /// @brief Count the number of nodes in the tree.
         /// @return The number of nodes in the tree.
@@ -340,8 +340,6 @@ namespace libquixcc
     {
     public:
         ASTNopNode() { ntype = NodeType::ASTNopNode; }
-
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
     };
 
     class ExprNode : public ParseNode
@@ -353,7 +351,6 @@ namespace libquixcc
     public:
         ExprNode() = default;
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
 
@@ -391,7 +388,6 @@ namespace libquixcc
     public:
         ConstExprNode() { ntype = NodeType::ConstExprNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual llvm::Constant *codegen(CodegenVisitor &visitor) const { return static_cast<llvm::Constant *>(visitor.visit(static_cast<const ExprNode *>(this))); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(static_cast<const ExprNode *>(this)); }
         virtual bool is_negative() const;
@@ -403,7 +399,6 @@ namespace libquixcc
     public:
         StmtNode() { ntype = NodeType::StmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const = 0;
@@ -414,7 +409,6 @@ namespace libquixcc
     public:
         ExprStmtNode(std::shared_ptr<ExprNode> expr) : m_expr(expr) { ntype = NodeType::ExprStmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_expr;
@@ -425,7 +419,6 @@ namespace libquixcc
     public:
         NopStmtNode() { ntype = NodeType::NopStmtNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
     };
 
@@ -436,7 +429,6 @@ namespace libquixcc
         ~TypeNode() = default;
         TypeNode(const TypeNode &) = delete;
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual llvm::Type *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
         bool is_composite() const;
@@ -469,7 +461,6 @@ namespace libquixcc
             return m_instances[name].get();
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t size(size_t ptr_size) const { return 0; }
         virtual std::string to_source() const override { return m_name; }
         virtual std::string name() const override { return m_name; }
@@ -482,7 +473,6 @@ namespace libquixcc
     public:
         DeclNode() { ntype = NodeType::DeclNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override = 0;
     };
 
@@ -491,7 +481,6 @@ namespace libquixcc
     public:
         DefNode() { ntype = NodeType::DefNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override = 0;
     };
 
@@ -500,7 +489,6 @@ namespace libquixcc
     public:
         BlockNode() { ntype = NodeType::BlockNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::vector<std::shared_ptr<StmtNode>> m_stmts;
@@ -511,7 +499,6 @@ namespace libquixcc
     public:
         StmtGroupNode(std::vector<std::shared_ptr<StmtNode>> stmts = {}) : m_stmts(stmts) { ntype = NodeType::StmtGroupNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::vector<std::shared_ptr<StmtNode>> m_stmts;

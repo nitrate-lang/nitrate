@@ -43,10 +43,10 @@ using namespace libquixcc;
 
 void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(ParseNodePreorderVisitor(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+    ast->dfs_preorder(traversal::ASTTraversalState(
+        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
-            if (node.first != TraversePtrType::Smart)
+            if (node.first != traversal::TraversePtrType::Smart)
                 return;
             auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 

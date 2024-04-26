@@ -56,7 +56,6 @@ namespace libquixcc
     public:
         UnaryExprNode(Operator op, const std::shared_ptr<ExprNode> &expr) : m_op(op), m_expr(expr) { ntype = NodeType::UnaryExprNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         Operator m_op;
@@ -73,7 +72,6 @@ namespace libquixcc
         BinaryExprNode(Operator op, const std::shared_ptr<ExprNode> &lhs, const std::shared_ptr<ExprNode> &rhs)
             : m_op(op), m_lhs(lhs), m_rhs(rhs) { ntype = NodeType::BinaryExprNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         Operator m_op;
@@ -92,7 +90,6 @@ namespace libquixcc
     public:
         CallExprNode() { ntype = NodeType::CallExprNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         std::string m_name;
@@ -110,7 +107,6 @@ namespace libquixcc
     public:
         ListExprNode(std::vector<std::shared_ptr<ExprNode>> elements) : m_elements(elements) { ntype = NodeType::ListExprNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         std::vector<std::shared_ptr<ExprNode>> m_elements;
@@ -125,7 +121,6 @@ namespace libquixcc
     public:
         MemberAccessNode(const std::shared_ptr<ExprNode> &expr, const std::string &field) : m_expr(expr), m_field(field) { ntype = NodeType::MemberAccessNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         std::shared_ptr<ExprNode> m_expr;
@@ -137,7 +132,6 @@ namespace libquixcc
     public:
         CastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : m_expr(expr), m_type(type) { ntype = NodeType::CastExprNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         std::shared_ptr<ExprNode> m_expr;

@@ -45,10 +45,10 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
 {
     std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> vars;
 
-    ast->dfs_preorder(ParseNodePreorderVisitor(
-        [&](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+    ast->dfs_preorder(traversal::ASTTraversalState(
+        [&](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
-            if (node.first != TraversePtrType::Smart)
+            if (node.first != traversal::TraversePtrType::Smart)
                 return;
             auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 

@@ -52,7 +52,6 @@ namespace libquixcc
         VarDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::VarDeclNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::string m_name;
@@ -72,7 +71,6 @@ namespace libquixcc
         LetDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::LetDeclNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::string m_name;

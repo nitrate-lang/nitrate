@@ -38,9 +38,9 @@
 
 using namespace libquixcc;
 
-static void collapse(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+static void collapse(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
 {
-    if (node.first != TraversePtrType::Smart)
+    if (node.first != traversal::TraversePtrType::Smart)
         return;
     auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 
@@ -132,7 +132,7 @@ static void collapse(const std::vector<std::string> &__namespace, libquixcc::Par
             auto def = std::static_pointer_cast<SubsystemNode>(child);
             std::vector<std::string> __namespace2 = __namespace;
             __namespace2.push_back(sub->m_name);
-            collapse(__namespace2, parent, std::make_pair(TraversePtrType::Smart, reinterpret_cast<std::shared_ptr<ParseNode> *>(&def)));
+            collapse(__namespace2, parent, std::make_pair(traversal::TraversePtrType::Smart, reinterpret_cast<std::shared_ptr<ParseNode> *>(&def)));
             stmts->m_stmts.push_back(def);
             break;
         }
@@ -145,9 +145,9 @@ static void collapse(const std::vector<std::string> &__namespace, libquixcc::Par
     *std::get<std::shared_ptr<ParseNode> *>(node.second) = stmts;
 }
 
-static void typenode_rename(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+static void typenode_rename(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
 {
-    if (node.first != TraversePtrType::Raw)
+    if (node.first != traversal::TraversePtrType::Raw)
         return;
     auto ptr = *std::get<ParseNode **>(node.second);
     auto dobptr = std::get<ParseNode **>(node.second);
@@ -201,6 +201,6 @@ static void typenode_rename(const std::vector<std::string> &__namespace, libquix
 
 void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(ParseNodePreorderVisitor(typenode_rename, {}));
-    ast->dfs_preorder(ParseNodePreorderVisitor(collapse, {}));
+    ast->dfs_preorder(traversal::ASTTraversalState(typenode_rename, {}));
+    ast->dfs_preorder(traversal::ASTTraversalState(collapse, {}));
 }

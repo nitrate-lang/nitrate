@@ -456,12 +456,12 @@ static libquixcc::TypeNode *deserialize_type(const std::string &input)
     if (!type)
         return nullptr;
 
-    type->dfs_preorder(libquixcc::ParseNodePreorderVisitor(
-        [&](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr current)
+    type->dfs_preorder(libquixcc::traversal::ASTTraversalState(
+        [&](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::traversal::TraversePtr current)
         {
-            if (current.first != libquixcc::TraversePtrType::Raw)
+            if (current.first != libquixcc::traversal::TraversePtrType::Raw)
                 return;
-            
+
             libquixcc::TypeNode **t = reinterpret_cast<libquixcc::TypeNode **>(std::get<libquixcc::ParseNode **>(current.second));
             if ((*t)->ntype != libquixcc::NodeType::UserTypeNode)
                 return;

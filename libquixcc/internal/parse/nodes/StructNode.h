@@ -65,7 +65,6 @@ namespace libquixcc
             return instance;
         }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         virtual size_t size(size_t ptr_size) const override
         {
             /// TODO: adjust for padding
@@ -94,7 +93,6 @@ namespace libquixcc
         StructFieldNode() { ntype = NodeType::StructFieldNode; }
         StructFieldNode(const std::string &name, TypeNode *type, std::shared_ptr<ConstExprNode> value = nullptr) : m_name(name), m_type(type), m_value(value) { ntype = NodeType::StructFieldNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
 
         std::string m_name;
         TypeNode *m_type;
@@ -107,7 +105,6 @@ namespace libquixcc
         StructDefNode() { ntype = NodeType::StructDefNode; }
         StructDefNode(const std::string &name, const std::vector<std::shared_ptr<StructFieldNode>> &fields) : m_name(name), m_fields(fields) { ntype = NodeType::StructDefNode; }
 
-        virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         virtual StructTypeNode *get_type() const

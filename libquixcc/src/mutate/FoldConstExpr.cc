@@ -37,11 +37,11 @@
 
 using namespace libquixcc;
 
-static void fold_const_string_expr(const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+static void fold_const_string_expr(const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
 {
     (void)_namespace;
 
-    if (node.first != TraversePtrType::Smart)
+    if (node.first != traversal::TraversePtrType::Smart)
         return;
     auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 
@@ -62,5 +62,5 @@ static void fold_const_string_expr(const std::vector<std::string> &_namespace, l
 
 void libquixcc::mutate::FoldConstExpr(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
 {
-    ast->dfs_preorder(ParseNodePreorderVisitor(fold_const_string_expr, {}));
+    ast->dfs_preorder(traversal::ASTTraversalState(fold_const_string_expr, {}));
 }

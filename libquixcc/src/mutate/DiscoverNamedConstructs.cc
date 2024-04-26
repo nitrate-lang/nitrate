@@ -77,10 +77,10 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
     std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> named_construct_map;
     std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> named_types_map;
 
-    ast->dfs_preorder(ParseNodePreorderVisitor(
-        [&named_construct_map, job, &named_types_map](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::TraversePtr node)
+    ast->dfs_preorder(traversal::ASTTraversalState(
+        [&named_construct_map, job, &named_types_map](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
-            if (node.first != TraversePtrType::Smart)
+            if (node.first != traversal::TraversePtrType::Smart)
                 return;
             auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 
