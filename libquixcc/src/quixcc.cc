@@ -675,7 +675,7 @@ static bool compile(quixcc_job_t *job)
         return false;
     LOG(DEBUG) << "Finished building AST 1" << std::endl;
     if (job->m_debug)
-        LOG(DEBUG) << "Dumping AST 1 (JSON): " << base64_encode(ast->to_json(ParseNodeJsonSerializerVisitor())) << std::endl;
+        LOG(DEBUG) << "Dumping AST 1 (JSON): " << base64_encode(ast->to_json()) << std::endl;
     ///=========================================
     /// END: PARSER
     ///=========================================
@@ -693,7 +693,7 @@ static bool compile(quixcc_job_t *job)
         return false;
 
     if (job->m_debug)
-        LOG(DEBUG) << "Dumping AST 2 (JSON): " << base64_encode(ast->to_json(ParseNodeJsonSerializerVisitor())) << std::endl;
+        LOG(DEBUG) << "Dumping AST 2 (JSON): " << base64_encode(ast->to_json()) << std::endl;
 
     ///=========================================
     /// END: INTERMEDIATE PROCESSING
@@ -712,7 +712,7 @@ static bool compile(quixcc_job_t *job)
     }
 
     if (job->m_debug)
-        LOG(DEBUG) << "Dumping AST 3 (JSON): " << base64_encode(ast_reduced->to_json(ParseNodeJsonSerializerVisitor())) << std::endl;
+        LOG(DEBUG) << "Dumping AST 3 (JSON): " << base64_encode(ast_reduced->to_json()) << std::endl;
 
     reduce_named_mappings(*job);
 

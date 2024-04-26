@@ -57,7 +57,6 @@ namespace libquixcc
         UnaryExprNode(Operator op, const std::shared_ptr<ExprNode> &expr) : m_op(op), m_expr(expr) { ntype = NodeType::UnaryExprNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         Operator m_op;
@@ -75,7 +74,6 @@ namespace libquixcc
             : m_op(op), m_lhs(lhs), m_rhs(rhs) { ntype = NodeType::BinaryExprNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         Operator m_op;
@@ -95,7 +93,6 @@ namespace libquixcc
         CallExprNode() { ntype = NodeType::CallExprNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         std::string m_name;
@@ -114,7 +111,6 @@ namespace libquixcc
         ListExprNode(std::vector<std::shared_ptr<ExprNode>> elements) : m_elements(elements) { ntype = NodeType::ListExprNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         std::vector<std::shared_ptr<ExprNode>> m_elements;
@@ -130,7 +126,6 @@ namespace libquixcc
         MemberAccessNode(const std::shared_ptr<ExprNode> &expr, const std::string &field) : m_expr(expr), m_field(field) { ntype = NodeType::MemberAccessNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual TypeNode *infer(TIState &state) const override;
 
         std::shared_ptr<ExprNode> m_expr;
@@ -158,7 +153,6 @@ namespace libquixcc
     public:
         StaticCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::StaticCastExprNode; }
 
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
     };
 
     class BitCastExprNode : public CastExprNode
@@ -170,7 +164,6 @@ namespace libquixcc
     public:
         BitCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::BitCastExprNode; }
 
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
     };
 
     class SignedUpcastExprNode : public CastExprNode
@@ -182,7 +175,6 @@ namespace libquixcc
     public:
         SignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::SignedUpcastExprNode; }
 
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
     };
 
     class UnsignedUpcastExprNode : public CastExprNode
@@ -194,7 +186,6 @@ namespace libquixcc
     public:
         UnsignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::UnsignedUpcastExprNode; }
 
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
     };
 
     class DowncastExprNode : public CastExprNode
@@ -206,7 +197,6 @@ namespace libquixcc
     public:
         DowncastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::DowncastExprNode; }
 
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
     };
 
     class PtrToIntCastExprNode : public CastExprNode
@@ -218,7 +208,6 @@ namespace libquixcc
     public:
         PtrToIntCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::PtrToIntCastExprNode; }
 
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
     };
 
     class IntToPtrCastExprNode : public CastExprNode
@@ -230,7 +219,6 @@ namespace libquixcc
     public:
         IntToPtrCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::IntToPtrCastExprNode; }
 
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
     };
 
 }

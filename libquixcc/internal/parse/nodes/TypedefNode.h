@@ -51,7 +51,6 @@ namespace libquixcc
         TypedefNode(TypeNode *orig, const std::string &name) : m_orig(orig), m_name(name) { ntype = NodeType::TypedefNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         TypeNode *m_orig;

@@ -63,7 +63,6 @@ namespace libquixcc
         }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual size_t size(size_t ptr_size) const override { return m_member_type->size(ptr_size); }
         virtual std::string to_source() const override
         {
@@ -82,7 +81,6 @@ namespace libquixcc
         EnumFieldNode(const std::string &name, const std::shared_ptr<ConstExprNode> &value) : m_name(name), m_value(value) { ntype = NodeType::EnumFieldNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
 
         std::string m_name;
         std::shared_ptr<ConstExprNode> m_value;
@@ -94,7 +92,6 @@ namespace libquixcc
         EnumDefNode() { ntype = NodeType::EnumDefNode; }
         EnumDefNode(EnumTypeNode *type, bool scoped, const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {}) : m_type(type), m_fields(fields), m_scoped(scoped) { ntype = NodeType::EnumDefNode; }
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
         
         virtual TypeNode *get_type() const { return m_type; }

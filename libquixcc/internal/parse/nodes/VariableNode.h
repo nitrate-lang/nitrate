@@ -53,7 +53,6 @@ namespace libquixcc
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::VarDeclNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::string m_name;
@@ -74,7 +73,6 @@ namespace libquixcc
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::LetDeclNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::string m_name;

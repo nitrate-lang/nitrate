@@ -127,7 +127,7 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
 
             *user_type_ptr = reinterpret_cast<libquixcc::UserTypeNode *>(type);
 
-            LOG(DEBUG) << feedback[RESOLVED_TYPE] << name << type->to_json(ParseNodeJsonSerializerVisitor()) << std::endl;
+            LOG(DEBUG) << feedback[RESOLVED_TYPE] << name << type->to_json() << std::endl;
         },
         {}));
 }

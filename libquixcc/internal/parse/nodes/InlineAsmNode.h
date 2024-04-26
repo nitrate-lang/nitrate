@@ -53,7 +53,6 @@ namespace libquixcc
             : m_asm(asmcode), m_outputs(outputs), m_inputs(inputs), m_clobbers(clobbers) { ntype = NodeType::InlineAsmNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::string m_asm;

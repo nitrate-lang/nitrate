@@ -70,7 +70,7 @@ namespace libquixcc
         ParseNode() = default;
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) = 0;
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const = 0;
+        virtual std::string to_json() const;
 
         /// @brief Count the number of nodes in the tree.
         /// @return The number of nodes in the tree.
@@ -342,7 +342,6 @@ namespace libquixcc
         ASTNopNode() { ntype = NodeType::ASTNopNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
     };
 
     class ExprNode : public ParseNode
@@ -355,7 +354,6 @@ namespace libquixcc
         ExprNode() = default;
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
 
@@ -394,7 +392,6 @@ namespace libquixcc
         ConstExprNode() { ntype = NodeType::ConstExprNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Constant *codegen(CodegenVisitor &visitor) const { return static_cast<llvm::Constant *>(visitor.visit(static_cast<const ExprNode *>(this))); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(static_cast<const ExprNode *>(this)); }
         virtual bool is_negative() const;
@@ -407,7 +404,6 @@ namespace libquixcc
         StmtNode() { ntype = NodeType::StmtNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const = 0;
@@ -419,7 +415,6 @@ namespace libquixcc
         ExprStmtNode(std::shared_ptr<ExprNode> expr) : m_expr(expr) { ntype = NodeType::ExprStmtNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_expr;
@@ -431,7 +426,6 @@ namespace libquixcc
         NopStmtNode() { ntype = NodeType::NopStmtNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
     };
 
@@ -443,7 +437,6 @@ namespace libquixcc
         TypeNode(const TypeNode &) = delete;
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual llvm::Type *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
         bool is_composite() const;
@@ -477,7 +470,6 @@ namespace libquixcc
         }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual size_t size(size_t ptr_size) const { return 0; }
         virtual std::string to_source() const override { return m_name; }
         virtual std::string name() const override { return m_name; }
@@ -491,7 +483,6 @@ namespace libquixcc
         DeclNode() { ntype = NodeType::DeclNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override = 0;
     };
 
@@ -501,7 +492,6 @@ namespace libquixcc
         DefNode() { ntype = NodeType::DefNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override = 0;
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override = 0;
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override = 0;
     };
 
@@ -511,7 +501,6 @@ namespace libquixcc
         BlockNode() { ntype = NodeType::BlockNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::vector<std::shared_ptr<StmtNode>> m_stmts;
@@ -523,7 +512,6 @@ namespace libquixcc
         StmtGroupNode(std::vector<std::shared_ptr<StmtNode>> stmts = {}) : m_stmts(stmts) { ntype = NodeType::StmtGroupNode; }
 
         virtual size_t dfs_preorder(ParseNodePreorderVisitor visitor) override { return visitor.visit(this); }
-        virtual std::string to_json(ParseNodeJsonSerializerVisitor visitor) const override { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::vector<std::shared_ptr<StmtNode>> m_stmts;

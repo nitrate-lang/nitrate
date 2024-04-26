@@ -94,7 +94,7 @@ bool libquixcc::Symbol::demangle_tojson(const std::string &mangled, std::string 
     if (node == nullptr)
         return false;
 
-    output = node->to_json(ParseNodeJsonSerializerVisitor());
+    output = node->to_json();
     return true;
 }
 
