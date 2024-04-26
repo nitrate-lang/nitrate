@@ -48,6 +48,7 @@
 #include <set>
 #include <stack>
 #include <queue>
+#include <sstream>
 #include <chrono>
 
 #include <boost/serialization/access.hpp>
@@ -60,6 +61,8 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <boost/uuid/string_generator.hpp>
+#include <boost/endian/conversion.hpp>
 
 namespace libquixcc
 {
@@ -115,7 +118,7 @@ namespace libquixcc
             std::chrono::time_point<std::chrono::system_clock> m_time;
 
         public:
-            Diagnostic(const SourceLocation &location, const std::initializer_list<std::string> &messages) : m_location(location), m_messages(messages)
+            Diagnostic(const std::initializer_list<std::string> &messages, const SourceLocation &location = SourceLocation()) : m_location(location), m_messages(messages)
             {
                 m_time = std::chrono::system_clock::now();
             }
@@ -154,10 +157,11 @@ namespace libquixcc
             T m_value;
 
         public:
+            Result() : m_diagnostic(nullptr), m_value(T()) {}
             Result(const T &value) : m_diagnostic(nullptr), m_value(value) {}
             Result(const Diagnostic &diag) : m_diagnostic(new Diagnostic(diag)), m_value(T()) {}
             Result(const Diagnostic &diag, const T &value) : m_diagnostic(new Diagnostic(diag)), m_value(value) {}
-            inline ~Result()
+            ~Result()
             {
                 if (m_diagnostic)
                 {
@@ -166,12 +170,27 @@ namespace libquixcc
                 }
             }
 
-            Result(const Result &other) = delete;
-            inline Result(Result &&other)
+            Result(const Result &other)
+            {
+                m_diagnostic = other.m_diagnostic;
+                m_value = other.m_value;
+            }
+
+            Result(Result &&other)
             {
                 m_diagnostic = other.m_diagnostic;
                 m_value = other.m_value;
                 other.m_diagnostic = nullptr;
+            }
+
+            Result &operator=(const Result &other)
+            {
+                if (this != &other)
+                {
+                    m_diagnostic = other.m_diagnostic;
+                    m_value = other.m_value;
+                }
+                return *this;
             }
 
             T &get() { return m_value; }
@@ -194,9 +213,6 @@ namespace libquixcc
             T *operator->() { return m_value; }
             const T *operator->() const { return m_value; }
         };
-
-        template <auto T, auto U>
-        class IRModule;
 
         template <typename X, typename Y>
         X *qir_cast(Y *node)
@@ -222,9 +238,6 @@ namespace libquixcc
             return std::reinterpret_pointer_cast<const X>(node);
         }
 
-        template <auto T>
-        class NodeIterator;
-
         template <auto T, typename W = double>
         class Value
         {
@@ -241,7 +254,7 @@ namespace libquixcc
             /* IR Module Verification */
             virtual bool verify_impl() const = 0;
 
-            std::vector<std::pair<std::shared_ptr<Value>, W>> m_children;
+            std::set<std::pair<std::shared_ptr<Value>, W>> m_children;
 
         public:
             Value() = default;
@@ -256,18 +269,40 @@ namespace libquixcc
                 return typeid(*this) == typeid(U);
             }
 
+            template <typename U>
+            bool is(const U *other) const
+            {
+                if (typeid(*this) != typeid(*other))
+                    return false;
+
+                return *qir_cast<const U>(this) == *other;
+            }
+
             /* Write IR to Output Stream */
             template <PrintMode mode = PrintMode::Unspecified>
-            Result<bool> print(std::ostream &os) const
+            Result<bool> print(std::ostream &os, bool newline = false) const
             {
                 switch (mode)
                 {
                 case PrintMode::Debug:
-                    return print_text_impl(os, true);
+                {
+                    Result<bool> result(print_text_impl(os, true));
+                    if (newline)
+                        os << std::endl;
+                    return result;
+                }
                 default:
-                    return print_text_impl(os, false);
+                {
+                    Result<bool> result(print_text_impl(os, false));
+                    if (newline)
+                        os << std::endl;
+                    return result;
+                }
                 }
             }
+
+            /* Write UUID to Output Stream */
+            inline void printid(std::ostream &os) const { os << boost::uuids::to_string(hash()); }
 
             /* Read IR from Input Stream */
             template <DeserializeMode mode = DeserializeMode::Unspecified>
@@ -293,17 +328,60 @@ namespace libquixcc
             bool has_children() const { return !m_children.empty(); }
             bool empty() const { return m_children.empty(); }
 
-            NodeIterator<T> begin() { return NodeIterator<T>(this, 0); }
-            NodeIterator<T> end() { return NodeIterator<T>(this, m_children.size()); }
-            const NodeIterator<T> cbegin() const { return NodeIterator<T>(this, 0); }
-            const NodeIterator<T> cend() const { return NodeIterator<T>(this, m_children.size()); }
+            auto begin() { return m_children.begin(); }
+            auto end() { return m_children.end(); }
+            const auto cbegin() const { return m_children.cbegin(); }
+            const auto cend() const { return m_children.cend(); }
 
-            Value<T> &get_child(size_t index) { return *m_children.at(index).first; }
-            const Value<T> &get_child(size_t index) const { return *m_children.at(index).first; }
+            const std::set<std::pair<std::shared_ptr<Value>, W>> &children() const { return m_children; }
+
+            Value<T> &operator[](const std::string_view &uuid)
+            {
+                for (const auto &child : m_children)
+                {
+                    if (child.first->hash() == boost::uuids::string_generator()(uuid.data()))
+                        return *child.first;
+                }
+
+                throw std::out_of_range("Value not found");
+            }
+
+            const Value<T> &operator[](const std::string_view &uuid) const
+            {
+                for (const auto &child : m_children)
+                {
+                    if (child.first->hash() == boost::uuids::string_generator()(uuid.data()))
+                        return *child.first;
+                }
+
+                throw std::out_of_range("Value not found");
+            }
 
             Value<T> &add_child(std::shared_ptr<Value<T>> child, W weight = W())
             {
-                m_children.push_back(std::make_pair(child, weight));
+                m_children.insert(std::make_pair(child, weight));
+                return *this;
+            }
+
+            Value<T> &remove_child(size_t index)
+            {
+                m_children.erase(m_children.begin() + index);
+                return *this;
+            }
+
+            Value<T> &remove_child(const Value<T> *child)
+            {
+                m_children.erase(std::remove_if(m_children.begin(), m_children.end(), [child](const auto &pair)
+                                                { return pair.first.get() == child; }),
+                                 m_children.end());
+                return *this;
+            }
+
+            Value<T> &remove_child(std::function<bool(const Value<T> *)> predicate)
+            {
+                m_children.erase(std::remove_if(m_children.begin(), m_children.end(), [predicate](const auto &pair)
+                                                { return predicate(pair.first.get()); }),
+                                 m_children.end());
                 return *this;
             }
 
@@ -338,7 +416,7 @@ namespace libquixcc
 
             inline bool is_acyclic() const { return !is_cyclic(); }
 
-            bool contains(const Value<T> *node) const
+            bool contains(std::function<bool(const Value<T> *)> predicate) const
             {
                 std::set<const Value<T> *> visited;
                 std::stack<const Value<T> *> stack;
@@ -354,7 +432,7 @@ namespace libquixcc
 
                     visited.insert(current);
 
-                    if (current == node)
+                    if (predicate(current))
                         return true;
 
                     for (const auto &child : current->m_children)
@@ -366,22 +444,21 @@ namespace libquixcc
                 return false;
             }
 
-            template <typename U>
-            std::vector<const Value<T> *> find_shortest_path(const U *node) const
+            std::vector<Value<T> *> find_shortest_path(std::function<bool(Value<T> *)> predicate)
             {
-                assert(node != nullptr);
+                assert(predicate != nullptr);
 
-                std::vector<const Value<T> *> path;
-                std::set<const Value<T> *> visited;
-                std::stack<const Value<T> *> stack;
-                std::unordered_map<const Value<T> *, const Value<T> *> parent;
+                std::vector<Value<T> *> path;
+                std::set<Value<T> *> visited;
+                std::stack<Value<T> *> stack;
+                std::unordered_map<Value<T> *, Value<T> *> parent;
 
                 stack.push(this);
                 parent[this] = nullptr;
 
                 while (!stack.empty())
                 {
-                    const Value<T> *current = stack.top();
+                    Value<T> *current = stack.top();
                     stack.pop();
 
                     if (visited.contains(current))
@@ -389,9 +466,9 @@ namespace libquixcc
 
                     visited.insert(current);
 
-                    if (typeid(*current) == typeid(*node) && *qir_cast<U>(current) == *node)
+                    if (predicate(current))
                     {
-                        const Value<T> *current_node = current;
+                        Value<T> *current_node = current;
                         while (current_node != nullptr)
                         {
                             path.push_back(current_node);
@@ -402,7 +479,7 @@ namespace libquixcc
                         return path;
                     }
 
-                    for (const auto &child : current->m_children)
+                    for (auto &child : current->m_children)
                     {
                         stack.push(child.first.get());
                         parent[child.first.get()] = current;
@@ -553,42 +630,73 @@ namespace libquixcc
             }
         };
 
-        template <auto T>
-        class NodeIterator
+        class Hasher
         {
-            friend class Value<T>;
-
-            Value<T> *m_node;
-            size_t m_index;
-
-            NodeIterator(Value<T> *node, size_t index) : m_node(node), m_index(index) {}
-            NodeIterator(const Value<T> *node, size_t index) : m_node(const_cast<Value<T> *>(node)), m_index(index) {}
+            boost::uuids::detail::sha1 m_hasher;
 
         public:
-            NodeIterator(const NodeIterator &other) = default;
-            NodeIterator(NodeIterator &&other) = default;
-            NodeIterator &operator=(const NodeIterator &other) = default;
+            Hasher() = default;
 
-            inline NodeIterator<T> &operator++()
+            template <typename T>
+            Hasher &add(const T value)
             {
-                m_index++;
+                std::stringstream ss;
+                value->print(ss);
+                m_hasher.process_bytes(ss.str().data(), ss.str().size());
                 return *this;
             }
-            inline NodeIterator<T> operator++(int)
+
+            template <typename T, typename W>
+            Hasher &add(const std::set<std::pair<T, W>> &values)
             {
-                NodeIterator<T> tmp(*this);
-                operator++();
-                return tmp;
-            }
-            inline bool operator==(const NodeIterator<T> &other) const { return m_node == other.m_node && m_index == other.m_index; }
-            Value<T> &operator*() const
-            {
-                return m_node->get_child(m_index);
+                for (const auto &value : values)
+                {
+                    add(value.first);
+
+                    /* TODO: fix this */
+                    m_hasher.process_bytes(reinterpret_cast<const void *>(&value.second), sizeof(W));
+                }
+                return *this;
             }
 
-            Value<T> *operator->() const
+            inline Hasher &add(const std::string_view &value)
             {
-                return &m_node->get_child(m_index);
+                m_hasher.process_bytes(value.data(), value.size());
+                return *this;
+            }
+
+            inline Hasher &add(const char *value)
+            {
+                m_hasher.process_bytes(value, std::strlen(value));
+                return *this;
+            }
+
+            inline Hasher &add(const std::string &value)
+            {
+                m_hasher.process_bytes(value.data(), value.size());
+                return *this;
+            }
+
+            /* Generate tag based on source metadata */
+            inline Hasher &gettag(const std::string_view &tag = __PRETTY_FUNCTION__)
+            {
+                m_hasher.process_bytes(tag.data(), tag.size());
+                return *this;
+            }
+
+            inline boost::uuids::uuid hash()
+            {
+
+                boost::uuids::detail::sha1::digest_type digest;
+                m_hasher.get_digest(digest);
+                boost::uuids::uuid ret;
+                auto p = ret.begin();
+                for (std::size_t i{}; i != 4; p += 4, ++i)
+                {
+                    auto const d = boost::endian::native_to_big(digest[i]);
+                    std::memcpy(p, &d, 4);
+                }
+                return ret;
             }
         };
 
@@ -604,11 +712,6 @@ namespace libquixcc
 
             /* Module Deserialization */
             virtual Result<bool> deserialize_text_impl(std::istream &is) = 0;
-
-            /* Graph Operations & Caching */
-            virtual size_t node_count_impl() const = 0;
-            virtual boost::uuids::uuid graph_hash_impl() const = 0;
-            virtual std::string_view graph_hash_algorithm_name_impl() const = 0;
 
             /* IR Dialect Information */
             virtual std::string_view ir_dialect_name_impl() const = 0;
@@ -669,14 +772,8 @@ namespace libquixcc
             /* Verify IR Module */
             inline bool verify() const { return verify_impl(); }
 
-            /* Count Nodes in IR Graph */
-            inline size_t node_count() const { return node_count_impl(); }
-
             /* Calculate a cryptographic hash of the IR Graph */
-            inline boost::uuids::uuid hash() const { return graph_hash_impl(); }
-
-            /* Get the name of the hash algorithm used to calculate the IR Graph hash */
-            inline std::string_view hash_algorithm() const { return graph_hash_algorithm_name_impl(); }
+            inline boost::uuids::uuid hash() const { return m_root ? m_root->hash() : boost::uuids::nil_uuid(); }
 
             /* Get the name of the IR Dialect */
             inline std::string_view dialect_name() const { return ir_dialect_name_impl(); }
@@ -691,8 +788,8 @@ namespace libquixcc
             inline std::string_view dialect_description() const { return ir_dialect_description_impl(); }
 
             /* Get Entry Point for IR Graph */
-            virtual std::shared_ptr<Value<U>> getRoot() { return m_root; }
-            virtual const std::shared_ptr<Value<U>> getRoot() const { return m_root; }
+            virtual std::shared_ptr<Value<U>> root() { return m_root; }
+            virtual const std::shared_ptr<Value<U>> root() const { return m_root; }
 
             IRModule<T, U> &assign(std::shared_ptr<Value<U>> root)
             {
@@ -713,7 +810,7 @@ namespace libquixcc
         template <typename T, typename U>
         std::shared_ptr<T> QIR_ROOT(const U &_module)
         {
-            return std::reinterpret_pointer_cast<T>(_module->getRoot());
+            return std::reinterpret_pointer_cast<T>(_module->root());
         }
 
     } // namespace ir

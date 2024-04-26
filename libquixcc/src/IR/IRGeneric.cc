@@ -30,8 +30,6 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/IRModule.h>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
 
 #include <map>
 
@@ -62,7 +60,7 @@ protected:
         {
             if (it != cbegin())
                 os << ", ";
-            it->print<PrintMode::Text>(os);
+            it->first->print<PrintMode::Text>(os);
         }
 
         os << "])";
@@ -76,7 +74,7 @@ protected:
 
     boost::uuids::uuid graph_hash_impl() const override
     {
-        return boost::uuids::nil_uuid();
+        return Hasher().gettag().add(m_name).add(children()).hash();
     }
 
     bool verify_impl() const override
@@ -93,7 +91,24 @@ class NodeNode : public libquixcc::ir::Value<NodeType::Node>
 protected:
     Result<bool> print_text_impl(std::ostream &os, bool debug) const override
     {
-        os << "NodeNode(" << m_name << ")";
+        os << "NodeNode(" << m_name;
+
+        if (!has_children())
+        {
+            os << ")";
+            return true;
+        }
+
+        os << ", [";
+        for (auto it = cbegin(); it != cend(); ++it)
+        {
+            if (it != cbegin())
+                os << ", ";
+            it->first->print<PrintMode::Text>(os);
+        }
+
+        os << "])";
+
         return true;
     }
 
@@ -104,7 +119,7 @@ protected:
 
     boost::uuids::uuid graph_hash_impl() const override
     {
-        return boost::uuids::nil_uuid();
+        return Hasher().gettag().add(m_name).hash();
     }
 
     bool verify_impl() const override
@@ -149,27 +164,6 @@ protected:
 
         m_root = std::make_shared<GroupNode>();
         return m_root->deserialize<DeserializeMode::Text>(is);
-    }
-
-    size_t node_count_impl() const override
-    {
-        if (!m_root)
-            return 0;
-
-        return m_root->node_count();
-    }
-
-    boost::uuids::uuid graph_hash_impl() const override
-    {
-        if (!m_root)
-            return boost::uuids::nil_uuid();
-
-        return m_root->hash();
-    }
-
-    std::string_view graph_hash_algorithm_name_impl() const override
-    {
-        return "node-recurse-sha1-trunc96";
     }
 
     std::string_view ir_dialect_name_impl() const override
@@ -240,36 +234,7 @@ void x()
 
     ir->assign(node);
 
-    std::cout << "Depth First Preorder Traversal" << std::endl;
-    ir->getRoot()->dfs_preorder(
-        [](Value<NodeType::Group> *node)
-        {
-            node->print<PrintMode::Text>(std::cout);
-            std::cout << std::endl;
-        });
+    auto &r = *ir->root();
 
-    std::cout << "Depth First Postorder Traversal" << std::endl;
-    ir->getRoot()->dfs_postorder(
-        [](Value<NodeType::Group> *node)
-        {
-            node->print<PrintMode::Text>(std::cout);
-            std::cout << std::endl;
-        });
-
-    std::cout << "Breadth First Preorder Traversal" << std::endl;
-    ir->getRoot()->bfs_preorder(
-        [](Value<NodeType::Group> *node)
-        {
-            node->print<PrintMode::Text>(std::cout);
-            std::cout << std::endl;
-        });
-
-    std::cout << "Breadth First Postorder Traversal" << std::endl;
-    ir->getRoot()->bfs_postorder(
-        [](Value<NodeType::Group> *node)
-        {
-            node->print<PrintMode::Text>(std::cout);
-            std::cout << std::endl;
-        });
-
+    r.print(std::cout, true);
 }
