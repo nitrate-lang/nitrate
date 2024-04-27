@@ -607,9 +607,6 @@ static void reduce_named_mappings(quixcc_job_t &ctx)
 
 static bool compile(quixcc_job_t *job)
 {
-    /// TODO: test
-    x();
-
     // Create an AST before goto statements
     // AST ast;
     std::shared_ptr<AST> ast = std::make_shared<AST>();
