@@ -58,7 +58,14 @@
 #include <libquixcc.h>
 #include <mutate/Routine.h>
 
-#include <IR/IRModule.h>
+#include <IR/alpha/AlphaIR.h>
+#include <IR/beta/BetaIR.h>
+#include <IR/gamma/GammaIR.h>
+#include <IR/delta/DeltaIR.h>
+
+#include <optimizer/alpha/Optimizer.h>
+#include <optimizer/beta/Optimizer.h>
+#include <optimizer/gamma/Optimizer.h>
 
 #define PROJECT_REPO_URL "https://github.com/Kracken256/quixcc"
 
@@ -345,54 +352,9 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
     return true;
 }
 
-static bool quixcc_verify_semantics(quixcc_job_t *job, std::shared_ptr<AST> ast)
+static bool quixcc_qualify(quixcc_job_t *job, std::shared_ptr<AST> ast)
 {
-    (void)job;
-    (void)ast;
-
-    /*
-     * TODO: Implement function argument type verification
-     * TODO: Implement function return type verification
-     */
-
-    /* old stuff
-        /// TODO: Verify that all identifiers are defined
-        /// TODO: Verify that all types are defined
-        /// TODO: Verify that all functions are defined
-        /// TODO: Type checking
-        /// TODO: Integer overflow/underflow checking
-        /// TODO: Array bounds checking
-        /// TODO: NULL value checking
-        /// TODO: Veirfy struct/union members are non cyclic
-        /// TODO: Verify mutability of variables
-        /// TODO: Item alignment checking
-        /// TODO: verify definitions match declarations
-        /// TODO: identifiers don't conflict with reserved words
-    */
-
-    return true;
-}
-
-static bool quixcc_optimize_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
-{
-    (void)job;
-    (void)ast;
-
-    /// TODO: Argument by-value to const reference optimization
-    /// TODO: Data flow analysis
-    ///   - compile-time immutable blobs to const data
-    ///   - function folding via effect engine
-    ///   - ControlFlowGraph reduction via effect engine
-    ///   - Smart dead code elimination via effect engine
-    ///   - Standard library aware optimizations/eliminations
-    ///      - Heap allocation elimination via metastructure generation
-    ///      - String concatenation to constant string
-    ///      - String concatenation to optimized metaclass builder
-    ///   - Lookup table generation
-    /// TODO: Detect common algorithms implementation and replace with standard library optimized version
-    /// TODO: Try-catch block elimination via deep inspection of the AST
-    /// TODO:
-
+    /// TODO: implement semantic analysis
     return true;
 }
 
@@ -576,40 +538,9 @@ static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<PrepEngine> prep
     return true;
 }
 
-static void reduce_named_mappings(quixcc_job_t &ctx)
-{
-    auto it = ctx.m_inner.m_named_construsts.begin();
-
-    while (it != ctx.m_inner.m_named_construsts.end())
-    {
-        switch (it->first.first)
-        {
-        case NodeType::GroupDefNode:
-        {
-            auto group = std::static_pointer_cast<GroupDefNode>(it->second);
-            ctx.m_inner.m_named_construsts[std::make_pair(NodeType::StructDefNode, it->first.second)] = group->to_struct_def();
-            it = ctx.m_inner.m_named_construsts.erase(it);
-            break;
-        }
-        case NodeType::RegionDefNode:
-        {
-            auto region = std::static_pointer_cast<RegionDefNode>(it->second);
-            ctx.m_inner.m_named_construsts[std::make_pair(NodeType::StructDefNode, it->first.second)] = region->to_struct_def();
-            it = ctx.m_inner.m_named_construsts.erase(it);
-            break;
-        }
-        default:
-            it++;
-            break;
-        }
-    }
-}
-
 static bool compile(quixcc_job_t *job)
 {
-    // Create an AST before goto statements
-    // AST ast;
-    std::shared_ptr<AST> ast = std::make_shared<AST>();
+    auto ast = std::make_shared<AST>();
 
     if (job->m_argset.contains("-PREP"))
     {
@@ -658,69 +589,80 @@ static bool compile(quixcc_job_t *job)
 
     ///=========================================
     /// BEGIN: PREPROCESSOR/LEXER
-    ///=========================================
-    std::shared_ptr<PrepEngine> prep = std::make_shared<PrepEngine>(*job);
+    auto prep = std::make_shared<PrepEngine>(*job);
     LOG(DEBUG) << "Preprocessing source" << std::endl;
     prep->setup();
     if (!preprocess_phase(job, prep))
         return false;
     LOG(DEBUG) << "Finished preprocessing source" << std::endl;
-    ///=========================================
-    /// END: PREPROCESSOR/LEXER
+    /// END:   PREPROCESSOR/LEXER
     ///=========================================
 
     ///=========================================
     /// BEGIN: PARSER
-    ///=========================================
     LOG(DEBUG) << "Building AST 1" << std::endl;
     if (!parse(*job, prep, ast, false))
         return false;
     LOG(DEBUG) << "Finished building AST 1" << std::endl;
     if (job->m_debug)
         LOG(DEBUG) << "Dumping AST 1 (JSON): " << base64_encode(ast->to_json()) << std::endl;
-    ///=========================================
-    /// END: PARSER
+    /// END:   PARSER
     ///=========================================
 
     ///=========================================
     /// BEGIN: INTERMEDIATE PROCESSING
-    ///=========================================
     if (!quixcc_mutate_ast(job, ast) || job->m_tainted)
         return false;
-
-    if (!quixcc_verify_semantics(job, ast) || job->m_tainted)
-        return false;
-
-    if (!quixcc_optimize_ast(job, ast) || job->m_tainted)
-        return false;
-
-    if (job->m_debug)
-        LOG(DEBUG) << "Dumping AST 2 (JSON): " << base64_encode(ast->to_json()) << std::endl;
-
-    ///=========================================
-    /// END: INTERMEDIATE PROCESSING
+    /// END:   INTERMEDIATE PROCESSING
     ///=========================================
 
-    ///=========================================
-    /// BEGIN: AST REDUCTION
-    ///=========================================
-
-    ReductionState state;
-    auto ast_reduced = ast->reduce(state);
-    if (!ast_reduced)
+    if (!job->m_argset.contains("-fno-check")) // -fno-check disables semantic analysis
     {
-        LOG(ERROR) << "failed to reduce AST" << std::endl;
-        return false;
+        ///=========================================
+        /// BEGIN: SEMANTIC ANALYSIS
+        LOG(DEBUG) << "Performing semantic analysis" << std::endl;
+        if (!quixcc_qualify(job, ast))
+        {
+            LOG(ERROR) << "failed to verify AST" << std::endl;
+            return false;
+        }
+        LOG(DEBUG) << "Finished semantic analysis" << std::endl;
+        /// END:   SEMANTIC ANALYSIS
+        ///=========================================
     }
 
-    if (job->m_debug)
-        LOG(DEBUG) << "Dumping AST 3 (JSON): " << base64_encode(ast_reduced->to_json()) << std::endl;
-
-    reduce_named_mappings(*job);
-
     ///=========================================
-    /// END: AST REDUCTION
+    /// BEGIN: OPTIMIZATION PIPELINE
+    bool opt = !job->m_argset.contains("-O0");
+
+    auto AIR = std::make_unique<ir::alpha::IRAlpha>(job->m_filename);
+    if (!AIR->from_ast(ast))
+        return false;
+
+    if (opt && !optimizer::alpha::optimize_AlphaIR_1_0(AIR))
+        return false;
+
+    auto BIR = std::make_unique<ir::beta::IRBeta>(job->m_filename);
+    if (!BIR->from_alpha(AIR))
+        return false;
+
+    if (opt && !optimizer::beta::optimize_BetaIR_1_0(BIR))
+        return false;
+
+    auto GIR = std::make_unique<ir::gamma::IRGamma>(job->m_filename);
+    if (!GIR->from_beta(BIR))
+        return false;
+
+    if (opt && !optimizer::gamma::optimize_GammaIR_1_0(GIR))
+        return false;
+
+    auto DIR = std::make_unique<ir::delta::IRDelta>(job->m_filename);
+    if (!DIR->from_gamma(GIR))
+        return false;
+    /// END:   OPTIMIZATION PIPELINE
     ///=========================================
+
+    auto ast_reduced = std::make_unique<BlockNode>(*ast);
 
     ///=========================================
     /// BEGIN: GENERATOR

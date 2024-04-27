@@ -235,14 +235,14 @@ static void setup_graph(std::shared_ptr<GroupNode> node, size_t n)
     setup_graph(node4, n - 1);
 }
 
-void x()
-{
-    std::shared_ptr<GroupNode> node = std::make_shared<GroupNode>();
+// void x()
+// {
+//     std::shared_ptr<GroupNode> node = std::make_shared<GroupNode>();
 
-    setup_graph(node, 500);
+//     setup_graph(node, 500);
 
-    auto ir = std::make_unique<IRAlpha>("AST");
+//     auto ir = std::make_unique<IRAlpha>("AST");
 
-    ir->assign(node);
+//     ir->assign(node);
 
-}
+// }

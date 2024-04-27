@@ -308,11 +308,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
     builder.target(m_config["triple"].as<std::string>());
     builder.cpu(m_config["cpu"].as<std::string>());
 
-    auto &compiler = builder.build().run(1);
-
-    compiler.puts();
-
-    if (!compiler.ok())
+    if (!builder.build().run(1).puts().ok())
     {
         LOG(core::ERROR) << "Failed to compile source file " << file << std::endl;
         return false;
