@@ -11,7 +11,7 @@
 ///       ░▒▓██▓▒░                                                               ///
 ///                                                                              ///
 ///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
-///     * Copyright (C) 2020-2024 Wesley C. Jones                                ///
+///     * Copyright (C) 2024 Wesley C. Jones                                     ///
 ///                                                                              ///
 ///     The QUIX Compiler Suite is free software; you can redistribute it and/or ///
 ///     modify it under the terms of the GNU Lesser General Public               ///
@@ -34,7 +34,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <bits/types/FILE.h>
+#include <stdio.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -73,76 +73,34 @@ extern "C"
         enum quixcc_msg_level_t m_level;
     };
 
-    struct quixcc_result_t
+    struct quixcc_status_t
     {
         struct quixcc_msg_t **m_messages;
         uint32_t m_count;
         bool m_success;
     };
 
-#if defined(__cplusplus) && defined(QUIXCC_INTERNAL)
-}
-
-#include <map>
-#include <string>
-#include <llvm/LLVMWrapper.h>
-
-typedef struct quixcc_options_t
-{
-    const char **m_options;
-    uint32_t m_count;
-} quixcc_options_t;
-
-typedef struct quixcc_uuid_t
-{
-    uint64_t m_low;
-    uint64_t m_high;
-} quixcc_uuid_t;
-
-typedef struct quixcc_job_t
-{
-    std::map<std::string, std::string> m_argset;
-    std::string m_triple;
-    std::string m_cpu;
-    libquixcc::LLVMContext m_inner;
-    quixcc_uuid_t m_id;
-    quixcc_options_t m_options;
-    quixcc_result_t m_result;
-    FILE *m_in;
-    FILE *m_out;
-    char *m_filename;
-    uint8_t m_priority;
-    bool m_debug;
-    bool m_tainted;
-} quixcc_job_t;
-
-extern "C"
-{
-#else
-typedef struct quixcc_job_t quixcc_job_t;
-#endif
+    typedef struct quixcc_job_t quixcc_job_t;
 
     /**
      * @brief Initialize the QUIX compiler library.
      *
-     * This function initializes the QUIX compiler library and must be called before any other functions.
+     * Initializes the QUIX compiler library and must be called before all
+     * other QUIX library functions.
      *
      * @return true if the library was initialized successfully.
      * @note This function is thread-safe.
-     * @note It is okay to call this function multiple times. All calls after the first are no-ops.
+     * @note Initialization more than once is a no-op.
      */
     bool quixcc_init();
 
     /**
-     * @brief Create a new compiler job.
-     *
-     * This function initializes and allocates memory for a new compiler job structure.
+     * @brief Create a new compiler job with default settings.
      *
      * @return A pointer to the newly created compiler job.
      *
-     * @note The caller is responsible for disposing the structure.
-     * @note The returned structure is in a valid state.
-     * @note The returned structure is allocated dynamically.
+     * @note The caller is responsible for disposing of the job using
+     *       `quixcc_dispose()`.
      * @note This function is thread-safe.
      */
     quixcc_job_t *quixcc_new();
@@ -150,7 +108,8 @@ typedef struct quixcc_job_t quixcc_job_t;
     /**
      * @brief Dispose a compiler job.
      *
-     * This function releases all associated resources and deallocates memory for the specified compiler job.
+     * Releases all associated resources and deallocates memory for the
+     * specified compiler job.
      *
      * @param job The compiler job to be disposed.
      * @return true if the job was disposed successfully.
@@ -158,110 +117,101 @@ typedef struct quixcc_job_t quixcc_job_t;
      * @note The job is disposed, and ALL associated resources are released.
      * @note This function is thread-safe.
      * @note This function will return false if the job is in use.
+     * @note If `!job`, this function is a no-op.
      */
     bool quixcc_dispose(quixcc_job_t *job);
 
     /**
-     * @brief Add an option to a compiler job.
-     *
-     * This function enables or disables the specified option for the given compiler job.
+     * @brief Set an option for a compiler job.
      *
      * @param job The compiler job.
      * @param option The option to add.
      * @param enabled Is the option enabled?
      *
      * @note This function is thread-safe.
+     * @note The option string is copied internally.
+     * @note It is okay to set the same option multiple times.
+     *       The last setting will be used.
+     * @note If `!job || !option`, this function is a no-op.
      */
-    void quixcc_add_option(quixcc_job_t *job, const char *option, bool enabled);
-
-    /**
-     * @brief Remove an option from a compiler job.
-     *
-     * This function removes the specified option from the given compiler job.
-     *
-     * @param job The compiler job.
-     * @param opt The option to remove.
-     *
-     * @note This function is thread-safe.
-     */
-    void quixcc_remove_option(quixcc_job_t *job, const char *opt);
+    void quixcc_option(quixcc_job_t *job, const char *option, bool enable);
 
     /**
      * @brief Set the input stream for a compiler job.
-     *
-     * This function sets the input stream and filename for the given compiler job.
      *
      * @param job The compiler job.
      * @param in The input stream.
      * @param filename The input filename (required for error messages).
      *
      * @note This function is thread-safe.
+     * @note The filename string is copied internally.
+     * @note If `!job || !in || !filename`, this function is a no-op.
+     * @note The FILE handle for the input stream is owned by the caller.
+     * @warning The caller must ensure that the input stream is open and
+     *          readable for the ENTIRE duration of the job.
      */
-    void quixcc_set_input(quixcc_job_t *job, FILE *in, const char *filename);
+    void quixcc_source(quixcc_job_t *job, FILE *in, const char *filename);
 
     /**
      * @brief Set the LLVM Target Triple for a compiler job.
      *
-     * This function sets the LLVM Target Triple for the given compiler job.
-     *
      * @param job The compiler job.
      * @param triple The LLVM Target Triple.
-     * @return true if the triple was set successfully. false if the triple is invalid or unknown.
-     * @warning An empty string is a special case and will use the Host Target Triple returned by `llvm::sys::getDefaultTargetTriple()`.
-     * @note This function will validate the triple before setting it and will check if it is supported.
-     * @note Is is okay to set the triple multiple times. The last valid triple will be used.
+     * @return true if the triple was set successfully. false if the triple
+     *         is invalid or unknown.
+     * @warning An empty string is a special case and will use the Host Target
+     *          Triple returned by `llvm::sys::getDefaultTargetTriple()`.
+     * @note This function will validate the triple before setting it and will
+     *       check if it is supported.
+     * @note It is okay to set the triple multiple times. The last **VALID**
+     *       triple will be used.
+     * @note If `!job || !triple`, this function is a no-op.
      * @note This function is thread-safe.
      */
-    bool quixcc_set_triple(quixcc_job_t *job, const char *triple);
+    bool quixcc_target(quixcc_job_t *job, const char *llvm_triple);
 
     /**
      * @brief Set the LLVM Target CPU for a compiler job.
      *
-     * This function sets the LLVM Target CPU for the given compiler job.
-     *
      * @param job The compiler job.
      * @param cpu The LLVM Target CPU.
-     * @return true if the CPU was set successfully. false if the CPU is invalid or unknown.
-     * @note This function will validate the CPU before setting it and will check if it is supported.
-     * @note Is is okay to set the CPU multiple times. The last valid CPU will be used.
+     * @return true if the CPU was set successfully. false if the CPU
+     *         is invalid or unknown.
+     * @note It is okay to set the CPU multiple times. The last **VALID**
+     *       CPU will be used.
      * @note This function is thread-safe.
+     * @note If `!job || !cpu`, this function is a no-op.
+     * @warning Currently, the CPU is not validated for correctness or backend
+     *          support.
      */
-    bool quixcc_set_cpu(quixcc_job_t *job, const char *cpu);
-
-    /**
-     * @brief Check if a LLVM Target Triple is valid.
-     *
-     * This function checks if the given LLVM Target Triple is valid.
-     *
-     * @param triple The LLVM Target Triple.
-     * @return true if the triple is valid. false if the triple is invalid or unknown.
-     * @warning An empty string is a special case and will use the Host Target Triple returned by `llvm::sys::getDefaultTargetTriple()`.
-     * @note This function is thread-safe.
-     */
-    bool quixcc_triple(const char *triple);
+    bool quixcc_cpu(quixcc_job_t *job, const char *cpu);
 
     /**
      * @brief Set the output stream for a compiler job.
      *
-     * This function sets the output stream for the given compiler job.
-     *
      * @param job The compiler job.
      * @param out The output stream.
+     * @param[out] old_out The previous output stream.
      *
+     * @note The FILE handle for the output stream is owned by the caller.
+     * @note If `!job || !out`, this function is a no-op.
+     * @note The caller must ensure that the output stream is open and
+     *       writable for the ENTIRE duration of the job.
+     * @note If `old_out` is not NULL, the previous output stream will be
+     *       returned in it.
      * @note This function is thread-safe.
      */
-    void quixcc_set_output(quixcc_job_t *job, FILE *out);
+    void quixcc_output(quixcc_job_t *job, FILE *out, FILE **old_out);
 
     /**
      * @brief Run a compiler job.
      *
-     * This function executes the compiler job and returns true if it completed successfully.
-     *
      * @param job The compiler job.
-     * @return true if the job completed successfully.
+     * @return true if the job completed without errors.
      *
      * @note This function is thread-safe.
      * @note Use `quixcc_status()` for a detailed result.
+     * @note If `!job`, this function is a no-op.
      */
     bool quixcc_run(quixcc_job_t *job);
 
@@ -271,51 +221,63 @@ typedef struct quixcc_job_t quixcc_job_t;
      * This function retrieves the result of the specified compiler job.
      *
      * @param job The compiler job.
-     * @return The result of the job, or NULL if the job is still running.
+     * @return The result of the job, or NULL.
      *
      * @note This function is thread-safe.
+     * @note The result is owned by the job and should not be modified.
+     * @note If the job is still running, this function will return NULL.
+     * @note The result is valid until the job is disposed.
+     * @note If `!job`, this function is a no-op.
      */
-    const quixcc_result_t *quixcc_result(quixcc_job_t *job);
+    const quixcc_status_t *quixcc_status(quixcc_job_t *job);
 
     /**
-     * @brief Perform a one-shot compilation using QUIX.
+     * @brief Perform a one-shot compilation.
      *
-     * This function compiles input from an input stream, processes it according to specified options,
-     * and writes the output to the provided output stream.
+     * This function compiles input from an input stream, processes it
+     * according to specified options, and writes the output to the
+     * provided output stream.
      *
      * @param in The input stream containing the source code to be compiled.
      * @param out The output stream where the compiled output will be written.
-     * @param options An array of compiler options, terminated by a NULL element.
-     * @return NULL if the compilation is successful, otherwise a string containing concatenated error messages.
+     * @param options An array of compiler options, terminated by a NULL
+     *                element.
+     * @return NULL if the compilation is successful, otherwise a string array
+     *         containing status messages.
      *
      * @note This function is thread-safe.
-     * @note It is the caller's responsibility to free the returned string if it is not NULL.
-     * @warning Debug and non-fatal messages will be discarded.
+     * @note It is the caller's responsibility to free the returned array
+     *       if it is not NULL.
+     * @warning Non-error messages will be discarded.
      * @note Compilation option parsing is handled internally.
      * @warning Ensure that the options array is properly NULL-terminated.
-     * @note The FILE handles for input and output streams are owned by the caller.
-     *       The caller may need to flush the streams.
-     * @note It is acceptable to use `fmemopen` and `open_memstream` to create the IO streams.
+     * @note The FILE handles for input and output streams are owned by the
+     *       caller.
+     * @warning The caller must ensure that the input stream is open and
+     *          readable for the ENTIRE duration of the compilation.
+     * @warning The caller must ensure that the output stream is open and
+     *          writable for the ENTIRE duration of the compilation.
+     * @note If `!in || !out`, this function is a no-op and returns NULL.
      */
-    char *quixcc_compile(FILE *in, FILE *out, const char *options[]);
+    char **quixcc_compile(FILE *in, FILE *out, const char *options[]);
 
     ///===================================================================================================
-    /// BEGIN: LANGUAGE stuff
+    /// BEGIN: LANGUAGE STUFF
     ///===================================================================================================
+
     /**
-     * @brief Demangle a mangled symbol name into JSON.
-     *
-     * This function converts a mangled symbol name into a demangled JSON string.
+     * @brief Demangle a mangled symbol name into a JSON representation.
      *
      * @param mangled The mangled symbol name to be demangled.
-     * @return A dynamically allocated JSON string representing the demangled symbol name.
+     * @return A malloc'd JSON string representing the demangled symbol name.
      *
-     * @note The caller is responsible for `free()`ing the memory allocated for the returned JSON string.
+     * @note This function is thread-safe.
+     * @note If `!mangled`, this function is a no-op and returns NULL.
      */
-    char *quixcc_demangle_symbol(const char *mangled);
+    char *quixcc_demangle(const char *mangled);
 
     ///===================================================================================================
-    /// END: LANGUAGE stuff
+    /// END: LANGUAGE STUFF
     ///===================================================================================================
 
 #ifdef __cplusplus

@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 
     std::string mangled = argv[1];
 
-    char *demangled = quixcc_demangle_symbol(mangled.c_str());
+    char *demangled = quixcc_demangle(mangled.c_str());
     if (!demangled)
     {
         std::cerr << "Invalid mangled symbol" << std::endl;

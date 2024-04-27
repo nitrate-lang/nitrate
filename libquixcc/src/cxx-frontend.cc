@@ -11,7 +11,7 @@
 ///       ░▒▓██▓▒░                                                               ///
 ///                                                                              ///
 ///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
-///     * Copyright (C) 2020-2024 Wesley C. Jones                                ///
+///     * Copyright (C) 2024 Wesley C. Jones                                     ///
 ///                                                                              ///
 ///     The QUIX Compiler Suite is free software; you can redistribute it and/or ///
 ///     modify it under the terms of the GNU Lesser General Public               ///
@@ -124,16 +124,19 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads)
 
     m_ok = true;
 
-    // Collect messages
     for (auto job : this->m_jobs)
     {
-        for (i = 0; i < job->m_result.m_count; i++)
+        const quixcc_status_t *status = quixcc_status(job);
+        if (!status)
+            throw std::runtime_error("Failed to retrieve job status.");
+
+        for (i = 0; i < status->m_count; i++)
         {
-            auto feedback = job->m_result.m_messages[i];
+            auto feedback = status->m_messages[i];
             this->m_messages.push_back(std::make_pair(feedback->message, feedback->m_level));
         }
 
-        if (!job->m_result.m_success)
+        if (!status->m_success)
             this->m_ok = false;
     }
 
@@ -146,9 +149,13 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal, st
 
     for (auto job : this->m_jobs)
     {
-        for (i = 0; i < job->m_result.m_count; i++)
+        const quixcc_status_t *status = quixcc_status(job);
+        if (!status)
+            throw std::runtime_error("Failed to retrieve job status.");
+
+        for (i = 0; i < status->m_count; i++)
         {
-            auto feedback = job->m_result.m_messages[i];
+            auto feedback = status->m_messages[i];
             if (feedback->m_level < QUIXCC_ERROR)
                 normal << feedback->message << std::endl;
             else
@@ -356,26 +363,26 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build()
         case Verbosity::NORMAL:
             break;
         case Verbosity::VERBOSE:
-            quixcc_add_option(job, "-v", true);
+            quixcc_option(job, "-v", true);
             break;
         case Verbosity::VERY_VERBOSE:
-            job->m_debug = true;
-            quixcc_add_option(job, "-v", true);
+            // job->m_debug = true;
+            quixcc_option(job, "-v", true);
             break;
         }
 
         for (auto &flag : m_flags)
-            quixcc_add_option(job, flag.c_str(), true);
+            quixcc_option(job, flag.c_str(), true);
 
-        quixcc_set_input(job, entry.first, entry.second.c_str());
+        quixcc_source(job, entry.first, entry.second.c_str());
 
-        if (!quixcc_set_triple(job, m_target.triple().c_str()))
+        if (!quixcc_target(job, m_target.triple().c_str()))
             throw TargetTripleException("Invalid or unsupported LLVM target triple: " + m_target.triple());
 
-        if (!quixcc_set_cpu(job, m_cpu.cpu().c_str()))
+        if (!quixcc_cpu(job, m_cpu.cpu().c_str()))
             throw CpuException("Invalid or unsupported LLVM CPU: " + m_cpu.cpu());
 
-        quixcc_set_output(job, m_output);
+        quixcc_output(job, m_output, nullptr);
 
         jobs.push_back(job);
     }

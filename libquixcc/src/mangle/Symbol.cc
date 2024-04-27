@@ -11,7 +11,7 @@
 ///       ░▒▓██▓▒░                                                               ///
 ///                                                                              ///
 ///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
-///     * Copyright (C) 2020-2024 Wesley C. Jones                                ///
+///     * Copyright (C) 2024 Wesley C. Jones                                     ///
 ///                                                                              ///
 ///     The QUIX Compiler Suite is free software; you can redistribute it and/or ///
 ///     modify it under the terms of the GNU Lesser General Public               ///
@@ -98,8 +98,12 @@ bool libquixcc::Symbol::demangle_tojson(const std::string &mangled, std::string 
     return true;
 }
 
-LIB_EXPORT char *quixcc_demangle_symbol(const char *mangled)
+LIB_EXPORT char *quixcc_demangle(const char *mangled)
 {
+    /* no-op */
+    if (!mangled)
+        return nullptr;
+    
     std::string output;
     if (!libquixcc::Symbol::demangle_tojson(mangled, output))
         return nullptr;

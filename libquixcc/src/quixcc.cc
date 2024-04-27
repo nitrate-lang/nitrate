@@ -11,7 +11,7 @@
 ///       ░▒▓██▓▒░                                                               ///
 ///                                                                              ///
 ///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
-///     * Copyright (C) 2020-2024 Wesley C. Jones                                ///
+///     * Copyright (C) 2024 Wesley C. Jones                                     ///
 ///                                                                              ///
 ///     The QUIX Compiler Suite is free software; you can redistribute it and/or ///
 ///     modify it under the terms of the GNU Lesser General Public               ///
@@ -67,7 +67,12 @@
 #include <optimizer/beta/Optimizer.h>
 #include <optimizer/gamma/Optimizer.h>
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/random_generator.hpp>
+
 #define PROJECT_REPO_URL "https://github.com/Kracken256/quixcc"
+
+#define PRUNE_DEBUG_MESSAGES 1
 
 using namespace libquixcc;
 
@@ -95,30 +100,13 @@ static char *safe_strdup(const char *str)
 
 static quixcc_uuid_t quixcc_uuid()
 {
-    /*
-        I'm not sure if std::random_device is thread safe, so I'm using a mutex to lock it.
-    */
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
+    boost::uuids::uuid uuid = boost::uuids::random_generator()();
+    static_assert((sizeof(quixcc_uuid_t::data) | sizeof(uuid.data)) == 16, "UUID type size mismatch");
 
-    union
-    {
-        uint8_t bytes[16];
-        struct
-        {
-            uint64_t m_low;
-            uint64_t m_high;
-        } __attribute__((packed)) m;
-    } __attribute__((packed)) raw;
+    quixcc_uuid_t id;
+    memcpy(id.data, uuid.data, sizeof(quixcc_uuid_t));
 
-    // Generate non-deteministic random number
-    std::random_device rd;
-    std::mt19937_64 gen(rd());
-    std::uniform_int_distribution<uint64_t> dis(0, UINT64_MAX);
-    raw.m.m_high = dis(gen);
-    raw.m.m_low = dis(gen);
-
-    return {.m_low = raw.m.m_low, .m_high = raw.m.m_high};
+    return id;
 }
 
 LIB_EXPORT bool quixcc_init()
@@ -128,6 +116,7 @@ LIB_EXPORT bool quixcc_init()
 
     std::lock_guard<std::mutex> lock(g_mutex);
 
+    /* We don't need to initialize LLVM more than once */
     if (g_is_initialized)
         return true;
 
@@ -137,6 +126,15 @@ LIB_EXPORT bool quixcc_init()
     llvm::InitializeAllTargetMCs();
     llvm::InitializeAllAsmParsers();
     llvm::InitializeAllAsmPrinters();
+
+    /* Check if LLVM is initialized */
+    if (llvm::TargetRegistry::targets().empty())
+    {
+        std::cerr << "error: LLVM initialization failed" << std::endl;
+        return false;
+    }
+#else
+#warning "Building LIBQUIXCC without support for ANY LLVM targets!!"
 #endif
 
     g_is_initialized = true;
@@ -145,12 +143,15 @@ LIB_EXPORT bool quixcc_init()
 
 LIB_EXPORT quixcc_job_t *quixcc_new()
 {
+    /* Allocate a new job using raw pointers to be friendly with C */
     quixcc_job_t *job = new quixcc_job_t();
     job->m_id = quixcc_uuid();
 
-    job->m_options.m_count = 0;
-    job->m_options.m_options = nullptr;
-    memset(&job->m_result, 0, sizeof(quixcc_result_t));
+    /* Clear structures */
+    memset(&job->m_options, 0, sizeof(quixcc_options_t));
+    memset(&job->m_result, 0, sizeof(quixcc_status_t));
+
+    /* Clear all pointers & values */
     job->m_in = job->m_out = nullptr;
     job->m_filename = nullptr;
     job->m_priority = 0;
@@ -161,39 +162,35 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
 
 LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
 {
+    /* no-op */
     if (!job)
         return false;
 
+    /* Free Options array */
     for (uint32_t i = 0; i < job->m_options.m_count; i++)
     {
         free((void *)job->m_options.m_options[i]);
         job->m_options.m_options[i] = nullptr;
     }
-
     if (job->m_options.m_options)
         free(job->m_options.m_options);
-    job->m_options.m_count = 0;
-    job->m_options.m_options = nullptr;
+    memset(&job->m_options, 0, sizeof(quixcc_options_t));
 
+    /* Free messages array */
     for (uint32_t i = 0; i < job->m_result.m_count; i++)
     {
         quixcc_msg_t *msg = job->m_result.m_messages[i];
-        if (!msg)
-            continue;
+        assert(msg);
+        assert(msg->message);
 
-        if (msg->message)
-            free((void *)msg->message);
-
-        msg->message = nullptr;
+        free((void *)msg->message);
+        memset(msg, 0, sizeof(quixcc_msg_t));
         free(msg);
-
-        job->m_result.m_messages[i] = nullptr;
     }
 
     if (job->m_result.m_messages)
         free(job->m_result.m_messages);
-    job->m_result.m_count = 0;
-    job->m_result.m_messages = nullptr;
+    memset(&job->m_result, 0, sizeof(quixcc_status_t));
 
     if (job->m_filename)
     {
@@ -201,25 +198,24 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
         job->m_filename = nullptr;
     }
 
+    /* Clear all pointers & values */
+    /* The FILE handles are owned by the caller; we don't close them */
+    job->m_in = job->m_out = nullptr;
+    job->m_priority = 0;
+    job->m_debug = job->m_tainted = false;
+
     delete job;
 
     return true;
 }
 
-LIB_EXPORT void quixcc_add_option(quixcc_job_t *job, const char *opt, bool enabled)
+LIB_EXPORT void quixcc_option(quixcc_job_t *job, const char *opt, bool enable)
 {
-    if (!job || !opt || !enabled)
-        return;
-
-    job->m_options.m_options = (const char **)safe_realloc(job->m_options.m_options, (job->m_options.m_count + 1) * sizeof(const char *));
-    job->m_options.m_options[job->m_options.m_count++] = safe_strdup(opt);
-}
-
-LIB_EXPORT void quixcc_remove_option(quixcc_job_t *job, const char *opt)
-{
+    /* no-op */
     if (!job || !opt)
         return;
 
+    /* Remove the option if it already exists */
     for (uint32_t i = 0; i < job->m_options.m_count; i++)
     {
         const char *option = job->m_options.m_options[i];
@@ -230,73 +226,85 @@ LIB_EXPORT void quixcc_remove_option(quixcc_job_t *job, const char *opt)
             job->m_options.m_options[i] = job->m_options.m_options[job->m_options.m_count - 1];
             job->m_options.m_options[job->m_options.m_count - 1] = nullptr;
             job->m_options.m_count--;
-
             break;
         }
     }
+
+    if (enable)
+    {
+        /* Enable it */
+        job->m_options.m_options = (const char **)safe_realloc(job->m_options.m_options, (job->m_options.m_count + 1) * sizeof(const char *));
+        job->m_options.m_options[job->m_options.m_count++] = safe_strdup(opt);
+    }
 }
 
-LIB_EXPORT void quixcc_set_input(quixcc_job_t *job, FILE *in, const char *filename)
+LIB_EXPORT void quixcc_source(quixcc_job_t *job, FILE *in, const char *filename)
 {
+    /* no-op */
     if (!job || !in || !filename)
         return;
+
+    /* Its the callers responsibility to make sure this is a valid file */
+    if (fseek(in, 0, SEEK_SET) != 0)
+        abort();
 
     job->m_in = in;
     job->m_filename = safe_strdup(filename);
 }
 
-LIB_EXPORT bool quixcc_set_triple(quixcc_job_t *job, const char *_triple)
+LIB_EXPORT bool quixcc_target(quixcc_job_t *job, const char *_llvm_triple)
 {
-    if (!job || !_triple)
+    /* no-op */
+    if (!job || !_llvm_triple)
         return false;
 
-    if (!quixcc_triple(_triple))
-        return false;
-
-    job->m_triple = _triple;
-
-    return true;
-}
-
-LIB_EXPORT bool quixcc_triple(const char *_triple)
-{
-    if (!_triple)
-        return false;
+    std::string new_triple, err;
 
     try
     {
-        if (_triple[0] == '\0')
-            return !llvm::sys::getDefaultTargetTriple().empty();
-
-        std::string err;
-        return llvm::TargetRegistry::lookupTarget(_triple, err) != nullptr;
+        /* An empty string means use the default target */
+        if (_llvm_triple[0] == '\0')
+            new_triple = llvm::sys::getDefaultTargetTriple();
+        else
+            new_triple = _llvm_triple;
     }
     catch (std::exception &)
     {
         return false;
     }
+
+    if (llvm::TargetRegistry::lookupTarget(new_triple, err) == nullptr)
+    {
+        LOG(ERROR) << "invalid target triple: " << new_triple << std::endl;
+        return false;
+    }
+
+    job->m_triple = new_triple;
+
+    return true;
 }
 
-LIB_EXPORT bool quixcc_set_cpu(quixcc_job_t *job, const char *cpu)
+LIB_EXPORT bool quixcc_cpu(quixcc_job_t *job, const char *cpu)
 {
+    /* no-op */
     if (!job || !cpu)
         return false;
 
     /// TODO: find a way to validate the CPU
-    /*
-    if (!quixcc_cpu(cpu))
-        return false;
-    */
 
     job->m_cpu = cpu;
 
     return true;
 }
 
-LIB_EXPORT void quixcc_set_output(quixcc_job_t *job, FILE *out)
+LIB_EXPORT void quixcc_output(quixcc_job_t *job, FILE *out, FILE **old_out)
 {
+    /* no-op */
     if (!job || !out)
         return;
+
+    if (old_out)
+        *old_out = job->m_out;
 
     job->m_out = out;
 }
@@ -662,6 +670,7 @@ static bool compile(quixcc_job_t *job)
     /// END:   OPTIMIZATION PIPELINE
     ///=========================================
 
+    /// TODO: code generator will use the DeltaIR, not the AST
     auto ast_reduced = std::make_unique<BlockNode>(*ast);
 
     ///=========================================
@@ -685,31 +694,26 @@ static bool compile(quixcc_job_t *job)
 static bool verify_build_option(const std::string &option, const std::string &value)
 {
     const static std::set<std::string> static_options = {
-        "-S",            // assembly output
-        "-PREP",         // preprocessor/Lexer output
-        "-emit-tokens",  // lexer output (no preprocessing)
-        "-emit-ir",      // IR output
-        "-emit-c11",     // C11 output
-        "-emit-bc",      // bitcode output
-        "-c",            // compile only
-        "-O0",           // optimization levels
-        "-O1",           // optimization levels
-        "-O2",           // optimization levels
-        "-O3",           // optimization levels
-        "-Os",           // optimization levels
-        "-g",            // debug information
-        "-flto",         // link time optimization
-        "-fPIC",         // position independent code
-        "-fPIE",         // position independent executable
-        "-v",            // verbose
-        "-s",            // strip
-        "-nostdlib",     // no standard library
-        "-nostartfiles", // no standard startup files
+        "-S",           // assembly output
+        "-PREP",        // preprocessor/Lexer output
+        "-emit-tokens", // lexer output (no preprocessing)
+        "-emit-ir",     // IR output
+        "-emit-c11",    // C11 output
+        "-emit-bc",     // bitcode output
+        "-c",           // compile only
+        "-O0",          // optimization levels
+        "-O1",          // optimization levels
+        "-O2",          // optimization levels
+        "-O3",          // optimization levels
+        "-Os",          // optimization levels
+        "-g",           // debug information
+        "-flto",        // link time optimization
+        "-fPIC",        // position independent code
+        "-fPIE",        // position independent executable
+        "-v",           // verbose
     };
     const static std::vector<std::pair<std::regex, std::regex>> static_regexes = {
-        // -D<name>[=<value>]
         {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex("[a-zA-Z0-9_ ]*")},
-        {std::regex("-l[a-zA-Z0-9_]*"), std::regex("")},
         {std::regex("-I.+"), std::regex("")},
     };
 
@@ -733,8 +737,7 @@ static bool verify_build_option_conflicts(quixcc_job_t *job)
 
 static bool build_argmap(quixcc_job_t *job)
 {
-    // -<p><key>[=<value>]
-    const static std::set<char> okay_prefixes = {'f', 'O', 'l', 'P', 'n', 'L', 'I', 'e', 'D', 'W', 'm', 'c', 'S', 'g', 's', 'v'};
+    const static std::set<char> okay_prefixes = {'f', 'O', 'P', 'I', 'e', 'D', 'W', 'm', 'c', 'S', 'g', 's', 'v'};
 
     for (uint32_t i = 0; i < job->m_options.m_count; i++)
     {
@@ -869,7 +872,7 @@ static void print_general_fault_message()
     std::cerr << "Please include the following report code: \n  " << geterror_report_string() << std::endl;
 }
 
-LIB_EXPORT void quixcc_fault_handler(int sig)
+void quixcc_fault_handler(int sig)
 {
     /*
         Lock all threads to prevent multiple error messages
@@ -973,12 +976,12 @@ static bool execute_job(quixcc_job_t *job)
 
 LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
 {
-    /*
-        Catch crashes and pretty print them
-    */
+    /* no-op */
+    if (!job)
+        return false;
 
+    /* Install signal handlers to catch fatal memory errors */
     sighandler_t old_handlers[6];
-
     old_handlers[0] = signal(SIGINT, quixcc_fault_handler);
     old_handlers[1] = signal(SIGILL, quixcc_fault_handler);
     old_handlers[2] = signal(SIGFPE, quixcc_fault_handler);
@@ -986,18 +989,13 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     old_handlers[4] = signal(SIGTERM, quixcc_fault_handler);
     old_handlers[5] = signal(SIGABRT, quixcc_fault_handler);
 
-    /*
-        This guarantees that every job will run in a seperate thread:
-            1. Every compilation unit has its own thread local storage
-            1. Every compilation unit has its own cache
-    */
-
+    /* Every compiler job must have its own thread-local storage */
     bool success = false;
     std::thread t([&]
                   { success = execute_job(job); });
-
     t.join();
 
+    /* Restore signal handlers */
     signal(SIGINT, old_handlers[0]);
     signal(SIGILL, old_handlers[1]);
     signal(SIGFPE, old_handlers[2]);
@@ -1008,16 +1006,17 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     return success;
 }
 
-LIB_EXPORT const quixcc_result_t *quixcc_result(quixcc_job_t *job)
+LIB_EXPORT const quixcc_status_t *quixcc_status(quixcc_job_t *job)
 {
-    quixcc_result_t *result = &job->m_result;
+    /* no-op */
+    if (!job)
+        return nullptr;
 
-    if (job->m_debug)
-        return result;
+    quixcc_status_t *result = &job->m_result;
 
-    // remove debug messages
+#if PRUNE_DEBUG_MESSAGES
+    // Remove debug messages
     uint32_t i = 0;
-
     while (i < result->m_count)
     {
         quixcc_msg_t *msg = result->m_messages[i];
@@ -1035,47 +1034,44 @@ LIB_EXPORT const quixcc_result_t *quixcc_result(quixcc_job_t *job)
         memmove(&result->m_messages[i], &result->m_messages[i + 1], (result->m_count - i - 1) * sizeof(quixcc_msg_t *));
         result->m_count--;
     }
-
-    if (result->m_count == 0)
-    {
-        free(result->m_messages);
-        result->m_messages = nullptr;
-    }
-    else
-    {
-        result->m_messages = (quixcc_msg_t **)safe_realloc(result->m_messages, result->m_count * sizeof(quixcc_msg_t *));
-    }
+#endif
 
     return result;
 }
 
-LIB_EXPORT char *quixcc_compile(FILE *in, FILE *out, const char *options[])
+LIB_EXPORT char **quixcc_compile(FILE *in, FILE *out, const char *options[])
 {
-    quixcc_job_t *job = quixcc_new();
-    quixcc_set_input(job, in, "stdin");
-    quixcc_set_output(job, out);
+    /* no-op */
+    if (!in || !out)
+        return nullptr;
 
+    quixcc_job_t *job = quixcc_new();
+    quixcc_source(job, in, "stdin");
+    quixcc_output(job, out, nullptr);
+
+    /* Set options */
     if (options)
     {
         for (uint32_t i = 0; options[i]; i++)
-            quixcc_add_option(job, options[i], true);
+            quixcc_option(job, options[i], true);
     }
+
+    /* Run the job */
     if (quixcc_run(job))
     {
         quixcc_dispose(job);
-        return nullptr;
+        return nullptr; // success
     }
 
-    std::string str;
+    /* Copy messages */
+    char **messages = (char **)malloc((job->m_result.m_count + 1) * sizeof(char *));
     for (uint32_t i = 0; i < job->m_result.m_count; i++)
     {
         quixcc_msg_t *msg = job->m_result.m_messages[i];
-        if (!msg)
-            continue;
-
-        str += msg->message;
-        str += '\n';
+        messages[i] = safe_strdup(msg->message);
     }
+    messages[job->m_result.m_count] = nullptr;
 
-    return safe_strdup(str.c_str());
+    quixcc_dispose(job);
+    return messages;
 }

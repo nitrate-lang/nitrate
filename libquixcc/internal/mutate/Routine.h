@@ -11,7 +11,7 @@
 ///       ░▒▓██▓▒░                                                               ///
 ///                                                                              ///
 ///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
-///     * Copyright (C) 2020-2024 Wesley C. Jones                                ///
+///     * Copyright (C) 2024 Wesley C. Jones                                     ///
 ///                                                                              ///
 ///     The QUIX Compiler Suite is free software; you can redistribute it and/or ///
 ///     modify it under the terms of the GNU Lesser General Public               ///
