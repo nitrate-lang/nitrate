@@ -219,7 +219,7 @@ bool qpkg::init::Package::createPackage()
 bool qpkg::init::Package::create()
 {
     if (m_verbose)
-        LOG(core::DEBUG).on();
+        LOG_ENABLE(core::DEBUG);
 
     if (!validateName(m_name))
     {

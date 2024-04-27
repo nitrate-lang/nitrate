@@ -8,6 +8,7 @@
 #include <memory>
 #include <chrono>
 #include <sstream>
+#include <iostream>
 
 namespace qpkg
 {
@@ -74,6 +75,9 @@ namespace qpkg
         };
 
 #define LOG(lvl) qpkg::core::LoggerSpool::getInst()[lvl](__PRETTY_FUNCTION__, __FILE__, __LINE__)
+#define LOG_ENABLE(lvl) LOG(lvl).on(true)
+        // #define LOG_ENABLE(lvl) {}
+        // #define LOG(lvl) std::cout
 
         template <class T>
         Logger &operator<<(Logger &logger, const T &msg)

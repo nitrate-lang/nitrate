@@ -705,6 +705,7 @@ namespace libquixcc
         {
         protected:
             std::shared_ptr<Value<U>> m_root;
+            std::string m_name;
             const static auto m_ir_type = T;
 
             /* Module Serialization */
@@ -723,11 +724,13 @@ namespace libquixcc
             virtual bool verify_impl() const = 0;
 
         public:
-            IRModule()
+            IRModule(const std::string_view &name)
             {
                 static_assert(std::is_enum_v<decltype(T)>, "IR Type must be an enumeration");
                 static_assert(std::is_enum_v<decltype(U)>, "IR Node Type must be an enumeration");
                 static_assert(!std::is_same_v<decltype(T), decltype(U)>, "IR Type and Node Type must be different enumerations");
+
+                m_name = name;
             }
 
             virtual ~IRModule() = default;
@@ -788,22 +791,13 @@ namespace libquixcc
             inline std::string_view dialect_description() const { return ir_dialect_description_impl(); }
 
             /* Get Entry Point for IR Graph */
-            virtual std::shared_ptr<Value<U>> root() { return m_root; }
-            virtual const std::shared_ptr<Value<U>> root() const { return m_root; }
+            virtual std::shared_ptr<Value<U>> &root() { return m_root; }
+            virtual const std::shared_ptr<Value<U>> &root() const { return m_root; }
 
             IRModule<T, U> &assign(std::shared_ptr<Value<U>> root)
             {
                 m_root = root;
                 return *this;
-            }
-
-            /* Graph Algorithims */
-            bool is_cyclic() const
-            {
-                if (!m_root)
-                    return false;
-
-                return m_root->is_cyclic();
             }
         };
 

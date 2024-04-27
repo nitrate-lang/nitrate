@@ -27,7 +27,7 @@ qpkg::build::Engine::Engine(const std::string &package_src,
                             bool verbose)
 {
     if (verbose)
-        LOG(core::DEBUG).on();
+        LOG_ENABLE(core::DEBUG);
 
     m_package_src = package_src;
     m_output = output;
@@ -131,7 +131,6 @@ class CompilationProgressPrinter
     State m_linker;
     State m_state;
     bool m_linking;
-    std::mutex m_mutex;
     std::queue<std::pair<State, std::string>> m_messages;
 
 public:
@@ -139,8 +138,6 @@ public:
 
     void reset(size_t total, size_t real)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-
         m_total = total;
         m_real = real;
         m_current = 0;
@@ -148,7 +145,6 @@ public:
 
     void starting(const std::string &msg)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         if (m_current >= m_total)
             return;
 
@@ -157,7 +153,6 @@ public:
 
     void finished(const std::string &msg)
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         if (m_current >= m_total)
             return;
 
@@ -168,21 +163,17 @@ public:
 
     void linking()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         m_linking = true;
         m_linker = State::STARTING;
     }
 
     void linked()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
         m_linker = State::FINISHED;
     }
 
     void print()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-
         uint8_t percent = m_total == 0 ? 0 : (m_current * 100) / m_total;
         std::string percent_pad = "[";
         if (percent < 10)
@@ -249,13 +240,12 @@ public:
 
     bool is_done()
     {
-        std::lock_guard<std::mutex> lock(m_mutex);
-
         return m_state == State::FINISHED;
     }
 };
 
 static CompilationProgressPrinter g_cc_printer;
+static std::mutex g_cc_printer_mutex;
 
 bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path &base, const std::filesystem::__cxx11::path &build_dir, const std::filesystem::__cxx11::path &file) const
 {
@@ -318,9 +308,11 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
     builder.target(m_config["triple"].as<std::string>());
     builder.cpu(m_config["cpu"].as<std::string>());
 
-    auto compiler = builder.build();
+    auto &compiler = builder.build().run(1);
 
-    if (!compiler.run(1).puts().ok())
+    compiler.puts();
+
+    if (!compiler.ok())
     {
         LOG(core::ERROR) << "Failed to compile source file " << file << std::endl;
         return false;
@@ -381,7 +373,9 @@ void qpkg::build::Engine::run_threads(const std::filesystem::__cxx11::path &base
 
     tcount = std::min<size_t>(m_jobs, source_files.size());
 
+    g_cc_printer_mutex.lock();
     g_cc_printer.reset(source_files.size(), source_files.size());
+    g_cc_printer_mutex.unlock();
 
     for (i = 0; i < tcount; i++)
     {
@@ -389,13 +383,19 @@ void qpkg::build::Engine::run_threads(const std::filesystem::__cxx11::path &base
                                       {
             for (size_t j = i; j < source_files.size(); j += tcount)
             {
+                g_cc_printer_mutex.lock();
                 g_cc_printer.starting(source_files[j]);
+                g_cc_printer_mutex.unlock();
+
                 if (!build_source_file(base, build_dir, source_files[j]))
                 {
                     LOG(core::ERROR) << "Failed to compile source file" << std::endl;
                     exit(1);
                 }
+
+                g_cc_printer_mutex.lock();
                 g_cc_printer.finished(source_files[j]);
+                g_cc_printer_mutex.unlock();
             } }));
     }
 
@@ -403,10 +403,15 @@ void qpkg::build::Engine::run_threads(const std::filesystem::__cxx11::path &base
                                {
         while (true)
         {
+            g_cc_printer_mutex.lock();
             g_cc_printer.print();
+            bool done = g_cc_printer.is_done();
+            g_cc_printer_mutex.unlock();
+
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-            if (g_cc_printer.is_done())
+
+            if (done)
                 break;
         } });
 
@@ -426,22 +431,40 @@ bool qpkg::build::Engine::build_package(const std::filesystem::__cxx11::path &ba
 
     if (m_config["nolink"].as<bool>() == false)
     {
+        g_cc_printer_mutex.lock();
         g_cc_printer.linking();
+        g_cc_printer_mutex.unlock();
+
         if (!link_objects(objects))
         {
             LOG(core::ERROR) << "Failed to link object files" << std::endl;
             return false;
         }
+
+        g_cc_printer_mutex.lock();
         g_cc_printer.linked();
+        g_cc_printer_mutex.unlock();
     }
     else
     {
         LOG(core::DEBUG) << "Skipping linking" << std::endl;
+
+        g_cc_printer_mutex.lock();
         g_cc_printer.linked();
+        g_cc_printer_mutex.unlock();
     }
 
-    while (!g_cc_printer.is_done())
+    while (true)
+    {
+        g_cc_printer_mutex.lock();
+        bool done = g_cc_printer.is_done();
+        g_cc_printer_mutex.unlock();
+
+        if (done)
+            break;
+
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
 
     return true;
 }

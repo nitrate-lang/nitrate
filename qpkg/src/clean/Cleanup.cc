@@ -5,7 +5,7 @@
 bool qpkg::clean::CleanPackageSource(const std::string &package_src, bool recursive, bool verbose)
 {
     if (verbose)
-        LOG(core::DEBUG).on();
+        LOG_ENABLE(core::DEBUG);
     
     std::filesystem::path package_src_path(package_src);
 

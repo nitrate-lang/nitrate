@@ -55,11 +55,11 @@ class GroupNode : public libquixcc::ir::Value<NodeType::Group>
 protected:
     Result<bool> print_text_impl(std::ostream &os, bool debug) const override
     {
-        os << "GroupNode(" << m_name << ", [";
+        os << "GroupNode(" << m_name << ",[";
         for (auto it = cbegin(); it != cend(); ++it)
         {
             if (it != cbegin())
-                os << ", ";
+                os << ",";
             it->first->print<PrintMode::Text>(os);
         }
 
@@ -99,11 +99,11 @@ protected:
             return true;
         }
 
-        os << ", [";
+        os << ",[";
         for (auto it = cbegin(); it != cend(); ++it)
         {
             if (it != cbegin())
-                os << ", ";
+                os << ",";
             it->first->print<PrintMode::Text>(os);
         }
 
@@ -142,15 +142,21 @@ protected:
     {
         if (!m_root)
         {
-            os << "IRAlpha_1_0\n\n";
+            os << "IRAlpha_1_0(" + m_name + ")";
             return true;
         }
 
-        os << "IRAlpha_1_0\n\n";
+        os << "IRAlpha_1_0(" + m_name + ",[";
+
+        Result<bool> result;
         if (debug)
-            return m_root->print<PrintMode::Debug>(os);
+            result = m_root->print<PrintMode::Debug>(os);
         else
-            return m_root->print<PrintMode::Text>(os);
+            result = m_root->print<PrintMode::Text>(os);
+
+        os << "])";
+
+        return result;
     }
 
     Result<bool> deserialize_text_impl(std::istream &is) override
@@ -195,19 +201,19 @@ protected:
     };
 
 public:
-    IRAlpha() : IRModule<IR::Alpha, NodeType::Group>()
+    IRAlpha(const std::string_view &name) : IRModule<IR::Alpha, NodeType::Group>(name)
     {
     }
 
     ~IRAlpha() = default;
 };
 
-static void setup_graph(std::shared_ptr<GroupNode> node)
+static void setup_graph(std::shared_ptr<GroupNode> node, size_t n)
 {
     std::shared_ptr<NodeNode> node1 = std::make_shared<NodeNode>();
     std::shared_ptr<NodeNode> node2 = std::make_shared<NodeNode>();
     std::shared_ptr<NodeNode> node3 = std::make_shared<NodeNode>();
-    std::shared_ptr<NodeNode> node4 = std::make_shared<NodeNode>();
+    std::shared_ptr<GroupNode> node4 = std::make_shared<GroupNode>();
 
     node1->m_name = "Node1";
     node2->m_name = "Node2";
@@ -215,26 +221,28 @@ static void setup_graph(std::shared_ptr<GroupNode> node)
 
     node4->m_name = "Node4";
 
-    node3->add_child(node4);
+    node3->add_child(qir_cast<NodeNode>(node4));
 
     node->m_name = "GroupNode";
 
     node->add_child(qir_cast<GroupNode>(node1));
     node->add_child(qir_cast<GroupNode>(node2));
     node->add_child(qir_cast<GroupNode>(node3));
+
+    if (n == 0)
+        return;
+
+    setup_graph(node4, n - 1);
 }
 
 void x()
 {
     std::shared_ptr<GroupNode> node = std::make_shared<GroupNode>();
 
-    setup_graph(node);
+    setup_graph(node, 500);
 
-    std::unique_ptr<libquixcc::ir::IRModule<IR::Alpha, NodeType::Group>> ir(new IRAlpha());
+    auto ir = std::make_unique<IRAlpha>("AST");
 
     ir->assign(node);
 
-    auto &r = *ir->root();
-
-    r.print(std::cout, true);
 }
