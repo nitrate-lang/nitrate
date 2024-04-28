@@ -76,6 +76,8 @@
 
 using namespace libquixcc;
 
+static std::atomic<bool> g_is_initialized = false;
+
 static void *safe_realloc(void *ptr, size_t size)
 {
     void *new_ptr = realloc(ptr, size);
@@ -98,6 +100,45 @@ static char *safe_strdup(const char *str)
     return new_str;
 }
 
+static void print_stacktrace();
+
+static void quixcc_panic(std::string msg)
+{
+    msg = "LIBQUIXCC LIBRARY PANIC: " + msg;
+    // Split msg into lines of `max` characters
+    std::vector<std::string> lines;
+    std::string line;
+    size_t pos = 0, len = 0;
+    const size_t max = 80;
+    while (pos < msg.size())
+    {
+        len = std::min<size_t>(max - 4, msg.size() - pos);
+        line = msg.substr(pos, len);
+
+        if (line.size() < max - 4)
+            line += std::string(max - 4 - line.size(), ' ');
+        lines.push_back(line);
+        pos += len;
+    }
+
+    std::string sep;
+    for (size_t i = 0; i < max - 2; i++)
+        sep += "━";
+
+    std::cerr << "\x1b[31;1m┏" << sep << "┓\x1b[0m" << std::endl;
+    for (auto &str : lines)
+        std::cerr << "\x1b[31;1m┃\x1b[0m " << str << " \x1b[31;1m┃\x1b[0m" << std::endl;
+    std::cerr << "\x1b[31;1m┗" << sep << "\x1b[31;1m┛\x1b[0m\n"
+              << std::endl;
+
+    print_stacktrace();
+
+    abort();
+
+    while (true)
+        std::this_thread::yield();
+}
+
 static quixcc_uuid_t quixcc_uuid()
 {
     boost::uuids::uuid uuid = boost::uuids::random_generator()();
@@ -111,14 +152,12 @@ static quixcc_uuid_t quixcc_uuid()
 
 LIB_EXPORT bool quixcc_init()
 {
-    static bool g_is_initialized = false;
-    static std::mutex g_mutex;
-
-    std::lock_guard<std::mutex> lock(g_mutex);
-
-    /* We don't need to initialize LLVM more than once */
+    /* We don't need to initialize more than once */
     if (g_is_initialized)
         return true;
+
+    static std::mutex g_mutex;
+    std::lock_guard<std::mutex> lock(g_mutex);
 
 #ifdef LLVM_SUUPORT_ALL_TARGETS
     llvm::InitializeAllTargetInfos();
@@ -143,6 +182,11 @@ LIB_EXPORT bool quixcc_init()
 
 LIB_EXPORT quixcc_job_t *quixcc_new()
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_new(). quitcc_new() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* Allocate a new job using raw pointers to be friendly with C */
     quixcc_job_t *job = new quixcc_job_t();
     job->m_id = quixcc_uuid();
@@ -155,15 +199,24 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
     job->m_in = job->m_out = nullptr;
     job->m_filename = nullptr;
     job->m_priority = 0;
-    job->m_debug = job->m_tainted = false;
+    job->m_debug = job->m_tainted = job->m_running = false;
 
     return job;
 }
 
 LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_dispose(). quixcc_dispose() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* no-op */
     if (!job)
+        return false;
+
+    bool lockable = job->m_lock.try_lock();
+    if (!lockable)
         return false;
 
     /* Free Options array */
@@ -204,6 +257,8 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
     job->m_priority = 0;
     job->m_debug = job->m_tainted = false;
 
+    job->m_lock.unlock();
+
     delete job;
 
     return true;
@@ -211,9 +266,16 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
 
 LIB_EXPORT void quixcc_option(quixcc_job_t *job, const char *opt, bool enable)
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_option(). quixcc_option() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* no-op */
     if (!job || !opt)
         return;
+
+    std::lock_guard<std::mutex> lock(job->m_lock);
 
     /* Remove the option if it already exists */
     for (uint32_t i = 0; i < job->m_options.m_count; i++)
@@ -240,9 +302,16 @@ LIB_EXPORT void quixcc_option(quixcc_job_t *job, const char *opt, bool enable)
 
 LIB_EXPORT void quixcc_source(quixcc_job_t *job, FILE *in, const char *filename)
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_source(). quixcc_source() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* no-op */
     if (!job || !in || !filename)
         return;
+
+    std::lock_guard<std::mutex> lock(job->m_lock);
 
     /* Its the callers responsibility to make sure this is a valid file */
     if (fseek(in, 0, SEEK_SET) != 0)
@@ -254,9 +323,16 @@ LIB_EXPORT void quixcc_source(quixcc_job_t *job, FILE *in, const char *filename)
 
 LIB_EXPORT bool quixcc_target(quixcc_job_t *job, const char *_llvm_triple)
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_target(). quixcc_target() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* no-op */
     if (!job || !_llvm_triple)
         return false;
+
+    std::lock_guard<std::mutex> lock(job->m_lock);
 
     std::string new_triple, err;
 
@@ -286,9 +362,16 @@ LIB_EXPORT bool quixcc_target(quixcc_job_t *job, const char *_llvm_triple)
 
 LIB_EXPORT bool quixcc_cpu(quixcc_job_t *job, const char *cpu)
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_cpu(). quixcc_cpu() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* no-op */
     if (!job || !cpu)
         return false;
+
+    std::lock_guard<std::mutex> lock(job->m_lock);
 
     /// TODO: find a way to validate the CPU
 
@@ -299,9 +382,16 @@ LIB_EXPORT bool quixcc_cpu(quixcc_job_t *job, const char *cpu)
 
 LIB_EXPORT void quixcc_output(quixcc_job_t *job, FILE *out, FILE **old_out)
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_output(). quixcc_output() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* no-op */
     if (!job || !out)
         return;
+
+    std::lock_guard<std::mutex> lock(job->m_lock);
 
     if (old_out)
         *old_out = job->m_out;
@@ -976,9 +1066,16 @@ static bool execute_job(quixcc_job_t *job)
 
 LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_run(). quixcc_run() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* no-op */
     if (!job)
         return false;
+
+    std::lock_guard<std::mutex> lock(job->m_lock);
 
     /* Install signal handlers to catch fatal memory errors */
     sighandler_t old_handlers[6];
@@ -1008,8 +1105,17 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
 
 LIB_EXPORT const quixcc_status_t *quixcc_status(quixcc_job_t *job)
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_status(). quixcc_status() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* no-op */
     if (!job)
+        return nullptr;
+
+    bool lockable = job->m_lock.try_lock();
+    if (!lockable)
         return nullptr;
 
     quixcc_status_t *result = &job->m_result;
@@ -1036,16 +1142,25 @@ LIB_EXPORT const quixcc_status_t *quixcc_status(quixcc_job_t *job)
     }
 #endif
 
+    job->m_lock.unlock();
+
     return result;
 }
 
 LIB_EXPORT char **quixcc_compile(FILE *in, FILE *out, const char *options[])
 {
+    if (!g_is_initialized && !quixcc_init())
+    {
+        quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_compile(). quixcc_compile() attempted to compensate for this error, but quitcc_init() failed to initialize.");
+    }
+
     /* no-op */
     if (!in || !out)
         return nullptr;
 
     quixcc_job_t *job = quixcc_new();
+
+    /* No need for locks here */
     quixcc_source(job, in, "stdin");
     quixcc_output(job, out, nullptr);
 
@@ -1066,10 +1181,7 @@ LIB_EXPORT char **quixcc_compile(FILE *in, FILE *out, const char *options[])
     /* Copy messages */
     char **messages = (char **)malloc((job->m_result.m_count + 1) * sizeof(char *));
     for (uint32_t i = 0; i < job->m_result.m_count; i++)
-    {
-        quixcc_msg_t *msg = job->m_result.m_messages[i];
-        messages[i] = safe_strdup(msg->message);
-    }
+        messages[i] = safe_strdup(job->m_result.m_messages[i]->message);
     messages[job->m_result.m_count] = nullptr;
 
     quixcc_dispose(job);

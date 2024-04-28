@@ -116,7 +116,7 @@ extern "C"
      *
      * @note The job is disposed, and ALL associated resources are released.
      * @note This function is thread-safe.
-     * @note This function will return false if the job is in use.
+     * @note This function will return false if the job is locked.
      * @note If `!job`, this function is a no-op.
      */
     bool quixcc_dispose(quixcc_job_t *job);
@@ -133,6 +133,7 @@ extern "C"
      * @note It is okay to set the same option multiple times.
      *       The last setting will be used.
      * @note If `!job || !option`, this function is a no-op.
+     * @note This function will block until the job is unlocked.
      */
     void quixcc_option(quixcc_job_t *job, const char *option, bool enable);
 
@@ -149,6 +150,7 @@ extern "C"
      * @note The FILE handle for the input stream is owned by the caller.
      * @warning The caller must ensure that the input stream is open and
      *          readable for the ENTIRE duration of the job.
+     * @note This function will block until the job is unlocked.
      */
     void quixcc_source(quixcc_job_t *job, FILE *in, const char *filename);
 
@@ -167,6 +169,7 @@ extern "C"
      *       triple will be used.
      * @note If `!job || !triple`, this function is a no-op.
      * @note This function is thread-safe.
+     * @note This function will block until the job is unlocked.
      */
     bool quixcc_target(quixcc_job_t *job, const char *llvm_triple);
 
@@ -183,6 +186,7 @@ extern "C"
      * @note If `!job || !cpu`, this function is a no-op.
      * @warning Currently, the CPU is not validated for correctness or backend
      *          support.
+     * @note This function will block until the job is unlocked.
      */
     bool quixcc_cpu(quixcc_job_t *job, const char *cpu);
 
@@ -200,6 +204,7 @@ extern "C"
      * @note If `old_out` is not NULL, the previous output stream will be
      *       returned in it.
      * @note This function is thread-safe.
+     * @note This function will block until the job is unlocked.
      */
     void quixcc_output(quixcc_job_t *job, FILE *out, FILE **old_out);
 
@@ -212,6 +217,7 @@ extern "C"
      * @note This function is thread-safe.
      * @note Use `quixcc_status()` for a detailed result.
      * @note If `!job`, this function is a no-op.
+     * @note This function will block until the job is unlocked.
      */
     bool quixcc_run(quixcc_job_t *job);
 
@@ -225,7 +231,7 @@ extern "C"
      *
      * @note This function is thread-safe.
      * @note The result is owned by the job and should not be modified.
-     * @note If the job is still running, this function will return NULL.
+     * @note If the job is locked, this function will return NULL.
      * @note The result is valid until the job is disposed.
      * @note If `!job`, this function is a no-op.
      */
@@ -279,6 +285,19 @@ extern "C"
     ///===================================================================================================
     /// END: LANGUAGE STUFF
     ///===================================================================================================
+
+    /**
+     * @brief Reset and free the internal cache memory
+     *
+     * @brief This function is thread-safe.
+     * @return true if the cache was reset successfully. false otherwise.
+     *
+     * @note This function requires all jobs to be disposed before calling.
+     * @note This function is a no-op if any jobs are still in use.
+     * @warning Although this will decrease memory usage, it will also
+     *          decrease performance significantly.
+     */
+    bool quixcc_cache_reset();
 
 #ifdef __cplusplus
 }

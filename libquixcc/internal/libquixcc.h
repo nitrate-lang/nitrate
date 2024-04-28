@@ -38,6 +38,7 @@
 
 #include <string>
 #include <map>
+#include <mutex>
 #include <llvm/LLVMWrapper.h>
 #include <quixcc.h>
 
@@ -54,10 +55,11 @@ typedef struct quixcc_uuid_t
 
 struct quixcc_job_t
 {
+    libquixcc::LLVMContext m_inner;
     std::map<std::string, std::string> m_argset;
+    std::mutex m_lock;
     std::string m_triple;
     std::string m_cpu;
-    libquixcc::LLVMContext m_inner;
     quixcc_uuid_t m_id;
     quixcc_options_t m_options;
     quixcc_status_t m_result;
@@ -67,6 +69,7 @@ struct quixcc_job_t
     uint8_t m_priority;
     bool m_debug;
     bool m_tainted;
+    bool m_running;
 };
 
 #endif // __QUIXCC_QUIXCCLIB_H__
