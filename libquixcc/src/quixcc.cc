@@ -34,6 +34,9 @@
 #include <quixcc.h>
 #include <memory>
 #include <string>
+#include <map>
+#include <mutex>
+#include <atomic>
 #include <vector>
 #include <cstring>
 #include <iostream>
@@ -77,6 +80,8 @@
 using namespace libquixcc;
 
 static std::atomic<bool> g_is_initialized = false;
+std::atomic<uint64_t> g_num_of_contexts = 0;
+std::mutex g_library_lock;
 
 static void *safe_realloc(void *ptr, size_t size)
 {
@@ -187,6 +192,9 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
         quixcc_panic("A libquixcc library contract violation occurred: A successful call to quixcc_init() is required before calling quixcc_new(). quitcc_new() attempted to compensate for this error, but quitcc_init() failed to initialize.");
     }
 
+    /* Acquire a lock on the library state. This is for MT-safe cache management */
+    std::lock_guard<std::mutex> lock(g_library_lock);
+
     /* Allocate a new job using raw pointers to be friendly with C */
     quixcc_job_t *job = new quixcc_job_t();
     job->m_id = quixcc_uuid();
@@ -200,6 +208,8 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
     job->m_filename = nullptr;
     job->m_priority = 0;
     job->m_debug = job->m_tainted = job->m_running = false;
+
+    g_num_of_contexts++;
 
     return job;
 }
@@ -260,6 +270,8 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
     job->m_lock.unlock();
 
     delete job;
+
+    g_num_of_contexts--;
 
     return true;
 }

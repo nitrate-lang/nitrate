@@ -29,51 +29,43 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_QUIXCCLIB_H__
-#define __QUIXCC_QUIXCCLIB_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <LibMacro.h>
 
-#include <string>
-#include <map>
-#include <mutex>
-#include <atomic>
-#include <llvm/LLVMWrapper.h>
-#include <quixcc.h>
+#include <libquixcc.h>
+#include <cache.h>
 
-typedef struct quixcc_options_t
+/* Lexer cache */
+std::unordered_map<std::string, std::string> libquixcc::g_canonicalize_identifier_cache;
+std::unordered_map<std::string, std::string> libquixcc::g_check_number_literal_type_cache;
+std::unordered_map<std::string, std::string> libquixcc::g_canonicalize_number_cache;
+
+template <typename T>
+inline void freeContainer(T &p_container)
 {
-    const char **m_options;
-    uint32_t m_count;
-} quixcc_options_t;
+    T empty;
+    using std::swap;
+    swap(p_container, empty);
+}
 
-typedef struct quixcc_uuid_t
+LIB_EXPORT bool quixcc_cache_reset()
 {
-    uint8_t data[16];
-} quixcc_uuid_t;
+    /* Acquire a lock on the library state */
+    std::lock_guard<std::mutex> lock(g_library_lock);
 
-struct quixcc_job_t
-{
-    libquixcc::LLVMContext m_inner;
-    std::map<std::string, std::string> m_argset;
-    std::mutex m_lock;
-    std::string m_triple;
-    std::string m_cpu;
-    quixcc_uuid_t m_id;
-    quixcc_options_t m_options;
-    quixcc_status_t m_result;
-    FILE *m_in;
-    FILE *m_out;
-    char *m_filename;
-    uint8_t m_priority;
-    bool m_debug;
-    bool m_tainted;
-    bool m_running;
-};
+    /* Ensure that no contexts are active */
+    if (g_num_of_contexts != 0)
+        return false;
 
-extern std::atomic<uint64_t> g_num_of_contexts;
-extern std::mutex g_library_lock;
+    /* We have a guarantee that no contexts are active,
+     * and none will be created, for now. */
 
-#endif // __QUIXCC_QUIXCCLIB_H__
+    /* Erase cache line and free the memory */
+    freeContainer(libquixcc::g_canonicalize_identifier_cache);
+    freeContainer(libquixcc::g_check_number_literal_type_cache);
+    freeContainer(libquixcc::g_canonicalize_number_cache);
+
+    /* We now have an empty cache and can return (implicitly unlocking the mutex) */
+    return true;
+}

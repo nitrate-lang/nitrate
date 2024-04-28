@@ -29,51 +29,17 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_QUIXCCLIB_H__
-#define __QUIXCC_QUIXCCLIB_H__
-
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#ifndef QUIXCC_INTERNAL_CACHE_H
+#define QUIXCC_INTERNAL_CACHE_H
 
 #include <string>
-#include <map>
-#include <mutex>
-#include <atomic>
-#include <llvm/LLVMWrapper.h>
-#include <quixcc.h>
+#include <unordered_map>
 
-typedef struct quixcc_options_t
+namespace libquixcc
 {
-    const char **m_options;
-    uint32_t m_count;
-} quixcc_options_t;
+    extern std::unordered_map<std::string, std::string> g_canonicalize_identifier_cache;
+    extern std::unordered_map<std::string, std::string> g_check_number_literal_type_cache;
+    extern std::unordered_map<std::string, std::string> g_canonicalize_number_cache;
+}
 
-typedef struct quixcc_uuid_t
-{
-    uint8_t data[16];
-} quixcc_uuid_t;
-
-struct quixcc_job_t
-{
-    libquixcc::LLVMContext m_inner;
-    std::map<std::string, std::string> m_argset;
-    std::mutex m_lock;
-    std::string m_triple;
-    std::string m_cpu;
-    quixcc_uuid_t m_id;
-    quixcc_options_t m_options;
-    quixcc_status_t m_result;
-    FILE *m_in;
-    FILE *m_out;
-    char *m_filename;
-    uint8_t m_priority;
-    bool m_debug;
-    bool m_tainted;
-    bool m_running;
-};
-
-extern std::atomic<uint64_t> g_num_of_contexts;
-extern std::mutex g_library_lock;
-
-#endif // __QUIXCC_QUIXCCLIB_H__
+#endif // QUIXCC_INTERNAL_CACHE_H

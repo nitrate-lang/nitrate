@@ -293,9 +293,9 @@ extern "C"
      * @return true if the cache was reset successfully. false otherwise.
      *
      * @note This function requires all jobs to be disposed before calling.
-     * @note This function is a no-op if any jobs are still in use.
      * @warning Although this will decrease memory usage, it will also
      *          decrease performance significantly.
+     * @note This function will return false if any jobs are still active.
      */
     bool quixcc_cache_reset();
 

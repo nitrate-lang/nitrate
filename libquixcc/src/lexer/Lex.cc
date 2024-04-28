@@ -42,6 +42,7 @@
 #include <mutex>
 #include <regex>
 #include <cmath>
+#include <cache.h>
 
 ///=============================================================================
 
@@ -417,9 +418,9 @@ static bool canonicalize_identifier(std::string &str)
     /* Canonicalize the identifier */
 
     /* Create a cache */
-    static std::unordered_map<std::string, std::string> cache;
-    if (cache.contains(str))
-        return str = cache[str], true;
+    static std::unordered_map<std::string, std::string> g_canonicalize_identifier_cache;
+    if (g_canonicalize_identifier_cache.contains(str))
+        return str = g_canonicalize_identifier_cache[str], true;
 
     // Replace all `name::<string>` syntax should be replaced with `name_::string`
     size_t first, last;
@@ -430,7 +431,7 @@ static bool canonicalize_identifier(std::string &str)
         return false;
 
     /* Cache the result */
-    return cache[str] = str, true;
+    return g_canonicalize_identifier_cache[str] = str, true;
 }
 
 enum class NumType
@@ -447,20 +448,20 @@ enum class NumType
 static NumType check_number_literal_type(const std::string &input)
 {
     /* Create a cache */
-    static std::unordered_map<std::string, NumType> cache;
-    if (cache.contains(input))
-        return cache[input];
+    static std::unordered_map<std::string, NumType> g_check_number_literal_type_cache;
+    if (g_check_number_literal_type_cache.contains(input))
+        return g_check_number_literal_type_cache[input];
 
     if (input.empty())
-        return cache[input] = NumType::Invalid;
+        return g_check_number_literal_type_cache[input] = NumType::Invalid;
 
     /* Check if it's a single digit */
     if (input.size() < 3)
     {
         if (std::isdigit(input[0]))
-            return cache[input] = NumType::Decimal;
+            return g_check_number_literal_type_cache[input] = NumType::Decimal;
         else
-            return cache[input] = NumType::Invalid;
+            return g_check_number_literal_type_cache[input] = NumType::Invalid;
     }
 
     std::string prefix = input.substr(0, 2);
@@ -470,33 +471,33 @@ static NumType check_number_literal_type(const std::string &input)
     {
         for (i = 2; i < input.size(); i++)
             if (!((input[i] >= '0' && input[i] <= '9') || (input[i] >= 'a' && input[i] <= 'f')))
-                return cache[input] = NumType::Invalid;
+                return g_check_number_literal_type_cache[input] = NumType::Invalid;
 
-        return cache[input] = NumType::Hexadecimal;
+        return g_check_number_literal_type_cache[input] = NumType::Hexadecimal;
     }
     else if (prefix == "0b")
     {
         for (i = 2; i < input.size(); i++)
             if (!(input[i] == '0' || input[i] == '1'))
-                return cache[input] = NumType::Invalid;
+                return g_check_number_literal_type_cache[input] = NumType::Invalid;
 
-        return cache[input] = NumType::Binary;
+        return g_check_number_literal_type_cache[input] = NumType::Binary;
     }
     else if (prefix == "0o")
     {
         for (i = 2; i < input.size(); i++)
             if (!(input[i] >= '0' && input[i] <= '7'))
-                return cache[input] = NumType::Invalid;
+                return g_check_number_literal_type_cache[input] = NumType::Invalid;
 
-        return cache[input] = NumType::Octal;
+        return g_check_number_literal_type_cache[input] = NumType::Octal;
     }
     else if (prefix == "0d")
     {
         for (i = 2; i < input.size(); i++)
             if (!(input[i] >= '0' && input[i] <= '9'))
-                return cache[input] = NumType::Invalid;
+                return g_check_number_literal_type_cache[input] = NumType::Invalid;
 
-        return cache[input] = NumType::DecimalExplicit;
+        return g_check_number_literal_type_cache[input] = NumType::DecimalExplicit;
     }
     else
     {
@@ -508,13 +509,13 @@ static NumType check_number_literal_type(const std::string &input)
 
                 // slow operation
                 if (std::regex_match(input, regexpFloat))
-                    return cache[input] = NumType::Floating;
+                    return g_check_number_literal_type_cache[input] = NumType::Floating;
 
-                return cache[input] = NumType::Invalid;
+                return g_check_number_literal_type_cache[input] = NumType::Invalid;
             }
         }
 
-        return cache[input] = NumType::Decimal;
+        return g_check_number_literal_type_cache[input] = NumType::Decimal;
     }
 }
 
@@ -539,9 +540,9 @@ static std::string canonicalize_float(const std::string &input)
 bool canonicalize_number(std::string &number, std::string &norm, NumType type)
 {
     /* Create a cache */
-    static std::unordered_map<std::string, std::string> cache;
-    if (cache.contains(number))
-        return norm = cache[number], true;
+    static std::unordered_map<std::string, std::string> g_canonicalize_number_cache;
+    if (g_canonicalize_number_cache.contains(number))
+        return norm = g_canonicalize_number_cache[number], true;
 
     uint64_t x = 0, i = 0;
 
@@ -615,7 +616,7 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type)
     }
 
     /* Convert back to string and cache the result */
-    return cache[number] = (norm = std::to_string(x)), true;
+    return g_canonicalize_number_cache[number] = (norm = std::to_string(x)), true;
 }
 
 libquixcc::Token libquixcc::StreamLexer::read_token() noexcept
