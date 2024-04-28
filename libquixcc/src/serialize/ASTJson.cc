@@ -140,10 +140,10 @@ std::string libquixcc::serialize::ASTJsonSerializer::dispatch(libquixcc::seriali
             {NodeType::ArrayTypeNode, (Func)ArrayTypeNode_conv},
             {NodeType::FunctionTypeNode, (Func)FunctionTypeNode_conv},
             {NodeType::UserTypeNode, (Func)UserTypeNode_conv},
-            {NodeType::IntegerLiteralNode, (Func)IntegerLiteralNode_conv},
+            {NodeType::IntegerNode, (Func)IntegerNode_conv},
             {NodeType::FloatLiteralNode, (Func)FloatLiteralNode_conv},
-            {NodeType::StringLiteralNode, (Func)StringLiteralNode_conv},
-            {NodeType::CharLiteralNode, (Func)CharLiteralNode_conv},
+            {NodeType::StringNode, (Func)StringNode_conv},
+            {NodeType::CharNode, (Func)CharNode_conv},
             {NodeType::BoolLiteralNode, (Func)BoolLiteralNode_conv},
             {NodeType::NullLiteralNode, (Func)NullLiteralNode_conv},
             {NodeType::TypedefNode, (Func)TypedefNode_conv},
@@ -583,9 +583,9 @@ std::string libquixcc::serialize::ASTJsonSerializer::UserTypeNode_conv(libquixcc
     return "{\"ntype\":\"UserTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::IntegerLiteralNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::IntegerLiteralNode *node)
+std::string libquixcc::serialize::ASTJsonSerializer::IntegerNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::IntegerNode *node)
 {
-    return "{\"ntype\":\"IntegerLiteralNode\",\"value\":\"" + node->m_val + "\"}";
+    return "{\"ntype\":\"IntegerNode\",\"value\":\"" + node->m_val + "\"}";
 }
 
 std::string libquixcc::serialize::ASTJsonSerializer::FloatLiteralNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::FloatLiteralNode *node)
@@ -593,14 +593,14 @@ std::string libquixcc::serialize::ASTJsonSerializer::FloatLiteralNode_conv(libqu
     return "{\"ntype\":\"FloatLiteralNode\",\"value\":\"" + node->m_val + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::StringLiteralNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::StringLiteralNode *node)
+std::string libquixcc::serialize::ASTJsonSerializer::StringNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::StringNode *node)
 {
-    return "{\"ntype\":\"StringLiteralNode\",\"value\":\"" + escape_json(node->m_val) + "\"}";
+    return "{\"ntype\":\"StringNode\",\"value\":\"" + escape_json(node->m_val) + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::CharLiteralNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::CharLiteralNode *node)
+std::string libquixcc::serialize::ASTJsonSerializer::CharNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::CharNode *node)
 {
-    return "{\"ntype\":\"CharLiteralNode\",\"value\":\"" + node->m_val + "\"}";
+    return "{\"ntype\":\"CharNode\",\"value\":\"" + node->m_val + "\"}";
 }
 
 std::string libquixcc::serialize::ASTJsonSerializer::BoolLiteralNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::BoolLiteralNode *node)

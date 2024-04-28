@@ -53,7 +53,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
 
     group = std::make_shared<BlockNode>();
 
-    while ((tok = scanner->peek()).type() != TokenType::Eof)
+    while ((tok = scanner->peek()).type() != TT::Eof)
     {
         if (expect_braces)
         {
@@ -64,10 +64,10 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             }
         }
 
-        if (tok.type() != TokenType::Keyword)
+        if (tok.type() != TT::Keyword)
         {
             std::shared_ptr<ExprNode> expr;
-            if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, expr))
+            if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, expr))
                 return false;
 
             if (!expr)

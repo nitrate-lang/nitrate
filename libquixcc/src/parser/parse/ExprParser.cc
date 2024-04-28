@@ -46,14 +46,14 @@ static std::shared_ptr<libquixcc::CallExprNode> parse_function_call(quixcc_job_t
     while (true)
     {
         auto tok = scanner->peek();
-        if (tok == Token(TokenType::Punctor, Punctor::CloseParen))
+        if (tok == Token(TT::Punctor, Punctor::CloseParen))
         {
             scanner->next();
             break;
         }
 
         std::shared_ptr<libquixcc::ExprNode> arg;
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseParen)}, arg, depth + 1))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma), Token(TT::Punctor, Punctor::CloseParen)}, arg, depth + 1))
             return nullptr;
         args.push_back(arg);
 
@@ -142,7 +142,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     while (true)
     {
         auto tok = scanner->peek();
-        if (tok.type() == TokenType::Eof)
+        if (tok.type() == TT::Eof)
             return false;
 
         if (terminators.contains(tok))
@@ -167,19 +167,19 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
 
         switch (tok.type())
         {
-        case TokenType::IntegerLiteral:
-            stack.push(libquixcc::IntegerLiteralNode::create(std::get<std::string>(tok.val())));
+        case TT::Integer:
+            stack.push(libquixcc::IntegerNode::create(std::get<std::string>(tok.val())));
             continue;
-        case TokenType::FloatingLiteral:
+        case TT::Float:
             stack.push(libquixcc::FloatLiteralNode::create(std::get<std::string>(tok.val())));
             continue;
-        case TokenType::StringLiteral:
-            stack.push(libquixcc::StringLiteralNode::create(std::get<std::string>(tok.val())));
+        case TT::String:
+            stack.push(libquixcc::StringNode::create(std::get<std::string>(tok.val())));
             continue;
-        case TokenType::CharLiteral:
-            stack.push(libquixcc::CharLiteralNode::create(std::get<std::string>(tok.val())));
+        case TT::Char:
+            stack.push(libquixcc::CharNode::create(std::get<std::string>(tok.val())));
             continue;
-        case TokenType::Keyword:
+        case TT::Keyword:
             switch (std::get<Keyword>(tok.val()))
             {
             case Keyword::True:
@@ -196,7 +196,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 return false;
             }
             break;
-        case TokenType::Punctor:
+        case TT::Punctor:
             switch (std::get<Punctor>(tok.val()))
             {
             case Punctor::OpenParen:
@@ -237,14 +237,14 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 while (true)
                 {
                     auto tok = scanner->peek();
-                    if (tok == Token(TokenType::Punctor, Punctor::CloseBrace))
+                    if (tok == Token(TT::Punctor, Punctor::CloseBrace))
                     {
                         scanner->next();
                         break;
                     }
 
                     std::shared_ptr<libquixcc::ExprNode> element;
-                    if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseBrace)}, element, depth + 1))
+                    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma), Token(TT::Punctor, Punctor::CloseBrace)}, element, depth + 1))
                         return false;
                     elements.push_back(element);
 
@@ -270,7 +270,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 stack.pop();
 
                 auto tok = scanner->peek();
-                if (tok.type() != TokenType::Identifier)
+                if (tok.type() != TT::Identifier)
                 {
                     LOG(ERROR) << "Expected an identifier in member access" << tok << std::endl;
                     return false;
@@ -286,7 +286,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 return false;
             }
             break;
-        case TokenType::Operator:
+        case TT::Operator:
         {
             auto op = std::get<Operator>(tok.val());
             std::shared_ptr<libquixcc::ExprNode> expr;
@@ -314,10 +314,10 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             }
             break;
         }
-        case TokenType::Identifier:
+        case TT::Identifier:
         {
             auto ident = std::get<std::string>(tok.val());
-            if (scanner->peek().type() == TokenType::Punctor && std::get<Punctor>(scanner->peek().val()) == Punctor::OpenParen)
+            if (scanner->peek().type() == TT::Punctor && std::get<Punctor>(scanner->peek().val()) == Punctor::OpenParen)
             {
                 scanner->next();
                 auto fcall = parse_function_call(job, std::make_shared<IdentifierNode>(ident), scanner, depth);

@@ -46,9 +46,9 @@ static T getval_and_cast(const std::shared_ptr<libquixcc::ConstExprNode> node)
 
     switch (node->ntype)
     {
-    case NodeType::IntegerLiteralNode:
+    case NodeType::IntegerNode:
     {
-        auto n = static_cast<const IntegerLiteralNode *>(node.get());
+        auto n = static_cast<const IntegerNode *>(node.get());
         switch (n->m_val_type->ntype)
         {
         case NodeType::I64TypeNode:
@@ -63,9 +63,9 @@ static T getval_and_cast(const std::shared_ptr<libquixcc::ConstExprNode> node)
         return static_cast<T>(static_cast<const FloatLiteralNode *>(node.get())->m_value);
     case NodeType::BoolLiteralNode:
         return static_cast<T>(static_cast<const BoolLiteralNode *>(node.get())->m_val);
-    case NodeType::CharLiteralNode:
-        return static_cast<T>(std::stoi(static_cast<const CharLiteralNode *>(node.get())->m_val));
-    case NodeType::StringLiteralNode:
+    case NodeType::CharNode:
+        return static_cast<T>(std::stoi(static_cast<const CharNode *>(node.get())->m_val));
+    case NodeType::StringNode:
         throw std::runtime_error("string literals cannot be used in binary expressions");
     case NodeType::NullLiteralNode:
         throw std::runtime_error("null literals cannot be used in binary expressions");
@@ -82,21 +82,21 @@ static const std::shared_ptr<libquixcc::LiteralNode> reduce_unary_expr(T val, li
     switch (op)
     {
     case Operator::Minus:
-        return IntegerLiteralNode::create(std::to_string(-val));
+        return IntegerNode::create(std::to_string(-val));
     case Operator::Plus:
-        return IntegerLiteralNode::create(std::to_string(+val));
+        return IntegerNode::create(std::to_string(+val));
     case Operator::LogicalNot:
-        return IntegerLiteralNode::create(std::to_string(!val));
+        return IntegerNode::create(std::to_string(!val));
     case Operator::BitwiseNot:
     {
         if (std::is_same_v<T, bool>)
-            return IntegerLiteralNode::create(std::to_string(!val));
-        return IntegerLiteralNode::create(std::to_string(~val));
+            return IntegerNode::create(std::to_string(!val));
+        return IntegerNode::create(std::to_string(~val));
     }
     case Operator::Increment:
-        return IntegerLiteralNode::create(std::to_string(val + 1));
+        return IntegerNode::create(std::to_string(val + 1));
     case Operator::Decrement:
-        return IntegerLiteralNode::create(std::to_string(val - 1));
+        return IntegerNode::create(std::to_string(val - 1));
     default:
         LOG(FATAL) << "const-expr reduction error: invalid operator in unary expression" << std::endl;
         return nullptr;
@@ -153,29 +153,29 @@ static const std::shared_ptr<libquixcc::LiteralNode> reduce_binary_expr(T lhs, T
     case Operator::GreaterThan:
         return BoolLiteralNode::create(lhs > rhs);
     case Operator::Minus:
-        return IntegerLiteralNode::create(std::to_string(lhs - rhs));
+        return IntegerNode::create(std::to_string(lhs - rhs));
     case Operator::Plus:
-        return IntegerLiteralNode::create(std::to_string(lhs + rhs));
+        return IntegerNode::create(std::to_string(lhs + rhs));
     case Operator::Multiply:
-        return IntegerLiteralNode::create(std::to_string(lhs * rhs));
+        return IntegerNode::create(std::to_string(lhs * rhs));
     case Operator::Divide:
         if (rhs == 0)
             LOG(ERROR) << "const-expr reduction error: division by zero is mathematically undefined" << std::endl;
-        return IntegerLiteralNode::create(std::to_string(lhs / rhs));
+        return IntegerNode::create(std::to_string(lhs / rhs));
     case Operator::Modulo:
         if (rhs == 0)
             LOG(ERROR) << "const-expr reduction error: modulo by zero is mathematically undefined" << std::endl;
-        return IntegerLiteralNode::create(std::to_string(lhs % rhs));
+        return IntegerNode::create(std::to_string(lhs % rhs));
     case Operator::BitwiseAnd:
-        return IntegerLiteralNode::create(std::to_string(lhs & rhs));
+        return IntegerNode::create(std::to_string(lhs & rhs));
     case Operator::BitwiseOr:
-        return IntegerLiteralNode::create(std::to_string(lhs | rhs));
+        return IntegerNode::create(std::to_string(lhs | rhs));
     case Operator::BitwiseXor:
-        return IntegerLiteralNode::create(std::to_string(lhs ^ rhs));
+        return IntegerNode::create(std::to_string(lhs ^ rhs));
     case Operator::LeftShift:
-        return IntegerLiteralNode::create(std::to_string(lhs << rhs));
+        return IntegerNode::create(std::to_string(lhs << rhs));
     case Operator::RightShift:
-        return IntegerLiteralNode::create(std::to_string(lhs >> rhs));
+        return IntegerNode::create(std::to_string(lhs >> rhs));
     case Operator::Equal:
         return BoolLiteralNode::create(lhs == rhs);
     case Operator::NotEqual:
@@ -191,9 +191,9 @@ static const std::shared_ptr<libquixcc::LiteralNode> reduce_binary_expr(T lhs, T
     case Operator::GreaterThanEqual:
         return BoolLiteralNode::create(lhs >= rhs);
     case Operator::Increment:
-        return IntegerLiteralNode::create(std::to_string(lhs + 1));
+        return IntegerNode::create(std::to_string(lhs + 1));
     case Operator::Decrement:
-        return IntegerLiteralNode::create(std::to_string(lhs - 1));
+        return IntegerNode::create(std::to_string(lhs - 1));
     default:
         LOG(FATAL) << "const-expr reduction error: invalid operator in binary expression" << std::endl;
         return nullptr;

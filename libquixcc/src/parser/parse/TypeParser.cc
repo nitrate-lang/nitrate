@@ -55,7 +55,7 @@ static std::map<std::string, TypeNode *> primitive_types = {
 bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, TypeNode **node)
 {
     Token tok = scanner->next();
-    if (tok.type() == TokenType::Keyword)
+    if (tok.type() == TT::Keyword)
     {
         std::shared_ptr<StmtNode> fn;
 
@@ -78,7 +78,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             }
 
             *node = std::static_pointer_cast<FunctionDeclNode>(fn)->m_type;
-            scanner->push(Token(TokenType::Punctor, Punctor::Semicolon));
+            scanner->push(Token(TT::Punctor, Punctor::Semicolon));
             return true;
         case Keyword::Opaque:
         {
@@ -89,7 +89,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 return false;
             }
             tok = scanner->next();
-            if (tok.type() != TokenType::Identifier)
+            if (tok.type() != TT::Identifier)
             {
                 LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_IDENTIFIER] << tok << std::endl;
                 return false;
@@ -109,7 +109,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             return false;
         }
     }
-    else if (tok.type() == TokenType::Identifier)
+    else if (tok.type() == TT::Identifier)
     {
         if (primitive_types.contains(std::get<std::string>(tok.val())))
         {
@@ -141,7 +141,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         }
 
         std::shared_ptr<ConstExprNode> size;
-        if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::CloseBracket), size))
+        if (!parse_const_expr(job, scanner, Token(TT::Punctor, Punctor::CloseBracket), size))
         {
             LOG(ERROR) << feedback[TYPE_EXPECTED_CONST_EXPR] << tok << std::endl;
             return false;

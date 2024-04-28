@@ -37,7 +37,6 @@
 #endif
 
 #include <string>
-#include <optional>
 #include <variant>
 
 namespace libquixcc
@@ -149,61 +148,56 @@ namespace libquixcc
         NotEqual,
     };
 
-    enum class TokenType
+    enum class TT
     {
         Eof = -1,
-        Unknown,
+        Unknown = 0,
 
-        Identifier,
-        Keyword,
-        Operator,
+        Identifier = 1,
+        Keyword = 2,
+        Operator = 3,
+        Punctor = 4,
 
-        IntegerLiteral,
-        FloatingLiteral,
-        StringLiteral,
-        CharLiteral,
-        MacroBlock,
-        MacroSingleLine,
+        Integer = 5,
+        Float = 6,
+        String = 7,
+        Char = 8,
 
-        Punctor,
+        MacroBlock = 9,
+        MacroSingleLine = 10,
 
-        Comment
+        Comment = 11,
     };
 
     typedef std::variant<std::string, Punctor, Keyword, Operator> TokVal;
 
     struct Loc
     {
-        int64_t line;
-        int64_t col;
         std::string file;
+        int_least32_t line;
+        int_least32_t col;
 
         Loc() : line(1), col(1) {}
-        Loc(int64_t line, int64_t col, std::string file = "") : line(line), col(col), file(file) {}
+        Loc(int_least32_t line, int_least32_t col, std::string file = "") : file(file), line(line), col(col) {}
 
-        Loc operator-(size_t rhs) const;
-
-        static Loc Unk;
+        Loc operator-(int_least32_t rhs) const;
     };
 
     class Token
     {
-        TokenType m_type;
         TokVal m_value;
         Loc m_loc;
+        TT m_type;
 
     public:
-        Token() : m_type(TokenType::Unknown), m_value(std::string()) {}
-        Token(TokenType type, TokVal value, Loc loc = Loc());
+        Token() : m_value(std::string()), m_loc(), m_type(TT::Unknown) {}
+        Token(TT type, TokVal value, Loc loc = Loc());
 
-        TokenType type() const;
-        const TokVal &val() const;
-        const Loc &loc() const;
+        inline TT type() const { return m_type; }
+        inline const TokVal &val() const { return m_value; }
+        inline const Loc &loc() const { return m_loc; }
 
-        bool is(TokenType val) const
-        {
-            return m_type == val;
-        }
+        inline bool is(TT val) const { return m_type == val; }
 
         template <typename T, typename V = T>
         bool is(V val) const
@@ -213,13 +207,15 @@ namespace libquixcc
 
         std::string serialize(bool human_readable = true) const;
 
-        bool operator==(const Token &rhs) const;
-        bool operator<(const Token &rhs) const;
-
-        bool nil() const
+        inline bool operator==(const Token &rhs) const { return m_type == rhs.m_type && m_value == rhs.m_value; }
+        inline bool operator<(const Token &rhs) const
         {
-            return m_type == TokenType::Unknown;
+            if (m_type != rhs.m_type)
+                return m_type < rhs.m_type;
+            return m_value < rhs.m_value;
         }
+
+        inline bool nil() const { return m_type == TT::Unknown; }
     };
 };
 

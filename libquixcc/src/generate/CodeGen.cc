@@ -818,7 +818,7 @@ llvm::Type *libquixcc::CodegenVisitor::visit(const libquixcc::FunctionTypeNode *
     return llvm::FunctionType::get(node->m_return_type->codegen(*this), params, node->m_variadic);
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::IntegerLiteralNode *node)
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::IntegerNode *node)
 {
     return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(get_numbits(node->m_val), node->m_val, 10));
 }
@@ -833,7 +833,7 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::FloatLiteralNo
         return nullptr;
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::StringLiteralNode *node)
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::StringNode *node)
 {
     llvm::Constant *zero = llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(*m_ctx->m_ctx));
     llvm::Constant *indices[] = {zero, zero};
@@ -845,7 +845,7 @@ llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::StringLiteralN
     return llvm::ConstantExpr::getGetElementPtr(gvar->getValueType(), gvar, indices);
 }
 
-llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::CharLiteralNode *node)
+llvm::Constant *libquixcc::CodegenVisitor::visit(const libquixcc::CharNode *node)
 {
     return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(8, node->m_val[0]));
 }
@@ -1342,14 +1342,14 @@ llvm::Value *libquixcc::CodegenVisitor::visit(const libquixcc::ExprNode *node)
         return visit(static_cast<const ConstBinaryExprNode *>(node));
     case NodeType::IdentifierNode:
         return visit(static_cast<const IdentifierNode *>(node));
-    case NodeType::IntegerLiteralNode:
-        return visit(static_cast<const IntegerLiteralNode *>(node));
+    case NodeType::IntegerNode:
+        return visit(static_cast<const IntegerNode *>(node));
     case NodeType::FloatLiteralNode:
         return visit(static_cast<const FloatLiteralNode *>(node));
-    case NodeType::StringLiteralNode:
-        return visit(static_cast<const StringLiteralNode *>(node));
-    case NodeType::CharLiteralNode:
-        return visit(static_cast<const CharLiteralNode *>(node));
+    case NodeType::StringNode:
+        return visit(static_cast<const StringNode *>(node));
+    case NodeType::CharNode:
+        return visit(static_cast<const CharNode *>(node));
     case NodeType::BoolLiteralNode:
         return visit(static_cast<const BoolLiteralNode *>(node));
     case NodeType::NullLiteralNode:

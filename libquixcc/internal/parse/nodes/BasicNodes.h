@@ -210,14 +210,14 @@ namespace libquixcc
 
             case NodeType::LiteralNode:
                 return std::is_same_v<T, LiteralNode>;
-            case NodeType::IntegerLiteralNode:
-                return std::is_same_v<T, IntegerLiteralNode>;
+            case NodeType::IntegerNode:
+                return std::is_same_v<T, IntegerNode>;
             case NodeType::FloatLiteralNode:
                 return std::is_same_v<T, FloatLiteralNode>;
-            case NodeType::StringLiteralNode:
-                return std::is_same_v<T, StringLiteralNode>;
-            case NodeType::CharLiteralNode:
-                return std::is_same_v<T, CharLiteralNode>;
+            case NodeType::StringNode:
+                return std::is_same_v<T, StringNode>;
+            case NodeType::CharNode:
+                return std::is_same_v<T, CharNode>;
             case NodeType::BoolLiteralNode:
                 return std::is_same_v<T, BoolLiteralNode>;
             case NodeType::NullLiteralNode:
@@ -295,7 +295,7 @@ namespace libquixcc
                 return is<ConstUnaryExprNode>() || is<ConstBinaryExprNode>();
 
             if (std::is_same_v<T, LiteralNode>)
-                return is<IntegerLiteralNode>() || is<FloatLiteralNode>() || is<StringLiteralNode>() || is<CharLiteralNode>() || is<BoolLiteralNode>() || is<NullLiteralNode>();
+                return is<IntegerNode>() || is<FloatLiteralNode>() || is<StringNode>() || is<CharNode>() || is<BoolLiteralNode>() || is<NullLiteralNode>();
 
             if (std::is_same_v<T, CastExprNode>)
                 return is<StaticCastExprNode>() || is<BitCastExprNode>() || is<SignedUpcastExprNode>() || is<UnsignedUpcastExprNode>() || is<DowncastExprNode>() || is<IntToPtrCastExprNode>() || is<PtrToIntCastExprNode>();

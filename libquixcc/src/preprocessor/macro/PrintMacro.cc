@@ -59,7 +59,7 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
     E level = E::INFO;
 
     Token t = tokens[0];
-    if (t.type() == TokenType::Identifier && tokens.size() == 3)
+    if (t.type() == TT::Identifier && tokens.size() == 3)
     {
         std::string id = std::get<std::string>(t.val());
         std::transform(id.begin(), id.end(), id.begin(), ::tolower);
@@ -82,7 +82,7 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
             return false;
         }
 
-        if (tokens[1].type() != TokenType::Punctor || std::get<Punctor>(tokens[1].val()) != Punctor::Comma)
+        if (tokens[1].type() != TT::Punctor || std::get<Punctor>(tokens[1].val()) != Punctor::Comma)
         {
             LOG(ERROR) << "Expected comma after print level" << std::endl;
             return false;

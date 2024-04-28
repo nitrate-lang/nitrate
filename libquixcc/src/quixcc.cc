@@ -561,7 +561,7 @@ static bool compile(quixcc_job_t *job)
         // Generate output
         std::string tmp;
         std::optional<Token> tok;
-        while ((tok = prep->next())->type() != TokenType::Eof)
+        while ((tok = prep->next())->type() != TT::Eof)
         {
             tmp = tok->serialize();
             fwrite(tmp.c_str(), 1, tmp.size(), job->m_out);
@@ -585,7 +585,7 @@ static bool compile(quixcc_job_t *job)
         // Generate output
         std::string tmp;
         Token tok;
-        while ((tok = lexer.next()).type() != TokenType::Eof)
+        while ((tok = lexer.next()).type() != TT::Eof)
         {
             tmp = tok.serialize();
             fwrite(tmp.c_str(), 1, tmp.size(), job->m_out);

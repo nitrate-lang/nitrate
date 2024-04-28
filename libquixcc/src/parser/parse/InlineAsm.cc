@@ -54,7 +54,7 @@ static bool asm_parse_param(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
 
     while (!(tok = scanner->next()).is<Punctor>(Punctor::CloseBrace))
     {
-        if (tok.type() != TokenType::StringLiteral)
+        if (tok.type() != TT::String)
         {
             LOG(ERROR) << feedback[ASM_PARAM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok << std::endl;
             return false;
@@ -70,7 +70,7 @@ static bool asm_parse_param(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
         }
 
         std::shared_ptr<ExprNode> expr;
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseBrace)}, expr))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma), Token(TT::Punctor, Punctor::CloseBrace)}, expr))
         {
             LOG(ERROR) << feedback[ASM_PARAM_EXPECTED_EXPR] << tok.serialize() << tok << std::endl;
             return false;
@@ -97,7 +97,7 @@ static bool asm_parse_clobbers(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     while (!(tok = scanner->next()).is<Punctor>(Punctor::CloseBracket))
     {
-        if (tok.type() != TokenType::StringLiteral)
+        if (tok.type() != TT::String)
         {
             LOG(ERROR) << feedback[ASM_PARAM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok << std::endl;
             return false;
@@ -119,7 +119,7 @@ bool libquixcc::parse_inline_asm(quixcc_job_t &job, std::shared_ptr<libquixcc::S
     }
 
     tok = scanner->next();
-    if (tok.type() != TokenType::StringLiteral)
+    if (tok.type() != TT::String)
     {
         LOG(ERROR) << feedback[ASM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok << std::endl;
         return false;

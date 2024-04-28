@@ -43,7 +43,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
 
     ExportLangType langType = ExportLangType::Default;
 
-    if (tok.type() == TokenType::StringLiteral)
+    if (tok.type() == TT::String)
     {
         scanner->next();
 
@@ -77,7 +77,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     }
 
     scanner->next();
-    if (tok.type() != TokenType::Keyword)
+    if (tok.type() != TT::Keyword)
     {
         LOG(ERROR) << feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok << std::endl;
         return false;

@@ -36,7 +36,7 @@
 #error "This header requires C++"
 #endif
 
-#include <map>
+#include <unordered_map>
 
 namespace libquixcc
 {
@@ -197,7 +197,17 @@ namespace libquixcc
         MAX_MSG
     };
 
-    extern std::map<Msg, const char *> feedback;
+    class Feedback
+    {
+        std::unordered_map<Msg, const char *> m_feedback;
+
+    public:
+        const char *operator[](Msg msg) const { return m_feedback.at(msg); }
+        Feedback(const std::unordered_map<Msg, const char *> &feedback) : m_feedback(feedback) {}
+    };
+
+    extern Feedback feedback;
+
 };
 
 #endif

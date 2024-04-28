@@ -101,10 +101,10 @@ size_t libquixcc::traversal::ASTPreorderTraversal::dispatch(libquixcc::traversal
             {NodeType::ArrayTypeNode, (Func)ArrayTypeNode_iter},
             {NodeType::FunctionTypeNode, (Func)FunctionTypeNode_iter},
             {NodeType::UserTypeNode, (Func)UserTypeNode_iter},
-            {NodeType::IntegerLiteralNode, (Func)IntegerLiteralNode_iter},
+            {NodeType::IntegerNode, (Func)IntegerNode_iter},
             {NodeType::FloatLiteralNode, (Func)FloatLiteralNode_iter},
-            {NodeType::StringLiteralNode, (Func)StringLiteralNode_iter},
-            {NodeType::CharLiteralNode, (Func)CharLiteralNode_iter},
+            {NodeType::StringNode, (Func)StringNode_iter},
+            {NodeType::CharNode, (Func)CharNode_iter},
             {NodeType::BoolLiteralNode, (Func)BoolLiteralNode_iter},
             {NodeType::NullLiteralNode, (Func)NullLiteralNode_iter},
             {NodeType::TypedefNode, (Func)TypedefNode_iter},
@@ -493,7 +493,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::UserTypeNode_iter(libquixcc::
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::IntegerLiteralNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::IntegerLiteralNode *node)
+size_t libquixcc::traversal::ASTPreorderTraversal::IntegerNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::IntegerNode *node)
 {
     return 1;
 }
@@ -503,12 +503,12 @@ size_t libquixcc::traversal::ASTPreorderTraversal::FloatLiteralNode_iter(libquix
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::StringLiteralNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::StringLiteralNode *node)
+size_t libquixcc::traversal::ASTPreorderTraversal::StringNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::StringNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::CharLiteralNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::CharLiteralNode *node)
+size_t libquixcc::traversal::ASTPreorderTraversal::CharNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::CharNode *node)
 {
     return 1;
 }

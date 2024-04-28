@@ -199,7 +199,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
         const libquixcc::ArrayTypeNode *st = static_cast<const ArrayTypeNode *>(type);
         std::string s;
         s += wrap_tag(serialize_type(st->m_type, visited));
-        s += wrap_tag("x" + st->m_size->reduce<IntegerLiteralNode>()->m_val);
+        s += wrap_tag("x" + st->m_size->reduce<IntegerNode>()->m_val);
         return "a" + s;
     }
     else if (type->is<PointerTypeNode>())
@@ -369,7 +369,7 @@ static libquixcc::TypeNode *deserialize_type_inner(const std::string &type, std:
         if ((t = deserialize_type_inner(fields[0], prev)) == nullptr)
             return nullptr;
 
-        return ArrayTypeNode::create(t, libquixcc::IntegerLiteralNode::create(fields[1].substr(1)));
+        return ArrayTypeNode::create(t, libquixcc::IntegerNode::create(fields[1].substr(1)));
     }
     else if (type[0] == 'p')
     {

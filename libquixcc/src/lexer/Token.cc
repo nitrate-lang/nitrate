@@ -32,30 +32,16 @@
 #define QUIXCC_INTERNAL
 
 #include <lexer/Token.h>
-#include <map>
+#include <lexer/Lex.h>
 
-namespace libquixcc
+libquixcc::Loc libquixcc::Loc::operator-(int_least32_t rhs) const
 {
-    extern std::map<libquixcc::Keyword, std::string> keyword_map_inverse;
-    extern std::map<libquixcc::Operator, std::string> operator_map_inverse;
-    extern std::map<libquixcc::Punctor, std::string> punctor_map_inverse;
-}
-
-libquixcc::Loc libquixcc::Loc::Unk = libquixcc::Loc(-1, -1);
-
-libquixcc::Loc libquixcc::Loc::operator-(size_t rhs) const
-{
-    if (col == -1 || line == -1)
-    {
-        return *this;
-    }
-
-    if (rhs <= (uint64_t)col)
+    if (rhs <= col)
         return Loc(line, col - rhs, file);
 
     Loc new_loc = *this;
 
-    while (rhs > (uint64_t)col)
+    while (rhs > col)
     {
         rhs -= col;
         new_loc.line--;
@@ -67,26 +53,11 @@ libquixcc::Loc libquixcc::Loc::operator-(size_t rhs) const
     return new_loc;
 }
 
-libquixcc::Token::Token(libquixcc::TokenType type, libquixcc::TokVal value, libquixcc::Loc loc)
+libquixcc::Token::Token(libquixcc::TT type, libquixcc::TokVal value, libquixcc::Loc loc)
 {
     m_type = type;
     m_value = value;
     m_loc = loc;
-}
-
-libquixcc::TokenType libquixcc::Token::type() const
-{
-    return m_type;
-}
-
-const libquixcc::TokVal &libquixcc::Token::val() const
-{
-    return m_value;
-}
-
-const libquixcc::Loc &libquixcc::Token::loc() const
-{
-    return m_loc;
 }
 
 std::string libquixcc::Token::serialize(bool human_readable) const
@@ -95,47 +66,35 @@ std::string libquixcc::Token::serialize(bool human_readable) const
 
     switch (m_type)
     {
-    case TokenType::Eof:
+    case TT::Eof:
         return "Eof";
-    case TokenType::Unknown:
+    case TT::Unknown:
         return "Unknown";
-    case TokenType::Identifier:
+    case TT::Identifier:
         return "Identifier(" + std::get<std::string>(m_value) + ")";
-    case TokenType::Keyword:
+    case TT::Keyword:
         return "Keyword(" + keyword_map_inverse.at(std::get<Keyword>(m_value)) + ")";
-    case TokenType::Operator:
+    case TT::Operator:
         return "Operator(" + operator_map_inverse.at(std::get<Operator>(m_value)) + ")";
-    case TokenType::Punctor:
+    case TT::Punctor:
         return "Punctor(" + punctor_map_inverse.at(std::get<Punctor>(m_value)) + ")";
-    case TokenType::StringLiteral:
+    case TT::String:
         return "\"" + std::get<std::string>(m_value) + "\"";
-    case TokenType::CharLiteral:
+    case TT::Char:
         return "'" + std::get<std::string>(m_value) + "'";
-    case TokenType::IntegerLiteral:
+    case TT::Integer:
         return "Number(" + std::get<std::string>(m_value) + ")";
-    case TokenType::FloatingLiteral:
+    case TT::Float:
         return "Float(" + std::get<std::string>(m_value) + ")";
-    case TokenType::Comment:
+    case TT::Comment:
         return "/* " + std::get<std::string>(m_value) + " */";
-    case TokenType::MacroBlock:
+    case TT::MacroBlock:
         return "MacroBlock(" + std::get<std::string>(m_value) + ")";
-    case TokenType::MacroSingleLine:
+    case TT::MacroSingleLine:
         return "MacroSingleLine(" + std::get<std::string>(m_value) + ")";
     default:
         return "Unknown";
     }
 
     return "Unknown";
-}
-
-bool libquixcc::Token::operator==(const libquixcc::Token &rhs) const
-{
-    return m_type == rhs.m_type && m_value == rhs.m_value;
-}
-
-bool libquixcc::Token::operator<(const libquixcc::Token &rhs) const
-{
-    if (m_type != rhs.m_type)
-        return m_type < rhs.m_type;
-    return m_value < rhs.m_value;
 }

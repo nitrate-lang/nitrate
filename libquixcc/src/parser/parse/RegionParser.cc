@@ -40,7 +40,7 @@ using namespace libquixcc;
 static bool parse_region_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<RegionFieldNode> &node)
 {
     Token tok = scanner->next();
-    if (tok.type() != TokenType::Identifier)
+    if (tok.type() != TT::Identifier)
     {
         LOG(ERROR) << feedback[REGION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
         return false;
@@ -72,7 +72,7 @@ static bool parse_region_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     }
     else if (tok.is<Operator>(Operator::Assign))
     {
-        if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), value))
+        if (!parse_const_expr(job, scanner, Token(TT::Punctor, Punctor::Comma), value))
         {
             LOG(ERROR) << feedback[REGION_FIELD_INIT_ERR] << name << tok << std::endl;
             return false;
@@ -99,7 +99,7 @@ static bool parse_region_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 bool libquixcc::parse_region(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     Token tok = scanner->next();
-    if (tok.type() != TokenType::Identifier)
+    if (tok.type() != TT::Identifier)
     {
         LOG(ERROR) << feedback[REGION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
         return false;

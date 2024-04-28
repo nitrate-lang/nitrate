@@ -62,17 +62,17 @@ namespace libquixcc
 
     typedef std::variant<int64_t, uint64_t> NumbericLiteralNode;
 
-    class IntegerLiteralNode : public LiteralNode
+    class IntegerNode : public LiteralNode
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
         virtual std::shared_ptr<ExprNode> promote_impl() const override { return this->create(m_val); }
 
-        static std::unordered_map<std::string, std::shared_ptr<IntegerLiteralNode>> m_instances;
-        IntegerLiteralNode(const std::string &val);
+        static std::unordered_map<std::string, std::shared_ptr<IntegerNode>> m_instances;
+        IntegerNode(const std::string &val);
 
     public:
-        static const std::shared_ptr<IntegerLiteralNode> create(const std::string &val)
+        static const std::shared_ptr<IntegerNode> create(const std::string &val)
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);
@@ -80,7 +80,7 @@ namespace libquixcc
             if (m_instances.find(val) != m_instances.end())
                 return m_instances[val];
 
-            m_instances[val] = std::shared_ptr<IntegerLiteralNode>(new IntegerLiteralNode(val));
+            m_instances[val] = std::shared_ptr<IntegerNode>(new IntegerNode(val));
             return m_instances[val];
         }
 
@@ -122,17 +122,17 @@ namespace libquixcc
         double m_value;
     };
 
-    class StringLiteralNode : public LiteralNode
+    class StringNode : public LiteralNode
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
         virtual std::shared_ptr<ExprNode> promote_impl() const override { return this->create(m_val); }
 
-        static std::unordered_map<std::string, std::shared_ptr<StringLiteralNode>> m_instances;
-        StringLiteralNode(const std::string &val) : m_val(val) { ntype = NodeType::StringLiteralNode; }
+        static std::unordered_map<std::string, std::shared_ptr<StringNode>> m_instances;
+        StringNode(const std::string &val) : m_val(val) { ntype = NodeType::StringNode; }
 
     public:
-        static const std::shared_ptr<StringLiteralNode> create(const std::string &val)
+        static const std::shared_ptr<StringNode> create(const std::string &val)
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);
@@ -140,7 +140,7 @@ namespace libquixcc
             if (m_instances.find(val) != m_instances.end())
                 return m_instances[val];
 
-            m_instances[val] = std::shared_ptr<StringLiteralNode>(new StringLiteralNode(val));
+            m_instances[val] = std::shared_ptr<StringNode>(new StringNode(val));
             return m_instances[val];
         }
 
@@ -150,17 +150,17 @@ namespace libquixcc
         std::string m_val;
     };
 
-    class CharLiteralNode : public LiteralNode
+    class CharNode : public LiteralNode
     {
     protected:
         virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override { return this->create(m_val); }
         virtual std::shared_ptr<ExprNode> promote_impl() const override { return this->create(m_val); }
 
-        static std::unordered_map<std::string, std::shared_ptr<CharLiteralNode>> m_instances;
-        CharLiteralNode(const std::string &val) : m_val(val) { ntype = NodeType::CharLiteralNode; }
+        static std::unordered_map<std::string, std::shared_ptr<CharNode>> m_instances;
+        CharNode(const std::string &val) : m_val(val) { ntype = NodeType::CharNode; }
 
     public:
-        static const std::shared_ptr<CharLiteralNode> create(const std::string &val)
+        static const std::shared_ptr<CharNode> create(const std::string &val)
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);
@@ -168,7 +168,7 @@ namespace libquixcc
             if (m_instances.find(val) != m_instances.end())
                 return m_instances[val];
 
-            m_instances[val] = std::shared_ptr<CharLiteralNode>(new CharLiteralNode(val));
+            m_instances[val] = std::shared_ptr<CharNode>(new CharNode(val));
             return m_instances[val];
         }
 

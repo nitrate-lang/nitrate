@@ -79,35 +79,35 @@ bool libquixcc::macro::ParseDefine(quixcc_job_t *job, const Token &tok, const st
             type = String;
     }
 
-    exp.push_back(Token(TokenType::Keyword, Keyword::Let));
-    exp.push_back(Token(TokenType::Identifier, name));
-    exp.push_back(Token(TokenType::Punctor, Punctor::Colon));
+    exp.push_back(Token(TT::Keyword, Keyword::Let));
+    exp.push_back(Token(TT::Identifier, name));
+    exp.push_back(Token(TT::Punctor, Punctor::Colon));
 
     switch (type)
     {
     case Int:
-        exp.push_back(Token(TokenType::Identifier, "i64"));
-        exp.push_back(Token(TokenType::Operator, Operator::Assign));
-        exp.push_back(Token(TokenType::IntegerLiteral, value));
+        exp.push_back(Token(TT::Identifier, "i64"));
+        exp.push_back(Token(TT::Operator, Operator::Assign));
+        exp.push_back(Token(TT::Integer, value));
         break;
     case String:
-        exp.push_back(Token(TokenType::Identifier, "string"));
-        exp.push_back(Token(TokenType::Operator, Operator::Assign));
-        exp.push_back(Token(TokenType::StringLiteral, value));
+        exp.push_back(Token(TT::Identifier, "string"));
+        exp.push_back(Token(TT::Operator, Operator::Assign));
+        exp.push_back(Token(TT::String, value));
         break;
     case Bool:
-        exp.push_back(Token(TokenType::Identifier, "bool"));
-        exp.push_back(Token(TokenType::Operator, Operator::Assign));
+        exp.push_back(Token(TT::Identifier, "bool"));
+        exp.push_back(Token(TT::Operator, Operator::Assign));
         if (value == "true")
-            exp.push_back(Token(TokenType::Keyword, Keyword::True));
+            exp.push_back(Token(TT::Keyword, Keyword::True));
         else
-            exp.push_back(Token(TokenType::Keyword, Keyword::False));
+            exp.push_back(Token(TT::Keyword, Keyword::False));
         break;
     default:
         break;
     }
 
-    exp.push_back(Token(TokenType::Punctor, Punctor::Semicolon));
+    exp.push_back(Token(TT::Punctor, Punctor::Semicolon));
 
     return true;
 }

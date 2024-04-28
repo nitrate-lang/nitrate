@@ -40,7 +40,7 @@ using namespace libquixcc;
 static bool parse_union_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<UnionFieldNode> &node)
 {
     Token tok = scanner->next();
-    if (tok.type() != TokenType::Identifier)
+    if (tok.type() != TT::Identifier)
     {
         LOG(ERROR) << feedback[UNION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
         return false;
@@ -79,7 +79,7 @@ static bool parse_union_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
 bool libquixcc::parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     Token tok = scanner->next();
-    if (tok.type() != TokenType::Identifier)
+    if (tok.type() != TT::Identifier)
     {
         LOG(ERROR) << feedback[UNION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
         return false;

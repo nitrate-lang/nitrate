@@ -36,7 +36,7 @@
 #error "This header requires C++"
 #endif
 
-#include <bits/types/FILE.h>
+#include <stdio.h>
 #include <quixcc.h>
 #include <parse/Parser.h>
 #include <parse/NodeType.h>

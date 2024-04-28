@@ -45,11 +45,11 @@
 
 ///=============================================================================
 
-#define FLOATING_POINT_LITERAL_ROUND_DIGITS 32
+#define FLOATING_POINT_PRECISION 32
 
 namespace libquixcc
 {
-    std::map<std::string, libquixcc::Keyword> keyword_map = {
+    std::unordered_map<std::string, libquixcc::Keyword> keyword_map = {
         {"subsystem", libquixcc::Keyword::Subsystem},
         {"import", libquixcc::Keyword::Import},
         {"type", libquixcc::Keyword::Type},
@@ -90,7 +90,7 @@ namespace libquixcc
         {"true", libquixcc::Keyword::True},
         {"false", libquixcc::Keyword::False}};
 
-    std::map<libquixcc::Keyword, std::string> keyword_map_inverse = {
+    std::unordered_map<libquixcc::Keyword, std::string> keyword_map_inverse = {
         {libquixcc::Keyword::Subsystem, "subsystem"},
         {libquixcc::Keyword::Import, "import"},
         {libquixcc::Keyword::Type, "type"},
@@ -131,7 +131,7 @@ namespace libquixcc
         {libquixcc::Keyword::True, "true"},
         {libquixcc::Keyword::False, "false"}};
 
-    std::map<std::string, libquixcc::Punctor> punctor_map = {
+    std::unordered_map<std::string, libquixcc::Punctor> punctor_map = {
         {"(", libquixcc::Punctor::OpenParen},
         {")", libquixcc::Punctor::CloseParen},
         {"{", libquixcc::Punctor::OpenBrace},
@@ -143,7 +143,7 @@ namespace libquixcc
         {":", libquixcc::Punctor::Colon},
         {";", libquixcc::Punctor::Semicolon}};
 
-    std::map<libquixcc::Punctor, std::string> punctor_map_inverse = {
+    std::unordered_map<libquixcc::Punctor, std::string> punctor_map_inverse = {
         {libquixcc::Punctor::OpenParen, "("},
         {libquixcc::Punctor::CloseParen, ")"},
         {libquixcc::Punctor::OpenBrace, "{"},
@@ -155,7 +155,7 @@ namespace libquixcc
         {libquixcc::Punctor::Colon, ":"},
         {libquixcc::Punctor::Semicolon, ";"}};
 
-    std::map<std::string, libquixcc::Operator> operator_map = {
+    std::unordered_map<std::string, libquixcc::Operator> operator_map = {
         {"<", libquixcc::Operator::LessThan},
         {">", libquixcc::Operator::GreaterThan},
         {"=", libquixcc::Operator::Assign},
@@ -196,7 +196,7 @@ namespace libquixcc
         {"<<=", libquixcc::Operator::LeftShiftAssign},
         {">>=", libquixcc::Operator::RightShiftAssign}};
 
-    std::map<libquixcc::Operator, std::string> operator_map_inverse = {
+    std::unordered_map<libquixcc::Operator, std::string> operator_map_inverse = {
         {libquixcc::Operator::LessThan, "<"},
         {libquixcc::Operator::GreaterThan, ">"},
         {libquixcc::Operator::Assign, "="},
@@ -238,7 +238,7 @@ namespace libquixcc
         {libquixcc::Operator::RightShiftAssign, ">>="}};
 }
 
-std::string libquixcc::Scanner::escape_string(const std::string &str)
+std::string libquixcc::Scanner::escape_string(const std::string &str) noexcept
 {
     std::ostringstream output;
 
@@ -297,8 +297,14 @@ libquixcc::StreamLexer::StreamLexer()
     added_newline = false;
 }
 
-char libquixcc::StreamLexer::getc()
+char libquixcc::StreamLexer::getc() noexcept
 {
+    /* The QUIX specification requires UTF-8 support. */
+    /// TODO: implement UTF-8 support
+
+    // Stateful buffered reader that inserts a newline character at the end of the file if it doesn't exist.
+
+    /* If the Lexer overshot, we will return the saved character */
     if (!m_pushback.empty())
     {
         char c = m_pushback.front();
@@ -306,29 +312,36 @@ char libquixcc::StreamLexer::getc()
         return c;
     }
 
+    /* Fill buffer if it's empty */
     if (m_buf_pos >= m_buffer.size())
     {
         size_t read;
         if ((read = fread(m_buffer.data(), 1, m_buffer.size(), m_src)) == 0)
         {
+            // If we haven't added a newline character, we will add one here.
             if (added_newline)
                 return EOF;
 
+            // We only do this once.
             m_buffer[0] = '\n';
             read = 1;
             added_newline = true;
         }
 
+        // Resize buffer to the actual size
         if (m_buffer.size() != read)
             m_buffer.resize(read);
 
+        // Reset buffer position
         m_buf_pos = 0;
     }
 
+    // Read character from buffer
     char c = m_buffer[m_buf_pos++];
 
     m_loc = m_loc_curr;
 
+    // Update location
     if (c == '\n')
     {
         m_loc_curr.line++;
@@ -342,14 +355,13 @@ char libquixcc::StreamLexer::getc()
     return c;
 }
 
-bool libquixcc::StreamLexer::set_source(FILE *src, const std::string &filename)
+bool libquixcc::StreamLexer::set_source(FILE *src, const std::string &filename) noexcept
 {
     if (src == nullptr)
         return false;
 
-    m_src = src;
-
-    if (fseek(m_src, 0, SEEK_SET) != 0)
+    /* Test if the file is 'usable' */
+    if (fseek(m_src = src, 0, SEEK_SET) != 0)
         return false;
 
     m_filename = filename;
@@ -358,138 +370,70 @@ bool libquixcc::StreamLexer::set_source(FILE *src, const std::string &filename)
     return true;
 }
 
-libquixcc::Token libquixcc::StreamLexer::next()
+libquixcc::Token libquixcc::StreamLexer::next() noexcept
 {
     Token tok = peek();
     m_tok = std::nullopt;
     return tok;
 }
 
-void libquixcc::StreamLexer::push(libquixcc::Token tok)
+static bool validate_identifier(const std::string &id)
 {
-    m_tok = tok;
-}
-
-static bool validate_identifier_type_1(const std::string &id)
-{
-    // check if its a a::b::c::d::e::f
-
-    int state = 0;
-
-    for (const auto &c : id)
-    {
-        switch (state)
-        {
-        case 0:
-            if (std::isalnum(c) || c == '_')
-                continue;
-            if (c == ':')
-            {
-                state = 1;
-                continue;
-            }
-            return false;
-        case 1:
-            if (c == ':')
-            {
-                state = 0;
-                continue;
-            }
-            return false;
-        }
-    }
-
-    return state == 0;
-}
-
-static bool validate_identifier_type_2(const std::string &id)
-{
-    int state = 0;
-
-    for (const auto &c : id)
-    {
-        switch (state)
-        {
-        case 0:
-            if (std::isalnum(c) || c == '_')
-                continue;
-            if (c == '.')
-            {
-                state = 1;
-                continue;
-            }
-            return false;
-        case 1:
-            if (std::isalnum(c) || c == '_')
-            {
-                state = 0;
-                continue;
-            }
-            return false;
-        }
-    }
-
-    return state == 0;
-}
-
-static bool reduce_identifier(std::string &str)
-{
-    static std::unordered_map<std::string, std::string> cache;
-
-    if (cache.contains(str))
-    {
-        str = cache[str];
-        return true;
-    }
-
-    // Replace all `<<string>>` syntax should be replaced with _Z0<string>_
-    size_t first = str.find('<');
-    size_t last = str.find('>');
-
-    while (first != std::string::npos && last != std::string::npos)
-    {
-        str.replace(first, last - first + 1, "::_" + str.substr(first + 1, last - first - 1));
-        first = str.find('<');
-        last = str.find('>');
-    }
-
-    if (validate_identifier_type_1(str))
-    {
-        cache[str] = str;
-        return true;
-    }
-
     /*
-        a.b.c.d.e.f
-        becomes -> a::b::c::d::e::f
-    */
+     * This state machine checks if the identifier looks
+     * like 'a::b::c::d_::e::f'.
+     */
 
-    if (validate_identifier_type_2(str))
+    int state = 0;
+
+    for (const auto &c : id)
     {
-        size_t index = 0;
-        while (true)
+        switch (state)
         {
-            /* Locate the substring to replace. */
-            index = str.find(".", index);
-            if (index == std::string::npos)
-                break;
-
-            /* Make the replacement. */
-            str.replace(index, 1, "::");
-
-            /* Advance index forward so the next iteration doesn't pick it up as well. */
-            index++;
+        case 0:
+            if (std::isalnum(c) || c == '_')
+                continue;
+            if (c == ':')
+            {
+                state = 1;
+                continue;
+            }
+            return false;
+        case 1:
+            if (c == ':')
+            {
+                state = 0;
+                continue;
+            }
+            return false;
         }
-
-        cache[str] = str;
-
-        return true;
     }
 
-    return false;
+    return state == 0;
 }
 
-enum class NumberLiteralType
+static bool canonicalize_identifier(std::string &str)
+{
+    /* Canonicalize the identifier */
+
+    /* Create a cache */
+    static std::unordered_map<std::string, std::string> cache;
+    if (cache.contains(str))
+        return str = cache[str], true;
+
+    // Replace all `name::<string>` syntax should be replaced with `name_::string`
+    size_t first, last;
+    while ((first = str.find('<')) != std::string::npos && (last = str.find('>')) != std::string::npos)
+        str.replace(first, last - first + 1, "::_" + str.substr(first + 1, last - first - 1));
+
+    if (!validate_identifier(str))
+        return false;
+
+    /* Cache the result */
+    return cache[str] = str, true;
+}
+
+enum class NumType
 {
     Invalid,
     Decimal,
@@ -500,154 +444,116 @@ enum class NumberLiteralType
     Floating,
 };
 
-static NumberLiteralType check_number_literal_type(std::string input)
+static NumType check_number_literal_type(const std::string &input)
 {
-    static std::unordered_map<std::string, NumberLiteralType> cache;
-
+    /* Create a cache */
+    static std::unordered_map<std::string, NumType> cache;
     if (cache.contains(input))
         return cache[input];
 
-    if (input[0] == '-')
-        input = input.substr(1);
+    if (input.empty())
+        return cache[input] = NumType::Invalid;
 
-    if (input.length() < 3)
+    /* Check if it's a single digit */
+    if (input.size() < 3)
     {
         if (std::isdigit(input[0]))
-        {
-            cache[input] = NumberLiteralType::Decimal;
-            return NumberLiteralType::Decimal;
-        }
+            return cache[input] = NumType::Decimal;
         else
-        {
-            cache[input] = NumberLiteralType::Invalid;
-            return NumberLiteralType::Invalid;
-        }
+            return cache[input] = NumType::Invalid;
     }
 
     std::string prefix = input.substr(0, 2);
+    size_t i;
 
     if (prefix == "0x")
     {
-        for (size_t i = 2; i < input.length(); i++)
-        {
+        for (i = 2; i < input.size(); i++)
             if (!((input[i] >= '0' && input[i] <= '9') || (input[i] >= 'a' && input[i] <= 'f')))
-            {
-                cache[input] = NumberLiteralType::Invalid;
-                return NumberLiteralType::Invalid;
-            }
-        }
-        cache[input] = NumberLiteralType::Hexadecimal;
-        return NumberLiteralType::Hexadecimal;
+                return cache[input] = NumType::Invalid;
+
+        return cache[input] = NumType::Hexadecimal;
     }
     else if (prefix == "0b")
     {
-        for (size_t i = 2; i < input.length(); i++)
-        {
+        for (i = 2; i < input.size(); i++)
             if (!(input[i] == '0' || input[i] == '1'))
-            {
-                cache[input] = NumberLiteralType::Invalid;
-                return NumberLiteralType::Invalid;
-            }
-        }
-        cache[input] = NumberLiteralType::Binary;
-        return NumberLiteralType::Binary;
+                return cache[input] = NumType::Invalid;
+
+        return cache[input] = NumType::Binary;
     }
     else if (prefix == "0o")
     {
-        for (size_t i = 2; i < input.length(); i++)
-        {
+        for (i = 2; i < input.size(); i++)
             if (!(input[i] >= '0' && input[i] <= '7'))
-            {
-                cache[input] = NumberLiteralType::Invalid;
-                return NumberLiteralType::Invalid;
-            }
-        }
-        cache[input] = NumberLiteralType::Octal;
-        return NumberLiteralType::Octal;
+                return cache[input] = NumType::Invalid;
+
+        return cache[input] = NumType::Octal;
     }
     else if (prefix == "0d")
     {
-        for (size_t i = 2; i < input.length(); i++)
-        {
+        for (i = 2; i < input.size(); i++)
             if (!(input[i] >= '0' && input[i] <= '9'))
-            {
-                cache[input] = NumberLiteralType::Invalid;
-                return NumberLiteralType::Invalid;
-            }
-        }
-        cache[input] = NumberLiteralType::DecimalExplicit;
-        return NumberLiteralType::DecimalExplicit;
+                return cache[input] = NumType::Invalid;
+
+        return cache[input] = NumType::DecimalExplicit;
     }
     else
     {
-        for (size_t i = 0; i < input.length(); i++)
+        for (i = 0; i < input.size(); i++)
         {
             if (!(input[i] >= '0' && input[i] <= '9'))
             {
-                goto test_float;
+                static const auto regexpFloat = std::regex("^([0-9]+(\\.[0-9]+)?)?(e[+-]?([0-9]+(\\.?[0-9]+)?)+)*$");
+
+                // slow operation
+                if (std::regex_match(input, regexpFloat))
+                    return cache[input] = NumType::Floating;
+
+                return cache[input] = NumType::Invalid;
             }
         }
-        cache[input] = NumberLiteralType::Decimal;
-        return NumberLiteralType::Decimal;
+
+        return cache[input] = NumType::Decimal;
     }
-
-test_float:
-    static const auto regexpFloat = std::regex("^([0-9]+(\\.[0-9]+)?)?(e[+-]?([0-9]+(\\.?[0-9]+)?)+)*$");
-
-    // slow operation
-    if (std::regex_match(input, regexpFloat))
-    {
-        cache[input] = NumberLiteralType::Floating;
-        return NumberLiteralType::Floating;
-    }
-
-    cache[input] = NumberLiteralType::Invalid;
-    return NumberLiteralType::Invalid;
 }
 
-static std::string normalize_float(const std::string &input)
+static std::string canonicalize_float(const std::string &input)
 {
-    double mantissa = 0;
-    double exponent = 0;
-    double x = 0;
+    double mantissa = 0, exponent = 0, x = 0;
+    size_t e_pos = 0;
 
-    size_t e_pos = input.find('e');
-
-    if (e_pos == std::string::npos)
+    if ((e_pos = input.find('e')) == std::string::npos)
         return input;
 
     mantissa = std::stod(input.substr(0, e_pos));
     exponent = std::stod(input.substr(e_pos + 1));
 
     x = mantissa * std::pow(10.0, exponent);
+
     std::stringstream ss;
-    ss << std::setprecision(FLOATING_POINT_LITERAL_ROUND_DIGITS) << x;
+    ss << std::setprecision(FLOATING_POINT_PRECISION) << x;
     return ss.str();
 }
 
-bool normalize_number_literal(std::string &number, std::string &norm, NumberLiteralType type)
+bool canonicalize_number(std::string &number, std::string &norm, NumType type)
 {
+    /* Create a cache */
     static std::unordered_map<std::string, std::string> cache;
-
     if (cache.contains(number))
-    {
-        norm = cache[number];
-        return true;
-    }
+        return norm = cache[number], true;
 
-    uint64_t x = 0;
+    uint64_t x = 0, i = 0;
 
-    for (size_t i = 0; i < number.length(); i++)
-    {
-        number[i] = std::tolower(number[i]);
-    }
+    /* Convert to lowercase */
+    std::transform(number.begin(), number.end(), number.begin(), ::tolower);
 
     switch (type)
     {
-    case NumberLiteralType::Hexadecimal:
-        for (size_t i = 2; i < number.length(); ++i)
+    case NumType::Hexadecimal:
+        for (i = 2; i < number.size(); ++i)
         {
-            // check for overflow
+            // Check for overflow
             if (x & 0xF000000000000000)
                 return false;
 
@@ -659,42 +565,48 @@ bool normalize_number_literal(std::string &number, std::string &norm, NumberLite
                 return false;
         }
         break;
-    case NumberLiteralType::Binary:
-        for (size_t i = 2; i < number.length(); ++i)
+    case NumType::Binary:
+        for (i = 2; i < number.size(); ++i)
         {
-            // check for overflow
+            // Check for overflow
             if (x & 0x8000000000000000)
+                return false;
+
+            if (number[i] != '0' && number[i] != '1')
                 return false;
 
             x = (x << 1) + (number[i] - '0');
         }
         break;
-    case NumberLiteralType::Octal:
-        for (size_t i = 2; i < number.length(); ++i)
+    case NumType::Octal:
+        for (i = 2; i < number.size(); ++i)
         {
-            // check for overflow
+            // Check for overflow
             if (x & 0xE000000000000000)
+                return false;
+
+            if (number[i] < '0' || number[i] > '7')
                 return false;
 
             x = (x << 3) + (number[i] - '0');
         }
         break;
-    case NumberLiteralType::DecimalExplicit:
+    case NumType::DecimalExplicit:
         try
         {
             x = std::stoull(number.substr(2));
         }
-        catch (const std::exception &e)
+        catch (...)
         {
             return false;
         }
         break;
-    case NumberLiteralType::Decimal:
+    case NumType::Decimal:
         try
         {
             x = std::stoull(number);
         }
-        catch (const std::exception &e)
+        catch (...)
         {
             return false;
         }
@@ -702,19 +614,18 @@ bool normalize_number_literal(std::string &number, std::string &norm, NumberLite
         break;
     }
 
-    norm = std::to_string(x);
-    cache[number] = norm;
-    return true;
+    /* Convert back to string and cache the result */
+    return cache[number] = (norm = std::to_string(x)), true;
 }
 
-libquixcc::Token libquixcc::StreamLexer::read_token()
+libquixcc::Token libquixcc::StreamLexer::read_token() noexcept
 {
     enum class LexState
     {
         Start,
         Identifier,
-        StringLiteral,
-        IntegerLiteral,
+        String,
+        Integer,
         CommentStart,
         CommentSingleLine,
         CommentMultiLine,
@@ -724,23 +635,19 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
         Other,
     };
 
-    std::string buffer;
+    static std::string buf;
+    buf.clear();
+
     LexState state = LexState::Start;
-    size_t state_parens = 0;
+    uint_least32_t state_parens = 0;
     char c;
 
     while (true)
     {
         if (m_last != 0)
-        {
-            c = m_last;
-            m_last = 0;
-        }
-        else
-        {
-            if ((c = getc()) == EOF)
-                break;
-        }
+            c = m_last, m_last = 0;
+        else if ((c = getc()) == EOF)
+            break;
 
         switch (state)
         {
@@ -751,46 +658,34 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
             {
                 continue;
             }
-            else if (c == '/')
+            else if (std::isalpha(c) || c == '_') /* Identifier or keyword */
             {
-                state = LexState::CommentStart;
-
-                // it could also be an operator
+                buf += c, state = LexState::Identifier;
                 continue;
             }
-            else if (std::isalpha(c) || c == '_')
+            else if (c == '/') /* Comment or operator */
             {
-                buffer += c;
-                state = LexState::Identifier;
-
-                // it can also be a keyword
+                state = LexState::CommentStart;
                 continue;
             }
             else if (std::isdigit(c))
             {
-                // Number literal
-                buffer += c;
-                state = LexState::IntegerLiteral;
+                buf += c, state = LexState::Integer;
                 continue;
             }
             else if (c == '"' || c == '\'')
             {
-                // String literal
-                buffer += c;
-                state = LexState::StringLiteral;
+                buf += c, state = LexState::String;
                 continue;
             }
             else if (c == '@')
             {
-                // Macro
                 state = LexState::MacroStart;
                 continue;
             }
-            else
+            else /* Operator or punctor or invalid */
             {
-                // Operator or punctor or comment or invalid
-                buffer += c;
-                state = LexState::Other;
+                buf += c, state = LexState::Other;
                 continue;
             }
         }
@@ -798,221 +693,190 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
         {
             if (std::isalnum(c) || c == '_' || c == ':' || c == '<' || c == '>')
             {
-                buffer += c;
+                buf += c;
                 continue;
             }
 
             m_last = c;
 
-            if (buffer.size() > 0 && buffer.back() == ':')
+            /* We overshot; this must be a punctor ':' */
+            if (buf.size() > 0 && buf.back() == ':')
             {
                 char tc;
-                pushback((tc = buffer.back(), buffer.pop_back(), tc));
+                pushback((tc = buf.back(), buf.pop_back(), tc));
                 continue;
             }
 
-            // check if it's a keyword
+            /* Determine if it's a keyword or an identifier */
             for (const auto &kw : keyword_map)
-            {
-                if (buffer == kw.first)
-                {
-                    m_tok = Token(TokenType::Keyword, keyword_map[buffer], m_loc - buffer.size());
-                    return m_tok.value();
-                }
-            }
+                if (buf == kw.first)
+                    return (m_tok = Token(TT::Keyword, keyword_map[buf], m_loc - buf.size())).value();
 
-            if (!reduce_identifier(buffer))
-            {
-                m_tok = Token(TokenType::Unknown, buffer, m_loc - buffer.size());
-                return m_tok.value();
-            }
+            /* Check if it's a valid identifier */
+            if (!canonicalize_identifier(buf))
+                return (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
 
-            // it's an identifier
-            m_tok = Token(TokenType::Identifier, buffer, m_loc - buffer.size());
-            return m_tok.value();
+            /* Canonicalize the identifier to the correct format */
+            return (m_tok = Token(TT::Identifier, buf, m_loc - buf.size())).value();
         }
-        case LexState::IntegerLiteral:
+        case LexState::Integer:
         {
-            // match [0-9.]
             if (std::isxdigit(c) || c == '.' || c == 'x' || c == 'b' || c == 'd' || c == 'o' || c == 'e')
             {
-                buffer += c;
+                buf += c;
                 continue;
             }
 
-            auto type = check_number_literal_type(buffer);
+            NumType type;
 
-            if (type == NumberLiteralType::Floating)
-            {
-                m_tok = Token(TokenType::FloatingLiteral, normalize_float(buffer), m_loc - buffer.size());
-            }
-            else if (type != NumberLiteralType::Invalid)
-            {
-                std::string norm;
-                if (!normalize_number_literal(buffer, norm, type))
-                {
-                    LOG(ERROR) << "Tokenization error: Numeric literal is too large to fit in an integer type: '" << buffer << "'" << std::endl;
-                    m_tok = Token(TokenType::Unknown, buffer, m_loc - buffer.size());
-                }
-                else
-                {
-                    m_tok = Token(TokenType::IntegerLiteral, norm, m_loc - buffer.size());
-                }
-            }
+            /* Check if it's a floating point number */
+            if ((type = check_number_literal_type(buf)) == NumType::Floating)
+                return m_last = c, (m_tok = Token(TT::Float, canonicalize_float(buf), m_loc - buf.size())).value();
 
-            m_last = c;
-            return m_tok.value();
+            /* Check if it's a valid number */
+            if (type == NumType::Invalid)
+                return m_last = c, (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+
+            /* Canonicalize the number */
+            std::string norm;
+            if (canonicalize_number(buf, norm, type))
+                return m_last = c, (m_tok = Token(TT::Integer, norm, m_loc - buf.size())).value();
+
+            /* Invalid number */
+            LOG(ERROR) << "Tokenization error: Numeric literal is too large to fit in an integer type: '" << buf << "'" << std::endl;
+            return m_last = c, (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
         }
         case LexState::CommentStart:
         {
             if (c == '/')
             {
+                /* Single line comment */
                 state = LexState::CommentSingleLine;
                 continue;
             }
             else if (c == '*')
             {
+                /* Multi-line comment */
                 state = LexState::CommentMultiLine;
                 continue;
             }
             else
             {
-                // it's an operator
-                m_last = c;
-                m_tok = Token(TokenType::Operator, Operator::Divide, m_loc);
-                return m_tok.value();
+                /* Divide operator */
+                return (m_last = c, m_tok = Token(TT::Operator, Operator::Divide, m_loc)).value();
             }
         }
         case LexState::CommentSingleLine:
         {
             if (c != '\n')
             {
-                buffer += c;
+                buf += c;
                 continue;
             }
 
-            m_tok = Token(TokenType::Comment, buffer, m_loc - buffer.size());
-            return m_tok.value();
+            return (m_tok = Token(TT::Comment, buf, m_loc - buf.size())).value();
         }
         case LexState::CommentMultiLine:
         {
             if (c != '*')
             {
-                buffer += c;
+                buf += c;
                 continue;
             }
 
             if ((c = getc()) == '/')
-            {
-                m_tok = Token(TokenType::Comment, buffer, m_loc - buffer.size());
-                return m_tok.value();
-            }
+                return (m_tok = Token(TT::Comment, buf, m_loc - buf.size())).value();
 
-            buffer += '*';
-            buffer += c;
+            buf += "*/";
             continue;
         }
-        case LexState::StringLiteral:
+        case LexState::String:
         {
-            if (c != buffer[0])
+            if (c != buf[0])
             {
-                // buffer += c;
-                // continue;
-                if (c == '\\')
+                /* Normal character */
+                if (c != '\\')
                 {
-                    // escape sequence
-                    c = getc();
-                    switch (c)
-                    {
-                    case 'n':
-                        buffer += '\n';
-                        break;
-                    case 't':
-                        buffer += '\t';
-                        break;
-                    case 'r':
-                        buffer += '\r';
-                        break;
-                    case '0':
-                        buffer += '\0';
-                        break;
-                    case '\\':
-                        buffer += '\\';
-                        break;
-                    case '\'':
-                        buffer += '\'';
-                        break;
-                    case '\"':
-                        buffer += '\"';
-                        break;
-                    case 'x':
-                    {
-                        std::string hex;
-                        hex += getc();
-                        hex += getc();
-                        buffer += std::stoi(hex, nullptr, 16);
-                        break;
-                    }
-                    case 'u':
-                    {
-                        std::string hex;
-                        hex += getc();
-                        hex += getc();
-                        hex += getc();
-                        hex += getc();
-                        buffer += std::stoi(hex, nullptr, 16);
-                        break;
-                    }
-                    case 'o':
-                    {
-                        std::string oct;
-                        oct += getc();
-                        oct += getc();
-                        oct += getc();
-                        buffer += std::stoi(oct, nullptr, 8);
-                        break;
-                    }
-                    default:
-                        buffer += c;
-                        break;
-                    }
+                    buf += c;
+                    continue;
                 }
-                else
+
+                /* String escape sequences */
+                c = getc();
+                switch (c)
                 {
-                    buffer += c;
+                case 'n':
+                    buf += '\n';
+                    break;
+                case 't':
+                    buf += '\t';
+                    break;
+                case 'r':
+                    buf += '\r';
+                    break;
+                case '0':
+                    buf += '\0';
+                    break;
+                case '\\':
+                    buf += '\\';
+                    break;
+                case '\'':
+                    buf += '\'';
+                    break;
+                case '\"':
+                    buf += '\"';
+                    break;
+                case 'x':
+                {
+                    char hex[3] = {getc(), getc(), 0};
+                    buf += std::stoi(hex, nullptr, 16);
+                    break;
+                }
+                case 'u':
+                {
+                    char hex[5] = {getc(), getc(), getc(), getc(), 0};
+                    buf += std::stoi(hex, nullptr, 16);
+                    break;
+                }
+                case 'o':
+                {
+                    char oct[4] = {getc(), getc(), getc(), 0};
+                    buf += std::stoi(oct, nullptr, 8);
+                    break;
+                }
+                default:
+                    buf += c;
+                    break;
                 }
                 continue;
             }
 
-            if (buffer.front() == '\'' && buffer.size() == 2)
-            {
-                m_tok = Token(TokenType::CharLiteral, std::string(1, buffer[1]), m_loc - 2);
-            }
+            /* Character or string */
+            if (buf.front() == '\'' && buf.size() == 2)
+                return (m_tok = Token(TT::Char, std::string(1, buf[1]), m_loc - 2)).value();
             else
-            {
-                m_tok = Token(TokenType::StringLiteral, buffer.substr(1, buffer.size() - 1), m_loc - buffer.size());
-            }
-
-            return m_tok.value();
+                return (m_tok = Token(TT::String, buf.substr(1, buf.size() - 1), m_loc - buf.size())).value();
         }
         case LexState::MacroStart:
-            // macros begin with '@'
-            // There are two types. One is a single line macro, the other is a block macro.
-            // block macros begin with a '@(' and end with a ');'
+        {
+            /*
+             * Macros start with '@' and can be either single-line or block macros.
+             * Block macros are enclosed in parentheses.
+             * Single-line macros end with a newline character or a special cases
+             */
             if (c == '(')
             {
-                state = LexState::BlockMacro;
-                state_parens = 1;
+                state = LexState::BlockMacro, state_parens = 1;
                 continue;
             }
             else
             {
-                state = LexState::SingleLineMacro;
-                state_parens = 0;
-                buffer += c;
+                state = LexState::SingleLineMacro, state_parens = 0;
+                buf += c;
                 continue;
             }
             break;
+        }
         case LexState::SingleLineMacro:
         {
             /*
@@ -1022,170 +886,166 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
             switch (state_parens)
             {
             case 0:
+            {
                 if (c == '\n')
                 {
-                    m_tok = Token(TokenType::MacroSingleLine, buffer, m_loc - buffer.size());
-                    return m_tok.value();
+                    return (m_tok = Token(TT::MacroSingleLine, buf, m_loc - buf.size())).value();
                 }
                 else if (c != '(')
                 {
-                    buffer += c;
+                    buf += c;
                     continue;
                 }
                 else if (c == '(')
                 {
-                    buffer += c;
-                    state_parens++;
+                    buf += c, state_parens++;
                     continue;
                 }
                 else
                 {
-                    m_tok = Token(TokenType::Unknown, buffer, m_loc - buffer.size());
-                    return m_tok.value();
+                    return (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
                 }
+            }
             default:
+            {
                 if (c == '(')
-                {
-                    buffer += c;
-                    state_parens++;
-                }
+                    buf += c, state_parens++;
                 else if (c == ')')
-                {
-                    buffer += c;
-                    state_parens--;
-                }
+                    buf += c, state_parens--;
 
                 if (state_parens == 0)
-                {
-                    m_tok = Token(TokenType::MacroSingleLine, buffer, m_loc - buffer.size());
-                    return m_tok.value();
-                }
+                    return (m_tok = Token(TT::MacroSingleLine, buf, m_loc - buf.size())).value();
 
-                buffer += c;
+                buf += c;
                 continue;
+            }
             }
         }
         case LexState::BlockMacro:
         {
-            // block macros can contain anything
-            // therefore, we must keep track of how many open and close parens we have
-            // and stop when we have a matching pair
             if (c == '(')
-            {
                 state_parens++;
-            }
             else if (c == ')')
-            {
                 state_parens--;
-            }
 
             if (state_parens == 0)
-            {
-                m_tok = Token(TokenType::MacroBlock, buffer, m_loc - buffer.size());
-                return m_tok.value();
-            }
+                return (m_tok = Token(TT::MacroBlock, buf, m_loc - buf.size())).value();
 
-            buffer += c;
+            buf += c;
             continue;
         }
-
         case LexState::Other:
         {
-            if (buffer.size() == 1)
+            if (buf.size() == 1)
             {
+                /* Check if it's a punctor */
                 for (const char punc : punctors)
                 {
-                    if (punc == buffer[0])
+                    if (punc == buf[0])
                     {
                         m_last = c;
-                        m_tok = Token(TokenType::Punctor, punctor_map.at(buffer), m_loc - buffer.size());
-                        return m_tok.value();
+                        return (m_tok = Token(TT::Punctor, punctor_map.at(buf), m_loc - buf.size())).value();
                     }
                 }
 
-                if ((buffer[0] == '~' && c == '>'))
+                /* Special case for a comment */
+                if ((buf[0] == '~' && c == '>'))
                 {
                     state = LexState::CommentSingleLine;
                     continue;
                 }
 
-                if (buffer[0] == '#' && std::isspace(c))
+                /* Special case for a comment */
+                if (buf[0] == '#' && std::isspace(c))
                 {
                     state = LexState::CommentSingleLine;
                     continue;
                 }
             }
-            if (!operator_map.contains(buffer))
+
+            /* Check if it's an operator */
+            if (!operator_map.contains(buf))
             {
-                pushback(buffer.back());
+                pushback(buf.back());
                 pushback(c);
-                m_tok = Token(TokenType::Operator, operator_map.at(buffer.substr(0, buffer.size() - 1)), m_loc - buffer.size());
-                return m_tok.value();
+                return (m_tok = Token(TT::Operator, operator_map.at(buf.substr(0, buf.size() - 1)), m_loc - buf.size())).value();
             }
 
-            buffer += c;
+            buf += c;
             continue;
         }
         }
     }
 
-    m_tok = Token(TokenType::Eof, "", m_loc);
+    m_tok = Token(TT::Eof, "", m_loc);
     return m_tok.value();
 }
 
-libquixcc::Token libquixcc::StreamLexer::peek()
+libquixcc::Token libquixcc::StreamLexer::peek() noexcept
 {
-    Token tok;
+    /* If we have a token, return it */
     if (m_tok.has_value())
         return m_tok.value();
 
+    /* This lock makes the entire Lexer thread-safe */
     static std::mutex mutex;
     std::lock_guard<std::mutex> lock(mutex);
 
+    Token tok;
     while (true)
     {
         tok = read_token();
-        if (tok.type() == TokenType::Comment)
-            m_tok = std::nullopt;
-        else
+
+        /* Skip comments */
+        if (tok.type() != TT::Comment)
             return tok;
+
+        /* We will ignore comments */
+        m_tok = std::nullopt;
     }
 }
 
-bool libquixcc::StringLexer::set_source(const std::string &source_code, const std::string &filename)
+bool libquixcc::StringLexer::set_source(const std::string &source_code, const std::string &filename) noexcept
 {
+    /* Copy the source internally */
     m_src = source_code;
 
+    /* Open a file stream from the string */
     m_file = fmemopen((void *)m_src.c_str(), m_src.size(), "r");
     if (m_file == nullptr)
         return false;
 
+    /* Set the source using the memory buffer */
     return StreamLexer::set_source(m_file, filename);
 }
 
 libquixcc::StringLexer::~StringLexer()
 {
     if (m_file != nullptr)
+    {
         fclose(m_file);
+        m_file = nullptr;
+    }
 }
 
-bool libquixcc::StringLexer::QuickLex(const std::string &source_code, std::vector<libquixcc::Token> &tokens, const std::string &filename)
+bool libquixcc::StringLexer::QuickLex(const std::string &source_code, std::vector<libquixcc::Token> &tokens, const std::string &filename) noexcept
 {
+    tokens.clear();
+
     try
     {
+        /* Parse the source code "as-is" */
         StringLexer lex;
-        lex.set_source(source_code + "\n# .", filename);
+        lex.set_source(source_code, filename);
+
         Token tok;
-        tokens.clear();
-        while ((tok = lex.next()).type() != TokenType::Eof)
-        {
+        while ((tok = lex.next()).type() != TT::Eof)
             tokens.push_back(tok);
-        }
+
+        return true;
     }
     catch (std::exception &e)
     {
         return false;
     }
-
-    return true;
 }

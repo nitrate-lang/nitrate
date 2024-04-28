@@ -109,7 +109,7 @@ static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     auto tok = scanner->next();
 
-    if (tok.type() != TokenType::Identifier)
+    if (tok.type() != TT::Identifier)
     {
         LOG(ERROR) << feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;
@@ -139,7 +139,7 @@ static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
         scanner->next();
 
         std::shared_ptr<ExprNode> value;
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Comma), Token(TokenType::Punctor, Punctor::CloseParen)}, value))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma), Token(TT::Punctor, Punctor::CloseParen)}, value))
         {
             LOG(ERROR) << feedback[FN_PARAM_INIT_ERR] << tok << std::endl;
             return false;
@@ -169,7 +169,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     Token tok = scanner->next();
 
-    if (tok.type() != TokenType::Identifier)
+    if (tok.type() != TT::Identifier)
     {
         LOG(ERROR) << feedback[FN_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;

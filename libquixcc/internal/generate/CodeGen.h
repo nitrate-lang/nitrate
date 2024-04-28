@@ -113,10 +113,10 @@ namespace libquixcc
         llvm::Type *visit(const UnionTypeNode *node);
         llvm::Type *visit(const ArrayTypeNode *node);
         llvm::Type *visit(const FunctionTypeNode *node);
-        llvm::Constant *visit(const IntegerLiteralNode *node);
+        llvm::Constant *visit(const IntegerNode *node);
         llvm::Constant *visit(const FloatLiteralNode *node);
-        llvm::Constant *visit(const StringLiteralNode *node);
-        llvm::Constant *visit(const CharLiteralNode *node);
+        llvm::Constant *visit(const StringNode *node);
+        llvm::Constant *visit(const CharNode *node);
         llvm::Constant *visit(const BoolLiteralNode *node);
         llvm::Constant *visit(const NullLiteralNode *node);
         llvm::Value *visit(const LetDeclNode *node);
@@ -194,10 +194,10 @@ namespace libquixcc
         std::string visit(const UnionTypeNode *node);
         std::string visit(const ArrayTypeNode *node);
         std::string visit(const FunctionTypeNode *node);
-        std::string visit(const IntegerLiteralNode *node);
+        std::string visit(const IntegerNode *node);
         std::string visit(const FloatLiteralNode *node);
-        std::string visit(const StringLiteralNode *node);
-        std::string visit(const CharLiteralNode *node);
+        std::string visit(const StringNode *node);
+        std::string visit(const CharNode *node);
         std::string visit(const BoolLiteralNode *node);
         std::string visit(const NullLiteralNode *node);
         std::string visit(const LetDeclNode *node);

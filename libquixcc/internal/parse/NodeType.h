@@ -101,10 +101,10 @@ namespace libquixcc
         UserTypeNode,
 
         LiteralNode,
-        IntegerLiteralNode,
+        IntegerNode,
         FloatLiteralNode,
-        StringLiteralNode,
-        CharLiteralNode,
+        StringNode,
+        CharNode,
         BoolLiteralNode,
         NullLiteralNode,
 
@@ -193,10 +193,10 @@ namespace libquixcc
     class FunctionTypeNode;
     class UserTypeNode;
     class LiteralNode;
-    class IntegerLiteralNode;
+    class IntegerNode;
     class FloatLiteralNode;
-    class StringLiteralNode;
-    class CharLiteralNode;
+    class StringNode;
+    class CharNode;
     class BoolLiteralNode;
     class NullLiteralNode;
     class TypedefNode;

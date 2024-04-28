@@ -66,12 +66,12 @@ void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr
                 }
                 else if (i == 0)
                 {
-                    def->m_fields[i]->m_value = last = IntegerLiteralNode::create("0");
+                    def->m_fields[i]->m_value = last = IntegerNode::create("0");
                     continue;
                 }
 
                 last = std::make_shared<ConstBinaryExprNode>(
-                    Operator::Plus, last, IntegerLiteralNode::create("1"))->reduce<LiteralNode>();
+                    Operator::Plus, last, IntegerNode::create("1"))->reduce<LiteralNode>();
 
                 def->m_fields[i]->m_value = last;
             }

@@ -95,7 +95,7 @@ bool libquixcc::parse_var(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             }
         }
     }
-    else if (tok.type() == TokenType::Identifier)
+    else if (tok.type() == TT::Identifier)
     {
         // Parse single variable declaration
         std::pair<std::string, libquixcc::TypeNode *> decl;
@@ -124,7 +124,7 @@ bool libquixcc::parse_var(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
 
         // Parse initializer
         std::shared_ptr<ExprNode> init;
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, init))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, init))
             return false;
 
         tok = scanner->next();

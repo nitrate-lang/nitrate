@@ -35,6 +35,4 @@
 #define LIB_EXPORT extern "C" __attribute__((visibility("default")))
 #define LIB_CXX_EXPORT __attribute__((visibility("default")))
 
-#define QUIXCC_INTERNAL
-
 #endif // __QUIXCC_MACRO_H__

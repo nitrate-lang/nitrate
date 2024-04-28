@@ -46,7 +46,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     {
         tok = scanner->next();
 
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, x0))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x0))
             return false;
 
         tok = scanner->next();
@@ -56,7 +56,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
         }
 
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, x1))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x1))
             return false;
 
         tok = scanner->next();
@@ -66,7 +66,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
         }
 
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::CloseParen)}, x2))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::CloseParen)}, x2))
             return false;
 
         tok = scanner->next();
@@ -86,7 +86,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     }
     else
     {
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, x0))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x0))
             return false;
 
         tok = scanner->next();
@@ -96,7 +96,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
         }
 
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::Semicolon)}, x1))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x1))
             return false;
 
         tok = scanner->next();
@@ -106,7 +106,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
             return false;
         }
 
-        if (!parse_expr(job, scanner, {Token(TokenType::Punctor, Punctor::OpenBrace)}, x2))
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::OpenBrace)}, x2))
             return false;
 
         std::shared_ptr<BlockNode> then_block;

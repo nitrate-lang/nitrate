@@ -609,7 +609,7 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::FunctionTypeNod
     return code;
 }
 
-std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::IntegerLiteralNode *node)
+std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::IntegerNode *node)
 {
     return node->m_val;
 }
@@ -619,12 +619,12 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::FloatLiteralNod
     return node->m_val;
 }
 
-std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::StringLiteralNode *node)
+std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::StringNode *node)
 {
     return "\"" + c_escape_string_literal(node->m_val) + "\"";
 }
 
-std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::CharLiteralNode *node)
+std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::CharNode *node)
 {
     return "'" + node->m_val + "'";
 }
@@ -899,14 +899,14 @@ std::string libquixcc::C11CodegenVisitor::visit(const libquixcc::ExprNode *node)
         return visit(static_cast<const ConstBinaryExprNode *>(node));
     case NodeType::IdentifierNode:
         return visit(static_cast<const IdentifierNode *>(node));
-    case NodeType::IntegerLiteralNode:
-        return visit(static_cast<const IntegerLiteralNode *>(node));
+    case NodeType::IntegerNode:
+        return visit(static_cast<const IntegerNode *>(node));
     case NodeType::FloatLiteralNode:
         return visit(static_cast<const FloatLiteralNode *>(node));
-    case NodeType::StringLiteralNode:
-        return visit(static_cast<const StringLiteralNode *>(node));
-    case NodeType::CharLiteralNode:
-        return visit(static_cast<const CharLiteralNode *>(node));
+    case NodeType::StringNode:
+        return visit(static_cast<const StringNode *>(node));
+    case NodeType::CharNode:
+        return visit(static_cast<const CharNode *>(node));
     case NodeType::BoolLiteralNode:
         return visit(static_cast<const BoolLiteralNode *>(node));
     case NodeType::NullLiteralNode:

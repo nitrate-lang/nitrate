@@ -88,7 +88,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
     size_t maxlen = 0;
 
     Token t = tokens[0];
-    if (t.type() == TokenType::Identifier && tokens.size() > 1)
+    if (t.type() == TT::Identifier && tokens.size() > 1)
     {
         // check for noecho and/or binary
         // if present, noecho is first
@@ -119,7 +119,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
         }
     }
 
-    if (t.type() != TokenType::IntegerLiteral)
+    if (t.type() != TT::Integer)
     {
         LOG(ERROR) << "Invalid readstdin maxlen" << std::endl;
         return false;
@@ -158,7 +158,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
     }
     else
     {
-        exp.push_back(Token(TokenType::StringLiteral, input));
+        exp.push_back(Token(TT::String, input));
     }
 
     if (noecho)

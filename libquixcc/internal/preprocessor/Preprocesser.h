@@ -36,7 +36,7 @@
 #error "This header requires C++"
 #endif
 
-#include <bits/types/FILE.h>
+#include <stdio.h>
 #include <vector>
 #include <string>
 #include <optional>
@@ -74,14 +74,14 @@ namespace libquixcc
         std::queue<Token> m_buffer;
         MacroParser m_macro_parser;
 
-        Token read_token();
+        Token read_token() noexcept;
 
         bool handle_macro(const Token &tok);
         bool handle_import(const Token &tok);
 
         Entry build_statics_decl();
 
-        void push(Token tok) override;
+        inline void push(Token tok) noexcept override { m_tok = tok; }
 
     public:
         PrepEngine(quixcc_job_t &job) : job(&job), m_macro_parser(job) {}
@@ -94,15 +94,15 @@ namespace libquixcc
         /// @brief Set the source file
         /// @param src C FILE pointer
         /// @return true if the source file is set successfully
-        virtual bool set_source(FILE *src, const std::string &filename);
+        virtual bool set_source(FILE *src, const std::string &filename) noexcept;
 
         /// @brief Get the next token
         /// @return The next token
-        Token next() override;
+        Token next() noexcept override;
 
         /// @brief Peek the next token
         /// @return The next token
-        Token peek() override;
+        Token peek() noexcept override;
 
         void set_static(const std::string &name, const std::string &value) { m_statics[name] = value; }
         bool get_static(const std::string &name, std::string &value) const;

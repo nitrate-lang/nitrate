@@ -44,7 +44,7 @@ bool libquixcc::parse_typedef(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     */
 
     Token tok = scanner->next();
-    if (tok.type() != TokenType::Identifier)
+    if (tok.type() != TT::Identifier)
     {
         LOG(ERROR) << feedback[TYPEDEF_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;

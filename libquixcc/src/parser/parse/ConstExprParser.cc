@@ -45,7 +45,7 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
     while (true)
     {
         auto tok = scanner->peek();
-        if (tok.type() == TokenType::Eof)
+        if (tok.type() == TT::Eof)
             return false;
 
         if (tok == terminator)
@@ -64,19 +64,19 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
 
         switch (tok.type())
         {
-        case TokenType::IntegerLiteral:
-            stack.push(IntegerLiteralNode::create(std::get<std::string>(tok.val())));
+        case TT::Integer:
+            stack.push(IntegerNode::create(std::get<std::string>(tok.val())));
             continue;
-        case TokenType::FloatingLiteral:
+        case TT::Float:
             stack.push(FloatLiteralNode::create(std::get<std::string>(tok.val())));
             continue;
-        case TokenType::StringLiteral:
-            stack.push(StringLiteralNode::create(std::get<std::string>(tok.val())));
+        case TT::String:
+            stack.push(StringNode::create(std::get<std::string>(tok.val())));
             continue;
-        case TokenType::CharLiteral:
-            stack.push(CharLiteralNode::create(std::get<std::string>(tok.val())));
+        case TT::Char:
+            stack.push(CharNode::create(std::get<std::string>(tok.val())));
             continue;
-        case TokenType::Keyword:
+        case TT::Keyword:
             switch (std::get<Keyword>(tok.val()))
             {
             case Keyword::True:
@@ -93,7 +93,7 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
                 return false;
             }
             break;
-        case TokenType::Punctor:
+        case TT::Punctor:
             switch (std::get<Punctor>(tok.val()))
             {
             case Punctor::OpenParen:
@@ -121,7 +121,7 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
                 return false;
             }
             break;
-        case TokenType::Operator:
+        case TT::Operator:
         {
             auto op = std::get<Operator>(tok.val());
             std::shared_ptr<ConstExprNode> expr;

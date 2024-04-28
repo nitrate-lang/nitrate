@@ -113,10 +113,10 @@ namespace libquixcc
             static size_t ArrayTypeNode_iter(ASTTraversalState &state, ArrayTypeNode *node);
             static size_t FunctionTypeNode_iter(ASTTraversalState &state, FunctionTypeNode *node);
             static size_t UserTypeNode_iter(ASTTraversalState &state, UserTypeNode *node);
-            static size_t IntegerLiteralNode_iter(ASTTraversalState &state, IntegerLiteralNode *node);
+            static size_t IntegerNode_iter(ASTTraversalState &state, IntegerNode *node);
             static size_t FloatLiteralNode_iter(ASTTraversalState &state, FloatLiteralNode *node);
-            static size_t StringLiteralNode_iter(ASTTraversalState &state, StringLiteralNode *node);
-            static size_t CharLiteralNode_iter(ASTTraversalState &state, CharLiteralNode *node);
+            static size_t StringNode_iter(ASTTraversalState &state, StringNode *node);
+            static size_t CharNode_iter(ASTTraversalState &state, CharNode *node);
             static size_t BoolLiteralNode_iter(ASTTraversalState &state, BoolLiteralNode *node);
             static size_t NullLiteralNode_iter(ASTTraversalState &state, NullLiteralNode *node);
             static size_t TypedefNode_iter(ASTTraversalState &state, TypedefNode *node);

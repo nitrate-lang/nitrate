@@ -33,19 +33,19 @@
 
 #include <parse/nodes/AllNodes.h>
 
-std::unordered_map<std::string, std::shared_ptr<libquixcc::StringLiteralNode>> libquixcc::StringLiteralNode::m_instances;
-std::unordered_map<std::string, std::shared_ptr<libquixcc::CharLiteralNode>> libquixcc::CharLiteralNode::m_instances;
+std::unordered_map<std::string, std::shared_ptr<libquixcc::StringNode>> libquixcc::StringNode::m_instances;
+std::unordered_map<std::string, std::shared_ptr<libquixcc::CharNode>> libquixcc::CharNode::m_instances;
 std::shared_ptr<libquixcc::BoolLiteralNode> libquixcc::BoolLiteralNode::m_true_instance;
 std::shared_ptr<libquixcc::BoolLiteralNode> libquixcc::BoolLiteralNode::m_false_instance;
 std::unordered_map<std::string, std::shared_ptr<libquixcc::FloatLiteralNode>> libquixcc::FloatLiteralNode::m_instances;
-std::unordered_map<std::string, std::shared_ptr<libquixcc::IntegerLiteralNode>> libquixcc::IntegerLiteralNode::m_instances;
+std::unordered_map<std::string, std::shared_ptr<libquixcc::IntegerNode>> libquixcc::IntegerNode::m_instances;
 std::shared_ptr<libquixcc::NullLiteralNode> libquixcc::NullLiteralNode::m_instance;
 
 uint8_t get_numbits(std::string s);
 
-libquixcc::IntegerLiteralNode::IntegerLiteralNode(const std::string &val)
+libquixcc::IntegerNode::IntegerNode(const std::string &val)
 {
-    ntype = NodeType::IntegerLiteralNode;
+    ntype = NodeType::IntegerNode;
     m_val = val;
 
     if (val.starts_with("-"))
@@ -74,12 +74,12 @@ libquixcc::FloatLiteralNode::FloatLiteralNode(const std::string &val)
         m_val_type = F64TypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::StringLiteralNode::infer(libquixcc::TIState &state) const
+libquixcc::TypeNode *libquixcc::StringNode::infer(libquixcc::TIState &state) const
 {
     return StringTypeNode::create();
 }
 
-libquixcc::TypeNode *libquixcc::CharLiteralNode::infer(libquixcc::TIState &state) const
+libquixcc::TypeNode *libquixcc::CharNode::infer(libquixcc::TIState &state) const
 {
     return I8TypeNode::create();
 }

@@ -40,7 +40,7 @@ using namespace libquixcc;
 static bool parse_group_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<GroupFieldNode> &node)
 {
     Token tok = scanner->next();
-    if (tok.type() != TokenType::Identifier)
+    if (tok.type() != TT::Identifier)
     {
         LOG(ERROR) << feedback[GROUP_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
         return false;
@@ -72,7 +72,7 @@ static bool parse_group_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
     }
     else if (tok.is<Operator>(Operator::Assign))
     {
-        if (!parse_const_expr(job, scanner, Token(TokenType::Punctor, Punctor::Comma), value))
+        if (!parse_const_expr(job, scanner, Token(TT::Punctor, Punctor::Comma), value))
         {
             LOG(ERROR) << feedback[GROUP_FIELD_INIT_ERR] << name << tok << std::endl;
             return false;
@@ -99,7 +99,7 @@ static bool parse_group_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
 bool libquixcc::parse_group(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     Token tok = scanner->next();
-    if (tok.type() != TokenType::Identifier)
+    if (tok.type() != TT::Identifier)
     {
         LOG(ERROR) << feedback[GROUP_DECL_MISSING_IDENTIFIER] << tok << std::endl;
         return false;

@@ -96,10 +96,10 @@ namespace libquixcc
             static std::string ArrayTypeNode_conv(ASTJsonSerializerState &state, const ArrayTypeNode *node);
             static std::string FunctionTypeNode_conv(ASTJsonSerializerState &state, const FunctionTypeNode *node);
             static std::string UserTypeNode_conv(ASTJsonSerializerState &state, const UserTypeNode *node);
-            static std::string IntegerLiteralNode_conv(ASTJsonSerializerState &state, const IntegerLiteralNode *node);
+            static std::string IntegerNode_conv(ASTJsonSerializerState &state, const IntegerNode *node);
             static std::string FloatLiteralNode_conv(ASTJsonSerializerState &state, const FloatLiteralNode *node);
-            static std::string StringLiteralNode_conv(ASTJsonSerializerState &state, const StringLiteralNode *node);
-            static std::string CharLiteralNode_conv(ASTJsonSerializerState &state, const CharLiteralNode *node);
+            static std::string StringNode_conv(ASTJsonSerializerState &state, const StringNode *node);
+            static std::string CharNode_conv(ASTJsonSerializerState &state, const CharNode *node);
             static std::string BoolLiteralNode_conv(ASTJsonSerializerState &state, const BoolLiteralNode *node);
             static std::string NullLiteralNode_conv(ASTJsonSerializerState &state, const NullLiteralNode *node);
             static std::string TypedefNode_conv(ASTJsonSerializerState &state, const TypedefNode *node);

@@ -36,14 +36,14 @@
 #error "This header requires C++"
 #endif
 
-#include <bits/types/FILE.h>
+#include <stdio.h>
 #include <vector>
 #include <string>
 #include <optional>
 #include <variant>
 #include <deque>
 #include <array>
-#include <map>
+#include <unordered_map>
 #include <set>
 #include <queue>
 #include <lexer/Token.h>
@@ -53,12 +53,12 @@ namespace libquixcc
     constexpr std::array<char, 10> punctors = {
         '(', ')', '{', '}', '[', ']', '.', ',', ':', ';'};
 
-    extern std::map<std::string, libquixcc::Keyword> keyword_map;
-    extern std::map<libquixcc::Keyword, std::string> keyword_map_inverse;
-    extern std::map<std::string, libquixcc::Punctor> punctor_map;
-    extern std::map<libquixcc::Punctor, std::string> punctor_map_inverse;
-    extern std::map<std::string, libquixcc::Operator> operator_map;
-    extern std::map<libquixcc::Operator, std::string> operator_map_inverse;
+    extern std::unordered_map<std::string, libquixcc::Keyword> keyword_map;
+    extern std::unordered_map<libquixcc::Keyword, std::string> keyword_map_inverse;
+    extern std::unordered_map<std::string, libquixcc::Punctor> punctor_map;
+    extern std::unordered_map<libquixcc::Punctor, std::string> punctor_map_inverse;
+    extern std::unordered_map<std::string, libquixcc::Operator> operator_map;
+    extern std::unordered_map<libquixcc::Operator, std::string> operator_map_inverse;
 
     class Scanner
     {
@@ -66,17 +66,12 @@ namespace libquixcc
         Scanner() = default;
         ~Scanner() = default;
 
-        /// @brief Get the next token
-        /// @return The next token
-        virtual Token next() = 0;
+        virtual Token next() noexcept = 0;
+        virtual Token peek() noexcept = 0;
 
-        /// @brief Peek the next token
-        /// @return The next token
-        virtual Token peek() = 0;
+        static std::string escape_string(const std::string &str) noexcept;
 
-        static std::string escape_string(const std::string &str);
-
-        virtual void push(Token tok) = 0;
+        virtual void push(Token tok) noexcept = 0;
     };
 
     class StreamLexer : public Scanner
@@ -97,10 +92,10 @@ namespace libquixcc
         Loc m_loc;
         bool added_newline = false;
 
-        virtual char getc();
-        virtual libquixcc::Token read_token();
+        virtual char getc() noexcept;
+        virtual libquixcc::Token read_token() noexcept;
 
-        void pushback(char c) { m_pushback.push(c); }
+        inline void pushback(char c) { m_pushback.push(c); }
 
     public:
         StreamLexer();
@@ -108,17 +103,12 @@ namespace libquixcc
         /// @brief Set the source file
         /// @param src C FILE pointer
         /// @return true if the source file is set successfully
-        virtual bool set_source(FILE *src, const std::string &filename);
+        virtual bool set_source(FILE *src, const std::string &filename) noexcept;
 
-        /// @brief Get the next token
-        /// @return The next token
-        Token next() override;
+        Token next() noexcept override;
+        Token peek() noexcept override;
 
-        /// @brief Peek the next token
-        /// @return The next token
-        Token peek() override;
-
-        void push(Token tok) override;
+        inline void push(Token tok) noexcept override { m_tok = tok; }
     };
 
     class StringLexer : public StreamLexer
@@ -135,14 +125,13 @@ namespace libquixcc
         /// @brief Set the source file
         /// @param src C FILE pointer
         /// @return true if the source file is set successfully
-        bool set_source(const std::string &source_code, const std::string &filename);
+        bool set_source(const std::string &source_code, const std::string &filename) noexcept;
 
-        /// @brief lex the source code
+        /// @brief Lex the source code
         /// @param source_code
         /// @param tokens
         /// @return Returns false if the source code is invalid
-        /// @note Does not throw exceptions
-        static bool QuickLex(const std::string &source_code, std::vector<Token> &tokens, const std::string &filename = "quicklex");
+        static bool QuickLex(const std::string &source_code, std::vector<Token> &tokens, const std::string &filename = "quicklex") noexcept;
     };
 };
 

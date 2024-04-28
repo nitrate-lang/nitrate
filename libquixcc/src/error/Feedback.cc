@@ -33,9 +33,9 @@
 
 #include <core/Messages.h>
 
-using namespace libquixcc;
+/// TODO: write better error messages
 
-std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
+libquixcc::Feedback libquixcc::feedback({
     {PARSER_EXPECTED_KEYWORD, "Parser failed because a keyword was expected, but the token {} was found"},
     {PARSER_ILLEGAL_KEYWORD, "Parser failed because the keyword {} is not allowed in this context"},
     {PARSER_EXPECTED_LEFT_BRACE, "Parser failed because an open brace was expected, but the token {} was found"},
@@ -184,4 +184,4 @@ std::map<libquixcc::Msg, const char *> libquixcc::feedback = {
     {UNRESOLVED_FUNCTION, "Function '{}' is not defined in the current scope. To fix the issue, define the function or import the module that defines the function"},
     {UNRESOLVED_TYPE, "Type '{}' is not defined in the current scope. To fix the issue, define the type or import the module that defines the type"},
     {RESOLVED_TYPE, "Resolved type '{}' into '{}'"},
-};
+});
