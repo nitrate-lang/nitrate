@@ -83,28 +83,6 @@ static std::atomic<bool> g_is_initialized = false;
 std::atomic<uint64_t> g_num_of_contexts = 0;
 std::mutex g_library_lock;
 
-static void *safe_realloc(void *ptr, size_t size)
-{
-    void *new_ptr = realloc(ptr, size);
-    if (!new_ptr)
-    {
-        std::cerr << "error: out of memory" << std::endl;
-        exit(1);
-    }
-    return new_ptr;
-}
-
-static char *safe_strdup(const char *str)
-{
-    char *new_str = strdup(str);
-    if (!new_str)
-    {
-        std::cerr << "error: out of memory" << std::endl;
-        exit(1);
-    }
-    return new_str;
-}
-
 static void print_stacktrace();
 
 static void quixcc_panic(std::string msg)
@@ -142,6 +120,23 @@ static void quixcc_panic(std::string msg)
 
     while (true)
         std::this_thread::yield();
+}
+
+static void *safe_realloc(void *ptr, size_t size)
+{
+    void *new_ptr = realloc(ptr, size);
+    if (!new_ptr)
+        quixcc_panic("out of memory");
+
+    return new_ptr;
+}
+
+static char *safe_strdup(const char *str)
+{
+    char *new_str = strdup(str);
+    if (!new_str)
+        quixcc_panic("out of memory");
+    return new_str;
 }
 
 static quixcc_uuid_t quixcc_uuid()
@@ -209,6 +204,9 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
     job->m_priority = 0;
     job->m_debug = job->m_tainted = job->m_running = false;
 
+    /* Set magic structure field */
+    job->m_magic = JOB_MAGIC;
+
     g_num_of_contexts++;
 
     return job;
@@ -224,6 +222,10 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
     /* no-op */
     if (!job)
         return false;
+
+    /* User may have passed an invalid job pointer */
+    if (job->m_magic != JOB_MAGIC) /* We can't handle this, so panic */
+        quixcc_panic("A libquixcc library contract violation occurred: An invalid job pointer was passed to quixcc_dispose().");
 
     bool lockable = job->m_lock.try_lock();
     if (!lockable)
@@ -269,7 +271,10 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
 
     job->m_lock.unlock();
 
-    delete job;
+    /* Hopefully, this will cache library usage errors */
+    job->m_magic = 0;
+
+    delete job; // Destruct C++ object members implicitly
 
     g_num_of_contexts--;
 
@@ -286,6 +291,10 @@ LIB_EXPORT void quixcc_option(quixcc_job_t *job, const char *opt, bool enable)
     /* no-op */
     if (!job || !opt)
         return;
+
+    /* User may have passed an invalid job pointer */
+    if (job->m_magic != JOB_MAGIC) /* We can't handle this, so panic */
+        quixcc_panic("A libquixcc library contract violation occurred: An invalid job pointer was passed to quixcc_option().");
 
     std::lock_guard<std::mutex> lock(job->m_lock);
 
@@ -323,6 +332,10 @@ LIB_EXPORT void quixcc_source(quixcc_job_t *job, FILE *in, const char *filename)
     if (!job || !in || !filename)
         return;
 
+    /* User may have passed an invalid job pointer */
+    if (job->m_magic != JOB_MAGIC) /* We can't handle this, so panic */
+        quixcc_panic("A libquixcc library contract violation occurred: An invalid job pointer was passed to quixcc_source().");
+
     std::lock_guard<std::mutex> lock(job->m_lock);
 
     /* Its the callers responsibility to make sure this is a valid file */
@@ -343,6 +356,10 @@ LIB_EXPORT bool quixcc_target(quixcc_job_t *job, const char *_llvm_triple)
     /* no-op */
     if (!job || !_llvm_triple)
         return false;
+
+    /* User may have passed an invalid job pointer */
+    if (job->m_magic != JOB_MAGIC) /* We can't handle this, so panic */
+        quixcc_panic("A libquixcc library contract violation occurred: An invalid job pointer was passed to quixcc_target().");
 
     std::lock_guard<std::mutex> lock(job->m_lock);
 
@@ -383,6 +400,10 @@ LIB_EXPORT bool quixcc_cpu(quixcc_job_t *job, const char *cpu)
     if (!job || !cpu)
         return false;
 
+    /* User may have passed an invalid job pointer */
+    if (job->m_magic != JOB_MAGIC) /* We can't handle this, so panic */
+        quixcc_panic("A libquixcc library contract violation occurred: An invalid job pointer was passed to quixcc_cpu().");
+
     std::lock_guard<std::mutex> lock(job->m_lock);
 
     /// TODO: find a way to validate the CPU
@@ -402,6 +423,10 @@ LIB_EXPORT void quixcc_output(quixcc_job_t *job, FILE *out, FILE **old_out)
     /* no-op */
     if (!job || !out)
         return;
+
+    /* User may have passed an invalid job pointer */
+    if (job->m_magic != JOB_MAGIC) /* We can't handle this, so panic */
+        quixcc_panic("A libquixcc library contract violation occurred: An invalid job pointer was passed to quixcc_output().");
 
     std::lock_guard<std::mutex> lock(job->m_lock);
 
@@ -1087,6 +1112,10 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     if (!job)
         return false;
 
+    /* User may have passed an invalid job pointer */
+    if (job->m_magic != JOB_MAGIC) /* We can't handle this, so panic */
+        quixcc_panic("A libquixcc library contract violation occurred: An invalid job pointer was passed to quixcc_run().");
+
     std::lock_guard<std::mutex> lock(job->m_lock);
 
     /* Install signal handlers to catch fatal memory errors */
@@ -1125,6 +1154,10 @@ LIB_EXPORT const quixcc_status_t *quixcc_status(quixcc_job_t *job)
     /* no-op */
     if (!job)
         return nullptr;
+
+    /* User may have passed an invalid job pointer */
+    if (job->m_magic != JOB_MAGIC) /* We can't handle this, so panic */
+        quixcc_panic("A libquixcc library contract violation occurred: An invalid job pointer was passed to quixcc_status().");
 
     bool lockable = job->m_lock.try_lock();
     if (!lockable)

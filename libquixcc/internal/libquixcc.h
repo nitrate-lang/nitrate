@@ -54,8 +54,11 @@ typedef struct quixcc_uuid_t
     uint8_t data[16];
 } quixcc_uuid_t;
 
+#define JOB_MAGIC 0x32b287410bbef790
+
 struct quixcc_job_t
 {
+    volatile uint64_t m_magic;
     libquixcc::LLVMContext m_inner;
     std::map<std::string, std::string> m_argset;
     std::mutex m_lock;

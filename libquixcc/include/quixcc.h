@@ -43,26 +43,13 @@ extern "C"
 
     enum quixcc_msg_level_t
     {
-        /// @brief Raw message
-        QUIXCC_RAW,
-
-        /// @brief Debug message
-        QUIXCC_DEBUG,
-
-        /// @brief Success message
-        QUIXCC_SUCCESS,
-
-        /// @brief Information message
-        QUIXCC_INFO,
-
-        /// @brief Warning message
-        QUIXCC_WARN,
-
-        /// @brief Error message
-        QUIXCC_ERROR,
-
-        /// @brief Internal compiler error
-        QUIXCC_FATAL
+        QUIXCC_RAW = 0,
+        QUIXCC_DEBUG = 1,
+        QUIXCC_SUCCESS = 2,
+        QUIXCC_INFO = 3,
+        QUIXCC_WARN = 4,
+        QUIXCC_ERROR = 5,
+        QUIXCC_FATAL = 6
     };
 
     struct quixcc_msg_t
@@ -80,6 +67,8 @@ extern "C"
         bool m_success;
     };
 
+    /// @brief Opaque compiler job context
+    /// @warning Attempting to access this structure directly will result in undefined behavior, as it uses C++ objects internally.
     typedef struct quixcc_job_t quixcc_job_t;
 
     /**
@@ -293,8 +282,8 @@ extern "C"
      * @return true if the cache was reset successfully. false otherwise.
      *
      * @note This function requires all jobs to be disposed before calling.
-     * @warning Although this will decrease memory usage, it will also
-     *          decrease performance significantly.
+     * @warning Although this will decrease memory usage, it may also
+     *          decrease pipeline performance significantly.
      * @note This function will return false if any jobs are still active.
      */
     bool quixcc_cache_reset();
