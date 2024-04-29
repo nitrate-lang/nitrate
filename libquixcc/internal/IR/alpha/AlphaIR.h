@@ -97,10 +97,9 @@ namespace libquixcc
 
             public:
                 IRAlpha(const std::string_view &name) : IRModule<IR::Alpha, NodeType::Group>(name) {}
+                ~IRAlpha() = default;
 
                 bool from_ast(const std::shared_ptr<BlockNode> &ast);
-
-                ~IRAlpha() = default;
             };
         }
     }

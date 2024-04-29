@@ -97,10 +97,9 @@ namespace libquixcc
 
             public:
                 IRBeta(const std::string_view &name) : IRModule<IR::Beta, NodeType::Group>(name) {}
+                ~IRBeta() = default;
 
                 bool from_alpha(const std::unique_ptr<libquixcc::ir::alpha::IRAlpha> &alpha);
-
-                ~IRBeta() = default;
             };
         }
     }

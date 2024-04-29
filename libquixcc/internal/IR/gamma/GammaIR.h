@@ -97,10 +97,9 @@ namespace libquixcc
 
             public:
                 IRGamma(const std::string_view &name) : IRModule<IR::Gamma, NodeType::Group>(name) {}
+                ~IRGamma() = default;
 
                 bool from_beta(const std::unique_ptr<libquixcc::ir::beta::IRBeta> &beta);
-
-                ~IRGamma() = default;
             };
         }
     }

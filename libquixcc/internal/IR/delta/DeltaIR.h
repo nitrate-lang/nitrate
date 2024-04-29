@@ -86,7 +86,7 @@ namespace libquixcc
                 unsigned ir_dialect_version_impl() const override;
                 std::string_view ir_dialect_family_impl() const override;
                 std::string_view ir_dialect_description_impl() const override;
-                
+
                 bool verify_impl() const override
                 {
                     if (!m_root)
@@ -97,10 +97,9 @@ namespace libquixcc
 
             public:
                 IRDelta(const std::string_view &name) : IRModule<IR::Delta, NodeType::Group>(name) {}
+                ~IRDelta() = default;
 
                 bool from_gamma(const std::unique_ptr<libquixcc::ir::gamma::IRGamma> &beta);
-
-                ~IRDelta() = default;
             };
         }
     }
