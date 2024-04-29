@@ -261,7 +261,8 @@ to an integer, perform the arithmetic, and cast it back to a pointer.
 ### Control Flow
 
 Control flow operations are operations that change execution flow. Control flow
-operations may be conditional or unconditional. Control flow operations are `pure`.
+operations may be conditional or unconditional. Control flow operations are `pure` if
+and only if the target segment is `pure`.
 
 | Operation | Description                                            |
 |-----------|--------------------------------------------------------|
@@ -272,3 +273,6 @@ operations may be conditional or unconditional. Control flow operations are `pur
 | `ret`     | Return from a segment. Does not return a value.        |
 | `call`    | Call a segment.                                        |
 | `halt`    | Halt execution. (Implementation defined)               |
+
+
+**TODO: Support casting operations.**
