@@ -85,7 +85,7 @@ std::mutex g_library_lock;
 
 static void print_stacktrace();
 
-static void quixcc_panic(std::string msg)
+[[noreturn]] static void quixcc_panic(std::string msg) noexcept
 {
     msg = "LIBQUIXCC LIBRARY PANIC: " + msg;
     // Split msg into lines of `max` characters

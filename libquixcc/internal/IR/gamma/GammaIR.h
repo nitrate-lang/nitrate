@@ -82,25 +82,10 @@ namespace libquixcc
                     throw std::runtime_error("Not implemented");
                 }
 
-                std::string_view ir_dialect_name_impl() const override
-                {
-                    return "QIR-Gamma";
-                }
-
-                unsigned ir_dialect_version_impl() const override
-                {
-                    return 1;
-                }
-
-                std::string_view ir_dialect_family_impl() const override
-                {
-                    return "QIR";
-                }
-
-                std::string_view ir_dialect_description_impl() const override
-                {
-                    return "Quix Gamma Intermediate Representation (QIR-Gamma-V1.0) is a high-level intermediate representation for the Quix language. It contains high level information such as control flow, lambda expressions, coroutines, heap allocations, and other high-level constructs.";
-                }
+                std::string_view ir_dialect_name_impl() const override;
+                unsigned ir_dialect_version_impl() const override;
+                std::string_view ir_dialect_family_impl() const override;
+                std::string_view ir_dialect_description_impl() const override;
 
                 bool verify_impl() const override
                 {

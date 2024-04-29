@@ -29,81 +29,24 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_ALPHAIR_H__
-#define __QUIXCC_IR_ALPHAIR_H__
+#include <IR/beta/BetaIR.h>
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <parse/nodes/AllNodes.h>
-#include <IR/IRModule.h>
-#include <IR/Type.h>
-
-namespace libquixcc
+std::string_view libquixcc::ir::beta::IRBeta::ir_dialect_name_impl() const
 {
-    namespace ir
-    {
-        namespace alpha
-        {
-            enum class NodeType
-            {
-                Generic,
-                Group,
-                Node,
-            };
-
-            class IRAlpha : public libquixcc::ir::IRModule<IR::Alpha, NodeType::Group>
-            {
-            protected:
-                Result<bool> print_text_impl(std::ostream &os, bool debug) const override
-                {
-                    if (!m_root)
-                    {
-                        os << "IRAlpha_1_0(" + m_name + ")";
-                        return true;
-                    }
-
-                    os << "IRAlpha_1_0(" + m_name + ",[";
-
-                    Result<bool> result;
-                    if (debug)
-                        result = m_root->print<PrintMode::Debug>(os);
-                    else
-                        result = m_root->print<PrintMode::Text>(os);
-
-                    os << "])";
-
-                    return result;
-                }
-
-                Result<bool> deserialize_text_impl(std::istream &is) override
-                {
-                    throw std::runtime_error("Not implemented");
-                }
-
-                std::string_view ir_dialect_name_impl() const override;
-                unsigned ir_dialect_version_impl() const override;
-                std::string_view ir_dialect_family_impl() const override;
-                std::string_view ir_dialect_description_impl() const override;
-
-                bool verify_impl() const override
-                {
-                    if (!m_root)
-                        return false;
-
-                    return m_root->verify();
-                };
-
-            public:
-                IRAlpha(const std::string_view &name) : IRModule<IR::Alpha, NodeType::Group>(name) {}
-
-                bool from_ast(const std::shared_ptr<BlockNode> &ast);
-
-                ~IRAlpha() = default;
-            };
-        }
-    }
+    return "QIR-Beta";
 }
 
-#endif // __QUIXCC_IR_ALPHAIR_H__
+unsigned int libquixcc::ir::beta::IRBeta::ir_dialect_version_impl() const
+{
+    return 1;
+}
+
+std::string_view libquixcc::ir::beta::IRBeta::ir_dialect_family_impl() const
+{
+    return "QIR";
+}
+
+std::string_view libquixcc::ir::beta::IRBeta::ir_dialect_description_impl() const
+{
+    return "Quix Beta Intermediate Representation (QIR-Beta-V1.0) is an intermediate representation for the Quix language.";
+}

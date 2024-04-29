@@ -82,26 +82,11 @@ namespace libquixcc
                     throw std::runtime_error("Not implemented");
                 }
 
-                std::string_view ir_dialect_name_impl() const override
-                {
-                    return "QIR-Delta";
-                }
-
-                unsigned ir_dialect_version_impl() const override
-                {
-                    return 1;
-                }
-
-                std::string_view ir_dialect_family_impl() const override
-                {
-                    return "QIR";
-                }
-
-                std::string_view ir_dialect_description_impl() const override
-                {
-                    return "Quix Delta Intermediate Representation (QIR-Delta-V1.0) is a high-level intermediate representation for the Quix language. It contains high level information such as control flow, lambda expressions, coroutines, heap allocations, and other high-level constructs.";
-                }
-
+                std::string_view ir_dialect_name_impl() const override;
+                unsigned ir_dialect_version_impl() const override;
+                std::string_view ir_dialect_family_impl() const override;
+                std::string_view ir_dialect_description_impl() const override;
+                
                 bool verify_impl() const override
                 {
                     if (!m_root)
