@@ -12,33 +12,36 @@ Revision: 0.1-dev
 
 ## Introduction
 
-QUIX Delta IR is an LLVM IR-like intermediate representation (IR) designed to decouple 
+QUIX Delta IR is an LLVM IR-like intermediate representation (IR) designed to decouple
 the QUIX compiler from complete LLVM backend dependence. QUIX Delta IR (DIR hereafter)
-describes a program's control and data flow; it is designed to be compiler-backend 
-agnostic and suitable for source-to-source compilation to systems programming 
+describes a program's control and data flow; it is designed to be compiler-backend
+agnostic and suitable for source-to-source compilation to systems programming
 languages like C and Haskell.
 
 ## Constructs and Features
-Because DIR is a low-level IR, it is simple and minimalistic. Herein, we overview 
+
+Because DIR is a low-level IR, it is simple and minimalistic. Herein, we overview
 DIR's constructs and features and see how they are defined syntactically.
 
 ### Segments (Functions)
-In DIR, sequences of statements are organized into discrete units called segments. 
-A segment differs from a function in that it lacks the built-in concept of a 
-stack frame. Segments may have mutable arguments and do not have a return value. 
-Imagine a segment as an operation that you can call that mutates the program's 
+
+In DIR, sequences of statements are organized into discrete units called segments.
+A segment differs from a function in that it lacks the built-in concept of a
+stack frame. Segments may have mutable arguments and do not have a return value.
+Imagine a segment as an operation that you can call that mutates the program's
 state. It does not need to transfer control or occupy physical memory, but it
 may.
 
 The following properties classify segments:
-- `stateful`: A stateful segment (non-pure) is any segment that reads and/or writes 
- to a global variable and/or directly manipulates memory (does not include 
+
+- `stateful`: A stateful segment (non-pure) is any segment that reads and/or writes
+ to a global variable and/or directly manipulates memory (does not include
  its arguments) and/or calls a `stateful` segment. Any segment not meeting this
  criteria is considered stateless (pure).
-- `pure`: A pure segment is a segment that does not read or write to a global 
- variable, does not directly manipulate memory (does not include its arguments), 
+- `pure`: A pure segment is a segment that does not read or write to a global
+ variable, does not directly manipulate memory (does not include its arguments),
  and does not call a `stateful` segment.
-- `internal`: An internal segment is not externally visible. It is assumed to 
+- `internal`: An internal segment is not externally visible. It is assumed to
  be only callable by other segments within the same module. Calling an internal
  segment from another module is an undefined behavior.
 - `external`: An external segment is an externally visible segment. It is assumed
@@ -47,9 +50,11 @@ The following properties classify segments:
  segments may or may not have an actual address in memory.
 
 The following properties distinguish segments:
+
 - `name`: The name of the segment.
 
 ### Primitives
+
 A primitive is a simple data type not composed of other data types.
 Primitives are the building blocks of all other data types.
 
@@ -72,50 +77,58 @@ Primitives are the building blocks of all other data types.
 | `f64`          | 8            | 64-bit floating point |
 
 The following properties classify primitives:
+
 - `size`: The size of the primitive in bytes.
 - `signed`: A signed primitive can represent positive and negative numbers.
 - `unsigned`: An unsigned primitive can only represent positive numbers.
 - `floating`: A floating primitive can represent fractional numbers.
 
 ### Pointers
+
 A pointer is, well, a pointer (like in C). It is a mutable reference to a (possibly)
 mutable value. Pointers may be null. Any pointer may be dereferenced, but the behavior may be undefined based
 on the particular context in which this is done.
 
 ### Packets (Packed Structures)
+
 A packet is an ordered, finite collection of fields. Each field has a name and
 a type. Packets have no padding between fields, nor do they have any alignment
 requirements. Packets are used to represent data structures in memory. They lack
-methods and are not self-referential. Data fields are always public and mutable. 
-Bitfields are supported. All fields in a packet are addressable and dereferenceable 
+methods and are not self-referential. Data fields are always public and mutable.
+Bitfields are supported. All fields in a packet are addressable and dereferenceable
 with well-defined behavior, including bitfields. Fields may not have a default value.
 All initializations must be explicit.
 
 The following properties classify packets:
+
 - `size`: The size of the packet in bytes.
 - `fields`: The fields in the packet.
 
 The following properties distinguish packets:
+
 - `name`: The name of the packet.
 
 ### Variables
+
 A variable is a named storage location that holds a value.
 Variables may be global or local with respect to a segment. Variables
 may or may not occupy a physical memory location. Variables may be of any type
 supported by DIR (e.g., primitive types, packets, pointers).
 
 The following properties classify variables:
+
 - `type`: The type of the variable.
 - `volatile`: A volatile variable may be mutated in an unforeseen
  , unpredictable/undefined manner. The compiler shalt not optimize volatile
  variables.
 
 The following properties distinguish variables:
+
 - `name`: The name of the variable.
 - `scope`: The variable's scope (global or local).
 
-
 ### Constants
+
 A constant is a value that does not change. Constants may be of any type supported
 by DIR (e.g., primitive types, packets, pointers). Constants must be initialized
 in place, and the expression must not reference any other constants (self-contained
@@ -124,16 +137,20 @@ that are non-trivial (e.g., basic substitution won't work) may have an address i
 memory. Dereferencing a constant pointer is illegal and undefined behavior.
 
 The following properties classify constants:
+
 - `type`: The type of the constant.
 
 The following properties distinguish constants:
+
 - `name`: The name of the constant.
 
 ### Load and Store
+
 A load operation reads a value from a memory location. A store operation writes
 a value to a memory location.
 
 The following properties classify load and store operations:
+
 - `type`: The type of the value being loaded or stored.
 - `volatile`: A volatile load or store operation may be mutated in an
  unforeseen or unpredictable/undefined manner. The compiler shalt not optimize
@@ -143,12 +160,14 @@ The following properties classify load and store operations:
  memory location.
 
 ### Arithmetic Operations
+
 Arithmetic operations are operations that perform arithmetic on values. Arithmetic
 operations may be unary or binary. All arithmetic operations are `pure`.
 Arithmetic is defined over the primitive types. Floating point and integer arithmetic
 are supported and use the same instruction set.
 
 #### Binary Arithmetic Operations
+
 | Operator | Operand A Type | Operand B Type | Result Type   | Description                                                             |
 |----------|----------------|----------------|---------------|-------------------------------------------------------------------------|
 | `+`      | `i*`           | `i*`           | maxsize(`i*`) | Addition of two integers. Over/underflow is undefined.                  |
@@ -167,6 +186,7 @@ are supported and use the same instruction set.
 | `/`      | `f*`           | `f*`           | maxsize(`f*`) | Division of two floating point numbers. Division by zero is undefined.  |
 
 #### Unary Arithmetic Operations
+
 | Operator | Operand Type | Result Type | Description                                            |
 |----------|--------------|-------------|--------------------------------------------------------|
 | `+`      | `i*`         | `i*`        | Identity operation.                                    |
@@ -177,11 +197,13 @@ are supported and use the same instruction set.
 | `-`      | `f*`         | `f*`        | Negation operation.                                    |
 
 ### Bitwise Operations
+
 Bitwise operations are operations that perform bitwise operations on values. Bitwise
 operations may be unary or binary. All bitwise operations are `pure`.
 Bitwise operations are defined over the primitive types.
 
 #### Binary Bitwise Operations
+
 | Operator | Operand A Type | Operand B Type | Result Type       | Description                                            |
 |----------|----------------|----------------|-------------------|--------------------------------------------------------|
 | `&`      | `i*`           | `i*`           | maxsize(`i*`)     | Bitwise AND of two integers.                           |
@@ -192,25 +214,29 @@ Bitwise operations are defined over the primitive types.
 | `^`      | `u*`           | `u*`           | maxsize(`u*`)     | Bitwise XOR of two unsigned integers.                  |
 
 #### Unary Bitwise Operations
+
 | Operator | Operand Type | Result Type | Description                                            |
 |----------|--------------|-------------|--------------------------------------------------------|
 | `~`      | `i*`         | `i*`        | Bitwise NOT of an integer.                             |
 | `~`      | `u*`         | `u*`        | Bitwise NOT of an unsigned integer.                    |
 
 ### Logical Operations
+
 Logical operations are operations that perform logical operations on values. Logical
 operations may be unary or binary. All logical operations are `pure`.
 Logical operations are defined over the primitive types.
 
 #### Binary Logical Operations
+
 | Operator | Operand A Type | Operand B Type | Result Type | Description                                            |
 |----------|----------------|----------------|-------------|--------------------------------------------------------|
 | `&&`     | `i*`           | `i*`           | `i1`        | Logical AND of two integers.                           |
-| `||`     | `i*`           | `i*`           | `i1`        | Logical OR of two integers.                            |
+| `\|\|`   | `i*`           | `i*`           | `i1`        | Logical OR of two integers.                            |
 | `&&`     | `u*`           | `u*`           | `i1`        | Logical AND of two unsigned integers.                  |
-| `||`     | `u*`           | `u*`           | `i1`        | Logical OR of two unsigned integers.                   |
+| `\|\|`   | `u*`           | `u*`           | `i1`        | Logical OR of two unsigned integers.                   |
 
 #### Unary Logical Operations
+
 | Operator | Operand Type | Result Type | Description                                            |
 |----------|--------------|-------------|--------------------------------------------------------|
 | `!`      | `i*`         | `i1`        | Logical NOT of an integer.                             |
@@ -218,6 +244,7 @@ Logical operations are defined over the primitive types.
 | `!`      | `f*`         | `i1`        | Logical NOT of a floating point number.                |
 
 ### Pointer Operations
+
 Pointer operations are operations that perform pointer operations on values. Pointer
 operations may be unary or binary. All pointer operations are `impure`.
 Pointer operations are defined over the pointer types.
@@ -225,13 +252,14 @@ Pointer operations do not support arithmetic directly. Instead, cast the pointer
 to an integer, perform the arithmetic, and cast it back to a pointer.
 
 #### Unary Pointer Operations
+
 | Operator | Operand Type | Result Type | Description                                            |
 |----------|--------------|-------------|--------------------------------------------------------|
 | `*`      | `*T`         | `T`         | Dereference a pointer.                                 |
 | `&`      | `T`          | `*T`        | Reference a value.                                     |
 
-
 ### Control Flow
+
 Control flow operations are operations that change execution flow. Control flow
 operations may be conditional or unconditional. Control flow operations are `pure`.
 
