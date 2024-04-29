@@ -1,7 +1,7 @@
 ---
 layout: page
 title: DeltaIR (Decoupled IR)
-permalink: /ir/delta/
+permalink: /docs/ir/delta/
 parent: Documentation
 has_children: false
 ---
@@ -53,23 +53,23 @@ The following properties distinguish segments:
 A primitive is a simple data type not composed of other data types.
 Primitives are the building blocks of all other data types.
 
-| Primitive Type | Size (bytes) | Description |
+| Primitive Type | Size (bytes) | Description           |
 |----------------|--------------|-----------------------|
-| `i1` | 1 | 1-bit int |
-| `i8` | 1 | 8-bit signed int |
-| `i16` | 2 | 16-bit signed int |
-| `i32` | 4 | 32-bit signed int |
-| `i64` | 8 | 64-bit signed int |
-| `i128` | 16 | 128-bit signed int |
-| `i256` | 32 | 256-bit signed int |
-| `u8` | 1 | 8-bit unsigned int |
-| `u16` | 2 | 16-bit unsigned int |
-| `u32` | 4 | 32-bit unsigned int |
-| `u64` | 8 | 64-bit unsigned int |
-| `u128` | 16 | 128-bit unsigned int |
-| `u256` | 32 | 256-bit unsigned int |
-| `f32` | 4 | 32-bit floating point |
-| `f64` | 8 | 64-bit floating point |
+| `i1`           | 1            | 1-bit int             |
+| `i8`           | 1            | 8-bit signed int      |
+| `i16`          | 2            | 16-bit signed int     |
+| `i32`          | 4            | 32-bit signed int     |
+| `i64`          | 8            | 64-bit signed int     |
+| `i128`         | 16           | 128-bit signed int    |
+| `i256`         | 32           | 256-bit signed int    |
+| `u8`           | 1            | 8-bit unsigned int    |
+| `u16`          | 2            | 16-bit unsigned int   |
+| `u32`          | 4            | 32-bit unsigned int   |
+| `u64`          | 8            | 64-bit unsigned int   |
+| `u128`         | 16           | 128-bit unsigned int  |
+| `u256`         | 32           | 256-bit unsigned int  |
+| `f32`          | 4            | 32-bit floating point |
+| `f64`          | 8            | 64-bit floating point |
 
 The following properties classify primitives:
 - `size`: The size of the primitive in bytes.
@@ -149,32 +149,32 @@ Arithmetic is defined over the primitive types. Floating point and integer arith
 are supported and use the same instruction set.
 
 #### Binary Arithmetic Operations
-| Operator | Operand A Type | Operand B Type | Result Type | Description |
-|----------|----------------|----------------|-------------------|--------------------------------------------------------|
-| `+` | `i*` | `i*` | maxsize(`i*`) | Addition of two integers. Over/underflow is undefined. |
-| `-` | `i*` | `i*` | maxsize(`i*`) | Subtraction of two integers. Over/underflow is undefined. |
-| `*` | `i*` | `i*` | maxsize(`i*`) | Multiplication of two integers. Over/underflow is undefined. |
-| `/` | `i*` | `i*` | maxsize(`i*`) | Division of two integers. Division by zero is undefined. |
-| `%` | `i*` | `i*` | maxsize(`i*`) | Modulus of two integers. Modulus by zero is undefined. |
-| `+` | `u*` | `u*` | maxsize(`u*`) | Addition of two unsigned integers. Over/underflow is defined. |
-| `-` | `u*` | `u*` | maxsize(`u*`) | Subtraction of two unsigned integers. Over/underflow is defined. |
-| `*` | `u*` | `u*` | maxsize(`u*`) | Multiplication of two unsigned integers. Over/underflow is defined. |
-| `/` | `u*` | `u*` | maxsize(`u*`) | Division of two unsigned integers. Division by zero is undefined. |
-| `%` | `u*` | `u*` | maxsize(`u*`) | Modulus of two unsigned integers. Modulus by zero is undefined. |
-| `+` | `f*` | `f*` | maxsize(`f*`) | Addition of two floating point numbers. |
-| `-` | `f*` | `f*` | maxsize(`f*`) | Subtraction of two floating point numbers. |
-| `*` | `f*` | `f*` | maxsize(`f*`) | Multiplication of two floating point numbers. |
-| `/` | `f*` | `f*` | maxsize(`f*`) | Division of two floating point numbers. Division by zero is undefined. |
+| Operator | Operand A Type | Operand B Type | Result Type   | Description                                                             |
+|----------|----------------|----------------|---------------|-------------------------------------------------------------------------|
+| `+`      | `i*`           | `i*`           | maxsize(`i*`) | Addition of two integers. Over/underflow is undefined.                  |
+| `-`      | `i*`           | `i*`           | maxsize(`i*`) | Subtraction of two integers. Over/underflow is undefined.               |
+| `*`      | `i*`           | `i*`           | maxsize(`i*`) | Multiplication of two integers. Over/underflow is undefined.            |
+| `/`      | `i*`           | `i*`           | maxsize(`i*`) | Division of two integers. Division by zero is undefined.                |
+| `%`      | `i*`           | `i*`           | maxsize(`i*`) | Modulus of two integers. Modulus by zero is undefined.                  |
+| `+`      | `u*`           | `u*`           | maxsize(`u*`) | Addition of two unsigned integers. Over/underflow is defined.           |
+| `-`      | `u*`           | `u*`           | maxsize(`u*`) | Subtraction of two unsigned integers. Over/underflow is defined.        |
+| `*`      | `u*`           | `u*`           | maxsize(`u*`) | Multiplication of two unsigned integers. Over/underflow is defined.     |
+| `/`      | `u*`           | `u*`           | maxsize(`u*`) | Division of two unsigned integers. Division by zero is undefined.       |
+| `%`      | `u*`           | `u*`           | maxsize(`u*`) | Modulus of two unsigned integers. Modulus by zero is undefined.         |
+| `+`      | `f*`           | `f*`           | maxsize(`f*`) | Addition of two floating point numbers.                                 |
+| `-`      | `f*`           | `f*`           | maxsize(`f*`) | Subtraction of two floating point numbers.                              |
+| `*`      | `f*`           | `f*`           | maxsize(`f*`) | Multiplication of two floating point numbers.                           |
+| `/`      | `f*`           | `f*`           | maxsize(`f*`) | Division of two floating point numbers. Division by zero is undefined.  |
 
 #### Unary Arithmetic Operations
-| Operator | Operand Type | Result Type | Description |
-|----------|--------------|-------------------|--------------------------------------------------------|
-| `+` | `i*` | `i*` | Identity operation. |
-| `-` | `i*` | `i*` | Negation operation. |
-| `+` | `u*` | `u*` | Identity operation. |
-| `-` | `u*` | `u*` | Negation operation. |
-| `+` | `f*` | `f*` | Identity operation. |
-| `-` | `f*` | `f*` | Negation operation. |
+| Operator | Operand Type | Result Type | Description                                            |
+|----------|--------------|-------------|--------------------------------------------------------|
+| `+`      | `i*`         | `i*`        | Identity operation.                                    |
+| `-`      | `i*`         | `i*`        | Negation operation.                                    |
+| `+`      | `u*`         | `u*`        | Identity operation.                                    |
+| `-`      | `u*`         | `u*`        | Negation operation.                                    |
+| `+`      | `f*`         | `f*`        | Identity operation.                                    |
+| `-`      | `f*`         | `f*`        | Negation operation.                                    |
 
 ### Bitwise Operations
 Bitwise operations are operations that perform bitwise operations on values. Bitwise
@@ -182,20 +182,20 @@ operations may be unary or binary. All bitwise operations are `pure`.
 Bitwise operations are defined over the primitive types.
 
 #### Binary Bitwise Operations
-| Operator | Operand A Type | Operand B Type | Result Type | Description |
+| Operator | Operand A Type | Operand B Type | Result Type       | Description                                            |
 |----------|----------------|----------------|-------------------|--------------------------------------------------------|
-| `&` | `i*` | `i*` | maxsize(`i*`) | Bitwise AND of two integers. |
-| `|` | `i*` | `i*` | maxsize(`i*`) | Bitwise OR of two integers. |
-| `^` | `i*` | `i*` | maxsize(`i*`) | Bitwise XOR of two integers. |
-| `&` | `u*` | `u*` | maxsize(`u*`) | Bitwise AND of two unsigned integers. |
-| `|` | `u*` | `u*` | maxsize(`u*`) | Bitwise OR of two unsigned integers. |
-| `^` | `u*` | `u*` | maxsize(`u*`) | Bitwise XOR of two unsigned integers. |
+| `&`      | `i*`           | `i*`           | maxsize(`i*`)     | Bitwise AND of two integers.                           |
+| `\|`     | `i*`           | `i*`           | maxsize(`i*`)     | Bitwise OR of two integers.                            |
+| `^`      | `i*`           | `i*`           | maxsize(`i*`)     | Bitwise XOR of two integers.                           |
+| `&`      | `u*`           | `u*`           | maxsize(`u*`)     | Bitwise AND of two unsigned integers.                  |
+| `\|`     | `u*`           | `u*`           | maxsize(`u*`)     | Bitwise OR of two unsigned integers.                   |
+| `^`      | `u*`           | `u*`           | maxsize(`u*`)     | Bitwise XOR of two unsigned integers.                  |
 
 #### Unary Bitwise Operations
-| Operator | Operand Type | Result Type | Description |
-|----------|--------------|-------------------|--------------------------------------------------------|
-| `~` | `i*` | `i*` | Bitwise NOT of an integer. |
-| `~` | `u*` | `u*` | Bitwise NOT of an unsigned integer. |
+| Operator | Operand Type | Result Type | Description                                            |
+|----------|--------------|-------------|--------------------------------------------------------|
+| `~`      | `i*`         | `i*`        | Bitwise NOT of an integer.                             |
+| `~`      | `u*`         | `u*`        | Bitwise NOT of an unsigned integer.                    |
 
 ### Logical Operations
 Logical operations are operations that perform logical operations on values. Logical
@@ -203,19 +203,19 @@ operations may be unary or binary. All logical operations are `pure`.
 Logical operations are defined over the primitive types.
 
 #### Binary Logical Operations
-| Operator | Operand A Type | Operand B Type | Result Type | Description |
-|----------|----------------|----------------|-------------------|--------------------------------------------------------|
-| `&&` | `i*` | `i*` | `i1` | Logical AND of two integers. |
-| `||` | `i*` | `i*` | `i1` | Logical OR of two integers. |
-| `&&` | `u*` | `u*` | `i1` | Logical AND of two unsigned integers. |
-| `||` | `u*` | `u*` | `i1` | Logical OR of two unsigned integers. |
+| Operator | Operand A Type | Operand B Type | Result Type | Description                                            |
+|----------|----------------|----------------|-------------|--------------------------------------------------------|
+| `&&`     | `i*`           | `i*`           | `i1`        | Logical AND of two integers.                           |
+| `||`     | `i*`           | `i*`           | `i1`        | Logical OR of two integers.                            |
+| `&&`     | `u*`           | `u*`           | `i1`        | Logical AND of two unsigned integers.                  |
+| `||`     | `u*`           | `u*`           | `i1`        | Logical OR of two unsigned integers.                   |
 
 #### Unary Logical Operations
-| Operator | Operand Type | Result Type | Description |
-|----------|--------------|-------------------|--------------------------------------------------------|
-| `!` | `i*` | `i1` | Logical NOT of an integer. |
-| `!` | `u*` | `i1` | Logical NOT of an unsigned integer. |
-| `!` | `f*` | `i1` | Logical NOT of a floating point number. |
+| Operator | Operand Type | Result Type | Description                                            |
+|----------|--------------|-------------|--------------------------------------------------------|
+| `!`      | `i*`         | `i1`        | Logical NOT of an integer.                             |
+| `!`      | `u*`         | `i1`        | Logical NOT of an unsigned integer.                    |
+| `!`      | `f*`         | `i1`        | Logical NOT of a floating point number.                |
 
 ### Pointer Operations
 Pointer operations are operations that perform pointer operations on values. Pointer
@@ -225,23 +225,22 @@ Pointer operations do not support arithmetic directly. Instead, cast the pointer
 to an integer, perform the arithmetic, and cast it back to a pointer.
 
 #### Unary Pointer Operations
-| Operator | Operand Type | Result Type | Description |
-|----------|--------------|-------------------|--------------------------------------------------------|
-| `*` | `*T` | `T` | Dereference a pointer. |
-| `&` | `T` | `*T` | Reference a value. |
+| Operator | Operand Type | Result Type | Description                                            |
+|----------|--------------|-------------|--------------------------------------------------------|
+| `*`      | `*T`         | `T`         | Dereference a pointer.                                 |
+| `&`      | `T`          | `*T`        | Reference a value.                                     |
 
 
 ### Control Flow
 Control flow operations are operations that change execution flow. Control flow
 operations may be conditional or unconditional. Control flow operations are `pure`.
 
-| Operation | Description |
+| Operation | Description                                            |
 |-----------|--------------------------------------------------------|
-| `if-else` | Conditional execution with mandatory `else` branch. |
-| `while` | Loop with conditional execution. |
-| `jmp` | Unconditional jump to a label. |
-| `label:` | A named label for control flow jumps. |
-| `ret` | Return from a segment. Does not return a value. |
-| `call` | Call a segment. |
-| `halt` | Halt execution. (Implementation defined) |
-
+| `if-else` | Conditional execution with mandatory `else` branch.    |
+| `while`   | Loop with conditional execution.                       |
+| `jmp`     | Unconditional jump to a label.                         |
+| `label:`  | A named label for control flow jumps.                  |
+| `ret`     | Return from a segment. Does not return a value.        |
+| `call`    | Call a segment.                                        |
+| `halt`    | Halt execution. (Implementation defined)               |
