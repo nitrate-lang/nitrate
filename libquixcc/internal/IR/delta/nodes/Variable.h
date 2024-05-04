@@ -29,80 +29,76 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_GAMMAIR_H__
-#define __QUIXCC_IR_GAMMAIR_H__
+#ifndef __QUIXCC_IR_DELTA_NODES_VARIABLE_H__
+#define __QUIXCC_IR_DELTA_NODES_VARIABLE_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <IR/beta/BetaIR.h>
-#include <IR/IRModule.h>
-#include <IR/Type.h>
+#include <IR/delta/DeltaIR.h>
 
-namespace libquixcc
+namespace libquixcc::ir::delta
 {
-    namespace ir
+    class Local : public libquixcc::ir::Value<NodeType::Local>
     {
-        namespace gamma
-        {
-            enum class NodeType
-            {
-                Generic,
-                Group,
-                Node,
-            };
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-            class IRGamma : public libquixcc::ir::IRModule<IR::Gamma, NodeType::Group>
-            {
-            protected:
-                Result<bool> print_impl(std::ostream &os, bool debug) const override
-                {
-                    if (!m_root)
-                    {
-                        os << "IRGamma_1_0(" + m_name + ")";
-                        return true;
-                    }
+    public:
+        static const Local *create(std::string name, const libquixcc::ir::Value<> *type);
 
-                    os << "IRGamma_1_0(" + m_name + ",[";
+        std::string name;
+        const libquixcc::ir::Value<> *type;
+    };
 
-                    Result<bool> result;
-                    if (debug)
-                        result = m_root->print<PrintMode::Debug>(os);
-                    else
-                        result = m_root->print<PrintMode::Text>(os);
+    class Global : public libquixcc::ir::Value<NodeType::Global>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-                    os << "])";
+    public:
+        static const Global *create(std::string name, const libquixcc::ir::Value<> *type, bool _volatile = false, bool _atomic = false);
 
-                    return result;
-                }
+        std::string name;
+        const libquixcc::ir::Value<> *type;
+        bool _volatile;
+        bool _atomic;
+    };
 
-                Result<bool> deserialize_impl(std::istream &is) override
-                {
-                    throw std::runtime_error("Not implemented");
-                }
+    class Number : public libquixcc::ir::Value<NodeType::Number>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-                std::string_view ir_dialect_name_impl() const override;
-                unsigned ir_dialect_version_impl() const override;
-                std::string_view ir_dialect_family_impl() const override;
-                std::string_view ir_dialect_description_impl() const override;
+    public:
+        static const Number *create(std::string value);
 
-                bool verify_impl() const override
-                {
-                    if (!m_root)
-                        return false;
+        std::string value;
+    };
 
-                    return m_root->verify();
-                };
+    class String : public libquixcc::ir::Value<NodeType::String>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-            public:
-                IRGamma(const std::string_view &name) : IRModule<IR::Gamma, NodeType::Group>(name) {}
-                ~IRGamma() = default;
+    public:
+        static const String *create(std::string value);
 
-                bool from_beta(const std::unique_ptr<libquixcc::ir::beta::IRBeta> &beta);
-            };
-        }
-    }
+        std::string value;
+    };
 }
 
-#endif // __QUIXCC_IR_GAMMAIR_H__
+#endif // __QUIXCC_IR_DELTA_NODES_VARIABLE_H__

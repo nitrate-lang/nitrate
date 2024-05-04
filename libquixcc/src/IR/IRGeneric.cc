@@ -53,7 +53,7 @@ using namespace libquixcc::ir;
 class GroupNode : public libquixcc::ir::Value<NodeType::Group>
 {
 protected:
-    Result<bool> print_text_impl(std::ostream &os, bool debug) const override
+    Result<bool> print_impl(std::ostream &os, bool debug) const override
     {
         os << "GroupNode(" << m_name << ",[";
         for (auto it = cbegin(); it != cend(); ++it)
@@ -67,12 +67,12 @@ protected:
         return true;
     }
 
-    Result<bool> deserialize_text_impl(std::istream &is) override
+    Result<bool> deserialize_impl(std::istream &is) override
     {
         return true;
     }
 
-    boost::uuids::uuid graph_hash_impl() const override
+    boost::uuids::uuid hash_impl() const override
     {
         return Hasher().gettag().add(m_name).add(children()).hash();
     }
@@ -89,7 +89,7 @@ public:
 class NodeNode : public libquixcc::ir::Value<NodeType::Node>
 {
 protected:
-    Result<bool> print_text_impl(std::ostream &os, bool debug) const override
+    Result<bool> print_impl(std::ostream &os, bool debug) const override
     {
         os << "NodeNode(" << m_name;
 
@@ -112,12 +112,12 @@ protected:
         return true;
     }
 
-    Result<bool> deserialize_text_impl(std::istream &is) override
+    Result<bool> deserialize_impl(std::istream &is) override
     {
         return true;
     }
 
-    boost::uuids::uuid graph_hash_impl() const override
+    boost::uuids::uuid hash_impl() const override
     {
         return Hasher().gettag().add(m_name).hash();
     }
@@ -138,7 +138,7 @@ public:
 class IRAlpha : public libquixcc::ir::IRModule<IR::Alpha, NodeType::Group>
 {
 protected:
-    Result<bool> print_text_impl(std::ostream &os, bool debug) const override
+    Result<bool> print_impl(std::ostream &os, bool debug) const override
     {
         if (!m_root)
         {
@@ -159,7 +159,7 @@ protected:
         return result;
     }
 
-    Result<bool> deserialize_text_impl(std::istream &is) override
+    Result<bool> deserialize_impl(std::istream &is) override
     {
         char buf[13];
         if (is.readsome(buf, 13) != 13)

@@ -29,80 +29,91 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_GAMMAIR_H__
-#define __QUIXCC_IR_GAMMAIR_H__
+#ifndef __QUIXCC_IR_DELTA_NODES_CAST_H__
+#define __QUIXCC_IR_DELTA_NODES_CAST_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <IR/beta/BetaIR.h>
-#include <IR/IRModule.h>
-#include <IR/Type.h>
+#include <IR/delta/DeltaIR.h>
 
-namespace libquixcc
+namespace libquixcc::ir::delta
 {
-    namespace ir
+    class SCast : public libquixcc::ir::Value<NodeType::SCast>
     {
-        namespace gamma
-        {
-            enum class NodeType
-            {
-                Generic,
-                Group,
-                Node,
-            };
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-            class IRGamma : public libquixcc::ir::IRModule<IR::Gamma, NodeType::Group>
-            {
-            protected:
-                Result<bool> print_impl(std::ostream &os, bool debug) const override
-                {
-                    if (!m_root)
-                    {
-                        os << "IRGamma_1_0(" + m_name + ")";
-                        return true;
-                    }
+    public:
+        static const SCast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
 
-                    os << "IRGamma_1_0(" + m_name + ",[";
+        const libquixcc::ir::Value<> *type;
+        const libquixcc::ir::Value<> *value;
+    };
 
-                    Result<bool> result;
-                    if (debug)
-                        result = m_root->print<PrintMode::Debug>(os);
-                    else
-                        result = m_root->print<PrintMode::Text>(os);
+    class UCast : public libquixcc::ir::Value<NodeType::UCast>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-                    os << "])";
+    public:
+        static const UCast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
 
-                    return result;
-                }
+        const libquixcc::ir::Value<> *type;
+        const libquixcc::ir::Value<> *value;
+    };
 
-                Result<bool> deserialize_impl(std::istream &is) override
-                {
-                    throw std::runtime_error("Not implemented");
-                }
+    class PtrICast : public libquixcc::ir::Value<NodeType::PtrICast>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-                std::string_view ir_dialect_name_impl() const override;
-                unsigned ir_dialect_version_impl() const override;
-                std::string_view ir_dialect_family_impl() const override;
-                std::string_view ir_dialect_description_impl() const override;
+    public:
+        static const PtrICast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
 
-                bool verify_impl() const override
-                {
-                    if (!m_root)
-                        return false;
+        const libquixcc::ir::Value<> *type;
+        const libquixcc::ir::Value<> *value;
+    };
 
-                    return m_root->verify();
-                };
+    class IPtrCast : public libquixcc::ir::Value<NodeType::IPtrCast>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-            public:
-                IRGamma(const std::string_view &name) : IRModule<IR::Gamma, NodeType::Group>(name) {}
-                ~IRGamma() = default;
+    public:
+        static const IPtrCast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
 
-                bool from_beta(const std::unique_ptr<libquixcc::ir::beta::IRBeta> &beta);
-            };
-        }
-    }
+        const libquixcc::ir::Value<> *type;
+        const libquixcc::ir::Value<> *value;
+    };
+
+    class Bitcast : public libquixcc::ir::Value<NodeType::Bitcast>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const Bitcast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
+
+        const libquixcc::ir::Value<> *type;
+        const libquixcc::ir::Value<> *value;
+    };
 }
 
-#endif // __QUIXCC_IR_GAMMAIR_H__
+#endif // __QUIXCC_IR_DELTA_NODES_CAST_H__

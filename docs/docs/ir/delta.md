@@ -10,6 +10,8 @@ has_children: false
 
 Revision: 0.1-dev
 
+This document is a work in progress and is pretty much a scratchpad for ideas.
+
 ## Introduction
 
 QUIX Delta IR is an LLVM IR-like intermediate representation (IR) designed to decouple
@@ -46,8 +48,6 @@ The following properties classify segments:
  segment from another module is an undefined behavior.
 - `external`: An external segment is an externally visible segment. It is assumed
  that an external segment is callable by any code.
-- `referencable`: A pointer can call a reference segment. Non-referenceable
- segments may or may not have an actual address in memory.
 
 The following properties distinguish segments:
 
@@ -96,7 +96,7 @@ a type. Packets have no padding between fields, nor do they have any alignment
 requirements. Packets are used to represent data structures in memory. They lack
 methods and are not self-referential. Data fields are always public and mutable.
 Bitfields are supported. All fields in a packet are addressable and dereferenceable
-with well-defined behavior, including bitfields. Fields may not have a default value.
+with well-defined behavior, including bitfields. Fields can not have a default value.
 All initializations must be explicit.
 
 The following properties classify packets:
@@ -129,20 +129,7 @@ The following properties distinguish variables:
 
 ### Constants
 
-A constant is a value that does not change. Constants may be of any type supported
-by DIR (e.g., primitive types, packets, pointers). Constants must be initialized
-in place, and the expression must not reference any other constants (self-contained
-constant value). Primitive constants have no address in memory. Packet constants
-that are non-trivial (e.g., basic substitution won't work) may have an address in
-memory. Dereferencing a constant pointer is illegal and undefined behavior.
-
-The following properties classify constants:
-
-- `type`: The type of the constant.
-
-The following properties distinguish constants:
-
-- `name`: The name of the constant.
+Constants are not supported in DIR. 
 
 ### Load and Store
 
@@ -272,7 +259,51 @@ and only if the target segment is `pure`.
 | `label:`  | A named label for control flow jumps.                  |
 | `ret`     | Return from a segment. Does not return a value.        |
 | `call`    | Call a segment.                                        |
+| `ptrcall` | Call a function pointer.                               |
 | `halt`    | Halt execution. (Implementation defined)               |
 
+### Casting
 
-**TODO: Support casting operations.**
+Casting operations are operations that convert values from one type to another.
+All casting operations are `pure`. All casts are explicit.
+
+| Cast Type | Description                                            |
+|-----------|--------------------------------------------------------|
+| `scast`   | Signed integer cast up or down.                        |
+| `ucast`   | Unsigned integer cast up or down.                      |
+| `ptricast`| Pointer to integer cast.                               |
+| `iptrcast`| Integer to pointer cast.                               |
+| `bitcast` | Bitcase cast.                                          |
+
+
+### Memory Operations
+
+Allocations are implicit in DIR. The compiler is responsible for allocating
+stack memory for local variables. Heap allocations require an external memory
+allocator. These are out-of-scope for DIR.
+
+## Example
+
+A program that calculates the 10th Fibonacci number:
+
+```ir
+@_fib10([]->i32) = segment internal pure (i32) () {
+    %a(i32) = scast i32, 0;
+    %b(i32) = scast i32, 1;
+    %i(i32) = scast i32, 0;
+    %tmp(i32) = scast i32, 0;
+    
+    while %i(i32) < scast i32, 10 {
+        %tmp(i32) = %a(i32) + %b(i32);
+        %a(i32) = %b(i32);
+        %b(i32) = %tmp(i32);
+        %i(i32) = %i(i32) + scast i32, 1;
+    }
+    ret %a(i32);
+}
+
+@main([]->i32) = segment external pure (i32) () {
+    %result(i32) = call @_fib10 ();
+    ret %result(i32);
+}
+```

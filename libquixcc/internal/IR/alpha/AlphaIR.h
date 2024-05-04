@@ -56,7 +56,7 @@ namespace libquixcc
             class IRAlpha : public libquixcc::ir::IRModule<IR::Alpha, NodeType::Group>
             {
             protected:
-                Result<bool> print_text_impl(std::ostream &os, bool debug) const override
+                Result<bool> print_impl(std::ostream &os, bool debug) const override
                 {
                     if (!m_root)
                     {
@@ -77,7 +77,7 @@ namespace libquixcc
                     return result;
                 }
 
-                Result<bool> deserialize_text_impl(std::istream &is) override
+                Result<bool> deserialize_impl(std::istream &is) override
                 {
                     throw std::runtime_error("Not implemented");
                 }

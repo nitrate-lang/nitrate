@@ -238,18 +238,18 @@ namespace libquixcc
             return std::reinterpret_pointer_cast<const X>(node);
         }
 
-        template <auto T, typename W = double>
+        template <auto T = 0, typename W = double>
         class Value
         {
         protected:
             /* Node Serialization */
-            virtual Result<bool> print_text_impl(std::ostream &os, bool debug) const = 0;
+            virtual Result<bool> print_impl(std::ostream &os, bool debug) const = 0;
 
             /* Node Deserialization */
-            virtual Result<bool> deserialize_text_impl(std::istream &is) = 0;
+            virtual Result<bool> deserialize_impl(std::istream &is) = 0;
 
             /* Graph Operations & Caching */
-            virtual boost::uuids::uuid graph_hash_impl() const = 0;
+            virtual boost::uuids::uuid hash_impl() const = 0;
 
             /* IR Module Verification */
             virtual bool verify_impl() const = 0;
@@ -286,14 +286,14 @@ namespace libquixcc
                 {
                 case PrintMode::Debug:
                 {
-                    Result<bool> result(print_text_impl(os, true));
+                    Result<bool> result(print_impl(os, true));
                     if (newline)
                         os << std::endl;
                     return result;
                 }
                 default:
                 {
-                    Result<bool> result(print_text_impl(os, false));
+                    Result<bool> result(print_impl(os, false));
                     if (newline)
                         os << std::endl;
                     return result;
@@ -311,7 +311,7 @@ namespace libquixcc
                 switch (mode)
                 {
                 default:
-                    return deserialize_text_impl(is);
+                    return deserialize_impl(is);
                 }
             }
 
@@ -322,7 +322,7 @@ namespace libquixcc
             inline size_t node_count() const { return m_children.size() + 1; }
 
             /* Calculate a cryptographic hash of the IR Graph */
-            inline boost::uuids::uuid hash() const { return graph_hash_impl(); }
+            inline boost::uuids::uuid hash() const { return hash_impl(); }
 
             /* Iterate over the IR Graph */
             bool has_children() const { return !m_children.empty(); }
@@ -709,10 +709,10 @@ namespace libquixcc
             const static auto m_ir_type = T;
 
             /* Module Serialization */
-            virtual Result<bool> print_text_impl(std::ostream &os, bool debug) const = 0;
+            virtual Result<bool> print_impl(std::ostream &os, bool debug) const = 0;
 
             /* Module Deserialization */
-            virtual Result<bool> deserialize_text_impl(std::istream &is) = 0;
+            virtual Result<bool> deserialize_impl(std::istream &is) = 0;
 
             /* IR Dialect Information */
             virtual std::string_view ir_dialect_name_impl() const = 0;
@@ -748,13 +748,13 @@ namespace libquixcc
                 {
                 case PrintMode::Debug:
                 {
-                    Result<bool> result = print_text_impl(os, true);
+                    Result<bool> result = print_impl(os, true);
                     os.flush();
                     return result;
                 }
                 default:
                 {
-                    Result<bool> result = print_text_impl(os, false);
+                    Result<bool> result = print_impl(os, false);
                     os.flush();
                     return result;
                 }
@@ -768,7 +768,7 @@ namespace libquixcc
                 switch (mode)
                 {
                 default:
-                    return deserialize_text_impl(is);
+                    return deserialize_impl(is);
                 }
             }
 

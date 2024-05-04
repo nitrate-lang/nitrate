@@ -48,55 +48,103 @@ namespace libquixcc
         {
             enum class NodeType
             {
-                Generic,
-                Group,
                 Node,
+                Root,
+
+                /* Types */
+                I1,
+                I8,
+                I16,
+                I32,
+                I64,
+                I128,
+                I256,
+                U8,
+                U16,
+                U32,
+                U64,
+                U128,
+                U256,
+                F32,
+                F64,
+                Ptr,
+                Packet,
+                Array,
+
+                /* Variables */
+                Local,
+                Global,
+                Number,
+                String,
+
+                /* Memory */
+                Assign,
+                Load,
+                Index,
+
+                /* Casting */
+                SCast,
+                UCast,
+                PtrICast,
+                IPtrCast,
+                Bitcast,
+
+                /* Control Flow */
+                IfElse,
+                While,
+                Jmp,
+                Label,
+                Ret,
+                Call,
+                PtrCall,
+                Halt,
+
+                /* Blocks */
+                Segment,
+
+                /* Arithmetic */
+                Add,
+                Sub,
+                Mul,
+                Div,
+                Mod,
+                BitAnd,
+                BitOr,
+                BitXor,
+                BitNot,
+                Shl,
+                Shr,
+                Rotl,
+                Rotr,
+
+                /* Comparison */
+                Eq,
+                Ne,
+                Lt,
+                Gt,
+                Le,
+                Ge,
+
+                /* Logical */
+                And,
+                Or,
+                Not,
+                Xor,
             };
 
-            class IRDelta : public libquixcc::ir::IRModule<IR::Delta, NodeType::Group>
+            class IRDelta : public libquixcc::ir::IRModule<IR::Delta, NodeType::Root>
             {
             protected:
-                Result<bool> print_text_impl(std::ostream &os, bool debug) const override
-                {
-                    if (!m_root)
-                    {
-                        os << "IRDelta_1_0(" + m_name + ")";
-                        return true;
-                    }
-
-                    os << "IRDelta_1_0(" + m_name + ",[";
-
-                    Result<bool> result;
-                    if (debug)
-                        result = m_root->print<PrintMode::Debug>(os);
-                    else
-                        result = m_root->print<PrintMode::Text>(os);
-
-                    os << "])";
-
-                    return result;
-                }
-
-                Result<bool> deserialize_text_impl(std::istream &is) override
-                {
-                    throw std::runtime_error("Not implemented");
-                }
-
+                Result<bool> print_impl(std::ostream &os, bool debug) const override;
+                Result<bool> deserialize_impl(std::istream &is) override;
                 std::string_view ir_dialect_name_impl() const override;
                 unsigned ir_dialect_version_impl() const override;
                 std::string_view ir_dialect_family_impl() const override;
                 std::string_view ir_dialect_description_impl() const override;
-
-                bool verify_impl() const override
-                {
-                    if (!m_root)
-                        return false;
-
-                    return m_root->verify();
-                };
+                bool verify_impl() const override;
 
             public:
-                IRDelta(const std::string_view &name) : IRModule<IR::Delta, NodeType::Group>(name) {}
+                IRDelta(const std::string_view &name) : IRModule<IR::Delta, NodeType::Root>(name) {}
                 ~IRDelta() = default;
 
                 bool from_gamma(const std::unique_ptr<libquixcc::ir::gamma::IRGamma> &beta);

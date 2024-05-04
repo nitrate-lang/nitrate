@@ -29,8 +29,8 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_DELTA_NODES_SEGMENT_H__
-#define __QUIXCC_IR_DELTA_NODES_SEGMENT_H__
+#ifndef __QUIXCC_IR_DELTA_NODES_CONTROL_H__
+#define __QUIXCC_IR_DELTA_NODES_CONTROL_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
@@ -40,14 +40,7 @@
 
 namespace libquixcc::ir::delta
 {
-    enum class Visibility
-    {
-        Private,  /* Only visible within the current compilation unit */
-        Internal, /* Only visible to source files within the same library */
-        External, /* Exported and visible to other libraries */
-    };
-
-    class Segment : public libquixcc::ir::Value<NodeType::Segment>
+    class IfElse : public libquixcc::ir::Value<NodeType::IfElse>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
@@ -56,15 +49,111 @@ namespace libquixcc::ir::delta
         bool verify_impl() const override;
 
     public:
-        static const Segment *create(const std::string &name, const libquixcc::ir::Value<> *ret, Visibility visibility, bool pure, const std::vector<const libquixcc::ir::Value<> *> &params, const std::vector<const libquixcc::ir::Value<> *> &stmts);
+        static const IfElse *create(const libquixcc::ir::Value<> *cond, const libquixcc::ir::Value<> *then, const libquixcc::ir::Value<> *els);
+
+        const libquixcc::ir::Value<> *cond;
+        const libquixcc::ir::Value<> *then;
+        const libquixcc::ir::Value<> *els;
+    };
+
+    class While : public libquixcc::ir::Value<NodeType::While>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const While *create(const libquixcc::ir::Value<> *cond, const libquixcc::ir::Value<> *body);
+
+        const libquixcc::ir::Value<> *cond;
+        const libquixcc::ir::Value<> *body;
+    };
+
+    class Jmp : public libquixcc::ir::Value<NodeType::Jmp>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const Jmp *create(const libquixcc::ir::Value<> *target);
+
+        const libquixcc::ir::Value<NodeType::Label> *target;
+    };
+
+    class Label : public libquixcc::ir::Value<NodeType::Label>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const Label *create(std::string name);
 
         std::string name;
-        std::vector<const libquixcc::ir::Value<> *> params;
-        std::vector<const libquixcc::ir::Value<> *> stmts;
-        const libquixcc::ir::Value<> *ret;
-        Visibility visibility;
-        bool pure;
+    };
+
+    class Ret : public libquixcc::ir::Value<NodeType::Ret>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const Ret *create(const libquixcc::ir::Value<> *value);
+
+        const libquixcc::ir::Value<> *value;
+    };
+
+    class Call : public libquixcc::ir::Value<NodeType::Call>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const Call *create(const libquixcc::ir::Value<NodeType::Segment> *callee, std::vector<const libquixcc::ir::Value<> *> args);
+
+        const libquixcc::ir::Value<NodeType::Segment> *callee;
+        std::vector<const libquixcc::ir::Value<> *> args;
+    };
+
+    class PtrCall : public libquixcc::ir::Value<NodeType::PtrCall>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const PtrCall *create(const libquixcc::ir::Value<> *callee, std::vector<const libquixcc::ir::Value<> *> args);
+
+        const libquixcc::ir::Value<> *callee;
+        std::vector<const libquixcc::ir::Value<> *> args;
+    };
+
+    class Halt : public libquixcc::ir::Value<NodeType::Halt>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const Halt *create();
     };
 }
 
-#endif // __QUIXCC_IR_DELTA_NODES_SEGMENT_H__
+#endif // __QUIXCC_IR_DELTA_NODES_CONTROL_H__
