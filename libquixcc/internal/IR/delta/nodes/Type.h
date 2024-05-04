@@ -220,6 +220,18 @@ namespace libquixcc::ir::delta
         static const F64 *create();
     };
 
+    class Void : public libquixcc::ir::Value<NodeType::Void>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const Void *create();
+    };
+
     class Ptr : public libquixcc::ir::Value<NodeType::Ptr>
     {
     protected:
@@ -243,9 +255,9 @@ namespace libquixcc::ir::delta
         bool verify_impl() const override;
 
     public:
-        static const Packet *create(std::vector<std::pair<std::string, const libquixcc::ir::Value<>>> fields, std::string name);
+        static const Packet *create(std::vector<std::pair<std::string, const libquixcc::ir::Value<> *>> fields, std::string name);
 
-        std::vector<std::pair<std::string, const libquixcc::ir::Value<>>> fields;
+        std::vector<std::pair<std::string, const libquixcc::ir::Value<> *>> fields;
         std::string name;
     };
 

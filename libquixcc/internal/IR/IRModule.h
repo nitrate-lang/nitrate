@@ -671,6 +671,12 @@ namespace libquixcc
                 return *this;
             }
 
+            inline Hasher &add(size_t value)
+            {
+                m_hasher.process_bytes(reinterpret_cast<const void *>(&value), sizeof(size_t));
+                return *this;
+            }
+
             inline Hasher &add(const std::string &value)
             {
                 m_hasher.process_bytes(value.data(), value.size());

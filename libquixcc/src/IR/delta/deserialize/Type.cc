@@ -29,129 +29,99 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_DELTAIR_H__
-#define __QUIXCC_IR_DELTAIR_H__
+#include <IR/delta/nodes/Type.h>
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <IR/gamma/GammaIR.h>
-#include <IR/IRModule.h>
-#include <IR/Type.h>
-
-namespace libquixcc
+libquixcc::ir::Result<bool> libquixcc::ir::delta::I1::deserialize_impl(std::istream &is)
 {
-    namespace ir
-    {
-        namespace delta
-        {
-            enum class NodeType
-            {
-                Node,
-                Root,
-
-                /* Types */
-                I1,
-                I8,
-                I16,
-                I32,
-                I64,
-                I128,
-                I256,
-                U8,
-                U16,
-                U32,
-                U64,
-                U128,
-                U256,
-                F32,
-                F64,
-                Void,
-                Ptr,
-                Packet,
-                Array,
-
-                /* Variables */
-                Local,
-                Global,
-                Number,
-                String,
-
-                /* Memory */
-                Assign,
-                Load,
-                Index,
-
-                /* Casting */
-                SCast,
-                UCast,
-                PtrICast,
-                IPtrCast,
-                Bitcast,
-
-                /* Control Flow */
-                IfElse,
-                While,
-                Jmp,
-                Label,
-                Ret,
-                Call,
-                PtrCall,
-                Halt,
-
-                /* Blocks */
-                Segment,
-
-                /* Arithmetic */
-                Add,
-                Sub,
-                Mul,
-                Div,
-                Mod,
-                BitAnd,
-                BitOr,
-                BitXor,
-                BitNot,
-                Shl,
-                Shr,
-                Rotl,
-                Rotr,
-
-                /* Comparison */
-                Eq,
-                Ne,
-                Lt,
-                Gt,
-                Le,
-                Ge,
-
-                /* Logical */
-                And,
-                Or,
-                Not,
-                Xor,
-            };
-
-            class IRDelta : public libquixcc::ir::IRModule<IR::Delta, NodeType::Root>
-            {
-            protected:
-                Result<bool> print_impl(std::ostream &os, bool debug) const override;
-                Result<bool> deserialize_impl(std::istream &is) override;
-                std::string_view ir_dialect_name_impl() const override;
-                unsigned ir_dialect_version_impl() const override;
-                std::string_view ir_dialect_family_impl() const override;
-                std::string_view ir_dialect_description_impl() const override;
-                bool verify_impl() const override;
-
-            public:
-                IRDelta(const std::string_view &name) : IRModule<IR::Delta, NodeType::Root>(name) {}
-                ~IRDelta() = default;
-
-                bool from_gamma(const std::unique_ptr<libquixcc::ir::gamma::IRGamma> &beta);
-            };
-        }
-    }
+    return false;
 }
 
-#endif // __QUIXCC_IR_DELTAIR_H__
+libquixcc::ir::Result<bool> libquixcc::ir::delta::I8::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::I16::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::I32::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::I64::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::I128::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::I256::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::U8::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::U16::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::U32::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::U64::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::U128::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::U256::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::F32::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::F64::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Void::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Ptr::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Packet::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Array::deserialize_impl(std::istream &is)
+{
+    return false;
+}
