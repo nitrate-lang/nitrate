@@ -71,6 +71,7 @@ namespace libquixcc
                 Ptr,
                 Packet,
                 Array,
+                FType,
 
                 /* Variables */
                 Local,

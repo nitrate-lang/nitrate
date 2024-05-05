@@ -30,3 +30,39 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/nodes/Variable.h>
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Local::print_impl(std::ostream &os, bool debug) const
+{
+    os << "%" << name << "(" << type << ")"
+       << " = undef;";
+
+    return true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Global::print_impl(std::ostream &os, bool debug) const
+{
+    if (value)
+    {
+        os << "@" << name << "(" << type << ")"
+           << " = " << value << ";";
+    }
+    else
+    {
+        os << "@" << name << "(" << type << ")"
+           << " = undef;";
+    }
+
+    return true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Number::print_impl(std::ostream &os, bool debug) const
+{
+    os << value;
+    return true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::String::print_impl(std::ostream &os, bool debug) const
+{
+    os << "\"" << value << "\"";
+    return true;
+}

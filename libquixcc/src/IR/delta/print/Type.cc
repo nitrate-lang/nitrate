@@ -139,3 +139,17 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Array::print_impl(std::ostream
         return false;
     return os << "; " << size << "]", true;
 }
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::FType::print_impl(std::ostream &os, bool debug) const
+{
+    os << "[";
+    for (size_t i = 0; i < params.size(); i++)
+    {
+        if (!params[i]->print(os, debug))
+            return false;
+        if (i + 1 < params.size())
+            os << ", ";
+    }
+    os << "]->";
+    return ret->print(os, debug);
+}

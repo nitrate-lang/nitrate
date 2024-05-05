@@ -30,3 +30,49 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/nodes/Segment.h>
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Segment::print_impl(std::ostream &os, bool debug) const
+{
+    os << "segment ";
+
+    switch (visibility)
+    {
+    case Visibility::Private:
+        os << "private";
+        break;
+    case Visibility::Internal:
+        os << "internal";
+        break;
+    case Visibility::External:
+        os << "external";
+        break;
+    }
+
+    if (pure)
+        os << " pure";
+    else
+        os << " impure";
+
+    os << " (";
+    if (!ret->print(os, debug))
+        return false;
+    os << ") (";
+    for (uint64_t i = 0; i < params.size(); i++)
+    {
+        if (!params[i]->print(os, debug))
+            return false;
+        if (i + 1 < params.size())
+            os << ", ";
+    }
+    os << ") {\n";
+
+    for (auto &stmt : stmts)
+    {
+        if (!stmt->print(os, debug))
+            return false;
+    }
+
+    os << "}\n";
+
+    return true;
+}

@@ -80,9 +80,9 @@ namespace libquixcc::ir::delta
         bool verify_impl() const override;
 
     public:
-        static const Jmp *create(const libquixcc::ir::Value<> *target);
+        static const Jmp *create(std::string target);
 
-        const libquixcc::ir::Value<NodeType::Label> *target;
+        std::string target;
     };
 
     class Label : public libquixcc::ir::Value<NodeType::Label>

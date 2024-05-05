@@ -275,6 +275,21 @@ namespace libquixcc::ir::delta
         const libquixcc::ir::Value<> *type;
         uint64_t size;
     };
+
+    class FType : public libquixcc::ir::Value<NodeType::FType>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> deserialize_impl(std::istream &is) override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+    public:
+        static const FType *create(std::vector<const libquixcc::ir::Value<> *> params, const libquixcc::ir::Value<> *ret);
+
+        std::vector<const libquixcc::ir::Value<> *> params;
+        const libquixcc::ir::Value<> *ret;
+    };
 }
 
 #endif // __QUIXCC_IR_DELTA_NODES_TYPE_H__

@@ -54,7 +54,6 @@ namespace libquixcc::ir::delta
         uint64_t rank; /* How many levels of dereferencing are to be done */
         const libquixcc::ir::Value<> *var;
         const libquixcc::ir::Value<> *value;
-        bool _volatile;
     };
 
     class Load : public libquixcc::ir::Value<NodeType::Load>

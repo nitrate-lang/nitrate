@@ -677,6 +677,12 @@ namespace libquixcc
                 return *this;
             }
 
+            inline Hasher &add(bool value)
+            {
+                m_hasher.process_bytes(reinterpret_cast<const void *>(&value), sizeof(bool));
+                return *this;
+            }
+
             inline Hasher &add(const std::string &value)
             {
                 m_hasher.process_bytes(value.data(), value.size());
@@ -692,7 +698,6 @@ namespace libquixcc
 
             inline boost::uuids::uuid hash()
             {
-
                 boost::uuids::detail::sha1::digest_type digest;
                 m_hasher.get_digest(digest);
                 boost::uuids::uuid ret;

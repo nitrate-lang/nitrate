@@ -64,10 +64,11 @@ namespace libquixcc::ir::delta
         bool verify_impl() const override;
 
     public:
-        static const Global *create(std::string name, const libquixcc::ir::Value<> *type, bool _volatile = false, bool _atomic = false);
+        static const Global *create(std::string name, const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value, bool _volatile = false, bool _atomic = false);
 
         std::string name;
         const libquixcc::ir::Value<> *type;
+        const libquixcc::ir::Value<> *value;
         bool _volatile;
         bool _atomic;
     };

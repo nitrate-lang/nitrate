@@ -30,3 +30,43 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/nodes/Control.h>
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::IfElse::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::While::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Jmp::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Label::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Ret::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Call::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::PtrCall::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Halt::deserialize_impl(std::istream &is)
+{
+    return false;
+}

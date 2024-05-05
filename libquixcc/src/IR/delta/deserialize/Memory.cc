@@ -30,3 +30,18 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/nodes/Memory.h>
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Assign::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Load::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Index::deserialize_impl(std::istream &is)
+{
+    return false;
+}

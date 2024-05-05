@@ -125,3 +125,8 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Array::deserialize_impl(std::i
 {
     return false;
 }
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::FType::deserialize_impl(std::istream &is)
+{
+    return false;
+}

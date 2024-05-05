@@ -226,3 +226,19 @@ bool libquixcc::ir::delta::Array::verify_impl() const
 {
     return type->verify() && size > 0;
 }
+
+boost::uuids::uuid libquixcc::ir::delta::FType::hash_impl() const
+{
+    auto h = Hasher().gettag().add(ret);
+    for (auto &p : params)
+        h.add(p);
+    return h.hash();
+}
+
+bool libquixcc::ir::delta::FType::verify_impl() const
+{
+    for (auto &p : params)
+        if (!p->verify())
+            return false;
+    return ret->verify();
+}

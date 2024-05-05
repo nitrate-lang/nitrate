@@ -30,3 +30,23 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/nodes/Variable.h>
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Local::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Global::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Number::deserialize_impl(std::istream &is)
+{
+    return false;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::String::deserialize_impl(std::istream &is)
+{
+    return false;
+}

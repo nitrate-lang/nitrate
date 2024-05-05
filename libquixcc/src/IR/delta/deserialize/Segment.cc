@@ -30,3 +30,8 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/nodes/Segment.h>
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Segment::deserialize_impl(std::istream &is)
+{
+    return false;
+}

@@ -30,3 +30,28 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/nodes/Segment.h>
+
+boost::uuids::uuid libquixcc::ir::delta::Segment::hash_impl() const
+{
+    auto h = Hasher().gettag().add(name).add(ret).add((uint64_t)visibility).add(pure);
+    for (auto &p : params)
+        h.add(p);
+
+    for (auto &s : stmts)
+        h.add(s);
+
+    return h.hash();
+}
+
+bool libquixcc::ir::delta::Segment::verify_impl() const
+{
+    for (auto &p : params)
+        if (!p->verify())
+            return false;
+
+    for (auto &s : stmts)
+        if (!s->verify())
+            return false;
+
+    return ret->verify();
+}
