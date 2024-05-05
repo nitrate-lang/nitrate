@@ -482,6 +482,7 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
     mutator.add_routine(mutate::InferTypes);              ///> Type inference
     mutator.add_routine(mutate::ObjectConstruction);      ///> Object construction
     mutator.add_routine(mutate::ObjectDestruction);       ///> Object destruction
+    mutator.add_routine(mutate::ImplicitReturn);          ///> Implicit return statements
     mutator.run(job, ast);
 
     return true;
@@ -748,6 +749,8 @@ static bool compile(quixcc_job_t *job)
     /// BEGIN: INTERMEDIATE PROCESSING
     if (!quixcc_mutate_ast(job, ast) || job->m_tainted)
         return false;
+    if (job->m_debug)
+        LOG(DEBUG) << "Dumping AST 2 (JSON): " << base64_encode(ast->to_json()) << std::endl;
     /// END:   INTERMEDIATE PROCESSING
     ///=========================================
 
@@ -799,15 +802,12 @@ static bool compile(quixcc_job_t *job)
 
     ///=========================================
     /// BEGIN: GENERATOR
-    ///=========================================
     LOG(DEBUG) << "Generating output" << std::endl;
     if (!generate(*job, DIR))
     {
         LOG(ERROR) << "failed to generate output" << std::endl;
         return false;
     }
-
-    ///=========================================
     /// END: GENERATOR
     ///=========================================
 

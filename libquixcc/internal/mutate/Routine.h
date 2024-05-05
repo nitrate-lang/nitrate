@@ -57,6 +57,7 @@ namespace libquixcc
         inline void ObjectConstruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
         inline void ObjectDestruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
         void SubsystemCollapse(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
+        void ImplicitReturn(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
     }
 
     typedef std::function<void(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>)> ASTMutateRoutine;

@@ -41,7 +41,7 @@
 
 using namespace libquixcc;
 
-void libquixcc::mutate::ConvertTypes(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
+void libquixcc::mutate::ImplicitReturn(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(traversal::ASTTraversalState(
         [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::traversal::TraversePtr node)
@@ -49,68 +49,26 @@ void libquixcc::mutate::ConvertTypes(quixcc_job_t *job, std::shared_ptr<libquixc
             if (node.first != traversal::TraversePtrType::Smart)
                 return;
             auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+            if (!ptr->is<libquixcc::FunctionDefNode>())
+                return;
 
-            if (ptr->isof<ConstExprNode>())
-            {
-                auto const_expr = std::static_pointer_cast<ConstExprNode>(ptr)->promote<ConstExprNode>();
-                *std::get<std::shared_ptr<ParseNode> *>(node.second) = const_expr;
-            }
-            else if (ptr->isof<ExprNode>())
-            {
-                auto expr = std::static_pointer_cast<ExprNode>(ptr)->promote<ExprNode>();
-                *std::get<std::shared_ptr<ParseNode> *>(node.second) = expr;
-            }
-            else if (ptr->is<LetDeclNode>())
-            {
-                auto let_decl = std::static_pointer_cast<LetDeclNode>(ptr);
-                if (!let_decl->m_type)
-                    return; // Inference will be done later
+            auto func = std::static_pointer_cast<libquixcc::FunctionDefNode>(ptr);
 
-                if (!let_decl->m_init)
+            if (!func->m_decl->m_type->m_return_type->is_void())
+                return;
+
+            for (auto &stmt : func->m_body->m_stmts)
+            {
+                if (stmt->is<libquixcc::ReturnStmtNode>() ||
+                    stmt->is<libquixcc::RetifStmtNode>() ||
+                    stmt->is<libquixcc::RetzStmtNode>() ||
+                    stmt->is<libquixcc::RetvStmtNode>())
+                {
                     return;
-
-                auto expr = std::static_pointer_cast<ExprNode>(let_decl->m_init)->promote<ExprNode>();
-                if (expr->is_same(let_decl->m_type))
-                    return; // No need to convert
-
-                if (!let_decl->m_type->is_primitive())
-                    return; // We can't convert this
-
-                // Semantic analysis will catch this
-                let_decl->m_init = std::make_shared<StaticCastExprNode>(expr, let_decl->m_type);
+                }
             }
-            else if (ptr->is<VarDeclNode>())
-            {
-                auto var_decl = std::static_pointer_cast<VarDeclNode>(ptr);
-                if (!var_decl->m_type)
-                    return; // Inference will be done later
 
-                if (!var_decl->m_init)
-                    return;
-
-                auto expr = std::static_pointer_cast<ExprNode>(var_decl->m_init)->promote<ExprNode>();
-                if (expr->is_same(var_decl->m_type))
-                    return; // No need to convert
-
-                if (!var_decl->m_type->is_primitive())
-                    return; // We can't convert this
-
-                // Semantic analysis will catch this
-                var_decl->m_init = std::make_shared<StaticCastExprNode>(expr, var_decl->m_type);
-            }
-            else if (ptr->is<CallExprNode>())
-            {
-                /// TODO: Implement this
-                // auto call_expr = std::static_pointer_cast<CallExprNode>(ptr);
-
-                // for (auto &arg : call_expr->m_positional_args)
-                // {
-                // }
-
-                // for (auto &arg : call_expr->m_named_args)
-                // {
-                // }
-            }
+            func->m_body->m_stmts.push_back(std::make_shared<libquixcc::ReturnStmtNode>(nullptr));
         },
         {}));
 }
