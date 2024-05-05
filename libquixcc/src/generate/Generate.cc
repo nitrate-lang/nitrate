@@ -34,7 +34,7 @@
 #include <generate/Generate.h>
 #include <generate/CodeGen.h>
 #include <stdlib.h>
-#include "llvm/LLVMWrapper.h"
+#include <llvm/LLVMWrapper.h>
 #include <core/Logger.h>
 #include <filesystem>
 #include <fstream>
@@ -101,14 +101,12 @@ protected:
     }
 };
 
-bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast, FILE *out, bool generate_bitcode)
+bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out, bool generate_bitcode)
 {
     std::error_code ec;
     CFILE_raw_pwrite_ostream os(out);
 
-    // Generate code for AST
-    CodegenVisitor codegen(ctx.m_inner);
-    if (!ast->codegen(codegen))
+    if (!LLVM14Codegen::codegen(ir, ctx.m_inner))
     {
         LOG(ERROR) << ctx.m_filename << ": Failed to generate LLVM IR" << std::endl;
         return false;
@@ -146,13 +144,21 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode>
     return true;
 }
 
-bool libquixcc::write_c11(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast, FILE *out)
+bool libquixcc::write_c11(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out)
 {
     LOG(DEBUG) << "Generating C" << std::endl;
 
-    C11CodegenVisitor codegen;
+    std::stringstream stream;
+    stream << "#include <stdint.h>\n#include <stddef.h>\n\n";
 
-    std::string code = "#include <stdint.h>\n#include <stddef.h>\n\n" + ast->codegen(codegen);
+    if (!C11Codegen::codegen(ir, stream))
+    {
+        LOG(ERROR) << "Failed to generate C11 code" << std::endl;
+        return false;
+    }
+
+    std::string code = stream.str();
+
     if (fwrite(code.c_str(), 1, code.size(), out) != code.size())
     {
         LOG(ERROR) << "Failed to write C11 code to file" << std::endl;
@@ -164,7 +170,7 @@ bool libquixcc::write_c11(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode
     return true;
 }
 
-bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast, FILE *out, llvm::CodeGenFileType mode)
+bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out, llvm::CodeGenFileType mode)
 {
 #if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
     LOG(FATAL) << "Unsupported operating system" << std::endl;
@@ -194,9 +200,7 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNod
     std::error_code ec;
     CFILE_raw_pwrite_ostream os(out);
 
-    // Generate code for AST
-    CodegenVisitor codegen(ctx.m_inner);
-    if (!ast->codegen(codegen))
+    if (!LLVM14Codegen::codegen(ir, ctx.m_inner))
     {
         LOG(ERROR) << "Failed to generate LLVM Code for file" << ctx.m_filename << std::endl;
         return false;
@@ -262,27 +266,22 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNod
 #endif
 }
 
-bool libquixcc::generate(quixcc_job_t &job, std::unique_ptr<libquixcc::StmtNode> ast)
+bool libquixcc::generate(quixcc_job_t &job, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir)
 {
-    libquixcc::BlockNode *block = static_cast<libquixcc::BlockNode *>(ast.get());
-    ast.release();
-
-    std::unique_ptr<libquixcc::StmtGroupNode> block_ptr = std::make_unique<libquixcc::StmtGroupNode>(block->m_stmts);
-
     if (job.m_argset.contains("-emit-ir"))
-        return write_IR(job, std::move(block_ptr), job.m_out, false);
+        return write_IR(job, ir, job.m_out, false);
 
     if (job.m_argset.contains("-emit-bc"))
-        return write_IR(job, std::move(block_ptr), job.m_out, true);
+        return write_IR(job, ir, job.m_out, true);
 
     if (job.m_argset.contains("-emit-c11"))
-        return write_c11(job, std::move(block_ptr), job.m_out);
+        return write_c11(job, ir, job.m_out);
 
     if (job.m_argset.contains("-S"))
-        return write_llvm(job, std::move(block_ptr), job.m_out, llvm::CGFT_AssemblyFile);
+        return write_llvm(job, ir, job.m_out, llvm::CGFT_AssemblyFile);
 
     if (job.m_argset.contains("-c"))
-        return write_llvm(job, std::move(block_ptr), job.m_out, llvm::CGFT_ObjectFile);
+        return write_llvm(job, ir, job.m_out, llvm::CGFT_ObjectFile);
 
     LOG(FATAL) << "Output format was not specified. Expected: [-emit-ir, -emit-c11, -emit-bc, -S, -c]" << std::endl;
 

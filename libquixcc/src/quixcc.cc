@@ -797,14 +797,11 @@ static bool compile(quixcc_job_t *job)
     /// END:   OPTIMIZATION PIPELINE
     ///=========================================
 
-    /// TODO: code generator will use the DeltaIR, not the AST
-    auto ast_reduced = std::make_unique<BlockNode>(*ast);
-
     ///=========================================
     /// BEGIN: GENERATOR
     ///=========================================
     LOG(DEBUG) << "Generating output" << std::endl;
-    if (!generate(*job, std::move(ast_reduced)))
+    if (!generate(*job, DIR))
     {
         LOG(ERROR) << "failed to generate output" << std::endl;
         return false;
