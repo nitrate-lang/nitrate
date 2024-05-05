@@ -214,39 +214,12 @@ namespace libquixcc
             const T *operator->() const { return m_value; }
         };
 
-        template <typename X, typename Y>
-        X *qir_cast(Y *node)
-        {
-            return reinterpret_cast<X *>(node);
-        }
-
-        template <typename X, typename Y>
-        const X *qir_cast(const Y *node)
-        {
-            return reinterpret_cast<const X *>(node);
-        }
-
-        template <typename X, typename Y>
-        std::shared_ptr<X> qir_cast(const std::shared_ptr<Y> &node)
-        {
-            return std::reinterpret_pointer_cast<X>(node);
-        }
-
-        template <typename X, typename Y>
-        std::shared_ptr<const X> qir_cast(const std::shared_ptr<const Y> &node)
-        {
-            return std::reinterpret_pointer_cast<const X>(node);
-        }
-
-        template <auto T = 0, typename W = double>
+        template <auto V>
         class Value
         {
         protected:
             /* Node Serialization */
             virtual Result<bool> print_impl(std::ostream &os, bool debug) const = 0;
-
-            /* Node Deserialization */
-            virtual Result<bool> deserialize_impl(std::istream &is) = 0;
 
             /* Graph Operations & Caching */
             virtual boost::uuids::uuid hash_impl() const = 0;
@@ -254,28 +227,28 @@ namespace libquixcc
             /* IR Module Verification */
             virtual bool verify_impl() const = 0;
 
-            std::set<std::pair<std::shared_ptr<Value>, W>> m_children;
+            const static auto __IR_type = V;
 
         public:
             Value() = default;
             virtual ~Value() = default;
-            Value(const Value &other) = delete;
-            Value(Value &&other) = delete;
-            Value &operator=(const Value &other) = delete;
 
-            template <typename U>
+            template <typename T>
             bool is() const
             {
-                return typeid(*this) == typeid(U);
+                return typeid(*this) == typeid(T);
             }
 
-            template <typename U>
-            bool is(const U *other) const
+            template <typename T>
+            bool is(const T *other) const
             {
-                if (typeid(*this) != typeid(*other))
-                    return false;
+                return is<T>() && *dynamic_cast<const T *>(this) == *other;
+            }
 
-                return *qir_cast<const U>(this) == *other;
+            template <typename T>
+            const T *as() const
+            {
+                return dynamic_cast<const T *>(this);
             }
 
             /* Write IR to Output Stream */
@@ -304,330 +277,14 @@ namespace libquixcc
             /* Write UUID to Output Stream */
             inline void printid(std::ostream &os) const { os << boost::uuids::to_string(hash()); }
 
-            /* Read IR from Input Stream */
-            template <DeserializeMode mode = DeserializeMode::Unspecified>
-            Result<bool> deserialize(std::istream &is)
-            {
-                switch (mode)
-                {
-                default:
-                    return deserialize_impl(is);
-                }
-            }
-
             /* Verify IR Module */
             inline bool verify() const { return verify_impl(); }
-
-            /* Count Nodes in IR Graph */
-            inline size_t node_count() const { return m_children.size() + 1; }
 
             /* Calculate a cryptographic hash of the IR Graph */
             inline boost::uuids::uuid hash() const { return hash_impl(); }
 
-            /* Iterate over the IR Graph */
-            bool has_children() const { return !m_children.empty(); }
-            bool empty() const { return m_children.empty(); }
-
-            auto begin() { return m_children.begin(); }
-            auto end() { return m_children.end(); }
-            const auto cbegin() const { return m_children.cbegin(); }
-            const auto cend() const { return m_children.cend(); }
-
-            const std::set<std::pair<std::shared_ptr<Value>, W>> &children() const { return m_children; }
-
-            Value<T> &operator[](const std::string_view &uuid)
-            {
-                for (const auto &child : m_children)
-                {
-                    if (child.first->hash() == boost::uuids::string_generator()(uuid.data()))
-                        return *child.first;
-                }
-
-                throw std::out_of_range("Value not found");
-            }
-
-            const Value<T> &operator[](const std::string_view &uuid) const
-            {
-                for (const auto &child : m_children)
-                {
-                    if (child.first->hash() == boost::uuids::string_generator()(uuid.data()))
-                        return *child.first;
-                }
-
-                throw std::out_of_range("Value not found");
-            }
-
-            Value<T> &add_child(std::shared_ptr<Value<T>> child, W weight = W())
-            {
-                m_children.insert(std::make_pair(child, weight));
-                return *this;
-            }
-
-            Value<T> &remove_child(size_t index)
-            {
-                m_children.erase(m_children.begin() + index);
-                return *this;
-            }
-
-            Value<T> &remove_child(const Value<T> *child)
-            {
-                m_children.erase(std::remove_if(m_children.begin(), m_children.end(), [child](const auto &pair)
-                                                { return pair.first.get() == child; }),
-                                 m_children.end());
-                return *this;
-            }
-
-            Value<T> &remove_child(std::function<bool(const Value<T> *)> predicate)
-            {
-                m_children.erase(std::remove_if(m_children.begin(), m_children.end(), [predicate](const auto &pair)
-                                                { return predicate(pair.first.get()); }),
-                                 m_children.end());
-                return *this;
-            }
-
             bool operator==(const Value &other) const { return hash() == other.hash(); }
             bool operator>(const Value &other) const { return hash() > other.hash(); }
-
-            /* Graph Algorithims */
-            bool is_cyclic() const
-            {
-                std::set<const Value<T> *> visited;
-                std::stack<const Value<T> *> stack;
-                stack.push(this);
-
-                while (!stack.empty())
-                {
-                    const Value<T> *current = stack.top();
-                    stack.pop();
-
-                    if (visited.contains(current))
-                        return true;
-
-                    visited.insert(current);
-
-                    for (const auto &child : current->m_children)
-                    {
-                        stack.push(child.first.get());
-                    }
-                }
-
-                return false;
-            }
-
-            inline bool is_acyclic() const { return !is_cyclic(); }
-
-            bool contains(std::function<bool(const Value<T> *)> predicate) const
-            {
-                std::set<const Value<T> *> visited;
-                std::stack<const Value<T> *> stack;
-                stack.push(this);
-
-                while (!stack.empty())
-                {
-                    const Value<T> *current = stack.top();
-                    stack.pop();
-
-                    if (visited.contains(current))
-                        continue;
-
-                    visited.insert(current);
-
-                    if (predicate(current))
-                        return true;
-
-                    for (const auto &child : current->m_children)
-                    {
-                        stack.push(child.first.get());
-                    }
-                }
-
-                return false;
-            }
-
-            std::vector<Value<T> *> find_shortest_path(std::function<bool(Value<T> *)> predicate)
-            {
-                assert(predicate != nullptr);
-
-                std::vector<Value<T> *> path;
-                std::set<Value<T> *> visited;
-                std::stack<Value<T> *> stack;
-                std::unordered_map<Value<T> *, Value<T> *> parent;
-
-                stack.push(this);
-                parent[this] = nullptr;
-
-                while (!stack.empty())
-                {
-                    Value<T> *current = stack.top();
-                    stack.pop();
-
-                    if (visited.contains(current))
-                        continue;
-
-                    visited.insert(current);
-
-                    if (predicate(current))
-                    {
-                        Value<T> *current_node = current;
-                        while (current_node != nullptr)
-                        {
-                            path.push_back(current_node);
-                            current_node = parent[current_node];
-                        }
-
-                        std::reverse(path.begin(), path.end());
-                        return path;
-                    }
-
-                    for (auto &child : current->m_children)
-                    {
-                        stack.push(child.first.get());
-                        parent[child.first.get()] = current;
-                    }
-                }
-
-                return path;
-            }
-
-            size_t dfs_preorder(std::function<void(Value<T> *)> callback)
-            {
-                size_t count = 0;
-                std::set<Value<T> *> visited;
-                std::stack<Value<T> *> stack;
-                stack.push(this);
-
-                while (!stack.empty())
-                {
-                    Value<T> *current = stack.top();
-                    stack.pop();
-
-                    if (visited.contains(current))
-                        continue;
-
-                    visited.insert(current);
-
-                    callback(current);
-                    count++;
-
-                    for (const auto &child : current->m_children)
-                    {
-                        stack.push(child.first.get());
-                    }
-                }
-
-                return count;
-            }
-
-            size_t dfs_preorder(std::function<void(const Value<T> *)> callback) const
-            {
-                return const_cast<Value<T> *>(this)->dfs_preorder([&callback](Value<T> *node)
-                                                                  { callback(node); });
-            }
-
-            size_t dfs_postorder(std::function<void(Value<T> *)> callback)
-            {
-                size_t count = 0;
-                std::set<Value<T> *> visited;
-                std::stack<Value<T> *> stack;
-                stack.push(this);
-
-                while (!stack.empty())
-                {
-                    Value<T> *current = stack.top();
-                    stack.pop();
-
-                    if (visited.contains(current))
-                        continue;
-
-                    visited.insert(current);
-
-                    for (const auto &child : current->m_children)
-                    {
-                        stack.push(child.first.get());
-                    }
-
-                    callback(current);
-                    count++;
-                }
-
-                return count;
-            }
-
-            size_t dfs_postorder(std::function<void(const Value<T> *)> callback) const
-            {
-                return const_cast<Value<T> *>(this)->dfs_postorder([&callback](Value<T> *node)
-                                                                   { callback(node); });
-            }
-
-            size_t bfs_preorder(std::function<void(Value<T> *)> callback)
-            {
-                size_t count = 0;
-                std::set<Value<T> *> visited;
-                std::queue<Value<T> *> queue;
-                queue.push(this);
-
-                while (!queue.empty())
-                {
-                    Value<T> *current = queue.front();
-                    queue.pop();
-
-                    if (visited.contains(current))
-                        continue;
-
-                    visited.insert(current);
-
-                    callback(current);
-                    count++;
-
-                    for (const auto &child : current->m_children)
-                    {
-                        queue.push(child.first.get());
-                    }
-                }
-
-                return count;
-            }
-
-            size_t bfs_preorder(std::function<void(const Value<T> *)> callback) const
-            {
-                return const_cast<Value<T> *>(this)->bfs_preorder([&callback](Value<T> *node)
-                                                                  { callback(node); });
-            }
-
-            size_t bfs_postorder(std::function<void(Value<T> *)> callback)
-            {
-                size_t count = 0;
-                std::set<Value<T> *> visited;
-                std::queue<Value<T> *> queue;
-                queue.push(this);
-
-                while (!queue.empty())
-                {
-                    Value<T> *current = queue.front();
-                    queue.pop();
-
-                    if (visited.contains(current))
-                        continue;
-
-                    visited.insert(current);
-
-                    for (const auto &child : current->m_children)
-                    {
-                        queue.push(child.first.get());
-                    }
-
-                    callback(current);
-                    count++;
-                }
-
-                return count;
-            }
-
-            size_t bfs_postorder(std::function<void(const Value<T> *)> callback) const
-            {
-                return const_cast<Value<T> *>(this)->bfs_postorder([&callback](Value<T> *node)
-                                                                   { callback(node); });
-            }
         };
 
         class Hasher
@@ -711,19 +368,16 @@ namespace libquixcc
             }
         };
 
-        template <auto T, auto U>
+        template <auto T, typename U>
         class IRModule
         {
         protected:
-            std::shared_ptr<Value<U>> m_root;
             std::string m_name;
+            U m_root = nullptr;
             const static auto m_ir_type = T;
 
             /* Module Serialization */
             virtual Result<bool> print_impl(std::ostream &os, bool debug) const = 0;
-
-            /* Module Deserialization */
-            virtual Result<bool> deserialize_impl(std::istream &is) = 0;
 
             /* IR Dialect Information */
             virtual std::string_view ir_dialect_name_impl() const = 0;
@@ -738,8 +392,6 @@ namespace libquixcc
             IRModule(const std::string_view &name)
             {
                 static_assert(std::is_enum_v<decltype(T)>, "IR Type must be an enumeration");
-                static_assert(std::is_enum_v<decltype(U)>, "IR Node Type must be an enumeration");
-                static_assert(!std::is_same_v<decltype(T), decltype(U)>, "IR Type and Node Type must be different enumerations");
 
                 m_name = name;
             }
@@ -772,17 +424,6 @@ namespace libquixcc
                 }
             }
 
-            /* Read IR from Input Stream */
-            template <DeserializeMode mode = DeserializeMode::Unspecified>
-            Result<bool> deserialize(std::istream &is)
-            {
-                switch (mode)
-                {
-                default:
-                    return deserialize_impl(is);
-                }
-            }
-
             /* Verify IR Module */
             inline bool verify() const { return verify_impl(); }
 
@@ -802,21 +443,15 @@ namespace libquixcc
             inline std::string_view dialect_description() const { return ir_dialect_description_impl(); }
 
             /* Get Entry Point for IR Graph */
-            virtual std::shared_ptr<Value<U>> &root() { return m_root; }
-            virtual const std::shared_ptr<Value<U>> &root() const { return m_root; }
+            virtual U root() { return m_root; }
+            virtual const U root() const { return m_root; }
 
-            IRModule<T, U> &assign(std::shared_ptr<Value<U>> root)
+            IRModule<T, U> &assign(U root)
             {
                 m_root = root;
                 return *this;
             }
         };
-
-        template <typename T, typename U>
-        std::shared_ptr<T> QIR_ROOT(const U &_module)
-        {
-            return std::reinterpret_pointer_cast<T>(_module->root());
-        }
 
     } // namespace ir
 } // namespace libquixcc

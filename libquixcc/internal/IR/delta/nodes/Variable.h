@@ -40,46 +40,49 @@
 
 namespace libquixcc::ir::delta
 {
-    class Local : public libquixcc::ir::Value<NodeType::Local>
+    class Local : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        Local(std::string name, const Value<Delta> *type) : name(name), type(type) {}
+
     public:
-        static const Local *create(std::string name, const libquixcc::ir::Value<> *type);
+        static const Local *create(std::string name, const Value<Delta> *type);
 
         std::string name;
-        const libquixcc::ir::Value<> *type;
+        const Value<Delta> *type;
     };
 
-    class Global : public libquixcc::ir::Value<NodeType::Global>
+    class Global : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        Global(std::string name, const Value<Delta> *type, const Value<Delta> *value, bool _volatile, bool _atomic) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic) {}
+
     public:
-        static const Global *create(std::string name, const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value, bool _volatile = false, bool _atomic = false);
+        static const Global *create(std::string name, const Value<Delta> *type, const Value<Delta> *value, bool _volatile = false, bool _atomic = false);
 
         std::string name;
-        const libquixcc::ir::Value<> *type;
-        const libquixcc::ir::Value<> *value;
+        const Value<Delta> *type;
+        const Value<Delta> *value;
         bool _volatile;
         bool _atomic;
     };
 
-    class Number : public libquixcc::ir::Value<NodeType::Number>
+    class Number : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Number(std::string value) : value(value) {}
 
     public:
         static const Number *create(std::string value);
@@ -87,13 +90,14 @@ namespace libquixcc::ir::delta
         std::string value;
     };
 
-    class String : public libquixcc::ir::Value<NodeType::String>
+    class String : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        String(std::string value) : value(value) {}
 
     public:
         static const String *create(std::string value);

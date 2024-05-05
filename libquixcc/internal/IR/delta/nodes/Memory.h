@@ -40,50 +40,52 @@
 
 namespace libquixcc::ir::delta
 {
-    class Assign : public libquixcc::ir::Value<NodeType::Assign>
+    class Assign : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        Assign(const Value<Delta> *var, const Value<Delta> *value, uint64_t rank) : rank(rank), var(var), value(value) {}
     public:
-        static const Assign *create(const libquixcc::ir::Value<> *var, const libquixcc::ir::Value<> *value, bool _volatile = false, uint64_t rank = 0);
+        static const Assign *create(const Value<Delta> *var, const Value<Delta> *value, uint64_t rank = 0);
 
         uint64_t rank; /* How many levels of dereferencing are to be done */
-        const libquixcc::ir::Value<> *var;
-        const libquixcc::ir::Value<> *value;
+        const Value<Delta> *var;
+        const Value<Delta> *value;
     };
 
-    class Load : public libquixcc::ir::Value<NodeType::Load>
+    class Load : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        Load(const Value<Delta> *var, uint64_t rank) : rank(rank), var(var) {}
+
     public:
-        static const Load *create(const libquixcc::ir::Value<> *var, uint64_t rank = 0);
+        static const Load *create(const Value<Delta> *var, uint64_t rank = 0);
 
         uint64_t rank; /* How many levels of dereferencing are to be done */
-        const libquixcc::ir::Value<> *var;
+        const Value<Delta> *var;
     };
 
-    class Index : public libquixcc::ir::Value<NodeType::Index>
+    class Index : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const Index *create(const libquixcc::ir::Value<> *var, const libquixcc::ir::Value<> *index);
+        Index(const Value<Delta> *var, const Value<Delta> *index) : var(var), index(index) {}
 
-        const libquixcc::ir::Value<> *var;
-        const libquixcc::ir::Value<> *index;
+    public:
+        static const Index *create(const Value<Delta> *var, const Value<Delta> *index);
+
+        const Value<Delta> *var;
+        const Value<Delta> *index;
     };
 }
 

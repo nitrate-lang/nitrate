@@ -60,11 +60,6 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::IRDelta::print_impl(std::ostre
     return result;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::IRDelta::deserialize_impl(std::istream &is)
-{
-    throw std::runtime_error("Not implemented");
-}
-
 bool libquixcc::ir::delta::IRDelta::verify_impl() const
 {
     if (!m_root)

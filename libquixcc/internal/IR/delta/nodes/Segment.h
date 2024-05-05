@@ -47,21 +47,22 @@ namespace libquixcc::ir::delta
         External, /* Exported and visible to other libraries */
     };
 
-    class Segment : public libquixcc::ir::Value<NodeType::Segment>
+    class Segment : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        Segment(const std::string &name, const Value<Delta> *ret, Visibility visibility, bool pure, const std::vector<const Value<Delta> *> &params, const std::vector<const Value<Delta> *> &stmts) : name(name), params(params), stmts(stmts), ret(ret), visibility(visibility), pure(pure) {}
+
     public:
-        static const Segment *create(const std::string &name, const libquixcc::ir::Value<> *ret, Visibility visibility, bool pure, const std::vector<const libquixcc::ir::Value<> *> &params, const std::vector<const libquixcc::ir::Value<> *> &stmts);
+        static const Segment *create(const std::string &name, const Value<Delta> *ret, Visibility visibility, bool pure, const std::vector<const Value<Delta> *> &params, const std::vector<const Value<Delta> *> &stmts);
 
         std::string name;
-        std::vector<const libquixcc::ir::Value<> *> params;
-        std::vector<const libquixcc::ir::Value<> *> stmts;
-        const libquixcc::ir::Value<> *ret;
+        std::vector<const Value<Delta> *> params;
+        std::vector<const Value<Delta> *> stmts;
+        const Value<Delta> *ret;
         Visibility visibility;
         bool pure;
     };

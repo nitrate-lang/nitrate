@@ -134,11 +134,25 @@ namespace libquixcc
                 Xor,
             };
 
-            class IRDelta : public libquixcc::ir::IRModule<IR::Delta, NodeType::Root>
+            class RootNode : public libquixcc::ir::Value<Delta>
             {
             protected:
                 Result<bool> print_impl(std::ostream &os, bool debug) const override;
-                Result<bool> deserialize_impl(std::istream &is) override;
+                boost::uuids::uuid hash_impl() const override;
+                bool verify_impl() const override;
+
+                RootNode(std::vector<const Value<Delta> *> children) : children(children) {}
+
+            public:
+                static const RootNode *create(std::vector<const Value<Delta> *> children = {});
+
+                std::vector<const Value<Delta> *> children;
+            };
+
+            class IRDelta : public libquixcc::ir::IRModule<IR::Delta, const RootNode *>
+            {
+            protected:
+                Result<bool> print_impl(std::ostream &os, bool debug) const override;
                 std::string_view ir_dialect_name_impl() const override;
                 unsigned ir_dialect_version_impl() const override;
                 std::string_view ir_dialect_family_impl() const override;
@@ -146,7 +160,7 @@ namespace libquixcc
                 bool verify_impl() const override;
 
             public:
-                IRDelta(const std::string_view &name) : IRModule<IR::Delta, NodeType::Root>(name) {}
+                IRDelta(const std::string_view &name) : IRModule<IR::Delta, const RootNode *>(name) {}
                 ~IRDelta() = default;
 
                 bool from_gamma(const std::unique_ptr<libquixcc::ir::gamma::IRGamma> &beta);

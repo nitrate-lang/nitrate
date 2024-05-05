@@ -53,7 +53,21 @@ namespace libquixcc
                 Node,
             };
 
-            class IRBeta : public libquixcc::ir::IRModule<IR::Beta, NodeType::Group>
+            class RootNode : public libquixcc::ir::Value<Beta>
+            {
+            protected:
+                Result<bool> print_impl(std::ostream &os, bool debug) const override;
+                boost::uuids::uuid hash_impl() const override;
+                bool verify_impl() const override;
+
+            public:
+                static const RootNode *create()
+                {
+                    return nullptr;
+                }
+            };
+
+            class IRBeta : public libquixcc::ir::IRModule<IR::Beta, RootNode *>
             {
             protected:
                 Result<bool> print_impl(std::ostream &os, bool debug) const override
@@ -77,11 +91,6 @@ namespace libquixcc
                     return result;
                 }
 
-                Result<bool> deserialize_impl(std::istream &is) override
-                {
-                    throw std::runtime_error("Not implemented");
-                }
-
                 std::string_view ir_dialect_name_impl() const override;
                 unsigned ir_dialect_version_impl() const override;
                 std::string_view ir_dialect_family_impl() const override;
@@ -96,7 +105,7 @@ namespace libquixcc
                 };
 
             public:
-                IRBeta(const std::string_view &name) : IRModule<IR::Beta, NodeType::Group>(name) {}
+                IRBeta(const std::string_view &name) : IRModule<IR::Beta, RootNode *>(name) {}
                 ~IRBeta() = default;
 
                 bool from_alpha(const std::unique_ptr<libquixcc::ir::alpha::IRAlpha> &alpha);

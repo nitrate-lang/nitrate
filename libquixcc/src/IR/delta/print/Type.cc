@@ -61,11 +61,6 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::I128::print_impl(std::ostream 
     return os << "i128", true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::I256::print_impl(std::ostream &os, bool debug) const
-{
-    return os << "i256", true;
-}
-
 libquixcc::ir::Result<bool> libquixcc::ir::delta::U8::print_impl(std::ostream &os, bool debug) const
 {
     return os << "u8", true;
@@ -89,11 +84,6 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::U64::print_impl(std::ostream &
 libquixcc::ir::Result<bool> libquixcc::ir::delta::U128::print_impl(std::ostream &os, bool debug) const
 {
     return os << "u128", true;
-}
-
-libquixcc::ir::Result<bool> libquixcc::ir::delta::U256::print_impl(std::ostream &os, bool debug) const
-{
-    return os << "u256", true;
 }
 
 libquixcc::ir::Result<bool> libquixcc::ir::delta::F32::print_impl(std::ostream &os, bool debug) const

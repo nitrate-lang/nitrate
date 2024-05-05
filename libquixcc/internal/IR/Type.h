@@ -40,7 +40,7 @@ namespace libquixcc
 {
     namespace ir
     {
-        enum class IR
+        enum IR
         {
             Alpha,
             Beta,

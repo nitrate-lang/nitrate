@@ -30,9 +30,16 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/DeltaIR.h>
+#include <IR/delta/nodes/Segment.h>
+#include <IR/delta/nodes/Variable.h>
+#include <IR/delta/nodes/Type.h>
 
 bool libquixcc::ir::delta::IRDelta::from_gamma(const std::unique_ptr<libquixcc::ir::gamma::IRGamma> &ir)
 {
+    m_root = RootNode::create({Global::create("test", I8::create(), Number::create("69"))});
+
+    m_root->print<PrintMode::Debug>(std::cout);
+
     /// TODO: implement this function
     return true;
 }

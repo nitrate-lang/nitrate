@@ -30,3 +30,76 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/nodes/Control.h>
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::IfElse::print_impl(std::ostream &os, bool debug) const
+{
+    os << "if (";
+    if (!then->print(os, debug))
+        return false;
+
+    os << ") {";
+    if (!then->print(os, debug))
+        return false;
+
+    os << "} else {";
+    if (!els->print(os, debug))
+        return false;
+
+    os << "}";
+    return true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::While::print_impl(std::ostream &os, bool debug) const
+{
+    os << "while (";
+    if (!cond->print(os, debug))
+        return false;
+
+    os << ") {";
+    if (!body->print(os, debug))
+        return false;
+
+    os << "}";
+    return true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Jmp::print_impl(std::ostream &os, bool debug) const
+{
+    os << "jmp " << target;
+
+    return true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Label::print_impl(std::ostream &os, bool debug) const
+{
+    os << name << ":";
+    return true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Ret::print_impl(std::ostream &os, bool debug) const
+{
+    os << "ret";
+    if (value)
+    {
+        os << " ";
+        if (!value->print(os, debug))
+            return false;
+    }
+    return true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Call::print_impl(std::ostream &os, bool debug) const
+{
+    throw std::runtime_error("Call::print_impl not implemented");
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::PtrCall::print_impl(std::ostream &os, bool debug) const
+{
+    throw std::runtime_error("PtrCall::print_impl not implemented");
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Halt::print_impl(std::ostream &os, bool debug) const
+{
+    os << "halt";
+    return true;
+}

@@ -76,3 +76,14 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Segment::print_impl(std::ostre
 
     return true;
 }
+
+libquixcc::ir::Result<bool> libquixcc::ir::delta::RootNode::print_impl(std::ostream &os, bool debug) const
+{
+    for (auto &child : children)
+    {
+        if (!child->print(os, debug))
+            return false;
+    }
+
+    return true;
+}

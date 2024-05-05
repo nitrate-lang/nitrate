@@ -40,11 +40,10 @@
 
 namespace libquixcc::ir::delta
 {
-    class I1 : public libquixcc::ir::Value<NodeType::I1>
+    class I1 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -52,11 +51,10 @@ namespace libquixcc::ir::delta
         static const I1 *create();
     };
 
-    class I8 : public libquixcc::ir::Value<NodeType::I8>
+    class I8 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -64,11 +62,10 @@ namespace libquixcc::ir::delta
         static const I8 *create();
     };
 
-    class I16 : public libquixcc::ir::Value<NodeType::I16>
+    class I16 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -76,11 +73,10 @@ namespace libquixcc::ir::delta
         static const I16 *create();
     };
 
-    class I32 : public libquixcc::ir::Value<NodeType::I32>
+    class I32 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -88,11 +84,10 @@ namespace libquixcc::ir::delta
         static const I32 *create();
     };
 
-    class I64 : public libquixcc::ir::Value<NodeType::I64>
+    class I64 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -100,11 +95,10 @@ namespace libquixcc::ir::delta
         static const I64 *create();
     };
 
-    class I128 : public libquixcc::ir::Value<NodeType::I128>
+    class I128 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -112,23 +106,10 @@ namespace libquixcc::ir::delta
         static const I128 *create();
     };
 
-    class I256 : public libquixcc::ir::Value<NodeType::I256>
+    class U8 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-    public:
-        static const I256 *create();
-    };
-
-    class U8 : public libquixcc::ir::Value<NodeType::U8>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -136,11 +117,10 @@ namespace libquixcc::ir::delta
         static const U8 *create();
     };
 
-    class U16 : public libquixcc::ir::Value<NodeType::U16>
+    class U16 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -148,11 +128,10 @@ namespace libquixcc::ir::delta
         static const U16 *create();
     };
 
-    class U32 : public libquixcc::ir::Value<NodeType::U32>
+    class U32 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -160,11 +139,10 @@ namespace libquixcc::ir::delta
         static const U32 *create();
     };
 
-    class U64 : public libquixcc::ir::Value<NodeType::U64>
+    class U64 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -172,11 +150,10 @@ namespace libquixcc::ir::delta
         static const U64 *create();
     };
 
-    class U128 : public libquixcc::ir::Value<NodeType::U128>
+    class U128 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -184,23 +161,10 @@ namespace libquixcc::ir::delta
         static const U128 *create();
     };
 
-    class U256 : public libquixcc::ir::Value<NodeType::U256>
+    class F32 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-    public:
-        static const U256 *create();
-    };
-
-    class F32 : public libquixcc::ir::Value<NodeType::F32>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -208,11 +172,10 @@ namespace libquixcc::ir::delta
         static const F32 *create();
     };
 
-    class F64 : public libquixcc::ir::Value<NodeType::F64>
+    class F64 : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -220,11 +183,10 @@ namespace libquixcc::ir::delta
         static const F64 *create();
     };
 
-    class Void : public libquixcc::ir::Value<NodeType::Void>
+    class Void : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -232,63 +194,67 @@ namespace libquixcc::ir::delta
         static const Void *create();
     };
 
-    class Ptr : public libquixcc::ir::Value<NodeType::Ptr>
+    class Ptr : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const Ptr *create(libquixcc::ir::Value<> *type);
+        Ptr(const Value<Delta> *type) : type(type) {}
 
-        const libquixcc::ir::Value<> *type;
+    public:
+        static const Ptr *create(Value<Delta> *type);
+
+        const Value<Delta> *type;
     };
 
-    class Packet : public libquixcc::ir::Value<NodeType::Packet>
+    class Packet : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const Packet *create(std::vector<std::pair<std::string, const libquixcc::ir::Value<> *>> fields, std::string name);
+        Packet(std::vector<std::pair<std::string, const Value<Delta> *>> fields, std::string name) : fields(fields), name(name) {}
 
-        std::vector<std::pair<std::string, const libquixcc::ir::Value<> *>> fields;
+    public:
+        static const Packet *create(std::vector<std::pair<std::string, const Value<Delta> *>> fields, std::string name);
+
+        std::vector<std::pair<std::string, const Value<Delta> *>> fields;
         std::string name;
     };
 
-    class Array : public libquixcc::ir::Value<NodeType::Array>
+    class Array : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const Array *create(libquixcc::ir::Value<> *type, uint64_t size);
+        Array(Value<Delta> *type, uint64_t size) : type(type), size(size) {}
 
-        const libquixcc::ir::Value<> *type;
+    public:
+        static const Array *create(Value<Delta> *type, uint64_t size);
+
+        const Value<Delta> *type;
         uint64_t size;
     };
 
-    class FType : public libquixcc::ir::Value<NodeType::FType>
+    class FType : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const FType *create(std::vector<const libquixcc::ir::Value<> *> params, const libquixcc::ir::Value<> *ret);
+        FType(std::vector<const Value<Delta> *> params, const Value<Delta> *ret) : params(params), ret(ret) {}
 
-        std::vector<const libquixcc::ir::Value<> *> params;
-        const libquixcc::ir::Value<> *ret;
+    public:
+        static const FType *create(std::vector<const Value<Delta> *> params, const Value<Delta> *ret);
+
+        std::vector<const Value<Delta> *> params;
+        const Value<Delta> *ret;
     };
 }
 

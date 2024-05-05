@@ -37,47 +37,51 @@
 #endif
 
 #include <IR/delta/DeltaIR.h>
+#include <IR/delta/nodes/Segment.h>
 
 namespace libquixcc::ir::delta
 {
-    class IfElse : public libquixcc::ir::Value<NodeType::IfElse>
+    class IfElse : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        IfElse(const Value<Delta> *cond, const Value<Delta> *then, const Value<Delta> *els) : cond(cond), then(then), els(els) {}
 
     public:
-        static const IfElse *create(const libquixcc::ir::Value<> *cond, const libquixcc::ir::Value<> *then, const libquixcc::ir::Value<> *els);
+        static const IfElse *create(const Value<Delta> *cond, const Value<Delta> *then, const Value<Delta> *els);
 
-        const libquixcc::ir::Value<> *cond;
-        const libquixcc::ir::Value<> *then;
-        const libquixcc::ir::Value<> *els;
+        const Value<Delta> *cond;
+        const Value<Delta> *then;
+        const Value<Delta> *els;
     };
 
-    class While : public libquixcc::ir::Value<NodeType::While>
+    class While : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        While(const Value<Delta> *cond, const Value<Delta> *body) : cond(cond), body(body) {}
 
     public:
-        static const While *create(const libquixcc::ir::Value<> *cond, const libquixcc::ir::Value<> *body);
+        static const While *create(const Value<Delta> *cond, const Value<Delta> *body);
 
-        const libquixcc::ir::Value<> *cond;
-        const libquixcc::ir::Value<> *body;
+        const Value<Delta> *cond;
+        const Value<Delta> *body;
     };
 
-    class Jmp : public libquixcc::ir::Value<NodeType::Jmp>
+    class Jmp : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Jmp(std::string target) : target(target) {}
 
     public:
         static const Jmp *create(std::string target);
@@ -85,13 +89,14 @@ namespace libquixcc::ir::delta
         std::string target;
     };
 
-    class Label : public libquixcc::ir::Value<NodeType::Label>
+    class Label : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Label(std::string name) : name(name) {}
 
     public:
         static const Label *create(std::string name);
@@ -99,57 +104,61 @@ namespace libquixcc::ir::delta
         std::string name;
     };
 
-    class Ret : public libquixcc::ir::Value<NodeType::Ret>
+    class Ret : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Ret(const Value<Delta> *value) : value(value) {}
 
     public:
-        static const Ret *create(const libquixcc::ir::Value<> *value);
+        static const Ret *create(const Value<Delta> *value);
 
-        const libquixcc::ir::Value<> *value;
+        const Value<Delta> *value;
     };
 
-    class Call : public libquixcc::ir::Value<NodeType::Call>
+    class Call : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Call(const Segment *callee, std::vector<const Value<Delta> *> args) : callee(callee), args(args) {}
 
     public:
-        static const Call *create(const libquixcc::ir::Value<NodeType::Segment> *callee, std::vector<const libquixcc::ir::Value<> *> args);
+        static const Call *create(const Segment *callee, std::vector<const Value<Delta> *> args);
 
-        const libquixcc::ir::Value<NodeType::Segment> *callee;
-        std::vector<const libquixcc::ir::Value<> *> args;
+        const Segment *callee;
+        std::vector<const Value<Delta> *> args;
     };
 
-    class PtrCall : public libquixcc::ir::Value<NodeType::PtrCall>
+    class PtrCall : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        PtrCall(const Value<Delta> *callee, std::vector<const Value<Delta> *> args) : callee(callee), args(args) {}
 
     public:
-        static const PtrCall *create(const libquixcc::ir::Value<> *callee, std::vector<const libquixcc::ir::Value<> *> args);
+        static const PtrCall *create(const Value<Delta> *callee, std::vector<const Value<Delta> *> args);
 
-        const libquixcc::ir::Value<> *callee;
-        std::vector<const libquixcc::ir::Value<> *> args;
+        const Value<Delta> *callee;
+        std::vector<const Value<Delta> *> args;
     };
 
-    class Halt : public libquixcc::ir::Value<NodeType::Halt>
+    class Halt : public Value<Delta>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Halt() {}
 
     public:
         static const Halt *create();
