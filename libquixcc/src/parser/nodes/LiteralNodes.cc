@@ -41,7 +41,44 @@ std::unordered_map<std::string, std::shared_ptr<libquixcc::FloatLiteralNode>> li
 std::unordered_map<std::string, std::shared_ptr<libquixcc::IntegerNode>> libquixcc::IntegerNode::m_instances;
 std::shared_ptr<libquixcc::NullLiteralNode> libquixcc::NullLiteralNode::m_instance;
 
-uint8_t get_numbits(std::string s);
+uint8_t get_numbits(std::string s)
+{
+    if (s.starts_with("-"))
+        s = s.substr(1);
+
+    if (s.find('.') != std::string::npos)
+    {
+        float f0;
+        try
+        {
+            f0 = std::stof(s);
+        }
+        catch (const std::out_of_range &e)
+        {
+            return 64;
+        }
+        double f1 = std::stod(s);
+        double delta = 0.0000001;
+
+        return std::abs(f0 - f1) < delta ? 64 : 32;
+    }
+
+    uint64_t val = std::stoull(s);
+    uint8_t bits = 0;
+    while (val)
+    {
+        val >>= 1;
+        bits++;
+    }
+
+    if (bits > 32)
+        return 64;
+    else if (bits > 16)
+        return 32;
+    else if (bits > 8)
+        return 16;
+    return 8;
+}
 
 libquixcc::IntegerNode::IntegerNode(const std::string &val)
 {

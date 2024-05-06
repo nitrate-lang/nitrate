@@ -31,57 +31,57 @@
 
 #include <IR/delta/nodes/Cast.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::SCast::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::SCast::print_impl(std::ostream &os, PState &state) const
 {
     os << "scast ";
-    if (!type->print(os, debug))
+    if (!type->print(os, state))
         return false;
     os << ", ";
-    if (!value->print(os, debug))
+    if (!value->print(os, state))
         return false;
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::UCast::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::UCast::print_impl(std::ostream &os, PState &state) const
 {
     os << "ucast ";
-    if (!type->print(os, debug))
+    if (!type->print(os, state))
         return false;
     os << ", ";
-    if (!value->print(os, debug))
+    if (!value->print(os, state))
         return false;
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::PtrICast::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::PtrICast::print_impl(std::ostream &os, PState &state) const
 {
     os << "ptricast ";
-    if (!type->print(os, debug))
+    if (!type->print(os, state))
         return false;
     os << ", ";
-    if (!value->print(os, debug))
+    if (!value->print(os, state))
         return false;
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::IPtrCast::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::IPtrCast::print_impl(std::ostream &os, PState &state) const
 {
     os << "iptrcast ";
-    if (!type->print(os, debug))
+    if (!type->print(os, state))
         return false;
     os << ", ";
-    if (!value->print(os, debug))
+    if (!value->print(os, state))
         return false;
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Bitcast::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Bitcast::print_impl(std::ostream &os, PState &state) const
 {
     os << "bitcast ";
-    if (!type->print(os, debug))
+    if (!type->print(os, state))
         return false;
     os << ", ";
-    if (!value->print(os, debug))
+    if (!value->print(os, state))
         return false;
     return true;
 }

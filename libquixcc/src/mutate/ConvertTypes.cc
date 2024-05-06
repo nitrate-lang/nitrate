@@ -101,15 +101,15 @@ void libquixcc::mutate::ConvertTypes(quixcc_job_t *job, std::shared_ptr<libquixc
             else if (ptr->is<CallExprNode>())
             {
                 /// TODO: Implement this
-                auto call_expr = std::static_pointer_cast<CallExprNode>(ptr);
+                // auto call_expr = std::static_pointer_cast<CallExprNode>(ptr);
 
-                for (auto &arg : call_expr->m_positional_args)
-                {
-                }
+                // for (auto &arg : call_expr->m_positional_args)
+                // {
+                // }
 
-                for (auto &arg : call_expr->m_named_args)
-                {
-                }
+                // for (auto &arg : call_expr->m_named_args)
+                // {
+                // }
             }
         },
         {}));

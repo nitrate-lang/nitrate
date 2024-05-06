@@ -40,79 +40,84 @@
 
 namespace libquixcc::ir::delta
 {
-    class SCast : public libquixcc::ir::Value<NodeType::SCast>
+    class SCast : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const SCast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
+        SCast(const Value<Delta> *type, const Value<Delta> *value) : type(type), value(value) {}
 
-        const libquixcc::ir::Value<> *type;
-        const libquixcc::ir::Value<> *value;
+    public:
+        static const SCast *create(const Value<Delta> *type, const Value<Delta> *value);
+
+        const Value<Delta> *type;
+        const Value<Delta> *value;
     };
 
-    class UCast : public libquixcc::ir::Value<NodeType::UCast>
+    class UCast : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const UCast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
+        UCast(const Value<Delta> *type, const Value<Delta> *value) : type(type), value(value) {}
 
-        const libquixcc::ir::Value<> *type;
-        const libquixcc::ir::Value<> *value;
+    public:
+        static const UCast *create(const Value<Delta> *type, const Value<Delta> *value);
+
+        const Value<Delta> *type;
+        const Value<Delta> *value;
     };
 
-    class PtrICast : public libquixcc::ir::Value<NodeType::PtrICast>
+    class PtrICast : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const PtrICast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
+        PtrICast(const Value<Delta> *type, const Value<Delta> *value) : type(type), value(value) {}
 
-        const libquixcc::ir::Value<> *type;
-        const libquixcc::ir::Value<> *value;
+    public:
+        static const PtrICast *create(const Value<Delta> *type, const Value<Delta> *value);
+
+        const Value<Delta> *type;
+        const Value<Delta> *value;
     };
 
-    class IPtrCast : public libquixcc::ir::Value<NodeType::IPtrCast>
+    class IPtrCast : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const IPtrCast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
+        IPtrCast(const Value<Delta> *type, const Value<Delta> *value) : type(type), value(value) {}
 
-        const libquixcc::ir::Value<> *type;
-        const libquixcc::ir::Value<> *value;
+    public:
+        static const IPtrCast *create(const Value<Delta> *type, const Value<Delta> *value);
+
+        const Value<Delta> *type;
+        const Value<Delta> *value;
     };
 
-    class Bitcast : public libquixcc::ir::Value<NodeType::Bitcast>
+    class Bitcast : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const Bitcast *create(const libquixcc::ir::Value<> *type, const libquixcc::ir::Value<> *value);
+        Bitcast(const Value<Delta> *type, const Value<Delta> *value) : type(type), value(value) {}
 
-        const libquixcc::ir::Value<> *type;
-        const libquixcc::ir::Value<> *value;
+    public:
+        static const Bitcast *create(const Value<Delta> *type, const Value<Delta> *value);
+
+        const Value<Delta> *type;
+        const Value<Delta> *value;
     };
 }
 

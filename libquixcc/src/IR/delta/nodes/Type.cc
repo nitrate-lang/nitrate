@@ -91,16 +91,6 @@ bool libquixcc::ir::delta::I128::verify_impl() const
     return true;
 }
 
-boost::uuids::uuid libquixcc::ir::delta::I256::hash_impl() const
-{
-    return Hasher().gettag().hash();
-}
-
-bool libquixcc::ir::delta::I256::verify_impl() const
-{
-    return true;
-}
-
 boost::uuids::uuid libquixcc::ir::delta::U8::hash_impl() const
 {
     return Hasher().gettag().hash();
@@ -147,16 +137,6 @@ boost::uuids::uuid libquixcc::ir::delta::U128::hash_impl() const
 }
 
 bool libquixcc::ir::delta::U128::verify_impl() const
-{
-    return true;
-}
-
-boost::uuids::uuid libquixcc::ir::delta::U256::hash_impl() const
-{
-    return Hasher().gettag().hash();
-}
-
-bool libquixcc::ir::delta::U256::verify_impl() const
 {
     return true;
 }
@@ -225,4 +205,20 @@ boost::uuids::uuid libquixcc::ir::delta::Array::hash_impl() const
 bool libquixcc::ir::delta::Array::verify_impl() const
 {
     return type->verify() && size > 0;
+}
+
+boost::uuids::uuid libquixcc::ir::delta::FType::hash_impl() const
+{
+    auto h = Hasher().gettag().add(ret);
+    for (auto &p : params)
+        h.add(p);
+    return h.hash();
+}
+
+bool libquixcc::ir::delta::FType::verify_impl() const
+{
+    for (auto &p : params)
+        if (!p->verify())
+            return false;
+    return ret->verify();
 }

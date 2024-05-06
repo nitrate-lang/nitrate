@@ -30,3 +30,33 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/delta/nodes/Memory.h>
+
+boost::uuids::uuid libquixcc::ir::delta::Assign::hash_impl() const
+{
+    return Hasher().gettag().add(rank).add(var).add(value).hash();
+}
+
+bool libquixcc::ir::delta::Assign::verify_impl() const
+{
+    return var->verify() && value->verify();
+}
+
+boost::uuids::uuid libquixcc::ir::delta::Load::hash_impl() const
+{
+    return Hasher().gettag().add(rank).add(var).hash();
+}
+
+bool libquixcc::ir::delta::Load::verify_impl() const
+{
+    return var->verify();
+}
+
+boost::uuids::uuid libquixcc::ir::delta::Index::hash_impl() const
+{
+    return Hasher().gettag().add(var).add(index).hash();
+}
+
+bool libquixcc::ir::delta::Index::verify_impl() const
+{
+    return var->verify() && index->verify();
+}

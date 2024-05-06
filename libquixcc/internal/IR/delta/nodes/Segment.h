@@ -37,32 +37,33 @@
 #endif
 
 #include <IR/delta/DeltaIR.h>
+#include <IR/delta/nodes/Type.h>
 
 namespace libquixcc::ir::delta
 {
-    enum class Visibility
-    {
-        Private,  /* Only visible within the current compilation unit */
-        Internal, /* Only visible to source files within the same library */
-        External, /* Exported and visible to other libraries */
-    };
-
-    class Segment : public libquixcc::ir::Value<NodeType::Segment>
+    class Segment : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
-        Result<bool> deserialize_impl(std::istream &is) override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const Segment *create(const std::string &name, const libquixcc::ir::Value<> *ret, Visibility visibility, bool pure, const std::vector<const libquixcc::ir::Value<> *> &params, const std::vector<const libquixcc::ir::Value<> *> &stmts);
+        Segment(const Value<Delta> *ret, bool pure, const std::vector<std::pair<std::string, const Value<Delta> *>> &params, const std::vector<const Value<Delta> *> &stmts) : params(params), stmts(stmts), ret(ret), pure(pure) {}
 
-        std::string name;
-        std::vector<const libquixcc::ir::Value<> *> params;
-        std::vector<const libquixcc::ir::Value<> *> stmts;
-        const libquixcc::ir::Value<> *ret;
-        Visibility visibility;
+    public:
+        static const Segment *create(const Value<Delta> *ret, bool pure, const std::vector<std::pair<std::string, const Value<Delta> *>> &params, const std::vector<const Value<Delta> *> &stmts);
+
+        const FType *getType() const
+        {
+            std::vector<const Value<Delta> *> param_types;
+            for (auto &param : params)
+                param_types.push_back(param.second);
+            return FType::create(param_types, ret);
+        }
+
+        std::vector<std::pair<std::string, const Value<Delta> *>> params;
+        std::vector<const Value<Delta> *> stmts;
+        const Value<Delta> *ret;
         bool pure;
     };
 }

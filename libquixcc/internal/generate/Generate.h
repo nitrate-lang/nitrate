@@ -38,15 +38,14 @@
 
 #include <stdio.h>
 #include <quixcc.h>
-#include <parse/Parser.h>
-#include <parse/NodeType.h>
+#include <IR/delta/DeltaIR.h>
 
 namespace libquixcc
 {
-    bool write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast, FILE *out, bool generate_bitcode);
-    bool write_c11(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast, FILE *out);
-    bool write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast, FILE *out, llvm::CodeGenFileType mode);
-    bool generate(quixcc_job_t &ctx, std::unique_ptr<libquixcc::StmtNode> ast);
+    bool write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out, bool generate_bitcode);
+    bool write_c11(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out);
+    bool write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out, llvm::CodeGenFileType mode);
+    bool generate(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir);
 };
 
 #endif // __QUIXCC_LLVM_GEN_H__

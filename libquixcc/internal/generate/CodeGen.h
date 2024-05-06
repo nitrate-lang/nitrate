@@ -36,10 +36,21 @@
 #error "This header requires C++"
 #endif
 
-#include <parse/NodeType.h>
 #include <llvm/IR/Value.h>
 #include <llvm/LLVMWrapper.h>
+#include <IR/delta/DeltaIR.h>
 #include <optional>
+#include <memory>
+#include <string>
+#include <iostream>
+
+#include <IR/delta/nodes/Type.h>
+#include <IR/delta/nodes/Variable.h>
+#include <IR/delta/nodes/Memory.h>
+#include <IR/delta/nodes/Cast.h>
+#include <IR/delta/nodes/Control.h>
+#include <IR/delta/nodes/Segment.h>
+#include <IR/delta/nodes/Math.h>
 
 namespace libquixcc
 {
@@ -53,173 +64,159 @@ namespace libquixcc
         virtual const char *what() const noexcept override { return m_msg.c_str(); }
     };
 
-    class CodegenVisitor
+    class LLVM14Codegen
     {
         struct CodegenState
         {
-            bool implicit_load = true;
-            bool inside_function = false;
+            std::string name;
         };
 
         LLVMContext *m_ctx;
         CodegenState m_state;
 
-        std::optional<std::pair<llvm::Value *, llvm::Type *>> create_struct_gep(llvm::Value *struct_ptr, const std::string &field_name);
+        llvm::Type *gen(const ir::delta::I1 *node);
+        llvm::Type *gen(const ir::delta::I8 *node);
+        llvm::Type *gen(const ir::delta::I16 *node);
+        llvm::Type *gen(const ir::delta::I32 *node);
+        llvm::Type *gen(const ir::delta::I64 *node);
+        llvm::Type *gen(const ir::delta::I128 *node);
+        llvm::Type *gen(const ir::delta::U8 *node);
+        llvm::Type *gen(const ir::delta::U16 *node);
+        llvm::Type *gen(const ir::delta::U32 *node);
+        llvm::Type *gen(const ir::delta::U64 *node);
+        llvm::Type *gen(const ir::delta::U128 *node);
+        llvm::Type *gen(const ir::delta::F32 *node);
+        llvm::Type *gen(const ir::delta::F64 *node);
+        llvm::Type *gen(const ir::delta::Void *node);
+        llvm::PointerType *gen(const ir::delta::Ptr *node);
+        llvm::StructType *gen(const ir::delta::Packet *node);
+        llvm::ArrayType *gen(const ir::delta::Array *node);
+        llvm::FunctionType *gen(const ir::delta::FType *node);
+        llvm::Value *gen(const ir::delta::Local *node);
+        llvm::Value *gen(const ir::delta::Global *node);
+        llvm::Constant *gen(const ir::delta::Number *node);
+        llvm::Constant *gen(const ir::delta::String *node);
+        llvm::Value *gen(const ir::delta::Assign *node);
+        llvm::Value *gen(const ir::delta::Load *node);
+        llvm::Value *gen(const ir::delta::Index *node);
+        llvm::Value *gen(const ir::delta::SCast *node);
+        llvm::Value *gen(const ir::delta::UCast *node);
+        llvm::Value *gen(const ir::delta::PtrICast *node);
+        llvm::Value *gen(const ir::delta::IPtrCast *node);
+        llvm::Value *gen(const ir::delta::Bitcast *node);
+        llvm::Value *gen(const ir::delta::IfElse *node);
+        llvm::Value *gen(const ir::delta::While *node);
+        llvm::Value *gen(const ir::delta::Jmp *node);
+        llvm::Value *gen(const ir::delta::Label *node);
+        llvm::Value *gen(const ir::delta::Ret *node);
+        llvm::Value *gen(const ir::delta::Call *node);
+        llvm::Value *gen(const ir::delta::PtrCall *node);
+        llvm::Value *gen(const ir::delta::Halt *node);
+        llvm::Function *gen(const ir::delta::Segment *node);
+        llvm::Value *gen(const ir::delta::Add *node);
+        llvm::Value *gen(const ir::delta::Sub *node);
+        llvm::Value *gen(const ir::delta::Mul *node);
+        llvm::Value *gen(const ir::delta::Div *node);
+        llvm::Value *gen(const ir::delta::Mod *node);
+        llvm::Value *gen(const ir::delta::BitAnd *node);
+        llvm::Value *gen(const ir::delta::BitOr *node);
+        llvm::Value *gen(const ir::delta::BitXor *node);
+        llvm::Value *gen(const ir::delta::BitNot *node);
+        llvm::Value *gen(const ir::delta::Shl *node);
+        llvm::Value *gen(const ir::delta::Shr *node);
+        llvm::Value *gen(const ir::delta::Rotl *node);
+        llvm::Value *gen(const ir::delta::Rotr *node);
+        llvm::Value *gen(const ir::delta::Eq *node);
+        llvm::Value *gen(const ir::delta::Ne *node);
+        llvm::Value *gen(const ir::delta::Lt *node);
+        llvm::Value *gen(const ir::delta::Gt *node);
+        llvm::Value *gen(const ir::delta::Le *node);
+        llvm::Value *gen(const ir::delta::Ge *node);
+        llvm::Value *gen(const ir::delta::And *node);
+        llvm::Value *gen(const ir::delta::Or *node);
+        llvm::Value *gen(const ir::delta::Not *node);
+        llvm::Value *gen(const ir::delta::Xor *node);
+        llvm::Value *gen(const ir::delta::RootNode *node);
 
-        enum class AORLocality
-        {
-            Global,
-            Local,
-            Parameter,
-            Function
-        };
-        std::optional<std::tuple<llvm::Value *, llvm::Type *, AORLocality>> address_of_identifier(const std::string &name);
+        llvm::Type *gent(const ir::Value<libquixcc::ir::Delta> *node);
+        llvm::Value *gen(const ir::Value<libquixcc::ir::Delta> *node);
 
-        llvm::Value *visit(const BlockNode *node);
-        llvm::Value *visit(const StmtGroupNode *node);
-        llvm::Value *visit(const ExprStmtNode *node);
-        llvm::Value *visit(const BitCastExprNode *node);
-        llvm::Value *visit(const SignedUpcastExprNode *node);
-        llvm::Value *visit(const UnsignedUpcastExprNode *node);
-        llvm::Value *visit(const DowncastExprNode *node);
-        llvm::Value *visit(const PtrToIntCastExprNode *node);
-        llvm::Value *visit(const IntToPtrCastExprNode *node);
-        llvm::Value *visit(const UnaryExprNode *node);
-        llvm::Value *visit(const BinaryExprNode *node);
-        llvm::Value *visit(const CallExprNode *node);
-        llvm::Value *visit(const ListExprNode *node);
-        llvm::Value *visit(const MemberAccessNode *node);
-        llvm::Constant *visit(const ConstUnaryExprNode *node);
-        llvm::Constant *visit(const ConstBinaryExprNode *node);
-        llvm::Value *visit(const IdentifierNode *node);
-        llvm::Type *visit(const MutTypeNode *node);
-        llvm::Type *visit(const U8TypeNode *node);
-        llvm::Type *visit(const U16TypeNode *node);
-        llvm::Type *visit(const U32TypeNode *node);
-        llvm::Type *visit(const U64TypeNode *node);
-        llvm::Type *visit(const I8TypeNode *node);
-        llvm::Type *visit(const I16TypeNode *node);
-        llvm::Type *visit(const I32TypeNode *node);
-        llvm::Type *visit(const I64TypeNode *node);
-        llvm::Type *visit(const F32TypeNode *node);
-        llvm::Type *visit(const F64TypeNode *node);
-        llvm::Type *visit(const BoolTypeNode *node);
-        llvm::Type *visit(const VoidTypeNode *node);
-        llvm::Type *visit(const PointerTypeNode *node);
-        llvm::Type *visit(const StringTypeNode *node);
-        llvm::Type *visit(const EnumTypeNode *node);
-        llvm::Type *visit(const StructTypeNode *node);
-        llvm::Type *visit(const RegionTypeNode *node);
-        llvm::Type *visit(const UnionTypeNode *node);
-        llvm::Type *visit(const ArrayTypeNode *node);
-        llvm::Type *visit(const FunctionTypeNode *node);
-        llvm::Constant *visit(const IntegerNode *node);
-        llvm::Constant *visit(const FloatLiteralNode *node);
-        llvm::Constant *visit(const StringNode *node);
-        llvm::Constant *visit(const CharNode *node);
-        llvm::Constant *visit(const BoolLiteralNode *node);
-        llvm::Constant *visit(const NullLiteralNode *node);
-        llvm::Value *visit(const LetDeclNode *node);
-        llvm::Function *visit(const FunctionDeclNode *node);
-        llvm::Value *visit(const StructDefNode *node);
-        llvm::Value *visit(const RegionDefNode *node);
-        llvm::Value *visit(const UnionDefNode *node);
-        llvm::Function *visit(const FunctionDefNode *node);
-        llvm::Value *visit(const FunctionParamNode *node);
-        llvm::Value *visit(const ExportNode *node);
-        llvm::Value *visit(const InlineAsmNode *node);
-        llvm::Value *visit(const ReturnStmtNode *node);
-        llvm::Value *visit(const IfStmtNode *node);
-        llvm::Value *visit(const WhileStmtNode *node);
+        LLVM14Codegen(LLVMContext &ctx) : m_ctx(&ctx) {}
 
     public:
-        CodegenVisitor(LLVMContext &llvm) : m_ctx(&llvm) {}
-
-        llvm::Value *visit(const ExprNode *node);
-        llvm::Value *visit(const StmtNode *node);
-        llvm::Type *visit(const TypeNode *node);
+        static bool codegen(const std::unique_ptr<ir::delta::IRDelta> &ir, LLVMContext &ctx);
     };
 
-    class C11CodegenVisitor
+    class C11Codegen
     {
-        struct CodegenState
-        {
-            std::map<std::string, std::string> variables;
-            std::map<std::string, bool> is_pointers;
-            std::string subsystem;
-            ExportLangType export_lang = ExportLangType::Default;
-            size_t indent = 0;
-            bool function_def = false;
-            bool pub = false;
-            bool mut = false;
-        };
+        // std::string gen(const ir::delta::I1 *node);
+        // std::string gen(const ir::delta::I8 *node);
+        // std::string gen(const ir::delta::I16 *node);
+        // std::string gen(const ir::delta::I32 *node);
+        // std::string gen(const ir::delta::I64 *node);
+        // std::string gen(const ir::delta::I128 *node);
+        // std::string gen(const ir::delta::U8 *node);
+        // std::string gen(const ir::delta::U16 *node);
+        // std::string gen(const ir::delta::U32 *node);
+        // std::string gen(const ir::delta::U64 *node);
+        // std::string gen(const ir::delta::U128 *node);
+        // std::string gen(const ir::delta::F32 *node);
+        // std::string gen(const ir::delta::F64 *node);
+        // std::string gen(const ir::delta::Void *node);
+        // std::string gen(const ir::delta::Ptr *node);
+        // std::string gen(const ir::delta::Packet *node);
+        // std::string gen(const ir::delta::Array *node);
+        // std::string gen(const ir::delta::FType *node);
+        // std::string gen(const ir::delta::Local *node);
+        // std::string gen(const ir::delta::Global *node);
+        // std::string gen(const ir::delta::Number *node);
+        // std::string gen(const ir::delta::String *node);
+        // std::string gen(const ir::delta::Assign *node);
+        // std::string gen(const ir::delta::Load *node);
+        // std::string gen(const ir::delta::Index *node);
+        // std::string gen(const ir::delta::SCast *node);
+        // std::string gen(const ir::delta::UCast *node);
+        // std::string gen(const ir::delta::PtrICast *node);
+        // std::string gen(const ir::delta::IPtrCast *node);
+        // std::string gen(const ir::delta::Bitcast *node);
+        // std::string gen(const ir::delta::IfElse *node);
+        // std::string gen(const ir::delta::While *node);
+        // std::string gen(const ir::delta::Jmp *node);
+        // std::string gen(const ir::delta::Label *node);
+        // std::string gen(const ir::delta::Ret *node);
+        // std::string gen(const ir::delta::Call *node);
+        // std::string gen(const ir::delta::PtrCall *node);
+        // std::string gen(const ir::delta::Halt *node);
+        // std::string gen(const ir::delta::Segment *node);
+        // std::string gen(const ir::delta::Add *node);
+        // std::string gen(const ir::delta::Sub *node);
+        // std::string gen(const ir::delta::Mul *node);
+        // std::string gen(const ir::delta::Div *node);
+        // std::string gen(const ir::delta::Mod *node);
+        // std::string gen(const ir::delta::BitAnd *node);
+        // std::string gen(const ir::delta::BitOr *node);
+        // std::string gen(const ir::delta::BitXor *node);
+        // std::string gen(const ir::delta::BitNot *node);
+        // std::string gen(const ir::delta::Shl *node);
+        // std::string gen(const ir::delta::Shr *node);
+        // std::string gen(const ir::delta::Rotl *node);
+        // std::string gen(const ir::delta::Rotr *node);
+        // std::string gen(const ir::delta::Eq *node);
+        // std::string gen(const ir::delta::Ne *node);
+        // std::string gen(const ir::delta::Lt *node);
+        // std::string gen(const ir::delta::Gt *node);
+        // std::string gen(const ir::delta::Le *node);
+        // std::string gen(const ir::delta::Ge *node);
+        // std::string gen(const ir::delta::And *node);
+        // std::string gen(const ir::delta::Or *node);
+        // std::string gen(const ir::delta::Not *node);
+        // std::string gen(const ir::delta::Xor *node);
 
-        CodegenState m_state;
-
-        std::string visit(const BlockNode *node);
-        std::string visit(const StmtGroupNode *node);
-        std::string visit(const ExprStmtNode *node);
-        std::string visit(const BitCastExprNode *node);
-        std::string visit(const SignedUpcastExprNode *node);
-        std::string visit(const UnsignedUpcastExprNode *node);
-        std::string visit(const DowncastExprNode *node);
-        std::string visit(const PtrToIntCastExprNode *node);
-        std::string visit(const IntToPtrCastExprNode *node);
-        std::string visit(const UnaryExprNode *node);
-        std::string visit(const BinaryExprNode *node);
-        std::string visit(const CallExprNode *node);
-        std::string visit(const ListExprNode *node);
-        std::string visit(const MemberAccessNode *node);
-        std::string visit(const ConstUnaryExprNode *node);
-        std::string visit(const ConstBinaryExprNode *node);
-        std::string visit(const IdentifierNode *node);
-        std::string visit(const MutTypeNode *node);
-        std::string visit(const U8TypeNode *node);
-        std::string visit(const U16TypeNode *node);
-        std::string visit(const U32TypeNode *node);
-        std::string visit(const U64TypeNode *node);
-        std::string visit(const I8TypeNode *node);
-        std::string visit(const I16TypeNode *node);
-        std::string visit(const I32TypeNode *node);
-        std::string visit(const I64TypeNode *node);
-        std::string visit(const F32TypeNode *node);
-        std::string visit(const F64TypeNode *node);
-        std::string visit(const BoolTypeNode *node);
-        std::string visit(const VoidTypeNode *node);
-        std::string visit(const PointerTypeNode *node);
-        std::string visit(const StringTypeNode *node);
-        std::string visit(const EnumTypeNode *node);
-        std::string visit(const StructTypeNode *node);
-        std::string visit(const RegionTypeNode *node);
-        std::string visit(const UnionTypeNode *node);
-        std::string visit(const ArrayTypeNode *node);
-        std::string visit(const FunctionTypeNode *node);
-        std::string visit(const IntegerNode *node);
-        std::string visit(const FloatLiteralNode *node);
-        std::string visit(const StringNode *node);
-        std::string visit(const CharNode *node);
-        std::string visit(const BoolLiteralNode *node);
-        std::string visit(const NullLiteralNode *node);
-        std::string visit(const LetDeclNode *node);
-        std::string visit(const FunctionDeclNode *node);
-        std::string visit(const StructDefNode *node);
-        std::string visit(const RegionDefNode *node);
-        std::string visit(const UnionDefNode *node);
-        std::string visit(const FunctionDefNode *node);
-        std::string visit(const FunctionParamNode *node);
-        std::string visit(const ExportNode *node);
-        std::string visit(const InlineAsmNode *node);
-        std::string visit(const ReturnStmtNode *node);
-        std::string visit(const IfStmtNode *node);
-        std::string visit(const WhileStmtNode *node);
+        // llvm::Value *gen(const ir::delta::RootNode *node);
 
     public:
-        C11CodegenVisitor() = default;
-
-        std::string visit(const ExprNode *node);
-        std::string visit(const StmtNode *node);
-        std::string visit(const TypeNode *node);
+        static bool codegen(const std::unique_ptr<ir::delta::IRDelta> &ir, std::ostream &os);
     };
-};
+}
 
 #endif // __QUIXCC_LLVM_CODEGEN_H__

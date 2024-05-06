@@ -44,7 +44,6 @@
 #include <parse/NodeType.h>
 #include <traversal/AST.h>
 #include <serialize/ASTJson.h>
-#include <generate/CodeGen.h>
 
 namespace libquixcc
 {
@@ -351,9 +350,6 @@ namespace libquixcc
     public:
         ExprNode() = default;
 
-        virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
-        virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
-
         /// @brief Do type promotion and insert casts if necessary.
         /// @return The promoted expression.
         template <typename T>
@@ -388,8 +384,6 @@ namespace libquixcc
     public:
         ConstExprNode() { ntype = NodeType::ConstExprNode; }
 
-        virtual llvm::Constant *codegen(CodegenVisitor &visitor) const { return static_cast<llvm::Constant *>(visitor.visit(static_cast<const ExprNode *>(this))); }
-        virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(static_cast<const ExprNode *>(this)); }
         virtual bool is_negative() const;
         virtual TypeNode *infer(TIState &state) const override = 0;
     };
@@ -399,8 +393,6 @@ namespace libquixcc
     public:
         StmtNode() { ntype = NodeType::StmtNode; }
 
-        virtual llvm::Value *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
-        virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
         virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const = 0;
     };
 
@@ -429,8 +421,6 @@ namespace libquixcc
         ~TypeNode() = default;
         TypeNode(const TypeNode &) = delete;
 
-        virtual llvm::Type *codegen(CodegenVisitor &visitor) const { return visitor.visit(this); }
-        virtual std::string codegen(C11CodegenVisitor &visitor) const { return visitor.visit(this); }
         bool is_composite() const;
         bool is_ptr() const;
         bool is_array() const;

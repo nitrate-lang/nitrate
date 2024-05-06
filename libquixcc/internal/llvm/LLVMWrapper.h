@@ -76,7 +76,7 @@ namespace libquixcc
         std::vector<std::pair<llvm::Function *, const FunctionDeclNode *>> m_named_functions;
         std::map<std::string, llvm::StructType *> m_named_structs;
         std::string prefix;
-        bool m_pub = false;
+        bool m_pub = true;
         size_t m_skipbr = 0;
         ExportLangType m_lang = ExportLangType::Default;
 
