@@ -48,7 +48,6 @@ namespace libquixcc
         {
             enum class NodeType
             {
-                Node,
                 Root,
 
                 /* Types */

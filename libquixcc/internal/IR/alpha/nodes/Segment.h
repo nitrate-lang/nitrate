@@ -29,60 +29,42 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_ALPHAIR_H__
-#define __QUIXCC_IR_ALPHAIR_H__
+#ifndef __QUIXCC_IR_ALPHA_NODES_SEGMENT_H__
+#define __QUIXCC_IR_ALPHA_NODES_SEGMENT_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <parse/nodes/AllNodes.h>
-#include <IR/IRModule.h>
-#include <IR/Type.h>
+#include <IR/alpha/AlphaIR.h>
 
-namespace libquixcc
+namespace libquixcc::ir::alpha
 {
-    namespace ir
-    {
-        namespace alpha
-        {
-            enum class NodeType
-            {
-                Root,
-            };
+    // class Segment : public Value<Delta>
+    // {
+    // protected:
+    //     Result<bool> print_impl(std::ostream &os, PState &state) const override;
+    //     boost::uuids::uuid hash_impl() const override;
+    //     bool verify_impl() const override;
 
-            class RootNode : public libquixcc::ir::Value<Alpha>
-            {
-            protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
-                boost::uuids::uuid hash_impl() const override;
-                bool verify_impl() const override;
+    //     Segment(const Value<Delta> *ret, bool pure, const std::vector<std::pair<std::string, const Value<Delta> *>> &params, const std::vector<const Value<Delta> *> &stmts) : params(params), stmts(stmts), ret(ret), pure(pure) {}
 
-            public:
-                static const RootNode *create()
-                {
-                    return nullptr;
-                }
-            };
+    // public:
+    //     static const Segment *create(const Value<Delta> *ret, bool pure, const std::vector<std::pair<std::string, const Value<Delta> *>> &params, const std::vector<const Value<Delta> *> &stmts);
 
-            class IRAlpha : public libquixcc::ir::IRModule<IR::Alpha, RootNode *>
-            {
-            protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
-                std::string_view ir_dialect_name_impl() const override;
-                unsigned ir_dialect_version_impl() const override;
-                std::string_view ir_dialect_family_impl() const override;
-                std::string_view ir_dialect_description_impl() const override;
-                bool verify_impl() const override;
+    //     const FType *getType() const
+    //     {
+    //         std::vector<const Value<Delta> *> param_types;
+    //         for (auto &param : params)
+    //             param_types.push_back(param.second);
+    //         return FType::create(param_types, ret);
+    //     }
 
-            public:
-                IRAlpha(const std::string_view &name) : IRModule<IR::Alpha, RootNode *>(name) {}
-                ~IRAlpha() = default;
-
-                bool from_ast(const std::shared_ptr<BlockNode> &ast);
-            };
-        }
-    }
+    //     std::vector<std::pair<std::string, const Value<Delta> *>> params;
+    //     std::vector<const Value<Delta> *> stmts;
+    //     const Value<Delta> *ret;
+    //     bool pure;
+    // };
 }
 
-#endif // __QUIXCC_IR_ALPHAIR_H__
+#endif // __QUIXCC_IR_ALPHA_NODES_SEGMENT_H__

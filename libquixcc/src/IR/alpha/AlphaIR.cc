@@ -31,6 +31,29 @@
 
 #include <IR/alpha/AlphaIR.h>
 
+libquixcc::ir::Result<bool> libquixcc::ir::alpha::IRAlpha::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "use QAlpha_1_0;\n";
+    os << "; ModuleID = '" << m_name << "'\n";
+
+    if (!m_root)
+        return true;
+
+    os << "; ModuleHash = '";
+    m_root->printid(os);
+    os << "'\n\n";
+
+    return m_root->print(os, state);
+}
+
+bool libquixcc::ir::alpha::IRAlpha::verify_impl() const
+{
+    if (!m_root)
+        return false;
+
+    return m_root->verify();
+}
+
 std::string_view libquixcc::ir::alpha::IRAlpha::ir_dialect_name_impl() const
 {
     return "QIR-Alpha";
