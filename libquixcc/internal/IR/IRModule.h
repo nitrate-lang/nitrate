@@ -68,19 +68,6 @@ namespace libquixcc
 {
     namespace ir
     {
-        enum class PrintMode
-        {
-            Text = 1,
-            Debug = 3,
-            Unspecified = PrintMode::Text,
-        };
-
-        enum class DeserializeMode
-        {
-            Text = 1,
-            Unspecified = DeserializeMode::Text,
-        };
-
         struct SourceLocation
         {
             const char *file;
@@ -214,12 +201,21 @@ namespace libquixcc
             const T *operator->() const { return m_value; }
         };
 
+        struct PState
+        {
+            size_t ind;
+
+            PState() {
+                ind = 0;
+            }
+        };
+
         template <auto V>
         class Value
         {
         protected:
             /* Node Serialization */
-            virtual Result<bool> print_impl(std::ostream &os, bool debug) const = 0;
+            virtual Result<bool> print_impl(std::ostream &os, PState &state) const = 0;
 
             /* Graph Operations & Caching */
             virtual boost::uuids::uuid hash_impl() const = 0;
@@ -252,26 +248,9 @@ namespace libquixcc
             }
 
             /* Write IR to Output Stream */
-            template <PrintMode mode = PrintMode::Unspecified>
-            Result<bool> print(std::ostream &os, bool newline = false) const
+            Result<bool> print(std::ostream &os, PState &state) const
             {
-                switch (mode)
-                {
-                case PrintMode::Debug:
-                {
-                    Result<bool> result(print_impl(os, true));
-                    if (newline)
-                        os << std::endl;
-                    return result;
-                }
-                default:
-                {
-                    Result<bool> result(print_impl(os, false));
-                    if (newline)
-                        os << std::endl;
-                    return result;
-                }
-                }
+                return print_impl(os, state);
             }
 
             /* Write UUID to Output Stream */
@@ -298,7 +277,8 @@ namespace libquixcc
             Hasher &add(const T value)
             {
                 std::stringstream ss;
-                value->print(ss);
+                PState state;
+                value->print(ss, state);
                 m_hasher.process_bytes(ss.str().data(), ss.str().size());
                 return *this;
             }
@@ -377,7 +357,7 @@ namespace libquixcc
             const static auto m_ir_type = T;
 
             /* Module Serialization */
-            virtual Result<bool> print_impl(std::ostream &os, bool debug) const = 0;
+            virtual Result<bool> print_impl(std::ostream &os, PState &state) const = 0;
 
             /* IR Dialect Information */
             virtual std::string_view ir_dialect_name_impl() const = 0;
@@ -404,24 +384,10 @@ namespace libquixcc
             auto getIRType() const { return m_ir_type; }
 
             /* Write IR to Output Stream */
-            template <PrintMode mode = PrintMode::Unspecified>
             Result<bool> print(std::ostream &os) const
             {
-                switch (mode)
-                {
-                case PrintMode::Debug:
-                {
-                    Result<bool> result = print_impl(os, true);
-                    os.flush();
-                    return result;
-                }
-                default:
-                {
-                    Result<bool> result = print_impl(os, false);
-                    os.flush();
-                    return result;
-                }
-                }
+                PState state;
+                return print_impl(os, state);
             }
 
             /* Verify IR Module */

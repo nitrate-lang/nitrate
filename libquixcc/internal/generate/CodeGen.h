@@ -68,23 +68,11 @@ namespace libquixcc
     {
         struct CodegenState
         {
-            bool implicit_load = true;
-            bool inside_function = false;
+            std::string name;
         };
 
         LLVMContext *m_ctx;
         CodegenState m_state;
-
-        std::optional<std::pair<llvm::Value *, llvm::Type *>> create_struct_gep(llvm::Value *struct_ptr, const std::string &field_name);
-
-        enum class AORLocality
-        {
-            Global,
-            Local,
-            Parameter,
-            Function
-        };
-        std::optional<std::tuple<llvm::Value *, llvm::Type *, AORLocality>> address_of_identifier(const std::string &name);
 
         llvm::Type *gen(const ir::delta::I1 *node);
         llvm::Type *gen(const ir::delta::I8 *node);

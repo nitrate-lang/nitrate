@@ -137,7 +137,7 @@ namespace libquixcc
             class RootNode : public libquixcc::ir::Value<Delta>
             {
             protected:
-                Result<bool> print_impl(std::ostream &os, bool debug) const override;
+                Result<bool> print_impl(std::ostream &os, PState &state) const override;
                 boost::uuids::uuid hash_impl() const override;
                 bool verify_impl() const override;
 
@@ -152,7 +152,7 @@ namespace libquixcc
             class IRDelta : public libquixcc::ir::IRModule<IR::Delta, const RootNode *>
             {
             protected:
-                Result<bool> print_impl(std::ostream &os, bool debug) const override;
+                Result<bool> print_impl(std::ostream &os, PState &state) const override;
                 std::string_view ir_dialect_name_impl() const override;
                 unsigned ir_dialect_version_impl() const override;
                 std::string_view ir_dialect_family_impl() const override;

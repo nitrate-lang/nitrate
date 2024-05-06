@@ -31,74 +31,75 @@
 
 #include <IR/delta/nodes/Control.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::IfElse::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::IfElse::print_impl(std::ostream &os, PState &state) const
 {
     os << "if (";
-    if (!then->print(os, debug))
+    if (!then->print(os, state))
         return false;
 
     os << ") {";
-    if (!then->print(os, debug))
+    if (!then->print(os, state))
         return false;
 
     os << "} else {";
-    if (!els->print(os, debug))
+    if (!els->print(os, state))
         return false;
 
     os << "}";
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::While::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::While::print_impl(std::ostream &os, PState &state) const
 {
     os << "while (";
-    if (!cond->print(os, debug))
+    if (!cond->print(os, state))
         return false;
 
     os << ") {";
-    if (!body->print(os, debug))
+    if (!body->print(os, state))
         return false;
 
     os << "}";
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Jmp::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Jmp::print_impl(std::ostream &os, PState &state) const
 {
     os << "jmp " << target;
 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Label::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Label::print_impl(std::ostream &os, PState &state) const
 {
     os << name << ":";
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Ret::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Ret::print_impl(std::ostream &os, PState &state) const
 {
     os << "ret";
     if (value)
     {
         os << " ";
-        if (!value->print(os, debug))
+        if (!value->print(os, state))
             return false;
     }
+
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Call::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Call::print_impl(std::ostream &os, PState &state) const
 {
     throw std::runtime_error("Call::print_impl not implemented");
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::PtrCall::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::PtrCall::print_impl(std::ostream &os, PState &state) const
 {
     throw std::runtime_error("PtrCall::print_impl not implemented");
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Halt::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Halt::print_impl(std::ostream &os, PState &state) const
 {
     os << "halt";
     return true;

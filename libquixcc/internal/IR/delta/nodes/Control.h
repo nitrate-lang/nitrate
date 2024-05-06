@@ -44,7 +44,7 @@ namespace libquixcc::ir::delta
     class IfElse : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -61,7 +61,7 @@ namespace libquixcc::ir::delta
     class While : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -77,7 +77,7 @@ namespace libquixcc::ir::delta
     class Jmp : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -92,7 +92,7 @@ namespace libquixcc::ir::delta
     class Label : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -107,7 +107,7 @@ namespace libquixcc::ir::delta
     class Ret : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -122,23 +122,23 @@ namespace libquixcc::ir::delta
     class Call : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Call(const Segment *callee, std::vector<const Value<Delta> *> args) : callee(callee), args(args) {}
+        Call(std::string callee, std::vector<const Value<Delta> *> args) : callee(callee), args(args) {}
 
     public:
-        static const Call *create(const Segment *callee, std::vector<const Value<Delta> *> args);
+        static const Call *create(std::string callee, std::vector<const Value<Delta> *> args);
 
-        const Segment *callee;
+        std::string callee;
         std::vector<const Value<Delta> *> args;
     };
 
     class PtrCall : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -154,7 +154,7 @@ namespace libquixcc::ir::delta
     class Halt : public Value<Delta>
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, bool debug) const override;
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 

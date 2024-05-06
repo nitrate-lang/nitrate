@@ -163,6 +163,15 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Global *node)
 {
     llvm::Type *type = gent(node->type);
 
+    if (node->value && node->value->is<Segment>())
+    {
+        m_state.name = node->name;
+        auto segment = node->value->as<Segment>();
+        llvm::Function *func = gen(segment);
+        m_state.name.clear();
+        return func;
+    }
+
     m_ctx->m_module->getOrInsertGlobal(node->name, type);
     llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(node->name);
     m_ctx->m_named_global_vars[node->name] = gvar;
@@ -250,27 +259,27 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::SCast *node)
 {
-    return nullptr;
+    return m_ctx->m_builder->CreateSExtOrTrunc(gen(node->value), gent(node->type));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::UCast *node)
 {
-    return nullptr;
+    return m_ctx->m_builder->CreateZExtOrTrunc(gen(node->value), gent(node->type));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::PtrICast *node)
 {
-    return nullptr;
+    return m_ctx->m_builder->CreateIntToPtr(gen(node->value), gent(node->type));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::IPtrCast *node)
 {
-    return nullptr;
+    return m_ctx->m_builder->CreatePtrToInt(gen(node->value), gent(node->type));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Bitcast *node)
 {
-    return nullptr;
+    return m_ctx->m_builder->CreateBitCast(gen(node->value), gent(node->type));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::IfElse *node)
@@ -295,27 +304,56 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Label *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ret *node)
 {
-    return nullptr;
+    if (node->value)
+        return m_ctx->m_builder->CreateRet(gen(node->value));
+    else
+        return m_ctx->m_builder->CreateRetVoid();
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Call *node)
 {
-    return nullptr;
+    std::vector<llvm::Value *> args;
+    for (auto &arg : node->args)
+        args.push_back(gen(arg));
+
+    auto callee = m_ctx->m_module->getFunction(node->callee);
+    throwif(!callee);
+
+    return m_ctx->m_builder->CreateCall(callee, args);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::PtrCall *node)
 {
-    return nullptr;
+    throw std::runtime_error("PtrCall not implemented");
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Halt *node)
 {
-    return nullptr;
+    throw std::runtime_error("Halt not implemented");
 }
 
 llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
 {
-    return nullptr;
+    std::vector<llvm::Type *> types;
+    for (auto &param : node->params)
+        types.push_back(gent(param.second));
+
+    llvm::FunctionType *ftype = llvm::FunctionType::get(gent(node->ret), types, false);
+    llvm::Function *func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, m_state.name, m_ctx->m_module.get());
+
+    llvm::BasicBlock *bb = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
+    m_ctx->m_builder->SetInsertPoint(bb);
+
+    for (auto it = func->arg_begin(); it != func->arg_end(); ++it)
+    {
+        auto &param = node->params[it->getArgNo()];
+        it->setName(param.first);
+    }
+
+    for (auto &stmt : node->stmts)
+        gen(stmt);
+
+    return func;
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Add *node)

@@ -31,57 +31,51 @@
 
 #include <IR/delta/nodes/Segment.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Segment::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::Segment::print_impl(std::ostream &os, PState &state) const
 {
     os << "segment ";
 
-    switch (visibility)
-    {
-    case Visibility::Private:
-        os << "private";
-        break;
-    case Visibility::Internal:
-        os << "internal";
-        break;
-    case Visibility::External:
-        os << "external";
-        break;
-    }
-
     if (pure)
-        os << " pure";
+        os << "pure";
     else
-        os << " impure";
+        os << "impure";
 
     os << " (";
-    if (!ret->print(os, debug))
+    if (!ret->print(os, state))
         return false;
     os << ") (";
     for (uint64_t i = 0; i < params.size(); i++)
     {
-        if (!params[i]->print(os, debug))
+        os << params[i].first << " : ";
+        if (!params[i].second->print(os, state))
             return false;
         if (i + 1 < params.size())
             os << ", ";
     }
     os << ") {\n";
 
+    state.ind += 2;
+
     for (auto &stmt : stmts)
     {
-        if (!stmt->print(os, debug))
+        os << std::string(state.ind, ' ');
+
+        if (!stmt->print(os, state))
             return false;
     }
 
-    os << "}\n";
+    state.ind -= 2;
+
+    os << "\n}\n";
 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::RootNode::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::RootNode::print_impl(std::ostream &os, PState &state) const
 {
     for (auto &child : children)
     {
-        if (!child->print(os, debug))
+        if (!child->print(os, state))
             return false;
     }
 

@@ -33,9 +33,9 @@
 
 boost::uuids::uuid libquixcc::ir::delta::Segment::hash_impl() const
 {
-    auto h = Hasher().gettag().add(name).add(ret).add((uint64_t)visibility).add(pure);
+    auto h = Hasher().gettag().add(ret).add(pure);
     for (auto &p : params)
-        h.add(p);
+        h.add(p.second);
 
     for (auto &s : stmts)
         h.add(s);
@@ -46,7 +46,7 @@ boost::uuids::uuid libquixcc::ir::delta::Segment::hash_impl() const
 bool libquixcc::ir::delta::Segment::verify_impl() const
 {
     for (auto &p : params)
-        if (!p->verify())
+        if (!p.second->verify())
             return false;
 
     for (auto &s : stmts)

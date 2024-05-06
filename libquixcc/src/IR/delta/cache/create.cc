@@ -56,7 +56,7 @@ static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Whi
 static std::map<std::string, const Jmp *> jmp_insts;
 static std::map<std::string, const Label *> label_insts;
 static std::map<const Value<Delta> *, const Ret *> ret_insts;
-static std::map<std::pair<const Value<Delta> *, std::vector<const Value<Delta> *>>, const Call *> call_insts;
+static std::map<std::pair<std::string, std::vector<const Value<Delta> *>>, const Call *> call_insts;
 static std::map<std::pair<const Value<Delta> *, std::vector<const Value<Delta> *>>, const PtrCall *> ptrcall_insts;
 static Halt *halt_inst = nullptr;
 static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Add *> add_insts;
@@ -85,7 +85,7 @@ static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Xor
 static std::map<std::tuple<const Value<Delta> *, const Value<Delta> *, uint64_t>, const Assign *> assign_insts;
 static std::map<std::pair<const Value<Delta> *, uint64_t>, const Load *> load_insts;
 static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Index *> index_insts;
-static std::map<std::tuple<std::string, const Value<Delta> *, Visibility, bool, std::vector<const Value<Delta> *>, std::vector<const Value<Delta> *>>, const Segment *> segment_insts;
+static std::map<std::tuple<const Value<Delta> *, bool, const std::vector<std::pair<std::string, const Value<Delta> *>>, std::vector<const Value<Delta> *>>, const Segment *> segment_insts;
 static I1 *i1_inst = nullptr;
 static I8 *i8_inst = nullptr;
 static I16 *i16_inst = nullptr;
@@ -208,7 +208,7 @@ const delta::Ret *delta::Ret::create(const Value<Delta> *value)
     return ret_insts[value];
 }
 
-const delta::Call *delta::Call::create(const delta::Segment *callee, std::vector<const Value<Delta> *> args)
+const delta::Call *delta::Call::create(std::string callee, std::vector<const Value<Delta> *> args)
 {
     lock(NodeType::Call);
     auto key = std::make_pair(callee, args);
@@ -466,12 +466,12 @@ const delta::Index *delta::Index::create(const Value<Delta> *var, const Value<De
     return index_insts[key];
 }
 
-const delta::Segment *delta::Segment::create(const std::string &name, const Value<Delta> *ret, delta::Visibility visibility, bool pure, const std::vector<const Value<Delta> *> &params, const std::vector<const Value<Delta> *> &stmts)
+const delta::Segment *delta::Segment::create(const Value<Delta> *ret, bool pure, const std::vector<std::pair<std::string, const Value<Delta> *>> &params, const std::vector<const Value<Delta> *> &stmts)
 {
     lock(NodeType::Segment);
-    auto key = std::make_tuple(name, ret, visibility, pure, params, stmts);
+    auto key = std::make_tuple(ret, pure, params, stmts);
     if (!segment_insts.contains(key))
-        segment_insts[key] = new Segment(name, ret, visibility, pure, params, stmts);
+        segment_insts[key] = new Segment(ret, pure, params, stmts);
     return segment_insts[key];
 }
 

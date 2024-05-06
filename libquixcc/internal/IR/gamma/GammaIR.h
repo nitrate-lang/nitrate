@@ -56,7 +56,7 @@ namespace libquixcc
             class RootNode : public libquixcc::ir::Value<Gamma>
             {
             protected:
-                Result<bool> print_impl(std::ostream &os, bool debug) const override;
+                Result<bool> print_impl(std::ostream &os, PState &state) const override;
                 boost::uuids::uuid hash_impl() const override;
                 bool verify_impl() const override;
 
@@ -70,7 +70,7 @@ namespace libquixcc
             class IRGamma : public libquixcc::ir::IRModule<IR::Gamma, RootNode *>
             {
             protected:
-                Result<bool> print_impl(std::ostream &os, bool debug) const override
+                Result<bool> print_impl(std::ostream &os, PState &state) const override
                 {
                     if (!m_root)
                     {
@@ -80,12 +80,7 @@ namespace libquixcc
 
                     os << "IRGamma_1_0(" + m_name + ",[";
 
-                    Result<bool> result;
-                    if (debug)
-                        result = m_root->print<PrintMode::Debug>(os);
-                    else
-                        result = m_root->print<PrintMode::Text>(os);
-
+                    Result<bool> result = m_root->print(os, state);
                     os << "])";
 
                     return result;

@@ -94,9 +94,6 @@ boost::uuids::uuid libquixcc::ir::delta::Call::hash_impl() const
 
 bool libquixcc::ir::delta::Call::verify_impl() const
 {
-    if (!callee->verify())
-        return false;
-
     for (auto arg : args)
     {
         if (!arg->verify())

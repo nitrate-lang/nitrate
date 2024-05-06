@@ -39,25 +39,19 @@
 #include <IR/delta/nodes/Segment.h>
 #include <IR/delta/nodes/Math.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os, bool debug) const
+libquixcc::ir::Result<bool> libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os, PState &state) const
 {
+    os << "use QDelta_1_0;\n";
+    os << "; ModuleID = '" << m_name << "'\n";
+
     if (!m_root)
-    {
-        os << "IRDelta_1_0(" + m_name + ")";
         return true;
-    }
 
-    os << "IRDelta_1_0(" + m_name + ",[";
+    os << "; ModuleHash = '";
+    m_root->printid(os);
+    os << "'\n\n";
 
-    Result<bool> result;
-    if (debug)
-        result = m_root->print<PrintMode::Debug>(os);
-    else
-        result = m_root->print<PrintMode::Text>(os);
-
-    os << "])";
-
-    return result;
+    return m_root->print(os, state);
 }
 
 bool libquixcc::ir::delta::IRDelta::verify_impl() const
