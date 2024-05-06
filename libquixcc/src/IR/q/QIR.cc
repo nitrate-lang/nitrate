@@ -31,6 +31,31 @@
 
 #include <IR/Q/QIR.h>
 
+libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    if (!m_root)
+    {
+        os << "QIR_1_0(" + m_name + ")";
+        return true;
+    }
+
+    os << "QIR_1_0(" + m_name + ",[";
+
+    Result<bool> result = m_root->print(os, state);
+    os << "])";
+
+    return result;
+}
+
+bool libquixcc::ir::q::QModule::verify_impl() const
+{
+
+    if (!m_root)
+        return false;
+
+    return m_root->verify();
+}
+
 std::string_view libquixcc::ir::q::QModule::ir_dialect_name_impl() const
 {
     return "QIR-Q";
