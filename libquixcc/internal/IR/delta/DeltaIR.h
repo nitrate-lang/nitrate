@@ -36,7 +36,7 @@
 #error "This header requires C++"
 #endif
 
-#include <IR/gamma/GammaIR.h>
+#include <IR/Q/QIR.h>
 #include <IR/IRModule.h>
 #include <IR/Type.h>
 
@@ -162,7 +162,7 @@ namespace libquixcc
                 IRDelta(const std::string_view &name) : IRModule<IR::Delta, const RootNode *>(name) {}
                 ~IRDelta() = default;
 
-                bool from_gamma(const std::unique_ptr<libquixcc::ir::gamma::IRGamma> &beta);
+                bool from_qir(const std::unique_ptr<libquixcc::ir::q::QModule> &qir);
             };
         }
     }

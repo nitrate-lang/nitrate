@@ -29,8 +29,8 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_ALPHAIR_H__
-#define __QUIXCC_IR_ALPHAIR_H__
+#ifndef __QUIXCC_IR_QIR_H__
+#define __QUIXCC_IR_QIR_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
@@ -44,14 +44,16 @@ namespace libquixcc
 {
     namespace ir
     {
-        namespace alpha
+        namespace q
         {
             enum class NodeType
             {
-                Root,
+                Generic,
+                Group,
+                Node,
             };
 
-            class RootNode : public libquixcc::ir::Value<Alpha>
+            class RootNode : public libquixcc::ir::Value<Q>
             {
             protected:
                 Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -65,19 +67,41 @@ namespace libquixcc
                 }
             };
 
-            class IRAlpha : public libquixcc::ir::IRModule<IR::Alpha, RootNode *>
+            class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *>
             {
             protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
+                Result<bool> print_impl(std::ostream &os, PState &state) const override
+                {
+                    if (!m_root)
+                    {
+                        os << "QIR_1_0(" + m_name + ")";
+                        return true;
+                    }
+
+                    os << "QIR_1_0(" + m_name + ",[";
+
+                    Result<bool> result = m_root->print(os, state);
+                    os << "])";
+
+                    return result;
+                }
+
                 std::string_view ir_dialect_name_impl() const override;
                 unsigned ir_dialect_version_impl() const override;
                 std::string_view ir_dialect_family_impl() const override;
                 std::string_view ir_dialect_description_impl() const override;
-                bool verify_impl() const override;
+
+                bool verify_impl() const override
+                {
+                    if (!m_root)
+                        return false;
+
+                    return m_root->verify();
+                };
 
             public:
-                IRAlpha(const std::string_view &name) : IRModule<IR::Alpha, RootNode *>(name) {}
-                ~IRAlpha() = default;
+                QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {}
+                ~QModule() = default;
 
                 bool from_ast(const std::shared_ptr<BlockNode> &ast);
             };
@@ -85,4 +109,4 @@ namespace libquixcc
     }
 }
 
-#endif // __QUIXCC_IR_ALPHAIR_H__
+#endif // __QUIXCC_IR_QIR_H__

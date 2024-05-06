@@ -29,27 +29,24 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_OPTIMIZER_BETA_OPTIMIZER_H__
-#define __QUIXCC_OPTIMIZER_BETA_OPTIMIZER_H__
+#include <IR/Q/QIR.h>
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <IR/beta/BetaIR.h>
-
-namespace libquixcc
+std::string_view libquixcc::ir::q::QModule::ir_dialect_name_impl() const
 {
-    namespace optimizer
-    {
-        namespace beta
-        {
-            bool optimize_BetaIR_1_0(std::unique_ptr<ir::beta::IRBeta> &ir)
-            {
-                return true;
-            }
-        }
-    }
+    return "QIR-Q";
 }
 
-#endif // __QUIXCC_OPTIMIZER_BETA_OPTIMIZER_H__
+unsigned int libquixcc::ir::q::QModule::ir_dialect_version_impl() const
+{
+    return 1;
+}
+
+std::string_view libquixcc::ir::q::QModule::ir_dialect_family_impl() const
+{
+    return "QIR";
+}
+
+std::string_view libquixcc::ir::q::QModule::ir_dialect_description_impl() const
+{
+    return "Quix Q Intermediate Representation (QIR-Q-V1.0) is an intermediate representation for the Quix language.";
+}

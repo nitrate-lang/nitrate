@@ -29,24 +29,10 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/beta/BetaIR.h>
+#include <IR/Q/QIR.h>
 
-std::string_view libquixcc::ir::beta::IRBeta::ir_dialect_name_impl() const
+bool libquixcc::ir::q::QModule::from_ast(const std::shared_ptr<libquixcc::BlockNode> &ast)
 {
-    return "QIR-Beta";
-}
-
-unsigned int libquixcc::ir::beta::IRBeta::ir_dialect_version_impl() const
-{
-    return 1;
-}
-
-std::string_view libquixcc::ir::beta::IRBeta::ir_dialect_family_impl() const
-{
-    return "QIR";
-}
-
-std::string_view libquixcc::ir::beta::IRBeta::ir_dialect_description_impl() const
-{
-    return "Quix Beta Intermediate Representation (QIR-Beta-V1.0) is an intermediate representation for the Quix language.";
+    /// TODO: implement this function
+    return true;
 }

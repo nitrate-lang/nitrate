@@ -42,9 +42,7 @@ namespace libquixcc
     {
         enum IR
         {
-            Alpha,
-            Beta,
-            Gamma,
+            Q,
             Delta,
         };
     }

@@ -61,14 +61,10 @@
 #include <libquixcc.h>
 #include <mutate/Routine.h>
 
-#include <IR/alpha/AlphaIR.h>
-#include <IR/beta/BetaIR.h>
-#include <IR/gamma/GammaIR.h>
+#include <IR/Q/QIR.h>
 #include <IR/delta/DeltaIR.h>
 
-#include <optimizer/alpha/Optimizer.h>
-#include <optimizer/beta/Optimizer.h>
-#include <optimizer/gamma/Optimizer.h>
+#include <optimizer/Optimizer.h>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
@@ -771,65 +767,58 @@ static bool compile(quixcc_job_t *job)
 
     ///=========================================
     /// BEGIN: OPTIMIZATION PIPELINE
-    bool opt = !job->m_argset.contains("-O0");
-
-    auto AIR = std::make_unique<ir::alpha::IRAlpha>(job->m_filename);
-    if (!AIR->from_ast(ast))
+    auto QIR = std::make_unique<ir::q::QModule>(job->m_filename);
+    if (!QIR->from_ast(ast))
         return false;
 
-    /* Apply architecural optimizations
-     * - Transform single threaded code into multi-threaded code
-     * - Recognize common structural patterns and replace them with optimized equivalents (remove polymorphism, etc.)
-     * - Break large functions into smaller functions
-     * - Move large code segments into dynamic library bundles
-     */
-    if (opt && !optimizer::alpha::optimize_AlphaIR_1_0(AIR))
-        return false;
+    if (!job->m_argset.contains("-O0"))
+    {
+        /* Apply architecural optimizations
+         * - Transform single threaded code into multi-threaded code
+         * - Recognize common structural patterns and replace them with optimized equivalents (remove polymorphism, etc.)
+         * - Break large functions into smaller functions
+         * - Move large code segments into dynamic library bundles
+         */
+        if (job->m_argset.contains("-OA") && !optimizer::optimize_architecture(QIR))
+            return false;
 
-    auto BIR = std::make_unique<ir::beta::IRBeta>(job->m_filename);
-    if (!BIR->from_alpha(AIR))
-        return false;
+        /* Apply behavioral optimizations
+         * - Replace math with SIMD instructions
+         * - Algebraic reduction
+         * - Remove redundant locks
+         * - Auto-generate comparison methods for user defined types
+         * - Remove redundant threads
+         * - Remove redundant memory allocations
+         * - Replace allocators with flyweight patterns
+         * - Replace heap with stack whenever possible
+         * - Replace stack with static memory whenever possible
+         * - Replace static memory with compile time constants whenever possible
+         * - If allowed, install huristics into opaque algorithms
+         * - Replace opaque algorithms with specialized algorithms
+         * - Replace out-of-band messaging with direct functional messaging
+         * - Replace exceptions with composite return values
+         * - Eliminate dynamic runtime deallocations (garbage collection) whenever possible
+         */
+        if (job->m_argset.contains("-OB") && !optimizer::optimize_behavior(QIR))
+            return false;
 
-    /* Apply behavioral optimizations
-     * - Replace math with SIMD instructions
-     * - Algebraic reduction
-     * - Remove redundant locks
-     * - Auto-generate comparison methods for user defined types
-     * - Remove redundant threads
-     * - Remove redundant memory allocations
-     * - Replace allocators with flyweight patterns
-     * - Replace heap with stack whenever possible
-     * - Replace stack with static memory whenever possible
-     * - Replace static memory with compile time constants whenever possible
-     * - If allowed, install huristics into opaque algorithms
-     * - Replace opaque algorithms with specialized algorithms
-     * - Replace out-of-band messaging with direct functional messaging
-     * - Replace exceptions with composite return values
-     * - Eliminate dynamic runtime deallocations (garbage collection) whenever possible
-     */
-    if (opt && !optimizer::beta::optimize_BetaIR_1_0(BIR))
-        return false;
-
-    auto GIR = std::make_unique<ir::gamma::IRGamma>(job->m_filename);
-    if (!GIR->from_beta(BIR))
-        return false;
-
-    /* Apply general optimizations
-     * - Replace stringy code with enums
-     * - Native TypeSize optimizations
-     * - Generator unrolling
-     * - Cache the results of complex pure functions
-     * - Replace pure functions with lookup tables
-     * - Remove trivially constructable unused allocations/deallocations
-     * - Replace non-trivially constructable unused allocations with direct constructor calls
-     * - ML-smart branch prediction / rearangement
-     * - Don't construct fields that are unused
-     */
-    if (opt && !optimizer::gamma::optimize_GammaIR_1_0(GIR))
-        return false;
+        /* Apply general optimizations
+         * - Replace stringy code with enums
+         * - Native TypeSize optimizations
+         * - Generator unrolling
+         * - Cache the results of complex pure functions
+         * - Replace pure functions with lookup tables
+         * - Remove trivially constructable unused allocations/deallocations
+         * - Replace non-trivially constructable unused allocations with direct constructor calls
+         * - ML-smart branch prediction / rearangement
+         * - Don't construct fields that are unused
+         */
+        if (job->m_argset.contains("-OG") && !optimizer::optimize_general(QIR))
+            return false;
+    }
 
     auto DIR = std::make_unique<ir::delta::IRDelta>(job->m_filename);
-    if (!DIR->from_gamma(GIR))
+    if (!DIR->from_qir(QIR))
         return false;
     /// END:   OPTIMIZATION PIPELINE
     ///=========================================
