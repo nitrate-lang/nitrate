@@ -777,6 +777,12 @@ static bool compile(quixcc_job_t *job)
     if (!AIR->from_ast(ast))
         return false;
 
+    /* Apply architecural optimizations
+     * - Transform single threaded code into multi-threaded code
+     * - Recognize common structural patterns and replace them with optimized equivalents (remove polymorphism, etc.)
+     * - Break large functions into smaller functions
+     * - Move large code segments into dynamic library bundles
+     */
     if (opt && !optimizer::alpha::optimize_AlphaIR_1_0(AIR))
         return false;
 
@@ -784,6 +790,23 @@ static bool compile(quixcc_job_t *job)
     if (!BIR->from_alpha(AIR))
         return false;
 
+    /* Apply behavioral optimizations
+     * - Replace math with SIMD instructions
+     * - Algebraic reduction
+     * - Remove redundant locks
+     * - Auto-generate comparison methods for user defined types
+     * - Remove redundant threads
+     * - Remove redundant memory allocations
+     * - Replace allocators with flyweight patterns
+     * - Replace heap with stack whenever possible
+     * - Replace stack with static memory whenever possible
+     * - Replace static memory with compile time constants whenever possible
+     * - If allowed, install huristics into opaque algorithms
+     * - Replace opaque algorithms with specialized algorithms
+     * - Replace out-of-band messaging with direct functional messaging
+     * - Replace exceptions with composite return values
+     * - Eliminate dynamic runtime deallocations (garbage collection) whenever possible
+     */
     if (opt && !optimizer::beta::optimize_BetaIR_1_0(BIR))
         return false;
 
@@ -791,6 +814,17 @@ static bool compile(quixcc_job_t *job)
     if (!GIR->from_beta(BIR))
         return false;
 
+    /* Apply general optimizations
+     * - Replace stringy code with enums
+     * - Native TypeSize optimizations
+     * - Generator unrolling
+     * - Cache the results of complex pure functions
+     * - Replace pure functions with lookup tables
+     * - Remove trivially constructable unused allocations/deallocations
+     * - Replace non-trivially constructable unused allocations with direct constructor calls
+     * - ML-smart branch prediction / rearangement
+     * - Don't construct fields that are unused
+     */
     if (opt && !optimizer::gamma::optimize_GammaIR_1_0(GIR))
         return false;
 
@@ -803,7 +837,7 @@ static bool compile(quixcc_job_t *job)
     ///=========================================
     /// BEGIN: GENERATOR
     LOG(DEBUG) << "Generating output" << std::endl;
-    if (!generate(*job, DIR))
+    if (!generate(*job, DIR)) /* Apply LLVM optimizations */
     {
         LOG(ERROR) << "failed to generate output" << std::endl;
         return false;
