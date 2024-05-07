@@ -6,5 +6,6 @@ url: "https://quix.deltasploit.com" # the base hostname & protocol for your site
 
 # Build settings
 remote_theme: just-the-docs/just-the-docs
+color_scheme: dark
 plugins:
   - jekyll-feed
