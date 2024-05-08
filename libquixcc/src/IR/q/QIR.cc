@@ -29,27 +29,49 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_OPTIMIZER_BETA_OPTIMIZER_H__
-#define __QUIXCC_OPTIMIZER_BETA_OPTIMIZER_H__
+#include <IR/Q/QIR.h>
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <IR/beta/BetaIR.h>
-
-namespace libquixcc
+libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    namespace optimizer
+    if (!m_root)
     {
-        namespace beta
-        {
-            bool optimize_BetaIR_1_0(std::unique_ptr<ir::beta::IRBeta> &ir)
-            {
-                return true;
-            }
-        }
+        os << "QIR_1_0(" + m_name + ")";
+        return true;
     }
+
+    os << "QIR_1_0(" + m_name + ",[";
+
+    Result<bool> result = m_root->print(os, state);
+    os << "])";
+
+    return result;
 }
 
-#endif // __QUIXCC_OPTIMIZER_BETA_OPTIMIZER_H__
+bool libquixcc::ir::q::QModule::verify_impl() const
+{
+
+    if (!m_root)
+        return false;
+
+    return m_root->verify();
+}
+
+std::string_view libquixcc::ir::q::QModule::ir_dialect_name_impl() const
+{
+    return "QIR-Q";
+}
+
+unsigned int libquixcc::ir::q::QModule::ir_dialect_version_impl() const
+{
+    return 1;
+}
+
+std::string_view libquixcc::ir::q::QModule::ir_dialect_family_impl() const
+{
+    return "QIR";
+}
+
+std::string_view libquixcc::ir::q::QModule::ir_dialect_description_impl() const
+{
+    return "Quix Q Intermediate Representation (QIR-Q-V1.0) is an intermediate representation for the Quix language.";
+}

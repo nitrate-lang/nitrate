@@ -29,27 +29,34 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_OPTIMIZER_ALPHA_OPTIMIZER_H__
-#define __QUIXCC_OPTIMIZER_ALPHA_OPTIMIZER_H__
+#ifndef __QUIXCC_OPTIMIZER_OPTIMIZER_H__
+#define __QUIXCC_OPTIMIZER_OPTIMIZER_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <IR/alpha/AlphaIR.h>
+#include <IR/Q/QIR.h>
 
 namespace libquixcc
 {
     namespace optimizer
     {
-        namespace alpha
+        bool optimize_architecture(std::unique_ptr<ir::q::QModule> &ir)
         {
-            bool optimize_AlphaIR_1_0(std::unique_ptr<ir::alpha::IRAlpha> &ir)
-            {
-                return true;
-            }
+            return true;
+        }
+
+        bool optimize_behavior(std::unique_ptr<ir::q::QModule> &ir)
+        {
+            return true;
+        }
+
+        bool optimize_general(std::unique_ptr<ir::q::QModule> &ir)
+        {
+            return true;
         }
     }
 }
 
-#endif // __QUIXCC_OPTIMIZER_ALPHA_OPTIMIZER_H__
+#endif // __QUIXCC_OPTIMIZER_OPTIMIZER_H__

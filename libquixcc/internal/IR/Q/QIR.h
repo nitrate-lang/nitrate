@@ -29,24 +29,60 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/beta/BetaIR.h>
+#ifndef __QUIXCC_IR_QIR_H__
+#define __QUIXCC_IR_QIR_H__
 
-std::string_view libquixcc::ir::beta::IRBeta::ir_dialect_name_impl() const
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
+
+#include <parse/nodes/AllNodes.h>
+#include <IR/IRModule.h>
+#include <IR/Type.h>
+
+namespace libquixcc
 {
-    return "QIR-Beta";
+    namespace ir
+    {
+        namespace q
+        {
+            enum class NodeType
+            {
+                Root,
+            };
+
+            class RootNode : public libquixcc::ir::Value<Q>
+            {
+            protected:
+                Result<bool> print_impl(std::ostream &os, PState &state) const override;
+                boost::uuids::uuid hash_impl() const override;
+                bool verify_impl() const override;
+
+            public:
+                static const RootNode *create()
+                {
+                    return nullptr;
+                }
+            };
+
+            class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *>
+            {
+            protected:
+                Result<bool> print_impl(std::ostream &os, PState &state) const override;
+                std::string_view ir_dialect_name_impl() const override;
+                unsigned ir_dialect_version_impl() const override;
+                std::string_view ir_dialect_family_impl() const override;
+                std::string_view ir_dialect_description_impl() const override;
+                bool verify_impl() const override;
+
+            public:
+                QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {}
+                ~QModule() = default;
+
+                bool from_ast(const std::shared_ptr<BlockNode> &ast);
+            };
+        }
+    }
 }
 
-unsigned int libquixcc::ir::beta::IRBeta::ir_dialect_version_impl() const
-{
-    return 1;
-}
-
-std::string_view libquixcc::ir::beta::IRBeta::ir_dialect_family_impl() const
-{
-    return "QIR";
-}
-
-std::string_view libquixcc::ir::beta::IRBeta::ir_dialect_description_impl() const
-{
-    return "Quix Beta Intermediate Representation (QIR-Beta-V1.0) is an intermediate representation for the Quix language.";
-}
+#endif // __QUIXCC_IR_QIR_H__
