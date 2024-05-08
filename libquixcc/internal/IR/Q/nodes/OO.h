@@ -29,104 +29,65 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_QIR_H__
-#define __QUIXCC_IR_QIR_H__
+#ifndef __QUIXCC_IR_Q_NODES_OOP_H__
+#define __QUIXCC_IR_Q_NODES_OOP_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <parse/nodes/AllNodes.h>
-#include <IR/IRModule.h>
-#include <IR/Type.h>
+#include <IR/Q/QIR.h>
+#include <IR/Q/nodes/Function.h>
 
-namespace libquixcc
+namespace libquixcc::ir::q
 {
-    namespace ir
+    class RegionDef : public Value<Q>
     {
-        namespace q
-        {
-            enum class NodeType
-            {
-                Root,
-                I1,
-                I8,
-                I16,
-                I32,
-                I64,
-                I128,
-                U8,
-                U16,
-                U32,
-                U64,
-                U128,
-                F32,
-                F64,
-                Void,
-                Ptr,
-                Array,
-                Vector,
-                FType,
-                Region,
-                Group,
-                Union,
-                Opaque,
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-                FunctionBlock,
-                Function,
+        RegionDef(std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
 
-                RegionDef,
-                GroupDef,
-                UnionDef,
+    public:
+        static const RegionDef *create(std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods);
 
-                Call,
-                CallIndirect,
+        std::vector<std::pair<std::string, const Value<Q> *>> fields;
+        std::set<const Function *> methods;
+    };
 
-                IfElse,
-                While,
-                For,
-                Loop,
-                Break,
-                Continue,
-                Return,
-                Throw,
-                TryCatchFinally,
-                Case,
-                Switch,
-            };
+    class GroupDef : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-            class RootNode : public libquixcc::ir::Value<Q>
-            {
-            protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
-                boost::uuids::uuid hash_impl() const override;
-                bool verify_impl() const override;
+        GroupDef(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
 
-            public:
-                static const RootNode *create()
-                {
-                    return nullptr;
-                }
-            };
+    public:
+        static const GroupDef *create(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
 
-            class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *>
-            {
-            protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
-                std::string_view ir_dialect_name_impl() const override;
-                unsigned ir_dialect_version_impl() const override;
-                std::string_view ir_dialect_family_impl() const override;
-                std::string_view ir_dialect_description_impl() const override;
-                bool verify_impl() const override;
+        std::unordered_map<std::string, const Value<Q> *> fields;
+        std::set<const Function *> methods;
+    };
 
-            public:
-                QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {}
-                ~QModule() = default;
+    class UnionDef : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-                bool from_ast(const std::shared_ptr<BlockNode> &ast);
-            };
-        }
-    }
+        UnionDef(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
+
+    public:
+        static const UnionDef *create(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
+
+        std::unordered_map<std::string, const Value<Q> *> fields;
+        std::set<const Function *> methods;
+    };
 }
 
-#endif // __QUIXCC_IR_QIR_H__
+#endif // __QUIXCC_IR_Q_NODES_OOP_H__

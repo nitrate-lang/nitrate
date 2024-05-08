@@ -29,104 +29,59 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_QIR_H__
-#define __QUIXCC_IR_QIR_H__
+#ifndef __QUIXCC_IR_Q_NODES_FUNCTION_H__
+#define __QUIXCC_IR_Q_NODES_FUNCTION_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <parse/nodes/AllNodes.h>
-#include <IR/IRModule.h>
-#include <IR/Type.h>
+#include <IR/Q/QIR.h>
 
-namespace libquixcc
+namespace libquixcc::ir::q
 {
-    namespace ir
+    class FunctionBlock : public Value<Q>
     {
-        namespace q
-        {
-            enum class NodeType
-            {
-                Root,
-                I1,
-                I8,
-                I16,
-                I32,
-                I64,
-                I128,
-                U8,
-                U16,
-                U32,
-                U64,
-                U128,
-                F32,
-                F64,
-                Void,
-                Ptr,
-                Array,
-                Vector,
-                FType,
-                Region,
-                Group,
-                Union,
-                Opaque,
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-                FunctionBlock,
-                Function,
+        FunctionBlock(std::vector<const Value<Q> *> stmts) : stmts(stmts) {}
 
-                RegionDef,
-                GroupDef,
-                UnionDef,
+    public:
+        static const FunctionBlock *create(std::vector<const Value<Q> *> stmts);
 
-                Call,
-                CallIndirect,
+        std::vector<const Value<Q> *> stmts;
+    };
 
-                IfElse,
-                While,
-                For,
-                Loop,
-                Break,
-                Continue,
-                Return,
-                Throw,
-                TryCatchFinally,
-                Case,
-                Switch,
-            };
+    enum class FConstraint
+    {
+        C_ABI,
+        Variadic,
+        Pure,
+        ThreadSafe,
+        NoThrow,
+    };
 
-            class RootNode : public libquixcc::ir::Value<Q>
-            {
-            protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
-                boost::uuids::uuid hash_impl() const override;
-                bool verify_impl() const override;
+    class Function : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-            public:
-                static const RootNode *create()
-                {
-                    return nullptr;
-                }
-            };
+        Function(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const FunctionBlock *block) : name(std::move(name)), params(std::move(params)), return_type(return_type), block(block) {}
 
-            class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *>
-            {
-            protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
-                std::string_view ir_dialect_name_impl() const override;
-                unsigned ir_dialect_version_impl() const override;
-                std::string_view ir_dialect_family_impl() const override;
-                std::string_view ir_dialect_description_impl() const override;
-                bool verify_impl() const override;
+    public:
+        static const Function *create(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Value<Q> *block);
 
-            public:
-                QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {}
-                ~QModule() = default;
-
-                bool from_ast(const std::shared_ptr<BlockNode> &ast);
-            };
-        }
-    }
+        std::string name;
+        std::set<FConstraint> constraints;
+        std::vector<const Value<Q> *> params;
+        const Value<Q> *return_type;
+        const FunctionBlock *block;
+    };
 }
 
-#endif // __QUIXCC_IR_QIR_H__
+#endif // __QUIXCC_IR_Q_NODES_FUNCTION_H__

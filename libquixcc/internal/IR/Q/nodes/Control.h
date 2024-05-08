@@ -29,8 +29,8 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_Q_NODES_TYPE_H__
-#define __QUIXCC_IR_Q_NODES_TYPE_H__
+#ifndef __QUIXCC_IR_Q_NODES_CONTROL_H__
+#define __QUIXCC_IR_Q_NODES_CONTROL_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
@@ -40,51 +40,73 @@
 
 namespace libquixcc::ir::q
 {
-    class I1 : public Value<Q>
+    class IfElse : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        IfElse(const Value<Q> *cond, const Value<Q> *then, const Value<Q> *els) : cond(cond), then(then), els(els) {}
+
     public:
-        static const I1 *create();
+        static const IfElse *create(const Value<Q> *cond, const Value<Q> *then, const Value<Q> *els);
+
+        const Value<Q> *cond;
+        const Value<Q> *then;
+        const Value<Q> *els;
     };
 
-    class I8 : public Value<Q>
+    class While : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        While(const Value<Q> *cond, const Value<Q> *body) : cond(cond), body(body) {}
+
     public:
-        static const I8 *create();
+        static const While *create(const Value<Q> *cond, const Value<Q> *body);
+
+        const Value<Q> *cond;
+        const Value<Q> *body;
     };
 
-    class I16 : public Value<Q>
+    class For : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        For(const Value<Q> *init, const Value<Q> *cond, const Value<Q> *step, const Value<Q> *body) : init(init), cond(cond), step(step), body(body) {}
+
     public:
-        static const I16 *create();
+        static const For *create(const Value<Q> *init, const Value<Q> *cond, const Value<Q> *step, const Value<Q> *body);
+
+        const Value<Q> *init;
+        const Value<Q> *cond;
+        const Value<Q> *step;
+        const Value<Q> *body;
     };
 
-    class I32 : public Value<Q>
+    class Loop : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        Loop(const Value<Q> *body) : body(body) {}
+
     public:
-        static const I32 *create();
+        static const Loop *create(const Value<Q> *body);
+
+        const Value<Q> *body;
     };
 
-    class I64 : public Value<Q>
+    class Break : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -92,10 +114,10 @@ namespace libquixcc::ir::q
         bool verify_impl() const override;
 
     public:
-        static const I64 *create();
+        static const Break *create();
     };
 
-    class I128 : public Value<Q>
+    class Continue : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -103,223 +125,88 @@ namespace libquixcc::ir::q
         bool verify_impl() const override;
 
     public:
-        static const I128 *create();
+        static const Continue *create();
     };
 
-    class U8 : public Value<Q>
+    class Return : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        Return(const Value<Q> *value) : value(value) {}
+
     public:
-        static const U8 *create();
+        static const Return *create(const Value<Q> *value);
+
+        const Value<Q> *value;
     };
 
-    class U16 : public Value<Q>
+    class Throw : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        Throw(const Value<Q> *value) : value(value) {}
+
     public:
-        static const U16 *create();
+        static const Throw *create(const Value<Q> *value);
+
+        const Value<Q> *value;
     };
 
-    class U32 : public Value<Q>
+    class TryCatchFinally : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        TryCatchFinally(const Value<Q> *tryblock, const Value<Q> *catchblock, const Value<Q> *finallyblock) : tryblock(tryblock), catchblock(catchblock), finallyblock(finallyblock) {}
+
     public:
-        static const U32 *create();
+        static const TryCatchFinally *create(const Value<Q> *tryblock, const Value<Q> *catchblock, const Value<Q> *finallyblock);
+
+        const Value<Q> *tryblock;
+        const Value<Q> *catchblock;
+        const Value<Q> *finallyblock;
     };
 
-    class U64 : public Value<Q>
+    class Case : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        Case(const Value<Q> *value, const Value<Q> *body) : value(value), body(body) {}
+
     public:
-        static const U64 *create();
+        static const Case *create(const Value<Q> *value, const Value<Q> *body);
+
+        const Value<Q> *value;
+        const Value<Q> *body;
     };
 
-    class U128 : public Value<Q>
+    class Switch : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-    public:
-        static const U128 *create();
-    };
-
-    class F32 : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
+        Switch(const Value<Q> *value, const std::set<const Case *> &cases, const Value<Q> *defaultcase) : value(value), cases(cases), defaultcase(defaultcase) {}
 
     public:
-        static const F32 *create();
-    };
+        static const Switch *create(const Value<Q> *value, const std::set<const Case *> &cases, const Value<Q> *defaultcase);
 
-    class F64 : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-    public:
-        static const F64 *create();
-    };
-
-    class Void : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-    public:
-        static const Void *create();
-    };
-
-    class Ptr : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Ptr(const Value<Q> *type) : type(type) {}
-
-    public:
-        static const Ptr *create(Value<Q> *type);
-
-        const Value<Q> *type;
-    };
-
-    class Array : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Array(Value<Q> *type, uint64_t size) : type(type), size(size) {}
-
-    public:
-        static const Array *create(Value<Q> *type, uint64_t size);
-
-        const Value<Q> *type;
-        uint64_t size;
-    };
-
-    class Vector : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Vector(const Value<Q> *type) : type(type) {}
-
-    public:
-        static const Vector *create(const Value<Q> *type);
-
-        const Value<Q> *type;
-    };
-
-    class FType : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        FType(std::vector<const Value<Q> *> params, const Value<Q> *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow) : params(params), ret(ret), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_nothrow(nothrow) {}
-
-    public:
-        static const FType *create(std::vector<const Value<Q> *> params, const Value<Q> *ret, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false);
-
-        std::vector<const Value<Q> *> params;
-        const Value<Q> *ret;
-        bool m_variadic;
-        bool m_pure;
-        bool m_thread_safe;
-        bool m_foreign;
-        bool m_nothrow;
-    };
-
-    class Region : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Region(std::string name) : name(name) {}
-
-    public:
-        static const Region *create(std::string name);
-
-        std::string name;
-    };
-
-    class Group : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Group(std::string name) : name(name) {}
-
-    public:
-        static const Group *create(std::string name);
-
-        std::string name;
-    };
-
-    class Union : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Union(std::string name) : name(name) {}
-
-    public:
-        static const Union *create(std::string name);
-
-        std::string name;
-    };
-
-    class Opaque : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Opaque(std::string name) : name(name) {}
-
-    public:
-        static const Opaque *create(std::string name);
-
-        std::string name;
+        const Value<Q> *value;
+        const std::set<const Case *> cases;
+        const Value<Q> *defaultcase;
     };
 }
 
-#endif // __QUIXCC_IR_Q_NODES_TYPE_H__
+#endif // __QUIXCC_IR_Q_NODES_CONTROL_H__
