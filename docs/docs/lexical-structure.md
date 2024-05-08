@@ -92,10 +92,12 @@ This table contains the types of tokens that are used in QUIX:
 | u16 | type | Unsigned 16-bit integer |
 | u32 | type | Unsigned 32-bit integer |
 | u64 | type | Unsigned 64-bit integer |
+| u128 | type | Unsigned 128-bit integer |
 | i8 | type | Signed 8-bit integer |
 | i16 | type | Signed 16-bit integer |
 | i32 | type | Signed 32-bit integer |
 | i64 | type | Signed 64-bit integer |
+| i128 | type | Signed 128-bit integer |
 | f32 | type | Signed 32-bit floating point |
 | f64 | type | Signed 64-bit floating point |
 | buildconf | reserved | Reserved |

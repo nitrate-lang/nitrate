@@ -64,6 +64,12 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             }
         }
 
+        if (tok.is<Punctor>(Punctor::Semicolon)) /* Skip excessive semicolons */
+        {
+            scanner->next();
+            continue;
+        }
+
         if (tok.type() != TT::Keyword)
         {
             std::shared_ptr<ExprNode> expr;

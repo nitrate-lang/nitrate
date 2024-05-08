@@ -148,6 +148,26 @@ namespace libquixcc
         virtual std::string to_source() const override { return "u64"; }
     };
 
+    class U128TypeNode : public TypeNode
+    {
+        U128TypeNode() { ntype = NodeType::U128TypeNode; }
+        static U128TypeNode *m_instance;
+
+    public:
+        static U128TypeNode *create()
+        {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
+            if (m_instance == nullptr)
+                m_instance = new U128TypeNode();
+            return m_instance;
+        }
+
+        virtual size_t size(size_t ptr_size) const override { return 8; }
+        virtual std::string to_source() const override { return "u128"; }
+    };
+
     class I8TypeNode : public TypeNode
     {
         I8TypeNode() { ntype = NodeType::I8TypeNode; }
@@ -226,6 +246,26 @@ namespace libquixcc
 
         virtual size_t size(size_t ptr_size) const override { return 8; }
         virtual std::string to_source() const override { return "i64"; }
+    };
+
+    class I128TypeNode : public TypeNode
+    {
+        I128TypeNode() { ntype = NodeType::I128TypeNode; }
+        static I128TypeNode *m_instance;
+
+    public:
+        static I128TypeNode *create()
+        {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
+            if (m_instance == nullptr)
+                m_instance = new I128TypeNode();
+            return m_instance;
+        }
+
+        virtual size_t size(size_t ptr_size) const override { return 8; }
+        virtual std::string to_source() const override { return "i128"; }
     };
 
     class F32TypeNode : public TypeNode

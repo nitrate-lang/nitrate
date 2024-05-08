@@ -80,10 +80,12 @@ namespace libquixcc
         U16TypeNode,
         U32TypeNode,
         U64TypeNode,
+        U128TypeNode,
         I8TypeNode,
         I16TypeNode,
         I32TypeNode,
         I64TypeNode,
+        I128TypeNode,
         F32TypeNode,
         F64TypeNode,
         BoolTypeNode,
@@ -174,10 +176,12 @@ namespace libquixcc
     class U16TypeNode;
     class U32TypeNode;
     class U64TypeNode;
+    class U128TypeNode;
     class I8TypeNode;
     class I16TypeNode;
     class I32TypeNode;
     class I64TypeNode;
+    class I128TypeNode;
     class F32TypeNode;
     class F64TypeNode;
     class BoolTypeNode;

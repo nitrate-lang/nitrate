@@ -169,6 +169,8 @@ namespace libquixcc
                 return std::is_same_v<T, U32TypeNode>;
             case NodeType::U64TypeNode:
                 return std::is_same_v<T, U64TypeNode>;
+            case NodeType::U128TypeNode:
+                return std::is_same_v<T, U128TypeNode>;
             case NodeType::I8TypeNode:
                 return std::is_same_v<T, I8TypeNode>;
             case NodeType::I16TypeNode:
@@ -177,6 +179,8 @@ namespace libquixcc
                 return std::is_same_v<T, I32TypeNode>;
             case NodeType::I64TypeNode:
                 return std::is_same_v<T, I64TypeNode>;
+            case NodeType::I128TypeNode:
+                return std::is_same_v<T, I128TypeNode>;
             case NodeType::F32TypeNode:
                 return std::is_same_v<T, F32TypeNode>;
             case NodeType::F64TypeNode:
@@ -303,7 +307,7 @@ namespace libquixcc
                 return is<UnaryExprNode>() || is<BinaryExprNode>() || is<CallExprNode>() || is<ListExprNode>() || is<MemberAccessNode>() || isof<CastExprNode>() || isof<LiteralNode>();
 
             if (std::is_same_v<T, TypeNode>)
-                return is<MutTypeNode>() || is<U8TypeNode>() || is<U16TypeNode>() || is<U32TypeNode>() || is<U64TypeNode>() || is<I8TypeNode>() || is<I16TypeNode>() || is<I32TypeNode>() || is<I64TypeNode>() || is<F32TypeNode>() || is<F64TypeNode>() || is<BoolTypeNode>() || is<VoidTypeNode>() || is<PointerTypeNode>() || is<OpaqueTypeNode>() || is<StringTypeNode>() || is<EnumTypeNode>() || is<StructTypeNode>() || is<RegionTypeNode>() || is<UnionTypeNode>() || is<ArrayTypeNode>() || is<FunctionTypeNode>() || is<UserTypeNode>();
+                return is<MutTypeNode>() || is<U8TypeNode>() || is<U16TypeNode>() || is<U32TypeNode>() || is<U64TypeNode>() || is<U128TypeNode>() || is<I8TypeNode>() || is<I16TypeNode>() || is<I32TypeNode>() || is<I64TypeNode>() || is<I128TypeNode>() || is<F32TypeNode>() || is<F64TypeNode>() || is<BoolTypeNode>() || is<VoidTypeNode>() || is<PointerTypeNode>() || is<OpaqueTypeNode>() || is<StringTypeNode>() || is<EnumTypeNode>() || is<StructTypeNode>() || is<RegionTypeNode>() || is<UnionTypeNode>() || is<ArrayTypeNode>() || is<FunctionTypeNode>() || is<UserTypeNode>();
 
             if (std::is_same_v<T, StmtNode>)
                 return is<ExprStmtNode>() || is<NopStmtNode>() || is<DeclNode>() || is<DefNode>() || is<BlockNode>() || is<StmtGroupNode>() || is<ReturnStmtNode>() || is<RetifStmtNode>() || is<RetzStmtNode>() || is<RetvStmtNode>() || is<IfStmtNode>() || is<WhileStmtNode>() || is<ForStmtNode>() || is<SubsystemNode>() || is<ExportNode>() || is<InlineAsmNode>();
