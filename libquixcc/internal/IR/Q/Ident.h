@@ -29,47 +29,31 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef __QUIXCC_IR_Q_NODES_IDENTIFIER_H__
+#define __QUIXCC_IR_Q_NODES_IDENTIFIER_H__
+
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
+
 #include <IR/Q/QIR.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+namespace libquixcc::ir::q
 {
-    os << "use QIR_1_0;\n";
-    os << "; ModuleID = '" << m_name << "'\n";
+    class Ident : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-    if (!m_root)
-        return true;
+        Ident(std::string name) : name(name) {}
 
-    os << "; ModuleHash = '";
-    m_root->printid(os);
-    os << "'\n\n";
+    public:
+        static const Ident *create(std::string name);
 
-    return m_root->print(os, state);
+        std::string name;
+    };
 }
 
-bool libquixcc::ir::q::QModule::verify_impl() const
-{
-    if (!m_root)
-        return false;
-
-    return m_root->verify();
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_name_impl() const
-{
-    return "QIR-Q";
-}
-
-unsigned int libquixcc::ir::q::QModule::ir_dialect_version_impl() const
-{
-    return 1;
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_family_impl() const
-{
-    return "QIR";
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_description_impl() const
-{
-    return "Quix Q Intermediate Representation (QIR-Q-V1.0) is an intermediate representation for the Quix language. ... (write something useful here)";
-}
+#endif // __QUIXCC_IR_Q_NODES_IDENTIFIER_H__

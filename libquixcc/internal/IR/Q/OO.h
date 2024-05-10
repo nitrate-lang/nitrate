@@ -29,47 +29,65 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
+#ifndef __QUIXCC_IR_Q_NODES_OOP_H__
+#define __QUIXCC_IR_Q_NODES_OOP_H__
+
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
+
 #include <IR/Q/QIR.h>
+#include <IR/Q/Function.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+namespace libquixcc::ir::q
 {
-    os << "use QIR_1_0;\n";
-    os << "; ModuleID = '" << m_name << "'\n";
+    class RegionDef : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-    if (!m_root)
-        return true;
+        RegionDef(std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
 
-    os << "; ModuleHash = '";
-    m_root->printid(os);
-    os << "'\n\n";
+    public:
+        static const RegionDef *create(std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods);
 
-    return m_root->print(os, state);
+        std::vector<std::pair<std::string, const Value<Q> *>> fields;
+        std::set<const Function *> methods;
+    };
+
+    class GroupDef : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        GroupDef(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
+
+    public:
+        static const GroupDef *create(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
+
+        std::unordered_map<std::string, const Value<Q> *> fields;
+        std::set<const Function *> methods;
+    };
+
+    class UnionDef : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        UnionDef(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
+
+    public:
+        static const UnionDef *create(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
+
+        std::unordered_map<std::string, const Value<Q> *> fields;
+        std::set<const Function *> methods;
+    };
 }
 
-bool libquixcc::ir::q::QModule::verify_impl() const
-{
-    if (!m_root)
-        return false;
-
-    return m_root->verify();
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_name_impl() const
-{
-    return "QIR-Q";
-}
-
-unsigned int libquixcc::ir::q::QModule::ir_dialect_version_impl() const
-{
-    return 1;
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_family_impl() const
-{
-    return "QIR";
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_description_impl() const
-{
-    return "Quix Q Intermediate Representation (QIR-Q-V1.0) is an intermediate representation for the Quix language. ... (write something useful here)";
-}
+#endif // __QUIXCC_IR_Q_NODES_OOP_H__

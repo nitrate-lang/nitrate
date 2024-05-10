@@ -29,65 +29,58 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_Q_NODES_OOP_H__
-#define __QUIXCC_IR_Q_NODES_OOP_H__
+#ifndef __QUIXCC_IR_Q_NODES_FUNCTION_H__
+#define __QUIXCC_IR_Q_NODES_FUNCTION_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
 #include <IR/Q/QIR.h>
-#include <IR/Q/nodes/Function.h>
 
 namespace libquixcc::ir::q
 {
-    class RegionDef : public Value<Q>
+    class FunctionBlock : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        RegionDef(std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
+        FunctionBlock(std::vector<const Value<Q> *> stmts) : stmts(stmts) {}
 
     public:
-        static const RegionDef *create(std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods);
+        static const FunctionBlock *create(std::vector<const Value<Q> *> stmts);
 
-        std::vector<std::pair<std::string, const Value<Q> *>> fields;
-        std::set<const Function *> methods;
+        std::vector<const Value<Q> *> stmts;
     };
 
-    class GroupDef : public Value<Q>
+    enum class FConstraint
     {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        GroupDef(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
-
-    public:
-        static const GroupDef *create(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
-
-        std::unordered_map<std::string, const Value<Q> *> fields;
-        std::set<const Function *> methods;
+        C_ABI,
+        Variadic,
+        Pure,
+        ThreadSafe,
+        NoThrow,
     };
 
-    class UnionDef : public Value<Q>
+    class Function : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        UnionDef(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
-
+        Function(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Value<Q> *block, std::set<FConstraint> constraints) : name(name), constraints(constraints), params(params), return_type(return_type), block(static_cast<const FunctionBlock *>(block)) {}
     public:
-        static const UnionDef *create(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
+        static const Function *create(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Value<Q> *block, std::set<FConstraint> constraints);
 
-        std::unordered_map<std::string, const Value<Q> *> fields;
-        std::set<const Function *> methods;
+        std::string name;
+        std::set<FConstraint> constraints;
+        std::vector<const Value<Q> *> params;
+        const Value<Q> *return_type;
+        const FunctionBlock *block;
     };
 }
 
-#endif // __QUIXCC_IR_Q_NODES_OOP_H__
+#endif // __QUIXCC_IR_Q_NODES_FUNCTION_H__

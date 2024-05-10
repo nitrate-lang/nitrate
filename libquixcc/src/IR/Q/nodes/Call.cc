@@ -29,49 +29,26 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_Q_NODES_CALL_H__
-#define __QUIXCC_IR_Q_NODES_CALL_H__
+#include <IR/Q/Call.h>
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <IR/Q/QIR.h>
-#include <IR/Q/nodes/Function.h>
-
-namespace libquixcc::ir::q
+boost::uuids::uuid libquixcc::ir::q::Call::hash_impl() const
 {
-    class Call : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Call(const Function *func, std::vector<const Value<Q> *> args) : func(func), args(args) {}
-
-    public:
-        static const Call *create(const Function *func, std::vector<const Value<Q> *> args);
-
-        const Function *func;
-        std::vector<const Value<Q> *> args;
-    };
-
-    class CallIndirect : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        CallIndirect(const Value<Q> *exprfunc, std::vector<const Value<Q> *> args) : exprfunc(exprfunc), args(args) {}
-
-    public:
-        static const CallIndirect *create(const Value<Q> *exprfunc, std::vector<const Value<Q> *> args);
-
-        const Value<Q> *exprfunc;
-        std::vector<const Value<Q> *> args;
-    };
+    return Hasher().gettag().add(func).add(args).hash();
 }
 
-#endif // __QUIXCC_IR_Q_NODES_CALL_H__
+bool libquixcc::ir::q::Call::verify_impl() const
+{
+    return func->verify() && std::all_of(args.begin(), args.end(), [](const Value<Q> *arg)
+                                         { return arg->verify(); });
+}
+
+boost::uuids::uuid libquixcc::ir::q::CallIndirect::hash_impl() const
+{
+    return Hasher().gettag().add(exprfunc).add(args).hash();
+}
+
+bool libquixcc::ir::q::CallIndirect::verify_impl() const
+{
+    return exprfunc->verify() && std::all_of(args.begin(), args.end(), [](const Value<Q> *arg)
+                                             { return arg->verify(); });
+}

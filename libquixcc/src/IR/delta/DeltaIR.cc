@@ -79,5 +79,5 @@ std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_family_impl() const
 
 std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_description_impl() const
 {
-    return "Quix Delta Intermediate Representation (QIR-Delta-V1.0) is an intermediate representation for the Quix language.";
+    return "Quix Delta Intermediate Representation (QIR-Delta-V1.0) is an intermediate representation for the Quix language. ... (write something useful here)";
 }

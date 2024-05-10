@@ -29,47 +29,79 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/QIR.h>
+#include <IR/Q/OO.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+boost::uuids::uuid libquixcc::ir::q::RegionDef::hash_impl() const
 {
-    os << "use QIR_1_0;\n";
-    os << "; ModuleID = '" << m_name << "'\n";
+    auto hasher = Hasher().gettag();
+    for (auto &f : fields)
+        hasher.add(f.first).add(f.second);
 
-    if (!m_root)
-        return true;
+    for (auto &m : methods)
+        hasher.add(m);
 
-    os << "; ModuleHash = '";
-    m_root->printid(os);
-    os << "'\n\n";
-
-    return m_root->print(os, state);
+    return hasher.hash();
 }
 
-bool libquixcc::ir::q::QModule::verify_impl() const
+bool libquixcc::ir::q::RegionDef::verify_impl() const
 {
-    if (!m_root)
-        return false;
+    for (auto &f : fields)
+        if (!f.second->verify())
+            return false;
 
-    return m_root->verify();
+    for (auto &m : methods)
+        if (!m->verify())
+            return false;
+
+    return true;
 }
 
-std::string_view libquixcc::ir::q::QModule::ir_dialect_name_impl() const
+boost::uuids::uuid libquixcc::ir::q::GroupDef::hash_impl() const
 {
-    return "QIR-Q";
+    auto hasher = Hasher().gettag();
+    for (auto &f : fields)
+        hasher.add(f.first).add(f.second);
+
+    for (auto &m : methods)
+        hasher.add(m);
+
+    return hasher.hash();
 }
 
-unsigned int libquixcc::ir::q::QModule::ir_dialect_version_impl() const
+bool libquixcc::ir::q::GroupDef::verify_impl() const
 {
-    return 1;
+    for (auto &f : fields)
+        if (!f.second->verify())
+            return false;
+
+    for (auto &m : methods)
+        if (!m->verify())
+            return false;
+
+    return true;
 }
 
-std::string_view libquixcc::ir::q::QModule::ir_dialect_family_impl() const
+boost::uuids::uuid libquixcc::ir::q::UnionDef::hash_impl() const
 {
-    return "QIR";
+    auto hasher = Hasher().gettag();
+    for (auto &f : fields)
+        hasher.add(f.first).add(f.second);
+
+    for (auto &m : methods)
+        hasher.add(m);
+
+    return hasher.hash();
 }
 
-std::string_view libquixcc::ir::q::QModule::ir_dialect_description_impl() const
+bool libquixcc::ir::q::UnionDef::verify_impl() const
 {
-    return "Quix Q Intermediate Representation (QIR-Q-V1.0) is an intermediate representation for the Quix language. ... (write something useful here)";
+    for (auto &f : fields)
+        if (!f.second->verify())
+            return false;
+
+    for (auto &m : methods)
+        if (!m->verify())
+            return false;
+
+    return true;
 }

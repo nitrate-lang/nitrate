@@ -29,8 +29,8 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_Q_NODES_FUNCTION_H__
-#define __QUIXCC_IR_Q_NODES_FUNCTION_H__
+#ifndef __QUIXCC_IR_Q_NODES_VARIABLE_H__
+#define __QUIXCC_IR_Q_NODES_VARIABLE_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
@@ -40,48 +40,70 @@
 
 namespace libquixcc::ir::q
 {
-    class FunctionBlock : public Value<Q>
+    class Local : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        FunctionBlock(std::vector<const Value<Q> *> stmts) : stmts(stmts) {}
+        Local(std::string name, const Value<Q> *type) : name(name), type(type) {}
 
     public:
-        static const FunctionBlock *create(std::vector<const Value<Q> *> stmts);
-
-        std::vector<const Value<Q> *> stmts;
-    };
-
-    enum class FConstraint
-    {
-        C_ABI,
-        Variadic,
-        Pure,
-        ThreadSafe,
-        NoThrow,
-    };
-
-    class Function : public Value<Q>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Function(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const FunctionBlock *block) : name(std::move(name)), params(std::move(params)), return_type(return_type), block(block) {}
-
-    public:
-        static const Function *create(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Value<Q> *block);
+        static const Local *create(std::string name, const Value<Q> *type);
 
         std::string name;
-        std::set<FConstraint> constraints;
-        std::vector<const Value<Q> *> params;
-        const Value<Q> *return_type;
-        const FunctionBlock *block;
+        const Value<Q> *type;
+    };
+
+    class Global : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Global(std::string name, const Value<Q> *type, const Value<Q> *value, bool _volatile, bool _atomic) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic) {}
+
+    public:
+        static const Global *create(std::string name, const Value<Q> *type, const Value<Q> *value, bool _volatile = false, bool _atomic = false);
+
+        std::string name;
+        const Value<Q> *type;
+        const Value<Q> *value;
+        bool _volatile;
+        bool _atomic;
+    };
+
+    class Number : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Number(std::string value) : value(value) {}
+
+    public:
+        static const Number *create(std::string value);
+
+        std::string value;
+    };
+
+    class String : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        String(std::string value) : value(value) {}
+
+    public:
+        static const String *create(std::string value);
+
+        std::string value;
     };
 }
 
-#endif // __QUIXCC_IR_Q_NODES_FUNCTION_H__
+#endif // __QUIXCC_IR_Q_NODES_VARIABLE_H__

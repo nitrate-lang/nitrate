@@ -29,47 +29,14 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/QIR.h>
+#include <IR/Q/Ident.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+boost::uuids::uuid libquixcc::ir::q::Ident::hash_impl() const
 {
-    os << "use QIR_1_0;\n";
-    os << "; ModuleID = '" << m_name << "'\n";
-
-    if (!m_root)
-        return true;
-
-    os << "; ModuleHash = '";
-    m_root->printid(os);
-    os << "'\n\n";
-
-    return m_root->print(os, state);
+    return Hasher().gettag().add(name).hash();
 }
 
-bool libquixcc::ir::q::QModule::verify_impl() const
+bool libquixcc::ir::q::Ident::verify_impl() const
 {
-    if (!m_root)
-        return false;
-
-    return m_root->verify();
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_name_impl() const
-{
-    return "QIR-Q";
-}
-
-unsigned int libquixcc::ir::q::QModule::ir_dialect_version_impl() const
-{
-    return 1;
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_family_impl() const
-{
-    return "QIR";
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_description_impl() const
-{
-    return "Quix Q Intermediate Representation (QIR-Q-V1.0) is an intermediate representation for the Quix language. ... (write something useful here)";
+    return false;
 }

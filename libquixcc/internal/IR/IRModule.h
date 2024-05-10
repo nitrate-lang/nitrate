@@ -283,6 +283,26 @@ namespace libquixcc
                 return *this;
             }
 
+            template <typename T>
+            Hasher &add(const std::vector<T> &values)
+            {
+                for (const auto &value : values)
+                {
+                    add(value);
+                }
+                return *this;
+            }
+
+            template <typename T>
+            Hasher &add(const std::set<T> &values)
+            {
+                for (const auto &value : values)
+                {
+                    add(value);
+                }
+                return *this;
+            }
+
             template <typename T, typename W>
             Hasher &add(const std::set<std::pair<T, W>> &values)
             {

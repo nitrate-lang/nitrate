@@ -49,6 +49,8 @@ namespace libquixcc
             enum class NodeType
             {
                 Root,
+
+                /* Types */
                 I1,
                 I8,
                 I16,
@@ -72,27 +74,74 @@ namespace libquixcc
                 Union,
                 Opaque,
 
+                /* Functions */
                 FunctionBlock,
                 Function,
+                Asm,
 
+                /* OO */
                 RegionDef,
                 GroupDef,
                 UnionDef,
 
+                /* Casting */
+                SCast,
+                UCast,
+                PtrICast,
+                IPtrCast,
+                Bitcast,
+
+                /* Control Flow */
                 Call,
                 CallIndirect,
-
                 IfElse,
                 While,
                 For,
                 Loop,
                 Break,
                 Continue,
-                Return,
+                Ret,
                 Throw,
                 TryCatchFinally,
                 Case,
                 Switch,
+
+                Ident,
+
+                /* Arithmetic */
+                Add,
+                Sub,
+                Mul,
+                Div,
+                Mod,
+                BitAnd,
+                BitOr,
+                BitXor,
+                BitNot,
+                Shl,
+                Shr,
+                Rotl,
+                Rotr,
+
+                /* Comparison */
+                Eq,
+                Ne,
+                Lt,
+                Gt,
+                Le,
+                Ge,
+
+                /* Logical */
+                And,
+                Or,
+                Not,
+                Xor,
+
+                /* Variables */
+                Local,
+                Global,
+                Number,
+                String,
             };
 
             class RootNode : public libquixcc::ir::Value<Q>
@@ -102,11 +151,12 @@ namespace libquixcc
                 boost::uuids::uuid hash_impl() const override;
                 bool verify_impl() const override;
 
+                RootNode(std::vector<const Value<Q> *> children) : children(children) {}
+
             public:
-                static const RootNode *create()
-                {
-                    return nullptr;
-                }
+                static const RootNode *create(std::vector<const Value<Q> *> children = {});
+
+                std::vector<const Value<Q> *> children;
             };
 
             class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *>

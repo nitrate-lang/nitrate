@@ -29,47 +29,54 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/QIR.h>
+#include <IR/Q/Cast.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+boost::uuids::uuid libquixcc::ir::q::SCast::hash_impl() const
 {
-    os << "use QIR_1_0;\n";
-    os << "; ModuleID = '" << m_name << "'\n";
-
-    if (!m_root)
-        return true;
-
-    os << "; ModuleHash = '";
-    m_root->printid(os);
-    os << "'\n\n";
-
-    return m_root->print(os, state);
+    return Hasher().gettag().add(type).add(value).hash();
 }
 
-bool libquixcc::ir::q::QModule::verify_impl() const
+bool libquixcc::ir::q::SCast::verify_impl() const
 {
-    if (!m_root)
-        return false;
-
-    return m_root->verify();
+    return type->verify() && value->verify();
 }
 
-std::string_view libquixcc::ir::q::QModule::ir_dialect_name_impl() const
+boost::uuids::uuid libquixcc::ir::q::UCast::hash_impl() const
 {
-    return "QIR-Q";
+    return Hasher().gettag().add(type).add(value).hash();
 }
 
-unsigned int libquixcc::ir::q::QModule::ir_dialect_version_impl() const
+bool libquixcc::ir::q::UCast::verify_impl() const
 {
-    return 1;
+    return type->verify() && value->verify();
 }
 
-std::string_view libquixcc::ir::q::QModule::ir_dialect_family_impl() const
+boost::uuids::uuid libquixcc::ir::q::PtrICast::hash_impl() const
 {
-    return "QIR";
+    return Hasher().gettag().add(type).add(value).hash();
 }
 
-std::string_view libquixcc::ir::q::QModule::ir_dialect_description_impl() const
+bool libquixcc::ir::q::PtrICast::verify_impl() const
 {
-    return "Quix Q Intermediate Representation (QIR-Q-V1.0) is an intermediate representation for the Quix language. ... (write something useful here)";
+    return type->verify() && value->verify();
+}
+
+boost::uuids::uuid libquixcc::ir::q::IPtrCast::hash_impl() const
+{
+    return Hasher().gettag().add(type).add(value).hash();
+}
+
+bool libquixcc::ir::q::IPtrCast::verify_impl() const
+{
+    return type->verify() && value->verify();
+}
+
+boost::uuids::uuid libquixcc::ir::q::Bitcast::hash_impl() const
+{
+    return Hasher().gettag().add(type).add(value).hash();
+}
+
+bool libquixcc::ir::q::Bitcast::verify_impl() const
+{
+    return type->verify() && value->verify();
 }

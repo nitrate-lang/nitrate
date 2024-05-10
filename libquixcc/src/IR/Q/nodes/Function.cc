@@ -29,47 +29,32 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/QIR.h>
+#include <IR/Q/Function.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+boost::uuids::uuid libquixcc::ir::q::FunctionBlock::hash_impl() const
 {
-    os << "use QIR_1_0;\n";
-    os << "; ModuleID = '" << m_name << "'\n";
-
-    if (!m_root)
-        return true;
-
-    os << "; ModuleHash = '";
-    m_root->printid(os);
-    os << "'\n\n";
-
-    return m_root->print(os, state);
+    return Hasher().gettag().add(stmts).hash();
 }
 
-bool libquixcc::ir::q::QModule::verify_impl() const
+bool libquixcc::ir::q::FunctionBlock::verify_impl() const
 {
-    if (!m_root)
-        return false;
-
-    return m_root->verify();
+    return std::all_of(stmts.begin(), stmts.end(), [](const Value<Q> *stmt)
+                       { return stmt->verify(); });
 }
 
-std::string_view libquixcc::ir::q::QModule::ir_dialect_name_impl() const
+boost::uuids::uuid libquixcc::ir::q::Function::hash_impl() const
 {
-    return "QIR-Q";
+    auto h = Hasher().gettag().add(name).add(params).add(return_type).add(block);
+
+    for (const auto &c : constraints)
+        h.add((size_t)c);
+
+    return h.hash();
 }
 
-unsigned int libquixcc::ir::q::QModule::ir_dialect_version_impl() const
+bool libquixcc::ir::q::Function::verify_impl() const
 {
-    return 1;
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_family_impl() const
-{
-    return "QIR";
-}
-
-std::string_view libquixcc::ir::q::QModule::ir_dialect_description_impl() const
-{
-    return "Quix Q Intermediate Representation (QIR-Q-V1.0) is an intermediate representation for the Quix language. ... (write something useful here)";
+    return std::all_of(params.begin(), params.end(), [](const Value<Q> *param)
+                       { return param->verify(); }) &&
+           return_type->verify() && block->verify();
 }
