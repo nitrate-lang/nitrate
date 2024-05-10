@@ -165,13 +165,13 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        TryCatchFinally(const Value<Q> *tryblock, const Value<Q> *catchblock, const Value<Q> *finallyblock) : tryblock(tryblock), catchblock(catchblock), finallyblock(finallyblock) {}
+        TryCatchFinally(const Value<Q> *tryblock, std::vector<std::pair<const Value<Q> *, const Value<Q> *>> catchblocks, const Value<Q> *finallyblock) : tryblock(tryblock), catchblocks(catchblocks), finallyblock(finallyblock) {}
 
     public:
-        static const TryCatchFinally *create(const Value<Q> *tryblock, const Value<Q> *catchblock, const Value<Q> *finallyblock);
+        static const TryCatchFinally *create(const Value<Q> *tryblock, std::vector<std::pair<const Value<Q> *, const Value<Q> *>> catchblocks, const Value<Q> *finallyblock);
 
         const Value<Q> *tryblock;
-        const Value<Q> *catchblock;
+        std::vector<std::pair<const Value<Q> *, const Value<Q> *>> catchblocks;
         const Value<Q> *finallyblock;
     };
 

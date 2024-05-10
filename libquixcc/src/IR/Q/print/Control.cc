@@ -31,121 +31,128 @@
 
 #include <IR/Q/Control.h>
 
-boost::uuids::uuid libquixcc::ir::q::IfElse::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::IfElse::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().add(cond).add(then).add(els).hash();
-}
-
-bool libquixcc::ir::q::IfElse::verify_impl() const
-{
-    return cond->verify() && then->verify() && els->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::While::hash_impl() const
-{
-    return Hasher().gettag().add(cond).add(body).hash();
-}
-
-bool libquixcc::ir::q::While::verify_impl() const
-{
-    return cond->verify() && body->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::For::hash_impl() const
-{
-    return Hasher().gettag().add(init).add(cond).add(step).add(body).hash();
-}
-
-bool libquixcc::ir::q::For::verify_impl() const
-{
-    return init->verify() && cond->verify() && step->verify() && body->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::Loop::hash_impl() const
-{
-    return Hasher().gettag().add(body).hash();
-}
-
-bool libquixcc::ir::q::Loop::verify_impl() const
-{
-    return body->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::Break::hash_impl() const
-{
-    return Hasher().gettag().hash();
-}
-
-bool libquixcc::ir::q::Break::verify_impl() const
-{
+    os << "if (";
+    if (!cond->print(os, state))
+        return false;
+    os << ") ";
+    if (!then->print(os, state))
+        return false;
+    os << " else ";
+    if (!els->print(os, state))
+        return false;
     return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Continue::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::While::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().hash();
-}
-
-bool libquixcc::ir::q::Continue::verify_impl() const
-{
+    os << "while (";
+    if (!cond->print(os, state))
+        return false;
+    os << ") ";
+    if (!body->print(os, state))
+        return false;
     return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Ret::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::For::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().add(value).hash();
+    os << "for (";
+    if (!init->print(os, state))
+        return false;
+    os << "; ";
+    if (!cond->print(os, state))
+        return false;
+    os << "; ";
+    if (!step->print(os, state))
+        return false;
+    os << ") ";
+    if (!body->print(os, state))
+        return false;
+    return true;
 }
 
-bool libquixcc::ir::q::Ret::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Loop::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return value->verify();
+    os << "loop ";
+    if (!body->print(os, state))
+        return false;
+    return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Throw::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Break::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().add(value).hash();
+    os << "break";
+    return true;
 }
 
-bool libquixcc::ir::q::Throw::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Continue::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return value->verify();
+    os << "continue";
+    return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::TryCatchFinally::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Ret::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    auto h = Hasher().gettag().add(tryblock).add(finallyblock);
-
-    for (auto &c : catchblocks)
-        h.add(c.first).add(c.second);
-
-    return h.hash();
+    os << "ret ";
+    if (!value->print(os, state))
+        return false;
+    return true;
 }
 
-bool libquixcc::ir::q::TryCatchFinally::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Throw::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return tryblock->verify() && std::all_of(catchblocks.begin(), catchblocks.end(), [](const auto &c)
-                                             { return c.second->verify(); }) &&
-           finallyblock->verify();
+    os << "throw ";
+    if (!value->print(os, state))
+        return false;
+    return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Case::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::TryCatchFinally::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().add(value).add(body).hash();
+    os << "try ";
+    if (!tryblock->print(os, state))
+        return false;
+    for (const auto &catchblock : catchblocks)
+    {
+        os << "catch (";
+        if (!catchblock.first->print(os, state))
+            return false;
+        os << ") ";
+        if (!catchblock.second->print(os, state))
+            return false;
+    }
+
+    os << "finally ";
+    if (!finallyblock->print(os, state))
+        return false;
+
+    return true;
 }
 
-bool libquixcc::ir::q::Case::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Case::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return value->verify() && body->verify();
+    os << "case ";
+    if (!value->print(os, state))
+        return false;
+    os << ": ";
+    if (!body->print(os, state))
+        return false;
+    return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Switch::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Switch::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().add(value).add(cases).add(defaultcase).hash();
-}
-
-bool libquixcc::ir::q::Switch::verify_impl() const
-{
-    return value->verify() && std::all_of(cases.begin(), cases.end(), [](const Case *c)
-                                          { return c->verify(); }) &&
-           defaultcase->verify();
+    os << "switch (";
+    if (!value->print(os, state))
+        return false;
+    os << ") {";
+    for (const auto &c : cases)
+    {
+        if (!c->print(os, state))
+            return false;
+    }
+    os << "}";
+    return true;
 }

@@ -58,3 +58,14 @@ bool libquixcc::ir::q::Function::verify_impl() const
                        { return param->verify(); }) &&
            return_type->verify() && block->verify();
 }
+
+boost::uuids::uuid libquixcc::ir::q::RootNode::hash_impl() const
+{
+    return Hasher().gettag().add(children).hash();
+}
+
+bool libquixcc::ir::q::RootNode::verify_impl() const
+{
+    return std::all_of(children.begin(), children.end(), [](const Value<Q> *child)
+                       { return child->verify(); });
+}

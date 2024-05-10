@@ -45,8 +45,8 @@
 #include <map>
 
 using namespace libquixcc;
-using namespace libquixcc::ir;
-using namespace libquixcc::ir::q;
+using namespace ir;
+using namespace ir::q;
 
 static RootNode *root = nullptr;
 static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const SCast *> scast_insts;
@@ -61,7 +61,7 @@ static std::map<const Value<Q> *, const Loop *> loop_insts;
 static Break *break_inst = nullptr;
 static Continue *continue_inst = nullptr;
 static std::map<const Value<Q> *, const Throw *> throw_insts;
-static std::map<std::tuple<const Value<Q> *, const Value<Q> *, const Value<Q> *>, const TryCatchFinally *> trycatchfinally_insts;
+static std::map<std::tuple<const Value<Q> *, std::vector<std::pair<const Value<Q> *, const Value<Q> *>>, const Value<Q> *>, const TryCatchFinally *> trycatchfinally_insts;
 static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Case *> case_insts;
 static std::map<std::tuple<const Value<Q> *, const std::set<const Case *>, const Value<Q> *>, const Switch *> switch_insts;
 static std::map<std::string, const Ident *> ident_insts;
@@ -191,7 +191,7 @@ const q::While *q::While::create(const Value<Q> *cond, const Value<Q> *body)
     return while_insts[key];
 }
 
-const libquixcc::ir::q::For *libquixcc::ir::q::For::create(const libquixcc::ir::Value<Q> *init, const libquixcc::ir::Value<Q> *cond, const libquixcc::ir::Value<Q> *step, const libquixcc::ir::Value<Q> *body)
+const ir::q::For *ir::q::For::create(const ir::Value<Q> *init, const ir::Value<Q> *cond, const ir::Value<Q> *step, const ir::Value<Q> *body)
 {
     lock(NodeType::For);
     auto key = std::make_tuple(init, cond, step, body);
@@ -200,7 +200,7 @@ const libquixcc::ir::q::For *libquixcc::ir::q::For::create(const libquixcc::ir::
     return for_insts[key];
 }
 
-const libquixcc::ir::q::Loop *libquixcc::ir::q::Loop::create(const libquixcc::ir::Value<libquixcc::ir::Q> *body)
+const ir::q::Loop *ir::q::Loop::create(const ir::Value<ir::Q> *body)
 {
     lock(NodeType::Loop);
     if (!loop_insts.contains(body))
@@ -208,7 +208,7 @@ const libquixcc::ir::q::Loop *libquixcc::ir::q::Loop::create(const libquixcc::ir
     return loop_insts[body];
 }
 
-const libquixcc::ir::q::Break *libquixcc::ir::q::Break::create()
+const ir::q::Break *ir::q::Break::create()
 {
     lock(NodeType::Break);
     if (break_inst == nullptr)
@@ -216,7 +216,7 @@ const libquixcc::ir::q::Break *libquixcc::ir::q::Break::create()
     return break_inst;
 }
 
-const libquixcc::ir::q::Continue *libquixcc::ir::q::Continue::create()
+const ir::q::Continue *ir::q::Continue::create()
 {
     lock(NodeType::Continue);
     if (continue_inst == nullptr)
@@ -232,7 +232,7 @@ const q::Ret *q::Ret::create(const Value<Q> *value)
     return ret_insts[value];
 }
 
-const libquixcc::ir::q::Throw *libquixcc::ir::q::Throw::create(const libquixcc::ir::Value<libquixcc::ir::Q> *value)
+const ir::q::Throw *ir::q::Throw::create(const ir::Value<ir::Q> *value)
 {
     lock(NodeType::Throw);
     if (!throw_insts.contains(value))
@@ -240,16 +240,16 @@ const libquixcc::ir::q::Throw *libquixcc::ir::q::Throw::create(const libquixcc::
     return throw_insts[value];
 }
 
-const libquixcc::ir::q::TryCatchFinally *libquixcc::ir::q::TryCatchFinally::create(const libquixcc::ir::Value<Q> *tryblock, const libquixcc::ir::Value<Q> *catchblock, const libquixcc::ir::Value<Q> *finallyblock)
+const ir::q::TryCatchFinally *ir::q::TryCatchFinally::create(const ir::Value<Q> *tryblock, std::vector<std::pair<const Value<Q> *, const Value<Q> *>> catchblocks, const ir::Value<Q> *finallyblock)
 {
     lock(NodeType::TryCatchFinally);
-    auto key = std::make_tuple(tryblock, catchblock, finallyblock);
+    auto key = std::make_tuple(tryblock, catchblocks, finallyblock);
     if (!trycatchfinally_insts.contains(key))
-        trycatchfinally_insts[key] = new TryCatchFinally(tryblock, catchblock, finallyblock);
+        trycatchfinally_insts[key] = new TryCatchFinally(tryblock, catchblocks, finallyblock);
     return trycatchfinally_insts[key];
 }
 
-const libquixcc::ir::q::Case *libquixcc::ir::q::Case::create(const libquixcc::ir::Value<libquixcc::ir::Q> *value, const libquixcc::ir::Value<libquixcc::ir::Q> *body)
+const ir::q::Case *ir::q::Case::create(const ir::Value<ir::Q> *value, const ir::Value<ir::Q> *body)
 {
     lock(NodeType::Case);
     auto key = std::make_pair(value, body);
@@ -258,7 +258,7 @@ const libquixcc::ir::q::Case *libquixcc::ir::q::Case::create(const libquixcc::ir
     return case_insts[key];
 }
 
-const libquixcc::ir::q::Switch *libquixcc::ir::q::Switch::create(const libquixcc::ir::Value<libquixcc::ir::Q> *value, const std::set<const libquixcc::ir::q::Case *> &cases, const libquixcc::ir::Value<libquixcc::ir::Q> *defaultcase)
+const ir::q::Switch *ir::q::Switch::create(const ir::Value<ir::Q> *value, const std::set<const ir::q::Case *> &cases, const ir::Value<ir::Q> *defaultcase)
 {
     lock(NodeType::Switch);
     auto key = std::make_tuple(value, cases, defaultcase);
@@ -267,7 +267,7 @@ const libquixcc::ir::q::Switch *libquixcc::ir::q::Switch::create(const libquixcc
     return switch_insts[key];
 }
 
-const libquixcc::ir::q::Call *libquixcc::ir::q::Call::create(const libquixcc::ir::q::Function *func, std::vector<const libquixcc::ir::Value<libquixcc::ir::Q> *> args)
+const ir::q::Call *ir::q::Call::create(const ir::q::Function *func, std::vector<const ir::Value<ir::Q> *> args)
 {
     lock(NodeType::Call);
     auto key = std::make_pair(func, args);
@@ -285,7 +285,7 @@ const q::CallIndirect *q::CallIndirect::create(const Value<Q> *callee, std::vect
     return ptrcall_insts[key];
 }
 
-const libquixcc::ir::q::Ident *libquixcc::ir::q::Ident::create(std::string name)
+const ir::q::Ident *ir::q::Ident::create(std::string name)
 {
     lock(NodeType::Ident);
     if (!ident_insts.contains(name))
@@ -293,7 +293,7 @@ const libquixcc::ir::q::Ident *libquixcc::ir::q::Ident::create(std::string name)
     return ident_insts[name];
 }
 
-const libquixcc::ir::q::Asm *libquixcc::ir::q::Asm::create()
+const ir::q::Asm *ir::q::Asm::create()
 {
     lock(NodeType::Asm);
     if (asm_inst == nullptr)
@@ -301,7 +301,7 @@ const libquixcc::ir::q::Asm *libquixcc::ir::q::Asm::create()
     return asm_inst;
 }
 
-const libquixcc::ir::q::FunctionBlock *libquixcc::ir::q::FunctionBlock::create(std::vector<const libquixcc::ir::Value<libquixcc::ir::Q> *> stmts)
+const ir::q::FunctionBlock *ir::q::FunctionBlock::create(std::vector<const ir::Value<ir::Q> *> stmts)
 {
     lock(NodeType::FunctionBlock);
     auto key = stmts;
@@ -310,7 +310,7 @@ const libquixcc::ir::q::FunctionBlock *libquixcc::ir::q::FunctionBlock::create(s
     return functionblock_insts[key];
 }
 
-const libquixcc::ir::q::Function *libquixcc::ir::q::Function::create(std::string name, std::vector<const Value<Q> *> params, const libquixcc::ir::Value<Q> *return_type, const libquixcc::ir::Value<Q> *block, std::set<libquixcc::ir::q::FConstraint> constraints)
+const ir::q::Function *ir::q::Function::create(std::string name, std::vector<const Value<Q> *> params, const ir::Value<Q> *return_type, const ir::Value<Q> *block, std::set<ir::q::FConstraint> constraints)
 {
     lock(NodeType::Function);
     auto key = std::make_tuple(name, params, return_type, block, constraints);

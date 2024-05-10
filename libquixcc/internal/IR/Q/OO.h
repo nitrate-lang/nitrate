@@ -48,11 +48,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        RegionDef(std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
+        RegionDef(std::string name, std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods) : name(name), fields(fields), methods(methods) {}
 
     public:
-        static const RegionDef *create(std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods);
+        static const RegionDef *create(std::string name, std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Function *> methods);
 
+        std::string name;
         std::vector<std::pair<std::string, const Value<Q> *>> fields;
         std::set<const Function *> methods;
     };
@@ -64,11 +65,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        GroupDef(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
+        GroupDef(std::string name, std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : name(name), fields(fields), methods(methods) {}
 
     public:
-        static const GroupDef *create(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
+        static const GroupDef *create(std::string name, std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
 
+        std::string name;
         std::unordered_map<std::string, const Value<Q> *> fields;
         std::set<const Function *> methods;
     };
@@ -80,11 +82,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        UnionDef(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : fields(fields), methods(methods) {}
+        UnionDef(std::string name, std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods) : name(name), fields(fields), methods(methods) {}
 
     public:
-        static const UnionDef *create(std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
+        static const UnionDef *create(std::string name, std::unordered_map<std::string, const Value<Q> *> fields, std::set<const Function *> methods);
 
+        std::string name;
         std::unordered_map<std::string, const Value<Q> *> fields;
         std::set<const Function *> methods;
     };

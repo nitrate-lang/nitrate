@@ -29,123 +29,82 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/Control.h>
+#include <IR/Q/OO.h>
 
-boost::uuids::uuid libquixcc::ir::q::IfElse::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::RegionDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().add(cond).add(then).add(els).hash();
-}
+    os << "region " << name << " {";
+    for (const auto &field : fields)
+    {
+        os << " " << field.first << ": ";
+        if (!field.second->print(os, state))
+            return false;
 
-bool libquixcc::ir::q::IfElse::verify_impl() const
-{
-    return cond->verify() && then->verify() && els->verify();
-}
+        os << ";";
+    }
 
-boost::uuids::uuid libquixcc::ir::q::While::hash_impl() const
-{
-    return Hasher().gettag().add(cond).add(body).hash();
-}
+    for (const auto &method : methods)
+    {
+        os << " ";
+        if (!method->print(os, state))
+            return false;
 
-bool libquixcc::ir::q::While::verify_impl() const
-{
-    return cond->verify() && body->verify();
-}
+        os << ";";
+    }
 
-boost::uuids::uuid libquixcc::ir::q::For::hash_impl() const
-{
-    return Hasher().gettag().add(init).add(cond).add(step).add(body).hash();
-}
+    os << " }";
 
-bool libquixcc::ir::q::For::verify_impl() const
-{
-    return init->verify() && cond->verify() && step->verify() && body->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::Loop::hash_impl() const
-{
-    return Hasher().gettag().add(body).hash();
-}
-
-bool libquixcc::ir::q::Loop::verify_impl() const
-{
-    return body->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::Break::hash_impl() const
-{
-    return Hasher().gettag().hash();
-}
-
-bool libquixcc::ir::q::Break::verify_impl() const
-{
     return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Continue::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::GroupDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().hash();
-}
+    os << "group " << name << " {";
+    for (const auto &field : fields)
+    {
+        os << " " << field.first << ": ";
+        if (!field.second->print(os, state))
+            return false;
 
-bool libquixcc::ir::q::Continue::verify_impl() const
-{
+        os << ";";
+    }
+
+    for (const auto &method : methods)
+    {
+        os << " ";
+        if (!method->print(os, state))
+            return false;
+
+        os << ";";
+    }
+
+    os << " }";
+
     return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Ret::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::UnionDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().add(value).hash();
-}
+    os << "union " << name << " {";
+    for (const auto &field : fields)
+    {
+        os << " " << field.first << ": ";
+        if (!field.second->print(os, state))
+            return false;
 
-bool libquixcc::ir::q::Ret::verify_impl() const
-{
-    return value->verify();
-}
+        os << ";";
+    }
 
-boost::uuids::uuid libquixcc::ir::q::Throw::hash_impl() const
-{
-    return Hasher().gettag().add(value).hash();
-}
+    for (const auto &method : methods)
+    {
+        os << " ";
+        if (!method->print(os, state))
+            return false;
 
-bool libquixcc::ir::q::Throw::verify_impl() const
-{
-    return value->verify();
-}
+        os << ";";
+    }
 
-boost::uuids::uuid libquixcc::ir::q::TryCatchFinally::hash_impl() const
-{
-    auto h = Hasher().gettag().add(tryblock).add(finallyblock);
+    os << " }";
 
-    for (auto &c : catchblocks)
-        h.add(c.first).add(c.second);
-
-    return h.hash();
-}
-
-bool libquixcc::ir::q::TryCatchFinally::verify_impl() const
-{
-    return tryblock->verify() && std::all_of(catchblocks.begin(), catchblocks.end(), [](const auto &c)
-                                             { return c.second->verify(); }) &&
-           finallyblock->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::Case::hash_impl() const
-{
-    return Hasher().gettag().add(value).add(body).hash();
-}
-
-bool libquixcc::ir::q::Case::verify_impl() const
-{
-    return value->verify() && body->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::Switch::hash_impl() const
-{
-    return Hasher().gettag().add(value).add(cases).add(defaultcase).hash();
-}
-
-bool libquixcc::ir::q::Switch::verify_impl() const
-{
-    return value->verify() && std::all_of(cases.begin(), cases.end(), [](const Case *c)
-                                          { return c->verify(); }) &&
-           defaultcase->verify();
+    return true;
 }

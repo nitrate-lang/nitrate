@@ -29,123 +29,127 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/Control.h>
+#include <IR/Q/Type.h>
 
-boost::uuids::uuid libquixcc::ir::q::IfElse::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::I1::print_impl(std::ostream &os, PState &state) const
 {
-    return Hasher().gettag().add(cond).add(then).add(els).hash();
+    return os << "i1", true;
 }
 
-bool libquixcc::ir::q::IfElse::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::I8::print_impl(std::ostream &os, PState &state) const
 {
-    return cond->verify() && then->verify() && els->verify();
+    return os << "i8", true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::While::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::I16::print_impl(std::ostream &os, PState &state) const
 {
-    return Hasher().gettag().add(cond).add(body).hash();
+    return os << "i16", true;
 }
 
-bool libquixcc::ir::q::While::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::I32::print_impl(std::ostream &os, PState &state) const
 {
-    return cond->verify() && body->verify();
+    return os << "i32", true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::For::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::I64::print_impl(std::ostream &os, PState &state) const
 {
-    return Hasher().gettag().add(init).add(cond).add(step).add(body).hash();
+    return os << "i64", true;
 }
 
-bool libquixcc::ir::q::For::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::I128::print_impl(std::ostream &os, PState &state) const
 {
-    return init->verify() && cond->verify() && step->verify() && body->verify();
+    return os << "i128", true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Loop::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::U8::print_impl(std::ostream &os, PState &state) const
 {
-    return Hasher().gettag().add(body).hash();
+    return os << "u8", true;
 }
 
-bool libquixcc::ir::q::Loop::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::U16::print_impl(std::ostream &os, PState &state) const
 {
-    return body->verify();
+    return os << "u16", true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Break::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::U32::print_impl(std::ostream &os, PState &state) const
 {
-    return Hasher().gettag().hash();
+    return os << "u32", true;
 }
 
-bool libquixcc::ir::q::Break::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::U64::print_impl(std::ostream &os, PState &state) const
 {
+    return os << "u64", true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::q::U128::print_impl(std::ostream &os, PState &state) const
+{
+    return os << "u128", true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::q::F32::print_impl(std::ostream &os, PState &state) const
+{
+    return os << "f32", true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::q::F64::print_impl(std::ostream &os, PState &state) const
+{
+    return os << "f64", true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::q::Void::print_impl(std::ostream &os, PState &state) const
+{
+    return os << "void", true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::q::Ptr::print_impl(std::ostream &os, PState &state) const
+{
+    if (!type->print(os, state))
+        return false;
+    return os << "*", true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::q::Array::print_impl(std::ostream &os, PState &state) const
+{
+    os << "[";
+    if (!type->print(os, state))
+        return false;
+    return os << "; " << size << "]", true;
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::q::FType::print_impl(std::ostream &os, PState &state) const
+{
+    os << "[";
+    for (size_t i = 0; i < params.size(); i++)
+    {
+        if (!params[i]->print(os, state))
+            return false;
+        if (i + 1 < params.size())
+            os << ", ";
+    }
+    os << "]->";
+    return ret->print(os, state);
+}
+
+libquixcc::ir::Result<bool> libquixcc::ir::q::Region::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "region " << name;
     return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Continue::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Group::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().hash();
-}
-
-bool libquixcc::ir::q::Continue::verify_impl() const
-{
+    os << "group " << name;
     return true;
 }
 
-boost::uuids::uuid libquixcc::ir::q::Ret::hash_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Union::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return Hasher().gettag().add(value).hash();
+    os << "union " << name;
+    return true;
 }
 
-bool libquixcc::ir::q::Ret::verify_impl() const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Opaque::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    return value->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::Throw::hash_impl() const
-{
-    return Hasher().gettag().add(value).hash();
-}
-
-bool libquixcc::ir::q::Throw::verify_impl() const
-{
-    return value->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::TryCatchFinally::hash_impl() const
-{
-    auto h = Hasher().gettag().add(tryblock).add(finallyblock);
-
-    for (auto &c : catchblocks)
-        h.add(c.first).add(c.second);
-
-    return h.hash();
-}
-
-bool libquixcc::ir::q::TryCatchFinally::verify_impl() const
-{
-    return tryblock->verify() && std::all_of(catchblocks.begin(), catchblocks.end(), [](const auto &c)
-                                             { return c.second->verify(); }) &&
-           finallyblock->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::Case::hash_impl() const
-{
-    return Hasher().gettag().add(value).add(body).hash();
-}
-
-bool libquixcc::ir::q::Case::verify_impl() const
-{
-    return value->verify() && body->verify();
-}
-
-boost::uuids::uuid libquixcc::ir::q::Switch::hash_impl() const
-{
-    return Hasher().gettag().add(value).add(cases).add(defaultcase).hash();
-}
-
-bool libquixcc::ir::q::Switch::verify_impl() const
-{
-    return value->verify() && std::all_of(cases.begin(), cases.end(), [](const Case *c)
-                                          { return c->verify(); }) &&
-           defaultcase->verify();
+    os << "opaque " << name;
+    return true;
 }
