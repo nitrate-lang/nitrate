@@ -159,7 +159,7 @@ namespace libquixcc
                 std::vector<const Value<Q> *> children;
             };
 
-            class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *>
+            class QModule : public libquixcc::ir::IRModule<IR::Q, const RootNode *>
             {
             protected:
                 Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -170,10 +170,10 @@ namespace libquixcc
                 bool verify_impl() const override;
 
             public:
-                QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {}
+                QModule(const std::string_view &name) : IRModule<IR::Q, const RootNode *>(name) {}
                 ~QModule() = default;
 
-                bool from_ast(const std::shared_ptr<BlockNode> &ast);
+                bool from_ast(std::shared_ptr<BlockNode> ast);
             };
         }
     }

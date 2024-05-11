@@ -768,7 +768,7 @@ static bool compile(quixcc_job_t *job)
     ///=========================================
     /// BEGIN: OPTIMIZATION PIPELINE
     auto QIR = std::make_unique<ir::q::QModule>(job->m_filename);
-    if (!QIR->from_ast(ast))
+    if (!QIR->from_ast(std::move(ast))) /* This will modify the AST */
         return false;
 
     if (!job->m_argset.contains("-O0"))
