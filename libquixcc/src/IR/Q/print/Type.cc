@@ -116,6 +116,14 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Array::print_impl(std::ostream &os
     return os << "; " << size << "]", true;
 }
 
+libquixcc::ir::Result<bool> libquixcc::ir::q::Vector::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "[";
+    if (!type->print(os, state))
+        return false;
+    return os << "]", true;
+}
+
 libquixcc::ir::Result<bool> libquixcc::ir::q::FType::print_impl(std::ostream &os, PState &state) const
 {
     os << "[";

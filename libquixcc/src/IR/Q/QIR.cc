@@ -43,7 +43,12 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &
     m_root->printid(os);
     os << "'\n\n";
 
-    return m_root->print(os, state);
+    if (!m_root->print(os, state))
+        return false;
+
+    os << "\n";
+
+    return true;
 }
 
 bool libquixcc::ir::q::QModule::verify_impl() const

@@ -204,7 +204,7 @@ namespace libquixcc::ir::q
         Ptr(const Value<Q> *type) : type(type) {}
 
     public:
-        static const Ptr *create(Value<Q> *type);
+        static const Ptr *create(const Value<Q> *type);
 
         const Value<Q> *type;
     };
@@ -216,10 +216,10 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Array(Value<Q> *type, uint64_t size) : type(type), size(size) {}
+        Array(const Value<Q> *type, uint64_t size) : type(type), size(size) {}
 
     public:
-        static const Array *create(Value<Q> *type, uint64_t size);
+        static const Array *create(const Value<Q> *type, uint64_t size);
 
         const Value<Q> *type;
         uint64_t size;

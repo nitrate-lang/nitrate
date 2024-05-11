@@ -71,15 +71,16 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Function(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Value<Q> *block, std::set<FConstraint> constraints) : name(name), constraints(constraints), params(params), return_type(return_type), block(static_cast<const FunctionBlock *>(block)) {}
+        Function(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const FunctionBlock *block, std::set<FConstraint> constraints, bool _public) : name(name), constraints(constraints), params(params), return_type(return_type), block(block), m_public(_public) {}
     public:
-        static const Function *create(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Value<Q> *block, std::set<FConstraint> constraints);
+        static const Function *create(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const FunctionBlock *block, std::set<FConstraint> constraints, bool m_public = false);
 
         std::string name;
         std::set<FConstraint> constraints;
         std::vector<const Value<Q> *> params;
         const Value<Q> *return_type;
         const FunctionBlock *block;
+        bool m_public;
     };
 }
 

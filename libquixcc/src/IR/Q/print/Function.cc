@@ -33,10 +33,15 @@
 
 libquixcc::ir::Result<bool> libquixcc::ir::q::FunctionBlock::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    for (const auto &stmt : stmts)
+    for (auto it = stmts.begin(); it != stmts.end(); it++)
     {
-        if (!stmt->print(os, state))
+        os << std::string(state.ind, ' ');
+
+        if (!(*it)->print(os, state))
             return false;
+
+        if (it != stmts.end())
+            os << "\n";
     }
     return true;
 }
@@ -80,19 +85,33 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Function::print_impl(std::ostream 
     if (!return_type->print(os, state))
         return false;
 
-    os << " {";
+    if (!block)
+    {
+        os << ";";
+        return true;
+    }
+
+    os << " {\n";
+    state.ind += 2;
+
     if (!block->print(os, state))
         return false;
+
+    state.ind -= 2;
+
     os << "}";
     return true;
 }
 
 libquixcc::ir::Result<bool> libquixcc::ir::q::RootNode::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    for (const auto &func : children)
+    for (auto it = children.begin(); it != children.end(); it++)
     {
-        if (!func->print(os, state))
+        if (!(*it)->print(os, state))
             return false;
+
+        if (it != children.end())
+            os << "\n";
     }
     return true;
 }

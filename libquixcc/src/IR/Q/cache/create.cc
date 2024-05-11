@@ -43,6 +43,7 @@
 #include <IR/Q/Variable.h>
 
 #include <map>
+#include <unordered_map>
 
 using namespace libquixcc;
 using namespace ir;
@@ -67,7 +68,7 @@ static std::map<std::tuple<const Value<Q> *, const std::set<const Case *>, const
 static std::map<std::string, const Ident *> ident_insts;
 static Asm *asm_inst = nullptr;
 static std::map<std::vector<const Value<Q> *>, const FunctionBlock *> functionblock_insts;
-static std::map<std::tuple<std::string, std::vector<const Value<Q> *>, const Value<Q> *, const Value<Q> *, std::set<FConstraint>>, const Function *> function_insts;
+static std::map<std::tuple<std::string, std::vector<const Value<Q> *>, const Value<Q> *, const Value<Q> *, std::set<FConstraint>, bool>, const Function *> function_insts;
 static std::map<const Value<Q> *, const Ret *> ret_insts;
 static std::map<std::pair<const Function *, std::vector<const Value<Q> *>>, const Call *> call_insts;
 static std::map<std::pair<const Value<Q> *, std::vector<const Value<Q> *>>, const CallIndirect *> ptrcall_insts;
@@ -110,8 +111,16 @@ static F64 *f64_inst = nullptr;
 static Void *void_inst = nullptr;
 static std::map<const Value<Q> *, const Ptr *> ptr_insts;
 static std::map<std::pair<const Value<Q> *, uint64_t>, const Array *> array_insts;
-static std::map<std::pair<std::vector<const Value<Q> *>, const Value<Q> *>, const FType *> ftype_insts;
-static std::map<std::pair<std::string, const Value<Q> *>, const Local *> local_insts;
+static std::map<const Value<Q> *, const Vector *> vector_insts;
+static std::map<std::tuple<std::vector<const Value<Q> *>, const Value<Q> *, bool, bool, bool, bool, bool>, const FType *> ftype_insts;
+static std::map<std::string, const Region *> region_insts;
+static std::map<std::string, const Group *> group_insts;
+static std::map<std::string, const Union *> union_insts;
+static std::map<std::string, const Opaque *> opaque_insts;
+static std::map<std::tuple<std::string, std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>>, std::set<const libquixcc::ir::q::Function *>>, const RegionDef *> regiondef_insts;
+static std::map<std::tuple<std::string, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, std::set<const libquixcc::ir::q::Function *>>, const GroupDef *> groupdef_insts;
+static std::map<std::tuple<std::string, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, std::set<const libquixcc::ir::q::Function *>>, const UnionDef *> uniondef_insts;
+static std::map<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, const Local *> local_insts;
 static std::map<std::tuple<std::string, const Value<Q> *, const Value<Q> *, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
@@ -310,12 +319,12 @@ const ir::q::FunctionBlock *ir::q::FunctionBlock::create(std::vector<const ir::V
     return functionblock_insts[key];
 }
 
-const ir::q::Function *ir::q::Function::create(std::string name, std::vector<const Value<Q> *> params, const ir::Value<Q> *return_type, const ir::Value<Q> *block, std::set<ir::q::FConstraint> constraints)
+const ir::q::Function *ir::q::Function::create(std::string name, std::vector<const Value<Q> *> params, const ir::Value<Q> *return_type, const FunctionBlock *block, std::set<ir::q::FConstraint> constraints, bool _public)
 {
     lock(NodeType::Function);
-    auto key = std::make_tuple(name, params, return_type, block, constraints);
+    auto key = std::make_tuple(name, params, return_type, block, constraints, _public);
     if (!function_insts.contains(key))
-        function_insts[key] = new Function(name, params, return_type, block, constraints);
+        function_insts[key] = new Function(name, params, return_type, block, constraints, _public);
     return function_insts[key];
 }
 
@@ -636,7 +645,7 @@ const q::Void *q::Void::create()
     return void_inst;
 }
 
-const q::Ptr *q::Ptr::create(Value<Q> *type)
+const q::Ptr *q::Ptr::create(const Value<Q> *type)
 {
     lock(NodeType::Ptr);
     if (!ptr_insts.contains(type))
@@ -644,13 +653,89 @@ const q::Ptr *q::Ptr::create(Value<Q> *type)
     return ptr_insts[type];
 }
 
-const q::Array *q::Array::create(Value<Q> *type, uint64_t size)
+const q::Array *q::Array::create(const Value<Q> *type, uint64_t size)
 {
     lock(NodeType::Array);
     auto key = std::make_pair(type, size);
     if (!array_insts.contains(key))
         array_insts[key] = new Array(type, size);
     return array_insts[key];
+}
+
+const libquixcc::ir::q::Vector *libquixcc::ir::q::Vector::create(const libquixcc::ir::Value<libquixcc::ir::Q> *type)
+{
+    lock(NodeType::Vector);
+    if (!vector_insts.contains(type))
+        vector_insts[type] = new Vector(type);
+    return vector_insts[type];
+}
+
+const libquixcc::ir::q::FType *libquixcc::ir::q::FType::create(std::vector<const Value<Q> *> params, const Value<Q> *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
+{
+    lock(NodeType::FType);
+    auto key = std::make_tuple(params, ret, variadic, pure, thread_safe, foreign, nothrow);
+    if (!ftype_insts.contains(key))
+        ftype_insts[key] = new FType(params, ret, variadic, pure, thread_safe, foreign, nothrow);
+    return ftype_insts[key];
+}
+
+const libquixcc::ir::q::Region *libquixcc::ir::q::Region::create(std::string name)
+{
+    lock(NodeType::Region);
+    if (!region_insts.contains(name))
+        region_insts[name] = new Region(name);
+    return region_insts[name];
+}
+
+const libquixcc::ir::q::Group *libquixcc::ir::q::Group::create(std::string name)
+{
+    lock(NodeType::Group);
+    if (!group_insts.contains(name))
+        group_insts[name] = new Group(name);
+    return group_insts[name];
+}
+
+const libquixcc::ir::q::Union *libquixcc::ir::q::Union::create(std::string name)
+{
+    lock(NodeType::Union);
+    if (!union_insts.contains(name))
+        union_insts[name] = new Union(name);
+    return union_insts[name];
+}
+
+const libquixcc::ir::q::Opaque *libquixcc::ir::q::Opaque::create(std::string name)
+{
+    lock(NodeType::Opaque);
+    if (!opaque_insts.contains(name))
+        opaque_insts[name] = new Opaque(name);
+    return opaque_insts[name];
+}
+
+const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::string name, std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>> fields, std::set<const libquixcc::ir::q::Function *> methods)
+{
+    lock(NodeType::RegionDef);
+    auto key = std::make_tuple(name, fields, methods);
+    if (!regiondef_insts.contains(key))
+        regiondef_insts[key] = new RegionDef(name, fields, methods);
+    return regiondef_insts[key];
+}
+
+const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string name, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *> fields, std::set<const libquixcc::ir::q::Function *> methods)
+{
+    lock(NodeType::GroupDef);
+    auto key = std::make_tuple(name, fields, methods);
+    if (!groupdef_insts.contains(key))
+        groupdef_insts[key] = new GroupDef(name, fields, methods);
+    return groupdef_insts[key];
+}
+
+const libquixcc::ir::q::UnionDef *libquixcc::ir::q::UnionDef::create(std::string name, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *> fields, std::set<const libquixcc::ir::q::Function *> methods)
+{
+    lock(NodeType::UnionDef);
+    auto key = std::make_tuple(name, fields, methods);
+    if (!uniondef_insts.contains(key))
+        uniondef_insts[key] = new UnionDef(name, fields, methods);
+    return uniondef_insts[key];
 }
 
 const q::Local *q::Local::create(std::string name, const Value<Q> *type)

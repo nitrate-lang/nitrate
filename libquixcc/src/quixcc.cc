@@ -467,7 +467,6 @@ static std::string base64_encode(const std::string &in)
 static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
 {
     Mutation mutator;
-    mutator.add_routine(mutate::SubsystemCollapse);       ///> Flatten AST by collapsing subsystems
     mutator.add_routine(mutate::StripUnderscoreNames);    ///> Remove all constructs named '_'
     mutator.add_routine(mutate::MethodToFunc);            ///> Convert method calls to function calls
     mutator.add_routine(mutate::DiscoverNamedConstructs); ///> Map named constructs to their respective AST nodes
@@ -479,6 +478,7 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
     mutator.add_routine(mutate::ObjectConstruction);      ///> Object construction
     mutator.add_routine(mutate::ObjectDestruction);       ///> Object destruction
     mutator.add_routine(mutate::ImplicitReturn);          ///> Implicit return statements
+    mutator.add_routine(mutate::SubsystemCollapse);       ///> Flatten AST by collapsing subsystems
     mutator.run(job, ast);
 
     return true;

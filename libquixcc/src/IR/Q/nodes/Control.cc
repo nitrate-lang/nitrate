@@ -93,11 +93,19 @@ bool libquixcc::ir::q::Continue::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::q::Ret::hash_impl() const
 {
-    return Hasher().gettag().add(value).hash();
+    auto h = Hasher().gettag();
+
+    if (value)
+        h.add(value);
+
+    return h.hash();
 }
 
 bool libquixcc::ir::q::Ret::verify_impl() const
 {
+    if (!value)
+        return true;
+    
     return value->verify();
 }
 

@@ -219,7 +219,7 @@ namespace libquixcc
 
     extern thread_local LoggerGroup __G_loggerGrp;
 
-#define LOG(lvl) __G_loggerGrp[lvl]
+#define LOG(lvl) libquixcc::__G_loggerGrp[lvl]
 #define LOGGER_SETUP() thread_local libquixcc::LoggerGroup libquixcc::__G_loggerGrp;
 
     static inline void LoggerConfigure(quixcc_job_t &job)

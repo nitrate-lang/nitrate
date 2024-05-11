@@ -44,19 +44,30 @@ bool libquixcc::ir::q::FunctionBlock::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::q::Function::hash_impl() const
 {
-    auto h = Hasher().gettag().add(name).add(params).add(return_type).add(block);
+    auto h = Hasher().gettag().add(name).add(params).add(return_type);
 
     for (const auto &c : constraints)
         h.add((size_t)c);
+
+    if (block)
+        h.add(block);
 
     return h.hash();
 }
 
 bool libquixcc::ir::q::Function::verify_impl() const
 {
-    return std::all_of(params.begin(), params.end(), [](const Value<Q> *param)
-                       { return param->verify(); }) &&
-           return_type->verify() && block->verify();
+    if (!std::all_of(params.begin(), params.end(), [](const Value<Q> *param)
+                     { return param->verify(); }) &&
+        return_type->verify())
+    {
+        return false;
+    }
+
+    if (block)
+        return block->verify();
+
+    return true;
 }
 
 boost::uuids::uuid libquixcc::ir::q::RootNode::hash_impl() const

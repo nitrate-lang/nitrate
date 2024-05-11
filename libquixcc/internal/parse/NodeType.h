@@ -37,6 +37,8 @@
 #endif
 
 #include <cstdint>
+#include <unordered_map>
+#include <string>
 
 namespace libquixcc
 {
@@ -229,6 +231,8 @@ namespace libquixcc
     class IfStmtNode;
     class WhileStmtNode;
     class ForStmtNode;
+
+    extern std::unordered_map<NodeType, std::string_view> NodeTypeNames;
 }
 
 #endif // __QUIXCC_PARSE_NODES_NODETYPES_H__
