@@ -31,8 +31,17 @@
 
 #include <IR/Q/Function.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::FunctionBlock::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Block::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
+    if (stmts.empty())
+    {
+        os << "{}";
+        return true;
+    }
+
+    os << "{\n";
+    state.ind += 2;
+
     for (auto it = stmts.begin(); it != stmts.end(); it++)
     {
         os << std::string(state.ind, ' ');
@@ -43,6 +52,10 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::FunctionBlock::print_impl(std::ost
         if (it != stmts.end())
             os << "\n";
     }
+
+    state.ind -= 2;
+    os << std::string(state.ind, ' ') << "}";
+
     return true;
 }
 
@@ -90,16 +103,12 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Function::print_impl(std::ostream 
         os << ";";
         return true;
     }
-
-    os << " {\n";
-    state.ind += 2;
+    else
+        os << " ";
 
     if (!block->print(os, state))
         return false;
 
-    state.ind -= 2;
-
-    os << "}";
     return true;
 }
 

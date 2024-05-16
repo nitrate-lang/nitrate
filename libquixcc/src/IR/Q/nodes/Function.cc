@@ -31,12 +31,12 @@
 
 #include <IR/Q/Function.h>
 
-boost::uuids::uuid libquixcc::ir::q::FunctionBlock::hash_impl() const
+boost::uuids::uuid libquixcc::ir::q::Block::hash_impl() const
 {
     return Hasher().gettag().add(stmts).hash();
 }
 
-bool libquixcc::ir::q::FunctionBlock::verify_impl() const
+bool libquixcc::ir::q::Block::verify_impl() const
 {
     return std::all_of(stmts.begin(), stmts.end(), [](const Value<Q> *stmt)
                        { return stmt->verify(); });

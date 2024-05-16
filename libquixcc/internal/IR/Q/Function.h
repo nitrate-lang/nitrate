@@ -40,17 +40,17 @@
 
 namespace libquixcc::ir::q
 {
-    class FunctionBlock : public Value<Q>
+    class Block : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        FunctionBlock(std::vector<const Value<Q> *> stmts) : stmts(stmts) {}
+        Block(std::vector<const Value<Q> *> stmts) : stmts(stmts) {}
 
     public:
-        static const FunctionBlock *create(std::vector<const Value<Q> *> stmts);
+        static const Block *create(std::vector<const Value<Q> *> stmts);
 
         std::vector<const Value<Q> *> stmts;
     };
@@ -71,15 +71,15 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Function(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const FunctionBlock *block, std::set<FConstraint> constraints, bool _public) : name(name), constraints(constraints), params(params), return_type(return_type), block(block), m_public(_public) {}
+        Function(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints, bool _public) : name(name), constraints(constraints), params(params), return_type(return_type), block(block), m_public(_public) {}
     public:
-        static const Function *create(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const FunctionBlock *block, std::set<FConstraint> constraints, bool m_public = false);
+        static const Function *create(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints, bool m_public = false);
 
         std::string name;
         std::set<FConstraint> constraints;
         std::vector<const Value<Q> *> params;
         const Value<Q> *return_type;
-        const FunctionBlock *block;
+        const Block *block;
         bool m_public;
     };
 }

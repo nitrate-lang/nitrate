@@ -48,17 +48,8 @@
 using namespace libquixcc;
 
 /*
-ExprStmtNode
-BlockNode
-StmtGroupNode
 CastExprNode
 StaticCastExprNode
-BitCastExprNode
-SignedUpcastExprNode
-UnsignedUpcastExprNode
-DowncastExprNode
-PtrToIntCastExprNode
-IntToPtrCastExprNode
 UnaryExprNode
 BinaryExprNode
 CallExprNode
@@ -66,37 +57,12 @@ ListExprNode
 MemberAccessNode
 ConstUnaryExprNode
 ConstBinaryExprNode
-IdentifierNode
-MutTypeNode
-U8TypeNode
-U16TypeNode
-U32TypeNode
-U64TypeNode
-U128TypeNode
-I8TypeNode
-I16TypeNode
-I32TypeNode
-I64TypeNode
-I128TypeNode
-F32TypeNode
-F64TypeNode
-BoolTypeNode
-VoidTypeNode
-PointerTypeNode
-OpaqueTypeNode
-StringTypeNode
 EnumTypeNode
 StructTypeNode
 RegionTypeNode
 UnionTypeNode
 ArrayTypeNode
 FunctionTypeNode
-UserTypeNode
-IntegerNode
-FloatLiteralNode
-StringNode
-CharNode
-BoolLiteralNode
 NullLiteralNode
 TypedefNode
 VarDeclNode
@@ -114,16 +80,8 @@ EnumDefNode
 EnumFieldNode
 FunctionDefNode
 FunctionParamNode
-SubsystemNode
 ExportNode
 InlineAsmNode
-ReturnStmtNode
-RetifStmtNode
-RetzStmtNode
-RetvStmtNode
-IfStmtNode
-WhileStmtNode
-ForStmtNode
 */
 
 static void push_children(ParseNode *current, std::stack<ParseNode *> &s)
@@ -381,8 +339,6 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
         auto current = s2.top();
         s2.pop();
 
-        LOG(libquixcc::INFO) << NodeTypeNames[current->ntype] << std::endl;
-
         switch (current->ntype)
         {
         case NodeType::BlockNode:
@@ -393,7 +349,65 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
                 stmts.push_back(s3.top());
                 s3.pop();
             }
-            s3.push(q::FunctionBlock::create(stmts));
+            s3.push(q::Block::create(stmts));
+            break;
+        }
+        case NodeType::CastExprNode:
+            throw std::runtime_error("CastExprNode not implemented");
+        case NodeType::StaticCastExprNode:
+            throw std::runtime_error("StaticCastExprNode not implemented");
+        case NodeType::BitCastExprNode:
+        {
+            auto expr = s3.top();
+            s3.pop();
+            auto type = s3.top();
+            s3.pop();
+            s3.push(q::Bitcast::create(type, expr));
+            break;
+        }
+        case NodeType::SignedUpcastExprNode:
+        {
+            auto expr = s3.top();
+            s3.pop();
+            auto type = s3.top();
+            s3.pop();
+            s3.push(q::SCast::create(type, expr));
+            break;
+        }
+        case NodeType::UnsignedUpcastExprNode:
+        {
+            auto expr = s3.top();
+            s3.pop();
+            auto type = s3.top();
+            s3.pop();
+            s3.push(q::UCast::create(type, expr));
+            break;
+        }
+        case NodeType::DowncastExprNode:
+        {
+            auto expr = s3.top();
+            s3.pop();
+            auto type = s3.top();
+            s3.pop();
+            s3.push(q::UCast::create(type, expr));
+            break;
+        }
+        case NodeType::PtrToIntCastExprNode:
+        {
+            auto expr = s3.top();
+            s3.pop();
+            auto type = s3.top();
+            s3.pop();
+            s3.push(q::PtrICast::create(type, expr));
+            break;
+        }
+        case NodeType::IntToPtrCastExprNode:
+        {
+            auto expr = s3.top();
+            s3.pop();
+            auto type = s3.top();
+            s3.pop();
+            s3.push(q::IPtrCast::create(type, expr));
             break;
         }
         case NodeType::IdentifierNode:
@@ -467,10 +481,14 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
             s3.push(q::Union::create(current->as<UnionTypeNode>()->m_name));
             break;
         case NodeType::ArrayTypeNode:
-            s3.push(q::Array::create(s3.top(), std::atoll(s3.top()->as<ConstExprNode>()->reduce<IntegerNode>(state)->m_val.c_str())));
+        {
+            auto type = s3.top();
             s3.pop();
+            auto size = std::atoll(current->as<ArrayTypeNode>()->m_size->reduce<IntegerNode>(state)->m_val.c_str());
             s3.pop();
+            s3.push(q::Array::create(type, size));
             break;
+        }
         case NodeType::FunctionTypeNode:
         {
             std::vector<const libquixcc::ir::Value<libquixcc::ir::Q> *> params;
@@ -586,7 +604,7 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
             throw std::runtime_error("GroupDefNode not implemented");
         case NodeType::FunctionDefNode:
         {
-            auto body = s3.top()->as<libquixcc::ir::q::FunctionBlock>();
+            auto body = s3.top()->as<libquixcc::ir::q::Block>();
             s3.pop();
             auto decl = s3.top()->as<libquixcc::ir::q::Function>();
             s3.pop();

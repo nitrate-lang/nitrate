@@ -78,19 +78,21 @@ namespace libquixcc
         template <typename T>
         T *as()
         {
-            if (!is<T>())
+            auto p = dynamic_cast<T *>(this);
+            if (!p)
                 LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
 
-            return static_cast<T *>(this);
+            return p;
         }
 
         template <typename T>
         const T *as() const
         {
-            if (!is<T>())
+            auto p = dynamic_cast<const T *>(this);
+            if (!p)
                 LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
 
-            return static_cast<const T *>(this);
+            return p;
         }
 
         template <typename T>

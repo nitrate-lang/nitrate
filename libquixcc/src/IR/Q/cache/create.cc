@@ -67,7 +67,7 @@ static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Case *> cas
 static std::map<std::tuple<const Value<Q> *, const std::set<const Case *>, const Value<Q> *>, const Switch *> switch_insts;
 static std::map<std::string, const Ident *> ident_insts;
 static Asm *asm_inst = nullptr;
-static std::map<std::vector<const Value<Q> *>, const FunctionBlock *> functionblock_insts;
+static std::map<std::vector<const Value<Q> *>, const Block *> functionblock_insts;
 static std::map<std::tuple<std::string, std::vector<const Value<Q> *>, const Value<Q> *, const Value<Q> *, std::set<FConstraint>, bool>, const Function *> function_insts;
 static std::map<const Value<Q> *, const Ret *> ret_insts;
 static std::map<std::pair<const Function *, std::vector<const Value<Q> *>>, const Call *> call_insts;
@@ -310,16 +310,16 @@ const ir::q::Asm *ir::q::Asm::create()
     return asm_inst;
 }
 
-const ir::q::FunctionBlock *ir::q::FunctionBlock::create(std::vector<const ir::Value<ir::Q> *> stmts)
+const ir::q::Block *ir::q::Block::create(std::vector<const ir::Value<ir::Q> *> stmts)
 {
-    lock(NodeType::FunctionBlock);
+    lock(NodeType::Block);
     auto key = stmts;
     if (!functionblock_insts.contains(key))
-        functionblock_insts[key] = new FunctionBlock(stmts);
+        functionblock_insts[key] = new Block(stmts);
     return functionblock_insts[key];
 }
 
-const ir::q::Function *ir::q::Function::create(std::string name, std::vector<const Value<Q> *> params, const ir::Value<Q> *return_type, const FunctionBlock *block, std::set<ir::q::FConstraint> constraints, bool _public)
+const ir::q::Function *ir::q::Function::create(std::string name, std::vector<const Value<Q> *> params, const ir::Value<Q> *return_type, const Block *block, std::set<ir::q::FConstraint> constraints, bool _public)
 {
     lock(NodeType::Function);
     auto key = std::make_tuple(name, params, return_type, block, constraints, _public);

@@ -75,7 +75,7 @@ namespace libquixcc
                 Opaque,
 
                 /* Functions */
-                FunctionBlock,
+                Block,
                 Function,
                 Asm,
 
