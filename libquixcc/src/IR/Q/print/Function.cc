@@ -30,6 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/Q/Function.h>
+#include <IR/Q/Type.h>
 
 libquixcc::ir::Result<bool> libquixcc::ir::q::Block::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
@@ -59,50 +60,39 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Block::print_impl(std::ostream &os
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Function::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+libquixcc::ir::Result<bool> libquixcc::ir::q::Segment::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    os << "fn ";
+    os << "segment ";
 
-    for (auto c : constraints)
-    {
-        switch (c)
-        {
-        case FConstraint::C_ABI:
-            os << "cextern ";
-            break;
-        case FConstraint::Pure:
-            os << "pure ";
-            break;
-        case FConstraint::ThreadSafe:
-            os << "threadsafe ";
-            break;
-        case FConstraint::NoThrow:
-            os << "nothrow ";
-            break;
-        default:
-            break;
-        }
-    }
+    if (constraints.contains(FConstraint::Pure))
+        os << "pure ";
+    else
+        os << "impure ";
 
-    os << name << "(";
+    if (constraints.contains(FConstraint::ThreadSafe))
+        os << "tsafe ";
+    if (constraints.contains(FConstraint::NoThrow))
+        os << "nothrow ";
+    if (constraints.contains(FConstraint::C_ABI))
+        os << "cextern ";
+
+    os << "(";
     for (auto it = params.begin(); it != params.end(); it++)
     {
         (*it)->print(os, state);
-        if (it != params.end())
+        if (it != params.end() - 1)
             os << ", ";
         else if (constraints.contains(FConstraint::Variadic))
-            os << "...";
+            os << ", ...";
     }
 
-    os << "): ";
+    os << ") -> (";
     if (!return_type->print(os, state))
         return false;
+    os << ")";
 
     if (!block)
-    {
-        os << ";";
         return true;
-    }
     else
         os << " ";
 

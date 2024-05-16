@@ -167,87 +167,6 @@ static void flush_atexit()
     qpkg::core::LoggerSpool::getInst().flush(qpkg::core::LoggerSpool::LOG_FILE);
 }
 
-__attribute__((noinline))
-__attribute__((optimize("O0")))
-__attribute__((naked))
-__attribute__((used)) void
-reference_address(void)
-{
-}
-
-static std::string generate_backtrace()
-{
-    /*
-     * Generate a backtrace
-     * This function is called when a fault is detected
-     */
-
-    std::array<void *, 64> buffer = {};
-
-    /* Generate backtrace */
-    int nptrs = backtrace(buffer.data(), buffer.size());
-    char **strings = backtrace_symbols(buffer.data(), nptrs);
-    std::string backtrace_str;
-
-    /* Use a reference address so devs can get around ASLR */
-    uintptr_t ref = (uintptr_t)&reference_address;
-
-    backtrace_str += "Reference address: ";
-
-    // hex encode address
-    std::stringstream ss;
-    ss << std::setfill('0') << std::setw(sizeof(uintptr_t) * 2) << std::hex << ref;
-    backtrace_str += "0x" + ss.str() + std::string("\n");
-
-    for (int i = 0; i < nptrs; i++)
-        backtrace_str += strings[i] + std::string("\n");
-
-    free(strings);
-
-    return backtrace_str;
-}
-
-static void pushlog_onfault(int sig)
-{
-    (void)sig; // suppress unused warning
-
-    static std::mutex m;
-    std::lock_guard<std::mutex> lock(m); // only one thread can handle this
-
-    LOG(qpkg::core::ERROR) << "Caught signal: " << sig << std::endl; // LOG is a macro that uses qpkg::core::LoggerSpool::getInst()[level]
-    LOG(qpkg::core::INFO) << "Backtrace: " << generate_backtrace() << std::endl;
-    LOG(qpkg::core::INFO) << "Fault. Dumping logs to " << qpkg::core::LoggerSpool::LOG_FILE << std::endl;
-
-    qpkg::core::LoggerSpool::getInst().flush(qpkg::core::LoggerSpool::LOG_FILE);
-
-    std::cerr << "Fault. Dumping logs to " << qpkg::core::LoggerSpool::LOG_FILE << std::endl;
-
-    signal(SIGABRT, SIG_DFL);
-
-    /* Kill process and generate core dump */
-    abort();
-}
-
-static void pushlog_nonfatal(int sig)
-{
-    (void)sig; // suppress unused warning
-
-    static std::mutex m;
-    std::lock_guard<std::mutex> lock(m); // only one thread can handle this
-
-    LOG(qpkg::core::WARN) << "Caught signal: " << sig << std::endl; // LOG is a macro that uses qpkg::core::LoggerSpool::getInst()[level]
-    LOG(qpkg::core::INFO) << "Exiting... Dumping logs to " << qpkg::core::LoggerSpool::LOG_FILE << std::endl;
-
-    qpkg::core::LoggerSpool::getInst().flush(qpkg::core::LoggerSpool::LOG_FILE);
-
-    std::cerr << "Exiting... Dumping logs to " << qpkg::core::LoggerSpool::LOG_FILE << std::endl;
-
-    signal(sig, SIG_DFL);
-
-    /* Kill process and don't generate core dump */
-    exit(1);
-}
-
 qpkg::core::LoggerSpool::LoggerSpool(std::chrono::duration<int> flushInterval)
 {
     m_okay = false;
@@ -265,21 +184,6 @@ qpkg::core::LoggerSpool::LoggerSpool(std::chrono::duration<int> flushInterval)
 
     /* Flush logs at exit(x) */
     std::atexit(flush_atexit);
-
-    signal(SIGSEGV, pushlog_onfault);
-    signal(SIGABRT, pushlog_onfault);
-    signal(SIGILL, pushlog_onfault);
-    signal(SIGFPE, pushlog_onfault);
-    signal(SIGBUS, pushlog_onfault);
-    signal(SIGSYS, pushlog_onfault);
-    signal(SIGXCPU, pushlog_onfault);
-    signal(SIGXFSZ, pushlog_onfault);
-    signal(SIGPIPE, pushlog_onfault);
-
-    signal(SIGINT, pushlog_nonfatal);
-    signal(SIGTERM, pushlog_nonfatal);
-    signal(SIGHUP, pushlog_nonfatal);
-    signal(SIGQUIT, pushlog_nonfatal);
 
     try
     {

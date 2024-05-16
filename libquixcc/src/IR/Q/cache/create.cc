@@ -68,9 +68,9 @@ static std::map<std::tuple<const Value<Q> *, const std::set<const Case *>, const
 static std::map<std::string, const Ident *> ident_insts;
 static Asm *asm_inst = nullptr;
 static std::map<std::vector<const Value<Q> *>, const Block *> functionblock_insts;
-static std::map<std::tuple<std::string, std::vector<const Value<Q> *>, const Value<Q> *, const Value<Q> *, std::set<FConstraint>, bool>, const Function *> function_insts;
+static std::map<std::tuple<std::vector<const Value<Q> *>, const Value<Q> *, const Value<Q> *, std::set<FConstraint>, bool>, const Segment *> function_insts;
 static std::map<const Value<Q> *, const Ret *> ret_insts;
-static std::map<std::pair<const Function *, std::vector<const Value<Q> *>>, const Call *> call_insts;
+static std::map<std::pair<const Global *, std::vector<const Value<Q> *>>, const Call *> call_insts;
 static std::map<std::pair<const Value<Q> *, std::vector<const Value<Q> *>>, const CallIndirect *> ptrcall_insts;
 static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Add *> add_insts;
 static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Sub *> sub_insts;
@@ -117,11 +117,11 @@ static std::map<std::string, const Region *> region_insts;
 static std::map<std::string, const Group *> group_insts;
 static std::map<std::string, const Union *> union_insts;
 static std::map<std::string, const Opaque *> opaque_insts;
-static std::map<std::tuple<std::string, std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>>, std::set<const libquixcc::ir::q::Function *>>, const RegionDef *> regiondef_insts;
-static std::map<std::tuple<std::string, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, std::set<const libquixcc::ir::q::Function *>>, const GroupDef *> groupdef_insts;
-static std::map<std::tuple<std::string, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, std::set<const libquixcc::ir::q::Function *>>, const UnionDef *> uniondef_insts;
+static std::map<std::tuple<std::string, std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>>, std::set<const libquixcc::ir::q::Segment *>>, const RegionDef *> regiondef_insts;
+static std::map<std::tuple<std::string, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, std::set<const libquixcc::ir::q::Segment *>>, const GroupDef *> groupdef_insts;
+static std::map<std::tuple<std::string, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, std::set<const libquixcc::ir::q::Segment *>>, const UnionDef *> uniondef_insts;
 static std::map<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, const Local *> local_insts;
-static std::map<std::tuple<std::string, const Value<Q> *, const Value<Q> *, bool, bool>, const Global *> global_insts;
+static std::map<std::tuple<std::string, const Value<Q> *, const Value<Q> *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
 
@@ -276,7 +276,7 @@ const ir::q::Switch *ir::q::Switch::create(const ir::Value<ir::Q> *value, const 
     return switch_insts[key];
 }
 
-const ir::q::Call *ir::q::Call::create(const ir::q::Function *func, std::vector<const ir::Value<ir::Q> *> args)
+const ir::q::Call *ir::q::Call::create(const ir::q::Global *func, std::vector<const ir::Value<ir::Q> *> args)
 {
     lock(NodeType::Call);
     auto key = std::make_pair(func, args);
@@ -319,12 +319,12 @@ const ir::q::Block *ir::q::Block::create(std::vector<const ir::Value<ir::Q> *> s
     return functionblock_insts[key];
 }
 
-const ir::q::Function *ir::q::Function::create(std::string name, std::vector<const Value<Q> *> params, const ir::Value<Q> *return_type, const Block *block, std::set<ir::q::FConstraint> constraints, bool _public)
+const ir::q::Segment *ir::q::Segment::create(std::vector<const Value<Q> *> params, const ir::Value<Q> *return_type, const Block *block, std::set<ir::q::FConstraint> constraints, bool _public)
 {
-    lock(NodeType::Function);
-    auto key = std::make_tuple(name, params, return_type, block, constraints, _public);
+    lock(NodeType::Segment);
+    auto key = std::make_tuple(params, return_type, block, constraints, _public);
     if (!function_insts.contains(key))
-        function_insts[key] = new Function(name, params, return_type, block, constraints, _public);
+        function_insts[key] = new Segment(params, return_type, block, constraints, _public);
     return function_insts[key];
 }
 
@@ -711,7 +711,7 @@ const libquixcc::ir::q::Opaque *libquixcc::ir::q::Opaque::create(std::string nam
     return opaque_insts[name];
 }
 
-const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::string name, std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>> fields, std::set<const libquixcc::ir::q::Function *> methods)
+const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::string name, std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>> fields, std::set<const libquixcc::ir::q::Segment *> methods)
 {
     lock(NodeType::RegionDef);
     auto key = std::make_tuple(name, fields, methods);
@@ -720,7 +720,7 @@ const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::stri
     return regiondef_insts[key];
 }
 
-const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string name, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *> fields, std::set<const libquixcc::ir::q::Function *> methods)
+const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string name, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *> fields, std::set<const libquixcc::ir::q::Segment *> methods)
 {
     lock(NodeType::GroupDef);
     auto key = std::make_tuple(name, fields, methods);
@@ -729,7 +729,7 @@ const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string
     return groupdef_insts[key];
 }
 
-const libquixcc::ir::q::UnionDef *libquixcc::ir::q::UnionDef::create(std::string name, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *> fields, std::set<const libquixcc::ir::q::Function *> methods)
+const libquixcc::ir::q::UnionDef *libquixcc::ir::q::UnionDef::create(std::string name, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *> fields, std::set<const libquixcc::ir::q::Segment *> methods)
 {
     lock(NodeType::UnionDef);
     auto key = std::make_tuple(name, fields, methods);
@@ -747,12 +747,12 @@ const q::Local *q::Local::create(std::string name, const Value<Q> *type)
     return local_insts[key];
 }
 
-const q::Global *q::Global::create(std::string name, const Value<Q> *type, const Value<Q> *value, bool _volatile, bool _atomic)
+const q::Global *q::Global::create(std::string name, const Value<Q> *type, const Value<Q> *value, bool _volatile, bool _atomic, bool _extern)
 {
     lock(NodeType::Global);
-    auto key = std::make_tuple(name, type, value, _volatile, _atomic);
+    auto key = std::make_tuple(name, type, value, _volatile, _atomic, _extern);
     if (!global_insts.contains(key))
-        global_insts[key] = new Global(name, type, value, _volatile, _atomic);
+        global_insts[key] = new Global(name, type, value, _volatile, _atomic, _extern);
     return global_insts[key];
 }
 

@@ -64,18 +64,17 @@ namespace libquixcc::ir::q
         NoThrow,
     };
 
-    class Function : public Value<Q>
+    class Segment : public Value<Q>
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Function(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints, bool _public) : name(name), constraints(constraints), params(params), return_type(return_type), block(block), m_public(_public) {}
+        Segment(std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints, bool _public) : constraints(constraints), params(params), return_type(return_type), block(block), m_public(_public) {}
     public:
-        static const Function *create(std::string name, std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints, bool m_public = false);
+        static const Segment *create(std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints, bool m_public = false);
 
-        std::string name;
         std::set<FConstraint> constraints;
         std::vector<const Value<Q> *> params;
         const Value<Q> *return_type;

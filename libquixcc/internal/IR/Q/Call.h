@@ -37,7 +37,7 @@
 #endif
 
 #include <IR/Q/QIR.h>
-#include <IR/Q/Function.h>
+#include <IR/Q/Variable.h>
 
 namespace libquixcc::ir::q
 {
@@ -48,12 +48,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Call(const Function *func, std::vector<const Value<Q> *> args) : func(func), args(args) {}
+        Call(const Global *func, std::vector<const Value<Q> *> args) : func(func), args(args) {}
 
     public:
-        static const Call *create(const Function *func, std::vector<const Value<Q> *> args);
+        static const Call *create(const Global *func, std::vector<const Value<Q> *> args);
 
-        const Function *func;
+        const Global *func;
         std::vector<const Value<Q> *> args;
     };
 

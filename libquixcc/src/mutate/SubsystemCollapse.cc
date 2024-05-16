@@ -199,8 +199,27 @@ static void typenode_rename(const std::vector<std::string> &__namespace, libquix
     }
 }
 
+
+static void exportnode_quash(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+{
+    if (node.first != traversal::TraversePtrType::Smart)
+        return;
+    auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+
+    if (!ptr->is<ExportNode>())
+        return;
+    auto exp = std::static_pointer_cast<ExportNode>(ptr);
+
+    for (auto &child : exp->m_stmts)
+        child->_m_export_lang = exp->m_lang_type;
+
+    auto group = std::make_shared<StmtGroupNode>(exp->m_stmts);
+    *std::get<std::shared_ptr<ParseNode> *>(node.second) = group;
+}
+
 void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(traversal::ASTTraversalState(typenode_rename, {}));
     ast->dfs_preorder(traversal::ASTTraversalState(collapse, {}));
+    ast->dfs_preorder(traversal::ASTTraversalState(exportnode_quash, {}));
 }

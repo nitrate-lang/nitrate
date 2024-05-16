@@ -330,6 +330,7 @@ namespace libquixcc
         }
 
         NodeType ntype = NodeType::ParseNode;
+        ExportLangType _m_export_lang = ExportLangType::None;
     };
 
     struct TIState

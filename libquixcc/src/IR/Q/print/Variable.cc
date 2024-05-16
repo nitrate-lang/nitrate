@@ -33,20 +33,30 @@
 
 libquixcc::ir::Result<bool> libquixcc::ir::q::Local::print_impl(std::ostream &os, PState &state) const
 {
-    os << "let " << name << ": ";
+    os << "%" << name << "(";
     if (!type->print(os, state))
         return false;
-    os << ";";
+    os << ") = undef";
 
     return true;
 }
 
 libquixcc::ir::Result<bool> libquixcc::ir::q::Global::print_impl(std::ostream &os, PState &state) const
 {
-    os << "global " << name << ": ";
+    os << "@" << name << "(";
     if (!type->print(os, state))
         return false;
-    os << ";";
+    os << ") = ";
+
+    if (value)
+    {
+        if (!value->print(os, state))
+            return false;
+    }
+    else
+    {
+        os << "undef";
+    }
 
     return true;
 }
@@ -57,8 +67,44 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Number::print_impl(std::ostream &o
     return true;
 }
 
+static std::string escape(const std::string &str)
+{
+    std::string out;
+    for (char c : str)
+    {
+        switch (c)
+        {
+        case '\n':
+            out += "\\n";
+            break;
+        case '\t':
+            out += "\\t";
+            break;
+        case '\r':
+            out += "\\r";
+            break;
+        case '\0':
+            out += "\\0";
+            break;
+        case '\\':
+            out += "\\\\";
+            break;
+        case '\"':
+            out += "\\\"";
+            break;
+        default:
+            if (c >= 32 && c <= 126)
+                out += c;
+            else
+                out += "\\x" + std::to_string((int)c);
+            break;
+        }
+    }
+    return out;
+}
+
 libquixcc::ir::Result<bool> libquixcc::ir::q::String::print_impl(std::ostream &os, PState &state) const
 {
-    os << "\"" << value << "\"";
+    os << "\"" << escape(value) << "\"";
     return true;
 }

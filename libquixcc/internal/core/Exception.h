@@ -37,12 +37,14 @@
 #endif
 
 #include <string>
+#include <stdexcept>
 
 namespace libquixcc
 {
-    class Exception : public std::exception
+    class Exception : public std::runtime_error
     {
     public:
+        Exception(const std::string &msg = "") : std::runtime_error(msg) {}
         const char *what() const noexcept override { return "Error"; }
     };
 

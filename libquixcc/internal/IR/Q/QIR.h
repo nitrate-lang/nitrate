@@ -76,7 +76,7 @@ namespace libquixcc
 
                 /* Functions */
                 Block,
-                Function,
+                Segment,
                 Asm,
 
                 /* OO */

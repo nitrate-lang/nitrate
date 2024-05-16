@@ -83,13 +83,13 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Loop::print_impl(std::ostream &os,
 
 libquixcc::ir::Result<bool> libquixcc::ir::q::Break::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    os << "break;";
+    os << "break";
     return true;
 }
 
 libquixcc::ir::Result<bool> libquixcc::ir::q::Continue::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    os << "continue;";
+    os << "continue";
     return true;
 }
 
@@ -103,7 +103,6 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Ret::print_impl(std::ostream &os, 
         if (!value->print(os, state))
             return false;
     }
-    os << ";";
     return true;
 }
 

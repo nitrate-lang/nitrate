@@ -42,9 +42,9 @@ bool libquixcc::ir::q::Block::verify_impl() const
                        { return stmt->verify(); });
 }
 
-boost::uuids::uuid libquixcc::ir::q::Function::hash_impl() const
+boost::uuids::uuid libquixcc::ir::q::Segment::hash_impl() const
 {
-    auto h = Hasher().gettag().add(name).add(params).add(return_type);
+    auto h = Hasher().gettag().add(params).add(return_type);
 
     for (const auto &c : constraints)
         h.add((size_t)c);
@@ -55,7 +55,7 @@ boost::uuids::uuid libquixcc::ir::q::Function::hash_impl() const
     return h.hash();
 }
 
-bool libquixcc::ir::q::Function::verify_impl() const
+bool libquixcc::ir::q::Segment::verify_impl() const
 {
     if (!std::all_of(params.begin(), params.end(), [](const Value<Q> *param)
                      { return param->verify(); }) &&

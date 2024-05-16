@@ -63,16 +63,17 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Global(std::string name, const Value<Q> *type, const Value<Q> *value, bool _volatile, bool _atomic) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic) {}
+        Global(std::string name, const Value<Q> *type, const Value<Q> *value, bool _volatile, bool _atomic, bool _extern) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic), _extern(_extern) {}
 
     public:
-        static const Global *create(std::string name, const Value<Q> *type, const Value<Q> *value, bool _volatile = false, bool _atomic = false);
+        static const Global *create(std::string name, const Value<Q> *type, const Value<Q> *value, bool _volatile = false, bool _atomic = false, bool _extern = false);
 
         std::string name;
         const Value<Q> *type;
         const Value<Q> *value;
         bool _volatile;
         bool _atomic;
+        bool _extern;
     };
 
     class Number : public Value<Q>

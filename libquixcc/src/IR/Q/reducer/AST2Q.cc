@@ -42,49 +42,19 @@
 #include <IR/Q/Variable.h>
 #include <core/Logger.h>
 
+#include <mangle/Symbol.h>
+
 #include <stack>
 #include <any>
 
 using namespace libquixcc;
 
-/*
-CastExprNode
-StaticCastExprNode
-UnaryExprNode
-BinaryExprNode
-CallExprNode
-ListExprNode
-MemberAccessNode
-ConstUnaryExprNode
-ConstBinaryExprNode
-EnumTypeNode
-StructTypeNode
-RegionTypeNode
-UnionTypeNode
-ArrayTypeNode
-FunctionTypeNode
-NullLiteralNode
-TypedefNode
-VarDeclNode
-LetDeclNode
-FunctionDeclNode
-StructDefNode
-StructFieldNode
-RegionDefNode
-RegionFieldNode
-GroupDefNode
-GroupFieldNode
-UnionDefNode
-UnionFieldNode
-EnumDefNode
-EnumFieldNode
-FunctionDefNode
-FunctionParamNode
-ExportNode
-InlineAsmNode
-*/
+struct State
+{
+    ReductionState red;
+};
 
-static void push_children(ParseNode *current, std::stack<ParseNode *> &s)
+static void push_children(ParseNode *current, std::stack<ParseNode *> &s, State &state)
 {
     switch (current->ntype)
     {
@@ -139,11 +109,11 @@ static void push_children(ParseNode *current, std::stack<ParseNode *> &s)
         s.push(current->as<BinaryExprNode>()->m_rhs.get());
         break;
     case NodeType::CallExprNode:
-        s.push(current->as<CallExprNode>()->m_decl.get());
-        for (auto it = current->as<CallExprNode>()->m_named_args.rbegin(); it != current->as<CallExprNode>()->m_named_args.rend(); it++)
-            s.push(it->second.get());
+        // for (auto it = current->as<CallExprNode>()->m_named_args.rbegin(); it != current->as<CallExprNode>()->m_named_args.rend(); it++)
+        //     s.push(it->second.get());
         for (auto it = current->as<CallExprNode>()->m_positional_args.rbegin(); it != current->as<CallExprNode>()->m_positional_args.rend(); it++)
             s.push(it->get());
+        s.push(current->as<CallExprNode>()->m_decl.get());
         break;
     case NodeType::ListExprNode:
         for (auto it = current->as<ListExprNode>()->m_elements.rbegin(); it != current->as<ListExprNode>()->m_elements.rend(); it++)
@@ -237,14 +207,6 @@ static void push_children(ParseNode *current, std::stack<ParseNode *> &s)
         if (current->as<UnionFieldNode>()->m_value)
             s.push(current->as<UnionFieldNode>()->m_value.get());
         break;
-    case NodeType::EnumDefNode:
-        for (auto it = current->as<EnumDefNode>()->m_fields.rbegin(); it != current->as<EnumDefNode>()->m_fields.rend(); it++)
-            s.push(it->get());
-        s.push(current->as<EnumDefNode>()->m_type);
-        break;
-    case NodeType::EnumFieldNode:
-        s.push(current->as<EnumFieldNode>()->m_value.get());
-        break;
     case NodeType::FunctionDefNode:
         s.push(current->as<FunctionDefNode>()->m_decl.get());
         s.push(current->as<FunctionDefNode>()->m_body.get());
@@ -256,10 +218,6 @@ static void push_children(ParseNode *current, std::stack<ParseNode *> &s)
         break;
     case NodeType::SubsystemNode:
         s.push(current->as<SubsystemNode>()->m_block.get());
-        break;
-    case NodeType::ExportNode:
-        for (auto it = current->as<ExportNode>()->m_stmts.rbegin(); it != current->as<ExportNode>()->m_stmts.rend(); it++)
-            s.push(it->get());
         break;
     case NodeType::InlineAsmNode:
         for (auto it = current->as<InlineAsmNode>()->m_inputs.rbegin(); it != current->as<InlineAsmNode>()->m_inputs.rend(); it++)
@@ -308,31 +266,9 @@ static void push_children(ParseNode *current, std::stack<ParseNode *> &s)
     }
 }
 
-static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libquixcc::ir::q::RootNode **root)
+static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir::Q> *> &s3, State &state)
 {
-    /*
-     * 1. Iterate over the general polymorphic AST `bottom-up`
-     * 2. Translate each node into 0 or more QIR nodes
-     */
-
     using namespace libquixcc::ir;
-
-    ReductionState state;
-    std::stack<ParseNode *> s1;
-    std::stack<ParseNode *> s2;
-    std::stack<const Value<Q> *> s3;
-    bool is_public = false;
-
-    for (auto it = ast->m_stmts.rbegin(); it != ast->m_stmts.rend(); it++)
-        s1.push(it->get());
-
-    while (!s1.empty())
-    {
-        auto current = s1.top();
-        s1.pop();
-        push_children(current, s1);
-        s2.push(current);
-    }
 
     while (!s2.empty())
     {
@@ -343,7 +279,7 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
         {
         case NodeType::BlockNode:
         {
-            std::vector<const libquixcc::ir::Value<libquixcc::ir::Q> *> stmts;
+            std::vector<const ir::Value<ir::Q> *> stmts;
             for (auto &stmt : current->as<BlockNode>()->m_stmts)
             {
                 stmts.push_back(s3.top());
@@ -410,6 +346,33 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
             s3.push(q::IPtrCast::create(type, expr));
             break;
         }
+        case NodeType::UnaryExprNode:
+            throw std::runtime_error("UnaryExprNode not implemented");
+        case NodeType::BinaryExprNode:
+            throw std::runtime_error("BinaryExprNode not implemented");
+        case NodeType::CallExprNode:
+        {
+            /// TODO: default arguments, named arguments
+            auto decl = s3.top()->as<ir::q::Global>();
+            s3.pop();
+            std::vector<const ir::Value<ir::Q> *> args;
+            for (auto &arg : current->as<CallExprNode>()->m_positional_args)
+            {
+                auto expr = s3.top();
+                s3.pop();
+                args.push_back(expr);
+            }
+            s3.push(q::Call::create(decl, args));
+            break;
+        }
+        case NodeType::ListExprNode:
+            throw std::runtime_error("ListExprNode not implemented");
+        case NodeType::MemberAccessNode:
+            throw std::runtime_error("MemberAccessNode not implemented");
+        case NodeType::ConstUnaryExprNode:
+            throw std::runtime_error("ConstUnaryExprNode not implemented");
+        case NodeType::ConstBinaryExprNode:
+            throw std::runtime_error("ConstBinaryExprNode not implemented");
         case NodeType::IdentifierNode:
             s3.push(q::Ident::create(current->as<IdentifierNode>()->m_name));
             break;
@@ -484,14 +447,15 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
         {
             auto type = s3.top();
             s3.pop();
-            auto size = std::atoll(current->as<ArrayTypeNode>()->m_size->reduce<IntegerNode>(state)->m_val.c_str());
+            auto size = std::atoll(current->as<ArrayTypeNode>()->m_size->reduce<IntegerNode>(state.red)->m_val.c_str());
             s3.pop();
             s3.push(q::Array::create(type, size));
             break;
         }
         case NodeType::FunctionTypeNode:
         {
-            std::vector<const libquixcc::ir::Value<libquixcc::ir::Q> *> params;
+            std::vector<const ir::Value<ir::Q> *> params;
+            auto f = current->as<FunctionTypeNode>();
             for (auto &param : current->as<FunctionTypeNode>()->m_params)
             {
                 auto type = s3.top();
@@ -500,7 +464,18 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
             }
             auto return_type = s3.top();
             s3.pop();
-            s3.push(q::Function::create("", params, return_type, nullptr, {}));
+            std::set<q::FConstraint> constraints;
+            if (f->m_pure)
+                constraints.insert(q::FConstraint::Pure);
+            if (f->m_thread_safe)
+                constraints.insert(q::FConstraint::ThreadSafe);
+            if (f->m_foreign)
+                constraints.insert(q::FConstraint::C_ABI);
+            if (f->m_nothrow)
+                constraints.insert(q::FConstraint::NoThrow);
+            if (f->m_variadic)
+                constraints.insert(q::FConstraint::Variadic);
+            s3.push(q::Segment::create(params, return_type, nullptr, constraints));
             break;
         }
         case NodeType::IntegerNode:
@@ -526,6 +501,11 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
         case NodeType::LetDeclNode:
         {
             /// TODO: set default value
+            if (current->as<LetDeclNode>()->m_init)
+            {
+                auto expr = s3.top();
+                s3.pop();
+            }
             auto type = s3.top();
             s3.pop();
             s3.push(q::Local::create(current->as<LetDeclNode>()->m_name, type));
@@ -535,7 +515,8 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
         {
             auto type = s3.top();
             s3.pop();
-            std::vector<const libquixcc::ir::Value<libquixcc::ir::Q> *> params;
+            auto f = current->as<FunctionDeclNode>()->m_type;
+            std::vector<const ir::Value<ir::Q> *> params;
             for (auto &param : current->as<FunctionDeclNode>()->m_params)
             {
                 auto type = s3.top();
@@ -543,13 +524,37 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
                 params.push_back(type);
             }
             std::set<q::FConstraint> constraints;
-            s3.push(q::Function::create(current->as<FunctionDeclNode>()->m_name, params, type, nullptr, constraints));
+            if (f->m_pure)
+                constraints.insert(q::FConstraint::Pure);
+            if (f->m_thread_safe)
+                constraints.insert(q::FConstraint::ThreadSafe);
+            if (f->m_foreign)
+                constraints.insert(q::FConstraint::C_ABI);
+            if (f->m_nothrow)
+                constraints.insert(q::FConstraint::NoThrow);
+            if (f->m_variadic)
+                constraints.insert(q::FConstraint::Variadic);
+
+            auto ftype = q::FType::create(params, type, f->m_variadic, f->m_pure, f->m_thread_safe, f->m_foreign, f->m_nothrow);
+            auto fndecl = q::Segment::create(params, type, nullptr, constraints);
+            const libquixcc::ir::q::Global *globfb;
+
+            if (current->_m_export_lang == ExportLangType::None)
+            {
+                globfb = q::Global::create(Symbol::mangle(current->as<DeclNode>(), "", ExportLangType::Default), ftype, fndecl, false, false, false);
+            }
+            else
+            {
+                globfb = q::Global::create(Symbol::mangle(current->as<DeclNode>(), "", current->_m_export_lang), ftype, fndecl, false, false, true);
+            }
+
+            s3.push(globfb);
             break;
         }
         case NodeType::StructDefNode:
         {
-            std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>> fields;
-            std::set<const libquixcc::ir::q::Function *> methods;
+            std::vector<std::pair<std::string, const ir::Value<ir::Q> *>> fields;
+            std::set<const ir::q::Segment *> methods;
             for (auto &field : current->as<StructDefNode>()->m_fields)
             {
                 auto type = s3.top();
@@ -560,13 +565,13 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
             {
                 auto type = s3.top();
                 s3.pop();
-                methods.insert(type->as<libquixcc::ir::q::Function>());
+                methods.insert(type->as<ir::q::Segment>());
             }
             for (auto &static_method : current->as<StructDefNode>()->m_static_methods)
             {
                 auto type = s3.top();
                 s3.pop();
-                methods.insert(type->as<libquixcc::ir::q::Function>());
+                methods.insert(type->as<ir::q::Segment>());
             }
 
             s3.push(q::RegionDef::create(current->as<StructDefNode>()->m_name, fields, methods));
@@ -574,8 +579,8 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
         }
         case NodeType::RegionDefNode:
         {
-            std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>> fields;
-            std::set<const libquixcc::ir::q::Function *> methods;
+            std::vector<std::pair<std::string, const ir::Value<ir::Q> *>> fields;
+            std::set<const ir::q::Segment *> methods;
             for (auto &field : current->as<RegionDefNode>()->m_fields)
             {
                 auto type = s3.top();
@@ -588,8 +593,8 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
         }
         case NodeType::UnionDefNode:
         {
-            std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *> fields;
-            std::set<const libquixcc::ir::q::Function *> methods;
+            std::map<std::string, const ir::Value<ir::Q> *> fields;
+            std::set<const ir::q::Segment *> methods;
             for (auto &field : current->as<UnionDefNode>()->m_fields)
             {
                 auto type = s3.top();
@@ -604,25 +609,26 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
             throw std::runtime_error("GroupDefNode not implemented");
         case NodeType::FunctionDefNode:
         {
-            auto body = s3.top()->as<libquixcc::ir::q::Block>();
+            auto body = s3.top()->as<ir::q::Block>();
             s3.pop();
-            auto decl = s3.top()->as<libquixcc::ir::q::Function>();
+            auto glob = s3.top()->as<ir::q::Global>();
             s3.pop();
+            auto seg = glob->value->as<ir::q::Segment>();
 
-            s3.push(q::Function::create(decl->name, decl->params, decl->return_type, body, decl->constraints));
+            auto f = q::Segment::create(seg->params, seg->return_type, body, seg->constraints);
+            s3.push(q::Global::create(glob->name, glob->type, f, glob->_volatile, glob->_atomic));
             break;
         }
         case NodeType::FunctionParamNode:
         {
-            s3.pop();
             if (current->as<FunctionParamNode>()->m_value)
                 s3.pop();
+            // auto p = s3.top();
+            // s3.pop();
 
             /// TODO: Implement FunctionParamNode
             break;
         }
-        case NodeType::ExportNode:
-            throw std::runtime_error("ExportNode not implemented");
         case NodeType::InlineAsmNode:
             throw std::runtime_error("InlineAsmNode not implemented");
         case NodeType::ReturnStmtNode:
@@ -701,6 +707,35 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
             break;
         }
     }
+}
+
+static void translate_ast(std::shared_ptr<BlockNode> ast, const ir::q::RootNode **root)
+{
+    /*
+     * 1. Iterate over the general polymorphic AST `bottom-up`
+     * 2. Translate each node into 0 or more QIR nodes
+     */
+
+    using namespace ir;
+
+    State state;
+    std::stack<ParseNode *> s1;
+    std::stack<ParseNode *> s2;
+    std::stack<const Value<Q> *> s3;
+    bool is_public = false;
+
+    for (auto it = ast->m_stmts.rbegin(); it != ast->m_stmts.rend(); it++)
+        s1.push(it->get());
+
+    while (!s1.empty())
+    {
+        auto current = s1.top();
+        s1.pop();
+        push_children(current, s1, state);
+        s2.push(current);
+    }
+
+    transform(s2, s3, state);
 
     std::vector<const Value<Q> *> children;
     while (!s3.empty())
@@ -712,7 +747,7 @@ static void translate_ast(std::shared_ptr<libquixcc::BlockNode> ast, const libqu
     *root = q::RootNode::create(children);
 }
 
-bool libquixcc::ir::q::QModule::from_ast(std::shared_ptr<libquixcc::BlockNode> ast)
+bool ir::q::QModule::from_ast(std::shared_ptr<BlockNode> ast)
 {
     translate_ast(ast, &m_root);
 
