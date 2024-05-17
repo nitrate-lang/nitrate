@@ -175,11 +175,11 @@ static void push_children(ParseNode *current, std::stack<ParseNode *> &s, State 
         s.push(current->as<FunctionDeclNode>()->m_type->m_return_type);
         break;
     case NodeType::StructDefNode:
-        for (auto it = current->as<StructDefNode>()->m_fields.rbegin(); it != current->as<StructDefNode>()->m_fields.rend(); it++)
+        for (auto it = current->as<StructDefNode>()->m_static_methods.rbegin(); it != current->as<StructDefNode>()->m_static_methods.rend(); it++)
             s.push(it->get());
         for (auto it = current->as<StructDefNode>()->m_methods.rbegin(); it != current->as<StructDefNode>()->m_methods.rend(); it++)
             s.push(it->get());
-        for (auto it = current->as<StructDefNode>()->m_static_methods.rbegin(); it != current->as<StructDefNode>()->m_static_methods.rend(); it++)
+        for (auto it = current->as<StructDefNode>()->m_fields.rbegin(); it != current->as<StructDefNode>()->m_fields.rend(); it++)
             s.push(it->get());
         break;
     case NodeType::StructFieldNode:
@@ -286,6 +286,9 @@ std::optional<const ir::Value<ir::Q> *> staticcast_reduce(const ir::q::Expr *exp
     auto from_size = from->bitcount();
     auto to_size = to->as<ir::q::Type>()->bitcount();
 
+    if (to->is(from))
+        return expr;
+
     bool upcasting = from_size < to_size;
 
     if (to->is_ptr() && from->is_integer())
@@ -301,9 +304,42 @@ std::optional<const ir::Value<ir::Q> *> staticcast_reduce(const ir::q::Expr *exp
     return nullptr;
 }
 
-class Adapter {
+namespace libquixcc::ir::q
+{
+    class Coupler : public Value<Q>
+    {
+        static std::map<std::vector<const Value<Q> *>, const Coupler *> instances;
 
-};
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override
+        {
+            throw std::runtime_error("Coupler::print_impl not implemented");
+        }
+        boost::uuids::uuid hash_impl() const override
+        {
+            return Hasher().gettag().add(items).hash();
+        }
+        bool verify_impl() const override
+        {
+            return std::all_of(items.begin(), items.end(), [](const Value<Q> *stmt)
+                               { return stmt->verify(); });
+        }
+
+        Coupler(std::vector<const Value<Q> *> items) : items(items) {}
+
+    public:
+        static const Coupler *create(std::vector<const Value<Q> *> items)
+        {
+            if (!instances.contains(items))
+                instances[items] = new Coupler(items);
+            return instances[items];
+        }
+
+        std::vector<const Value<Q> *> items;
+    };
+
+    std::map<std::vector<const libquixcc::ir::Value<libquixcc::ir::Q> *>, const libquixcc::ir::q::Coupler *> libquixcc::ir::q::Coupler::instances;
+}
 
 static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir::Q> *> &s3, State &state)
 {
@@ -321,7 +357,16 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             std::vector<const ir::Value<ir::Q> *> stmts;
             for (auto &stmt : current->as<BlockNode>()->m_stmts)
             {
-                stmts.push_back(s3.top());
+                auto x = s3.top();
+                if (x->is<q::Coupler>())
+                {
+                    auto c = x->as<q::Coupler>();
+                    stmts.insert(stmts.end(), c->items.begin(), c->items.end());
+                }
+                else
+                {
+                    stmts.push_back(x);
+                }
                 s3.pop();
             }
             s3.push(q::Block::create(stmts));
@@ -572,9 +617,12 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             s3.push(q::Void::create());
             break;
         case NodeType::PointerTypeNode:
-            s3.push(q::Ptr::create(s3.top()->as<q::Type>()));
+        {
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
+            s3.push(q::Ptr::create(type));
             break;
+        }
         case NodeType::OpaqueTypeNode:
             s3.push(q::Opaque::create(current->as<OpaqueTypeNode>()->m_name));
             break;
@@ -654,20 +702,20 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
         case NodeType::LetDeclNode:
         {
             /// TODO: set default value
-            // const q::Expr *expr = nullptr;
+            const q::Expr *expr = nullptr;
             if (current->as<LetDeclNode>()->m_init)
             {
-                // expr = s3.top()->as<q::Expr>();
+                expr = s3.top()->as<q::Expr>();
                 s3.pop();
             }
             auto type = s3.top()->as<q::Type>();
             s3.pop();
             auto name = current->as<LetDeclNode>()->m_name;
 
-            // if (expr)
-
-            s3.push(q::Local::create(name, type));
-            // s3.push(q::Assign::create(q::Ident::create(name), q::Number::create("0")));
+            if (expr)
+                s3.push(q::Coupler::create({q::Local::create(name, type), q::Assign::create(q::Ident::create(name), expr)}));
+            else
+                s3.push(q::Local::create(name, type));
 
             break;
         }
@@ -751,7 +799,7 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
                 fields.push_back({field->m_name, type});
             }
 
-            s3.push(q::RegionDef::create(current->as<StructDefNode>()->m_name, fields, methods));
+            s3.push(q::RegionDef::create(current->as<RegionDefNode>()->m_name, fields, methods));
             break;
         }
         case NodeType::UnionDefNode:
@@ -894,7 +942,7 @@ static void translate_ast(std::shared_ptr<BlockNode> ast, const ir::q::RootNode 
     State state;
     std::stack<ParseNode *> s1;
     std::stack<ParseNode *> s2;
-    std::stack<const Value<Q> *> s3;
+    std::stack<const ir::Value<ir::Q> *> s3;
     bool is_public = false;
 
     for (auto it = ast->m_stmts.rbegin(); it != ast->m_stmts.rend(); it++)
@@ -913,7 +961,18 @@ static void translate_ast(std::shared_ptr<BlockNode> ast, const ir::q::RootNode 
     std::vector<const Value<Q> *> children;
     while (!s3.empty())
     {
-        children.push_back(s3.top());
+        /* We must unpack the things */
+        auto value = s3.top();
+        if (value->is<q::Coupler>())
+        {
+            auto coupler = value->as<q::Coupler>();
+            for (auto &stmt : coupler->items)
+                children.push_back(stmt);
+        }
+        else
+        {
+            children.push_back(value);
+        }
         s3.pop();
     }
 

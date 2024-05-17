@@ -442,7 +442,7 @@ static std::string get_datetime()
     return buf;
 }
 
-static std::string base64_encode(const std::string &in)
+std::string base64_encode(const std::string &in)
 {
     std::string out;
 
