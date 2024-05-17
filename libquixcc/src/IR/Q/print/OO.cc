@@ -58,7 +58,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::RegionDef::print_impl(std::ostream
 
     state.ind -= 2;
 
-    os << " }";
+    os << "}";
 
     return true;
 }
@@ -90,7 +90,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::GroupDef::print_impl(std::ostream 
 
     state.ind -= 2;
 
-    os << " }";
+    os << "}";
 
     return true;
 }
@@ -122,7 +122,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::UnionDef::print_impl(std::ostream 
 
     state.ind -= 2;
 
-    os << " }";
+    os << "}";
 
     return true;
 }

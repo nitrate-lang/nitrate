@@ -33,7 +33,6 @@
 
 std::unordered_map<libquixcc::NodeType, std::string_view> libquixcc::NodeTypeNames = {
     {NodeType::ParseNode, "ParseNode"},
-    {NodeType::ASTNopNode, "ASTNopNode"},
     {NodeType::ExprNode, "ExprNode"},
     {NodeType::ConstExprNode, "ConstExprNode"},
     {NodeType::StmtNode, "StmtNode"},

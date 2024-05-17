@@ -97,7 +97,6 @@ std::string libquixcc::serialize::ASTJsonSerializer::dispatch(libquixcc::seriali
 
     static std::unordered_map<NodeType, Func> node_map =
         {
-            {NodeType::ASTNopNode, (Func)ASTNopNode_conv},
             {NodeType::ExprStmtNode, (Func)ExprStmtNode_conv},
             {NodeType::NopStmtNode, (Func)NopStmtNode_conv},
             {NodeType::BlockNode, (Func)BlockNode_conv},
@@ -178,11 +177,6 @@ std::string libquixcc::serialize::ASTJsonSerializer::dispatch(libquixcc::seriali
         LOG(FATAL) << "No conversion function for node type " << (int)node->ntype << " found." << std::endl;
 
     return node_map[node->ntype](state, node);
-}
-
-std::string libquixcc::serialize::ASTJsonSerializer::ASTNopNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ASTNopNode *node)
-{
-    return "{\"ntype\":\"ASTNopNode\"}";
 }
 
 std::string libquixcc::serialize::ASTJsonSerializer::ExprStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ExprStmtNode *node)

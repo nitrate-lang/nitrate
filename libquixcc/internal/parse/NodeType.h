@@ -45,7 +45,6 @@ namespace libquixcc
     enum class NodeType : uint8_t
     {
         ParseNode,
-        ASTNopNode,
         ExprNode,
         ConstExprNode,
         StmtNode,
@@ -146,7 +145,6 @@ namespace libquixcc
     };
 
     class ParseNode;
-    class ASTNopNode;
     class ExprNode;
     class ConstExprNode;
     class StmtNode;

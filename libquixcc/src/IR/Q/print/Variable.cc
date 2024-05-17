@@ -111,3 +111,9 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::String::print_impl(std::ostream &o
     os << "\"" << escape(value) << "\"";
     return true;
 }
+
+libquixcc::ir::Result<bool> libquixcc::ir::q::Char::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "'" << escape(value) << "'";
+    return true;
+}

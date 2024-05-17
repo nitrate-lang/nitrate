@@ -142,6 +142,7 @@ namespace libquixcc
                 Global,
                 Number,
                 String,
+                Char,
 
                 /* Memory */
                 Assign,

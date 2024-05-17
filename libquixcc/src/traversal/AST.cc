@@ -57,7 +57,6 @@ size_t libquixcc::traversal::ASTPreorderTraversal::dispatch(libquixcc::traversal
 
     static const std::unordered_map<NodeType, Func> node_map =
         {
-            {NodeType::ASTNopNode, (Func)ASTNopNode_iter},
             {NodeType::ExprStmtNode, (Func)ExprStmtNode_iter},
             {NodeType::NopStmtNode, (Func)NopStmtNode_iter},
             {NodeType::BlockNode, (Func)BlockNode_iter},
@@ -139,11 +138,6 @@ size_t libquixcc::traversal::ASTPreorderTraversal::dispatch(libquixcc::traversal
         LOG(FATAL) << "No conversion function for node type " << (int)node->ntype << " found." << std::endl;
 
     return node_map.at(node->ntype)(state, node);
-}
-
-size_t libquixcc::traversal::ASTPreorderTraversal::ASTNopNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ASTNopNode *node)
-{
-    return 0;
 }
 
 size_t libquixcc::traversal::ASTPreorderTraversal::ExprStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ExprStmtNode *node)

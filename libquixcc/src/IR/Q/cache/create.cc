@@ -126,6 +126,7 @@ static std::map<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir:
 static std::map<std::tuple<std::string, const Value<Q> *, const Value<Q> *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
+static std::map<std::string, const Char *> char_insts;
 static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Assign *> assign_insts;
 
 static std::map<q::NodeType, std::mutex> node_mutexes;
@@ -773,6 +774,14 @@ const q::String *q::String::create(std::string value)
     if (!string_insts.contains(value))
         string_insts[value] = new String(value);
     return string_insts[value];
+}
+
+const libquixcc::ir::q::Char *libquixcc::ir::q::Char::create(std::string value)
+{
+    lock(NodeType::Char);
+    if (!char_insts.contains(value))
+        char_insts[value] = new Char(value);
+    return char_insts[value];
 }
 
 const libquixcc::ir::q::Assign *libquixcc::ir::q::Assign::create(const Expr *lhs, const Expr *rhs)

@@ -107,6 +107,21 @@ namespace libquixcc::ir::q
 
         std::string value;
     };
+
+    class Char : public Expr
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Char(std::string value) : value(value) {}
+
+    public:
+        static const Char *create(std::string value);
+
+        std::string value;
+    };
 }
 
 #endif // __QUIXCC_IR_Q_NODES_VARIABLE_H__

@@ -102,8 +102,6 @@ namespace libquixcc
             {
             case NodeType::ParseNode:
                 return std::is_same_v<T, ParseNode>;
-            case NodeType::ASTNopNode:
-                return std::is_same_v<T, ASTNopNode>;
             case NodeType::ExprNode:
                 return std::is_same_v<T, ExprNode>;
             case NodeType::ConstExprNode:
@@ -341,12 +339,6 @@ namespace libquixcc
     };
 
 #define PARSE_NODE_SIZE sizeof(ParseNode)
-
-    class ASTNopNode : public ParseNode
-    {
-    public:
-        ASTNopNode() { ntype = NodeType::ASTNopNode; }
-    };
 
     class ExprNode : public ParseNode
     {

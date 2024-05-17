@@ -75,3 +75,13 @@ bool libquixcc::ir::q::String::verify_impl() const
 {
     return true;
 }
+
+boost::uuids::uuid libquixcc::ir::q::Char::hash_impl() const
+{
+    return Hasher().gettag().add(value).hash();
+}
+
+bool libquixcc::ir::q::Char::verify_impl() const
+{
+    return true;
+}
