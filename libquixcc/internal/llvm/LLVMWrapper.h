@@ -52,11 +52,11 @@ namespace libquixcc
 {
     enum class ExportLangType
     {
-        None, /* Internal */
         Default,
         C,
         CXX,
         DLang,
+        None, /* Internal */
     };
 
     class LLVMContext
