@@ -37,10 +37,29 @@
 #endif
 
 #include <IR/Q/QIR.h>
+#include <cmath>
 
 namespace libquixcc::ir::q
 {
-    class I1 : public Value<Q>
+    class Type : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override = 0;
+        boost::uuids::uuid hash_impl() const override = 0;
+        bool verify_impl() const override = 0;
+
+    public:
+        virtual size_t bitcount() const = 0;
+        size_t size() const;
+        bool is_ptr() const;
+        bool is_integer() const;
+        bool is_float() const;
+        bool is_void() const;
+        bool is_signed() const;
+        bool is_unsigned() const;
+    };
+
+    class I1 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -49,9 +68,10 @@ namespace libquixcc::ir::q
 
     public:
         static const I1 *create();
+        size_t bitcount() const override { return 1; }
     };
 
-    class I8 : public Value<Q>
+    class I8 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -60,9 +80,10 @@ namespace libquixcc::ir::q
 
     public:
         static const I8 *create();
+        size_t bitcount() const override { return 8; }
     };
 
-    class I16 : public Value<Q>
+    class I16 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -71,9 +92,10 @@ namespace libquixcc::ir::q
 
     public:
         static const I16 *create();
+        size_t bitcount() const override { return 16; }
     };
 
-    class I32 : public Value<Q>
+    class I32 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -82,9 +104,10 @@ namespace libquixcc::ir::q
 
     public:
         static const I32 *create();
+        size_t bitcount() const override { return 32; }
     };
 
-    class I64 : public Value<Q>
+    class I64 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -93,9 +116,10 @@ namespace libquixcc::ir::q
 
     public:
         static const I64 *create();
+        size_t bitcount() const override { return 64; }
     };
 
-    class I128 : public Value<Q>
+    class I128 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -104,9 +128,10 @@ namespace libquixcc::ir::q
 
     public:
         static const I128 *create();
+        size_t bitcount() const override { return 128; }
     };
 
-    class U8 : public Value<Q>
+    class U8 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -115,9 +140,10 @@ namespace libquixcc::ir::q
 
     public:
         static const U8 *create();
+        size_t bitcount() const override { return 8; }
     };
 
-    class U16 : public Value<Q>
+    class U16 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -126,9 +152,10 @@ namespace libquixcc::ir::q
 
     public:
         static const U16 *create();
+        size_t bitcount() const override { return 16; }
     };
 
-    class U32 : public Value<Q>
+    class U32 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -137,9 +164,10 @@ namespace libquixcc::ir::q
 
     public:
         static const U32 *create();
+        size_t bitcount() const override { return 32; }
     };
 
-    class U64 : public Value<Q>
+    class U64 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -148,9 +176,10 @@ namespace libquixcc::ir::q
 
     public:
         static const U64 *create();
+        size_t bitcount() const override { return 64; }
     };
 
-    class U128 : public Value<Q>
+    class U128 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -159,9 +188,10 @@ namespace libquixcc::ir::q
 
     public:
         static const U128 *create();
+        size_t bitcount() const override { return 128; }
     };
 
-    class F32 : public Value<Q>
+    class F32 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -170,9 +200,10 @@ namespace libquixcc::ir::q
 
     public:
         static const F32 *create();
+        size_t bitcount() const override { return 32; }
     };
 
-    class F64 : public Value<Q>
+    class F64 : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -181,9 +212,10 @@ namespace libquixcc::ir::q
 
     public:
         static const F64 *create();
+        size_t bitcount() const override { return 64; }
     };
 
-    class Void : public Value<Q>
+    class Void : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -192,68 +224,73 @@ namespace libquixcc::ir::q
 
     public:
         static const Void *create();
+        size_t bitcount() const override { return 0; }
     };
 
-    class Ptr : public Value<Q>
+    class Ptr : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ptr(const Value<Q> *type) : type(type) {}
+        Ptr(const Type *type) : type(type) {}
 
     public:
-        static const Ptr *create(const Value<Q> *type);
+        static const Ptr *create(const Type *type);
+        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of pointer type"); }
 
-        const Value<Q> *type;
+        const Type *type;
     };
 
-    class Array : public Value<Q>
+    class Array : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Array(const Value<Q> *type, uint64_t size) : type(type), size(size) {}
+        Array(const Type *type, uint64_t size) : type(type), size(size) {}
 
     public:
-        static const Array *create(const Value<Q> *type, uint64_t size);
+        static const Array *create(const Type *type, uint64_t size);
+        size_t bitcount() const override { return type->bitcount() * size; }
 
-        const Value<Q> *type;
+        const Type *type;
         uint64_t size;
     };
 
-    class Vector : public Value<Q>
+    class Vector : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Vector(const Value<Q> *type) : type(type) {}
+        Vector(const Type *type) : type(type) {}
 
     public:
-        static const Vector *create(const Value<Q> *type);
+        static const Vector *create(const Type *type);
+        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of vector type"); }
 
-        const Value<Q> *type;
+        const Type *type;
     };
 
-    class FType : public Value<Q>
+    class FType : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        FType(std::vector<const Value<Q> *> params, const Value<Q> *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow) : params(params), ret(ret), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_nothrow(nothrow) {}
+        FType(std::vector<const Type *> params, const Type *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow) : params(params), ret(ret), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_nothrow(nothrow) {}
 
     public:
-        static const FType *create(std::vector<const Value<Q> *> params, const Value<Q> *ret, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false);
+        static const FType *create(std::vector<const Type *> params, const Type *ret, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false);
+        size_t bitcount() const override { return Ptr::create(Void::create())->bitcount(); }
 
-        std::vector<const Value<Q> *> params;
-        const Value<Q> *ret;
+        std::vector<const Type *> params;
+        const Type *ret;
         bool m_variadic;
         bool m_pure;
         bool m_thread_safe;
@@ -261,7 +298,7 @@ namespace libquixcc::ir::q
         bool m_nothrow;
     };
 
-    class Region : public Value<Q>
+    class Region : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -272,11 +309,12 @@ namespace libquixcc::ir::q
 
     public:
         static const Region *create(std::string name);
+        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of region type"); }
 
         std::string name;
     };
 
-    class Group : public Value<Q>
+    class Group : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -287,11 +325,12 @@ namespace libquixcc::ir::q
 
     public:
         static const Group *create(std::string name);
+        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of group type"); }
 
         std::string name;
     };
 
-    class Union : public Value<Q>
+    class Union : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -302,11 +341,12 @@ namespace libquixcc::ir::q
 
     public:
         static const Union *create(std::string name);
+        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of union type"); }
 
         std::string name;
     };
 
-    class Opaque : public Value<Q>
+    class Opaque : public Type
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -317,6 +357,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Opaque *create(std::string name);
+        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of opaque type"); }
 
         std::string name;
     };

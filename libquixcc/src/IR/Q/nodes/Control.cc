@@ -53,12 +53,35 @@ bool libquixcc::ir::q::While::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::q::For::hash_impl() const
 {
-    return Hasher().gettag().add(init).add(cond).add(step).add(body).hash();
+    auto h = Hasher().gettag();
+    if (init)
+        h.add(init);
+    if (cond)
+        h.add(cond);
+    if (step)
+        h.add(step);
+    if (body)
+        h.add(body);
+
+    return h.hash();
 }
 
 bool libquixcc::ir::q::For::verify_impl() const
 {
-    return init->verify() && cond->verify() && step->verify() && body->verify();
+    if (init)
+        if (!init->verify())
+            return false;
+    if (cond)
+        if (!cond->verify())
+            return false;
+    if (step)
+        if (!step->verify())
+            return false;
+    if (body)
+        if (!body->verify())
+            return false;
+
+    return true;
 }
 
 boost::uuids::uuid libquixcc::ir::q::Loop::hash_impl() const
@@ -105,17 +128,24 @@ bool libquixcc::ir::q::Ret::verify_impl() const
 {
     if (!value)
         return true;
-    
+
     return value->verify();
 }
 
 boost::uuids::uuid libquixcc::ir::q::Throw::hash_impl() const
 {
-    return Hasher().gettag().add(value).hash();
+    auto h = Hasher().gettag();
+    if (value)
+        h.add(value);
+
+    return h.hash();
 }
 
 bool libquixcc::ir::q::Throw::verify_impl() const
 {
+    if (!value)
+        return true;
+
     return value->verify();
 }
 

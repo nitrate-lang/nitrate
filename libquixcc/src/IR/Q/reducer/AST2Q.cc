@@ -40,12 +40,15 @@
 #include <IR/Q/OO.h>
 #include <IR/Q/Type.h>
 #include <IR/Q/Variable.h>
+#include <IR/Q/Memory.h>
+
 #include <core/Logger.h>
 
 #include <mangle/Symbol.h>
 
 #include <stack>
 #include <any>
+#include <optional>
 
 using namespace libquixcc;
 
@@ -241,10 +244,10 @@ static void push_children(ParseNode *current, std::stack<ParseNode *> &s, State 
         s.push(current->as<RetvStmtNode>()->m_cond.get());
         break;
     case NodeType::IfStmtNode:
-        s.push(current->as<IfStmtNode>()->m_cond.get());
-        s.push(current->as<IfStmtNode>()->m_then.get());
         if (current->as<IfStmtNode>()->m_else)
             s.push(current->as<IfStmtNode>()->m_else.get());
+        s.push(current->as<IfStmtNode>()->m_then.get());
+        s.push(current->as<IfStmtNode>()->m_cond.get());
         break;
     case NodeType::WhileStmtNode:
         s.push(current->as<WhileStmtNode>()->m_cond.get());
@@ -265,6 +268,42 @@ static void push_children(ParseNode *current, std::stack<ParseNode *> &s, State 
         break;
     }
 }
+
+std::optional<const ir::Value<ir::Q> *> staticcast_reduce(const ir::q::Expr *expr, const ir::q::Type *to)
+{
+    /*
+    | Type A    | Type B    | Cast Type     |
+    |-----------|-----------|---------------|
+    | signed    | unsigned  | signed        |
+    | signed    | signed    | signed        |
+    | unsigned  | signed    | signed        |
+    | unsigned  | unsigned  | unsigned      |
+    | pointer   | integer   | ptr-to-int    |
+    | integer   | pointer   | int-to-ptr    |
+    */
+
+    auto from = expr->infer();
+    auto from_size = from->bitcount();
+    auto to_size = to->as<ir::q::Type>()->bitcount();
+
+    bool upcasting = from_size < to_size;
+
+    if (to->is_ptr() && from->is_integer())
+        return ir::q::IPtrCast::create(to, expr);
+    if (to->is_integer() && from->is_ptr())
+        return ir::q::PtrICast::create(to, expr);
+    if (from->is_signed() || to->is_signed())
+        return ir::q::SCast::create(to, expr);
+    if (from->is_unsigned() && to->is_unsigned())
+        return ir::q::UCast::create(to, expr);
+
+    LOG(FATAL) << "error converting from static_cast to primitive casts" << std::endl;
+    return nullptr;
+}
+
+class Adapter {
+
+};
 
 static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir::Q> *> &s3, State &state)
 {
@@ -291,65 +330,179 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
         case NodeType::CastExprNode:
             throw std::runtime_error("CastExprNode not implemented");
         case NodeType::StaticCastExprNode:
-            throw std::runtime_error("StaticCastExprNode not implemented");
+        {
+            auto t = s3.top()->as<q::Type>();
+            s3.pop();
+            auto e = s3.top()->as<q::Expr>();
+            s3.pop();
+
+            auto c = staticcast_reduce(e, t);
+            if (!c)
+                throw std::runtime_error("Failed to reduce static_cast expression");
+
+            s3.push(*c);
+            break;
+        }
         case NodeType::BitCastExprNode:
         {
-            auto expr = s3.top();
+            auto expr = s3.top()->as<q::Expr>();
             s3.pop();
-            auto type = s3.top();
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
             s3.push(q::Bitcast::create(type, expr));
             break;
         }
         case NodeType::SignedUpcastExprNode:
         {
-            auto expr = s3.top();
+            auto expr = s3.top()->as<q::Expr>();
             s3.pop();
-            auto type = s3.top();
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
             s3.push(q::SCast::create(type, expr));
             break;
         }
         case NodeType::UnsignedUpcastExprNode:
         {
-            auto expr = s3.top();
+            auto expr = s3.top()->as<q::Expr>();
             s3.pop();
-            auto type = s3.top();
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
             s3.push(q::UCast::create(type, expr));
             break;
         }
         case NodeType::DowncastExprNode:
         {
-            auto expr = s3.top();
+            auto expr = s3.top()->as<q::Expr>();
             s3.pop();
-            auto type = s3.top();
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
             s3.push(q::UCast::create(type, expr));
             break;
         }
         case NodeType::PtrToIntCastExprNode:
         {
-            auto expr = s3.top();
+            auto expr = s3.top()->as<q::Expr>();
             s3.pop();
-            auto type = s3.top();
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
             s3.push(q::PtrICast::create(type, expr));
             break;
         }
         case NodeType::IntToPtrCastExprNode:
         {
-            auto expr = s3.top();
+            auto expr = s3.top()->as<q::Expr>();
             s3.pop();
-            auto type = s3.top();
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
             s3.push(q::IPtrCast::create(type, expr));
             break;
         }
         case NodeType::UnaryExprNode:
-            throw std::runtime_error("UnaryExprNode not implemented");
+        {
+            auto ex = current->as<UnaryExprNode>();
+            auto e = s3.top()->as<q::Expr>();
+            s3.pop();
+
+            switch (ex->m_op)
+            {
+            case Operator::Plus:
+                s3.push(e);
+                break;
+            case Operator::Minus:
+                s3.push(q::Sub::create(q::Number::create("0"), e));
+                break;
+            case Operator::LogicalNot:
+                s3.push(q::Not::create(e));
+                break;
+            case Operator::BitwiseNot:
+                s3.push(q::BitNot::create(e));
+                break;
+            case Operator::Increment:
+                s3.push(q::Add::create(e, q::Number::create("1")));
+                break;
+            case Operator::Decrement:
+                s3.push(q::Sub::create(e, q::Number::create("1")));
+                break;
+            default:
+                throw std::runtime_error("UnaryExprNode not implemented");
+            }
+            break;
+        }
         case NodeType::BinaryExprNode:
-            throw std::runtime_error("BinaryExprNode not implemented");
+        {
+            auto ex = current->as<BinaryExprNode>();
+            auto rhs = s3.top()->as<q::Expr>();
+            s3.pop();
+            auto lhs = s3.top()->as<q::Expr>();
+            s3.pop();
+
+            switch (ex->m_op)
+            {
+            case Operator::Plus:
+                s3.push(q::Add::create(lhs, rhs));
+                break;
+            case Operator::Minus:
+                s3.push(q::Sub::create(lhs, rhs));
+                break;
+            case Operator::Multiply:
+                s3.push(q::Mul::create(lhs, rhs));
+                break;
+            case Operator::Divide:
+                s3.push(q::Div::create(lhs, rhs));
+                break;
+            case Operator::Modulo:
+                s3.push(q::Mod::create(lhs, rhs));
+                break;
+            case Operator::BitwiseAnd:
+                s3.push(q::BitAnd::create(lhs, rhs));
+                break;
+            case Operator::BitwiseOr:
+                s3.push(q::BitOr::create(lhs, rhs));
+                break;
+            case Operator::BitwiseXor:
+                s3.push(q::BitXor::create(lhs, rhs));
+                break;
+            case Operator::LeftShift:
+                s3.push(q::Shl::create(lhs, rhs));
+                break;
+            case Operator::RightShift:
+                s3.push(q::Shr::create(lhs, rhs));
+                break;
+            case Operator::Assign:
+                s3.push(q::Assign::create(lhs, rhs));
+                break;
+            case Operator::LogicalAnd:
+                s3.push(q::And::create(lhs, rhs));
+                break;
+            case Operator::LogicalOr:
+                s3.push(q::Or::create(lhs, rhs));
+                break;
+            case Operator::LogicalXor:
+                s3.push(q::Xor::create(lhs, rhs));
+                break;
+            case Operator::LessThan:
+                s3.push(q::Lt::create(lhs, rhs));
+                break;
+            case Operator::GreaterThan:
+                s3.push(q::Gt::create(lhs, rhs));
+                break;
+            case Operator::LessThanEqual:
+                s3.push(q::Le::create(lhs, rhs));
+                break;
+            case Operator::GreaterThanEqual:
+                s3.push(q::Ge::create(lhs, rhs));
+                break;
+            case Operator::Equal:
+                s3.push(q::Eq::create(lhs, rhs));
+                break;
+            case Operator::NotEqual:
+                s3.push(q::Ne::create(lhs, rhs));
+                break;
+            default:
+                throw std::runtime_error("BinaryExprNode not implemented");
+            }
+            break;
+        }
         case NodeType::CallExprNode:
         {
             /// TODO: default arguments, named arguments
@@ -358,7 +511,7 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             std::vector<const ir::Value<ir::Q> *> args;
             for (auto &arg : current->as<CallExprNode>()->m_positional_args)
             {
-                auto expr = s3.top();
+                auto expr = s3.top()->as<q::Expr>();
                 s3.pop();
                 args.push_back(expr);
             }
@@ -419,7 +572,7 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             s3.push(q::Void::create());
             break;
         case NodeType::PointerTypeNode:
-            s3.push(q::Ptr::create(s3.top()));
+            s3.push(q::Ptr::create(s3.top()->as<q::Type>()));
             s3.pop();
             break;
         case NodeType::OpaqueTypeNode:
@@ -445,7 +598,7 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             break;
         case NodeType::ArrayTypeNode:
         {
-            auto type = s3.top();
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
             auto size = std::atoll(current->as<ArrayTypeNode>()->m_size->reduce<IntegerNode>(state.red)->m_val.c_str());
             s3.pop();
@@ -458,7 +611,7 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             auto f = current->as<FunctionTypeNode>();
             for (auto &param : current->as<FunctionTypeNode>()->m_params)
             {
-                auto type = s3.top();
+                auto type = s3.top()->as<q::Type>();
                 s3.pop();
                 params.push_back(type);
             }
@@ -501,25 +654,32 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
         case NodeType::LetDeclNode:
         {
             /// TODO: set default value
+            // const q::Expr *expr = nullptr;
             if (current->as<LetDeclNode>()->m_init)
             {
-                auto expr = s3.top();
+                // expr = s3.top()->as<q::Expr>();
                 s3.pop();
             }
-            auto type = s3.top();
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
-            s3.push(q::Local::create(current->as<LetDeclNode>()->m_name, type));
+            auto name = current->as<LetDeclNode>()->m_name;
+
+            // if (expr)
+
+            s3.push(q::Local::create(name, type));
+            // s3.push(q::Assign::create(q::Ident::create(name), q::Number::create("0")));
+
             break;
         }
         case NodeType::FunctionDeclNode:
         {
-            auto type = s3.top();
+            auto type = s3.top()->as<q::Type>();
             s3.pop();
             auto f = current->as<FunctionDeclNode>()->m_type;
             std::vector<const ir::Value<ir::Q> *> params;
             for (auto &param : current->as<FunctionDeclNode>()->m_params)
             {
-                auto type = s3.top();
+                auto type = s3.top()->as<q::Type>();
                 s3.pop();
                 params.push_back(type);
             }
@@ -535,7 +695,10 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             if (f->m_variadic)
                 constraints.insert(q::FConstraint::Variadic);
 
-            auto ftype = q::FType::create(params, type, f->m_variadic, f->m_pure, f->m_thread_safe, f->m_foreign, f->m_nothrow);
+            std::vector<const q::Type *> ptypes;
+            for (auto &param : params)
+                ptypes.push_back(param->as<q::Type>());
+            auto ftype = q::FType::create(ptypes, type, f->m_variadic, f->m_pure, f->m_thread_safe, f->m_foreign, f->m_nothrow);
             auto fndecl = q::Segment::create(params, type, nullptr, constraints);
             const libquixcc::ir::q::Global *globfb;
 
@@ -557,19 +720,19 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             std::set<const ir::q::Segment *> methods;
             for (auto &field : current->as<StructDefNode>()->m_fields)
             {
-                auto type = s3.top();
+                auto type = s3.top()->as<q::Type>();
                 s3.pop();
                 fields.push_back({field->m_name, type});
             }
             for (auto &method : current->as<StructDefNode>()->m_methods)
             {
-                auto type = s3.top();
+                auto type = s3.top()->as<q::Type>();
                 s3.pop();
                 methods.insert(type->as<ir::q::Segment>());
             }
             for (auto &static_method : current->as<StructDefNode>()->m_static_methods)
             {
-                auto type = s3.top();
+                auto type = s3.top()->as<q::Type>();
                 s3.pop();
                 methods.insert(type->as<ir::q::Segment>());
             }
@@ -583,7 +746,7 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             std::set<const ir::q::Segment *> methods;
             for (auto &field : current->as<RegionDefNode>()->m_fields)
             {
-                auto type = s3.top();
+                auto type = s3.top()->as<q::Type>();
                 s3.pop();
                 fields.push_back({field->m_name, type});
             }
@@ -597,7 +760,7 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
             std::set<const ir::q::Segment *> methods;
             for (auto &field : current->as<UnionDefNode>()->m_fields)
             {
-                auto type = s3.top();
+                auto type = s3.top()->as<q::Type>();
                 s3.pop();
                 fields.insert({field->m_name, type});
             }
@@ -635,7 +798,7 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
         {
             if (current->as<ReturnStmtNode>()->m_expr)
             {
-                auto expr = s3.top();
+                auto expr = s3.top()->as<q::Expr>();
                 s3.pop();
                 s3.push(q::Ret::create(expr));
             }
@@ -647,37 +810,47 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
         }
         case NodeType::RetifStmtNode:
         {
-            auto cond = s3.top();
+            auto cond = s3.top()->as<q::Expr>();
             s3.pop();
-            auto ret = s3.top();
+            auto ret = s3.top()->as<q::Expr>();
             s3.pop();
             s3.push(q::IfElse::create(cond, q::Ret::create(ret), nullptr));
             break;
         }
         case NodeType::RetzStmtNode:
         {
-            auto cond = s3.top();
+            auto cond = s3.top()->as<q::Expr>();
             s3.pop();
-            auto ret = s3.top();
+            auto ret = s3.top()->as<q::Expr>();
             s3.pop();
             s3.push(q::IfElse::create(q::Not::create(cond), q::Ret::create(ret), nullptr));
             break;
         }
         case NodeType::RetvStmtNode:
         {
-            auto cond = s3.top();
+            auto cond = s3.top()->as<q::Expr>();
             s3.pop();
             s3.push(q::IfElse::create(cond, q::Ret::create(nullptr), nullptr));
             break;
         }
         case NodeType::IfStmtNode:
         {
-            auto else_block = s3.top();
+            auto cond = s3.top()->as<q::Expr>();
             s3.pop();
             auto then_block = s3.top();
             s3.pop();
-            auto cond = s3.top();
-            s3.pop();
+
+            const Value<Q> *else_block = nullptr;
+            if (current->as<IfStmtNode>()->m_else)
+            {
+                else_block = s3.top();
+                s3.pop();
+            }
+            else
+            {
+                else_block = q::Block::create({});
+            }
+
             s3.push(q::IfElse::create(cond, then_block, else_block));
             break;
         }
@@ -685,7 +858,7 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
         {
             auto stmt = s3.top();
             s3.pop();
-            auto cond = s3.top();
+            auto cond = s3.top()->as<q::Expr>();
             s3.pop();
             s3.push(q::While::create(cond, stmt));
             break;
@@ -694,11 +867,11 @@ static void transform(std::stack<ParseNode *> &s2, std::stack<const ir::Value<ir
         {
             auto stmt = s3.top();
             s3.pop();
-            auto step = s3.top();
+            auto step = s3.top()->as<q::Expr>();
             s3.pop();
-            auto cond = s3.top();
+            auto cond = s3.top()->as<q::Expr>();
             s3.pop();
-            auto init = s3.top();
+            auto init = s3.top()->as<q::Expr>();
             s3.pop();
             s3.push(q::For::create(init, cond, step, stmt));
             break;

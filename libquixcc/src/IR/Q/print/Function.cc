@@ -50,6 +50,8 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Block::print_impl(std::ostream &os
         if (!(*it)->print(os, state))
             return false;
 
+        os << ";";
+
         if (it != stmts.end())
             os << "\n";
     }
@@ -109,8 +111,12 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::RootNode::print_impl(std::ostream 
         if (!(*it)->print(os, state))
             return false;
 
+        os << ";\n";
+
         if (it != children.end())
             os << "\n";
     }
+
+    os << "; End of module\n";
     return true;
 }

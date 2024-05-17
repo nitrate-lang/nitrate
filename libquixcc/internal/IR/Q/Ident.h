@@ -37,10 +37,11 @@
 #endif
 
 #include <IR/Q/QIR.h>
+#include <IR/Q/Expr.h>
 
 namespace libquixcc::ir::q
 {
-    class Ident : public Value<Q>
+    class Ident : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;

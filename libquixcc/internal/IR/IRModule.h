@@ -232,7 +232,7 @@ namespace libquixcc
             template <typename T>
             bool is() const
             {
-                return typeid(*this) == typeid(T);
+                return dynamic_cast<const T *>(this) != nullptr;
             }
 
             template <typename T>
@@ -244,7 +244,7 @@ namespace libquixcc
             template <typename T>
             const T *as() const
             {
-                return dynamic_cast<const T *>(this);
+                return static_cast<const T *>(this);
             }
 
             /* Write IR to Output Stream */

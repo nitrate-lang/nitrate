@@ -37,6 +37,8 @@
 #endif
 
 #include <IR/Q/QIR.h>
+#include <IR/Q/Expr.h>
+#include <IR/Q/Type.h>
 
 namespace libquixcc::ir::q
 {
@@ -64,7 +66,7 @@ namespace libquixcc::ir::q
         NoThrow,
     };
 
-    class Segment : public Value<Q>
+    class Segment : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -72,6 +74,7 @@ namespace libquixcc::ir::q
         bool verify_impl() const override;
 
         Segment(std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints, bool _public) : constraints(constraints), params(params), return_type(return_type), block(block), m_public(_public) {}
+
     public:
         static const Segment *create(std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints, bool m_public = false);
 

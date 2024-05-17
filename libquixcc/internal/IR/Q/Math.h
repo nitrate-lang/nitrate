@@ -37,373 +37,374 @@
 #endif
 
 #include <IR/Q/QIR.h>
+#include <IR/Q/Expr.h>
 
 namespace libquixcc::ir::q
 {
-    class Add : public Value<Q>
+    class Add : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Add(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Add(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Add *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Add *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Sub : public Value<Q>
+    class Sub : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Sub(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Sub(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Sub *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Sub *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Mul : public Value<Q>
+    class Mul : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Mul(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Mul(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Mul *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Mul *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Div : public Value<Q>
+    class Div : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Div(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Div(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Div *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Div *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Mod : public Value<Q>
+    class Mod : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Mod(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Mod(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Mod *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Mod *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class BitAnd : public Value<Q>
+    class BitAnd : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        BitAnd(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        BitAnd(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const BitAnd *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const BitAnd *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class BitOr : public Value<Q>
+    class BitOr : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        BitOr(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        BitOr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const BitOr *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const BitOr *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class BitXor : public Value<Q>
+    class BitXor : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        BitXor(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        BitXor(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const BitXor *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const BitXor *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class BitNot : public Value<Q>
+    class BitNot : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        BitNot(const Value<Q> *operand) : operand(operand) {}
+        BitNot(const Expr *operand) : operand(operand) {}
 
     public:
-        static const BitNot *create(const Value<Q> *operand);
+        static const BitNot *create(const Expr *operand);
 
-        const Value<Q> *operand;
+        const Expr *operand;
     };
 
-    class Shl : public Value<Q>
+    class Shl : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Shl(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Shl(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Shl *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Shl *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Shr : public Value<Q>
+    class Shr : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Shr(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Shr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Shr *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Shr *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Rotl : public Value<Q>
+    class Rotl : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Rotl(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Rotl(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Rotl *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Rotl *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Rotr : public Value<Q>
+    class Rotr : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Rotr(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Rotr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Rotr *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Rotr *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Eq : public Value<Q>
+    class Eq : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Eq(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Eq(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Eq *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Eq *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Ne : public Value<Q>
+    class Ne : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ne(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Ne(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Ne *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Ne *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Lt : public Value<Q>
+    class Lt : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Lt(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Lt(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Lt *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Lt *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Gt : public Value<Q>
+    class Gt : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Gt(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Gt(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Gt *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Gt *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Le : public Value<Q>
+    class Le : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Le(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Le(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Le *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Le *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Ge : public Value<Q>
+    class Ge : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ge(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Ge(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Ge *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Ge *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class And : public Value<Q>
+    class And : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        And(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        And(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const And *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const And *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Or : public Value<Q>
+    class Or : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Or(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Or(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Or *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Or *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Not : public Value<Q>
+    class Not : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Not(const Value<Q> *operand) : operand(operand) {}
+        Not(const Expr *operand) : operand(operand) {}
 
     public:
-        static const Not *create(const Value<Q> *operand);
+        static const Not *create(const Expr *operand);
 
-        const Value<Q> *operand;
+        const Expr *operand;
     };
 
-    class Xor : public Value<Q>
+    class Xor : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Xor(const Value<Q> *lhs, const Value<Q> *rhs) : lhs(lhs), rhs(rhs) {}
+        Xor(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Xor *create(const Value<Q> *lhs, const Value<Q> *rhs);
+        static const Xor *create(const Expr *lhs, const Expr *rhs);
 
-        const Value<Q> *lhs;
-        const Value<Q> *rhs;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 }
 

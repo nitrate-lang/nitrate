@@ -43,6 +43,9 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Local::print_impl(std::ostream &os
 
 libquixcc::ir::Result<bool> libquixcc::ir::q::Global::print_impl(std::ostream &os, PState &state) const
 {
+    if (_extern)
+        os << "extern ";
+
     os << "@" << name << "(";
     if (!type->print(os, state))
         return false;

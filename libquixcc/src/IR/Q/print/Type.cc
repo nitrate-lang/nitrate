@@ -133,6 +133,8 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::FType::print_impl(std::ostream &os
             return false;
         if (i + 1 < params.size())
             os << ", ";
+        else if (m_variadic)
+            os << ", ...";
     }
     os << "]->";
     return ret->print(os, state);

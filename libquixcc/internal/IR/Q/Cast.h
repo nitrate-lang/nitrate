@@ -37,87 +37,89 @@
 #endif
 
 #include <IR/Q/QIR.h>
+#include <IR/Q/Expr.h>
+#include <IR/Q/Type.h>
 
 namespace libquixcc::ir::q
 {
-    class SCast : public Value<Q>
+    class SCast : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        SCast(const Value<Q> *type, const Value<Q> *value) : type(type), value(value) {}
+        SCast(const Type *type, const Expr *value) : type(type), value(value) {}
 
     public:
-        static const SCast *create(const Value<Q> *type, const Value<Q> *value);
+        static const SCast *create(const Type *type, const Expr *value);
 
-        const Value<Q> *type;
-        const Value<Q> *value;
+        const Type *type;
+        const Expr *value;
     };
 
-    class UCast : public Value<Q>
+    class UCast : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        UCast(const Value<Q> *type, const Value<Q> *value) : type(type), value(value) {}
+        UCast(const Type *type, const Expr *value) : type(type), value(value) {}
 
     public:
-        static const UCast *create(const Value<Q> *type, const Value<Q> *value);
+        static const UCast *create(const Type *type, const Expr *value);
 
-        const Value<Q> *type;
-        const Value<Q> *value;
+        const Type *type;
+        const Expr *value;
     };
 
-    class PtrICast : public Value<Q>
+    class PtrICast : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        PtrICast(const Value<Q> *type, const Value<Q> *value) : type(type), value(value) {}
+        PtrICast(const Type *type, const Expr *value) : type(type), value(value) {}
 
     public:
-        static const PtrICast *create(const Value<Q> *type, const Value<Q> *value);
+        static const PtrICast *create(const Type *type, const Expr *value);
 
-        const Value<Q> *type;
-        const Value<Q> *value;
+        const Type *type;
+        const Expr *value;
     };
 
-    class IPtrCast : public Value<Q>
+    class IPtrCast : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        IPtrCast(const Value<Q> *type, const Value<Q> *value) : type(type), value(value) {}
+        IPtrCast(const Type *type, const Expr *value) : type(type), value(value) {}
 
     public:
-        static const IPtrCast *create(const Value<Q> *type, const Value<Q> *value);
+        static const IPtrCast *create(const Type *type, const Expr *value);
 
-        const Value<Q> *type;
-        const Value<Q> *value;
+        const Type *type;
+        const Expr *value;
     };
 
-    class Bitcast : public Value<Q>
+    class Bitcast : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Bitcast(const Value<Q> *type, const Value<Q> *value) : type(type), value(value) {}
+        Bitcast(const Type *type, const Expr *value) : type(type), value(value) {}
 
     public:
-        static const Bitcast *create(const Value<Q> *type, const Value<Q> *value);
+        static const Bitcast *create(const Type *type, const Expr *value);
 
-        const Value<Q> *type;
-        const Value<Q> *value;
+        const Type *type;
+        const Expr *value;
     };
 }
 

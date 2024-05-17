@@ -29,14 +29,14 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/Ident.h>
+#include <IR/Q/Memory.h>
 
-boost::uuids::uuid libquixcc::ir::q::Ident::hash_impl() const
+boost::uuids::uuid libquixcc::ir::q::Assign::hash_impl() const
 {
-    return Hasher().gettag().add(name).hash();
+    return Hasher().gettag().add(lhs).add(rhs).hash();
 }
 
-bool libquixcc::ir::q::Ident::verify_impl() const
+bool libquixcc::ir::q::Assign::verify_impl() const
 {
-    return true;
+    return lhs->verify() && rhs->verify();
 }

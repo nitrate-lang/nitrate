@@ -38,10 +38,11 @@
 
 #include <IR/Q/QIR.h>
 #include <IR/Q/Variable.h>
+#include <IR/Q/Expr.h>
 
 namespace libquixcc::ir::q
 {
-    class Call : public Value<Q>
+    class Call : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;
@@ -57,7 +58,7 @@ namespace libquixcc::ir::q
         std::vector<const Value<Q> *> args;
     };
 
-    class CallIndirect : public Value<Q>
+    class CallIndirect : public Expr
     {
     protected:
         Result<bool> print_impl(std::ostream &os, PState &state) const override;

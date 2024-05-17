@@ -256,3 +256,38 @@ bool libquixcc::ir::q::Opaque::verify_impl() const
 {
     return !name.empty();
 }
+
+size_t libquixcc::ir::q::Type::size() const
+{
+    return std::ceil(bitcount() / 8.0);
+}
+
+bool libquixcc::ir::q::Type::is_ptr() const
+{
+    return this->is<Ptr>();
+}
+
+bool libquixcc::ir::q::Type::is_integer() const
+{
+    return this->is<I1>() || this->is<I8>() || this->is<I16>() || this->is<I32>() || this->is<I64>() || this->is<I128>() || this->is<U8>() || this->is<U16>() || this->is<U32>() || this->is<U64>() || this->is<U128>();
+}
+
+bool libquixcc::ir::q::Type::is_float() const
+{
+    return this->is<F32>() || this->is<F64>();
+}
+
+bool libquixcc::ir::q::Type::is_void() const
+{
+    return this->is<Void>();
+}
+
+bool libquixcc::ir::q::Type::is_signed() const
+{
+    return this->is<I1>() || this->is<I8>() || this->is<I16>() || this->is<I32>() || this->is<I64>() || this->is<I128>();
+}
+
+bool libquixcc::ir::q::Type::is_unsigned() const
+{
+    return this->is<U8>() || this->is<U16>() || this->is<U32>() || this->is<U64>() || this->is<U128>();
+}

@@ -41,6 +41,8 @@
 #include <IR/Q/OO.h>
 #include <IR/Q/Type.h>
 #include <IR/Q/Variable.h>
+#include <IR/Q/Memory.h>
+#include <IR/Q/Expr.h>
 
 #include <map>
 #include <unordered_map>
@@ -112,7 +114,7 @@ static Void *void_inst = nullptr;
 static std::map<const Value<Q> *, const Ptr *> ptr_insts;
 static std::map<std::pair<const Value<Q> *, uint64_t>, const Array *> array_insts;
 static std::map<const Value<Q> *, const Vector *> vector_insts;
-static std::map<std::tuple<std::vector<const Value<Q> *>, const Value<Q> *, bool, bool, bool, bool, bool>, const FType *> ftype_insts;
+static std::map<std::tuple<std::vector<const Type *>, const Value<Q> *, bool, bool, bool, bool, bool>, const FType *> ftype_insts;
 static std::map<std::string, const Region *> region_insts;
 static std::map<std::string, const Group *> group_insts;
 static std::map<std::string, const Union *> union_insts;
@@ -124,6 +126,7 @@ static std::map<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir:
 static std::map<std::tuple<std::string, const Value<Q> *, const Value<Q> *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
+static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Assign *> assign_insts;
 
 static std::map<q::NodeType, std::mutex> node_mutexes;
 
@@ -137,7 +140,7 @@ const RootNode *q::RootNode::create(std::vector<const Value<Q> *> children)
     return root;
 }
 
-const q::SCast *q::SCast::create(const Value<Q> *type, const Value<Q> *value)
+const q::SCast *q::SCast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::SCast);
     auto key = std::make_pair(type, value);
@@ -146,7 +149,7 @@ const q::SCast *q::SCast::create(const Value<Q> *type, const Value<Q> *value)
     return scast_insts[key];
 }
 
-const q::UCast *q::UCast::create(const Value<Q> *type, const Value<Q> *value)
+const q::UCast *q::UCast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::UCast);
     auto key = std::make_pair(type, value);
@@ -155,7 +158,7 @@ const q::UCast *q::UCast::create(const Value<Q> *type, const Value<Q> *value)
     return ucast_insts[key];
 }
 
-const q::PtrICast *q::PtrICast::create(const Value<Q> *type, const Value<Q> *value)
+const q::PtrICast *q::PtrICast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::PtrICast);
     auto key = std::make_pair(type, value);
@@ -164,7 +167,7 @@ const q::PtrICast *q::PtrICast::create(const Value<Q> *type, const Value<Q> *val
     return ptricast_insts[key];
 }
 
-const q::IPtrCast *q::IPtrCast::create(const Value<Q> *type, const Value<Q> *value)
+const q::IPtrCast *q::IPtrCast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::IPtrCast);
     auto key = std::make_pair(type, value);
@@ -173,7 +176,7 @@ const q::IPtrCast *q::IPtrCast::create(const Value<Q> *type, const Value<Q> *val
     return iptrcast_insts[key];
 }
 
-const q::Bitcast *q::Bitcast::create(const Value<Q> *type, const Value<Q> *value)
+const q::Bitcast *q::Bitcast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::Bitcast);
     auto key = std::make_pair(type, value);
@@ -182,7 +185,7 @@ const q::Bitcast *q::Bitcast::create(const Value<Q> *type, const Value<Q> *value
     return bitcast_insts[key];
 }
 
-const q::IfElse *q::IfElse::create(const Value<Q> *cond, const Value<Q> *then, const Value<Q> *els)
+const q::IfElse *q::IfElse::create(const Expr *cond, const Value<Q> *then, const Value<Q> *els)
 {
     lock(NodeType::IfElse);
     auto key = std::make_tuple(cond, then, els);
@@ -191,7 +194,7 @@ const q::IfElse *q::IfElse::create(const Value<Q> *cond, const Value<Q> *then, c
     return ifelse_insts[key];
 }
 
-const q::While *q::While::create(const Value<Q> *cond, const Value<Q> *body)
+const q::While *q::While::create(const Expr *cond, const Value<Q> *body)
 {
     lock(NodeType::While);
     auto key = std::make_pair(cond, body);
@@ -200,7 +203,7 @@ const q::While *q::While::create(const Value<Q> *cond, const Value<Q> *body)
     return while_insts[key];
 }
 
-const ir::q::For *ir::q::For::create(const ir::Value<Q> *init, const ir::Value<Q> *cond, const ir::Value<Q> *step, const ir::Value<Q> *body)
+const ir::q::For *ir::q::For::create(const Expr *init, const Expr *cond, const Expr *step, const ir::Value<Q> *body)
 {
     lock(NodeType::For);
     auto key = std::make_tuple(init, cond, step, body);
@@ -233,7 +236,7 @@ const ir::q::Continue *ir::q::Continue::create()
     return continue_inst;
 }
 
-const q::Ret *q::Ret::create(const Value<Q> *value)
+const q::Ret *q::Ret::create(const Expr *value)
 {
     lock(NodeType::Ret);
     if (!ret_insts.contains(value))
@@ -241,7 +244,7 @@ const q::Ret *q::Ret::create(const Value<Q> *value)
     return ret_insts[value];
 }
 
-const ir::q::Throw *ir::q::Throw::create(const ir::Value<ir::Q> *value)
+const ir::q::Throw *ir::q::Throw::create(const Expr *value)
 {
     lock(NodeType::Throw);
     if (!throw_insts.contains(value))
@@ -258,7 +261,7 @@ const ir::q::TryCatchFinally *ir::q::TryCatchFinally::create(const ir::Value<Q> 
     return trycatchfinally_insts[key];
 }
 
-const ir::q::Case *ir::q::Case::create(const ir::Value<ir::Q> *value, const ir::Value<ir::Q> *body)
+const ir::q::Case *ir::q::Case::create(const Expr *value, const ir::Value<ir::Q> *body)
 {
     lock(NodeType::Case);
     auto key = std::make_pair(value, body);
@@ -267,7 +270,7 @@ const ir::q::Case *ir::q::Case::create(const ir::Value<ir::Q> *value, const ir::
     return case_insts[key];
 }
 
-const ir::q::Switch *ir::q::Switch::create(const ir::Value<ir::Q> *value, const std::set<const ir::q::Case *> &cases, const ir::Value<ir::Q> *defaultcase)
+const ir::q::Switch *ir::q::Switch::create(const Expr *value, const std::set<const ir::q::Case *> &cases, const ir::Value<ir::Q> *defaultcase)
 {
     lock(NodeType::Switch);
     auto key = std::make_tuple(value, cases, defaultcase);
@@ -328,7 +331,7 @@ const ir::q::Segment *ir::q::Segment::create(std::vector<const Value<Q> *> param
     return function_insts[key];
 }
 
-const q::Add *q::Add::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Add *q::Add::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Add);
     auto key = std::make_pair(lhs, rhs);
@@ -337,7 +340,7 @@ const q::Add *q::Add::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return add_insts[key];
 }
 
-const q::Sub *q::Sub::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Sub *q::Sub::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Sub);
     auto key = std::make_pair(lhs, rhs);
@@ -346,7 +349,7 @@ const q::Sub *q::Sub::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return sub_insts[key];
 }
 
-const q::Mul *q::Mul::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Mul *q::Mul::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Mul);
     auto key = std::make_pair(lhs, rhs);
@@ -355,7 +358,7 @@ const q::Mul *q::Mul::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return mul_insts[key];
 }
 
-const q::Div *q::Div::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Div *q::Div::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Div);
     auto key = std::make_pair(lhs, rhs);
@@ -364,7 +367,7 @@ const q::Div *q::Div::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return div_insts[key];
 }
 
-const q::Mod *q::Mod::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Mod *q::Mod::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Mod);
     auto key = std::make_pair(lhs, rhs);
@@ -373,7 +376,7 @@ const q::Mod *q::Mod::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return mod_insts[key];
 }
 
-const q::BitAnd *q::BitAnd::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::BitAnd *q::BitAnd::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::BitAnd);
     auto key = std::make_pair(lhs, rhs);
@@ -382,7 +385,7 @@ const q::BitAnd *q::BitAnd::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return bitand_insts[key];
 }
 
-const q::BitOr *q::BitOr::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::BitOr *q::BitOr::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::BitOr);
     auto key = std::make_pair(lhs, rhs);
@@ -391,7 +394,7 @@ const q::BitOr *q::BitOr::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return bitor_insts[key];
 }
 
-const q::BitXor *q::BitXor::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::BitXor *q::BitXor::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::BitXor);
     auto key = std::make_pair(lhs, rhs);
@@ -400,7 +403,7 @@ const q::BitXor *q::BitXor::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return bitxor_insts[key];
 }
 
-const q::BitNot *q::BitNot::create(const Value<Q> *value)
+const q::BitNot *q::BitNot::create(const Expr *value)
 {
     lock(NodeType::BitNot);
     if (!bitnot_insts.contains(value))
@@ -408,7 +411,7 @@ const q::BitNot *q::BitNot::create(const Value<Q> *value)
     return bitnot_insts[value];
 }
 
-const q::Shl *q::Shl::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Shl *q::Shl::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Shl);
     auto key = std::make_pair(lhs, rhs);
@@ -417,7 +420,7 @@ const q::Shl *q::Shl::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return shl_insts[key];
 }
 
-const q::Shr *q::Shr::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Shr *q::Shr::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Shr);
     auto key = std::make_pair(lhs, rhs);
@@ -426,7 +429,7 @@ const q::Shr *q::Shr::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return shr_insts[key];
 }
 
-const q::Rotl *q::Rotl::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Rotl *q::Rotl::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Rotl);
     auto key = std::make_pair(lhs, rhs);
@@ -435,7 +438,7 @@ const q::Rotl *q::Rotl::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return rotl_insts[key];
 }
 
-const q::Rotr *q::Rotr::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Rotr *q::Rotr::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Rotr);
     auto key = std::make_pair(lhs, rhs);
@@ -444,7 +447,7 @@ const q::Rotr *q::Rotr::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return rotr_insts[key];
 }
 
-const q::Eq *q::Eq::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Eq *q::Eq::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Eq);
     auto key = std::make_pair(lhs, rhs);
@@ -453,7 +456,7 @@ const q::Eq *q::Eq::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return eq_insts[key];
 }
 
-const q::Ne *q::Ne::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Ne *q::Ne::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Ne);
     auto key = std::make_pair(lhs, rhs);
@@ -462,7 +465,7 @@ const q::Ne *q::Ne::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return ne_insts[key];
 }
 
-const q::Lt *q::Lt::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Lt *q::Lt::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Lt);
     auto key = std::make_pair(lhs, rhs);
@@ -471,7 +474,7 @@ const q::Lt *q::Lt::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return lt_insts[key];
 }
 
-const q::Gt *q::Gt::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Gt *q::Gt::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Gt);
     auto key = std::make_pair(lhs, rhs);
@@ -480,7 +483,7 @@ const q::Gt *q::Gt::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return gt_insts[key];
 }
 
-const q::Le *q::Le::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Le *q::Le::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Le);
     auto key = std::make_pair(lhs, rhs);
@@ -489,7 +492,7 @@ const q::Le *q::Le::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return le_insts[key];
 }
 
-const q::Ge *q::Ge::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Ge *q::Ge::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Ge);
     auto key = std::make_pair(lhs, rhs);
@@ -498,7 +501,7 @@ const q::Ge *q::Ge::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return ge_insts[key];
 }
 
-const q::And *q::And::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::And *q::And::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::And);
     auto key = std::make_pair(lhs, rhs);
@@ -507,7 +510,7 @@ const q::And *q::And::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return and_insts[key];
 }
 
-const q::Or *q::Or::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Or *q::Or::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Or);
     auto key = std::make_pair(lhs, rhs);
@@ -516,7 +519,7 @@ const q::Or *q::Or::create(const Value<Q> *lhs, const Value<Q> *rhs)
     return or_insts[key];
 }
 
-const q::Not *q::Not::create(const Value<Q> *value)
+const q::Not *q::Not::create(const Expr *value)
 {
     lock(NodeType::Not);
     if (!not_insts.contains(value))
@@ -524,7 +527,7 @@ const q::Not *q::Not::create(const Value<Q> *value)
     return not_insts[value];
 }
 
-const q::Xor *q::Xor::create(const Value<Q> *lhs, const Value<Q> *rhs)
+const q::Xor *q::Xor::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Xor);
     auto key = std::make_pair(lhs, rhs);
@@ -645,7 +648,7 @@ const q::Void *q::Void::create()
     return void_inst;
 }
 
-const q::Ptr *q::Ptr::create(const Value<Q> *type)
+const q::Ptr *q::Ptr::create(const Type *type)
 {
     lock(NodeType::Ptr);
     if (!ptr_insts.contains(type))
@@ -653,7 +656,7 @@ const q::Ptr *q::Ptr::create(const Value<Q> *type)
     return ptr_insts[type];
 }
 
-const q::Array *q::Array::create(const Value<Q> *type, uint64_t size)
+const q::Array *q::Array::create(const Type *type, uint64_t size)
 {
     lock(NodeType::Array);
     auto key = std::make_pair(type, size);
@@ -662,7 +665,7 @@ const q::Array *q::Array::create(const Value<Q> *type, uint64_t size)
     return array_insts[key];
 }
 
-const libquixcc::ir::q::Vector *libquixcc::ir::q::Vector::create(const libquixcc::ir::Value<libquixcc::ir::Q> *type)
+const libquixcc::ir::q::Vector *libquixcc::ir::q::Vector::create(const Type *type)
 {
     lock(NodeType::Vector);
     if (!vector_insts.contains(type))
@@ -670,7 +673,7 @@ const libquixcc::ir::q::Vector *libquixcc::ir::q::Vector::create(const libquixcc
     return vector_insts[type];
 }
 
-const libquixcc::ir::q::FType *libquixcc::ir::q::FType::create(std::vector<const Value<Q> *> params, const Value<Q> *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
+const libquixcc::ir::q::FType *libquixcc::ir::q::FType::create(std::vector<const Type *> params, const Type *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
 {
     lock(NodeType::FType);
     auto key = std::make_tuple(params, ret, variadic, pure, thread_safe, foreign, nothrow);
@@ -738,7 +741,7 @@ const libquixcc::ir::q::UnionDef *libquixcc::ir::q::UnionDef::create(std::string
     return uniondef_insts[key];
 }
 
-const q::Local *q::Local::create(std::string name, const Value<Q> *type)
+const q::Local *q::Local::create(std::string name, const Type *type)
 {
     lock(NodeType::Local);
     auto key = std::make_pair(name, type);
@@ -747,7 +750,7 @@ const q::Local *q::Local::create(std::string name, const Value<Q> *type)
     return local_insts[key];
 }
 
-const q::Global *q::Global::create(std::string name, const Value<Q> *type, const Value<Q> *value, bool _volatile, bool _atomic, bool _extern)
+const q::Global *q::Global::create(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic, bool _extern)
 {
     lock(NodeType::Global);
     auto key = std::make_tuple(name, type, value, _volatile, _atomic, _extern);
@@ -770,4 +773,13 @@ const q::String *q::String::create(std::string value)
     if (!string_insts.contains(value))
         string_insts[value] = new String(value);
     return string_insts[value];
+}
+
+const libquixcc::ir::q::Assign *libquixcc::ir::q::Assign::create(const Expr *lhs, const Expr *rhs)
+{
+    lock(NodeType::Assign);
+    auto key = std::make_pair(lhs, rhs);
+    if (!assign_insts.contains(key))
+        assign_insts[key] = new Assign(lhs, rhs);
+    return assign_insts[key];
 }

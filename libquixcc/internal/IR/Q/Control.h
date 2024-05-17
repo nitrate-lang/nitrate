@@ -37,6 +37,7 @@
 #endif
 
 #include <IR/Q/QIR.h>
+#include <IR/Q/Expr.h>
 
 namespace libquixcc::ir::q
 {
@@ -47,12 +48,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        IfElse(const Value<Q> *cond, const Value<Q> *then, const Value<Q> *els) : cond(cond), then(then), els(els) {}
+        IfElse(const Expr *cond, const Value<Q> *then, const Value<Q> *els) : cond(cond), then(then), els(els) {}
 
     public:
-        static const IfElse *create(const Value<Q> *cond, const Value<Q> *then, const Value<Q> *els);
+        static const IfElse *create(const Expr *cond, const Value<Q> *then, const Value<Q> *els);
 
-        const Value<Q> *cond;
+        const Expr *cond;
         const Value<Q> *then;
         const Value<Q> *els;
     };
@@ -64,12 +65,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        While(const Value<Q> *cond, const Value<Q> *body) : cond(cond), body(body) {}
+        While(const Expr *cond, const Value<Q> *body) : cond(cond), body(body) {}
 
     public:
-        static const While *create(const Value<Q> *cond, const Value<Q> *body);
+        static const While *create(const Expr *cond, const Value<Q> *body);
 
-        const Value<Q> *cond;
+        const Expr *cond;
         const Value<Q> *body;
     };
 
@@ -80,14 +81,14 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        For(const Value<Q> *init, const Value<Q> *cond, const Value<Q> *step, const Value<Q> *body) : init(init), cond(cond), step(step), body(body) {}
+        For(const Expr *init, const Expr *cond, const Expr *step, const Value<Q> *body) : init(init), cond(cond), step(step), body(body) {}
 
     public:
-        static const For *create(const Value<Q> *init, const Value<Q> *cond, const Value<Q> *step, const Value<Q> *body);
+        static const For *create(const Expr *init, const Expr *cond, const Expr *step, const Value<Q> *body);
 
-        const Value<Q> *init;
-        const Value<Q> *cond;
-        const Value<Q> *step;
+        const Expr *init;
+        const Expr *cond;
+        const Expr *step;
         const Value<Q> *body;
     };
 
@@ -135,12 +136,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ret(const Value<Q> *value) : value(value) {}
+        Ret(const Expr *value) : value(value) {}
 
     public:
-        static const Ret *create(const Value<Q> *value);
+        static const Ret *create(const Expr *value);
 
-        const Value<Q> *value;
+        const Expr *value;
     };
 
     class Throw : public Value<Q>
@@ -150,12 +151,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Throw(const Value<Q> *value) : value(value) {}
+        Throw(const Expr *value) : value(value) {}
 
     public:
-        static const Throw *create(const Value<Q> *value);
+        static const Throw *create(const Expr *value);
 
-        const Value<Q> *value;
+        const Expr *value;
     };
 
     class TryCatchFinally : public Value<Q>
@@ -182,12 +183,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Case(const Value<Q> *value, const Value<Q> *body) : value(value), body(body) {}
+        Case(const Expr *value, const Value<Q> *body) : value(value), body(body) {}
 
     public:
-        static const Case *create(const Value<Q> *value, const Value<Q> *body);
+        static const Case *create(const Expr *value, const Value<Q> *body);
 
-        const Value<Q> *value;
+        const Expr *value;
         const Value<Q> *body;
     };
 
@@ -198,12 +199,12 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Switch(const Value<Q> *value, const std::set<const Case *> &cases, const Value<Q> *defaultcase) : value(value), cases(cases), defaultcase(defaultcase) {}
+        Switch(const Expr *value, const std::set<const Case *> &cases, const Value<Q> *defaultcase) : value(value), cases(cases), defaultcase(defaultcase) {}
 
     public:
-        static const Switch *create(const Value<Q> *value, const std::set<const Case *> &cases, const Value<Q> *defaultcase);
+        static const Switch *create(const Expr *value, const std::set<const Case *> &cases, const Value<Q> *defaultcase);
 
-        const Value<Q> *value;
+        const Expr *value;
         const std::set<const Case *> cases;
         const Value<Q> *defaultcase;
     };

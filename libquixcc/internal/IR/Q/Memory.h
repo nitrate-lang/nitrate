@@ -29,14 +29,33 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/Ident.h>
+#ifndef __QUIXCC_IR_Q_NODES_MEMORY_H__
+#define __QUIXCC_IR_Q_NODES_MEMORY_H__
 
-boost::uuids::uuid libquixcc::ir::q::Ident::hash_impl() const
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
+
+#include <IR/Q/QIR.h>
+#include <IR/Q/Expr.h>
+
+namespace libquixcc::ir::q
 {
-    return Hasher().gettag().add(name).hash();
+    class Assign : public Expr
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Assign(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+
+    public:
+        static const Assign *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
+    };
 }
 
-bool libquixcc::ir::q::Ident::verify_impl() const
-{
-    return true;
-}
+#endif // __QUIXCC_IR_Q_NODES_MEMORY_H__

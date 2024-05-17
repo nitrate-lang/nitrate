@@ -29,14 +29,28 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/Ident.h>
+#ifndef __QUIXCC_IR_Q_NODES_EXPR_H__
+#define __QUIXCC_IR_Q_NODES_EXPR_H__
 
-boost::uuids::uuid libquixcc::ir::q::Ident::hash_impl() const
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
+
+#include <IR/Q/QIR.h>
+#include <IR/Q/Type.h>
+
+namespace libquixcc::ir::q
 {
-    return Hasher().gettag().add(name).hash();
+    class Expr : public Value<Q>
+    {
+    protected:
+        Result<bool> print_impl(std::ostream &os, PState &state) const override = 0;
+        boost::uuids::uuid hash_impl() const override = 0;
+        bool verify_impl() const override = 0;
+
+    public:
+        virtual const Type *infer() const { return I8::create(); }
+    };
 }
 
-bool libquixcc::ir::q::Ident::verify_impl() const
-{
-    return true;
-}
+#endif // __QUIXCC_IR_Q_NODES_EXPR_H__

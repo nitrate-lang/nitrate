@@ -142,6 +142,9 @@ namespace libquixcc
                 Global,
                 Number,
                 String,
+
+                /* Memory */
+                Assign,
             };
 
             class RootNode : public libquixcc::ir::Value<Q>

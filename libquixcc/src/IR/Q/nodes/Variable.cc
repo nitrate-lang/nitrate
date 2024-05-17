@@ -43,12 +43,17 @@ bool libquixcc::ir::q::Local::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::q::Global::hash_impl() const
 {
-    return Hasher().gettag().add(name).add(type).add(value).add(_volatile).add(_atomic).add(_extern).hash();
+    auto h = Hasher().gettag().add(name).add(type).add(_volatile).add(_atomic).add(_extern);
+    if (value)
+        h.add(value);
+    return h.hash();
 }
 
 bool libquixcc::ir::q::Global::verify_impl() const
 {
-    return type->verify() && value->verify();
+    if (value)
+        return type->verify() && value->verify();
+    return type->verify();
 }
 
 boost::uuids::uuid libquixcc::ir::q::Number::hash_impl() const
