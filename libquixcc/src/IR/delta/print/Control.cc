@@ -91,7 +91,19 @@ bool libquixcc::ir::delta::Ret::print_impl(std::ostream &os, PState &state) cons
 
 bool libquixcc::ir::delta::Call::print_impl(std::ostream &os, PState &state) const
 {
-    throw std::runtime_error("Call::print_impl not implemented");
+    os << callee << "(";
+    for (size_t i = 0; i < args.size(); i++)
+    {
+        if (!args[i]->print(os, state))
+            return false;
+
+        if (i != args.size() - 1)
+            os << ", ";
+    }
+
+    os << ")";
+
+    return true;
 }
 
 bool libquixcc::ir::delta::PtrCall::print_impl(std::ostream &os, PState &state) const

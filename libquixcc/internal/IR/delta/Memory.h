@@ -49,7 +49,11 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Assign(const Expr *var, const Expr *value, uint64_t rank) : rank(rank), var(var), value(value) {}
+        Assign(const Expr *var, const Expr *value, uint64_t rank) : rank(rank), var(var), value(value)
+        {
+            ntype = (int)NodeType::Assign;
+        }
+
     public:
         static const Assign *create(const Expr *var, const Expr *value, uint64_t rank = 0);
 
@@ -65,7 +69,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Load(const Expr *var, uint64_t rank) : rank(rank), var(var) {}
+        Load(const Expr *var, uint64_t rank) : rank(rank), var(var)
+        {
+            ntype = (int)NodeType::Load;
+        }
 
     public:
         static const Load *create(const Expr *var, uint64_t rank = 0);
@@ -81,7 +88,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Index(const Expr *var, const Value *index) : var(var), index(index) {}
+        Index(const Expr *var, const Value *index) : var(var), index(index)
+        {
+            ntype = (int)NodeType::Index;
+        }
 
     public:
         static const Index *create(const Expr *var, const Value *index);

@@ -49,7 +49,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Local(std::string name, const Type *type) : name(name), type(type) {}
+        Local(std::string name, const Type *type) : name(name), type(type)
+        {
+            ntype = (int)NodeType::Local;
+        }
 
     public:
         static const Local *create(std::string name, const Type *type);
@@ -65,16 +68,20 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Global(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic) {}
+        Global(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic, bool _extern) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic), _extern(_extern)
+        {
+            ntype = (int)NodeType::Global;
+        }
 
     public:
-        static const Global *create(std::string name, const Type *type, const Expr *value, bool _volatile = false, bool _atomic = false);
+        static const Global *create(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic, bool _extern);
 
         std::string name;
         const Type *type;
         const Expr *value;
         bool _volatile;
         bool _atomic;
+        bool _extern;
     };
 
     class Number : public Expr
@@ -84,7 +91,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Number(std::string value) : value(value) {}
+        Number(std::string value) : value(value)
+        {
+            ntype = (int)NodeType::Number;
+        }
 
     public:
         static const Number *create(std::string value);
@@ -99,7 +109,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        String(std::string value) : value(value) {}
+        String(std::string value) : value(value)
+        {
+            ntype = (int)NodeType::String;
+        }
 
     public:
         static const String *create(std::string value);

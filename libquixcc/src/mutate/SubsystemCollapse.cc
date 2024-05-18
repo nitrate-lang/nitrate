@@ -48,8 +48,7 @@ static void collapse(const std::vector<std::string> &_ns, libquixcc::ParseNode *
         return;
     auto sub = std::static_pointer_cast<SubsystemNode>(ptr);
 
-    // This node is not the namespace node. So we must account for the prefix
-    std::string _namespace = Symbol::join(_ns, sub->m_name);
+    std::string _namespace = Symbol::join(_ns, "");
 
     std::shared_ptr<StmtGroupNode> stmts = std::make_shared<StmtGroupNode>();
 

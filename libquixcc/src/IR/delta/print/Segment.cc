@@ -101,6 +101,8 @@ bool libquixcc::ir::delta::RootNode::print_impl(std::ostream &os, PState &state)
     {
         if (!child->print(os, state))
             return false;
+
+        os << "\n";
     }
 
     return true;

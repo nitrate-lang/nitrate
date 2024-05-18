@@ -73,11 +73,17 @@ bool libquixcc::ir::delta::Label::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::delta::Ret::hash_impl() const
 {
-    return Hasher().gettag().add(value).hash();
+    auto h = Hasher().gettag();
+    if (value)
+        h.add(value);
+    return h.hash();
 }
 
 bool libquixcc::ir::delta::Ret::verify_impl() const
 {
+    if (!value)
+        return true;
+    
     return value->verify();
 }
 

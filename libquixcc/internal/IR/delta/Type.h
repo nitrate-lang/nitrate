@@ -65,6 +65,11 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        I1()
+        {
+            ntype = (int)NodeType::I1;
+        }
+
     public:
         static const I1 *create();
         size_t bitcount() const override { return 1; }
@@ -76,6 +81,11 @@ namespace libquixcc::ir::delta
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        I8()
+        {
+            ntype = (int)NodeType::I8;
+        }
 
     public:
         static const I8 *create();
@@ -89,6 +99,11 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        I16()
+        {
+            ntype = (int)NodeType::I16;
+        }
+
     public:
         static const I16 *create();
         size_t bitcount() const override { return 16; }
@@ -100,6 +115,11 @@ namespace libquixcc::ir::delta
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        I32()
+        {
+            ntype = (int)NodeType::I32;
+        }
 
     public:
         static const I32 *create();
@@ -113,6 +133,11 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        I64()
+        {
+            ntype = (int)NodeType::I64;
+        }
+
     public:
         static const I64 *create();
         size_t bitcount() const override { return 64; }
@@ -124,6 +149,11 @@ namespace libquixcc::ir::delta
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        I128()
+        {
+            ntype = (int)NodeType::I128;
+        }
 
     public:
         static const I128 *create();
@@ -137,6 +167,11 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        U8()
+        {
+            ntype = (int)NodeType::U8;
+        }
+
     public:
         static const U8 *create();
         size_t bitcount() const override { return 8; }
@@ -148,6 +183,11 @@ namespace libquixcc::ir::delta
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        U16()
+        {
+            ntype = (int)NodeType::U16;
+        }
 
     public:
         static const U16 *create();
@@ -161,6 +201,11 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        U32()
+        {
+            ntype = (int)NodeType::U32;
+        }
+
     public:
         static const U32 *create();
         size_t bitcount() const override { return 32; }
@@ -172,6 +217,11 @@ namespace libquixcc::ir::delta
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        U64()
+        {
+            ntype = (int)NodeType::U64;
+        }
 
     public:
         static const U64 *create();
@@ -185,6 +235,11 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        U128()
+        {
+            ntype = (int)NodeType::U128;
+        }
+
     public:
         static const U128 *create();
         size_t bitcount() const override { return 128; }
@@ -196,6 +251,11 @@ namespace libquixcc::ir::delta
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        F32()
+        {
+            ntype = (int)NodeType::F32;
+        }
 
     public:
         static const F32 *create();
@@ -209,6 +269,11 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
+        F64()
+        {
+            ntype = (int)NodeType::F64;
+        }
+
     public:
         static const F64 *create();
         size_t bitcount() const override { return 64; }
@@ -220,6 +285,11 @@ namespace libquixcc::ir::delta
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Void()
+        {
+            ntype = (int)NodeType::Void;
+        }
 
     public:
         static const Void *create();
@@ -233,7 +303,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ptr(const Type *type) : type(type) {}
+        Ptr(const Type *type) : type(type)
+        {
+            ntype = (int)NodeType::Ptr;
+        }
 
     public:
         static const Ptr *create(const Type *type);
@@ -249,7 +322,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Packet(std::vector<std::pair<std::string, const Type *>> fields, std::string name) : fields(fields), name(name) {}
+        Packet(std::vector<std::pair<std::string, const Type *>> fields, std::string name) : fields(fields), name(name)
+        {
+            ntype = (int)NodeType::Packet;
+        }
 
     public:
         static const Packet *create(std::vector<std::pair<std::string, const Type *>> fields, std::string name);
@@ -272,7 +348,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Array(const Type *type, uint64_t size) : type(type), size(size) {}
+        Array(const Type *type, uint64_t size) : type(type), size(size)
+        {
+            ntype = (int)NodeType::Array;
+        }
 
     public:
         static const Array *create(const Type *type, uint64_t size);
@@ -289,7 +368,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        FType(std::vector<const Type *> params, const Type *ret) : params(params), ret(ret) {}
+        FType(std::vector<const Type *> params, const Type *ret) : params(params), ret(ret)
+        {
+            ntype = (int)NodeType::FType;
+        }
 
     public:
         static const FType *create(std::vector<const Type *> params, const Type *ret);

@@ -81,7 +81,9 @@ bool libquixcc::ir::q::Segment::print_impl(std::ostream &os, libquixcc::ir::PSta
     os << "(";
     for (auto it = params.begin(); it != params.end(); it++)
     {
-        (*it)->print(os, state);
+        os << it->first << ": ";
+        if (!it->second->print(os, state))
+            return false;
         if (it != params.end() - 1)
             os << ", ";
         else if (constraints.contains(FConstraint::Variadic))

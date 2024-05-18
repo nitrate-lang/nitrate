@@ -48,6 +48,9 @@
 #include <IR/delta/Type.h>
 #include <IR/delta/Control.h>
 #include <IR/delta/Cast.h>
+#include <IR/delta/Math.h>
+#include <IR/delta/Memory.h>
+#include <IR/delta/Ident.h>
 
 #include <core/Logger.h>
 #include <mangle/Symbol.h>
@@ -57,10 +60,12 @@
 #include <optional>
 
 using namespace libquixcc;
-using namespace libquixcc::ir::q;
+using namespace libquixcc::ir::delta;
 
 struct DState
 {
+    std::map<std::string, const Packet *> regions;
+
     DState()
     {
     }
@@ -100,858 +105,872 @@ public:
     auto end() const { return m_values.end(); }
 };
 
-static auto conv(const I1 *n, DState &state) -> DResult;
-static auto conv(const RootNode *n, DState &state) -> DResult;
-static auto conv(const I8 *n, DState &state) -> DResult;
-static auto conv(const I16 *n, DState &state) -> DResult;
-static auto conv(const I32 *n, DState &state) -> DResult;
-static auto conv(const I64 *n, DState &state) -> DResult;
-static auto conv(const I128 *n, DState &state) -> DResult;
-static auto conv(const U8 *n, DState &state) -> DResult;
-static auto conv(const U16 *n, DState &state) -> DResult;
-static auto conv(const U32 *n, DState &state) -> DResult;
-static auto conv(const U64 *n, DState &state) -> DResult;
-static auto conv(const U128 *n, DState &state) -> DResult;
-static auto conv(const F32 *n, DState &state) -> DResult;
-static auto conv(const F64 *n, DState &state) -> DResult;
-static auto conv(const Void *n, DState &state) -> DResult;
-static auto conv(const Ptr *n, DState &state) -> DResult;
-static auto conv(const Array *n, DState &state) -> DResult;
-static auto conv(const Vector *n, DState &state) -> DResult;
-static auto conv(const FType *n, DState &state) -> DResult;
-static auto conv(const Region *n, DState &state) -> DResult;
-static auto conv(const Group *n, DState &state) -> DResult;
-static auto conv(const Union *n, DState &state) -> DResult;
-static auto conv(const Opaque *n, DState &state) -> DResult;
-static auto conv(const Block *n, DState &state) -> DResult;
-static auto conv(const Segment *n, DState &state) -> DResult;
-static auto conv(const Asm *n, DState &state) -> DResult;
-static auto conv(const RegionDef *n, DState &state) -> DResult;
-static auto conv(const GroupDef *n, DState &state) -> DResult;
-static auto conv(const UnionDef *n, DState &state) -> DResult;
-static auto conv(const SCast *n, DState &state) -> DResult;
-static auto conv(const UCast *n, DState &state) -> DResult;
-static auto conv(const PtrICast *n, DState &state) -> DResult;
-static auto conv(const IPtrCast *n, DState &state) -> DResult;
-static auto conv(const Bitcast *n, DState &state) -> DResult;
-static auto conv(const Call *n, DState &state) -> DResult;
-static auto conv(const CallIndirect *n, DState &state) -> DResult;
-static auto conv(const IfElse *n, DState &state) -> DResult;
-static auto conv(const While *n, DState &state) -> DResult;
-static auto conv(const For *n, DState &state) -> DResult;
-static auto conv(const Loop *n, DState &state) -> DResult;
-static auto conv(const Break *n, DState &state) -> DResult;
-static auto conv(const Continue *n, DState &state) -> DResult;
-static auto conv(const Ret *n, DState &state) -> DResult;
-static auto conv(const Throw *n, DState &state) -> DResult;
-static auto conv(const TryCatchFinally *n, DState &state) -> DResult;
-static auto conv(const Case *n, DState &state) -> DResult;
-static auto conv(const Switch *n, DState &state) -> DResult;
-static auto conv(const Ident *n, DState &state) -> DResult;
-static auto conv(const Add *n, DState &state) -> DResult;
-static auto conv(const Sub *n, DState &state) -> DResult;
-static auto conv(const Mul *n, DState &state) -> DResult;
-static auto conv(const Div *n, DState &state) -> DResult;
-static auto conv(const Mod *n, DState &state) -> DResult;
-static auto conv(const BitAnd *n, DState &state) -> DResult;
-static auto conv(const BitOr *n, DState &state) -> DResult;
-static auto conv(const BitXor *n, DState &state) -> DResult;
-static auto conv(const BitNot *n, DState &state) -> DResult;
-static auto conv(const Shl *n, DState &state) -> DResult;
-static auto conv(const Shr *n, DState &state) -> DResult;
-static auto conv(const Rotl *n, DState &state) -> DResult;
-static auto conv(const Rotr *n, DState &state) -> DResult;
-static auto conv(const Eq *n, DState &state) -> DResult;
-static auto conv(const Ne *n, DState &state) -> DResult;
-static auto conv(const Lt *n, DState &state) -> DResult;
-static auto conv(const Gt *n, DState &state) -> DResult;
-static auto conv(const Le *n, DState &state) -> DResult;
-static auto conv(const Ge *n, DState &state) -> DResult;
-static auto conv(const And *n, DState &state) -> DResult;
-static auto conv(const Or *n, DState &state) -> DResult;
-static auto conv(const Not *n, DState &state) -> DResult;
-static auto conv(const Xor *n, DState &state) -> DResult;
-static auto conv(const Local *n, DState &state) -> DResult;
-static auto conv(const Global *n, DState &state) -> DResult;
-static auto conv(const Number *n, DState &state) -> DResult;
-static auto conv(const String *n, DState &state) -> DResult;
-static auto conv(const Char *n, DState &state) -> DResult;
-static auto conv(const Assign *n, DState &state) -> DResult;
+static auto conv(const ir::q::Value *n, DState &state) -> DResult;
+static auto conv(const ir::q::I1 *n, DState &state) -> DResult;
+static auto conv(const ir::q::RootNode *n, DState &state) -> DResult;
+static auto conv(const ir::q::I8 *n, DState &state) -> DResult;
+static auto conv(const ir::q::I16 *n, DState &state) -> DResult;
+static auto conv(const ir::q::I32 *n, DState &state) -> DResult;
+static auto conv(const ir::q::I64 *n, DState &state) -> DResult;
+static auto conv(const ir::q::I128 *n, DState &state) -> DResult;
+static auto conv(const ir::q::U8 *n, DState &state) -> DResult;
+static auto conv(const ir::q::U16 *n, DState &state) -> DResult;
+static auto conv(const ir::q::U32 *n, DState &state) -> DResult;
+static auto conv(const ir::q::U64 *n, DState &state) -> DResult;
+static auto conv(const ir::q::U128 *n, DState &state) -> DResult;
+static auto conv(const ir::q::F32 *n, DState &state) -> DResult;
+static auto conv(const ir::q::F64 *n, DState &state) -> DResult;
+static auto conv(const ir::q::Void *n, DState &state) -> DResult;
+static auto conv(const ir::q::Ptr *n, DState &state) -> DResult;
+static auto conv(const ir::q::Array *n, DState &state) -> DResult;
+static auto conv(const ir::q::Vector *n, DState &state) -> DResult;
+static auto conv(const ir::q::FType *n, DState &state) -> DResult;
+static auto conv(const ir::q::Region *n, DState &state) -> DResult;
+static auto conv(const ir::q::Group *n, DState &state) -> DResult;
+static auto conv(const ir::q::Union *n, DState &state) -> DResult;
+static auto conv(const ir::q::Opaque *n, DState &state) -> DResult;
+static auto conv(const ir::q::Block *n, DState &state) -> DResult;
+static auto conv(const ir::q::Segment *n, DState &state) -> DResult;
+static auto conv(const ir::q::Asm *n, DState &state) -> DResult;
+static auto conv(const ir::q::RegionDef *n, DState &state) -> DResult;
+static auto conv(const ir::q::GroupDef *n, DState &state) -> DResult;
+static auto conv(const ir::q::UnionDef *n, DState &state) -> DResult;
+static auto conv(const ir::q::SCast *n, DState &state) -> DResult;
+static auto conv(const ir::q::UCast *n, DState &state) -> DResult;
+static auto conv(const ir::q::PtrICast *n, DState &state) -> DResult;
+static auto conv(const ir::q::IPtrCast *n, DState &state) -> DResult;
+static auto conv(const ir::q::Bitcast *n, DState &state) -> DResult;
+static auto conv(const ir::q::Call *n, DState &state) -> DResult;
+static auto conv(const ir::q::CallIndirect *n, DState &state) -> DResult;
+static auto conv(const ir::q::IfElse *n, DState &state) -> DResult;
+static auto conv(const ir::q::While *n, DState &state) -> DResult;
+static auto conv(const ir::q::For *n, DState &state) -> DResult;
+static auto conv(const ir::q::Loop *n, DState &state) -> DResult;
+static auto conv(const ir::q::Break *n, DState &state) -> DResult;
+static auto conv(const ir::q::Continue *n, DState &state) -> DResult;
+static auto conv(const ir::q::Ret *n, DState &state) -> DResult;
+static auto conv(const ir::q::Throw *n, DState &state) -> DResult;
+static auto conv(const ir::q::TryCatchFinally *n, DState &state) -> DResult;
+static auto conv(const ir::q::Case *n, DState &state) -> DResult;
+static auto conv(const ir::q::Switch *n, DState &state) -> DResult;
+static auto conv(const ir::q::Ident *n, DState &state) -> DResult;
+static auto conv(const ir::q::Add *n, DState &state) -> DResult;
+static auto conv(const ir::q::Sub *n, DState &state) -> DResult;
+static auto conv(const ir::q::Mul *n, DState &state) -> DResult;
+static auto conv(const ir::q::Div *n, DState &state) -> DResult;
+static auto conv(const ir::q::Mod *n, DState &state) -> DResult;
+static auto conv(const ir::q::BitAnd *n, DState &state) -> DResult;
+static auto conv(const ir::q::BitOr *n, DState &state) -> DResult;
+static auto conv(const ir::q::BitXor *n, DState &state) -> DResult;
+static auto conv(const ir::q::BitNot *n, DState &state) -> DResult;
+static auto conv(const ir::q::Shl *n, DState &state) -> DResult;
+static auto conv(const ir::q::Shr *n, DState &state) -> DResult;
+static auto conv(const ir::q::Rotl *n, DState &state) -> DResult;
+static auto conv(const ir::q::Rotr *n, DState &state) -> DResult;
+static auto conv(const ir::q::Eq *n, DState &state) -> DResult;
+static auto conv(const ir::q::Ne *n, DState &state) -> DResult;
+static auto conv(const ir::q::Lt *n, DState &state) -> DResult;
+static auto conv(const ir::q::Gt *n, DState &state) -> DResult;
+static auto conv(const ir::q::Le *n, DState &state) -> DResult;
+static auto conv(const ir::q::Ge *n, DState &state) -> DResult;
+static auto conv(const ir::q::And *n, DState &state) -> DResult;
+static auto conv(const ir::q::Or *n, DState &state) -> DResult;
+static auto conv(const ir::q::Not *n, DState &state) -> DResult;
+static auto conv(const ir::q::Xor *n, DState &state) -> DResult;
+static auto conv(const ir::q::Local *n, DState &state) -> DResult;
+static auto conv(const ir::q::Global *n, DState &state) -> DResult;
+static auto conv(const ir::q::Number *n, DState &state) -> DResult;
+static auto conv(const ir::q::String *n, DState &state) -> DResult;
+static auto conv(const ir::q::Char *n, DState &state) -> DResult;
+static auto conv(const ir::q::Assign *n, DState &state) -> DResult;
 
-static auto conv(const RootNode *n, DState &state) -> DResult
+static auto conv(const ir::q::RootNode *n, DState &state) -> DResult
 {
-    /// TODO: Implement RootNode
-    throw std::runtime_error("DeltaIR translation: RootNode not implemented");
+    std::vector<DValue> values;
+    for (auto node : n->children)
+    {
+        auto result = conv(node, state);
+        if (!result)
+            continue;
+
+        for (auto &value : *result)
+            values.push_back(value);
+    }
+
+    return RootNode::create(values);
 }
 
-static auto conv(const I1 *n, DState &state) -> DResult
+static auto conv(const ir::q::I1 *n, DState &state) -> DResult
 {
-    /// TODO: Implement I1
-    throw std::runtime_error("DeltaIR translation: I1 not implemented");
+    return I1::create();
 }
 
-static auto conv(const I8 *n, DState &state) -> DResult
+static auto conv(const ir::q::I8 *n, DState &state) -> DResult
 {
-    /// TODO: Implement I8
-    throw std::runtime_error("DeltaIR translation: I8 not implemented");
+    return I8::create();
 }
 
-static auto conv(const I16 *n, DState &state) -> DResult
+static auto conv(const ir::q::I16 *n, DState &state) -> DResult
 {
-    /// TODO: Implement I16
-    throw std::runtime_error("DeltaIR translation: I16 not implemented");
+    return I16::create();
 }
 
-static auto conv(const I32 *n, DState &state) -> DResult
+static auto conv(const ir::q::I32 *n, DState &state) -> DResult
 {
-    /// TODO: Implement I32
-    throw std::runtime_error("DeltaIR translation: I32 not implemented");
+    return I32::create();
 }
 
-static auto conv(const I64 *n, DState &state) -> DResult
+static auto conv(const ir::q::I64 *n, DState &state) -> DResult
 {
-    /// TODO: Implement I64
-    throw std::runtime_error("DeltaIR translation: I64 not implemented");
+    return I64::create();
 }
 
-static auto conv(const I128 *n, DState &state) -> DResult
+static auto conv(const ir::q::I128 *n, DState &state) -> DResult
 {
-    /// TODO: Implement I128
-    throw std::runtime_error("DeltaIR translation: I128 not implemented");
+    return I128::create();
 }
 
-static auto conv(const U8 *n, DState &state) -> DResult
+static auto conv(const ir::q::U8 *n, DState &state) -> DResult
 {
-    /// TODO: Implement U8
-    throw std::runtime_error("DeltaIR translation: U8 not implemented");
+    return U8::create();
 }
 
-static auto conv(const U16 *n, DState &state) -> DResult
+static auto conv(const ir::q::U16 *n, DState &state) -> DResult
 {
-    /// TODO: Implement U16
-    throw std::runtime_error("DeltaIR translation: U16 not implemented");
+    return U16::create();
 }
 
-static auto conv(const U32 *n, DState &state) -> DResult
+static auto conv(const ir::q::U32 *n, DState &state) -> DResult
 {
-    /// TODO: Implement U32
-    throw std::runtime_error("DeltaIR translation: U32 not implemented");
+    return U32::create();
 }
 
-static auto conv(const U64 *n, DState &state) -> DResult
+static auto conv(const ir::q::U64 *n, DState &state) -> DResult
 {
-    /// TODO: Implement U64
-    throw std::runtime_error("DeltaIR translation: U64 not implemented");
+    return U64::create();
 }
 
-static auto conv(const U128 *n, DState &state) -> DResult
+static auto conv(const ir::q::U128 *n, DState &state) -> DResult
 {
-    /// TODO: Implement U128
-    throw std::runtime_error("DeltaIR translation: U128 not implemented");
+    return U128::create();
 }
 
-static auto conv(const F32 *n, DState &state) -> DResult
+static auto conv(const ir::q::F32 *n, DState &state) -> DResult
 {
-    /// TODO: Implement F32
-    throw std::runtime_error("DeltaIR translation: F32 not implemented");
+    return F32::create();
 }
 
-static auto conv(const F64 *n, DState &state) -> DResult
+static auto conv(const ir::q::F64 *n, DState &state) -> DResult
 {
-    /// TODO: Implement F64
-    throw std::runtime_error("DeltaIR translation: F64 not implemented");
+    return F64::create();
 }
 
-static auto conv(const Void *n, DState &state) -> DResult
+static auto conv(const ir::q::Void *n, DState &state) -> DResult
 {
-    /// TODO: Implement Void
-    throw std::runtime_error("DeltaIR translation: Void not implemented");
+    return Void::create();
 }
 
-static auto conv(const Ptr *n, DState &state) -> DResult
+static auto conv(const ir::q::Ptr *n, DState &state) -> DResult
 {
-    /// TODO: Implement Ptr
-    throw std::runtime_error("DeltaIR translation: Ptr not implemented");
+    return Ptr::create(conv(n->type, state)[0]->as<Type>());
 }
 
-static auto conv(const Array *n, DState &state) -> DResult
+static auto conv(const ir::q::Array *n, DState &state) -> DResult
 {
-    /// TODO: Implement Array
-    throw std::runtime_error("DeltaIR translation: Array not implemented");
+    return Array::create(conv(n->type, state)[0]->as<Type>(), n->size);
 }
 
-static auto conv(const Vector *n, DState &state) -> DResult
+static auto conv(const ir::q::Vector *n, DState &state) -> DResult
 {
     /// TODO: Implement Vector
     throw std::runtime_error("DeltaIR translation: Vector not implemented");
 }
 
-static auto conv(const FType *n, DState &state) -> DResult
+static auto conv(const ir::q::FType *n, DState &state) -> DResult
 {
-    /// TODO: Implement FType
-    throw std::runtime_error("DeltaIR translation: FType not implemented");
+    auto ret = conv(n->ret, state)[0]->as<Type>();
+    std::vector<const Type *> params;
+    for (auto param : n->params)
+        params.push_back(conv(param, state)[0]->as<Type>());
+
+    return FType::create(params, ret);
 }
 
-static auto conv(const Region *n, DState &state) -> DResult
+static auto conv(const ir::q::Region *n, DState &state) -> DResult
 {
-    /// TODO: Implement Region
-    throw std::runtime_error("DeltaIR translation: Region not implemented");
+    if (!state.regions.contains(n->name))
+        throw std::runtime_error("DeltaIR translation: Region not found");
+
+    return state.regions.at(n->name);
 }
 
-static auto conv(const Group *n, DState &state) -> DResult
+static auto conv(const ir::q::Group *n, DState &state) -> DResult
 {
     /// TODO: Implement Group
     throw std::runtime_error("DeltaIR translation: Group not implemented");
 }
 
-static auto conv(const Union *n, DState &state) -> DResult
+static auto conv(const ir::q::Union *n, DState &state) -> DResult
 {
     /// TODO: Implement Union
     throw std::runtime_error("DeltaIR translation: Union not implemented");
 }
 
-static auto conv(const Opaque *n, DState &state) -> DResult
+static auto conv(const ir::q::Opaque *n, DState &state) -> DResult
 {
     /// TODO: Implement Opaque
     throw std::runtime_error("DeltaIR translation: Opaque not implemented");
 }
 
-static auto conv(const Block *n, DState &state) -> DResult
+static auto conv(const ir::q::Block *n, DState &state) -> DResult
 {
-    /// TODO: Implement Block
-    throw std::runtime_error("DeltaIR translation: Block not implemented");
+    std::vector<DValue> values;
+    for (auto node : n->stmts)
+    {
+        auto result = conv(node, state);
+        if (!result)
+            continue;
+
+        for (auto value : *result)
+            values.push_back(value);
+    }
+
+    return Block::create(values);
 }
 
-static auto conv(const Segment *n, DState &state) -> DResult
+static auto conv(const ir::q::Segment *n, DState &state) -> DResult
 {
-    /// TODO: Implement Segment
-    throw std::runtime_error("DeltaIR translation: Segment not implemented");
+    auto ret = conv(n->return_type, state)[0]->as<Type>();
+    std::vector<std::pair<std::string, const Type *>> params;
+
+    for (auto param : n->params)
+        params.push_back({param.first, conv(param.second, state)[0]->as<Type>()});
+
+    const Block *block = nullptr;
+    if (n->block)
+        block = conv(n->block, state)[0]->as<Block>();
+
+    return Segment::create(ret, false, params, block);
 }
 
-static auto conv(const Asm *n, DState &state) -> DResult
+static auto conv(const ir::q::Asm *n, DState &state) -> DResult
 {
     /// TODO: Implement Asm
     throw std::runtime_error("DeltaIR translation: Asm not implemented");
 }
 
-static auto conv(const RegionDef *n, DState &state) -> DResult
+static auto conv(const ir::q::RegionDef *n, DState &state) -> DResult
 {
-    /// TODO: Implement RegionDef
-    throw std::runtime_error("DeltaIR translation: RegionDef not implemented");
+    /// TODO: handle methods impl
+
+    std::vector<std::pair<std::string, const Type *>> fields;
+    for (auto field : n->fields)
+        fields.push_back({field.first, conv(field.second, state)[0]->as<Type>()});
+
+    std::vector<const Segment *> methods;
+    for (auto method : n->methods)
+        methods.push_back(conv(method, state)[0]->as<Segment>());
+
+    std::vector<DValue> values = {Packet::create(fields, n->name)};
+    values.insert(values.end(), methods.begin(), methods.end());
+
+    state.regions[n->name] = values[0]->as<Packet>();
+
+    return values;
 }
 
-static auto conv(const GroupDef *n, DState &state) -> DResult
+static auto conv(const ir::q::GroupDef *n, DState &state) -> DResult
 {
     /// TODO: Implement GroupDef
     throw std::runtime_error("DeltaIR translation: GroupDef not implemented");
 }
 
-static auto conv(const UnionDef *n, DState &state) -> DResult
+static auto conv(const ir::q::UnionDef *n, DState &state) -> DResult
 {
     /// TODO: Implement UnionDef
     throw std::runtime_error("DeltaIR translation: UnionDef not implemented");
 }
 
-static auto conv(const SCast *n, DState &state) -> DResult
+static auto conv(const ir::q::SCast *n, DState &state) -> DResult
 {
-    /// TODO: Implement SCast
-    throw std::runtime_error("DeltaIR translation: SCast not implemented");
+    return SCast::create(conv(n->type, state)[0]->as<Type>(), conv(n->value, state)[0]->as<Expr>());
 }
 
-static auto conv(const UCast *n, DState &state) -> DResult
+static auto conv(const ir::q::UCast *n, DState &state) -> DResult
 {
-    /// TODO: Implement UCast
-    throw std::runtime_error("DeltaIR translation: UCast not implemented");
+    return UCast::create(conv(n->type, state)[0]->as<Type>(), conv(n->value, state)[0]->as<Expr>());
 }
 
-static auto conv(const PtrICast *n, DState &state) -> DResult
+static auto conv(const ir::q::PtrICast *n, DState &state) -> DResult
 {
-    /// TODO: Implement PtrICast
-    throw std::runtime_error("DeltaIR translation: PtrICast not implemented");
+    return PtrICast::create(conv(n->type, state)[0]->as<Type>(), conv(n->value, state)[0]->as<Expr>());
 }
 
-static auto conv(const IPtrCast *n, DState &state) -> DResult
+static auto conv(const ir::q::IPtrCast *n, DState &state) -> DResult
 {
-    /// TODO: Implement IPtrCast
-    throw std::runtime_error("DeltaIR translation: IPtrCast not implemented");
+    return IPtrCast::create(conv(n->type, state)[0]->as<Type>(), conv(n->value, state)[0]->as<Expr>());
 }
 
-static auto conv(const Bitcast *n, DState &state) -> DResult
+static auto conv(const ir::q::Bitcast *n, DState &state) -> DResult
 {
-    /// TODO: Implement Bitcast
-    throw std::runtime_error("DeltaIR translation: Bitcast not implemented");
+    return Bitcast::create(conv(n->type, state)[0]->as<Type>(), conv(n->value, state)[0]->as<Expr>());
 }
 
-static auto conv(const Call *n, DState &state) -> DResult
+static auto conv(const ir::q::Call *n, DState &state) -> DResult
 {
-    /// TODO: Implement Call
-    throw std::runtime_error("DeltaIR translation: Call not implemented");
+    std::vector<const Expr *> args;
+    for (auto arg : n->args)
+        args.push_back(conv(arg, state)[0]->as<Expr>());
+
+    return Call::create(n->func->name, args);
 }
 
-static auto conv(const CallIndirect *n, DState &state) -> DResult
+static auto conv(const ir::q::CallIndirect *n, DState &state) -> DResult
 {
     /// TODO: Implement CallIndirect
     throw std::runtime_error("DeltaIR translation: CallIndirect not implemented");
 }
 
-static auto conv(const IfElse *n, DState &state) -> DResult
+static auto conv(const ir::q::IfElse *n, DState &state) -> DResult
 {
     /// TODO: Implement IfElse
     throw std::runtime_error("DeltaIR translation: IfElse not implemented");
 }
 
-static auto conv(const While *n, DState &state) -> DResult
+static auto conv(const ir::q::While *n, DState &state) -> DResult
 {
-    /// TODO: Implement While
-    throw std::runtime_error("DeltaIR translation: While not implemented");
+    auto cond = conv(n->cond, state)[0]->as<Expr>();
+    auto body = conv(n->body, state)[0];
+
+    return While::create(cond, body);
 }
 
-static auto conv(const For *n, DState &state) -> DResult
+static auto conv(const ir::q::For *n, DState &state) -> DResult
 {
     /// TODO: Implement For
     throw std::runtime_error("DeltaIR translation: For not implemented");
 }
 
-static auto conv(const Loop *n, DState &state) -> DResult
+static auto conv(const ir::q::Loop *n, DState &state) -> DResult
 {
     /// TODO: Implement Loop
     throw std::runtime_error("DeltaIR translation: Loop not implemented");
 }
 
-static auto conv(const Break *n, DState &state) -> DResult
+static auto conv(const ir::q::Break *n, DState &state) -> DResult
 {
     /// TODO: Implement Break
     throw std::runtime_error("DeltaIR translation: Break not implemented");
 }
 
-static auto conv(const Continue *n, DState &state) -> DResult
+static auto conv(const ir::q::Continue *n, DState &state) -> DResult
 {
     /// TODO: Implement Continue
     throw std::runtime_error("DeltaIR translation: Continue not implemented");
 }
 
-static auto conv(const Ret *n, DState &state) -> DResult
+static auto conv(const ir::q::Ret *n, DState &state) -> DResult
 {
-    /// TODO: Implement Ret
-    throw std::runtime_error("DeltaIR translation: Ret not implemented");
+    if (!n->value)
+        return Ret::create(nullptr);
+
+    return Ret::create(conv(n->value, state)[0]->as<Expr>());
 }
 
-static auto conv(const Throw *n, DState &state) -> DResult
+static auto conv(const ir::q::Throw *n, DState &state) -> DResult
 {
     /// TODO: Implement Throw
     throw std::runtime_error("DeltaIR translation: Throw not implemented");
 }
 
-static auto conv(const TryCatchFinally *n, DState &state) -> DResult
+static auto conv(const ir::q::TryCatchFinally *n, DState &state) -> DResult
 {
     /// TODO: Implement TryCatchFinally
     throw std::runtime_error("DeltaIR translation: TryCatchFinally not implemented");
 }
 
-static auto conv(const Case *n, DState &state) -> DResult
+static auto conv(const ir::q::Case *n, DState &state) -> DResult
 {
     /// TODO: Implement Case
     throw std::runtime_error("DeltaIR translation: Case not implemented");
 }
 
-static auto conv(const Switch *n, DState &state) -> DResult
+static auto conv(const ir::q::Switch *n, DState &state) -> DResult
 {
     /// TODO: Implement Switch
     throw std::runtime_error("DeltaIR translation: Switch not implemented");
 }
 
-static auto conv(const Ident *n, DState &state) -> DResult
+static auto conv(const ir::q::Ident *n, DState &state) -> DResult
 {
-    /// TODO: Implement Ident
-    throw std::runtime_error("DeltaIR translation: Ident not implemented");
+    return Ident::create(n->name);
 }
 
-static auto conv(const Add *n, DState &state) -> DResult
+static auto conv(const ir::q::Add *n, DState &state) -> DResult
 {
-    /// TODO: Implement Add
-    throw std::runtime_error("DeltaIR translation: Add not implemented");
+    return Add::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Sub *n, DState &state) -> DResult
+static auto conv(const ir::q::Sub *n, DState &state) -> DResult
 {
-    /// TODO: Implement Sub
-    throw std::runtime_error("DeltaIR translation: Sub not implemented");
+    return Sub::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Mul *n, DState &state) -> DResult
+static auto conv(const ir::q::Mul *n, DState &state) -> DResult
 {
-    /// TODO: Implement Mul
-    throw std::runtime_error("DeltaIR translation: Mul not implemented");
+    return Mul::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Div *n, DState &state) -> DResult
+static auto conv(const ir::q::Div *n, DState &state) -> DResult
 {
-    /// TODO: Implement Div
-    throw std::runtime_error("DeltaIR translation: Div not implemented");
+    return Div::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Mod *n, DState &state) -> DResult
+static auto conv(const ir::q::Mod *n, DState &state) -> DResult
 {
-    /// TODO: Implement Mod
-    throw std::runtime_error("DeltaIR translation: Mod not implemented");
+    return Mod::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const BitAnd *n, DState &state) -> DResult
+static auto conv(const ir::q::BitAnd *n, DState &state) -> DResult
 {
-    /// TODO: Implement BitAnd
-    throw std::runtime_error("DeltaIR translation: BitAnd not implemented");
+    return BitAnd::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const BitOr *n, DState &state) -> DResult
+static auto conv(const ir::q::BitOr *n, DState &state) -> DResult
 {
-    /// TODO: Implement BitOr
-    throw std::runtime_error("DeltaIR translation: BitOr not implemented");
+    return BitOr::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const BitXor *n, DState &state) -> DResult
+static auto conv(const ir::q::BitXor *n, DState &state) -> DResult
 {
-    /// TODO: Implement BitXor
-    throw std::runtime_error("DeltaIR translation: BitXor not implemented");
+    return BitXor::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const BitNot *n, DState &state) -> DResult
+static auto conv(const ir::q::BitNot *n, DState &state) -> DResult
 {
-    /// TODO: Implement BitNot
-    throw std::runtime_error("DeltaIR translation: BitNot not implemented");
+    return BitNot::create(conv(n->operand, state)[0]->as<Expr>());
 }
 
-static auto conv(const Shl *n, DState &state) -> DResult
+static auto conv(const ir::q::Shl *n, DState &state) -> DResult
 {
-    /// TODO: Implement Shl
-    throw std::runtime_error("DeltaIR translation: Shl not implemented");
+    return Shl::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Shr *n, DState &state) -> DResult
+static auto conv(const ir::q::Shr *n, DState &state) -> DResult
 {
-    /// TODO: Implement Shr
-    throw std::runtime_error("DeltaIR translation: Shr not implemented");
+    return Shr::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Rotl *n, DState &state) -> DResult
+static auto conv(const ir::q::Rotl *n, DState &state) -> DResult
 {
-    /// TODO: Implement Rotl
-    throw std::runtime_error("DeltaIR translation: Rotl not implemented");
+    return Rotl::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Rotr *n, DState &state) -> DResult
+static auto conv(const ir::q::Rotr *n, DState &state) -> DResult
 {
-    /// TODO: Implement Rotr
-    throw std::runtime_error("DeltaIR translation: Rotr not implemented");
+    return Rotr::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Eq *n, DState &state) -> DResult
+static auto conv(const ir::q::Eq *n, DState &state) -> DResult
 {
-    /// TODO: Implement Eq
-    throw std::runtime_error("DeltaIR translation: Eq not implemented");
+    return Eq::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Ne *n, DState &state) -> DResult
+static auto conv(const ir::q::Ne *n, DState &state) -> DResult
 {
-    /// TODO: Implement Ne
-    throw std::runtime_error("DeltaIR translation: Ne not implemented");
+    return Ne::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Lt *n, DState &state) -> DResult
+static auto conv(const ir::q::Lt *n, DState &state) -> DResult
 {
-    /// TODO: Implement Lt
-    throw std::runtime_error("DeltaIR translation: Lt not implemented");
+    return Lt::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Gt *n, DState &state) -> DResult
+static auto conv(const ir::q::Gt *n, DState &state) -> DResult
 {
-    /// TODO: Implement Gt
-    throw std::runtime_error("DeltaIR translation: Gt not implemented");
+    return Gt::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Le *n, DState &state) -> DResult
+static auto conv(const ir::q::Le *n, DState &state) -> DResult
 {
-    /// TODO: Implement Le
-    throw std::runtime_error("DeltaIR translation: Le not implemented");
+    return Le::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Ge *n, DState &state) -> DResult
+static auto conv(const ir::q::Ge *n, DState &state) -> DResult
 {
-    /// TODO: Implement Ge
-    throw std::runtime_error("DeltaIR translation: Ge not implemented");
+    return Ge::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const And *n, DState &state) -> DResult
+static auto conv(const ir::q::And *n, DState &state) -> DResult
 {
-    /// TODO: Implement And
-    throw std::runtime_error("DeltaIR translation: And not implemented");
+    return And::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Or *n, DState &state) -> DResult
+static auto conv(const ir::q::Or *n, DState &state) -> DResult
 {
-    /// TODO: Implement Or
-    throw std::runtime_error("DeltaIR translation: Or not implemented");
+    return Or::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Not *n, DState &state) -> DResult
+static auto conv(const ir::q::Not *n, DState &state) -> DResult
 {
-    /// TODO: Implement Not
-    throw std::runtime_error("DeltaIR translation: Not not implemented");
+    return Not::create(conv(n->operand, state)[0]->as<Expr>());
 }
 
-static auto conv(const Xor *n, DState &state) -> DResult
+static auto conv(const ir::q::Xor *n, DState &state) -> DResult
 {
-    /// TODO: Implement Xor
-    throw std::runtime_error("DeltaIR translation: Xor not implemented");
+    return Xor::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Local *n, DState &state) -> DResult
+static auto conv(const ir::q::Local *n, DState &state) -> DResult
 {
-    /// TODO: Implement Local
-    throw std::runtime_error("DeltaIR translation: Local not implemented");
+    return Local::create(n->name, conv(n->type, state)[0]->as<Type>());
 }
 
-static auto conv(const Global *n, DState &state) -> DResult
+static auto conv(const ir::q::Global *n, DState &state) -> DResult
 {
-    /// TODO: Implement Global
-    throw std::runtime_error("DeltaIR translation: Global not implemented");
+    auto type = conv(n->type, state)[0]->as<Type>();
+
+    const Expr *init = nullptr;
+
+    if (n->value)
+        init = conv(n->value, state)[0]->as<Expr>();
+
+    return Global::create(n->name, type, init, n->_volatile, n->_atomic, n->_extern);
 }
 
-static auto conv(const Number *n, DState &state) -> DResult
+static auto conv(const ir::q::Number *n, DState &state) -> DResult
 {
-    /// TODO: Implement Number
-    throw std::runtime_error("DeltaIR translation: Number not implemented");
+    return Number::create(n->value);
 }
 
-static auto conv(const String *n, DState &state) -> DResult
+static auto conv(const ir::q::String *n, DState &state) -> DResult
 {
-    /// TODO: Implement String
-    throw std::runtime_error("DeltaIR translation: String not implemented");
+    return String::create(n->value);
 }
 
-static auto conv(const Char *n, DState &state) -> DResult
+static auto conv(const ir::q::Char *n, DState &state) -> DResult
 {
     /// TODO: Implement Char
     throw std::runtime_error("DeltaIR translation: Char not implemented");
 }
 
-static auto conv(const Assign *n, DState &state) -> DResult
+static auto conv(const ir::q::Assign *n, DState &state) -> DResult
 {
-    /// TODO: Implement Assign
-    throw std::runtime_error("DeltaIR translation: Assign not implemented");
+    return Assign::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
-static auto conv(const Value *n, DState &state) -> DResult
+static auto conv(const ir::q::Value *n, DState &state) -> DResult
 {
     DResult r;
 
     switch ((libquixcc::ir::q::NodeType)n->ntype)
     {
     case libquixcc::ir::q::NodeType::Root:
-        r = conv(n->as<RootNode>(), state);
+        r = conv(n->as<ir::q::RootNode>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::I1:
-        r = conv(n->as<I1>(), state);
+        r = conv(n->as<ir::q::I1>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::I8:
-        r = conv(n->as<I8>(), state);
+        r = conv(n->as<ir::q::I8>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::I16:
-        r = conv(n->as<I16>(), state);
+        r = conv(n->as<ir::q::I16>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::I32:
-        r = conv(n->as<I32>(), state);
+        r = conv(n->as<ir::q::I32>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::I64:
-        r = conv(n->as<I64>(), state);
+        r = conv(n->as<ir::q::I64>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::I128:
-        r = conv(n->as<I128>(), state);
+        r = conv(n->as<ir::q::I128>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::U8:
-        r = conv(n->as<U8>(), state);
+        r = conv(n->as<ir::q::U8>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::U16:
-        r = conv(n->as<U16>(), state);
+        r = conv(n->as<ir::q::U16>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::U32:
-        r = conv(n->as<U32>(), state);
+        r = conv(n->as<ir::q::U32>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::U64:
-        r = conv(n->as<U64>(), state);
+        r = conv(n->as<ir::q::U64>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::U128:
-        r = conv(n->as<U128>(), state);
+        r = conv(n->as<ir::q::U128>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::F32:
-        r = conv(n->as<F32>(), state);
+        r = conv(n->as<ir::q::F32>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::F64:
-        r = conv(n->as<F64>(), state);
+        r = conv(n->as<ir::q::F64>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Void:
-        r = conv(n->as<Void>(), state);
+        r = conv(n->as<ir::q::Void>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Ptr:
-        r = conv(n->as<Ptr>(), state);
+        r = conv(n->as<ir::q::Ptr>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Array:
-        r = conv(n->as<Array>(), state);
+        r = conv(n->as<ir::q::Array>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Vector:
-        r = conv(n->as<Vector>(), state);
+        r = conv(n->as<ir::q::Vector>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::FType:
-        r = conv(n->as<FType>(), state);
+        r = conv(n->as<ir::q::FType>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Region:
-        r = conv(n->as<Region>(), state);
+        r = conv(n->as<ir::q::Region>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Group:
-        r = conv(n->as<Group>(), state);
+        r = conv(n->as<ir::q::Group>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Union:
-        r = conv(n->as<Union>(), state);
+        r = conv(n->as<ir::q::Union>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Opaque:
-        r = conv(n->as<Opaque>(), state);
+        r = conv(n->as<ir::q::Opaque>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Block:
-        r = conv(n->as<Block>(), state);
+        r = conv(n->as<ir::q::Block>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Segment:
-        r = conv(n->as<Segment>(), state);
+        r = conv(n->as<ir::q::Segment>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Asm:
-        r = conv(n->as<Asm>(), state);
+        r = conv(n->as<ir::q::Asm>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::RegionDef:
-        r = conv(n->as<RegionDef>(), state);
+        r = conv(n->as<ir::q::RegionDef>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::GroupDef:
-        r = conv(n->as<GroupDef>(), state);
+        r = conv(n->as<ir::q::GroupDef>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::UnionDef:
-        r = conv(n->as<UnionDef>(), state);
+        r = conv(n->as<ir::q::UnionDef>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::SCast:
-        r = conv(n->as<SCast>(), state);
+        r = conv(n->as<ir::q::SCast>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::UCast:
-        r = conv(n->as<UCast>(), state);
+        r = conv(n->as<ir::q::UCast>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::PtrICast:
-        r = conv(n->as<PtrICast>(), state);
+        r = conv(n->as<ir::q::PtrICast>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::IPtrCast:
-        r = conv(n->as<IPtrCast>(), state);
+        r = conv(n->as<ir::q::IPtrCast>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Bitcast:
-        r = conv(n->as<Bitcast>(), state);
+        r = conv(n->as<ir::q::Bitcast>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Call:
-        r = conv(n->as<Call>(), state);
+        r = conv(n->as<ir::q::Call>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::CallIndirect:
-        r = conv(n->as<CallIndirect>(), state);
+        r = conv(n->as<ir::q::CallIndirect>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::IfElse:
-        r = conv(n->as<IfElse>(), state);
+        r = conv(n->as<ir::q::IfElse>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::While:
-        r = conv(n->as<While>(), state);
+        r = conv(n->as<ir::q::While>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::For:
-        r = conv(n->as<For>(), state);
+        r = conv(n->as<ir::q::For>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Loop:
-        r = conv(n->as<Loop>(), state);
+        r = conv(n->as<ir::q::Loop>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Break:
-        r = conv(n->as<Break>(), state);
+        r = conv(n->as<ir::q::Break>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Continue:
-        r = conv(n->as<Continue>(), state);
+        r = conv(n->as<ir::q::Continue>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Ret:
-        r = conv(n->as<Ret>(), state);
+        r = conv(n->as<ir::q::Ret>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Throw:
-        r = conv(n->as<Throw>(), state);
+        r = conv(n->as<ir::q::Throw>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::TryCatchFinally:
-        r = conv(n->as<TryCatchFinally>(), state);
+        r = conv(n->as<ir::q::TryCatchFinally>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Case:
-        r = conv(n->as<Case>(), state);
+        r = conv(n->as<ir::q::Case>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Switch:
-        r = conv(n->as<Switch>(), state);
+        r = conv(n->as<ir::q::Switch>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Ident:
-        r = conv(n->as<Ident>(), state);
+        r = conv(n->as<ir::q::Ident>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Add:
-        r = conv(n->as<Add>(), state);
+        r = conv(n->as<ir::q::Add>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Sub:
-        r = conv(n->as<Sub>(), state);
+        r = conv(n->as<ir::q::Sub>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Mul:
-        r = conv(n->as<Mul>(), state);
+        r = conv(n->as<ir::q::Mul>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Div:
-        r = conv(n->as<Div>(), state);
+        r = conv(n->as<ir::q::Div>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Mod:
-        r = conv(n->as<Mod>(), state);
+        r = conv(n->as<ir::q::Mod>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::BitAnd:
-        r = conv(n->as<BitAnd>(), state);
+        r = conv(n->as<ir::q::BitAnd>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::BitOr:
-        r = conv(n->as<BitOr>(), state);
+        r = conv(n->as<ir::q::BitOr>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::BitXor:
-        r = conv(n->as<BitXor>(), state);
+        r = conv(n->as<ir::q::BitXor>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::BitNot:
-        r = conv(n->as<BitNot>(), state);
+        r = conv(n->as<ir::q::BitNot>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Shl:
-        r = conv(n->as<Shl>(), state);
+        r = conv(n->as<ir::q::Shl>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Shr:
-        r = conv(n->as<Shr>(), state);
+        r = conv(n->as<ir::q::Shr>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Rotl:
-        r = conv(n->as<Rotl>(), state);
+        r = conv(n->as<ir::q::Rotl>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Rotr:
-        r = conv(n->as<Rotr>(), state);
+        r = conv(n->as<ir::q::Rotr>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Eq:
-        r = conv(n->as<Eq>(), state);
+        r = conv(n->as<ir::q::Eq>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Ne:
-        r = conv(n->as<Ne>(), state);
+        r = conv(n->as<ir::q::Ne>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Lt:
-        r = conv(n->as<Lt>(), state);
+        r = conv(n->as<ir::q::Lt>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Gt:
-        r = conv(n->as<Gt>(), state);
+        r = conv(n->as<ir::q::Gt>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Le:
-        r = conv(n->as<Le>(), state);
+        r = conv(n->as<ir::q::Le>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Ge:
-        r = conv(n->as<Ge>(), state);
+        r = conv(n->as<ir::q::Ge>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::And:
-        r = conv(n->as<And>(), state);
+        r = conv(n->as<ir::q::And>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Or:
-        r = conv(n->as<Or>(), state);
+        r = conv(n->as<ir::q::Or>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Not:
-        r = conv(n->as<Not>(), state);
+        r = conv(n->as<ir::q::Not>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Xor:
-        r = conv(n->as<Xor>(), state);
+        r = conv(n->as<ir::q::Xor>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Local:
-        r = conv(n->as<Local>(), state);
+        r = conv(n->as<ir::q::Local>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Global:
-        r = conv(n->as<Global>(), state);
+        r = conv(n->as<ir::q::Global>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Number:
-        r = conv(n->as<Number>(), state);
+        r = conv(n->as<ir::q::Number>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::String:
-        r = conv(n->as<String>(), state);
+        r = conv(n->as<ir::q::String>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Char:
-        r = conv(n->as<Char>(), state);
+        r = conv(n->as<ir::q::Char>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Assign:
-        r = conv(n->as<Assign>(), state);
+        r = conv(n->as<ir::q::Assign>(), state);
         break;
 
     default:
@@ -959,7 +978,7 @@ static auto conv(const Value *n, DState &state) -> DResult
     }
     return r;
 
-    (void)conv(n->as<Value>(), state);
+    (void)conv(n->as<ir::q::Value>(), state);
 }
 
 bool libquixcc::ir::delta::IRDelta::from_qir(const std::unique_ptr<libquixcc::ir::q::QModule> &ir)
@@ -967,9 +986,8 @@ bool libquixcc::ir::delta::IRDelta::from_qir(const std::unique_ptr<libquixcc::ir
     LOG(DEBUG) << "Translating QUIX intermediate representation to DeltaIR" << std::endl;
 
     DState state;
-    auto r = conv(ir->root(), state);
 
-    m_root = RootNode::create(r[0]->as<Block>()->stmts);
+    m_root = conv(ir->root(), state)[0]->as<RootNode>();
 
     if (!verify())
     {

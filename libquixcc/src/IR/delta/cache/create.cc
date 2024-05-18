@@ -38,6 +38,7 @@
 #include <IR/delta/Control.h>
 #include <IR/delta/Segment.h>
 #include <IR/delta/Math.h>
+#include <IR/delta/Ident.h>
 
 #include <map>
 
@@ -106,9 +107,10 @@ static std::map<std::pair<std::string, std::vector<std::pair<std::string, const 
 static std::map<std::pair<const Type *, uint64_t>, const Array *> array_insts;
 static std::map<std::pair<std::vector<const Type *>, const Type *>, const FType *> ftype_insts;
 static std::map<std::pair<std::string, const Value *>, const Local *> local_insts;
-static std::map<std::tuple<std::string, const Value *, const Value *, bool, bool>, const Global *> global_insts;
+static std::map<std::tuple<std::string, const Value *, const Value *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
+static std::map<std::string, const Ident *> ident_insts;
 
 static std::map<delta::NodeType, std::mutex> node_mutexes;
 
@@ -640,12 +642,12 @@ const delta::Local *delta::Local::create(std::string name, const Type *type)
     return local_insts[key];
 }
 
-const delta::Global *delta::Global::create(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic)
+const delta::Global *delta::Global::create(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic, bool _extern)
 {
     lock(NodeType::Global);
-    auto key = std::make_tuple(name, type, value, _volatile, _atomic);
+    auto key = std::make_tuple(name, type, value, _volatile, _atomic, _extern);
     if (!global_insts.contains(key))
-        global_insts[key] = new Global(name, type, value, _volatile, _atomic);
+        global_insts[key] = new Global(name, type, value, _volatile, _atomic, _extern);
     return global_insts[key];
 }
 
@@ -663,4 +665,12 @@ const delta::String *delta::String::create(std::string value)
     if (!string_insts.contains(value))
         string_insts[value] = new String(value);
     return string_insts[value];
+}
+
+const libquixcc::ir::delta::Ident *libquixcc::ir::delta::Ident::create(std::string name)
+{
+    lock(NodeType::Ident);
+    if (!ident_insts.contains(name))
+        ident_insts[name] = new Ident(name);
+    return ident_insts[name];
 }

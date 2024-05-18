@@ -29,57 +29,14 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/Function.h>
+#include <IR/delta/Ident.h>
 
-boost::uuids::uuid libquixcc::ir::q::Block::hash_impl() const
+boost::uuids::uuid libquixcc::ir::delta::Ident::hash_impl() const
 {
-    return Hasher().gettag().add(stmts).hash();
+    return Hasher().gettag().add(name).hash();
 }
 
-bool libquixcc::ir::q::Block::verify_impl() const
+bool libquixcc::ir::delta::Ident::verify_impl() const
 {
-    return std::all_of(stmts.begin(), stmts.end(), [](const Value *stmt)
-                       { return stmt->verify(); });
-}
-
-boost::uuids::uuid libquixcc::ir::q::Segment::hash_impl() const
-{
-    auto h = Hasher().gettag().add(return_type);
-
-    for (const auto &p : params)
-        h.add(p.first).add(p.second);
-
-    for (const auto &c : constraints)
-        h.add((size_t)c);
-
-    if (block)
-        h.add(block);
-
-    return h.hash();
-}
-
-bool libquixcc::ir::q::Segment::verify_impl() const
-{
-    if (!std::all_of(params.begin(), params.end(), [](const auto param)
-                     { return param.second->verify(); }) &&
-        return_type->verify())
-    {
-        return false;
-    }
-
-    if (block)
-        return block->verify();
-
     return true;
-}
-
-boost::uuids::uuid libquixcc::ir::q::RootNode::hash_impl() const
-{
-    return Hasher().gettag().add(children).hash();
-}
-
-bool libquixcc::ir::q::RootNode::verify_impl() const
-{
-    return std::all_of(children.begin(), children.end(), [](const Value *child)
-                       { return child->verify(); });
 }

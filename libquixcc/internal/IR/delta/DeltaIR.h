@@ -82,6 +82,7 @@ namespace libquixcc
                 Assign,
                 Load,
                 Index,
+                Ident,
 
                 /* Casting */
                 SCast,
@@ -149,7 +150,10 @@ namespace libquixcc
                 boost::uuids::uuid hash_impl() const override;
                 bool verify_impl() const override;
 
-                RootNode(std::vector<const Value *> children) : children(children) {}
+                RootNode(std::vector<const Value *> children) : children(children)
+                {
+                    ntype = (int)NodeType::Root;
+                }
 
             public:
                 static const RootNode *create(std::vector<const Value *> children = {});

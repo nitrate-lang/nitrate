@@ -416,15 +416,14 @@ bool qpkg::build::Engine::run_threads(const std::filesystem::path &base, const s
 
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-
             if (done)
-                break;
+                return;
         } });
 
-    for (auto &thread : threads)
-        thread.detach();
+    printer_thread.detach();
 
-    printer_thread.join();
+    for (auto &thread : threads)
+        thread.join();
 
     return !tainted;
 }

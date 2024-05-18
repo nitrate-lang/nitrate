@@ -53,18 +53,6 @@
 using namespace libquixcc;
 using namespace libquixcc::ir::q;
 
-struct QState
-{
-    bool inside_segment;
-    ExportLangType lang;
-
-    QState()
-    {
-        inside_segment = false;
-        lang = ExportLangType::None;
-    }
-};
-
 typedef const Value *QValue;
 
 class QResult
@@ -97,6 +85,19 @@ public:
 
     auto begin() const { return m_values.begin(); }
     auto end() const { return m_values.end(); }
+};
+
+struct QState
+{
+    std::map<std::string, std::pair<ExportLangType, QResult>> exported;
+    bool inside_segment;
+    ExportLangType lang;
+
+    QState()
+    {
+        inside_segment = false;
+        lang = ExportLangType::None;
+    }
 };
 
 static auto conv(const ParseNode *n, QState &state) -> QResult;
@@ -194,8 +195,14 @@ static auto conv(const BlockNode *n, QState &state) -> QResult
         auto res = conv(stmt.get(), state);
         if (!res)
             continue;
-        for (auto &val : *res)
+
+        for (auto val : *res)
+        {
+            if (!val)
+                continue;
+
             sub.push_back(val);
+        }
     }
     return Block::create(sub);
 }
@@ -209,7 +216,11 @@ static auto conv(const StmtGroupNode *n, QState &state) -> QResult
         if (!res)
             continue;
         for (auto &val : *res)
+        {
+            if (!val)
+                continue;
             sub.push_back(val);
+        }
     }
     return sub;
 }
@@ -354,7 +365,13 @@ static auto conv(const BinaryExprNode *n, QState &state) -> QResult
 
 static auto conv(const CallExprNode *n, QState &state) -> QResult
 {
-    auto callee = conv(n->m_decl.get(), state)[0]->as<Global>();
+    const Global *callee = nullptr;
+
+    if (state.exported.contains(n->m_decl->m_name))
+        callee = state.exported[n->m_decl->m_name].second[0]->as<Global>();
+    else
+        callee = conv(n->m_decl.get(), state)[0]->as<Global>();
+
     std::vector<QValue> args;
 
     size_t i = 0;
@@ -647,7 +664,11 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult
     if (n->m_init)
         expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-    return Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
+    std::string mangled = Symbol::mangle(n, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
+    auto g = Global::create(mangled, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
+
+    state.exported[n->m_name] = {state.lang, g};
+    return g;
 }
 
 static auto conv(const ConstDeclNode *n, QState &state) -> QResult
@@ -666,16 +687,20 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult
     if (n->m_init)
         expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-    return Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
+    std::string mangled = Symbol::mangle(n, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
+    auto g = Global::create(mangled, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
+
+    state.exported[n->m_name] = {state.lang, g};
+    return g;
 }
 
 static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
 {
-    std::vector<QValue> sub;
+    std::vector<std::pair<std::string, const Type *>> params;
     for (auto &p : n->m_params)
     {
         auto res = conv(p.get(), state);
-        sub.insert(sub.end(), res.begin(), res.end());
+        params.push_back({p->m_name, res[0]->as<Type>()});
     }
 
     std::set<FConstraint> constraints;
@@ -690,16 +715,17 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
     if (n->m_type->m_variadic)
         constraints.insert(FConstraint::Variadic);
 
-    auto seg = Segment::create(sub, conv(n->m_type->m_return_type, state)[0]->as<Type>(), nullptr, constraints);
+    auto seg = Segment::create(params, conv(n->m_type->m_return_type, state)[0]->as<Type>(), nullptr, constraints);
+
+    const Global *g = nullptr;
 
     if (state.lang == ExportLangType::None)
-    {
-        return Global::create(Symbol::mangle(n, "", ExportLangType::Default), FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(), false, false, false, false, false), seg, false, false, false);
-    }
+        g = Global::create(Symbol::mangle(n, "", ExportLangType::Default), FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(), false, false, false, false, false), seg, false, false, false);
     else
-    {
-        return Global::create(Symbol::mangle(n, "", state.lang), FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(), false, false, false, false, false), seg, false, false, true);
-    }
+        g = Global::create(Symbol::mangle(n, "", state.lang), FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(), false, false, false, false, false), seg, false, false, true);
+
+    state.exported[n->m_name] = {state.lang, g};
+    return g;
 }
 
 static auto conv(const StructDefNode *n, QState &state) -> QResult

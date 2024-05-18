@@ -76,16 +76,16 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Segment(std::vector<const Value *> params, const Value *return_type, const Block *block, std::set<FConstraint> constraints) : constraints(constraints), params(params), return_type(return_type), block(block)
+        Segment(std::vector<std::pair<std::string, const Type *>> params, const Value *return_type, const Block *block, std::set<FConstraint> constraints) : constraints(constraints), params(params), return_type(return_type), block(block)
         {
             ntype = (int)NodeType::Segment;
         }
 
     public:
-        static const Segment *create(std::vector<const Value *> params, const Value *return_type, const Block *block, std::set<FConstraint> constraints);
+        static const Segment *create(std::vector<std::pair<std::string, const Type *>> params, const Value *return_type, const Block *block, std::set<FConstraint> constraints);
 
         std::set<FConstraint> constraints;
-        std::vector<const Value *> params;
+        std::vector<std::pair<std::string, const Type *>> params;
         const Value *return_type;
         const Block *block;
     };

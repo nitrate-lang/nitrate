@@ -49,7 +49,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        SCast(const Type *type, const Expr *value) : type(type), value(value) {}
+        SCast(const Type *type, const Expr *value) : type(type), value(value)
+        {
+            ntype = (int)NodeType::SCast;
+        }
 
     public:
         static const SCast *create(const Type *type, const Expr *value);
@@ -65,7 +68,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        UCast(const Type *type, const Expr *value) : type(type), value(value) {}
+        UCast(const Type *type, const Expr *value) : type(type), value(value)
+        {
+            ntype = (int)NodeType::UCast;
+        }
 
     public:
         static const UCast *create(const Type *type, const Expr *value);
@@ -81,7 +87,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        PtrICast(const Type *type, const Expr *value) : type(type), value(value) {}
+        PtrICast(const Type *type, const Expr *value) : type(type), value(value)
+        {
+            ntype = (int)NodeType::PtrICast;
+        }
 
     public:
         static const PtrICast *create(const Type *type, const Expr *value);
@@ -97,7 +106,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        IPtrCast(const Type *type, const Expr *value) : type(type), value(value) {}
+        IPtrCast(const Type *type, const Expr *value) : type(type), value(value)
+        {
+            ntype = (int)NodeType::IPtrCast;
+        }
 
     public:
         static const IPtrCast *create(const Type *type, const Expr *value);
@@ -113,7 +125,10 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Bitcast(const Type *type, const Expr *value) : type(type), value(value) {}
+        Bitcast(const Type *type, const Expr *value) : type(type), value(value)
+        {
+            ntype = (int)NodeType::Bitcast;
+        }
 
     public:
         static const Bitcast *create(const Type *type, const Expr *value);

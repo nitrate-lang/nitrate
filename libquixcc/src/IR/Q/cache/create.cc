@@ -70,7 +70,7 @@ static std::map<std::tuple<const Value *, const std::set<const Case *>, const Va
 static std::map<std::string, const Ident *> ident_insts;
 static Asm *asm_inst = nullptr;
 static std::map<std::vector<const Value *>, const Block *> functionblock_insts;
-static std::map<std::tuple<std::vector<const Value *>, const Value *, const Value *, std::set<FConstraint>>, const Segment *> function_insts;
+static std::map<std::tuple<std::vector<std::pair<std::string, const Type *>>, const Value *, const Value *, std::set<FConstraint>>, const Segment *> function_insts;
 static std::map<const Value *, const Ret *> ret_insts;
 static std::map<std::pair<const Global *, std::vector<const Value *>>, const Call *> call_insts;
 static std::map<std::pair<const Value *, std::vector<const Value *>>, const CallIndirect *> ptrcall_insts;
@@ -323,7 +323,7 @@ const ir::q::Block *ir::q::Block::create(std::vector<const Value *> stmts)
     return functionblock_insts[key];
 }
 
-const ir::q::Segment *ir::q::Segment::create(std::vector<const Value *> params, const Value *return_type, const Block *block, std::set<ir::q::FConstraint> constraints)
+const ir::q::Segment *ir::q::Segment::create(std::vector<std::pair<std::string, const Type *>> params, const Value *return_type, const Block *block, std::set<ir::q::FConstraint> constraints)
 {
     lock(NodeType::Segment);
     auto key = std::make_tuple(params, return_type, block, constraints);

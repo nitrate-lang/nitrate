@@ -38,6 +38,7 @@
 
 #include <IR/delta/DeltaIR.h>
 #include <IR/delta/Type.h>
+#include <IR/delta/Expr.h>
 
 namespace libquixcc::ir::delta
 {
@@ -59,7 +60,7 @@ namespace libquixcc::ir::delta
         std::vector<const Value *> stmts;
     };
 
-    class Segment : public Value
+    class Segment : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;

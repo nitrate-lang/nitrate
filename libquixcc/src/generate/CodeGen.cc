@@ -150,11 +150,21 @@ llvm::FunctionType *libquixcc::LLVM14Codegen::gen(const ir::delta::FType *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Local *node)
 {
-    return nullptr;
+    auto type = gent(node->type);
+    llvm::AllocaInst *alloca = m_ctx->m_builder->CreateAlloca(type, nullptr, node->name);
+
+    m_state.locals.top()[node->name] = alloca;
+
+    return alloca;
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Global *node)
 {
+    bool old_pub = m_state.m_pub;
+
+    if (node->_extern)
+        m_state.m_pub = true;
+
     llvm::Type *type = gent(node->type);
 
     if (node->value && node->value->is<Segment>())
@@ -163,6 +173,10 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Global *node)
         auto segment = node->value->as<Segment>();
         llvm::Function *func = gen(segment);
         m_state.name.clear();
+
+        m_state.functions[node->name] = func;
+
+        m_state.m_pub = old_pub;
         return func;
     }
 
@@ -170,7 +184,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Global *node)
     llvm::GlobalVariable *gvar = m_ctx->m_module->getGlobalVariable(node->name);
     m_ctx->m_named_global_vars[node->name] = gvar;
 
-    if (m_ctx->m_pub)
+    if (node->_extern)
         gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
     else
         gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
@@ -193,6 +207,8 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Global *node)
             gvar->setInitializer(llvm::Constant::getNullValue(type));
     }
 
+    m_state.globals[node->name] = gvar;
+    m_state.m_pub = old_pub;
     return gvar;
 }
 
@@ -221,7 +237,7 @@ llvm::Constant *libquixcc::LLVM14Codegen::gen(const ir::delta::Number *node)
     case 128: /* TODO: get_numbits cant handle 128 bits */
         return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(128, node->value, 10));
     default:
-        throw std::runtime_error("Codegen failed");
+        throw std::runtime_error("Codegen failed: Number type not supported");
     }
 }
 
@@ -236,19 +252,55 @@ llvm::Constant *libquixcc::LLVM14Codegen::gen(const ir::delta::String *node)
     return llvm::ConstantExpr::getGetElementPtr(gvar->getValueType(), gvar, indices);
 }
 
+llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ident *node)
+{
+    if (!m_state.locals.empty())
+    {
+        if (m_state.locals.top().contains(node->name))
+        {
+            auto v = m_state.locals.top()[node->name];
+            auto t = m_state.locals.top()[node->name]->getType()->getPointerElementType();
+            if (m_state.m_deref)
+                return m_ctx->m_builder->CreateLoad(t, v);
+            else
+                return v;
+        }
+    }
+
+    if (m_state.globals.contains(node->name))
+    {
+        auto v = m_state.globals[node->name];
+        auto t = m_state.globals[node->name]->getType()->getPointerElementType();
+        if (m_state.m_deref)
+            return m_ctx->m_builder->CreateLoad(t, v);
+        else
+            return v;
+    }
+    else if (m_state.functions.contains(node->name))
+        return m_state.functions[node->name];
+    else
+        throw std::runtime_error("Codegen failed: Identifier not found: " + node->name);
+}
+
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Assign *node)
 {
-    return nullptr;
+    bool old = m_state.m_deref;
+    m_state.m_deref = false;
+
+    auto ptr = gen(node->var);
+    m_state.m_deref = old;
+
+    return m_ctx->m_builder->CreateStore(gen(node->value), ptr);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Load *node)
 {
-    return nullptr;
+    throw std::runtime_error("Load not implemented");
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
 {
-    return nullptr;
+    throw std::runtime_error("Index not implemented");
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::SCast *node)
@@ -278,22 +330,22 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Bitcast *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::IfElse *node)
 {
-    return nullptr;
+    throw std::runtime_error("IfElse not implemented");
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::While *node)
 {
-    return nullptr;
+    throw std::runtime_error("While not implemented");
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Jmp *node)
 {
-    return nullptr;
+    throw std::runtime_error("Jmp not implemented");
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Label *node)
 {
-    return nullptr;
+    throw std::runtime_error("Label not implemented");
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ret *node)
@@ -312,7 +364,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Call *node)
 
     auto callee = m_ctx->m_module->getFunction(node->callee);
     if (!callee)
-        throw std::runtime_error("Codegen failed");
+        throw std::runtime_error("Codegen failed: Function not found: " + node->callee);
 
     return m_ctx->m_builder->CreateCall(callee, args);
 }
@@ -327,6 +379,14 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Halt *node)
     throw std::runtime_error("Halt not implemented");
 }
 
+llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Block *node)
+{
+    for (auto child : node->stmts)
+        gen(child);
+
+    return nullptr;
+}
+
 llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
 {
     std::vector<llvm::Type *> types;
@@ -334,18 +394,30 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
         types.push_back(gent(param.second));
 
     llvm::FunctionType *ftype = llvm::FunctionType::get(gent(node->ret), types, false);
-    llvm::Function *func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, m_state.name, m_ctx->m_module.get());
+    llvm::Function *func;
 
-    llvm::BasicBlock *bb = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
-    m_ctx->m_builder->SetInsertPoint(bb);
+    if (m_state.m_pub)
+        func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, m_state.name, m_ctx->m_module.get());
+    else
+        func = llvm::Function::Create(ftype, llvm::Function::InternalLinkage, m_state.name, m_ctx->m_module.get());
 
-    for (auto it = func->arg_begin(); it != func->arg_end(); ++it)
+    if (node->block)
     {
-        auto &param = node->params[it->getArgNo()];
-        it->setName(param.first);
-    }
+        m_state.locals.push({});
 
-    gen(node->block);
+        llvm::BasicBlock *bb = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
+        m_ctx->m_builder->SetInsertPoint(bb);
+
+        for (auto it = func->arg_begin(); it != func->arg_end(); ++it)
+        {
+            auto &param = node->params[it->getArgNo()];
+            it->setName(param.first);
+        }
+
+        gen(node->block);
+
+        m_state.locals.pop();
+    }
 
     return func;
 }
@@ -407,7 +479,22 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Shr *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotl *node)
 {
-    throw std::runtime_error("Rotl not implemented");
+    /// TODO: verify this formula
+
+    // Formula: (x << n) | (x >> (w - n))
+    // throw std::runtime_error("Rotl not implemented");
+
+    auto lhs = gen(node->lhs);
+    auto rhs = gen(node->rhs);
+
+    auto bits = lhs->getType()->getIntegerBitWidth();
+    auto n = m_ctx->m_builder->CreateURem(rhs, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits));
+    auto w = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits);
+
+    auto shl = m_ctx->m_builder->CreateShl(lhs, n);
+    auto shr = m_ctx->m_builder->CreateLShr(lhs, m_ctx->m_builder->CreateSub(w, n));
+
+    return m_ctx->m_builder->CreateOr(shl, shr);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotr *node)
@@ -468,10 +555,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Xor *node)
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::RootNode *node)
 {
     for (auto child : node->children)
-    {
-        if (!gen(child))
-            throw std::runtime_error("Codegen failed");
-    }
+        gen(child);
 
     return nullptr;
 }
@@ -479,6 +563,10 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::RootNode *node)
 #define match(type)    \
     if (n->is<type>()) \
     return gen(n->as<type>())
+
+#define ignore(type)   \
+    if (n->is<type>()) \
+    return nullptr
 
 llvm::Type *libquixcc::LLVM14Codegen::gent(const libquixcc::ir::delta::Type *n)
 {
@@ -501,7 +589,7 @@ llvm::Type *libquixcc::LLVM14Codegen::gent(const libquixcc::ir::delta::Type *n)
     match(Array);
     match(FType);
 
-    throw std::runtime_error("Codegen failed");
+    throw std::runtime_error("Codegen failed: codegen not implemented for type: " + std::to_string(n->ntype));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
@@ -510,6 +598,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
     match(Global);
     match(Number);
     match(String);
+    match(Ident);
     match(Assign);
     match(Load);
     match(Index);
@@ -552,7 +641,9 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
     match(Xor);
     match(RootNode);
 
-    throw std::runtime_error("Codegen failed");
+    ignore(Packet);
+
+    throw std::runtime_error("Codegen failed: codegen not implemented for value: " + std::to_string(n->ntype));
 }
 
 bool libquixcc::LLVM14Codegen::codegen(const std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, libquixcc::LLVMContext &ctx)
