@@ -41,102 +41,127 @@
 
 namespace libquixcc::ir::q
 {
-    class IfElse : public Value<Q>
+    class IfElse : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        IfElse(const Expr *cond, const Value<Q> *then, const Value<Q> *els) : cond(cond), then(then), els(els) {}
+        IfElse(const Expr *cond, const Value *then, const Value *els) : cond(cond), then(then), els(els)
+        {
+            ntype = (int)NodeType::IfElse;
+        }
 
     public:
-        static const IfElse *create(const Expr *cond, const Value<Q> *then, const Value<Q> *els);
+        static const IfElse *create(const Expr *cond, const Value *then, const Value *els);
 
         const Expr *cond;
-        const Value<Q> *then;
-        const Value<Q> *els;
+        const Value *then;
+        const Value *els;
     };
 
-    class While : public Value<Q>
+    class While : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        While(const Expr *cond, const Value<Q> *body) : cond(cond), body(body) {}
+        While(const Expr *cond, const Value *body) : cond(cond), body(body)
+        {
+            ntype = (int)NodeType::While;
+        }
 
     public:
-        static const While *create(const Expr *cond, const Value<Q> *body);
+        static const While *create(const Expr *cond, const Value *body);
 
         const Expr *cond;
-        const Value<Q> *body;
+        const Value *body;
     };
 
-    class For : public Value<Q>
+    class For : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        For(const Expr *init, const Expr *cond, const Expr *step, const Value<Q> *body) : init(init), cond(cond), step(step), body(body) {}
+        For(const Expr *init, const Expr *cond, const Expr *step, const Value *body) : init(init), cond(cond), step(step), body(body)
+        {
+            ntype = (int)NodeType::For;
+        }
 
     public:
-        static const For *create(const Expr *init, const Expr *cond, const Expr *step, const Value<Q> *body);
+        static const For *create(const Expr *init, const Expr *cond, const Expr *step, const Value *body);
 
         const Expr *init;
         const Expr *cond;
         const Expr *step;
-        const Value<Q> *body;
+        const Value *body;
     };
 
-    class Loop : public Value<Q>
+    class Loop : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Loop(const Value<Q> *body) : body(body) {}
+        Loop(const Value *body) : body(body)
+        {
+            ntype = (int)NodeType::Loop;
+        }
 
     public:
-        static const Loop *create(const Value<Q> *body);
+        static const Loop *create(const Value *body);
 
-        const Value<Q> *body;
+        const Value *body;
     };
 
-    class Break : public Value<Q>
+    class Break : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Break()
+        {
+            ntype = (int)NodeType::Break;
+        }
 
     public:
         static const Break *create();
     };
 
-    class Continue : public Value<Q>
+    class Continue : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Continue()
+        {
+            ntype = (int)NodeType::Continue;
+        }
 
     public:
         static const Continue *create();
     };
 
-    class Ret : public Value<Q>
+    class Ret : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ret(const Expr *value) : value(value) {}
+        Ret(const Expr *value) : value(value)
+        {
+            ntype = (int)NodeType::Ret;
+        }
 
     public:
         static const Ret *create(const Expr *value);
@@ -144,14 +169,17 @@ namespace libquixcc::ir::q
         const Expr *value;
     };
 
-    class Throw : public Value<Q>
+    class Throw : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Throw(const Expr *value) : value(value) {}
+        Throw(const Expr *value) : value(value)
+        {
+            ntype = (int)NodeType::Throw;
+        }
 
     public:
         static const Throw *create(const Expr *value);
@@ -159,54 +187,63 @@ namespace libquixcc::ir::q
         const Expr *value;
     };
 
-    class TryCatchFinally : public Value<Q>
+    class TryCatchFinally : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        TryCatchFinally(const Value<Q> *tryblock, std::vector<std::pair<const Value<Q> *, const Value<Q> *>> catchblocks, const Value<Q> *finallyblock) : tryblock(tryblock), catchblocks(catchblocks), finallyblock(finallyblock) {}
+        TryCatchFinally(const Value *tryblock, std::vector<std::pair<const Value *, const Value *>> catchblocks, const Value *finallyblock) : tryblock(tryblock), catchblocks(catchblocks), finallyblock(finallyblock)
+        {
+            ntype = (int)NodeType::TryCatchFinally;
+        }
 
     public:
-        static const TryCatchFinally *create(const Value<Q> *tryblock, std::vector<std::pair<const Value<Q> *, const Value<Q> *>> catchblocks, const Value<Q> *finallyblock);
+        static const TryCatchFinally *create(const Value *tryblock, std::vector<std::pair<const Value *, const Value *>> catchblocks, const Value *finallyblock);
 
-        const Value<Q> *tryblock;
-        std::vector<std::pair<const Value<Q> *, const Value<Q> *>> catchblocks;
-        const Value<Q> *finallyblock;
+        const Value *tryblock;
+        std::vector<std::pair<const Value *, const Value *>> catchblocks;
+        const Value *finallyblock;
     };
 
-    class Case : public Value<Q>
+    class Case : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Case(const Expr *value, const Value<Q> *body) : value(value), body(body) {}
+        Case(const Expr *value, const Value *body) : value(value), body(body)
+        {
+            ntype = (int)NodeType::Case;
+        }
 
     public:
-        static const Case *create(const Expr *value, const Value<Q> *body);
+        static const Case *create(const Expr *value, const Value *body);
 
         const Expr *value;
-        const Value<Q> *body;
+        const Value *body;
     };
 
-    class Switch : public Value<Q>
+    class Switch : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Switch(const Expr *value, const std::set<const Case *> &cases, const Value<Q> *defaultcase) : value(value), cases(cases), defaultcase(defaultcase) {}
+        Switch(const Expr *value, const std::set<const Case *> &cases, const Value *defaultcase) : value(value), cases(cases), defaultcase(defaultcase)
+        {
+            ntype = (int)NodeType::Switch;
+        }
 
     public:
-        static const Switch *create(const Expr *value, const std::set<const Case *> &cases, const Value<Q> *defaultcase);
+        static const Switch *create(const Expr *value, const std::set<const Case *> &cases, const Value *defaultcase);
 
         const Expr *value;
         const std::set<const Case *> cases;
-        const Value<Q> *defaultcase;
+        const Value *defaultcase;
     };
 }
 

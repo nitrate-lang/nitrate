@@ -42,14 +42,17 @@
 
 namespace libquixcc::ir::q
 {
-    class Local : public Value<Q>
+    class Local : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Local(std::string name, const Type *type) : name(name), type(type) {}
+        Local(std::string name, const Type *type) : name(name), type(type)
+        {
+            ntype = (int)NodeType::Local;
+        }
 
     public:
         static const Local *create(std::string name, const Type *type);
@@ -58,21 +61,24 @@ namespace libquixcc::ir::q
         const Type *type;
     };
 
-    class Global : public Value<Q>
+    class Global : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Global(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic, bool _extern) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic), _extern(_extern) {}
+        Global(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic, bool _extern) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic), _extern(_extern)
+        {
+            ntype = (int)NodeType::Global;
+        }
 
     public:
         static const Global *create(std::string name, const Type *type, const Expr *value, bool _volatile = false, bool _atomic = false, bool _extern = false);
 
         std::string name;
         const Type *type;
-        const Expr*value;
+        const Expr *value;
         bool _volatile;
         bool _atomic;
         bool _extern;
@@ -81,11 +87,14 @@ namespace libquixcc::ir::q
     class Number : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Number(std::string value) : value(value) {}
+        Number(std::string value) : value(value)
+        {
+            ntype = (int)NodeType::Number;
+        }
 
     public:
         static const Number *create(std::string value);
@@ -96,11 +105,14 @@ namespace libquixcc::ir::q
     class String : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        String(std::string value) : value(value) {}
+        String(std::string value) : value(value)
+        {
+            ntype = (int)NodeType::String;
+        }
 
     public:
         static const String *create(std::string value);
@@ -111,11 +123,14 @@ namespace libquixcc::ir::q
     class Char : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Char(std::string value) : value(value) {}
+        Char(std::string value) : value(value)
+        {
+            ntype = (int)NodeType::Char;
+        }
 
     public:
         static const Char *create(std::string value);

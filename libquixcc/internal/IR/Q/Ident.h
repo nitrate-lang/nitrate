@@ -44,11 +44,14 @@ namespace libquixcc::ir::q
     class Ident : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ident(std::string name) : name(name) {}
+        Ident(std::string name) : name(name)
+        {
+            ntype = (int)NodeType::Ident;
+        }
 
     public:
         static const Ident *create(std::string name);

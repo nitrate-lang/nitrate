@@ -41,54 +41,63 @@
 
 namespace libquixcc::ir::q
 {
-    class RegionDef : public Value<Q>
+    class RegionDef : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        RegionDef(std::string name, std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Segment *> methods) : name(name), fields(fields), methods(methods) {}
+        RegionDef(std::string name, std::vector<std::pair<std::string, const Value *>> fields, std::set<const Segment *> methods) : name(name), fields(fields), methods(methods)
+        {
+            ntype = (int)NodeType::RegionDef;
+        }
 
     public:
-        static const RegionDef *create(std::string name, std::vector<std::pair<std::string, const Value<Q> *>> fields, std::set<const Segment *> methods);
+        static const RegionDef *create(std::string name, std::vector<std::pair<std::string, const Value *>> fields, std::set<const Segment *> methods);
 
         std::string name;
-        std::vector<std::pair<std::string, const Value<Q> *>> fields;
+        std::vector<std::pair<std::string, const Value *>> fields;
         std::set<const Segment *> methods;
     };
 
-    class GroupDef : public Value<Q>
+    class GroupDef : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        GroupDef(std::string name, std::map<std::string, const Value<Q> *> fields, std::set<const Segment *> methods) : name(name), fields(fields), methods(methods) {}
+        GroupDef(std::string name, std::map<std::string, const Value *> fields, std::set<const Segment *> methods) : name(name), fields(fields), methods(methods)
+        {
+            ntype = (int)NodeType::GroupDef;
+        }
 
     public:
-        static const GroupDef *create(std::string name, std::map<std::string, const Value<Q> *> fields, std::set<const Segment *> methods);
+        static const GroupDef *create(std::string name, std::map<std::string, const Value *> fields, std::set<const Segment *> methods);
 
         std::string name;
-        std::map<std::string, const Value<Q> *> fields;
+        std::map<std::string, const Value *> fields;
         std::set<const Segment *> methods;
     };
 
-    class UnionDef : public Value<Q>
+    class UnionDef : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        UnionDef(std::string name, std::map<std::string, const Value<Q> *> fields, std::set<const Segment *> methods) : name(name), fields(fields), methods(methods) {}
+        UnionDef(std::string name, std::map<std::string, const Value *> fields, std::set<const Segment *> methods) : name(name), fields(fields), methods(methods)
+        {
+            ntype = (int)NodeType::UnionDef;
+        }
 
     public:
-        static const UnionDef *create(std::string name, std::map<std::string, const Value<Q> *> fields, std::set<const Segment *> methods);
+        static const UnionDef *create(std::string name, std::map<std::string, const Value *> fields, std::set<const Segment *> methods);
 
         std::string name;
-        std::map<std::string, const Value<Q> *> fields;
+        std::map<std::string, const Value *> fields;
         std::set<const Segment *> methods;
     };
 }

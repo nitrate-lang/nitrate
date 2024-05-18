@@ -65,7 +65,7 @@ struct State
     }
 };
 
-typedef const ir::Value<ir::Q> *QValue;
+typedef const Value *QValue;
 
 class QResult
 {
@@ -1228,6 +1228,8 @@ static auto conv(const ParseNode *n, State &state) -> QResult
 
 bool ir::q::QModule::from_ast(std::shared_ptr<BlockNode> ast)
 {
+    LOG(DEBUG) << "Converting AST to QUIX intermediate representation" << std::endl;
+
     State state;
 
     auto r = conv(ast.get(), state);
@@ -1241,6 +1243,8 @@ bool ir::q::QModule::from_ast(std::shared_ptr<BlockNode> ast)
     }
 
     LOG(DEBUG) << this->to_string() << std::endl;
+
+    LOG(DEBUG) << "Successfully converted AST to QUIX intermediate representation" << std::endl;
 
     return true;
 }

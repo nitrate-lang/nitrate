@@ -29,19 +29,97 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_Q_NODES_CALL_H__
-#define __QUIXCC_IR_Q_NODES_CALL_H__
+#ifndef __QUIXCC_IR_DELTA_NODES_CONTROL_H__
+#define __QUIXCC_IR_DELTA_NODES_CONTROL_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <IR/Q/QIR.h>
-#include <IR/Q/Variable.h>
-#include <IR/Q/Expr.h>
+#include <IR/delta/DeltaIR.h>
+#include <IR/delta/Segment.h>
+#include <IR/delta/Expr.h>
 
-namespace libquixcc::ir::q
+namespace libquixcc::ir::delta
 {
+    class IfElse : public Value
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        IfElse(const Expr *cond, const Value *then, const Value *els) : cond(cond), then(then), els(els) {}
+
+    public:
+        static const IfElse *create(const Expr *cond, const Value *then, const Value *els);
+
+        const Expr *cond;
+        const Value *then;
+        const Value *els;
+    };
+
+    class While : public Value
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        While(const Expr *cond, const Value *body) : cond(cond), body(body) {}
+
+    public:
+        static const While *create(const Expr *cond, const Value *body);
+
+        const Expr *cond;
+        const Value *body;
+    };
+
+    class Jmp : public Value
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Jmp(std::string target) : target(target) {}
+
+    public:
+        static const Jmp *create(std::string target);
+
+        std::string target;
+    };
+
+    class Label : public Value
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Label(std::string name) : name(name) {}
+
+    public:
+        static const Label *create(std::string name);
+
+        std::string name;
+    };
+
+    class Ret : public Value
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Ret(const Expr *value) : value(value) {}
+
+    public:
+        static const Ret *create(const Expr *value);
+
+        const Expr *value;
+    };
+
     class Call : public Expr
     {
     protected:
@@ -49,36 +127,43 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Call(const Global *func, std::vector<const Value *> args) : func(func), args(args)
-        {
-            ntype = (int)NodeType::Call;
-        }
+        Call(std::string callee, std::vector<const Expr *> args) : callee(callee), args(args) {}
 
     public:
-        static const Call *create(const Global *func, std::vector<const Value *> args);
+        static const Call *create(std::string callee, std::vector<const Expr *> args);
 
-        const Global *func;
-        std::vector<const Value *> args;
+        std::string callee;
+        std::vector<const Expr *> args;
     };
 
-    class CallIndirect : public Expr
+    class PtrCall : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        CallIndirect(const Value *exprfunc, std::vector<const Value *> args) : exprfunc(exprfunc), args(args)
-        {
-            ntype = (int)NodeType::CallIndirect;
-        }
+        PtrCall(const Value *callee, std::vector<const Expr *> args) : callee(callee), args(args) {}
 
     public:
-        static const CallIndirect *create(const Value *exprfunc, std::vector<const Value *> args);
+        static const PtrCall *create(const Value *callee, std::vector<const Expr *> args);
 
-        const Value *exprfunc;
-        std::vector<const Value *> args;
+        const Value *callee;
+        std::vector<const Expr *> args;
+    };
+
+    class Halt : public Value
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Halt() {}
+
+    public:
+        static const Halt *create();
     };
 }
 
-#endif // __QUIXCC_IR_Q_NODES_CALL_H__
+#endif // __QUIXCC_IR_DELTA_NODES_CONTROL_H__

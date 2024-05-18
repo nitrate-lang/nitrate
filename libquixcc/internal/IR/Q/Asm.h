@@ -40,12 +40,14 @@
 
 namespace libquixcc::ir::q
 {
-    class Asm : public Value<Q>
+    class Asm : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
+
+        Asm() { ntype = (int)NodeType::Asm; }
 
     public:
         static const Asm *create();

@@ -31,7 +31,7 @@
 
 #include <IR/Q/OO.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::RegionDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::RegionDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "region " << name << " {\n";
     state.ind += 2;
@@ -63,7 +63,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::RegionDef::print_impl(std::ostream
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::GroupDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::GroupDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "group " << name << " {\n";
     state.ind += 2;
@@ -95,7 +95,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::GroupDef::print_impl(std::ostream 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::UnionDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::UnionDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "union " << name << " {\n";
     state.ind += 2;

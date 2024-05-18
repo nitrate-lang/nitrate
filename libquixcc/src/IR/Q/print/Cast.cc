@@ -31,7 +31,7 @@
 
 #include <IR/Q/Cast.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::SCast::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::q::SCast::print_impl(std::ostream &os, PState &state) const
 {
     os << "scast ";
     if (!type->print(os, state))
@@ -42,7 +42,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::SCast::print_impl(std::ostream &os
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::UCast::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::q::UCast::print_impl(std::ostream &os, PState &state) const
 {
     os << "ucast ";
     if (!type->print(os, state))
@@ -53,7 +53,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::UCast::print_impl(std::ostream &os
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::PtrICast::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::q::PtrICast::print_impl(std::ostream &os, PState &state) const
 {
     os << "ptricast ";
     if (!type->print(os, state))
@@ -64,7 +64,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::PtrICast::print_impl(std::ostream 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::IPtrCast::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::q::IPtrCast::print_impl(std::ostream &os, PState &state) const
 {
     os << "iptrcast ";
     if (!type->print(os, state))
@@ -75,7 +75,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::IPtrCast::print_impl(std::ostream 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Bitcast::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::q::Bitcast::print_impl(std::ostream &os, PState &state) const
 {
     os << "bitcast ";
     if (!type->print(os, state))

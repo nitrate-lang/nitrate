@@ -29,64 +29,28 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_DELTA_NODES_MEMORY_H__
-#define __QUIXCC_IR_DELTA_NODES_MEMORY_H__
+#ifndef __QUIXCC_IR_DELTA_NODES_EXPR_H__
+#define __QUIXCC_IR_DELTA_NODES_EXPR_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
 #include <IR/delta/DeltaIR.h>
+#include <IR/delta/Type.h>
 
 namespace libquixcc::ir::delta
 {
-    class Assign : public Value<Delta>
+    class Expr : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Assign(const Value<Delta> *var, const Value<Delta> *value, uint64_t rank) : rank(rank), var(var), value(value) {}
-    public:
-        static const Assign *create(const Value<Delta> *var, const Value<Delta> *value, uint64_t rank = 0);
-
-        uint64_t rank; /* How many levels of dereferencing are to be done */
-        const Value<Delta> *var;
-        const Value<Delta> *value;
-    };
-
-    class Load : public Value<Delta>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Load(const Value<Delta> *var, uint64_t rank) : rank(rank), var(var) {}
+        bool print_impl(std::ostream &os, PState &state) const override = 0;
+        boost::uuids::uuid hash_impl() const override = 0;
+        bool verify_impl() const override = 0;
 
     public:
-        static const Load *create(const Value<Delta> *var, uint64_t rank = 0);
-
-        uint64_t rank; /* How many levels of dereferencing are to be done */
-        const Value<Delta> *var;
-    };
-
-    class Index : public Value<Delta>
-    {
-    protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Index(const Value<Delta> *var, const Value<Delta> *index) : var(var), index(index) {}
-
-    public:
-        static const Index *create(const Value<Delta> *var, const Value<Delta> *index);
-
-        const Value<Delta> *var;
-        const Value<Delta> *index;
+        virtual const Type *infer() const { return Void::create(); }
     };
 }
 
-#endif // __QUIXCC_IR_DELTA_NODES_MEMORY_H__
+#endif // __QUIXCC_IR_DELTA_NODES_EXPR_H__

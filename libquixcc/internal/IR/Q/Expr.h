@@ -41,15 +41,15 @@
 
 namespace libquixcc::ir::q
 {
-    class Expr : public Value<Q>
+    class Expr : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override = 0;
+        bool print_impl(std::ostream &os, PState &state) const override = 0;
         boost::uuids::uuid hash_impl() const override = 0;
         bool verify_impl() const override = 0;
 
     public:
-        virtual const Type *infer() const { return I8::create(); }
+        virtual const Type *infer() const { return Void::create(); }
     };
 }
 

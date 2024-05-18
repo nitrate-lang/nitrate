@@ -40,221 +40,263 @@
 
 namespace libquixcc::ir::delta
 {
-    class I1 : public Value<Delta>
+    class Type : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override = 0;
+        boost::uuids::uuid hash_impl() const override = 0;
+        bool verify_impl() const override = 0;
+
+    public:
+        virtual size_t bitcount() const = 0;
+        size_t size() const;
+        bool is_ptr() const;
+        bool is_integer() const;
+        bool is_float() const;
+        bool is_void() const;
+        bool is_signed() const;
+        bool is_unsigned() const;
+    };
+
+    class I1 : public Type
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const I1 *create();
+        size_t bitcount() const override { return 1; }
     };
 
-    class I8 : public Value<Delta>
+    class I8 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const I8 *create();
+        size_t bitcount() const override { return 8; }
     };
 
-    class I16 : public Value<Delta>
+    class I16 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const I16 *create();
+        size_t bitcount() const override { return 16; }
     };
 
-    class I32 : public Value<Delta>
+    class I32 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const I32 *create();
+        size_t bitcount() const override { return 32; }
     };
 
-    class I64 : public Value<Delta>
+    class I64 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const I64 *create();
+        size_t bitcount() const override { return 64; }
     };
 
-    class I128 : public Value<Delta>
+    class I128 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const I128 *create();
+        size_t bitcount() const override { return 128; }
     };
 
-    class U8 : public Value<Delta>
+    class U8 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const U8 *create();
+        size_t bitcount() const override { return 8; }
     };
 
-    class U16 : public Value<Delta>
+    class U16 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const U16 *create();
+        size_t bitcount() const override { return 16; }
     };
 
-    class U32 : public Value<Delta>
+    class U32 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const U32 *create();
+        size_t bitcount() const override { return 32; }
     };
 
-    class U64 : public Value<Delta>
+    class U64 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const U64 *create();
+        size_t bitcount() const override { return 64; }
     };
 
-    class U128 : public Value<Delta>
+    class U128 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const U128 *create();
+        size_t bitcount() const override { return 128; }
     };
 
-    class F32 : public Value<Delta>
+    class F32 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const F32 *create();
+        size_t bitcount() const override { return 32; }
     };
 
-    class F64 : public Value<Delta>
+    class F64 : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const F64 *create();
+        size_t bitcount() const override { return 64; }
     };
 
-    class Void : public Value<Delta>
+    class Void : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
     public:
         static const Void *create();
+        size_t bitcount() const override { return 0; }
     };
 
-    class Ptr : public Value<Delta>
+    class Ptr : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ptr(const Value<Delta> *type) : type(type) {}
+        Ptr(const Type *type) : type(type) {}
 
     public:
-        static const Ptr *create(Value<Delta> *type);
+        static const Ptr *create(const Type *type);
+        size_t bitcount() const override { throw std::runtime_error("Pointer size is not known"); }
 
-        const Value<Delta> *type;
+        const Type *type;
     };
 
-    class Packet : public Value<Delta>
+    class Packet : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Packet(std::vector<std::pair<std::string, const Value<Delta> *>> fields, std::string name) : fields(fields), name(name) {}
+        Packet(std::vector<std::pair<std::string, const Type *>> fields, std::string name) : fields(fields), name(name) {}
 
     public:
-        static const Packet *create(std::vector<std::pair<std::string, const Value<Delta> *>> fields, std::string name);
+        static const Packet *create(std::vector<std::pair<std::string, const Type *>> fields, std::string name);
+        size_t bitcount() const override
+        {
+            size_t count = 0;
+            for (auto &field : fields)
+                count += field.second->bitcount();
+            return count;
+        }
 
-        std::vector<std::pair<std::string, const Value<Delta> *>> fields;
+        std::vector<std::pair<std::string, const Type *>> fields;
         std::string name;
     };
 
-    class Array : public Value<Delta>
+    class Array : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Array(Value<Delta> *type, uint64_t size) : type(type), size(size) {}
+        Array(const Type *type, uint64_t size) : type(type), size(size) {}
 
     public:
-        static const Array *create(Value<Delta> *type, uint64_t size);
+        static const Array *create(const Type *type, uint64_t size);
+        size_t bitcount() const override { return type->bitcount() * size; }
 
-        const Value<Delta> *type;
+        const Type *type;
         uint64_t size;
     };
 
-    class FType : public Value<Delta>
+    class FType : public Type
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        FType(std::vector<const Value<Delta> *> params, const Value<Delta> *ret) : params(params), ret(ret) {}
+        FType(std::vector<const Type *> params, const Type *ret) : params(params), ret(ret) {}
 
     public:
-        static const FType *create(std::vector<const Value<Delta> *> params, const Value<Delta> *ret);
+        static const FType *create(std::vector<const Type *> params, const Type *ret);
+        size_t bitcount() const override { return Ptr::create(Void::create())->bitcount(); }
 
-        std::vector<const Value<Delta> *> params;
-        const Value<Delta> *ret;
+        std::vector<const Type *> params;
+        const Type *ret;
     };
 }
 

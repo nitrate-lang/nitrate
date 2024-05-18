@@ -31,7 +31,7 @@
 
 #include <IR/Q/Asm.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Asm::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Asm::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "asm()";
     return true;

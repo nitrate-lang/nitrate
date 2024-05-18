@@ -37,33 +37,54 @@
 #endif
 
 #include <IR/delta/DeltaIR.h>
-#include <IR/delta/nodes/Type.h>
+#include <IR/delta/Type.h>
 
 namespace libquixcc::ir::delta
 {
-    class Segment : public Value<Delta>
+    class Block : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Segment(const Value<Delta> *ret, bool pure, const std::vector<std::pair<std::string, const Value<Delta> *>> &params, const std::vector<const Value<Delta> *> &stmts) : params(params), stmts(stmts), ret(ret), pure(pure) {}
+        Block(std::vector<const Value *> stmts) : stmts(stmts)
+        {
+            ntype = (int)NodeType::Block;
+        }
 
     public:
-        static const Segment *create(const Value<Delta> *ret, bool pure, const std::vector<std::pair<std::string, const Value<Delta> *>> &params, const std::vector<const Value<Delta> *> &stmts);
+        static const Block *create(std::vector<const Value *> stmts);
+
+        std::vector<const Value *> stmts;
+    };
+
+    class Segment : public Value
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Segment(const Type *ret, bool pure, const std::vector<std::pair<std::string, const Type *>> &params, const Block *block) : params(params), block(block), ret(ret), pure(pure)
+        {
+            ntype = (int)NodeType::Segment;
+        }
+
+    public:
+        static const Segment *create(const Type *ret, bool pure, const std::vector<std::pair<std::string, const Type *>> &params, const Block *block);
 
         const FType *getType() const
         {
-            std::vector<const Value<Delta> *> param_types;
+            std::vector<const Type *> param_types;
             for (auto &param : params)
                 param_types.push_back(param.second);
             return FType::create(param_types, ret);
         }
 
-        std::vector<std::pair<std::string, const Value<Delta> *>> params;
-        std::vector<const Value<Delta> *> stmts;
-        const Value<Delta> *ret;
+        std::vector<std::pair<std::string, const Type *>> params;
+        const Block *block;
+        const Type *ret;
         bool pure;
     };
 }

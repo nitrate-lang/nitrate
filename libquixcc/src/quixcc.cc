@@ -1101,19 +1101,34 @@ static bool execute_job(quixcc_job_t *job)
         LOG(FAILED) << "Compilation was programmatically aborted while preprocessing source" << std::endl;
         return false;
     }
-    catch (PreprocessorException &)
+    catch (PreprocessorException &e)
     {
-        LOG(FAILED) << "Compilation was aborted while preprocessing source" << std::endl;
+        LOG(FAILED) << "Compilation was aborted while preprocessing source: " << e.what() << std::endl;
         return false;
     }
-    catch (ParseException &)
+    catch (ParseException &e)
     {
-        LOG(FAILED) << "Compilation was aborted while parsing source" << std::endl;
+        LOG(FAILED) << "Compilation was aborted while parsing source: " << e.what() << std::endl;
         return false;
     }
-    catch (Exception &)
+    catch (Exception &e)
     {
-        LOG(FAILED) << "Compilation failed" << std::endl;
+        LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+        return false;
+    }
+    catch (std::runtime_error &e)
+    {
+        LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+        return false;
+    }
+    catch (std::exception &e)
+    {
+        LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+        return false;
+    }
+    catch (const char *e)
+    {
+        LOG(FAILED) << "Compilation failed: " << e << std::endl;
         return false;
     }
     catch (...)

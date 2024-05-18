@@ -31,7 +31,7 @@
 
 #include <IR/Q/QIR.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "use QIR_1_0;\n";
     os << "; ModuleID = '" << m_name << "'\n";

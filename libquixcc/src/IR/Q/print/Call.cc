@@ -31,7 +31,7 @@
 
 #include <IR/Q/Call.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Call::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Call::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << func->name << "(";
     for (size_t i = 0; i < args.size(); i++)
@@ -44,7 +44,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Call::print_impl(std::ostream &os,
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::CallIndirect::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::CallIndirect::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     if (!exprfunc->print(os, state))
         return false;

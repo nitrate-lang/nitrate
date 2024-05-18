@@ -32,7 +32,7 @@
 #include <IR/Q/Function.h>
 #include <IR/Q/Type.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Block::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Block::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     if (stmts.empty())
     {
@@ -62,7 +62,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Block::print_impl(std::ostream &os
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Segment::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Segment::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "segment ";
 
@@ -104,7 +104,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Segment::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::RootNode::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::RootNode::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     for (auto it = children.begin(); it != children.end(); it++)
     {

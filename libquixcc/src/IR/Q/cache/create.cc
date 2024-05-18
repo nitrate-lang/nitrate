@@ -52,51 +52,51 @@ using namespace ir;
 using namespace ir::q;
 
 static RootNode *root = nullptr;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const SCast *> scast_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const UCast *> ucast_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const PtrICast *> ptricast_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const IPtrCast *> iptrcast_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Bitcast *> bitcast_insts;
-static std::map<std::tuple<const Value<Q> *, const Value<Q> *, const Value<Q> *>, IfElse *> ifelse_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const While *> while_insts;
-static std::map<std::tuple<const Value<Q> *, const Value<Q> *, const Value<Q> *, const Value<Q> *>, const For *> for_insts;
-static std::map<const Value<Q> *, const Loop *> loop_insts;
+static std::map<std::pair<const Value *, const Value *>, const SCast *> scast_insts;
+static std::map<std::pair<const Value *, const Value *>, const UCast *> ucast_insts;
+static std::map<std::pair<const Value *, const Value *>, const PtrICast *> ptricast_insts;
+static std::map<std::pair<const Value *, const Value *>, const IPtrCast *> iptrcast_insts;
+static std::map<std::pair<const Value *, const Value *>, const Bitcast *> bitcast_insts;
+static std::map<std::tuple<const Value *, const Value *, const Value *>, IfElse *> ifelse_insts;
+static std::map<std::pair<const Value *, const Value *>, const While *> while_insts;
+static std::map<std::tuple<const Value *, const Value *, const Value *, const Value *>, const For *> for_insts;
+static std::map<const Value *, const Loop *> loop_insts;
 static Break *break_inst = nullptr;
 static Continue *continue_inst = nullptr;
-static std::map<const Value<Q> *, const Throw *> throw_insts;
-static std::map<std::tuple<const Value<Q> *, std::vector<std::pair<const Value<Q> *, const Value<Q> *>>, const Value<Q> *>, const TryCatchFinally *> trycatchfinally_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Case *> case_insts;
-static std::map<std::tuple<const Value<Q> *, const std::set<const Case *>, const Value<Q> *>, const Switch *> switch_insts;
+static std::map<const Value *, const Throw *> throw_insts;
+static std::map<std::tuple<const Value *, std::vector<std::pair<const Value *, const Value *>>, const Value *>, const TryCatchFinally *> trycatchfinally_insts;
+static std::map<std::pair<const Value *, const Value *>, const Case *> case_insts;
+static std::map<std::tuple<const Value *, const std::set<const Case *>, const Value *>, const Switch *> switch_insts;
 static std::map<std::string, const Ident *> ident_insts;
 static Asm *asm_inst = nullptr;
-static std::map<std::vector<const Value<Q> *>, const Block *> functionblock_insts;
-static std::map<std::tuple<std::vector<const Value<Q> *>, const Value<Q> *, const Value<Q> *, std::set<FConstraint>>, const Segment *> function_insts;
-static std::map<const Value<Q> *, const Ret *> ret_insts;
-static std::map<std::pair<const Global *, std::vector<const Value<Q> *>>, const Call *> call_insts;
-static std::map<std::pair<const Value<Q> *, std::vector<const Value<Q> *>>, const CallIndirect *> ptrcall_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Add *> add_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Sub *> sub_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Mul *> mul_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Div *> div_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Mod *> mod_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const BitAnd *> bitand_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const BitOr *> bitor_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const BitXor *> bitxor_insts;
-static std::map<const Value<Q> *, const BitNot *> bitnot_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Shl *> shl_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Shr *> shr_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Rotl *> rotl_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Rotr *> rotr_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Eq *> eq_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Ne *> ne_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Lt *> lt_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Gt *> gt_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Le *> le_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Ge *> ge_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const And *> and_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Or *> or_insts;
-static std::map<const Value<Q> *, const Not *> not_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Xor *> xor_insts;
+static std::map<std::vector<const Value *>, const Block *> functionblock_insts;
+static std::map<std::tuple<std::vector<const Value *>, const Value *, const Value *, std::set<FConstraint>>, const Segment *> function_insts;
+static std::map<const Value *, const Ret *> ret_insts;
+static std::map<std::pair<const Global *, std::vector<const Value *>>, const Call *> call_insts;
+static std::map<std::pair<const Value *, std::vector<const Value *>>, const CallIndirect *> ptrcall_insts;
+static std::map<std::pair<const Value *, const Value *>, const Add *> add_insts;
+static std::map<std::pair<const Value *, const Value *>, const Sub *> sub_insts;
+static std::map<std::pair<const Value *, const Value *>, const Mul *> mul_insts;
+static std::map<std::pair<const Value *, const Value *>, const Div *> div_insts;
+static std::map<std::pair<const Value *, const Value *>, const Mod *> mod_insts;
+static std::map<std::pair<const Value *, const Value *>, const BitAnd *> bitand_insts;
+static std::map<std::pair<const Value *, const Value *>, const BitOr *> bitor_insts;
+static std::map<std::pair<const Value *, const Value *>, const BitXor *> bitxor_insts;
+static std::map<const Value *, const BitNot *> bitnot_insts;
+static std::map<std::pair<const Value *, const Value *>, const Shl *> shl_insts;
+static std::map<std::pair<const Value *, const Value *>, const Shr *> shr_insts;
+static std::map<std::pair<const Value *, const Value *>, const Rotl *> rotl_insts;
+static std::map<std::pair<const Value *, const Value *>, const Rotr *> rotr_insts;
+static std::map<std::pair<const Value *, const Value *>, const Eq *> eq_insts;
+static std::map<std::pair<const Value *, const Value *>, const Ne *> ne_insts;
+static std::map<std::pair<const Value *, const Value *>, const Lt *> lt_insts;
+static std::map<std::pair<const Value *, const Value *>, const Gt *> gt_insts;
+static std::map<std::pair<const Value *, const Value *>, const Le *> le_insts;
+static std::map<std::pair<const Value *, const Value *>, const Ge *> ge_insts;
+static std::map<std::pair<const Value *, const Value *>, const And *> and_insts;
+static std::map<std::pair<const Value *, const Value *>, const Or *> or_insts;
+static std::map<const Value *, const Not *> not_insts;
+static std::map<std::pair<const Value *, const Value *>, const Xor *> xor_insts;
 static I1 *i1_inst = nullptr;
 static I8 *i8_inst = nullptr;
 static I16 *i16_inst = nullptr;
@@ -111,29 +111,29 @@ static U128 *u128_inst = nullptr;
 static F32 *f32_inst = nullptr;
 static F64 *f64_inst = nullptr;
 static Void *void_inst = nullptr;
-static std::map<const Value<Q> *, const Ptr *> ptr_insts;
-static std::map<std::pair<const Value<Q> *, uint64_t>, const Array *> array_insts;
-static std::map<const Value<Q> *, const Vector *> vector_insts;
-static std::map<std::tuple<std::vector<const Type *>, const Value<Q> *, bool, bool, bool, bool, bool>, const FType *> ftype_insts;
+static std::map<const Value *, const Ptr *> ptr_insts;
+static std::map<std::pair<const Value *, uint64_t>, const Array *> array_insts;
+static std::map<const Value *, const Vector *> vector_insts;
+static std::map<std::tuple<std::vector<const Type *>, const Value *, bool, bool, bool, bool, bool>, const FType *> ftype_insts;
 static std::map<std::string, const Region *> region_insts;
 static std::map<std::string, const Group *> group_insts;
 static std::map<std::string, const Union *> union_insts;
 static std::map<std::string, const Opaque *> opaque_insts;
-static std::map<std::tuple<std::string, std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>>, std::set<const libquixcc::ir::q::Segment *>>, const RegionDef *> regiondef_insts;
-static std::map<std::tuple<std::string, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, std::set<const libquixcc::ir::q::Segment *>>, const GroupDef *> groupdef_insts;
-static std::map<std::tuple<std::string, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, std::set<const libquixcc::ir::q::Segment *>>, const UnionDef *> uniondef_insts;
-static std::map<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>, const Local *> local_insts;
-static std::map<std::tuple<std::string, const Value<Q> *, const Value<Q> *, bool, bool, bool>, const Global *> global_insts;
+static std::map<std::tuple<std::string, std::vector<std::pair<std::string, const Value *>>, std::set<const libquixcc::ir::q::Segment *>>, const RegionDef *> regiondef_insts;
+static std::map<std::tuple<std::string, std::map<std::string, const Value *>, std::set<const libquixcc::ir::q::Segment *>>, const GroupDef *> groupdef_insts;
+static std::map<std::tuple<std::string, std::map<std::string, const Value *>, std::set<const libquixcc::ir::q::Segment *>>, const UnionDef *> uniondef_insts;
+static std::map<std::pair<std::string, const Value *>, const Local *> local_insts;
+static std::map<std::tuple<std::string, const Value *, const Value *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
 static std::map<std::string, const Char *> char_insts;
-static std::map<std::pair<const Value<Q> *, const Value<Q> *>, const Assign *> assign_insts;
+static std::map<std::pair<const Value *, const Value *>, const Assign *> assign_insts;
 
 static std::map<q::NodeType, std::mutex> node_mutexes;
 
 #define lock(type) std::lock_guard<std::mutex> lock(node_mutexes[type])
 
-const RootNode *q::RootNode::create(std::vector<const Value<Q> *> children)
+const RootNode *q::RootNode::create(std::vector<const Value *> children)
 {
     lock(NodeType::Root);
     if (root == nullptr)
@@ -186,7 +186,7 @@ const q::Bitcast *q::Bitcast::create(const Type *type, const Expr *value)
     return bitcast_insts[key];
 }
 
-const q::IfElse *q::IfElse::create(const Expr *cond, const Value<Q> *then, const Value<Q> *els)
+const q::IfElse *q::IfElse::create(const Expr *cond, const Value *then, const Value *els)
 {
     lock(NodeType::IfElse);
     auto key = std::make_tuple(cond, then, els);
@@ -195,7 +195,7 @@ const q::IfElse *q::IfElse::create(const Expr *cond, const Value<Q> *then, const
     return ifelse_insts[key];
 }
 
-const q::While *q::While::create(const Expr *cond, const Value<Q> *body)
+const q::While *q::While::create(const Expr *cond, const Value *body)
 {
     lock(NodeType::While);
     auto key = std::make_pair(cond, body);
@@ -204,7 +204,7 @@ const q::While *q::While::create(const Expr *cond, const Value<Q> *body)
     return while_insts[key];
 }
 
-const ir::q::For *ir::q::For::create(const Expr *init, const Expr *cond, const Expr *step, const ir::Value<Q> *body)
+const ir::q::For *ir::q::For::create(const Expr *init, const Expr *cond, const Expr *step, const Value *body)
 {
     lock(NodeType::For);
     auto key = std::make_tuple(init, cond, step, body);
@@ -213,7 +213,7 @@ const ir::q::For *ir::q::For::create(const Expr *init, const Expr *cond, const E
     return for_insts[key];
 }
 
-const ir::q::Loop *ir::q::Loop::create(const ir::Value<ir::Q> *body)
+const ir::q::Loop *ir::q::Loop::create(const Value *body)
 {
     lock(NodeType::Loop);
     if (!loop_insts.contains(body))
@@ -253,7 +253,7 @@ const ir::q::Throw *ir::q::Throw::create(const Expr *value)
     return throw_insts[value];
 }
 
-const ir::q::TryCatchFinally *ir::q::TryCatchFinally::create(const ir::Value<Q> *tryblock, std::vector<std::pair<const Value<Q> *, const Value<Q> *>> catchblocks, const ir::Value<Q> *finallyblock)
+const ir::q::TryCatchFinally *ir::q::TryCatchFinally::create(const Value *tryblock, std::vector<std::pair<const Value *, const Value *>> catchblocks, const Value *finallyblock)
 {
     lock(NodeType::TryCatchFinally);
     auto key = std::make_tuple(tryblock, catchblocks, finallyblock);
@@ -262,7 +262,7 @@ const ir::q::TryCatchFinally *ir::q::TryCatchFinally::create(const ir::Value<Q> 
     return trycatchfinally_insts[key];
 }
 
-const ir::q::Case *ir::q::Case::create(const Expr *value, const ir::Value<ir::Q> *body)
+const ir::q::Case *ir::q::Case::create(const Expr *value, const Value *body)
 {
     lock(NodeType::Case);
     auto key = std::make_pair(value, body);
@@ -271,7 +271,7 @@ const ir::q::Case *ir::q::Case::create(const Expr *value, const ir::Value<ir::Q>
     return case_insts[key];
 }
 
-const ir::q::Switch *ir::q::Switch::create(const Expr *value, const std::set<const ir::q::Case *> &cases, const ir::Value<ir::Q> *defaultcase)
+const ir::q::Switch *ir::q::Switch::create(const Expr *value, const std::set<const ir::q::Case *> &cases, const Value *defaultcase)
 {
     lock(NodeType::Switch);
     auto key = std::make_tuple(value, cases, defaultcase);
@@ -280,7 +280,7 @@ const ir::q::Switch *ir::q::Switch::create(const Expr *value, const std::set<con
     return switch_insts[key];
 }
 
-const ir::q::Call *ir::q::Call::create(const ir::q::Global *func, std::vector<const ir::Value<ir::Q> *> args)
+const ir::q::Call *ir::q::Call::create(const ir::q::Global *func, std::vector<const Value *> args)
 {
     lock(NodeType::Call);
     auto key = std::make_pair(func, args);
@@ -289,7 +289,7 @@ const ir::q::Call *ir::q::Call::create(const ir::q::Global *func, std::vector<co
     return call_insts[key];
 }
 
-const q::CallIndirect *q::CallIndirect::create(const Value<Q> *callee, std::vector<const Value<Q> *> args)
+const q::CallIndirect *q::CallIndirect::create(const Value *callee, std::vector<const Value *> args)
 {
     lock(NodeType::CallIndirect);
     auto key = std::make_pair(callee, args);
@@ -314,7 +314,7 @@ const ir::q::Asm *ir::q::Asm::create()
     return asm_inst;
 }
 
-const ir::q::Block *ir::q::Block::create(std::vector<const ir::Value<ir::Q> *> stmts)
+const ir::q::Block *ir::q::Block::create(std::vector<const Value *> stmts)
 {
     lock(NodeType::Block);
     auto key = stmts;
@@ -323,7 +323,7 @@ const ir::q::Block *ir::q::Block::create(std::vector<const ir::Value<ir::Q> *> s
     return functionblock_insts[key];
 }
 
-const ir::q::Segment *ir::q::Segment::create(std::vector<const Value<Q> *> params, const ir::Value<Q> *return_type, const Block *block, std::set<ir::q::FConstraint> constraints)
+const ir::q::Segment *ir::q::Segment::create(std::vector<const Value *> params, const Value *return_type, const Block *block, std::set<ir::q::FConstraint> constraints)
 {
     lock(NodeType::Segment);
     auto key = std::make_tuple(params, return_type, block, constraints);
@@ -715,7 +715,7 @@ const libquixcc::ir::q::Opaque *libquixcc::ir::q::Opaque::create(std::string nam
     return opaque_insts[name];
 }
 
-const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::string name, std::vector<std::pair<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *>> fields, std::set<const libquixcc::ir::q::Segment *> methods)
+const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::string name, std::vector<std::pair<std::string, const Value *>> fields, std::set<const libquixcc::ir::q::Segment *> methods)
 {
     lock(NodeType::RegionDef);
     auto key = std::make_tuple(name, fields, methods);
@@ -724,7 +724,7 @@ const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::stri
     return regiondef_insts[key];
 }
 
-const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string name, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *> fields, std::set<const libquixcc::ir::q::Segment *> methods)
+const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string name, std::map<std::string, const Value *> fields, std::set<const libquixcc::ir::q::Segment *> methods)
 {
     lock(NodeType::GroupDef);
     auto key = std::make_tuple(name, fields, methods);
@@ -733,7 +733,7 @@ const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string
     return groupdef_insts[key];
 }
 
-const libquixcc::ir::q::UnionDef *libquixcc::ir::q::UnionDef::create(std::string name, std::map<std::string, const libquixcc::ir::Value<libquixcc::ir::Q> *> fields, std::set<const libquixcc::ir::q::Segment *> methods)
+const libquixcc::ir::q::UnionDef *libquixcc::ir::q::UnionDef::create(std::string name, std::map<std::string, const Value *> fields, std::set<const libquixcc::ir::q::Segment *> methods)
 {
     lock(NodeType::UnionDef);
     auto key = std::make_tuple(name, fields, methods);

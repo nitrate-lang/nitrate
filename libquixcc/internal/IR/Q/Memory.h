@@ -44,11 +44,14 @@ namespace libquixcc::ir::q
     class Assign : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Assign(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Assign(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Assign;
+        }
 
     public:
         static const Assign *create(const Expr *lhs, const Expr *rhs);

@@ -29,7 +29,7 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/delta/nodes/Cast.h>
+#include <IR/delta/Cast.h>
 
 boost::uuids::uuid libquixcc::ir::delta::SCast::hash_impl() const
 {

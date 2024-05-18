@@ -36,25 +36,19 @@
 #include <mangle/Symbol.h>
 #include <core/Logger.h>
 
-#include <IR/delta/nodes/Type.h>
-#include <IR/delta/nodes/Variable.h>
-#include <IR/delta/nodes/Memory.h>
-#include <IR/delta/nodes/Cast.h>
-#include <IR/delta/nodes/Control.h>
-#include <IR/delta/nodes/Segment.h>
-#include <IR/delta/nodes/Math.h>
+#include <IR/delta/Type.h>
+#include <IR/delta/Variable.h>
+#include <IR/delta/Memory.h>
+#include <IR/delta/Cast.h>
+#include <IR/delta/Control.h>
+#include <IR/delta/Segment.h>
+#include <IR/delta/Math.h>
 
 using namespace libquixcc;
 using namespace libquixcc::ir;
 using namespace libquixcc::ir::delta;
 
 uint8_t get_numbits(std::string s);
-
-#define throwif(cond)                               \
-    if (cond)                                       \
-    {                                               \
-        throw std::runtime_error("Codegen failed"); \
-    }
 
 llvm::Type *libquixcc::LLVM14Codegen::gen(const ir::delta::I1 *node)
 {
@@ -227,7 +221,7 @@ llvm::Constant *libquixcc::LLVM14Codegen::gen(const ir::delta::Number *node)
     case 128: /* TODO: get_numbits cant handle 128 bits */
         return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(128, node->value, 10));
     default:
-        throwif(true);
+        throw std::runtime_error("Codegen failed");
     }
 }
 
@@ -317,7 +311,8 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Call *node)
         args.push_back(gen(arg));
 
     auto callee = m_ctx->m_module->getFunction(node->callee);
-    throwif(!callee);
+    if (!callee)
+        throw std::runtime_error("Codegen failed");
 
     return m_ctx->m_builder->CreateCall(callee, args);
 }
@@ -350,8 +345,7 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
         it->setName(param.first);
     }
 
-    for (auto &stmt : node->stmts)
-        gen(stmt);
+    gen(node->block);
 
     return func;
 }
@@ -474,7 +468,10 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Xor *node)
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::RootNode *node)
 {
     for (auto child : node->children)
-        throwif(!gen(child));
+    {
+        if (!gen(child))
+            throw std::runtime_error("Codegen failed");
+    }
 
     return nullptr;
 }
@@ -483,7 +480,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::RootNode *node)
     if (n->is<type>()) \
     return gen(n->as<type>())
 
-llvm::Type *libquixcc::LLVM14Codegen::gent(const libquixcc::ir::Value<libquixcc::ir::Delta> *n)
+llvm::Type *libquixcc::LLVM14Codegen::gent(const libquixcc::ir::delta::Type *n)
 {
     match(I1);
     match(I8);
@@ -504,10 +501,10 @@ llvm::Type *libquixcc::LLVM14Codegen::gent(const libquixcc::ir::Value<libquixcc:
     match(Array);
     match(FType);
 
-    throwif(true);
+    throw std::runtime_error("Codegen failed");
 }
 
-llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::Value<libquixcc::ir::Delta> *n)
+llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
 {
     match(Local);
     match(Global);
@@ -555,7 +552,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::Value<libquixcc:
     match(Xor);
     match(RootNode);
 
-    throwif(true);
+    throw std::runtime_error("Codegen failed");
 }
 
 bool libquixcc::LLVM14Codegen::codegen(const std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, libquixcc::LLVMContext &ctx)

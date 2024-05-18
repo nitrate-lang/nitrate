@@ -29,9 +29,39 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/delta/nodes/Segment.h>
+#include <IR/delta/Segment.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Segment::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Block::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    if (stmts.empty())
+    {
+        os << "{}";
+        return true;
+    }
+
+    os << "{\n";
+    state.ind += 2;
+
+    for (auto it = stmts.begin(); it != stmts.end(); it++)
+    {
+        os << std::string(state.ind, ' ');
+
+        if (!(*it)->print(os, state))
+            return false;
+
+        os << ";";
+
+        if (it != stmts.end())
+            os << "\n";
+    }
+
+    state.ind -= 2;
+    os << std::string(state.ind, ' ') << "}";
+
+    return true;
+}
+
+bool libquixcc::ir::delta::Segment::print_impl(std::ostream &os, PState &state) const
 {
     os << "segment ";
 
@@ -41,9 +71,6 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Segment::print_impl(std::ostre
         os << "impure";
 
     os << " (";
-    if (!ret->print(os, state))
-        return false;
-    os << ") (";
     for (uint64_t i = 0; i < params.size(); i++)
     {
         os << params[i].first << " : ";
@@ -52,26 +79,23 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Segment::print_impl(std::ostre
         if (i + 1 < params.size())
             os << ", ";
     }
-    os << ") {\n";
+    os << ") (";
+    if (!ret->print(os, state))
+        return false;
+    os << ")";
 
-    state.ind += 2;
+    if (!block)
+        return true;
+    else
+        os << " ";
 
-    for (auto &stmt : stmts)
-    {
-        os << std::string(state.ind, ' ');
-
-        if (!stmt->print(os, state))
-            return false;
-    }
-
-    state.ind -= 2;
-
-    os << "\n}\n";
+    if (!block->print(os, state))
+        return false;
 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::RootNode::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::RootNode::print_impl(std::ostream &os, PState &state) const
 {
     for (auto &child : children)
     {

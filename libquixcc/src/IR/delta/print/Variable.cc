@@ -29,9 +29,9 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/delta/nodes/Variable.h>
+#include <IR/delta/Variable.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Local::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Local::print_impl(std::ostream &os, PState &state) const
 {
     os << "%" << name << "(";
     if (!type->print(os, state))
@@ -41,7 +41,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Local::print_impl(std::ostream
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Global::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Global::print_impl(std::ostream &os, PState &state) const
 {
     os << "@" << name << "(";
     if (!type->print(os, state))
@@ -63,13 +63,13 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Global::print_impl(std::ostrea
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Number::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Number::print_impl(std::ostream &os, PState &state) const
 {
     os << value;
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::String::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::String::print_impl(std::ostream &os, PState &state) const
 {
     os << "\"" << value << "\"";
     return true;

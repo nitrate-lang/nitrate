@@ -29,9 +29,9 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/delta/nodes/Math.h>
+#include <IR/delta/Math.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Add::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Add::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -43,7 +43,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Add::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Sub::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Sub::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -55,7 +55,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Sub::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Mul::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Mul::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -67,7 +67,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Mul::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Div::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Div::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -79,7 +79,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Div::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Mod::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Mod::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -91,7 +91,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Mod::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::BitAnd::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::BitAnd::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -103,7 +103,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::BitAnd::print_impl(std::ostrea
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::BitOr::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::BitOr::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -115,7 +115,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::BitOr::print_impl(std::ostream
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::BitXor::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::BitXor::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -127,7 +127,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::BitXor::print_impl(std::ostrea
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::BitNot::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::BitNot::print_impl(std::ostream &os, PState &state) const
 {
     os << "(~";
     if (!operand->print(os, state))
@@ -136,7 +136,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::BitNot::print_impl(std::ostrea
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Shl::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Shl::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -148,7 +148,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Shl::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Shr::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Shr::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -160,7 +160,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Shr::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Rotl::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Rotl::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -172,7 +172,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Rotl::print_impl(std::ostream 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Rotr::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Rotr::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -184,7 +184,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Rotr::print_impl(std::ostream 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Eq::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Eq::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -196,7 +196,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Eq::print_impl(std::ostream &o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Ne::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Ne::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -208,7 +208,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Ne::print_impl(std::ostream &o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Lt::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Lt::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -220,7 +220,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Lt::print_impl(std::ostream &o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Gt::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Gt::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -232,7 +232,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Gt::print_impl(std::ostream &o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Le::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Le::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -244,7 +244,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Le::print_impl(std::ostream &o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Ge::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Ge::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -256,7 +256,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Ge::print_impl(std::ostream &o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::And::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::And::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -268,7 +268,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::And::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Or::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Or::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))
@@ -280,7 +280,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Or::print_impl(std::ostream &o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Not::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Not::print_impl(std::ostream &os, PState &state) const
 {
     os << "(!";
     if (!operand->print(os, state))
@@ -289,7 +289,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Not::print_impl(std::ostream &
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Xor::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Xor::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))

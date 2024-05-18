@@ -31,7 +31,7 @@
 
 #include <IR/Q/Control.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::IfElse::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::IfElse::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "if (";
     if (!cond->print(os, state))
@@ -45,7 +45,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::IfElse::print_impl(std::ostream &o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::While::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::While::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "while (";
     if (!cond->print(os, state))
@@ -56,7 +56,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::While::print_impl(std::ostream &os
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::For::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::For::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "for (";
     if (!init->print(os, state))
@@ -73,7 +73,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::For::print_impl(std::ostream &os, 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Loop::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Loop::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "loop ";
     if (!body->print(os, state))
@@ -81,19 +81,19 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Loop::print_impl(std::ostream &os,
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Break::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Break::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "break";
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Continue::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Continue::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "continue";
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Ret::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Ret::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "ret";
 
@@ -106,7 +106,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Ret::print_impl(std::ostream &os, 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Throw::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Throw::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "throw ";
     if (!value->print(os, state))
@@ -114,7 +114,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Throw::print_impl(std::ostream &os
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::TryCatchFinally::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::TryCatchFinally::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "try ";
     if (!tryblock->print(os, state))
@@ -136,7 +136,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::TryCatchFinally::print_impl(std::o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Case::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Case::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "case ";
     if (!value->print(os, state))
@@ -147,7 +147,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Case::print_impl(std::ostream &os,
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Switch::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Switch::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "switch (";
     if (!value->print(os, state))

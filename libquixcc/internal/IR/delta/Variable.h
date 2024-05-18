@@ -37,48 +37,50 @@
 #endif
 
 #include <IR/delta/DeltaIR.h>
+#include <IR/delta/Type.h>
+#include <IR/delta/Expr.h>
 
 namespace libquixcc::ir::delta
 {
-    class Local : public Value<Delta>
+    class Local : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Local(std::string name, const Value<Delta> *type) : name(name), type(type) {}
+        Local(std::string name, const Type *type) : name(name), type(type) {}
 
     public:
-        static const Local *create(std::string name, const Value<Delta> *type);
+        static const Local *create(std::string name, const Type *type);
 
         std::string name;
-        const Value<Delta> *type;
+        const Type *type;
     };
 
-    class Global : public Value<Delta>
+    class Global : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Global(std::string name, const Value<Delta> *type, const Value<Delta> *value, bool _volatile, bool _atomic) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic) {}
+        Global(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic) : name(name), type(type), value(value), _volatile(_volatile), _atomic(_atomic) {}
 
     public:
-        static const Global *create(std::string name, const Value<Delta> *type, const Value<Delta> *value, bool _volatile = false, bool _atomic = false);
+        static const Global *create(std::string name, const Type *type, const Expr *value, bool _volatile = false, bool _atomic = false);
 
         std::string name;
-        const Value<Delta> *type;
-        const Value<Delta> *value;
+        const Type *type;
+        const Expr *value;
         bool _volatile;
         bool _atomic;
     };
 
-    class Number : public Value<Delta>
+    class Number : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
@@ -90,10 +92,10 @@ namespace libquixcc::ir::delta
         std::string value;
     };
 
-    class String : public Value<Delta>
+    class String : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 

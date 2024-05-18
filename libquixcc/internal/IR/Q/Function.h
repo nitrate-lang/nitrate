@@ -42,19 +42,22 @@
 
 namespace libquixcc::ir::q
 {
-    class Block : public Value<Q>
+    class Block : public Value
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Block(std::vector<const Value<Q> *> stmts) : stmts(stmts) {}
+        Block(std::vector<const Value *> stmts) : stmts(stmts)
+        {
+            ntype = (int)NodeType::Block;
+        }
 
     public:
-        static const Block *create(std::vector<const Value<Q> *> stmts);
+        static const Block *create(std::vector<const Value *> stmts);
 
-        std::vector<const Value<Q> *> stmts;
+        std::vector<const Value *> stmts;
     };
 
     enum class FConstraint
@@ -69,18 +72,21 @@ namespace libquixcc::ir::q
     class Segment : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Segment(std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints) : constraints(constraints), params(params), return_type(return_type), block(block) {}
+        Segment(std::vector<const Value *> params, const Value *return_type, const Block *block, std::set<FConstraint> constraints) : constraints(constraints), params(params), return_type(return_type), block(block)
+        {
+            ntype = (int)NodeType::Segment;
+        }
 
     public:
-        static const Segment *create(std::vector<const Value<Q> *> params, const Value<Q> *return_type, const Block *block, std::set<FConstraint> constraints);
+        static const Segment *create(std::vector<const Value *> params, const Value *return_type, const Block *block, std::set<FConstraint> constraints);
 
         std::set<FConstraint> constraints;
-        std::vector<const Value<Q> *> params;
-        const Value<Q> *return_type;
+        std::vector<const Value *> params;
+        const Value *return_type;
         const Block *block;
     };
 }

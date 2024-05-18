@@ -29,390 +29,384 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_Q_NODES_TYPE_H__
-#define __QUIXCC_IR_Q_NODES_TYPE_H__
+#ifndef __QUIXCC_IR_DELTA_NODES_MATH_H__
+#define __QUIXCC_IR_DELTA_NODES_MATH_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <IR/Q/QIR.h>
-#include <cmath>
+#include <IR/delta/DeltaIR.h>
+#include <IR/delta/Type.h>
+#include <IR/delta/Expr.h>
 
-namespace libquixcc::ir::q
+namespace libquixcc::ir::delta
 {
-    class Type : public Value
-    {
-    protected:
-        bool print_impl(std::ostream &os, PState &state) const override = 0;
-        boost::uuids::uuid hash_impl() const override = 0;
-        bool verify_impl() const override = 0;
-
-    public:
-        virtual size_t bitcount() const = 0;
-        size_t size() const;
-        bool is_ptr() const;
-        bool is_integer() const;
-        bool is_float() const;
-        bool is_void() const;
-        bool is_signed() const;
-        bool is_unsigned() const;
-    };
-
-    class I1 : public Type
+    class Add : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        I1() { ntype = (int)NodeType::I1; }
+        Add(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const I1 *create();
-        size_t bitcount() const override { return 1; }
+        static const Add *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class I8 : public Type
+    class Sub : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        I8() { ntype = (int)NodeType::I8; }
+        Sub(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const I8 *create();
-        size_t bitcount() const override { return 8; }
+        static const Sub *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class I16 : public Type
+    class Mul : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        I16() { ntype = (int)NodeType::I16; }
+        Mul(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const I16 *create();
-        size_t bitcount() const override { return 16; }
+        static const Mul *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class I32 : public Type
+    class Div : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        I32() { ntype = (int)NodeType::I32; }
+        Div(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const I32 *create();
-        size_t bitcount() const override { return 32; }
+        static const Div *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class I64 : public Type
+    class Mod : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        I64() { ntype = (int)NodeType::I64; }
+        Mod(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const I64 *create();
-        size_t bitcount() const override { return 64; }
+        static const Mod *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class I128 : public Type
+    class BitAnd : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        I128() { ntype = (int)NodeType::I128; }
+        BitAnd(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const I128 *create();
-        size_t bitcount() const override { return 128; }
+        static const BitAnd *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class U8 : public Type
+    class BitOr : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        U8() { ntype = (int)NodeType::U8; }
+        BitOr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const U8 *create();
-        size_t bitcount() const override { return 8; }
+        static const BitOr *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class U16 : public Type
+    class BitXor : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        U16() { ntype = (int)NodeType::U16; }
+        BitXor(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const U16 *create();
-        size_t bitcount() const override { return 16; }
+        static const BitXor *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class U32 : public Type
+    class BitNot : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        U32() { ntype = (int)NodeType::U32; }
+        BitNot(const Value *operand) : operand(operand) {}
 
     public:
-        static const U32 *create();
-        size_t bitcount() const override { return 32; }
+        static const BitNot *create(const Value *operand);
+
+        const Value *operand;
     };
 
-    class U64 : public Type
+    class Shl : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        U64() { ntype = (int)NodeType::U64; }
+        Shl(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const U64 *create();
-        size_t bitcount() const override { return 64; }
+        static const Shl *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class U128 : public Type
+    class Shr : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        U128() { ntype = (int)NodeType::U128; }
+        Shr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const U128 *create();
-        size_t bitcount() const override { return 128; }
+        static const Shr *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class F32 : public Type
+    class Rotl : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        F32() { ntype = (int)NodeType::F32; }
+        Rotl(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const F32 *create();
-        size_t bitcount() const override { return 32; }
+        static const Rotl *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class F64 : public Type
+    class Rotr : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        F64() { ntype = (int)NodeType::F64; }
+        Rotr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const F64 *create();
-        size_t bitcount() const override { return 64; }
+        static const Rotr *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Void : public Type
+    class Eq : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Void() { ntype = (int)NodeType::Void; }
+        Eq(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Void *create();
-        size_t bitcount() const override { return 0; }
+        static const Eq *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Ptr : public Type
+    class Ne : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ptr(const Type *type) : type(type)
-        {
-            ntype = (int)NodeType::Ptr;
-        }
+        Ne(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Ptr *create(const Type *type);
-        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of pointer type"); }
+        static const Ne *create(const Expr *lhs, const Expr *rhs);
 
-        const Type *type;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Array : public Type
+    class Lt : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Array(const Type *type, uint64_t size) : type(type), size(size)
-        {
-            ntype = (int)NodeType::Array;
-        }
+        Lt(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Array *create(const Type *type, uint64_t size);
-        size_t bitcount() const override { return type->bitcount() * size; }
+        static const Lt *create(const Expr *lhs, const Expr *rhs);
 
-        const Type *type;
-        uint64_t size;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Vector : public Type
+    class Gt : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Vector(const Type *type) : type(type)
-        {
-            ntype = (int)NodeType::Vector;
-        }
+        Gt(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Vector *create(const Type *type);
-        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of vector type"); }
+        static const Gt *create(const Expr *lhs, const Expr *rhs);
 
-        const Type *type;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class FType : public Type
+    class Le : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        FType(std::vector<const Type *> params, const Type *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow) : params(params), ret(ret), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_nothrow(nothrow)
-        {
-            ntype = (int)NodeType::FType;
-        }
+        Le(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const FType *create(std::vector<const Type *> params, const Type *ret, bool variadic = false, bool pure = false, bool thread_safe = false, bool foreign = false, bool nothrow = false);
-        size_t bitcount() const override { return Ptr::create(Void::create())->bitcount(); }
+        static const Le *create(const Expr *lhs, const Expr *rhs);
 
-        std::vector<const Type *> params;
-        const Type *ret;
-        bool m_variadic;
-        bool m_pure;
-        bool m_thread_safe;
-        bool m_foreign;
-        bool m_nothrow;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Region : public Type
+    class Ge : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Region(std::string name) : name(name)
-        {
-            ntype = (int)NodeType::Region;
-        }
+        Ge(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Region *create(std::string name);
-        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of region type"); }
+        static const Ge *create(const Expr *lhs, const Expr *rhs);
 
-        std::string name;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Group : public Type
+    class And : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Group(std::string name) : name(name)
-        {
-            ntype = (int)NodeType::Group;
-        }
+        And(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Group *create(std::string name);
-        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of group type"); }
+        static const And *create(const Expr *lhs, const Expr *rhs);
 
-        std::string name;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Union : public Type
+    class Or : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Union(std::string name) : name(name)
-        {
-            ntype = (int)NodeType::Union;
-        }
+        Or(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
 
     public:
-        static const Union *create(std::string name);
-        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of union type"); }
+        static const Or *create(const Expr *lhs, const Expr *rhs);
 
-        std::string name;
+        const Expr *lhs;
+        const Expr *rhs;
     };
 
-    class Opaque : public Type
+    class Not : public Expr
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Opaque(std::string name) : name(name)
-        {
-            ntype = (int)NodeType::Opaque;
-        }
+        Not(const Value *operand) : operand(operand) {}
 
     public:
-        static const Opaque *create(std::string name);
-        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of opaque type"); }
+        static const Not *create(const Value *operand);
 
-        std::string name;
+        const Value *operand;
+    };
+
+    class Xor : public Expr
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Xor(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+
+    public:
+        static const Xor *create(const Expr *lhs, const Expr *rhs);
+
+        const Expr *lhs;
+        const Expr *rhs;
     };
 }
 
-#endif // __QUIXCC_IR_Q_NODES_TYPE_H__
+#endif // __QUIXCC_IR_DELTA_NODES_MATH_H__

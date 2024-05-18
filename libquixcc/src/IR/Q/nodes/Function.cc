@@ -38,7 +38,7 @@ boost::uuids::uuid libquixcc::ir::q::Block::hash_impl() const
 
 bool libquixcc::ir::q::Block::verify_impl() const
 {
-    return std::all_of(stmts.begin(), stmts.end(), [](const Value<Q> *stmt)
+    return std::all_of(stmts.begin(), stmts.end(), [](const Value *stmt)
                        { return stmt->verify(); });
 }
 
@@ -57,7 +57,7 @@ boost::uuids::uuid libquixcc::ir::q::Segment::hash_impl() const
 
 bool libquixcc::ir::q::Segment::verify_impl() const
 {
-    if (!std::all_of(params.begin(), params.end(), [](const Value<Q> *param)
+    if (!std::all_of(params.begin(), params.end(), [](const Value *param)
                      { return param->verify(); }) &&
         return_type->verify())
     {
@@ -77,6 +77,6 @@ boost::uuids::uuid libquixcc::ir::q::RootNode::hash_impl() const
 
 bool libquixcc::ir::q::RootNode::verify_impl() const
 {
-    return std::all_of(children.begin(), children.end(), [](const Value<Q> *child)
+    return std::all_of(children.begin(), children.end(), [](const Value *child)
                        { return child->verify(); });
 }

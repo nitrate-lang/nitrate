@@ -44,11 +44,14 @@ namespace libquixcc::ir::q
     class Add : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Add(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Add(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Add;
+        }
 
     public:
         static const Add *create(const Expr *lhs, const Expr *rhs);
@@ -60,11 +63,14 @@ namespace libquixcc::ir::q
     class Sub : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Sub(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Sub(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Sub;
+        }
 
     public:
         static const Sub *create(const Expr *lhs, const Expr *rhs);
@@ -76,11 +82,14 @@ namespace libquixcc::ir::q
     class Mul : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Mul(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Mul(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Mul;
+        }
 
     public:
         static const Mul *create(const Expr *lhs, const Expr *rhs);
@@ -92,11 +101,14 @@ namespace libquixcc::ir::q
     class Div : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Div(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Div(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Div;
+        }
 
     public:
         static const Div *create(const Expr *lhs, const Expr *rhs);
@@ -108,11 +120,14 @@ namespace libquixcc::ir::q
     class Mod : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Mod(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Mod(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Mod;
+        }
 
     public:
         static const Mod *create(const Expr *lhs, const Expr *rhs);
@@ -124,11 +139,14 @@ namespace libquixcc::ir::q
     class BitAnd : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        BitAnd(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        BitAnd(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::BitAnd;
+        }
 
     public:
         static const BitAnd *create(const Expr *lhs, const Expr *rhs);
@@ -140,11 +158,14 @@ namespace libquixcc::ir::q
     class BitOr : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        BitOr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        BitOr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::BitOr;
+        }
 
     public:
         static const BitOr *create(const Expr *lhs, const Expr *rhs);
@@ -156,11 +177,14 @@ namespace libquixcc::ir::q
     class BitXor : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        BitXor(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        BitXor(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::BitXor;
+        }
 
     public:
         static const BitXor *create(const Expr *lhs, const Expr *rhs);
@@ -172,11 +196,14 @@ namespace libquixcc::ir::q
     class BitNot : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        BitNot(const Expr *operand) : operand(operand) {}
+        BitNot(const Expr *operand) : operand(operand)
+        {
+            ntype = (int)NodeType::BitNot;
+        }
 
     public:
         static const BitNot *create(const Expr *operand);
@@ -187,11 +214,14 @@ namespace libquixcc::ir::q
     class Shl : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Shl(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Shl(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Shl;
+        }
 
     public:
         static const Shl *create(const Expr *lhs, const Expr *rhs);
@@ -203,11 +233,14 @@ namespace libquixcc::ir::q
     class Shr : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Shr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Shr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Shr;
+        }
 
     public:
         static const Shr *create(const Expr *lhs, const Expr *rhs);
@@ -219,11 +252,14 @@ namespace libquixcc::ir::q
     class Rotl : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Rotl(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Rotl(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Rotl;
+        }
 
     public:
         static const Rotl *create(const Expr *lhs, const Expr *rhs);
@@ -235,11 +271,14 @@ namespace libquixcc::ir::q
     class Rotr : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Rotr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Rotr(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Rotr;
+        }
 
     public:
         static const Rotr *create(const Expr *lhs, const Expr *rhs);
@@ -251,11 +290,14 @@ namespace libquixcc::ir::q
     class Eq : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Eq(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Eq(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Eq;
+        }
 
     public:
         static const Eq *create(const Expr *lhs, const Expr *rhs);
@@ -267,11 +309,14 @@ namespace libquixcc::ir::q
     class Ne : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ne(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Ne(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Ne;
+        }
 
     public:
         static const Ne *create(const Expr *lhs, const Expr *rhs);
@@ -283,11 +328,14 @@ namespace libquixcc::ir::q
     class Lt : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Lt(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Lt(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Lt;
+        }
 
     public:
         static const Lt *create(const Expr *lhs, const Expr *rhs);
@@ -299,11 +347,14 @@ namespace libquixcc::ir::q
     class Gt : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Gt(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Gt(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Gt;
+        }
 
     public:
         static const Gt *create(const Expr *lhs, const Expr *rhs);
@@ -315,11 +366,14 @@ namespace libquixcc::ir::q
     class Le : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Le(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Le(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Le;
+        }
 
     public:
         static const Le *create(const Expr *lhs, const Expr *rhs);
@@ -331,11 +385,14 @@ namespace libquixcc::ir::q
     class Ge : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ge(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Ge(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Ge;
+        }
 
     public:
         static const Ge *create(const Expr *lhs, const Expr *rhs);
@@ -347,11 +404,14 @@ namespace libquixcc::ir::q
     class And : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        And(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        And(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::And;
+        }
 
     public:
         static const And *create(const Expr *lhs, const Expr *rhs);
@@ -363,11 +423,14 @@ namespace libquixcc::ir::q
     class Or : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Or(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Or(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Or;
+        }
 
     public:
         static const Or *create(const Expr *lhs, const Expr *rhs);
@@ -379,11 +442,14 @@ namespace libquixcc::ir::q
     class Not : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Not(const Expr *operand) : operand(operand) {}
+        Not(const Expr *operand) : operand(operand)
+        {
+            ntype = (int)NodeType::Not;
+        }
 
     public:
         static const Not *create(const Expr *operand);
@@ -394,11 +460,14 @@ namespace libquixcc::ir::q
     class Xor : public Expr
     {
     protected:
-        Result<bool> print_impl(std::ostream &os, PState &state) const override;
+        bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Xor(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {}
+        Xor(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs)
+        {
+            ntype = (int)NodeType::Xor;
+        }
 
     public:
         static const Xor *create(const Expr *lhs, const Expr *rhs);

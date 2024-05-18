@@ -31,7 +31,7 @@
 
 #include <IR/Q/Memory.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Assign::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Assign::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "(";
     if (!lhs->print(os, state))

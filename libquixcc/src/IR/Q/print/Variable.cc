@@ -31,7 +31,7 @@
 
 #include <IR/Q/Variable.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Local::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::q::Local::print_impl(std::ostream &os, PState &state) const
 {
     os << "%" << name << "(";
     if (!type->print(os, state))
@@ -41,7 +41,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Local::print_impl(std::ostream &os
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Global::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::q::Global::print_impl(std::ostream &os, PState &state) const
 {
     if (_extern)
         os << "extern ";
@@ -64,7 +64,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::q::Global::print_impl(std::ostream &o
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Number::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::q::Number::print_impl(std::ostream &os, PState &state) const
 {
     os << value;
     return true;
@@ -106,13 +106,13 @@ static std::string escape(const std::string &str)
     return out;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::String::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::q::String::print_impl(std::ostream &os, PState &state) const
 {
     os << "\"" << escape(value) << "\"";
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Char::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Char::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "'" << escape(value) << "'";
     return true;

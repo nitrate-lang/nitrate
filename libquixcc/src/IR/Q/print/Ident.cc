@@ -31,7 +31,7 @@
 
 #include <IR/Q/Ident.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::q::Ident::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+bool libquixcc::ir::q::Ident::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << name;
     return true;

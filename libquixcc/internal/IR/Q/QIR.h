@@ -148,25 +148,36 @@ namespace libquixcc
                 Assign,
             };
 
-            class RootNode : public libquixcc::ir::Value<Q>
+            class Value : public libquixcc::ir::Node<Q>
             {
             protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
+                bool print_impl(std::ostream &os, PState &state) const override = 0;
+                boost::uuids::uuid hash_impl() const override = 0;
+                bool verify_impl() const override = 0;
+            };
+
+            class RootNode : public Value
+            {
+            protected:
+                bool print_impl(std::ostream &os, PState &state) const override;
                 boost::uuids::uuid hash_impl() const override;
                 bool verify_impl() const override;
 
-                RootNode(std::vector<const Value<Q> *> children) : children(children) {}
+                RootNode(std::vector<const Value *> children) : children(children)
+                {
+                    ntype = (int)NodeType::Root;
+                }
 
             public:
-                static const RootNode *create(std::vector<const Value<Q> *> children = {});
+                static const RootNode *create(std::vector<const Value *> children = {});
 
-                std::vector<const Value<Q> *> children;
+                std::vector<const Value *> children;
             };
 
             class QModule : public libquixcc::ir::IRModule<IR::Q, const RootNode *>
             {
             protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
+                bool print_impl(std::ostream &os, PState &state) const override;
                 std::string_view ir_dialect_name_impl() const override;
                 unsigned ir_dialect_version_impl() const override;
                 std::string_view ir_dialect_family_impl() const override;
