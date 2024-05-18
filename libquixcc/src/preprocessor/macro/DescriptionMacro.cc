@@ -29,46 +29,26 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_H__
-#define __QUIXCC_PARSE_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
+#include <preprocessor/macro/DescriptionMacro.h>
 #include <lexer/Lex.h>
-#include <parse/nodes/AllNodes.h>
-#include <quixcc.h>
+#include <core/Logger.h>
 
-namespace libquixcc
+bool libquixcc::macro::ParseDescription(quixcc_job_t *job, const Token &tok, const std::string &directive, const std::string &parameter, std::vector<libquixcc::Token> &exp)
 {
-    typedef BlockNode AST;
+    (void)job;
+    (void)tok;
+    (void)directive;
 
-    bool parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<BlockNode> &node, bool expect_braces = true);
-    bool parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    StringLexer lexer(parameter);
 
-    bool parse_let(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
-    bool parse_const(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
-    bool parse_var(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
-    bool parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_region(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_group(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_union(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, Token terminator, std::shared_ptr<libquixcc::ConstExprNode> &node);
-    bool parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::set<Token> terminators, std::shared_ptr<libquixcc::ExprNode> &node, size_t depth = 0);
-    bool parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, TypeNode **node);
-    bool parse_typedef(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_return(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_retv(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_if(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_while(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_for(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-    bool parse_inline_asm(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);
-};
+    Token tok2 = lexer.next();
+    if (tok2.type() != TT::String)
+    {
+        LOG(ERROR) << "Invalid parameter for use directive" << tok << std::endl;
+        return false;
+    }
 
-#endif // __QUIXCC_PARSE_H__
+    return true;
+}

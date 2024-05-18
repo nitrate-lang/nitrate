@@ -51,6 +51,8 @@
 #include <sstream>
 #include <chrono>
 
+#include <core/Logger.h>
+
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/library_version_type.hpp>
 #include <boost/serialization/unordered_set.hpp>
@@ -205,7 +207,8 @@ namespace libquixcc
         {
             size_t ind;
 
-            PState() {
+            PState()
+            {
                 ind = 0;
             }
         };
@@ -251,6 +254,14 @@ namespace libquixcc
             Result<bool> print(std::ostream &os, PState &state) const
             {
                 return print_impl(os, state);
+            }
+
+            std::string to_string() const
+            {
+                std::stringstream ss;
+                PState state;
+                print(ss, state);
+                return ss.str();
             }
 
             /* Write UUID to Output Stream */
@@ -410,6 +421,13 @@ namespace libquixcc
                 return print_impl(os, state);
             }
 
+            std::string to_string() const
+            {
+                std::stringstream ss;
+                print(ss);
+                return ss.str();
+            }
+
             /* Verify IR Module */
             inline bool verify() const { return verify_impl(); }
 
@@ -441,7 +459,5 @@ namespace libquixcc
 
     } // namespace ir
 } // namespace libquixcc
-
-void x();
 
 #endif // __QUIXCC_IR_GENERIC_H__

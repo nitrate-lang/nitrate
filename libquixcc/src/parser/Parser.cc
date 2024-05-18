@@ -114,6 +114,15 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
                 group->m_stmts.push_back(decl);
             break;
         }
+        case Keyword::Const:
+        {
+            std::vector<std::shared_ptr<StmtNode>> decls;
+            if (!parse_const(job, scanner, decls))
+                return false;
+            for (auto &decl : decls)
+                group->m_stmts.push_back(decl);
+            break;
+        }
         case Keyword::Enum:
             if (!parse_enum(job, scanner, node))
                 return false;

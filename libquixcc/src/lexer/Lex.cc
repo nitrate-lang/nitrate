@@ -239,7 +239,7 @@ namespace libquixcc
         {libquixcc::Operator::RightShiftAssign, ">>="}};
 }
 
-std::string libquixcc::Scanner::escape_string(const std::string &str) noexcept
+std::string libquixcc::Scanner::escape_string(const std::string &str)
 {
     std::ostringstream output;
 
@@ -298,7 +298,7 @@ libquixcc::StreamLexer::StreamLexer()
     added_newline = false;
 }
 
-char libquixcc::StreamLexer::getc() noexcept
+char libquixcc::StreamLexer::getc()
 {
     /* The QUIX specification requires UTF-8 support. */
     /// TODO: implement UTF-8 support
@@ -356,7 +356,7 @@ char libquixcc::StreamLexer::getc() noexcept
     return c;
 }
 
-bool libquixcc::StreamLexer::set_source(FILE *src, const std::string &filename) noexcept
+bool libquixcc::StreamLexer::set_source(FILE *src, const std::string &filename)
 {
     if (src == nullptr)
         return false;
@@ -371,7 +371,7 @@ bool libquixcc::StreamLexer::set_source(FILE *src, const std::string &filename) 
     return true;
 }
 
-libquixcc::Token libquixcc::StreamLexer::next() noexcept
+libquixcc::Token libquixcc::StreamLexer::next()
 {
     Token tok = peek();
     m_tok = std::nullopt;
@@ -619,7 +619,7 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type)
     return g_canonicalize_number_cache[number] = (norm = std::to_string(x)), true;
 }
 
-libquixcc::Token libquixcc::StreamLexer::read_token() noexcept
+libquixcc::Token libquixcc::StreamLexer::read_token()
 {
     enum class LexState
     {
@@ -982,7 +982,7 @@ libquixcc::Token libquixcc::StreamLexer::read_token() noexcept
     return m_tok.value();
 }
 
-libquixcc::Token libquixcc::StreamLexer::peek() noexcept
+libquixcc::Token libquixcc::StreamLexer::peek()
 {
     /* If we have a token, return it */
     if (m_tok.has_value())
@@ -1006,7 +1006,7 @@ libquixcc::Token libquixcc::StreamLexer::peek() noexcept
     }
 }
 
-bool libquixcc::StringLexer::set_source(const std::string &source_code, const std::string &filename) noexcept
+bool libquixcc::StringLexer::set_source(const std::string &source_code, const std::string &filename)
 {
     /* Copy the source internally */
     m_src = source_code;
@@ -1029,7 +1029,7 @@ libquixcc::StringLexer::~StringLexer()
     }
 }
 
-bool libquixcc::StringLexer::QuickLex(const std::string &source_code, std::vector<libquixcc::Token> &tokens, const std::string &filename) noexcept
+bool libquixcc::StringLexer::QuickLex(const std::string &source_code, std::vector<libquixcc::Token> &tokens, const std::string &filename)
 {
     tokens.clear();
 

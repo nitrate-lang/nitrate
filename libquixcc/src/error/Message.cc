@@ -60,7 +60,7 @@ void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job, libquixcc::E
         job.m_tainted = true;
 
         // At worst, the compiler will catch this upstream
-        throw Exception();
+        throw Exception(message);
     }
     else if (type == E::FAILED)
     {

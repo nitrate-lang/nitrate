@@ -490,6 +490,20 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
 
         return res;
     }
+    case libquixcc::NodeType::ConstDeclNode:
+    {
+        res += "z";
+        auto var = static_cast<const libquixcc::ConstDeclNode *>(node);
+        res += wrap_tag(join(prefix, var->m_name));
+        res += wrap_tag(serialize_type(var->m_type, visited));
+
+        std::string flags;
+        if (var->m_is_deprecated)
+            flags += "d";
+        res += wrap_tag(flags);
+
+        return res;
+    }
     case libquixcc::NodeType::FunctionDeclNode:
     {
         res += "f";
@@ -598,6 +612,31 @@ std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_quix(std::strin
             }
 
             return let;
+        }
+        case 'z':
+        {
+            if (!unwrap_tags(input.substr(1), parts))
+                return nullptr;
+
+            auto cnst = std::make_shared<libquixcc::ConstDeclNode>();
+            cnst->m_name = parts[0];
+            if ((cnst->m_type = deserialize_type(parts[1])) == nullptr)
+                return nullptr;
+
+            std::string flags = parts[2];
+            for (size_t i = 0; i < flags.size(); i++)
+            {
+                switch (flags[i])
+                {
+                case 'd':
+                    cnst->m_is_deprecated = true;
+                    break;
+                default:
+                    return nullptr;
+                }
+            }
+
+            return cnst;
         }
         case 'f':
         {

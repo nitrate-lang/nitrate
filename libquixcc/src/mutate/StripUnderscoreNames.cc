@@ -59,6 +59,13 @@ void libquixcc::mutate::StripUnderscoreNames(quixcc_job_t *job, std::shared_ptr<
                     ptr = std::make_shared<NopStmtNode>();
                 break;
             }
+            case NodeType::ConstDeclNode:
+            {
+                auto cnst = std::static_pointer_cast<ConstDeclNode>(ptr);
+                if (cnst->m_name == "_")
+                    ptr = std::make_shared<NopStmtNode>();
+                break;
+            }
             case NodeType::VarDeclNode:
             {
                 auto var = std::static_pointer_cast<VarDeclNode>(ptr);

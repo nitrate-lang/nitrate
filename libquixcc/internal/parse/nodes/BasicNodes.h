@@ -233,6 +233,8 @@ namespace libquixcc
                 return std::is_same_v<T, VarDeclNode>;
             case NodeType::LetDeclNode:
                 return std::is_same_v<T, LetDeclNode>;
+            case NodeType::ConstDeclNode:
+                return std::is_same_v<T, ConstDeclNode>;
 
             case NodeType::FunctionDeclNode:
                 return std::is_same_v<T, FunctionDeclNode>;
@@ -313,7 +315,7 @@ namespace libquixcc
                 return is<ExprStmtNode>() || is<NopStmtNode>() || is<DeclNode>() || is<DefNode>() || is<BlockNode>() || is<StmtGroupNode>() || is<ReturnStmtNode>() || is<RetifStmtNode>() || is<RetzStmtNode>() || is<RetvStmtNode>() || is<IfStmtNode>() || is<WhileStmtNode>() || is<ForStmtNode>() || is<SubsystemNode>() || is<ExportNode>() || is<InlineAsmNode>();
 
             if (std::is_same_v<T, DeclNode>)
-                return is<VarDeclNode>() || is<LetDeclNode>() || is<FunctionDeclNode>() || is<FunctionParamNode>() || is<TypedefNode>();
+                return is<VarDeclNode>() || is<LetDeclNode>() || is<FunctionDeclNode>() || is<FunctionParamNode>() || is<TypedefNode>() || is<ConstDeclNode>();
 
             if (std::is_same_v<T, DefNode>)
                 return is<EnumDefNode>() || is<FunctionDefNode>() || is<GroupDefNode>() || is<RegionDefNode>() || is<StructDefNode>() || is<UnionDefNode>();

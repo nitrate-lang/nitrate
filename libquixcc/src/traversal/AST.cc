@@ -109,6 +109,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::dispatch(libquixcc::traversal
             {NodeType::TypedefNode, (Func)TypedefNode_iter},
             {NodeType::VarDeclNode, (Func)VarDeclNode_iter},
             {NodeType::LetDeclNode, (Func)LetDeclNode_iter},
+            {NodeType::ConstDeclNode, (Func)ConstDeclNode_iter},
             {NodeType::FunctionDeclNode, (Func)FunctionDeclNode_iter},
             {NodeType::StructDefNode, (Func)StructDefNode_iter},
             {NodeType::StructFieldNode, (Func)StructFieldNode_iter},
@@ -543,6 +544,25 @@ size_t libquixcc::traversal::ASTPreorderTraversal::LetDeclNode_iter(libquixcc::t
 
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
+    if (node->m_init)
+    {
+        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));
+        count += next(state, node->m_init);
+    }
+    return count + 1;
+}
+
+size_t libquixcc::traversal::ASTPreorderTraversal::ConstDeclNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ConstDeclNode *node)
+{
+    state.m_visited.clear();
+    size_t count = 0;
+
+    if (node->m_type)
+    {
+        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+        count += next(state, node->m_type);
+    }
+
     if (node->m_init)
     {
         state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));

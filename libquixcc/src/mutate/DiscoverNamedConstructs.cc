@@ -57,6 +57,7 @@ static std::string ConstructName(const std::vector<std::string> &prefix, const s
 static std::map<libquixcc::NodeType, libquixcc::Msg> error_message_index = {
     {NodeType::VarDeclNode, VAR_NAME_DUPLICATE},
     {NodeType::LetDeclNode, LET_NAME_DUPLICATE},
+    {NodeType::ConstDeclNode, CONST_NAME_DUPLICATE},
     {NodeType::StructDefNode, STRUCT_NAME_DUPLICATE},
     {NodeType::StructFieldNode, STRUCT_FIELD_DUPLICATE},
     {NodeType::RegionDefNode, REGION_NAME_DUPLICATE},
@@ -94,6 +95,9 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
                 break;
             case NodeType::LetDeclNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::LetDeclNode>(ptr)->m_name);
+                break;
+            case NodeType::ConstDeclNode:
+                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::ConstDeclNode>(ptr)->m_name);
                 break;
             case NodeType::FunctionDeclNode:
                 tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::FunctionDeclNode>(ptr)->m_name);

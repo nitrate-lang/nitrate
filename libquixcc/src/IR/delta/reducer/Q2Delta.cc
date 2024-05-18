@@ -53,7 +53,8 @@ bool libquixcc::ir::delta::IRDelta::from_qir(const std::unique_ptr<libquixcc::ir
     const Segment *main = Segment::create(I32::create(), false, {}, stmts);
     const Global *main_global = Global::create("main", main->getType(), main);
     m_root = RootNode::create({main_global});
-    print(std::cout);
+
+    LOG(DEBUG) << this->to_string() << std::endl;
 
     /// TODO: implement this function
     return true;

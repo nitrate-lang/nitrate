@@ -62,6 +62,11 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
                 vars[std::static_pointer_cast<VarDeclNode>(ptr)->m_name] = ptr;
                 return;
             }
+            if ((ptr)->is<ConstDeclNode>())
+            {
+                vars[std::static_pointer_cast<ConstDeclNode>(ptr)->m_name] = ptr;
+                return;
+            }
             if ((ptr)->is<FunctionParamNode>())
             {
                 vars[std::static_pointer_cast<FunctionParamNode>(ptr)->m_name] = ptr;
@@ -93,6 +98,11 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
             case NodeType::LetDeclNode:
             {
                 _typename = std::static_pointer_cast<LetDeclNode>(var)->m_type->name();
+                break;
+            }
+            case NodeType::ConstDeclNode:
+            {
+                _typename = std::static_pointer_cast<ConstDeclNode>(var)->m_type->name();
                 break;
             }
             case NodeType::VarDeclNode:

@@ -146,6 +146,8 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads)
 LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal, std::ostream &error)
 {
     size_t i;
+    static std::mutex mtx;
+    std::lock_guard<std::mutex> lock(mtx);
 
     for (auto job : this->m_jobs)
     {

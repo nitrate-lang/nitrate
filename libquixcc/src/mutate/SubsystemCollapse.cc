@@ -71,6 +71,13 @@ static void collapse(const std::vector<std::string> &__namespace, libquixcc::Par
             stmts->m_stmts.push_back(decl);
             break;
         }
+        case NodeType::ConstDeclNode:
+        {
+            auto decl = std::static_pointer_cast<ConstDeclNode>(child);
+            decl->m_name = Symbol::join(_namespace, decl->m_name);
+            stmts->m_stmts.push_back(decl);
+            break;
+        }
         case NodeType::VarDeclNode:
         {
             auto decl = std::static_pointer_cast<VarDeclNode>(child);

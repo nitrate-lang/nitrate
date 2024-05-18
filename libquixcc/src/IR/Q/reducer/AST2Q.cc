@@ -152,6 +152,7 @@ static auto conv(const NullLiteralNode *n, State &state) -> QResult;
 static auto conv(const TypedefNode *n, State &state) -> QResult;
 static auto conv(const VarDeclNode *n, State &state) -> QResult;
 static auto conv(const LetDeclNode *n, State &state) -> QResult;
+static auto conv(const ConstDeclNode *n, State &state) -> QResult;
 static auto conv(const FunctionDeclNode *n, State &state) -> QResult;
 static auto conv(const StructDefNode *n, State &state) -> QResult;
 static auto conv(const StructFieldNode *n, State &state) -> QResult;
@@ -649,6 +650,25 @@ static auto conv(const LetDeclNode *n, State &state) -> QResult
     return Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
 }
 
+static auto conv(const ConstDeclNode *n, State &state) -> QResult
+{
+    if (state.inside_segment)
+    {
+        auto l = Local::create(n->m_name, conv(n->m_type, state)[0]->as<Type>());
+
+        if (n->m_init)
+            return {l, Assign::create(Ident::create(n->m_name), conv(n->m_init.get(), state)[0]->as<Expr>())};
+
+        return l;
+    }
+
+    const Expr *expr = nullptr;
+    if (n->m_init)
+        expr = conv(n->m_init.get(), state)[0]->as<Expr>();
+
+    return Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
+}
+
 static auto conv(const FunctionDeclNode *n, State &state) -> QResult
 {
     std::vector<QValue> sub;
@@ -1108,6 +1128,10 @@ static auto conv(const ParseNode *n, State &state) -> QResult
         r = conv(n->as<LetDeclNode>(), state);
         break;
 
+    case libquixcc::NodeType::ConstDeclNode:
+        r = conv(n->as<ConstDeclNode>(), state);
+        break;
+
     case libquixcc::NodeType::FunctionDeclNode:
         r = conv(n->as<FunctionDeclNode>(), state);
         break;
@@ -1216,7 +1240,7 @@ bool ir::q::QModule::from_ast(std::shared_ptr<BlockNode> ast)
         return false;
     }
 
-    print(std::cout);
+    LOG(DEBUG) << this->to_string() << std::endl;
 
     return true;
 }

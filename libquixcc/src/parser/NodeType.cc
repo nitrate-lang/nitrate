@@ -94,6 +94,7 @@ std::unordered_map<libquixcc::NodeType, std::string_view> libquixcc::NodeTypeNam
     {NodeType::TypedefNode, "TypedefNode"},
     {NodeType::VarDeclNode, "VarDeclNode"},
     {NodeType::LetDeclNode, "LetDeclNode"},
+    {NodeType::ConstDeclNode, "ConstDeclNode"},
     {NodeType::FunctionDeclNode, "FunctionDeclNode"},
     {NodeType::StructDefNode, "StructDefNode"},
     {NodeType::StructFieldNode, "StructFieldNode"},

@@ -148,6 +148,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::dispatch(libquixcc::seriali
             {NodeType::TypedefNode, (Func)TypedefNode_conv},
             {NodeType::VarDeclNode, (Func)VarDeclNode_conv},
             {NodeType::LetDeclNode, (Func)LetDeclNode_conv},
+            {NodeType::ConstDeclNode, (Func)ConstDeclNode_conv},
             {NodeType::FunctionDeclNode, (Func)FunctionDeclNode_conv},
             {NodeType::StructDefNode, (Func)StructDefNode_conv},
             {NodeType::StructFieldNode, (Func)StructFieldNode_conv},
@@ -660,6 +661,27 @@ std::string libquixcc::serialize::ASTJsonSerializer::LetDeclNode_conv(libquixcc:
     str += std::string(node->m_is_static ? "true" : "false");
     str += ",\"thread_local\":";
     str += std::string(node->m_is_thread_local ? "true" : "false");
+    return str + "}";
+}
+
+std::string libquixcc::serialize::ASTJsonSerializer::ConstDeclNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ConstDeclNode *node)
+{
+    state.m_visited.clear();
+
+    std::string str = "{\"ntype\":\"ConstDeclNode\",\"name\":\"";
+    str += escape_json(node->m_name);
+    str += "\",\"type\":";
+    if (node->m_type)
+        str += next(state, node->m_type);
+    else
+        str += "null";
+    str += ",\"value\":";
+    if (node->m_init)
+        str += next(state, node->m_init);
+    else
+        str += "null";
+    str += ",\"deprecated\":";
+    str += std::string(node->m_is_deprecated ? "true" : "false");
     return str + "}";
 }
 

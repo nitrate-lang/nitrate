@@ -115,6 +115,7 @@ namespace libquixcc
 
         VarDeclNode,
         LetDeclNode,
+        ConstDeclNode,
 
         FunctionDeclNode,
 
@@ -206,6 +207,7 @@ namespace libquixcc
     class TypedefNode;
     class VarDeclNode;
     class LetDeclNode;
+    class ConstDeclNode;
     class FunctionDeclNode;
     class StructDefNode;
     class StructFieldNode;

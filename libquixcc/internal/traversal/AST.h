@@ -121,6 +121,7 @@ namespace libquixcc
             static size_t TypedefNode_iter(ASTTraversalState &state, TypedefNode *node);
             static size_t VarDeclNode_iter(ASTTraversalState &state, VarDeclNode *node);
             static size_t LetDeclNode_iter(ASTTraversalState &state, LetDeclNode *node);
+            static size_t ConstDeclNode_iter(ASTTraversalState &state, ConstDeclNode *node);
             static size_t FunctionDeclNode_iter(ASTTraversalState &state, FunctionDeclNode *node);
             static size_t StructDefNode_iter(ASTTraversalState &state, StructDefNode *node);
             static size_t StructFieldNode_iter(ASTTraversalState &state, StructFieldNode *node);

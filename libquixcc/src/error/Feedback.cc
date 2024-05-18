@@ -49,17 +49,17 @@ libquixcc::Feedback libquixcc::feedback({
     {LET_DECL_INIT_ERR, "Declaration of variable '{}' requires an initializer, but an error occurred while parsing the initializer. Syntax: let name: type [= expr];"},
     {LET_DECL_MISSING_PUNCTOR, "Declaration of variable '{}' requires an initializer OR a semicolon punctuator, but neither was found. Make sure to terminate all statements with a semicolon. Syntax: let name: type [= expr];"},
 
-    {VAR_DECL_MISSING_IDENTIFIER, "Expected identifier in variable declaration. To fix the issue, name your variable. Syntax: var name: type [= expr];"},
-    {VAR_DECL_MISSING_COLON, "Expected colon separator in variable declaration. To fix the issue, insert a colon between the variable name and the typename. Syntax: var name: type [= expr];"},
-    {VAR_DECL_TYPE_ERR, "An error occurred while parsing the type of variable '{}'. Syntax: var name: type [= expr];"},
-    {VAR_DECL_INIT_ERR, "Declaration of variable '{}' requires an initializer, but an error occurred while parsing the initializer. Syntax: var name: type [= expr];"},
-    {VAR_DECL_MISSING_PUNCTOR, "Declaration of variable '{}' requires an initializer OR a semicolon punctuator, but neither was found. Make sure to terminate all statements with a semicolon. Syntax: var name: type [= expr];"},
-
     {CONST_DECL_MISSING_IDENTIFIER, "Expected identifier in variable declaration. To fix the issue, name your variable. Syntax: const name: type [= expr];"},
     {CONST_DECL_MISSING_COLON, "Expected colon separator in variable declaration. To fix the issue, insert a colon between the variable name and the typename. Syntax: const name: type [= expr];"},
     {CONST_DECL_TYPE_ERR, "An error occurred while parsing the type of variable '{}'. Syntax: const name: type [= expr];"},
     {CONST_DECL_INIT_ERR, "Declaration of variable '{}' requires an initializer, but an error occurred while parsing the initializer. Syntax: const name: type [= expr];"},
     {CONST_DECL_MISSING_PUNCTOR, "Declaration of variable '{}' requires an initializer OR a semicolon punctuator, but neither was found. Make sure to terminate all statements with a semicolon. Syntax: const name: type [= expr];"},
+
+    {VAR_DECL_MISSING_IDENTIFIER, "Expected identifier in variable declaration. To fix the issue, name your variable. Syntax: var name: type [= expr];"},
+    {VAR_DECL_MISSING_COLON, "Expected colon separator in variable declaration. To fix the issue, insert a colon between the variable name and the typename. Syntax: var name: type [= expr];"},
+    {VAR_DECL_TYPE_ERR, "An error occurred while parsing the type of variable '{}'. Syntax: var name: type [= expr];"},
+    {VAR_DECL_INIT_ERR, "Declaration of variable '{}' requires an initializer, but an error occurred while parsing the initializer. Syntax: var name: type [= expr];"},
+    {VAR_DECL_MISSING_PUNCTOR, "Declaration of variable '{}' requires an initializer OR a semicolon punctuator, but neither was found. Make sure to terminate all statements with a semicolon. Syntax: var name: type [= expr];"},
 
     {STRUCT_DECL_MISSING_IDENTIFIER, "Expected identifier in struct declaration. To fix the issue, name your struct. Syntax: struct name { ... };"},
     {STRUCT_FIELD_MISSING_IDENTIFIER, "Expected identifier in struct field declaration. To fix the issue, name your field. Syntax: name: type [= expr];"},

@@ -13,9 +13,17 @@
 ///     * License terms may be found in the LICENSE file.                   ///
 ///                                                                         ///
 ///////////////////////////////////////////////////////////////////////////////
-@encoding utf8
-@pragma version 1.0.0
 
-subsystem orbit {
+@use "v1.0";
 
-};
+@copyright "Wesley Jones";
+@description "Mathematics Library";
+@language "en";
+@warranty "As-Is; No Warranty";
+
+subsystem Math {
+    @import constants;
+    // @import core;
+    // @import calc;
+    // @import random;
+}
