@@ -29,7 +29,7 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/delta/nodes/Memory.h>
+#include <IR/delta/Memory.h>
 
 boost::uuids::uuid libquixcc::ir::delta::Assign::hash_impl() const
 {

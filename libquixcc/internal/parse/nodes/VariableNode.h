@@ -82,6 +82,22 @@ namespace libquixcc
         bool m_is_static = false;
         bool m_is_deprecated = false;
     };
+
+    class ConstDeclNode : public DeclNode
+    {
+    public:
+        ConstDeclNode() { ntype = NodeType::ConstDeclNode; }
+        ConstDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
+            : m_name(name), m_type(type), m_init(init) { ntype = NodeType::ConstDeclNode; }
+
+        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
+
+        std::string m_name;
+        TypeNode *m_type;
+        std::shared_ptr<ExprNode> m_init;
+
+        bool m_is_deprecated = false;
+    };
 }
 
 #endif // __QUIXCC_PARSE_NODES_VARIABLE_H__

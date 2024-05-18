@@ -38,19 +38,19 @@
 
 #include <llvm/IR/Value.h>
 #include <llvm/LLVMWrapper.h>
-#include <IR/delta/DeltaIR.h>
 #include <optional>
 #include <memory>
 #include <string>
 #include <iostream>
 
-#include <IR/delta/nodes/Type.h>
-#include <IR/delta/nodes/Variable.h>
-#include <IR/delta/nodes/Memory.h>
-#include <IR/delta/nodes/Cast.h>
-#include <IR/delta/nodes/Control.h>
-#include <IR/delta/nodes/Segment.h>
-#include <IR/delta/nodes/Math.h>
+#include <IR/delta/DeltaIR.h>
+#include <IR/delta/Type.h>
+#include <IR/delta/Variable.h>
+#include <IR/delta/Memory.h>
+#include <IR/delta/Cast.h>
+#include <IR/delta/Control.h>
+#include <IR/delta/Segment.h>
+#include <IR/delta/Math.h>
 
 namespace libquixcc
 {
@@ -138,8 +138,8 @@ namespace libquixcc
         llvm::Value *gen(const ir::delta::Xor *node);
         llvm::Value *gen(const ir::delta::RootNode *node);
 
-        llvm::Type *gent(const ir::Value<libquixcc::ir::Delta> *node);
-        llvm::Value *gen(const ir::Value<libquixcc::ir::Delta> *node);
+        llvm::Type *gent(const ir::delta::Type *node);
+        llvm::Value *gen(const ir::delta::Value *node);
 
         LLVM14Codegen(LLVMContext &ctx) : m_ctx(&ctx) {}
 

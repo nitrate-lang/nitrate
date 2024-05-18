@@ -31,15 +31,15 @@
 
 #include <IR/delta/DeltaIR.h>
 
-#include <IR/delta/nodes/Type.h>
-#include <IR/delta/nodes/Variable.h>
-#include <IR/delta/nodes/Memory.h>
-#include <IR/delta/nodes/Cast.h>
-#include <IR/delta/nodes/Control.h>
-#include <IR/delta/nodes/Segment.h>
-#include <IR/delta/nodes/Math.h>
+#include <IR/delta/Type.h>
+#include <IR/delta/Variable.h>
+#include <IR/delta/Memory.h>
+#include <IR/delta/Cast.h>
+#include <IR/delta/Control.h>
+#include <IR/delta/Segment.h>
+#include <IR/delta/Math.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os, PState &state) const
 {
     os << "use QDelta_1_0;\n";
     os << "; ModuleID = '" << m_name << "'\n";
@@ -79,5 +79,5 @@ std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_family_impl() const
 
 std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_description_impl() const
 {
-    return "Quix Delta Intermediate Representation (QIR-Delta-V1.0) is an intermediate representation for the Quix language.";
+    return "Quix Delta Intermediate Representation (QIR-Delta-V1.0) is an intermediate representation for the Quix language. ... (write something useful here)";
 }

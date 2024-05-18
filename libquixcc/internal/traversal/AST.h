@@ -69,7 +69,6 @@ namespace libquixcc
 
         class ASTPreorderTraversal
         {
-            static size_t ASTNopNode_iter(ASTTraversalState &state, ASTNopNode *node);
             static size_t ExprStmtNode_iter(ASTTraversalState &state, ExprStmtNode *node);
             static size_t NopStmtNode_iter(ASTTraversalState &state, NopStmtNode *node);
             static size_t BlockNode_iter(ASTTraversalState &state, BlockNode *node);
@@ -122,6 +121,7 @@ namespace libquixcc
             static size_t TypedefNode_iter(ASTTraversalState &state, TypedefNode *node);
             static size_t VarDeclNode_iter(ASTTraversalState &state, VarDeclNode *node);
             static size_t LetDeclNode_iter(ASTTraversalState &state, LetDeclNode *node);
+            static size_t ConstDeclNode_iter(ASTTraversalState &state, ConstDeclNode *node);
             static size_t FunctionDeclNode_iter(ASTTraversalState &state, FunctionDeclNode *node);
             static size_t StructDefNode_iter(ASTTraversalState &state, StructDefNode *node);
             static size_t StructFieldNode_iter(ASTTraversalState &state, StructFieldNode *node);

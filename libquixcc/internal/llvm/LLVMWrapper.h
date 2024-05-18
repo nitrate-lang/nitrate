@@ -56,6 +56,7 @@ namespace libquixcc
         C,
         CXX,
         DLang,
+        None, /* Internal */
     };
 
     class LLVMContext

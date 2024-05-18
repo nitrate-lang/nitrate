@@ -170,6 +170,21 @@ static void resolve_function_decls_to_calls(quixcc_job_t *job, std::shared_ptr<l
 
             auto expr = std::static_pointer_cast<libquixcc::CallExprNode>(ptr);
 
+            std::vector<std::string> tmp = _namespace;
+
+            while (!tmp.empty())
+            {
+                std::string abs = join_ns(tmp) + expr->m_name;
+                if (job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::FunctionDeclNode, abs)))
+                {
+                    auto func_decl = std::static_pointer_cast<libquixcc::FunctionDeclNode>(job->m_inner.m_named_construsts[std::make_pair(NodeType::FunctionDeclNode, abs)]);
+                    expr->m_decl = func_decl;
+                    return;
+                }
+
+                tmp.pop_back();
+            }
+
             if (!job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::FunctionDeclNode, expr->m_name)))
             {
                 LOG(ERROR) << feedback[UNRESOLVED_FUNCTION] << expr->m_name << std::endl;

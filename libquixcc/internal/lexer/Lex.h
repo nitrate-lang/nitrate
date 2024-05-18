@@ -66,12 +66,12 @@ namespace libquixcc
         Scanner() = default;
         ~Scanner() = default;
 
-        virtual Token next() noexcept = 0;
-        virtual Token peek() noexcept = 0;
+        virtual Token next() = 0;
+        virtual Token peek() = 0;
 
-        static std::string escape_string(const std::string &str) noexcept;
+        static std::string escape_string(const std::string &str);
 
-        virtual void push(Token tok) noexcept = 0;
+        virtual void push(Token tok) = 0;
     };
 
     class StreamLexer : public Scanner
@@ -92,8 +92,8 @@ namespace libquixcc
         Loc m_loc;
         bool added_newline = false;
 
-        virtual char getc() noexcept;
-        virtual libquixcc::Token read_token() noexcept;
+        virtual char getc();
+        virtual libquixcc::Token read_token();
 
         inline void pushback(char c) { m_pushback.push(c); }
 
@@ -103,12 +103,12 @@ namespace libquixcc
         /// @brief Set the source file
         /// @param src C FILE pointer
         /// @return true if the source file is set successfully
-        virtual bool set_source(FILE *src, const std::string &filename) noexcept;
+        virtual bool set_source(FILE *src, const std::string &filename);
 
-        Token next() noexcept override;
-        Token peek() noexcept override;
+        Token next() override;
+        Token peek() override;
 
-        inline void push(Token tok) noexcept override { m_tok = tok; }
+        inline void push(Token tok) override { m_tok = tok; }
     };
 
     class StringLexer : public StreamLexer
@@ -125,13 +125,13 @@ namespace libquixcc
         /// @brief Set the source file
         /// @param src C FILE pointer
         /// @return true if the source file is set successfully
-        bool set_source(const std::string &source_code, const std::string &filename) noexcept;
+        bool set_source(const std::string &source_code, const std::string &filename);
 
         /// @brief Lex the source code
         /// @param source_code
         /// @param tokens
         /// @return Returns false if the source code is invalid
-        static bool QuickLex(const std::string &source_code, std::vector<Token> &tokens, const std::string &filename = "quicklex") noexcept;
+        static bool QuickLex(const std::string &source_code, std::vector<Token> &tokens, const std::string &filename = "quicklex");
     };
 };
 

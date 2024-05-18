@@ -31,13 +31,13 @@
 
 #include <IR/delta/DeltaIR.h>
 
-#include <IR/delta/nodes/Type.h>
-#include <IR/delta/nodes/Variable.h>
-#include <IR/delta/nodes/Memory.h>
-#include <IR/delta/nodes/Cast.h>
-#include <IR/delta/nodes/Control.h>
-#include <IR/delta/nodes/Segment.h>
-#include <IR/delta/nodes/Math.h>
+#include <IR/delta/Type.h>
+#include <IR/delta/Variable.h>
+#include <IR/delta/Memory.h>
+#include <IR/delta/Cast.h>
+#include <IR/delta/Control.h>
+#include <IR/delta/Segment.h>
+#include <IR/delta/Math.h>
 
 #include <map>
 
@@ -46,46 +46,47 @@ using namespace libquixcc::ir;
 using namespace libquixcc::ir::delta;
 
 static RootNode *root = nullptr;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const SCast *> scast_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const UCast *> ucast_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const PtrICast *> ptricast_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const IPtrCast *> iptrcast_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Bitcast *> bitcast_insts;
-static std::map<std::tuple<const Value<Delta> *, const Value<Delta> *, const Value<Delta> *>, IfElse *> ifelse_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const While *> while_insts;
+static std::map<std::pair<const Value *, const Value *>, const SCast *> scast_insts;
+static std::map<std::pair<const Value *, const Value *>, const UCast *> ucast_insts;
+static std::map<std::pair<const Value *, const Value *>, const PtrICast *> ptricast_insts;
+static std::map<std::pair<const Value *, const Value *>, const IPtrCast *> iptrcast_insts;
+static std::map<std::pair<const Value *, const Value *>, const Bitcast *> bitcast_insts;
+static std::map<std::tuple<const Value *, const Value *, const Value *>, IfElse *> ifelse_insts;
+static std::map<std::pair<const Value *, const Value *>, const While *> while_insts;
 static std::map<std::string, const Jmp *> jmp_insts;
 static std::map<std::string, const Label *> label_insts;
-static std::map<const Value<Delta> *, const Ret *> ret_insts;
-static std::map<std::pair<std::string, std::vector<const Value<Delta> *>>, const Call *> call_insts;
-static std::map<std::pair<const Value<Delta> *, std::vector<const Value<Delta> *>>, const PtrCall *> ptrcall_insts;
+static std::map<const Value *, const Ret *> ret_insts;
+static std::map<std::pair<std::string, std::vector<const Expr *>>, const Call *> call_insts;
+static std::map<std::pair<const Value *, std::vector<const Expr *>>, const PtrCall *> ptrcall_insts;
 static Halt *halt_inst = nullptr;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Add *> add_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Sub *> sub_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Mul *> mul_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Div *> div_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Mod *> mod_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const BitAnd *> bitand_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const BitOr *> bitor_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const BitXor *> bitxor_insts;
-static std::map<const Value<Delta> *, const BitNot *> bitnot_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Shl *> shl_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Shr *> shr_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Rotl *> rotl_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Rotr *> rotr_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Eq *> eq_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Ne *> ne_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Lt *> lt_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Gt *> gt_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Le *> le_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Ge *> ge_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const And *> and_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Or *> or_insts;
-static std::map<const Value<Delta> *, const Not *> not_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Xor *> xor_insts;
-static std::map<std::tuple<const Value<Delta> *, const Value<Delta> *, uint64_t>, const Assign *> assign_insts;
-static std::map<std::pair<const Value<Delta> *, uint64_t>, const Load *> load_insts;
-static std::map<std::pair<const Value<Delta> *, const Value<Delta> *>, const Index *> index_insts;
-static std::map<std::tuple<const Value<Delta> *, bool, const std::vector<std::pair<std::string, const Value<Delta> *>>, std::vector<const Value<Delta> *>>, const Segment *> segment_insts;
+static std::map<std::pair<const Value *, const Value *>, const Add *> add_insts;
+static std::map<std::pair<const Value *, const Value *>, const Sub *> sub_insts;
+static std::map<std::pair<const Value *, const Value *>, const Mul *> mul_insts;
+static std::map<std::pair<const Value *, const Value *>, const Div *> div_insts;
+static std::map<std::pair<const Value *, const Value *>, const Mod *> mod_insts;
+static std::map<std::pair<const Value *, const Value *>, const BitAnd *> bitand_insts;
+static std::map<std::pair<const Value *, const Value *>, const BitOr *> bitor_insts;
+static std::map<std::pair<const Value *, const Value *>, const BitXor *> bitxor_insts;
+static std::map<const Value *, const BitNot *> bitnot_insts;
+static std::map<std::pair<const Value *, const Value *>, const Shl *> shl_insts;
+static std::map<std::pair<const Value *, const Value *>, const Shr *> shr_insts;
+static std::map<std::pair<const Value *, const Value *>, const Rotl *> rotl_insts;
+static std::map<std::pair<const Value *, const Value *>, const Rotr *> rotr_insts;
+static std::map<std::pair<const Value *, const Value *>, const Eq *> eq_insts;
+static std::map<std::pair<const Value *, const Value *>, const Ne *> ne_insts;
+static std::map<std::pair<const Value *, const Value *>, const Lt *> lt_insts;
+static std::map<std::pair<const Value *, const Value *>, const Gt *> gt_insts;
+static std::map<std::pair<const Value *, const Value *>, const Le *> le_insts;
+static std::map<std::pair<const Value *, const Value *>, const Ge *> ge_insts;
+static std::map<std::pair<const Value *, const Value *>, const And *> and_insts;
+static std::map<std::pair<const Value *, const Value *>, const Or *> or_insts;
+static std::map<const Value *, const Not *> not_insts;
+static std::map<std::pair<const Value *, const Value *>, const Xor *> xor_insts;
+static std::map<std::tuple<const Value *, const Value *, uint64_t>, const Assign *> assign_insts;
+static std::map<std::pair<const Value *, uint64_t>, const Load *> load_insts;
+static std::map<std::pair<const Value *, const Value *>, const Index *> index_insts;
+static std::map<std::vector<const Value *>, const Block *> block_insts;
+static std::map<std::tuple<const Type *, bool, const std::vector<std::pair<std::string, const Type *>>, const Block *>, const Segment *> segment_insts;
 static I1 *i1_inst = nullptr;
 static I8 *i8_inst = nullptr;
 static I16 *i16_inst = nullptr;
@@ -100,12 +101,12 @@ static U128 *u128_inst = nullptr;
 static F32 *f32_inst = nullptr;
 static F64 *f64_inst = nullptr;
 static Void *void_inst = nullptr;
-static std::map<const Value<Delta> *, const Ptr *> ptr_insts;
-static std::map<std::pair<std::string, std::vector<std::pair<std::string, const Value<Delta> *>>>, const Packet *> packet_insts;
-static std::map<std::pair<const Value<Delta> *, uint64_t>, const Array *> array_insts;
-static std::map<std::pair<std::vector<const Value<Delta> *>, const Value<Delta> *>, const FType *> ftype_insts;
-static std::map<std::pair<std::string, const Value<Delta> *>, const Local *> local_insts;
-static std::map<std::tuple<std::string, const Value<Delta> *, const Value<Delta> *, bool, bool>, const Global *> global_insts;
+static std::map<const Type *, const Ptr *> ptr_insts;
+static std::map<std::pair<std::string, std::vector<std::pair<std::string, const Type *>>>, const Packet *> packet_insts;
+static std::map<std::pair<const Type *, uint64_t>, const Array *> array_insts;
+static std::map<std::pair<std::vector<const Type *>, const Type *>, const FType *> ftype_insts;
+static std::map<std::pair<std::string, const Value *>, const Local *> local_insts;
+static std::map<std::tuple<std::string, const Value *, const Value *, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
 
@@ -113,7 +114,7 @@ static std::map<delta::NodeType, std::mutex> node_mutexes;
 
 #define lock(type) std::lock_guard<std::mutex> lock(node_mutexes[type])
 
-const RootNode *delta::RootNode::create(std::vector<const Value<Delta> *> children)
+const RootNode *delta::RootNode::create(std::vector<const Value *> children)
 {
     lock(NodeType::Root);
     if (root == nullptr)
@@ -121,7 +122,7 @@ const RootNode *delta::RootNode::create(std::vector<const Value<Delta> *> childr
     return root;
 }
 
-const delta::SCast *delta::SCast::create(const Value<Delta> *type, const Value<Delta> *value)
+const delta::SCast *delta::SCast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::SCast);
     auto key = std::make_pair(type, value);
@@ -130,7 +131,7 @@ const delta::SCast *delta::SCast::create(const Value<Delta> *type, const Value<D
     return scast_insts[key];
 }
 
-const delta::UCast *delta::UCast::create(const Value<Delta> *type, const Value<Delta> *value)
+const delta::UCast *delta::UCast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::UCast);
     auto key = std::make_pair(type, value);
@@ -139,7 +140,7 @@ const delta::UCast *delta::UCast::create(const Value<Delta> *type, const Value<D
     return ucast_insts[key];
 }
 
-const delta::PtrICast *delta::PtrICast::create(const Value<Delta> *type, const Value<Delta> *value)
+const delta::PtrICast *delta::PtrICast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::PtrICast);
     auto key = std::make_pair(type, value);
@@ -148,7 +149,7 @@ const delta::PtrICast *delta::PtrICast::create(const Value<Delta> *type, const V
     return ptricast_insts[key];
 }
 
-const delta::IPtrCast *delta::IPtrCast::create(const Value<Delta> *type, const Value<Delta> *value)
+const delta::IPtrCast *delta::IPtrCast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::IPtrCast);
     auto key = std::make_pair(type, value);
@@ -157,7 +158,7 @@ const delta::IPtrCast *delta::IPtrCast::create(const Value<Delta> *type, const V
     return iptrcast_insts[key];
 }
 
-const delta::Bitcast *delta::Bitcast::create(const Value<Delta> *type, const Value<Delta> *value)
+const delta::Bitcast *delta::Bitcast::create(const Type *type, const Expr *value)
 {
     lock(NodeType::Bitcast);
     auto key = std::make_pair(type, value);
@@ -166,7 +167,7 @@ const delta::Bitcast *delta::Bitcast::create(const Value<Delta> *type, const Val
     return bitcast_insts[key];
 }
 
-const delta::IfElse *delta::IfElse::create(const Value<Delta> *cond, const Value<Delta> *then, const Value<Delta> *els)
+const delta::IfElse *delta::IfElse::create(const Expr *cond, const Value *then, const Value *els)
 {
     lock(NodeType::IfElse);
     auto key = std::make_tuple(cond, then, els);
@@ -175,7 +176,7 @@ const delta::IfElse *delta::IfElse::create(const Value<Delta> *cond, const Value
     return ifelse_insts[key];
 }
 
-const delta::While *delta::While::create(const Value<Delta> *cond, const Value<Delta> *body)
+const delta::While *delta::While::create(const Expr *cond, const Value *body)
 {
     lock(NodeType::While);
     auto key = std::make_pair(cond, body);
@@ -200,7 +201,7 @@ const delta::Label *delta::Label::create(std::string name)
     return label_insts[name];
 }
 
-const delta::Ret *delta::Ret::create(const Value<Delta> *value)
+const delta::Ret *delta::Ret::create(const Expr *value)
 {
     lock(NodeType::Ret);
     if (!ret_insts.contains(value))
@@ -208,7 +209,7 @@ const delta::Ret *delta::Ret::create(const Value<Delta> *value)
     return ret_insts[value];
 }
 
-const delta::Call *delta::Call::create(std::string callee, std::vector<const Value<Delta> *> args)
+const delta::Call *delta::Call::create(std::string callee, std::vector<const Expr *> args)
 {
     lock(NodeType::Call);
     auto key = std::make_pair(callee, args);
@@ -217,7 +218,7 @@ const delta::Call *delta::Call::create(std::string callee, std::vector<const Val
     return call_insts[key];
 }
 
-const delta::PtrCall *delta::PtrCall::create(const Value<Delta> *callee, std::vector<const Value<Delta> *> args)
+const delta::PtrCall *delta::PtrCall::create(const Value *callee, std::vector<const Expr *> args)
 {
     lock(NodeType::PtrCall);
     auto key = std::make_pair(callee, args);
@@ -234,7 +235,7 @@ const delta::Halt *delta::Halt::create()
     return halt_inst;
 }
 
-const delta::Add *delta::Add::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Add *delta::Add::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Add);
     auto key = std::make_pair(lhs, rhs);
@@ -243,7 +244,7 @@ const delta::Add *delta::Add::create(const Value<Delta> *lhs, const Value<Delta>
     return add_insts[key];
 }
 
-const delta::Sub *delta::Sub::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Sub *delta::Sub::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Sub);
     auto key = std::make_pair(lhs, rhs);
@@ -252,7 +253,7 @@ const delta::Sub *delta::Sub::create(const Value<Delta> *lhs, const Value<Delta>
     return sub_insts[key];
 }
 
-const delta::Mul *delta::Mul::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Mul *delta::Mul::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Mul);
     auto key = std::make_pair(lhs, rhs);
@@ -261,7 +262,7 @@ const delta::Mul *delta::Mul::create(const Value<Delta> *lhs, const Value<Delta>
     return mul_insts[key];
 }
 
-const delta::Div *delta::Div::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Div *delta::Div::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Div);
     auto key = std::make_pair(lhs, rhs);
@@ -270,7 +271,7 @@ const delta::Div *delta::Div::create(const Value<Delta> *lhs, const Value<Delta>
     return div_insts[key];
 }
 
-const delta::Mod *delta::Mod::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Mod *delta::Mod::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Mod);
     auto key = std::make_pair(lhs, rhs);
@@ -279,7 +280,7 @@ const delta::Mod *delta::Mod::create(const Value<Delta> *lhs, const Value<Delta>
     return mod_insts[key];
 }
 
-const delta::BitAnd *delta::BitAnd::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::BitAnd *delta::BitAnd::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::BitAnd);
     auto key = std::make_pair(lhs, rhs);
@@ -288,7 +289,7 @@ const delta::BitAnd *delta::BitAnd::create(const Value<Delta> *lhs, const Value<
     return bitand_insts[key];
 }
 
-const delta::BitOr *delta::BitOr::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::BitOr *delta::BitOr::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::BitOr);
     auto key = std::make_pair(lhs, rhs);
@@ -297,7 +298,7 @@ const delta::BitOr *delta::BitOr::create(const Value<Delta> *lhs, const Value<De
     return bitor_insts[key];
 }
 
-const delta::BitXor *delta::BitXor::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::BitXor *delta::BitXor::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::BitXor);
     auto key = std::make_pair(lhs, rhs);
@@ -306,7 +307,7 @@ const delta::BitXor *delta::BitXor::create(const Value<Delta> *lhs, const Value<
     return bitxor_insts[key];
 }
 
-const delta::BitNot *delta::BitNot::create(const Value<Delta> *value)
+const delta::BitNot *delta::BitNot::create(const Value *value)
 {
     lock(NodeType::BitNot);
     if (!bitnot_insts.contains(value))
@@ -314,7 +315,7 @@ const delta::BitNot *delta::BitNot::create(const Value<Delta> *value)
     return bitnot_insts[value];
 }
 
-const delta::Shl *delta::Shl::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Shl *delta::Shl::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Shl);
     auto key = std::make_pair(lhs, rhs);
@@ -323,7 +324,7 @@ const delta::Shl *delta::Shl::create(const Value<Delta> *lhs, const Value<Delta>
     return shl_insts[key];
 }
 
-const delta::Shr *delta::Shr::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Shr *delta::Shr::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Shr);
     auto key = std::make_pair(lhs, rhs);
@@ -332,7 +333,7 @@ const delta::Shr *delta::Shr::create(const Value<Delta> *lhs, const Value<Delta>
     return shr_insts[key];
 }
 
-const delta::Rotl *delta::Rotl::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Rotl *delta::Rotl::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Rotl);
     auto key = std::make_pair(lhs, rhs);
@@ -341,7 +342,7 @@ const delta::Rotl *delta::Rotl::create(const Value<Delta> *lhs, const Value<Delt
     return rotl_insts[key];
 }
 
-const delta::Rotr *delta::Rotr::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Rotr *delta::Rotr::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Rotr);
     auto key = std::make_pair(lhs, rhs);
@@ -350,7 +351,7 @@ const delta::Rotr *delta::Rotr::create(const Value<Delta> *lhs, const Value<Delt
     return rotr_insts[key];
 }
 
-const delta::Eq *delta::Eq::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Eq *delta::Eq::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Eq);
     auto key = std::make_pair(lhs, rhs);
@@ -359,7 +360,7 @@ const delta::Eq *delta::Eq::create(const Value<Delta> *lhs, const Value<Delta> *
     return eq_insts[key];
 }
 
-const delta::Ne *delta::Ne::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Ne *delta::Ne::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Ne);
     auto key = std::make_pair(lhs, rhs);
@@ -368,7 +369,7 @@ const delta::Ne *delta::Ne::create(const Value<Delta> *lhs, const Value<Delta> *
     return ne_insts[key];
 }
 
-const delta::Lt *delta::Lt::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Lt *delta::Lt::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Lt);
     auto key = std::make_pair(lhs, rhs);
@@ -377,7 +378,7 @@ const delta::Lt *delta::Lt::create(const Value<Delta> *lhs, const Value<Delta> *
     return lt_insts[key];
 }
 
-const delta::Gt *delta::Gt::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Gt *delta::Gt::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Gt);
     auto key = std::make_pair(lhs, rhs);
@@ -386,7 +387,7 @@ const delta::Gt *delta::Gt::create(const Value<Delta> *lhs, const Value<Delta> *
     return gt_insts[key];
 }
 
-const delta::Le *delta::Le::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Le *delta::Le::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Le);
     auto key = std::make_pair(lhs, rhs);
@@ -395,7 +396,7 @@ const delta::Le *delta::Le::create(const Value<Delta> *lhs, const Value<Delta> *
     return le_insts[key];
 }
 
-const delta::Ge *delta::Ge::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Ge *delta::Ge::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Ge);
     auto key = std::make_pair(lhs, rhs);
@@ -404,7 +405,7 @@ const delta::Ge *delta::Ge::create(const Value<Delta> *lhs, const Value<Delta> *
     return ge_insts[key];
 }
 
-const delta::And *delta::And::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::And *delta::And::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::And);
     auto key = std::make_pair(lhs, rhs);
@@ -413,7 +414,7 @@ const delta::And *delta::And::create(const Value<Delta> *lhs, const Value<Delta>
     return and_insts[key];
 }
 
-const delta::Or *delta::Or::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Or *delta::Or::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Or);
     auto key = std::make_pair(lhs, rhs);
@@ -422,7 +423,7 @@ const delta::Or *delta::Or::create(const Value<Delta> *lhs, const Value<Delta> *
     return or_insts[key];
 }
 
-const delta::Not *delta::Not::create(const Value<Delta> *value)
+const delta::Not *delta::Not::create(const Value *value)
 {
     lock(NodeType::Not);
     if (!not_insts.contains(value))
@@ -430,7 +431,7 @@ const delta::Not *delta::Not::create(const Value<Delta> *value)
     return not_insts[value];
 }
 
-const delta::Xor *delta::Xor::create(const Value<Delta> *lhs, const Value<Delta> *rhs)
+const delta::Xor *delta::Xor::create(const Expr *lhs, const Expr *rhs)
 {
     lock(NodeType::Xor);
     auto key = std::make_pair(lhs, rhs);
@@ -439,7 +440,7 @@ const delta::Xor *delta::Xor::create(const Value<Delta> *lhs, const Value<Delta>
     return xor_insts[key];
 }
 
-const delta::Assign *delta::Assign::create(const Value<Delta> *var, const Value<Delta> *value, uint64_t rank)
+const delta::Assign *delta::Assign::create(const Expr *var, const Expr *value, uint64_t rank)
 {
     lock(NodeType::Assign);
     auto key = std::make_tuple(var, value, rank);
@@ -448,7 +449,7 @@ const delta::Assign *delta::Assign::create(const Value<Delta> *var, const Value<
     return assign_insts[key];
 }
 
-const delta::Load *delta::Load::create(const Value<Delta> *var, uint64_t rank)
+const delta::Load *delta::Load::create(const Expr *var, uint64_t rank)
 {
     lock(NodeType::Load);
     auto key = std::make_pair(var, rank);
@@ -457,7 +458,7 @@ const delta::Load *delta::Load::create(const Value<Delta> *var, uint64_t rank)
     return load_insts[key];
 }
 
-const delta::Index *delta::Index::create(const Value<Delta> *var, const Value<Delta> *index)
+const delta::Index *delta::Index::create(const Expr *var, const Value *index)
 {
     lock(NodeType::Index);
     auto key = std::make_pair(var, index);
@@ -466,7 +467,15 @@ const delta::Index *delta::Index::create(const Value<Delta> *var, const Value<De
     return index_insts[key];
 }
 
-const delta::Segment *delta::Segment::create(const Value<Delta> *ret, bool pure, const std::vector<std::pair<std::string, const Value<Delta> *>> &params, const std::vector<const Value<Delta> *> &stmts)
+const libquixcc::ir::delta::Block *libquixcc::ir::delta::Block::create(std::vector<const Value *> stmts)
+{
+    lock(NodeType::Block);
+    if (!block_insts.contains(stmts))
+        block_insts[stmts] = new Block(stmts);
+    return block_insts[stmts];
+}
+
+const delta::Segment *delta::Segment::create(const Type *ret, bool pure, const std::vector<std::pair<std::string, const Type *>> &params, const Block *stmts)
 {
     lock(NodeType::Segment);
     auto key = std::make_tuple(ret, pure, params, stmts);
@@ -587,7 +596,7 @@ const delta::Void *delta::Void::create()
     return void_inst;
 }
 
-const delta::Ptr *delta::Ptr::create(Value<Delta> *type)
+const delta::Ptr *delta::Ptr::create(const Type *type)
 {
     lock(NodeType::Ptr);
     if (!ptr_insts.contains(type))
@@ -595,7 +604,7 @@ const delta::Ptr *delta::Ptr::create(Value<Delta> *type)
     return ptr_insts[type];
 }
 
-const delta::Packet *delta::Packet::create(std::vector<std::pair<std::string, const Value<Delta> *>> fields, std::string name)
+const delta::Packet *delta::Packet::create(std::vector<std::pair<std::string, const Type *>> fields, std::string name)
 {
     lock(NodeType::Packet);
     auto key = std::make_pair(name, fields);
@@ -604,7 +613,7 @@ const delta::Packet *delta::Packet::create(std::vector<std::pair<std::string, co
     return packet_insts[key];
 }
 
-const delta::Array *delta::Array::create(Value<Delta> *type, uint64_t size)
+const delta::Array *delta::Array::create(const Type *type, uint64_t size)
 {
     lock(NodeType::Array);
     auto key = std::make_pair(type, size);
@@ -613,7 +622,7 @@ const delta::Array *delta::Array::create(Value<Delta> *type, uint64_t size)
     return array_insts[key];
 }
 
-const delta::FType *delta::FType::create(std::vector<const Value<Delta> *> params, const Value<Delta> *ret)
+const delta::FType *delta::FType::create(std::vector<const Type *> params, const Type *ret)
 {
     lock(NodeType::FType);
     auto key = std::make_pair(params, ret);
@@ -622,7 +631,7 @@ const delta::FType *delta::FType::create(std::vector<const Value<Delta> *> param
     return ftype_insts[key];
 }
 
-const delta::Local *delta::Local::create(std::string name, const Value<Delta> *type)
+const delta::Local *delta::Local::create(std::string name, const Type *type)
 {
     lock(NodeType::Local);
     auto key = std::make_pair(name, type);
@@ -631,7 +640,7 @@ const delta::Local *delta::Local::create(std::string name, const Value<Delta> *t
     return local_insts[key];
 }
 
-const delta::Global *delta::Global::create(std::string name, const Value<Delta> *type, const Value<Delta> *value, bool _volatile, bool _atomic)
+const delta::Global *delta::Global::create(std::string name, const Type *type, const Expr *value, bool _volatile, bool _atomic)
 {
     lock(NodeType::Global);
     auto key = std::make_tuple(name, type, value, _volatile, _atomic);

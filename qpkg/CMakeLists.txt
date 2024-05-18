@@ -10,11 +10,6 @@ file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
 
 add_subdirectory(src/cache/blake3)
 
-# Get LLVM flags from llvm-config-14 --cxxflags
-execute_process(COMMAND llvm-config-14 --cxxflags
-                OUTPUT_VARIABLE LLVM_CXX_FLAGS
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
-
 # Get LLVM flags from llvm-config-14 --ldflags 
 execute_process(COMMAND llvm-config-14 --ldflags
 OUTPUT_VARIABLE LLVM_LD_FLAGS
@@ -40,7 +35,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_custom_command(TARGET qpkg POST_BUILD COMMAND strip $<TARGET_FILE:qpkg>)
     add_custom_command(TARGET qpkg POST_BUILD COMMAND upx $<TARGET_FILE:qpkg>)
 else()
-    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror ${LLVM_CXX_FLAGS})
+    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror)
 endif()
 
 if (BUILD_TESTING)

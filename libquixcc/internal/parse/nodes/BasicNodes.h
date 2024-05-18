@@ -76,21 +76,23 @@ namespace libquixcc
         size_t count();
 
         template <typename T>
-        T as()
+        T *as()
         {
-            if (!is<T>())
+            auto p = dynamic_cast<T *>(this);
+            if (!p)
                 LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
 
-            return static_cast<T>(this);
+            return p;
         }
 
         template <typename T>
-        const T as() const
+        const T *as() const
         {
-            if (!is<T>())
+            auto p = dynamic_cast<const T *>(this);
+            if (!p)
                 LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
 
-            return static_cast<const T>(this);
+            return p;
         }
 
         template <typename T>
@@ -100,8 +102,6 @@ namespace libquixcc
             {
             case NodeType::ParseNode:
                 return std::is_same_v<T, ParseNode>;
-            case NodeType::ASTNopNode:
-                return std::is_same_v<T, ASTNopNode>;
             case NodeType::ExprNode:
                 return std::is_same_v<T, ExprNode>;
             case NodeType::ConstExprNode:
@@ -233,6 +233,8 @@ namespace libquixcc
                 return std::is_same_v<T, VarDeclNode>;
             case NodeType::LetDeclNode:
                 return std::is_same_v<T, LetDeclNode>;
+            case NodeType::ConstDeclNode:
+                return std::is_same_v<T, ConstDeclNode>;
 
             case NodeType::FunctionDeclNode:
                 return std::is_same_v<T, FunctionDeclNode>;
@@ -313,7 +315,7 @@ namespace libquixcc
                 return is<ExprStmtNode>() || is<NopStmtNode>() || is<DeclNode>() || is<DefNode>() || is<BlockNode>() || is<StmtGroupNode>() || is<ReturnStmtNode>() || is<RetifStmtNode>() || is<RetzStmtNode>() || is<RetvStmtNode>() || is<IfStmtNode>() || is<WhileStmtNode>() || is<ForStmtNode>() || is<SubsystemNode>() || is<ExportNode>() || is<InlineAsmNode>();
 
             if (std::is_same_v<T, DeclNode>)
-                return is<VarDeclNode>() || is<LetDeclNode>() || is<FunctionDeclNode>() || is<FunctionParamNode>() || is<TypedefNode>();
+                return is<VarDeclNode>() || is<LetDeclNode>() || is<FunctionDeclNode>() || is<FunctionParamNode>() || is<TypedefNode>() || is<ConstDeclNode>();
 
             if (std::is_same_v<T, DefNode>)
                 return is<EnumDefNode>() || is<FunctionDefNode>() || is<GroupDefNode>() || is<RegionDefNode>() || is<StructDefNode>() || is<UnionDefNode>();
@@ -338,12 +340,6 @@ namespace libquixcc
     };
 
 #define PARSE_NODE_SIZE sizeof(ParseNode)
-
-    class ASTNopNode : public ParseNode
-    {
-    public:
-        ASTNopNode() { ntype = NodeType::ASTNopNode; }
-    };
 
     class ExprNode : public ParseNode
     {

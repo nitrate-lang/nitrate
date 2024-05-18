@@ -49,26 +49,135 @@ namespace libquixcc
             enum class NodeType
             {
                 Root,
+
+                /* Types */
+                I1,
+                I8,
+                I16,
+                I32,
+                I64,
+                I128,
+                U8,
+                U16,
+                U32,
+                U64,
+                U128,
+                F32,
+                F64,
+                Void,
+                Ptr,
+                Array,
+                Vector,
+                FType,
+                Region,
+                Group,
+                Union,
+                Opaque,
+
+                /* Functions */
+                Block,
+                Segment,
+                Asm,
+
+                /* OO */
+                RegionDef,
+                GroupDef,
+                UnionDef,
+
+                /* Casting */
+                SCast,
+                UCast,
+                PtrICast,
+                IPtrCast,
+                Bitcast,
+
+                /* Control Flow */
+                Call,
+                CallIndirect,
+                IfElse,
+                While,
+                For,
+                Loop,
+                Break,
+                Continue,
+                Ret,
+                Throw,
+                TryCatchFinally,
+                Case,
+                Switch,
+
+                Ident,
+
+                /* Arithmetic */
+                Add,
+                Sub,
+                Mul,
+                Div,
+                Mod,
+                BitAnd,
+                BitOr,
+                BitXor,
+                BitNot,
+                Shl,
+                Shr,
+                Rotl,
+                Rotr,
+
+                /* Comparison */
+                Eq,
+                Ne,
+                Lt,
+                Gt,
+                Le,
+                Ge,
+
+                /* Logical */
+                And,
+                Or,
+                Not,
+                Xor,
+
+                /* Variables */
+                Local,
+                Global,
+                Number,
+                String,
+                Char,
+
+                /* Memory */
+                Assign,
             };
 
-            class RootNode : public libquixcc::ir::Value<Q>
+            class Value : public libquixcc::ir::Node<Q>
             {
             protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
+                bool print_impl(std::ostream &os, PState &state) const override = 0;
+                boost::uuids::uuid hash_impl() const override = 0;
+                bool verify_impl() const override = 0;
+            };
+
+            class RootNode : public Value
+            {
+            protected:
+                bool print_impl(std::ostream &os, PState &state) const override;
                 boost::uuids::uuid hash_impl() const override;
                 bool verify_impl() const override;
 
-            public:
-                static const RootNode *create()
+                RootNode(std::vector<const Value *> children) : children(children)
                 {
-                    return nullptr;
+                    ntype = (int)NodeType::Root;
                 }
+
+            public:
+                static const RootNode *create(std::vector<const Value *> children = {});
+
+                std::vector<const Value *> children;
             };
 
-            class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *>
+            class QModule : public libquixcc::ir::IRModule<IR::Q, const RootNode *>
             {
             protected:
-                Result<bool> print_impl(std::ostream &os, PState &state) const override;
+                bool print_impl(std::ostream &os, PState &state) const override;
                 std::string_view ir_dialect_name_impl() const override;
                 unsigned ir_dialect_version_impl() const override;
                 std::string_view ir_dialect_family_impl() const override;
@@ -76,10 +185,10 @@ namespace libquixcc
                 bool verify_impl() const override;
 
             public:
-                QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {}
+                QModule(const std::string_view &name) : IRModule<IR::Q, const RootNode *>(name) {}
                 ~QModule() = default;
 
-                bool from_ast(const std::shared_ptr<BlockNode> &ast);
+                bool from_ast(std::shared_ptr<BlockNode> ast);
             };
         }
     }

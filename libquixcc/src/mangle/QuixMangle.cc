@@ -40,7 +40,22 @@
 
 static std::string wrap_tag(const std::string &tag)
 {
-    return std::to_string(tag.size()) + tag;
+    std::string s;
+
+    for (size_t i = 0; i < tag.size(); i++)
+    {
+        if (tag[i] == ':')
+        {
+            s += "__";
+            i++;
+        }
+        else
+        {
+            s += tag[i];
+        }
+    }
+
+    return std::to_string(s.size()) + s;
 }
 
 static bool unwrap_tags(const std::string &input, std::vector<std::string> &out)
@@ -60,61 +75,11 @@ static bool unwrap_tags(const std::string &input, std::vector<std::string> &out)
 
         size_t l = std::stoi(len);
         out.push_back(input.substr(i, l));
+
         i += l;
     }
 
     return true;
-}
-
-static std::string serialize_ns(const std::string &ns)
-{
-    std::string s;
-
-    for (size_t i = 0; i < ns.size(); i++)
-    {
-        if (ns[i] == ':')
-        {
-            s += "_";
-            i++;
-        }
-        else if (ns[i] == '_')
-        {
-            s += "__";
-        }
-        else
-        {
-            s += ns[i];
-        }
-    }
-
-    return s;
-}
-
-static std::string deserialize_ns(const std::string &ns)
-{
-    std::string s;
-
-    for (size_t i = 0; i < ns.size(); i++)
-    {
-        if (ns[i] == '_')
-        {
-            if (ns[i + 1] == '_')
-            {
-                s += "_";
-                i++;
-            }
-            else
-            {
-                s += "::";
-            }
-        }
-        else
-        {
-            s += ns[i];
-        }
-    }
-
-    return s;
 }
 
 static std::string serialize_type(const libquixcc::TypeNode *type, std::set<const libquixcc::TypeNode *> visited)
@@ -216,7 +181,7 @@ static std::string serialize_type(const libquixcc::TypeNode *type, std::set<cons
         s += wrap_tag(serialize_type(st->m_return_type, visited));
         for (auto &param : st->m_params)
         {
-            s += wrap_tag(serialize_ns(param.first));
+            s += wrap_tag(param.first);
             s += wrap_tag(serialize_type(param.second, visited));
         }
 
@@ -280,7 +245,7 @@ static libquixcc::TypeNode *deserialize_type_inner(const std::string &type, std:
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
 
-        std::string name = deserialize_ns(fields[0]);
+        std::string name = fields[0];
 
         if (fields.size() == 1)
             return UserTypeNode::create(name);
@@ -302,7 +267,7 @@ static libquixcc::TypeNode *deserialize_type_inner(const std::string &type, std:
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
 
-        std::string name = deserialize_ns(fields[0]);
+        std::string name = fields[0];
 
         if (fields.size() == 1)
             return UserTypeNode::create(name);
@@ -324,7 +289,7 @@ static libquixcc::TypeNode *deserialize_type_inner(const std::string &type, std:
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
 
-        std::string name = deserialize_ns(fields[0]);
+        std::string name = fields[0];
 
         if (fields.size() == 1)
             return UserTypeNode::create(name);
@@ -489,7 +454,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
     {
         res += "v";
         auto var = static_cast<const libquixcc::VarDeclNode *>(node);
-        res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
+        res += wrap_tag(join(prefix, var->m_name));
         res += wrap_tag(serialize_type(var->m_type, visited));
 
         std::string flags;
@@ -509,7 +474,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
     {
         res += "l";
         auto var = static_cast<const libquixcc::LetDeclNode *>(node);
-        res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
+        res += wrap_tag(join(prefix, var->m_name));
         res += wrap_tag(serialize_type(var->m_type, visited));
 
         std::string flags;
@@ -525,12 +490,26 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::DeclNode *node, cons
 
         return res;
     }
+    case libquixcc::NodeType::ConstDeclNode:
+    {
+        res += "z";
+        auto var = static_cast<const libquixcc::ConstDeclNode *>(node);
+        res += wrap_tag(join(prefix, var->m_name));
+        res += wrap_tag(serialize_type(var->m_type, visited));
+
+        std::string flags;
+        if (var->m_is_deprecated)
+            flags += "d";
+        res += wrap_tag(flags);
+
+        return res;
+    }
     case libquixcc::NodeType::FunctionDeclNode:
     {
         res += "f";
         auto var = static_cast<const libquixcc::FunctionDeclNode *>(node);
         auto tp = static_cast<const libquixcc::FunctionTypeNode *>(var->m_type);
-        res += wrap_tag(serialize_ns(join(prefix, var->m_name)));
+        res += wrap_tag(join(prefix, var->m_name));
         res += wrap_tag(serialize_type(var->m_type, visited));
 
         std::string flags;
@@ -572,7 +551,7 @@ std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_quix(std::strin
                 return nullptr;
 
             auto var = std::make_shared<libquixcc::VarDeclNode>();
-            var->m_name = deserialize_ns(parts[0]);
+            var->m_name = parts[0];
             if ((var->m_type = deserialize_type(parts[1])) == nullptr)
                 return nullptr;
 
@@ -606,7 +585,7 @@ std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_quix(std::strin
                 return nullptr;
 
             auto let = std::make_shared<libquixcc::LetDeclNode>();
-            let->m_name = deserialize_ns(parts[0]);
+            let->m_name = parts[0];
             if ((let->m_type = deserialize_type(parts[1])) == nullptr)
                 return nullptr;
 
@@ -634,13 +613,38 @@ std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_quix(std::strin
 
             return let;
         }
+        case 'z':
+        {
+            if (!unwrap_tags(input.substr(1), parts))
+                return nullptr;
+
+            auto cnst = std::make_shared<libquixcc::ConstDeclNode>();
+            cnst->m_name = parts[0];
+            if ((cnst->m_type = deserialize_type(parts[1])) == nullptr)
+                return nullptr;
+
+            std::string flags = parts[2];
+            for (size_t i = 0; i < flags.size(); i++)
+            {
+                switch (flags[i])
+                {
+                case 'd':
+                    cnst->m_is_deprecated = true;
+                    break;
+                default:
+                    return nullptr;
+                }
+            }
+
+            return cnst;
+        }
         case 'f':
         {
             if (!unwrap_tags(input.substr(1), parts))
                 return nullptr;
 
             auto fun = std::make_shared<libquixcc::FunctionDeclNode>();
-            fun->m_name = deserialize_ns(parts[0]);
+            fun->m_name = parts[0];
             if ((fun->m_type = static_cast<libquixcc::FunctionTypeNode *>(deserialize_type(parts[1]))) == nullptr)
                 return nullptr;
 

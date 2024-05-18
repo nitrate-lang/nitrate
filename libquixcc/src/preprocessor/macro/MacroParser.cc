@@ -85,8 +85,8 @@ bool libquixcc::MacroParser::parse(const libquixcc::Token &macro, std::vector<li
                 }
             }
 
-            LOG(ERROR) << "Unknown macro directive: {}" << content << macro << std::endl;
-            return false;
+            LOG(WARN) << "Ignoring unknown macro directive: {}" << content << macro << std::endl;
+            return true;
         }
     }
     else if (macro.type() == TT::MacroBlock)

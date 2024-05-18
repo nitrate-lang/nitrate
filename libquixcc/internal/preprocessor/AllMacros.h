@@ -45,5 +45,7 @@
 #include <preprocessor/macro/LangMacro.h>
 #include <preprocessor/macro/AuthorMacro.h>
 #include <preprocessor/macro/LicenseMacro.h>
+#include <preprocessor/macro/UseMacro.h>
+#include <preprocessor/macro/DescriptionMacro.h>
 
 #endif // __QUIXCC_PREP_MACRO_H__

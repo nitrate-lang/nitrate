@@ -442,7 +442,7 @@ static std::string get_datetime()
     return buf;
 }
 
-static std::string base64_encode(const std::string &in)
+std::string base64_encode(const std::string &in)
 {
     std::string out;
 
@@ -467,7 +467,6 @@ static std::string base64_encode(const std::string &in)
 static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
 {
     Mutation mutator;
-    mutator.add_routine(mutate::SubsystemCollapse);       ///> Flatten AST by collapsing subsystems
     mutator.add_routine(mutate::StripUnderscoreNames);    ///> Remove all constructs named '_'
     mutator.add_routine(mutate::MethodToFunc);            ///> Convert method calls to function calls
     mutator.add_routine(mutate::DiscoverNamedConstructs); ///> Map named constructs to their respective AST nodes
@@ -479,6 +478,7 @@ static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
     mutator.add_routine(mutate::ObjectConstruction);      ///> Object construction
     mutator.add_routine(mutate::ObjectDestruction);       ///> Object destruction
     mutator.add_routine(mutate::ImplicitReturn);          ///> Implicit return statements
+    mutator.add_routine(mutate::SubsystemCollapse);       ///> Flatten AST by collapsing subsystems
     mutator.run(job, ast);
 
     return true;
@@ -768,7 +768,7 @@ static bool compile(quixcc_job_t *job)
     ///=========================================
     /// BEGIN: OPTIMIZATION PIPELINE
     auto QIR = std::make_unique<ir::q::QModule>(job->m_filename);
-    if (!QIR->from_ast(ast))
+    if (!QIR->from_ast(std::move(ast))) /* This will modify the AST */
         return false;
 
     if (!job->m_argset.contains("-O0"))
@@ -1073,52 +1073,71 @@ static bool execute_job(quixcc_job_t *job)
 {
     if (!job->m_in || !job->m_out || !job->m_filename)
         return false;
-
-    LoggerConfigure(*job);
-
-    job->m_inner.setup(job->m_filename);
-
-    LOG(DEBUG) << "Starting quixcc run @ " << get_datetime() << std::endl;
-
-    if (!build_argmap(job))
-    {
-        LOG(ERROR) << "failed to build argmap" << std::endl;
-        return false;
-    }
-
-    bool success = false;
     try
     {
-        if (compile(job))
+        LoggerConfigure(*job);
+
+        job->m_inner.setup(job->m_filename);
+
+        LOG(DEBUG) << "Starting quixcc run @ " << get_datetime() << std::endl;
+
+        if (!build_argmap(job))
         {
-            LOG(DEBUG) << "Compilation successful" << std::endl;
-            success = true;
+            LOG(ERROR) << "failed to build argmap" << std::endl;
+            return false;
         }
-        else
-        {
+
+        if (!compile(job))
             LOG(ERROR) << "Compilation failed" << std::endl;
-        }
+
+        LOG(DEBUG) << "Compilation successful" << std::endl;
+        LOG(DEBUG) << "Finished quixcc run @ " << get_datetime() << std::endl;
+
+        job->m_result.m_success = true;
+        return true;
     }
     catch (ProgrammaticPreprocessorException &)
     {
         LOG(FAILED) << "Compilation was programmatically aborted while preprocessing source" << std::endl;
+        return false;
     }
-    catch (PreprocessorException &)
+    catch (PreprocessorException &e)
     {
-        LOG(FAILED) << "Compilation was aborted while preprocessing source" << std::endl;
+        LOG(FAILED) << "Compilation was aborted while preprocessing source: " << e.what() << std::endl;
+        return false;
     }
-    catch (ParseException &)
+    catch (ParseException &e)
     {
-        LOG(FAILED) << "Compilation was aborted while parsing source" << std::endl;
+        LOG(FAILED) << "Compilation was aborted while parsing source: " << e.what() << std::endl;
+        return false;
     }
-    catch (Exception &)
+    catch (Exception &e)
+    {
+        LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+        return false;
+    }
+    catch (std::runtime_error &e)
+    {
+        LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+        return false;
+    }
+    catch (std::exception &e)
+    {
+        LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+        return false;
+    }
+    catch (const char *e)
+    {
+        LOG(FAILED) << "Compilation failed: " << e << std::endl;
+        return false;
+    }
+    catch (...)
     {
         LOG(FAILED) << "Compilation failed" << std::endl;
+        return false;
     }
 
-    LOG(DEBUG) << "Finished quixcc run @ " << get_datetime() << std::endl;
-
-    return job->m_result.m_success = success;
+    return false;
 }
 
 LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
@@ -1137,15 +1156,16 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
         quixcc_panic("A libquixcc library contract violation occurred: An invalid job pointer was passed to quixcc_run().");
 
     std::lock_guard<std::mutex> lock(job->m_lock);
+    static std::mutex siglock;
 
     /* Install signal handlers to catch fatal memory errors */
-    sighandler_t old_handlers[6];
-    old_handlers[0] = signal(SIGINT, quixcc_fault_handler);
-    old_handlers[1] = signal(SIGILL, quixcc_fault_handler);
-    old_handlers[2] = signal(SIGFPE, quixcc_fault_handler);
-    old_handlers[3] = signal(SIGSEGV, quixcc_fault_handler);
-    old_handlers[4] = signal(SIGTERM, quixcc_fault_handler);
-    old_handlers[5] = signal(SIGABRT, quixcc_fault_handler);
+    siglock.lock();
+    sighandler_t old_handlers[4];
+    old_handlers[0] = signal(SIGILL, quixcc_fault_handler);
+    old_handlers[1] = signal(SIGFPE, quixcc_fault_handler);
+    old_handlers[2] = signal(SIGSEGV, quixcc_fault_handler);
+    old_handlers[3] = signal(SIGABRT, quixcc_fault_handler);
+    siglock.unlock();
 
     /* Every compiler job must have its own thread-local storage */
     bool success = false;
@@ -1154,12 +1174,12 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     t.join();
 
     /* Restore signal handlers */
-    signal(SIGINT, old_handlers[0]);
-    signal(SIGILL, old_handlers[1]);
-    signal(SIGFPE, old_handlers[2]);
-    signal(SIGSEGV, old_handlers[3]);
-    signal(SIGTERM, old_handlers[4]);
-    signal(SIGABRT, old_handlers[5]);
+    siglock.lock();
+    signal(SIGILL, old_handlers[0]);
+    signal(SIGFPE, old_handlers[1]);
+    signal(SIGSEGV, old_handlers[2]);
+    signal(SIGABRT, old_handlers[3]);
+    siglock.unlock();
 
     return success;
 }

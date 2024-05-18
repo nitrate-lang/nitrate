@@ -224,7 +224,7 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::UnionDefNode::reduce(libquixcc::
             auto red = field->m_value->reduce<ConstExprNode>();
             if (!red)
                 LOG(FATAL) << "Failed to reduce union field" << std::endl;
-            
+
             auto copy = std::make_shared<libquixcc::UnionFieldNode>(field->m_name, field->m_type, red);
             fields.push_back(copy);
         }
@@ -246,7 +246,7 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::TypedefNode::reduce(libquixcc::R
 std::unique_ptr<libquixcc::StmtNode> libquixcc::VarDeclNode::reduce(libquixcc::ReductionState &state) const
 {
     LOG(FATAL) << "VarDeclNode::reduce not implemented" << std::endl;
-    
+
     std::unique_ptr<VarDeclNode> decl = std::make_unique<VarDeclNode>();
 
     decl->m_name = m_name;
@@ -272,6 +272,19 @@ std::unique_ptr<libquixcc::StmtNode> libquixcc::LetDeclNode::reduce(libquixcc::R
     decl->m_is_mut = m_is_mut;
     decl->m_is_thread_local = m_is_thread_local;
     decl->m_is_static = m_is_static;
+    decl->m_is_deprecated = m_is_deprecated;
+
+    return decl;
+}
+
+std::unique_ptr<libquixcc::StmtNode> libquixcc::ConstDeclNode::reduce(libquixcc::ReductionState &state) const
+{
+    std::unique_ptr<ConstDeclNode> decl = std::make_unique<ConstDeclNode>();
+
+    decl->m_name = m_name;
+    decl->m_type = m_type;
+    if (m_init)
+        decl->m_init = m_init->reduce<ExprNode>();
     decl->m_is_deprecated = m_is_deprecated;
 
     return decl;

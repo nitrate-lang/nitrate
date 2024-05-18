@@ -53,7 +53,6 @@ namespace libquixcc
 
         class ASTJsonSerializer
         {
-            static std::string ASTNopNode_conv(ASTJsonSerializerState &state, const ASTNopNode *node);
             static std::string ExprStmtNode_conv(ASTJsonSerializerState &state, const ExprStmtNode *node);
             static std::string NopStmtNode_conv(ASTJsonSerializerState &state, const NopStmtNode *node);
             static std::string BlockNode_conv(ASTJsonSerializerState &state, const BlockNode *node);
@@ -105,6 +104,7 @@ namespace libquixcc
             static std::string TypedefNode_conv(ASTJsonSerializerState &state, const TypedefNode *node);
             static std::string VarDeclNode_conv(ASTJsonSerializerState &state, const VarDeclNode *node);
             static std::string LetDeclNode_conv(ASTJsonSerializerState &state, const LetDeclNode *node);
+            static std::string ConstDeclNode_conv(ASTJsonSerializerState &state, const ConstDeclNode *node);
             static std::string FunctionDeclNode_conv(ASTJsonSerializerState &state, const FunctionDeclNode *node);
             static std::string StructDefNode_conv(ASTJsonSerializerState &state, const StructDefNode *node);
             static std::string StructFieldNode_conv(ASTJsonSerializerState &state, const StructFieldNode *node);

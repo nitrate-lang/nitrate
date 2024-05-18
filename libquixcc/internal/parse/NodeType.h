@@ -37,13 +37,14 @@
 #endif
 
 #include <cstdint>
+#include <unordered_map>
+#include <string>
 
 namespace libquixcc
 {
     enum class NodeType : uint8_t
     {
         ParseNode,
-        ASTNopNode,
         ExprNode,
         ConstExprNode,
         StmtNode,
@@ -114,6 +115,7 @@ namespace libquixcc
 
         VarDeclNode,
         LetDeclNode,
+        ConstDeclNode,
 
         FunctionDeclNode,
 
@@ -144,7 +146,6 @@ namespace libquixcc
     };
 
     class ParseNode;
-    class ASTNopNode;
     class ExprNode;
     class ConstExprNode;
     class StmtNode;
@@ -206,6 +207,7 @@ namespace libquixcc
     class TypedefNode;
     class VarDeclNode;
     class LetDeclNode;
+    class ConstDeclNode;
     class FunctionDeclNode;
     class StructDefNode;
     class StructFieldNode;
@@ -229,6 +231,8 @@ namespace libquixcc
     class IfStmtNode;
     class WhileStmtNode;
     class ForStmtNode;
+
+    extern std::unordered_map<NodeType, std::string_view> NodeTypeNames;
 }
 
 #endif // __QUIXCC_PARSE_NODES_NODETYPES_H__

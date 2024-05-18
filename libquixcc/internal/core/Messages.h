@@ -61,6 +61,8 @@ namespace libquixcc
         LET_DECL_INIT_ERR,
         LET_DECL_MISSING_PUNCTOR,
 
+        CONST_DECL_TYPE_ERR,
+
         VAR_DECL_MISSING_IDENTIFIER,
         VAR_DECL_MISSING_COLON,
         VAR_DECL_TYPE_ERR,
@@ -69,7 +71,6 @@ namespace libquixcc
 
         CONST_DECL_MISSING_IDENTIFIER,
         CONST_DECL_MISSING_COLON,
-        CONST_DECL_TYPE_ERR,
         CONST_DECL_INIT_ERR,
         CONST_DECL_MISSING_PUNCTOR,
 

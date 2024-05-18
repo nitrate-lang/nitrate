@@ -51,6 +51,8 @@
 #include <sstream>
 #include <chrono>
 
+#include <core/Logger.h>
+
 #include <boost/serialization/access.hpp>
 #include <boost/serialization/library_version_type.hpp>
 #include <boost/serialization/unordered_set.hpp>
@@ -68,154 +70,22 @@ namespace libquixcc
 {
     namespace ir
     {
-        struct SourceLocation
-        {
-            const char *file;
-            const char *function;
-            unsigned line;
-            unsigned column;
-
-            SourceLocation(const char *file = __FILE__, const char *function = __PRETTY_FUNCTION__, unsigned line = __LINE__, unsigned column = 0)
-                : file(file), function(function), line(line), column(column) {}
-
-            SourceLocation(const SourceLocation &other) = default;
-            SourceLocation(SourceLocation &&other) = default;
-            SourceLocation &operator=(const SourceLocation &other) = default;
-
-            friend std::ostream &operator<<(std::ostream &os, const SourceLocation &loc)
-            {
-                os << loc.file << ":" << loc.line << ":" << loc.column;
-                return os;
-            }
-
-            template <typename Archive>
-            void serialize(Archive &ar, const unsigned int version)
-            {
-                ar & file;
-                ar & function;
-                ar & line;
-                ar & column;
-            }
-        };
-
-        class Diagnostic
-        {
-            SourceLocation m_location;
-            std::unordered_set<std::string> m_messages;
-            std::chrono::time_point<std::chrono::system_clock> m_time;
-
-        public:
-            Diagnostic(const std::initializer_list<std::string> &messages, const SourceLocation &location = SourceLocation()) : m_location(location), m_messages(messages)
-            {
-                m_time = std::chrono::system_clock::now();
-            }
-
-            Diagnostic(const Diagnostic &other) = default;
-            Diagnostic(Diagnostic &&other) = default;
-            Diagnostic &operator=(const Diagnostic &other) = default;
-
-            const SourceLocation &getLocation() const { return m_location; }
-            const std::unordered_set<std::string> &getMessages() const { return m_messages; }
-            const std::chrono::time_point<std::chrono::system_clock> &getTime() const { return m_time; }
-
-            friend std::ostream &operator<<(std::ostream &os, const Diagnostic &diag)
-            {
-                os << diag.getLocation() << ": ";
-                for (const auto &msg : diag.getMessages())
-                {
-                    os << msg << std::endl;
-                }
-                return os;
-            }
-
-            template <typename Archive>
-            void serialize(Archive &ar, const unsigned int version)
-            {
-                ar & m_location;
-                ar & m_messages;
-                ar & m_time;
-            }
-        };
-
-        template <typename T>
-        class Result
-        {
-            Diagnostic *m_diagnostic;
-            T m_value;
-
-        public:
-            Result() : m_diagnostic(nullptr), m_value(T()) {}
-            Result(const T &value) : m_diagnostic(nullptr), m_value(value) {}
-            Result(const Diagnostic &diag) : m_diagnostic(new Diagnostic(diag)), m_value(T()) {}
-            Result(const Diagnostic &diag, const T &value) : m_diagnostic(new Diagnostic(diag)), m_value(value) {}
-            ~Result()
-            {
-                if (m_diagnostic)
-                {
-                    delete m_diagnostic;
-                    m_diagnostic = nullptr;
-                }
-            }
-
-            Result(const Result &other)
-            {
-                m_diagnostic = other.m_diagnostic;
-                m_value = other.m_value;
-            }
-
-            Result(Result &&other)
-            {
-                m_diagnostic = other.m_diagnostic;
-                m_value = other.m_value;
-                other.m_diagnostic = nullptr;
-            }
-
-            Result &operator=(const Result &other)
-            {
-                if (this != &other)
-                {
-                    m_diagnostic = other.m_diagnostic;
-                    m_value = other.m_value;
-                }
-                return *this;
-            }
-
-            T &get() { return m_value; }
-            const T &get() const { return m_value; }
-            const Diagnostic *problem() const { return m_diagnostic; }
-            bool is_ok() const { return m_diagnostic == nullptr; }
-            bool operator!() const { return !is_ok(); }
-
-            friend std::ostream &operator<<(std::ostream &os, const Result &result)
-            {
-                if (result.is_ok())
-                    os << result.get();
-                else
-                    os << *result.problem();
-                return os;
-            }
-
-            T &operator*() { return m_value; }
-            const T &operator*() const { return m_value; }
-            T *operator->() { return m_value; }
-            const T *operator->() const { return m_value; }
-        };
-
         struct PState
         {
             size_t ind;
 
-            PState() {
+            PState()
+            {
                 ind = 0;
             }
         };
 
         template <auto V>
-        class Value
+        class Node
         {
         protected:
             /* Node Serialization */
-            virtual Result<bool> print_impl(std::ostream &os, PState &state) const = 0;
+            virtual bool print_impl(std::ostream &os, PState &state) const = 0;
 
             /* Graph Operations & Caching */
             virtual boost::uuids::uuid hash_impl() const = 0;
@@ -223,16 +93,16 @@ namespace libquixcc
             /* IR Module Verification */
             virtual bool verify_impl() const = 0;
 
-            const static auto __IR_type = V;
+            const static auto _IR_type = V;
 
         public:
-            Value() = default;
-            virtual ~Value() = default;
+            Node() = default;
+            virtual ~Node() = default;
 
             template <typename T>
             bool is() const
             {
-                return typeid(*this) == typeid(T);
+                return dynamic_cast<const T *>(this) != nullptr;
             }
 
             template <typename T>
@@ -244,13 +114,24 @@ namespace libquixcc
             template <typename T>
             const T *as() const
             {
-                return dynamic_cast<const T *>(this);
+                if (!is<T>())
+                    throw std::runtime_error("Invalid cast");
+
+                return reinterpret_cast<const T *>(this);
             }
 
             /* Write IR to Output Stream */
-            Result<bool> print(std::ostream &os, PState &state) const
+            bool print(std::ostream &os, PState &state) const
             {
                 return print_impl(os, state);
+            }
+
+            std::string to_string() const
+            {
+                std::stringstream ss;
+                PState state;
+                print(ss, state);
+                return ss.str();
             }
 
             /* Write UUID to Output Stream */
@@ -262,8 +143,10 @@ namespace libquixcc
             /* Calculate a cryptographic hash of the IR Graph */
             inline boost::uuids::uuid hash() const { return hash_impl(); }
 
-            bool operator==(const Value &other) const { return hash() == other.hash(); }
-            bool operator>(const Value &other) const { return hash() > other.hash(); }
+            bool operator==(const Node &other) const { return hash() == other.hash(); }
+            bool operator>(const Node &other) const { return hash() > other.hash(); }
+
+            int32_t ntype = -1;
         };
 
         class Hasher
@@ -280,6 +163,26 @@ namespace libquixcc
                 PState state;
                 value->print(ss, state);
                 m_hasher.process_bytes(ss.str().data(), ss.str().size());
+                return *this;
+            }
+
+            template <typename T>
+            Hasher &add(const std::vector<T> &values)
+            {
+                for (const auto &value : values)
+                {
+                    add(value);
+                }
+                return *this;
+            }
+
+            template <typename T>
+            Hasher &add(const std::set<T> &values)
+            {
+                for (const auto &value : values)
+                {
+                    add(value);
+                }
                 return *this;
             }
 
@@ -357,7 +260,7 @@ namespace libquixcc
             const static auto m_ir_type = T;
 
             /* Module Serialization */
-            virtual Result<bool> print_impl(std::ostream &os, PState &state) const = 0;
+            virtual bool print_impl(std::ostream &os, PState &state) const = 0;
 
             /* IR Dialect Information */
             virtual std::string_view ir_dialect_name_impl() const = 0;
@@ -384,10 +287,17 @@ namespace libquixcc
             auto getIRType() const { return m_ir_type; }
 
             /* Write IR to Output Stream */
-            Result<bool> print(std::ostream &os) const
+            bool print(std::ostream &os) const
             {
                 PState state;
                 return print_impl(os, state);
+            }
+
+            std::string to_string() const
+            {
+                std::stringstream ss;
+                print(ss);
+                return ss.str();
             }
 
             /* Verify IR Module */
@@ -421,7 +331,5 @@ namespace libquixcc
 
     } // namespace ir
 } // namespace libquixcc
-
-void x();
 
 #endif // __QUIXCC_IR_GENERIC_H__

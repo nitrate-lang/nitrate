@@ -55,8 +55,11 @@ void libquixcc::PrepEngine::setup()
     m_macro_parser.add_routine("readstdin", libquixcc::macro::ParseReadStdin);
     m_macro_parser.add_routine("encoding", libquixcc::macro::ParseEncoding);
     m_macro_parser.add_routine("lang", libquixcc::macro::ParseLang);
-    m_macro_parser.add_routine("author", libquixcc::macro::ParseAuthor);
+    m_macro_parser.add_routine("language", libquixcc::macro::ParseLang);
+    m_macro_parser.add_routine("copyright", libquixcc::macro::ParseAuthor);
     m_macro_parser.add_routine("license", libquixcc::macro::ParseLicense);
+    m_macro_parser.add_routine("use", libquixcc::macro::ParseUse);
+    m_macro_parser.add_routine("description", libquixcc::macro::ParseDescription);
 }
 
 void libquixcc::PrepEngine::addpath(const std::string &path)
@@ -94,7 +97,7 @@ libquixcc::PrepEngine::Entry libquixcc::PrepEngine::build_statics_decl()
     return Entry(l, QUIX_STATICS_FILE, f, ptr);
 }
 
-bool libquixcc::PrepEngine::set_source(FILE *src, const std::string &filename) noexcept
+bool libquixcc::PrepEngine::set_source(FILE *src, const std::string &filename)
 {
     StreamLexer l;
     if (!l.set_source(src, filename))
@@ -110,14 +113,14 @@ bool libquixcc::PrepEngine::set_source(FILE *src, const std::string &filename) n
     return true;
 }
 
-libquixcc::Token libquixcc::PrepEngine::next() noexcept
+libquixcc::Token libquixcc::PrepEngine::next()
 {
     Token tok = peek();
     m_tok = std::nullopt;
     return tok;
 }
 
-libquixcc::Token libquixcc::PrepEngine::peek() noexcept
+libquixcc::Token libquixcc::PrepEngine::peek()
 {
     if (m_tok)
         return m_tok.value();
@@ -139,7 +142,11 @@ bool libquixcc::PrepEngine::get_static(const std::string &name, std::string &val
 bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok)
 {
     StringLexer lexer;
-    assert(lexer.set_source(std::get<std::string>(input_tok.val()).substr(6), "import"));
+    if (!lexer.set_source(std::get<std::string>(input_tok.val()).substr(6), "import"))
+    {
+        LOG(ERROR) << "Failed to set source for import" << input_tok << std::endl;
+        return false;
+    }
 
     Token tok = lexer.next();
     if (tok.type() != TT::Identifier)
@@ -238,7 +245,12 @@ bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok)
         m_stack.top().already_included.insert(filepath);
         m_include_files.push_back(filepath);
         m_stack.push({StreamLexer(), filepath, f});
-        m_stack.top().lexer.set_source(f, filepath);
+        if (!m_stack.top().lexer.set_source(f, filepath))
+        {
+            LOG(ERROR) << "Failed to set source for file: " << filepath << tok << std::endl;
+            return false;
+        }
+
         return true;
     }
     else
@@ -275,7 +287,7 @@ bool libquixcc::PrepEngine::handle_macro(const libquixcc::Token &tok)
     return true;
 }
 
-libquixcc::Token libquixcc::PrepEngine::read_token() noexcept
+libquixcc::Token libquixcc::PrepEngine::read_token()
 {
     libquixcc::Token tok;
 

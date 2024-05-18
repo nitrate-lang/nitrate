@@ -57,7 +57,6 @@ size_t libquixcc::traversal::ASTPreorderTraversal::dispatch(libquixcc::traversal
 
     static const std::unordered_map<NodeType, Func> node_map =
         {
-            {NodeType::ASTNopNode, (Func)ASTNopNode_iter},
             {NodeType::ExprStmtNode, (Func)ExprStmtNode_iter},
             {NodeType::NopStmtNode, (Func)NopStmtNode_iter},
             {NodeType::BlockNode, (Func)BlockNode_iter},
@@ -110,6 +109,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::dispatch(libquixcc::traversal
             {NodeType::TypedefNode, (Func)TypedefNode_iter},
             {NodeType::VarDeclNode, (Func)VarDeclNode_iter},
             {NodeType::LetDeclNode, (Func)LetDeclNode_iter},
+            {NodeType::ConstDeclNode, (Func)ConstDeclNode_iter},
             {NodeType::FunctionDeclNode, (Func)FunctionDeclNode_iter},
             {NodeType::StructDefNode, (Func)StructDefNode_iter},
             {NodeType::StructFieldNode, (Func)StructFieldNode_iter},
@@ -139,11 +139,6 @@ size_t libquixcc::traversal::ASTPreorderTraversal::dispatch(libquixcc::traversal
         LOG(FATAL) << "No conversion function for node type " << (int)node->ntype << " found." << std::endl;
 
     return node_map.at(node->ntype)(state, node);
-}
-
-size_t libquixcc::traversal::ASTPreorderTraversal::ASTNopNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ASTNopNode *node)
-{
-    return 0;
 }
 
 size_t libquixcc::traversal::ASTPreorderTraversal::ExprStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ExprStmtNode *node)
@@ -549,6 +544,25 @@ size_t libquixcc::traversal::ASTPreorderTraversal::LetDeclNode_iter(libquixcc::t
 
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
+    if (node->m_init)
+    {
+        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));
+        count += next(state, node->m_init);
+    }
+    return count + 1;
+}
+
+size_t libquixcc::traversal::ASTPreorderTraversal::ConstDeclNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ConstDeclNode *node)
+{
+    state.m_visited.clear();
+    size_t count = 0;
+
+    if (node->m_type)
+    {
+        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+        count += next(state, node->m_type);
+    }
+
     if (node->m_init)
     {
         state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));

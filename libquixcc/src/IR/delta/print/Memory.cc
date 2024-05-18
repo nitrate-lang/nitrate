@@ -29,9 +29,9 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/delta/nodes/Memory.h>
+#include <IR/delta/Memory.h>
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Assign::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Assign::print_impl(std::ostream &os, PState &state) const
 {
     if (!var->print(os, state))
         return false;
@@ -49,7 +49,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Assign::print_impl(std::ostrea
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Load::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Load::print_impl(std::ostream &os, PState &state) const
 {
     for (uint64_t i = 0; i < rank; i++)
         os << "*";
@@ -60,7 +60,7 @@ libquixcc::ir::Result<bool> libquixcc::ir::delta::Load::print_impl(std::ostream 
     return true;
 }
 
-libquixcc::ir::Result<bool> libquixcc::ir::delta::Index::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::Index::print_impl(std::ostream &os, PState &state) const
 {
     if (!var->print(os, state))
         return false;

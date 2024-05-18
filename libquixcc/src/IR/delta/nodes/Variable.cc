@@ -29,7 +29,7 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/delta/nodes/Variable.h>
+#include <IR/delta/Variable.h>
 
 boost::uuids::uuid libquixcc::ir::delta::Local::hash_impl() const
 {

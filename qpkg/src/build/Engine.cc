@@ -58,7 +58,7 @@ qpkg::build::Engine::Engine(const std::string &package_src,
     }
 }
 
-std::optional<qpkg::conf::Config> qpkg::build::Engine::load_config(const std::filesystem::__cxx11::path &base)
+std::optional<qpkg::conf::Config> qpkg::build::Engine::load_config(const std::filesystem::path &base)
 {
     if (std::filesystem::exists(base / "qpkg.yaml"))
         return conf::YamlConfigParser().parsef(base / "qpkg.yaml");
@@ -69,7 +69,7 @@ std::optional<qpkg::conf::Config> qpkg::build::Engine::load_config(const std::fi
     }
 }
 
-std::vector<std::string> qpkg::build::Engine::get_source_files(const std::filesystem::__cxx11::path &base)
+std::vector<std::string> qpkg::build::Engine::get_source_files(const std::filesystem::path &base)
 {
     std::vector<std::string> source_code_files;
 
@@ -92,7 +92,7 @@ std::vector<std::string> qpkg::build::Engine::get_source_files(const std::filesy
     return source_code_files;
 }
 
-static qpkg::cache::CacheKey compute_cachekey(const std::filesystem::__cxx11::path &file)
+static qpkg::cache::CacheKey compute_cachekey(const std::filesystem::path &file)
 {
     std::ifstream in(file, std::ios::binary);
     if (!in)
@@ -125,6 +125,7 @@ class CompilationProgressPrinter
         NOT_STARTED,
         STARTING,
         FINISHED,
+        TAINTED
     };
 
     size_t m_total, m_real, m_current;
@@ -172,6 +173,11 @@ public:
         m_linker = State::FINISHED;
     }
 
+    void tainted()
+    {
+        m_state = State::TAINTED;
+    }
+
     void print()
     {
         uint8_t percent = m_total == 0 ? 0 : (m_current * 100) / m_total;
@@ -200,6 +206,9 @@ public:
                 break;
             case State::FINISHED:
                 std::cout << percent_pad << " \x1b[32mFinished building QUIX object " << msg << "\x1b[0m" << std::endl;
+                break;
+            case State::TAINTED:
+                std::cout << percent_pad << " \x1b[31mFailed to build QUIX object\x1b[0m" << std::endl;
                 break;
             default:
                 break;
@@ -240,14 +249,14 @@ public:
 
     bool is_done()
     {
-        return m_state == State::FINISHED;
+        return m_state == State::FINISHED || m_state == State::TAINTED;
     }
 };
 
 static CompilationProgressPrinter g_cc_printer;
 static std::mutex g_cc_printer_mutex;
 
-bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path &base, const std::filesystem::__cxx11::path &build_dir, const std::filesystem::__cxx11::path &file) const
+bool qpkg::build::Engine::build_source_file(const std::filesystem::path &base, const std::filesystem::path &build_dir, const std::filesystem::path &file) const
 {
     cache::CacheKey key;
     std::string outfile = build_dir.string() + "/" + file.filename().string() + ".o";
@@ -301,7 +310,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
         builder.opt(flag);
 
     if (m_build_type == BuildType::SHAREDLIB)
-        builder.opt("-shared");
+        builder.opt("-fPIC");
     else if (m_build_type == BuildType::STATICLIB)
         builder.opt("-fPIC");
 
@@ -324,7 +333,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::__cxx11::path
     return true;
 }
 
-bool qpkg::build::Engine::link_objects(const std::vector<std::filesystem::__cxx11::path> &objects) const
+bool qpkg::build::Engine::link_objects(const std::vector<std::filesystem::path> &objects) const
 {
     std::string cmd = "qld";
 
@@ -362,7 +371,7 @@ bool qpkg::build::Engine::link_objects(const std::vector<std::filesystem::__cxx1
     return true;
 }
 
-void qpkg::build::Engine::run_threads(const std::filesystem::__cxx11::path &base, const std::vector<std::string> &source_files, const std::filesystem::__cxx11::path &build_dir) const
+void qpkg::build::Engine::run_threads(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir) const
 {
     size_t i, tcount;
     std::vector<std::thread> threads;
@@ -385,8 +394,10 @@ void qpkg::build::Engine::run_threads(const std::filesystem::__cxx11::path &base
 
                 if (!build_source_file(base, build_dir, source_files[j]))
                 {
-                    LOG(core::ERROR) << "Failed to compile source file" << std::endl;
-                    exit(1);
+                    g_cc_printer_mutex.lock();
+                    g_cc_printer.tainted();
+                    g_cc_printer_mutex.unlock();
+                    return;
                 }
 
                 g_cc_printer_mutex.lock();
@@ -417,7 +428,7 @@ void qpkg::build::Engine::run_threads(const std::filesystem::__cxx11::path &base
         thread.join();
 }
 
-bool qpkg::build::Engine::build_package(const std::filesystem::__cxx11::path &base, const std::vector<std::string> &source_files, const std::filesystem::__cxx11::path &build_dir)
+bool qpkg::build::Engine::build_package(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir)
 {
     run_threads(base, source_files, build_dir);
 
