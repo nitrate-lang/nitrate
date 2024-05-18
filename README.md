@@ -1,6 +1,7 @@
 # Quix Compiler
 
-Quix is a new, multi-paradigm systems and application programming language designed for simplicity and performance. This README provides an overview of the Quix compiler's GitHub repository.
+QUIX is a high-level, statically typed, memory-safe, garbage-collected, high-performance, object-oriented, general-purpose systems programming language designed to be safe, expressive, and performant. QUIX supports runtime reflection, low-level memory access, namespaces, mandatory explicit typing, packed data types, classes, operator overloading, coroutines, default initializers, arbitrary precision math, destructors, automatic memory management, and metaprogramming.
+QUIX is especially well-suited for library development, game development, and systems programming. QUIX is designed to be a modern, safe, and expressive alternative to C++ and Rust.
 
 ## Table of Contents
 
