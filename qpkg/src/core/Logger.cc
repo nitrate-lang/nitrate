@@ -38,32 +38,7 @@ thread_local std::ostringstream qpkg::core::Logger::m_buffer;
 thread_local const char *qpkg::core::Logger::m_func = nullptr;
 thread_local const char *qpkg::core::Logger::m_file = nullptr;
 thread_local int qpkg::core::Logger::m_line = 0;
-
-static std::string get_timestamp()
-{
-    static size_t counter = 0;
-    static std::mutex m;
-    std::lock_guard<std::mutex> lock(m);
-
-    /*
-     * Get current time in UTC
-     */
-
-    auto now = std::chrono::system_clock::now();
-    auto now_time_t = std::chrono::system_clock::to_time_t(now);
-    auto now_tm = std::gmtime(&now_time_t);
-    std::array<char, 30> timestamp;
-
-    std::strftime(timestamp.data(), timestamp.size(), "%H:%M:%S", now_tm);
-
-    return timestamp.data() + std::string(".") + std::to_string(counter++);
-}
-
-static std::unordered_map<qpkg::core::E, std::string> level_to_str = {
-    {qpkg::core::DEBUG, "HELP"},
-    {qpkg::core::INFO, "INFO"},
-    {qpkg::core::WARN, "WARN"},
-    {qpkg::core::ERROR, "FAIL"}};
+static bool _G_is_color_enabled = (getenv("QUIXCC_COLOR") == nullptr) || (std::string(getenv("QUIXCC_COLOR")) == "1");
 
 static std::map<std::pair<const char *, int>, std::string> file_to_str_mapping;
 static std::unordered_map<const char *, std::string> func_to_str_mapping;
@@ -98,27 +73,51 @@ static std::string escape_log_message(const std::string &str)
 
 void qpkg::core::Logger::push()
 {
-    /* Build log entry */
-    /*
-     * FORMAT:
-     *   [logprefix] [timestamp] LEVEL [function] [file:line] message
-     */
-
     if (DEBUG_MODE == 0 && m_level == DEBUG && !m_verbose)
         return;
 
-    std::stringstream log;
+    std::stringstream ss;
 
-    /* Build message */
-    log << '[' << get_timestamp() << ']';
-    log << " ";
-    log << level_to_str[m_level] << " ";
-    log << escape_log_message(m_buffer.str());
+    if (_G_is_color_enabled)
+    {
+        switch (m_level)
+        {
+        case DEBUG:
+            ss << "\x1b[49;1mdebug:\x1b[0m " << escape_log_message(m_buffer.str());
+            break;
+        case INFO:
+            ss << "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49;1m" << escape_log_message(m_buffer.str()) << "\x1b[0m";
+            break;
+        case WARN:
+            ss << "\x1b[35;49;1mwarning:\x1b[0m \x1b[37;49;1m" << escape_log_message(m_buffer.str()) << "\x1b[0m";
+            break;
+        case ERROR:
+            ss << "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" << escape_log_message(m_buffer.str()) << "\x1b[0m";
+            break;
+        }
+    }
+    else
+    {
+        switch (m_level)
+        {
+        case DEBUG:
+            ss << "(debug): " << escape_log_message(m_buffer.str());
+            break;
+        case INFO:
+            ss << "(info): " << escape_log_message(m_buffer.str());
+            break;
+        case WARN:
+            ss << "(WARNING): " << escape_log_message(m_buffer.str());
+            break;
+        case ERROR:
+            ss << "(ERROR): " << escape_log_message(m_buffer.str());
+            break;
+        }
+    }
 
     /* Push log entry to queue */
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_queue.push(log.str());
-
+    m_queue.push(ss.str());
 }
 
 qpkg::core::Logger &qpkg::core::Logger::operator()(const char *func, const char *file, int line)
@@ -228,8 +227,6 @@ qpkg::core::LoggerSpool::LoggerSpool(std::chrono::duration<int> flushInterval)
     }
     catch (std::exception &e)
     {
-        std::cerr << "logger: " << e.what() << std::endl;
-        _exit(1); // exit to avoid recursive call to terminate
     }
 
     /* Create a worker thread to save logs */
@@ -265,15 +262,21 @@ void qpkg::core::LoggerSpool::flush(const char *filepath)
     if (!m_okay)
         return;
 
-    /* Flush all loggers to file */
-    std::ofstream file(filepath, std::ios::app);
-    if (!file.is_open())
-        throw std::runtime_error("logger: unable to open log file \"" + std::string(LOG_FILE) + "\": " + std::string(strerror(errno)));
+    try
+    {
+        /* Flush all loggers to file */
+        std::ofstream file(filepath, std::ios::app);
+        if (!file.is_open())
+            return;
 
-    /* Flush all loggers */
-    for (auto &logger : m_loggers)
-        logger.second->flush(file);
+        /* Flush all loggers */
+        for (auto &logger : m_loggers)
+            logger.second->flush(file);
 
-    /* Close file, implicit flush */
-    file.close();
+        /* Close file, implicit flush */
+        file.close();
+    }
+    catch (std::exception &e)
+    {
+    }
 }

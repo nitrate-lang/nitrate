@@ -217,14 +217,14 @@ namespace libquixcc
         return log;
     }
 
-    extern thread_local LoggerGroup __G_loggerGrp;
+    extern thread_local LoggerGroup _G_loggerGrp;
 
-#define LOG(lvl) libquixcc::__G_loggerGrp[lvl]
-#define LOGGER_SETUP() thread_local libquixcc::LoggerGroup libquixcc::__G_loggerGrp;
+#define LOG(lvl) libquixcc::_G_loggerGrp[lvl]
+#define LOGGER_SETUP() thread_local libquixcc::LoggerGroup libquixcc::_G_loggerGrp;
 
     static inline void LoggerConfigure(quixcc_job_t &job)
     {
-        __G_loggerGrp.setup(job);
+        _G_loggerGrp.setup(job);
     }
 };
 

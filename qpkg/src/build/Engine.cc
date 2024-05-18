@@ -318,10 +318,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::path &base, c
     builder.cpu(m_config["cpu"].as<std::string>());
 
     if (!builder.build().run(1).puts().ok())
-    {
-        LOG(core::ERROR) << "Failed to compile source file " << file << std::endl;
         return false;
-    }
 
     if (m_cache)
     {
@@ -371,10 +368,11 @@ bool qpkg::build::Engine::link_objects(const std::vector<std::filesystem::path> 
     return true;
 }
 
-void qpkg::build::Engine::run_threads(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir) const
+bool qpkg::build::Engine::run_threads(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir) const
 {
     size_t i, tcount;
     std::vector<std::thread> threads;
+    std::atomic<bool> tainted = false;
 
     tcount = std::min<size_t>(m_jobs, source_files.size());
 
@@ -384,7 +382,7 @@ void qpkg::build::Engine::run_threads(const std::filesystem::path &base, const s
 
     for (i = 0; i < tcount; i++)
     {
-        threads.push_back(std::thread([this, &base, &build_dir, &source_files, i, tcount]()
+        threads.push_back(std::thread([this, &base, &build_dir, &source_files, i, tcount, &tainted]()
                                       {
             for (size_t j = i; j < source_files.size(); j += tcount)
             {
@@ -396,6 +394,7 @@ void qpkg::build::Engine::run_threads(const std::filesystem::path &base, const s
                 {
                     g_cc_printer_mutex.lock();
                     g_cc_printer.tainted();
+                    tainted = true;
                     g_cc_printer_mutex.unlock();
                     return;
                 }
@@ -406,9 +405,9 @@ void qpkg::build::Engine::run_threads(const std::filesystem::path &base, const s
             } }));
     }
 
-    std::thread printer_thread([]()
+    std::thread printer_thread([&tainted]()
                                {
-        while (true)
+        while (!tainted)
         {
             g_cc_printer_mutex.lock();
             g_cc_printer.print();
@@ -422,15 +421,21 @@ void qpkg::build::Engine::run_threads(const std::filesystem::path &base, const s
                 break;
         } });
 
-    printer_thread.detach();
-
     for (auto &thread : threads)
-        thread.join();
+        thread.detach();
+
+    printer_thread.join();
+
+    return !tainted;
 }
 
 bool qpkg::build::Engine::build_package(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir)
 {
-    run_threads(base, source_files, build_dir);
+    if (!run_threads(base, source_files, build_dir))
+    {
+        LOG(core::ERROR) << "Failed to build package " << m_package_name << std::endl;
+        return false;
+    }
 
     std::vector<std::filesystem::path> objects;
     for (const auto &file : source_files)
@@ -487,6 +492,8 @@ bool qpkg::build::Engine::run()
 
     m_config = *_config;
     conf::PopulateConfig(m_config);
+
+    m_package_name = m_config["name"].as<std::string>();
 
     std::filesystem::path build_dir = base / ".qpkg" / "build";
 

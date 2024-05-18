@@ -84,8 +84,8 @@ bool libquixcc::LoggerGroup::is_color_enabled()
     // I don't know windows color codes
     return false;
 #else
-    static bool __G_is_color_enabled = (getenv("QUIXCC_COLOR") == nullptr) || (std::string(getenv("QUIXCC_COLOR")) == "1");
-    return __G_is_color_enabled;
+    static bool _G_is_color_enabled = (getenv("QUIXCC_COLOR") == nullptr) || (std::string(getenv("QUIXCC_COLOR")) == "1");
+    return _G_is_color_enabled;
 #endif
 }
 
@@ -112,7 +112,7 @@ std::string libquixcc::LoggerGroup::format_message_ansi(const std::string &messa
     case E::INFO:
         return msg + "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + message + "\x1b[0m";
     case E::WARN:
-        return msg + "\x1b[35;49;1mwarn:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
+        return msg + "\x1b[35;49;1mwarning:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
     case E::ERROR:
     case E::FAILED:
         return msg + "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
@@ -145,7 +145,7 @@ std::string libquixcc::LoggerGroup::format_message_nocolor(const std::string &me
     case E::INFO:
         return msg + "(info): " + message;
     case E::WARN:
-        return msg + "(warn): " + message;
+        return msg + "(WARNING): " + message;
     case E::ERROR:
     case E::FAILED:
         return msg + "(ERROR): " + message;

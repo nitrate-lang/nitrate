@@ -21,7 +21,6 @@ namespace qpkg
             INFO = 1,
             WARN = 2,
             ERROR = 3,
-            FAILED = 4 // Like ERROR, but does not terminate the program
         };
 
         class Logger

@@ -45,6 +45,7 @@ namespace qpkg
             };
 
             std::string m_package_src;
+            std::string m_package_name;
             std::unique_ptr<cache::ICache> m_cache;
             conf::Config m_config;
             std::string m_output;
@@ -57,9 +58,9 @@ namespace qpkg
 
             std::optional<qpkg::conf::Config> load_config(const std::filesystem::path &base);
             std::vector<std::string> get_source_files(const std::filesystem::path &base);
-            void run_threads(const std::filesystem::__cxx11::path &base, const std::vector<std::string> &source_files, const std::filesystem::__cxx11::path &build_dir) const;
+            bool run_threads(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir) const;
             bool build_package(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir);
-            bool build_source_file(const std::filesystem::__cxx11::path &base, const std::filesystem::__cxx11::path &build_dir, const std::filesystem::path &file) const;
+            bool build_source_file(const std::filesystem::path &base, const std::filesystem::path &build_dir, const std::filesystem::path &file) const;
             bool link_objects(const std::vector<std::filesystem::path> &objects) const;
 
         public:
