@@ -25,7 +25,7 @@ SET(PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-paramet
 
 SET(PROJECT_DEBUG_FLAGS -g -Wall -Wextra -Werror -Wno-unused-parameter -Wno-error=unused-parameter -pedantic -Wno-error=unused-variable -fPIC -Wno-error=mismatched-new-delete)
 
-SET(STATIC_PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter-Wno-error=unused-variable -fPIC -O3  -Wno-error=mismatched-new-delete)
+SET(STATIC_PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter -Wno-error=unused-variable -fPIC -O3  -Wno-error=mismatched-new-delete)
 
 add_library(libquixcc SHARED ${LIBQUIX_CXX_SOURCES})
 target_include_directories(libquixcc PUBLIC "internal" include)

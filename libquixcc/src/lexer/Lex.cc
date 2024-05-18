@@ -292,7 +292,7 @@ libquixcc::StreamLexer::StreamLexer()
 {
     m_src = nullptr;
     m_buf_pos = 1024;
-    m_buffer = std::vector<char>(m_buf_pos);
+    m_buffer.resize(m_buf_pos);
     m_tok = std::nullopt;
     m_last = 0;
     added_newline = false;
@@ -300,6 +300,8 @@ libquixcc::StreamLexer::StreamLexer()
 
 char libquixcc::StreamLexer::getc()
 {
+    assert(m_src != nullptr && "Source file not set");
+
     /* The QUIX specification requires UTF-8 support. */
     /// TODO: implement UTF-8 support
 
@@ -330,8 +332,7 @@ char libquixcc::StreamLexer::getc()
         }
 
         // Resize buffer to the actual size
-        if (m_buffer.size() != read)
-            m_buffer.resize(read);
+        m_buffer.resize(read);
 
         // Reset buffer position
         m_buf_pos = 0;
@@ -1037,7 +1038,8 @@ bool libquixcc::StringLexer::QuickLex(const std::string &source_code, std::vecto
     {
         /* Parse the source code "as-is" */
         StringLexer lex;
-        lex.set_source(source_code, filename);
+        if (!lex.set_source(source_code, filename))
+            return false;
 
         Token tok;
         while ((tok = lex.next()).type() != TT::Eof)

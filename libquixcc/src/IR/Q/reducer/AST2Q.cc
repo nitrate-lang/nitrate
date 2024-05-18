@@ -53,12 +53,12 @@
 using namespace libquixcc;
 using namespace libquixcc::ir::q;
 
-struct State
+struct QState
 {
     bool inside_segment;
     ExportLangType lang;
 
-    State()
+    QState()
     {
         inside_segment = false;
         lang = ExportLangType::None;
@@ -99,94 +99,94 @@ public:
     auto end() const { return m_values.end(); }
 };
 
-static auto conv(const ParseNode *n, State &state) -> QResult;
-static auto conv(const ExprStmtNode *n, State &state) -> QResult;
-static auto conv(const NopStmtNode *n, State &state) -> QResult;
-static auto conv(const BlockNode *n, State &state) -> QResult;
-static auto conv(const StmtGroupNode *n, State &state) -> QResult;
-static auto conv(const StaticCastExprNode *n, State &state) -> QResult;
-static auto conv(const BitCastExprNode *n, State &state) -> QResult;
-static auto conv(const SignedUpcastExprNode *n, State &state) -> QResult;
-static auto conv(const UnsignedUpcastExprNode *n, State &state) -> QResult;
-static auto conv(const DowncastExprNode *n, State &state) -> QResult;
-static auto conv(const PtrToIntCastExprNode *n, State &state) -> QResult;
-static auto conv(const IntToPtrCastExprNode *n, State &state) -> QResult;
-static auto conv(const UnaryExprNode *n, State &state) -> QResult;
-static auto conv(const BinaryExprNode *n, State &state) -> QResult;
-static auto conv(const CallExprNode *n, State &state) -> QResult;
-static auto conv(const ListExprNode *n, State &state) -> QResult;
-static auto conv(const MemberAccessNode *n, State &state) -> QResult;
-static auto conv(const ConstUnaryExprNode *n, State &state) -> QResult;
-static auto conv(const ConstBinaryExprNode *n, State &state) -> QResult;
-static auto conv(const IdentifierNode *n, State &state) -> QResult;
-static auto conv(const MutTypeNode *n, State &state) -> QResult;
-static auto conv(const U8TypeNode *n, State &state) -> QResult;
-static auto conv(const U16TypeNode *n, State &state) -> QResult;
-static auto conv(const U32TypeNode *n, State &state) -> QResult;
-static auto conv(const U64TypeNode *n, State &state) -> QResult;
-static auto conv(const U128TypeNode *n, State &state) -> QResult;
-static auto conv(const I8TypeNode *n, State &state) -> QResult;
-static auto conv(const I16TypeNode *n, State &state) -> QResult;
-static auto conv(const I32TypeNode *n, State &state) -> QResult;
-static auto conv(const I64TypeNode *n, State &state) -> QResult;
-static auto conv(const I128TypeNode *n, State &state) -> QResult;
-static auto conv(const F32TypeNode *n, State &state) -> QResult;
-static auto conv(const F64TypeNode *n, State &state) -> QResult;
-static auto conv(const BoolTypeNode *n, State &state) -> QResult;
-static auto conv(const VoidTypeNode *n, State &state) -> QResult;
-static auto conv(const PointerTypeNode *n, State &state) -> QResult;
-static auto conv(const OpaqueTypeNode *n, State &state) -> QResult;
-static auto conv(const StringTypeNode *n, State &state) -> QResult;
-static auto conv(const EnumTypeNode *n, State &state) -> QResult;
-static auto conv(const StructTypeNode *n, State &state) -> QResult;
-static auto conv(const RegionTypeNode *n, State &state) -> QResult;
-static auto conv(const UnionTypeNode *n, State &state) -> QResult;
-static auto conv(const ArrayTypeNode *n, State &state) -> QResult;
-static auto conv(const FunctionTypeNode *n, State &state) -> QResult;
-static auto conv(const IntegerNode *n, State &state) -> QResult;
-static auto conv(const FloatLiteralNode *n, State &state) -> QResult;
-static auto conv(const StringNode *n, State &state) -> QResult;
-static auto conv(const CharNode *n, State &state) -> QResult;
-static auto conv(const BoolLiteralNode *n, State &state) -> QResult;
-static auto conv(const NullLiteralNode *n, State &state) -> QResult;
-static auto conv(const TypedefNode *n, State &state) -> QResult;
-static auto conv(const VarDeclNode *n, State &state) -> QResult;
-static auto conv(const LetDeclNode *n, State &state) -> QResult;
-static auto conv(const ConstDeclNode *n, State &state) -> QResult;
-static auto conv(const FunctionDeclNode *n, State &state) -> QResult;
-static auto conv(const StructDefNode *n, State &state) -> QResult;
-static auto conv(const StructFieldNode *n, State &state) -> QResult;
-static auto conv(const RegionDefNode *n, State &state) -> QResult;
-static auto conv(const RegionFieldNode *n, State &state) -> QResult;
-static auto conv(const GroupDefNode *n, State &state) -> QResult;
-static auto conv(const GroupFieldNode *n, State &state) -> QResult;
-static auto conv(const UnionDefNode *n, State &state) -> QResult;
-static auto conv(const UnionFieldNode *n, State &state) -> QResult;
-static auto conv(const EnumDefNode *n, State &state) -> QResult;
-static auto conv(const EnumFieldNode *n, State &state) -> QResult;
-static auto conv(const FunctionDefNode *n, State &state) -> QResult;
-static auto conv(const FunctionParamNode *n, State &state) -> QResult;
-static auto conv(const ExportNode *n, State &state) -> QResult;
-static auto conv(const InlineAsmNode *n, State &state) -> QResult;
-static auto conv(const ReturnStmtNode *n, State &state) -> QResult;
-static auto conv(const RetifStmtNode *n, State &state) -> QResult;
-static auto conv(const RetzStmtNode *n, State &state) -> QResult;
-static auto conv(const RetvStmtNode *n, State &state) -> QResult;
-static auto conv(const IfStmtNode *n, State &state) -> QResult;
-static auto conv(const WhileStmtNode *n, State &state) -> QResult;
-static auto conv(const ForStmtNode *n, State &state) -> QResult;
+static auto conv(const ParseNode *n, QState &state) -> QResult;
+static auto conv(const ExprStmtNode *n, QState &state) -> QResult;
+static auto conv(const NopStmtNode *n, QState &state) -> QResult;
+static auto conv(const BlockNode *n, QState &state) -> QResult;
+static auto conv(const StmtGroupNode *n, QState &state) -> QResult;
+static auto conv(const StaticCastExprNode *n, QState &state) -> QResult;
+static auto conv(const BitCastExprNode *n, QState &state) -> QResult;
+static auto conv(const SignedUpcastExprNode *n, QState &state) -> QResult;
+static auto conv(const UnsignedUpcastExprNode *n, QState &state) -> QResult;
+static auto conv(const DowncastExprNode *n, QState &state) -> QResult;
+static auto conv(const PtrToIntCastExprNode *n, QState &state) -> QResult;
+static auto conv(const IntToPtrCastExprNode *n, QState &state) -> QResult;
+static auto conv(const UnaryExprNode *n, QState &state) -> QResult;
+static auto conv(const BinaryExprNode *n, QState &state) -> QResult;
+static auto conv(const CallExprNode *n, QState &state) -> QResult;
+static auto conv(const ListExprNode *n, QState &state) -> QResult;
+static auto conv(const MemberAccessNode *n, QState &state) -> QResult;
+static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult;
+static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult;
+static auto conv(const IdentifierNode *n, QState &state) -> QResult;
+static auto conv(const MutTypeNode *n, QState &state) -> QResult;
+static auto conv(const U8TypeNode *n, QState &state) -> QResult;
+static auto conv(const U16TypeNode *n, QState &state) -> QResult;
+static auto conv(const U32TypeNode *n, QState &state) -> QResult;
+static auto conv(const U64TypeNode *n, QState &state) -> QResult;
+static auto conv(const U128TypeNode *n, QState &state) -> QResult;
+static auto conv(const I8TypeNode *n, QState &state) -> QResult;
+static auto conv(const I16TypeNode *n, QState &state) -> QResult;
+static auto conv(const I32TypeNode *n, QState &state) -> QResult;
+static auto conv(const I64TypeNode *n, QState &state) -> QResult;
+static auto conv(const I128TypeNode *n, QState &state) -> QResult;
+static auto conv(const F32TypeNode *n, QState &state) -> QResult;
+static auto conv(const F64TypeNode *n, QState &state) -> QResult;
+static auto conv(const BoolTypeNode *n, QState &state) -> QResult;
+static auto conv(const VoidTypeNode *n, QState &state) -> QResult;
+static auto conv(const PointerTypeNode *n, QState &state) -> QResult;
+static auto conv(const OpaqueTypeNode *n, QState &state) -> QResult;
+static auto conv(const StringTypeNode *n, QState &state) -> QResult;
+static auto conv(const EnumTypeNode *n, QState &state) -> QResult;
+static auto conv(const StructTypeNode *n, QState &state) -> QResult;
+static auto conv(const RegionTypeNode *n, QState &state) -> QResult;
+static auto conv(const UnionTypeNode *n, QState &state) -> QResult;
+static auto conv(const ArrayTypeNode *n, QState &state) -> QResult;
+static auto conv(const FunctionTypeNode *n, QState &state) -> QResult;
+static auto conv(const IntegerNode *n, QState &state) -> QResult;
+static auto conv(const FloatLiteralNode *n, QState &state) -> QResult;
+static auto conv(const StringNode *n, QState &state) -> QResult;
+static auto conv(const CharNode *n, QState &state) -> QResult;
+static auto conv(const BoolLiteralNode *n, QState &state) -> QResult;
+static auto conv(const NullLiteralNode *n, QState &state) -> QResult;
+static auto conv(const TypedefNode *n, QState &state) -> QResult;
+static auto conv(const VarDeclNode *n, QState &state) -> QResult;
+static auto conv(const LetDeclNode *n, QState &state) -> QResult;
+static auto conv(const ConstDeclNode *n, QState &state) -> QResult;
+static auto conv(const FunctionDeclNode *n, QState &state) -> QResult;
+static auto conv(const StructDefNode *n, QState &state) -> QResult;
+static auto conv(const StructFieldNode *n, QState &state) -> QResult;
+static auto conv(const RegionDefNode *n, QState &state) -> QResult;
+static auto conv(const RegionFieldNode *n, QState &state) -> QResult;
+static auto conv(const GroupDefNode *n, QState &state) -> QResult;
+static auto conv(const GroupFieldNode *n, QState &state) -> QResult;
+static auto conv(const UnionDefNode *n, QState &state) -> QResult;
+static auto conv(const UnionFieldNode *n, QState &state) -> QResult;
+static auto conv(const EnumDefNode *n, QState &state) -> QResult;
+static auto conv(const EnumFieldNode *n, QState &state) -> QResult;
+static auto conv(const FunctionDefNode *n, QState &state) -> QResult;
+static auto conv(const FunctionParamNode *n, QState &state) -> QResult;
+static auto conv(const ExportNode *n, QState &state) -> QResult;
+static auto conv(const InlineAsmNode *n, QState &state) -> QResult;
+static auto conv(const ReturnStmtNode *n, QState &state) -> QResult;
+static auto conv(const RetifStmtNode *n, QState &state) -> QResult;
+static auto conv(const RetzStmtNode *n, QState &state) -> QResult;
+static auto conv(const RetvStmtNode *n, QState &state) -> QResult;
+static auto conv(const IfStmtNode *n, QState &state) -> QResult;
+static auto conv(const WhileStmtNode *n, QState &state) -> QResult;
+static auto conv(const ForStmtNode *n, QState &state) -> QResult;
 
-static auto conv(const ExprStmtNode *n, State &state) -> QResult
+static auto conv(const ExprStmtNode *n, QState &state) -> QResult
 {
     return conv(n->m_expr.get(), state);
 }
 
-static auto conv(const NopStmtNode *n, State &state) -> QResult
+static auto conv(const NopStmtNode *n, QState &state) -> QResult
 {
     return nullptr;
 }
 
-static auto conv(const BlockNode *n, State &state) -> QResult
+static auto conv(const BlockNode *n, QState &state) -> QResult
 {
     std::vector<QValue> sub;
     for (auto &stmt : n->m_stmts)
@@ -200,7 +200,7 @@ static auto conv(const BlockNode *n, State &state) -> QResult
     return Block::create(sub);
 }
 
-static auto conv(const StmtGroupNode *n, State &state) -> QResult
+static auto conv(const StmtGroupNode *n, QState &state) -> QResult
 {
     std::vector<QValue> sub;
     for (auto &stmt : n->m_stmts)
@@ -214,7 +214,7 @@ static auto conv(const StmtGroupNode *n, State &state) -> QResult
     return sub;
 }
 
-static auto conv(const StaticCastExprNode *n, State &state) -> QResult
+static auto conv(const StaticCastExprNode *n, QState &state) -> QResult
 {
     /*
     | Type A    | Type B    | Cast Type     |
@@ -247,37 +247,37 @@ static auto conv(const StaticCastExprNode *n, State &state) -> QResult
     return nullptr;
 }
 
-static auto conv(const BitCastExprNode *n, State &state) -> QResult
+static auto conv(const BitCastExprNode *n, QState &state) -> QResult
 {
     return Bitcast::create(conv(n->m_type, state)[0]->as<Type>(), conv(n->m_expr.get(), state)[0]->as<Expr>());
 }
 
-static auto conv(const SignedUpcastExprNode *n, State &state) -> QResult
+static auto conv(const SignedUpcastExprNode *n, QState &state) -> QResult
 {
     return SCast::create(conv(n->m_type, state)[0]->as<Type>(), conv(n->m_expr.get(), state)[0]->as<Expr>());
 }
 
-static auto conv(const UnsignedUpcastExprNode *n, State &state) -> QResult
+static auto conv(const UnsignedUpcastExprNode *n, QState &state) -> QResult
 {
     return UCast::create(conv(n->m_type, state)[0]->as<Type>(), conv(n->m_expr.get(), state)[0]->as<Expr>());
 }
 
-static auto conv(const DowncastExprNode *n, State &state) -> QResult
+static auto conv(const DowncastExprNode *n, QState &state) -> QResult
 {
     return UCast::create(conv(n->m_type, state)[0]->as<Type>(), conv(n->m_expr.get(), state)[0]->as<Expr>());
 }
 
-static auto conv(const PtrToIntCastExprNode *n, State &state) -> QResult
+static auto conv(const PtrToIntCastExprNode *n, QState &state) -> QResult
 {
     return PtrICast::create(conv(n->m_type, state)[0]->as<Type>(), conv(n->m_expr.get(), state)[0]->as<Expr>());
 }
 
-static auto conv(const IntToPtrCastExprNode *n, State &state) -> QResult
+static auto conv(const IntToPtrCastExprNode *n, QState &state) -> QResult
 {
     return IPtrCast::create(conv(n->m_type, state)[0]->as<Type>(), conv(n->m_expr.get(), state)[0]->as<Expr>());
 }
 
-static auto conv(const UnaryExprNode *n, State &state) -> QResult
+static auto conv(const UnaryExprNode *n, QState &state) -> QResult
 {
     auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
@@ -300,7 +300,7 @@ static auto conv(const UnaryExprNode *n, State &state) -> QResult
     }
 }
 
-static auto conv(const BinaryExprNode *n, State &state) -> QResult
+static auto conv(const BinaryExprNode *n, QState &state) -> QResult
 {
     auto lhs = conv(n->m_lhs.get(), state)[0]->as<Expr>();
     auto rhs = conv(n->m_rhs.get(), state)[0]->as<Expr>();
@@ -352,7 +352,7 @@ static auto conv(const BinaryExprNode *n, State &state) -> QResult
     }
 }
 
-static auto conv(const CallExprNode *n, State &state) -> QResult
+static auto conv(const CallExprNode *n, QState &state) -> QResult
 {
     auto callee = conv(n->m_decl.get(), state)[0]->as<Global>();
     std::vector<QValue> args;
@@ -374,19 +374,19 @@ static auto conv(const CallExprNode *n, State &state) -> QResult
     return Call::create(callee, args);
 }
 
-static auto conv(const ListExprNode *n, State &state) -> QResult
+static auto conv(const ListExprNode *n, QState &state) -> QResult
 {
     /// TODO: Implement ListExprNode
     throw std::runtime_error("QIR translation: ListExprNode not implemented");
 }
 
-static auto conv(const MemberAccessNode *n, State &state) -> QResult
+static auto conv(const MemberAccessNode *n, QState &state) -> QResult
 {
     /// TODO: Implement MemberAccessNode
     throw std::runtime_error("QIR translation: MemberAccessNode not implemented");
 }
 
-static auto conv(const ConstUnaryExprNode *n, State &state) -> QResult
+static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult
 {
     auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
@@ -409,7 +409,7 @@ static auto conv(const ConstUnaryExprNode *n, State &state) -> QResult
     }
 }
 
-static auto conv(const ConstBinaryExprNode *n, State &state) -> QResult
+static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult
 {
     auto lhs = conv(n->m_lhs.get(), state)[0]->as<Expr>();
     auto rhs = conv(n->m_rhs.get(), state)[0]->as<Expr>();
@@ -461,127 +461,127 @@ static auto conv(const ConstBinaryExprNode *n, State &state) -> QResult
     }
 }
 
-static auto conv(const IdentifierNode *n, State &state) -> QResult
+static auto conv(const IdentifierNode *n, QState &state) -> QResult
 {
     return Ident::create(n->m_name);
 }
 
-static auto conv(const MutTypeNode *n, State &state) -> QResult
+static auto conv(const MutTypeNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
 }
 
-static auto conv(const U8TypeNode *n, State &state) -> QResult
+static auto conv(const U8TypeNode *n, QState &state) -> QResult
 {
     return U8::create();
 }
 
-static auto conv(const U16TypeNode *n, State &state) -> QResult
+static auto conv(const U16TypeNode *n, QState &state) -> QResult
 {
     return U16::create();
 }
 
-static auto conv(const U32TypeNode *n, State &state) -> QResult
+static auto conv(const U32TypeNode *n, QState &state) -> QResult
 {
     return U32::create();
 }
 
-static auto conv(const U64TypeNode *n, State &state) -> QResult
+static auto conv(const U64TypeNode *n, QState &state) -> QResult
 {
     return U64::create();
 }
 
-static auto conv(const U128TypeNode *n, State &state) -> QResult
+static auto conv(const U128TypeNode *n, QState &state) -> QResult
 {
     return U128::create();
 }
 
-static auto conv(const I8TypeNode *n, State &state) -> QResult
+static auto conv(const I8TypeNode *n, QState &state) -> QResult
 {
     return I8::create();
 }
 
-static auto conv(const I16TypeNode *n, State &state) -> QResult
+static auto conv(const I16TypeNode *n, QState &state) -> QResult
 {
     return I16::create();
 }
 
-static auto conv(const I32TypeNode *n, State &state) -> QResult
+static auto conv(const I32TypeNode *n, QState &state) -> QResult
 {
     return I32::create();
 }
 
-static auto conv(const I64TypeNode *n, State &state) -> QResult
+static auto conv(const I64TypeNode *n, QState &state) -> QResult
 {
     return I64::create();
 }
 
-static auto conv(const I128TypeNode *n, State &state) -> QResult
+static auto conv(const I128TypeNode *n, QState &state) -> QResult
 {
     return I128::create();
 }
 
-static auto conv(const F32TypeNode *n, State &state) -> QResult
+static auto conv(const F32TypeNode *n, QState &state) -> QResult
 {
     return F32::create();
 }
 
-static auto conv(const F64TypeNode *n, State &state) -> QResult
+static auto conv(const F64TypeNode *n, QState &state) -> QResult
 {
     return F64::create();
 }
 
-static auto conv(const BoolTypeNode *n, State &state) -> QResult
+static auto conv(const BoolTypeNode *n, QState &state) -> QResult
 {
     return I1::create();
 }
 
-static auto conv(const VoidTypeNode *n, State &state) -> QResult
+static auto conv(const VoidTypeNode *n, QState &state) -> QResult
 {
     return Void::create();
 }
 
-static auto conv(const PointerTypeNode *n, State &state) -> QResult
+static auto conv(const PointerTypeNode *n, QState &state) -> QResult
 {
     return Ptr::create(conv(n->m_type, state)[0]->as<Type>());
 }
 
-static auto conv(const OpaqueTypeNode *n, State &state) -> QResult
+static auto conv(const OpaqueTypeNode *n, QState &state) -> QResult
 {
     return Opaque::create(n->m_name);
 }
 
-static auto conv(const StringTypeNode *n, State &state) -> QResult
+static auto conv(const StringTypeNode *n, QState &state) -> QResult
 {
     return Ptr::create(U8::create());
 }
 
-static auto conv(const EnumTypeNode *n, State &state) -> QResult
+static auto conv(const EnumTypeNode *n, QState &state) -> QResult
 {
     return conv(n->m_member_type, state)[0]->as<Type>();
 }
 
-static auto conv(const StructTypeNode *n, State &state) -> QResult
+static auto conv(const StructTypeNode *n, QState &state) -> QResult
 {
     return Region::create(n->m_name);
 }
 
-static auto conv(const RegionTypeNode *n, State &state) -> QResult
+static auto conv(const RegionTypeNode *n, QState &state) -> QResult
 {
     return Region::create(n->m_name);
 }
 
-static auto conv(const UnionTypeNode *n, State &state) -> QResult
+static auto conv(const UnionTypeNode *n, QState &state) -> QResult
 {
     return Union::create(n->m_name);
 }
 
-static auto conv(const ArrayTypeNode *n, State &state) -> QResult
+static auto conv(const ArrayTypeNode *n, QState &state) -> QResult
 {
     return Array::create(conv(n->m_type, state)[0]->as<Type>(), std::atoll(n->m_size->reduce<IntegerNode>()->m_val.c_str()));
 }
 
-static auto conv(const FunctionTypeNode *n, State &state) -> QResult
+static auto conv(const FunctionTypeNode *n, QState &state) -> QResult
 {
     std::vector<const Type *> params;
     for (auto &param : n->m_params)
@@ -590,48 +590,48 @@ static auto conv(const FunctionTypeNode *n, State &state) -> QResult
     return FType::create(params, conv(n->m_return_type, state)[0]->as<Type>(), n->m_variadic, n->m_pure, n->m_thread_safe, n->m_foreign, n->m_nothrow);
 }
 
-static auto conv(const IntegerNode *n, State &state) -> QResult
+static auto conv(const IntegerNode *n, QState &state) -> QResult
 {
     return Number::create(n->m_val);
 }
 
-static auto conv(const FloatLiteralNode *n, State &state) -> QResult
+static auto conv(const FloatLiteralNode *n, QState &state) -> QResult
 {
     return Number::create(n->m_val);
 }
 
-static auto conv(const StringNode *n, State &state) -> QResult
+static auto conv(const StringNode *n, QState &state) -> QResult
 {
     return String::create(n->m_val);
 }
 
-static auto conv(const CharNode *n, State &state) -> QResult
+static auto conv(const CharNode *n, QState &state) -> QResult
 {
     return Char::create(n->m_val);
 }
 
-static auto conv(const BoolLiteralNode *n, State &state) -> QResult
+static auto conv(const BoolLiteralNode *n, QState &state) -> QResult
 {
     return Number::create(n->m_val ? "1" : "0");
 }
 
-static auto conv(const NullLiteralNode *n, State &state) -> QResult
+static auto conv(const NullLiteralNode *n, QState &state) -> QResult
 {
     return Number::create("0");
 }
 
-static auto conv(const TypedefNode *n, State &state) -> QResult
+static auto conv(const TypedefNode *n, QState &state) -> QResult
 {
     return nullptr;
 }
 
-static auto conv(const VarDeclNode *n, State &state) -> QResult
+static auto conv(const VarDeclNode *n, QState &state) -> QResult
 {
     /// TODO: Implement VarDeclNode
     throw std::runtime_error("QIR translation: VarDeclNode not implemented");
 }
 
-static auto conv(const LetDeclNode *n, State &state) -> QResult
+static auto conv(const LetDeclNode *n, QState &state) -> QResult
 {
     if (state.inside_segment)
     {
@@ -650,7 +650,7 @@ static auto conv(const LetDeclNode *n, State &state) -> QResult
     return Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
 }
 
-static auto conv(const ConstDeclNode *n, State &state) -> QResult
+static auto conv(const ConstDeclNode *n, QState &state) -> QResult
 {
     if (state.inside_segment)
     {
@@ -669,7 +669,7 @@ static auto conv(const ConstDeclNode *n, State &state) -> QResult
     return Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
 }
 
-static auto conv(const FunctionDeclNode *n, State &state) -> QResult
+static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
 {
     std::vector<QValue> sub;
     for (auto &p : n->m_params)
@@ -702,7 +702,7 @@ static auto conv(const FunctionDeclNode *n, State &state) -> QResult
     }
 }
 
-static auto conv(const StructDefNode *n, State &state) -> QResult
+static auto conv(const StructDefNode *n, QState &state) -> QResult
 {
     std::vector<std::pair<std::string, QValue>> fields;
     std::set<const Segment *> methods;
@@ -731,13 +731,13 @@ static auto conv(const StructDefNode *n, State &state) -> QResult
     return result;
 }
 
-static auto conv(const StructFieldNode *n, State &state) -> QResult
+static auto conv(const StructFieldNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
     /// TODO: Implement StructFieldNode
 }
 
-static auto conv(const RegionDefNode *n, State &state) -> QResult
+static auto conv(const RegionDefNode *n, QState &state) -> QResult
 {
     std::vector<std::pair<std::string, QValue>> fields;
 
@@ -750,14 +750,14 @@ static auto conv(const RegionDefNode *n, State &state) -> QResult
     return RegionDef::create(n->m_name, fields, {});
 }
 
-static auto conv(const RegionFieldNode *n, State &state) -> QResult
+static auto conv(const RegionFieldNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
 
     /// TODO: Implement RegionFieldNode
 }
 
-static auto conv(const GroupDefNode *n, State &state) -> QResult
+static auto conv(const GroupDefNode *n, QState &state) -> QResult
 {
     auto st = n->to_struct_def();
     std::map<std::string, QValue> fields;
@@ -778,14 +778,14 @@ static auto conv(const GroupDefNode *n, State &state) -> QResult
     return GroupDef::create(st->m_name, fields, methods);
 }
 
-static auto conv(const GroupFieldNode *n, State &state) -> QResult
+static auto conv(const GroupFieldNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
 
     /// TODO: Implement GroupFieldNode
 }
 
-static auto conv(const UnionDefNode *n, State &state) -> QResult
+static auto conv(const UnionDefNode *n, QState &state) -> QResult
 {
     std::map<std::string, QValue> fields;
     for (auto &field : n->m_fields)
@@ -797,24 +797,24 @@ static auto conv(const UnionDefNode *n, State &state) -> QResult
     return UnionDef::create(n->m_name, fields, {});
 }
 
-static auto conv(const UnionFieldNode *n, State &state) -> QResult
+static auto conv(const UnionFieldNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
 
     /// TODO: Implement UnionFieldNode
 }
 
-static auto conv(const EnumDefNode *n, State &state) -> QResult
+static auto conv(const EnumDefNode *n, QState &state) -> QResult
 {
     return nullptr;
 }
 
-static auto conv(const EnumFieldNode *n, State &state) -> QResult
+static auto conv(const EnumFieldNode *n, QState &state) -> QResult
 {
     return nullptr;
 }
 
-static auto conv(const FunctionDefNode *n, State &state) -> QResult
+static auto conv(const FunctionDefNode *n, QState &state) -> QResult
 {
     auto glob = conv(n->m_decl.get(), state)[0]->as<Global>();
     auto dseg = glob->value->as<Segment>();
@@ -828,12 +828,12 @@ static auto conv(const FunctionDefNode *n, State &state) -> QResult
     return Global::create(glob->name, glob->type, f, glob->_volatile, glob->_atomic, glob->_extern);
 }
 
-static auto conv(const FunctionParamNode *n, State &state) -> QResult
+static auto conv(const FunctionParamNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
 }
 
-static auto conv(const ExportNode *n, State &state) -> QResult
+static auto conv(const ExportNode *n, QState &state) -> QResult
 {
     std::vector<QValue> sub;
     ExportLangType old = state.lang;
@@ -851,13 +851,13 @@ static auto conv(const ExportNode *n, State &state) -> QResult
     return sub;
 }
 
-static auto conv(const InlineAsmNode *n, State &state) -> QResult
+static auto conv(const InlineAsmNode *n, QState &state) -> QResult
 {
     /// TODO: Implement InlineAsmNode
     throw std::runtime_error("QIR translation: InlineAsmNode not implemented");
 }
 
-static auto conv(const ReturnStmtNode *n, State &state) -> QResult
+static auto conv(const ReturnStmtNode *n, QState &state) -> QResult
 {
     if (n->m_expr)
         return Ret::create(conv(n->m_expr.get(), state)[0]->as<Expr>());
@@ -865,27 +865,27 @@ static auto conv(const ReturnStmtNode *n, State &state) -> QResult
         return Ret::create(nullptr);
 }
 
-static auto conv(const RetifStmtNode *n, State &state) -> QResult
+static auto conv(const RetifStmtNode *n, QState &state) -> QResult
 {
     auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
     auto ret = conv(n->m_return.get(), state)[0]->as<Expr>();
     return IfElse::create(cond, Ret::create(ret), nullptr);
 }
 
-static auto conv(const RetzStmtNode *n, State &state) -> QResult
+static auto conv(const RetzStmtNode *n, QState &state) -> QResult
 {
     auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
     auto ret = conv(n->m_return.get(), state)[0]->as<Expr>();
     return IfElse::create(Not::create(cond), Ret::create(ret), nullptr);
 }
 
-static auto conv(const RetvStmtNode *n, State &state) -> QResult
+static auto conv(const RetvStmtNode *n, QState &state) -> QResult
 {
     auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
     return IfElse::create(cond, Ret::create(nullptr), nullptr);
 }
 
-static auto conv(const IfStmtNode *n, State &state) -> QResult
+static auto conv(const IfStmtNode *n, QState &state) -> QResult
 {
     auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
     auto then_block = conv(n->m_then.get(), state)[0]->as<Block>();
@@ -898,14 +898,14 @@ static auto conv(const IfStmtNode *n, State &state) -> QResult
     return IfElse::create(cond, then_block, else_block[0]->as<Block>());
 }
 
-static auto conv(const WhileStmtNode *n, State &state) -> QResult
+static auto conv(const WhileStmtNode *n, QState &state) -> QResult
 {
     auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
     auto stmt = conv(n->m_stmt.get(), state)[0]->as<Block>();
     return While::create(cond, stmt);
 }
 
-static auto conv(const ForStmtNode *n, State &state) -> QResult
+static auto conv(const ForStmtNode *n, QState &state) -> QResult
 {
     auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
     auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
@@ -914,7 +914,7 @@ static auto conv(const ForStmtNode *n, State &state) -> QResult
     return For::create(init, cond, step, stmt);
 }
 
-static auto conv(const ParseNode *n, State &state) -> QResult
+static auto conv(const ParseNode *n, QState &state) -> QResult
 {
     QResult r;
 
@@ -1230,7 +1230,7 @@ bool ir::q::QModule::from_ast(std::shared_ptr<BlockNode> ast)
 {
     LOG(DEBUG) << "Converting AST to QUIX intermediate representation" << std::endl;
 
-    State state;
+    QState state;
 
     auto r = conv(ast.get(), state);
 

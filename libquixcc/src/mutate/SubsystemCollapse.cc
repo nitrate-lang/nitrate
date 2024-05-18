@@ -38,7 +38,7 @@
 
 using namespace libquixcc;
 
-static void collapse(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+static void collapse(const std::vector<std::string> &_ns, libquixcc::ParseNode *parent, traversal::TraversePtr node)
 {
     if (node.first != traversal::TraversePtrType::Smart)
         return;
@@ -49,7 +49,7 @@ static void collapse(const std::vector<std::string> &__namespace, libquixcc::Par
     auto sub = std::static_pointer_cast<SubsystemNode>(ptr);
 
     // This node is not the namespace node. So we must account for the prefix
-    std::string _namespace = Symbol::join(__namespace, sub->m_name);
+    std::string _namespace = Symbol::join(_ns, sub->m_name);
 
     std::shared_ptr<StmtGroupNode> stmts = std::make_shared<StmtGroupNode>();
 
@@ -137,9 +137,9 @@ static void collapse(const std::vector<std::string> &__namespace, libquixcc::Par
         case NodeType::SubsystemNode:
         {
             auto def = std::static_pointer_cast<SubsystemNode>(child);
-            std::vector<std::string> __namespace2 = __namespace;
-            __namespace2.push_back(sub->m_name);
-            collapse(__namespace2, parent, std::make_pair(traversal::TraversePtrType::Smart, reinterpret_cast<std::shared_ptr<ParseNode> *>(&def)));
+            std::vector<std::string> _ns2 = _ns;
+            _ns2.push_back(sub->m_name);
+            collapse(_ns2, parent, std::make_pair(traversal::TraversePtrType::Smart, reinterpret_cast<std::shared_ptr<ParseNode> *>(&def)));
             stmts->m_stmts.push_back(def);
             break;
         }
@@ -152,14 +152,14 @@ static void collapse(const std::vector<std::string> &__namespace, libquixcc::Par
     *std::get<std::shared_ptr<ParseNode> *>(node.second) = stmts;
 }
 
-static void typenode_rename(const std::vector<std::string> &__namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+static void typenode_rename(const std::vector<std::string> &_ns, libquixcc::ParseNode *parent, traversal::TraversePtr node)
 {
     if (node.first != traversal::TraversePtrType::Raw)
         return;
     auto ptr = *std::get<ParseNode **>(node.second);
     auto dobptr = std::get<ParseNode **>(node.second);
 
-    std::vector<std::string> _namespace = __namespace;
+    std::vector<std::string> _namespace = _ns;
     if (!_namespace.empty())
         _namespace.pop_back();
 

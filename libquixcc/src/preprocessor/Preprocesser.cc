@@ -142,7 +142,11 @@ bool libquixcc::PrepEngine::get_static(const std::string &name, std::string &val
 bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok)
 {
     StringLexer lexer;
-    assert(lexer.set_source(std::get<std::string>(input_tok.val()).substr(6), "import"));
+    if (!lexer.set_source(std::get<std::string>(input_tok.val()).substr(6), "import"))
+    {
+        LOG(ERROR) << "Failed to set source for import" << input_tok << std::endl;
+        return false;
+    }
 
     Token tok = lexer.next();
     if (tok.type() != TT::Identifier)
@@ -241,7 +245,12 @@ bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok)
         m_stack.top().already_included.insert(filepath);
         m_include_files.push_back(filepath);
         m_stack.push({StreamLexer(), filepath, f});
-        m_stack.top().lexer.set_source(f, filepath);
+        if (!m_stack.top().lexer.set_source(f, filepath))
+        {
+            LOG(ERROR) << "Failed to set source for file: " << filepath << tok << std::endl;
+            return false;
+        }
+
         return true;
     }
     else

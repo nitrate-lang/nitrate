@@ -62,7 +62,7 @@ namespace libquixcc
             std::string *buffer;
 
             Entry(StreamLexer l, const std::string &p, FILE *f = nullptr, std::string *buf = nullptr) : lexer(l), path(p), file(f), buffer(buf) {}
-            Entry() : lexer(), path(), file(nullptr) {}
+            Entry() : path(), file(nullptr), buffer(nullptr) {}
         };
         std::set<std::string> m_include_dirs;
         std::vector<std::string> m_include_files; // for circular include detection
