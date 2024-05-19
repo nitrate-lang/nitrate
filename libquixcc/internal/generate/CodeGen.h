@@ -71,10 +71,14 @@ namespace libquixcc
         {
             std::string name;
             std::stack<std::map<std::string, llvm::AllocaInst *>> locals;
+            std::stack<std::map<std::string, llvm::Argument *>> params;
             std::stack<std::map<std::string, llvm::BasicBlock *>> labels;
             std::map<std::string, llvm::GlobalVariable *> globals;
             std::map<std::string, llvm::Function *> functions;
-            
+            std::map<std::string, llvm::Type *> types;
+            bool terminate_early;
+            bool incond;
+
             bool m_pub;
             bool m_deref;
 
@@ -83,6 +87,7 @@ namespace libquixcc
                 name = "";
                 m_pub = false;
                 m_deref = true;
+                incond = false;
             }
         };
 
@@ -113,6 +118,7 @@ namespace libquixcc
         llvm::Constant *gen(const ir::delta::String *node);
         llvm::Value *gen(const ir::delta::Ident *node);
         llvm::Value *gen(const ir::delta::Assign *node);
+        llvm::Value *gen(const ir::delta::Member *node);
         llvm::Value *gen(const ir::delta::Load *node);
         llvm::Value *gen(const ir::delta::Index *node);
         llvm::Value *gen(const ir::delta::SCast *node);

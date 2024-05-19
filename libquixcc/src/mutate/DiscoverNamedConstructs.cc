@@ -167,7 +167,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
         {}));
 
     for (auto &pair : named_construct_map)
-        LOG(DEBUG) << "Found named construct: " << pair.first.second << std::endl;
+        LOG(DEBUG) << log::raw << "Found named construct: " << pair.first.second << std::endl;
 
     job->m_inner.m_named_construsts = named_construct_map;
     job->m_inner.m_named_types = named_types_map;

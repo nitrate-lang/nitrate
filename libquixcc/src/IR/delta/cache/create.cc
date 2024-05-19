@@ -44,7 +44,7 @@
 
 using namespace libquixcc;
 using namespace libquixcc::ir;
-using namespace libquixcc::ir::delta;
+using namespace delta;
 
 static RootNode *root = nullptr;
 static std::map<std::pair<const Value *, const Value *>, const SCast *> scast_insts;
@@ -84,6 +84,7 @@ static std::map<std::pair<const Value *, const Value *>, const Or *> or_insts;
 static std::map<const Value *, const Not *> not_insts;
 static std::map<std::pair<const Value *, const Value *>, const Xor *> xor_insts;
 static std::map<std::tuple<const Value *, const Value *, uint64_t>, const Assign *> assign_insts;
+static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *> member_insts;
 static std::map<std::pair<const Value *, uint64_t>, const Load *> load_insts;
 static std::map<std::pair<const Value *, const Value *>, const Index *> index_insts;
 static std::map<std::vector<const Value *>, const Block *> block_insts;
@@ -450,6 +451,15 @@ const delta::Assign *delta::Assign::create(const Expr *var, const Expr *value, u
     return assign_insts[key];
 }
 
+const delta::Member *delta::Member::create(const delta::Expr *lhs, size_t field, const delta::Type *field_type)
+{
+    lock(NodeType::Member);
+    auto key = std::make_tuple(lhs, field, field_type);
+    if (!member_insts.contains(key))
+        member_insts[key] = new Member(lhs, field, field_type);
+    return member_insts[key];
+}
+
 const delta::Load *delta::Load::create(const Expr *var, uint64_t rank)
 {
     lock(NodeType::Load);
@@ -468,7 +478,7 @@ const delta::Index *delta::Index::create(const Expr *var, const Expr *index)
     return index_insts[key];
 }
 
-const libquixcc::ir::delta::Block *libquixcc::ir::delta::Block::create(std::vector<const Value *> stmts)
+const delta::Block *delta::Block::create(std::vector<const Value *> stmts)
 {
     lock(NodeType::Block);
     if (!block_insts.contains(stmts))
@@ -476,12 +486,12 @@ const libquixcc::ir::delta::Block *libquixcc::ir::delta::Block::create(std::vect
     return block_insts[stmts];
 }
 
-const delta::Segment *delta::Segment::create(const Type *ret, bool pure, const std::vector<std::pair<std::string, const Type *>> &params, const Block *stmts)
+const delta::Segment *delta::Segment::create(const Type *ret, bool variadic, const std::vector<std::pair<std::string, const Type *>> &params, const Block *stmts)
 {
     lock(NodeType::Segment);
-    auto key = std::make_tuple(ret, pure, params, stmts);
+    auto key = std::make_tuple(ret, variadic, params, stmts);
     if (!segment_insts.contains(key))
-        segment_insts[key] = new Segment(ret, pure, params, stmts);
+        segment_insts[key] = new Segment(ret, variadic, params, stmts);
     return segment_insts[key];
 }
 
@@ -666,7 +676,7 @@ const delta::String *delta::String::create(std::string value)
     return string_insts[value];
 }
 
-const libquixcc::ir::delta::Ident *libquixcc::ir::delta::Ident::create(std::string name, const Type *type)
+const delta::Ident *delta::Ident::create(std::string name, const Type *type)
 {
     lock(NodeType::Ident);
     auto key = std::make_pair(name, type);

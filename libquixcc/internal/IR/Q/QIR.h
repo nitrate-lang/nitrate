@@ -146,6 +146,7 @@ namespace libquixcc
 
                 /* Memory */
                 Assign,
+                Member,
             };
 
             class Value : public libquixcc::ir::Node<Q>

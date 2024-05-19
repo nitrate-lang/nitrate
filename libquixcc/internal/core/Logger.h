@@ -60,6 +60,12 @@ namespace libquixcc
         FATAL
     };
 
+    enum class log
+    {
+        format,
+        raw
+    };
+
     typedef std::function<void(const std::string &, E type)> LogDispatchFunc;
     typedef std::function<std::string(const std::string &, E type, const Token &)> LogFormatFunc;
 
@@ -72,13 +78,20 @@ namespace libquixcc
         LogDispatchFunc m_dispatch;
         LogFormatFunc m_fmt;
         E m_level;
+        libquixcc::log m_mode;
 
     public:
-        inline Logger(E level) : m_dispatch(nullptr), m_fmt(nullptr), m_level(level) {}
+        inline Logger(E level) : m_dispatch(nullptr), m_fmt(nullptr), m_level(level), m_mode(log::format) {}
 
         template <class T>
         Logger &operator+=(const T &msg)
         {
+            if (m_mode == log::raw)
+            {
+                m_buf << msg;
+                return *this;
+            }
+
             if (!m_replacement_idx.empty())
             {
                 m_parts[m_replacement_idx.front()] = msg;
@@ -124,6 +137,11 @@ namespace libquixcc
             return *this;
         }
 
+        inline void mode(libquixcc::log m)
+        {
+            m_mode = m;
+        }
+
         inline void flush()
         {
             if (!m_dispatch || !m_fmt)
@@ -134,6 +152,8 @@ namespace libquixcc
             m_parts = {};
             m_replacement_idx = {};
             m_tok = Token();
+
+            mode(log::format);
         }
 
         inline void base(const Token &tok) { m_tok = tok; }
@@ -210,6 +230,11 @@ namespace libquixcc
         return logger += msg;
     }
 
+    static inline Logger &operator<<(Logger &l, libquixcc::log m)
+    {
+        l.mode(m);
+        return l;
+    }
     static inline void operator<<(Logger &log, std::ostream &(*var)(std::ostream &)) { log.flush(); }
     static inline Logger &operator<<(Logger &log, const Token &tok)
     {
@@ -226,6 +251,7 @@ namespace libquixcc
     {
         _G_loggerGrp.setup(job);
     }
+
 };
 
 #endif // __QUIXCC_LOGGER_H__

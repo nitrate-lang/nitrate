@@ -34,18 +34,17 @@
 bool libquixcc::ir::delta::IfElse::print_impl(std::ostream &os, PState &state) const
 {
     os << "if (";
+    if (!cond->print(os, state))
+        return false;
+
+    os << ") ";
     if (!then->print(os, state))
         return false;
 
-    os << ") {";
-    if (!then->print(os, state))
-        return false;
-
-    os << "} else {";
+    os << " else ";
     if (!els->print(os, state))
         return false;
 
-    os << "}";
     return true;
 }
 

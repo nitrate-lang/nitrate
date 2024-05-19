@@ -108,7 +108,7 @@ namespace libquixcc
             template <typename T>
             bool is(const T *other) const
             {
-                return ntype == other->ntype;
+                return reinterpret_cast<const T *>(this) == other; 
             }
 
             template <typename T>
@@ -295,8 +295,9 @@ namespace libquixcc
 
             std::string to_string() const
             {
-                std::stringstream ss;
-                print(ss);
+                std::ostringstream ss;
+                if (!print(ss))
+                    throw std::runtime_error("Failed to print IR Module");
                 return ss.str();
             }
 

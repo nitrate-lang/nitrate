@@ -40,3 +40,13 @@ bool libquixcc::ir::q::Assign::verify_impl() const
 {
     return lhs->verify() && rhs->verify();
 }
+
+boost::uuids::uuid libquixcc::ir::q::Member::hash_impl() const
+{
+    return Hasher().gettag().add(lhs).add(field).add(field_type).hash();
+}
+
+bool libquixcc::ir::q::Member::verify_impl() const
+{
+    return lhs->verify() && field_type->verify();
+}

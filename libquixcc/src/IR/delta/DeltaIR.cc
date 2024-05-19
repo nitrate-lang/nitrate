@@ -82,7 +82,7 @@ unsigned int libquixcc::ir::delta::IRDelta::ir_dialect_version_impl() const
 
 std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_family_impl() const
 {
-    return "QIR";
+    return "DeltaIR";
 }
 
 std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_description_impl() const

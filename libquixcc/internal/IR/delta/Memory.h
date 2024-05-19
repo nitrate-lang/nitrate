@@ -62,6 +62,26 @@ namespace libquixcc::ir::delta
         const Expr *value;
     };
 
+    class Member : public Expr
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Member(const Expr *lhs, size_t field, const Type *field_type) : field(field), lhs(lhs), field_type(field_type)
+        {
+            ntype = (int)NodeType::Member;
+        }
+
+    public:
+        static const Member *create(const Expr *lhs, size_t field, const Type *field_type);
+
+        size_t field;
+        const Expr *lhs;
+        const Type *field_type;
+    };
+
     class Load : public Expr
     {
     protected:

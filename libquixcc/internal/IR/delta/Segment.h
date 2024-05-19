@@ -67,13 +67,13 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Segment(const Type *ret, bool pure, const std::vector<std::pair<std::string, const Type *>> &params, const Block *block) : params(params), block(block), ret(ret), pure(pure)
+        Segment(const Type *ret, bool variadic, const std::vector<std::pair<std::string, const Type *>> &params, const Block *block) : params(params), block(block), ret(ret), variadic(variadic)
         {
             ntype = (int)NodeType::Segment;
         }
 
     public:
-        static const Segment *create(const Type *ret, bool pure, const std::vector<std::pair<std::string, const Type *>> &params, const Block *block);
+        static const Segment *create(const Type *ret, bool variadic, const std::vector<std::pair<std::string, const Type *>> &params, const Block *block);
 
         const FType *getType() const
         {
@@ -86,7 +86,7 @@ namespace libquixcc::ir::delta
         std::vector<std::pair<std::string, const Type *>> params;
         const Block *block;
         const Type *ret;
-        bool pure;
+        bool variadic;
     };
 }
 

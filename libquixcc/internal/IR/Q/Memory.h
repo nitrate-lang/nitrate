@@ -60,6 +60,27 @@ namespace libquixcc::ir::q
         const Expr *lhs;
         const Expr *rhs;
     };
+
+    class Member : public Expr
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Member(const Value *lhs, size_t field, const Type *field_type) : field(field), lhs(lhs), field_type(field_type)
+        {
+            ntype = (int)NodeType::Member;
+        }
+
+    public:
+        static const Member *create(const Value *lhs, size_t field, const Type *field_type);
+        const Type *infer() const override;
+
+        size_t field;
+        const Value *lhs;
+        const Type *field_type;
+    };
 }
 
 #endif // __QUIXCC_IR_Q_NODES_MEMORY_H__

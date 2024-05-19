@@ -48,7 +48,7 @@ using namespace libquixcc::ir::q;
 
 const Type *Call::infer() const
 {
-    return func->type->as<Segment>()->return_type;
+    return func->type->as<FType>()->ret;
 }
 
 const Type *CallIndirect::infer() const
@@ -302,6 +302,11 @@ const Type *Xor::infer() const
 const Type *Assign::infer() const
 {
     return rhs->infer();
+}
+
+const libquixcc::ir::q::Type *libquixcc::ir::q::Member::infer() const
+{
+    return field_type;
 }
 
 uint8_t get_numbits(std::string s);

@@ -115,9 +115,9 @@ static std::map<const Value *, const Ptr *> ptr_insts;
 static std::map<std::pair<const Value *, uint64_t>, const Array *> array_insts;
 static std::map<const Value *, const Vector *> vector_insts;
 static std::map<std::tuple<std::vector<const Type *>, const Value *, bool, bool, bool, bool, bool>, const FType *> ftype_insts;
-static std::map<std::string, const Region *> region_insts;
-static std::map<std::string, const Group *> group_insts;
-static std::map<std::string, const Union *> union_insts;
+static std::map<std::pair<std::string, std::vector<const Type *>>, const Region *> region_insts;
+static std::map<std::pair<std::string, std::vector<const Type *>>, const Group *> group_insts;
+static std::map<std::pair<std::string, std::vector<const Type *>>, const Union *> union_insts;
 static std::map<std::string, const Opaque *> opaque_insts;
 static std::map<std::tuple<std::string, std::vector<std::pair<std::string, const Value *>>, std::set<const libquixcc::ir::q::Segment *>>, const RegionDef *> regiondef_insts;
 static std::map<std::tuple<std::string, std::map<std::string, const Value *>, std::set<const libquixcc::ir::q::Segment *>>, const GroupDef *> groupdef_insts;
@@ -128,6 +128,7 @@ static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
 static std::map<std::string, const Char *> char_insts;
 static std::map<std::pair<const Value *, const Value *>, const Assign *> assign_insts;
+static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *> member_insts;
 
 static std::map<q::NodeType, std::mutex> node_mutexes;
 
@@ -684,28 +685,31 @@ const libquixcc::ir::q::FType *libquixcc::ir::q::FType::create(std::vector<const
     return ftype_insts[key];
 }
 
-const libquixcc::ir::q::Region *libquixcc::ir::q::Region::create(std::string name)
+const libquixcc::ir::q::Region *libquixcc::ir::q::Region::create(std::string name, std::vector<const Type *> fields)
 {
     lock(NodeType::Region);
-    if (!region_insts.contains(name))
-        region_insts[name] = new Region(name);
-    return region_insts[name];
+    auto key = std::make_pair(name, fields);
+    if (!region_insts.contains(key))
+        region_insts[key] = new Region(name, fields);
+    return region_insts[key];
 }
 
-const libquixcc::ir::q::Group *libquixcc::ir::q::Group::create(std::string name)
+const libquixcc::ir::q::Group *libquixcc::ir::q::Group::create(std::string name, std::vector<const Type *> fields)
 {
     lock(NodeType::Group);
-    if (!group_insts.contains(name))
-        group_insts[name] = new Group(name);
-    return group_insts[name];
+    auto key = std::make_pair(name, fields);
+    if (!group_insts.contains(key))
+        group_insts[key] = new Group(name, fields);
+    return group_insts[key];
 }
 
-const libquixcc::ir::q::Union *libquixcc::ir::q::Union::create(std::string name)
+const libquixcc::ir::q::Union *libquixcc::ir::q::Union::create(std::string name, std::vector<const Type *> fields)
 {
     lock(NodeType::Union);
-    if (!union_insts.contains(name))
-        union_insts[name] = new Union(name);
-    return union_insts[name];
+    auto key = std::make_pair(name, fields);
+    if (!union_insts.contains(key))
+        union_insts[key] = new Union(name, fields);
+    return union_insts[key];
 }
 
 const libquixcc::ir::q::Opaque *libquixcc::ir::q::Opaque::create(std::string name)
@@ -792,4 +796,13 @@ const libquixcc::ir::q::Assign *libquixcc::ir::q::Assign::create(const Expr *lhs
     if (!assign_insts.contains(key))
         assign_insts[key] = new Assign(lhs, rhs);
     return assign_insts[key];
+}
+
+const libquixcc::ir::q::Member *libquixcc::ir::q::Member::create(const libquixcc::ir::q::Value *lhs, size_t field, const Type *field_type)
+{
+    lock(NodeType::Member);
+    auto key = std::make_tuple(lhs, field, field_type);
+    if (!member_insts.contains(key))
+        member_insts[key] = new Member(lhs, field, field_type);
+    return member_insts[key];
 }

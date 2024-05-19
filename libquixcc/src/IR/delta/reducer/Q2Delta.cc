@@ -350,7 +350,7 @@ static auto conv(const ir::q::Segment *n, DState &state) -> DResult
     if (n->block)
         block = conv(n->block, state)[0]->as<Block>();
 
-    return Segment::create(ret, false, params, block);
+    return Segment::create(ret, n->infer()->as<ir::q::FType>()->m_variadic, params, block);
 }
 
 static auto conv(const ir::q::Asm *n, DState &state) -> DResult
@@ -381,8 +381,22 @@ static auto conv(const ir::q::RegionDef *n, DState &state) -> DResult
 
 static auto conv(const ir::q::GroupDef *n, DState &state) -> DResult
 {
-    /// TODO: Implement GroupDef
-    throw std::runtime_error("DeltaIR translation: GroupDef not implemented");
+    /// TODO: handle methods impl
+
+    std::vector<std::pair<std::string, const Type *>> fields;
+    for (auto field : n->fields)
+        fields.push_back({field.first, conv(field.second, state)[0]->as<Type>()});
+
+    std::vector<const Segment *> methods;
+    for (auto method : n->methods)
+        methods.push_back(conv(method, state)[0]->as<Segment>());
+
+    std::vector<DValue> values = {Packet::create(fields, n->name)};
+    values.insert(values.end(), methods.begin(), methods.end());
+
+    state.regions[n->name] = values[0]->as<Packet>();
+
+    return values;
 }
 
 static auto conv(const ir::q::UnionDef *n, DState &state) -> DResult
@@ -433,8 +447,11 @@ static auto conv(const ir::q::CallIndirect *n, DState &state) -> DResult
 
 static auto conv(const ir::q::IfElse *n, DState &state) -> DResult
 {
-    /// TODO: Implement IfElse
-    throw std::runtime_error("DeltaIR translation: IfElse not implemented");
+    auto cond = conv(n->cond, state)[0]->as<Expr>();
+    auto if_block = conv(n->then, state)[0]->as<Block>();
+    auto else_block = conv(n->els, state)[0]->as<Block>();
+
+    return IfElse::create(cond, if_block, else_block);
 }
 
 static auto conv(const ir::q::While *n, DState &state) -> DResult
@@ -657,6 +674,14 @@ static auto conv(const ir::q::Char *n, DState &state) -> DResult
 static auto conv(const ir::q::Assign *n, DState &state) -> DResult
 {
     return Assign::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
+}
+
+static auto conv(const ir::q::Member *n, DState &state) -> DResult
+{
+    auto e = conv(n->lhs, state)[0]->as<Expr>();
+    auto t = conv(n->field_type, state)[0]->as<Type>();
+
+    return Member::create(e, n->field, t);
 }
 
 static auto conv(const ir::q::Value *n, DState &state) -> DResult
@@ -973,12 +998,14 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult
         r = conv(n->as<ir::q::Assign>(), state);
         break;
 
+    case libquixcc::ir::q::NodeType::Member:
+        r = conv(n->as<ir::q::Member>(), state);
+        break;
+
     default:
         throw std::runtime_error("DIR translation: Unknown node type");
     }
     return r;
-
-    (void)conv(n->as<ir::q::Value>(), state);
 }
 
 bool libquixcc::ir::delta::IRDelta::from_qir(const std::unique_ptr<libquixcc::ir::q::QModule> &ir)
@@ -995,7 +1022,7 @@ bool libquixcc::ir::delta::IRDelta::from_qir(const std::unique_ptr<libquixcc::ir
         return false;
     }
 
-    LOG(DEBUG) << this->to_string() << std::endl;
+    LOG(DEBUG) << log::raw << to_string() << std::endl;
 
     LOG(DEBUG) << "Successfully translated QUIX intermediate representation to DeltaIR" << std::endl;
 

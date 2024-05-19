@@ -86,7 +86,7 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
 
             if (!vars.contains(varname))
             {
-                LOG(ERROR) << "MethodToFunc: Named item '" << varname << "' not found." << std::endl;
+                LOG(ERROR) << log::raw << "MethodToFunc: Named item '" << varname << "' not found." << std::endl;
                 return;
             }
 
@@ -121,7 +121,7 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
 
             if (_typename.empty())
             {
-                LOG(FATAL) << "MethodToFunc: Named item '" << varname << "' has no typename!" << std::endl;
+                LOG(FATAL) << log::raw << "MethodToFunc: Named item '" << varname << "' has no typename!" << std::endl;
                 return;
             }
 

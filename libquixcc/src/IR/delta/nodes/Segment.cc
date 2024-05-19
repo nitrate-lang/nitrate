@@ -43,7 +43,7 @@ bool libquixcc::ir::delta::Block::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::delta::Segment::hash_impl() const
 {
-    auto h = Hasher().gettag().add(ret).add(pure);
+    auto h = Hasher().gettag().add(ret).add(variadic);
     for (auto &p : params)
         h.add(p.second);
 

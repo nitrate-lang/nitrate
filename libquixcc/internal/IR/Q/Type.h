@@ -270,7 +270,11 @@ namespace libquixcc::ir::q
 
     public:
         static const Ptr *create(const Type *type);
-        size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of pointer type"); }
+        size_t bitcount() const override
+        {
+            /// TODO: This is a temporary solution. We need to find a better way to handle this.
+            return 64;
+        }
 
         const Type *type;
     };
@@ -346,16 +350,17 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Region(std::string name) : name(name)
+        Region(std::string name, std::vector<const Type *> fields) : name(name), fields(fields)
         {
             ntype = (int)NodeType::Region;
         }
 
     public:
-        static const Region *create(std::string name);
+        static const Region *create(std::string name, std::vector<const Type *> fields);
         size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of region type"); }
 
         std::string name;
+        std::vector<const Type *> fields;
     };
 
     class Group : public Type
@@ -365,16 +370,17 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Group(std::string name) : name(name)
+        Group(std::string name, std::vector<const Type *> fields) : name(name), fields(fields)
         {
             ntype = (int)NodeType::Group;
         }
 
     public:
-        static const Group *create(std::string name);
+        static const Group *create(std::string name, std::vector<const Type *> fields);
         size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of group type"); }
 
         std::string name;
+        std::vector<const Type *> fields;
     };
 
     class Union : public Type
@@ -384,16 +390,17 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Union(std::string name) : name(name)
+        Union(std::string name, std::vector<const Type *> fields) : name(name), fields(fields)
         {
             ntype = (int)NodeType::Union;
         }
 
     public:
-        static const Union *create(std::string name);
+        static const Union *create(std::string name, std::vector<const Type *> fields);
         size_t bitcount() const override { throw std::runtime_error("Cannot get bitcount of union type"); }
 
         std::string name;
+        std::vector<const Type *> fields;
     };
 
     class Opaque : public Type

@@ -95,6 +95,7 @@ struct QState
     bool inside_segment;
     ExportLangType lang;
     std::stack<const FunctionDefNode *> function;
+    std::map<std::string, const DefNode *> typedefs;
 
     QState()
     {
@@ -339,6 +340,9 @@ static const Expr *promote(const Type *lht, const libquixcc::ir::q::Expr *rhs)
     if (lht->is_unsigned() || rht->is_unsigned())
         return ir::q::UCast::create(lht, rhs);
 
+    if (lht->is_ptr() && rht->is_ptr())
+        return ir::q::Bitcast::create(lht, rhs);
+
     throw std::runtime_error("cannot promote types");
 }
 
@@ -354,6 +358,15 @@ static void bipromote(const libquixcc::ir::q::Expr **lhs, const libquixcc::ir::q
 
     if (!lht || !rht)
         throw std::runtime_error("failed promote types");
+
+    if (lht->is_ptr())
+        *lhs = ir::q::PtrICast::create(*lhs);
+
+    if (rht->is_ptr())
+        *rhs = ir::q::PtrICast::create(*rhs);
+
+    lht = (*lhs)->infer();
+    rht = (*rhs)->infer();
 
     if (lht->is(rht))
         return;
@@ -371,12 +384,6 @@ static void bipromote(const libquixcc::ir::q::Expr **lhs, const libquixcc::ir::q
         *lhs = promote(*rhs, *lhs);
         return;
     }
-
-    if (lht->is_ptr())
-        *lhs = ir::q::PtrICast::create(*lhs);
-
-    if (rht->is_ptr())
-        *rhs = ir::q::PtrICast::create(*rhs);
 
     if (lht->is_float() || rht->is_float())
     {
@@ -453,7 +460,7 @@ static auto conv(const BinaryExprNode *n, QState &state) -> QResult
     case Operator::NotEqual:
         return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
     case Operator::Assign:
-        return Assign::create(lhs, rhs);
+        return Assign::create(lhs, promote(lhs, rhs));
     case Operator::PlusAssign:
         return Assign::create(lhs, Add::create(lhs, promote(lhs, rhs)));
     case Operator::MinusAssign:
@@ -496,18 +503,26 @@ static auto conv(const CallExprNode *n, QState &state) -> QResult
         callee = conv(n->m_decl.get(), state)[0]->as<Global>();
 
     std::vector<QValue> args;
+    const Segment *seg = callee->value->as<Segment>();
 
     size_t i = 0;
     for (auto &arg : n->m_positional_args)
     {
-        args.push_back(conv(arg.get(), state)[0]);
+        auto v = conv(arg.get(), state)[0]->as<Expr>();
+        if (seg->params[i].second)
+            args.push_back(promote(seg->params[i].second, v));
+        else
+            args.push_back(v);
         i++;
     }
 
     while (i < callee->value->as<Segment>()->params.size())
     {
-        auto d = conv(n->m_decl->m_params[i]->m_value.get(), state);
-        args.push_back(d[0]);
+        auto v = conv(n->m_decl->m_params[i]->m_value.get(), state)[0]->as<Expr>();
+        if (seg->params[i].second)
+            args.push_back(promote(seg->params[i].second, v));
+        else
+            args.push_back(v);
         i++;
     }
 
@@ -522,6 +537,95 @@ static auto conv(const ListExprNode *n, QState &state) -> QResult
 
 static auto conv(const MemberAccessNode *n, QState &state) -> QResult
 {
+    auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
+    auto t = e->infer()->as<Type>();
+
+    size_t rank = 0;
+
+    while (t->is_ptr())
+    {
+        t = t->as<Ptr>()->type;
+        rank++;
+    }
+
+    switch ((ir::q::NodeType)t->ntype)
+    {
+    case ir::q::NodeType::Region:
+    {
+        auto x = t->as<Region>();
+
+        if (!state.typedefs.contains(x->name))
+            throw std::runtime_error("QIR translation: MemberAccessNode not found");
+
+        if (state.typedefs[x->name]->is<RegionDefNode>())
+        {
+            auto def = state.typedefs[x->name]->as<RegionDefNode>();
+            for (size_t i = 0; i < def->m_fields.size(); i++)
+            {
+                if (def->m_fields[i]->m_name == n->m_field)
+                {
+                    auto t = conv(def->m_fields[i]->m_type, state)[0]->as<Type>();
+                    return Member::create(e, i, t);
+                }
+            }
+        }
+        else
+        {
+            auto def = state.typedefs[x->name]->as<StructDefNode>();
+            for (size_t i = 0; i < def->m_fields.size(); i++)
+            {
+                if (def->m_fields[i]->m_name == n->m_field)
+                {
+                    auto t = conv(def->m_fields[i]->m_type, state)[0]->as<Type>();
+                    return Member::create(e, i, t);
+                }
+            }
+        }
+
+        throw std::runtime_error("QIR translation: MemberAccessNode not found");
+    }
+    case ir::q::NodeType::Group:
+    {
+        auto x = t->as<Group>();
+
+        if (!state.typedefs.contains(x->name))
+            throw std::runtime_error("QIR translation: MemberAccessNode not found");
+
+        auto def = state.typedefs[x->name]->as<StructDefNode>();
+        for (size_t i = 0; i < def->m_fields.size(); i++)
+        {
+            if (def->m_fields[i]->m_name == n->m_field)
+            {
+                auto t = conv(def->m_fields[i]->m_type, state)[0]->as<Type>();
+                return Member::create(e, i, t);
+            }
+        }
+
+        throw std::runtime_error("QIR translation: MemberAccessNode not found");
+    }
+    case ir::q::NodeType::Union:
+    {
+        auto x = t->as<Union>();
+
+        if (!state.typedefs.contains(x->name))
+            throw std::runtime_error("QIR translation: MemberAccessNode not found");
+
+        auto def = state.typedefs[x->name]->as<UnionDefNode>();
+        for (size_t i = 0; i < def->m_fields.size(); i++)
+        {
+            if (def->m_fields[i]->m_name == n->m_field)
+            {
+                auto t = conv(def->m_fields[i]->m_type, state)[0]->as<Type>();
+                return Member::create(e, i, t);
+            }
+        }
+
+        throw std::runtime_error("QIR translation: MemberAccessNode not found");
+    }
+    default:
+        throw std::runtime_error("MemberAccessNode not implemented");
+    }
+
     /// TODO: Implement MemberAccessNode
     throw std::runtime_error("QIR translation: MemberAccessNode not implemented");
 }
@@ -707,17 +811,29 @@ static auto conv(const EnumTypeNode *n, QState &state) -> QResult
 
 static auto conv(const StructTypeNode *n, QState &state) -> QResult
 {
-    return Region::create(n->m_name);
+    std::vector<const Type *> fields;
+    for (auto &field : n->m_fields)
+        fields.push_back(conv(field, state)[0]->as<Type>());
+
+    return Region::create(n->m_name, fields);
 }
 
 static auto conv(const RegionTypeNode *n, QState &state) -> QResult
 {
-    return Region::create(n->m_name);
+    std::vector<const Type *> fields;
+    for (auto &field : n->m_fields)
+        fields.push_back(conv(field, state)[0]->as<Type>());
+
+    return Region::create(n->m_name, fields);
 }
 
 static auto conv(const UnionTypeNode *n, QState &state) -> QResult
 {
-    return Union::create(n->m_name);
+    std::vector<const Type *> fields;
+    for (auto &field : n->m_fields)
+        fields.push_back(conv(field, state)[0]->as<Type>());
+
+    return Union::create(n->m_name, fields);
 }
 
 static auto conv(const ArrayTypeNode *n, QState &state) -> QResult
@@ -777,22 +893,103 @@ static auto conv(const VarDeclNode *n, QState &state) -> QResult
     throw std::runtime_error("QIR translation: VarDeclNode not implemented");
 }
 
+static auto create_defaults(const libquixcc::ir::q::Value *var, libquixcc::TypeNode *type, QState &state) -> QResult
+{
+    switch (type->ntype)
+    {
+    case libquixcc::NodeType::StructTypeNode:
+    {
+        auto s = type->as<libquixcc::StructTypeNode>();
+        if (!state.typedefs.contains(s->m_name))
+            throw std::runtime_error("QIR translation: structdef not found");
+
+        std::vector<QValue> res;
+        for (size_t i = 0; i < state.typedefs[s->m_name]->as<StructDefNode>()->m_fields.size(); i++)
+        {
+            auto field = state.typedefs[s->m_name]->as<StructDefNode>()->m_fields[i];
+            if (!field->m_value)
+                continue;
+
+            auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
+            auto t = conv(field->m_type, state)[0]->as<Type>();
+
+            res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
+        }
+
+        return res;
+    }
+    case libquixcc::NodeType::RegionTypeNode:
+    {
+        auto r = type->as<libquixcc::RegionTypeNode>();
+        if (!state.typedefs.contains(r->m_name))
+            throw std::runtime_error("QIR translation: regiondef not found");
+
+        std::vector<QValue> res;
+        for (size_t i = 0; i < state.typedefs[r->m_name]->as<RegionDefNode>()->m_fields.size(); i++)
+        {
+            auto field = state.typedefs[r->m_name]->as<RegionDefNode>()->m_fields[i];
+            if (!field->m_value)
+                continue;
+
+            auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
+            auto t = conv(field->m_type, state)[0]->as<Type>();
+
+            res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
+        }
+
+        return res;
+    }
+    case libquixcc::NodeType::UnionTypeNode:
+    {
+        /// TODO: think about this one
+
+        auto u = type->as<libquixcc::UnionTypeNode>();
+        if (!state.typedefs.contains(u->m_name))
+            throw std::runtime_error("QIR translation: uniondef not found");
+
+        std::vector<QValue> res;
+        for (size_t i = 0; i < state.typedefs[u->m_name]->as<UnionDefNode>()->m_fields.size(); i++)
+        {
+            auto field = state.typedefs[u->m_name]->as<UnionDefNode>()->m_fields[i];
+            if (!field->m_value)
+                continue;
+
+            auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
+            auto t = conv(field->m_type, state)[0]->as<Type>();
+
+            res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
+        }
+
+        return res;
+    }
+    default:
+        throw std::runtime_error("QIR translation: create_defaults not implemented");
+    }
+}
+
 static auto conv(const LetDeclNode *n, QState &state) -> QResult
 {
     if (state.inside_segment)
     {
         auto l = Local::create(n->m_name, conv(n->m_type, state)[0]->as<Type>());
-
         state.local_idents.top()[n->m_name] = l->type;
+        std::vector<QValue> res = {l};
+        auto ident = Ident::create(n->m_name, l->type);
+
+        if (n->m_type->is_composite())
+        {
+            auto defaults = create_defaults(ident, n->m_type, state);
+            for (auto &d : defaults)
+                res.push_back(d);
+        }
 
         if (n->m_init)
         {
             auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
-            auto ident = Ident::create(n->m_name, l->type);
-            return {l, Assign::create(ident, promote(ident, init))};
+            res.push_back(Assign::create(ident, promote(ident, init)));
         }
 
-        return l;
+        return res;
     }
 
     const Expr *expr = nullptr;
@@ -814,17 +1011,24 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult
     if (state.inside_segment)
     {
         auto l = Local::create(n->m_name, conv(n->m_type, state)[0]->as<Type>());
+        state.local_idents.top()[n->m_name] = l->type;
+        std::vector<QValue> res = {l};
+        auto ident = Ident::create(n->m_name, l->type);
+
+        if (n->m_type->is_composite())
+        {
+            auto defaults = create_defaults(ident, n->m_type, state);
+            for (auto &d : defaults)
+                res.push_back(d);
+        }
 
         if (n->m_init)
         {
             auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
-            auto ident = Ident::create(n->m_name, l->type);
-            return {l, Assign::create(ident, promote(ident, init))};
+            res.push_back(Assign::create(ident, promote(ident, init)));
         }
 
-        state.local_idents.top()[n->m_name] = l->type;
-
-        return l;
+        return res;
     }
 
     const Expr *expr = nullptr;
@@ -929,6 +1133,8 @@ static auto conv(const StructDefNode *n, QState &state) -> QResult
         result.insert(result.end(), res.begin(), res.end());
     }
 
+    state.typedefs[n->m_name] = n;
+
     return result;
 }
 
@@ -948,6 +1154,7 @@ static auto conv(const RegionDefNode *n, QState &state) -> QResult
         fields.push_back({field->m_name, res[0]});
     }
 
+    state.typedefs[n->m_name] = n;
     return RegionDef::create(n->m_name, fields, {});
 }
 
@@ -960,6 +1167,9 @@ static auto conv(const RegionFieldNode *n, QState &state) -> QResult
 
 static auto conv(const GroupDefNode *n, QState &state) -> QResult
 {
+    /// TODO: fix memory leak
+    static std::set<std::shared_ptr<StructDefNode>> groups;
+
     auto st = n->to_struct_def();
     std::map<std::string, QValue> fields;
     std::set<const Segment *> methods;
@@ -976,6 +1186,8 @@ static auto conv(const GroupDefNode *n, QState &state) -> QResult
         methods.insert(res[0]->as<Segment>());
     }
 
+    groups.insert(st);
+    state.typedefs[n->m_name] = st.get();
     return GroupDef::create(st->m_name, fields, methods);
 }
 
@@ -995,6 +1207,7 @@ static auto conv(const UnionDefNode *n, QState &state) -> QResult
         fields.insert({field->m_name, res[0]});
     }
 
+    state.typedefs[n->m_name] = n;
     return UnionDef::create(n->m_name, fields, {});
 }
 
@@ -1020,11 +1233,12 @@ static auto conv(const FunctionDefNode *n, QState &state) -> QResult
     state.local_idents.push({});
     state.function.push(n);
 
+    bool old = state.inside_segment;
+    state.inside_segment = true;
+
     auto glob = conv(n->m_decl.get(), state)[0]->as<Global>();
     auto dseg = glob->value->as<Segment>();
 
-    bool old = state.inside_segment;
-    state.inside_segment = true;
     auto body = conv(n->m_body.get(), state)[0]->as<Block>();
     state.inside_segment = old;
 
@@ -1038,7 +1252,10 @@ static auto conv(const FunctionDefNode *n, QState &state) -> QResult
 
 static auto conv(const FunctionParamNode *n, QState &state) -> QResult
 {
-    return conv(n->m_type, state)[0]->as<Type>();
+    auto t = conv(n->m_type, state)[0]->as<Type>();
+    if (state.inside_segment)
+        state.local_idents.top()[n->m_name] = t;
+    return t;
 }
 
 static auto conv(const ExportNode *n, QState &state) -> QResult
@@ -1452,7 +1669,7 @@ bool ir::q::QModule::from_ast(std::shared_ptr<BlockNode> ast)
         return false;
     }
 
-    LOG(DEBUG) << this->to_string() << std::endl;
+    LOG(DEBUG) << log::raw << this->to_string() << std::endl;
 
     LOG(DEBUG) << "Successfully converted AST to QUIX intermediate representation" << std::endl;
 

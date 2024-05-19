@@ -745,7 +745,7 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
                 return m_last = c, (m_tok = Token(TT::Integer, norm, m_loc - buf.size())).value();
 
             /* Invalid number */
-            LOG(ERROR) << "Tokenization error: Numeric literal is too large to fit in an integer type: '" << buf << "'" << std::endl;
+            LOG(ERROR) << log::raw << "Tokenization error: Numeric literal is too large to fit in an integer type: '" << buf << "'" << std::endl;
             return m_last = c, (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
         }
         case LexState::CommentStart:

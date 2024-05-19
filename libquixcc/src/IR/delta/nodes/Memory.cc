@@ -41,6 +41,16 @@ bool libquixcc::ir::delta::Assign::verify_impl() const
     return var->verify() && value->verify();
 }
 
+boost::uuids::uuid libquixcc::ir::delta::Member::hash_impl() const
+{
+    return Hasher().gettag().add(lhs).add(field).add(field_type).hash();
+}
+
+bool libquixcc::ir::delta::Member::verify_impl() const
+{
+    return lhs->verify() && field_type->verify();
+}
+
 boost::uuids::uuid libquixcc::ir::delta::Load::hash_impl() const
 {
     return Hasher().gettag().add(rank).add(var).hash();

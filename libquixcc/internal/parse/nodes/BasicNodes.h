@@ -67,7 +67,7 @@ namespace libquixcc
         {
             auto p = dynamic_cast<T *>(this);
             if (!p)
-                LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
+                LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `" << typeid(T).name() << "`" << std::endl;
 
             return p;
         }
@@ -77,7 +77,7 @@ namespace libquixcc
         {
             auto p = dynamic_cast<const T *>(this);
             if (!p)
-                LOG(FATAL) << "Invalid cast from " << (int)ntype << std::endl;
+                LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `" << typeid(T).name() << "`" << std::endl;
 
             return p;
         }
@@ -85,196 +85,7 @@ namespace libquixcc
         template <typename T>
         bool is() const
         {
-            switch (ntype)
-            {
-            case NodeType::ParseNode:
-                return std::is_same_v<T, ParseNode>;
-            case NodeType::ExprNode:
-                return std::is_same_v<T, ExprNode>;
-            case NodeType::ConstExprNode:
-                return std::is_same_v<T, ConstExprNode>;
-            case NodeType::StmtNode:
-                return std::is_same_v<T, StmtNode>;
-            case NodeType::ExprStmtNode:
-                return std::is_same_v<T, ExprStmtNode>;
-            case NodeType::NopStmtNode:
-                return std::is_same_v<T, NopStmtNode>;
-            case NodeType::TypeNode:
-                return std::is_same_v<T, TypeNode>;
-            case NodeType::DeclNode:
-                return std::is_same_v<T, DeclNode>;
-            case NodeType::DefNode:
-                return std::is_same_v<T, DefNode>;
-            case NodeType::BlockNode:
-                return std::is_same_v<T, BlockNode>;
-            case NodeType::StmtGroupNode:
-                return std::is_same_v<T, StmtGroupNode>;
-
-            case NodeType::ConstUnaryExprNode:
-                return std::is_same_v<T, ConstUnaryExprNode>;
-            case NodeType::ConstBinaryExprNode:
-                return std::is_same_v<T, ConstBinaryExprNode>;
-
-            case NodeType::CastExprNode:
-                return std::is_same_v<T, CastExprNode>;
-            case NodeType::StaticCastExprNode:
-                return std::is_same_v<T, StaticCastExprNode>;
-            case NodeType::BitCastExprNode:
-                return std::is_same_v<T, BitCastExprNode>;
-            case NodeType::SignedUpcastExprNode:
-                return std::is_same_v<T, SignedUpcastExprNode>;
-            case NodeType::UnsignedUpcastExprNode:
-                return std::is_same_v<T, UnsignedUpcastExprNode>;
-            case NodeType::DowncastExprNode:
-                return std::is_same_v<T, DowncastExprNode>;
-            case NodeType::IntToPtrCastExprNode:
-                return std::is_same_v<T, IntToPtrCastExprNode>;
-            case NodeType::PtrToIntCastExprNode:
-                return std::is_same_v<T, PtrToIntCastExprNode>;
-
-            case NodeType::UnaryExprNode:
-                return std::is_same_v<T, UnaryExprNode>;
-            case NodeType::BinaryExprNode:
-                return std::is_same_v<T, BinaryExprNode>;
-            case NodeType::CallExprNode:
-                return std::is_same_v<T, CallExprNode>;
-            case NodeType::ListExprNode:
-                return std::is_same_v<T, ListExprNode>;
-            case NodeType::MemberAccessNode:
-                return std::is_same_v<T, MemberAccessNode>;
-
-            case NodeType::IdentifierNode:
-                return std::is_same_v<T, IdentifierNode>;
-
-            case NodeType::MutTypeNode:
-                return std::is_same_v<T, MutTypeNode>;
-            case NodeType::U8TypeNode:
-                return std::is_same_v<T, U8TypeNode>;
-            case NodeType::U16TypeNode:
-                return std::is_same_v<T, U16TypeNode>;
-            case NodeType::U32TypeNode:
-                return std::is_same_v<T, U32TypeNode>;
-            case NodeType::U64TypeNode:
-                return std::is_same_v<T, U64TypeNode>;
-            case NodeType::U128TypeNode:
-                return std::is_same_v<T, U128TypeNode>;
-            case NodeType::I8TypeNode:
-                return std::is_same_v<T, I8TypeNode>;
-            case NodeType::I16TypeNode:
-                return std::is_same_v<T, I16TypeNode>;
-            case NodeType::I32TypeNode:
-                return std::is_same_v<T, I32TypeNode>;
-            case NodeType::I64TypeNode:
-                return std::is_same_v<T, I64TypeNode>;
-            case NodeType::I128TypeNode:
-                return std::is_same_v<T, I128TypeNode>;
-            case NodeType::F32TypeNode:
-                return std::is_same_v<T, F32TypeNode>;
-            case NodeType::F64TypeNode:
-                return std::is_same_v<T, F64TypeNode>;
-            case NodeType::BoolTypeNode:
-                return std::is_same_v<T, BoolTypeNode>;
-            case NodeType::VoidTypeNode:
-                return std::is_same_v<T, VoidTypeNode>;
-            case NodeType::PointerTypeNode:
-                return std::is_same_v<T, PointerTypeNode>;
-            case NodeType::OpaqueTypeNode:
-                return std::is_same_v<T, OpaqueTypeNode>;
-            case NodeType::StringTypeNode:
-                return std::is_same_v<T, StringTypeNode>;
-
-            case NodeType::EnumTypeNode:
-                return std::is_same_v<T, EnumTypeNode>;
-            case NodeType::StructTypeNode:
-                return std::is_same_v<T, StructTypeNode>;
-            case NodeType::RegionTypeNode:
-                return std::is_same_v<T, RegionTypeNode>;
-            case NodeType::UnionTypeNode:
-                return std::is_same_v<T, UnionTypeNode>;
-            case NodeType::ArrayTypeNode:
-                return std::is_same_v<T, ArrayTypeNode>;
-            case NodeType::FunctionTypeNode:
-                return std::is_same_v<T, FunctionTypeNode>;
-            case NodeType::UserTypeNode:
-                return std::is_same_v<T, UserTypeNode>;
-
-            case NodeType::LiteralNode:
-                return std::is_same_v<T, LiteralNode>;
-            case NodeType::IntegerNode:
-                return std::is_same_v<T, IntegerNode>;
-            case NodeType::FloatLiteralNode:
-                return std::is_same_v<T, FloatLiteralNode>;
-            case NodeType::StringNode:
-                return std::is_same_v<T, StringNode>;
-            case NodeType::CharNode:
-                return std::is_same_v<T, CharNode>;
-            case NodeType::BoolLiteralNode:
-                return std::is_same_v<T, BoolLiteralNode>;
-            case NodeType::NullLiteralNode:
-                return std::is_same_v<T, NullLiteralNode>;
-
-            case NodeType::TypedefNode:
-                return std::is_same_v<T, TypedefNode>;
-
-            case NodeType::VarDeclNode:
-                return std::is_same_v<T, VarDeclNode>;
-            case NodeType::LetDeclNode:
-                return std::is_same_v<T, LetDeclNode>;
-            case NodeType::ConstDeclNode:
-                return std::is_same_v<T, ConstDeclNode>;
-
-            case NodeType::FunctionDeclNode:
-                return std::is_same_v<T, FunctionDeclNode>;
-
-            case NodeType::StructDefNode:
-                return std::is_same_v<T, StructDefNode>;
-            case NodeType::StructFieldNode:
-                return std::is_same_v<T, StructFieldNode>;
-            case NodeType::RegionDefNode:
-                return std::is_same_v<T, RegionDefNode>;
-            case NodeType::RegionFieldNode:
-                return std::is_same_v<T, RegionFieldNode>;
-            case NodeType::GroupDefNode:
-                return std::is_same_v<T, GroupDefNode>;
-            case NodeType::GroupFieldNode:
-                return std::is_same_v<T, GroupFieldNode>;
-            case NodeType::UnionDefNode:
-                return std::is_same_v<T, UnionDefNode>;
-            case NodeType::UnionFieldNode:
-                return std::is_same_v<T, UnionFieldNode>;
-            case NodeType::EnumDefNode:
-                return std::is_same_v<T, EnumDefNode>;
-            case NodeType::EnumFieldNode:
-                return std::is_same_v<T, EnumFieldNode>;
-            case NodeType::FunctionDefNode:
-                return std::is_same_v<T, FunctionDefNode>;
-            case NodeType::FunctionParamNode:
-                return std::is_same_v<T, FunctionParamNode>;
-
-            case NodeType::SubsystemNode:
-                return std::is_same_v<T, SubsystemNode>;
-            case NodeType::ExportNode:
-                return std::is_same_v<T, ExportNode>;
-            case NodeType::InlineAsmNode:
-                return std::is_same_v<T, InlineAsmNode>;
-
-            case NodeType::ReturnStmtNode:
-                return std::is_same_v<T, ReturnStmtNode>;
-            case NodeType::RetifStmtNode:
-                return std::is_same_v<T, RetifStmtNode>;
-            case NodeType::RetzStmtNode:
-                return std::is_same_v<T, RetzStmtNode>;
-            case NodeType::RetvStmtNode:
-                return std::is_same_v<T, RetvStmtNode>;
-            case NodeType::IfStmtNode:
-                return std::is_same_v<T, IfStmtNode>;
-            case NodeType::WhileStmtNode:
-                return std::is_same_v<T, WhileStmtNode>;
-            case NodeType::ForStmtNode:
-                return std::is_same_v<T, ForStmtNode>;
-            }
-
-            throw std::runtime_error("Invalid node type: " + std::to_string((int)ntype));
+            return typeid(*this) == typeid(T);
         }
 
         template <typename T>

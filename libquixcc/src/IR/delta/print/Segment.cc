@@ -65,11 +65,6 @@ bool libquixcc::ir::delta::Segment::print_impl(std::ostream &os, PState &state) 
 {
     os << "segment ";
 
-    if (pure)
-        os << "pure";
-    else
-        os << "impure";
-
     os << " (";
     for (uint64_t i = 0; i < params.size(); i++)
     {
@@ -78,6 +73,8 @@ bool libquixcc::ir::delta::Segment::print_impl(std::ostream &os, PState &state) 
             return false;
         if (i + 1 < params.size())
             os << ", ";
+        else if (variadic)
+            os << ", ...";
     }
     os << ") (";
     if (!ret->print(os, state))

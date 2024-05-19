@@ -376,7 +376,7 @@ LIB_EXPORT bool quixcc_target(quixcc_job_t *job, const char *_llvm_triple)
 
     if (llvm::TargetRegistry::lookupTarget(new_triple, err) == nullptr)
     {
-        LOG(ERROR) << "invalid target triple: " << new_triple << std::endl;
+        LOG(ERROR) << log::raw << "invalid target triple: " << new_triple << std::endl;
         return false;
     }
 
@@ -593,7 +593,7 @@ static bool get_compile_time_user_constants(quixcc_job_t *job, std::map<std::str
 
             if (!verify_user_constant(key, value))
             {
-                LOG(ERROR) << "invalid user constant: " << key << std::endl;
+                LOG(ERROR) << log::raw << "invalid user constant: " << key << std::endl;
                 return false;
             }
             constants[key] = value;
@@ -618,7 +618,7 @@ static bool get_env_constants(quixcc_job_t *job, std::map<std::string, std::stri
 
                 if (!verify_user_constant(key, value))
                 {
-                    LOG(ERROR) << "invalid user constant: " << key << std::endl;
+                    LOG(ERROR) << log::raw << "invalid user constant: " << key << std::endl;
                     return false;
                 }
                 constants[key] = value;
@@ -733,7 +733,7 @@ static bool compile(quixcc_job_t *job)
         return false;
     LOG(DEBUG) << "Finished building AST 1" << std::endl;
     if (job->m_debug)
-        LOG(DEBUG) << "Dumping AST 1 (JSON): " << base64_encode(ast->to_json()) << std::endl;
+        LOG(DEBUG) << log::raw << "Dumping AST 1 (JSON): " << base64_encode(ast->to_json()) << std::endl;
     /// END:   PARSER
     ///=========================================
 
@@ -742,7 +742,7 @@ static bool compile(quixcc_job_t *job)
     if (!quixcc_mutate_ast(job, ast) || job->m_tainted)
         return false;
     if (job->m_debug)
-        LOG(DEBUG) << "Dumping AST 2 (JSON): " << base64_encode(ast->to_json()) << std::endl;
+        LOG(DEBUG) << log::raw << "Dumping AST 2 (JSON): " << base64_encode(ast->to_json()) << std::endl;
     /// END:   INTERMEDIATE PROCESSING
     ///=========================================
 
@@ -888,7 +888,7 @@ static bool build_argmap(quixcc_job_t *job)
 
         if (option.size() == 2 && option[0] == '-' && !okay_prefixes.contains(option[1]))
         {
-            LOG(ERROR) << "invalid build option: " << option << std::endl;
+            LOG(ERROR) << log::raw << "invalid build option: " << option << std::endl;
             return false;
         }
 
@@ -901,7 +901,7 @@ static bool build_argmap(quixcc_job_t *job)
 
         if (!verify_build_option(key, value))
         {
-            LOG(ERROR) << "invalid build option: " << key << std::endl;
+            LOG(ERROR) << log::raw << "invalid build option: " << key << std::endl;
             return false;
         }
 
@@ -911,9 +911,9 @@ static bool build_argmap(quixcc_job_t *job)
         job->m_argset.insert({key, value});
 
         if (!value.empty())
-            LOG(DEBUG) << "Added switch entry: " << key << "=" << value << std::endl;
+            LOG(DEBUG) << log::raw << "Added switch entry: " << key << "=" << value << std::endl;
         else
-            LOG(DEBUG) << "Added switch entry: " << key << std::endl;
+            LOG(DEBUG) << log::raw << "Added switch entry: " << key << std::endl;
     }
 
     return verify_build_option_conflicts(job);
@@ -1075,7 +1075,7 @@ static bool execute_job(quixcc_job_t *job)
 
         job->m_inner.setup(job->m_filename);
 
-        LOG(DEBUG) << "Starting quixcc run @ " << get_datetime() << std::endl;
+        LOG(DEBUG) << log::raw << "Starting quixcc run @ " << get_datetime() << std::endl;
 
         if (!build_argmap(job))
         {
@@ -1087,7 +1087,7 @@ static bool execute_job(quixcc_job_t *job)
             LOG(ERROR) << "Compilation failed" << std::endl;
 
         LOG(DEBUG) << "Compilation successful" << std::endl;
-        LOG(DEBUG) << "Finished quixcc run @ " << get_datetime() << std::endl;
+        LOG(DEBUG) << log::raw << "Finished quixcc run @ " << get_datetime() << std::endl;
 
         job->m_result.m_success = true;
         return true;
@@ -1099,32 +1099,32 @@ static bool execute_job(quixcc_job_t *job)
     }
     catch (PreprocessorException &e)
     {
-        LOG(FAILED) << "Compilation was aborted while preprocessing source: " << e.what() << std::endl;
+        LOG(FAILED) << log::raw << "Compilation was aborted while preprocessing source: " << e.what() << std::endl;
         return false;
     }
     catch (ParseException &e)
     {
-        LOG(FAILED) << "Compilation was aborted while parsing source: " << e.what() << std::endl;
+        LOG(FAILED) << log::raw << "Compilation was aborted while parsing source: " << e.what() << std::endl;
         return false;
     }
     catch (Exception &e)
     {
-        LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+        LOG(FAILED) << log::raw << "Compilation failed: " << e.what() << std::endl;
         return false;
     }
     catch (std::runtime_error &e)
     {
-        LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+        LOG(FAILED) << log::raw << "Compilation failed: " << e.what() << std::endl;
         return false;
     }
     catch (std::exception &e)
     {
-        LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+        LOG(FAILED) << log::raw << "Compilation failed: " << e.what() << std::endl;
         return false;
     }
     catch (const char *e)
     {
-        LOG(FAILED) << "Compilation failed: " << e << std::endl;
+        LOG(FAILED) << log::raw << "Compilation failed: " << e << std::endl;
         return false;
     }
     catch (...)

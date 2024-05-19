@@ -42,3 +42,13 @@ bool libquixcc::ir::q::Assign::print_impl(std::ostream &os, libquixcc::ir::PStat
     os << ")";
     return true;
 }
+
+bool libquixcc::ir::q::Member::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "(";
+    if (!lhs->print(os, state))
+        return false;
+    os << "." << field;
+    os << ")";
+    return true;
+}

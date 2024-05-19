@@ -127,11 +127,17 @@ llvm::PointerType *libquixcc::LLVM14Codegen::gen(const ir::delta::Ptr *node)
 
 llvm::StructType *libquixcc::LLVM14Codegen::gen(const ir::delta::Packet *node)
 {
+    if (m_state.types.contains(node->name))
+        return static_cast<llvm::StructType *>(m_state.types[node->name]);
+
     std::vector<llvm::Type *> types;
     for (auto &field : node->fields)
         types.push_back(gent(field.second));
 
-    return llvm::StructType::create(*m_ctx->m_ctx, types, node->name, true);
+    auto st = llvm::StructType::create(*m_ctx->m_ctx, types, node->name, true);
+    m_state.types[node->name] = st;
+
+    return st;
 }
 
 llvm::ArrayType *libquixcc::LLVM14Codegen::gen(const ir::delta::Array *node)
@@ -256,8 +262,18 @@ llvm::Constant *libquixcc::LLVM14Codegen::gen(const ir::delta::String *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ident *node)
 {
-    if (!m_state.locals.empty())
+    if (!m_state.locals.empty() && !m_state.params.empty())
     {
+        if (m_state.params.top().contains(node->name))
+        {
+            auto v = m_state.params.top()[node->name];
+            auto t = m_state.params.top()[node->name]->getType();
+            if (m_state.m_deref)
+                return m_ctx->m_builder->CreateLoad(t, v);
+            else
+                return v;
+        }
+
         if (m_state.locals.top().contains(node->name))
         {
             auto v = m_state.locals.top()[node->name];
@@ -295,17 +311,48 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Assign *node)
     for (size_t i = 0; i < node->rank; i++)
         ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
 
-    return m_ctx->m_builder->CreateStore(gen(node->value), ptr);
+    auto v = gen(node->value);
+
+    m_ctx->m_builder->CreateStore(v, ptr);
+
+    return v;
+}
+
+llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Member *node)
+{
+    bool old = m_state.m_deref;
+    m_state.m_deref = false;
+    auto ptr = gen(node->lhs);
+    m_state.m_deref = old;
+
+    auto t = ptr->getType();
+    while (!t->isStructTy())
+        t = t->getPointerElementType();
+
+    while (1)
+    {
+        if (ptr->getType()->isPointerTy() && ptr->getType()->getPointerElementType()->isStructTy())
+            break;
+
+        ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+    }
+
+    auto eptr = m_ctx->m_builder->CreateStructGEP(t, ptr, node->field);
+
+    if (m_state.m_deref)
+        return m_ctx->m_builder->CreateLoad(eptr->getType()->getPointerElementType(), eptr);
+    else
+        return eptr;
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Load *node)
 {
     auto ptr = gen(node->var);
 
-    for (size_t i = 0; i < node->rank; i++)
+    for (size_t i = 0; i < node->rank + 1; i++)
         ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
 
-    return m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+    return ptr;
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
@@ -343,7 +390,36 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Bitcast *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::IfElse *node)
 {
-    throw std::runtime_error("IfElse not implemented");
+    auto func = m_ctx->m_builder->GetInsertBlock()->getParent();
+    bool old2 = m_state.incond;
+    m_state.incond = true;
+
+    llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "if.then", func);
+    llvm::BasicBlock *elseBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "if.else", func);
+    llvm::BasicBlock *endBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "if.end", func);
+
+    auto cond = gen(node->cond);
+    m_ctx->m_builder->CreateCondBr(cond, thenBB, elseBB);
+
+    bool old1 = m_state.terminate_early;
+    m_state.terminate_early = false;
+    m_ctx->m_builder->SetInsertPoint(thenBB);
+    gen(node->then);
+    if (!m_state.terminate_early)
+        m_ctx->m_builder->CreateBr(endBB);
+
+    m_state.terminate_early = false;
+    m_ctx->m_builder->SetInsertPoint(elseBB);
+    gen(node->els);
+    if (!m_state.terminate_early)
+        m_ctx->m_builder->CreateBr(endBB);
+
+    m_ctx->m_builder->SetInsertPoint(endBB);
+
+    m_state.terminate_early = old1;
+    m_state.incond = old2;
+
+    return nullptr;
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::While *node)
@@ -402,10 +478,13 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Label *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ret *node)
 {
+    if (m_state.incond)
+        m_state.terminate_early = true;
+
     if (node->value)
-        return m_ctx->m_builder->CreateRet(gen(node->value));
-    else
-        return m_ctx->m_builder->CreateRetVoid();
+        m_ctx->m_builder->CreateStore(gen(node->value), m_state.locals.top()["__retval"]);
+
+    return m_ctx->m_builder->CreateBr(m_state.labels.top().at("__ret"));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Call *node)
@@ -445,7 +524,7 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
     for (auto &param : node->params)
         types.push_back(gent(param.second));
 
-    llvm::FunctionType *ftype = llvm::FunctionType::get(gent(node->ret), types, false);
+    llvm::FunctionType *ftype = llvm::FunctionType::get(gent(node->ret), types, node->variadic);
     llvm::Function *func;
 
     if (m_state.m_pub)
@@ -457,18 +536,54 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
     {
         m_state.labels.push({});
         m_state.locals.push({});
+        m_state.params.push({});
 
         llvm::BasicBlock *bb = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
         m_ctx->m_builder->SetInsertPoint(bb);
 
-        for (auto it = func->arg_begin(); it != func->arg_end(); ++it)
+        for (auto &arg : func->args())
         {
-            auto &param = node->params[it->getArgNo()];
-            it->setName(param.first);
+            auto &param = node->params[arg.getArgNo()];
+
+            if (param.second->is<Ptr>())
+            {
+                arg.setName(param.first);
+                m_state.params.top()[param.first] = &arg;
+            }
+            else
+            {
+                arg.setName("__" + param.first);
+                auto alloca = m_ctx->m_builder->CreateAlloca(arg.getType(), nullptr, param.first);
+                m_ctx->m_builder->CreateStore(&arg, alloca);
+                m_state.locals.top()[param.first] = alloca;
+            }
         }
+
+        if (!node->ret->is<Void>())
+        {
+            auto retval = m_ctx->m_builder->CreateAlloca(gent(node->ret), nullptr, "__retval");
+            m_state.locals.top()["__retval"] = retval;
+        }
+
+        llvm::BasicBlock *retBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "__ret", func);
+        m_ctx->m_builder->SetInsertPoint(retBB);
+        if (!node->ret->is<Void>())
+        {
+            auto retval = m_ctx->m_builder->CreateLoad(gent(node->ret), m_state.locals.top()["__retval"]);
+            m_ctx->m_builder->CreateRet(retval);
+        }
+        else
+        {
+            m_ctx->m_builder->CreateRetVoid();
+        }
+
+        m_state.labels.top()["__ret"] = retBB;
+
+        m_ctx->m_builder->SetInsertPoint(bb);
 
         gen(node->block);
 
+        m_state.params.pop();
         m_state.locals.pop();
         m_state.labels.pop();
     }
@@ -663,6 +778,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
     match(String);
     match(Ident);
     match(Assign);
+    match(Member);
     match(Load);
     match(Index);
     match(SCast);

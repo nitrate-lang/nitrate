@@ -220,7 +220,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(const std::string &t
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
 
-        return q::Group::create(fields[0]);
+        return q::Group::create(fields[0], {});
     }
     else if (type[0] == 'j')
     {
@@ -228,7 +228,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(const std::string &t
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
 
-        return q::Region::create(fields[0]);
+        return q::Region::create(fields[0], {});
     }
     else if (type[0] == 'u')
     {
@@ -236,7 +236,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(const std::string &t
         if (!unwrap_tags(type.substr(1), fields))
             return nullptr;
 
-        return q::Union::create(fields[0]);
+        return q::Union::create(fields[0], {});
     }
     else if (type[0] == 'a')
     {
