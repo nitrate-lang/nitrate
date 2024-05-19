@@ -887,7 +887,7 @@ static auto conv(const CharNode *n, QState &state) -> QResult
 
 static auto conv(const BoolLiteralNode *n, QState &state) -> QResult
 {
-    return Number::create(n->m_val ? "1" : "0");
+    return UCast::create(I1::create(), Number::create(n->m_val ? "1" : "0"));
 }
 
 static auto conv(const NullLiteralNode *n, QState &state) -> QResult
@@ -984,12 +984,19 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult
 {
     if (state.inside_segment)
     {
-        auto l = Local::create(n->m_name, conv(n->m_type, state)[0]->as<Type>());
+        auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
+        const Type *type = nullptr;
+        if (n->m_type)
+            type = conv(n->m_type, state)[0]->as<Type>();
+        else
+            type = init->infer();
+
+        auto l = Local::create(n->m_name, type);
         state.local_idents.top()[n->m_name] = l->type;
         std::vector<QValue> res = {l};
         auto ident = Ident::create(n->m_name, l->type);
 
-        if (n->m_type->is_composite())
+        if (n->m_type && n->m_type->is_composite())
         {
             auto defaults = create_defaults(ident, n->m_type, state);
             for (auto &d : defaults)
@@ -997,10 +1004,7 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult
         }
 
         if (n->m_init)
-        {
-            auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
             res.push_back(Assign::create(ident, promote(ident, init)));
-        }
 
         return res;
     }
@@ -1023,23 +1027,21 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult
 {
     if (state.inside_segment)
     {
-        auto l = Local::create(n->m_name, conv(n->m_type, state)[0]->as<Type>());
+        auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
+
+        const Type *type = nullptr;
+        if (n->m_type)
+            type = conv(n->m_type, state)[0]->as<Type>();
+        else
+            type = init->infer();
+
+        auto l = Local::create(n->m_name, type);
         state.local_idents.top()[n->m_name] = l->type;
         std::vector<QValue> res = {l};
         auto ident = Ident::create(n->m_name, l->type);
 
-        if (n->m_type->is_composite())
-        {
-            auto defaults = create_defaults(ident, n->m_type, state);
-            for (auto &d : defaults)
-                res.push_back(d);
-        }
-
         if (n->m_init)
-        {
-            auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
             res.push_back(Assign::create(ident, promote(ident, init)));
-        }
 
         return res;
     }
@@ -1048,9 +1050,15 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult
     if (n->m_init)
         expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-    auto tmp = Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
+    const Type *type = nullptr;
+    if (n->m_type)
+        type = conv(n->m_type, state)[0]->as<Type>();
+    else
+        type = expr->infer();
+
+    auto tmp = Global::create(n->m_name, type, expr, false, false, state.lang != ExportLangType::None);
     std::string mangled = Symbol::mangle(tmp, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
-    auto g = Global::create(mangled, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
+    auto g = Global::create(mangled, type, expr, false, false, state.lang != ExportLangType::None);
 
     state.global_idents[n->m_name] = g->type;
     state.global_idents[mangled] = g->type;

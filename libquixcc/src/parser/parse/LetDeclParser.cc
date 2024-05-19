@@ -41,12 +41,14 @@ static bool parse_decl(quixcc_job_t &job, Token tok, std::shared_ptr<libquixcc::
 {
     std::string name = std::get<std::string>(tok.val());
 
-    tok = scanner->next();
+    tok = scanner->peek();
     if (!tok.is<Punctor>(Punctor::Colon))
     {
-        LOG(ERROR) << feedback[LET_DECL_MISSING_COLON] << tok << std::endl;
-        return false;
+        decl = std::make_pair(name, nullptr);
+        return true;
     }
+
+    scanner->next();
 
     TypeNode *type;
 

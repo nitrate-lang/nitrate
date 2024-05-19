@@ -538,8 +538,14 @@ size_t libquixcc::traversal::ParseTreePreorder::VarDeclNode_iter(libquixcc::trav
 {
     state.m_visited.clear();
 
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
-    size_t count = next(state, node->m_type);
+    size_t count = 0;
+
+    if (node->m_type)
+    {
+        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+        count += next(state, node->m_type);
+    }
+
     if (node->m_init)
     {
         state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));
@@ -552,8 +558,14 @@ size_t libquixcc::traversal::ParseTreePreorder::LetDeclNode_iter(libquixcc::trav
 {
     state.m_visited.clear();
 
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
-    size_t count = next(state, node->m_type);
+    size_t count = 0;
+    
+    if (node->m_type)
+    {
+        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+        count += next(state, node->m_type);
+    }
+
     if (node->m_init)
     {
         state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));

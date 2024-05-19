@@ -331,11 +331,8 @@ const Type *Number::infer() const
     switch (bits)
     {
     case 1:
-        return I1::create();
     case 8:
-        return U8::create();
     case 16:
-        return U16::create();
     case 32:
         return U32::create();
     case 64:

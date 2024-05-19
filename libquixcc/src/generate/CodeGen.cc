@@ -233,11 +233,8 @@ llvm::Constant *libquixcc::LLVM14Codegen::gen(const ir::delta::Number *node)
     switch (bits)
     {
     case 1:
-        return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, node->value, 10));
     case 8:
-        return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(8, node->value, 10));
     case 16:
-        return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(16, node->value, 10));
     case 32:
         return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(32, node->value, 10));
     case 64:

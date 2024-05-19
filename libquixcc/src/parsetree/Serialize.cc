@@ -634,7 +634,10 @@ std::string libquixcc::serialize::ParseTreeSerializer::VarDeclNode_conv(libquixc
     std::string str = "{\"ntype\":\"VarDeclNode\",\"name\":\"";
     str += escape_json(node->m_name);
     str += "\",\"type\":";
-    str += next(state, node->m_type);
+    if (node->m_type)
+        str += next(state, node->m_type);
+    else
+        str += "null";
     str += ",\"value\":";
     if (node->m_init)
         str += next(state, node->m_init);
@@ -658,7 +661,10 @@ std::string libquixcc::serialize::ParseTreeSerializer::LetDeclNode_conv(libquixc
     std::string str = "{\"ntype\":\"LetDeclNode\",\"name\":\"";
     str += escape_json(node->m_name);
     str += "\",\"type\":";
-    str += next(state, node->m_type);
+    if (node->m_type)
+        str += next(state, node->m_type);
+    else
+        str += "null";
     str += ",\"value\":";
     if (node->m_init)
         str += next(state, node->m_init);
