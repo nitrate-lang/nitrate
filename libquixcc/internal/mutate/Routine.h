@@ -46,13 +46,9 @@ namespace libquixcc
 {
     namespace mutate
     {
-        void StripUnderscoreNames(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
         void DiscoverNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
         void ExtrapolateEnumFields(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
         void ResolveNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void FoldConstExpr(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ConvertTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        inline void InferTypes(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
         void MethodToFunc(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
         inline void ObjectConstruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
         inline void ObjectDestruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}

@@ -49,14 +49,8 @@ namespace libquixcc
 {
     class UnaryExprNode : public ExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         UnaryExprNode(Operator op, const std::shared_ptr<ExprNode> &expr) : m_op(op), m_expr(expr) { ntype = NodeType::UnaryExprNode; }
-
-        virtual TypeNode *infer(TIState &state) const override;
 
         Operator m_op;
         std::shared_ptr<ExprNode> m_expr;
@@ -64,15 +58,9 @@ namespace libquixcc
 
     class BinaryExprNode : public ExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         BinaryExprNode(Operator op, const std::shared_ptr<ExprNode> &lhs, const std::shared_ptr<ExprNode> &rhs)
             : m_op(op), m_lhs(lhs), m_rhs(rhs) { ntype = NodeType::BinaryExprNode; }
-
-        virtual TypeNode *infer(TIState &state) const override;
 
         Operator m_op;
         std::shared_ptr<ExprNode> m_lhs;
@@ -83,14 +71,8 @@ namespace libquixcc
 
     class CallExprNode : public ExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         CallExprNode() { ntype = NodeType::CallExprNode; }
-
-        virtual TypeNode *infer(TIState &state) const override;
 
         std::string m_name;
         std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_named_args;
@@ -100,28 +82,16 @@ namespace libquixcc
 
     class ListExprNode : public ExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         ListExprNode(std::vector<std::shared_ptr<ExprNode>> elements) : m_elements(elements) { ntype = NodeType::ListExprNode; }
-
-        virtual TypeNode *infer(TIState &state) const override;
 
         std::vector<std::shared_ptr<ExprNode>> m_elements;
     };
 
     class MemberAccessNode : public ExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         MemberAccessNode(const std::shared_ptr<ExprNode> &expr, const std::string &field) : m_expr(expr), m_field(field) { ntype = NodeType::MemberAccessNode; }
-
-        virtual TypeNode *infer(TIState &state) const override;
 
         std::shared_ptr<ExprNode> m_expr;
         std::string m_field;
@@ -132,18 +102,12 @@ namespace libquixcc
     public:
         CastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : m_expr(expr), m_type(type) { ntype = NodeType::CastExprNode; }
 
-        virtual TypeNode *infer(TIState &state) const override;
-
         std::shared_ptr<ExprNode> m_expr;
         TypeNode *m_type;
     };
 
     class StaticCastExprNode : public CastExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         StaticCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::StaticCastExprNode; }
 
@@ -151,10 +115,6 @@ namespace libquixcc
 
     class BitCastExprNode : public CastExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         BitCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::BitCastExprNode; }
 
@@ -162,10 +122,6 @@ namespace libquixcc
 
     class SignedUpcastExprNode : public CastExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         SignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::SignedUpcastExprNode; }
 
@@ -173,10 +129,6 @@ namespace libquixcc
 
     class UnsignedUpcastExprNode : public CastExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         UnsignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::UnsignedUpcastExprNode; }
 
@@ -184,10 +136,6 @@ namespace libquixcc
 
     class DowncastExprNode : public CastExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         DowncastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::DowncastExprNode; }
 
@@ -195,10 +143,6 @@ namespace libquixcc
 
     class PtrToIntCastExprNode : public CastExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         PtrToIntCastExprNode(const std::shared_ptr<ExprNode> &expr) : CastExprNode(expr, nullptr) { ntype = NodeType::PtrToIntCastExprNode; }
 
@@ -206,10 +150,6 @@ namespace libquixcc
 
     class IntToPtrCastExprNode : public CastExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         IntToPtrCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::IntToPtrCastExprNode; }
 

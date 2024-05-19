@@ -42,34 +42,21 @@
 
 #include <core/Logger.h>
 #include <parse/NodeType.h>
-#include <traversal/AST.h>
-#include <serialize/ASTJson.h>
+#include <parsetree/Iterate.h>
+#include <parsetree/Serialize.h>
 
 namespace libquixcc
 {
     class TypeNode;
     class ParseNode;
 
-    struct ReductionState
-    {
-        bool m_export = false;
-        bool m_fn_def = false;
-        std::shared_ptr<ParseNode> m_root;
-        size_t m_ptr_size = 8;
-
-        // ReductionState() = delete;
-        /// TODO: Add a constructor that takes a shared_ptr<ParseNode> and a size_t ptr_size.
-        ReductionState() = default;
-
-        ReductionState(std::shared_ptr<ParseNode> root, size_t ptr_size) : m_root(root), m_ptr_size(ptr_size) {}
-    };
     class ParseNode
     {
     public:
         ParseNode() = default;
 
-        virtual size_t dfs_preorder(traversal::ASTTraversalState state);
-        virtual std::string to_json(serialize::ASTJsonSerializerState state = serialize::ASTJsonSerializerState()) const;
+        virtual size_t dfs_preorder(traversal::ParseTreeTraversalState state);
+        virtual std::string to_json(serialize::ParseTreeSerializerState state = serialize::ParseTreeSerializerState()) const;
 
         /// @brief Count the number of nodes in the tree.
         /// @return The number of nodes in the tree.
@@ -343,65 +330,26 @@ namespace libquixcc
 
     class ExprNode : public ParseNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const = 0;
-        virtual std::shared_ptr<ExprNode> promote_impl() const = 0;
-
     public:
         ExprNode() = default;
-
-        /// @brief Do type promotion and insert casts if necessary.
-        /// @return The promoted expression.
-        template <typename T>
-        std::shared_ptr<T> promote() const
-        {
-            return std::static_pointer_cast<T>(promote_impl());
-        }
-
-        template <typename T>
-        std::shared_ptr<T> reduce(ReductionState &state) const
-        {
-            return std::static_pointer_cast<T>(reduce_impl(state));
-        }
-
-        template <typename T>
-        std::shared_ptr<T> reduce() const
-        {
-            ReductionState state;
-            return std::static_pointer_cast<T>(reduce_impl(state));
-        }
-
-        virtual TypeNode *infer(TIState &state) const = 0;
-        bool is_const_expr() const { return reduce<ExprNode>()->is<LiteralNode>(); }
     };
 
     class ConstExprNode : public ExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override = 0;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override = 0;
-
     public:
         ConstExprNode() { ntype = NodeType::ConstExprNode; }
-
-        virtual bool is_negative() const;
-        virtual TypeNode *infer(TIState &state) const override = 0;
     };
 
     class StmtNode : public ParseNode
     {
     public:
         StmtNode() { ntype = NodeType::StmtNode; }
-
-        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const = 0;
     };
 
     class ExprStmtNode : public StmtNode
     {
     public:
         ExprStmtNode(std::shared_ptr<ExprNode> expr) : m_expr(expr) { ntype = NodeType::ExprStmtNode; }
-
-        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::shared_ptr<ExprNode> m_expr;
     };
@@ -410,8 +358,6 @@ namespace libquixcc
     {
     public:
         NopStmtNode() { ntype = NodeType::NopStmtNode; }
-
-        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
     };
 
     class TypeNode : public ParseNode
@@ -462,24 +408,18 @@ namespace libquixcc
     {
     public:
         DeclNode() { ntype = NodeType::DeclNode; }
-
-        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override = 0;
     };
 
     class DefNode : public StmtNode
     {
     public:
         DefNode() { ntype = NodeType::DefNode; }
-
-        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override = 0;
     };
 
     class BlockNode : public StmtNode
     {
     public:
         BlockNode() { ntype = NodeType::BlockNode; }
-
-        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::vector<std::shared_ptr<StmtNode>> m_stmts;
     };
@@ -488,8 +428,6 @@ namespace libquixcc
     {
     public:
         StmtGroupNode(std::vector<std::shared_ptr<StmtNode>> stmts = {}) : m_stmts(stmts) { ntype = NodeType::StmtGroupNode; }
-
-        virtual std::unique_ptr<StmtNode> reduce(ReductionState &state) const override;
 
         std::vector<std::shared_ptr<StmtNode>> m_stmts;
     };

@@ -722,7 +722,9 @@ static auto conv(const UnionTypeNode *n, QState &state) -> QResult
 
 static auto conv(const ArrayTypeNode *n, QState &state) -> QResult
 {
-    return Array::create(conv(n->m_type, state)[0]->as<Type>(), std::atoll(n->m_size->reduce<IntegerNode>()->m_val.c_str()));
+    auto size = std::atoll(conv(n->m_size.get(), state)[0]->as<Number>()->value.c_str());
+
+    return Array::create(conv(n->m_type, state)[0]->as<Type>(), size);
 }
 
 static auto conv(const FunctionTypeNode *n, QState &state) -> QResult
@@ -797,7 +799,8 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult
     if (n->m_init)
         expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-    std::string mangled = Symbol::mangle(n, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
+    auto tmp = Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, false);
+    std::string mangled = Symbol::mangle(tmp, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
     auto g = Global::create(mangled, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
 
     state.global_idents[n->m_name] = g->type;
@@ -828,7 +831,8 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult
     if (n->m_init)
         expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-    std::string mangled = Symbol::mangle(n, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
+    auto tmp = Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
+    std::string mangled = Symbol::mangle(tmp, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
     auto g = Global::create(mangled, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
 
     state.global_idents[n->m_name] = g->type;
@@ -863,9 +867,14 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
     const Global *g = nullptr;
     std::string mangled;
 
+    g = Global::create(n->m_name,
+                       FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
+                                     false, false, false, false, false),
+                       seg, false, false, true);
+
     if (n->m_name == "main")
     {
-        g = Global::create(mangled = Symbol::mangle(n, "", ExportLangType::C),
+        g = Global::create(mangled = Symbol::mangle(g, "", ExportLangType::C),
                            FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
                                          false, false, false, false, false),
                            seg, false, false, true);
@@ -874,14 +883,14 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
     {
         if (state.lang == ExportLangType::None)
         {
-            g = Global::create(mangled = Symbol::mangle(n, "", ExportLangType::Default),
+            g = Global::create(mangled = Symbol::mangle(g, "", ExportLangType::Default),
                                FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
                                              false, false, false, false, false),
                                seg, false, false, false);
         }
         else
         {
-            g = Global::create(mangled = Symbol::mangle(n, "", state.lang),
+            g = Global::create(mangled = Symbol::mangle(g, "", state.lang),
                                FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
                                              false, false, false, false, false),
                                seg, false, false, true);

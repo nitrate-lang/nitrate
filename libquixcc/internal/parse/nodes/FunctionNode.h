@@ -137,8 +137,6 @@ namespace libquixcc
         FunctionParamNode(const std::string &name, TypeNode *type, std::shared_ptr<ExprNode> value)
             : m_name(name), m_type(type), m_value(value) { ntype = NodeType::FunctionParamNode; }
 
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
-
         std::string m_name;
         TypeNode *m_type;
         std::shared_ptr<ExprNode> m_value;
@@ -148,8 +146,6 @@ namespace libquixcc
     {
     public:
         FunctionDeclNode() : m_type(nullptr) { ntype = NodeType::FunctionDeclNode; }
-
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::string m_name;
         std::vector<std::shared_ptr<FunctionParamNode>> m_params;
@@ -162,8 +158,6 @@ namespace libquixcc
         FunctionDefNode() { ntype = NodeType::FunctionDefNode; }
         FunctionDefNode(std::shared_ptr<FunctionDeclNode> decl, std::shared_ptr<BlockNode> body)
             : m_decl(decl), m_body(body) { ntype = NodeType::FunctionDefNode; }
-
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::shared_ptr<FunctionDeclNode> m_decl;
         std::shared_ptr<BlockNode> m_body;

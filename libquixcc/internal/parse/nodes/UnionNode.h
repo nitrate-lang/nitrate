@@ -106,8 +106,6 @@ namespace libquixcc
         UnionDefNode(const std::string &name, const std::vector<std::shared_ptr<UnionFieldNode>> &fields)
             : m_name(name), m_fields(fields) { ntype = NodeType::UnionDefNode; }
 
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
-
         virtual UnionTypeNode *get_type() const
         {
             std::vector<TypeNode *> fields;

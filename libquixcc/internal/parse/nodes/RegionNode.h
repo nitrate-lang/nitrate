@@ -104,8 +104,6 @@ namespace libquixcc
         RegionDefNode() { ntype = NodeType::RegionDefNode; }
         RegionDefNode(const std::string &name, const std::vector<std::shared_ptr<RegionFieldNode>> &fields) : m_name(name), m_fields(fields) { ntype = NodeType::RegionDefNode; }
 
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
-
         virtual RegionTypeNode *get_type() const
         {
             std::vector<TypeNode *> fields;

@@ -43,7 +43,7 @@ using namespace libquixcc;
 
 void libquixcc::mutate::ImplicitReturn(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(traversal::ASTTraversalState(
+    ast->dfs_preorder(traversal::ParseTreeTraversalState(
         [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::traversal::TraversePtr node)
         {
             if (node.first != traversal::TraversePtrType::Smart)

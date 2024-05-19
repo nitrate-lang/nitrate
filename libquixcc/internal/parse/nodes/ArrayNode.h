@@ -61,8 +61,8 @@ namespace libquixcc
             return instance;
         }
 
-        virtual size_t size(size_t ptr_size) const override { return std::get<uint64_t>(m_size->reduce<IntegerNode>()->m_value) * m_type->size(ptr_size); }
-        virtual std::string to_source() const override { return "[" + m_type->to_source() + "; " + std::to_string(std::get<uint64_t>(m_size->reduce<IntegerNode>()->m_value)) + "]"; }
+        virtual size_t size(size_t ptr_size) const override { throw std::runtime_error("Cannot get size of array type"); }
+        virtual std::string to_source() const override { throw std::runtime_error("Cannot convert array type to source"); }
 
         TypeNode *m_type;
         std::shared_ptr<ConstExprNode> m_size;

@@ -43,7 +43,7 @@ using namespace libquixcc;
 
 void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(traversal::ASTTraversalState(
+    ast->dfs_preorder(traversal::ParseTreeTraversalState(
         [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
             if (node.first != traversal::TraversePtrType::Smart)
@@ -71,7 +71,7 @@ void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr
                 }
 
                 last = std::make_shared<ConstBinaryExprNode>(
-                    Operator::Plus, last, IntegerNode::create("1"))->reduce<LiteralNode>();
+                    Operator::Plus, last, IntegerNode::create("1"));
 
                 def->m_fields[i]->m_value = last;
             }

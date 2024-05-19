@@ -45,7 +45,7 @@ uint8_t get_numbits(std::string s)
 {
     if (s == "0" || s == "1")
         return 1;
-    
+
     if (s.starts_with("-"))
         s = s.substr(1);
 
@@ -112,24 +112,4 @@ libquixcc::FloatLiteralNode::FloatLiteralNode(const std::string &val)
         m_val_type = F32TypeNode::create();
     else if (numbits == 64)
         m_val_type = F64TypeNode::create();
-}
-
-libquixcc::TypeNode *libquixcc::StringNode::infer(libquixcc::TIState &state) const
-{
-    return StringTypeNode::create();
-}
-
-libquixcc::TypeNode *libquixcc::CharNode::infer(libquixcc::TIState &state) const
-{
-    return I8TypeNode::create();
-}
-
-libquixcc::TypeNode *libquixcc::BoolLiteralNode::infer(libquixcc::TIState &state) const
-{
-    return BoolTypeNode::create();
-}
-
-libquixcc::TypeNode *libquixcc::NullLiteralNode::infer(libquixcc::TIState &state) const
-{
-    return PointerTypeNode::create(VoidTypeNode::create());
 }

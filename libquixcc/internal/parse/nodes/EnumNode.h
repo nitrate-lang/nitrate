@@ -89,8 +89,6 @@ namespace libquixcc
     public:
         EnumDefNode() { ntype = NodeType::EnumDefNode; }
         EnumDefNode(EnumTypeNode *type, bool scoped, const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {}) : m_type(type), m_fields(fields), m_scoped(scoped) { ntype = NodeType::EnumDefNode; }
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
-        
         virtual TypeNode *get_type() const { return m_type; }
 
         EnumTypeNode *m_type;

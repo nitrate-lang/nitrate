@@ -207,6 +207,6 @@ static void typenode_rename(const std::vector<std::string> &_ns, libquixcc::Pars
 
 void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(traversal::ASTTraversalState(typenode_rename, {}));
-    ast->dfs_preorder(traversal::ASTTraversalState(collapse, {}));
+    ast->dfs_preorder(traversal::ParseTreeTraversalState(typenode_rename, {}));
+    ast->dfs_preorder(traversal::ParseTreeTraversalState(collapse, {}));
 }

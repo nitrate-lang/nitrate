@@ -57,7 +57,7 @@ std::string libquixcc::Symbol::join(const std::vector<std::string> &namespaces, 
     return join(result, name);
 }
 
-std::string libquixcc::Symbol::mangle(const libquixcc::DeclNode *node, const std::string &prefix, ExportLangType lang)
+std::string libquixcc::Symbol::mangle(const ir::q::Value *node, const std::string &prefix, ExportLangType lang)
 {
     switch (lang)
     {
@@ -74,7 +74,7 @@ std::string libquixcc::Symbol::mangle(const libquixcc::DeclNode *node, const std
     }
 }
 
-std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle(const std::string &mangled)
+const libquixcc::ir::q::Value *libquixcc::Symbol::demangle(const std::string &mangled)
 {
     std::string input;
 
@@ -88,13 +88,13 @@ std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle(const std::stri
         return nullptr;
 }
 
-bool libquixcc::Symbol::demangle_tojson(const std::string &mangled, std::string &output)
+bool libquixcc::Symbol::demangle_tocode(const std::string &mangled, std::string &output)
 {
     auto node = demangle(mangled);
     if (node == nullptr)
         return false;
 
-    output = node->to_json();
+    output = node->to_string();
     return true;
 }
 
@@ -103,9 +103,9 @@ LIB_EXPORT char *quixcc_demangle(const char *mangled)
     /* no-op */
     if (!mangled)
         return nullptr;
-    
+
     std::string output;
-    if (!libquixcc::Symbol::demangle_tojson(mangled, output))
+    if (!libquixcc::Symbol::demangle_tocode(mangled, output))
         return nullptr;
 
     return strdup(output.c_str());

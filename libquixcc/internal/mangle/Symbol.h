@@ -39,7 +39,7 @@
 #include <memory>
 #include <set>
 #include <string>
-#include <parse/nodes/BasicNodes.h>
+#include <IR/Q/QIR.h>
 
 namespace libquixcc
 {
@@ -47,26 +47,26 @@ namespace libquixcc
     {
         Symbol() = delete;
 
-        static std::string mangle_quix(const DeclNode *node, const std::string &prefix);
-        static std::shared_ptr<DeclNode> demangle_quix(std::string input);
+        static std::string mangle_quix(const ir::q::Value *node, const std::string &prefix);
+        static const ir::q::Value *demangle_quix(std::string input);
 
-        static std::string mangle_cxx(const DeclNode *node, const std::string &prefix);
-        static std::shared_ptr<DeclNode> demangle_cxx(std::string input);
+        static std::string mangle_cxx(const ir::q::Value *node, const std::string &prefix);
+        static const ir::q::Value *demangle_cxx(std::string input);
 
-        static std::string mangle_c(const DeclNode *node, const std::string &prefix);
-        static std::shared_ptr<DeclNode> demangle_c(std::string input);
+        static std::string mangle_c(const ir::q::Value *node, const std::string &prefix);
+        static const ir::q::Value *demangle_c(std::string input);
 
         const static std::string quix_abiprefix;
         const static std::string cxx_abiprefix;
         const static std::string c_abiprefix;
 
     public:
-        static std::string mangle(const DeclNode *node, const std::string &prefix, ExportLangType lang);
+        static std::string mangle(const ir::q::Value *node, const std::string &prefix, ExportLangType lang);
         static std::string join(const std::string &prefix, const std::string &name);
         static std::string join(const std::vector<std::string> &namespaces, const std::string &name = "");
 
-        static std::shared_ptr<DeclNode> demangle(const std::string &mangled);
-        static bool demangle_tojson(const std::string &mangled, std::string &output);
+        static const ir::q::Value *demangle(const std::string &mangled);
+        static bool demangle_tocode(const std::string &mangled, std::string &output);
     };
 }
 

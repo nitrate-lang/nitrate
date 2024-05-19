@@ -50,8 +50,6 @@ namespace libquixcc
     public:
         TypedefNode(TypeNode *orig, const std::string &name) : m_orig(orig), m_name(name) { ntype = NodeType::TypedefNode; }
 
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
-
         TypeNode *m_orig;
         std::string m_name;
     };

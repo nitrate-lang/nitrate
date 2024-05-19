@@ -35,14 +35,16 @@
 #include <mangle/Symbol.h>
 #include <parse/nodes/AllNodes.h>
 
-std::string libquixcc::Symbol::mangle_cxx(const libquixcc::DeclNode *node, const std::string &prefix)
+std::string libquixcc::Symbol::mangle_cxx(const libquixcc::ir::q::Value *node, const std::string &prefix)
 {
+    throw std::runtime_error("CXX mangling: Not implemented");
     /// TODO: Implement C++20 mangling
     return "";
 }
 
-std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_cxx(std::string input)
+const libquixcc::ir::q::Value *libquixcc::Symbol::demangle_cxx(std::string input)
 {
+    throw std::runtime_error("CXX mangling: Not implemented");
     /// TODO: Implement C++20 demangling
     return nullptr;
 }

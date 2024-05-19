@@ -44,5 +44,5 @@ static void nop(const std::vector<std::string> &_namespace, libquixcc::ParseNode
 
 size_t libquixcc::ParseNode::count()
 {
-    return dfs_preorder(traversal::ASTTraversalState(nop, {}));
+    return dfs_preorder(traversal::ParseTreeTraversalState(nop, {}));
 }

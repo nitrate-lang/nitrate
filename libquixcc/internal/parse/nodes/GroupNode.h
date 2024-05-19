@@ -70,7 +70,6 @@ namespace libquixcc
             m_fields = optimize_layout(fields);
         }
 
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
         static std::vector<std::shared_ptr<GroupFieldNode>> group_optimize(const std::vector<std::shared_ptr<GroupFieldNode>> &fields);
         const std::vector<std::shared_ptr<GroupFieldNode>> &get_fields() const { return m_fields; }
         std::vector<std::shared_ptr<GroupFieldNode>> &get_fields_mut() { return m_fields; }

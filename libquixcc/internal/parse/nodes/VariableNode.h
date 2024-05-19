@@ -52,8 +52,6 @@ namespace libquixcc
         VarDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::VarDeclNode; }
 
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
-
         std::string m_name;
         TypeNode *m_type;
         std::shared_ptr<ExprNode> m_init;
@@ -71,8 +69,6 @@ namespace libquixcc
         LetDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::LetDeclNode; }
 
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
-
         std::string m_name;
         TypeNode *m_type;
         std::shared_ptr<ExprNode> m_init;
@@ -89,8 +85,6 @@ namespace libquixcc
         ConstDeclNode() { ntype = NodeType::ConstDeclNode; }
         ConstDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init)
             : m_name(name), m_type(type), m_init(init) { ntype = NodeType::ConstDeclNode; }
-
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
 
         std::string m_name;
         TypeNode *m_type;

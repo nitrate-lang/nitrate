@@ -49,14 +49,8 @@ namespace libquixcc
 {
     class ConstUnaryExprNode : public ConstExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         ConstUnaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &expr) : m_op(op), m_expr(expr) { ntype = NodeType::ConstUnaryExprNode; }
-
-        virtual TypeNode *infer(TIState &state) const override;
 
         Operator m_op;
         std::shared_ptr<ConstExprNode> m_expr;
@@ -64,15 +58,9 @@ namespace libquixcc
 
     class ConstBinaryExprNode : public ConstExprNode
     {
-    protected:
-        virtual std::shared_ptr<ExprNode> reduce_impl(ReductionState &state) const override;
-        virtual std::shared_ptr<ExprNode> promote_impl() const override;
-
     public:
         ConstBinaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &lhs, const std::shared_ptr<ConstExprNode> &rhs)
             : m_op(op), m_lhs(lhs), m_rhs(rhs) { ntype = NodeType::ConstBinaryExprNode; }
-
-        virtual TypeNode *infer(TIState &state) const override;
 
         Operator m_op;
         std::shared_ptr<ConstExprNode> m_lhs;

@@ -33,7 +33,8 @@
 
 #include <LibMacro.h>
 #include <mangle/Symbol.h>
-#include <parse/nodes/AllNodes.h>
+#include <IR/Q/Type.h>
+#include <IR/Q/Variable.h>
 
 static std::string filter(const std::string &input)
 {
@@ -44,25 +45,21 @@ static std::string filter(const std::string &input)
     return output;
 }
 
-std::string libquixcc::Symbol::mangle_c(const libquixcc::DeclNode *node, const std::string &prefix)
+std::string libquixcc::Symbol::mangle_c(const libquixcc::ir::q::Value *node, const std::string &prefix)
 {
     /// TODO: verify this is correct
-    switch (node->ntype)
+    switch ((ir::q::NodeType)node->ntype)
     {
-    case libquixcc::NodeType::VarDeclNode:
-        return filter(static_cast<const libquixcc::VarDeclNode *>(node)->m_name);
-    case libquixcc::NodeType::LetDeclNode:
-        return filter(static_cast<const libquixcc::LetDeclNode *>(node)->m_name);
-    case libquixcc::NodeType::ConstDeclNode:
-        return filter(static_cast<const libquixcc::ConstDeclNode *>(node)->m_name);
-    case libquixcc::NodeType::FunctionDeclNode:
-        return filter(static_cast<const libquixcc::FunctionDeclNode *>(node)->m_name);
+    case ir::q::NodeType::Local:
+        return filter(static_cast<const ir::q::Local *>(node)->name);
+    case ir::q::NodeType::Global:
+        return filter(static_cast<const ir::q::Global *>(node)->name);
     default:
         throw std::runtime_error("Invalid node type");
     }
 }
 
-std::shared_ptr<libquixcc::DeclNode> libquixcc::Symbol::demangle_c(std::string input)
+const libquixcc::ir::q::Value *libquixcc::Symbol::demangle_c(std::string input)
 {
     /// TODO: handle case where type is unknown
     return nullptr;

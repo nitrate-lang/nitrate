@@ -105,8 +105,6 @@ namespace libquixcc
         StructDefNode() { ntype = NodeType::StructDefNode; }
         StructDefNode(const std::string &name, const std::vector<std::shared_ptr<StructFieldNode>> &fields) : m_name(name), m_fields(fields) { ntype = NodeType::StructDefNode; }
 
-        std::unique_ptr<StmtNode> reduce(libquixcc::ReductionState &state) const override;
-
         virtual StructTypeNode *get_type() const
         {
             std::vector<TypeNode *> fields;

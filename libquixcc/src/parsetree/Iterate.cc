@@ -31,7 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <traversal/AST.h>
+#include <parsetree/Iterate.h>
 #include <parse/nodes/AllNodes.h>
 
 template <typename T>
@@ -46,14 +46,14 @@ libquixcc::traversal::TraversePtr mk_ptr(T **ptr)
     return std::make_pair(libquixcc::traversal::TraversePtrType::Raw, reinterpret_cast<libquixcc::ParseNode **>(ptr));
 }
 
-size_t libquixcc::ParseNode::dfs_preorder(libquixcc::traversal::ASTTraversalState state)
+size_t libquixcc::ParseNode::dfs_preorder(libquixcc::traversal::ParseTreeTraversalState state)
 {
-    return traversal::ASTPreorderTraversal::next(state, this);
+    return traversal::ParseTreePreorder::next(state, this);
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::dispatch(libquixcc::traversal::ASTTraversalState &state, libquixcc::ParseNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ParseNode *node)
 {
-    typedef size_t (*Func)(libquixcc::traversal::ASTTraversalState &, libquixcc::ParseNode *);
+    typedef size_t (*Func)(libquixcc::traversal::ParseTreeTraversalState &, libquixcc::ParseNode *);
 
     static const std::unordered_map<NodeType, Func> node_map =
         {
@@ -141,18 +141,18 @@ size_t libquixcc::traversal::ASTPreorderTraversal::dispatch(libquixcc::traversal
     return node_map.at(node->ntype)(state, node);
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::ExprStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ExprStmtNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ExprStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ExprStmtNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
     return next(state, node->m_expr) + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::NopStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::NopStmtNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::NopStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::NopStmtNode *node)
 {
     return 0;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::BlockNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::BlockNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::BlockNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::BlockNode *node)
 {
     size_t count = 0;
     for (auto &stmt : node->m_stmts)
@@ -163,7 +163,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::BlockNode_iter(libquixcc::tra
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::StmtGroupNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::StmtGroupNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::StmtGroupNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StmtGroupNode *node)
 {
     size_t count = 0;
     for (auto &stmt : node->m_stmts)
@@ -174,7 +174,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::StmtGroupNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::CastExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::CastExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::CastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::CastExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -183,7 +183,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::CastExprNode_iter(libquixcc::
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::StaticCastExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::StaticCastExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::StaticCastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StaticCastExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -192,7 +192,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::StaticCastExprNode_iter(libqu
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::BitCastExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::BitCastExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::BitCastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::BitCastExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -201,7 +201,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::BitCastExprNode_iter(libquixc
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::SignedUpcastExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::SignedUpcastExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::SignedUpcastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::SignedUpcastExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -210,7 +210,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::SignedUpcastExprNode_iter(lib
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::UnsignedUpcastExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::UnsignedUpcastExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::UnsignedUpcastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UnsignedUpcastExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -219,7 +219,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::UnsignedUpcastExprNode_iter(l
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::DowncastExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::DowncastExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::DowncastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::DowncastExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -228,7 +228,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::DowncastExprNode_iter(libquix
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::PtrToIntCastExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::PtrToIntCastExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::PtrToIntCastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::PtrToIntCastExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -237,7 +237,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::PtrToIntCastExprNode_iter(lib
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::IntToPtrCastExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::IntToPtrCastExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::IntToPtrCastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::IntToPtrCastExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -246,13 +246,13 @@ size_t libquixcc::traversal::ASTPreorderTraversal::IntToPtrCastExprNode_iter(lib
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::UnaryExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::UnaryExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::UnaryExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UnaryExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
     return next(state, node->m_expr) + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::BinaryExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::BinaryExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::BinaryExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::BinaryExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_lhs));
     size_t count = next(state, node->m_lhs);
@@ -261,7 +261,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::BinaryExprNode_iter(libquixcc
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::CallExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::CallExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::CallExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::CallExprNode *node)
 {
     size_t count = 0;
     for (auto &arg : node->m_positional_args)
@@ -284,7 +284,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::CallExprNode_iter(libquixcc::
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::ListExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ListExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ListExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ListExprNode *node)
 {
     size_t count = 0;
     for (auto &elem : node->m_elements)
@@ -295,19 +295,19 @@ size_t libquixcc::traversal::ASTPreorderTraversal::ListExprNode_iter(libquixcc::
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::MemberAccessNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::MemberAccessNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::MemberAccessNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::MemberAccessNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
     return next(state, node->m_expr) + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::ConstUnaryExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ConstUnaryExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ConstUnaryExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ConstUnaryExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
     return next(state, node->m_expr) + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::ConstBinaryExprNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ConstBinaryExprNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ConstBinaryExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ConstBinaryExprNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_lhs));
     size_t count = next(state, node->m_lhs);
@@ -316,100 +316,100 @@ size_t libquixcc::traversal::ASTPreorderTraversal::ConstBinaryExprNode_iter(libq
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::IdentifierNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::IdentifierNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::IdentifierNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::IdentifierNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::MutTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::MutTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::MutTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::MutTypeNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     return next(state, node->m_type) + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::U8TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::U8TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::U8TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::U8TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::U16TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::U16TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::U16TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::U16TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::U32TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::U32TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::U32TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::U32TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::U64TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::U64TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::U64TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::U64TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::I8TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::I8TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::I8TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::I8TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::I16TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::I16TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::I16TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::I16TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::I32TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::I32TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::I32TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::I32TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::I64TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::I64TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::I64TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::I64TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::F32TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::F32TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::F32TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::F32TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::F64TypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::F64TypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::F64TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::F64TypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::BoolTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::BoolTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::BoolTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::BoolTypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::VoidTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::VoidTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::VoidTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::VoidTypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::PointerTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::PointerTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::PointerTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::PointerTypeNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     return next(state, node->m_type) + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::OpaqueTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::OpaqueTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::OpaqueTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::OpaqueTypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::StringTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::StringTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::StringTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StringTypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::EnumTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::EnumTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::EnumTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::EnumTypeNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_member_type));
     return next(state, node->m_member_type) + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::StructTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::StructTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::StructTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StructTypeNode *node)
 {
     if (state.m_visited.contains(node))
         return 1;
@@ -425,7 +425,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::StructTypeNode_iter(libquixcc
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::RegionTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::RegionTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::RegionTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RegionTypeNode *node)
 {
     if (state.m_visited.contains(node))
         return 1;
@@ -441,7 +441,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::RegionTypeNode_iter(libquixcc
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::UnionTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::UnionTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::UnionTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UnionTypeNode *node)
 {
     if (state.m_visited.contains(node))
         return 1;
@@ -457,7 +457,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::UnionTypeNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::ArrayTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ArrayTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ArrayTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ArrayTypeNode *node)
 {
     size_t count = 0;
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
@@ -470,7 +470,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::ArrayTypeNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::FunctionTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::FunctionTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::FunctionTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::FunctionTypeNode *node)
 {
     size_t count = 0;
     for (auto &param : node->m_params)
@@ -483,48 +483,48 @@ size_t libquixcc::traversal::ASTPreorderTraversal::FunctionTypeNode_iter(libquix
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::UserTypeNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::UserTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::UserTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UserTypeNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::IntegerNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::IntegerNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::IntegerNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::IntegerNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::FloatLiteralNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::FloatLiteralNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::FloatLiteralNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::FloatLiteralNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::StringNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::StringNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::StringNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StringNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::CharNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::CharNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::CharNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::CharNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::BoolLiteralNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::BoolLiteralNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::BoolLiteralNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::BoolLiteralNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::NullLiteralNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::NullLiteralNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::NullLiteralNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::NullLiteralNode *node)
 {
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::TypedefNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::TypedefNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::TypedefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::TypedefNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_orig));
     return next(state, node->m_orig) + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::VarDeclNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::VarDeclNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::VarDeclNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::VarDeclNode *node)
 {
     state.m_visited.clear();
 
@@ -538,7 +538,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::VarDeclNode_iter(libquixcc::t
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::LetDeclNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::LetDeclNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::LetDeclNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::LetDeclNode *node)
 {
     state.m_visited.clear();
 
@@ -552,7 +552,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::LetDeclNode_iter(libquixcc::t
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::ConstDeclNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ConstDeclNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ConstDeclNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ConstDeclNode *node)
 {
     state.m_visited.clear();
     size_t count = 0;
@@ -571,7 +571,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::ConstDeclNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::FunctionDeclNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::FunctionDeclNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::FunctionDeclNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::FunctionDeclNode *node)
 {
     state.m_visited.clear();
 
@@ -590,7 +590,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::FunctionDeclNode_iter(libquix
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::StructDefNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::StructDefNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::StructDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StructDefNode *node)
 {
     size_t count = 0;
     state.m_prefix.push_back(node->m_name);
@@ -617,7 +617,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::StructDefNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::StructFieldNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::StructFieldNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::StructFieldNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StructFieldNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -629,7 +629,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::StructFieldNode_iter(libquixc
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::RegionDefNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::RegionDefNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::RegionDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RegionDefNode *node)
 {
     size_t count = 0;
     state.m_prefix.push_back(node->m_name);
@@ -644,7 +644,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::RegionDefNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::RegionFieldNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::RegionFieldNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::RegionFieldNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RegionFieldNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -656,7 +656,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::RegionFieldNode_iter(libquixc
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::GroupDefNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::GroupDefNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::GroupDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::GroupDefNode *node)
 {
     size_t count = 0;
     state.m_prefix.push_back(node->m_name);
@@ -671,7 +671,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::GroupDefNode_iter(libquixcc::
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::GroupFieldNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::GroupFieldNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::GroupFieldNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::GroupFieldNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -683,7 +683,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::GroupFieldNode_iter(libquixcc
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::UnionDefNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::UnionDefNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::UnionDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UnionDefNode *node)
 {
     size_t count = 0;
     state.m_prefix.push_back(node->m_name);
@@ -698,7 +698,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::UnionDefNode_iter(libquixcc::
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::UnionFieldNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::UnionFieldNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::UnionFieldNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UnionFieldNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
@@ -710,7 +710,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::UnionFieldNode_iter(libquixcc
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::EnumDefNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::EnumDefNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::EnumDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::EnumDefNode *node)
 {
     if (node->m_scoped)
         state.m_prefix.push_back(node->m_type->m_name);
@@ -729,7 +729,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::EnumDefNode_iter(libquixcc::t
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::EnumFieldNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::EnumFieldNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::EnumFieldNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::EnumFieldNode *node)
 {
     if (node->m_value)
     {
@@ -739,7 +739,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::EnumFieldNode_iter(libquixcc:
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::FunctionDefNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::FunctionDefNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::FunctionDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::FunctionDefNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_decl));
     size_t count = next(state, node->m_decl);
@@ -754,7 +754,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::FunctionDefNode_iter(libquixc
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::FunctionParamNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::FunctionParamNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::FunctionParamNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::FunctionParamNode *node)
 {
     state.m_visited.clear();
 
@@ -768,7 +768,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::FunctionParamNode_iter(libqui
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::SubsystemNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::SubsystemNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::SubsystemNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::SubsystemNode *node)
 {
     state.m_prefix.push_back(node->m_name);
 
@@ -780,7 +780,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::SubsystemNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::ExportNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ExportNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ExportNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ExportNode *node)
 {
     size_t count = 0;
     for (auto &stmt : node->m_stmts)
@@ -791,7 +791,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::ExportNode_iter(libquixcc::tr
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::InlineAsmNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::InlineAsmNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::InlineAsmNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::InlineAsmNode *node)
 {
     size_t count = 0;
 
@@ -810,7 +810,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::InlineAsmNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::ReturnStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ReturnStmtNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ReturnStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ReturnStmtNode *node)
 {
     if (node->m_expr)
     {
@@ -820,7 +820,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::ReturnStmtNode_iter(libquixcc
     return 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::RetifStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::RetifStmtNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::RetifStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RetifStmtNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
     size_t count = next(state, node->m_cond);
@@ -829,7 +829,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::RetifStmtNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::RetzStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::RetzStmtNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::RetzStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RetzStmtNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
     size_t count = next(state, node->m_cond);
@@ -838,13 +838,13 @@ size_t libquixcc::traversal::ASTPreorderTraversal::RetzStmtNode_iter(libquixcc::
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::RetvStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::RetvStmtNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::RetvStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RetvStmtNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
     return next(state, node->m_cond) + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::IfStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::IfStmtNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::IfStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::IfStmtNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
     size_t count = next(state, node->m_cond);
@@ -858,7 +858,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::IfStmtNode_iter(libquixcc::tr
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::WhileStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::WhileStmtNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::WhileStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::WhileStmtNode *node)
 {
     state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
     size_t count = next(state, node->m_cond);
@@ -867,7 +867,7 @@ size_t libquixcc::traversal::ASTPreorderTraversal::WhileStmtNode_iter(libquixcc:
     return count + 1;
 }
 
-size_t libquixcc::traversal::ASTPreorderTraversal::ForStmtNode_iter(libquixcc::traversal::ASTTraversalState &state, libquixcc::ForStmtNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ForStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ForStmtNode *node)
 {
     size_t count = 1;
 

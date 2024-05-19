@@ -31,7 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <serialize/ASTJson.h>
+#include <parsetree/Serialize.h>
 #include <parse/nodes/AllNodes.h>
 #include <functional>
 #include <unordered_map>
@@ -86,14 +86,14 @@ std::string escape_json(const std::string &input)
     return output;
 }
 
-std::string libquixcc::ParseNode::to_json(libquixcc::serialize::ASTJsonSerializerState state) const
+std::string libquixcc::ParseNode::to_json(libquixcc::serialize::ParseTreeSerializerState state) const
 {
-    return serialize::ASTJsonSerializer::next(state, this);
+    return serialize::ParseTreeSerializer::next(state, this);
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::dispatch(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ParseNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ParseNode *node)
 {
-    typedef std::string (*Func)(libquixcc::serialize::ASTJsonSerializerState &, const libquixcc::ParseNode *);
+    typedef std::string (*Func)(libquixcc::serialize::ParseTreeSerializerState &, const libquixcc::ParseNode *);
 
     static std::unordered_map<NodeType, Func> node_map =
         {
@@ -180,17 +180,17 @@ std::string libquixcc::serialize::ASTJsonSerializer::dispatch(libquixcc::seriali
     return node_map[node->ntype](state, node);
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::ExprStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ExprStmtNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ExprStmtNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ExprStmtNode *node)
 {
     return "{\"ntype\":\"ExprStmtNode\",\"expr\":" + next(state, node->m_expr) + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::NopStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::NopStmtNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::NopStmtNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::NopStmtNode *node)
 {
     return "{\"ntype\":\"nop\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::BlockNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::BlockNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::BlockNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::BlockNode *node)
 {
     std::string str = "{\"ntype\":\"BlockNode\",\"children\":[";
     for (auto it = node->m_stmts.begin(); it != node->m_stmts.end(); ++it)
@@ -205,7 +205,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::BlockNode_conv(libquixcc::s
     return str + "]}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::StmtGroupNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::StmtGroupNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::StmtGroupNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::StmtGroupNode *node)
 {
     std::string str;
 
@@ -221,7 +221,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::StmtGroupNode_conv(libquixc
     return str;
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::StaticCastExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::StaticCastExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::StaticCastExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::StaticCastExprNode *node)
 {
     std::string str = "{\"ntype\":\"StaticCastExprNode\",\"type\":";
     str += next(state, node->m_type);
@@ -230,7 +230,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::StaticCastExprNode_conv(lib
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::BitCastExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::BitCastExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::BitCastExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::BitCastExprNode *node)
 {
     std::string str = "{\"ntype\":\"BitCastExprNode\",\"type\":";
     str += next(state, node->m_type);
@@ -239,7 +239,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::BitCastExprNode_conv(libqui
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::SignedUpcastExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::SignedUpcastExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::SignedUpcastExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::SignedUpcastExprNode *node)
 {
     std::string str = "{\"ntype\":\"SignedUpcastExprNode\",\"type\":";
     str += next(state, node->m_type);
@@ -248,7 +248,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::SignedUpcastExprNode_conv(l
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::UnsignedUpcastExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::UnsignedUpcastExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::UnsignedUpcastExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::UnsignedUpcastExprNode *node)
 {
     std::string str = "{\"ntype\":\"UnsignedUpcastExprNode\",\"type\":";
     str += next(state, node->m_type);
@@ -257,7 +257,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::UnsignedUpcastExprNode_conv
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::DowncastExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::DowncastExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::DowncastExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::DowncastExprNode *node)
 {
     std::string str = "{\"ntype\":\"DowncastExprNode\",\"type\":";
     str += next(state, node->m_type);
@@ -266,7 +266,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::DowncastExprNode_conv(libqu
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::PtrToIntCastExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::PtrToIntCastExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::PtrToIntCastExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::PtrToIntCastExprNode *node)
 {
     std::string str = "{\"ntype\":\"PtrToIntCastExprNode\",\"type\":";
     str += next(state, node->m_type);
@@ -275,7 +275,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::PtrToIntCastExprNode_conv(l
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::IntToPtrCastExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::IntToPtrCastExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::IntToPtrCastExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::IntToPtrCastExprNode *node)
 {
     std::string str = "{\"ntype\":\"IntToPtrCastExprNode\",\"type\":";
     str += next(state, node->m_type);
@@ -284,7 +284,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::IntToPtrCastExprNode_conv(l
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::UnaryExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::UnaryExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::UnaryExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::UnaryExprNode *node)
 {
     std::string str = "{\"ntype\":\"UnaryExprNode\",\"op\":\"";
     str += operator_map_inverse.at(node->m_op);
@@ -294,7 +294,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::UnaryExprNode_conv(libquixc
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::BinaryExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::BinaryExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::BinaryExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::BinaryExprNode *node)
 {
     std::string str = "{\"ntype\":\"BinaryExprNode\",\"op\":\"";
     str += operator_map_inverse.at(node->m_op);
@@ -306,7 +306,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::BinaryExprNode_conv(libquix
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::CallExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::CallExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::CallExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::CallExprNode *node)
 {
     std::string str = "{\"ntype\":\"CallExprNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -333,7 +333,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::CallExprNode_conv(libquixcc
     return str + "]}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::ListExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ListExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ListExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ListExprNode *node)
 {
     std::string str = "{\"ntype\":\"ListExprNode\",\"elements\":[";
     for (auto it = node->m_elements.begin(); it != node->m_elements.end(); ++it)
@@ -348,7 +348,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::ListExprNode_conv(libquixcc
     return str + "]}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::MemberAccessNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::MemberAccessNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::MemberAccessNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::MemberAccessNode *node)
 {
     std::string str = "{\"ntype\":\"MemberAccessNode\",\"lhs\":";
     str += next(state, node->m_expr);
@@ -357,7 +357,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::MemberAccessNode_conv(libqu
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::ConstUnaryExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ConstUnaryExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ConstUnaryExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ConstUnaryExprNode *node)
 {
     std::string str = "{\"ntype\":\"ConstUnaryExprNode\",\"op\":\"";
     str += operator_map_inverse.at(node->m_op);
@@ -367,7 +367,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::ConstUnaryExprNode_conv(lib
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::ConstBinaryExprNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ConstBinaryExprNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ConstBinaryExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ConstBinaryExprNode *node)
 {
     std::string str = "{\"ntype\":\"ConstBinaryExprNode\",\"op\":\"";
     str += operator_map_inverse.at(node->m_op);
@@ -379,94 +379,94 @@ std::string libquixcc::serialize::ASTJsonSerializer::ConstBinaryExprNode_conv(li
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::IdentifierNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::IdentifierNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::IdentifierNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::IdentifierNode *node)
 {
     return "{\"ntype\":\"IdentifierNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::MutTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::MutTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::MutTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::MutTypeNode *node)
 {
     return "{\"ntype\":\"MutTypeNode\",\"type\":" + next(state, node->m_type) + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::U8TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::U8TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::U8TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::U8TypeNode *node)
 {
     return "{\"ntype\":\"U8TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::U16TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::U16TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::U16TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::U16TypeNode *node)
 {
     return "{\"ntype\":\"U16TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::U32TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::U32TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::U32TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::U32TypeNode *node)
 {
     return "{\"ntype\":\"U32TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::U64TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::U64TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::U64TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::U64TypeNode *node)
 {
     return "{\"ntype\":\"U64TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::I8TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::I8TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::I8TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::I8TypeNode *node)
 {
     return "{\"ntype\":\"I8TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::I16TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::I16TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::I16TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::I16TypeNode *node)
 {
     return "{\"ntype\":\"I16TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::I32TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::I32TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::I32TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::I32TypeNode *node)
 {
     return "{\"ntype\":\"I32TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::I64TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::I64TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::I64TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::I64TypeNode *node)
 {
     return "{\"ntype\":\"I64TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::F32TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::F32TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::F32TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::F32TypeNode *node)
 {
     return "{\"ntype\":\"F32TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::F64TypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::F64TypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::F64TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::F64TypeNode *node)
 {
     return "{\"ntype\":\"F64TypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::BoolTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::BoolTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::BoolTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::BoolTypeNode *node)
 {
     return "{\"ntype\":\"BoolTypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::VoidTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::VoidTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::VoidTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::VoidTypeNode *node)
 {
     return "{\"ntype\":\"VoidTypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::PointerTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::PointerTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::PointerTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::PointerTypeNode *node)
 {
     std::string str = "{\"ntype\":\"PointerTypeNode\",\"type\":";
     str += next(state, node->m_type);
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::OpaqueTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::OpaqueTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::OpaqueTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::OpaqueTypeNode *node)
 {
     return "{\"ntype\":\"OpaqueTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::StringTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::StringTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::StringTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::StringTypeNode *node)
 {
     return "{\"ntype\":\"StringTypeNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::EnumTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::EnumTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::EnumTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::EnumTypeNode *node)
 {
     std::string str = "{\"ntype\":\"EnumTypeNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -475,7 +475,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::EnumTypeNode_conv(libquixcc
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::StructTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::StructTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::StructTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::StructTypeNode *node)
 {
     if (state.m_visited.contains(node))
         return "{\"ntype\":\"StructTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
@@ -497,7 +497,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::StructTypeNode_conv(libquix
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::RegionTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::RegionTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::RegionTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::RegionTypeNode *node)
 {
     if (state.m_visited.contains(node))
         return "{\"ntype\":\"RegionTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
@@ -517,7 +517,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::RegionTypeNode_conv(libquix
     return str + "]}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::UnionTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::UnionTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::UnionTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::UnionTypeNode *node)
 {
     if (state.m_visited.contains(node))
         return "{\"ntype\":\"UnionTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
@@ -537,7 +537,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::UnionTypeNode_conv(libquixc
     return str + "]}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::ArrayTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ArrayTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ArrayTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ArrayTypeNode *node)
 {
     std::string str = "{\"ntype\":\"ArrayTypeNode\",\"type\":";
     str += next(state, node->m_type);
@@ -546,7 +546,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::ArrayTypeNode_conv(libquixc
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::FunctionTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::FunctionTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::FunctionTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::FunctionTypeNode *node)
 {
     std::string str = "{\"ntype\":\"FunctionTypeNode\",\"params\":[";
     for (auto it = node->m_params.begin(); it != node->m_params.end(); ++it)
@@ -573,42 +573,42 @@ std::string libquixcc::serialize::ASTJsonSerializer::FunctionTypeNode_conv(libqu
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::UserTypeNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::UserTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::UserTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::UserTypeNode *node)
 {
     return "{\"ntype\":\"UserTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::IntegerNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::IntegerNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::IntegerNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::IntegerNode *node)
 {
     return "{\"ntype\":\"IntegerNode\",\"value\":\"" + node->m_val + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::FloatLiteralNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::FloatLiteralNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::FloatLiteralNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::FloatLiteralNode *node)
 {
     return "{\"ntype\":\"FloatLiteralNode\",\"value\":\"" + node->m_val + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::StringNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::StringNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::StringNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::StringNode *node)
 {
     return "{\"ntype\":\"StringNode\",\"value\":\"" + escape_json(node->m_val) + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::CharNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::CharNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::CharNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::CharNode *node)
 {
     return "{\"ntype\":\"CharNode\",\"value\":\"" + node->m_val + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::BoolLiteralNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::BoolLiteralNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::BoolLiteralNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::BoolLiteralNode *node)
 {
     return "{\"ntype\":\"BoolLiteralNode\",\"value\":\"" + std::string(node->m_val ? "true" : "false") + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::NullLiteralNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::NullLiteralNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::NullLiteralNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::NullLiteralNode *node)
 {
     return "{\"ntype\":\"NullLiteralNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::TypedefNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::TypedefNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::TypedefNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::TypedefNode *node)
 {
     std::string str = "{\"ntype\":\"TypedefNode\",\"base\":";
     str += next(state, node->m_orig);
@@ -616,7 +616,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::TypedefNode_conv(libquixcc:
     return str + "\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::VarDeclNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::VarDeclNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::VarDeclNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::VarDeclNode *node)
 {
     state.m_visited.clear();
 
@@ -640,7 +640,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::VarDeclNode_conv(libquixcc:
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::LetDeclNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::LetDeclNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::LetDeclNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::LetDeclNode *node)
 {
     state.m_visited.clear();
 
@@ -664,7 +664,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::LetDeclNode_conv(libquixcc:
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::ConstDeclNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ConstDeclNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ConstDeclNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ConstDeclNode *node)
 {
     state.m_visited.clear();
 
@@ -685,7 +685,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::ConstDeclNode_conv(libquixc
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::FunctionDeclNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::FunctionDeclNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::FunctionDeclNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::FunctionDeclNode *node)
 {
     state.m_visited.clear();
 
@@ -716,7 +716,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::FunctionDeclNode_conv(libqu
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::StructDefNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::StructDefNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::StructDefNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::StructDefNode *node)
 {
     std::string str = "{\"ntype\":\"StructDefNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -752,7 +752,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::StructDefNode_conv(libquixc
     return str + "]}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::StructFieldNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::StructFieldNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::StructFieldNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::StructFieldNode *node)
 {
     std::string str = "{\"ntype\":\"StructFieldNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -763,7 +763,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::StructFieldNode_conv(libqui
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::RegionDefNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::RegionDefNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::RegionDefNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::RegionDefNode *node)
 {
     std::string str = "{\"ntype\":\"RegionDefNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -780,7 +780,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::RegionDefNode_conv(libquixc
     return str + "]}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::RegionFieldNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::RegionFieldNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::RegionFieldNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::RegionFieldNode *node)
 {
     std::string str = "{\"ntype\":\"RegionFieldNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -791,7 +791,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::RegionFieldNode_conv(libqui
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::GroupDefNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::GroupDefNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::GroupDefNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::GroupDefNode *node)
 {
     std::string str = "{\"ntype\":\"GroupDefNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -809,7 +809,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::GroupDefNode_conv(libquixcc
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::GroupFieldNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::GroupFieldNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::GroupFieldNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::GroupFieldNode *node)
 {
     std::string str = "{\"ntype\":\"GroupFieldNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -820,7 +820,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::GroupFieldNode_conv(libquix
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::UnionDefNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::UnionDefNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::UnionDefNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::UnionDefNode *node)
 {
     std::string str = "{\"ntype\":\"UnionDefNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -837,7 +837,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::UnionDefNode_conv(libquixcc
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::UnionFieldNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::UnionFieldNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::UnionFieldNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::UnionFieldNode *node)
 {
     std::string str = "{\"ntype\":\"UnionFieldNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -848,7 +848,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::UnionFieldNode_conv(libquix
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::EnumDefNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::EnumDefNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::EnumDefNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::EnumDefNode *node)
 {
     std::string str = "{\"ntype\":\"EnumDefNode\",\"type\":";
     str += next(state, node->m_type);
@@ -865,7 +865,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::EnumDefNode_conv(libquixcc:
     return str + "]}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::EnumFieldNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::EnumFieldNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::EnumFieldNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::EnumFieldNode *node)
 {
     std::string str = "{\"ntype\":\"EnumFieldNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -877,7 +877,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::EnumFieldNode_conv(libquixc
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::FunctionDefNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::FunctionDefNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::FunctionDefNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::FunctionDefNode *node)
 {
     std::string str = "{\"ntype\":\"FunctionDefNode\",\"decl\":";
     str += next(state, node->m_decl);
@@ -886,7 +886,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::FunctionDefNode_conv(libqui
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::FunctionParamNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::FunctionParamNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::FunctionParamNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::FunctionParamNode *node)
 {
     state.m_visited.clear();
 
@@ -902,7 +902,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::FunctionParamNode_conv(libq
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::SubsystemNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::SubsystemNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::SubsystemNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::SubsystemNode *node)
 {
     std::string str = "{\"ntype\":\"SubsystemNode\",\"name\":\"";
     str += escape_json(node->m_name);
@@ -920,7 +920,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::SubsystemNode_conv(libquixc
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::ExportNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ExportNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ExportNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ExportNode *node)
 {
     std::string str = "{\"ntype\":\"ExportNode\",\"block\":[";
     for (auto it = node->m_stmts.begin(); it != node->m_stmts.end(); ++it)
@@ -934,7 +934,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::ExportNode_conv(libquixcc::
     return str + "]}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::InlineAsmNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::InlineAsmNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::InlineAsmNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::InlineAsmNode *node)
 {
     std::string str = "{\"ntype\":\"InlineAsmNode\",\"asm\":\"";
     str += escape_json(node->m_asm);
@@ -978,7 +978,7 @@ std::string libquixcc::serialize::ASTJsonSerializer::InlineAsmNode_conv(libquixc
     return str;
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::ReturnStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ReturnStmtNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ReturnStmtNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ReturnStmtNode *node)
 {
     if (node->m_expr)
         return "{\"ntype\":\"ReturnStmtNode\",\"value\":" + next(state, node->m_expr) + "}";
@@ -986,22 +986,22 @@ std::string libquixcc::serialize::ASTJsonSerializer::ReturnStmtNode_conv(libquix
         return "{\"ntype\":\"ReturnStmtNode\"}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::RetifStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::RetifStmtNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::RetifStmtNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::RetifStmtNode *node)
 {
     return "{\"ntype\":\"RetifStmtNode\",\"cond\":" + next(state, node->m_cond) + ",\"value\":" + next(state, node->m_return) + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::RetzStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::RetzStmtNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::RetzStmtNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::RetzStmtNode *node)
 {
     return "{\"ntype\":\"RetzStmtNode\",\"cond\":" + next(state, node->m_cond) + ",\"value\":" + next(state, node->m_return) + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::RetvStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::RetvStmtNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::RetvStmtNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::RetvStmtNode *node)
 {
     return "{\"ntype\":\"RetvStmtNode\",\"cond\":" + next(state, node->m_cond) + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::IfStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::IfStmtNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::IfStmtNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::IfStmtNode *node)
 {
     std::string str = "{\"ntype\":\"IfStmtNode\",\"cond\":" + next(state, node->m_cond) + ",\"then\":" + next(state, node->m_then);
     if (node->m_else)
@@ -1011,12 +1011,12 @@ std::string libquixcc::serialize::ASTJsonSerializer::IfStmtNode_conv(libquixcc::
     return str + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::WhileStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::WhileStmtNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::WhileStmtNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::WhileStmtNode *node)
 {
     return "{\"ntype\":\"WhileStmtNode\",\"cond\":" + next(state, node->m_cond) + ",\"block\":" + next(state, node->m_stmt) + "}";
 }
 
-std::string libquixcc::serialize::ASTJsonSerializer::ForStmtNode_conv(libquixcc::serialize::ASTJsonSerializerState &state, const libquixcc::ForStmtNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ForStmtNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ForStmtNode *node)
 {
     std::string str = "{\"ntype\":\"ForStmtNode\"";
 
