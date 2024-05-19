@@ -116,6 +116,7 @@ namespace libquixcc
         llvm::Value *gen(const ir::delta::Global *node);
         llvm::Constant *gen(const ir::delta::Number *node);
         llvm::Constant *gen(const ir::delta::String *node);
+        llvm::Value *gen(const ir::delta::List *node);
         llvm::Value *gen(const ir::delta::Ident *node);
         llvm::Value *gen(const ir::delta::Assign *node);
         llvm::Value *gen(const ir::delta::Member *node);

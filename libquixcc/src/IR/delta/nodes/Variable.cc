@@ -77,3 +77,23 @@ bool libquixcc::ir::delta::String::verify_impl() const
 {
     return true;
 }
+
+boost::uuids::uuid libquixcc::ir::delta::List::hash_impl() const
+{
+    auto h = Hasher().gettag();
+    for (auto &v : values)
+    {
+        h.add(v);
+    }
+    return h.hash();
+}
+
+bool libquixcc::ir::delta::List::verify_impl() const
+{
+    for (auto &v : values)
+    {
+        if (!v->verify())
+            return false;
+    }
+    return true;
+}

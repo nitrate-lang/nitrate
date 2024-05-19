@@ -532,8 +532,14 @@ static auto conv(const CallExprNode *n, QState &state) -> QResult
 
 static auto conv(const ListExprNode *n, QState &state) -> QResult
 {
-    /// TODO: Implement ListExprNode
-    throw std::runtime_error("QIR translation: ListExprNode not implemented");
+    std::vector<const Expr *> values;
+    for (auto &elem : n->m_elements)
+    {
+        auto v = conv(elem.get(), state)[0]->as<Expr>();
+        values.push_back(v);
+    }
+
+    return List::create(values);
 }
 
 static auto conv(const MemberAccessNode *n, QState &state) -> QResult
@@ -626,9 +632,6 @@ static auto conv(const MemberAccessNode *n, QState &state) -> QResult
     default:
         throw std::runtime_error("MemberAccessNode not implemented");
     }
-
-    /// TODO: Implement MemberAccessNode
-    throw std::runtime_error("QIR translation: MemberAccessNode not implemented");
 }
 
 static auto conv(const IndexNode *n, QState &state) -> QResult
@@ -991,20 +994,17 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult
         else
             type = init->infer();
 
-        auto l = Local::create(n->m_name, type);
+        auto l = Local::create(n->m_name, type, init);
         state.local_idents.top()[n->m_name] = l->type;
         std::vector<QValue> res = {l};
         auto ident = Ident::create(n->m_name, l->type);
 
-        if (n->m_type && n->m_type->is_composite())
+        if (l->type == nullptr && n->m_type && n->m_type->is_composite())
         {
             auto defaults = create_defaults(ident, n->m_type, state);
             for (auto &d : defaults)
                 res.push_back(d);
         }
-
-        if (n->m_init)
-            res.push_back(Assign::create(ident, promote(ident, init)));
 
         return res;
     }
@@ -1035,15 +1035,10 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult
         else
             type = init->infer();
 
-        auto l = Local::create(n->m_name, type);
+        auto l = Local::create(n->m_name, type, init);
         state.local_idents.top()[n->m_name] = l->type;
-        std::vector<QValue> res = {l};
-        auto ident = Ident::create(n->m_name, l->type);
 
-        if (n->m_init)
-            res.push_back(Assign::create(ident, promote(ident, init)));
-
-        return res;
+        return l;
     }
 
     const Expr *expr = nullptr;
@@ -1162,7 +1157,6 @@ static auto conv(const StructDefNode *n, QState &state) -> QResult
 static auto conv(const StructFieldNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
-    /// TODO: Implement StructFieldNode
 }
 
 static auto conv(const RegionDefNode *n, QState &state) -> QResult
@@ -1182,8 +1176,6 @@ static auto conv(const RegionDefNode *n, QState &state) -> QResult
 static auto conv(const RegionFieldNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
-
-    /// TODO: Implement RegionFieldNode
 }
 
 static auto conv(const GroupDefNode *n, QState &state) -> QResult
@@ -1215,8 +1207,6 @@ static auto conv(const GroupDefNode *n, QState &state) -> QResult
 static auto conv(const GroupFieldNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
-
-    /// TODO: Implement GroupFieldNode
 }
 
 static auto conv(const UnionDefNode *n, QState &state) -> QResult
@@ -1235,8 +1225,6 @@ static auto conv(const UnionDefNode *n, QState &state) -> QResult
 static auto conv(const UnionFieldNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
-
-    /// TODO: Implement UnionFieldNode
 }
 
 static auto conv(const EnumDefNode *n, QState &state) -> QResult

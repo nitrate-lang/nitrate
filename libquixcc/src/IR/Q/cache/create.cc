@@ -122,11 +122,12 @@ static std::map<std::string, const Opaque *> opaque_insts;
 static std::map<std::tuple<std::string, std::vector<std::pair<std::string, const Value *>>, std::set<const libquixcc::ir::q::Segment *>>, const RegionDef *> regiondef_insts;
 static std::map<std::tuple<std::string, std::map<std::string, const Value *>, std::set<const libquixcc::ir::q::Segment *>>, const GroupDef *> groupdef_insts;
 static std::map<std::tuple<std::string, std::map<std::string, const Value *>, std::set<const libquixcc::ir::q::Segment *>>, const UnionDef *> uniondef_insts;
-static std::map<std::pair<std::string, const Value *>, const Local *> local_insts;
+static std::map<std::tuple<std::string, const Value *, const Value *>, const Local *> local_insts;
 static std::map<std::tuple<std::string, const Value *, const Value *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
 static std::map<std::string, const Char *> char_insts;
+static std::map<std::vector<const Expr *>, const List *> list_insts;
 static std::map<std::pair<const Value *, const Value *>, const Assign *> assign_insts;
 static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *> member_insts;
 static std::map<std::tuple<const Value *, const Value *, const Type *>, const Index *> index_insts;
@@ -748,12 +749,12 @@ const libquixcc::ir::q::UnionDef *libquixcc::ir::q::UnionDef::create(std::string
     return uniondef_insts[key];
 }
 
-const q::Local *q::Local::create(std::string name, const Type *type)
+const q::Local *q::Local::create(std::string name, const Type *type, const Expr *value)
 {
     lock(NodeType::Local);
-    auto key = std::make_pair(name, type);
+    auto key = std::make_tuple(name, type, value);
     if (!local_insts.contains(key))
-        local_insts[key] = new Local(name, type);
+        local_insts[key] = new Local(name, type, value);
     return local_insts[key];
 }
 
@@ -788,6 +789,14 @@ const libquixcc::ir::q::Char *libquixcc::ir::q::Char::create(std::string value)
     if (!char_insts.contains(value))
         char_insts[value] = new Char(value);
     return char_insts[value];
+}
+
+const libquixcc::ir::q::List *libquixcc::ir::q::List::create(std::vector<const libquixcc::ir::q::Expr *> values)
+{
+    lock(NodeType::List);
+    if (!list_insts.contains(values))
+        list_insts[values] = new List(values);
+    return list_insts[values];
 }
 
 const libquixcc::ir::q::Assign *libquixcc::ir::q::Assign::create(const Expr *lhs, const Expr *rhs)

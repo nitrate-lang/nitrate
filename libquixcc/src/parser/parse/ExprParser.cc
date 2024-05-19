@@ -283,6 +283,35 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<Scanner> scanner, 
             }
             case Punctor::OpenBracket:
             {
+                if (stack.empty())
+                {
+                    // List literal
+                    std::vector<std::shared_ptr<ExprNode>> elements;
+                    while (true)
+                    {
+                        auto tok = scanner->peek();
+                        if (tok == Token(TT::Punctor, Punctor::CloseBracket))
+                        {
+                            scanner->next();
+                            break;
+                        }
+
+                        std::shared_ptr<ExprNode> element;
+                        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma), Token(TT::Punctor, Punctor::CloseBracket)}, element, depth + 1))
+                            return false;
+                        elements.push_back(element);
+
+                        tok = scanner->peek();
+                        if (tok.is<Punctor>(Punctor::Comma))
+                        {
+                            scanner->next();
+                        }
+                    }
+
+                    stack.push(std::make_shared<ListExprNode>(elements));
+                    continue;
+                }
+
                 if (stack.size() != 1)
                 {
                     LOG(ERROR) << "Expected a single expression" << tok << std::endl;

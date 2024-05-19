@@ -49,16 +49,17 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Local(std::string name, const Type *type) : name(name), type(type)
+        Local(std::string name, const Type *type, const Expr *value) : name(name), type(type), value(value)
         {
             ntype = (int)NodeType::Local;
         }
 
     public:
-        static const Local *create(std::string name, const Type *type);
+        static const Local *create(std::string name, const Type *type, const Expr *value = nullptr);
 
         std::string name;
         const Type *type;
+        const Expr *value;
     };
 
     class Global : public Value
@@ -118,6 +119,24 @@ namespace libquixcc::ir::delta
         static const String *create(std::string value);
 
         std::string value;
+    };
+
+    class List : public Expr
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        List(std::vector<const Expr *> values) : values(values)
+        {
+            ntype = (int)NodeType::List;
+        }
+
+    public:
+        static const List *create(std::vector<const Expr *> values);
+
+        std::vector<const Expr *> values;
     };
 }
 

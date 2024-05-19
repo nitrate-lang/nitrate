@@ -72,11 +72,12 @@ namespace libquixcc
                 Array,
                 FType,
 
-                /* Variables */
+                /* Variables & Literals*/
                 Local,
                 Global,
                 Number,
                 String,
+                List,
 
                 /* Memory */
                 Assign,

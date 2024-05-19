@@ -182,6 +182,7 @@ static auto conv(const ir::q::Global *n, DState &state) -> DResult;
 static auto conv(const ir::q::Number *n, DState &state) -> DResult;
 static auto conv(const ir::q::String *n, DState &state) -> DResult;
 static auto conv(const ir::q::Char *n, DState &state) -> DResult;
+static auto conv(const ir::q::List *n, DState &state) -> DResult;
 static auto conv(const ir::q::Assign *n, DState &state) -> DResult;
 static auto conv(const ir::q::Member *n, DState &state) -> DResult;
 static auto conv(const ir::q::Index *n, DState &state) -> DResult;
@@ -670,7 +671,11 @@ static auto conv(const ir::q::Xor *n, DState &state) -> DResult
 
 static auto conv(const ir::q::Local *n, DState &state) -> DResult
 {
-    return Local::create(n->name, conv(n->type, state)[0]->as<Type>());
+    const Expr *v = nullptr;
+    if (n->value)
+        v = conv(n->value, state)[0]->as<Expr>();
+
+    return Local::create(n->name, conv(n->type, state)[0]->as<Type>(), v);
 }
 
 static auto conv(const ir::q::Global *n, DState &state) -> DResult
@@ -699,6 +704,15 @@ static auto conv(const ir::q::Char *n, DState &state) -> DResult
 {
     /// TODO: Implement Char
     throw std::runtime_error("DeltaIR translation: Char not implemented");
+}
+
+static auto conv(const ir::q::List *n, DState &state) -> DResult
+{
+    std::vector<const Expr *> values;
+    for (auto value : n->values)
+        values.push_back(conv(value, state)[0]->as<Expr>());
+
+    return List::create(values);
 }
 
 static auto conv(const ir::q::Assign *n, DState &state) -> DResult
@@ -1030,6 +1044,10 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult
 
     case libquixcc::ir::q::NodeType::Char:
         r = conv(n->as<ir::q::Char>(), state);
+        break;
+
+    case libquixcc::ir::q::NodeType::List:
+        r = conv(n->as<ir::q::List>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Assign:

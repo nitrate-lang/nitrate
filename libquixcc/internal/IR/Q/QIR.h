@@ -143,6 +143,7 @@ namespace libquixcc
                 Number,
                 String,
                 Char,
+                List,
 
                 /* Memory */
                 Assign,

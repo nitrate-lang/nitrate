@@ -158,8 +158,13 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Local *node)
 {
     auto type = gent(node->type);
     llvm::AllocaInst *alloca = m_ctx->m_builder->CreateAlloca(type, nullptr, node->name);
-
     m_state.locals.top()[node->name] = alloca;
+
+    if (node->value)
+    {
+        auto v = gen(node->value);
+        m_ctx->m_builder->CreateStore(v, alloca);
+    }
 
     return alloca;
 }
@@ -255,6 +260,29 @@ llvm::Constant *libquixcc::LLVM14Codegen::gen(const ir::delta::String *node)
     gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
 
     return llvm::ConstantExpr::getGetElementPtr(gvar->getValueType(), gvar, indices);
+}
+
+llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::List *node)
+{
+    std::vector<llvm::Value *> values;
+    for (auto &elem : node->values)
+        values.push_back(gen(elem));
+
+    if (values.empty())
+        throw std::runtime_error("Codegen failed: Can not use empty list");
+
+    llvm::Value *arr = m_ctx->m_builder->CreateAlloca(llvm::ArrayType::get(values[0]->getType(), values.size()));
+
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        auto ptr = m_ctx->m_builder->CreateGEP(arr->getType()->getPointerElementType(), arr, {llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), 0), llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), i)});
+        m_ctx->m_builder->CreateStore(values[i], ptr);
+    }
+
+    if (m_state.m_deref)
+        return m_ctx->m_builder->CreateLoad(arr->getType()->getPointerElementType(), arr);
+    else
+        return arr;
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ident *node)
@@ -371,12 +399,15 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
             i = m_ctx->m_builder->CreateSExtOrTrunc(i, llvm::Type::getInt32Ty(*m_ctx->m_ctx));
     }
 
-    auto aZero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), 0);
-
     if (e->getType()->getPointerElementType()->isArrayTy())
     {
         auto t = e->getType()->getPointerElementType();
-        llvm::Value *v = m_ctx->m_builder->CreateGEP(t, e, i);
+
+        t->dump();
+        auto zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), 0);
+        llvm::Value *v = m_ctx->m_builder->CreateGEP(t, e, {zero, i});
+
+        v->getType()->dump();
 
         if (m_state.m_deref)
             return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
@@ -831,6 +862,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
     match(Global);
     match(Number);
     match(String);
+    match(List);
     match(Ident);
     match(Assign);
     match(Member);

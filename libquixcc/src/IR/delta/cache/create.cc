@@ -107,10 +107,11 @@ static std::map<const Type *, const Ptr *> ptr_insts;
 static std::map<std::pair<std::string, std::vector<std::pair<std::string, const Type *>>>, const Packet *> packet_insts;
 static std::map<std::pair<const Type *, uint64_t>, const Array *> array_insts;
 static std::map<std::pair<std::vector<const Type *>, const Type *>, const FType *> ftype_insts;
-static std::map<std::pair<std::string, const Value *>, const Local *> local_insts;
+static std::map<std::tuple<std::string, const Value *, const Value *>, const Local *> local_insts;
 static std::map<std::tuple<std::string, const Value *, const Value *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
+static std::map<std::vector<const Expr *>, const List *> list_insts;
 static std::map<std::pair<std::string, const Type *>, const Ident *> ident_insts;
 
 static std::map<delta::NodeType, std::mutex> node_mutexes;
@@ -643,12 +644,12 @@ const delta::FType *delta::FType::create(std::vector<const Type *> params, const
     return ftype_insts[key];
 }
 
-const delta::Local *delta::Local::create(std::string name, const Type *type)
+const delta::Local *delta::Local::create(std::string name, const Type *type, const Expr *value)
 {
     lock(NodeType::Local);
-    auto key = std::make_pair(name, type);
+    auto key = std::make_tuple(name, type, value);
     if (!local_insts.contains(key))
-        local_insts[key] = new Local(name, type);
+        local_insts[key] = new Local(name, type, value);
     return local_insts[key];
 }
 
@@ -675,6 +676,14 @@ const delta::String *delta::String::create(std::string value)
     if (!string_insts.contains(value))
         string_insts[value] = new String(value);
     return string_insts[value];
+}
+
+const libquixcc::ir::delta::List *libquixcc::ir::delta::List::create(std::vector<const libquixcc::ir::delta::Expr *> values)
+{
+    lock(NodeType::List);
+    if (!list_insts.contains(values))
+        list_insts[values] = new List(values);
+    return list_insts[values];
 }
 
 const delta::Ident *delta::Ident::create(std::string name, const Type *type)

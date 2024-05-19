@@ -36,7 +36,17 @@ bool libquixcc::ir::delta::Local::print_impl(std::ostream &os, PState &state) co
     os << "%" << name << "(";
     if (!type->print(os, state))
         return false;
-    os << ") = undef";
+    os << ") = ";
+
+    if (value)
+    {
+        if (!value->print(os, state))
+            return false;
+    }
+    else
+    {
+        os << "undef";
+    }
 
     return true;
 }
@@ -109,5 +119,20 @@ static std::string escape(const std::string &str)
 bool libquixcc::ir::delta::String::print_impl(std::ostream &os, PState &state) const
 {
     os << "\"" << escape(value) << "\"";
+    return true;
+}
+
+bool libquixcc::ir::delta::List::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "[";
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        if (!values[i]->print(os, state))
+            return false;
+
+        if (i != values.size() - 1)
+            os << ", ";
+    }
+    os << "]";
     return true;
 }

@@ -36,7 +36,17 @@ bool libquixcc::ir::q::Local::print_impl(std::ostream &os, PState &state) const
     os << "%" << name << "(";
     if (!type->print(os, state))
         return false;
-    os << ") = undef";
+    os << ") = ";
+
+    if (value)
+    {
+        if (!value->print(os, state))
+            return false;
+    }
+    else
+    {
+        os << "undef";
+    }
 
     return true;
 }
@@ -115,5 +125,20 @@ bool libquixcc::ir::q::String::print_impl(std::ostream &os, PState &state) const
 bool libquixcc::ir::q::Char::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "'" << escape(value) << "'";
+    return true;
+}
+
+bool libquixcc::ir::q::List::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "[";
+    for (size_t i = 0; i < values.size(); i++)
+    {
+        if (!values[i]->print(os, state))
+            return false;
+
+        if (i != values.size() - 1)
+            os << ", ";
+    }
+    os << "]";
     return true;
 }
