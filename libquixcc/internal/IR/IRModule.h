@@ -108,7 +108,7 @@ namespace libquixcc
             template <typename T>
             bool is(const T *other) const
             {
-                return is<T>() && *dynamic_cast<const T *>(this) == *other;
+                return ntype == other->ntype;
             }
 
             template <typename T>

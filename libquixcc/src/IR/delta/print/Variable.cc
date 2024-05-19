@@ -36,13 +36,16 @@ bool libquixcc::ir::delta::Local::print_impl(std::ostream &os, PState &state) co
     os << "%" << name << "(";
     if (!type->print(os, state))
         return false;
-    os << ") = undef;";
+    os << ") = undef";
 
     return true;
 }
 
 bool libquixcc::ir::delta::Global::print_impl(std::ostream &os, PState &state) const
 {
+    if (_extern)
+        os << "extern ";
+
     os << "@" << name << "(";
     if (!type->print(os, state))
         return false;
@@ -58,8 +61,6 @@ bool libquixcc::ir::delta::Global::print_impl(std::ostream &os, PState &state) c
         os << "undef";
     }
 
-    os << ";";
-
     return true;
 }
 
@@ -69,8 +70,44 @@ bool libquixcc::ir::delta::Number::print_impl(std::ostream &os, PState &state) c
     return true;
 }
 
+static std::string escape(const std::string &str)
+{
+    std::string out;
+    for (char c : str)
+    {
+        switch (c)
+        {
+        case '\n':
+            out += "\\n";
+            break;
+        case '\t':
+            out += "\\t";
+            break;
+        case '\r':
+            out += "\\r";
+            break;
+        case '\0':
+            out += "\\0";
+            break;
+        case '\\':
+            out += "\\\\";
+            break;
+        case '\"':
+            out += "\\\"";
+            break;
+        default:
+            if (c >= 32 && c <= 126)
+                out += c;
+            else
+                out += "\\x" + std::to_string((int)c);
+            break;
+        }
+    }
+    return out;
+}
+
 bool libquixcc::ir::delta::String::print_impl(std::ostream &os, PState &state) const
 {
-    os << "\"" << value << "\"";
+    os << "\"" << escape(value) << "\"";
     return true;
 }

@@ -200,7 +200,7 @@ namespace libquixcc
         virtual std::shared_ptr<ExprNode> promote_impl() const override;
 
     public:
-        PtrToIntCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::PtrToIntCastExprNode; }
+        PtrToIntCastExprNode(const std::shared_ptr<ExprNode> &expr) : CastExprNode(expr, nullptr) { ntype = NodeType::PtrToIntCastExprNode; }
 
     };
 

@@ -49,7 +49,7 @@ namespace libquixcc::ir::q
         bool verify_impl() const override = 0;
 
     public:
-        virtual const Type *infer() const { return Void::create(); }
+        virtual const Type *infer() const = 0;
     };
 }
 

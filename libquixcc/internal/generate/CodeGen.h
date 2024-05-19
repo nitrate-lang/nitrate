@@ -71,6 +71,7 @@ namespace libquixcc
         {
             std::string name;
             std::stack<std::map<std::string, llvm::AllocaInst *>> locals;
+            std::stack<std::map<std::string, llvm::BasicBlock *>> labels;
             std::map<std::string, llvm::GlobalVariable *> globals;
             std::map<std::string, llvm::Function *> functions;
             

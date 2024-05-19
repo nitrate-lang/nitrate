@@ -43,6 +43,9 @@ std::shared_ptr<libquixcc::NullLiteralNode> libquixcc::NullLiteralNode::m_instan
 
 uint8_t get_numbits(std::string s)
 {
+    if (s == "0" || s == "1")
+        return 1;
+    
     if (s.starts_with("-"))
         s = s.substr(1);
 

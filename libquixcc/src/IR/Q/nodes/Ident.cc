@@ -33,10 +33,10 @@
 
 boost::uuids::uuid libquixcc::ir::q::Ident::hash_impl() const
 {
-    return Hasher().gettag().add(name).hash();
+    return Hasher().gettag().add(name).add(type).hash();
 }
 
 bool libquixcc::ir::q::Ident::verify_impl() const
 {
-    return true;
+    return type->verify();
 }

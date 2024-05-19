@@ -33,6 +33,10 @@
 
 bool libquixcc::ir::q::Ident::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    os << name;
+    os << "%" << name << "(";
+    if (!type->print(os, state))
+        return false;
+    os << ")";
+
     return true;
 }

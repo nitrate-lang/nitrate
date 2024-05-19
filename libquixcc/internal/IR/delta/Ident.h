@@ -48,15 +48,16 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ident(std::string name) : name(name)
+        Ident(std::string name, const Type *type) : name(name), type(type)
         {
             ntype = (int)NodeType::Ident;
         }
 
     public:
-        static const Ident *create(std::string name);
+        static const Ident *create(std::string name, const Type *type);
 
         std::string name;
+        const Type *type;
     };
 }
 

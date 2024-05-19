@@ -38,6 +38,7 @@
 
 #include <IR/Q/QIR.h>
 #include <IR/Q/Expr.h>
+#include <IR/Q/Type.h>
 
 namespace libquixcc::ir::q
 {
@@ -48,15 +49,17 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ident(std::string name) : name(name)
+        Ident(std::string name, const Type *type) : name(std::move(name)), type(type)
         {
             ntype = (int)NodeType::Ident;
         }
 
     public:
-        static const Ident *create(std::string name);
+        static const Ident *create(std::string name, const Type *type);
+        const Type *infer() const override;
 
         std::string name;
+        const Type *type;
     };
 }
 

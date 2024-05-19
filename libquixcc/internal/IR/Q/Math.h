@@ -55,6 +55,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Add *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -74,6 +75,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Sub *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -93,6 +95,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Mul *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -112,6 +115,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Div *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -131,6 +135,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Mod *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -150,6 +155,7 @@ namespace libquixcc::ir::q
 
     public:
         static const BitAnd *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -169,6 +175,7 @@ namespace libquixcc::ir::q
 
     public:
         static const BitOr *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -188,6 +195,7 @@ namespace libquixcc::ir::q
 
     public:
         static const BitXor *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -207,6 +215,7 @@ namespace libquixcc::ir::q
 
     public:
         static const BitNot *create(const Expr *operand);
+        const Type *infer() const override;
 
         const Expr *operand;
     };
@@ -225,6 +234,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Shl *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -244,6 +254,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Shr *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -263,6 +274,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Rotl *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -282,6 +294,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Rotr *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -301,6 +314,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Eq *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -320,6 +334,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Ne *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -339,6 +354,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Lt *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -358,6 +374,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Gt *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -377,6 +394,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Le *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -396,6 +414,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Ge *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -415,6 +434,7 @@ namespace libquixcc::ir::q
 
     public:
         static const And *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -434,6 +454,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Or *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -453,6 +474,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Not *create(const Expr *operand);
+        const Type *infer() const override;
 
         const Expr *operand;
     };
@@ -471,6 +493,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Xor *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;

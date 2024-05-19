@@ -98,6 +98,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Number *create(std::string value);
+        const Type *infer() const override;
 
         std::string value;
     };
@@ -116,6 +117,7 @@ namespace libquixcc::ir::q
 
     public:
         static const String *create(std::string value);
+        const Type *infer() const override;
 
         std::string value;
     };
@@ -134,6 +136,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Char *create(std::string value);
+        const Type *infer() const override;
 
         std::string value;
     };

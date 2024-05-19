@@ -54,7 +54,7 @@ using namespace ir::q;
 static RootNode *root = nullptr;
 static std::map<std::pair<const Value *, const Value *>, const SCast *> scast_insts;
 static std::map<std::pair<const Value *, const Value *>, const UCast *> ucast_insts;
-static std::map<std::pair<const Value *, const Value *>, const PtrICast *> ptricast_insts;
+static std::map<const Value *, const PtrICast *> ptricast_insts;
 static std::map<std::pair<const Value *, const Value *>, const IPtrCast *> iptrcast_insts;
 static std::map<std::pair<const Value *, const Value *>, const Bitcast *> bitcast_insts;
 static std::map<std::tuple<const Value *, const Value *, const Value *>, IfElse *> ifelse_insts;
@@ -67,7 +67,7 @@ static std::map<const Value *, const Throw *> throw_insts;
 static std::map<std::tuple<const Value *, std::vector<std::pair<const Value *, const Value *>>, const Value *>, const TryCatchFinally *> trycatchfinally_insts;
 static std::map<std::pair<const Value *, const Value *>, const Case *> case_insts;
 static std::map<std::tuple<const Value *, const std::set<const Case *>, const Value *>, const Switch *> switch_insts;
-static std::map<std::string, const Ident *> ident_insts;
+static std::map<std::pair<std::string, const Type *>, const Ident *> ident_insts;
 static Asm *asm_inst = nullptr;
 static std::map<std::vector<const Value *>, const Block *> functionblock_insts;
 static std::map<std::tuple<std::vector<std::pair<std::string, const Type *>>, const Value *, const Value *, std::set<FConstraint>>, const Segment *> function_insts;
@@ -159,13 +159,12 @@ const q::UCast *q::UCast::create(const Type *type, const Expr *value)
     return ucast_insts[key];
 }
 
-const q::PtrICast *q::PtrICast::create(const Type *type, const Expr *value)
+const q::PtrICast *q::PtrICast::create(const Expr *value)
 {
     lock(NodeType::PtrICast);
-    auto key = std::make_pair(type, value);
-    if (!ptricast_insts.contains(key))
-        ptricast_insts[key] = new PtrICast(type, value);
-    return ptricast_insts[key];
+    if (!ptricast_insts.contains(value))
+        ptricast_insts[value] = new PtrICast(value);
+    return ptricast_insts[value];
 }
 
 const q::IPtrCast *q::IPtrCast::create(const Type *type, const Expr *value)
@@ -289,7 +288,7 @@ const ir::q::Call *ir::q::Call::create(const ir::q::Global *func, std::vector<co
     return call_insts[key];
 }
 
-const q::CallIndirect *q::CallIndirect::create(const Value *callee, std::vector<const Value *> args)
+const q::CallIndirect *q::CallIndirect::create(const Segment *callee, std::vector<const Value *> args)
 {
     lock(NodeType::CallIndirect);
     auto key = std::make_pair(callee, args);
@@ -298,12 +297,14 @@ const q::CallIndirect *q::CallIndirect::create(const Value *callee, std::vector<
     return ptrcall_insts[key];
 }
 
-const ir::q::Ident *ir::q::Ident::create(std::string name)
+const ir::q::Ident *ir::q::Ident::create(std::string name, const Type *type)
 {
     lock(NodeType::Ident);
-    if (!ident_insts.contains(name))
-        ident_insts[name] = new Ident(name);
-    return ident_insts[name];
+    auto key = std::make_pair(name, type);
+    if (!ident_insts.contains(key))
+        ident_insts[key] = new Ident(name, type);
+
+    return ident_insts[key];
 }
 
 const ir::q::Asm *ir::q::Asm::create()
@@ -323,7 +324,7 @@ const ir::q::Block *ir::q::Block::create(std::vector<const Value *> stmts)
     return functionblock_insts[key];
 }
 
-const ir::q::Segment *ir::q::Segment::create(std::vector<std::pair<std::string, const Type *>> params, const Value *return_type, const Block *block, std::set<ir::q::FConstraint> constraints)
+const ir::q::Segment *ir::q::Segment::create(std::vector<std::pair<std::string, const Type *>> params, const Type *return_type, const Block *block, std::set<ir::q::FConstraint> constraints)
 {
     lock(NodeType::Segment);
     auto key = std::make_tuple(params, return_type, block, constraints);

@@ -87,15 +87,14 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        PtrICast(const Type *type, const Expr *value) : type(type), value(value)
+        PtrICast(const Expr *value) : value(value)
         {
             ntype = (int)NodeType::PtrICast;
         }
 
     public:
-        static const PtrICast *create(const Type *type, const Expr *value);
+        static const PtrICast *create(const Expr *value);
 
-        const Type *type;
         const Expr *value;
     };
 

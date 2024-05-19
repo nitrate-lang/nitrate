@@ -53,12 +53,12 @@ bool libquixcc::ir::q::UCast::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::q::PtrICast::hash_impl() const
 {
-    return Hasher().gettag().add(type).add(value).hash();
+    return Hasher().gettag().add(value).hash();
 }
 
 bool libquixcc::ir::q::PtrICast::verify_impl() const
 {
-    return type->verify() && value->verify();
+    return value->verify();
 }
 
 boost::uuids::uuid libquixcc::ir::q::IPtrCast::hash_impl() const

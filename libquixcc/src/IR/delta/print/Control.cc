@@ -55,11 +55,9 @@ bool libquixcc::ir::delta::While::print_impl(std::ostream &os, PState &state) co
     if (!cond->print(os, state))
         return false;
 
-    os << ") {";
+    os << ") ";
     if (!body->print(os, state))
         return false;
-
-    os << "}";
     return true;
 }
 

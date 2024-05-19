@@ -226,6 +226,8 @@ llvm::Constant *libquixcc::LLVM14Codegen::gen(const ir::delta::Number *node)
 
     switch (bits)
     {
+    case 1:
+        return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(1, node->value, 10));
     case 8:
         return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(8, node->value, 10));
     case 16:
@@ -290,17 +292,28 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Assign *node)
     auto ptr = gen(node->var);
     m_state.m_deref = old;
 
+    for (size_t i = 0; i < node->rank; i++)
+        ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+
     return m_ctx->m_builder->CreateStore(gen(node->value), ptr);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Load *node)
 {
-    throw std::runtime_error("Load not implemented");
+    auto ptr = gen(node->var);
+
+    for (size_t i = 0; i < node->rank; i++)
+        ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+
+    return m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
 {
-    throw std::runtime_error("Index not implemented");
+    auto e = gen(node->var);
+    auto i = gen(node->index);
+
+    return m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e, i);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::SCast *node)
@@ -315,12 +328,12 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::UCast *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::PtrICast *node)
 {
-    return m_ctx->m_builder->CreateIntToPtr(gen(node->value), gent(node->type));
+    return m_ctx->m_builder->CreatePtrToInt(gen(node->value), llvm::Type::getInt64Ty(*m_ctx->m_ctx));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::IPtrCast *node)
 {
-    return m_ctx->m_builder->CreatePtrToInt(gen(node->value), gent(node->type));
+    return m_ctx->m_builder->CreateIntToPtr(gen(node->value), gent(node->type));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Bitcast *node)
@@ -335,17 +348,56 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::IfElse *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::While *node)
 {
-    throw std::runtime_error("While not implemented");
+    auto func = m_ctx->m_builder->GetInsertBlock()->getParent();
+
+    llvm::BasicBlock *condBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "while.cond", func);
+    llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "while.body", func);
+    llvm::BasicBlock *endBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "while.end", func);
+
+    m_ctx->m_builder->CreateBr(condBB);
+    m_ctx->m_builder->SetInsertPoint(condBB);
+
+    auto cond = gen(node->cond);
+    m_ctx->m_builder->CreateCondBr(cond, bodyBB, endBB);
+
+    m_ctx->m_builder->SetInsertPoint(bodyBB);
+    gen(node->body);
+
+    m_ctx->m_builder->CreateBr(condBB);
+
+    m_ctx->m_builder->SetInsertPoint(endBB);
+
+    return nullptr;
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Jmp *node)
 {
-    throw std::runtime_error("Jmp not implemented");
+    if (m_state.labels.empty())
+        throw std::runtime_error("Codegen failed: Can not jump outside of segment");
+
+    if (!m_state.labels.top().contains(node->target))
+        throw std::runtime_error("Codegen failed: Label not found: " + node->target);
+
+    return m_ctx->m_builder->CreateBr(m_state.labels.top()[node->target]);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Label *node)
 {
-    throw std::runtime_error("Label not implemented");
+    /// TODO: verify
+
+    if (m_state.labels.empty())
+        throw std::runtime_error("Codegen failed: Can not create label outside of segment");
+
+    if (m_state.labels.top().contains(node->name))
+        throw std::runtime_error("Codegen failed: Label already exists: " + node->name);
+
+    auto func = m_ctx->m_builder->GetInsertBlock()->getParent();
+    auto bb = llvm::BasicBlock::Create(*m_ctx->m_ctx, node->name, func);
+
+    m_state.labels.top()[node->name] = bb;
+    m_ctx->m_builder->CreateBr(bb);
+
+    return bb;
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ret *node)
@@ -403,6 +455,7 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
 
     if (node->block)
     {
+        m_state.labels.push({});
         m_state.locals.push({});
 
         llvm::BasicBlock *bb = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
@@ -417,6 +470,7 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
         gen(node->block);
 
         m_state.locals.pop();
+        m_state.labels.pop();
     }
 
     return func;
@@ -481,9 +535,6 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotl *node)
 {
     /// TODO: verify this formula
 
-    // Formula: (x << n) | (x >> (w - n))
-    // throw std::runtime_error("Rotl not implemented");
-
     auto lhs = gen(node->lhs);
     auto rhs = gen(node->rhs);
 
@@ -499,7 +550,19 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotl *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotr *node)
 {
-    throw std::runtime_error("Rotr not implemented");
+    /// TODO: verify this formula
+
+    auto lhs = gen(node->lhs);
+    auto rhs = gen(node->rhs);
+
+    auto bits = lhs->getType()->getIntegerBitWidth();
+    auto n = m_ctx->m_builder->CreateURem(rhs, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits));
+    auto w = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits);
+
+    auto shr = m_ctx->m_builder->CreateLShr(lhs, n);
+    auto shl = m_ctx->m_builder->CreateShl(lhs, m_ctx->m_builder->CreateSub(w, n));
+
+    return m_ctx->m_builder->CreateOr(shl, shr);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Eq *node)
@@ -615,6 +678,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
     match(Call);
     match(PtrCall);
     match(Halt);
+    match(Block);
     match(Segment);
     match(Add);
     match(Sub);

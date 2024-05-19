@@ -55,6 +55,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Assign *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;

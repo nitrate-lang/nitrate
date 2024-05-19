@@ -33,55 +33,57 @@
 
 bool libquixcc::ir::delta::SCast::print_impl(std::ostream &os, PState &state) const
 {
-    os << "scast ";
+    os << "scast<";
     if (!type->print(os, state))
         return false;
-    os << ", ";
+    os << ">(";
     if (!value->print(os, state))
         return false;
+    os << ")";
     return true;
 }
 
 bool libquixcc::ir::delta::UCast::print_impl(std::ostream &os, PState &state) const
 {
-    os << "ucast ";
+    os << "ucast<";
     if (!type->print(os, state))
         return false;
-    os << ", ";
+    os << ">(";
     if (!value->print(os, state))
         return false;
+    os << ")";
     return true;
 }
 
 bool libquixcc::ir::delta::PtrICast::print_impl(std::ostream &os, PState &state) const
 {
-    os << "ptricast ";
-    if (!type->print(os, state))
-        return false;
-    os << ", ";
+    os << "ptricast(";
     if (!value->print(os, state))
         return false;
+    os << ")";
     return true;
 }
 
 bool libquixcc::ir::delta::IPtrCast::print_impl(std::ostream &os, PState &state) const
 {
-    os << "iptrcast ";
+    os << "iptrcast<";
     if (!type->print(os, state))
         return false;
-    os << ", ";
+    os << ">(";
     if (!value->print(os, state))
         return false;
+    os << ")";
     return true;
 }
 
 bool libquixcc::ir::delta::Bitcast::print_impl(std::ostream &os, PState &state) const
 {
-    os << "bitcast ";
+    os << "bitcast<";
     if (!type->print(os, state))
         return false;
-    os << ", ";
+    os << ">(";
     if (!value->print(os, state))
         return false;
+    os << ")";
     return true;
 }

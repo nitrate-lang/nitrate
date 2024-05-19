@@ -46,7 +46,10 @@ bool libquixcc::ir::q::QModule::print_impl(std::ostream &os, libquixcc::ir::PSta
     if (!m_root->print(os, state))
         return false;
 
-    os << "\n";
+    os << "\n; End of module '";
+    this->m_root->printid(os);
+
+    os << "'\n";
 
     return true;
 }

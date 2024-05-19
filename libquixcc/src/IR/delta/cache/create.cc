@@ -49,7 +49,7 @@ using namespace libquixcc::ir::delta;
 static RootNode *root = nullptr;
 static std::map<std::pair<const Value *, const Value *>, const SCast *> scast_insts;
 static std::map<std::pair<const Value *, const Value *>, const UCast *> ucast_insts;
-static std::map<std::pair<const Value *, const Value *>, const PtrICast *> ptricast_insts;
+static std::map<const Value *, const PtrICast *> ptricast_insts;
 static std::map<std::pair<const Value *, const Value *>, const IPtrCast *> iptrcast_insts;
 static std::map<std::pair<const Value *, const Value *>, const Bitcast *> bitcast_insts;
 static std::map<std::tuple<const Value *, const Value *, const Value *>, IfElse *> ifelse_insts;
@@ -110,7 +110,7 @@ static std::map<std::pair<std::string, const Value *>, const Local *> local_inst
 static std::map<std::tuple<std::string, const Value *, const Value *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
 static std::map<std::string, const String *> string_insts;
-static std::map<std::string, const Ident *> ident_insts;
+static std::map<std::pair<std::string, const Type *>, const Ident *> ident_insts;
 
 static std::map<delta::NodeType, std::mutex> node_mutexes;
 
@@ -142,13 +142,12 @@ const delta::UCast *delta::UCast::create(const Type *type, const Expr *value)
     return ucast_insts[key];
 }
 
-const delta::PtrICast *delta::PtrICast::create(const Type *type, const Expr *value)
+const delta::PtrICast *delta::PtrICast::create(const Expr *value)
 {
     lock(NodeType::PtrICast);
-    auto key = std::make_pair(type, value);
-    if (!ptricast_insts.contains(key))
-        ptricast_insts[key] = new PtrICast(type, value);
-    return ptricast_insts[key];
+    if (!ptricast_insts.contains(value))
+        ptricast_insts[value] = new PtrICast(value);
+    return ptricast_insts[value];
 }
 
 const delta::IPtrCast *delta::IPtrCast::create(const Type *type, const Expr *value)
@@ -460,7 +459,7 @@ const delta::Load *delta::Load::create(const Expr *var, uint64_t rank)
     return load_insts[key];
 }
 
-const delta::Index *delta::Index::create(const Expr *var, const Value *index)
+const delta::Index *delta::Index::create(const Expr *var, const Expr *index)
 {
     lock(NodeType::Index);
     auto key = std::make_pair(var, index);
@@ -667,10 +666,11 @@ const delta::String *delta::String::create(std::string value)
     return string_insts[value];
 }
 
-const libquixcc::ir::delta::Ident *libquixcc::ir::delta::Ident::create(std::string name)
+const libquixcc::ir::delta::Ident *libquixcc::ir::delta::Ident::create(std::string name, const Type *type)
 {
     lock(NodeType::Ident);
-    if (!ident_insts.contains(name))
-        ident_insts[name] = new Ident(name);
-    return ident_insts[name];
+    auto key = std::make_pair(name, type);
+    if (!ident_insts.contains(key))
+        ident_insts[key] = new Ident(name, type);
+    return ident_insts[key];
 }

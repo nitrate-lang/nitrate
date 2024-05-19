@@ -97,12 +97,12 @@ bool libquixcc::ir::delta::Segment::print_impl(std::ostream &os, PState &state) 
 
 bool libquixcc::ir::delta::RootNode::print_impl(std::ostream &os, PState &state) const
 {
-    for (auto &child : children)
+    for (auto it = children.begin(); it != children.end(); it++)
     {
-        if (!child->print(os, state))
+        if (!(*it)->print(os, state))
             return false;
 
-        os << "\n";
+        os << ";\n";
     }
 
     return true;

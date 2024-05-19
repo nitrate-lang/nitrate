@@ -403,7 +403,7 @@ static auto conv(const ir::q::UCast *n, DState &state) -> DResult
 
 static auto conv(const ir::q::PtrICast *n, DState &state) -> DResult
 {
-    return PtrICast::create(conv(n->type, state)[0]->as<Type>(), conv(n->value, state)[0]->as<Expr>());
+    return PtrICast::create(conv(n->value, state)[0]->as<Expr>());
 }
 
 static auto conv(const ir::q::IPtrCast *n, DState &state) -> DResult
@@ -503,7 +503,7 @@ static auto conv(const ir::q::Switch *n, DState &state) -> DResult
 
 static auto conv(const ir::q::Ident *n, DState &state) -> DResult
 {
-    return Ident::create(n->name);
+    return Ident::create(n->name, conv(n->type, state)[0]->as<Type>());
 }
 
 static auto conv(const ir::q::Add *n, DState &state) -> DResult

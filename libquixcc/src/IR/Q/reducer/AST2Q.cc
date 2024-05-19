@@ -90,8 +90,11 @@ public:
 struct QState
 {
     std::map<std::string, std::pair<ExportLangType, QResult>> exported;
+    std::stack<std::map<std::string, const Type *>> local_idents;
+    std::map<std::string, const Type *> global_idents;
     bool inside_segment;
     ExportLangType lang;
+    std::stack<const FunctionDefNode *> function;
 
     QState()
     {
@@ -248,7 +251,7 @@ static auto conv(const StaticCastExprNode *n, QState &state) -> QResult
     if (to->is_ptr() && from->is_integer())
         return ir::q::IPtrCast::create(to, expr);
     if (to->is_integer() && from->is_ptr())
-        return ir::q::PtrICast::create(to, expr);
+        return ir::q::PtrICast::create(expr);
     if (from->is_signed() || to->is_signed())
         return ir::q::SCast::create(to, expr);
     if (from->is_unsigned() && to->is_unsigned())
@@ -280,7 +283,7 @@ static auto conv(const DowncastExprNode *n, QState &state) -> QResult
 
 static auto conv(const PtrToIntCastExprNode *n, QState &state) -> QResult
 {
-    return PtrICast::create(conv(n->m_type, state)[0]->as<Type>(), conv(n->m_expr.get(), state)[0]->as<Expr>());
+    return PtrICast::create(conv(n->m_expr.get(), state)[0]->as<Expr>());
 }
 
 static auto conv(const IntToPtrCastExprNode *n, QState &state) -> QResult
@@ -297,18 +300,111 @@ static auto conv(const UnaryExprNode *n, QState &state) -> QResult
     case Operator::Plus:
         return e;
     case Operator::Minus:
-        return Sub::create(Number::create("0"), e);
+        return Sub::create(UCast::create(e->infer(), Number::create("0")), e);
     case Operator::LogicalNot:
         return Not::create(e);
     case Operator::BitwiseNot:
         return BitNot::create(e);
     case Operator::Increment:
-        return Add::create(e, Number::create("1"));
+        return Assign::create(e, Add::create(e, UCast::create(e->infer(), Number::create("1"))));
     case Operator::Decrement:
-        return Sub::create(e, Number::create("1"));
+        return Assign::create(e, Sub::create(e, UCast::create(e->infer(), Number::create("1"))));
     default:
         throw std::runtime_error("UnaryExprNode not implemented");
     }
+}
+
+static const Expr *promote(const Type *lht, const libquixcc::ir::q::Expr *rhs)
+{
+    auto rht = rhs->infer();
+
+    if (lht->is(rht))
+        return rhs;
+
+    if (lht->is_void() || rht->is_void())
+        throw std::runtime_error("cannot promote void type");
+
+    if (lht->is_integer() && rht->is_ptr())
+        return ir::q::PtrICast::create(rhs);
+
+    if (lht->is_ptr() && rht->is_integer())
+        return ir::q::IPtrCast::create(lht, rhs);
+
+    if (lht->is_float() || rht->is_float())
+        return ir::q::SCast::create(lht, rhs);
+
+    if (lht->is_signed() || rht->is_signed())
+        return ir::q::SCast::create(lht, rhs);
+
+    if (lht->is_unsigned() || rht->is_unsigned())
+        return ir::q::UCast::create(lht, rhs);
+
+    throw std::runtime_error("cannot promote types");
+}
+
+static const Expr *promote(const libquixcc::ir::q::Expr *lhs, const libquixcc::ir::q::Expr *rhs)
+{
+    return promote(lhs->infer(), rhs);
+}
+
+static void bipromote(const libquixcc::ir::q::Expr **lhs, const libquixcc::ir::q::Expr **rhs)
+{
+    auto lht = (*lhs)->infer();
+    auto rht = (*rhs)->infer();
+
+    if (!lht || !rht)
+        throw std::runtime_error("failed promote types");
+
+    if (lht->is(rht))
+        return;
+
+    if (lht->is_void() || rht->is_void())
+        throw std::runtime_error("cannot promote void type");
+
+    if ((*lhs)->is<Ident>())
+    {
+        *rhs = promote(*lhs, *rhs);
+        return;
+    }
+    else if ((*rhs)->is<Ident>())
+    {
+        *lhs = promote(*rhs, *lhs);
+        return;
+    }
+
+    if (lht->is_ptr())
+        *lhs = ir::q::PtrICast::create(*lhs);
+
+    if (rht->is_ptr())
+        *rhs = ir::q::PtrICast::create(*rhs);
+
+    if (lht->is_float() || rht->is_float())
+    {
+        /* We know they are not equal*/
+        if (lht->is<F32>())
+            *lhs = ir::q::SCast::create(ir::q::F64::create(), *lhs);
+        else
+            *rhs = ir::q::SCast::create(ir::q::F64::create(), *rhs);
+
+        return;
+    }
+
+    if (lht->is_signed() || rht->is_signed())
+    {
+        if (lht->size() < rht->size())
+            *lhs = ir::q::SCast::create(rht, *lhs);
+        else
+            *rhs = ir::q::SCast::create(lht, *rhs);
+    }
+    else
+    {
+        if (lht->size() < rht->size())
+            *lhs = ir::q::UCast::create(rht, *lhs);
+        else
+            *rhs = ir::q::UCast::create(lht, *rhs);
+    }
+
+    return;
 }
 
 static auto conv(const BinaryExprNode *n, QState &state) -> QResult
@@ -319,45 +415,72 @@ static auto conv(const BinaryExprNode *n, QState &state) -> QResult
     switch (n->m_op)
     {
     case Operator::Plus:
-        return Add::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Add::create(lhs, rhs);
     case Operator::Minus:
-        return Sub::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Sub::create(lhs, rhs);
     case Operator::Multiply:
-        return Mul::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Mul::create(lhs, rhs);
     case Operator::Divide:
-        return Div::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Div::create(lhs, rhs);
     case Operator::Modulo:
-        return Mod::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Mod::create(lhs, rhs);
     case Operator::BitwiseAnd:
-        return BitAnd::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), BitAnd::create(lhs, rhs);
     case Operator::BitwiseOr:
-        return BitOr::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), BitOr::create(lhs, rhs);
     case Operator::BitwiseXor:
-        return BitXor::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), BitXor::create(lhs, rhs);
     case Operator::LeftShift:
-        return Shl::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Shl::create(lhs, rhs);
     case Operator::RightShift:
-        return Shr::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Shr::create(lhs, rhs);
+    case Operator::LogicalAnd:
+        return bipromote(&lhs, &rhs), And::create(lhs, rhs);
+    case Operator::LogicalOr:
+        return bipromote(&lhs, &rhs), Or::create(lhs, rhs);
+    case Operator::LogicalXor:
+        return bipromote(&lhs, &rhs), Xor::create(lhs, rhs);
+    case Operator::LessThan:
+        return bipromote(&lhs, &rhs), Lt::create(lhs, rhs);
+    case Operator::GreaterThan:
+        return bipromote(&lhs, &rhs), Gt::create(lhs, rhs);
+    case Operator::LessThanEqual:
+        return bipromote(&lhs, &rhs), Le::create(lhs, rhs);
+    case Operator::GreaterThanEqual:
+        return bipromote(&lhs, &rhs), Ge::create(lhs, rhs);
+    case Operator::Equal:
+        return bipromote(&lhs, &rhs), Eq::create(lhs, rhs);
+    case Operator::NotEqual:
+        return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
     case Operator::Assign:
         return Assign::create(lhs, rhs);
-    case Operator::LogicalAnd:
-        return And::create(lhs, rhs);
-    case Operator::LogicalOr:
-        return Or::create(lhs, rhs);
-    case Operator::LogicalXor:
-        return Xor::create(lhs, rhs);
-    case Operator::LessThan:
-        return Lt::create(lhs, rhs);
-    case Operator::GreaterThan:
-        return Gt::create(lhs, rhs);
-    case Operator::LessThanEqual:
-        return Le::create(lhs, rhs);
-    case Operator::GreaterThanEqual:
-        return Ge::create(lhs, rhs);
-    case Operator::Equal:
-        return Eq::create(lhs, rhs);
-    case Operator::NotEqual:
-        return Ne::create(lhs, rhs);
+    case Operator::PlusAssign:
+        return Assign::create(lhs, Add::create(lhs, promote(lhs, rhs)));
+    case Operator::MinusAssign:
+        return Assign::create(lhs, Sub::create(lhs, promote(lhs, rhs)));
+    case Operator::MultiplyAssign:
+        return Assign::create(lhs, Mul::create(lhs, promote(lhs, rhs)));
+    case Operator::DivideAssign:
+        return Assign::create(lhs, Div::create(lhs, promote(lhs, rhs)));
+    case Operator::ModuloAssign:
+        return Assign::create(lhs, Mod::create(lhs, promote(lhs, rhs)));
+    case Operator::BitwiseOrAssign:
+        return Assign::create(lhs, BitOr::create(lhs, promote(lhs, rhs)));
+    case Operator::BitwiseAndAssign:
+        return Assign::create(lhs, BitAnd::create(lhs, promote(lhs, rhs)));
+    case Operator::BitwiseXorAssign:
+        return Assign::create(lhs, BitXor::create(lhs, promote(lhs, rhs)));
+    case Operator::XorAssign:
+        return Assign::create(lhs, Xor::create(lhs, promote(lhs, rhs)));
+    case Operator::OrAssign:
+        return Assign::create(lhs, Or::create(lhs, promote(lhs, rhs)));
+    case Operator::AndAssign:
+        return Assign::create(lhs, And::create(lhs, promote(lhs, rhs)));
+    case Operator::LeftShiftAssign:
+        return Assign::create(lhs, Shl::create(lhs, promote(lhs, rhs)));
+    case Operator::RightShiftAssign:
+        return Assign::create(lhs, Shr::create(lhs, promote(lhs, rhs)));
+
     default:
         throw std::runtime_error("BinaryExprNode not implemented");
     }
@@ -417,10 +540,6 @@ static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult
         return Not::create(e);
     case Operator::BitwiseNot:
         return BitNot::create(e);
-    case Operator::Increment:
-        return Add::create(e, Number::create("1"));
-    case Operator::Decrement:
-        return Sub::create(e, Number::create("1"));
     default:
         throw std::runtime_error("ConstUnaryExprNode not implemented");
     }
@@ -434,45 +553,44 @@ static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult
     switch (n->m_op)
     {
     case Operator::Plus:
-        return Add::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Add::create(lhs, rhs);
     case Operator::Minus:
-        return Sub::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Sub::create(lhs, rhs);
     case Operator::Multiply:
-        return Mul::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Mul::create(lhs, rhs);
     case Operator::Divide:
-        return Div::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Div::create(lhs, rhs);
     case Operator::Modulo:
-        return Mod::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Mod::create(lhs, rhs);
     case Operator::BitwiseAnd:
-        return BitAnd::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), BitAnd::create(lhs, rhs);
     case Operator::BitwiseOr:
-        return BitOr::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), BitOr::create(lhs, rhs);
     case Operator::BitwiseXor:
-        return BitXor::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), BitXor::create(lhs, rhs);
     case Operator::LeftShift:
-        return Shl::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Shl::create(lhs, rhs);
     case Operator::RightShift:
-        return Shr::create(lhs, rhs);
-    case Operator::Assign:
-        return Assign::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Shr::create(lhs, rhs);
     case Operator::LogicalAnd:
-        return And::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), And::create(lhs, rhs);
     case Operator::LogicalOr:
-        return Or::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Or::create(lhs, rhs);
     case Operator::LogicalXor:
         return Xor::create(lhs, rhs);
     case Operator::LessThan:
-        return Lt::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Lt::create(lhs, rhs);
     case Operator::GreaterThan:
-        return Gt::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Gt::create(lhs, rhs);
     case Operator::LessThanEqual:
-        return Le::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Le::create(lhs, rhs);
     case Operator::GreaterThanEqual:
-        return Ge::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Ge::create(lhs, rhs);
     case Operator::Equal:
-        return Eq::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Eq::create(lhs, rhs);
     case Operator::NotEqual:
-        return Ne::create(lhs, rhs);
+        return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
+
     default:
         throw std::runtime_error("ConstBinaryExprNode not implemented");
     }
@@ -480,7 +598,16 @@ static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult
 
 static auto conv(const IdentifierNode *n, QState &state) -> QResult
 {
-    return Ident::create(n->m_name);
+    if (state.inside_segment)
+    {
+        if (state.local_idents.top().contains(n->m_name))
+            return Ident::create(n->m_name, state.local_idents.top()[n->m_name]);
+    }
+
+    if (!state.global_idents.contains(n->m_name))
+        throw std::runtime_error("QIR translation: IdentifierNode not found");
+
+    return Ident::create(n->m_name, state.global_idents[n->m_name]);
 }
 
 static auto conv(const MutTypeNode *n, QState &state) -> QResult
@@ -654,8 +781,14 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult
     {
         auto l = Local::create(n->m_name, conv(n->m_type, state)[0]->as<Type>());
 
+        state.local_idents.top()[n->m_name] = l->type;
+
         if (n->m_init)
-            return {l, Assign::create(Ident::create(n->m_name), conv(n->m_init.get(), state)[0]->as<Expr>())};
+        {
+            auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
+            auto ident = Ident::create(n->m_name, l->type);
+            return {l, Assign::create(ident, promote(ident, init))};
+        }
 
         return l;
     }
@@ -667,6 +800,8 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult
     std::string mangled = Symbol::mangle(n, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
     auto g = Global::create(mangled, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
 
+    state.global_idents[n->m_name] = g->type;
+    state.global_idents[mangled] = g->type;
     state.exported[n->m_name] = {state.lang, g};
     return g;
 }
@@ -678,7 +813,13 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult
         auto l = Local::create(n->m_name, conv(n->m_type, state)[0]->as<Type>());
 
         if (n->m_init)
-            return {l, Assign::create(Ident::create(n->m_name), conv(n->m_init.get(), state)[0]->as<Expr>())};
+        {
+            auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
+            auto ident = Ident::create(n->m_name, l->type);
+            return {l, Assign::create(ident, promote(ident, init))};
+        }
+
+        state.local_idents.top()[n->m_name] = l->type;
 
         return l;
     }
@@ -690,6 +831,8 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult
     std::string mangled = Symbol::mangle(n, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
     auto g = Global::create(mangled, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
 
+    state.global_idents[n->m_name] = g->type;
+    state.global_idents[mangled] = g->type;
     state.exported[n->m_name] = {state.lang, g};
     return g;
 }
@@ -718,12 +861,35 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
     auto seg = Segment::create(params, conv(n->m_type->m_return_type, state)[0]->as<Type>(), nullptr, constraints);
 
     const Global *g = nullptr;
+    std::string mangled;
 
-    if (state.lang == ExportLangType::None)
-        g = Global::create(Symbol::mangle(n, "", ExportLangType::Default), FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(), false, false, false, false, false), seg, false, false, false);
+    if (n->m_name == "main")
+    {
+        g = Global::create(mangled = Symbol::mangle(n, "", ExportLangType::C),
+                           FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
+                                         false, false, false, false, false),
+                           seg, false, false, true);
+    }
     else
-        g = Global::create(Symbol::mangle(n, "", state.lang), FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(), false, false, false, false, false), seg, false, false, true);
+    {
+        if (state.lang == ExportLangType::None)
+        {
+            g = Global::create(mangled = Symbol::mangle(n, "", ExportLangType::Default),
+                               FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
+                                             false, false, false, false, false),
+                               seg, false, false, false);
+        }
+        else
+        {
+            g = Global::create(mangled = Symbol::mangle(n, "", state.lang),
+                               FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
+                                             false, false, false, false, false),
+                               seg, false, false, true);
+        }
+    }
 
+    state.global_idents[n->m_name] = g->type;
+    state.global_idents[mangled] = g->type;
     state.exported[n->m_name] = {state.lang, g};
     return g;
 }
@@ -842,6 +1008,9 @@ static auto conv(const EnumFieldNode *n, QState &state) -> QResult
 
 static auto conv(const FunctionDefNode *n, QState &state) -> QResult
 {
+    state.local_idents.push({});
+    state.function.push(n);
+
     auto glob = conv(n->m_decl.get(), state)[0]->as<Global>();
     auto dseg = glob->value->as<Segment>();
 
@@ -851,6 +1020,10 @@ static auto conv(const FunctionDefNode *n, QState &state) -> QResult
     state.inside_segment = old;
 
     auto f = Segment::create(dseg->params, dseg->return_type, body, dseg->constraints);
+
+    state.function.pop();
+    state.local_idents.pop();
+
     return Global::create(glob->name, glob->type, f, glob->_volatile, glob->_atomic, glob->_extern);
 }
 
@@ -885,10 +1058,12 @@ static auto conv(const InlineAsmNode *n, QState &state) -> QResult
 
 static auto conv(const ReturnStmtNode *n, QState &state) -> QResult
 {
-    if (n->m_expr)
-        return Ret::create(conv(n->m_expr.get(), state)[0]->as<Expr>());
-    else
+    if (!n->m_expr)
         return Ret::create(nullptr);
+
+    auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
+    auto t = conv(state.function.top()->m_decl->m_type->m_return_type, state)[0]->as<Type>();
+    return Ret::create(promote(t, e));
 }
 
 static auto conv(const RetifStmtNode *n, QState &state) -> QResult

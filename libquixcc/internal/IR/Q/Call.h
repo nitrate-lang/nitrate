@@ -39,6 +39,7 @@
 #include <IR/Q/QIR.h>
 #include <IR/Q/Variable.h>
 #include <IR/Q/Expr.h>
+#include <IR/Q/Function.h>
 
 namespace libquixcc::ir::q
 {
@@ -56,6 +57,7 @@ namespace libquixcc::ir::q
 
     public:
         static const Call *create(const Global *func, std::vector<const Value *> args);
+        const Type *infer() const override;
 
         const Global *func;
         std::vector<const Value *> args;
@@ -68,15 +70,16 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        CallIndirect(const Value *exprfunc, std::vector<const Value *> args) : exprfunc(exprfunc), args(args)
+        CallIndirect(const Segment *exprfunc, std::vector<const Value *> args) : exprfunc(exprfunc), args(args)
         {
             ntype = (int)NodeType::CallIndirect;
         }
 
     public:
-        static const CallIndirect *create(const Value *exprfunc, std::vector<const Value *> args);
+        static const CallIndirect *create(const Segment *exprfunc, std::vector<const Value *> args);
+        const Type *infer() const override;
 
-        const Value *exprfunc;
+        const Segment *exprfunc;
         std::vector<const Value *> args;
     };
 }

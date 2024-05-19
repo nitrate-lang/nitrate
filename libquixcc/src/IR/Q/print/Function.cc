@@ -114,11 +114,7 @@ bool libquixcc::ir::q::RootNode::print_impl(std::ostream &os, libquixcc::ir::PSt
             return false;
 
         os << ";\n";
-
-        if (it != children.end())
-            os << "\n";
     }
-
-    os << "; End of module\n";
+    
     return true;
 }

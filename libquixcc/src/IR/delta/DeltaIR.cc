@@ -51,7 +51,15 @@ bool libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os, PState &state) 
     m_root->printid(os);
     os << "'\n\n";
 
-    return m_root->print(os, state);
+    if (!m_root->print(os, state))
+        return false;
+
+    os << "\n; End of module '";
+    this->m_root->printid(os);
+
+    os << "'\n";
+
+    return true;
 }
 
 bool libquixcc::ir::delta::IRDelta::verify_impl() const

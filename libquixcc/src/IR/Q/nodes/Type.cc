@@ -291,3 +291,8 @@ bool libquixcc::ir::q::Type::is_unsigned() const
 {
     return this->is<U8>() || this->is<U16>() || this->is<U32>() || this->is<U64>() || this->is<U128>();
 }
+
+bool libquixcc::ir::q::Type::is_primitive() const
+{
+    return this->is_integer() || this->is_float() || this->is_void();
+}

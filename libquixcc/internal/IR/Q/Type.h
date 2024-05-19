@@ -57,6 +57,7 @@ namespace libquixcc::ir::q
         bool is_void() const;
         bool is_signed() const;
         bool is_unsigned() const;
+        bool is_primitive() const;
     };
 
     class I1 : public Type

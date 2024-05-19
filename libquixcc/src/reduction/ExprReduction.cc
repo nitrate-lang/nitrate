@@ -83,7 +83,7 @@ std::shared_ptr<libquixcc::ExprNode> libquixcc::StaticCastExprNode::reduce_impl(
         return upcasting ? res = std::make_shared<UnsignedUpcastExprNode>(m_expr, to) : res = std::make_shared<DowncastExprNode>(m_expr, to);
 
     if (from->is_ptr() && to->is_integer())
-        return res = std::make_shared<PtrToIntCastExprNode>(m_expr, to);
+        return res = std::make_shared<PtrToIntCastExprNode>(m_expr);
 
     if (from->is_integer() && to->is_ptr())
         return res = std::make_shared<IntToPtrCastExprNode>(m_expr, to);
