@@ -63,10 +63,10 @@ bool libquixcc::ir::delta::Load::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::delta::Index::hash_impl() const
 {
-    return Hasher().gettag().add(var).add(index).hash();
+    return Hasher().gettag().add(expr).add(index).hash();
 }
 
 bool libquixcc::ir::delta::Index::verify_impl() const
 {
-    return var->verify() && index->verify();
+    return expr->verify() && index->verify();
 }

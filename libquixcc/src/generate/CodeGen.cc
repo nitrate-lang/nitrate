@@ -357,10 +357,58 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Load *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
 {
-    auto e = gen(node->var);
+    bool old = m_state.m_deref;
+
+    if (!node->expr->is<Index>())
+        m_state.m_deref = false;
+    auto e = gen(node->expr);
+    m_state.m_deref = old;
+
     auto i = gen(node->index);
 
-    return m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e, i);
+    if (!i->getType()->isIntegerTy(32))
+    {
+        if (i->getType()->isIntegerTy(1))
+            i = m_ctx->m_builder->CreateZExtOrTrunc(i, llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+        else
+            i = m_ctx->m_builder->CreateSExtOrTrunc(i, llvm::Type::getInt32Ty(*m_ctx->m_ctx));
+    }
+
+    auto aZero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), 0);
+
+    if (e->getType()->getPointerElementType()->isArrayTy())
+    {
+        auto t = e->getType()->getPointerElementType();
+        llvm::Value *v = m_ctx->m_builder->CreateGEP(t, e, i);
+
+        if (m_state.m_deref)
+            return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
+        else
+            return v;
+    }
+    else if (e->getType()->getPointerElementType()->isPointerTy())
+    {
+        llvm::Value *v = m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e, i);
+
+        if (m_state.m_deref)
+            return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
+        else
+            return v;
+    }
+    else if (e->getType()->isPointerTy())
+    {
+        auto t = e->getType()->getPointerElementType();
+        llvm::Value *v = m_ctx->m_builder->CreateGEP(t, e, i);
+
+        if (m_state.m_deref)
+            return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
+        else
+            return v;
+    }
+    else
+    {
+        throw std::runtime_error("Codegen failed: Indexing not supported");
+    }
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::SCast *node)

@@ -97,6 +97,15 @@ namespace libquixcc
         std::string m_field;
     };
 
+    class IndexNode : public ExprNode
+    {
+    public:
+        IndexNode(const std::shared_ptr<ExprNode> &expr, const std::shared_ptr<ExprNode> &index) : m_expr(expr), m_index(index) { ntype = NodeType::IndexNode; }
+
+        std::shared_ptr<ExprNode> m_expr;
+        std::shared_ptr<ExprNode> m_index;
+    };
+
     class CastExprNode : public ExprNode
     {
     public:
@@ -110,49 +119,42 @@ namespace libquixcc
     {
     public:
         StaticCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::StaticCastExprNode; }
-
     };
 
     class BitCastExprNode : public CastExprNode
     {
     public:
         BitCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::BitCastExprNode; }
-
     };
 
     class SignedUpcastExprNode : public CastExprNode
     {
     public:
         SignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::SignedUpcastExprNode; }
-
     };
 
     class UnsignedUpcastExprNode : public CastExprNode
     {
     public:
         UnsignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::UnsignedUpcastExprNode; }
-
     };
 
     class DowncastExprNode : public CastExprNode
     {
     public:
         DowncastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::DowncastExprNode; }
-
     };
 
     class PtrToIntCastExprNode : public CastExprNode
     {
     public:
         PtrToIntCastExprNode(const std::shared_ptr<ExprNode> &expr) : CastExprNode(expr, nullptr) { ntype = NodeType::PtrToIntCastExprNode; }
-
     };
 
     class IntToPtrCastExprNode : public CastExprNode
     {
     public:
         IntToPtrCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::IntToPtrCastExprNode; }
-
     };
 
 }

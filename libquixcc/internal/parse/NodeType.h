@@ -73,6 +73,7 @@ namespace libquixcc
         CallExprNode,
         ListExprNode,
         MemberAccessNode,
+        IndexNode,
 
         IdentifierNode,
 
@@ -169,6 +170,7 @@ namespace libquixcc
     class CallExprNode;
     class ListExprNode;
     class MemberAccessNode;
+    class IndexNode;
     class ConstUnaryExprNode;
     class ConstBinaryExprNode;
     class IdentifierNode;

@@ -38,11 +38,11 @@
 
 using namespace libquixcc;
 
-static std::shared_ptr<libquixcc::CallExprNode> parse_function_call(quixcc_job_t &job, std::shared_ptr<ExprNode> callee, std::shared_ptr<libquixcc::Scanner> scanner, size_t depth)
+static std::shared_ptr<CallExprNode> parse_function_call(quixcc_job_t &job, std::shared_ptr<ExprNode> callee, std::shared_ptr<Scanner> scanner, size_t depth)
 {
     Token tok;
 
-    std::vector<std::shared_ptr<libquixcc::ExprNode>> args;
+    std::vector<std::shared_ptr<ExprNode>> args;
     while (true)
     {
         auto tok = scanner->peek();
@@ -52,7 +52,7 @@ static std::shared_ptr<libquixcc::CallExprNode> parse_function_call(quixcc_job_t
             break;
         }
 
-        std::shared_ptr<libquixcc::ExprNode> arg;
+        std::shared_ptr<ExprNode> arg;
         if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma), Token(TT::Punctor, Punctor::CloseParen)}, arg, depth + 1))
             return nullptr;
         args.push_back(arg);
@@ -64,22 +64,22 @@ static std::shared_ptr<libquixcc::CallExprNode> parse_function_call(quixcc_job_t
         }
     }
 
-    auto expr = std::make_shared<libquixcc::CallExprNode>();
+    auto expr = std::make_shared<CallExprNode>();
 
     if (callee->is<IdentifierNode>())
     {
-        expr->m_name = std::dynamic_pointer_cast<libquixcc::IdentifierNode>(callee)->m_name;
+        expr->m_name = std::dynamic_pointer_cast<IdentifierNode>(callee)->m_name;
     }
     else if (callee->is<MemberAccessNode>())
     {
-        auto member = std::dynamic_pointer_cast<libquixcc::MemberAccessNode>(callee);
+        auto member = std::dynamic_pointer_cast<MemberAccessNode>(callee);
         if (!member->m_expr->is<IdentifierNode>())
         {
             LOG(ERROR) << "Expected an identifier" << tok << std::endl;
             return nullptr;
         }
 
-        std::string name = std::dynamic_pointer_cast<libquixcc::IdentifierNode>(member->m_expr)->m_name;
+        std::string name = std::dynamic_pointer_cast<IdentifierNode>(member->m_expr)->m_name;
         expr->m_name = name + "." + member->m_field;
     }
     else
@@ -93,9 +93,9 @@ static std::shared_ptr<libquixcc::CallExprNode> parse_function_call(quixcc_job_t
     return expr;
 }
 
-bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::set<Token> terminators, std::shared_ptr<libquixcc::ExprNode> &node, size_t depth)
+bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<Scanner> scanner, std::set<Token> terminators, std::shared_ptr<ExprNode> &node, size_t depth)
 {
-    std::stack<std::shared_ptr<libquixcc::ExprNode>> stack;
+    std::stack<std::shared_ptr<ExprNode>> stack;
 
     // Operator precedence
     static std::map<Operator, int> operator_precedence = {
@@ -168,28 +168,28 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         switch (tok.type())
         {
         case TT::Integer:
-            stack.push(libquixcc::IntegerNode::create(std::get<std::string>(tok.val())));
+            stack.push(IntegerNode::create(std::get<std::string>(tok.val())));
             continue;
         case TT::Float:
-            stack.push(libquixcc::FloatLiteralNode::create(std::get<std::string>(tok.val())));
+            stack.push(FloatLiteralNode::create(std::get<std::string>(tok.val())));
             continue;
         case TT::String:
-            stack.push(libquixcc::StringNode::create(std::get<std::string>(tok.val())));
+            stack.push(StringNode::create(std::get<std::string>(tok.val())));
             continue;
         case TT::Char:
-            stack.push(libquixcc::CharNode::create(std::get<std::string>(tok.val())));
+            stack.push(CharNode::create(std::get<std::string>(tok.val())));
             continue;
         case TT::Keyword:
             switch (std::get<Keyword>(tok.val()))
             {
             case Keyword::True:
-                stack.push(libquixcc::BoolLiteralNode::create(true));
+                stack.push(BoolLiteralNode::create(true));
                 continue;
             case Keyword::False:
-                stack.push(libquixcc::BoolLiteralNode::create(false));
+                stack.push(BoolLiteralNode::create(false));
                 continue;
             case Keyword::Null:
-                stack.push(libquixcc::NullLiteralNode::create());
+                stack.push(NullLiteralNode::create());
                 continue;
             default:
                 LOG(ERROR) << "Unexpected token in non-constant expression '{}'" << tok.serialize() << tok << std::endl;
@@ -213,7 +213,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                     continue;
                 }
 
-                std::shared_ptr<libquixcc::ExprNode> expr;
+                std::shared_ptr<ExprNode> expr;
                 if (!parse_expr(job, scanner, terminators, expr, depth + 1))
                     return false;
                 stack.push(expr);
@@ -233,7 +233,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             }
             case Punctor::OpenBrace:
             {
-                std::vector<std::shared_ptr<libquixcc::ExprNode>> elements;
+                std::vector<std::shared_ptr<ExprNode>> elements;
                 while (true)
                 {
                     auto tok = scanner->peek();
@@ -243,7 +243,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                         break;
                     }
 
-                    std::shared_ptr<libquixcc::ExprNode> element;
+                    std::shared_ptr<ExprNode> element;
                     if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma), Token(TT::Punctor, Punctor::CloseBrace)}, element, depth + 1))
                         return false;
                     elements.push_back(element);
@@ -255,7 +255,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                     }
                 }
 
-                stack.push(std::make_shared<libquixcc::ListExprNode>(elements));
+                stack.push(std::make_shared<ListExprNode>(elements));
                 continue;
             }
             case Punctor::Dot:
@@ -277,7 +277,33 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 }
 
                 auto ident = std::get<std::string>(tok.val());
-                stack.push(std::make_shared<libquixcc::MemberAccessNode>(left, ident));
+                stack.push(std::make_shared<MemberAccessNode>(left, ident));
+                scanner->next();
+                continue;
+            }
+            case Punctor::OpenBracket:
+            {
+                if (stack.size() != 1)
+                {
+                    LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+                    return false;
+                }
+
+                auto left = stack.top();
+                stack.pop();
+
+                std::shared_ptr<ExprNode> index;
+                if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::CloseBracket)}, index, depth + 1))
+                    return false;
+
+                auto tok = scanner->peek();
+                if (!tok.is<Punctor>(Punctor::CloseBracket))
+                {
+                    LOG(ERROR) << "Expected a closing bracket" << tok << std::endl;
+                    return false;
+                }
+
+                stack.push(std::make_shared<IndexNode>(left, index));
                 scanner->next();
                 continue;
             }
@@ -289,14 +315,14 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         case TT::Operator:
         {
             auto op = std::get<Operator>(tok.val());
-            std::shared_ptr<libquixcc::ExprNode> expr;
+            std::shared_ptr<ExprNode> expr;
             if (!parse_expr(job, scanner, terminators, expr, depth + 1))
                 return false;
 
             if (stack.empty())
             {
                 // Unary operator
-                stack.push(std::make_shared<libquixcc::UnaryExprNode>(op, expr));
+                stack.push(std::make_shared<UnaryExprNode>(op, expr));
                 continue;
             }
             else if (stack.size() == 1)
@@ -304,7 +330,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 // Binary operator
                 auto left = stack.top();
                 stack.pop();
-                stack.push(std::make_shared<libquixcc::BinaryExprNode>(op, left, expr));
+                stack.push(std::make_shared<BinaryExprNode>(op, left, expr));
                 continue;
             }
             else
@@ -329,7 +355,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             }
             else
             {
-                stack.push(std::make_shared<libquixcc::IdentifierNode>(ident));
+                stack.push(std::make_shared<IdentifierNode>(ident));
                 continue;
             }
         }

@@ -113,6 +113,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::seria
             {NodeType::CallExprNode, (Func)CallExprNode_conv},
             {NodeType::ListExprNode, (Func)ListExprNode_conv},
             {NodeType::MemberAccessNode, (Func)MemberAccessNode_conv},
+            {NodeType::IndexNode, (Func)IndexNode_conv},
             {NodeType::ConstUnaryExprNode, (Func)ConstUnaryExprNode_conv},
             {NodeType::ConstBinaryExprNode, (Func)ConstBinaryExprNode_conv},
             {NodeType::IdentifierNode, (Func)IdentifierNode_conv},
@@ -353,6 +354,16 @@ std::string libquixcc::serialize::ParseTreeSerializer::MemberAccessNode_conv(lib
     std::string str = "{\"ntype\":\"MemberAccessNode\",\"lhs\":";
     str += next(state, node->m_expr);
     str += ",\"field\":\"" + escape_json(node->m_field) + "\"";
+
+    return str + "}";
+}
+
+std::string libquixcc::serialize::ParseTreeSerializer::IndexNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::IndexNode *node)
+{
+    std::string str = "{\"ntype\":\"IndexNode\",\"lhs\":";
+    str += next(state, node->m_expr);
+    str += ",\"index\":";
+    str += next(state, node->m_index);
 
     return str + "}";
 }

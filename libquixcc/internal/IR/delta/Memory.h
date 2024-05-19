@@ -108,15 +108,15 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Index(const Expr *var, const Expr *index) : var(var), index(index)
+        Index(const Expr *expr, const Expr *index) : expr(expr), index(index)
         {
             ntype = (int)NodeType::Index;
         }
 
     public:
-        static const Index *create(const Expr *var, const Expr *index);
+        static const Index *create(const Expr *expr, const Expr *index);
 
-        const Expr *var;
+        const Expr *expr;
         const Expr *index;
     };
 }

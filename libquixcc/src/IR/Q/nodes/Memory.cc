@@ -50,3 +50,13 @@ bool libquixcc::ir::q::Member::verify_impl() const
 {
     return lhs->verify() && field_type->verify();
 }
+
+boost::uuids::uuid libquixcc::ir::q::Index::hash_impl() const
+{
+    return Hasher().gettag().add(lhs).add(index).add(type).hash();
+}
+
+bool libquixcc::ir::q::Index::verify_impl() const
+{
+    return lhs->verify() && index->verify() && type->verify();
+}

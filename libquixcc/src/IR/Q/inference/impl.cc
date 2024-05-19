@@ -309,6 +309,11 @@ const libquixcc::ir::q::Type *libquixcc::ir::q::Member::infer() const
     return field_type;
 }
 
+const libquixcc::ir::q::Type *libquixcc::ir::q::Index::infer() const
+{
+    return type;
+}
+
 uint8_t get_numbits(std::string s);
 
 const Type *Number::infer() const

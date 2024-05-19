@@ -183,6 +183,8 @@ static auto conv(const ir::q::Number *n, DState &state) -> DResult;
 static auto conv(const ir::q::String *n, DState &state) -> DResult;
 static auto conv(const ir::q::Char *n, DState &state) -> DResult;
 static auto conv(const ir::q::Assign *n, DState &state) -> DResult;
+static auto conv(const ir::q::Member *n, DState &state) -> DResult;
+static auto conv(const ir::q::Index *n, DState &state) -> DResult;
 
 static auto conv(const ir::q::RootNode *n, DState &state) -> DResult
 {
@@ -465,7 +467,7 @@ static auto conv(const ir::q::While *n, DState &state) -> DResult
 static auto conv(const ir::q::For *n, DState &state) -> DResult
 {
     /// TODO: Implement For loops
-    
+
     /*
     for (init; cond; step)
         block;
@@ -710,6 +712,14 @@ static auto conv(const ir::q::Member *n, DState &state) -> DResult
     auto t = conv(n->field_type, state)[0]->as<Type>();
 
     return Member::create(e, n->field, t);
+}
+
+auto conv(const libquixcc::ir::q::Index *n, DState &state) -> DResult
+{
+    auto e = conv(n->lhs, state)[0]->as<Expr>();
+    auto i = conv(n->index, state)[0]->as<Expr>();
+
+    return Index::create(e, i);
 }
 
 static auto conv(const ir::q::Value *n, DState &state) -> DResult
@@ -1028,6 +1038,10 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult
 
     case libquixcc::ir::q::NodeType::Member:
         r = conv(n->as<ir::q::Member>(), state);
+        break;
+
+    case libquixcc::ir::q::NodeType::Index:
+        r = conv(n->as<ir::q::Index>(), state);
         break;
 
     default:

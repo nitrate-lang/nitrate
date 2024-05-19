@@ -129,6 +129,7 @@ static std::map<std::string, const String *> string_insts;
 static std::map<std::string, const Char *> char_insts;
 static std::map<std::pair<const Value *, const Value *>, const Assign *> assign_insts;
 static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *> member_insts;
+static std::map<std::tuple<const Value *, const Value *, const Type *>, const Index *> index_insts;
 
 static std::map<q::NodeType, std::mutex> node_mutexes;
 
@@ -805,4 +806,13 @@ const libquixcc::ir::q::Member *libquixcc::ir::q::Member::create(const libquixcc
     if (!member_insts.contains(key))
         member_insts[key] = new Member(lhs, field, field_type);
     return member_insts[key];
+}
+
+const libquixcc::ir::q::Index *libquixcc::ir::q::Index::create(const libquixcc::ir::q::Value *lhs, const libquixcc::ir::q::Expr *index, const libquixcc::ir::q::Type *type)
+{
+    lock(NodeType::Index);
+    auto key = std::make_tuple(lhs, index, type);
+    if (!index_insts.contains(key))
+        index_insts[key] = new Index(lhs, index, type);
+    return index_insts[key];
 }

@@ -82,15 +82,11 @@ bool libquixcc::ir::delta::Load::print_impl(std::ostream &os, PState &state) con
 bool libquixcc::ir::delta::Index::print_impl(std::ostream &os, PState &state) const
 {
     os << "(";
-
-    if (!var->print(os, state))
+    if (!expr->print(os, state))
         return false;
-
     os << "[";
-
     if (!index->print(os, state))
         return false;
-
     os << "]";
     os << ")";
 

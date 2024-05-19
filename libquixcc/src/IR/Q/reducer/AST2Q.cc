@@ -121,6 +121,7 @@ static auto conv(const BinaryExprNode *n, QState &state) -> QResult;
 static auto conv(const CallExprNode *n, QState &state) -> QResult;
 static auto conv(const ListExprNode *n, QState &state) -> QResult;
 static auto conv(const MemberAccessNode *n, QState &state) -> QResult;
+static auto conv(const IndexNode *n, QState &state) -> QResult;
 static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult;
 static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult;
 static auto conv(const IdentifierNode *n, QState &state) -> QResult;
@@ -628,6 +629,18 @@ static auto conv(const MemberAccessNode *n, QState &state) -> QResult
 
     /// TODO: Implement MemberAccessNode
     throw std::runtime_error("QIR translation: MemberAccessNode not implemented");
+}
+
+static auto conv(const IndexNode *n, QState &state) -> QResult
+{
+    auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
+    auto i = conv(n->m_index.get(), state)[0]->as<Expr>();
+    auto t = e->infer()->as<Type>();
+
+    if (t->is_ptr())
+        return Index::create(e, i, t->as<Ptr>()->type);
+
+    return Index::create(e, i, t->as<Array>()->type);
 }
 
 static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult
@@ -1417,6 +1430,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult
 
     case libquixcc::NodeType::MemberAccessNode:
         r = conv(n->as<MemberAccessNode>(), state);
+        break;
+
+    case libquixcc::NodeType::IndexNode:
+        r = conv(n->as<IndexNode>(), state);
         break;
 
     case libquixcc::NodeType::IdentifierNode:

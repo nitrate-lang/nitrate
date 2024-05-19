@@ -69,6 +69,7 @@ namespace libquixcc
             static std::string CallExprNode_conv(ParseTreeSerializerState &state, const CallExprNode *node);
             static std::string ListExprNode_conv(ParseTreeSerializerState &state, const ListExprNode *node);
             static std::string MemberAccessNode_conv(ParseTreeSerializerState &state, const MemberAccessNode *node);
+            static std::string IndexNode_conv(ParseTreeSerializerState &state, const IndexNode *node);
             static std::string ConstUnaryExprNode_conv(ParseTreeSerializerState &state, const ConstUnaryExprNode *node);
             static std::string ConstBinaryExprNode_conv(ParseTreeSerializerState &state, const ConstBinaryExprNode *node);
             static std::string IdentifierNode_conv(ParseTreeSerializerState &state, const IdentifierNode *node);

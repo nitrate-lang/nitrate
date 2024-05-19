@@ -86,6 +86,7 @@ namespace libquixcc
             static size_t CallExprNode_iter(ParseTreeTraversalState &state, CallExprNode *node);
             static size_t ListExprNode_iter(ParseTreeTraversalState &state, ListExprNode *node);
             static size_t MemberAccessNode_iter(ParseTreeTraversalState &state, MemberAccessNode *node);
+            static size_t IndexNode_iter(ParseTreeTraversalState &state, IndexNode *node);
             static size_t ConstUnaryExprNode_iter(ParseTreeTraversalState &state, ConstUnaryExprNode *node);
             static size_t ConstBinaryExprNode_iter(ParseTreeTraversalState &state, ConstBinaryExprNode *node);
             static size_t IdentifierNode_iter(ParseTreeTraversalState &state, IdentifierNode *node);

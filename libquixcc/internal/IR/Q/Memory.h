@@ -81,6 +81,27 @@ namespace libquixcc::ir::q
         const Value *lhs;
         const Type *field_type;
     };
+
+    class Index : public Expr
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Index(const Value *lhs, const Expr *index, const Type *type) : lhs(lhs), index(index), type(type)
+        {
+            ntype = (int)NodeType::Index;
+        }
+
+    public:
+        static const Index *create(const Value *lhs, const Expr *index, const Type *type);
+        const Type *infer() const override;
+
+        const Value *lhs;
+        const Expr *index;
+        const Type *type;
+    };
 }
 
 #endif // __QUIXCC_IR_Q_NODES_MEMORY_H__
