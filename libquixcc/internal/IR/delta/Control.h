@@ -106,15 +106,16 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Label(std::string name) : name(name)
+        Label(std::string name, const Value *code) : name(name), code(code)
         {
             ntype = (int)NodeType::Label;
         }
 
     public:
-        static const Label *create(std::string name);
+        static const Label *create(std::string name, const Value *code);
 
         std::string name;
+        const Value *code;
     };
 
     class Ret : public Value

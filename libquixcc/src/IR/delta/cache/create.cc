@@ -55,7 +55,7 @@ static std::map<std::pair<const Value *, const Value *>, const Bitcast *> bitcas
 static std::map<std::tuple<const Value *, const Value *, const Value *>, IfElse *> ifelse_insts;
 static std::map<std::pair<const Value *, const Value *>, const While *> while_insts;
 static std::map<std::string, const Jmp *> jmp_insts;
-static std::map<std::string, const Label *> label_insts;
+static std::map<std::pair<std::string, const Value *>, const Label *> label_insts;
 static std::map<const Value *, const Ret *> ret_insts;
 static std::map<std::pair<std::string, std::vector<const Expr *>>, const Call *> call_insts;
 static std::map<std::pair<const Value *, std::vector<const Expr *>>, const PtrCall *> ptrcall_insts;
@@ -195,12 +195,13 @@ const delta::Jmp *delta::Jmp::create(std::string target)
     return jmp_insts[target];
 }
 
-const delta::Label *delta::Label::create(std::string name)
+const delta::Label *delta::Label::create(std::string name, const Value *code)
 {
     lock(NodeType::Label);
-    if (!label_insts.contains(name))
-        label_insts[name] = new Label(name);
-    return label_insts[name];
+    auto key = std::make_pair(name, code);
+    if (!label_insts.contains(key))
+        label_insts[key] = new Label(name, code);
+    return label_insts[key];
 }
 
 const delta::Ret *delta::Ret::create(const Expr *value)

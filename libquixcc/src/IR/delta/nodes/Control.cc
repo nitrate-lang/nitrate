@@ -63,12 +63,12 @@ bool libquixcc::ir::delta::Jmp::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::delta::Label::hash_impl() const
 {
-    return Hasher().gettag().add(name).hash();
+    return Hasher().gettag().add(name).add(code).hash();
 }
 
 bool libquixcc::ir::delta::Label::verify_impl() const
 {
-    return true;
+    return code->verify();
 }
 
 boost::uuids::uuid libquixcc::ir::delta::Ret::hash_impl() const

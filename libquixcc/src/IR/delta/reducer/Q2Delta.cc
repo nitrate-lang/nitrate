@@ -464,8 +464,36 @@ static auto conv(const ir::q::While *n, DState &state) -> DResult
 
 static auto conv(const ir::q::For *n, DState &state) -> DResult
 {
-    /// TODO: Implement For
-    throw std::runtime_error("DeltaIR translation: For not implemented");
+    /// TODO: Implement For loops
+    
+    /*
+    for (init; cond; step)
+        block;
+
+    <=>
+
+    {
+        init;
+        while (cond)
+        {
+            block;
+
+            __step:
+              step;
+        }
+    }
+
+    */
+
+    auto init = conv(n->init, state)[0]->as<Expr>();
+    auto cond = conv(n->cond, state)[0]->as<Expr>();
+    auto step = conv(n->step, state)[0]->as<Expr>();
+    auto body = conv(n->body, state)[0];
+
+    auto block = Block::create({body, Label::create("__step", step)});
+    auto loop = While::create(cond, block);
+
+    return Block::create({init, loop});
 }
 
 static auto conv(const ir::q::Loop *n, DState &state) -> DResult

@@ -69,7 +69,9 @@ bool libquixcc::ir::delta::Jmp::print_impl(std::ostream &os, PState &state) cons
 
 bool libquixcc::ir::delta::Label::print_impl(std::ostream &os, PState &state) const
 {
-    os << name << ":";
+    os << name << " ";
+    if (!code->print(os, state))
+        return false;
     return true;
 }
 

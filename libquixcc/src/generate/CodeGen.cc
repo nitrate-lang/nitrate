@@ -365,7 +365,13 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::SCast *node)
 {
-    return m_ctx->m_builder->CreateSExtOrTrunc(gen(node->value), gent(node->type));
+    auto v = gen(node->value);
+    auto t = gent(node->type);
+
+    if (v->getType()->isIntegerTy(1))
+        return m_ctx->m_builder->CreateZExtOrTrunc(v, t);
+
+    return m_ctx->m_builder->CreateSExtOrTrunc(v, t);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::UCast *node)
@@ -472,6 +478,10 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Label *node)
 
     m_state.labels.top()[node->name] = bb;
     m_ctx->m_builder->CreateBr(bb);
+
+    m_ctx->m_builder->SetInsertPoint(bb);
+
+    gen(node->code);
 
     return bb;
 }
