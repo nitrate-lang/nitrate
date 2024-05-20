@@ -56,6 +56,7 @@ namespace libquixcc::ir::delta
         bool is_void() const;
         bool is_signed() const;
         bool is_unsigned() const;
+        bool is_primitive() const;
     };
 
     class I1 : public Type
@@ -368,17 +369,18 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        FType(std::vector<const Type *> params, const Type *ret) : params(params), ret(ret)
+        FType(std::vector<const Type *> params, const Type *ret, bool variadic) : params(params), ret(ret), variadic(variadic)
         {
             ntype = (int)NodeType::FType;
         }
 
     public:
-        static const FType *create(std::vector<const Type *> params, const Type *ret);
+        static const FType *create(std::vector<const Type *> params, const Type *ret, bool variadic);
         size_t bitcount() const override { return Ptr::create(Void::create())->bitcount(); }
 
         std::vector<const Type *> params;
         const Type *ret;
+        bool variadic;
     };
 }
 

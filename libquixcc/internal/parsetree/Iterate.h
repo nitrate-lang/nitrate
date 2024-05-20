@@ -56,15 +56,16 @@ namespace libquixcc
 
         typedef std::pair<TraversePtrType, std::variant<std::shared_ptr<libquixcc::ParseNode> *, libquixcc::ParseNode **>> TraversePtr;
 
-        typedef std::function<void(const std::vector<std::string> &_namespace, libquixcc::ParseNode *, TraversePtr)> ParseTreePreorderCallback;
+        typedef std::function<void(const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *, TraversePtr)> ParseTreePreorderCallback;
 
         struct ParseTreeTraversalState
         {
-            std::vector<std::string> m_prefix;
+            std::vector<std::string> m_ns;
+            std::vector<std::string> m_scope;
             std::set<TypeNode *> m_visited;
             ParseTreePreorderCallback m_callback;
 
-            ParseTreeTraversalState(ParseTreePreorderCallback callback, const std::vector<std::string> &_namespace) : m_prefix(_namespace), m_visited(), m_callback(callback) {}
+            ParseTreeTraversalState(ParseTreePreorderCallback callback, const std::vector<std::string> &_namespace) : m_ns(_namespace), m_visited(), m_callback(callback) {}
         };
 
         class ParseTreePreorder
@@ -90,7 +91,7 @@ namespace libquixcc
             static size_t ConstUnaryExprNode_iter(ParseTreeTraversalState &state, ConstUnaryExprNode *node);
             static size_t ConstBinaryExprNode_iter(ParseTreeTraversalState &state, ConstBinaryExprNode *node);
             static size_t IdentifierNode_iter(ParseTreeTraversalState &state, IdentifierNode *node);
-            static size_t MutTypeNode_iter(ParseTreeTraversalState &state, MutTypeNode *node);
+            static size_t ImmMutTypeNode_iter(ParseTreeTraversalState &state, ImmMutTypeNode *node);
             static size_t U8TypeNode_iter(ParseTreeTraversalState &state, U8TypeNode *node);
             static size_t U16TypeNode_iter(ParseTreeTraversalState &state, U16TypeNode *node);
             static size_t U32TypeNode_iter(ParseTreeTraversalState &state, U32TypeNode *node);
@@ -108,6 +109,7 @@ namespace libquixcc
             static size_t StringTypeNode_iter(ParseTreeTraversalState &state, StringTypeNode *node);
             static size_t EnumTypeNode_iter(ParseTreeTraversalState &state, EnumTypeNode *node);
             static size_t StructTypeNode_iter(ParseTreeTraversalState &state, StructTypeNode *node);
+            static size_t GroupTypeNode_iter(ParseTreeTraversalState &state, GroupTypeNode *node);
             static size_t RegionTypeNode_iter(ParseTreeTraversalState &state, RegionTypeNode *node);
             static size_t UnionTypeNode_iter(ParseTreeTraversalState &state, UnionTypeNode *node);
             static size_t ArrayTypeNode_iter(ParseTreeTraversalState &state, ArrayTypeNode *node);

@@ -97,30 +97,6 @@ namespace libquixcc
             return s_instances[inner];
         }
 
-        virtual size_t size(size_t ptr_size) const override { return ptr_size; }
-        virtual std::string to_source() const override
-        {
-            std::string source = "fn ";
-            if (m_pure)
-                source += "pure ";
-            if (m_thread_safe)
-                source += "tsafe ";
-            if (m_foreign)
-                source += "foreign ";
-            if (m_nothrow)
-                source += "nothrow ";
-            source += "(";
-            for (size_t i = 0; i < m_params.size(); i++)
-            {
-                source += m_params[i].first + ": " + m_params[i].second->to_source();
-                if (i < m_params.size() - 1)
-                    source += ", ";
-            }
-            source += "): ";
-            source += m_return_type->to_source();
-            return source;
-        }
-
         TypeNode *m_return_type;
         std::vector<std::pair<std::string, TypeNode *>> m_params;
         bool m_variadic = false;

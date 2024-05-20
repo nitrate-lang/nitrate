@@ -61,6 +61,25 @@ namespace libquixcc::ir::q
         const Expr *rhs;
     };
 
+    class AddressOf : public Expr
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        AddressOf(const Expr *lhs) : lhs(lhs)
+        {
+            ntype = (int)NodeType::AddressOf;
+        }
+
+    public:
+        static const AddressOf *create(const Expr *lhs);
+        const Type *infer() const override;
+
+        const Expr *lhs;
+    };
+
     class Member : public Expr
     {
     protected:

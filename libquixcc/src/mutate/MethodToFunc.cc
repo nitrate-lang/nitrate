@@ -41,12 +41,35 @@
 
 using namespace libquixcc;
 
+static std::string getname(const TypeNode *n)
+{
+    switch (n->ntype)
+    {
+    case NodeType::StructTypeNode:
+        return static_cast<const StructTypeNode *>(n)->m_name;
+    case NodeType::RegionTypeNode:
+        return static_cast<const RegionTypeNode *>(n)->m_name;
+    case NodeType::GroupTypeNode:
+        return static_cast<const GroupTypeNode *>(n)->m_name;
+    case NodeType::UnionTypeNode:
+        return static_cast<const UnionTypeNode *>(n)->m_name;
+    case NodeType::EnumTypeNode:
+        return static_cast<const EnumTypeNode *>(n)->m_name;
+    case NodeType::OpaqueTypeNode:
+        return static_cast<const OpaqueTypeNode *>(n)->m_name;
+    case NodeType::UserTypeNode:
+        return static_cast<const UserTypeNode *>(n)->m_name;
+    default:
+        throw std::runtime_error("getname: Unknown type node.");
+    }
+}
+
 void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> vars;
 
     ast->dfs_preorder(traversal::ParseTreeTraversalState(
-        [&](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+        [&](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
             if (node.first != traversal::TraversePtrType::Smart)
                 return;
@@ -55,11 +78,6 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
             if ((ptr)->is<LetDeclNode>())
             {
                 vars[std::static_pointer_cast<LetDeclNode>(ptr)->m_name] = ptr;
-                return;
-            }
-            if ((ptr)->is<VarDeclNode>())
-            {
-                vars[std::static_pointer_cast<VarDeclNode>(ptr)->m_name] = ptr;
                 return;
             }
             if ((ptr)->is<ConstDeclNode>())
@@ -97,22 +115,22 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
             {
             case NodeType::LetDeclNode:
             {
-                _typename = std::static_pointer_cast<LetDeclNode>(var)->m_type->name();
+                _typename = getname(std::static_pointer_cast<LetDeclNode>(var)->m_type);
                 break;
             }
             case NodeType::ConstDeclNode:
             {
-                _typename = std::static_pointer_cast<ConstDeclNode>(var)->m_type->name();
+                _typename = getname(std::static_pointer_cast<ConstDeclNode>(var)->m_type);
                 break;
             }
             case NodeType::VarDeclNode:
             {
-                _typename = std::static_pointer_cast<VarDeclNode>(var)->m_type->name();
+                _typename = getname(std::static_pointer_cast<VarDeclNode>(var)->m_type);
                 break;
             }
             case NodeType::FunctionParamNode:
             {
-                _typename = std::static_pointer_cast<FunctionParamNode>(var)->m_type->name();
+                _typename = getname(std::static_pointer_cast<FunctionParamNode>(var)->m_type);
                 break;
             }
             default:

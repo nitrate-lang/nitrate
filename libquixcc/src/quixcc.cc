@@ -464,23 +464,23 @@ std::string base64_encode(const std::string &in)
     return out;
 }
 
-static bool quixcc_mutate_ast(quixcc_job_t *job, std::shared_ptr<AST> ast)
+static bool quixcc_mutate_ptree(quixcc_job_t *job, std::shared_ptr<Ptree> ptree)
 {
     Mutation mutator;
+    mutator.add_routine(mutate::SubsystemCollapse);       ///> Flatten Ptree by collapsing subsystems
     mutator.add_routine(mutate::MethodToFunc);            ///> Convert method calls to function calls
-    mutator.add_routine(mutate::DiscoverNamedConstructs); ///> Map named constructs to their respective AST nodes
-    mutator.add_routine(mutate::ResolveNamedConstructs);  ///> Resolve named constructs to their respective AST nodes
+    mutator.add_routine(mutate::DiscoverNamedConstructs); ///> Map named constructs to their respective Ptree nodes
+    mutator.add_routine(mutate::ResolveNamedConstructs);  ///> Resolve named constructs to their respective Ptree nodes
     mutator.add_routine(mutate::ExtrapolateEnumFields);   ///> Derive enum field values
     mutator.add_routine(mutate::ObjectConstruction);      ///> Object construction
     mutator.add_routine(mutate::ObjectDestruction);       ///> Object destruction
     mutator.add_routine(mutate::ImplicitReturn);          ///> Implicit return statements
-    mutator.add_routine(mutate::SubsystemCollapse);       ///> Flatten AST by collapsing subsystems
-    mutator.run(job, ast);
+    mutator.run(job, ptree);
 
     return true;
 }
 
-static bool quixcc_qualify(quixcc_job_t *job, std::shared_ptr<AST> ast)
+static bool quixcc_qualify(quixcc_job_t *job, std::shared_ptr<Ptree> ptree)
 {
     /// TODO: implement semantic analysis
     return true;
@@ -668,7 +668,7 @@ static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<PrepEngine> prep
 
 static bool compile(quixcc_job_t *job)
 {
-    auto ast = std::make_shared<AST>();
+    auto ptree = std::make_shared<Ptree>();
 
     if (job->m_argset.contains("-PREP"))
     {
@@ -728,21 +728,21 @@ static bool compile(quixcc_job_t *job)
 
     ///=========================================
     /// BEGIN: PARSER
-    LOG(DEBUG) << "Building AST 1" << std::endl;
-    if (!parse(*job, prep, ast, false))
+    LOG(DEBUG) << "Building Ptree 1" << std::endl;
+    if (!parse(*job, prep, ptree, false))
         return false;
-    LOG(DEBUG) << "Finished building AST 1" << std::endl;
+    LOG(DEBUG) << "Finished building Ptree 1" << std::endl;
     if (job->m_debug)
-        LOG(DEBUG) << log::raw << "Dumping AST 1 (JSON): " << base64_encode(ast->to_json()) << std::endl;
+        LOG(DEBUG) << log::raw << "Dumping Ptree 1 (JSON): " << base64_encode(ptree->to_json()) << std::endl;
     /// END:   PARSER
     ///=========================================
 
     ///=========================================
     /// BEGIN: INTERMEDIATE PROCESSING
-    if (!quixcc_mutate_ast(job, ast) || job->m_tainted)
+    if (!quixcc_mutate_ptree(job, ptree) || job->m_tainted)
         return false;
     if (job->m_debug)
-        LOG(DEBUG) << log::raw << "Dumping AST 2 (JSON): " << base64_encode(ast->to_json()) << std::endl;
+        LOG(DEBUG) << log::raw << "Dumping Ptree 2 (JSON): " << base64_encode(ptree->to_json()) << std::endl;
     /// END:   INTERMEDIATE PROCESSING
     ///=========================================
 
@@ -751,9 +751,9 @@ static bool compile(quixcc_job_t *job)
         ///=========================================
         /// BEGIN: SEMANTIC ANALYSIS
         LOG(DEBUG) << "Performing semantic analysis" << std::endl;
-        if (!quixcc_qualify(job, ast))
+        if (!quixcc_qualify(job, ptree))
         {
-            LOG(ERROR) << "failed to verify AST" << std::endl;
+            LOG(ERROR) << "failed to verify Ptree" << std::endl;
             return false;
         }
         LOG(DEBUG) << "Finished semantic analysis" << std::endl;
@@ -764,7 +764,7 @@ static bool compile(quixcc_job_t *job)
     ///=========================================
     /// BEGIN: OPTIMIZATION PIPELINE
     auto QIR = std::make_unique<ir::q::QModule>(job->m_filename);
-    if (!QIR->from_ast(std::move(ast))) /* This will modify the AST */
+    if (!QIR->from_ptree(std::move(ptree))) /* This will modify the Ptree */
         return false;
 
     if (!job->m_argset.contains("-O0"))

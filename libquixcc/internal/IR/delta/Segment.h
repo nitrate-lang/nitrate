@@ -74,13 +74,14 @@ namespace libquixcc::ir::delta
 
     public:
         static const Segment *create(const Type *ret, bool variadic, const std::vector<std::pair<std::string, const Type *>> &params, const Block *block);
+        const Type *infer() const override;
 
         const FType *getType() const
         {
             std::vector<const Type *> param_types;
             for (auto &param : params)
                 param_types.push_back(param.second);
-            return FType::create(param_types, ret);
+            return FType::create(param_types, ret, variadic);
         }
 
         std::vector<std::pair<std::string, const Type *>> params;

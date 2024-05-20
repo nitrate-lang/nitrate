@@ -73,7 +73,7 @@ namespace libquixcc
             static std::string ConstUnaryExprNode_conv(ParseTreeSerializerState &state, const ConstUnaryExprNode *node);
             static std::string ConstBinaryExprNode_conv(ParseTreeSerializerState &state, const ConstBinaryExprNode *node);
             static std::string IdentifierNode_conv(ParseTreeSerializerState &state, const IdentifierNode *node);
-            static std::string MutTypeNode_conv(ParseTreeSerializerState &state, const MutTypeNode *node);
+            static std::string ImmMutTypeNode_conv(ParseTreeSerializerState &state, const ImmMutTypeNode *node);
             static std::string U8TypeNode_conv(ParseTreeSerializerState &state, const U8TypeNode *node);
             static std::string U16TypeNode_conv(ParseTreeSerializerState &state, const U16TypeNode *node);
             static std::string U32TypeNode_conv(ParseTreeSerializerState &state, const U32TypeNode *node);
@@ -91,6 +91,7 @@ namespace libquixcc
             static std::string StringTypeNode_conv(ParseTreeSerializerState &state, const StringTypeNode *node);
             static std::string EnumTypeNode_conv(ParseTreeSerializerState &state, const EnumTypeNode *node);
             static std::string StructTypeNode_conv(ParseTreeSerializerState &state, const StructTypeNode *node);
+            static std::string GroupTypeNode_conv(ParseTreeSerializerState &state, const GroupTypeNode *node);
             static std::string RegionTypeNode_conv(ParseTreeSerializerState &state, const RegionTypeNode *node);
             static std::string UnionTypeNode_conv(ParseTreeSerializerState &state, const UnionTypeNode *node);
             static std::string ArrayTypeNode_conv(ParseTreeSerializerState &state, const ArrayTypeNode *node);

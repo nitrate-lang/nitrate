@@ -65,6 +65,7 @@ using namespace libquixcc::ir::delta;
 struct DState
 {
     std::map<std::string, const Packet *> regions;
+    std::vector<std::pair<const Packet *, std::vector<const Global *>>> oop;
 
     DState()
     {
@@ -184,6 +185,7 @@ static auto conv(const ir::q::String *n, DState &state) -> DResult;
 static auto conv(const ir::q::Char *n, DState &state) -> DResult;
 static auto conv(const ir::q::List *n, DState &state) -> DResult;
 static auto conv(const ir::q::Assign *n, DState &state) -> DResult;
+static auto conv(const ir::q::AddressOf *n, DState &state) -> DResult;
 static auto conv(const ir::q::Member *n, DState &state) -> DResult;
 static auto conv(const ir::q::Index *n, DState &state) -> DResult;
 
@@ -198,6 +200,19 @@ static auto conv(const ir::q::RootNode *n, DState &state) -> DResult
 
         for (auto &value : *result)
             values.push_back(value);
+    }
+
+    for (auto it = state.oop.begin(); it != state.oop.end();)
+    {
+        auto packet = it->first;
+        auto methods = it->second;
+
+        for (auto method : methods)
+            values.push_back(method);
+
+        values.push_back(packet);
+
+        it = state.oop.erase(it);
     }
 
     return RootNode::create(values);
@@ -296,7 +311,7 @@ static auto conv(const ir::q::FType *n, DState &state) -> DResult
     for (auto param : n->params)
         params.push_back(conv(param, state)[0]->as<Type>());
 
-    return FType::create(params, ret);
+    return FType::create(params, ret, n->m_variadic);
 }
 
 static auto conv(const ir::q::Region *n, DState &state) -> DResult
@@ -309,14 +324,18 @@ static auto conv(const ir::q::Region *n, DState &state) -> DResult
 
 static auto conv(const ir::q::Group *n, DState &state) -> DResult
 {
-    /// TODO: Implement Group
-    throw std::runtime_error("DeltaIR translation: Group not implemented");
+    if (!state.regions.contains(n->name))
+        throw std::runtime_error("DeltaIR translation: Group not found");
+
+    return state.regions.at(n->name);
 }
 
 static auto conv(const ir::q::Union *n, DState &state) -> DResult
 {
-    /// TODO: Implement Union
-    throw std::runtime_error("DeltaIR translation: Union not implemented");
+    if (!state.regions.contains(n->name))
+        throw std::runtime_error("DeltaIR translation: Union not found");
+
+    return state.regions.at(n->name);
 }
 
 static auto conv(const ir::q::Opaque *n, DState &state) -> DResult
@@ -370,16 +389,19 @@ static auto conv(const ir::q::RegionDef *n, DState &state) -> DResult
     for (auto field : n->fields)
         fields.push_back({field.first, conv(field.second, state)[0]->as<Type>()});
 
-    std::vector<const Segment *> methods;
+    auto packet = Packet::create(fields, n->name);
+    state.regions[n->name] = packet;
+
+    std::vector<const Global *> methods;
     for (auto method : n->methods)
-        methods.push_back(conv(method, state)[0]->as<Segment>());
+    {
+        auto seg = conv(method.second, state)[0]->as<Segment>();
+        auto g = Global::create(method.first, seg->infer(), seg, false, false, false);
+        methods.push_back(g);
+    }
 
-    std::vector<DValue> values = {Packet::create(fields, n->name)};
-    values.insert(values.end(), methods.begin(), methods.end());
-
-    state.regions[n->name] = values[0]->as<Packet>();
-
-    return values;
+    state.oop.push_back({packet, methods});
+    return nullptr;
 }
 
 static auto conv(const ir::q::GroupDef *n, DState &state) -> DResult
@@ -390,16 +412,19 @@ static auto conv(const ir::q::GroupDef *n, DState &state) -> DResult
     for (auto field : n->fields)
         fields.push_back({field.first, conv(field.second, state)[0]->as<Type>()});
 
-    std::vector<const Segment *> methods;
+    auto packet = Packet::create(fields, n->name);
+    state.regions[n->name] = packet;
+
+    std::vector<const Global *> methods;
     for (auto method : n->methods)
-        methods.push_back(conv(method, state)[0]->as<Segment>());
+    {
+        auto seg = conv(method.second, state)[0]->as<Segment>();
+        auto g = Global::create(method.first, seg->infer(), seg, false, false, false);
+        methods.push_back(g);
+    }
 
-    std::vector<DValue> values = {Packet::create(fields, n->name)};
-    values.insert(values.end(), methods.begin(), methods.end());
-
-    state.regions[n->name] = values[0]->as<Packet>();
-
-    return values;
+    state.oop.push_back({packet, methods});
+    return nullptr;
 }
 
 static auto conv(const ir::q::UnionDef *n, DState &state) -> DResult
@@ -439,7 +464,9 @@ static auto conv(const ir::q::Call *n, DState &state) -> DResult
     for (auto arg : n->args)
         args.push_back(conv(arg, state)[0]->as<Expr>());
 
-    return Call::create(n->func->name, args);
+    auto ftype = conv(n->func->type, state)[0]->as<FType>();
+
+    return Call::create(n->func->name, args, ftype);
 }
 
 static auto conv(const ir::q::CallIndirect *n, DState &state) -> DResult
@@ -720,6 +747,11 @@ static auto conv(const ir::q::Assign *n, DState &state) -> DResult
     return Assign::create(conv(n->lhs, state)[0]->as<Expr>(), conv(n->rhs, state)[0]->as<Expr>());
 }
 
+static auto conv(const ir::q::AddressOf *n, DState &state) -> DResult
+{
+    return AddressOf::create(conv(n->lhs, state)[0]->as<Expr>());
+}
+
 static auto conv(const ir::q::Member *n, DState &state) -> DResult
 {
     auto e = conv(n->lhs, state)[0]->as<Expr>();
@@ -732,8 +764,9 @@ auto conv(const libquixcc::ir::q::Index *n, DState &state) -> DResult
 {
     auto e = conv(n->lhs, state)[0]->as<Expr>();
     auto i = conv(n->index, state)[0]->as<Expr>();
+    auto t = conv(n->type, state)[0]->as<Type>();
 
-    return Index::create(e, i);
+    return Index::create(e, i, t);
 }
 
 static auto conv(const ir::q::Value *n, DState &state) -> DResult
@@ -1052,6 +1085,10 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult
 
     case libquixcc::ir::q::NodeType::Assign:
         r = conv(n->as<ir::q::Assign>(), state);
+        break;
+
+    case libquixcc::ir::q::NodeType::AddressOf:
+        r = conv(n->as<ir::q::AddressOf>(), state);
         break;
 
     case libquixcc::ir::q::NodeType::Member:

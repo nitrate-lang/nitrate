@@ -115,7 +115,7 @@ namespace libquixcc
             const T *as() const
             {
                 if (!is<T>())
-                    throw std::runtime_error("Invalid cast from `" + std::string(typeid(*this).name()) + "` to `" + std::string(typeid(T).name()) + "`");
+                    LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `" << typeid(T).name() << "`" << std::endl;
 
                 return reinterpret_cast<const T *>(this);
             }

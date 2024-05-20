@@ -67,7 +67,7 @@ static bool parse_struct_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     tok = scanner->next();
     if (tok.is<Punctor>(Punctor::Comma))
     {
-        node = std::make_shared<StructFieldNode>(name, MutTypeNode::create(type));
+        node = std::make_shared<StructFieldNode>(name, type);
         return true;
     }
     else if (tok.is<Operator>(Operator::Assign))
@@ -135,7 +135,7 @@ bool libquixcc::parse_struct(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
             if (!parse_function(job, scanner, method))
                 return false;
 
-            auto fn_this = std::make_shared<FunctionParamNode>("this", MutTypeNode::create(PointerTypeNode::create(UserTypeNode::create(name))), nullptr);
+            auto fn_this = std::make_shared<FunctionParamNode>("this", PointerTypeNode::create(UserTypeNode::create(name)), nullptr);
 
             if (method->is<FunctionDeclNode>())
             {

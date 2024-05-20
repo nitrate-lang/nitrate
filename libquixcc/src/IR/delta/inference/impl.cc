@@ -29,31 +29,28 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/QIR.h>
+#include <IR/delta/DeltaIR.h>
 
-#include <IR/Q/Asm.h>
-#include <IR/Q/Call.h>
-#include <IR/Q/Cast.h>
-#include <IR/Q/Control.h>
-#include <IR/Q/Function.h>
-#include <IR/Q/Ident.h>
-#include <IR/Q/Math.h>
-#include <IR/Q/OO.h>
-#include <IR/Q/Type.h>
-#include <IR/Q/Variable.h>
-#include <IR/Q/Memory.h>
-#include <IR/Q/Expr.h>
+#include <IR/delta/Cast.h>
+#include <IR/delta/Control.h>
+#include <IR/delta/Segment.h>
+#include <IR/delta/Ident.h>
+#include <IR/delta/Math.h>
+#include <IR/delta/Type.h>
+#include <IR/delta/Variable.h>
+#include <IR/delta/Memory.h>
+#include <IR/delta/Expr.h>
 
-using namespace libquixcc::ir::q;
+using namespace libquixcc::ir::delta;
 
 const Type *Call::infer() const
 {
-    return func->type->as<FType>()->ret;
+    return ftype->ret;
 }
 
-const Type *CallIndirect::infer() const
+const Type *PtrCall::infer() const
 {
-    return exprfunc->return_type;
+    return callee->as<Expr>()->infer()->as<FType>()->ret;
 }
 
 const Type *SCast::infer() const
@@ -103,13 +100,7 @@ const Type *Segment::infer() const
         arg_types.push_back(arg.second);
     }
 
-    bool variadic = constraints.contains(FConstraint::Variadic);
-    bool pure = constraints.contains(FConstraint::Pure);
-    bool thread_safe = constraints.contains(FConstraint::ThreadSafe);
-    bool foreign = constraints.contains(FConstraint::C_ABI);
-    bool no_throw = constraints.contains(FConstraint::NoThrow);
-
-    return FType::create(arg_types, return_type, variadic, pure, thread_safe, foreign, no_throw);
+    return FType::create(arg_types, ret, variadic);
 }
 
 const Type *Ident::infer() const
@@ -301,20 +292,20 @@ const Type *Xor::infer() const
 
 const Type *Assign::infer() const
 {
-    return rhs->infer();
+    return value->infer();
 }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::AddressOf::infer() const
+const Type *AddressOf::infer() const
 {
     return Ptr::create(lhs->infer());
 }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::Member::infer() const
+const Type *Member::infer() const
 {
     return field_type;
 }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::Index::infer() const
+const Type *Index::infer() const
 {
     return type;
 }
@@ -349,7 +340,7 @@ const Type *Number::infer() const
     }
 }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::List::infer() const
+const Type *List::infer() const
 {
     std::vector<const Type *> types;
     for (auto &elem : values)
@@ -374,9 +365,4 @@ const libquixcc::ir::q::Type *libquixcc::ir::q::List::infer() const
 const Type *String::infer() const
 {
     return Ptr::create(U8::create());
-}
-
-const Type *Char::infer() const
-{
-    return U8::create();
 }

@@ -62,9 +62,6 @@ namespace libquixcc
 
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return ptr_size; }
-        virtual std::string to_source() const override { return "string"; }
     };
 }
 

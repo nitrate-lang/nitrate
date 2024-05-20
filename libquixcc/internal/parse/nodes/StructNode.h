@@ -65,24 +65,6 @@ namespace libquixcc
             return instance;
         }
 
-        virtual size_t size(size_t ptr_size) const override
-        {
-            /// TODO: adjust for padding
-            size_t size = 0;
-            for (auto &field : m_fields)
-                size += field->size(ptr_size);
-            return size;
-        }
-        virtual std::string to_source() const override
-        {
-            std::string source = "struct " + m_name + " { ";
-            for (auto &field : m_fields)
-                source += field->to_source() + "; ";
-            source += "}";
-            return source;
-        }
-        virtual std::string name() const override { return m_name; }
-
         std::vector<TypeNode *> m_fields;
         std::string m_name;
     };

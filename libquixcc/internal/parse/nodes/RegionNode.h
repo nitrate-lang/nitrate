@@ -65,23 +65,6 @@ namespace libquixcc
             return instance;
         }
 
-        virtual size_t size(size_t ptr_size) const override
-        {
-            size_t size = 0;
-            for (auto &field : m_fields)
-                size += field->size(ptr_size);
-            return size;
-        }
-        virtual std::string to_source() const override
-        {
-            std::string source = "region " + m_name + " {";
-            for (auto &field : m_fields)
-                source += field->to_source() + "; ";
-            source += "}";
-            return source;
-        }
-        virtual std::string name() const override { return m_name; }
-
         std::vector<TypeNode *> m_fields;
         std::string m_name;
     };
@@ -112,10 +95,10 @@ namespace libquixcc
             return RegionTypeNode::create(fields, m_name);
         }
 
-        std::shared_ptr<StructDefNode> to_struct_def() const;
-
         std::string m_name;
         std::vector<std::shared_ptr<RegionFieldNode>> m_fields;
+        std::vector<std::shared_ptr<StmtNode>> m_methods;
+        std::vector<std::shared_ptr<StmtNode>> m_static_methods;
     };
 }
 

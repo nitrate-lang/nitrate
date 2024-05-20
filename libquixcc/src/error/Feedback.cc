@@ -77,6 +77,7 @@ libquixcc::Feedback libquixcc::feedback({
     {REGION_FIELD_TYPE_ERR, "An error occurred while parsing the type of field '{}'. Syntax: name: type [= expr];"},
     {REGION_FIELD_INIT_ERR, "Declaration of field '{}' requires an initializer, but an error occurred while parsing the initializer. Syntax: name: type [= expr];"},
     {REGION_FIELD_MISSING_PUNCTOR, "Declaration of field '{}' requires an initializer OR a semicolon punctuator, but neither was found. Make sure to terminate all statements with a semicolon. Syntax: name: type [= expr];"},
+    {REGION_DEF_EXPECTED_FN, "Expected a function declaration after the region definition. To fix the issue, insert a function declaration after the region definition. Syntax: region name { ... }; fn name() { ... };"},
 
     {GROUP_DECL_MISSING_IDENTIFIER, "Expected identifier in group declaration. To fix the issue, name your group. Syntax: group name { ... };"},
     {GROUP_FIELD_MISSING_IDENTIFIER, "Expected identifier in group field declaration. To fix the issue, name your field. Syntax: name: type [= expr];"},
@@ -85,6 +86,7 @@ libquixcc::Feedback libquixcc::feedback({
     {GROUP_FIELD_TYPE_ERR, "An error occurred while parsing the type of field '{}'. Syntax: name: type [= expr];"},
     {GROUP_FIELD_INIT_ERR, "Declaration of field '{}' requires an initializer, but an error occurred while parsing the initializer. Syntax: name: type [= expr];"},
     {GROUP_FIELD_MISSING_PUNCTOR, "Declaration of field '{}' requires an initializer OR a semicolon punctuator, but neither was found. Make sure to terminate all statements with a semicolon. Syntax: name: type [= expr];"},
+    {GROUP_DEF_EXPECTED_FN, "Expected a function declaration after the group definition. To fix the issue, insert a function declaration after the group definition. Syntax: group name { ... }; fn name() { ... };"},
 
     {UNION_DECL_MISSING_IDENTIFIER, "Expected identifier in union declaration. To fix the issue, name your union. Syntax: union name;"},
     {UNION_DEF_EXPECTED_OPEN_BRACE, "Expected an open brace after the union name. To fix the issue, insert an open brace after the union name. Syntax: union name { ... };"},
@@ -93,6 +95,7 @@ libquixcc::Feedback libquixcc::feedback({
     {UNION_FIELD_MISSING_COLON, "Expected colon separator in union field declaration. To fix the issue, insert a colon between the field name and the typename. Syntax: name: type [= expr];"},
     {UNION_FIELD_TYPE_ERR, "An error occurred while parsing the type of field '{}'. Syntax: name: type [= expr];"},
     {UNION_FIELD_MISSING_PUNCTOR, "Declaration of field '{}' requires an initializer OR a semicolon punctuator, but neither was found. Make sure to terminate all statements with a semicolon. Syntax: name: type [= expr];"},
+    {UNION_DEF_EXPECTED_FN, "Expected a function declaration after the union definition. To fix the issue, insert a function declaration after the union definition. Syntax: union name { ... }; fn name() { ... };"},
 
     {TYPE_EXPECTED_TYPE, "Expected a type name after the open bracket. To fix the issue, insert a type name after the open bracket. Syntax: [type; size]"},
     {TYPE_EXPECTED_SEMICOLON, "Expected a semicolon after the type name. To fix the issue, insert a semicolon after the type name. Syntax: [type; size]"},

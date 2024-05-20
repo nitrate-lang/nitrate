@@ -34,9 +34,10 @@
 #include <parse/nodes/BasicNodes.h>
 #include <parse/nodes/AllNodes.h>
 
-static void nop(const std::vector<std::string> &_namespace, libquixcc::ParseNode *parrent, libquixcc::traversal::TraversePtr node)
+static void nop(const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parrent, libquixcc::traversal::TraversePtr node)
 {
     (void)_namespace;
+    (void)_scope;
     (void)parrent;
     (void)node;
     return;

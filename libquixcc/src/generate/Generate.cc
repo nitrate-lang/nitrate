@@ -120,9 +120,9 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta
     if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
     {
         if (ctx.m_debug)
-            LOG(FAILED) << log::raw << ctx.m_filename << "LLVM IR generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
+            LOG(FAILED) << log::raw << ctx.m_filename << "LLVM IR generation failed. The Ptree must have been semantically incorrect: " << err_stream.str() << std::endl;
         else
-            LOG(ERROR) << log::raw << ctx.m_filename << "LLVM IR generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
+            LOG(ERROR) << log::raw << ctx.m_filename << "LLVM IR generation failed. The Ptree must have been semantically incorrect: " << err_stream.str() << std::endl;
     }
 
     LOG(DEBUG) << "Generating LLVM IR" << std::endl;
@@ -214,9 +214,9 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::del
     if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
     {
         if (ctx.m_debug)
-            LOG(FAILED) << log::raw << "LLVM Code generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
+            LOG(FAILED) << log::raw << "LLVM Code generation failed. The Ptree must have been semantically incorrect: " << err_stream.str() << std::endl;
         else
-            LOG(ERROR) << log::raw << "LLVM Code generation failed. The AST must have been semantically incorrect: " << err_stream.str() << std::endl;
+            LOG(ERROR) << log::raw << "LLVM Code generation failed. The Ptree must have been semantically incorrect: " << err_stream.str() << std::endl;
     }
 
     llvm::PassManagerBuilder builder;

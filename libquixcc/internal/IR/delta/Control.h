@@ -39,6 +39,7 @@
 #include <IR/delta/DeltaIR.h>
 #include <IR/delta/Segment.h>
 #include <IR/delta/Expr.h>
+#include <IR/delta/Type.h>
 
 namespace libquixcc::ir::delta
 {
@@ -143,16 +144,18 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Call(std::string callee, std::vector<const Expr *> args) : callee(callee), args(args)
+        Call(std::string callee, std::vector<const Expr *> args, const FType *ftype) : callee(callee), args(args), ftype(ftype)
         {
             ntype = (int)NodeType::Call;
         }
 
     public:
-        static const Call *create(std::string callee, std::vector<const Expr *> args);
+        static const Call *create(std::string callee, std::vector<const Expr *> args, const FType *ftype);
+        const Type *infer() const override;
 
         std::string callee;
         std::vector<const Expr *> args;
+        const FType *ftype;
     };
 
     class PtrCall : public Expr
@@ -169,6 +172,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const PtrCall *create(const Value *callee, std::vector<const Expr *> args);
+        const Type *infer() const override;
 
         const Value *callee;
         std::vector<const Expr *> args;

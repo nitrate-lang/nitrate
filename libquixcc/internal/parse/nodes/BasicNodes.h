@@ -107,7 +107,7 @@ namespace libquixcc
                 return is<UnaryExprNode>() || is<BinaryExprNode>() || is<CallExprNode>() || is<ListExprNode>() || is<MemberAccessNode>() || isof<CastExprNode>() || isof<LiteralNode>();
 
             if (std::is_same_v<T, TypeNode>)
-                return is<MutTypeNode>() || is<U8TypeNode>() || is<U16TypeNode>() || is<U32TypeNode>() || is<U64TypeNode>() || is<U128TypeNode>() || is<I8TypeNode>() || is<I16TypeNode>() || is<I32TypeNode>() || is<I64TypeNode>() || is<I128TypeNode>() || is<F32TypeNode>() || is<F64TypeNode>() || is<BoolTypeNode>() || is<VoidTypeNode>() || is<PointerTypeNode>() || is<OpaqueTypeNode>() || is<StringTypeNode>() || is<EnumTypeNode>() || is<StructTypeNode>() || is<RegionTypeNode>() || is<UnionTypeNode>() || is<ArrayTypeNode>() || is<FunctionTypeNode>() || is<UserTypeNode>();
+                return is<ImmMutTypeNode>() || is<U8TypeNode>() || is<U16TypeNode>() || is<U32TypeNode>() || is<U64TypeNode>() || is<U128TypeNode>() || is<I8TypeNode>() || is<I16TypeNode>() || is<I32TypeNode>() || is<I64TypeNode>() || is<I128TypeNode>() || is<F32TypeNode>() || is<F64TypeNode>() || is<BoolTypeNode>() || is<VoidTypeNode>() || is<PointerTypeNode>() || is<OpaqueTypeNode>() || is<StringTypeNode>() || is<EnumTypeNode>() || is<StructTypeNode>() || is<RegionTypeNode>() || is<UnionTypeNode>() || is<ArrayTypeNode>() || is<FunctionTypeNode>() || is<UserTypeNode>();
 
             if (std::is_same_v<T, StmtNode>)
                 return is<ExprStmtNode>() || is<NopStmtNode>() || is<DeclNode>() || is<DefNode>() || is<BlockNode>() || is<StmtGroupNode>() || is<ReturnStmtNode>() || is<RetifStmtNode>() || is<RetzStmtNode>() || is<RetvStmtNode>() || is<IfStmtNode>() || is<WhileStmtNode>() || is<ForStmtNode>() || is<SubsystemNode>() || is<ExportNode>() || is<InlineAsmNode>();
@@ -177,21 +177,6 @@ namespace libquixcc
         TypeNode() { ntype = NodeType::TypeNode; }
         ~TypeNode() = default;
         TypeNode(const TypeNode &) = delete;
-
-        bool is_composite() const;
-        bool is_ptr() const;
-        bool is_array() const;
-        bool is_func() const;
-        bool is_void() const;
-        bool is_signed() const;
-        bool is_integer() const;
-        bool is_floating() const;
-        bool is_bool() const;
-        bool is_primitive() const;
-
-        virtual size_t size(size_t ptr_size) const = 0;
-        virtual std::string to_source() const = 0;
-        virtual std::string name() const { return ""; }
     };
 
     class UserTypeNode : public TypeNode
@@ -207,10 +192,6 @@ namespace libquixcc
 
             return m_instances[name].get();
         }
-
-        virtual size_t size(size_t ptr_size) const { return 0; }
-        virtual std::string to_source() const override { return m_name; }
-        virtual std::string name() const override { return m_name; }
 
         std::string m_name;
     };

@@ -46,36 +46,36 @@ namespace libquixcc
 {
     namespace mutate
     {
-        void DiscoverNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ExtrapolateEnumFields(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ResolveNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void MethodToFunc(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        inline void ObjectConstruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
-        inline void ObjectDestruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast) {}
-        void SubsystemCollapse(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
-        void ImplicitReturn(quixcc_job_t *job, const std::shared_ptr<libquixcc::AST> ast);
+        void DiscoverNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree);
+        void ExtrapolateEnumFields(quixcc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree);
+        void ResolveNamedConstructs(quixcc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree);
+        void MethodToFunc(quixcc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree);
+        inline void ObjectConstruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree) {}
+        inline void ObjectDestruction(quixcc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree) {}
+        void SubsystemCollapse(quixcc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree);
+        void ImplicitReturn(quixcc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree);
     }
 
-    typedef std::function<void(quixcc_job_t *job, std::shared_ptr<libquixcc::AST>)> ASTMutateRoutine;
+    typedef std::function<void(quixcc_job_t *job, std::shared_ptr<libquixcc::Ptree>)> PtreeMutateRoutine;
 
     class Mutation
     {
     public:
         /// @brief Run rountines in the order they were added.
-        void run(quixcc_job_t *job, std::shared_ptr<libquixcc::AST> ast)
+        void run(quixcc_job_t *job, std::shared_ptr<libquixcc::Ptree> ptree)
         {
             for (auto routine : m_routines)
             {
-                routine(job, ast);
+                routine(job, ptree);
             }
         }
 
-        void add_routine(ASTMutateRoutine routine)
+        void add_routine(PtreeMutateRoutine routine)
         {
             m_routines.push_back(routine);
         }
 
-        std::vector<ASTMutateRoutine> m_routines;
+        std::vector<PtreeMutateRoutine> m_routines;
     };
 }
 

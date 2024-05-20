@@ -64,7 +64,7 @@ static bool parse_union_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scan
         return false;
     }
 
-    node->m_type = MutTypeNode::create(type);
+    node->m_type = type;
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Comma))

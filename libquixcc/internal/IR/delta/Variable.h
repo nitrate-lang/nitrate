@@ -99,6 +99,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Number *create(std::string value);
+        const Type *infer() const override;
 
         std::string value;
     };
@@ -117,6 +118,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const String *create(std::string value);
+        const Type *infer() const override;
 
         std::string value;
     };
@@ -135,6 +137,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const List *create(std::vector<const Expr *> values);
+        const Type *infer() const override;
 
         std::vector<const Expr *> values;
     };

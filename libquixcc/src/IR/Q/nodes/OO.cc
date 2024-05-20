@@ -38,7 +38,7 @@ boost::uuids::uuid libquixcc::ir::q::RegionDef::hash_impl() const
         hasher.add(f.first).add(f.second);
 
     for (auto &m : methods)
-        hasher.add(m);
+        hasher.add(m.first).add(m.second);
 
     return hasher.hash();
 }
@@ -50,7 +50,7 @@ bool libquixcc::ir::q::RegionDef::verify_impl() const
             return false;
 
     for (auto &m : methods)
-        if (!m->verify())
+        if (!m.second->verify())
             return false;
 
     return true;
@@ -63,7 +63,7 @@ boost::uuids::uuid libquixcc::ir::q::GroupDef::hash_impl() const
         hasher.add(f.first).add(f.second);
 
     for (auto &m : methods)
-        hasher.add(m);
+        hasher.add(m.first).add(m.second);
 
     return hasher.hash();
 }
@@ -75,7 +75,7 @@ bool libquixcc::ir::q::GroupDef::verify_impl() const
             return false;
 
     for (auto &m : methods)
-        if (!m->verify())
+        if (!m.second->verify())
             return false;
 
     return true;
@@ -88,7 +88,7 @@ boost::uuids::uuid libquixcc::ir::q::UnionDef::hash_impl() const
         hasher.add(f.first).add(f.second);
 
     for (auto &m : methods)
-        hasher.add(m);
+        hasher.add(m.first).add(m.second);
 
     return hasher.hash();
 }
@@ -100,7 +100,7 @@ bool libquixcc::ir::q::UnionDef::verify_impl() const
             return false;
 
     for (auto &m : methods)
-        if (!m->verify())
+        if (!m.second->verify())
             return false;
 
     return true;

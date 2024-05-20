@@ -45,3 +45,6 @@ TODO
 libquixcc/test/src/test-suite.cc
 ct_*.json
 critical-points.txt
+parse.py
+data.json
+out.qh

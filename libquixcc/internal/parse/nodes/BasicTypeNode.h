@@ -45,25 +45,21 @@
 
 namespace libquixcc
 {
-    class MutTypeNode : public TypeNode
+    class ImmMutTypeNode : public TypeNode
     {
-        MutTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::MutTypeNode; }
-        static std::map<TypeNode *, MutTypeNode *> m_instances;
+        ImmMutTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::ImmMutTypeNode; }
+        static std::map<TypeNode *, ImmMutTypeNode *> m_instances;
 
     public:
-        static MutTypeNode *create(TypeNode *type)
+        static ImmMutTypeNode *create(TypeNode *type)
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);
 
             if (!m_instances.contains(type))
-                m_instances[type] = new MutTypeNode(type);
+                m_instances[type] = new ImmMutTypeNode(type);
             return m_instances[type];
         }
-
-        virtual size_t size(size_t ptr_size) const override { return m_type->size(ptr_size); }
-        virtual std::string to_source() const override { return "%" + m_type->to_source(); }
-        virtual std::string name() const { return m_type->name(); }
 
         TypeNode *m_type;
     };
@@ -83,9 +79,6 @@ namespace libquixcc
                 m_instance = new U8TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 1; }
-        virtual std::string to_source() const override { return "u8"; }
     };
 
     class U16TypeNode : public TypeNode
@@ -103,9 +96,6 @@ namespace libquixcc
                 m_instance = new U16TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 2; }
-        virtual std::string to_source() const override { return "u16"; }
     };
 
     class U32TypeNode : public TypeNode
@@ -123,9 +113,6 @@ namespace libquixcc
                 m_instance = new U32TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 4; }
-        virtual std::string to_source() const override { return "u32"; }
     };
 
     class U64TypeNode : public TypeNode
@@ -143,9 +130,6 @@ namespace libquixcc
                 m_instance = new U64TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 8; }
-        virtual std::string to_source() const override { return "u64"; }
     };
 
     class U128TypeNode : public TypeNode
@@ -163,9 +147,6 @@ namespace libquixcc
                 m_instance = new U128TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 8; }
-        virtual std::string to_source() const override { return "u128"; }
     };
 
     class I8TypeNode : public TypeNode
@@ -183,9 +164,6 @@ namespace libquixcc
                 m_instance = new I8TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 1; }
-        virtual std::string to_source() const override { return "i8"; }
     };
 
     class I16TypeNode : public TypeNode
@@ -203,9 +181,6 @@ namespace libquixcc
                 m_instance = new I16TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 2; }
-        virtual std::string to_source() const override { return "i16"; }
     };
 
     class I32TypeNode : public TypeNode
@@ -223,9 +198,6 @@ namespace libquixcc
                 m_instance = new I32TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 4; }
-        virtual std::string to_source() const override { return "i32"; }
     };
 
     class I64TypeNode : public TypeNode
@@ -243,9 +215,6 @@ namespace libquixcc
                 m_instance = new I64TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 8; }
-        virtual std::string to_source() const override { return "i64"; }
     };
 
     class I128TypeNode : public TypeNode
@@ -263,9 +232,6 @@ namespace libquixcc
                 m_instance = new I128TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 8; }
-        virtual std::string to_source() const override { return "i128"; }
     };
 
     class F32TypeNode : public TypeNode
@@ -283,9 +249,6 @@ namespace libquixcc
                 m_instance = new F32TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 4; }
-        virtual std::string to_source() const override { return "f32"; }
     };
 
     class F64TypeNode : public TypeNode
@@ -303,9 +266,6 @@ namespace libquixcc
                 m_instance = new F64TypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 8; }
-        virtual std::string to_source() const override { return "f64"; }
     };
 
     class BoolTypeNode : public TypeNode
@@ -323,9 +283,6 @@ namespace libquixcc
                 m_instance = new BoolTypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 1; }
-        virtual std::string to_source() const override { return "bool"; }
     };
 
     class VoidTypeNode : public TypeNode
@@ -343,9 +300,6 @@ namespace libquixcc
                 m_instance = new VoidTypeNode();
             return m_instance;
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 0; }
-        virtual std::string to_source() const override { return "void"; }
     };
 
     class PointerTypeNode : public TypeNode
@@ -363,10 +317,6 @@ namespace libquixcc
                 m_instances[type] = new PointerTypeNode(type);
             return m_instances[type];
         }
-
-        virtual size_t size(size_t ptr_size) const override { return ptr_size; }
-        virtual std::string to_source() const override { return "*" + m_type->to_source(); }
-        virtual std::string name() const { return m_type->name(); }
 
         TypeNode *m_type;
     };
@@ -386,10 +336,6 @@ namespace libquixcc
                 m_instances[name] = new OpaqueTypeNode(name);
             return m_instances[name];
         }
-
-        virtual size_t size(size_t ptr_size) const override { return 0; }
-        virtual std::string to_source() const override { return "opaque(" + m_name + ")"; }
-        virtual std::string name() const { return m_name; }
 
         std::string m_name;
     };

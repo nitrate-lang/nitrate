@@ -44,7 +44,7 @@ using namespace libquixcc;
 void libquixcc::mutate::ImplicitReturn(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(traversal::ParseTreeTraversalState(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, libquixcc::traversal::TraversePtr node)
+        [job](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, libquixcc::traversal::TraversePtr node)
         {
             if (node.first != traversal::TraversePtrType::Smart)
                 return;
@@ -54,7 +54,7 @@ void libquixcc::mutate::ImplicitReturn(quixcc_job_t *job, std::shared_ptr<libqui
 
             auto func = std::static_pointer_cast<libquixcc::FunctionDefNode>(ptr);
 
-            if (!func->m_decl->m_type->m_return_type->is_void())
+            if (!func->m_decl->m_type->m_return_type->is<VoidTypeNode>())
                 return;
 
             for (auto &stmt : func->m_body->m_stmts)

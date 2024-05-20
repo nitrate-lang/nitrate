@@ -79,7 +79,7 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
     std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> named_types_map;
 
     ast->dfs_preorder(traversal::ParseTreeTraversalState(
-        [&named_construct_map, job, &named_types_map](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+        [&named_construct_map, job, &named_types_map](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
             if (node.first != traversal::TraversePtrType::Smart)
                 return;
@@ -91,60 +91,60 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
             switch ((ptr)->ntype)
             {
             case NodeType::VarDeclNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::VarDeclNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::VarDeclNode>(ptr)->m_name);
                 break;
             case NodeType::LetDeclNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::LetDeclNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::LetDeclNode>(ptr)->m_name);
                 break;
             case NodeType::ConstDeclNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::ConstDeclNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::ConstDeclNode>(ptr)->m_name);
                 break;
             case NodeType::FunctionDeclNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::FunctionDeclNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::FunctionDeclNode>(ptr)->m_name);
                 break;
             case NodeType::StructDefNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::StructDefNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::StructDefNode>(ptr)->m_name);
                 is_type = true;
                 break;
             case NodeType::StructFieldNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::StructFieldNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::StructFieldNode>(ptr)->m_name);
                 break;
             case NodeType::RegionDefNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::RegionDefNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::RegionDefNode>(ptr)->m_name);
                 is_type = true;
                 break;
             case NodeType::RegionFieldNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::RegionFieldNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::RegionFieldNode>(ptr)->m_name);
                 break;
             case NodeType::GroupDefNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::GroupDefNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::GroupDefNode>(ptr)->m_name);
                 is_type = true;
                 break;
             case NodeType::GroupFieldNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::GroupFieldNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::GroupFieldNode>(ptr)->m_name);
                 break;
             case NodeType::UnionDefNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::UnionDefNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::UnionDefNode>(ptr)->m_name);
                 is_type = true;
                 break;
             case NodeType::UnionFieldNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::UnionFieldNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::UnionFieldNode>(ptr)->m_name);
                 break;
             case NodeType::EnumDefNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::EnumDefNode>(ptr)->m_type->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::EnumDefNode>(ptr)->m_type->m_name);
                 is_type = true;
                 break;
             case NodeType::EnumFieldNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::EnumFieldNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::EnumFieldNode>(ptr)->m_name);
                 break;
             case NodeType::FunctionParamNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::FunctionParamNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::FunctionParamNode>(ptr)->m_name);
                 break;
             case NodeType::SubsystemNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::SubsystemNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::SubsystemNode>(ptr)->m_name);
                 break;
             case NodeType::TypedefNode:
-                tmp = ConstructName(_namespace, std::static_pointer_cast<libquixcc::TypedefNode>(ptr)->m_name);
+                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::TypedefNode>(ptr)->m_name);
                 is_type = true;
                 break;
 

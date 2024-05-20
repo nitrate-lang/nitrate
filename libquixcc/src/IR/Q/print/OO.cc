@@ -49,8 +49,8 @@ bool libquixcc::ir::q::RegionDef::print_impl(std::ostream &os, libquixcc::ir::PS
 
     for (auto it = methods.begin(); it != methods.end(); ++it)
     {
-        os << std::string(state.ind, ' ');
-        if (!(*it)->print(os, state))
+        os << std::string(state.ind, ' ') << it->first << ": ";
+        if (!(*it).second->print(os, state))
             return false;
 
         os << ";\n";
@@ -81,8 +81,8 @@ bool libquixcc::ir::q::GroupDef::print_impl(std::ostream &os, libquixcc::ir::PSt
 
     for (auto it = methods.begin(); it != methods.end(); ++it)
     {
-        os << std::string(state.ind, ' ');
-        if (!(*it)->print(os, state))
+        os << std::string(state.ind, ' ') << it->first << ": ";
+        if (!(*it).second->print(os, state))
             return false;
 
         os << ";\n";
@@ -113,8 +113,8 @@ bool libquixcc::ir::q::UnionDef::print_impl(std::ostream &os, libquixcc::ir::PSt
 
     for (auto it = methods.begin(); it != methods.end(); ++it)
     {
-        os << std::string(state.ind, ' ');
-        if (!(*it)->print(os, state))
+        os << std::string(state.ind, ' ') << it->first << ": ";
+        if (!(*it).second->print(os, state))
             return false;
 
         os << ";\n";

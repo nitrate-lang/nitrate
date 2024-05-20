@@ -42,7 +42,7 @@
 
 namespace libquixcc
 {
-    typedef BlockNode AST;
+    typedef BlockNode Ptree;
 
     bool parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<BlockNode> &node, bool expect_braces = true);
     bool parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node);

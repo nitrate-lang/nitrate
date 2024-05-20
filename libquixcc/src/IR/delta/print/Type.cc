@@ -139,6 +139,8 @@ bool libquixcc::ir::delta::FType::print_impl(std::ostream &os, PState &state) co
             return false;
         if (i + 1 < params.size())
             os << ", ";
+        else if (variadic)
+            os << ", ...";
     }
     os << "]->";
     return ret->print(os, state);

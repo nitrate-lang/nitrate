@@ -119,9 +119,9 @@ static std::map<std::pair<std::string, std::vector<const Type *>>, const Region 
 static std::map<std::pair<std::string, std::vector<const Type *>>, const Group *> group_insts;
 static std::map<std::pair<std::string, std::vector<const Type *>>, const Union *> union_insts;
 static std::map<std::string, const Opaque *> opaque_insts;
-static std::map<std::tuple<std::string, std::vector<std::pair<std::string, const Value *>>, std::set<const libquixcc::ir::q::Segment *>>, const RegionDef *> regiondef_insts;
-static std::map<std::tuple<std::string, std::map<std::string, const Value *>, std::set<const libquixcc::ir::q::Segment *>>, const GroupDef *> groupdef_insts;
-static std::map<std::tuple<std::string, std::map<std::string, const Value *>, std::set<const libquixcc::ir::q::Segment *>>, const UnionDef *> uniondef_insts;
+static std::map<std::tuple<std::string, std::vector<std::pair<std::string, const Value *>>, std::map<std::string, const Segment *>>, const RegionDef *> regiondef_insts;
+static std::map<std::tuple<std::string, std::map<std::string, const Value *>, std::map<std::string, const Segment *>>, const GroupDef *> groupdef_insts;
+static std::map<std::tuple<std::string, std::map<std::string, const Value *>, std::map<std::string, const Segment *>>, const UnionDef *> uniondef_insts;
 static std::map<std::tuple<std::string, const Value *, const Value *>, const Local *> local_insts;
 static std::map<std::tuple<std::string, const Value *, const Value *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
@@ -129,6 +129,7 @@ static std::map<std::string, const String *> string_insts;
 static std::map<std::string, const Char *> char_insts;
 static std::map<std::vector<const Expr *>, const List *> list_insts;
 static std::map<std::pair<const Value *, const Value *>, const Assign *> assign_insts;
+static std::map<const Expr *, const AddressOf *> addressof_insts;
 static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *> member_insts;
 static std::map<std::tuple<const Value *, const Value *, const Type *>, const Index *> index_insts;
 
@@ -722,7 +723,7 @@ const libquixcc::ir::q::Opaque *libquixcc::ir::q::Opaque::create(std::string nam
     return opaque_insts[name];
 }
 
-const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::string name, std::vector<std::pair<std::string, const Value *>> fields, std::set<const libquixcc::ir::q::Segment *> methods)
+const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::string name, std::vector<std::pair<std::string, const Value *>> fields, std::map<std::string, const Segment *> methods)
 {
     lock(NodeType::RegionDef);
     auto key = std::make_tuple(name, fields, methods);
@@ -731,7 +732,7 @@ const libquixcc::ir::q::RegionDef *libquixcc::ir::q::RegionDef::create(std::stri
     return regiondef_insts[key];
 }
 
-const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string name, std::map<std::string, const Value *> fields, std::set<const libquixcc::ir::q::Segment *> methods)
+const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string name, std::map<std::string, const Value *> fields, std::map<std::string, const Segment *> methods)
 {
     lock(NodeType::GroupDef);
     auto key = std::make_tuple(name, fields, methods);
@@ -740,7 +741,7 @@ const libquixcc::ir::q::GroupDef *libquixcc::ir::q::GroupDef::create(std::string
     return groupdef_insts[key];
 }
 
-const libquixcc::ir::q::UnionDef *libquixcc::ir::q::UnionDef::create(std::string name, std::map<std::string, const Value *> fields, std::set<const libquixcc::ir::q::Segment *> methods)
+const libquixcc::ir::q::UnionDef *libquixcc::ir::q::UnionDef::create(std::string name, std::map<std::string, const Value *> fields, std::map<std::string, const Segment *> methods)
 {
     lock(NodeType::UnionDef);
     auto key = std::make_tuple(name, fields, methods);
@@ -806,6 +807,14 @@ const libquixcc::ir::q::Assign *libquixcc::ir::q::Assign::create(const Expr *lhs
     if (!assign_insts.contains(key))
         assign_insts[key] = new Assign(lhs, rhs);
     return assign_insts[key];
+}
+
+const libquixcc::ir::q::AddressOf *libquixcc::ir::q::AddressOf::create(const libquixcc::ir::q::Expr *lhs)
+{
+    lock(NodeType::AddressOf);
+    if (!addressof_insts.contains(lhs))
+        addressof_insts[lhs] = new AddressOf(lhs);
+    return addressof_insts[lhs];
 }
 
 const libquixcc::ir::q::Member *libquixcc::ir::q::Member::create(const libquixcc::ir::q::Value *lhs, size_t field, const Type *field_type)

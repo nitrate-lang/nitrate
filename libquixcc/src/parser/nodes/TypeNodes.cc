@@ -33,7 +33,7 @@
 
 #include <parse/nodes/AllNodes.h>
 
-std::map<libquixcc::TypeNode *, libquixcc::MutTypeNode *> libquixcc::MutTypeNode::m_instances;
+std::map<libquixcc::TypeNode *, libquixcc::ImmMutTypeNode *> libquixcc::ImmMutTypeNode::m_instances;
 libquixcc::U8TypeNode *libquixcc::U8TypeNode::m_instance = nullptr;
 libquixcc::U16TypeNode *libquixcc::U16TypeNode::m_instance = nullptr;
 libquixcc::U32TypeNode *libquixcc::U32TypeNode::m_instance = nullptr;
@@ -52,122 +52,10 @@ std::map<libquixcc::TypeNode *, libquixcc::PointerTypeNode *> libquixcc::Pointer
 std::map<std::string, libquixcc::OpaqueTypeNode *> libquixcc::OpaqueTypeNode::m_instances;
 libquixcc::StringTypeNode *libquixcc::StringTypeNode::m_instance = nullptr;
 std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::StructTypeNode *> libquixcc::StructTypeNode::m_instances;
+std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::GroupTypeNode *> libquixcc::GroupTypeNode::m_instances;
 std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::RegionTypeNode *> libquixcc::RegionTypeNode::m_instances;
 std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::UnionTypeNode *> libquixcc::UnionTypeNode::m_instances;
 thread_local std::map<std::pair<libquixcc::TypeNode *, std::shared_ptr<libquixcc::ConstExprNode>>, libquixcc::ArrayTypeNode *> libquixcc::ArrayTypeNode::m_instances;
 thread_local std::unordered_map<std::string, std::shared_ptr<libquixcc::UserTypeNode>> libquixcc::UserTypeNode::m_instances;
 std::map<libquixcc::FunctionTypeNode::Inner, libquixcc::FunctionTypeNode *> libquixcc::FunctionTypeNode::s_instances;
 std::map<std::pair<std::string, libquixcc::TypeNode *>, libquixcc::EnumTypeNode *> libquixcc::EnumTypeNode::m_instances;
-
-bool libquixcc::TypeNode::is_composite() const
-{
-    return is<StructTypeNode>() || is<RegionTypeNode>() || is<UnionTypeNode>();
-}
-
-bool libquixcc::TypeNode::is_primitive() const
-{
-    return is_integer() || is_floating() || is_void();
-}
-
-bool libquixcc::TypeNode::is_ptr() const
-{
-    return is<PointerTypeNode>();
-}
-
-bool libquixcc::TypeNode::is_array() const
-{
-    return is<ArrayTypeNode>();
-}
-
-bool libquixcc::TypeNode::is_func() const
-{
-    return is<FunctionTypeNode>();
-}
-
-bool libquixcc::TypeNode::is_void() const
-{
-    return is<VoidTypeNode>();
-}
-
-bool libquixcc::TypeNode::is_signed() const
-{
-    switch (ntype)
-    {
-    case NodeType::I8TypeNode:
-    case NodeType::I16TypeNode:
-    case NodeType::I32TypeNode:
-    case NodeType::I64TypeNode:
-        return true;
-    default:
-        return false;
-    }
-}
-
-bool libquixcc::TypeNode::is_integer() const
-{
-    switch (ntype)
-    {
-    case NodeType::U8TypeNode:
-    case NodeType::U16TypeNode:
-    case NodeType::U32TypeNode:
-    case NodeType::U64TypeNode:
-    case NodeType::I8TypeNode:
-    case NodeType::I16TypeNode:
-    case NodeType::I32TypeNode:
-    case NodeType::I64TypeNode:
-    case NodeType::BoolTypeNode:
-        return true;
-    default:
-        return false;
-    }
-}
-
-bool libquixcc::TypeNode::is_floating() const
-{
-    return is<F32TypeNode>() || is<F64TypeNode>();
-}
-
-bool libquixcc::TypeNode::is_bool() const
-{
-    return is<BoolTypeNode>();
-}
-
-std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> libquixcc::GroupDefNode::optimize_layout(const std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> &fields)
-{
-    /*
-     * A heuristic for optimizing the layout of a group's fields is to sort them in descending order of size.
-     * Downsides:
-     * - Does not take custom padding into account
-     * - Does not take alignment into account
-     * - Does not take bitfields into account
-     */
-    std::vector<std::shared_ptr<libquixcc::GroupFieldNode>> copy = fields;
-    size_t ptr_size = sizeof(void *);
-
-    std::sort(copy.begin(), copy.end(), [ptr_size](const std::shared_ptr<GroupFieldNode> &a, const std::shared_ptr<GroupFieldNode> &b)
-              { return a->m_type->size(ptr_size) > b->m_type->size(ptr_size); });
-
-    return copy;
-}
-
-std::shared_ptr<libquixcc::StructDefNode> libquixcc::GroupDefNode::to_struct_def() const
-{
-    std::vector<std::shared_ptr<libquixcc::StructFieldNode>> fields;
-    for (const auto &field : optimize_layout(m_fields))
-    {
-        fields.push_back(std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value));
-    }
-
-    return std::make_shared<libquixcc::StructDefNode>(m_name, fields);
-}
-
-std::shared_ptr<libquixcc::StructDefNode> libquixcc::RegionDefNode::to_struct_def() const
-{
-    std::vector<std::shared_ptr<libquixcc::StructFieldNode>> fields;
-    for (const auto &field : m_fields)
-    {
-        fields.push_back(std::make_shared<libquixcc::StructFieldNode>(field->m_name, field->m_type, field->m_value));
-    }
-
-    return std::make_shared<libquixcc::StructDefNode>(m_name, fields);
-}

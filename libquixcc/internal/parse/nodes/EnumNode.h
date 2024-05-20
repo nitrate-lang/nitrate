@@ -62,13 +62,6 @@ namespace libquixcc
             return m_instances[key];
         }
 
-        virtual size_t size(size_t ptr_size) const override { return m_member_type->size(ptr_size); }
-        virtual std::string to_source() const override
-        {
-            return "enum {" + m_member_type->to_source() + "}";
-        }
-        virtual std::string name() const override { return m_name; }
-
         std::string m_name;
         TypeNode *m_member_type;
     };

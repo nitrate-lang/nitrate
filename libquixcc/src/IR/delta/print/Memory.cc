@@ -52,6 +52,16 @@ bool libquixcc::ir::delta::Assign::print_impl(std::ostream &os, PState &state) c
     return true;
 }
 
+bool libquixcc::ir::delta::AddressOf::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "(&";
+    if (!lhs->print(os, state))
+        return false;
+    os << ")";
+
+    return true;
+}
+
 bool libquixcc::ir::delta::Member::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "(";
@@ -60,20 +70,6 @@ bool libquixcc::ir::delta::Member::print_impl(std::ostream &os, libquixcc::ir::P
 
     os << "." << field;
 
-    os << ")";
-
-    return true;
-
-}
-
-bool libquixcc::ir::delta::Load::print_impl(std::ostream &os, PState &state) const
-{
-    os << "(";
-    for (uint64_t i = 0; i < rank; i++)
-        os << "*";
-
-    if (!var->print(os, state))
-        return false;
     os << ")";
 
     return true;

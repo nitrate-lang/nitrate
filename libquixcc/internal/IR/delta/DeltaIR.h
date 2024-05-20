@@ -81,8 +81,8 @@ namespace libquixcc
 
                 /* Memory */
                 Assign,
+                AddressOf,
                 Member,
-                Load,
                 Index,
                 Ident,
 

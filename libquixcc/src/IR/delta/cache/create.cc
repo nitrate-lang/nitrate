@@ -57,7 +57,7 @@ static std::map<std::pair<const Value *, const Value *>, const While *> while_in
 static std::map<std::string, const Jmp *> jmp_insts;
 static std::map<std::pair<std::string, const Value *>, const Label *> label_insts;
 static std::map<const Value *, const Ret *> ret_insts;
-static std::map<std::pair<std::string, std::vector<const Expr *>>, const Call *> call_insts;
+static std::map<std::tuple<std::string, std::vector<const Expr *>, const FType *>, const Call *> call_insts;
 static std::map<std::pair<const Value *, std::vector<const Expr *>>, const PtrCall *> ptrcall_insts;
 static Halt *halt_inst = nullptr;
 static std::map<std::pair<const Value *, const Value *>, const Add *> add_insts;
@@ -68,7 +68,7 @@ static std::map<std::pair<const Value *, const Value *>, const Mod *> mod_insts;
 static std::map<std::pair<const Value *, const Value *>, const BitAnd *> bitand_insts;
 static std::map<std::pair<const Value *, const Value *>, const BitOr *> bitor_insts;
 static std::map<std::pair<const Value *, const Value *>, const BitXor *> bitxor_insts;
-static std::map<const Value *, const BitNot *> bitnot_insts;
+static std::map<const Expr *, const BitNot *> bitnot_insts;
 static std::map<std::pair<const Value *, const Value *>, const Shl *> shl_insts;
 static std::map<std::pair<const Value *, const Value *>, const Shr *> shr_insts;
 static std::map<std::pair<const Value *, const Value *>, const Rotl *> rotl_insts;
@@ -84,9 +84,9 @@ static std::map<std::pair<const Value *, const Value *>, const Or *> or_insts;
 static std::map<const Value *, const Not *> not_insts;
 static std::map<std::pair<const Value *, const Value *>, const Xor *> xor_insts;
 static std::map<std::tuple<const Value *, const Value *, uint64_t>, const Assign *> assign_insts;
+static std::map<const Expr *, const AddressOf *> addressof_insts;
 static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *> member_insts;
-static std::map<std::pair<const Value *, uint64_t>, const Load *> load_insts;
-static std::map<std::pair<const Value *, const Value *>, const Index *> index_insts;
+static std::map<std::tuple<const Value *, const Value *, const Type *>, const Index *> index_insts;
 static std::map<std::vector<const Value *>, const Block *> block_insts;
 static std::map<std::tuple<const Type *, bool, const std::vector<std::pair<std::string, const Type *>>, const Block *>, const Segment *> segment_insts;
 static I1 *i1_inst = nullptr;
@@ -106,7 +106,7 @@ static Void *void_inst = nullptr;
 static std::map<const Type *, const Ptr *> ptr_insts;
 static std::map<std::pair<std::string, std::vector<std::pair<std::string, const Type *>>>, const Packet *> packet_insts;
 static std::map<std::pair<const Type *, uint64_t>, const Array *> array_insts;
-static std::map<std::pair<std::vector<const Type *>, const Type *>, const FType *> ftype_insts;
+static std::map<std::tuple<std::vector<const Type *>, const Type *, bool>, const FType *> ftype_insts;
 static std::map<std::tuple<std::string, const Value *, const Value *>, const Local *> local_insts;
 static std::map<std::tuple<std::string, const Value *, const Value *, bool, bool, bool>, const Global *> global_insts;
 static std::map<std::string, const Number *> number_insts;
@@ -213,12 +213,12 @@ const delta::Ret *delta::Ret::create(const Expr *value)
     return ret_insts[value];
 }
 
-const delta::Call *delta::Call::create(std::string callee, std::vector<const Expr *> args)
+const delta::Call *delta::Call::create(std::string callee, std::vector<const Expr *> args, const FType *ftype)
 {
     lock(NodeType::Call);
-    auto key = std::make_pair(callee, args);
+    auto key = std::make_tuple(callee, args, ftype);
     if (!call_insts.contains(key))
-        call_insts[key] = new Call(callee, args);
+        call_insts[key] = new Call(callee, args, ftype);
     return call_insts[key];
 }
 
@@ -311,7 +311,7 @@ const delta::BitXor *delta::BitXor::create(const Expr *lhs, const Expr *rhs)
     return bitxor_insts[key];
 }
 
-const delta::BitNot *delta::BitNot::create(const Value *value)
+const delta::BitNot *delta::BitNot::create(const Expr *value)
 {
     lock(NodeType::BitNot);
     if (!bitnot_insts.contains(value))
@@ -453,6 +453,14 @@ const delta::Assign *delta::Assign::create(const Expr *var, const Expr *value, u
     return assign_insts[key];
 }
 
+const libquixcc::ir::delta::AddressOf *libquixcc::ir::delta::AddressOf::create(const libquixcc::ir::delta::Expr *lhs)
+{
+    lock(NodeType::AddressOf);
+    if (!addressof_insts.contains(lhs))
+        addressof_insts[lhs] = new AddressOf(lhs);
+    return addressof_insts[lhs];
+}
+
 const delta::Member *delta::Member::create(const delta::Expr *lhs, size_t field, const delta::Type *field_type)
 {
     lock(NodeType::Member);
@@ -462,21 +470,12 @@ const delta::Member *delta::Member::create(const delta::Expr *lhs, size_t field,
     return member_insts[key];
 }
 
-const delta::Load *delta::Load::create(const Expr *var, uint64_t rank)
-{
-    lock(NodeType::Load);
-    auto key = std::make_pair(var, rank);
-    if (!load_insts.contains(key))
-        load_insts[key] = new Load(var, rank);
-    return load_insts[key];
-}
-
-const delta::Index *delta::Index::create(const Expr *var, const Expr *index)
+const delta::Index *delta::Index::create(const Expr *var, const Expr *index, const Type *type)
 {
     lock(NodeType::Index);
-    auto key = std::make_pair(var, index);
+    auto key = std::make_tuple(var, index, type);
     if (!index_insts.contains(key))
-        index_insts[key] = new Index(var, index);
+        index_insts[key] = new Index(var, index, type);
     return index_insts[key];
 }
 
@@ -635,12 +634,12 @@ const delta::Array *delta::Array::create(const Type *type, uint64_t size)
     return array_insts[key];
 }
 
-const delta::FType *delta::FType::create(std::vector<const Type *> params, const Type *ret)
+const delta::FType *delta::FType::create(std::vector<const Type *> params, const Type *ret, bool variadic)
 {
     lock(NodeType::FType);
-    auto key = std::make_pair(params, ret);
+    auto key = std::make_tuple(params, ret, variadic);
     if (!ftype_insts.contains(key))
-        ftype_insts[key] = new FType(params, ret);
+        ftype_insts[key] = new FType(params, ret, variadic);
     return ftype_insts[key];
 }
 

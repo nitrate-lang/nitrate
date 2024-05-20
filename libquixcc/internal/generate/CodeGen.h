@@ -119,8 +119,8 @@ namespace libquixcc
         llvm::Value *gen(const ir::delta::List *node);
         llvm::Value *gen(const ir::delta::Ident *node);
         llvm::Value *gen(const ir::delta::Assign *node);
+        llvm::Value *gen(const ir::delta::AddressOf *node);
         llvm::Value *gen(const ir::delta::Member *node);
-        llvm::Value *gen(const ir::delta::Load *node);
         llvm::Value *gen(const ir::delta::Index *node);
         llvm::Value *gen(const ir::delta::SCast *node);
         llvm::Value *gen(const ir::delta::UCast *node);

@@ -46,12 +46,35 @@
 
 namespace libquixcc
 {
+    class GroupTypeNode : public TypeNode
+    {
+        GroupTypeNode(std::vector<TypeNode *> fields, const std::string &name) : m_fields(fields), m_name(name) { ntype = NodeType::GroupTypeNode; }
+        static std::map<std::pair<std::vector<TypeNode *>, std::string>, GroupTypeNode *> m_instances;
+
+    public:
+        static GroupTypeNode *create(const std::vector<TypeNode *> &fields, const std::string &name = "")
+        {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
+            auto key = std::make_pair(fields, name);
+            if (m_instances.contains(key))
+                return m_instances[key];
+            auto instance = new GroupTypeNode(fields, name);
+            instance->m_fields = fields;
+            m_instances[key] = instance;
+            return instance;
+        }
+
+        std::vector<TypeNode *> m_fields;
+        std::string m_name;
+    };
+
     class GroupFieldNode : public ParseNode
     {
     public:
         GroupFieldNode() { ntype = NodeType::GroupFieldNode; }
         GroupFieldNode(const std::string &name, TypeNode *type, std::shared_ptr<ConstExprNode> value = nullptr) : m_name(name), m_type(type), m_value(value) { ntype = NodeType::GroupFieldNode; }
-
 
         std::string m_name;
         TypeNode *m_type;
@@ -60,32 +83,25 @@ namespace libquixcc
 
     class GroupDefNode : public DefNode
     {
-        std::vector<std::shared_ptr<GroupFieldNode>> m_fields;
-        static std::vector<std::shared_ptr<GroupFieldNode>> optimize_layout(const std::vector<std::shared_ptr<GroupFieldNode>> &fields);
-
     public:
+        GroupDefNode() { ntype = NodeType::GroupDefNode; }
         GroupDefNode(const std::string &name, const std::vector<std::shared_ptr<GroupFieldNode>> &fields) : m_name(name)
         {
             ntype = NodeType::GroupDefNode;
-            m_fields = optimize_layout(fields);
         }
 
-        static std::vector<std::shared_ptr<GroupFieldNode>> group_optimize(const std::vector<std::shared_ptr<GroupFieldNode>> &fields);
-        const std::vector<std::shared_ptr<GroupFieldNode>> &get_fields() const { return m_fields; }
-        std::vector<std::shared_ptr<GroupFieldNode>> &get_fields_mut() { return m_fields; }
-
-        virtual StructTypeNode *get_type() const
+        virtual GroupTypeNode *get_type() const
         {
             std::vector<TypeNode *> types;
-            for (auto &field : optimize_layout(m_fields))
+            for (auto &field : m_fields)
                 types.push_back(field->m_type);
-
-            return StructTypeNode::create(types, m_name);
+            return GroupTypeNode::create(types, m_name);
         }
 
-        std::shared_ptr<StructDefNode> to_struct_def() const;
-
         std::string m_name;
+        std::vector<std::shared_ptr<GroupFieldNode>> m_fields;
+        std::vector<std::shared_ptr<StmtNode>> m_methods;
+        std::vector<std::shared_ptr<StmtNode>> m_static_methods;
     };
 }
 

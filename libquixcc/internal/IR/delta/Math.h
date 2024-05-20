@@ -56,6 +56,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Add *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -75,6 +76,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Sub *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -94,6 +96,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Mul *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -113,6 +116,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Div *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -132,6 +136,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Mod *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -151,6 +156,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const BitAnd *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -170,6 +176,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const BitOr *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -189,6 +196,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const BitXor *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -201,15 +209,16 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        BitNot(const Value *operand) : operand(operand)
+        BitNot(const Expr *operand) : operand(operand)
         {
             ntype = (int)NodeType::BitNot;
         }
 
     public:
-        static const BitNot *create(const Value *operand);
+        static const BitNot *create(const Expr *operand);
+        const Type *infer() const override;
 
-        const Value *operand;
+        const Expr *operand;
     };
 
     class Shl : public Expr
@@ -226,6 +235,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Shl *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -245,6 +255,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Shr *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -264,6 +275,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Rotl *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -283,6 +295,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Rotr *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -302,6 +315,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Eq *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -321,6 +335,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Ne *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -340,6 +355,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Lt *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -359,6 +375,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Gt *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -378,6 +395,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Le *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -397,6 +415,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Ge *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -416,6 +435,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const And *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -435,6 +455,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Or *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;
@@ -454,6 +475,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Not *create(const Value *operand);
+        const Type *infer() const override;
 
         const Value *operand;
     };
@@ -472,6 +494,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Xor *create(const Expr *lhs, const Expr *rhs);
+        const Type *infer() const override;
 
         const Expr *lhs;
         const Expr *rhs;

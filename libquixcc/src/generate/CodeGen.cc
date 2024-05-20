@@ -122,7 +122,11 @@ llvm::Type *libquixcc::LLVM14Codegen::gen(const ir::delta::Void *node)
 
 llvm::PointerType *libquixcc::LLVM14Codegen::gen(const ir::delta::Ptr *node)
 {
-    return llvm::PointerType::get(gent(node->type), 0);
+    auto type = gent(node->type);
+    if (type->isVoidTy())
+        return llvm::PointerType::get(llvm::Type::getInt8Ty(*m_ctx->m_ctx), 0);
+    else
+        return llvm::PointerType::get(type, 0);
 }
 
 llvm::StructType *libquixcc::LLVM14Codegen::gen(const ir::delta::Packet *node)
@@ -151,7 +155,7 @@ llvm::FunctionType *libquixcc::LLVM14Codegen::gen(const ir::delta::FType *node)
     for (auto &param : node->params)
         types.push_back(gent(param));
 
-    return llvm::FunctionType::get(gent(node->ret), types, false);
+    return llvm::FunctionType::get(gent(node->ret), types, node->variadic);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Local *node)
@@ -181,6 +185,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Global *node)
     if (node->value && node->value->is<Segment>())
     {
         m_state.name = node->name;
+
         auto segment = node->value->as<Segment>();
         llvm::Function *func = gen(segment);
         m_state.name.clear();
@@ -293,10 +298,10 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ident *node)
         {
             auto v = m_state.params.top()[node->name];
             auto t = m_state.params.top()[node->name]->getType();
-            if (m_state.m_deref)
-                return m_ctx->m_builder->CreateLoad(t, v);
-            else
-                return v;
+            // if (m_state.m_deref)
+            //     return m_ctx->m_builder->CreateLoad(t, v);
+            // else
+            return v;
         }
 
         if (m_state.locals.top().contains(node->name))
@@ -343,6 +348,16 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Assign *node)
     return v;
 }
 
+llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::AddressOf *node)
+{
+    bool old = m_state.m_deref;
+    m_state.m_deref = false;
+    auto ptr = gen(node->lhs);
+    m_state.m_deref = old;
+
+    return ptr;
+}
+
 llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Member *node)
 {
     bool old = m_state.m_deref;
@@ -370,16 +385,6 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Member *n
         return eptr;
 }
 
-llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Load *node)
-{
-    auto ptr = gen(node->var);
-
-    for (size_t i = 0; i < node->rank + 1; i++)
-        ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
-
-    return ptr;
-}
-
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
 {
     bool old = m_state.m_deref;
@@ -403,11 +408,8 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
     {
         auto t = e->getType()->getPointerElementType();
 
-        t->dump();
         auto zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), 0);
         llvm::Value *v = m_ctx->m_builder->CreateGEP(t, e, {zero, i});
-
-        v->getType()->dump();
 
         if (m_state.m_deref)
             return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
@@ -579,11 +581,13 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Call *node)
     for (auto &arg : node->args)
         args.push_back(gen(arg));
 
-    auto callee = m_ctx->m_module->getFunction(node->callee);
+    llvm::FunctionType *ft = static_cast<llvm::FunctionType *>(gent(node->ftype));
+
+    llvm::Value *callee = m_ctx->m_module->getOrInsertFunction(node->callee, ft).getCallee();
     if (!callee)
         throw std::runtime_error("Codegen failed: Function not found: " + node->callee);
 
-    return m_ctx->m_builder->CreateCall(callee, args);
+    return m_ctx->m_builder->CreateCall(ft, callee, args);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::PtrCall *node)
@@ -613,10 +617,17 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
     llvm::FunctionType *ftype = llvm::FunctionType::get(gent(node->ret), types, node->variadic);
     llvm::Function *func;
 
-    if (m_state.m_pub)
-        func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, m_state.name, m_ctx->m_module.get());
+    if (!m_ctx->m_module->getFunction(m_state.name))
+    {
+        if (m_state.m_pub)
+            func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, m_state.name, m_ctx->m_module.get());
+        else
+            func = llvm::Function::Create(ftype, llvm::Function::InternalLinkage, m_state.name, m_ctx->m_module.get());
+    }
     else
-        func = llvm::Function::Create(ftype, llvm::Function::InternalLinkage, m_state.name, m_ctx->m_module.get());
+    {
+        func = m_ctx->m_module->getFunction(m_state.name);
+    }
 
     if (node->block)
     {
@@ -865,8 +876,8 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
     match(List);
     match(Ident);
     match(Assign);
+    match(AddressOf);
     match(Member);
-    match(Load);
     match(Index);
     match(SCast);
     match(UCast);

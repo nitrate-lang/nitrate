@@ -52,7 +52,7 @@ static std::string join_ns(const std::vector<std::string> &ns)
 static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(traversal::ParseTreeTraversalState(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+        [job](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
             if (node.first != traversal::TraversePtrType::Raw)
                 return;
@@ -66,14 +66,14 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
             std::string name = user_type->m_name;
             std::shared_ptr<libquixcc::ParseNode> named_type;
 
-            if (!job->m_inner.m_named_types.contains(user_type->m_name) && _namespace.empty())
+            if (!job->m_inner.m_named_types.contains(user_type->m_name) && _scope.empty())
             {
                 LOG(ERROR) << feedback[UNRESOLVED_TYPE] << user_type->m_name << std::endl;
                 return;
             }
             else if (!job->m_inner.m_named_types.contains(user_type->m_name))
             {
-                std::vector<std::string> tmp = _namespace;
+                std::vector<std::string> tmp = _scope;
 
                 while (!tmp.empty())
                 {
@@ -135,7 +135,7 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
 static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(traversal::ParseTreeTraversalState(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+        [job](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
             if (node.first != traversal::TraversePtrType::Smart)
                 return;
@@ -159,7 +159,7 @@ static void resolve_enum_values(quixcc_job_t *job, std::shared_ptr<libquixcc::Bl
 static void resolve_function_decls_to_calls(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
     ast->dfs_preorder(traversal::ParseTreeTraversalState(
-        [job](const std::vector<std::string> &_namespace, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+        [job](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
             if (node.first != traversal::TraversePtrType::Smart)
                 return;
@@ -170,7 +170,7 @@ static void resolve_function_decls_to_calls(quixcc_job_t *job, std::shared_ptr<l
 
             auto expr = std::static_pointer_cast<libquixcc::CallExprNode>(ptr);
 
-            std::vector<std::string> tmp = _namespace;
+            std::vector<std::string> tmp = _scope;
 
             while (!tmp.empty())
             {

@@ -89,7 +89,7 @@ bool libquixcc::ir::delta::Ret::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::delta::Call::hash_impl() const
 {
-    auto h = Hasher().gettag().add(callee);
+    auto h = Hasher().gettag().add(callee).add(ftype);
     for (auto arg : args)
     {
         h.add(arg);
@@ -105,6 +105,9 @@ bool libquixcc::ir::delta::Call::verify_impl() const
         if (!arg->verify())
             return false;
     }
+
+    if (!ftype->verify())
+        return false;
 
     return true;
 }

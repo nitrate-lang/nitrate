@@ -55,6 +55,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Ident *create(std::string name, const Type *type);
+        const Type *infer() const override;
 
         std::string name;
         const Type *type;

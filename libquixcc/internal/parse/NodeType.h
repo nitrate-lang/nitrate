@@ -77,7 +77,7 @@ namespace libquixcc
 
         IdentifierNode,
 
-        MutTypeNode,
+        ImmMutTypeNode,
         U8TypeNode,
         U16TypeNode,
         U32TypeNode,
@@ -98,6 +98,7 @@ namespace libquixcc
 
         EnumTypeNode,
         StructTypeNode,
+        GroupTypeNode,
         RegionTypeNode,
         UnionTypeNode,
         ArrayTypeNode,
@@ -174,7 +175,7 @@ namespace libquixcc
     class ConstUnaryExprNode;
     class ConstBinaryExprNode;
     class IdentifierNode;
-    class MutTypeNode;
+    class ImmMutTypeNode;
     class U8TypeNode;
     class U16TypeNode;
     class U32TypeNode;
@@ -194,6 +195,7 @@ namespace libquixcc
     class StringTypeNode;
     class EnumTypeNode;
     class StructTypeNode;
+    class GroupTypeNode;
     class RegionTypeNode;
     class UnionTypeNode;
     class ArrayTypeNode;

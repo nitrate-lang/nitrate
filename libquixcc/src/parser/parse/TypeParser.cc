@@ -172,9 +172,9 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
         *node = PointerTypeNode::create(type);
         return true;
     }
-    else if (tok.is<Operator>(Operator::Modulo))
+    else if (tok.is<Operator>(Operator::LogicalNot))
     {
-        // '%' means mutability
+        // ! means immutability
         TypeNode *type;
         if (!parse_type(job, scanner, &type))
         {
@@ -182,7 +182,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             return false;
         }
 
-        *node = MutTypeNode::create(type);
+        *node = ImmMutTypeNode::create(type);
         return true;
     }
     else

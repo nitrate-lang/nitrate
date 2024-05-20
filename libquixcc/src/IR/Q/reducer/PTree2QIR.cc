@@ -125,7 +125,7 @@ static auto conv(const IndexNode *n, QState &state) -> QResult;
 static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult;
 static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult;
 static auto conv(const IdentifierNode *n, QState &state) -> QResult;
-static auto conv(const MutTypeNode *n, QState &state) -> QResult;
+static auto conv(const ImmMutTypeNode *n, QState &state) -> QResult;
 static auto conv(const U8TypeNode *n, QState &state) -> QResult;
 static auto conv(const U16TypeNode *n, QState &state) -> QResult;
 static auto conv(const U32TypeNode *n, QState &state) -> QResult;
@@ -145,6 +145,7 @@ static auto conv(const OpaqueTypeNode *n, QState &state) -> QResult;
 static auto conv(const StringTypeNode *n, QState &state) -> QResult;
 static auto conv(const EnumTypeNode *n, QState &state) -> QResult;
 static auto conv(const StructTypeNode *n, QState &state) -> QResult;
+static auto conv(const GroupTypeNode *n, QState &state) -> QResult;
 static auto conv(const RegionTypeNode *n, QState &state) -> QResult;
 static auto conv(const UnionTypeNode *n, QState &state) -> QResult;
 static auto conv(const ArrayTypeNode *n, QState &state) -> QResult;
@@ -311,6 +312,8 @@ static auto conv(const UnaryExprNode *n, QState &state) -> QResult
         return Assign::create(e, Add::create(e, UCast::create(e->infer(), Number::create("1"))));
     case Operator::Decrement:
         return Assign::create(e, Sub::create(e, UCast::create(e->infer(), Number::create("1"))));
+    case Operator::BitwiseAnd:
+        return AddressOf::create(e);
     default:
         throw std::runtime_error("UnaryExprNode not implemented");
     }
@@ -598,7 +601,7 @@ static auto conv(const MemberAccessNode *n, QState &state) -> QResult
         if (!state.typedefs.contains(x->name))
             throw std::runtime_error("QIR translation: MemberAccessNode not found");
 
-        auto def = state.typedefs[x->name]->as<StructDefNode>();
+        auto def = state.typedefs[x->name]->as<GroupDefNode>();
         for (size_t i = 0; i < def->m_fields.size(); i++)
         {
             if (def->m_fields[i]->m_name == n->m_field)
@@ -730,7 +733,7 @@ static auto conv(const IdentifierNode *n, QState &state) -> QResult
     return Ident::create(n->m_name, state.global_idents[n->m_name]);
 }
 
-static auto conv(const MutTypeNode *n, QState &state) -> QResult
+static auto conv(const ImmMutTypeNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
 }
@@ -832,6 +835,15 @@ static auto conv(const StructTypeNode *n, QState &state) -> QResult
         fields.push_back(conv(field, state)[0]->as<Type>());
 
     return Region::create(n->m_name, fields);
+}
+
+static auto conv(const libquixcc::GroupTypeNode *n, QState &state) -> QResult
+{
+    std::vector<const Type *> fields;
+    for (auto &field : n->m_fields)
+        fields.push_back(conv(field, state)[0]->as<Type>());
+
+    return Group::create(n->m_name, fields);
 }
 
 static auto conv(const RegionTypeNode *n, QState &state) -> QResult
@@ -983,23 +995,43 @@ static auto create_defaults(const libquixcc::ir::q::Value *var, libquixcc::TypeN
     }
 }
 
+static bool is_composite(const TypeNode *n)
+{
+    switch (n->ntype)
+    {
+    case libquixcc::NodeType::StructTypeNode:
+    case libquixcc::NodeType::GroupTypeNode:
+    case libquixcc::NodeType::RegionTypeNode:
+    case libquixcc::NodeType::UnionTypeNode:
+        return true;
+    default:
+        return false;
+    }
+}
+
 static auto conv(const LetDeclNode *n, QState &state) -> QResult
 {
     if (state.inside_segment)
     {
-        auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
+        const Expr *init = nullptr;
+
+        if (n->m_init)
+            init = conv(n->m_init.get(), state)[0]->as<Expr>();
+
         const Type *type = nullptr;
         if (n->m_type)
             type = conv(n->m_type, state)[0]->as<Type>();
-        else
+        else if (init)
             type = init->infer();
+        else
+            throw std::runtime_error("QIR translation: LetDeclNode is malformed");
 
         auto l = Local::create(n->m_name, type, init);
         state.local_idents.top()[n->m_name] = l->type;
         std::vector<QValue> res = {l};
         auto ident = Ident::create(n->m_name, l->type);
 
-        if (l->type == nullptr && n->m_type && n->m_type->is_composite())
+        if (l->type == nullptr && n->m_type && is_composite(n->m_type))
         {
             auto defaults = create_defaults(ident, n->m_type, state);
             for (auto &d : defaults)
@@ -1087,16 +1119,13 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
     const Global *g = nullptr;
     std::string mangled;
 
-    g = Global::create(n->m_name,
-                       FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
-                                     false, false, false, false, false),
+    g = Global::create(n->m_name, seg->infer(),
                        seg, false, false, true);
 
     if (n->m_name == "main")
     {
         g = Global::create(mangled = Symbol::mangle(g, "", ExportLangType::C),
-                           FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
-                                         false, false, false, false, false),
+                           seg->infer(),
                            seg, false, false, true);
     }
     else
@@ -1104,16 +1133,12 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
         if (state.lang == ExportLangType::None)
         {
             g = Global::create(mangled = Symbol::mangle(g, "", ExportLangType::Default),
-                               FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
-                                             false, false, false, false, false),
-                               seg, false, false, false);
+                               seg->infer(), seg, false, false, false);
         }
         else
         {
             g = Global::create(mangled = Symbol::mangle(g, "", state.lang),
-                               FType::create({}, conv(n->m_type->m_return_type, state)[0]->as<Type>(),
-                                             false, false, false, false, false),
-                               seg, false, false, true);
+                               seg->infer(), seg, false, false, true);
         }
     }
 
@@ -1126,8 +1151,9 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
 static auto conv(const StructDefNode *n, QState &state) -> QResult
 {
     std::vector<std::pair<std::string, QValue>> fields;
-    std::set<const Segment *> methods;
+    std::map<std::string, const Segment *> methods;
 
+    state.typedefs[n->m_name] = n;
     for (auto &field : n->m_fields)
     {
         auto res = conv(field.get(), state);
@@ -1136,20 +1162,32 @@ static auto conv(const StructDefNode *n, QState &state) -> QResult
 
     for (auto &method : n->m_methods)
     {
-        auto res = conv(method.get(), state);
-        methods.insert(res[0]->as<Segment>());
+        auto res = conv(method.get(), state)[0]->as<Global>();
+        methods[res->name] = res->value->as<Segment>();
     }
 
     std::vector<QValue> result;
     result.push_back(RegionDef::create(n->m_name, fields, methods));
 
-    for (auto &static_method : n->m_static_methods)
+    for (auto static_method : n->m_static_methods)
     {
-        auto res = conv(static_method.get(), state);
+        std::shared_ptr<StmtNode> clone;
+        if (static_method->is<FunctionDeclNode>())
+        {
+            clone = std::make_shared<FunctionDeclNode>(*static_method->as<FunctionDeclNode>());
+            auto x = std::static_pointer_cast<FunctionDeclNode>(clone);
+            x->m_name = n->m_name + "::" + x->m_name;
+        }
+        else if (static_method->is<FunctionDefNode>())
+        {
+            clone = std::make_shared<FunctionDefNode>(*static_method->as<FunctionDefNode>());
+            auto x = std::static_pointer_cast<FunctionDefNode>(clone);
+            x->m_decl->m_name = n->m_name + "::" + x->m_decl->m_name;
+        }
+
+        auto res = conv(clone.get(), state);
         result.insert(result.end(), res.begin(), res.end());
     }
-
-    state.typedefs[n->m_name] = n;
 
     return result;
 }
@@ -1162,15 +1200,45 @@ static auto conv(const StructFieldNode *n, QState &state) -> QResult
 static auto conv(const RegionDefNode *n, QState &state) -> QResult
 {
     std::vector<std::pair<std::string, QValue>> fields;
+    std::map<std::string, const Segment *> methods;
 
+    state.typedefs[n->m_name] = n;
     for (auto &field : n->m_fields)
     {
         auto res = conv(field.get(), state);
         fields.push_back({field->m_name, res[0]});
     }
 
-    state.typedefs[n->m_name] = n;
-    return RegionDef::create(n->m_name, fields, {});
+    for (auto &method : n->m_methods)
+    {
+        auto res = conv(method.get(), state)[0]->as<Global>();
+        methods[res->name] = res->value->as<Segment>();
+    }
+
+    std::vector<QValue> result;
+    result.push_back(RegionDef::create(n->m_name, fields, methods));
+
+    for (auto &static_method : n->m_static_methods)
+    {
+        std::shared_ptr<StmtNode> clone;
+        if (static_method->is<FunctionDeclNode>())
+        {
+            clone = std::make_shared<FunctionDeclNode>(*static_method->as<FunctionDeclNode>());
+            auto x = std::static_pointer_cast<FunctionDeclNode>(clone);
+            x->m_name = n->m_name + "::" + x->m_name;
+        }
+        else if (static_method->is<FunctionDefNode>())
+        {
+            clone = std::make_shared<FunctionDefNode>(*static_method->as<FunctionDefNode>());
+            auto x = std::static_pointer_cast<FunctionDefNode>(clone);
+            x->m_decl->m_name = n->m_name + "::" + x->m_decl->m_name;
+        }
+
+        auto res = conv(clone.get(), state);
+        result.insert(result.end(), res.begin(), res.end());
+    }
+
+    return result;
 }
 
 static auto conv(const RegionFieldNode *n, QState &state) -> QResult
@@ -1180,28 +1248,46 @@ static auto conv(const RegionFieldNode *n, QState &state) -> QResult
 
 static auto conv(const GroupDefNode *n, QState &state) -> QResult
 {
-    /// TODO: fix memory leak
-    static std::set<std::shared_ptr<StructDefNode>> groups;
-
-    auto st = n->to_struct_def();
     std::map<std::string, QValue> fields;
-    std::set<const Segment *> methods;
+    std::map<std::string, const Segment *> methods;
 
-    for (auto &field : st->m_fields)
+    state.typedefs[n->m_name] = n;
+    for (auto &field : n->m_fields)
     {
         auto res = conv(field.get(), state);
-        fields.insert({field->m_name, res[0]});
+        fields[field->m_name] = res[0];
     }
 
-    for (auto &method : st->m_methods)
+    for (auto &method : n->m_methods)
     {
-        auto res = conv(method.get(), state);
-        methods.insert(res[0]->as<Segment>());
+        auto res = conv(method.get(), state)[0]->as<Global>();
+        methods[res->name] = res->value->as<Segment>();
     }
 
-    groups.insert(st);
-    state.typedefs[n->m_name] = st.get();
-    return GroupDef::create(st->m_name, fields, methods);
+    std::vector<QValue> result;
+    result.push_back(GroupDef::create(n->m_name, fields, methods));
+
+    for (auto &static_method : n->m_static_methods)
+    {
+        std::shared_ptr<StmtNode> clone;
+        if (static_method->is<FunctionDeclNode>())
+        {
+            clone = std::make_shared<FunctionDeclNode>(*static_method->as<FunctionDeclNode>());
+            auto x = std::static_pointer_cast<FunctionDeclNode>(clone);
+            x->m_name = n->m_name + "::" + x->m_name;
+        }
+        else if (static_method->is<FunctionDefNode>())
+        {
+            clone = std::make_shared<FunctionDefNode>(*static_method->as<FunctionDefNode>());
+            auto x = std::static_pointer_cast<FunctionDefNode>(clone);
+            x->m_decl->m_name = n->m_name + "::" + x->m_decl->m_name;
+        }
+
+        auto res = conv(clone.get(), state);
+        result.insert(result.end(), res.begin(), res.end());
+    }
+
+    return result;
 }
 
 static auto conv(const GroupFieldNode *n, QState &state) -> QResult
@@ -1211,6 +1297,7 @@ static auto conv(const GroupFieldNode *n, QState &state) -> QResult
 
 static auto conv(const UnionDefNode *n, QState &state) -> QResult
 {
+    /// TODO: Implement UnionDefNode
     std::map<std::string, QValue> fields;
     for (auto &field : n->m_fields)
     {
@@ -1251,10 +1338,10 @@ static auto conv(const FunctionDefNode *n, QState &state) -> QResult
     auto body = conv(n->m_body.get(), state)[0]->as<Block>();
     state.inside_segment = old;
 
-    auto f = Segment::create(dseg->params, dseg->return_type, body, dseg->constraints);
-
     state.function.pop();
     state.local_idents.pop();
+
+    auto f = Segment::create(dseg->params, dseg->return_type, body, dseg->constraints);
 
     return Global::create(glob->name, glob->type, f, glob->_volatile, glob->_atomic, glob->_extern);
 }
@@ -1436,8 +1523,8 @@ static auto conv(const ParseNode *n, QState &state) -> QResult
         r = conv(n->as<IdentifierNode>(), state);
         break;
 
-    case libquixcc::NodeType::MutTypeNode:
-        r = conv(n->as<MutTypeNode>(), state);
+    case libquixcc::NodeType::ImmMutTypeNode:
+        r = conv(n->as<ImmMutTypeNode>(), state);
         break;
 
     case libquixcc::NodeType::U8TypeNode:
@@ -1514,6 +1601,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult
 
     case libquixcc::NodeType::StructTypeNode:
         r = conv(n->as<StructTypeNode>(), state);
+        break;
+
+    case libquixcc::NodeType::GroupTypeNode:
+        r = conv(n->as<GroupTypeNode>(), state);
         break;
 
     case libquixcc::NodeType::RegionTypeNode:
@@ -1666,9 +1757,9 @@ static auto conv(const ParseNode *n, QState &state) -> QResult
     return r;
 }
 
-bool ir::q::QModule::from_ast(std::shared_ptr<BlockNode> ast)
+bool ir::q::QModule::from_ptree(std::shared_ptr<BlockNode> ast)
 {
-    LOG(DEBUG) << "Converting AST to QUIX intermediate representation" << std::endl;
+    LOG(DEBUG) << "Converting Ptree to QUIX intermediate representation" << std::endl;
 
     QState state;
 
@@ -1684,7 +1775,7 @@ bool ir::q::QModule::from_ast(std::shared_ptr<BlockNode> ast)
 
     LOG(DEBUG) << log::raw << this->to_string() << std::endl;
 
-    LOG(DEBUG) << "Successfully converted AST to QUIX intermediate representation" << std::endl;
+    LOG(DEBUG) << "Successfully converted Ptree to QUIX intermediate representation" << std::endl;
 
     return true;
 }

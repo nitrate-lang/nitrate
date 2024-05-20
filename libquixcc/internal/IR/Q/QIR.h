@@ -147,6 +147,7 @@ namespace libquixcc
 
                 /* Memory */
                 Assign,
+                AddressOf,
                 Member,
                 Index,
             };
@@ -191,7 +192,7 @@ namespace libquixcc
                 QModule(const std::string_view &name) : IRModule<IR::Q, const RootNode *>(name) {}
                 ~QModule() = default;
 
-                bool from_ast(std::shared_ptr<BlockNode> ast);
+                bool from_ptree(std::shared_ptr<BlockNode> ast);
             };
         }
     }

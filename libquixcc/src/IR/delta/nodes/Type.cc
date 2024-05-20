@@ -209,7 +209,7 @@ bool libquixcc::ir::delta::Array::verify_impl() const
 
 boost::uuids::uuid libquixcc::ir::delta::FType::hash_impl() const
 {
-    auto h = Hasher().gettag().add(ret);
+    auto h = Hasher().gettag().add(ret).add(variadic);
     for (auto &p : params)
         h.add(p);
     return h.hash();
@@ -221,4 +221,45 @@ bool libquixcc::ir::delta::FType::verify_impl() const
         if (!p->verify())
             return false;
     return ret->verify();
+}
+
+
+size_t libquixcc::ir::delta::Type::size() const
+{
+    return std::ceil(bitcount() / 8.0);
+}
+
+bool libquixcc::ir::delta::Type::is_ptr() const
+{
+    return this->is<Ptr>();
+}
+
+bool libquixcc::ir::delta::Type::is_integer() const
+{
+    return this->is<I1>() || this->is<I8>() || this->is<I16>() || this->is<I32>() || this->is<I64>() || this->is<I128>() || this->is<U8>() || this->is<U16>() || this->is<U32>() || this->is<U64>() || this->is<U128>();
+}
+
+bool libquixcc::ir::delta::Type::is_float() const
+{
+    return this->is<F32>() || this->is<F64>();
+}
+
+bool libquixcc::ir::delta::Type::is_void() const
+{
+    return this->is<Void>();
+}
+
+bool libquixcc::ir::delta::Type::is_signed() const
+{
+    return this->is<I1>() || this->is<I8>() || this->is<I16>() || this->is<I32>() || this->is<I64>() || this->is<I128>();
+}
+
+bool libquixcc::ir::delta::Type::is_unsigned() const
+{
+    return this->is<U8>() || this->is<U16>() || this->is<U32>() || this->is<U64>() || this->is<U128>();
+}
+
+bool libquixcc::ir::delta::Type::is_primitive() const
+{
+    return this->is_integer() || this->is_float() || this->is_void();
 }

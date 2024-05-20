@@ -78,7 +78,7 @@ size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::P
             {NodeType::ConstUnaryExprNode, (Func)ConstUnaryExprNode_iter},
             {NodeType::ConstBinaryExprNode, (Func)ConstBinaryExprNode_iter},
             {NodeType::IdentifierNode, (Func)IdentifierNode_iter},
-            {NodeType::MutTypeNode, (Func)MutTypeNode_iter},
+            {NodeType::ImmMutTypeNode, (Func)ImmMutTypeNode_iter},
             {NodeType::U8TypeNode, (Func)U8TypeNode_iter},
             {NodeType::U16TypeNode, (Func)U16TypeNode_iter},
             {NodeType::U32TypeNode, (Func)U32TypeNode_iter},
@@ -96,6 +96,7 @@ size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::P
             {NodeType::StringTypeNode, (Func)StringTypeNode_iter},
             {NodeType::EnumTypeNode, (Func)EnumTypeNode_iter},
             {NodeType::StructTypeNode, (Func)StructTypeNode_iter},
+            {NodeType::GroupTypeNode, (Func)GroupTypeNode_iter},
             {NodeType::RegionTypeNode, (Func)RegionTypeNode_iter},
             {NodeType::UnionTypeNode, (Func)UnionTypeNode_iter},
             {NodeType::ArrayTypeNode, (Func)ArrayTypeNode_iter},
@@ -144,7 +145,7 @@ size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::P
 
 size_t libquixcc::traversal::ParseTreePreorder::ExprStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ExprStmtNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     return next(state, node->m_expr) + 1;
 }
 
@@ -158,7 +159,7 @@ size_t libquixcc::traversal::ParseTreePreorder::BlockNode_iter(libquixcc::traver
     size_t count = 0;
     for (auto &stmt : node->m_stmts)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&stmt));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&stmt));
         count += next(state, stmt);
     }
     return count + 1;
@@ -169,7 +170,7 @@ size_t libquixcc::traversal::ParseTreePreorder::StmtGroupNode_iter(libquixcc::tr
     size_t count = 0;
     for (auto &stmt : node->m_stmts)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&stmt));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&stmt));
         count += next(state, stmt);
     }
     return count + 1;
@@ -177,87 +178,87 @@ size_t libquixcc::traversal::ParseTreePreorder::StmtGroupNode_iter(libquixcc::tr
 
 size_t libquixcc::traversal::ParseTreePreorder::CastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::CastExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     count += next(state, node->m_expr);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::StaticCastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StaticCastExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     count += next(state, node->m_expr);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::BitCastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::BitCastExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     count += next(state, node->m_expr);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::SignedUpcastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::SignedUpcastExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     count += next(state, node->m_expr);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::UnsignedUpcastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UnsignedUpcastExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     count += next(state, node->m_expr);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::DowncastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::DowncastExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     count += next(state, node->m_expr);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::PtrToIntCastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::PtrToIntCastExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     count += next(state, node->m_expr);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::IntToPtrCastExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::IntToPtrCastExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     count += next(state, node->m_expr);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::UnaryExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UnaryExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     return next(state, node->m_expr) + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::BinaryExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::BinaryExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_lhs));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_lhs));
     size_t count = next(state, node->m_lhs);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_rhs));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_rhs));
     count += next(state, node->m_rhs);
     return count + 1;
 }
@@ -267,18 +268,18 @@ size_t libquixcc::traversal::ParseTreePreorder::CallExprNode_iter(libquixcc::tra
     size_t count = 0;
     for (auto &arg : node->m_positional_args)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&arg));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&arg));
         count += next(state, arg);
     }
     for (auto &arg : node->m_named_args)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&arg.second));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&arg.second));
         count += next(state, arg.second);
     }
 
     if (node->m_decl)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_decl));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_decl));
         count += next(state, node->m_decl);
     }
 
@@ -290,7 +291,7 @@ size_t libquixcc::traversal::ParseTreePreorder::ListExprNode_iter(libquixcc::tra
     size_t count = 0;
     for (auto &elem : node->m_elements)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&elem));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&elem));
         count += next(state, elem);
     }
     return count + 1;
@@ -298,30 +299,30 @@ size_t libquixcc::traversal::ParseTreePreorder::ListExprNode_iter(libquixcc::tra
 
 size_t libquixcc::traversal::ParseTreePreorder::MemberAccessNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::MemberAccessNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     return next(state, node->m_expr) + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::IndexNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::IndexNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     size_t count = next(state, node->m_expr);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_index));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_index));
     count += next(state, node->m_index);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::ConstUnaryExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ConstUnaryExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
     return next(state, node->m_expr) + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::ConstBinaryExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ConstBinaryExprNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_lhs));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_lhs));
     size_t count = next(state, node->m_lhs);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_rhs));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_rhs));
     count += next(state, node->m_rhs);
     return count + 1;
 }
@@ -331,9 +332,9 @@ size_t libquixcc::traversal::ParseTreePreorder::IdentifierNode_iter(libquixcc::t
     return 1;
 }
 
-size_t libquixcc::traversal::ParseTreePreorder::MutTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::MutTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::ImmMutTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ImmMutTypeNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     return next(state, node->m_type) + 1;
 }
 
@@ -399,7 +400,7 @@ size_t libquixcc::traversal::ParseTreePreorder::VoidTypeNode_iter(libquixcc::tra
 
 size_t libquixcc::traversal::ParseTreePreorder::PointerTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::PointerTypeNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     return next(state, node->m_type) + 1;
 }
 
@@ -415,7 +416,7 @@ size_t libquixcc::traversal::ParseTreePreorder::StringTypeNode_iter(libquixcc::t
 
 size_t libquixcc::traversal::ParseTreePreorder::EnumTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::EnumTypeNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_member_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_member_type));
     return next(state, node->m_member_type) + 1;
 }
 
@@ -429,7 +430,23 @@ size_t libquixcc::traversal::ParseTreePreorder::StructTypeNode_iter(libquixcc::t
     size_t count = 0;
     for (auto &field : node->m_fields)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&field));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&field));
+        count += next(state, field);
+    }
+    return count + 1;
+}
+
+size_t libquixcc::traversal::ParseTreePreorder::GroupTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::GroupTypeNode *node)
+{
+    if (state.m_visited.contains(node))
+        return 1;
+
+    state.m_visited.insert(node); // Prevent infinite recursion
+
+    size_t count = 0;
+    for (auto &field : node->m_fields)
+    {
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&field));
         count += next(state, field);
     }
     return count + 1;
@@ -445,7 +462,7 @@ size_t libquixcc::traversal::ParseTreePreorder::RegionTypeNode_iter(libquixcc::t
     size_t count = 0;
     for (auto &field : node->m_fields)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&field));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&field));
         count += next(state, field);
     }
     return count + 1;
@@ -461,7 +478,7 @@ size_t libquixcc::traversal::ParseTreePreorder::UnionTypeNode_iter(libquixcc::tr
     size_t count = 0;
     for (auto &field : node->m_fields)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&field));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&field));
         count += next(state, field);
     }
     return count + 1;
@@ -470,11 +487,11 @@ size_t libquixcc::traversal::ParseTreePreorder::UnionTypeNode_iter(libquixcc::tr
 size_t libquixcc::traversal::ParseTreePreorder::ArrayTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ArrayTypeNode *node)
 {
     size_t count = 0;
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     count += next(state, node->m_type);
     if (node->m_size)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_size));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_size));
         count += next(state, node->m_size);
     }
     return count + 1;
@@ -485,10 +502,10 @@ size_t libquixcc::traversal::ParseTreePreorder::FunctionTypeNode_iter(libquixcc:
     size_t count = 0;
     for (auto &param : node->m_params)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&param.second));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&param.second));
         count += next(state, param.second);
     }
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_return_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_return_type));
     count += next(state, node->m_return_type);
     return count + 1;
 }
@@ -530,7 +547,7 @@ size_t libquixcc::traversal::ParseTreePreorder::NullLiteralNode_iter(libquixcc::
 
 size_t libquixcc::traversal::ParseTreePreorder::TypedefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::TypedefNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_orig));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_orig));
     return next(state, node->m_orig) + 1;
 }
 
@@ -542,13 +559,13 @@ size_t libquixcc::traversal::ParseTreePreorder::VarDeclNode_iter(libquixcc::trav
 
     if (node->m_type)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
         count += next(state, node->m_type);
     }
 
     if (node->m_init)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_init));
         count += next(state, node->m_init);
     }
     return count + 1;
@@ -562,13 +579,13 @@ size_t libquixcc::traversal::ParseTreePreorder::LetDeclNode_iter(libquixcc::trav
     
     if (node->m_type)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
         count += next(state, node->m_type);
     }
 
     if (node->m_init)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_init));
         count += next(state, node->m_init);
     }
     return count + 1;
@@ -581,13 +598,13 @@ size_t libquixcc::traversal::ParseTreePreorder::ConstDeclNode_iter(libquixcc::tr
 
     if (node->m_type)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
         count += next(state, node->m_type);
     }
 
     if (node->m_init)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_init));
         count += next(state, node->m_init);
     }
     return count + 1;
@@ -598,54 +615,54 @@ size_t libquixcc::traversal::ParseTreePreorder::FunctionDeclNode_iter(libquixcc:
     state.m_visited.clear();
 
     size_t count = 0;
-    state.m_prefix.push_back(node->m_name);
+    state.m_scope.push_back(node->m_name);
 
     for (auto &param : node->m_params)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&param));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&param));
         count += next(state, param);
     }
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     count += next(state, node->m_type);
 
-    state.m_prefix.pop_back();
+    state.m_scope.pop_back();
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::StructDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StructDefNode *node)
 {
     size_t count = 0;
-    state.m_prefix.push_back(node->m_name);
+    state.m_scope.push_back(node->m_name);
 
     for (auto &field : node->m_fields)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&field));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&field));
         count += next(state, field);
     }
 
     for (auto &method : node->m_methods)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&method));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&method));
         count += next(state, method);
     }
 
     for (auto &method : node->m_static_methods)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&method));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&method));
         count += next(state, method);
     }
 
-    state.m_prefix.pop_back();
+    state.m_scope.pop_back();
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::StructFieldNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::StructFieldNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
     if (node->m_value)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_value));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_value));
         count += next(state, node->m_value);
     }
     return count + 1;
@@ -653,26 +670,38 @@ size_t libquixcc::traversal::ParseTreePreorder::StructFieldNode_iter(libquixcc::
 
 size_t libquixcc::traversal::ParseTreePreorder::RegionDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RegionDefNode *node)
 {
-    size_t count = 0;
-    state.m_prefix.push_back(node->m_name);
+   size_t count = 0;
+    state.m_scope.push_back(node->m_name);
 
     for (auto &field : node->m_fields)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&field));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&field));
         count += next(state, field);
     }
 
-    state.m_prefix.pop_back();
+    for (auto &method : node->m_methods)
+    {
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&method));
+        count += next(state, method);
+    }
+
+    for (auto &method : node->m_static_methods)
+    {
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&method));
+        count += next(state, method);
+    }
+
+    state.m_scope.pop_back();
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::RegionFieldNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RegionFieldNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
     if (node->m_value)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_value));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_value));
         count += next(state, node->m_value);
     }
     return count + 1;
@@ -680,26 +709,38 @@ size_t libquixcc::traversal::ParseTreePreorder::RegionFieldNode_iter(libquixcc::
 
 size_t libquixcc::traversal::ParseTreePreorder::GroupDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::GroupDefNode *node)
 {
-    size_t count = 0;
-    state.m_prefix.push_back(node->m_name);
+   size_t count = 0;
+    state.m_scope.push_back(node->m_name);
 
-    for (auto &field : node->get_fields_mut())
+    for (auto &field : node->m_fields)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&field));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&field));
         count += next(state, field);
     }
 
-    state.m_prefix.pop_back();
+    for (auto &method : node->m_methods)
+    {
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&method));
+        count += next(state, method);
+    }
+
+    for (auto &method : node->m_static_methods)
+    {
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&method));
+        count += next(state, method);
+    }
+
+    state.m_scope.pop_back();
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::GroupFieldNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::GroupFieldNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
     if (node->m_value)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_value));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_value));
         count += next(state, node->m_value);
     }
     return count + 1;
@@ -708,25 +749,37 @@ size_t libquixcc::traversal::ParseTreePreorder::GroupFieldNode_iter(libquixcc::t
 size_t libquixcc::traversal::ParseTreePreorder::UnionDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UnionDefNode *node)
 {
     size_t count = 0;
-    state.m_prefix.push_back(node->m_name);
+    state.m_scope.push_back(node->m_name);
 
     for (auto &field : node->m_fields)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&field));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&field));
         count += next(state, field);
     }
 
-    state.m_prefix.pop_back();
+    for (auto &method : node->m_methods)
+    {
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&method));
+        count += next(state, method);
+    }
+
+    for (auto &method : node->m_static_methods)
+    {
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&method));
+        count += next(state, method);
+    }
+
+    state.m_scope.pop_back();
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::UnionFieldNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UnionFieldNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
     if (node->m_value)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_value));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_value));
         count += next(state, node->m_value);
     }
     return count + 1;
@@ -735,18 +788,18 @@ size_t libquixcc::traversal::ParseTreePreorder::UnionFieldNode_iter(libquixcc::t
 size_t libquixcc::traversal::ParseTreePreorder::EnumDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::EnumDefNode *node)
 {
     if (node->m_scoped)
-        state.m_prefix.push_back(node->m_type->m_name);
+        state.m_scope.push_back(node->m_type->m_name);
 
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
     for (auto &field : node->m_fields)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&field));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&field));
         count += next(state, field);
     }
 
     if (node->m_scoped)
-        state.m_prefix.pop_back();
+        state.m_scope.pop_back();
 
     return count + 1;
 }
@@ -755,7 +808,7 @@ size_t libquixcc::traversal::ParseTreePreorder::EnumFieldNode_iter(libquixcc::tr
 {
     if (node->m_value)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_value));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_value));
         return next(state, node->m_value) + 1;
     }
     return 1;
@@ -763,15 +816,15 @@ size_t libquixcc::traversal::ParseTreePreorder::EnumFieldNode_iter(libquixcc::tr
 
 size_t libquixcc::traversal::ParseTreePreorder::FunctionDefNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::FunctionDefNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_decl));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_decl));
     size_t count = next(state, node->m_decl);
 
-    state.m_prefix.push_back(node->m_decl->m_name);
+    state.m_scope.push_back(node->m_decl->m_name);
 
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_body));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_body));
     count += next(state, node->m_body);
 
-    state.m_prefix.pop_back();
+    state.m_scope.pop_back();
 
     return count + 1;
 }
@@ -780,11 +833,11 @@ size_t libquixcc::traversal::ParseTreePreorder::FunctionParamNode_iter(libquixcc
 {
     state.m_visited.clear();
 
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_type));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     size_t count = next(state, node->m_type);
     if (node->m_value)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_value));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_value));
         count += next(state, node->m_value);
     }
     return count + 1;
@@ -792,12 +845,14 @@ size_t libquixcc::traversal::ParseTreePreorder::FunctionParamNode_iter(libquixcc
 
 size_t libquixcc::traversal::ParseTreePreorder::SubsystemNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::SubsystemNode *node)
 {
-    state.m_prefix.push_back(node->m_name);
+    state.m_ns.push_back(node->m_name);
+    state.m_scope.push_back(node->m_name);
 
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_block));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_block));
     size_t count = next(state, node->m_block);
 
-    state.m_prefix.pop_back();
+    state.m_scope.pop_back();
+    state.m_ns.pop_back();
 
     return count + 1;
 }
@@ -807,7 +862,7 @@ size_t libquixcc::traversal::ParseTreePreorder::ExportNode_iter(libquixcc::trave
     size_t count = 0;
     for (auto &stmt : node->m_stmts)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&stmt));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&stmt));
         count += next(state, stmt);
     }
     return count + 1;
@@ -819,13 +874,13 @@ size_t libquixcc::traversal::ParseTreePreorder::InlineAsmNode_iter(libquixcc::tr
 
     for (auto &[reg, expr] : node->m_outputs)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&expr));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&expr));
         count += next(state, expr);
     }
 
     for (auto &[reg, expr] : node->m_outputs)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&expr));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&expr));
         count += next(state, expr);
     }
 
@@ -836,7 +891,7 @@ size_t libquixcc::traversal::ParseTreePreorder::ReturnStmtNode_iter(libquixcc::t
 {
     if (node->m_expr)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_expr));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
         return next(state, node->m_expr) + 1;
     }
     return 1;
@@ -844,37 +899,37 @@ size_t libquixcc::traversal::ParseTreePreorder::ReturnStmtNode_iter(libquixcc::t
 
 size_t libquixcc::traversal::ParseTreePreorder::RetifStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RetifStmtNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_cond));
     size_t count = next(state, node->m_cond);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_return));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_return));
     count += next(state, node->m_return);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::RetzStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RetzStmtNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_cond));
     size_t count = next(state, node->m_cond);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_return));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_return));
     count += next(state, node->m_return);
     return count + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::RetvStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::RetvStmtNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_cond));
     return next(state, node->m_cond) + 1;
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::IfStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::IfStmtNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_cond));
     size_t count = next(state, node->m_cond);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_then));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_then));
     count += next(state, node->m_then);
     if (node->m_else)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_else));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_else));
         count += next(state, node->m_else);
     }
     return count + 1;
@@ -882,9 +937,9 @@ size_t libquixcc::traversal::ParseTreePreorder::IfStmtNode_iter(libquixcc::trave
 
 size_t libquixcc::traversal::ParseTreePreorder::WhileStmtNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::WhileStmtNode *node)
 {
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_cond));
     size_t count = next(state, node->m_cond);
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_stmt));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_stmt));
     count += next(state, node->m_stmt);
     return count + 1;
 }
@@ -895,23 +950,23 @@ size_t libquixcc::traversal::ParseTreePreorder::ForStmtNode_iter(libquixcc::trav
 
     if (node->m_init)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_init));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_init));
         count += next(state, node->m_init);
     }
 
     if (node->m_cond)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_cond));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_cond));
         count += next(state, node->m_cond);
     }
 
     if (node->m_step)
     {
-        state.m_callback(state.m_prefix, node, mk_ptr(&node->m_step));
+        state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_step));
         count += next(state, node->m_step);
     }
 
-    state.m_callback(state.m_prefix, node, mk_ptr(&node->m_stmt));
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_stmt));
     count += next(state, node->m_stmt);
 
     return count;

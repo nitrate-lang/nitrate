@@ -56,10 +56,30 @@ namespace libquixcc::ir::delta
 
     public:
         static const Assign *create(const Expr *var, const Expr *value, uint64_t rank = 0);
+        const Type *infer() const override;
 
         uint64_t rank; /* How many levels of dereferencing are to be done */
         const Expr *var;
         const Expr *value;
+    };
+
+    class AddressOf : public Expr
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        AddressOf(const Expr *lhs) : lhs(lhs)
+        {
+            ntype = (int)NodeType::AddressOf;
+        }
+
+    public:
+        static const AddressOf *create(const Expr *lhs);
+        const Type *infer() const override;
+
+        const Expr *lhs;
     };
 
     class Member : public Expr
@@ -76,29 +96,11 @@ namespace libquixcc::ir::delta
 
     public:
         static const Member *create(const Expr *lhs, size_t field, const Type *field_type);
+        const Type *infer() const override;
 
         size_t field;
         const Expr *lhs;
         const Type *field_type;
-    };
-
-    class Load : public Expr
-    {
-    protected:
-        bool print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
-
-        Load(const Expr *var, uint64_t rank) : rank(rank), var(var)
-        {
-            ntype = (int)NodeType::Load;
-        }
-
-    public:
-        static const Load *create(const Expr *var, uint64_t rank = 0);
-
-        uint64_t rank; /* How many levels of dereferencing are to be done */
-        const Expr *var;
     };
 
     class Index : public Expr
@@ -108,16 +110,18 @@ namespace libquixcc::ir::delta
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Index(const Expr *expr, const Expr *index) : expr(expr), index(index)
+        Index(const Expr *expr, const Expr *index, const Type *type) : expr(expr), index(index), type(type)
         {
             ntype = (int)NodeType::Index;
         }
 
     public:
-        static const Index *create(const Expr *expr, const Expr *index);
+        static const Index *create(const Expr *expr, const Expr *index, const Type *type);
+        const Type *infer() const override;
 
         const Expr *expr;
         const Expr *index;
+        const Type *type;
     };
 }
 

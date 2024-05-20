@@ -117,7 +117,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::seria
             {NodeType::ConstUnaryExprNode, (Func)ConstUnaryExprNode_conv},
             {NodeType::ConstBinaryExprNode, (Func)ConstBinaryExprNode_conv},
             {NodeType::IdentifierNode, (Func)IdentifierNode_conv},
-            {NodeType::MutTypeNode, (Func)MutTypeNode_conv},
+            {NodeType::ImmMutTypeNode, (Func)ImmMutTypeNode_conv},
             {NodeType::U8TypeNode, (Func)U8TypeNode_conv},
             {NodeType::U16TypeNode, (Func)U16TypeNode_conv},
             {NodeType::U32TypeNode, (Func)U32TypeNode_conv},
@@ -135,6 +135,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::seria
             {NodeType::StringTypeNode, (Func)StringTypeNode_conv},
             {NodeType::EnumTypeNode, (Func)EnumTypeNode_conv},
             {NodeType::StructTypeNode, (Func)StructTypeNode_conv},
+            {NodeType::GroupTypeNode, (Func)GroupTypeNode_conv},
             {NodeType::RegionTypeNode, (Func)RegionTypeNode_conv},
             {NodeType::UnionTypeNode, (Func)UnionTypeNode_conv},
             {NodeType::ArrayTypeNode, (Func)ArrayTypeNode_conv},
@@ -395,9 +396,9 @@ std::string libquixcc::serialize::ParseTreeSerializer::IdentifierNode_conv(libqu
     return "{\"ntype\":\"IdentifierNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
 }
 
-std::string libquixcc::serialize::ParseTreeSerializer::MutTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::MutTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::ImmMutTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ImmMutTypeNode *node)
 {
-    return "{\"ntype\":\"MutTypeNode\",\"type\":" + next(state, node->m_type) + "}";
+    return "{\"ntype\":\"ImmMutTypeNode\",\"type\":" + next(state, node->m_type) + "}";
 }
 
 std::string libquixcc::serialize::ParseTreeSerializer::U8TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::U8TypeNode *node)
@@ -504,6 +505,26 @@ std::string libquixcc::serialize::ParseTreeSerializer::StructTypeNode_conv(libqu
     }
 
     str += "],\"name\":\"" + escape_json(node->m_name) + "\"";
+
+    return str + "}";
+}
+
+std::string libquixcc::serialize::ParseTreeSerializer::GroupTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::GroupTypeNode *node)
+{
+    if (state.m_visited.contains(node))
+        return "{\"ntype\":\"GroupTypeNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
+
+    state.m_visited.insert(node); // Prevent infinite recursion
+
+    std::string str = "{\"ntype\":\"GroupTypeNode\",\"fields\":[";
+    for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it)
+    {
+        str += next(state, *it);
+        if (it != node->m_fields.end() - 1)
+        {
+            str += ",";
+        }
+    }
 
     return str + "}";
 }
@@ -794,6 +815,25 @@ std::string libquixcc::serialize::ParseTreeSerializer::RegionDefNode_conv(libqui
         }
     }
 
+    str += "],\"methods\":[";
+    for (auto it = node->m_methods.begin(); it != node->m_methods.end(); ++it)
+    {
+        str += next(state, *it);
+        if (it != node->m_methods.end() - 1)
+        {
+            str += ",";
+        }
+    }
+    str += "],\"static_methods\":[";
+    for (auto it = node->m_static_methods.begin(); it != node->m_static_methods.end(); ++it)
+    {
+        str += next(state, *it);
+        if (it != node->m_static_methods.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
     return str + "]}";
 }
 
@@ -812,18 +852,36 @@ std::string libquixcc::serialize::ParseTreeSerializer::GroupDefNode_conv(libquix
 {
     std::string str = "{\"ntype\":\"GroupDefNode\",\"name\":\"";
     str += escape_json(node->m_name);
-    auto fields = node->get_fields();
     str += "\",\"fields\":[";
-    for (auto it = fields.begin(); it != fields.end(); ++it)
+    for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it)
     {
         str += next(state, *it);
-        if (it != fields.end() - 1)
+        if (it != node->m_fields.end() - 1)
         {
             str += ",";
         }
     }
 
-    return str + "}";
+    str += "],\"methods\":[";
+    for (auto it = node->m_methods.begin(); it != node->m_methods.end(); ++it)
+    {
+        str += next(state, *it);
+        if (it != node->m_methods.end() - 1)
+        {
+            str += ",";
+        }
+    }
+    str += "],\"static_methods\":[";
+    for (auto it = node->m_static_methods.begin(); it != node->m_static_methods.end(); ++it)
+    {
+        str += next(state, *it);
+        if (it != node->m_static_methods.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    return str + "]}";
 }
 
 std::string libquixcc::serialize::ParseTreeSerializer::GroupFieldNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::GroupFieldNode *node)
@@ -851,7 +909,26 @@ std::string libquixcc::serialize::ParseTreeSerializer::UnionDefNode_conv(libquix
         }
     }
 
-    return str + "}";
+    str += "],\"methods\":[";
+    for (auto it = node->m_methods.begin(); it != node->m_methods.end(); ++it)
+    {
+        str += next(state, *it);
+        if (it != node->m_methods.end() - 1)
+        {
+            str += ",";
+        }
+    }
+    str += "],\"static_methods\":[";
+    for (auto it = node->m_static_methods.begin(); it != node->m_static_methods.end(); ++it)
+    {
+        str += next(state, *it);
+        if (it != node->m_static_methods.end() - 1)
+        {
+            str += ",";
+        }
+    }
+
+    return str + "]}";
 }
 
 std::string libquixcc::serialize::ParseTreeSerializer::UnionFieldNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::UnionFieldNode *node)

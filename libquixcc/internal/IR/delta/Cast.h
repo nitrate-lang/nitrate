@@ -56,6 +56,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const SCast *create(const Type *type, const Expr *value);
+        const Type *infer() const override;
 
         const Type *type;
         const Expr *value;
@@ -75,6 +76,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const UCast *create(const Type *type, const Expr *value);
+        const Type *infer() const override;
 
         const Type *type;
         const Expr *value;
@@ -94,6 +96,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const PtrICast *create(const Expr *value);
+        const Type *infer() const override;
 
         const Expr *value;
     };
@@ -112,6 +115,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const IPtrCast *create(const Type *type, const Expr *value);
+        const Type *infer() const override;
 
         const Type *type;
         const Expr *value;
@@ -131,6 +135,7 @@ namespace libquixcc::ir::delta
 
     public:
         static const Bitcast *create(const Type *type, const Expr *value);
+        const Type *infer() const override;
 
         const Type *type;
         const Expr *value;

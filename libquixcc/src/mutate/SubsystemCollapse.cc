@@ -38,7 +38,7 @@
 
 using namespace libquixcc;
 
-static void collapse(const std::vector<std::string> &_ns, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+static void collapse(const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
 {
     if (node.first != traversal::TraversePtrType::Smart)
         return;
@@ -48,9 +48,10 @@ static void collapse(const std::vector<std::string> &_ns, libquixcc::ParseNode *
         return;
     auto sub = std::static_pointer_cast<SubsystemNode>(ptr);
 
-    std::string _namespace = Symbol::join(_ns, "");
-
     std::shared_ptr<StmtGroupNode> stmts = std::make_shared<StmtGroupNode>();
+
+    std::vector<std::string> ns = _namespace;
+    ns.push_back(sub->m_name);
 
     for (auto &child : sub->m_block->m_stmts)
     {
@@ -59,86 +60,77 @@ static void collapse(const std::vector<std::string> &_ns, libquixcc::ParseNode *
         case NodeType::TypedefNode:
         {
             auto def = std::static_pointer_cast<TypedefNode>(child);
-            def->m_name = Symbol::join(_namespace, def->m_name);
+            def->m_name = Symbol::join(ns, def->m_name);
             stmts->m_stmts.push_back(def);
             break;
         }
         case NodeType::LetDeclNode:
         {
             auto decl = std::static_pointer_cast<LetDeclNode>(child);
-            decl->m_name = Symbol::join(_namespace, decl->m_name);
+            decl->m_name = Symbol::join(ns, decl->m_name);
             stmts->m_stmts.push_back(decl);
             break;
         }
         case NodeType::ConstDeclNode:
         {
             auto decl = std::static_pointer_cast<ConstDeclNode>(child);
-            decl->m_name = Symbol::join(_namespace, decl->m_name);
+            decl->m_name = Symbol::join(ns, decl->m_name);
             stmts->m_stmts.push_back(decl);
             break;
         }
         case NodeType::VarDeclNode:
         {
             auto decl = std::static_pointer_cast<VarDeclNode>(child);
-            decl->m_name = Symbol::join(_namespace, decl->m_name);
+            decl->m_name = Symbol::join(ns, decl->m_name);
             stmts->m_stmts.push_back(decl);
             break;
         }
         case NodeType::FunctionDeclNode:
         {
             auto decl = std::static_pointer_cast<FunctionDeclNode>(child);
-            decl->m_name = Symbol::join(_namespace, decl->m_name);
+            decl->m_name = Symbol::join(ns, decl->m_name);
             stmts->m_stmts.push_back(decl);
             break;
         }
         case NodeType::FunctionDefNode:
         {
             auto def = std::static_pointer_cast<FunctionDefNode>(child);
-            def->m_decl->m_name = Symbol::join(_namespace, def->m_decl->m_name);
+            def->m_decl->m_name = Symbol::join(ns, def->m_decl->m_name);
             stmts->m_stmts.push_back(def);
             break;
         }
         case NodeType::StructDefNode:
         {
             auto def = std::static_pointer_cast<StructDefNode>(child);
-            def->m_name = Symbol::join(_namespace, def->m_name);
+            def->m_name = Symbol::join(ns, def->m_name);
             stmts->m_stmts.push_back(def);
             break;
         }
         case NodeType::RegionDefNode:
         {
             auto def = std::static_pointer_cast<RegionDefNode>(child);
-            def->m_name = Symbol::join(_namespace, def->m_name);
+            def->m_name = Symbol::join(ns, def->m_name);
             stmts->m_stmts.push_back(def);
             break;
         }
         case NodeType::UnionDefNode:
         {
             auto def = std::static_pointer_cast<UnionDefNode>(child);
-            def->m_name = Symbol::join(_namespace, def->m_name);
+            def->m_name = Symbol::join(ns, def->m_name);
             stmts->m_stmts.push_back(def);
             break;
         }
         case NodeType::GroupDefNode:
         {
             auto def = std::static_pointer_cast<GroupDefNode>(child);
-            def->m_name = Symbol::join(_namespace, def->m_name);
+            def->m_name = Symbol::join(ns, def->m_name);
             stmts->m_stmts.push_back(def);
             break;
         }
         case NodeType::EnumDefNode:
         {
             auto def = std::static_pointer_cast<EnumDefNode>(child);
-            def->m_type = EnumTypeNode::create(Symbol::join(_namespace, def->m_type->m_name), def->m_type->m_member_type);
-            stmts->m_stmts.push_back(def);
-            break;
-        }
-        case NodeType::SubsystemNode:
-        {
-            auto def = std::static_pointer_cast<SubsystemNode>(child);
-            std::vector<std::string> _ns2 = _ns;
-            _ns2.push_back(sub->m_name);
-            collapse(_ns2, parent, std::make_pair(traversal::TraversePtrType::Smart, reinterpret_cast<std::shared_ptr<ParseNode> *>(&def)));
+            def->m_type = EnumTypeNode::create(Symbol::join(ns, def->m_type->m_name), def->m_type->m_member_type);
             stmts->m_stmts.push_back(def);
             break;
         }
@@ -151,62 +143,97 @@ static void collapse(const std::vector<std::string> &_ns, libquixcc::ParseNode *
     *std::get<std::shared_ptr<ParseNode> *>(node.second) = stmts;
 }
 
-static void typenode_rename(const std::vector<std::string> &_ns, libquixcc::ParseNode *parent, traversal::TraversePtr node)
-{
-    if (node.first != traversal::TraversePtrType::Raw)
-        return;
-    auto ptr = *std::get<ParseNode **>(node.second);
-    auto dobptr = std::get<ParseNode **>(node.second);
-
-    std::vector<std::string> _namespace = _ns;
-    if (!_namespace.empty())
-        _namespace.pop_back();
-
-    switch (ptr->ntype)
-    {
-    case NodeType::UserTypeNode:
-    {
-        *dobptr = UserTypeNode::create(Symbol::join(_namespace, static_cast<UserTypeNode *>(ptr)->m_name));
-        break;
-    }
-    // case NodeType::EnumTypeNode:
-    // {
-    //     _namespace.pop_back();
-    //     auto def = static_cast<EnumTypeNode *>(ptr);
-    //     *dobptr = EnumTypeNode::create(Symbol::join(_namespace, def->m_name), def->m_member_type);
-    //     break;
-    // }
-    case NodeType::UnionTypeNode:
-    {
-        auto def = static_cast<UnionTypeNode *>(ptr);
-        *dobptr = UnionTypeNode::create(def->m_fields, Symbol::join(_namespace, def->m_name));
-        break;
-    }
-    case NodeType::StructTypeNode:
-    {
-        auto def = static_cast<StructTypeNode *>(ptr);
-        *dobptr = StructTypeNode::create(def->m_fields, Symbol::join(_namespace, def->m_name));
-        break;
-    }
-    case NodeType::RegionTypeNode:
-    {
-        auto def = static_cast<RegionTypeNode *>(ptr);
-        *dobptr = RegionTypeNode::create(def->m_fields, Symbol::join(_namespace, def->m_name));
-        break;
-    }
-    case NodeType::OpaqueTypeNode:
-    {
-        auto def = static_cast<OpaqueTypeNode *>(ptr);
-        *dobptr = OpaqueTypeNode::create(Symbol::join(_namespace, def->m_name));
-        break;
-    }
-    default:
-        break;
-    }
-}
-
 void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast)
 {
-    ast->dfs_preorder(traversal::ParseTreeTraversalState(typenode_rename, {}));
+    std::set<std::string> visited;
+
+    ast->dfs_preorder(traversal::ParseTreeTraversalState([&visited](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+    {
+        if (node.first != traversal::TraversePtrType::Raw)
+            return;
+
+        auto ptr = *std::get<ParseNode **>(node.second);
+        auto dobptr = std::get<ParseNode **>(node.second);
+
+        switch (ptr->ntype)
+        {
+        case NodeType::UserTypeNode:
+        {
+            auto def = static_cast<UserTypeNode *>(ptr);
+            if (visited.contains(def->m_name))
+                return;
+
+            auto n = Symbol::join(_namespace, def->m_name);
+
+            *dobptr = UserTypeNode::create(n);
+            visited.insert(n);
+            break;
+        }
+        case NodeType::EnumTypeNode:
+        {
+            auto def = static_cast<EnumTypeNode *>(ptr);
+            if (visited.contains(def->m_name))
+                return;
+
+            auto n = Symbol::join(_namespace, def->m_name);
+
+            *dobptr = EnumTypeNode::create(n, def->m_member_type);
+            visited.insert(n);
+            break;
+        }
+        case NodeType::UnionTypeNode:
+        {
+            auto def = static_cast<UnionTypeNode *>(ptr);
+            if (visited.contains(def->m_name))
+                return;
+
+            auto n = Symbol::join(_namespace, def->m_name);
+
+            *dobptr = UnionTypeNode::create(def->m_fields, n);
+            visited.insert(n);
+            break;
+        }
+        case NodeType::StructTypeNode:
+        {
+            auto def = static_cast<StructTypeNode *>(ptr);
+            if (visited.contains(def->m_name))
+                return;
+
+            auto n = Symbol::join(_namespace, def->m_name);
+
+            *dobptr = StructTypeNode::create(def->m_fields, n);
+            visited.insert(n);
+            break;
+        }
+        case NodeType::RegionTypeNode:
+        {
+            auto def = static_cast<RegionTypeNode *>(ptr);
+            if (visited.contains(def->m_name))
+                return;
+
+            auto n = Symbol::join(_namespace, def->m_name);
+
+            *dobptr = RegionTypeNode::create(def->m_fields, n);
+            visited.insert(n);
+            break;
+        }
+        case NodeType::OpaqueTypeNode:
+        {
+            auto def = static_cast<OpaqueTypeNode *>(ptr);
+            if (visited.contains(def->m_name))
+                return;
+
+            auto n = Symbol::join(_namespace, def->m_name);
+
+            *dobptr = OpaqueTypeNode::create(n);
+            visited.insert(n);
+            break;
+        }
+        default:
+            break;
+        }
+
+        }, {}));
+
     ast->dfs_preorder(traversal::ParseTreeTraversalState(collapse, {}));
 }
