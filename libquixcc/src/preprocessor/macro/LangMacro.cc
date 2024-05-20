@@ -39,7 +39,5 @@ bool libquixcc::macro::ParseLang(quixcc_job_t *job, const Token &tok, const std:
     (void)tok;
     (void)directive;
 
-    /// TODO: Implement language encoding directive
-
     return true;
 }

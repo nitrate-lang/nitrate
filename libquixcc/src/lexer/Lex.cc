@@ -446,7 +446,7 @@ enum class NumType
     Floating,
 };
 
-static NumType check_number_literal_type(const std::string &input)
+static NumType check_number_literal_type(std::string input)
 {
     /* Create a cache */
     static std::unordered_map<std::string, NumType> g_check_number_literal_type_cache;
@@ -464,6 +464,9 @@ static NumType check_number_literal_type(const std::string &input)
         else
             return g_check_number_literal_type_cache[input] = NumType::Invalid;
     }
+
+    std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+    std::erase(input, '_');
 
     std::string prefix = input.substr(0, 2);
     size_t i;
@@ -544,11 +547,13 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type)
     static std::unordered_map<std::string, std::string> g_canonicalize_number_cache;
     if (g_canonicalize_number_cache.contains(number))
         return norm = g_canonicalize_number_cache[number], true;
+    typedef unsigned int uint128_t __attribute__((mode(TI)));
 
-    uint64_t x = 0, i = 0;
+    uint128_t x = 0, i = 0;
 
     /* Convert to lowercase */
     std::transform(number.begin(), number.end(), number.begin(), ::tolower);
+    std::erase(number, '_');
 
     switch (type)
     {
@@ -556,7 +561,7 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type)
         for (i = 2; i < number.size(); ++i)
         {
             // Check for overflow
-            if (x & 0xF000000000000000)
+            if ((x >> 64) & 0xF000000000000000)
                 return false;
 
             if (number[i] >= '0' && number[i] <= '9')
@@ -617,7 +622,15 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type)
     }
 
     /* Convert back to string and cache the result */
-    return g_canonicalize_number_cache[number] = (norm = std::to_string(x)), true;
+    std::stringstream ss;
+    // uint128_t to decimal string
+    for (i = x; i; i /= 10)
+        ss << (char)('0' + i % 10);
+
+    std::string s = ss.str();
+    std::reverse(s.begin(), s.end());
+
+    return g_canonicalize_number_cache[number] = (norm = s), true;
 }
 
 libquixcc::Token libquixcc::StreamLexer::read_token()
@@ -723,7 +736,7 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
         }
         case LexState::Integer:
         {
-            if (std::isxdigit(c) || c == '.' || c == 'x' || c == 'b' || c == 'd' || c == 'o' || c == 'e')
+            if (std::isxdigit(c) || c == '_' || c == '.' || c == 'x' || c == 'b' || c == 'd' || c == 'o' || c == 'e')
             {
                 buf += c;
                 continue;

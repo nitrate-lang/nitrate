@@ -402,8 +402,6 @@ LIB_EXPORT bool quixcc_cpu(quixcc_job_t *job, const char *cpu)
 
     std::lock_guard<std::mutex> lock(job->m_lock);
 
-    /// TODO: find a way to validate the CPU
-
     job->m_cpu = cpu;
 
     return true;

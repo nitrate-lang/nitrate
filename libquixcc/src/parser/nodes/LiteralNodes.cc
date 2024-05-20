@@ -41,6 +41,28 @@ std::unordered_map<std::string, std::shared_ptr<libquixcc::FloatLiteralNode>> li
 std::unordered_map<std::string, std::shared_ptr<libquixcc::IntegerNode>> libquixcc::IntegerNode::m_instances;
 std::shared_ptr<libquixcc::NullLiteralNode> libquixcc::NullLiteralNode::m_instance;
 
+typedef unsigned int uint128_t __attribute__((mode(TI)));
+
+uint128_t stringToUint128(const std::string &str)
+{
+    if (str.empty())
+    {
+        throw std::invalid_argument("Input string is empty");
+    }
+
+    uint128_t result = 0;
+    for (char c : str)
+    {
+        if (c < '0' || c > '9')
+        {
+            throw std::invalid_argument("Invalid character in input string");
+        }
+        result = result * 10 + (c - '0');
+    }
+
+    return result;
+}
+
 uint8_t get_numbits(std::string s)
 {
     if (s == "0" || s == "1")
@@ -66,7 +88,8 @@ uint8_t get_numbits(std::string s)
         return std::abs(f0 - f1) < delta ? 64 : 32;
     }
 
-    uint64_t val = std::stoull(s);
+    uint128_t val = stringToUint128(s);
+
     uint8_t bits = 0;
     while (val)
     {
@@ -74,7 +97,9 @@ uint8_t get_numbits(std::string s)
         bits++;
     }
 
-    if (bits > 32)
+    if (bits > 64)
+        return 128;
+    else if (bits > 32)
         return 64;
     else if (bits > 16)
         return 32;
@@ -89,15 +114,9 @@ libquixcc::IntegerNode::IntegerNode(const std::string &val)
     m_val = val;
 
     if (val.starts_with("-"))
-    {
         m_val_type = I64TypeNode::create();
-        m_value = (int64_t)std::stoll(val);
-    }
     else
-    {
         m_val_type = U64TypeNode::create();
-        m_value = (uint64_t)std::stoull(val);
-    }
 }
 
 libquixcc::FloatLiteralNode::FloatLiteralNode(const std::string &val)

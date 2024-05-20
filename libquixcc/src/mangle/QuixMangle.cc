@@ -29,8 +29,6 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-/// TODO: This code has out-of-bounds read bugs. Fix them.
-
 #define QUIXCC_INTERNAL
 
 #include <LibMacro.h>
@@ -40,22 +38,20 @@
 #include <IR/Q/Type.h>
 #include <IR/Q/Variable.h>
 
-/// TODO: Add a construct to the mangling system that indicates mutability.
-
 static std::string wrap_tag(const std::string &tag)
 {
     std::string s;
 
     for (size_t i = 0; i < tag.size(); i++)
     {
-        if (tag[i] == ':')
+        if (tag.at(i) == ':')
         {
             s += "__";
             i++;
         }
         else
         {
-            s += tag[i];
+            s += tag.at(i);
         }
     }
 
@@ -65,22 +61,29 @@ static std::string wrap_tag(const std::string &tag)
 static bool unwrap_tags(const std::string &input, std::vector<std::string> &out)
 {
     size_t i = 0;
-    while (i < input.size())
+    try
     {
-        std::string len;
-        while (std::isdigit(input[i]))
+        while (i < input.size())
         {
-            len += input[i];
-            i++;
+            std::string len;
+            while (std::isdigit(input.at(i)))
+            {
+                len += input.at(i);
+                i++;
+            }
+
+            if (len.empty())
+                return false;
+
+            size_t l = std::stoi(len);
+            out.push_back(input.substr(i, l));
+
+            i += l;
         }
-
-        if (len.empty())
-            return false;
-
-        size_t l = std::stoi(len);
-        out.push_back(input.substr(i, l));
-
-        i += l;
+    }
+    catch (std::out_of_range &e)
+    {
+        return false;
     }
 
     return true;
@@ -110,7 +113,7 @@ static std::string serialize_type(const libquixcc::ir::q::Type *type, std::set<c
     };
 
     if (basic_typesmap.contains(type->ntype))
-        return basic_typesmap[type->ntype];
+        return basic_typesmap.at(type->ntype);
 
     if (visited.contains(type))
     {
@@ -212,106 +215,131 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(const std::string &t
         {"v", q::Void::create()}};
 
     if (basic_typesmap.contains(type))
-        return basic_typesmap[type];
+        return basic_typesmap.at(type);
 
-    if (type[0] == 't')
+    try
     {
-        std::vector<std::string> fields;
-        if (!unwrap_tags(type.substr(1), fields))
-            return nullptr;
-
-        return q::Group::create(fields[0], {});
-    }
-    else if (type[0] == 'j')
-    {
-        std::vector<std::string> fields;
-        if (!unwrap_tags(type.substr(1), fields))
-            return nullptr;
-
-        return q::Region::create(fields[0], {});
-    }
-    else if (type[0] == 'u')
-    {
-        std::vector<std::string> fields;
-        if (!unwrap_tags(type.substr(1), fields))
-            return nullptr;
-
-        return q::Union::create(fields[0], {});
-    }
-    else if (type[0] == 'a')
-    {
-        std::vector<std::string> fields;
-        if (!unwrap_tags(type.substr(1), fields))
-            return nullptr;
-
-        const q::Type *t;
-        if ((t = deserialize_type_inner(fields[0], prev)) == nullptr)
-            return nullptr;
-
-        return q::Array::create(t, std::stoi(fields[1]));
-    }
-    else if (type[0] == 'p')
-    {
-        std::vector<std::string> fields;
-        if (!unwrap_tags(type.substr(1), fields))
-            return nullptr;
-
-        const q::Type *t;
-        if ((t = deserialize_type_inner(fields[0], prev)) == nullptr)
-            return nullptr;
-
-        return q::Ptr::create(t);
-    }
-    else if (type[0] == 'f')
-    {
-        std::vector<std::string> fields;
-        if (!unwrap_tags(type.substr(1), fields))
-            return nullptr;
-
-        const q::Type *ret;
-        if ((ret = deserialize_type_inner(fields[0], prev)) == nullptr)
-            return nullptr;
-
-        std::vector<const q::Type *> params;
-        for (size_t i = 1; i < fields.size() - 1; i += 2)
+        if (type.at(0) == 't')
         {
+            std::vector<std::string> fields;
+            if (!unwrap_tags(type.substr(1), fields))
+                return nullptr;
+
+            if (fields.size() < 1)
+                return nullptr;
+
+            return q::Group::create(fields.at(0), {});
+        }
+        else if (type.at(0) == 'j')
+        {
+            std::vector<std::string> fields;
+            if (!unwrap_tags(type.substr(1), fields))
+                return nullptr;
+
+            if (fields.size() < 1)
+                return nullptr;
+
+            return q::Region::create(fields.at(0), {});
+        }
+        else if (type.at(0) == 'u')
+        {
+            std::vector<std::string> fields;
+            if (!unwrap_tags(type.substr(1), fields))
+                return nullptr;
+
+            if (fields.size() < 1)
+                return nullptr;
+
+            return q::Union::create(fields.at(0), {});
+        }
+        else if (type.at(0) == 'a')
+        {
+            std::vector<std::string> fields;
+            if (!unwrap_tags(type.substr(1), fields))
+                return nullptr;
+
+            if (fields.size() < 2)
+                return nullptr;
+
             const q::Type *t;
-            if ((t = deserialize_type_inner(fields[i], prev)) == nullptr)
+            if ((t = deserialize_type_inner(fields.at(0), prev)) == nullptr)
                 return nullptr;
 
-            params.push_back(t);
+            return q::Array::create(t, std::stoi(fields.at(1)));
         }
-
-        std::string prop = fields.back();
-        bool foreign = false, nothrow = false, pure = false, thread_safe = false, variadic = false;
-        for (size_t i = 0; i < prop.size(); i++)
+        else if (type.at(0) == 'p')
         {
-            switch (prop[i])
-            {
-            case 'f':
-                foreign = true;
-                break;
-            case 'n':
-                nothrow = true;
-                break;
-            case 'p':
-                pure = true;
-                break;
-            case 't':
-                thread_safe = true;
-                break;
-            case 'v':
-                variadic = true;
-                break;
-            default:
+            std::vector<std::string> fields;
+            if (!unwrap_tags(type.substr(1), fields))
                 return nullptr;
+
+            if (fields.size() < 1)
+                return nullptr;
+
+            const q::Type *t;
+            if ((t = deserialize_type_inner(fields.at(0), prev)) == nullptr)
+                return nullptr;
+
+            return q::Ptr::create(t);
+        }
+        else if (type.at(0) == 'f')
+        {
+            std::vector<std::string> fields;
+            if (!unwrap_tags(type.substr(1), fields))
+                return nullptr;
+
+            if (fields.size() < 3)
+                return nullptr;
+
+            const q::Type *ret;
+            if ((ret = deserialize_type_inner(fields.at(0), prev)) == nullptr)
+                return nullptr;
+
+            std::vector<const q::Type *> params;
+            for (size_t i = 1; i < fields.size() - 1; i += 2)
+            {
+                const q::Type *t;
+                if ((t = deserialize_type_inner(fields.at(i), prev)) == nullptr)
+                    return nullptr;
+
+                params.push_back(t);
             }
+
+            std::string prop = fields.back();
+            bool foreign = false, nothrow = false, pure = false, thread_safe = false, variadic = false;
+            for (size_t i = 0; i < prop.size(); i++)
+            {
+                switch (prop.at(i))
+                {
+                case 'f':
+                    foreign = true;
+                    break;
+                case 'n':
+                    nothrow = true;
+                    break;
+                case 'p':
+                    pure = true;
+                    break;
+                case 't':
+                    thread_safe = true;
+                    break;
+                case 'v':
+                    variadic = true;
+                    break;
+                default:
+                    return nullptr;
+                }
+            }
+
+            return q::FType::create(params, ret, variadic, pure, thread_safe, foreign, nothrow);
         }
 
-        return q::FType::create(params, ret, variadic, pure, thread_safe, foreign, nothrow);
+        throw std::runtime_error("Unknown type 2");
     }
-
-    throw std::runtime_error("Unknown type 2");
+    catch (std::exception &e)
+    {
+        return nullptr;
+    }
 }
 
 static const libquixcc::ir::q::Type *deserialize_type(const std::string &input)
@@ -365,22 +393,25 @@ const libquixcc::ir::q::Value *libquixcc::Symbol::demangle_quix(std::string inpu
 
         std::vector<std::string> parts;
 
-        switch (input[0])
+        switch (input.at(0))
         {
         case 'g':
         {
             if (!unwrap_tags(input.substr(1), parts))
                 return nullptr;
 
-            auto t = deserialize_type(parts[1]);
+            if (parts.size() < 3)
+                return nullptr;
+
+            auto t = deserialize_type(parts.at(1));
             if (!t)
                 return nullptr;
 
             bool atomic = false, _volatile = false;
-            std::string flags = parts[2];
+            std::string flags = parts.at(2);
             for (size_t i = 0; i < flags.size(); i++)
             {
-                switch (flags[i])
+                switch (flags.at(i))
                 {
                 case 'a':
                     atomic = true;
@@ -393,7 +424,7 @@ const libquixcc::ir::q::Value *libquixcc::Symbol::demangle_quix(std::string inpu
                 }
             }
 
-            return q::Global::create(parts[0], t, nullptr, _volatile, atomic, false);
+            return q::Global::create(parts.at(0), t, nullptr, _volatile, atomic, false);
         }
 
         default:

@@ -342,7 +342,7 @@ const Type *Number::infer() const
         return U32::create();
     case 64:
         return U64::create();
-    case 128: /* TODO: get_numbits cant handle 128 bits */
+    case 128:
         return U128::create();
     default:
         throw std::runtime_error("Codegen failed: Number type not supported");

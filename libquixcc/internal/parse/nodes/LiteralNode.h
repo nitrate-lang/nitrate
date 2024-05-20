@@ -76,7 +76,6 @@ namespace libquixcc
 
         std::string m_val;
         TypeNode *m_val_type;
-        NumbericLiteralNode m_value;
     };
 
     class FloatLiteralNode : public LiteralNode

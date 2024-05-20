@@ -383,8 +383,6 @@ static auto conv(const ir::q::Asm *n, DState &state) -> DResult
 
 static auto conv(const ir::q::RegionDef *n, DState &state) -> DResult
 {
-    /// TODO: handle methods impl
-
     std::vector<std::pair<std::string, const Type *>> fields;
     for (auto field : n->fields)
         fields.push_back({field.first, conv(field.second, state)[0]->as<Type>()});
@@ -406,8 +404,6 @@ static auto conv(const ir::q::RegionDef *n, DState &state) -> DResult
 
 static auto conv(const ir::q::GroupDef *n, DState &state) -> DResult
 {
-    /// TODO: handle methods impl
-
     std::vector<std::pair<std::string, const Type *>> fields;
     for (auto field : n->fields)
         fields.push_back({field.first, conv(field.second, state)[0]->as<Type>()});
@@ -494,27 +490,6 @@ static auto conv(const ir::q::While *n, DState &state) -> DResult
 
 static auto conv(const ir::q::For *n, DState &state) -> DResult
 {
-    /// TODO: Implement For loops
-
-    /*
-    for (init; cond; step)
-        block;
-
-    <=>
-
-    {
-        init;
-        while (cond)
-        {
-            block;
-
-            __step:
-              step;
-        }
-    }
-
-    */
-
     auto init = conv(n->init, state)[0]->as<Expr>();
     auto cond = conv(n->cond, state)[0]->as<Expr>();
     auto step = conv(n->step, state)[0]->as<Expr>();

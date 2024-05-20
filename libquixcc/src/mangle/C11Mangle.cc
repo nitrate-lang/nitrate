@@ -47,11 +47,8 @@ static std::string filter(const std::string &input)
 
 std::string libquixcc::Symbol::mangle_c(const libquixcc::ir::q::Value *node, const std::string &prefix)
 {
-    /// TODO: verify this is correct
     switch ((ir::q::NodeType)node->ntype)
     {
-    case ir::q::NodeType::Local:
-        return filter(static_cast<const ir::q::Local *>(node)->name);
     case ir::q::NodeType::Global:
         return filter(static_cast<const ir::q::Global *>(node)->name);
     default:
@@ -61,6 +58,5 @@ std::string libquixcc::Symbol::mangle_c(const libquixcc::ir::q::Value *node, con
 
 const libquixcc::ir::q::Value *libquixcc::Symbol::demangle_c(std::string input)
 {
-    /// TODO: handle case where type is unknown
-    return nullptr;
+    throw std::runtime_error("Can not deserialize C mangled name");
 }

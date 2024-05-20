@@ -249,7 +249,7 @@ llvm::Constant *libquixcc::LLVM14Codegen::gen(const ir::delta::Number *node)
         return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(32, node->value, 10));
     case 64:
         return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(64, node->value, 10));
-    case 128: /* TODO: get_numbits cant handle 128 bits */
+    case 128:
         return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(128, node->value, 10));
     default:
         throw std::runtime_error("Codegen failed: Number type not supported");
@@ -295,14 +295,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ident *node)
     if (!m_state.locals.empty() && !m_state.params.empty())
     {
         if (m_state.params.top().contains(node->name))
-        {
-            auto v = m_state.params.top()[node->name];
-            auto t = m_state.params.top()[node->name]->getType();
-            // if (m_state.m_deref)
-            //     return m_ctx->m_builder->CreateLoad(t, v);
-            // else
-            return v;
-        }
+            return m_state.params.top()[node->name];
 
         if (m_state.locals.top().contains(node->name))
         {
@@ -543,8 +536,6 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Jmp *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Label *node)
 {
-    /// TODO: verify
-
     if (m_state.labels.empty())
         throw std::runtime_error("Codegen failed: Can not create label outside of segment");
 

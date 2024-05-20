@@ -186,19 +186,6 @@ namespace libquixcc
                 return *this;
             }
 
-            template <typename T, typename W>
-            Hasher &add(const std::set<std::pair<T, W>> &values)
-            {
-                for (const auto &value : values)
-                {
-                    add(value.first);
-
-                    /* TODO: fix this */
-                    m_hasher.process_bytes(reinterpret_cast<const void *>(&value.second), sizeof(W));
-                }
-                return *this;
-            }
-
             inline Hasher &add(const std::string_view &value)
             {
                 m_hasher.process_bytes(value.data(), value.size());
