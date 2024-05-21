@@ -37,7 +37,7 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::BlockNode> &group, bool expect_braces)
+bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::BlockNode> &group, bool expect_braces, bool single_stmt)
 {
     Token tok;
 
@@ -55,6 +55,9 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
 
     while ((tok = scanner->peek()).type() != TT::Eof)
     {
+        if (single_stmt && group->m_stmts.size() > 0)
+            break;
+
         if (expect_braces)
         {
             if (tok.is<Punctor>(Punctor::CloseBrace))

@@ -272,25 +272,40 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
             return true;
         }
     }
-    else if (!tok.is<Punctor>(Punctor::OpenBrace))
+
+    if (tok.is<Operator>(Operator::Arrow))
+    {
+        scanner->next();
+        /// TODO: Implement arrow function
+        // throw std::runtime_error("Arrow functions are not yet implemented.");
+
+        auto fnbody = std::make_shared<BlockNode>();
+
+        if (!parse(job, scanner, fnbody, false, true))
+            return false;
+
+        if (!fndecl->m_type)
+            fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+
+        node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
+        return true;
+    }
+    else if (tok.is<Punctor>(Punctor::OpenBrace))
+    {
+        auto fnbody = std::make_shared<BlockNode>();
+
+        if (!parse(job, scanner, fnbody))
+            return false;
+
+        if (!fndecl->m_type)
+            fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+
+        node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
+        return true;
+    }
+    else
     {
         LOG(ERROR) << feedback[FN_EXPECTED_OPEN_BRACE] << tok << std::endl;
         return false;
     }
-
-    auto fnbody = std::make_shared<BlockNode>();
-
-    if (!parse(job, scanner, fnbody))
-        return false;
-
-    if (!fndecl->m_type)
-        fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
-
-    auto fndef = std::make_shared<FunctionDefNode>();
-    fndef->m_decl = fndecl;
-    fndef->m_body = fnbody;
-
-    node = fndef;
-
-    return true;
 }

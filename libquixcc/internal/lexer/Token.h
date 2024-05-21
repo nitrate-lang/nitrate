@@ -102,6 +102,7 @@ namespace libquixcc
     {
         At,
         Question,
+        Arrow,
 
         Plus,
         Minus,
