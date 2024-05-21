@@ -52,6 +52,15 @@ bool libquixcc::ir::q::AddressOf::print_impl(std::ostream &os, libquixcc::ir::PS
     return true;
 }
 
+bool libquixcc::ir::q::Deref::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "(*";
+    if (!lhs->print(os, state))
+        return false;
+    os << ")";
+    return true;
+}
+
 bool libquixcc::ir::q::Member::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "(";

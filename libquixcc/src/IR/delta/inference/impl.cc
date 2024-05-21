@@ -300,6 +300,11 @@ const Type *AddressOf::infer() const
     return Ptr::create(lhs->infer());
 }
 
+const Type *Deref::infer() const
+{
+    return lhs->infer()->as<Ptr>()->type;
+}
+
 const Type *Member::infer() const
 {
     return field_type;

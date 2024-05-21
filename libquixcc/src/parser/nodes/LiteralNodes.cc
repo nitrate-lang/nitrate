@@ -45,11 +45,6 @@ typedef unsigned int uint128_t __attribute__((mode(TI)));
 
 uint128_t stringToUint128(const std::string &str)
 {
-    if (str.empty())
-    {
-        throw std::invalid_argument("Input string is empty");
-    }
-
     uint128_t result = 0;
     for (char c : str)
     {
@@ -67,9 +62,6 @@ uint8_t get_numbits(std::string s)
 {
     if (s == "0" || s == "1")
         return 1;
-
-    if (s.starts_with("-"))
-        s = s.substr(1);
 
     if (s.find('.') != std::string::npos)
     {
@@ -112,11 +104,7 @@ libquixcc::IntegerNode::IntegerNode(const std::string &val)
 {
     ntype = NodeType::IntegerNode;
     m_val = val;
-
-    if (val.starts_with("-"))
-        m_val_type = I64TypeNode::create();
-    else
-        m_val_type = U64TypeNode::create();
+    m_val_type = U64TypeNode::create();
 }
 
 libquixcc::FloatLiteralNode::FloatLiteralNode(const std::string &val)

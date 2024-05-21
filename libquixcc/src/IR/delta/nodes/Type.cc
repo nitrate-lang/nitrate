@@ -251,12 +251,12 @@ bool libquixcc::ir::delta::Type::is_void() const
 
 bool libquixcc::ir::delta::Type::is_signed() const
 {
-    return this->is<I1>() || this->is<I8>() || this->is<I16>() || this->is<I32>() || this->is<I64>() || this->is<I128>();
+    return this->is<I8>() || this->is<I16>() || this->is<I32>() || this->is<I64>() || this->is<I128>();
 }
 
 bool libquixcc::ir::delta::Type::is_unsigned() const
 {
-    return this->is<U8>() || this->is<U16>() || this->is<U32>() || this->is<U64>() || this->is<U128>();
+    return this->is<I1>() || this->is<U8>() || this->is<U16>() || this->is<U32>() || this->is<U64>() || this->is<U128>();
 }
 
 bool libquixcc::ir::delta::Type::is_primitive() const

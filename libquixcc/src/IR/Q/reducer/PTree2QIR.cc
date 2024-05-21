@@ -314,6 +314,8 @@ static auto conv(const UnaryExprNode *n, QState &state) -> QResult
         return Assign::create(e, Sub::create(e, UCast::create(e->infer(), Number::create("1"))));
     case Operator::BitwiseAnd:
         return AddressOf::create(e);
+    case Operator::Multiply:
+        return Deref::create(e);
     default:
         throw std::runtime_error("UnaryExprNode not implemented");
     }
@@ -338,6 +340,9 @@ static const Expr *promote(const Type *lht, const libquixcc::ir::q::Expr *rhs)
     if (lht->is_float() || rht->is_float())
         return ir::q::SCast::create(lht, rhs);
 
+    if (lht->is<I1>() && !rht->is<I1>())
+        return ir::q::Ne::create(rhs, ir::q::Number::create("0"));
+
     if (lht->is_signed() || rht->is_signed())
         return ir::q::SCast::create(lht, rhs);
 
@@ -346,6 +351,17 @@ static const Expr *promote(const Type *lht, const libquixcc::ir::q::Expr *rhs)
 
     if (lht->is_ptr() && rht->is_ptr())
         return ir::q::Bitcast::create(lht, rhs);
+
+    if (lht->is_ptr() && rht->is<Array>())
+    {
+        auto l = lht->as<Ptr>();
+        auto r = rht->as<Array>();
+
+        if (!l->type->is(r->type))
+            throw std::runtime_error("cannot promote type to pointer");
+
+        return ir::q::AddressOf::create(ir::q::Index::create(rhs, ir::q::Number::create("0"), l->type));
+    }
 
     throw std::runtime_error("cannot promote types");
 }
@@ -506,23 +522,25 @@ static auto conv(const CallExprNode *n, QState &state) -> QResult
     else
         callee = conv(n->m_decl.get(), state)[0]->as<Global>();
 
-    std::vector<QValue> args;
+    std::vector<const Expr *> args;
     const Segment *seg = callee->value->as<Segment>();
 
     size_t i = 0;
     for (auto &arg : n->m_positional_args)
     {
         auto v = conv(arg.get(), state)[0]->as<Expr>();
-        if (seg->params[i].second)
-            args.push_back(promote(seg->params[i].second, v));
-        else
+
+        if (seg->params.size() <= i || !seg->params.at(i).second)
             args.push_back(v);
+        else
+            args.push_back(promote(seg->params[i].second, v));
+
         i++;
     }
 
     while (i < callee->value->as<Segment>()->params.size())
     {
-        auto v = conv(n->m_decl->m_params[i]->m_value.get(), state)[0]->as<Expr>();
+        auto v = conv(n->m_decl->m_params.at(i)->m_value.get(), state)[0]->as<Expr>();
         if (seg->params[i].second)
             args.push_back(promote(seg->params[i].second, v));
         else
@@ -728,7 +746,7 @@ static auto conv(const IdentifierNode *n, QState &state) -> QResult
     }
 
     if (!state.global_idents.contains(n->m_name))
-        throw std::runtime_error("QIR translation: IdentifierNode not found");
+        throw std::runtime_error("QIR translation: IdentifierNode not found: " + n->m_name);
 
     return Ident::create(n->m_name, state.global_idents[n->m_name]);
 }
@@ -1099,7 +1117,12 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
     for (auto &p : n->m_params)
     {
         auto res = conv(p.get(), state);
-        params.push_back({p->m_name, res[0]->as<Type>()});
+        auto t = res[0]->as<Type>();
+
+        if (t->is<Array>())
+            params.push_back({p->m_name, Ptr::create(t->as<Array>()->type)});
+        else
+            params.push_back({p->m_name, t});
     }
 
     std::set<FConstraint> constraints;

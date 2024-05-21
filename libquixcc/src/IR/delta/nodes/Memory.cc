@@ -51,6 +51,16 @@ bool libquixcc::ir::delta::AddressOf::verify_impl() const
     return lhs->verify();
 }
 
+boost::uuids::uuid libquixcc::ir::delta::Deref::hash_impl() const 
+{
+    return Hasher().gettag().add(lhs).hash();
+}
+
+bool libquixcc::ir::delta::Deref::verify_impl() const
+{
+    return lhs->verify();
+}
+
 boost::uuids::uuid libquixcc::ir::delta::Member::hash_impl() const
 {
     return Hasher().gettag().add(lhs).add(field).add(field_type).hash();

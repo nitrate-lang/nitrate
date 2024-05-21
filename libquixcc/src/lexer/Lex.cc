@@ -623,7 +623,9 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type)
 
     /* Convert back to string and cache the result */
     std::stringstream ss;
-    // uint128_t to decimal string
+    if (x == 0)
+        ss << '0';
+    
     for (i = x; i; i /= 10)
         ss << (char)('0' + i % 10);
 

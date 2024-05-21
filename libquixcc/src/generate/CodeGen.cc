@@ -323,18 +323,41 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Ident *node)
         throw std::runtime_error("Codegen failed: Identifier not found: " + node->name);
 }
 
+llvm::Value *libquixcc::LLVM14Codegen::special_load(const ir::delta::Expr *node)
+{
+    if (!node->is<Index>())
+        return gen(node);
+
+    size_t rank = 0;
+    const Value *n = node->as<Index>();
+
+    while (n->is<Index>())
+    {
+        n = n->as<Index>()->expr;
+        rank++;
+    }
+
+    size_t old = m_state.index_rank;
+    m_state.index_rank = rank;
+    llvm::Value *v = gen(node);
+    m_state.index_rank = old;
+
+    return v;
+}
+
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Assign *node)
 {
     bool old = m_state.m_deref;
+
     m_state.m_deref = false;
+    auto ptr = special_load(node->var);
 
-    auto ptr = gen(node->var);
-    m_state.m_deref = old;
+    // for (size_t i = 0; i < node->rank; i++)
+    // ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
 
-    for (size_t i = 0; i < node->rank; i++)
-        ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
-
+    m_state.m_deref = true;
     auto v = gen(node->value);
+    m_state.m_deref = old;
 
     m_ctx->m_builder->CreateStore(v, ptr);
 
@@ -349,6 +372,12 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::AddressOf
     m_state.m_deref = old;
 
     return ptr;
+}
+
+llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Deref *node)
+{
+    auto ptr = gen(node->lhs);
+    return m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Member *node)
@@ -378,59 +407,64 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Member *n
         return eptr;
 }
 
+llvm::Value *libquixcc::LLVM14Codegen::bounds_wrap(llvm::Value *i, llvm::Value *n)
+{
+    ///========================================================================
+    /// BEGIN: EXPERIMENTAL SECURITY FEATURE
+
+    auto wrapped = m_ctx->m_builder->CreateURem(i, n);
+
+    /// This is a security feature that prevents the user from accessing
+    /// memory outside of the array bounds. This is a very simple check
+    /// that only works for statically allocated arrays. It is not a
+    /// replacement for proper bounds checking.
+
+    /// Given a bounded array of size N and an unsigned Index I, we compute
+    /// the effective index as (I % N). This guarantees that `out-of-bounds`
+    /// accesses are `contained` within the array. This protection may
+    /// make certain types of buffer overflow attacks infeasible.
+    /// Meaning that an attacker's damage is limited to corrupting elements
+    /// (likely of the same type) within the array. This also makes the behavior
+    /// well-defined, no need for manaully modulo-indexing into any arrays.
+    ///========================================================================
+
+    return wrapped;
+}
+
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node)
 {
-    bool old = m_state.m_deref;
+    llvm::Value *v = nullptr;
+    auto zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), 0);
 
-    if (!node->expr->is<Index>())
-        m_state.m_deref = false;
+    bool old = m_state.m_deref;
+    m_state.m_deref = true;
+    auto i = gen(node->index);
+
+    m_state.m_deref = false;
     auto e = gen(node->expr);
     m_state.m_deref = old;
 
-    auto i = gen(node->index);
+    bool is_inarr = m_state.index_rank > 1;
+    m_state.index_rank--;
 
-    if (!i->getType()->isIntegerTy(32))
+    if (e->getType()->isPointerTy() && e->getType()->getPointerElementType()->isArrayTy())
     {
-        if (i->getType()->isIntegerTy(1))
-            i = m_ctx->m_builder->CreateZExtOrTrunc(i, llvm::Type::getInt32Ty(*m_ctx->m_ctx));
-        else
-            i = m_ctx->m_builder->CreateSExtOrTrunc(i, llvm::Type::getInt32Ty(*m_ctx->m_ctx));
-    }
-
-    if (e->getType()->getPointerElementType()->isArrayTy())
-    {
-        auto t = e->getType()->getPointerElementType();
-
-        auto zero = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), 0);
-        llvm::Value *v = m_ctx->m_builder->CreateGEP(t, e, {zero, i});
-
-        if (m_state.m_deref)
-            return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
-        else
+        auto red = bounds_wrap(i, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), e->getType()->getPointerElementType()->getArrayNumElements()));
+        v = m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e, {zero, red});
+        if (!m_state.m_deref)
             return v;
-    }
-    else if (e->getType()->getPointerElementType()->isPointerTy())
-    {
-        llvm::Value *v = m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e, i);
-
-        if (m_state.m_deref)
-            return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
-        else
-            return v;
+        return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
     }
     else if (e->getType()->isPointerTy())
     {
-        auto t = e->getType()->getPointerElementType();
-        llvm::Value *v = m_ctx->m_builder->CreateGEP(t, e, i);
-
-        if (m_state.m_deref)
-            return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
-        else
+        v = m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e, i);
+        if (!m_state.m_deref && !is_inarr)
             return v;
+        return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(), v);
     }
     else
     {
-        throw std::runtime_error("Codegen failed: Indexing not supported");
+        throw std::runtime_error("Codegen failed: Indexing TYPE not supported");
     }
 }
 
@@ -570,7 +604,12 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Call *node)
 {
     std::vector<llvm::Value *> args;
     for (auto &arg : node->args)
-        args.push_back(gen(arg));
+    {
+        // args.push_back(gen(arg));
+        auto v = gen(arg);
+
+        args.push_back(v);
+    }
 
     llvm::FunctionType *ft = static_cast<llvm::FunctionType *>(gent(node->ftype));
 
@@ -622,6 +661,7 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
 
     if (node->block)
     {
+        /* Finite-Stateful gencode */
         m_state.labels.push({});
         m_state.locals.push({});
         m_state.params.push({});
@@ -632,19 +672,8 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
         for (auto &arg : func->args())
         {
             auto &param = node->params[arg.getArgNo()];
-
-            if (param.second->is<Ptr>())
-            {
-                arg.setName(param.first);
-                m_state.params.top()[param.first] = &arg;
-            }
-            else
-            {
-                arg.setName("__" + param.first);
-                auto alloca = m_ctx->m_builder->CreateAlloca(arg.getType(), nullptr, param.first);
-                m_ctx->m_builder->CreateStore(&arg, alloca);
-                m_state.locals.top()[param.first] = alloca;
-            }
+            arg.setName(param.first);
+            m_state.params.top()[param.first] = &arg;
         }
 
         if (!node->ret->is<Void>())
@@ -721,7 +750,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::BitXor *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::BitNot *node)
 {
-    return m_ctx->m_builder->CreateNeg(gen(node->operand));
+    return m_ctx->m_builder->CreateNot(gen(node->operand));
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Shl *node)
@@ -731,7 +760,13 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Shl *node)
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Shr *node)
 {
-    return m_ctx->m_builder->CreateAShr(gen(node->lhs), gen(node->rhs));
+    auto l = gen(node->lhs);
+    auto r = gen(node->rhs);
+
+    if (node->lhs->infer()->is_signed()) // signed
+        return m_ctx->m_builder->CreateAShr(l, r);
+    else // unsigned
+        return m_ctx->m_builder->CreateLShr(l, r);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotl *node)
@@ -868,6 +903,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
     match(Ident);
     match(Assign);
     match(AddressOf);
+    match(Deref);
     match(Member);
     match(Index);
     match(SCast);

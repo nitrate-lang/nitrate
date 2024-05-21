@@ -62,6 +62,16 @@ bool libquixcc::ir::delta::AddressOf::print_impl(std::ostream &os, libquixcc::ir
     return true;
 }
 
+bool libquixcc::ir::delta::Deref::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "(*";
+    if (!lhs->print(os, state))
+        return false;
+    os << ")";
+
+    return true;
+}
+
 bool libquixcc::ir::delta::Member::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
     os << "(";

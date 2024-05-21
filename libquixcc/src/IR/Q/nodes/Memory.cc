@@ -51,6 +51,16 @@ bool libquixcc::ir::q::AddressOf::verify_impl() const
     return lhs->verify();
 }
 
+boost::uuids::uuid libquixcc::ir::q::Deref::hash_impl() const
+{
+    return Hasher().gettag().add(lhs).hash();
+}
+
+bool libquixcc::ir::q::Deref::verify_impl() const
+{
+    return lhs->verify();
+}
+
 boost::uuids::uuid libquixcc::ir::q::Member::hash_impl() const
 {
     return Hasher().gettag().add(lhs).add(field).add(field_type).hash();

@@ -76,6 +76,7 @@ namespace libquixcc
             std::map<std::string, llvm::GlobalVariable *> globals;
             std::map<std::string, llvm::Function *> functions;
             std::map<std::string, llvm::Type *> types;
+            size_t index_rank;
             bool terminate_early;
             bool incond;
 
@@ -88,6 +89,8 @@ namespace libquixcc
                 m_pub = false;
                 m_deref = true;
                 incond = false;
+                terminate_early = false;
+                index_rank = 0;
             }
         };
 
@@ -120,6 +123,7 @@ namespace libquixcc
         llvm::Value *gen(const ir::delta::Ident *node);
         llvm::Value *gen(const ir::delta::Assign *node);
         llvm::Value *gen(const ir::delta::AddressOf *node);
+        llvm::Value *gen(const ir::delta::Deref *node);
         llvm::Value *gen(const ir::delta::Member *node);
         llvm::Value *gen(const ir::delta::Index *node);
         llvm::Value *gen(const ir::delta::SCast *node);
@@ -164,6 +168,9 @@ namespace libquixcc
 
         llvm::Type *gent(const ir::delta::Type *node);
         llvm::Value *gen(const ir::delta::Value *node);
+
+        llvm::Value *bounds_wrap(llvm::Value *v, llvm::Value *n);
+        llvm::Value *special_load(const ir::delta::Expr *node);
 
         LLVM14Codegen(LLVMContext &ctx) : m_ctx(&ctx) {}
 

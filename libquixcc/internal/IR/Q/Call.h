@@ -50,17 +50,17 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Call(const Global *func, std::vector<const Value *> args) : func(func), args(args)
+        Call(const Global *func, std::vector<const Expr *> args) : func(func), args(args)
         {
             ntype = (int)NodeType::Call;
         }
 
     public:
-        static const Call *create(const Global *func, std::vector<const Value *> args);
+        static const Call *create(const Global *func, std::vector<const Expr *> args);
         const Type *infer() const override;
 
         const Global *func;
-        std::vector<const Value *> args;
+        std::vector<const Expr *> args;
     };
 
     class CallIndirect : public Expr
@@ -70,17 +70,17 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        CallIndirect(const Segment *exprfunc, std::vector<const Value *> args) : exprfunc(exprfunc), args(args)
+        CallIndirect(const Segment *exprfunc, std::vector<const Expr *> args) : exprfunc(exprfunc), args(args)
         {
             ntype = (int)NodeType::CallIndirect;
         }
 
     public:
-        static const CallIndirect *create(const Segment *exprfunc, std::vector<const Value *> args);
+        static const CallIndirect *create(const Segment *exprfunc, std::vector<const Expr *> args);
         const Type *infer() const override;
 
         const Segment *exprfunc;
-        std::vector<const Value *> args;
+        std::vector<const Expr *> args;
     };
 }
 

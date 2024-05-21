@@ -85,6 +85,7 @@ static std::map<const Value *, const Not *> not_insts;
 static std::map<std::pair<const Value *, const Value *>, const Xor *> xor_insts;
 static std::map<std::tuple<const Value *, const Value *, uint64_t>, const Assign *> assign_insts;
 static std::map<const Expr *, const AddressOf *> addressof_insts;
+static std::map<const Expr *, const Deref *> deref_insts;
 static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *> member_insts;
 static std::map<std::tuple<const Value *, const Value *, const Type *>, const Index *> index_insts;
 static std::map<std::vector<const Value *>, const Block *> block_insts;
@@ -459,6 +460,14 @@ const libquixcc::ir::delta::AddressOf *libquixcc::ir::delta::AddressOf::create(c
     if (!addressof_insts.contains(lhs))
         addressof_insts[lhs] = new AddressOf(lhs);
     return addressof_insts[lhs];
+}
+
+const libquixcc::ir::delta::Deref *libquixcc::ir::delta::Deref::create(const libquixcc::ir::delta::Expr *lhs)
+{
+    lock(NodeType::Deref);
+    if (!deref_insts.contains(lhs))
+        deref_insts[lhs] = new Deref(lhs);
+    return deref_insts[lhs];
 }
 
 const delta::Member *delta::Member::create(const delta::Expr *lhs, size_t field, const delta::Type *field_type)

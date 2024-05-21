@@ -82,6 +82,7 @@ namespace libquixcc
                 /* Memory */
                 Assign,
                 AddressOf,
+                Deref,
                 Member,
                 Index,
                 Ident,

@@ -82,6 +82,25 @@ namespace libquixcc::ir::delta
         const Expr *lhs;
     };
 
+    class Deref : public Expr
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Deref(const Expr *lhs) : lhs(lhs)
+        {
+            ntype = (int)NodeType::Deref;
+        }
+
+    public:
+        static const Deref *create(const Expr *lhs);
+        const Type *infer() const override;
+
+        const Expr *lhs;
+    };
+
     class Member : public Expr
     {
     protected:

@@ -72,8 +72,8 @@ static Asm *asm_inst = nullptr;
 static std::map<std::vector<const Value *>, const Block *> functionblock_insts;
 static std::map<std::tuple<std::vector<std::pair<std::string, const Type *>>, const Value *, const Value *, std::set<FConstraint>>, const Segment *> function_insts;
 static std::map<const Value *, const Ret *> ret_insts;
-static std::map<std::pair<const Global *, std::vector<const Value *>>, const Call *> call_insts;
-static std::map<std::pair<const Value *, std::vector<const Value *>>, const CallIndirect *> ptrcall_insts;
+static std::map<std::pair<const Global *, std::vector<const Expr *>>, const Call *> call_insts;
+static std::map<std::pair<const Value *, std::vector<const Expr *>>, const CallIndirect *> ptrcall_insts;
 static std::map<std::pair<const Value *, const Value *>, const Add *> add_insts;
 static std::map<std::pair<const Value *, const Value *>, const Sub *> sub_insts;
 static std::map<std::pair<const Value *, const Value *>, const Mul *> mul_insts;
@@ -130,6 +130,7 @@ static std::map<std::string, const Char *> char_insts;
 static std::map<std::vector<const Expr *>, const List *> list_insts;
 static std::map<std::pair<const Value *, const Value *>, const Assign *> assign_insts;
 static std::map<const Expr *, const AddressOf *> addressof_insts;
+static std::map<const Expr *, const Deref *> deref_insts;
 static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *> member_insts;
 static std::map<std::tuple<const Value *, const Value *, const Type *>, const Index *> index_insts;
 
@@ -283,7 +284,7 @@ const ir::q::Switch *ir::q::Switch::create(const Expr *value, const std::set<con
     return switch_insts[key];
 }
 
-const ir::q::Call *ir::q::Call::create(const ir::q::Global *func, std::vector<const Value *> args)
+const ir::q::Call *ir::q::Call::create(const ir::q::Global *func, std::vector<const Expr *> args)
 {
     lock(NodeType::Call);
     auto key = std::make_pair(func, args);
@@ -292,7 +293,7 @@ const ir::q::Call *ir::q::Call::create(const ir::q::Global *func, std::vector<co
     return call_insts[key];
 }
 
-const q::CallIndirect *q::CallIndirect::create(const Segment *callee, std::vector<const Value *> args)
+const q::CallIndirect *q::CallIndirect::create(const Segment *callee, std::vector<const Expr *> args)
 {
     lock(NodeType::CallIndirect);
     auto key = std::make_pair(callee, args);
@@ -815,6 +816,14 @@ const libquixcc::ir::q::AddressOf *libquixcc::ir::q::AddressOf::create(const lib
     if (!addressof_insts.contains(lhs))
         addressof_insts[lhs] = new AddressOf(lhs);
     return addressof_insts[lhs];
+}
+
+const libquixcc::ir::q::Deref *libquixcc::ir::q::Deref::create(const libquixcc::ir::q::Expr *lhs)
+{
+    lock(NodeType::Deref);
+    if (!deref_insts.contains(lhs))
+        deref_insts[lhs] = new Deref(lhs);
+    return deref_insts[lhs];
 }
 
 const libquixcc::ir::q::Member *libquixcc::ir::q::Member::create(const libquixcc::ir::q::Value *lhs, size_t field, const Type *field_type)

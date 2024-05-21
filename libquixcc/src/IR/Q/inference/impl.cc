@@ -309,6 +309,11 @@ const libquixcc::ir::q::Type *libquixcc::ir::q::AddressOf::infer() const
     return Ptr::create(lhs->infer());
 }
 
+const libquixcc::ir::q::Type *libquixcc::ir::q::Deref::infer() const 
+{
+    return lhs->infer()->as<Ptr>()->type;
+}
+
 const libquixcc::ir::q::Type *libquixcc::ir::q::Member::infer() const
 {
     return field_type;

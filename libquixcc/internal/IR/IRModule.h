@@ -102,22 +102,26 @@ namespace libquixcc
             template <typename T>
             bool is() const
             {
-                return dynamic_cast<const T *>(this) != nullptr;
+                return typeid(T) == typeid(*this);
             }
 
             template <typename T>
             bool is(const T *other) const
             {
-                return reinterpret_cast<const T *>(this) == other; 
+                return reinterpret_cast<const T *>(this) == other;
             }
 
             template <typename T>
             const T *as() const
             {
-                if (!is<T>())
-                    LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `" << typeid(T).name() << "`" << std::endl;
+                auto p = dynamic_cast<const T *>(this);
 
-                return reinterpret_cast<const T *>(this);
+                if (p)
+                    return p;
+
+                LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `" << typeid(T).name() << "`" << std::endl;
+
+                __builtin_unreachable();
             }
 
             /* Write IR to Output Stream */
