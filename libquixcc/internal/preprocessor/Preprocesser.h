@@ -85,6 +85,7 @@ namespace libquixcc
 
     public:
         PrepEngine(quixcc_job_t &job) : job(&job), m_macro_parser(job) {}
+        virtual ~PrepEngine() = default;
 
         // Install macro routines
         void setup();

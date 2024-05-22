@@ -1,31 +1,31 @@
 cmake_minimum_required(VERSION 3.15)
 project(libquixcc CXX)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 20)
 
 # Find C++23 source files
 file(GLOB_RECURSE LIBQUIX_CXX_SOURCES "src/*.cc")
 
-# Get LLVM flags from llvm-config-14 --ldflags 
-execute_process(COMMAND llvm-config-14 --ldflags
+# Get LLVM flags from llvm14-config --ldflags 
+execute_process(COMMAND llvm14-config --ldflags
 OUTPUT_VARIABLE LLVM_LD_FLAGS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-# Get LLVM flags from llvm-config-14 --link-static --libfiles
-execute_process(COMMAND llvm-config-14 --link-static --system-libs --libfiles
+# Get LLVM flags from llvm14-config --link-static --libfiles
+execute_process(COMMAND llvm14-config --link-static --system-libs --libfiles
 OUTPUT_VARIABLE LLVM_LIBS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 string(REPLACE "\n" " " LLVM_LIBS "${LLVM_LIBS}")
 string(REPLACE " " ";" LLVM_LIBS "${LLVM_LIBS}")
 
-SET(PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter -Wno-error=unused-variable -fPIC -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete -flto)
+set(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter -Wno-error=unused-variable -Wno-predefined-identifier-outside-function)
 
-SET(PROJECT_DEBUG_FLAGS -g -Wall -Wextra -Werror -Wno-unused-parameter -Wno-error=unused-parameter -pedantic -Wno-error=unused-variable -fPIC -Wno-error=mismatched-new-delete)
+SET(PROJECT_RELEASE_FLAGS -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete -flto ${BUILD_FLAGS_COMMON})
 
-SET(STATIC_PROJECT_RELEASE_FLAGS -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter -Wno-error=unused-variable -fPIC -O3  -Wno-error=mismatched-new-delete)
+SET(PROJECT_DEBUG_FLAGS -Wno-error=unused-variable -Wno-error=mismatched-new-delete ${BUILD_FLAGS_COMMON})
+
+SET(STATIC_PROJECT_RELEASE_FLAGS -O3 -Wno-error=mismatched-new-delete ${BUILD_FLAGS_COMMON})
 
 add_library(libquixcc SHARED ${LIBQUIX_CXX_SOURCES})
 target_include_directories(libquixcc PUBLIC "internal" include)
@@ -46,7 +46,7 @@ endif()
 foreach(lib ${LLVM_LIBS})
     target_link_libraries(libquixcc PRIVATE ${lib})
 endforeach()
-target_link_libraries(libquixcc PRIVATE pthread boost_serialization)
+target_link_libraries(libquixcc PRIVATE pthread boost_serialization execinfo)
 set_target_properties(libquixcc PROPERTIES OUTPUT_NAME quixcc)
 
 add_library(libquixcc-static STATIC ${LIBQUIX_CXX_SOURCES})

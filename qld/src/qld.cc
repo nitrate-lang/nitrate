@@ -7,7 +7,6 @@
 #include <functional>
 #include <optional>
 
-constexpr const char *COPYRIGHT = "Copyright (C) 2024 Wesley C. Jones";
 constexpr const char *VERSION_STR = "qld version 0.1.0 [2024-03] (Debian 10.0.0-1)";
 constexpr const char *FULL_LICENSE = R"(This file is part of QUIX Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones

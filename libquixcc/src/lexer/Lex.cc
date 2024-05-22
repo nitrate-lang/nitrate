@@ -658,7 +658,7 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
     buf.clear();
 
     LexState state = LexState::Start;
-    uint_least32_t state_parens = 0;
+    uint32_t state_parens = 0;
     char c;
 
     while (true)

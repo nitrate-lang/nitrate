@@ -568,12 +568,9 @@ static auto conv(const MemberAccessNode *n, QState &state) -> QResult
     auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
     auto t = e->infer()->as<Type>();
 
-    size_t rank = 0;
-
     while (t->is_ptr())
     {
         t = t->as<Ptr>()->type;
-        rank++;
     }
 
     switch ((ir::q::NodeType)t->ntype)

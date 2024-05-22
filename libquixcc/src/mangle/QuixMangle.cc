@@ -66,7 +66,7 @@ static bool unwrap_tags(const std::string &input, std::vector<std::string> &out)
         while (i < input.size())
         {
             std::string len;
-            while (std::isdigit(input.at(i)))
+            while (i < input.size() && std::isdigit(input.at(i)))
             {
                 len += input.at(i);
                 i++;
@@ -83,6 +83,7 @@ static bool unwrap_tags(const std::string &input, std::vector<std::string> &out)
     }
     catch (std::out_of_range &e)
     {
+        throw std::runtime_error("Out of range");
         return false;
     }
 
@@ -296,7 +297,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(const std::string &t
                 return nullptr;
 
             std::vector<const q::Type *> params;
-            for (size_t i = 1; i < fields.size() - 1; i += 2)
+            for (size_t i = 1; i < fields.size() - 1; i++)
             {
                 const q::Type *t;
                 if ((t = deserialize_type_inner(fields.at(i), prev)) == nullptr)

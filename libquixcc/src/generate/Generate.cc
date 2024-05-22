@@ -225,7 +225,6 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::del
     if (ctx.m_argset.contains("-O0"))
     {
         builder.OptLevel = 0;
-        builder.SizeLevel = 0;
 
         builder.populateModulePassManager(pass);
     }
@@ -241,7 +240,7 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::del
     }
     else
     {
-        builder.Inliner = llvm::createFunctionInliningPass();
+        builder.SizeLevel = 0;
 
         if (ctx.m_argset.contains("-O1"))
             builder.OptLevel = 1;
@@ -249,6 +248,8 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::del
             builder.OptLevel = 2;
         else if (ctx.m_argset.contains("-O3"))
             builder.OptLevel = 3;
+
+        builder.Inliner = llvm::createFunctionInliningPass(builder.OptLevel, builder.SizeLevel, false);
 
         builder.populateModulePassManager(pass);
     }

@@ -96,13 +96,13 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
 
             auto call = std::static_pointer_cast<CallExprNode>(ptr);
 
-            if (!call->m_name.contains("."))
+            if (call->m_name.find(".") == std::string::npos)
                 return;
 
             std::string varname = call->m_name.substr(0, call->m_name.find_last_of("."));
             std::string method = call->m_name.substr(call->m_name.find_last_of(".") + 1);
 
-            if (!vars.contains(varname))
+            if (vars.find(varname) == vars.end())
             {
                 LOG(ERROR) << log::raw << "MethodToFunc: Named item '" << varname << "' not found." << std::endl;
                 return;

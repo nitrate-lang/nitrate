@@ -33,16 +33,16 @@ namespace qpkg
             bool setup(const std::string &location, bool init = false) override;
             bool contains(const CacheKey &key) override;
             std::set<CacheKey> keys() override;
-            void loadb(const CacheKey &key, std::vector<uint8_t> &value);
-            std::string loadf(const CacheKey &key);
-            std::chrono::system_clock::time_point timestamp(const CacheKey &key);
-            void storeb(const CacheKey &key, const std::vector<uint8_t> &value);
-            void storef(const CacheKey &key, const std::string &filepath);
-            void remove(const CacheKey &key);
-            void clear();
-            inline std::string location() { return m_cacheDir; }
-            size_t count();
-            size_t size();
+            void loadb(const CacheKey &key, std::vector<uint8_t> &value) override;
+            std::string loadf(const CacheKey &key) override;
+            std::chrono::system_clock::time_point timestamp(const CacheKey &key) override;
+            void storeb(const CacheKey &key, const std::vector<uint8_t> &value) override;
+            void storef(const CacheKey &key, const std::string &filepath) override;
+            void remove(const CacheKey &key) override;
+            void clear() override;
+            inline std::string location() override { return m_cacheDir; }
+            size_t count() override;
+            size_t size() override;
             void sync() override;
         };
     }

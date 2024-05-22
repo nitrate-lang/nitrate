@@ -203,7 +203,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Global *node)
     if (node->_extern)
         gvar->setLinkage(llvm::GlobalValue::ExternalLinkage);
     else
-        gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
+        gvar->setLinkage(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
 
     if (node->value)
     {
@@ -232,7 +232,7 @@ llvm::Constant *libquixcc::LLVM14Codegen::gen(const ir::delta::Number *node)
 {
     uint8_t bits = get_numbits(node->value);
 
-    if (node->value.contains("."))
+    if (node->value.find(".") != std::string::npos)
     {
         if (bits <= 32)
             return llvm::ConstantFP::get(*m_ctx->m_ctx, llvm::APFloat(llvm::APFloat::IEEEsingle(), node->value));
@@ -604,12 +604,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Call *node)
 {
     std::vector<llvm::Value *> args;
     for (auto &arg : node->args)
-    {
-        // args.push_back(gen(arg));
-        auto v = gen(arg);
-
-        args.push_back(v);
-    }
+        args.push_back(gen(arg));
 
     llvm::FunctionType *ft = static_cast<llvm::FunctionType *>(gent(node->ftype));
 
@@ -652,11 +647,16 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node)
         if (m_state.m_pub)
             func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, m_state.name, m_ctx->m_module.get());
         else
-            func = llvm::Function::Create(ftype, llvm::Function::InternalLinkage, m_state.name, m_ctx->m_module.get());
+            func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, m_state.name, m_ctx->m_module.get());
     }
     else
     {
         func = m_ctx->m_module->getFunction(m_state.name);
+
+        if (m_state.m_pub)
+            func->setLinkage(llvm::Function::ExternalLinkage);
+        else
+            func->setLinkage(llvm::Function::PrivateLinkage);
     }
 
     if (node->block)

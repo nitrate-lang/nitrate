@@ -309,7 +309,7 @@ const libquixcc::ir::q::Type *libquixcc::ir::q::AddressOf::infer() const
     return Ptr::create(lhs->infer());
 }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::Deref::infer() const 
+const libquixcc::ir::q::Type *libquixcc::ir::q::Deref::infer() const
 {
     return lhs->infer()->as<Ptr>()->type;
 }
@@ -330,7 +330,7 @@ const Type *Number::infer() const
 {
     uint8_t bits = get_numbits(value);
 
-    if (value.contains("."))
+    if (value.find(".") != std::string::npos)
     {
         if (bits <= 32)
             return F32::create();

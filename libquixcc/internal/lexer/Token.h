@@ -38,6 +38,7 @@
 
 #include <string>
 #include <variant>
+#include <cstdint>
 
 namespace libquixcc
 {
@@ -175,13 +176,13 @@ namespace libquixcc
     struct Loc
     {
         std::string file;
-        int_least32_t line;
-        int_least32_t col;
+        int32_t line;
+        int32_t col;
 
         Loc() : line(1), col(1) {}
-        Loc(int_least32_t line, int_least32_t col, std::string file = "") : file(file), line(line), col(col) {}
+        Loc(int32_t line, int32_t col, std::string file = "") : file(file), line(line), col(col) {}
 
-        Loc operator-(int_least32_t rhs) const;
+        Loc operator-(int32_t rhs) const;
     };
 
     class Token

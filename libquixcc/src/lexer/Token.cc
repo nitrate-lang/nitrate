@@ -34,7 +34,7 @@
 #include <lexer/Token.h>
 #include <lexer/Lex.h>
 
-libquixcc::Loc libquixcc::Loc::operator-(int_least32_t rhs) const
+libquixcc::Loc libquixcc::Loc::operator-(int32_t rhs) const
 {
     if (rhs <= col)
         return Loc(line, col - rhs, file);

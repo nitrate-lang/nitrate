@@ -99,6 +99,7 @@ namespace libquixcc
 
     public:
         StreamLexer();
+        virtual ~StreamLexer() = default;
 
         /// @brief Set the source file
         /// @param src C FILE pointer
@@ -120,7 +121,9 @@ namespace libquixcc
     public:
         StringLexer() : m_file(nullptr) {}
         StringLexer(const std::string &source_code) { set_source(source_code, "stringlexer"); }
-        ~StringLexer();
+        virtual ~StringLexer();
+
+        using StreamLexer::set_source;
 
         /// @brief Set the source file
         /// @param src C FILE pointer

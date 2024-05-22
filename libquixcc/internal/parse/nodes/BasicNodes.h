@@ -54,6 +54,7 @@ namespace libquixcc
     {
     public:
         ParseNode() = default;
+        virtual ~ParseNode() = default;
 
         virtual size_t dfs_preorder(traversal::ParseTreeTraversalState state);
         virtual std::string to_json(serialize::ParseTreeSerializerState state = serialize::ParseTreeSerializerState()) const;
@@ -143,18 +144,21 @@ namespace libquixcc
     {
     public:
         ExprNode() = default;
+        virtual ~ExprNode() = default;
     };
 
     class ConstExprNode : public ExprNode
     {
     public:
         ConstExprNode() { ntype = NodeType::ConstExprNode; }
+        virtual ~ConstExprNode() = default;
     };
 
     class StmtNode : public ParseNode
     {
     public:
         StmtNode() { ntype = NodeType::StmtNode; }
+        virtual ~StmtNode() = default;
     };
 
     class ExprStmtNode : public StmtNode
@@ -176,15 +180,19 @@ namespace libquixcc
     public:
         TypeNode() { ntype = NodeType::TypeNode; }
         ~TypeNode() = default;
+
         TypeNode(const TypeNode &) = delete;
     };
 
     class UserTypeNode : public TypeNode
     {
         UserTypeNode(const std::string &name) : m_name(name) { ntype = NodeType::UserTypeNode; }
+
         static thread_local std::unordered_map<std::string, std::shared_ptr<UserTypeNode>> m_instances;
 
     public:
+        virtual ~UserTypeNode() = default;
+
         static UserTypeNode *create(const std::string &name)
         {
             if (!m_instances.contains(name))
