@@ -5,10 +5,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-file(GLOB_RECURSE TEST_PROGRAMS "programs/*.cc")
-
-message(STATUS "Found test programs: ${TEST_PROGRAMS}")
-
 include(FetchContent)
 FetchContent_Declare(
   googletest
@@ -18,14 +14,6 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-foreach(TEST_SOURCE ${TEST_PROGRAMS})
-    message(STATUS "Adding test: ${TEST_SOURCE}")
-    get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
-    add_executable(qcc-${TEST_NAME} ${TEST_SOURCE})
-    target_include_directories(qcc-${TEST_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/programs)
-    target_link_libraries(qcc-${TEST_NAME} libquixcc)
-    add_dependencies(qcc-${TEST_NAME} libquixcc)
-endforeach()
 
 file(GLOB_RECURSE TEMPLATES "${CMAKE_CURRENT_SOURCE_DIR}/data/inputs/*")
 
@@ -39,8 +27,10 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc
 )
 
 add_executable(libquixcc-test-suite ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc)
-target_link_libraries(libquixcc-test-suite GTest::gtest_main libquixcc crypto)
+target_link_libraries(libquixcc-test-suite GTest::gtest_main quixcc-static z crypto)
+target_link_options(libquixcc-test-suite PRIVATE --coverage)
 add_dependencies(libquixcc-test-suite libquixcc)
+target_include_directories(libquixcc-test-suite PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 add_custom_target(libquixcc-test-suite-out ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc)
 
 add_test(NAME libquixcc-test-suite COMMAND libquixcc-test-suite)

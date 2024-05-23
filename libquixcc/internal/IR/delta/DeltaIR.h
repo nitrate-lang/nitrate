@@ -71,6 +71,7 @@ namespace libquixcc
                 Packet,
                 Array,
                 FType,
+                PacketDef,
 
                 /* Variables & Literals*/
                 Local,

@@ -181,20 +181,29 @@ bool libquixcc::ir::delta::Ptr::verify_impl() const
     return type->verify();
 }
 
-boost::uuids::uuid libquixcc::ir::delta::Packet::hash_impl() const
-{
+boost::uuids::uuid libquixcc::ir::delta::PacketDef::hash_impl() const {
     auto h = Hasher().gettag().add(name);
     for (auto &t : fields)
         h.add(t.first).add(t.second);
     return h.hash();
 }
 
-bool libquixcc::ir::delta::Packet::verify_impl() const
+bool libquixcc::ir::delta::PacketDef::verify_impl() const
 {
     for (auto &t : fields)
         if (!t.second->verify())
             return false;
     return true;
+}
+
+boost::uuids::uuid libquixcc::ir::delta::Packet::hash_impl() const
+{
+    return Hasher().gettag().add(def).hash();
+}
+
+bool libquixcc::ir::delta::Packet::verify_impl() const
+{
+    return def->verify();
 }
 
 boost::uuids::uuid libquixcc::ir::delta::Array::hash_impl() const

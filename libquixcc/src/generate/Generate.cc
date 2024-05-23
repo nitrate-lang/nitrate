@@ -149,7 +149,6 @@ bool libquixcc::write_c11(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delt
     LOG(DEBUG) << "Generating C" << std::endl;
 
     std::stringstream stream;
-    stream << "#include <stdint.h>\n#include <stddef.h>\n\n";
 
     if (!C11Codegen::codegen(ir, stream))
     {

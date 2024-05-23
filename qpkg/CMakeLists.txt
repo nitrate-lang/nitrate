@@ -10,18 +10,6 @@ file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
 
 add_subdirectory(src/cache/blake3)
 
-# Get LLVM flags from llvm14-config --ldflags 
-execute_process(COMMAND llvm14-config --ldflags
-OUTPUT_VARIABLE LLVM_LD_FLAGS
-OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-# Get LLVM flags from llvm14-config --link-static --libfiles
-execute_process(COMMAND llvm14-config --link-static --libfiles
-OUTPUT_VARIABLE LLVM_LIBS
-OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-string(REPLACE " " ";" LLVM_LIBS "${LLVM_LIBS}")
-
 set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_EXE_LINKER_FLAGS "-static")
@@ -32,12 +20,12 @@ target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquixcc/includ
 set(IGNORE_ERRORS -Wno-predefined-identifier-outside-function)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release") 
-    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror -O3 -flto ${IGNORE_ERRORS})
+    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror -O3 -flto ${IGNORE_ERRORS} -fPIC)
     target_link_options(qpkg PRIVATE -flto)
     add_custom_command(TARGET qpkg POST_BUILD COMMAND strip $<TARGET_FILE:qpkg>)
-    add_custom_command(TARGET qpkg POST_BUILD COMMAND upx $<TARGET_FILE:qpkg>)
+    # add_custom_command(TARGET qpkg POST_BUILD COMMAND upx --best $<TARGET_FILE:qpkg>)
 else()
-    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror  ${IGNORE_ERRORS})
+    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror  ${IGNORE_ERRORS} -fPIC)
 endif()
 
 if (BUILD_TESTING)
@@ -45,9 +33,8 @@ if (BUILD_TESTING)
 endif()
 
 target_link_directories(qpkg PRIVATE ${CMAKE_BINARY_DIR}/libquixcc)
-target_link_libraries(qpkg PRIVATE yaml-cpp blake3 libquixcc-static execinfo ${LLVM_LIBS} z boost_serialization)
-target_link_options(qpkg PRIVATE ${LLVM_LD_FLAGS})
-add_dependencies(qpkg blake3 libquixcc-static)
+target_link_libraries(qpkg PRIVATE quixcc-static execinfo yaml-cpp blake3 boost_serialization z)
+add_dependencies(qpkg blake3 quixcc-static)
 
 if (BUILD_TESTING)
     add_subdirectory(test)

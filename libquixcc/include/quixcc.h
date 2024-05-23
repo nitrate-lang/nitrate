@@ -68,7 +68,7 @@ extern "C"
     };
 
     /// @brief Opaque compiler job context
-    /// @warning Attempting to access this structure directly will result in undefined behavior, as it uses C++ objects internally.
+    /// @note It is opaque for a reason, treat it with respect.
     typedef struct quixcc_job_t quixcc_job_t;
 
     /**
@@ -270,6 +270,221 @@ extern "C"
      * @note If `!mangled`, this function is a no-op and returns NULL.
      */
     char *quixcc_demangle(const char *mangled);
+
+    typedef enum
+    {
+        QUIXCC_LEX_EOF,
+        QUIXCC_LEX_UNK,
+        QUIXCC_LEX_ERROR = -1,
+
+        QUIXCC_LEX_IDENT,
+        QUIXCC_LEX_KW,
+        QUIXCC_LEX_OP,
+        QUIXCC_LEX_PUNCT,
+        QUIXCC_LEX_INT,
+        QUIXCC_LEX_FLOAT,
+        QUIXCC_LEX_STR,
+        QUIXCC_LEX_CHAR,
+        QUIXCC_LEX_METABLK,
+        QUIXCC_LEX_METASEG,
+        QUIXCC_LEX_NOTE,
+    } quixcc_lex_type_t;
+
+    typedef enum
+    {
+        QUIXCC_KW_SUBSYSTEM,
+        QUIXCC_KW_IMPORT,
+        QUIXCC_KW_TYPE,
+        QUIXCC_KW_LET,
+        QUIXCC_KW_VAR,
+        QUIXCC_KW_CONST,
+        QUIXCC_KW_STATIC,
+        QUIXCC_KW_STRUCT,
+        QUIXCC_KW_REGION,
+        QUIXCC_KW_GROUP,
+        QUIXCC_KW_UNION,
+        QUIXCC_KW_OPAQUE,
+        QUIXCC_KW_FN,
+        QUIXCC_KW_NOTHROW,
+        QUIXCC_KW_FOREIGN,
+        QUIXCC_KW_IMPURE,
+        QUIXCC_KW_TSAFE,
+        QUIXCC_KW_ENUM,
+        QUIXCC_KW_PUB,
+        QUIXCC_KW_IF,
+        QUIXCC_KW_ELSE,
+        QUIXCC_KW_FOR,
+        QUIXCC_KW_WHILE,
+        QUIXCC_KW_DO,
+        QUIXCC_KW_SWITCH,
+        QUIXCC_KW_CASE,
+        QUIXCC_KW_DEFAULT,
+        QUIXCC_KW_BREAK,
+        QUIXCC_KW_CONTINUE,
+        QUIXCC_KW_RETURN,
+        QUIXCC_KW_RETIF,
+        QUIXCC_KW_RETZ,
+        QUIXCC_KW_RETV,
+        QUIXCC_KW_ASM,
+        QUIXCC_KW_VOID,
+        QUIXCC_KW_UNDEF,
+        QUIXCC_KW_NULL,
+        QUIXCC_KW_TRUE,
+        QUIXCC_KW_FALSE,
+    } quixcc_lex_kw_t;
+
+    typedef enum
+    {
+        QUIXCC_PUNCT_OPEN_PAREN,
+        QUIXCC_PUNCT_CLOSE_PAREN,
+        QUIXCC_PUNCT_OPEN_BRACE,
+        QUIXCC_PUNCT_CLOSE_BRACE,
+        QUIXCC_PUNCT_OPEN_BRACKET,
+        QUIXCC_PUNCT_CLOSE_BRACKET,
+        QUIXCC_PUNCT_DOT,
+        QUIXCC_PUNCT_COMMA,
+        QUIXCC_PUNCT_COLON,
+        QUIXCC_PUNCT_SEMICOLON,
+    } quixcc_lex_punct_t;
+
+    typedef enum
+    {
+        QUIXCC_OP_AT,
+        QUIXCC_OP_TERNARY,
+        QUIXCC_OP_ARROW,
+        QUIXCC_OP_PLUS,
+        QUIXCC_OP_MINUS,
+        QUIXCC_OP_MUL,
+        QUIXCC_OP_DIV,
+        QUIXCC_OP_MOD,
+        QUIXCC_OP_BIT_AND,
+        QUIXCC_OP_BIT_OR,
+        QUIXCC_OP_BIT_XOR,
+        QUIXCC_OP_BIT_NOT,
+        QUIXCC_OP_SHL,
+        QUIXCC_OP_SHR,
+        QUIXCC_OP_INC,
+        QUIXCC_OP_DEC,
+        QUIXCC_OP_ASSIGN,
+        QUIXCC_OP_PLUS_ASSIGN,
+        QUIXCC_OP_MINUS_ASSIGN,
+        QUIXCC_OP_MUL_ASSIGN,
+        QUIXCC_OP_DIV_ASSIGN,
+        QUIXCC_OP_MOD_ASSIGN,
+        QUIXCC_OP_BIT_OR_ASSIGN,
+        QUIXCC_OP_BIT_AND_ASSIGN,
+        QUIXCC_OP_BIT_XOR_ASSIGN,
+        QUIXCC_OP_XOR_ASSIGN,
+        QUIXCC_OP_OR_ASSIGN,
+        QUIXCC_OP_AND_ASSIGN,
+        QUIXCC_OP_SHL_ASSIGN,
+        QUIXCC_OP_SHR_ASSIGN,
+        QUIXCC_OP_NOT,
+        QUIXCC_OP_AND,
+        QUIXCC_OP_OR,
+        QUIXCC_OP_XOR,
+        QUIXCC_OP_LT,
+        QUIXCC_OP_GT,
+        QUIXCC_OP_LE,
+        QUIXCC_OP_GE,
+        QUIXCC_OP_EQ,
+        QUIXCC_OP_NE,
+    } quixcc_lex_op_t;
+
+    typedef uint32_t quixcc_sid_t;
+
+    typedef struct
+    {
+        uint32_t line;
+        uint32_t column : 24;
+        quixcc_sid_t voucher;
+    } __attribute__((packed)) quixcc_lex_loc_t;
+
+    typedef struct
+    {
+        quixcc_lex_loc_t loc;
+        union
+        {
+            quixcc_lex_op_t op;
+            quixcc_lex_punct_t punct;
+            quixcc_lex_kw_t kw;
+            quixcc_sid_t voucher;
+        } val;
+        quixcc_lex_type_t ty : 8;
+    } __attribute__((packed)) quixcc_tok_t;
+
+#define QUIXCC_TOK_SIZE sizeof(quixcc_tok_t)
+
+    typedef enum
+    {
+        QUIXCC_LEXCONF_IGN_WS = 1 << 0,
+        QUIXCC_LEXCONF_IGN_COM = 1 << 1,
+    } quixcc_lexer_config_t;
+
+    /// @brief Set the lexer configuration for a compiler job.
+    /// @param job The compiler job.
+    /// @param config The lexer configuration.
+    /// @note This function is thread-safe.
+    void quixcc_lexconf(quixcc_job_t *job, quixcc_lexer_config_t config);
+
+    /// @brief Get the next token from the lexer.
+    /// @param job The compiler job.
+    /// @return The next token from the lexer.
+    /// @warning This function is not thread-safe on the same job context, but is thread-safe across different job contexts.
+    quixcc_tok_t quixcc_next(quixcc_job_t *job);
+
+    /// @brief Peek at the next token from the lexer.
+    /// @param job The compiler job.
+    /// @return The next token from the lexer.
+    /// @warning This function is not thread-safe on the same job context, but is thread-safe across different job contexts.
+    quixcc_tok_t quixcc_peek(quixcc_job_t *job);
+
+    /// @brief Get the value of a string given its String ID.
+    /// @param job The compiler job.
+    /// @param voucher The String ID.
+    /// @return The string value or NULL if the voucher does not exist.
+    /// @note This function is thread-safe.
+    /// @warning The returned string is owned by the job. Its lifetime is tied to the job and the lifetime of the token which created it.
+    ///          If the token which created the string is released via `quixcc_tok_release()`, the string will be deallocated and therefore invalid.
+    ///          To prevent this, ensure either to never release the token or dispose of the job before releasing the token. Or copy the string.
+    /// @note This exists to save memory and decrease the size of the `quixcc_tok_t` structure.
+    /// @note This function is very fast and simply indexes into a string table.
+    const char *quixcc_getstr(quixcc_job_t *job, quixcc_sid_t voucher);
+
+    /// @brief Check if a token is valid (no error occurred).
+    /// @param tok The token to check.
+    /// @return true if the token is valid, false otherwise.
+    /// @note This function is thread-safe.
+    static inline bool quixcc_lex_ok(const quixcc_tok_t *tok) { return tok->ty < QUIXCC_LEX_ERROR; }
+
+    /// @brief Check if a token is of a specific type.
+    /// @param tok The token to check.
+    /// @param ty The type to check against.
+    /// @return true if the token is of the specified type, false otherwise.
+    /// @note This function is thread-safe.
+    static inline bool quixcc_lex_is(const quixcc_tok_t *tok, quixcc_lex_type_t ty) { return tok->ty == ty; }
+
+    /// @brief Signal to the job that a token's internal string memory (if any) is no longer needed.
+    /// @param job The compiler job.
+    /// @param tok The token to release.
+    /// @note This function is thread-safe.
+    void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok);
+
+    /// @brief Get raw string representation of a token.
+    /// @param job The compiler job.
+    /// @param tok The token to serialize.
+    /// @param buf The buffer to write the string representation to.
+    /// @param len The length of the buffer.
+    /// @note This function is thread-safe.
+    size_t quixcc_tok_serialize(quixcc_job_t *job, const quixcc_tok_t *tok, char *buf, size_t len);
+
+    /// @brief Get the human-readable string representation of a token.
+    /// @param job The compiler job.
+    /// @param tok The token to serialize.
+    /// @return A malloc'd human-readable string representation of the token.
+    /// @note This function is thread-safe.
+    /// @note The returned string is owned by the caller and must be freed.
+    char *quixcc_tok_humanize(quixcc_job_t *job, const quixcc_tok_t *tok);
 
     ///===================================================================================================
     /// END: LANGUAGE STUFF

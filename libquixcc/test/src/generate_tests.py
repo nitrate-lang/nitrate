@@ -7,6 +7,14 @@ import json
 with open(sys.argv[1], 'r') as f:
     content = f.read()
 
+headerinc = '/* PYTHON_INSERT_INCLUDE */'
+
+loc = os.path.abspath('../../../libquixcc/include/quixcc.h')
+if not os.path.exists(loc):
+    raise Exception(f'{loc} does not exist')
+
+content = content.replace(headerinc, f'#include "{loc}"')
+
 # remove everything after the string `/* PYTHON_INSERT_POINT_SYNTHESIZE_TEST_SUITE */`
 content = content.split('/* PYTHON_INSERT_POINT_SYNTHESIZE_TEST_SUITE */')[
     0] + '/* PYTHON_INSERT_POINT_SYNTHESIZE_TEST_SUITE */\n\n'

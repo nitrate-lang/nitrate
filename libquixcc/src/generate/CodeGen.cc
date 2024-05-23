@@ -131,15 +131,15 @@ llvm::PointerType *libquixcc::LLVM14Codegen::gen(const ir::delta::Ptr *node)
 
 llvm::StructType *libquixcc::LLVM14Codegen::gen(const ir::delta::Packet *node)
 {
-    if (m_state.types.contains(node->name))
-        return static_cast<llvm::StructType *>(m_state.types[node->name]);
+    if (m_state.types.contains(node->def->name))
+        return static_cast<llvm::StructType *>(m_state.types[node->def->name]);
 
     std::vector<llvm::Type *> types;
-    for (auto &field : node->fields)
+    for (auto &field : node->def->fields)
         types.push_back(gent(field.second));
 
-    auto st = llvm::StructType::create(*m_ctx->m_ctx, types, node->name, true);
-    m_state.types[node->name] = st;
+    auto st = llvm::StructType::create(*m_ctx->m_ctx, types, node->def->name, true);
+    m_state.types[node->def->name] = st;
 
     return st;
 }
@@ -947,6 +947,8 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Value *n)
     match(RootNode);
 
     ignore(Packet);
+    ignore(PacketDef);
+    ignore(FType);
 
     throw std::runtime_error("Codegen failed: codegen not implemented for value: " + std::to_string(n->ntype));
 }

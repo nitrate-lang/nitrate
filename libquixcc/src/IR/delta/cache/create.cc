@@ -105,7 +105,8 @@ static F32 *f32_inst = nullptr;
 static F64 *f64_inst = nullptr;
 static Void *void_inst = nullptr;
 static std::map<const Type *, const Ptr *> ptr_insts;
-static std::map<std::pair<std::string, std::vector<std::pair<std::string, const Type *>>>, const Packet *> packet_insts;
+static std::map<const PacketDef *, const Packet *> packet_insts;
+static std::map<std::pair<std::vector<std::pair<std::string, const Type *>>, std::string>, const PacketDef *> packetdef_insts;
 static std::map<std::pair<const Type *, uint64_t>, const Array *> array_insts;
 static std::map<std::tuple<std::vector<const Type *>, const Type *, bool>, const FType *> ftype_insts;
 static std::map<std::tuple<std::string, const Value *, const Value *>, const Local *> local_insts;
@@ -625,13 +626,21 @@ const delta::Ptr *delta::Ptr::create(const Type *type)
     return ptr_insts[type];
 }
 
-const delta::Packet *delta::Packet::create(std::vector<std::pair<std::string, const Type *>> fields, std::string name)
+const libquixcc::ir::delta::Packet *libquixcc::ir::delta::Packet::create(const libquixcc::ir::delta::PacketDef *def)
 {
     lock(NodeType::Packet);
-    auto key = std::make_pair(name, fields);
-    if (!packet_insts.contains(key))
-        packet_insts[key] = new Packet(fields, name);
-    return packet_insts[key];
+    if (!packet_insts.contains(def))
+        packet_insts[def] = new Packet(def);
+    return packet_insts[def];
+}
+
+const libquixcc::ir::delta::PacketDef *libquixcc::ir::delta::PacketDef::create(std::vector<std::pair<std::string, const libquixcc::ir::delta::Type *>> fields, std::string name)
+{
+    lock(NodeType::PacketDef);
+    auto key = std::make_pair(fields, name);
+    if (!packetdef_insts.contains(key))
+        packetdef_insts[key] = new PacketDef(fields, name);
+    return packetdef_insts[key];
 }
 
 const delta::Array *delta::Array::create(const Type *type, uint64_t size)

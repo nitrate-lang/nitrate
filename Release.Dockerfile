@@ -5,7 +5,7 @@ VOLUME /app/
 
 # Install dependencies
 RUN apk update
-RUN apk add cmake clang make upx git
+RUN apk add cmake clang make upx git cargo
 RUN apk add -X http://dl-cdn.alpinelinux.org/alpine/v3.18/main llvm14-dev llvm14-static
 
 # I don't know if all of these are needed, but I use them a lot in other projects
@@ -36,6 +36,10 @@ WORKDIR /tmp/yaml-cpp-0.8.0/build
 RUN cmake -DYAML_BUILD_SHARED_LIBS=OFF ..
 RUN make -j$(nproc) && make install
 RUN rm -rf /tmp/yaml-cpp-0.8.0 /tmp/yaml-cpp-0.8.0.tar.gz
+
+# Install tool to merge libraries
+RUN cargo install --git https://github.com/tux3/armerge
+RUN mv /root/.cargo/bin/armerge /usr/bin
 
 # Make the build script
 RUN echo "#!/bin/sh" > /opt/build.sh

@@ -108,9 +108,9 @@ bool libquixcc::ir::delta::Ptr::print_impl(std::ostream &os, PState &state) cons
     return os << "*", true;
 }
 
-bool libquixcc::ir::delta::Packet::print_impl(std::ostream &os, PState &state) const
+bool libquixcc::ir::delta::PacketDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
 {
-    os << "{";
+    os << "packet " << name << " {";
     for (size_t i = 0; i < fields.size(); i++)
     {
         os << fields[i].first << ": ";
@@ -119,7 +119,14 @@ bool libquixcc::ir::delta::Packet::print_impl(std::ostream &os, PState &state) c
         if (i + 1 < fields.size())
             os << ", ";
     }
+
     return os << "}", true;
+}
+
+bool libquixcc::ir::delta::Packet::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+    os << "packet<" << def->name << ">";
+    return true;
 }
 
 bool libquixcc::ir::delta::Array::print_impl(std::ostream &os, PState &state) const

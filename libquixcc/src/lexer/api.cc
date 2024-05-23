@@ -31,90 +31,49 @@
 
 #define QUIXCC_INTERNAL
 
+#include <lexer/Lex.h>
 #include <LibMacro.h>
-#include <mangle/Symbol.h>
-#include <parse/nodes/AllNodes.h>
+#include <quixcc.h>
+#include <stdexcept>
 
-const std::string libquixcc::Symbol::quix_abiprefix = "_ZJ0";
-const std::string libquixcc::Symbol::cxx_abiprefix = "_Z";
-const std::string libquixcc::Symbol::c_abiprefix = "";
-
-std::string libquixcc::Symbol::join(const std::string &a, const std::string &b)
+LIB_EXPORT void quixcc_lexconf(quixcc_job_t *job, quixcc_lexer_config_t config)
 {
-    if (a.empty())
-        return b;
-    if (b.empty())
-        return a;
-    return a + "::" + b;
+    /// TODO: Implement
+    throw std::runtime_error("quixcc_lexconf Not implemented");
 }
 
-std::string libquixcc::Symbol::join(const std::vector<std::string> &namespaces, const std::string &name)
+LIB_EXPORT quixcc_tok_t quixcc_next(quixcc_job_t *job)
 {
-    std::string result;
-    for (size_t i = 0; i < namespaces.size(); i++)
-        result = join(result, namespaces[i]);
-
-    return join(result, name);
+    /// TODO: Implement
+    throw std::runtime_error("quixcc_next Not implemented");
 }
 
-std::string libquixcc::Symbol::mangle(const ir::q::Value *node, const std::string &prefix, ExportLangType lang)
+LIB_EXPORT quixcc_tok_t quixcc_peek(quixcc_job_t *job)
 {
-    switch (lang)
-    {
-    case ExportLangType::Default:
-        return mangle_quix(node, prefix);
-    case ExportLangType::C:
-        return mangle_c(node, prefix);
-    case ExportLangType::CXX:
-        return mangle_cxx(node, prefix);
-    case ExportLangType::DLang:
-        throw std::runtime_error("DLang export not yet supported");
-    default:
-        throw std::runtime_error("Invalid export language type");
-    }
+    /// TODO: Implement
+    throw std::runtime_error("quixcc_peek Not implemented");
 }
 
-const libquixcc::ir::q::Value *libquixcc::Symbol::demangle(const std::string &mangled)
+LIB_EXPORT const char *quixcc_getstr(quixcc_job_t *job, quixcc_sid_t voucher)
 {
-    std::string input;
-
-    try
-    {
-        if (mangled.starts_with(quix_abiprefix))
-            return demangle_quix(mangled);
-        else if (mangled.starts_with(cxx_abiprefix))
-            return demangle_cxx(mangled);
-        else if (mangled.starts_with(c_abiprefix))
-            return demangle_c(mangled);
-        else
-            return nullptr;
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Demangling error: " << e.what() << std::endl;
-        return nullptr;
-    }
+    /// TODO: Implement
+    throw std::runtime_error("quixcc_getstr Not implemented");
 }
 
-bool libquixcc::Symbol::demangle_tocode(const std::string &mangled, std::string &output)
+LIB_EXPORT void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok)
 {
-    auto node = demangle(mangled);
-    if (node == nullptr)
-        return false;
-
-    output = node->to_string();
-    return true;
+    /// TODO: Implement
+    throw std::runtime_error("quixcc_tok_release Not implemented");
 }
 
-LIB_EXPORT char *quixcc_demangle(const char *mangled)
+LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job, const quixcc_tok_t *tok, char *buf, size_t len)
 {
-    /* no-op */
-    if (!mangled)
-        return nullptr;
+    /// TODO: Implement
+    throw std::runtime_error("quixcc_tok_serialize Not implemented");
+}
 
-    std::string output;
-    if (!libquixcc::Symbol::demangle_tocode(mangled, output))
-        return nullptr;
-
-    return strdup(output.c_str());
+LIB_EXPORT char *quixcc_tok_humanize(quixcc_job_t *job, const quixcc_tok_t *tok)
+{
+    /// TODO: Implement
+    throw std::runtime_error("quixcc_tok_humanize Not implemented");
 }

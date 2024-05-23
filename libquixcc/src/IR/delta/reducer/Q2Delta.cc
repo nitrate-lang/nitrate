@@ -65,7 +65,7 @@ using namespace libquixcc::ir::delta;
 struct DState
 {
     std::map<std::string, const Packet *> regions;
-    std::vector<std::pair<const Packet *, std::vector<const Global *>>> oop;
+    std::vector<std::pair<const PacketDef *, std::vector<const Global *>>> oop;
 
     DState()
     {
@@ -192,7 +192,7 @@ static auto conv(const ir::q::Index *n, DState &state) -> DResult;
 
 static auto conv(const ir::q::RootNode *n, DState &state) -> DResult
 {
-    std::vector<DValue> values;
+    std::vector<DValue> content;
     for (auto node : n->children)
     {
         auto result = conv(node, state);
@@ -200,7 +200,7 @@ static auto conv(const ir::q::RootNode *n, DState &state) -> DResult
             continue;
 
         for (auto &value : *result)
-            values.push_back(value);
+            content.push_back(value);
     }
 
     for (auto it = state.oop.begin(); it != state.oop.end();)
@@ -209,12 +209,52 @@ static auto conv(const ir::q::RootNode *n, DState &state) -> DResult
         auto methods = it->second;
 
         for (auto method : methods)
-            values.push_back(method);
+            content.push_back(method);
 
-        values.push_back(packet);
+        content.insert(content.begin(), packet);
 
         it = state.oop.erase(it);
     }
+
+    std::vector<const Global *> forward_decls;
+
+    for (auto it = content.begin(); it != content.end();)
+    {
+        if (!(*it)->is<Global>())
+        {
+            ++it;
+            continue;
+        }
+
+        auto global = (*it)->as<Global>();
+
+        if (!global->value || !global->value->is<Segment>())
+        {
+            ++it;
+            continue;
+        }
+
+        auto seg = global->value->as<Segment>();
+
+        if (!seg->block)
+        {
+            ++it;
+            continue;
+        }
+
+        forward_decls.push_back(Global::create(global->name,
+                                               seg->infer(),
+                                               Segment::create(seg->ret, seg->variadic, seg->params, nullptr),
+                                               global->_volatile, global->_atomic, global->_extern));
+
+        ++it;
+    }
+
+    std::vector<DValue> values;
+    for (auto decl : forward_decls)
+        values.push_back(decl);
+    for (auto value : content)
+        values.push_back(value);
 
     return RootNode::create(values);
 }
@@ -388,8 +428,8 @@ static auto conv(const ir::q::RegionDef *n, DState &state) -> DResult
     for (auto field : n->fields)
         fields.push_back({field.first, conv(field.second, state)[0]->as<Type>()});
 
-    auto packet = Packet::create(fields, n->name);
-    state.regions[n->name] = packet;
+    auto packet = PacketDef::create(fields, n->name);
+    state.regions[n->name] = Packet::create(packet);
 
     std::vector<const Global *> methods;
     for (auto method : n->methods)
@@ -409,8 +449,8 @@ static auto conv(const ir::q::GroupDef *n, DState &state) -> DResult
     for (auto field : n->fields)
         fields.push_back({field.first, conv(field.second, state)[0]->as<Type>()});
 
-    auto packet = Packet::create(fields, n->name);
-    state.regions[n->name] = packet;
+    auto packet = PacketDef::create(fields, n->name);
+    state.regions[n->name] = Packet::create(packet);
 
     std::vector<const Global *> methods;
     for (auto method : n->methods)

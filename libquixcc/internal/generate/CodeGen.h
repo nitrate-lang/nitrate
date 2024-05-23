@@ -180,6 +180,96 @@ namespace libquixcc
 
     class C11Codegen
     {
+        const size_t INDENT_SIZE = 4;
+        struct CodegenState
+        {
+            const ir::delta::Global *segmentvar;
+            std::set<std::string> autogen;
+            std::vector<std::string> structs;
+            size_t indent;
+
+            CodegenState() {
+                segmentvar = nullptr;
+                indent = 0;
+            }
+        };
+
+        CodegenState m_state;
+
+        std::string gen(const ir::delta::I1 *node);
+        std::string gen(const ir::delta::I8 *node);
+        std::string gen(const ir::delta::I16 *node);
+        std::string gen(const ir::delta::I32 *node);
+        std::string gen(const ir::delta::I64 *node);
+        std::string gen(const ir::delta::I128 *node);
+        std::string gen(const ir::delta::U8 *node);
+        std::string gen(const ir::delta::U16 *node);
+        std::string gen(const ir::delta::U32 *node);
+        std::string gen(const ir::delta::U64 *node);
+        std::string gen(const ir::delta::U128 *node);
+        std::string gen(const ir::delta::F32 *node);
+        std::string gen(const ir::delta::F64 *node);
+        std::string gen(const ir::delta::Void *node);
+        std::string gen(const ir::delta::Ptr *node);
+        std::string gen(const ir::delta::PacketDef *node);
+        std::string gen(const ir::delta::Packet *node);
+        std::string gen(const ir::delta::Array *node);
+        std::string gen(const ir::delta::FType *node);
+        std::string gen(const ir::delta::Local *node);
+        std::string gen(const ir::delta::Global *node);
+        std::string gen(const ir::delta::Number *node);
+        std::string gen(const ir::delta::String *node);
+        std::string gen(const ir::delta::List *node);
+        std::string gen(const ir::delta::Ident *node);
+        std::string gen(const ir::delta::Assign *node);
+        std::string gen(const ir::delta::AddressOf *node);
+        std::string gen(const ir::delta::Deref *node);
+        std::string gen(const ir::delta::Member *node);
+        std::string gen(const ir::delta::Index *node);
+        std::string gen(const ir::delta::SCast *node);
+        std::string gen(const ir::delta::UCast *node);
+        std::string gen(const ir::delta::PtrICast *node);
+        std::string gen(const ir::delta::IPtrCast *node);
+        std::string gen(const ir::delta::Bitcast *node);
+        std::string gen(const ir::delta::IfElse *node);
+        std::string gen(const ir::delta::While *node);
+        std::string gen(const ir::delta::Jmp *node);
+        std::string gen(const ir::delta::Label *node);
+        std::string gen(const ir::delta::Ret *node);
+        std::string gen(const ir::delta::Call *node);
+        std::string gen(const ir::delta::PtrCall *node);
+        std::string gen(const ir::delta::Halt *node);
+        std::string gen(const ir::delta::Block *node);
+        std::string gen(const ir::delta::Segment *node);
+        std::string gen(const ir::delta::Add *node);
+        std::string gen(const ir::delta::Sub *node);
+        std::string gen(const ir::delta::Mul *node);
+        std::string gen(const ir::delta::Div *node);
+        std::string gen(const ir::delta::Mod *node);
+        std::string gen(const ir::delta::BitAnd *node);
+        std::string gen(const ir::delta::BitOr *node);
+        std::string gen(const ir::delta::BitXor *node);
+        std::string gen(const ir::delta::BitNot *node);
+        std::string gen(const ir::delta::Shl *node);
+        std::string gen(const ir::delta::Shr *node);
+        std::string gen(const ir::delta::Rotl *node);
+        std::string gen(const ir::delta::Rotr *node);
+        std::string gen(const ir::delta::Eq *node);
+        std::string gen(const ir::delta::Ne *node);
+        std::string gen(const ir::delta::Lt *node);
+        std::string gen(const ir::delta::Gt *node);
+        std::string gen(const ir::delta::Le *node);
+        std::string gen(const ir::delta::Ge *node);
+        std::string gen(const ir::delta::And *node);
+        std::string gen(const ir::delta::Or *node);
+        std::string gen(const ir::delta::Not *node);
+        std::string gen(const ir::delta::Xor *node);
+        std::string gen(const ir::delta::RootNode *node);
+
+        std::string gen(const ir::delta::Value *node);
+
+        std::string ind();
+
     public:
         static bool codegen(const std::unique_ptr<ir::delta::IRDelta> &ir, std::ostream &os);
     };

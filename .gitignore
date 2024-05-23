@@ -48,3 +48,5 @@ critical-points.txt
 parse.py
 data.json
 out.qh
+lexer-speed.json
+lexer-throughput.json

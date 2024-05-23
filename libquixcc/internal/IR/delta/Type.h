@@ -316,20 +316,20 @@ namespace libquixcc::ir::delta
         const Type *type;
     };
 
-    class Packet : public Type
+    class PacketDef : public Type
     {
     protected:
         bool print_impl(std::ostream &os, PState &state) const override;
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Packet(std::vector<std::pair<std::string, const Type *>> fields, std::string name) : fields(fields), name(name)
+        PacketDef(std::vector<std::pair<std::string, const Type *>> fields, std::string name) : fields(fields), name(name)
         {
-            ntype = (int)NodeType::Packet;
+            ntype = (int)NodeType::PacketDef;
         }
 
     public:
-        static const Packet *create(std::vector<std::pair<std::string, const Type *>> fields, std::string name);
+        static const PacketDef *create(std::vector<std::pair<std::string, const Type *>> fields, std::string name);
         size_t bitcount() const override
         {
             size_t count = 0;
@@ -340,6 +340,25 @@ namespace libquixcc::ir::delta
 
         std::vector<std::pair<std::string, const Type *>> fields;
         std::string name;
+    };
+
+    class Packet : public Type
+    {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
+
+        Packet(const PacketDef *def) : def(def)
+        {
+            ntype = (int)NodeType::Packet;
+        }
+
+    public:
+        static const Packet *create(const PacketDef *def);
+        size_t bitcount() const override { return def->bitcount(); }
+
+        const PacketDef *def;
     };
 
     class Array : public Type
