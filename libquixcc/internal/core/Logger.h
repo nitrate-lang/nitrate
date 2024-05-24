@@ -199,9 +199,9 @@ namespace libquixcc
 
         ~LoggerGroup()
         {
-            // for (auto &logger : m_loggers)
-            //     delete logger.second;
-            // delete m_hole;
+            for (auto &logger : m_loggers)
+                delete logger.second;
+            delete m_hole;
         }
 
         inline void setup(quixcc_job_t &job)

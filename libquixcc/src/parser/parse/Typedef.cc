@@ -37,20 +37,20 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_typedef(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_typedef(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     /*
     type <name> = <type>;
     */
 
     Token tok = scanner->next();
-    if (tok.type() != TT::Identifier)
+    if (tok.type != TT::Identifier)
     {
         LOG(ERROR) << feedback[TYPEDEF_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
-    std::string name = std::get<std::string>(tok.val());
+    std::string name = tok.as<std::string>();
 
     tok = scanner->next();
     if (!tok.is<Operator>(Operator::Assign))

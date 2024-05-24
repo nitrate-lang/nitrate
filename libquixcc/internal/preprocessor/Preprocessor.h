@@ -74,7 +74,7 @@ namespace libquixcc
         std::queue<Token> m_buffer;
         MacroParser m_macro_parser;
 
-        Token read_token();
+        libquixcc::Token read_token();
 
         bool handle_macro(const Token &tok);
         bool handle_import(const Token &tok);
@@ -103,7 +103,7 @@ namespace libquixcc
 
         /// @brief Peek the next token
         /// @return The next token
-        Token peek() override;
+        const Token &peek() override;
 
         void set_static(const std::string &name, const std::string &value) { m_statics[name] = value; }
         bool get_static(const std::string &name, std::string &value) const;

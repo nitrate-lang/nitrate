@@ -37,9 +37,9 @@
 
 using namespace libquixcc;
 
-static bool parse_decl(quixcc_job_t &job, Token tok, std::shared_ptr<libquixcc::Scanner> scanner, std::pair<std::string, libquixcc::TypeNode *> &decl)
+static bool parse_decl(quixcc_job_t &job, Token tok, libquixcc::Scanner *scanner, std::pair<std::string, libquixcc::TypeNode *> &decl)
 {
-    std::string name = std::get<std::string>(tok.val());
+    std::string name = tok.as<std::string>();
 
     tok = scanner->peek();
     if (!tok.is<Punctor>(Punctor::Colon))
@@ -62,7 +62,7 @@ static bool parse_decl(quixcc_job_t &job, Token tok, std::shared_ptr<libquixcc::
     return true;
 }
 
-bool libquixcc::parse_const(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &nodes)
+bool libquixcc::parse_const(quixcc_job_t &job, libquixcc::Scanner *scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &nodes)
 {
     Token tok = scanner->next();
 
@@ -94,7 +94,7 @@ bool libquixcc::parse_const(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
             }
         }
     }
-    else if (tok.type() == TT::Identifier)
+    else if (tok.type == TT::Identifier)
     {
         // Parse single variable declaration
         std::pair<std::string, libquixcc::TypeNode *> decl;

@@ -31,14 +31,19 @@
 
 #define QUIXCC_INTERNAL
 
+/*
+    WARNING: WE ARE NOT ALLOWED TO USE THE LOGGER(lvl) SUBSYSTEM IN THIS FILE
+*/
+
 #include <lexer/Lex.h>
-#include <core/Logger.h>
 #include <cstdio>
 #include <cctype>
+#include <cassert>
 #include <stdexcept>
 #include <cstring>
 #include <iomanip>
 #include <unordered_map>
+#include <iostream>
 #include <mutex>
 #include <regex>
 #include <cmath>
@@ -50,7 +55,7 @@
 
 namespace libquixcc
 {
-    std::unordered_map<std::string, libquixcc::Keyword> keyword_map = {
+    const std::unordered_map<std::string_view, libquixcc::Keyword> keyword_map = {
         {"subsystem", libquixcc::Keyword::Subsystem},
         {"import", libquixcc::Keyword::Import},
         {"type", libquixcc::Keyword::Type},
@@ -91,7 +96,7 @@ namespace libquixcc
         {"true", libquixcc::Keyword::True},
         {"false", libquixcc::Keyword::False}};
 
-    std::unordered_map<libquixcc::Keyword, std::string> keyword_map_inverse = {
+    const std::unordered_map<libquixcc::Keyword, std::string_view> keyword_map_inverse = {
         {libquixcc::Keyword::Subsystem, "subsystem"},
         {libquixcc::Keyword::Import, "import"},
         {libquixcc::Keyword::Type, "type"},
@@ -132,7 +137,7 @@ namespace libquixcc
         {libquixcc::Keyword::True, "true"},
         {libquixcc::Keyword::False, "false"}};
 
-    std::unordered_map<std::string, libquixcc::Punctor> punctor_map = {
+    const std::unordered_map<std::string_view, libquixcc::Punctor> punctor_map = {
         {"(", libquixcc::Punctor::OpenParen},
         {")", libquixcc::Punctor::CloseParen},
         {"{", libquixcc::Punctor::OpenBrace},
@@ -144,7 +149,7 @@ namespace libquixcc
         {":", libquixcc::Punctor::Colon},
         {";", libquixcc::Punctor::Semicolon}};
 
-    std::unordered_map<libquixcc::Punctor, std::string> punctor_map_inverse = {
+    const std::unordered_map<libquixcc::Punctor, std::string_view> punctor_map_inverse = {
         {libquixcc::Punctor::OpenParen, "("},
         {libquixcc::Punctor::CloseParen, ")"},
         {libquixcc::Punctor::OpenBrace, "{"},
@@ -156,7 +161,7 @@ namespace libquixcc
         {libquixcc::Punctor::Colon, ":"},
         {libquixcc::Punctor::Semicolon, ";"}};
 
-    std::unordered_map<std::string, libquixcc::Operator> operator_map = {
+    const std::unordered_map<std::string_view, libquixcc::Operator> operator_map = {
         {"<", libquixcc::Operator::LessThan},
         {">", libquixcc::Operator::GreaterThan},
         {"=", libquixcc::Operator::Assign},
@@ -198,7 +203,7 @@ namespace libquixcc
         {"<<=", libquixcc::Operator::LeftShiftAssign},
         {">>=", libquixcc::Operator::RightShiftAssign}};
 
-    std::unordered_map<libquixcc::Operator, std::string> operator_map_inverse = {
+    const std::unordered_map<libquixcc::Operator, std::string_view> operator_map_inverse = {
         {libquixcc::Operator::LessThan, "<"},
         {libquixcc::Operator::GreaterThan, ">"},
         {libquixcc::Operator::Assign, "="},
@@ -239,9 +244,43 @@ namespace libquixcc
         {libquixcc::Operator::AndAssign, "&&="},
         {libquixcc::Operator::LeftShiftAssign, "<<="},
         {libquixcc::Operator::RightShiftAssign, ">>="}};
+
+    const std::set<char> operator_chars = {'<', '>', '=', '@',
+                                           '-', '+', '*', '/',
+                                           '%', '&', '|', '^',
+                                           '~', '!', '?'};
 }
 
-std::string libquixcc::Scanner::escape_string(const std::string &str)
+// Precomputed lookup table for hex char to byte conversion
+static constexpr std::array<uint8_t, 256> hexLookup = []()
+{
+    std::array<uint8_t, 256> hexLookup = {};
+    hexLookup['0'] = 0;
+    hexLookup['1'] = 1;
+    hexLookup['2'] = 2;
+    hexLookup['3'] = 3;
+    hexLookup['4'] = 4;
+    hexLookup['5'] = 5;
+    hexLookup['6'] = 6;
+    hexLookup['7'] = 7;
+    hexLookup['8'] = 8;
+    hexLookup['9'] = 9;
+    hexLookup['A'] = 10;
+    hexLookup['B'] = 11;
+    hexLookup['C'] = 12;
+    hexLookup['D'] = 13;
+    hexLookup['E'] = 14;
+    hexLookup['F'] = 15;
+    hexLookup['a'] = 10;
+    hexLookup['b'] = 11;
+    hexLookup['c'] = 12;
+    hexLookup['d'] = 13;
+    hexLookup['e'] = 14;
+    hexLookup['f'] = 15;
+    return hexLookup;
+}();
+
+std::string libquixcc::Scanner::escape_string(std::string_view str)
 {
     std::ostringstream output;
 
@@ -293,67 +332,53 @@ std::string libquixcc::Scanner::escape_string(const std::string &str)
 libquixcc::StreamLexer::StreamLexer()
 {
     m_src = nullptr;
-    m_buf_pos = 1024;
-    m_buffer.resize(m_buf_pos);
+    m_buf_pos = GETC_BUFFER_SIZE;
     m_tok = std::nullopt;
-    m_last = 0;
     added_newline = false;
 }
 
 char libquixcc::StreamLexer::getc()
 {
-    assert(m_src != nullptr && "Source file not set");
-
-    /* The QUIX specification requires UTF-8 support. */
-    /// TODO: implement UTF-8 support
-
-    // Stateful buffered reader that inserts a newline character at the end of the file if it doesn't exist.
-
-    /* If the Lexer overshot, we will return the saved character */
-    if (!m_pushback.empty())
-    {
-        char c = m_pushback.front();
-        m_pushback.pop();
-        return c;
-    }
+    if (m_buf_pos > GETC_BUFFER_SIZE) [[unlikely]]
+        return EOF;
 
     /* Fill buffer if it's empty */
-    if (m_buf_pos >= m_buffer.size())
+    if (m_buf_pos >= GETC_BUFFER_SIZE)
     {
-        size_t read;
-        if ((read = fread(m_buffer.data(), 1, m_buffer.size(), m_src)) == 0)
+        size_t read = fread(m_buffer.data(), 1, GETC_BUFFER_SIZE, m_src);
+
+        if (read == GETC_BUFFER_SIZE) [[likely]]
         {
-            // If we haven't added a newline character, we will add one here.
-            if (added_newline)
-                return EOF;
-
-            // We only do this once.
-            m_buffer[0] = '\n';
-            read = 1;
-            added_newline = true;
+            m_buf_pos = 0;
         }
+        else if (read < GETC_BUFFER_SIZE)
+        {
+            memset(m_buffer.data() + read, '\n', GETC_BUFFER_SIZE - read);
 
-        // Resize buffer to the actual size
-        m_buffer.resize(read);
-
-        // Reset buffer position
-        m_buf_pos = 0;
+            if (read != 0)
+            {
+                m_buf_pos = 0;
+            }
+            else
+            {
+                m_buf_pos = GETC_BUFFER_SIZE + 1;
+                return EOF;
+            }
+        }
     }
 
-    // Read character from buffer
-    char c = m_buffer[m_buf_pos++];
-
+    /* Update the current location */
     m_loc = m_loc_curr;
 
-    // Update location
-    if (c == '\n')
+    char c = m_buffer[m_buf_pos++];
+    if (c != '\n')
     {
-        m_loc_curr.line++;
-        m_loc_curr.col = 1;
+        m_loc_curr.col++;
     }
     else
     {
-        m_loc_curr.col++;
+        m_loc_curr.line++;
+        m_loc_curr.col = 1;
     }
 
     return c;
@@ -369,19 +394,12 @@ bool libquixcc::StreamLexer::set_source(FILE *src, const std::string &filename)
         return false;
 
     m_filename = filename;
-    m_loc_curr = Loc(1, 1, filename);
+    m_loc = Loc(1, 1, m_filename); /* Lexer's lifetime > Token's lifetime */
 
     return true;
 }
 
-libquixcc::Token libquixcc::StreamLexer::next()
-{
-    Token tok = peek();
-    m_tok = std::nullopt;
-    return tok;
-}
-
-static bool validate_identifier(const std::string &id)
+static bool validate_identifier(std::string_view id)
 {
     /*
      * This state machine checks if the identifier looks
@@ -525,16 +543,16 @@ static NumType check_number_literal_type(std::string input)
     }
 }
 
-static std::string canonicalize_float(const std::string &input)
+static std::string canonicalize_float(std::string_view input)
 {
     double mantissa = 0, exponent = 0, x = 0;
     size_t e_pos = 0;
 
     if ((e_pos = input.find('e')) == std::string::npos)
-        return input;
+        return input.data();
 
-    mantissa = std::stod(input.substr(0, e_pos));
-    exponent = std::stod(input.substr(e_pos + 1));
+    mantissa = std::stod(input.substr(0, e_pos).data());
+    exponent = std::stod(input.substr(e_pos + 1).data());
 
     x = mantissa * std::pow(10.0, exponent);
 
@@ -627,7 +645,7 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type)
     std::stringstream ss;
     if (x == 0)
         ss << '0';
-    
+
     for (i = x; i; i /= 10)
         ss << (char)('0' + i % 10);
 
@@ -637,7 +655,7 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type)
     return g_canonicalize_number_cache[number] = (norm = s), true;
 }
 
-libquixcc::Token libquixcc::StreamLexer::read_token()
+const libquixcc::Token &libquixcc::StreamLexer::read_token()
 {
     enum class LexState
     {
@@ -661,308 +679,334 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
     uint32_t state_parens = 0;
     char c;
 
-    while (true)
+    try
     {
-        if (m_last != 0)
-            c = m_last, m_last = 0;
-        else if ((c = getc()) == EOF)
-            break;
-
-        switch (state)
+        while (true)
         {
-        case LexState::Start:
-        {
-            // Skip whitespace
-            if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
+            /* If the Lexer overshot, we will return the saved character */
+            if (!m_pushback.empty())
             {
-                continue;
-            }
-            else if (std::isalpha(c) || c == '_') /* Identifier or keyword */
-            {
-                buf += c, state = LexState::Identifier;
-                continue;
-            }
-            else if (c == '/') /* Comment or operator */
-            {
-                state = LexState::CommentStart;
-                continue;
-            }
-            else if (std::isdigit(c))
-            {
-                buf += c, state = LexState::Integer;
-                continue;
-            }
-            else if (c == '"' || c == '\'')
-            {
-                buf += c, state = LexState::String;
-                continue;
-            }
-            else if (c == '@')
-            {
-                state = LexState::MacroStart;
-                continue;
-            }
-            else /* Operator or punctor or invalid */
-            {
-                buf += c, state = LexState::Other;
-                continue;
-            }
-        }
-        case LexState::Identifier:
-        {
-            if (std::isalnum(c) || c == '_' || c == ':' || c == '<' || c == '>')
-            {
-                buf += c;
-                continue;
-            }
-
-            m_last = c;
-
-            /* We overshot; this must be a punctor ':' */
-            if (buf.size() > 0 && buf.back() == ':')
-            {
-                char tc;
-                pushback((tc = buf.back(), buf.pop_back(), tc));
-                continue;
-            }
-
-            /* Determine if it's a keyword or an identifier */
-            for (const auto &kw : keyword_map)
-                if (buf == kw.first)
-                    return (m_tok = Token(TT::Keyword, keyword_map[buf], m_loc - buf.size())).value();
-
-            /* Check if it's a valid identifier */
-            if (!canonicalize_identifier(buf))
-                return (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
-
-            /* Canonicalize the identifier to the correct format */
-            return (m_tok = Token(TT::Identifier, buf, m_loc - buf.size())).value();
-        }
-        case LexState::Integer:
-        {
-            if (std::isxdigit(c) || c == '_' || c == '.' || c == 'x' || c == 'b' || c == 'd' || c == 'o' || c == 'e')
-            {
-                buf += c;
-                continue;
-            }
-
-            NumType type;
-
-            /* Check if it's a floating point number */
-            if ((type = check_number_literal_type(buf)) == NumType::Floating)
-                return m_last = c, (m_tok = Token(TT::Float, canonicalize_float(buf), m_loc - buf.size())).value();
-
-            /* Check if it's a valid number */
-            if (type == NumType::Invalid)
-                return m_last = c, (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
-
-            /* Canonicalize the number */
-            std::string norm;
-            if (canonicalize_number(buf, norm, type))
-                return m_last = c, (m_tok = Token(TT::Integer, norm, m_loc - buf.size())).value();
-
-            /* Invalid number */
-            LOG(ERROR) << log::raw << "Tokenization error: Numeric literal is too large to fit in an integer type: '" << buf << "'" << std::endl;
-            return m_last = c, (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
-        }
-        case LexState::CommentStart:
-        {
-            if (c == '/')
-            {
-                /* Single line comment */
-                state = LexState::CommentSingleLine;
-                continue;
-            }
-            else if (c == '*')
-            {
-                /* Multi-line comment */
-                state = LexState::CommentMultiLine;
-                continue;
+                c = m_pushback.front();
+                m_pushback.pop();
             }
             else
             {
-                /* Divide operator */
-                return (m_last = c, m_tok = Token(TT::Operator, Operator::Divide, m_loc)).value();
-            }
-        }
-        case LexState::CommentSingleLine:
-        {
-            if (c != '\n')
-            {
-                buf += c;
-                continue;
+                if ((c = getc()) == EOF)
+                    break;
             }
 
-            return (m_tok = Token(TT::Comment, buf, m_loc - buf.size())).value();
-        }
-        case LexState::CommentMultiLine:
-        {
-            if (c != '*')
+            switch (state)
             {
-                buf += c;
-                continue;
-            }
-
-            if ((c = getc()) == '/')
-                return (m_tok = Token(TT::Comment, buf, m_loc - buf.size())).value();
-
-            buf += "*/";
-            continue;
-        }
-        case LexState::String:
-        {
-            if (c != buf[0])
+            case LexState::Start:
             {
-                /* Normal character */
-                if (c != '\\')
+                // Skip whitespace
+                if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
                 {
-                    buf += c;
                     continue;
                 }
-
-                /* String escape sequences */
-                c = getc();
-                switch (c)
+                else if (std::isalpha(c) || c == '_') /* Identifier or keyword */
                 {
-                case 'n':
-                    buf += '\n';
-                    break;
-                case 't':
-                    buf += '\t';
-                    break;
-                case 'r':
-                    buf += '\r';
-                    break;
-                case '0':
-                    buf += '\0';
-                    break;
-                case '\\':
-                    buf += '\\';
-                    break;
-                case '\'':
-                    buf += '\'';
-                    break;
-                case '\"':
-                    buf += '\"';
-                    break;
-                case 'x':
-                {
-                    char hex[3] = {getc(), getc(), 0};
-                    buf += std::stoi(hex, nullptr, 16);
-                    break;
-                }
-                case 'u':
-                {
-                    char hex[5] = {getc(), getc(), getc(), getc(), 0};
-                    buf += std::stoi(hex, nullptr, 16);
-                    break;
-                }
-                case 'o':
-                {
-                    char oct[4] = {getc(), getc(), getc(), 0};
-                    buf += std::stoi(oct, nullptr, 8);
-                    break;
-                }
-                default:
-                    buf += c;
-                    break;
-                }
-                continue;
-            }
-
-            /* Character or string */
-            if (buf.front() == '\'' && buf.size() == 2)
-                return (m_tok = Token(TT::Char, std::string(1, buf[1]), m_loc - 2)).value();
-            else
-                return (m_tok = Token(TT::String, buf.substr(1, buf.size() - 1), m_loc - buf.size())).value();
-        }
-        case LexState::MacroStart:
-        {
-            /*
-             * Macros start with '@' and can be either single-line or block macros.
-             * Block macros are enclosed in parentheses.
-             * Single-line macros end with a newline character or a special cases
-             */
-            if (c == '(')
-            {
-                state = LexState::BlockMacro, state_parens = 1;
-                continue;
-            }
-            else
-            {
-                state = LexState::SingleLineMacro, state_parens = 0;
-                buf += c;
-                continue;
-            }
-            break;
-        }
-        case LexState::SingleLineMacro:
-        {
-            /*
-            Format:
-                ... @macro_name(arg1, arg2, arg3, ...) ...
-            */
-            switch (state_parens)
-            {
-            case 0:
-            {
-                if (c == '\n')
-                {
-                    return (m_tok = Token(TT::MacroSingleLine, buf, m_loc - buf.size())).value();
-                }
-                else if (c != '(')
-                {
-                    buf += c;
+                    buf += c, state = LexState::Identifier;
                     continue;
                 }
-                else if (c == '(')
+                else if (c == '/') /* Comment or operator */
                 {
-                    buf += c, state_parens++;
+                    state = LexState::CommentStart;
+                    continue;
+                }
+                else if (std::isdigit(c))
+                {
+                    buf += c, state = LexState::Integer;
+                    continue;
+                }
+                else if (c == '"' || c == '\'')
+                {
+                    buf += c, state = LexState::String;
+                    continue;
+                }
+                else if (c == '@')
+                {
+                    state = LexState::MacroStart;
+                    continue;
+                }
+                else /* Operator or punctor or invalid */
+                {
+                    buf += c;
+                    state = LexState::Other;
+                    continue;
+                }
+            }
+            case LexState::Identifier:
+            {
+                while (std::isalnum(c) || c == '_' || c == ':' || c == '<' || c == '>')
+                {
+                    buf += c;
+
+                    if ((c = getc()) == EOF)
+                        return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+                }
+
+                /* We overshot; this must be a punctor ':' */
+                if (buf.size() > 0 && buf.back() == ':')
+                {
+                    char tc;
+                    m_pushback.push((tc = buf.back(), buf.pop_back(), tc));
+                }
+                m_pushback.push(c);
+
+                /* Determine if it's a keyword or an identifier */
+                for (const auto &kw : keyword_map)
+                    if (buf == kw.first)
+                        return (m_tok = Token(TT::Keyword, keyword_map.at(buf), m_loc - buf.size())).value();
+
+                /* Check if it's a valid identifier */
+                if (!canonicalize_identifier(buf))
+                    return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+
+                /* Canonicalize the identifier to the correct format */
+                return (m_tok = Token(TT::Identifier, buf, m_loc - buf.size())).value();
+            }
+            case LexState::Integer:
+            {
+                while (std::isxdigit(c) || c == '_' || c == '.' || c == 'x' || c == 'b' || c == 'd' || c == 'o' || c == 'e')
+                {
+                    buf += c;
+
+                    if ((c = getc()) == EOF)
+                        return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+                }
+
+                NumType type;
+
+                m_pushback.push(c);
+
+                /* Check if it's a floating point number */
+                if ((type = check_number_literal_type(buf)) == NumType::Floating)
+                    return (m_tok = Token(TT::Float, canonicalize_float(buf), m_loc - buf.size())).value();
+
+                /* Check if it's a valid number */
+                if (type == NumType::Invalid)
+                    return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+
+                /* Canonicalize the number */
+                std::string norm;
+                if (canonicalize_number(buf, norm, type))
+                    return (m_tok = Token(TT::Integer, norm, m_loc - buf.size())).value();
+
+                /* Invalid number */
+                std::cerr << "Tokenization error: Numeric literal is too large to fit in an integer type: '" << buf << "'" << std::endl;
+                return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+            }
+            case LexState::CommentStart:
+            {
+                if (c == '/')
+                {
+                    /* Single line comment */
+                    state = LexState::CommentSingleLine;
+                    continue;
+                }
+                else if (c == '*')
+                {
+                    /* Multi-line comment */
+                    state = LexState::CommentMultiLine;
                     continue;
                 }
                 else
                 {
-                    return (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+                    /* Divide operator */
+                    return (m_tok = Token(TT::Operator, Operator::Divide, m_loc)).value();
                 }
             }
-            default:
+            case LexState::CommentSingleLine:
+            {
+                /* Automota for single-line comments */
+                while (c != '\n')
+                {
+                    buf += c;
+
+                    if ((c = getc()) == EOF)
+                        return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+                }
+
+                return (m_tok = Token(TT::Comment, buf, m_loc - buf.size())).value();
+            }
+            case LexState::CommentMultiLine:
+            {
+                /* Automota for multi-line comments */
+            loop:
+                while (c != '*')
+                {
+                    buf += c;
+
+                    if ((c = getc()) == EOF)
+                        return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+                }
+
+                if ((c = getc()) == '/')
+                    return (m_tok = Token(TT::Comment, buf, m_loc - buf.size())).value();
+                else if (c == EOF)
+                    return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+
+                buf += '*';
+                goto loop;
+            }
+            case LexState::String:
+            {
+                if (c != buf[0])
+                {
+                    /* Normal character */
+                    if (c != '\\')
+                    {
+                        buf += c;
+                        continue;
+                    }
+
+                    /* String escape sequences */
+                    c = getc();
+                    switch (c)
+                    {
+                    case 'n':
+                        buf += '\n';
+                        break;
+                    case 't':
+                        buf += '\t';
+                        break;
+                    case 'r':
+                        buf += '\r';
+                        break;
+                    case '0':
+                        buf += '\0';
+                        break;
+                    case '\\':
+                        buf += '\\';
+                        break;
+                    case '\'':
+                        buf += '\'';
+                        break;
+                    case '\"':
+                        buf += '\"';
+                        break;
+                    case 'x':
+                    {
+                        char hex[2] = {getc(), getc()};
+                        buf += (hexLookup[(uint8_t)hex[0]] << 4) | hexLookup[(uint8_t)hex[1]];
+                        break;
+                    }
+                    case 'u':
+                    {
+                        char hex[4] = {getc(), getc(), getc(), getc()};
+                        uint32_t codepoint = 0;
+                        codepoint |= hexLookup[(uint8_t)hex[0]] << 12;
+                        codepoint |= hexLookup[(uint8_t)hex[1]] << 8;
+                        codepoint |= hexLookup[(uint8_t)hex[2]] << 4;
+                        codepoint |= hexLookup[(uint8_t)hex[3]];
+                        buf += codepoint;
+                        break;
+                    }
+                    case 'o':
+                    {
+                        char oct[4] = {getc(), getc(), getc(), 0};
+                        buf += std::stoi(oct, nullptr, 8);
+                        break;
+                    }
+                    default:
+                        buf += c;
+                        break;
+                    }
+                    continue;
+                }
+
+                /* Character or string */
+                if (buf.front() == '\'' && buf.size() == 2)
+                    return (m_tok = Token(TT::Char, std::string(1, buf[1]), m_loc - 2)).value();
+                else
+                    return (m_tok = Token(TT::String, buf.substr(1, buf.size() - 1), m_loc - buf.size())).value();
+            }
+            case LexState::MacroStart:
+            {
+                /*
+                 * Macros start with '@' and can be either single-line or block macros.
+                 * Block macros are enclosed in parentheses.
+                 * Single-line macros end with a newline character or a special cases
+                 */
+                if (c == '(')
+                {
+                    state = LexState::BlockMacro, state_parens = 1;
+                    continue;
+                }
+                else
+                {
+                    state = LexState::SingleLineMacro, state_parens = 0;
+                    buf += c;
+                    continue;
+                }
+                break;
+            }
+            case LexState::SingleLineMacro:
+            {
+                /*
+                Format:
+                    ... @macro_name(arg1, arg2, arg3, ...) ...
+                */
+                switch (state_parens)
+                {
+                case 0:
+                {
+                    if (c == '\n')
+                    {
+                        return (m_tok = Token(TT::MacroSingleLine, buf, m_loc - buf.size() - 1)).value();
+                    }
+                    else if (c != '(')
+                    {
+                        buf += c;
+                        continue;
+                    }
+                    else if (c == '(')
+                    {
+                        buf += c, state_parens++;
+                        continue;
+                    }
+                    else
+                    {
+                        return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+                    }
+                }
+                default:
+                {
+                    if (c == '(')
+                        buf += c, state_parens++;
+                    else if (c == ')')
+                        buf += c, state_parens--;
+
+                    if (state_parens == 0)
+                        return (m_tok = Token(TT::MacroSingleLine, buf, m_loc - buf.size())).value();
+
+                    buf += c;
+                    continue;
+                }
+                }
+            }
+            case LexState::BlockMacro:
             {
                 if (c == '(')
-                    buf += c, state_parens++;
+                    state_parens++;
                 else if (c == ')')
-                    buf += c, state_parens--;
+                    state_parens--;
 
                 if (state_parens == 0)
-                    return (m_tok = Token(TT::MacroSingleLine, buf, m_loc - buf.size())).value();
+                    return (m_tok = Token(TT::MacroBlock, buf, m_loc - buf.size() - 1)).value();
 
                 buf += c;
                 continue;
             }
-            }
-        }
-        case LexState::BlockMacro:
-        {
-            if (c == '(')
-                state_parens++;
-            else if (c == ')')
-                state_parens--;
-
-            if (state_parens == 0)
-                return (m_tok = Token(TT::MacroBlock, buf, m_loc - buf.size())).value();
-
-            buf += c;
-            continue;
-        }
-        case LexState::Other:
-        {
-            if (buf.size() == 1)
+            case LexState::Other:
             {
                 /* Check if it's a punctor */
                 for (const char punc : punctors)
                 {
                     if (punc == buf[0])
                     {
-                        m_last = c;
+                        m_pushback.push(c);
                         return (m_tok = Token(TT::Punctor, punctor_map.at(buf), m_loc - buf.size())).value();
                     }
                 }
@@ -980,48 +1024,68 @@ libquixcc::Token libquixcc::StreamLexer::read_token()
                     state = LexState::CommentSingleLine;
                     continue;
                 }
-            }
 
-            /* Check if it's an operator */
-            if (!operator_map.contains(buf))
-            {
-                pushback(buf.back());
-                pushback(c);
-                return (m_tok = Token(TT::Operator, operator_map.at(buf.substr(0, buf.size() - 1)), m_loc - buf.size())).value();
-            }
+                while (1)
+                {
+                    if (!operator_map.contains(buf))
+                    {
+                        m_pushback.push(buf.back());
+                        m_pushback.push(c);
+                        return (m_tok = Token(TT::Operator, operator_map.at(buf.substr(0, buf.size() - 1)), m_loc - buf.size())).value();
+                    }
 
-            buf += c;
-            continue;
+                    buf += c;
+
+                    if (buf.size() > 4)
+                    { /* Handle infinite error case */
+                        return reset_state(), (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+                    }
+
+                    if ((c = getc()) == EOF)
+                        return (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+                }
+            }
+            }
         }
-        }
+        m_tok = Token(TT::Eof, "", m_loc);
+        return m_tok.value();
     }
+    catch (...)
+    {
+        reset_state();
+        m_tok = Token(TT::Unknown, buf, m_loc - buf.size());
 
-    m_tok = Token(TT::Eof, "", m_loc);
-    return m_tok.value();
+        return m_tok.value();
+    }
 }
 
-libquixcc::Token libquixcc::StreamLexer::peek()
+const libquixcc::Token &libquixcc::StreamLexer::peek()
 {
     /* If we have a token, return it */
     if (m_tok.has_value())
-        return m_tok.value();
+        return std::move(m_tok.value());
 
     /* This lock makes the entire Lexer thread-safe */
     static std::mutex mutex;
     std::lock_guard<std::mutex> lock(mutex);
 
-    Token tok;
     while (true)
     {
-        tok = read_token();
+        read_token();
 
         /* Skip comments */
-        if (tok.type() != TT::Comment)
-            return tok;
+        if (m_tok->type != TT::Comment)
+            return std::move(m_tok.value());
 
         /* We will ignore comments */
-        m_tok = std::nullopt;
     }
+}
+
+libquixcc::Token libquixcc::StreamLexer::next()
+{
+    Token tok = peek();
+    m_tok = std::nullopt;
+    return tok;
 }
 
 bool libquixcc::StringLexer::set_source(const std::string &source_code, const std::string &filename)
@@ -1059,7 +1123,7 @@ bool libquixcc::StringLexer::QuickLex(const std::string &source_code, std::vecto
             return false;
 
         Token tok;
-        while ((tok = lex.next()).type() != TT::Eof)
+        while ((tok = lex.next()).type != TT::Eof)
             tokens.push_back(tok);
 
         return true;

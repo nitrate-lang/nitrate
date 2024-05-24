@@ -38,14 +38,14 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, Token terminator, std::shared_ptr<libquixcc::ConstExprNode> &node)
+bool libquixcc::parse_const_expr(quixcc_job_t &job, libquixcc::Scanner *scanner, Token terminator, std::shared_ptr<libquixcc::ConstExprNode> &node)
 {
     std::stack<std::shared_ptr<ConstExprNode>> stack;
 
     while (true)
     {
         auto tok = scanner->peek();
-        if (tok.type() == TT::Eof)
+        if (tok.type == TT::Eof)
             return false;
 
         if (tok == terminator)
@@ -62,22 +62,22 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
 
         scanner->next();
 
-        switch (tok.type())
+        switch (tok.type)
         {
         case TT::Integer:
-            stack.push(IntegerNode::create(std::get<std::string>(tok.val())));
+            stack.push(IntegerNode::create(tok.as<std::string>()));
             continue;
         case TT::Float:
-            stack.push(FloatLiteralNode::create(std::get<std::string>(tok.val())));
+            stack.push(FloatLiteralNode::create(tok.as<std::string>()));
             continue;
         case TT::String:
-            stack.push(StringNode::create(std::get<std::string>(tok.val())));
+            stack.push(StringNode::create(tok.as<std::string>()));
             continue;
         case TT::Char:
-            stack.push(CharNode::create(std::get<std::string>(tok.val())));
+            stack.push(CharNode::create(tok.as<std::string>()));
             continue;
         case TT::Keyword:
-            switch (std::get<Keyword>(tok.val()))
+            switch (tok.as<Keyword>())
             {
             case Keyword::True:
                 stack.push(BoolLiteralNode::create(true));
@@ -94,7 +94,7 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
             }
             break;
         case TT::Punctor:
-            switch (std::get<Punctor>(tok.val()))
+            switch (tok.as<Punctor>())
             {
             case Punctor::OpenParen:
             {
@@ -123,7 +123,7 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, std::shared_ptr<libquixcc::S
             break;
         case TT::Operator:
         {
-            auto op = std::get<Operator>(tok.val());
+            auto op = tok.as<Operator>();
             std::shared_ptr<ConstExprNode> expr;
             if (!parse_const_expr(job, scanner, terminator, expr))
                 return false;

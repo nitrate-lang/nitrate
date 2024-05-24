@@ -44,9 +44,9 @@ static std::string trim(const std::string &str)
 
 bool libquixcc::MacroParser::parse(const libquixcc::Token &macro, std::vector<libquixcc::Token> &exp) const
 {
-    std::string content = trim(std::get<std::string>(macro.val()));
+    std::string content = trim(macro.as<std::string>());
 
-    if (macro.type() == TT::MacroSingleLine)
+    if (macro.type == TT::MacroSingleLine)
     {
         std::string directive;
         std::string parameter;
@@ -89,7 +89,7 @@ bool libquixcc::MacroParser::parse(const libquixcc::Token &macro, std::vector<li
             return true;
         }
     }
-    else if (macro.type() == TT::MacroBlock)
+    else if (macro.type == TT::MacroBlock)
     {
         /// TODO: implement block macro parsing
         return parse(Token(TT::MacroSingleLine, content), exp);

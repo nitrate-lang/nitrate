@@ -45,7 +45,7 @@ struct GetPropState
     bool did_tsafe;
 };
 
-static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, GetPropState &state)
+static bool fn_get_property(quixcc_job_t &job, libquixcc::Scanner *scanner, GetPropState &state)
 {
     Token tok = scanner->peek();
 
@@ -101,7 +101,7 @@ static bool fn_get_property(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     return false;
 }
 
-static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<FunctionParamNode> &param)
+static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<FunctionParamNode> &param)
 {
     /*
      <name> : <type> [?] [= <value>]
@@ -109,13 +109,13 @@ static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     auto tok = scanner->next();
 
-    if (tok.type() != TT::Identifier)
+    if (tok.type != TT::Identifier)
     {
         LOG(ERROR) << feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
-    std::string name = std::get<std::string>(tok.val());
+    std::string name = tok.as<std::string>();
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Colon))
@@ -155,7 +155,7 @@ static bool parse_fn_parameter(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
     return true;
 }
 
-bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     // fn [nothrow] [foreign] [pure] [tsafe] <name> ( [param]... ) [: <type>]; or {}
     auto fndecl = std::make_shared<FunctionDeclNode>();
@@ -169,13 +169,13 @@ bool libquixcc::parse_function(quixcc_job_t &job, std::shared_ptr<libquixcc::Sca
 
     Token tok = scanner->next();
 
-    if (tok.type() != TT::Identifier)
+    if (tok.type != TT::Identifier)
     {
         LOG(ERROR) << feedback[FN_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
-    fndecl->m_name = std::get<std::string>(tok.val());
+    fndecl->m_name = tok.as<std::string>();
 
     tok = scanner->next();
 

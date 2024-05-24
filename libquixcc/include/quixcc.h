@@ -275,8 +275,6 @@ extern "C"
     {
         QUIXCC_LEX_EOF,
         QUIXCC_LEX_UNK,
-        QUIXCC_LEX_ERROR = -1,
-
         QUIXCC_LEX_IDENT,
         QUIXCC_LEX_KW,
         QUIXCC_LEX_OP,
@@ -417,8 +415,7 @@ extern "C"
 
     typedef enum
     {
-        QUIXCC_LEXCONF_IGN_WS = 1 << 0,
-        QUIXCC_LEXCONF_IGN_COM = 1 << 1,
+        QUIXCC_LEXCONF_IGN_COM = 1 << 0,
     } quixcc_lexer_config_t;
 
     /// @brief Set the lexer configuration for a compiler job.
@@ -455,7 +452,7 @@ extern "C"
     /// @param tok The token to check.
     /// @return true if the token is valid, false otherwise.
     /// @note This function is thread-safe.
-    static inline bool quixcc_lex_ok(const quixcc_tok_t *tok) { return tok->ty < QUIXCC_LEX_ERROR; }
+    static inline bool quixcc_lex_ok(const quixcc_tok_t *tok) { return tok->ty > QUIXCC_LEX_UNK; }
 
     /// @brief Check if a token is of a specific type.
     /// @param tok The token to check.
@@ -481,10 +478,11 @@ extern "C"
     /// @brief Get the human-readable string representation of a token.
     /// @param job The compiler job.
     /// @param tok The token to serialize.
-    /// @return A malloc'd human-readable string representation of the token.
+    /// @param buf The buffer to write the string representation to.
+    /// @param len The length of the buffer.
+    /// @return The number of characters written to the buffer.
     /// @note This function is thread-safe.
-    /// @note The returned string is owned by the caller and must be freed.
-    char *quixcc_tok_humanize(quixcc_job_t *job, const quixcc_tok_t *tok);
+    size_t quixcc_tok_humanize(quixcc_job_t *job, const quixcc_tok_t *tok, char *buf, size_t len);
 
     ///===================================================================================================
     /// END: LANGUAGE STUFF

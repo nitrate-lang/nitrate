@@ -44,7 +44,7 @@ bool libquixcc::macro::ParseDescription(quixcc_job_t *job, const Token &tok, con
     StringLexer lexer(parameter);
 
     Token tok2 = lexer.next();
-    if (tok2.type() != TT::String)
+    if (tok2.type != TT::String)
     {
         LOG(ERROR) << "Invalid parameter for use directive" << tok << std::endl;
         return false;

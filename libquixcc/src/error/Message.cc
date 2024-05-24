@@ -65,7 +65,7 @@ void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job, libquixcc::E
             std::cerr << message << std::endl;
             abort();
         }
-        
+
         throw Exception(message);
     }
     else if (type == E::FAILED)
@@ -97,67 +97,75 @@ bool libquixcc::LoggerGroup::is_color_enabled()
 
 std::string libquixcc::LoggerGroup::format_message_ansi(const std::string &message, libquixcc::E type, const libquixcc::Token &tok)
 {
-    std::string msg;
+    std::stringstream msg;
 
-    msg.reserve(message.size() + 20);
-
-    if (!tok.nil())
-    {
-        /* Add the file, line, and column information */
-        msg += "\x1b[49;1m" + tok.loc().file + ":";
-        msg += std::to_string(tok.loc().line) + ":" + std::to_string(tok.loc().col) + ":\x1b[0m ";
-    }
+    /* Add the file, line, and column information */
+    msg << "\x1b[49;1m" << tok.loc().file << ":";
+    msg << std::to_string(tok.loc().line) << ":" << std::to_string(tok.loc().col) << ":\x1b[0m ";
 
     /* ANSI color codes */
     switch (type)
     {
     case E::DEBUG:
-        return msg + "\x1b[49;1mdebug:\x1b[0m " + message + "\x1b[0m";
+        msg << "\x1b[49;1mdebug:\x1b[0m " << message << "\x1b[0m";
+        break;
     case E::SUCCESS:
-        return msg + "\x1b[32;49;1msuccess:\x1b[0m " + message + "\x1b[0m";
+        msg << "\x1b[32;49;1msuccess:\x1b[0m " << message << "\x1b[0m";
+        break;
     case E::INFO:
-        return msg + "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" + message + "\x1b[0m";
+        msg << "\x1b[37;49;1minfo:\x1b[0m \x1b[37;49m" << message << "\x1b[0m";
+        break;
     case E::WARN:
-        return msg + "\x1b[35;49;1mwarning:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
+        msg << "\x1b[35;49;1mwarning:\x1b[0m \x1b[37;49;1m" << message << "\x1b[0m";
+        break;
     case E::ERROR:
     case E::FAILED:
-        return msg + "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
+        msg << "\x1b[31;49;1merror:\x1b[0m \x1b[37;49;1m" << message << "\x1b[0m";
+        break;
     case E::FATAL:
-        return msg + "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" + message + "\x1b[0m";
-    default:
-        return message + "\x1b[0m";
+        msg << "\x1b[31;49;1mINTERNAL COMPILER ERROR:\x1b[0m \x1b[37;49;1m" << message << "\x1b[0m";
+        break;
+    case E::RAW:
+        msg << message;
+        break;
     }
+
+    return msg.str();
 }
 
 std::string libquixcc::LoggerGroup::format_message_nocolor(const std::string &message, libquixcc::E type, const libquixcc::Token &tok)
 {
-    std::string msg;
+    std::stringstream msg;
 
-    msg.reserve(message.size() + 20);
-
-    if (!tok.nil())
-    {
-        /* Add the file, line, and column information */
-        msg += tok.loc().file + ":";
-        msg += std::to_string(tok.loc().line) + ":" + std::to_string(tok.loc().col) + ": ";
-    }
+    /* Add the file, line, and column information */
+    msg << tok.loc().file << ":";
+    msg << std::to_string(tok.loc().line) << ":" << std::to_string(tok.loc().col) << ": ";
 
     switch (type)
     {
     case E::DEBUG:
-        return msg + "(debug): " + message;
+        msg << "(debug): " << message;
+        break;
     case E::SUCCESS:
-        return msg + "(success): " + message;
+        msg << "(success): " << message;
+        break;
     case E::INFO:
-        return msg + "(info): " + message;
+        msg << "(info): " << message;
+        break;
     case E::WARN:
-        return msg + "(WARNING): " + message;
+        msg << "(WARNING): " << message;
+        break;
     case E::ERROR:
     case E::FAILED:
-        return msg + "(ERROR): " + message;
+        msg << "(ERROR): " << message;
+        break;
     case E::FATAL:
-        return msg + "(FATAL): " + message;
-    default:
-        return message;
+        msg << "(FATAL): " << message;
+        break;
+    case E::RAW:
+        msg << message;
+        break;
     }
+
+    return msg.str();
 }

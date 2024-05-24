@@ -88,16 +88,16 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
     size_t maxlen = 0;
 
     Token t = tokens[0];
-    if (t.type() == TT::Identifier && tokens.size() > 1)
+    if (t.type == TT::Identifier && tokens.size() > 1)
     {
         // check for noecho and/or binary
         // if present, noecho is first
-        if (std::get<std::string>(t.val()) == "noecho")
+        if (t.as<std::string>() == "noecho")
         {
             noecho = true;
             t = tokens[1];
         }
-        if (std::get<std::string>(t.val()) == "binary")
+        if (t.as<std::string>() == "binary")
         {
             binary = true;
             if ((uint)(noecho + 1) >= tokens.size())
@@ -107,7 +107,7 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
             }
             t = tokens[noecho + 1];
         }
-        if (std::get<std::string>(t.val()) == "expand")
+        if (t.as<std::string>() == "expand")
         {
             expand = true;
             if ((uint)(noecho + binary + 1) >= tokens.size())
@@ -119,13 +119,13 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok, const
         }
     }
 
-    if (t.type() != TT::Integer)
+    if (t.type != TT::Integer)
     {
         LOG(ERROR) << "Invalid readstdin maxlen" << std::endl;
         return false;
     }
 
-    maxlen = std::stoull(std::get<std::string>(t.val()));
+    maxlen = std::stoull(t.as<std::string>());
 
     (void)binary;
 

@@ -646,13 +646,13 @@ bool libquixcc::macro::ParseLicense(quixcc_job_t *job, const Token &tok, const s
     StringLexer lexer(parameter);
 
     Token tok2 = lexer.next();
-    if (tok2.type() != TT::String)
+    if (tok2.type != TT::String)
     {
         LOG(ERROR) << "Invalid SPDX license identifier: '{}'. All License macros must use a valid SPDX license identifier." << parameter << tok << std::endl;
         return false;
     }
 
-    std::string lower = std::get<std::string>(tok2.val());
+    std::string lower = tok2.as<std::string>();
     std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
 
     // Force coders to choose a SPDX license identifier if they use the macro

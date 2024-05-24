@@ -24,7 +24,7 @@ string(REPLACE "\n" " " LLVM_LIBS_BASH "${LLVM_LIBS_RAW}")
 
 set(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter -Wno-error=unused-variable -Wno-predefined-identifier-outside-function)
 
-SET(PROJECT_RELEASE_FLAGS -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete -flto ${BUILD_FLAGS_COMMON})
+SET(PROJECT_RELEASE_FLAGS -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete -flto ${BUILD_FLAGS_COMMON} -DNDEBUG)
 
 SET(PROJECT_DEBUG_FLAGS -Wno-error=unused-variable -Wno-error=mismatched-new-delete ${BUILD_FLAGS_COMMON})
 
@@ -90,4 +90,8 @@ foreach(TEST_SOURCE ${TEST_PROGRAMS})
     target_include_directories(qcc-${TEST_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/test/programs)
     target_link_libraries(qcc-${TEST_NAME} quixcc-static z)
     add_dependencies(qcc-${TEST_NAME} quixcc-static)
+
+    if (BUILD_TESTING)
+        target_link_options(qcc-${TEST_NAME} PRIVATE --coverage)
+    endif()
 endforeach()

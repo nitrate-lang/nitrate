@@ -59,9 +59,9 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
     E level = E::INFO;
 
     Token t = tokens[0];
-    if (t.type() == TT::Identifier && tokens.size() == 3)
+    if (t.type == TT::Identifier && tokens.size() == 3)
     {
-        std::string id = std::get<std::string>(t.val());
+        std::string id = t.as<std::string>();
         std::transform(id.begin(), id.end(), id.begin(), ::tolower);
 
         if (id == "debug")
@@ -82,7 +82,7 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
             return false;
         }
 
-        if (tokens[1].type() != TT::Punctor || std::get<Punctor>(tokens[1].val()) != Punctor::Comma)
+        if (tokens[1].type != TT::Punctor || (tokens[1]).as<Punctor>() != Punctor::Comma)
         {
             LOG(ERROR) << "Expected comma after print level" << std::endl;
             return false;
@@ -91,22 +91,22 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
         switch (level)
         {
         case E::DEBUG:
-            LOG(DEBUG) << log::raw << std::get<std::string>(tokens[2].val()) << tok << std::endl;
+            LOG(DEBUG) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
             break;
         case E::SUCCESS:
-            LOG(SUCCESS) << log::raw << std::get<std::string>(tokens[2].val()) << tok << std::endl;
+            LOG(SUCCESS) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
             break;
         case E::INFO:
-            LOG(INFO) << log::raw << std::get<std::string>(tokens[2].val()) << tok << std::endl;
+            LOG(INFO) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
             break;
         case E::WARN:
-            LOG(WARN) << log::raw << std::get<std::string>(tokens[2].val()) << tok << std::endl;
+            LOG(WARN) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
             break;
         case E::ERROR:
-            LOG(ERROR) << log::raw << std::get<std::string>(tokens[2].val()) << tok << std::endl;
+            LOG(ERROR) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
             throw libquixcc::ProgrammaticPreprocessorException();
         case E::RAW:
-            std::cout << std::get<std::string>(tokens[2].val());
+            std::cout << tokens[2].as<std::string>();
             break;
         default:
             break;
@@ -114,7 +114,7 @@ bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok, const std
     }
     else
     {
-        LOG(INFO) << log::raw << std::get<std::string>(t.val()) << tok << std::endl;
+        LOG(INFO) << log::raw << t.as<std::string>() << tok << std::endl;
     }
 
     return true;

@@ -42,6 +42,7 @@
 #include <optional>
 #include <variant>
 #include <deque>
+#include <stack>
 #include <array>
 #include <unordered_map>
 #include <set>
@@ -53,12 +54,12 @@ namespace libquixcc
     constexpr std::array<char, 10> punctors = {
         '(', ')', '{', '}', '[', ']', '.', ',', ':', ';'};
 
-    extern std::unordered_map<std::string, libquixcc::Keyword> keyword_map;
-    extern std::unordered_map<libquixcc::Keyword, std::string> keyword_map_inverse;
-    extern std::unordered_map<std::string, libquixcc::Punctor> punctor_map;
-    extern std::unordered_map<libquixcc::Punctor, std::string> punctor_map_inverse;
-    extern std::unordered_map<std::string, libquixcc::Operator> operator_map;
-    extern std::unordered_map<libquixcc::Operator, std::string> operator_map_inverse;
+    extern const std::unordered_map<std::string_view, libquixcc::Keyword> keyword_map;
+    extern const std::unordered_map<libquixcc::Keyword, std::string_view> keyword_map_inverse;
+    extern const std::unordered_map<std::string_view, libquixcc::Punctor> punctor_map;
+    extern const std::unordered_map<libquixcc::Punctor, std::string_view> punctor_map_inverse;
+    extern const std::unordered_map<std::string_view, libquixcc::Operator> operator_map;
+    extern const std::unordered_map<libquixcc::Operator, std::string_view> operator_map_inverse;
 
     class Scanner
     {
@@ -67,35 +68,31 @@ namespace libquixcc
         ~Scanner() = default;
 
         virtual Token next() = 0;
-        virtual Token peek() = 0;
+        virtual const Token &peek() = 0;
 
-        static std::string escape_string(const std::string &str);
+        static std::string escape_string(std::string_view str);
 
         virtual void push(Token tok) = 0;
     };
 
     class StreamLexer : public Scanner
     {
-    private:
-        FILE *m_src = nullptr;
-
-    protected:
-        /// @brief C FILE* source. Object is owned by the caller.
-        /// @note The caller is responsible for closing the file.
-        std::string m_filename;
-        std::vector<char> m_buffer;
-        std::queue<char> m_pushback;
+        constexpr static size_t GETC_BUFFER_SIZE = 1024;
+        std::array<char, GETC_BUFFER_SIZE> m_buffer;
         std::optional<Token> m_tok;
-        size_t m_buf_pos = 0;
-        char m_last = 0;
+        std::queue<char> m_pushback;
+        std::string m_filename;
         Loc m_loc_curr;
         Loc m_loc;
+        size_t m_buf_pos = 0;
+        FILE *m_src = nullptr;
         bool added_newline = false;
+        bool ingore_comments = true;
 
-        virtual char getc();
-        virtual libquixcc::Token read_token();
-
-        inline void pushback(char c) { m_pushback.push(c); }
+    protected:
+        char getc();
+        const libquixcc::Token &read_token();
+        inline void reset_state() { m_pushback = std::queue<char>(); }
 
     public:
         StreamLexer();
@@ -107,7 +104,9 @@ namespace libquixcc
         virtual bool set_source(FILE *src, const std::string &filename);
 
         Token next() override;
-        Token peek() override;
+        const Token &peek() override;
+
+        inline void comments(bool ignore) { ingore_comments = ignore; }
 
         inline void push(Token tok) override { m_tok = tok; }
     };

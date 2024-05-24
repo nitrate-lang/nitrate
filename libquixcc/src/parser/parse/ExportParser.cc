@@ -37,17 +37,17 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     Token tok = scanner->peek();
 
     ExportLangType langType = ExportLangType::Default;
 
-    if (tok.type() == TT::String)
+    if (tok.type == TT::String)
     {
         scanner->next();
 
-        std::string lang = std::get<std::string>(tok.val());
+        std::string lang = tok.as<std::string>();
 
         std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
 
@@ -77,7 +77,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     }
 
     scanner->next();
-    if (tok.type() != TT::Keyword)
+    if (tok.type != TT::Keyword)
     {
         LOG(ERROR) << feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok << std::endl;
         return false;
@@ -86,7 +86,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner>
     std::vector<std::shared_ptr<libquixcc::StmtNode>> stmts;
     std::shared_ptr<libquixcc::StmtNode> stmt;
 
-    switch (std::get<Keyword>(tok.val()))
+    switch (tok.as<Keyword>())
     {
     case Keyword::Var:
         if (!parse_var(job, scanner, stmts))

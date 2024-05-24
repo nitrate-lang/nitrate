@@ -461,7 +461,13 @@ std::string libquixcc::C11Codegen::gen(const ir::delta::Jmp *n)
 
 std::string libquixcc::C11Codegen::gen(const ir::delta::Label *n)
 {
-    return n->name + ":";
+    std::stringstream code;
+
+    code << n->name << ":";
+
+    code << ind() << gen(n->code);
+
+    return code.str();
 }
 
 std::string libquixcc::C11Codegen::gen(const ir::delta::Ret *n)
@@ -565,7 +571,7 @@ std::string libquixcc::C11Codegen::gen(const ir::delta::Segment *n)
 
 std::string libquixcc::C11Codegen::gen(const ir::delta::Add *n)
 {
-    return gen(n->lhs) + " + " + gen(n->rhs) + ")";
+    return "(" + gen(n->lhs) + " + " + gen(n->rhs) + ")";
 }
 
 std::string libquixcc::C11Codegen::gen(const ir::delta::Sub *n)

@@ -33,16 +33,16 @@
 #include <core/Logger.h>
 #include <LibMacro.h>
 
-bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     Token tok = scanner->next();
-    if (tok.type() != TT::Identifier)
+    if (tok.type != TT::Identifier)
     {
         LOG(ERROR) << feedback[SUBSYSTEM_MISSING_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
-    std::string name = std::get<std::string>(tok.val());
+    std::string name = tok.as<std::string>();
     std::set<std::string> deps;
 
     tok = scanner->peek();
@@ -52,24 +52,24 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, std::shared_ptr<libquixcc::Sc
     {
         scanner->next(); // consume colon
         tok = scanner->next();
-        if (tok.type() != TT::Identifier)
+        if (tok.type != TT::Identifier)
         {
             LOG(ERROR) << feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
             return false;
         }
-        deps.insert(std::get<std::string>(tok.val()));
+        deps.insert(tok.as<std::string>());
 
         tok = scanner->peek();
         while (tok.is<Punctor>(Punctor::Comma))
         {
             scanner->next(); // consume comma
             tok = scanner->next();
-            if (tok.type() != TT::Identifier)
+            if (tok.type != TT::Identifier)
             {
                 LOG(ERROR) << feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
                 return false;
             }
-            deps.insert(std::get<std::string>(tok.val()));
+            deps.insert(tok.as<std::string>());
             tok = scanner->peek();
         }
     }

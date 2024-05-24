@@ -37,7 +37,7 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_if(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_if(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     std::shared_ptr<ExprNode> cond;
     if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::OpenBrace)}, cond))

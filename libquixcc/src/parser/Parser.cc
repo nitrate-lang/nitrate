@@ -37,7 +37,7 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::BlockNode> &group, bool expect_braces, bool single_stmt)
+bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::BlockNode> &group, bool expect_braces, bool single_stmt)
 {
     Token tok;
 
@@ -53,7 +53,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
 
     group = std::make_shared<BlockNode>();
 
-    while ((tok = scanner->peek()).type() != TT::Eof)
+    while ((tok = scanner->peek()).type != TT::Eof)
     {
         if (single_stmt && group->m_stmts.size() > 0)
             break;
@@ -73,7 +73,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
             continue;
         }
 
-        if (tok.type() != TT::Keyword)
+        if (tok.type != TT::Keyword)
         {
             std::shared_ptr<ExprNode> expr;
             if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, expr))
@@ -97,7 +97,7 @@ bool libquixcc::parse(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> sca
 
         std::shared_ptr<StmtNode> node;
 
-        switch (std::get<Keyword>(tok.val()))
+        switch (tok.as<Keyword>())
         {
         case Keyword::Var:
         {

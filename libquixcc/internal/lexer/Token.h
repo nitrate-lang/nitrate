@@ -101,123 +101,208 @@ namespace libquixcc
 
     enum class Operator
     {
-        At,
-        Question,
-        Arrow,
+        At = 1,
+        Question = 2,
+        Arrow = 3,
 
-        Plus,
-        Minus,
-        Multiply,
-        Divide,
-        Modulo,
+        Plus = 10,
+        Minus = 11,
+        Multiply = 12,
+        Divide = 13,
+        Modulo = 14,
 
-        BitwiseAnd,
-        BitwiseOr,
-        BitwiseXor,
-        BitwiseNot,
+        BitwiseAnd = 20,
+        BitwiseOr = 21,
+        BitwiseXor = 22,
+        BitwiseNot = 23,
+        LeftShift = 24,
+        RightShift = 25,
 
-        LeftShift,
-        RightShift,
+        Increment = 30,
+        Decrement = 31,
+        Assign = 32,
+        PlusAssign = 33,
+        MinusAssign = 34,
+        MultiplyAssign = 35,
+        DivideAssign = 36,
+        ModuloAssign = 37,
+        BitwiseOrAssign = 38,
+        BitwiseAndAssign = 39,
+        BitwiseXorAssign = 40,
+        XorAssign = 41,
+        OrAssign = 42,
+        AndAssign = 43,
+        LeftShiftAssign = 44,
+        RightShiftAssign = 45,
 
-        Increment,
-        Decrement,
+        LogicalNot = 50,
+        LogicalAnd = 51,
+        LogicalOr = 52,
+        LogicalXor = 53,
 
-        Assign,
-        PlusAssign,
-        MinusAssign,
-        MultiplyAssign,
-        DivideAssign,
-        ModuloAssign,
-        BitwiseOrAssign,
-        BitwiseAndAssign,
-        BitwiseXorAssign,
-        XorAssign,
-        OrAssign,
-        AndAssign,
-        LeftShiftAssign,
-        RightShiftAssign,
-
-        LogicalNot,
-        LogicalAnd,
-        LogicalOr,
-        LogicalXor,
-
-        LessThan,
-        GreaterThan,
-        LessThanEqual,
-        GreaterThanEqual,
-        Equal,
-        NotEqual,
+        LessThan = 60,
+        GreaterThan = 61,
+        LessThanEqual = 62,
+        GreaterThanEqual = 63,
+        Equal = 64,
+        NotEqual = 65,
     };
 
     enum class TT
     {
-        Eof = -1,
-        Unknown = 0,
-
-        Identifier = 1,
-        Keyword = 2,
-        Operator = 3,
-        Punctor = 4,
-
-        Integer = 5,
-        Float = 6,
-        String = 7,
-        Char = 8,
-
-        MacroBlock = 9,
-        MacroSingleLine = 10,
-
-        Comment = 11,
+        Eof = 0,
+        Unknown = 1,
+        Identifier = 2,
+        Keyword = 3,
+        Operator = 4,
+        Punctor = 5,
+        Integer = 6,
+        Float = 7,
+        String = 8,
+        Char = 9,
+        MacroBlock = 10,
+        MacroSingleLine = 11,
+        Comment = 12,
     };
-
-    typedef std::variant<std::string, Punctor, Keyword, Operator> TokVal;
 
     struct Loc
     {
-        std::string file;
-        int32_t line;
-        int32_t col;
+        std::string_view file;
+        int_fast32_t line;
+        int_fast32_t col;
 
-        Loc() : line(1), col(1) {}
-        Loc(int32_t line, int32_t col, std::string file = "") : file(file), line(line), col(col) {}
+        Loc() : file(""), line(1), col(1) {}
+        Loc(int_fast32_t line, int_fast32_t col, std::string_view file = "") : file(file), line(line), col(col) {}
 
-        Loc operator-(int32_t rhs) const;
+        Loc operator-(int_fast32_t rhs) const;
     };
+
+#if !defined(NDEBUG)
+    typedef std::variant<std::string, Punctor, Keyword, Operator> TokVal;
+    TokVal m_value;
+#else
+    struct TokVal
+    {
+        std::string str;
+        int val;
+
+        TokVal() : val(0) {}
+        TokVal(std::string str) : str(str) {}
+        TokVal(const char *str) : str(str) {}
+        TokVal(Punctor punctor) : val(static_cast<int>(punctor)) {}
+        TokVal(Keyword keyword) : val(static_cast<int>(keyword)) {}
+        TokVal(Operator op) : val(static_cast<int>(op)) {}
+    };
+#endif
 
     class Token
     {
         TokVal m_value;
         Loc m_loc;
-        TT m_type;
 
     public:
-        Token() : m_value(std::string()), m_loc(), m_type(TT::Unknown) {}
+        TT type;
+
+        Token() : type(TT::Unknown) {}
         Token(TT type, TokVal value, Loc loc = Loc());
 
-        inline TT type() const { return m_type; }
-        inline const TokVal &val() const { return m_value; }
-        inline const Loc &loc() const { return m_loc; }
-
-        inline bool is(TT val) const { return m_type == val; }
+        inline bool is(TT val) const { return type == val; }
 
         template <typename T, typename V = T>
         bool is(V val) const
         {
-            return std::holds_alternative<T>(m_value) && std::get<V>(m_value) == val;
+            if constexpr (std::is_same_v<T, std::string>)
+                return type == TT::Identifier && as<std::string>() == val;
+            else if constexpr (std::is_same_v<T, Keyword>)
+                return type == TT::Keyword && as<Keyword>() == val;
+            else if constexpr (std::is_same_v<T, Punctor>)
+                return type == TT::Punctor && as<Punctor>() == val;
+            else if constexpr (std::is_same_v<T, Operator>)
+                return type == TT::Operator && as<Operator>() == val;
+            else
+                return false;
         }
+
+        template <typename T>
+        const T &as() const
+        {
+#if !defined(NDEBUG)
+            return std::get<T>(m_value);
+#else
+            if constexpr (std::is_same_v<T, std::string>)
+            {
+                return m_value.str;
+            }
+            else if constexpr (std::is_same_v<T, Punctor>)
+            {
+                static_assert(sizeof(m_value.val) == sizeof(Punctor));
+                return *reinterpret_cast<const Punctor *>(&m_value.val);
+            }
+            else if constexpr (std::is_same_v<T, Keyword>)
+            {
+                static_assert(sizeof(m_value.val) == sizeof(Keyword));
+                return *reinterpret_cast<const Keyword *>(&m_value.val);
+            }
+            else if constexpr (std::is_same_v<T, Operator>)
+            {
+                static_assert(sizeof(m_value.val) == sizeof(Operator));
+                return *reinterpret_cast<const Operator *>(&m_value.val);
+            }
+            else
+            {
+                static_assert(false, "Invalid type");
+            }
+#endif
+        }
+
+        const Loc &loc() const { return m_loc; }
 
         std::string serialize(bool human_readable = true) const;
 
-        inline bool operator==(const Token &rhs) const { return m_type == rhs.m_type && m_value == rhs.m_value; }
-        inline bool operator<(const Token &rhs) const
+        inline bool operator==(const Token &rhs) const
         {
-            if (m_type != rhs.m_type)
-                return m_type < rhs.m_type;
-            return m_value < rhs.m_value;
+            if (type != rhs.type)
+                return false;
+
+            switch (type)
+            {
+            case TT::Identifier:
+            case TT::String:
+            case TT::Char:
+            case TT::Integer:
+                return as<std::string>() == rhs.as<std::string>();
+            case TT::Keyword:
+                return as<Keyword>() == rhs.as<Keyword>();
+            case TT::Operator:
+                return as<Operator>() == rhs.as<Operator>();
+            case TT::Punctor:
+                return as<Punctor>() == rhs.as<Punctor>();
+            default:
+                return true;
+            }
         }
 
-        inline bool nil() const { return m_type == TT::Unknown; }
+        inline bool operator<(const Token &rhs) const
+        {
+            if (type != rhs.type)
+                return type < rhs.type;
+            switch (type)
+            {
+            case TT::Identifier:
+            case TT::String:
+            case TT::Char:
+            case TT::Integer:
+                return as<std::string>() < rhs.as<std::string>();
+            case TT::Keyword:
+                return as<Keyword>() < rhs.as<Keyword>();
+            case TT::Operator:
+                return as<Operator>() < rhs.as<Operator>();
+            case TT::Punctor:
+                return as<Punctor>() < rhs.as<Punctor>();
+            default:
+                return false;
+            }
+        }
     };
 };
 

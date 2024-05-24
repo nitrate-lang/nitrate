@@ -54,7 +54,7 @@
 #include <llvm/MC/TargetRegistry.h>
 #include <generate/Generate.h>
 #include <lexer/Lex.h>
-#include <preprocessor/Preprocesser.h>
+#include <preprocessor/Preprocessor.h>
 #include <core/Logger.h>
 #include <core/Exception.h>
 #include <parse/Parser.h>
@@ -199,6 +199,7 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
     job->m_filename = nullptr;
     job->m_priority = 0;
     job->m_debug = job->m_tainted = job->m_running = false;
+    job->m_sid_ctr = 0;
 
     /* Set magic structure field */
     job->m_magic = JOB_MAGIC;
@@ -627,10 +628,12 @@ static bool get_env_constants(quixcc_job_t *job, std::map<std::string, std::stri
     return true;
 }
 
-static bool preprocess_phase(quixcc_job_t *job, std::shared_ptr<PrepEngine> prep)
+bool preprocessor_config(quixcc_job_t *job, std::unique_ptr<PrepEngine> &prep)
 {
     std::set<std::string> dirs;
     std::map<std::string, std::string> constants;
+
+    prep->setup();
 
     if (!get_include_directories(job, dirs))
     {
@@ -671,15 +674,14 @@ static bool compile(quixcc_job_t *job)
     if (job->m_argset.contains("-PREP"))
     {
         LOG(DEBUG) << "Preprocessing only" << std::endl;
-        std::shared_ptr<PrepEngine> prep = std::make_shared<PrepEngine>(*job);
-        prep->setup();
-        if (!preprocess_phase(job, prep))
+        std::unique_ptr<PrepEngine> prep = std::make_unique<PrepEngine>(*job);
+        if (!preprocessor_config(job, prep))
             return false;
 
         // Generate output
         std::string tmp;
         std::optional<Token> tok;
-        while ((tok = prep->next())->type() != TT::Eof)
+        while ((tok = prep->next())->type != TT::Eof)
         {
             tmp = tok->serialize();
             fwrite(tmp.c_str(), 1, tmp.size(), job->m_out);
@@ -703,7 +705,7 @@ static bool compile(quixcc_job_t *job)
         // Generate output
         std::string tmp;
         Token tok;
-        while ((tok = lexer.next()).type() != TT::Eof)
+        while ((tok = lexer.next()).type != TT::Eof)
         {
             tmp = tok.serialize();
             fwrite(tmp.c_str(), 1, tmp.size(), job->m_out);
@@ -713,27 +715,28 @@ static bool compile(quixcc_job_t *job)
         return true;
     }
 
-    ///=========================================
-    /// BEGIN: PREPROCESSOR/LEXER
-    auto prep = std::make_shared<PrepEngine>(*job);
-    LOG(DEBUG) << "Preprocessing source" << std::endl;
-    prep->setup();
-    if (!preprocess_phase(job, prep))
-        return false;
-    LOG(DEBUG) << "Finished preprocessing source" << std::endl;
-    /// END:   PREPROCESSOR/LEXER
-    ///=========================================
+    {
+        ///=========================================
+        /// BEGIN: PREPROCESSOR/LEXER
+        auto prep = std::make_unique<PrepEngine>(*job);
+        LOG(DEBUG) << "Preprocessing source" << std::endl;
+        if (!preprocessor_config(job, prep))
+            return false;
+        LOG(DEBUG) << "Finished preprocessing source" << std::endl;
+        /// END:   PREPROCESSOR/LEXER
+        ///=========================================
 
-    ///=========================================
-    /// BEGIN: PARSER
-    LOG(DEBUG) << "Building Ptree 1" << std::endl;
-    if (!parse(*job, prep, ptree, false))
-        return false;
-    LOG(DEBUG) << "Finished building Ptree 1" << std::endl;
-    if (job->m_debug)
-        LOG(DEBUG) << log::raw << "Dumping Ptree 1 (JSON): " << base64_encode(ptree->to_json()) << std::endl;
-    /// END:   PARSER
-    ///=========================================
+        ///=========================================
+        /// BEGIN: PARSER
+        LOG(DEBUG) << "Building Ptree 1" << std::endl;
+        if (!parse(*job, prep.get(), ptree, false))
+            return false;
+        LOG(DEBUG) << "Finished building Ptree 1" << std::endl;
+        if (job->m_debug)
+            LOG(DEBUG) << log::raw << "Dumping Ptree 1 (JSON): " << base64_encode(ptree->to_json()) << std::endl;
+        /// END:   PARSER
+        ///=========================================
+    } /* Destruct PrepEngine */
 
     ///=========================================
     /// BEGIN: INTERMEDIATE PROCESSING

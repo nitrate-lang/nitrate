@@ -37,12 +37,12 @@
 
 using namespace libquixcc;
 
-static bool parse_enum_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<EnumFieldNode> &node)
+static bool parse_enum_field(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<EnumFieldNode> &node)
 {
     // <name> [ = <value> ] [,]
 
     Token tok = scanner->next();
-    if (tok.type() != TT::Identifier)
+    if (tok.type != TT::Identifier)
     {
         LOG(ERROR) << feedback[ENUM_FIELD_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;
@@ -50,7 +50,7 @@ static bool parse_enum_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
 
     node = std::make_shared<EnumFieldNode>();
 
-    node->m_name = std::get<std::string>(tok.val());
+    node->m_name = tok.as<std::string>();
 
     tok = scanner->peek();
     if (tok.is<Operator>(Operator::Assign))
@@ -80,16 +80,16 @@ static bool parse_enum_field(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     return true;
 }
 
-bool libquixcc::parse_enum(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_enum(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     Token tok = scanner->next();
-    if (tok.type() != TT::Identifier)
+    if (tok.type != TT::Identifier)
     {
         LOG(ERROR) << feedback[ENUM_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;
     }
 
-    std::string name = std::get<std::string>(tok.val());
+    std::string name = tok.as<std::string>();
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Colon))

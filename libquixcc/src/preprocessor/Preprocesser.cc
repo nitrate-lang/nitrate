@@ -31,7 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <preprocessor/Preprocesser.h>
+#include <preprocessor/Preprocessor.h>
 #include <cstdio>
 #include <cctype>
 #include <stdexcept>
@@ -120,7 +120,7 @@ libquixcc::Token libquixcc::PrepEngine::next()
     return tok;
 }
 
-libquixcc::Token libquixcc::PrepEngine::peek()
+const libquixcc::Token &libquixcc::PrepEngine::peek()
 {
     if (m_tok)
         return m_tok.value();
@@ -142,20 +142,20 @@ bool libquixcc::PrepEngine::get_static(const std::string &name, std::string &val
 bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok)
 {
     StringLexer lexer;
-    if (!lexer.set_source(std::get<std::string>(input_tok.val()).substr(6), "import"))
+    if (!lexer.set_source(input_tok.as<std::string>().substr(6), "import"))
     {
         LOG(ERROR) << "Failed to set source for import" << input_tok << std::endl;
         return false;
     }
 
     Token tok = lexer.next();
-    if (tok.type() != TT::Identifier)
+    if (tok.type != TT::Identifier)
     {
         LOG(ERROR) << "Expected identifier after import" << tok << std::endl;
         return false;
     }
 
-    std::string filename = std::regex_replace(std::get<std::string>(tok.val()), std::regex("::"), "/");
+    std::string filename = std::regex_replace(tok.as<std::string>(), std::regex("::"), "/");
 
     tok = lexer.peek();
     if (tok.is<Punctor>(Punctor::OpenParen))
@@ -163,13 +163,13 @@ bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok)
         // <name>(version)
         lexer.next();
         tok = lexer.next();
-        if (tok.type() == TT::Identifier)
+        if (tok.type == TT::Identifier)
         {
-            filename = filename + "/" + std::get<std::string>(tok.val()) + QUIX_HEADER_EXTENSION;
+            filename = filename + "/" + tok.as<std::string>() + QUIX_HEADER_EXTENSION;
         }
-        else if (tok.type() == TT::Integer)
+        else if (tok.type == TT::Integer)
         {
-            filename = filename + "/" + std::get<std::string>(tok.val()) + QUIX_HEADER_EXTENSION;
+            filename = filename + "/" + tok.as<std::string>() + QUIX_HEADER_EXTENSION;
         }
         else
         {
@@ -273,7 +273,7 @@ bool libquixcc::PrepEngine::handle_macro(const libquixcc::Token &tok)
 
     for (auto &tok : expanded)
     {
-        if (tok.type() == TT::MacroSingleLine || tok.type() == TT::MacroBlock)
+        if (tok.type == TT::MacroSingleLine || tok.type == TT::MacroBlock)
         {
             if (!handle_macro(tok))
                 return false;
@@ -308,9 +308,9 @@ libquixcc::Token libquixcc::PrepEngine::read_token()
 
         tok = m_stack.top().lexer.next();
 
-        if (tok.type() == TT::MacroSingleLine || tok.type() == TT::MacroBlock)
+        if (tok.type == TT::MacroSingleLine || tok.type == TT::MacroBlock)
         {
-            if (std::get<std::string>(tok.val()).starts_with("import"))
+            if (tok.as<std::string>().starts_with("import"))
             {
                 if (!handle_import(tok))
                 {
@@ -325,7 +325,7 @@ libquixcc::Token libquixcc::PrepEngine::read_token()
 
             continue;
         }
-        else if (tok.type() == TT::Eof)
+        else if (tok.type == TT::Eof)
         {
             if (m_stack.size() == 1)
                 goto end;

@@ -37,7 +37,7 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_return(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_return(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     Token tok = scanner->peek();
 
@@ -64,7 +64,7 @@ bool libquixcc::parse_return(quixcc_job_t &job, std::shared_ptr<libquixcc::Scann
     return true;
 }
 
-bool libquixcc::parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_retif(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     /*
         Syntax:
@@ -105,7 +105,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanne
     return true;
 }
 
-bool libquixcc::parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_retz(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     /*
         Syntax:
@@ -146,7 +146,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
     return true;
 }
 
-bool libquixcc::parse_retv(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+bool libquixcc::parse_retv(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
     /*
         Syntax:

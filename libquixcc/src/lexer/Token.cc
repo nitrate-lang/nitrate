@@ -33,8 +33,9 @@
 
 #include <lexer/Token.h>
 #include <lexer/Lex.h>
+#include <sstream>
 
-libquixcc::Loc libquixcc::Loc::operator-(int32_t rhs) const
+libquixcc::Loc libquixcc::Loc::operator-(int_fast32_t rhs) const
 {
     if (rhs <= col)
         return Loc(line, col - rhs, file);
@@ -53,48 +54,63 @@ libquixcc::Loc libquixcc::Loc::operator-(int32_t rhs) const
     return new_loc;
 }
 
-libquixcc::Token::Token(libquixcc::TT type, libquixcc::TokVal value, libquixcc::Loc loc)
+libquixcc::Token::Token(libquixcc::TT _type, libquixcc::TokVal value, libquixcc::Loc _loc)
 {
-    m_type = type;
+    type = _type;
     m_value = value;
-    m_loc = loc;
+    m_loc = _loc;
 }
 
 std::string libquixcc::Token::serialize(bool human_readable) const
 {
     (void)human_readable;
+    std::stringstream ss;
 
-    switch (m_type)
+    switch (type)
     {
     case TT::Eof:
-        return "Eof";
+        ss << "Eof";
+        break;
     case TT::Unknown:
-        return "Unknown";
+        ss << "Unknown";
+        break;
     case TT::Identifier:
-        return "Identifier(" + std::get<std::string>(m_value) + ")";
+        ss << "Identifier(" << as<std::string>() << ")";
+        break;
     case TT::Keyword:
-        return "Keyword(" + keyword_map_inverse.at(std::get<Keyword>(m_value)) + ")";
+        ss << "Keyword(" << keyword_map_inverse.at(as<Keyword>()).data() << ")";
+        break;
     case TT::Operator:
-        return "Operator(" + operator_map_inverse.at(std::get<Operator>(m_value)) + ")";
+        ss << "Operator(" << operator_map_inverse.at(as<Operator>()).data() << ")";
+        break;
     case TT::Punctor:
-        return "Punctor(" + punctor_map_inverse.at(std::get<Punctor>(m_value)) + ")";
+        ss << "Punctor(" << punctor_map_inverse.at(as<Punctor>()).data() << ")";
+        break;
     case TT::String:
-        return "\"" + std::get<std::string>(m_value) + "\"";
+        ss << "\"" << as<std::string>() << "\"";
+        break;
     case TT::Char:
-        return "'" + std::get<std::string>(m_value) + "'";
+        ss << "'" << as<std::string>() << "'";
+        break;
     case TT::Integer:
-        return "Number(" + std::get<std::string>(m_value) + ")";
+        ss << "Number(" << as<std::string>() << ")";
+        break;
     case TT::Float:
-        return "Float(" + std::get<std::string>(m_value) + ")";
+        ss << "Float(" << as<std::string>() << ")";
+        break;
     case TT::Comment:
-        return "/* " + std::get<std::string>(m_value) + " */";
+        ss << "/* " << as<std::string>() << " */";
+        break;
     case TT::MacroBlock:
-        return "MacroBlock(" + std::get<std::string>(m_value) + ")";
+        ss << "MacroBlock(" << as<std::string>() << ")";
+        break;
     case TT::MacroSingleLine:
-        return "MacroSingleLine(" + std::get<std::string>(m_value) + ")";
+        ss << "MacroSingleLine(" << as<std::string>() << ")";
+        break;
     default:
-        return "Unknown";
+        ss << "Unknown";
+        break;
     }
 
-    return "Unknown";
+    return ss.str();
 }

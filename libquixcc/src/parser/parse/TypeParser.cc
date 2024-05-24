@@ -54,14 +54,14 @@ static std::map<std::string, TypeNode *> primitive_types = {
     {"string", StringTypeNode::create()},
     {"void", VoidTypeNode::create()}};
 
-bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner> scanner, TypeNode **node)
+bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner, TypeNode **node)
 {
     Token tok = scanner->next();
-    if (tok.type() == TT::Keyword)
+    if (tok.type == TT::Keyword)
     {
         std::shared_ptr<StmtNode> fn;
 
-        switch (std::get<Keyword>(tok.val()))
+        switch (tok.as<Keyword>())
         {
         case Keyword::Void:
             *node = VoidTypeNode::create();
@@ -91,12 +91,12 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
                 return false;
             }
             tok = scanner->next();
-            if (tok.type() != TT::Identifier)
+            if (tok.type != TT::Identifier)
             {
                 LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_IDENTIFIER] << tok << std::endl;
                 return false;
             }
-            std::string name = std::get<std::string>(tok.val());
+            std::string name = tok.as<std::string>();
             tok = scanner->next();
             if (!tok.is<Punctor>(Punctor::CloseParen))
             {
@@ -111,16 +111,16 @@ bool libquixcc::parse_type(quixcc_job_t &job, std::shared_ptr<libquixcc::Scanner
             return false;
         }
     }
-    else if (tok.type() == TT::Identifier)
+    else if (tok.type == TT::Identifier)
     {
-        if (primitive_types.contains(std::get<std::string>(tok.val())))
+        if (primitive_types.contains(tok.as<std::string>()))
         {
-            *node = primitive_types[std::get<std::string>(tok.val())];
+            *node = primitive_types[tok.as<std::string>()];
             return true;
         }
         else
         {
-            *node = UserTypeNode::create(std::get<std::string>(tok.val()));
+            *node = UserTypeNode::create(tok.as<std::string>());
             return true;
         }
     }

@@ -41,7 +41,9 @@
 #include <mutex>
 #include <atomic>
 #include <llvm/LLVMWrapper.h>
+#include <preprocessor/Preprocessor.h>
 #include <quixcc.h>
+#include <unordered_map>
 
 typedef struct quixcc_options_t
 {
@@ -59,8 +61,11 @@ typedef struct quixcc_uuid_t
 struct quixcc_job_t
 {
     volatile uint64_t m_magic;
+    std::unique_ptr<libquixcc::PrepEngine> m_prep;
     libquixcc::LLVMContext m_inner;
     std::map<std::string, std::string> m_argset;
+    std::unordered_map<quixcc_sid_t, char *> m_owned_strings;
+    quixcc_sid_t m_sid_ctr;
     std::mutex m_lock;
     std::string m_triple;
     std::string m_cpu;

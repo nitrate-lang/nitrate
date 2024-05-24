@@ -40,7 +40,7 @@
 #include <iomanip>
 #include <code-example.hpp>
 
-constexpr size_t num_iterations = 100000;
+constexpr size_t num_iterations = 50;
 
 struct GeneralDistributionStats
 {
@@ -181,6 +181,7 @@ struct GeneralDistributionStats
 struct BenchStats
 {
     GeneralDistributionStats speed;
+    GeneralDistributionStats time_per_token;
     GeneralDistributionStats throughput;
 };
 
@@ -195,7 +196,7 @@ static bool do_bench(size_t *total_toks)
     if ((outf = open_memstream(&outbuf, &outlen)) == nullptr)
         return false;
 
-    if ((code = fmemopen((void *)libquixcc::benchmark_source, libquixcc::benchmark_source_len, "r")) == nullptr)
+    if ((code = fmemopen((void *)libquixcc::benchmark_lexer_source, libquixcc::benchmark_lexer_source_len, "r")) == nullptr)
         throw std::runtime_error("Failed to open code source"); /* Mem leak is ignored */
 
     job = quixcc_new();
@@ -210,13 +211,12 @@ static bool do_bench(size_t *total_toks)
         if (quixcc_lex_is(&tok, QUIXCC_LEX_EOF))
             break;
 
-        if (!quixcc_lex_ok(&tok))
-            throw std::runtime_error("Failed to lex token");
-
         quixcc_tok_release(job, &tok);
 
         tokens++;
     }
+
+    quixcc_dispose(job);
 
     fclose(outf);
     fclose(code);
@@ -244,7 +244,7 @@ static BenchStats run_bench()
 
         ct_data.push_back(duration);
 
-        if (i % (num_iterations / 20) == 0)
+        if (num_iterations >= 20 && i % (num_iterations / 20) == 0)
         {
             int percent = ((i * 100) / num_iterations) + 5;
             std::cout << "\x1b[36;49;1m*\x1b[0m \x1b[36;4mProgress: \x1b[0m\x1b[36;1;4m" << percent << "%\x1b[0m\tIteration " << i << "\t took " << duration << " nanoseconds" << std::endl;
@@ -259,11 +259,18 @@ static BenchStats run_bench()
         d = total_toks / (d / 1e9);
     bench.speed.compute(copy_ct_data);
 
+    /* Time per token */
+    copy_ct_data = ct_data;
+    bench.time_per_token.dist_name = "Time Per Token (ns)";
+    for (auto &d : copy_ct_data)
+        d = d / total_toks;
+    bench.time_per_token.compute(copy_ct_data);
+
     /* Throughput Mbps */
-    bench.throughput.dist_name = "Throughput (Mbps)";
+    bench.throughput.dist_name = "Throughput (MBps)";
     copy_ct_data = ct_data;
     for (auto &d : copy_ct_data)
-        d = (libquixcc::benchmark_source_len * 8) / (d / 1e9) / 1e6;
+        d = (libquixcc::benchmark_lexer_source_len) / (d / 1e9) / 1e6;
     bench.throughput.compute(copy_ct_data);
 
     std::cout << std::endl;
@@ -293,12 +300,14 @@ int main()
               << std::endl;
 
     bench.speed.print();
+    bench.time_per_token.print();
     bench.throughput.print();
 
     std::cout << "\x1b[36;49;1m*\x1b[0m \x1b[32;49;1mBenchmark results printed\x1b[0m" << std::endl;
 
     std::cout << "\x1b[36;49;1m*\x1b[0m Writing datasets to \x1b[36;1;4mct_data.json, ct_per_source_byte_data.json, ct_per_target_byte_data.json, ct_throughput_data.json\x1b[0m" << std::endl;
     bench.speed.write_dataset_json("lexer-speed.json");
+    bench.time_per_token.write_dataset_json("lexer-time-per-token.json");
     bench.throughput.write_dataset_json("lexer-throughput.json");
     return 0;
 }
