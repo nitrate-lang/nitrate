@@ -179,7 +179,6 @@ namespace libquixcc
 
 #if !defined(NDEBUG)
     typedef std::variant<std::string, Punctor, Keyword, Operator> TokVal;
-    TokVal m_value;
 #else
     struct TokVal
     {

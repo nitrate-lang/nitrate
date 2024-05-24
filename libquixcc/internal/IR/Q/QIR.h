@@ -151,6 +151,8 @@ namespace libquixcc
                 Deref,
                 Member,
                 Index,
+
+                EnumMax,
             };
 
             class Value : public libquixcc::ir::Node<Q>

@@ -40,6 +40,7 @@
 #include <map>
 #include <mutex>
 #include <atomic>
+#include <stack>
 #include <llvm/LLVMWrapper.h>
 #include <preprocessor/Preprocessor.h>
 #include <quixcc.h>
@@ -74,7 +75,7 @@ struct quixcc_job_t
     quixcc_status_t m_result;
     FILE *m_in;
     FILE *m_out;
-    char *m_filename;
+    std::stack<std::string> m_filename;
     uint8_t m_priority;
     bool m_debug;
     bool m_tainted;

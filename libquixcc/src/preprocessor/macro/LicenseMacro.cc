@@ -663,7 +663,7 @@ bool libquixcc::macro::ParseLicense(quixcc_job_t *job, const Token &tok, const s
     }
 
     std::string identifier = "__LICENSE__";
-    for (auto &c : std::string(job->m_filename))
+    for (auto &c : std::string(job->m_filename.top()))
     {
         if (std::isalnum(c))
             identifier += c;

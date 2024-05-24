@@ -103,10 +103,12 @@ bool libquixcc::PrepEngine::set_source(FILE *src, const std::string &filename)
     if (!l.set_source(src, filename))
         return false;
     m_stack.push({l, filename, src});
+    job->m_filename.push(filename);
 
     if (!m_statics.empty())
     {
         m_stack.push(build_statics_decl());
+        job->m_filename.push(QUIX_STATICS_FILE);
         m_include_files.push_back(QUIX_STATICS_FILE);
     }
 
@@ -245,6 +247,7 @@ bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok)
         m_stack.top().already_included.insert(filepath);
         m_include_files.push_back(filepath);
         m_stack.push({StreamLexer(), filepath, f});
+        job->m_filename.push(filepath);
         if (!m_stack.top().lexer.set_source(f, filepath))
         {
             LOG(ERROR) << "Failed to set source for file: " << filepath << tok << std::endl;
@@ -335,6 +338,7 @@ libquixcc::Token libquixcc::PrepEngine::read_token()
             if (m_stack.top().buffer)
                 delete m_stack.top().buffer;
             m_stack.pop();
+            job->m_filename.pop();
             continue;
         }
 

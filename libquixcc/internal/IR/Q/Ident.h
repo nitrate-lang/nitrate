@@ -49,7 +49,7 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Ident(std::string name, const Type *type) : name(std::move(name)), type(type)
+        Ident(std::string name, const Type *type) : name(name), type(type)
         {
             ntype = (int)NodeType::Ident;
         }

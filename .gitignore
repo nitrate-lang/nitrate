@@ -52,3 +52,4 @@ lexer-speed.json
 lexer-throughput.json
 data.raw
 lexer-time-per-token.json
+quixcc-benchmark.q

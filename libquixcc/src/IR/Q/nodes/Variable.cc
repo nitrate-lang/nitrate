@@ -33,11 +33,19 @@
 
 boost::uuids::uuid libquixcc::ir::q::Local::hash_impl() const
 {
-    return Hasher().gettag().add(name).add(type).hash();
+    auto h = Hasher().gettag().add(name).add(type);
+
+    if (value)
+        h.add(value);
+
+    return h.hash();
 }
 
 bool libquixcc::ir::q::Local::verify_impl() const
 {
+    if (value)
+        return type->verify() && value->verify();
+
     return type->verify();
 }
 

@@ -487,7 +487,10 @@ bool qpkg::build::Engine::run()
     auto _config = load_config(base);
 
     if (!_config || !conf::ValidateConfig(*_config, base))
+    {
+        LOG(core::ERROR) << "Failed to validate configuration" << std::endl;
         return false;
+    }
 
     m_config = *_config;
     conf::PopulateConfig(m_config);

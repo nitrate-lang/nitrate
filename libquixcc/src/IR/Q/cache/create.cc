@@ -51,7 +51,7 @@ using namespace libquixcc;
 using namespace ir;
 using namespace ir::q;
 
-static RootNode *root = nullptr;
+static std::map<std::vector<const Value *>, const RootNode *> root_insts;
 static std::map<std::pair<const Value *, const Value *>, const SCast *> scast_insts;
 static std::map<std::pair<const Value *, const Value *>, const UCast *> ucast_insts;
 static std::map<const Value *, const PtrICast *> ptricast_insts;
@@ -134,16 +134,18 @@ static std::map<const Expr *, const Deref *> deref_insts;
 static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *> member_insts;
 static std::map<std::tuple<const Value *, const Value *, const Type *>, const Index *> index_insts;
 
-static std::map<q::NodeType, std::mutex> node_mutexes;
+static std::array<std::mutex, (int)q::NodeType::EnumMax> node_mutexes;
 
-#define lock(type) std::lock_guard<std::mutex> lock(node_mutexes[type])
+#define lock(type) std::lock_guard<std::mutex> lock(node_mutexes[(int)type])
 
 const RootNode *q::RootNode::create(std::vector<const Value *> children)
 {
     lock(NodeType::Root);
-    if (root == nullptr)
-        root = new RootNode(children);
-    return root;
+
+    if (!root_insts.contains(children))
+        root_insts[children] = new RootNode(children);
+
+    return root_insts[children];
 }
 
 const q::SCast *q::SCast::create(const Type *type, const Expr *value)
@@ -766,6 +768,7 @@ const q::Global *q::Global::create(std::string name, const Type *type, const Exp
     auto key = std::make_tuple(name, type, value, _volatile, _atomic, _extern);
     if (!global_insts.contains(key))
         global_insts[key] = new Global(name, type, value, _volatile, _atomic, _extern);
+
     return global_insts[key];
 }
 

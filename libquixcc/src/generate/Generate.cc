@@ -108,7 +108,7 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta
 
     if (!LLVM14Codegen::codegen(ir, ctx.m_inner))
     {
-        LOG(ERROR) << log::raw << ctx.m_filename << ": Failed to generate LLVM IR" << std::endl;
+        LOG(ERROR) << log::raw << ctx.m_filename.top() << ": Failed to generate LLVM IR" << std::endl;
         return false;
     }
 
@@ -120,9 +120,9 @@ bool libquixcc::write_IR(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta
     if (llvm::verifyModule(*ctx.m_inner.m_module, &err_stream))
     {
         if (ctx.m_debug)
-            LOG(FAILED) << log::raw << ctx.m_filename << "LLVM IR generation failed. The Ptree must have been semantically incorrect: " << err_stream.str() << std::endl;
+            LOG(FAILED) << log::raw << ctx.m_filename.top() << "LLVM IR generation failed. The Ptree must have been semantically incorrect: " << err_stream.str() << std::endl;
         else
-            LOG(ERROR) << log::raw << ctx.m_filename << "LLVM IR generation failed. The Ptree must have been semantically incorrect: " << err_stream.str() << std::endl;
+            LOG(ERROR) << log::raw << ctx.m_filename.top() << "LLVM IR generation failed. The Ptree must have been semantically incorrect: " << err_stream.str() << std::endl;
     }
 
     LOG(DEBUG) << "Generating LLVM IR" << std::endl;
@@ -201,7 +201,7 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx, std::unique_ptr<libquixcc::ir::del
 
     if (!LLVM14Codegen::codegen(ir, ctx.m_inner))
     {
-        LOG(ERROR) << log::raw << "Failed to generate LLVM Code for file" << ctx.m_filename << std::endl;
+        LOG(ERROR) << log::raw << "Failed to generate LLVM Code for file" << ctx.m_filename.top() << std::endl;
         return false;
     }
 

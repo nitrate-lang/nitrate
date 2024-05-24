@@ -1061,7 +1061,9 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult
         expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
     auto tmp = Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, false);
+
     std::string mangled = Symbol::mangle(tmp, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
+
     auto g = Global::create(mangled, conv(n->m_type, state)[0]->as<Type>(), expr, false, false, state.lang != ExportLangType::None);
 
     state.global_idents[n->m_name] = g->type;

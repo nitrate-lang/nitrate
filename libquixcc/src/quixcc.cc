@@ -196,7 +196,6 @@ LIB_EXPORT quixcc_job_t *quixcc_new()
 
     /* Clear all pointers & values */
     job->m_in = job->m_out = nullptr;
-    job->m_filename = nullptr;
     job->m_priority = 0;
     job->m_debug = job->m_tainted = job->m_running = false;
     job->m_sid_ctr = 0;
@@ -253,12 +252,6 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job)
     if (job->m_result.m_messages)
         free(job->m_result.m_messages);
     memset(&job->m_result, 0, sizeof(quixcc_status_t));
-
-    if (job->m_filename)
-    {
-        free((void *)job->m_filename);
-        job->m_filename = nullptr;
-    }
 
     /* Clear all pointers & values */
     /* The FILE handles are owned by the caller; we don't close them */
@@ -340,7 +333,7 @@ LIB_EXPORT void quixcc_source(quixcc_job_t *job, FILE *in, const char *filename)
         abort();
 
     job->m_in = in;
-    job->m_filename = safe_strdup(filename);
+    job->m_filename.push(filename);
 }
 
 LIB_EXPORT bool quixcc_target(quixcc_job_t *job, const char *_llvm_triple)
@@ -658,7 +651,7 @@ bool preprocessor_config(quixcc_job_t *job, std::unique_ptr<PrepEngine> &prep)
     for (auto &constant : constants)
         prep->set_static(constant.first, constant.second);
 
-    if (!prep->set_source(job->m_in, job->m_filename))
+    if (!prep->set_source(job->m_in, job->m_filename.top()))
     {
         LOG(ERROR) << "failed to set source" << std::endl;
         return false;
@@ -696,7 +689,7 @@ static bool compile(quixcc_job_t *job)
         LOG(DEBUG) << "Lexing only" << std::endl;
         StreamLexer lexer;
 
-        if (!lexer.set_source(job->m_in, job->m_filename))
+        if (!lexer.set_source(job->m_in, job->m_filename.top()))
         {
             LOG(ERROR) << "failed to set source" << std::endl;
             return false;
@@ -764,7 +757,7 @@ static bool compile(quixcc_job_t *job)
 
     ///=========================================
     /// BEGIN: OPTIMIZATION PIPELINE
-    auto QIR = std::make_unique<ir::q::QModule>(job->m_filename);
+    auto QIR = std::make_unique<ir::q::QModule>(job->m_filename.top());
     if (!QIR->from_ptree(std::move(ptree))) /* This will modify the Ptree */
         return false;
 
@@ -814,7 +807,7 @@ static bool compile(quixcc_job_t *job)
             return false;
     }
 
-    auto DIR = std::make_unique<ir::delta::IRDelta>(job->m_filename);
+    auto DIR = std::make_unique<ir::delta::IRDelta>(job->m_filename.top());
     if (!DIR->from_qir(QIR))
         return false;
     /// END:   OPTIMIZATION PIPELINE
@@ -1068,13 +1061,13 @@ void quixcc_fault_handler(int sig)
 
 static bool execute_job(quixcc_job_t *job)
 {
-    if (!job->m_in || !job->m_out || !job->m_filename)
+    if (!job->m_in || !job->m_out || job->m_filename.empty())
         return false;
     try
     {
         LoggerConfigure(*job);
 
-        job->m_inner.setup(job->m_filename);
+        job->m_inner.setup(job->m_filename.top());
 
         LOG(DEBUG) << log::raw << "Starting quixcc run @ " << get_datetime() << std::endl;
 

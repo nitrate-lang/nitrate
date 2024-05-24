@@ -137,6 +137,8 @@ namespace libquixcc
                 Or,
                 Not,
                 Xor,
+
+                EnumMax,
             };
 
             class Value : public libquixcc::ir::Node<Delta>

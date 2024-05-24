@@ -46,7 +46,7 @@ using namespace libquixcc;
 using namespace libquixcc::ir;
 using namespace delta;
 
-static RootNode *root = nullptr;
+static std::map<std::vector<const Value *>, const RootNode *> root_insts;
 static std::map<std::pair<const Value *, const Value *>, const SCast *> scast_insts;
 static std::map<std::pair<const Value *, const Value *>, const UCast *> ucast_insts;
 static std::map<const Value *, const PtrICast *> ptricast_insts;
@@ -116,16 +116,16 @@ static std::map<std::string, const String *> string_insts;
 static std::map<std::vector<const Expr *>, const List *> list_insts;
 static std::map<std::pair<std::string, const Type *>, const Ident *> ident_insts;
 
-static std::map<delta::NodeType, std::mutex> node_mutexes;
+static std::array<std::mutex, (int)delta::NodeType::EnumMax> node_mutexes;
 
-#define lock(type) std::lock_guard<std::mutex> lock(node_mutexes[type])
+#define lock(type) std::lock_guard<std::mutex> lock(node_mutexes[(int)type])
 
 const RootNode *delta::RootNode::create(std::vector<const Value *> children)
 {
     lock(NodeType::Root);
-    if (root == nullptr)
-        root = new RootNode(children);
-    return root;
+    if (!root_insts.contains(children))
+        root_insts[children] = new RootNode(children);
+    return root_insts[children];
 }
 
 const delta::SCast *delta::SCast::create(const Type *type, const Expr *value)

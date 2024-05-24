@@ -51,7 +51,7 @@ bool libquixcc::macro::ParseAuthor(quixcc_job_t *job, const Token &tok, const st
     std::string name = tok2.as<std::string>();
 
     std::string identifier = "__AUTHOR__";
-    for (auto &c : std::string(job->m_filename))
+    for (auto c : job->m_filename.top())
     {
         if (std::isalnum(c))
             identifier += c;
