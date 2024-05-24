@@ -122,10 +122,12 @@ std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::seria
             {NodeType::U16TypeNode, (Func)U16TypeNode_conv},
             {NodeType::U32TypeNode, (Func)U32TypeNode_conv},
             {NodeType::U64TypeNode, (Func)U64TypeNode_conv},
+            {NodeType::U128TypeNode, (Func)U128TypeNode_conv},
             {NodeType::I8TypeNode, (Func)I8TypeNode_conv},
             {NodeType::I16TypeNode, (Func)I16TypeNode_conv},
             {NodeType::I32TypeNode, (Func)I32TypeNode_conv},
             {NodeType::I64TypeNode, (Func)I64TypeNode_conv},
+            {NodeType::I128TypeNode, (Func)I128TypeNode_conv},
             {NodeType::F32TypeNode, (Func)F32TypeNode_conv},
             {NodeType::F64TypeNode, (Func)F64TypeNode_conv},
             {NodeType::BoolTypeNode, (Func)BoolTypeNode_conv},
@@ -421,6 +423,11 @@ std::string libquixcc::serialize::ParseTreeSerializer::U64TypeNode_conv(libquixc
     return "{\"ntype\":\"U64TypeNode\"}";
 }
 
+std::string libquixcc::serialize::ParseTreeSerializer::U128TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::U128TypeNode *node)
+{
+    return "{\"ntype\":\"U128TypeNode\"}";
+}
+
 std::string libquixcc::serialize::ParseTreeSerializer::I8TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::I8TypeNode *node)
 {
     return "{\"ntype\":\"I8TypeNode\"}";
@@ -439,6 +446,11 @@ std::string libquixcc::serialize::ParseTreeSerializer::I32TypeNode_conv(libquixc
 std::string libquixcc::serialize::ParseTreeSerializer::I64TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::I64TypeNode *node)
 {
     return "{\"ntype\":\"I64TypeNode\"}";
+}
+
+std::string libquixcc::serialize::ParseTreeSerializer::I128TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::I128TypeNode *node)
+{
+    return "{\"ntype\":\"I128TypeNode\"}";
 }
 
 std::string libquixcc::serialize::ParseTreeSerializer::F32TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::F32TypeNode *node)

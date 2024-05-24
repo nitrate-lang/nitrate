@@ -83,10 +83,12 @@ size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::P
             {NodeType::U16TypeNode, (Func)U16TypeNode_iter},
             {NodeType::U32TypeNode, (Func)U32TypeNode_iter},
             {NodeType::U64TypeNode, (Func)U64TypeNode_iter},
+            {NodeType::U128TypeNode, (Func)U128TypeNode_iter},
             {NodeType::I8TypeNode, (Func)I8TypeNode_iter},
             {NodeType::I16TypeNode, (Func)I16TypeNode_iter},
             {NodeType::I32TypeNode, (Func)I32TypeNode_iter},
             {NodeType::I64TypeNode, (Func)I64TypeNode_iter},
+            {NodeType::I128TypeNode, (Func)I128TypeNode_iter},
             {NodeType::F32TypeNode, (Func)F32TypeNode_iter},
             {NodeType::F64TypeNode, (Func)F64TypeNode_iter},
             {NodeType::BoolTypeNode, (Func)BoolTypeNode_iter},
@@ -358,6 +360,11 @@ size_t libquixcc::traversal::ParseTreePreorder::U64TypeNode_iter(libquixcc::trav
     return 1;
 }
 
+size_t libquixcc::traversal::ParseTreePreorder::U128TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::U128TypeNode *node)
+{
+    return 1;
+}
+
 size_t libquixcc::traversal::ParseTreePreorder::I8TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::I8TypeNode *node)
 {
     return 1;
@@ -374,6 +381,11 @@ size_t libquixcc::traversal::ParseTreePreorder::I32TypeNode_iter(libquixcc::trav
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::I64TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::I64TypeNode *node)
+{
+    return 1;
+}
+
+size_t libquixcc::traversal::ParseTreePreorder::I128TypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::I128TypeNode *node)
 {
     return 1;
 }
