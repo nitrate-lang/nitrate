@@ -13,8 +13,10 @@
 ///     * License terms may be found in the LICENSE file.                   ///
 ///                                                                         ///
 ///////////////////////////////////////////////////////////////////////////////
-@encoding utf8
-@pragma version 1.0.0
+
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
 
 subsystem orbit {
 

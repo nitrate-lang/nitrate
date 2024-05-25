@@ -107,6 +107,8 @@ static qpkg::cache::CacheKey compute_cachekey(const std::filesystem::path &file)
         hasher.update(buffer, in.gcount());
     }
 
+    hasher.update(reinterpret_cast<const uint8_t *>(file.string().c_str()), file.string().size());
+
     return hasher.finalize();
 }
 

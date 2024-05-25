@@ -13,16 +13,11 @@
 ///     * License terms may be found in the LICENSE file.                   ///
 ///                                                                         ///
 ///////////////////////////////////////////////////////////////////////////////
-@encoding utf8
-@pragma version 1.0.0
 
-subsystem orbit::runtime {
-    import runtime.event;
-    import runtime.memory;
-    import runtime.mutex;
-    import runtime.plugin;
-    import runtime.process;
-    import runtime.semaphore;
-    import runtime.signal;
-    import runtime.thread;
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
+
+subsystem orbit {
+
 };

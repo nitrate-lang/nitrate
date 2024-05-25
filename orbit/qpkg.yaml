@@ -1,0 +1,7 @@
+version: 1
+name: "orbit"
+description: "Standard library for the Quix programming language"
+licenses: ["MIT"]
+sources: ["algorithm", "container", "crypto", "data", "math", "reflection", "runtime", "sysio", "time", "util"]
+headers: ["algorithm", "container", "crypto", "data", "math", "reflection", "runtime", "sysio", "time", "util"]
+target: "sharedlib"

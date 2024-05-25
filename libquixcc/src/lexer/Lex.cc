@@ -394,7 +394,7 @@ bool libquixcc::StreamLexer::set_source(FILE *src, const std::string &filename)
         return false;
 
     m_filename = filename;
-    m_loc = Loc(1, 1, m_filename); /* Lexer's lifetime > Token's lifetime */
+    m_loc_curr = Loc(1, 1, m_filename);
 
     return true;
 }

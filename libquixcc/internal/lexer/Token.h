@@ -167,12 +167,12 @@ namespace libquixcc
 
     struct Loc
     {
-        std::string_view file;
+        std::string file;
         int_fast32_t line;
         int_fast32_t col;
 
         Loc() : file(""), line(1), col(1) {}
-        Loc(int_fast32_t line, int_fast32_t col, std::string_view file = "") : file(file), line(line), col(col) {}
+        Loc(int_fast32_t line, int_fast32_t col, std::string file = "") : file(file), line(line), col(col) {}
 
         Loc operator-(int_fast32_t rhs) const;
     };

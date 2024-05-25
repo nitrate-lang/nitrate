@@ -1,6 +1,0 @@
-version: 1
-name: "orbit-math"
-description: "Most of your math needs in one place."
-target: "sharedlib"
-sources: ["math.q"]
-cflags: ["-O0"]

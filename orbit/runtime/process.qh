@@ -13,94 +13,11 @@
 ///     * License terms may be found in the LICENSE file.                   ///
 ///                                                                         ///
 ///////////////////////////////////////////////////////////////////////////////
-@encoding utf8
-@pragma version 1.0.0
 
-import sysio::io;
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
 
-subsystem orbit::runtime::process: sysio::io {
-    /// @brief Panic and exit the program with an error message.
-    /// @param msg The error message to display.
-    /// @param trace Whether to display a stack trace.
-    /// @warning This function will leak memory addresses if `trace` is `true`.
-    fn tsafe impure panic(msg: str, trace: bool = false): null;
+subsystem orbit {
 
-    /// @brief Abort the program and generate a core dump.
-    /// @warning This function will not display an error message.
-    fn tsafe impure abort(): null;
-
-    /// @brief Exit the program with a status code.
-    /// @param code The status code to return to the operating system.
-    /// @note A status code of `0` indicates success.
-    /// @note This function will call all registered callback functions in the
-    ///       reverse order of their registration.
-    fn tsafe impure exit(code: int): null;
-
-    /// @brief Exit the program with a status message.
-    /// @param str The message to display.
-    /// @note The status code is calculated using a hash of the message. The status code
-    ///       will only be status if the message is empty.
-    /// @note This function will call all registered callback functions in the
-    ///       reverse order of their registration.
-    fn tsafe impure exits(msg: str): null;
-
-    /// @brief A function to be called when the program exits.
-    /// @param rank The order in which the function was registered. 0 is the first and therefore, is called last.
-    typedef fn tsafe impure (rank: i32): void atexit_fn;
-
-    /// @brief Register a function to be called when the program exits.
-    /// @param fn The function to call.
-    fn tsafe impure atexit(fn: atexit_fn): void;
-
-    /// @brief Unregister a function from being called when the program exits.
-    /// @param fn The function to remove.
-    fn tsafe impure rmexit(fn: atexit_fn): bool;
-
-    /// @brief Get the current working directory.
-    /// @return The current working directory.
-    fn tsafe impure cwd(): str;
-
-    /// @brief Change the current working directory.
-    /// @param path The path to change to.
-    /// @return `true` if the directory was changed successfully, `false` otherwise.
-    fn tsafe impure chdir(path: str): bool;
-
-    /// @brief Get the path to the running executable.
-    /// @return The path to the executable.
-    fn tsafe impure exe(): str;
-
-    /// @brief Get process arguments.
-    /// @return The process arguments.
-    fn tsafe impure args(): [str];
-
-    struct EnvVar {
-        key: str;
-        value: str;
-    };
-
-    /// @brief Get the process environment.
-    /// @return The process environment.
-    fn tsafe impure env(): [EnvVar];
-
-    /// @brief Get an environment variable.
-    /// @param key The key of the environment variable.
-    /// @return The value of the environment variable.
-    fn tsafe impure getenv(key: str): str?;
-
-    /// @brief Set an environment variable.
-    /// @param key The key of the environment variable.
-    /// @param value The value of the environment variable.
-    fn tsafe impure setenv(key: str, value: str): void;
-
-    /// @brief Unset an environment variable.
-    /// @param key The key of the environment variable.
-    fn tsafe impure unsetenv(key: str): void;
-
-    /// @brief Get the process ID.
-    /// @return The process ID.
-    fn tsafe impure pid(): osint;
-
-    /// @brief Get process owners name.
-    /// @return The process owners name.
-    fn tsafe impure owner(): str;
 };

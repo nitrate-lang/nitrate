@@ -14,17 +14,10 @@
 ///                                                                         ///
 ///////////////////////////////////////////////////////////////////////////////
 
-@use "v1.0";
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
 
-@copyright "Wesley Jones";
-@description "Mathematics Library";
-@language "en";
-@warranty "As-Is; No Warranty";
+subsystem orbit {
 
-
-subsystem Math {
-    @import constants;
-    @import core;
-    @import calc;
-    @import random;
-}
+};

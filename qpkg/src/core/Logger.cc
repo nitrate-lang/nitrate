@@ -143,7 +143,7 @@ qpkg::core::Logger &qpkg::core::operator<<(qpkg::core::Logger &log, std::ostream
     return log;
 }
 
-void qpkg::core::Logger::flush(std::ofstream &file)
+void qpkg::core::Logger::flush(std::ostream &file)
 {
     /* Flush all log entries to file */
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -267,7 +267,10 @@ void qpkg::core::LoggerSpool::flush(const char *filepath)
         /* Flush all loggers to file */
         std::ofstream file(filepath, std::ios::app);
         if (!file.is_open())
-            return;
+        {
+            for (auto &logger : m_loggers)
+                logger.second->flush(std::cerr);
+        }
 
         /* Flush all loggers */
         for (auto &logger : m_loggers)
@@ -278,5 +281,7 @@ void qpkg::core::LoggerSpool::flush(const char *filepath)
     }
     catch (std::exception &e)
     {
+        for (auto &logger : m_loggers)
+            logger.second->flush(std::cerr);
     }
 }

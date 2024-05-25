@@ -33,7 +33,7 @@ namespace qpkg
             thread_local static int m_line;
             E m_level;
             bool m_verbose;
-            void flush(std::ofstream &file);
+            void flush(std::ostream &file);
 
             friend class LoggerSpool;
 
