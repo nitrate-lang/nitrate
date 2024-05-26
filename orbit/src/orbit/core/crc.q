@@ -55,7 +55,7 @@ fn orbit::core::update(data: [u8]): !Crc8 {
                  0xE6, 0xE1, 0xE8, 0xEF, 0xFA, 0xFD, 0xF4, 0xF3];
 
     let crc = this.s;
-    foreach (b: u8 in data) crc = tab[(crc ^ b) & 0xff];
+    // foreach (b: u8 in data) crc = tab[(crc ^ b) & 0xff];
     this.s = crc;
 
     ret this;

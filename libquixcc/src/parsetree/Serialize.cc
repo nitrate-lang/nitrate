@@ -313,9 +313,9 @@ std::string libquixcc::serialize::ParseTreeSerializer::BinaryExprNode_conv(libqu
 
 std::string libquixcc::serialize::ParseTreeSerializer::CallExprNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::CallExprNode *node)
 {
-    std::string str = "{\"ntype\":\"CallExprNode\",\"name\":\"";
-    str += escape_json(node->m_name);
-    str += "\",\"named_args\":[";
+    std::string str = "{\"ntype\":\"CallExprNode\",\"calle\":";
+    str += next(state, node->m_callee);
+    str += ",\"named_args\":[";
     for (auto it = node->m_named_args.begin(); it != node->m_named_args.end(); ++it)
     {
         str += "{\"name\":\"" + escape_json(it->first) + "\",\"value\":" + next(state, it->second) + "}";
@@ -539,7 +539,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::GroupTypeNode_conv(libqui
         }
     }
 
-    return str + "}";
+    return str + "]}";
 }
 
 std::string libquixcc::serialize::ParseTreeSerializer::RegionTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::RegionTypeNode *node)
@@ -1013,6 +1013,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::FunctionParamNode_conv(li
         str += next(state, node->m_value);
     else
         str += "null";
+
     return str + "}";
 }
 
@@ -1030,7 +1031,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::SubsystemNode_conv(libqui
         }
     }
 
-    str += "],\"block\":" + next(state, node->m_block) + "}";
+    str += "],\"block\":" + next(state, node->m_block);
     return str + "}";
 }
 

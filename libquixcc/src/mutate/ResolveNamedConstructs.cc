@@ -168,31 +168,47 @@ static void resolve_function_decls_to_calls(quixcc_job_t *job, std::shared_ptr<l
             if (!(ptr)->is<CallExprNode>())
                 return;
 
-            auto expr = std::static_pointer_cast<libquixcc::CallExprNode>(ptr);
+            auto call = std::static_pointer_cast<libquixcc::CallExprNode>(ptr);
+
+            std::string callee_name;
+
+            /// TODO: implement this
+
+            switch (call->m_callee->ntype)
+            {
+                case NodeType::IdentifierNode:
+                    callee_name = std::static_pointer_cast<libquixcc::IdentifierNode>(call->m_callee)->m_name;
+                    break;
+                case NodeType::MemberAccessNode:
+                    callee_name = std::static_pointer_cast<libquixcc::MemberAccessNode>(call->m_callee)->m_field;
+                    break;
+                default:
+                    throw std::runtime_error(std::string("Unimplemented typeid in ResolveNamedConstructs: ") + NodeTypeNames[call->m_callee->ntype].data());
+            }
 
             std::vector<std::string> tmp = _scope;
 
             while (!tmp.empty())
             {
-                std::string abs = join_ns(tmp) + expr->m_name;
+                std::string abs = join_ns(tmp) + callee_name;
                 if (job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::FunctionDeclNode, abs)))
                 {
                     auto func_decl = std::static_pointer_cast<libquixcc::FunctionDeclNode>(job->m_inner.m_named_construsts[std::make_pair(NodeType::FunctionDeclNode, abs)]);
-                    expr->m_decl = func_decl;
+                    call->m_decl = func_decl;
                     return;
                 }
 
                 tmp.pop_back();
             }
 
-            if (!job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::FunctionDeclNode, expr->m_name)))
+            if (!job->m_inner.m_named_construsts.contains(std::make_pair(NodeType::FunctionDeclNode, callee_name)))
             {
-                LOG(ERROR) << feedback[UNRESOLVED_FUNCTION] << expr->m_name << std::endl;
+                LOG(ERROR) << feedback[UNRESOLVED_FUNCTION] << callee_name << std::endl;
                 return;
             }
 
-            auto func_decl = std::static_pointer_cast<libquixcc::FunctionDeclNode>(job->m_inner.m_named_construsts[std::make_pair(NodeType::FunctionDeclNode, expr->m_name)]);
-            expr->m_decl = func_decl;
+            auto func_decl = std::static_pointer_cast<libquixcc::FunctionDeclNode>(job->m_inner.m_named_construsts[std::make_pair(NodeType::FunctionDeclNode, callee_name)]);
+            call->m_decl = func_decl;
         },
         {}));
 }

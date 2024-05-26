@@ -38,7 +38,37 @@
 
 using namespace libquixcc;
 
-static void collapse(const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+static void expr_collapse(const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+{
+    if (node.first != traversal::TraversePtrType::Smart)
+        return;
+    auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+
+    if (!ptr->isof<ExprNode>())
+        return;
+
+    auto expr = std::static_pointer_cast<ExprNode>(ptr);
+
+    switch (expr->ntype)
+    {
+    case NodeType::CallExprNode:
+    {
+        auto call = std::static_pointer_cast<CallExprNode>(expr);
+        if (call->m_callee->is<IdentifierNode>())
+        {
+            auto id = std::static_pointer_cast<IdentifierNode>(call->m_callee);
+            id->m_name = Symbol::join(_namespace, id->m_name);
+        }
+
+        break;
+    }
+
+    default:
+        break;
+    }
+}
+
+static void stmt_collapse(const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
 {
     if (node.first != traversal::TraversePtrType::Smart)
         return;
@@ -147,93 +177,95 @@ void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<lib
 {
     std::set<std::string> visited;
 
-    ast->dfs_preorder(traversal::ParseTreeTraversalState([&visited](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
-    {
-        if (node.first != traversal::TraversePtrType::Raw)
-            return;
-
-        auto ptr = *std::get<ParseNode **>(node.second);
-        auto dobptr = std::get<ParseNode **>(node.second);
-
-        switch (ptr->ntype)
+    ast->dfs_preorder(traversal::ParseTreeTraversalState(
+        [&visited](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
-        case NodeType::UserTypeNode:
-        {
-            auto def = static_cast<UserTypeNode *>(ptr);
-            if (visited.contains(def->m_name))
+            if (node.first != traversal::TraversePtrType::Raw)
                 return;
 
-            auto n = Symbol::join(_namespace, def->m_name);
+            auto ptr = *std::get<ParseNode **>(node.second);
+            auto dobptr = std::get<ParseNode **>(node.second);
 
-            *dobptr = UserTypeNode::create(n);
-            visited.insert(n);
-            break;
-        }
-        case NodeType::EnumTypeNode:
-        {
-            auto def = static_cast<EnumTypeNode *>(ptr);
-            if (visited.contains(def->m_name))
-                return;
+            switch (ptr->ntype)
+            {
+            case NodeType::UserTypeNode:
+            {
+                auto def = static_cast<UserTypeNode *>(ptr);
+                if (visited.contains(def->m_name))
+                    return;
 
-            auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(_namespace, def->m_name);
 
-            *dobptr = EnumTypeNode::create(n, def->m_member_type);
-            visited.insert(n);
-            break;
-        }
-        case NodeType::UnionTypeNode:
-        {
-            auto def = static_cast<UnionTypeNode *>(ptr);
-            if (visited.contains(def->m_name))
-                return;
+                *dobptr = UserTypeNode::create(n);
+                visited.insert(n);
+                break;
+            }
+            case NodeType::EnumTypeNode:
+            {
+                auto def = static_cast<EnumTypeNode *>(ptr);
+                if (visited.contains(def->m_name))
+                    return;
 
-            auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(_namespace, def->m_name);
 
-            *dobptr = UnionTypeNode::create(def->m_fields, n);
-            visited.insert(n);
-            break;
-        }
-        case NodeType::StructTypeNode:
-        {
-            auto def = static_cast<StructTypeNode *>(ptr);
-            if (visited.contains(def->m_name))
-                return;
+                *dobptr = EnumTypeNode::create(n, def->m_member_type);
+                visited.insert(n);
+                break;
+            }
+            case NodeType::UnionTypeNode:
+            {
+                auto def = static_cast<UnionTypeNode *>(ptr);
+                if (visited.contains(def->m_name))
+                    return;
 
-            auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(_namespace, def->m_name);
 
-            *dobptr = StructTypeNode::create(def->m_fields, n);
-            visited.insert(n);
-            break;
-        }
-        case NodeType::RegionTypeNode:
-        {
-            auto def = static_cast<RegionTypeNode *>(ptr);
-            if (visited.contains(def->m_name))
-                return;
+                *dobptr = UnionTypeNode::create(def->m_fields, n);
+                visited.insert(n);
+                break;
+            }
+            case NodeType::StructTypeNode:
+            {
+                auto def = static_cast<StructTypeNode *>(ptr);
+                if (visited.contains(def->m_name))
+                    return;
 
-            auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(_namespace, def->m_name);
 
-            *dobptr = RegionTypeNode::create(def->m_fields, n);
-            visited.insert(n);
-            break;
-        }
-        case NodeType::OpaqueTypeNode:
-        {
-            auto def = static_cast<OpaqueTypeNode *>(ptr);
-            if (visited.contains(def->m_name))
-                return;
+                *dobptr = StructTypeNode::create(def->m_fields, n);
+                visited.insert(n);
+                break;
+            }
+            case NodeType::RegionTypeNode:
+            {
+                auto def = static_cast<RegionTypeNode *>(ptr);
+                if (visited.contains(def->m_name))
+                    return;
 
-            auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(_namespace, def->m_name);
 
-            *dobptr = OpaqueTypeNode::create(n);
-            visited.insert(n);
-            break;
-        }
-        default:
-            break;
-        }
+                *dobptr = RegionTypeNode::create(def->m_fields, n);
+                visited.insert(n);
+                break;
+            }
+            case NodeType::OpaqueTypeNode:
+            {
+                auto def = static_cast<OpaqueTypeNode *>(ptr);
+                if (visited.contains(def->m_name))
+                    return;
 
-        }, {}));
+                auto n = Symbol::join(_namespace, def->m_name);
 
-    ast->dfs_preorder(traversal::ParseTreeTraversalState(collapse, {}));
+                *dobptr = OpaqueTypeNode::create(n);
+                visited.insert(n);
+                break;
+            }
+            default:
+                break;
+            }
+        },
+        {}));
+
+    ast->dfs_preorder(traversal::ParseTreeTraversalState(expr_collapse, {}));
+    ast->dfs_preorder(traversal::ParseTreeTraversalState(stmt_collapse, {}));
 }

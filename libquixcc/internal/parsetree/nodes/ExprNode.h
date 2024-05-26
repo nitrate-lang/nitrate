@@ -74,7 +74,7 @@ namespace libquixcc
     public:
         CallExprNode() { ntype = NodeType::CallExprNode; }
 
-        std::string m_name;
+        std::shared_ptr<ExprNode> m_callee;
         std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_named_args;
         std::vector<std::shared_ptr<ExprNode>> m_positional_args;
         std::shared_ptr<FunctionDeclNode> m_decl;

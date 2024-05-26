@@ -65,28 +65,29 @@ static std::shared_ptr<CallExprNode> parse_function_call(quixcc_job_t &job, std:
     }
 
     auto expr = std::make_shared<CallExprNode>();
+    expr->m_callee = callee;
 
-    if (callee->is<IdentifierNode>())
-    {
-        expr->m_name = std::dynamic_pointer_cast<IdentifierNode>(callee)->m_name;
-    }
-    else if (callee->is<MemberAccessNode>())
-    {
-        auto member = std::dynamic_pointer_cast<MemberAccessNode>(callee);
-        if (!member->m_expr->is<IdentifierNode>())
-        {
-            LOG(ERROR) << "Expected an identifier in member access expression" << tok << std::endl;
-            return nullptr;
-        }
+    // if (callee->is<IdentifierNode>())
+    // {
+    //     expr->m_name = std::dynamic_pointer_cast<IdentifierNode>(callee)->m_name;
+    // }
+    // else if (callee->is<MemberAccessNode>())
+    // {
+    //     auto member = std::dynamic_pointer_cast<MemberAccessNode>(callee);
+    //     if (!member->m_expr->is<IdentifierNode>())
+    //     {
+    //         LOG(ERROR) << "Expected an identifier in member access expression" << tok << std::endl;
+    //         return nullptr;
+    //     }
 
-        std::string name = std::dynamic_pointer_cast<IdentifierNode>(member->m_expr)->m_name;
-        expr->m_name = name + "." + member->m_field;
-    }
-    else
-    {
-        LOG(ERROR) << "Expected an identifier or member access expression" << tok << std::endl;
-        return nullptr;
-    }
+    //     std::string name = std::dynamic_pointer_cast<IdentifierNode>(member->m_expr)->m_name;
+    //     expr->m_name = name + "." + member->m_field;
+    // }
+    // else
+    // {
+    //     LOG(ERROR) << "Expected an identifier or member access expression" << tok << std::endl;
+    //     return nullptr;
+    // }
 
     expr->m_positional_args = args;
 

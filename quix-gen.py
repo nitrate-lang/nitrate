@@ -4,7 +4,7 @@
 import random
 import math
 
-target_fsize = 10**9
+target_fsize = 10**7
 step = 4
 
 random.seed(0)

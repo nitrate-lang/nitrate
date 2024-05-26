@@ -269,6 +269,10 @@ size_t libquixcc::traversal::ParseTreePreorder::BinaryExprNode_iter(libquixcc::t
 size_t libquixcc::traversal::ParseTreePreorder::CallExprNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::CallExprNode *node)
 {
     size_t count = 0;
+    
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_callee));
+    count += next(state, node->m_callee);
+
     for (auto &arg : node->m_positional_args)
     {
         state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&arg));

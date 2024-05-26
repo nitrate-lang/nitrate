@@ -54,3 +54,5 @@ data.raw
 lexer-time-per-token.json
 quixcc-benchmark.q
 orbit/.qpkg
+a.out.c
+s.json

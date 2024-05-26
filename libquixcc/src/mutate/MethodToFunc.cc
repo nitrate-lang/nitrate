@@ -91,62 +91,68 @@ void libquixcc::mutate::MethodToFunc(quixcc_job_t *job, std::shared_ptr<libquixc
                 return;
             }
 
-            if (!(ptr)->is<CallExprNode>())
-                return;
+            /// TODO: fix this
 
-            auto call = std::static_pointer_cast<CallExprNode>(ptr);
+            (void)getname;
 
-            if (call->m_name.find(".") == std::string::npos)
-                return;
+            return;
 
-            std::string varname = call->m_name.substr(0, call->m_name.find_last_of("."));
-            std::string method = call->m_name.substr(call->m_name.find_last_of(".") + 1);
+            // if (!(ptr)->is<CallExprNode>())
+            //     return;
 
-            if (vars.find(varname) == vars.end())
-            {
-                LOG(ERROR) << log::raw << "MethodToFunc: Named item '" << varname << "' not found." << std::endl;
-                return;
-            }
+            // auto call = std::static_pointer_cast<CallExprNode>(ptr);
 
-            auto var = vars[varname];
-            std::string _typename;
+            // if (call->m_name.find(".") == std::string::npos)
+            //     return;
 
-            switch (var->ntype)
-            {
-            case NodeType::LetDeclNode:
-            {
-                _typename = getname(std::static_pointer_cast<LetDeclNode>(var)->m_type);
-                break;
-            }
-            case NodeType::ConstDeclNode:
-            {
-                _typename = getname(std::static_pointer_cast<ConstDeclNode>(var)->m_type);
-                break;
-            }
-            case NodeType::VarDeclNode:
-            {
-                _typename = getname(std::static_pointer_cast<VarDeclNode>(var)->m_type);
-                break;
-            }
-            case NodeType::FunctionParamNode:
-            {
-                _typename = getname(std::static_pointer_cast<FunctionParamNode>(var)->m_type);
-                break;
-            }
-            default:
-                break;
-            }
+            // std::string varname = call->m_name.substr(0, call->m_name.find_last_of("."));
+            // std::string method = call->m_name.substr(call->m_name.find_last_of(".") + 1);
 
-            if (_typename.empty())
-            {
-                LOG(FATAL) << log::raw << "MethodToFunc: Named item '" << varname << "' has no typename!" << std::endl;
-                return;
-            }
+            // if (vars.find(varname) == vars.end())
+            // {
+            //     LOG(ERROR) << log::raw << "MethodToFunc: Named item '" << varname << "' not found." << std::endl;
+            //     return;
+            // }
 
-            auto thisPtr = std::make_shared<UnaryExprNode>(Operator::BitwiseAnd, std::make_shared<IdentifierNode>(varname));
+            // auto var = vars[varname];
+            // std::string _typename;
 
-            call->m_name = _typename + "::" + method;
-            call->m_positional_args.insert(call->m_positional_args.begin(), thisPtr);
+            // switch (var->ntype)
+            // {
+            // case NodeType::LetDeclNode:
+            // {
+            //     _typename = getname(std::static_pointer_cast<LetDeclNode>(var)->m_type);
+            //     break;
+            // }
+            // case NodeType::ConstDeclNode:
+            // {
+            //     _typename = getname(std::static_pointer_cast<ConstDeclNode>(var)->m_type);
+            //     break;
+            // }
+            // case NodeType::VarDeclNode:
+            // {
+            //     _typename = getname(std::static_pointer_cast<VarDeclNode>(var)->m_type);
+            //     break;
+            // }
+            // case NodeType::FunctionParamNode:
+            // {
+            //     _typename = getname(std::static_pointer_cast<FunctionParamNode>(var)->m_type);
+            //     break;
+            // }
+            // default:
+            //     break;
+            // }
+
+            // if (_typename.empty())
+            // {
+            //     LOG(FATAL) << log::raw << "MethodToFunc: Named item '" << varname << "' has no typename!" << std::endl;
+            //     return;
+            // }
+
+            // auto thisPtr = std::make_shared<UnaryExprNode>(Operator::BitwiseAnd, std::make_shared<IdentifierNode>(varname));
+
+            // call->m_name = _typename + "::" + method;
+            // call->m_positional_args.insert(call->m_positional_args.begin(), thisPtr);
         },
         {}));
 }
