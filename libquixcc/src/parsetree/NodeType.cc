@@ -59,7 +59,7 @@ std::unordered_map<libquixcc::NodeType, std::string_view> libquixcc::NodeTypeNam
     {NodeType::ConstUnaryExprNode, "ConstUnaryExprNode"},
     {NodeType::ConstBinaryExprNode, "ConstBinaryExprNode"},
     {NodeType::IdentifierNode, "IdentifierNode"},
-    {NodeType::ImmMutTypeNode, "ImmMutTypeNode"},
+    {NodeType::MutTypeNode, "MutTypeNode"},
     {NodeType::U8TypeNode, "U8TypeNode"},
     {NodeType::U16TypeNode, "U16TypeNode"},
     {NodeType::U32TypeNode, "U32TypeNode"},

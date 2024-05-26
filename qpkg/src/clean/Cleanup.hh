@@ -10,7 +10,7 @@ namespace qpkg
 {
     namespace clean
     {
-        bool CleanPackageSource(const std::string &package_src, bool recursive = false, bool verbose = false);
+        bool CleanPackageSource(const std::string &package_src, bool verbose = false);
     }
 }
 

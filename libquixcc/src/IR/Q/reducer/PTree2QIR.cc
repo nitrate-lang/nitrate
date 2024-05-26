@@ -125,7 +125,7 @@ static auto conv(const IndexNode *n, QState &state) -> QResult;
 static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult;
 static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult;
 static auto conv(const IdentifierNode *n, QState &state) -> QResult;
-static auto conv(const ImmMutTypeNode *n, QState &state) -> QResult;
+static auto conv(const MutTypeNode *n, QState &state) -> QResult;
 static auto conv(const U8TypeNode *n, QState &state) -> QResult;
 static auto conv(const U16TypeNode *n, QState &state) -> QResult;
 static auto conv(const U32TypeNode *n, QState &state) -> QResult;
@@ -749,7 +749,7 @@ static auto conv(const IdentifierNode *n, QState &state) -> QResult
     return Ident::create(n->m_name, state.global_idents[n->m_name]);
 }
 
-static auto conv(const ImmMutTypeNode *n, QState &state) -> QResult
+static auto conv(const MutTypeNode *n, QState &state) -> QResult
 {
     return conv(n->m_type, state)[0]->as<Type>();
 }
@@ -1551,8 +1551,8 @@ static auto conv(const ParseNode *n, QState &state) -> QResult
         r = conv(n->as<IdentifierNode>(), state);
         break;
 
-    case libquixcc::NodeType::ImmMutTypeNode:
-        r = conv(n->as<ImmMutTypeNode>(), state);
+    case libquixcc::NodeType::MutTypeNode:
+        r = conv(n->as<MutTypeNode>(), state);
         break;
 
     case libquixcc::NodeType::U8TypeNode:

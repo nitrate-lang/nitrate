@@ -185,11 +185,6 @@ static void setup_argparse_clean(ArgumentParser &parser)
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
-
-    parser.add_argument("-r", "--recursive")
-        .help("remove all cached files in the package and its dependencies")
-        .default_value(false)
-        .implicit_value(true);
 }
 
 static void setup_argparse_update(ArgumentParser &parser)
@@ -598,7 +593,7 @@ static int run_build_mode(const ArgumentParser &parser)
 
 static int run_clean_mode(const ArgumentParser &parser)
 {
-    return qpkg::clean::CleanPackageSource(parser.get<std::string>("package-src"), parser["--recursive"] == true, parser["--verbose"] == true) ? 0 : -1;
+    return qpkg::clean::CleanPackageSource(parser.get<std::string>("package-src"), parser["--verbose"] == true) ? 0 : -1;
 }
 
 static int run_update_mode(const ArgumentParser &parser)

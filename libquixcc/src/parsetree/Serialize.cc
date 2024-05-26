@@ -117,7 +117,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::seria
             {NodeType::ConstUnaryExprNode, (Func)ConstUnaryExprNode_conv},
             {NodeType::ConstBinaryExprNode, (Func)ConstBinaryExprNode_conv},
             {NodeType::IdentifierNode, (Func)IdentifierNode_conv},
-            {NodeType::ImmMutTypeNode, (Func)ImmMutTypeNode_conv},
+            {NodeType::MutTypeNode, (Func)MutTypeNode_conv},
             {NodeType::U8TypeNode, (Func)U8TypeNode_conv},
             {NodeType::U16TypeNode, (Func)U16TypeNode_conv},
             {NodeType::U32TypeNode, (Func)U32TypeNode_conv},
@@ -399,9 +399,9 @@ std::string libquixcc::serialize::ParseTreeSerializer::IdentifierNode_conv(libqu
     return "{\"ntype\":\"IdentifierNode\",\"name\":\"" + escape_json(node->m_name) + "\"}";
 }
 
-std::string libquixcc::serialize::ParseTreeSerializer::ImmMutTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ImmMutTypeNode *node)
+std::string libquixcc::serialize::ParseTreeSerializer::MutTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::MutTypeNode *node)
 {
-    return "{\"ntype\":\"ImmMutTypeNode\",\"type\":" + next(state, node->m_type) + "}";
+    return "{\"ntype\":\"MutTypeNode\",\"type\":" + next(state, node->m_type) + "}";
 }
 
 std::string libquixcc::serialize::ParseTreeSerializer::U8TypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::U8TypeNode *node)

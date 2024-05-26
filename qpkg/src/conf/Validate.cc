@@ -20,7 +20,8 @@ enum class KeyName
     CPU,
     CFLAGS,
     LFLAGS,
-    NOLINK
+    NOLINK,
+    PACKAGES,
 };
 
 enum class ValueType
@@ -47,13 +48,13 @@ static std::unordered_map<std::string, KeyName> key_map = {
     {"cpu", KeyName::CPU},
     {"cflags", KeyName::CFLAGS},
     {"lflags", KeyName::LFLAGS},
-    {"nolink", KeyName::NOLINK}};
+    {"nolink", KeyName::NOLINK},
+    {"packages", KeyName::PACKAGES}};
 
 static std::set<std::string> required_keys = {
     "name",
     "version",
     "description",
-    "sources",
     "target",
 };
 
@@ -338,6 +339,21 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config, const std::fil
                 return false;
             }
             break;
+        case KeyName::PACKAGES:
+            if (!config[key].is<std::vector<std::string>>())
+            {
+                LOG(core::ERROR) << "Invalid value type for key 'packages' in configuration" << std::endl;
+                return false;
+            }
+            for (const auto &source : config[key].as<std::vector<std::string>>())
+            {
+                if (!std::filesystem::exists(base / source) || !std::filesystem::is_directory(base / source))
+                {
+                    LOG(core::ERROR) << "Directory does not exist: " << source << std::endl;
+                    return false;
+                }
+            }
+            break;
         default:
             LOG(core::ERROR) << "Invalid key in configuration: " << key << std::endl;
             return false;
@@ -369,6 +385,12 @@ void qpkg::conf::PopulateConfig(qpkg::conf::Config &config)
 
     if (!config.m_root.has<std::vector<std::string>>("headers"))
         config.m_root.set("headers", std::vector<std::string>());
+
+    if (!config.m_root.has<std::vector<std::string>>("sources"))
+        config.m_root.set("sources", std::vector<std::string>());
+
+    if (!config.m_root.has<std::vector<std::string>>("packages"))
+        config.m_root.set("packages", std::vector<std::string>());
 
     if (!config.m_root.has<std::string>("triple"))
         config.m_root.set("triple", "");

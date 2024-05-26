@@ -432,51 +432,76 @@ bool qpkg::build::Engine::run_threads(const std::filesystem::path &base, const s
 
 bool qpkg::build::Engine::build_package(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir)
 {
-    if (!run_threads(base, source_files, build_dir))
+    if (!source_files.empty())
     {
-        LOG(core::ERROR) << "Failed to build package " << m_package_name << std::endl;
-        return false;
-    }
-
-    std::vector<std::filesystem::path> objects;
-    for (const auto &file : source_files)
-        objects.push_back(build_dir / (std::filesystem::path(file).filename().string() + ".o"));
-
-    if (m_config["nolink"].as<bool>() == false)
-    {
-        g_cc_printer_mutex.lock();
-        g_cc_printer.linking();
-        g_cc_printer_mutex.unlock();
-
-        if (!link_objects(objects))
+        if (!run_threads(base, source_files, build_dir))
         {
-            LOG(core::ERROR) << "Failed to link object files" << std::endl;
+            LOG(core::ERROR) << "Failed to build package " << m_package_name << std::endl;
             return false;
         }
 
-        g_cc_printer_mutex.lock();
-        g_cc_printer.linked();
-        g_cc_printer_mutex.unlock();
+        std::vector<std::filesystem::path> objects;
+        for (const auto &file : source_files)
+            objects.push_back(build_dir / (std::filesystem::path(file).filename().string() + ".o"));
+
+        if (m_config["nolink"].as<bool>() == false)
+        {
+            g_cc_printer_mutex.lock();
+            g_cc_printer.linking();
+            g_cc_printer_mutex.unlock();
+
+            if (!link_objects(objects))
+            {
+                LOG(core::ERROR) << "Failed to link object files" << std::endl;
+                return false;
+            }
+
+            g_cc_printer_mutex.lock();
+            g_cc_printer.linked();
+            g_cc_printer_mutex.unlock();
+        }
+        else
+        {
+            LOG(core::DEBUG) << "Skipping linking" << std::endl;
+
+            g_cc_printer_mutex.lock();
+            g_cc_printer.linked();
+            g_cc_printer_mutex.unlock();
+        }
+
+        while (true)
+        {
+            g_cc_printer_mutex.lock();
+            bool done = g_cc_printer.is_done();
+            g_cc_printer_mutex.unlock();
+
+            if (done)
+                break;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        return true;
     }
-    else
+    else if (m_config["packages"].as<std::vector<std::string>>().empty())
     {
-        LOG(core::DEBUG) << "Skipping linking" << std::endl;
-
-        g_cc_printer_mutex.lock();
-        g_cc_printer.linked();
-        g_cc_printer_mutex.unlock();
+        LOG(core::WARN) << "No source files found. Nothing to build" << std::endl;
+        return true;
     }
 
-    while (true)
+    for (const auto &pkg : m_config["packages"].as<std::vector<std::string>>())
     {
-        g_cc_printer_mutex.lock();
-        bool done = g_cc_printer.is_done();
-        g_cc_printer_mutex.unlock();
+        std::filesystem::path pkg_path = std::filesystem::absolute(base / pkg);
 
-        if (done)
-            break;
+        std::string command = "qpkg build " + pkg_path.string();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (m_verbose)
+            command += " -v";
+
+        if (!m_cache)
+            command += " -N";
+
+        if (system(command.c_str()) != 0)
+            return false;
     }
 
     return true;

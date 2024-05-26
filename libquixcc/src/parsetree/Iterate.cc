@@ -78,7 +78,7 @@ size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::P
             {NodeType::ConstUnaryExprNode, (Func)ConstUnaryExprNode_iter},
             {NodeType::ConstBinaryExprNode, (Func)ConstBinaryExprNode_iter},
             {NodeType::IdentifierNode, (Func)IdentifierNode_iter},
-            {NodeType::ImmMutTypeNode, (Func)ImmMutTypeNode_iter},
+            {NodeType::MutTypeNode, (Func)MutTypeNode_iter},
             {NodeType::U8TypeNode, (Func)U8TypeNode_iter},
             {NodeType::U16TypeNode, (Func)U16TypeNode_iter},
             {NodeType::U32TypeNode, (Func)U32TypeNode_iter},
@@ -339,7 +339,7 @@ size_t libquixcc::traversal::ParseTreePreorder::IdentifierNode_iter(libquixcc::t
     return 1;
 }
 
-size_t libquixcc::traversal::ParseTreePreorder::ImmMutTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ImmMutTypeNode *node)
+size_t libquixcc::traversal::ParseTreePreorder::MutTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::MutTypeNode *node)
 {
     state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
     return next(state, node->m_type) + 1;

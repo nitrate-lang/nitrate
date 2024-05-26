@@ -33,7 +33,7 @@
 
 #include <parsetree/nodes/AllNodes.h>
 
-std::map<libquixcc::TypeNode *, libquixcc::ImmMutTypeNode *> libquixcc::ImmMutTypeNode::m_instances;
+std::map<libquixcc::TypeNode *, libquixcc::MutTypeNode *> libquixcc::MutTypeNode::m_instances;
 libquixcc::U8TypeNode *libquixcc::U8TypeNode::m_instance = nullptr;
 libquixcc::U16TypeNode *libquixcc::U16TypeNode::m_instance = nullptr;
 libquixcc::U32TypeNode *libquixcc::U32TypeNode::m_instance = nullptr;

@@ -1,0 +1,308 @@
+///////////////////////////////////////////////////////////////////////////////
+///                                                                         ///
+///    ░▒▓██████▓▒░  ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░ ░▒▓████████▓▒░   ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///    ░▒▓██████▓▒░  ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///                                                                         ///
+///     * ORBIT STANDARD LIBRARY - The official stdlib for QUIX.            ///
+///     * Copyright (c) 2024, Wesley C. Jones.                              ///
+///     * License terms may be found in the LICENSE file.                   ///
+///                                                                         ///
+///////////////////////////////////////////////////////////////////////////////
+
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
+
+subsystem orbit::core::net::socket {
+    enum L1Proto {
+        IRDA            = 0000000,
+        
+        USB1_0          = 0000100,
+        USB2_0          = 0000101,
+        USB3_0          = 0000102,
+
+        RS232           = 0000200,
+        RS422           = 0000201,
+        RS423           = 0000202,
+        RS449           = 0000203,
+        RS485           = 0000204,
+
+        Eth10BaseT      = 0000300,
+        Eth10Base2      = 0000301,
+        Eth10Base5      = 0000302,
+        Eth100BaseTX    = 0000303,
+        Eth100BaseFX    = 0000304,
+        Eth1000BaseT    = 0000305,
+        Eth1000BaseSX   = 0000306,
+
+        WiFi80211a      = 0001000,
+        WiFi80211b      = 0001001,
+        WiFi80211g      = 0001002,
+        WiFi80211n      = 0001003,
+        WiFi80211ac     = 0001004,
+        WiFi80211ax     = 0001005,
+
+        DSL             = 0002000,
+        ISDN            = 0003000,
+        T1              = 0004000,
+        E1              = 0004001,
+
+        IEEE1394        = 0005000,
+
+        TransferJet     = 0005100,
+        Etherloop       = 0005200,
+        ARINC818        = 0005300,
+        GhnG9960        = 0005400,
+        CANBus          = 0005500,
+        Mipi            = 0005600,
+        FrameRelay      = 0005800,
+        FiberOptics     = 0005900,
+        X25             = 0006000,
+
+        CustomRF        = 0007000,
+        CustomMW        = 0007001,
+        CustomIR        = 0007002,
+        CustomVisible   = 0007003,
+        CustomLaser     = 0007004,
+        CustomUV        = 0007005,
+        CustomXRay      = 0007006,
+        CustomGamma     = 0007007,
+        CustomCosmic    = 0007008,
+
+        StdRF           = 0008000,
+        StdMW           = 0008001,
+        StdIR           = 0008002,
+        StdVisible      = 0008003,
+        StdLaser        = 0008004,
+        StdUV           = 0008005,
+        StdXRay         = 0008006,
+        StdGamma        = 0008007,
+        StdCosmic       = 0008008,
+
+        Other           = 9999998,
+        Unknown         = 9999999,
+    };
+
+    enum L2Proto {
+        ARCnet          = 0000000,
+        ARP             = 0000100,
+        ATM             = 0000200,
+        CHAP            = 0000300,
+        CDP             = 0000400,
+        DCAP            = 0000500,
+        DMLT            = 0000600,
+        DSMLT           = 0000700,
+        DTP             = 0000800,
+        Econet          = 0000900,
+        Ethernet        = 0001000,
+        FDDI            = 0005000,
+        FrameRelay      = 0006000,
+        GHN             = 0006100,
+        HDLC            = 0006200,
+        IEEE80211       = 0007000,
+        IEEE80216       = 0008000,
+        LACP            = 0009000,
+        LattisNet       = 0009100,
+        LocalTalk       = 0009200,
+        L2F             = 0009300,
+        L2TP            = 0009400,
+        LLDP            = 0009500,
+        LLDP_MED        = 0009600,
+        MAC             = 0009700,
+        Q710            = 0009800,
+        MLT             = 0009900,
+        NDP             = 0010000,
+        PAgP            = 0010100,
+        PPP             = 0010200,
+        PPTP            = 0010300,
+        PAP             = 0010400,
+        RPR             = 0010500,
+        SLIP            = 0010600,
+        StarLAN         = 0010700,
+        SDL             = 0010800,
+        STP             = 0010900,
+        SMLT            = 0011000,
+        TokenRing       = 0011100,
+        VEN             = 0011200,
+        VTP             = 0011300,
+        VLAN            = 0011400,
+
+        Other           = 9999998,
+        Unknown         = 9999999,
+    };
+
+    enum L25Proto {
+        ARP             = 0000000,
+        MPLS            = 0000100,
+        PPPoE           = 0000200,
+        TIPC            = 0000300,
+
+        Other           = 9999998,
+        Unknown         = 9999999,
+    };
+
+    enum L3Proto {
+        CLNP            = 0000000,
+        IPX             = 0000100,
+        NAT             = 0000200,
+        RoutedSMLT      = 0000300,
+        SCCP            = 0000400,
+        AppleTalkDDP    = 0000500,
+        HSRP            = 0000600,
+        VRRP            = 0000700,
+        IP              = 0001000,
+        ICMP            = 0002000,
+        ARP             = 0003000,
+        RIP             = 0004000,
+        OSPF            = 0005000,
+        IPSEC           = 0006000,
+
+        Other           = 9999998,
+        Unknown         = 9999999,
+    };
+
+    enum L4Proto {
+        TFTP            = 0000000,
+        AEP             = 0000100,
+        AH              = 0000200,
+        DCCP            = 0000300,
+        ESP             = 0000400,
+        FCP             = 0000500,
+        NetBIOS         = 0000600,
+        IL              = 0000700,
+        iSCSI           = 0000800,
+        NBF             = 0000900,
+        SCTP            = 0001000,
+        SinecH1         = 0001100,
+        TUP             = 0001200,
+        SPX             = 0001300,
+        NBP             = 0001400,
+        TCP             = 0001500,
+        UDP             = 0001600,
+        QUIC            = 0001700,
+
+        Other           = 9999998,
+        Unknown         = 9999999,
+    };
+
+    group SocketStack {
+        l1:  L1Proto,
+        l2:  L2Proto,
+        l25: L25Proto,
+        l3:  L3Proto,
+        l4:  L4Proto,
+
+        static pure fn is_supported(stack: SocketStack): bool?;
+        static pure fn get_supported_l1():  [L1Proto];
+        static pure fn get_supported_l2():  [L2Proto];
+        static pure fn get_supported_l25(): [L25Proto];
+        static pure fn get_supported_l3():  [L3Proto];
+        static pure fn get_supported_l4():  [L4Proto];
+
+        static pure fn get_supported(max: usize): ^SocketStack;
+
+        fn pure to_str(): string;
+    };
+
+    enum SocketDo {
+        Flush           = 0000,
+        Connect         = 0001,
+        Bind            = 0002,
+        Listen          = 0003,
+        Accept          = 0004,
+        Send            = 0005,
+        Recv            = 0006,
+        Peek            = 0007,
+        Close           = 0008,
+        Shutdown        = 0009,
+        SetOpt          = 0010,
+        GetOpt          = 0011,
+        GetPeerName     = 0012,
+        GetSockName     = 0013,
+        GetSockOpt      = 0014,
+        SetSockOpt      = 0015,
+        GetSockErr      = 0016,
+        GetSockState    = 0017,
+        GetSockType     = 0018,
+        GetSockProto    = 0019,
+        GetSockFamily   = 0020,
+    };
+
+    enum CloseMode {
+        Read            = 0000,
+        Write           = 0001,
+        Both            = 0002,
+    };
+
+    group Socket {
+        fd:    i32,
+        stack: SocketStack,
+
+        /// @brief Create a new socket.
+        /// @param stack The OSI stack to use.
+        /// @return A new socket, or error.
+        static quasipure noexcept fn new(stack: SocketStack): Socket?;
+
+        /// @brief Close the socket.
+        /// @return Void or error.
+        fn impurim noexcept close(mode: CloseMode = CloseMode::Both): void?;
+
+        /// @brief Send data over the socket.
+        /// @param data The data to send.
+        /// @return The number of bytes sent, or error.
+        fn impure noexcept tsafe send(data: [u8]): usize?;
+
+        /// @brief Receive data from the socket.
+        /// @param data The buffer to receive data into.
+        /// @return The number of bytes received, or error.
+        fn impure noexcept tsafe recv(data: [u8]): usize?;
+
+        /// @brief Peek at data from the socket.
+        /// @param data The buffer to receive data into.
+        /// @return The number of bytes peeked, or error.
+        fn impure noexcept tsafe peek(data: [u8]): usize?;
+
+        /// @brief Bind the socket to an address.
+        /// @param addr The fully-qualified address to bind to.
+        /// @return Void or error.
+        fn impure noexcept tsafe bind(addr: string): void?;
+
+        /// @brief Connect the socket to an address.
+        /// @param addr The fully-qualified address to connect to.
+        /// @return Void or error.
+        fn impure noexcept tsafe connect(addr: string): void?;
+
+        /// @brief Listen for incoming connections.
+        /// @param backlog The maximum number of pending connections.
+        /// @return Void or error.
+        fn impure noexcept tsafe listen(backlog: usize): void?;
+
+        /// @brief Accept an incoming connection.
+        /// @return A new socket, or error.
+        fn impure noexcept tsafe accept(): Socket?;
+
+        /// @brief Set a socket option.
+        /// @param name The name of the option.
+        /// @param value The value to set.
+        /// @return Void or error.
+        fn impure noexcept tsafe opt(name: string, value: [u8]): void?;
+
+        /// @brief Get a socket option.
+        /// @param name The name of the option.
+        /// @return The value of the option, or error.
+        fn impure noexcept tsafe opt(name: string): [u8]?;
+
+        /// @brief Perform a generic operation on the socket.
+        /// @param op The operation to perform.
+        /// @param data The data to use.
+        /// @return The result of the operation, or error.
+        fn impure noexcept tsafe ioctl(f: u32, inp: [u8] = undef, out: ![u8] = undef): void?; 
+
+        fn pure noexcept to_str(): string;
+    };
+}

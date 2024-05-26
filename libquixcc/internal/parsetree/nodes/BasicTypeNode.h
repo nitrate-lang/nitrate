@@ -45,19 +45,19 @@
 
 namespace libquixcc
 {
-    class ImmMutTypeNode : public TypeNode
+    class MutTypeNode : public TypeNode
     {
-        ImmMutTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::ImmMutTypeNode; }
-        static std::map<TypeNode *, ImmMutTypeNode *> m_instances;
+        MutTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::MutTypeNode; }
+        static std::map<TypeNode *, MutTypeNode *> m_instances;
 
     public:
-        static ImmMutTypeNode *create(TypeNode *type)
+        static MutTypeNode *create(TypeNode *type)
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);
 
             if (!m_instances.contains(type))
-                m_instances[type] = new ImmMutTypeNode(type);
+                m_instances[type] = new MutTypeNode(type);
             return m_instances[type];
         }
 

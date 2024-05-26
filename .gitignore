@@ -57,3 +57,5 @@ orbit/.qpkg
 a.out.c
 s.json
 TODO.md
+
+.qpkg/

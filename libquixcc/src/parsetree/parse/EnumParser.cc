@@ -91,16 +91,14 @@ bool libquixcc::parse_enum(quixcc_job_t &job, libquixcc::Scanner *scanner, std::
 
     std::string name = tok.as<std::string>();
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Colon))
+    tok = scanner->peek();
+    TypeNode *type = nullptr;
+    if (tok.is<Punctor>(Punctor::Colon))
     {
-        LOG(ERROR) << feedback[ENUM_EXPECTED_COLON] << tok << std::endl;
-        return false;
+        scanner->next();
+        if (!parse_type(job, scanner, &type))
+            return false;
     }
-
-    TypeNode *type;
-    if (!parse_type(job, scanner, &type))
-        return false;
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::OpenBrace))

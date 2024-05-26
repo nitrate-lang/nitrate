@@ -180,7 +180,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner, TypeN
     }
     else if (tok.is<Operator>(Operator::LogicalNot))
     {
-        // ! means immutability
+        // ! means mutability
         TypeNode *type;
         if (!parse_type(job, scanner, &type))
         {
@@ -188,7 +188,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner, TypeN
             return false;
         }
 
-        *node = ImmMutTypeNode::create(type);
+        *node = MutTypeNode::create(type);
         return true;
     }
     else
