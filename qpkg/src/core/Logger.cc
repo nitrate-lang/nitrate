@@ -31,7 +31,7 @@
 #include <map>
 
 #define LOGGER_MASK_SRC 1
-#define LOGGER_ECHO 1
+#define LOGGER_ECHO 0
 #define DEBUG_MODE 0
 
 thread_local std::ostringstream qpkg::core::Logger::m_buffer;
@@ -270,6 +270,8 @@ void qpkg::core::LoggerSpool::flush(const char *filepath)
         {
             for (auto &logger : m_loggers)
                 logger.second->flush(std::cerr);
+
+            return;
         }
 
         /* Flush all loggers */

@@ -196,8 +196,8 @@ namespace libquixcc
 
     class Token
     {
-        TokVal m_value;
         Loc m_loc;
+        TokVal m_value;
 
     public:
         TT type;

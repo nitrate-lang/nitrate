@@ -29,63 +29,25 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parsetree/Parser.h>
+#include <LibMacro.h>
+#include <core/Logger.h>
 
-#include <memory>
+using namespace libquixcc;
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
+bool libquixcc::parse_while(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    enum class ExportLangType
-    {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+    std::shared_ptr<ExprNode> cond;
+    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::OpenBrace)}, cond))
+        return false;
 
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
+    std::shared_ptr<BlockNode> then_block;
+    if (!parse(job, scanner, then_block, true))
+        return false;
 
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
+    node = std::make_shared<WhileStmtNode>(cond, then_block);
 
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
-        {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
-        }
-    };
-
-};
-
-#endif // __QUIXCC_LLVM_CTX_H__
+    return true;
+}

@@ -29,63 +29,69 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#ifndef __QUIXCC_PARSE_NODES_VARIABLE_H__
+#define __QUIXCC_PARSE_NODES_VARIABLE_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
+#include <string>
+#include <vector>
 #include <memory>
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
+#include <llvm/LLVMWrapper.h>
+#include <parsetree/nodes/BasicNodes.h>
 
 namespace libquixcc
 {
-    enum class ExportLangType
+    class VarDeclNode : public DeclNode
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
-
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
-
     public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
+        VarDeclNode() : m_name(""), m_type(nullptr), m_init(nullptr), m_is_mut(false), m_is_thread_local(false), m_is_static(false), m_is_deprecated(false) { ntype = NodeType::VarDeclNode; }
+        VarDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init, bool is_mut, bool is_thread_local, bool is_static, bool is_deprecated = false)
+            : m_name(name), m_type(type), m_init(init), m_is_mut(is_mut), m_is_thread_local(is_thread_local), m_is_static(is_static), m_is_deprecated(is_deprecated) { ntype = NodeType::VarDeclNode; }
 
-        LLVMContext() = default;
+        std::string m_name;
+        TypeNode *m_type;
+        std::shared_ptr<ExprNode> m_init;
 
-        void setup(const std::string &filename)
-        {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
-        }
+        bool m_is_mut;
+        bool m_is_thread_local;
+        bool m_is_static;
+        bool m_is_deprecated;
     };
 
-};
+    class LetDeclNode : public DeclNode
+    {
+    public:
+        LetDeclNode() : m_name(""), m_type(nullptr), m_init(nullptr), m_is_mut(false), m_is_thread_local(false), m_is_static(false), m_is_deprecated(false) { ntype = NodeType::LetDeclNode; }
+        LetDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init, bool is_mut = false, bool is_thread_local = false, bool is_static = false, bool is_deprecated = false)
+            : m_name(name), m_type(type), m_init(init), m_is_mut(is_mut), m_is_thread_local(is_thread_local), m_is_static(is_static), m_is_deprecated(is_deprecated) { ntype = NodeType::LetDeclNode; }
 
-#endif // __QUIXCC_LLVM_CTX_H__
+        std::string m_name;
+        TypeNode *m_type;
+        std::shared_ptr<ExprNode> m_init;
+
+        bool m_is_mut;
+        bool m_is_thread_local;
+        bool m_is_static;
+        bool m_is_deprecated;
+    };
+
+    class ConstDeclNode : public DeclNode
+    {
+    public:
+        ConstDeclNode() : m_name(""), m_type(nullptr), m_init(nullptr), m_is_deprecated(false) { ntype = NodeType::ConstDeclNode; }
+        ConstDeclNode(const std::string &name, TypeNode *type, const std::shared_ptr<ExprNode> init, bool is_deprecated = false)
+            : m_name(name), m_type(type), m_init(init), m_is_deprecated(is_deprecated) { ntype = NodeType::ConstDeclNode; }
+
+        std::string m_name;
+        TypeNode *m_type;
+        std::shared_ptr<ExprNode> m_init;
+
+        bool m_is_deprecated;
+    };
+}
+
+#endif // __QUIXCC_PARSE_NODES_VARIABLE_H__

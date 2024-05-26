@@ -29,63 +29,51 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parsetree/Parser.h>
+#include <LibMacro.h>
+#include <core/Logger.h>
 
-#include <memory>
+using namespace libquixcc;
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
+bool libquixcc::parse_typedef(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    enum class ExportLangType
+    /*
+    type <name> = <type>;
+    */
+
+    Token tok = scanner->next();
+    if (tok.type != TT::Identifier)
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+        LOG(ERROR) << feedback[TYPEDEF_EXPECTED_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
 
-    class LLVMContext
+    std::string name = tok.as<std::string>();
+
+    tok = scanner->next();
+    if (!tok.is<Operator>(Operator::Assign))
     {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
+        LOG(ERROR) << feedback[TYPEDEF_EXPECTED_ASSIGN] << tok << std::endl;
+        return false;
+    }
 
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
+    TypeNode *type;
+    if (!parse_type(job, scanner, &type))
+    {
+        LOG(ERROR) << feedback[TYPEDEF_INVALID_TYPE] << name << tok << std::endl;
+        return false;
+    }
 
-        LLVMContext() = default;
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Semicolon))
+    {
+        LOG(ERROR) << feedback[TYPEDEF_EXPECTED_SEMICOLON] << tok << std::endl;
+        return false;
+    }
 
-        void setup(const std::string &filename)
-        {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
-        }
-    };
+    node = std::make_shared<TypedefNode>(type, name);
 
-};
-
-#endif // __QUIXCC_LLVM_CTX_H__
+    return true;
+}

@@ -29,63 +29,91 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parsetree/Parser.h>
+#include <LibMacro.h>
+#include <core/Logger.h>
 
-#include <memory>
+using namespace libquixcc;
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
+static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<UnionFieldNode> &node)
 {
-    enum class ExportLangType
+    Token tok = scanner->next();
+    if (tok.type != TT::Identifier)
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+        LOG(ERROR) << feedback[UNION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
 
-    class LLVMContext
+    node = std::make_shared<UnionFieldNode>();
+
+    node->m_name = tok.as<std::string>();
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Colon))
     {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
+        LOG(ERROR) << feedback[UNION_FIELD_MISSING_COLON] << tok << std::endl;
+        return false;
+    }
 
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
+    TypeNode *type;
+    if (!parse_type(job, scanner, &type))
+    {
+        LOG(ERROR) << feedback[UNION_FIELD_TYPE_ERR] << node->m_name << tok << std::endl;
+        return false;
+    }
 
-        LLVMContext() = default;
+    node->m_type = type;
 
-        void setup(const std::string &filename)
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Comma))
+    {
+        LOG(ERROR) << feedback[UNION_FIELD_MISSING_PUNCTOR] << tok << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+{
+    Token tok = scanner->next();
+    if (tok.type != TT::Identifier)
+    {
+        LOG(ERROR) << feedback[UNION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
+
+    std::string name = tok.as<std::string>();
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::OpenBrace))
+    {
+        LOG(ERROR) << feedback[UNION_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
+        return false;
+    }
+
+    std::vector<std::shared_ptr<UnionFieldNode>> fields;
+
+    while (true)
+    {
+        tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::CloseBrace))
         {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
+            scanner->next();
+            break;
         }
-    };
 
-};
+        std::shared_ptr<UnionFieldNode> field;
+        if (!parse_union_field(job, scanner, field))
+            return false;
+        fields.push_back(field);
+    }
 
-#endif // __QUIXCC_LLVM_CTX_H__
+    auto sdef = std::make_shared<UnionDefNode>();
+    sdef->m_name = name;
+    sdef->m_fields = fields;
+    node = sdef;
+    return true;
+}

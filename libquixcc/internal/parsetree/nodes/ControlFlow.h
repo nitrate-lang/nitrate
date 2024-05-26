@@ -29,63 +29,92 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#ifndef __QUIXCC_PARSE_NODES_CONTROL_FLOW_H__
+#define __QUIXCC_PARSE_NODES_CONTROL_FLOW_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
+#include <string>
+#include <vector>
 #include <memory>
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
+#include <llvm/LLVMWrapper.h>
+#include <lexer/Token.h>
+#include <parsetree/nodes/BasicNodes.h>
+#include <parsetree/nodes/LiteralNode.h>
 
 namespace libquixcc
 {
-    enum class ExportLangType
+    class ReturnStmtNode : public StmtNode
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
-
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
-
     public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
+        ReturnStmtNode(const std::shared_ptr<ExprNode> &expr) : m_expr(expr) { ntype = NodeType::ReturnStmtNode; }
 
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
-        {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
-        }
+        std::shared_ptr<ExprNode> m_expr;
     };
 
-};
+    class RetifStmtNode : public StmtNode
+    {
+    public:
+        RetifStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &return_val)
+            : m_cond(cond), m_return(return_val) { ntype = NodeType::RetifStmtNode; }
 
-#endif // __QUIXCC_LLVM_CTX_H__
+        std::shared_ptr<ExprNode> m_cond;
+        std::shared_ptr<ExprNode> m_return;
+    };
+
+    class RetzStmtNode : public StmtNode
+    {
+    public:
+        RetzStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &return_val)
+            : m_cond(cond), m_return(return_val) { ntype = NodeType::RetzStmtNode; }
+
+        std::shared_ptr<ExprNode> m_cond;
+        std::shared_ptr<ExprNode> m_return;
+    };
+
+    class RetvStmtNode : public StmtNode
+    {
+    public:
+        RetvStmtNode(const std::shared_ptr<ExprNode> &cond) : m_cond(cond) { ntype = NodeType::RetvStmtNode; }
+
+        std::shared_ptr<ExprNode> m_cond;
+    };
+
+    class IfStmtNode : public StmtNode
+    {
+    public:
+        IfStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<StmtNode> &then, const std::shared_ptr<StmtNode> &els)
+            : m_cond(cond), m_then(then), m_else(els) { ntype = NodeType::IfStmtNode; }
+
+        std::shared_ptr<ExprNode> m_cond;
+        std::shared_ptr<StmtNode> m_then;
+        std::shared_ptr<StmtNode> m_else;
+    };
+
+    class WhileStmtNode : public StmtNode
+    {
+    public:
+        WhileStmtNode(const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<StmtNode> &body)
+            : m_cond(cond), m_stmt(body) { ntype = NodeType::WhileStmtNode; }
+
+        std::shared_ptr<ExprNode> m_cond;
+        std::shared_ptr<StmtNode> m_stmt;
+    };
+
+    class ForStmtNode : public StmtNode
+    {
+    public:
+        ForStmtNode(const std::shared_ptr<ExprNode> &init, const std::shared_ptr<ExprNode> &cond, const std::shared_ptr<ExprNode> &step, const std::shared_ptr<StmtNode> &body)
+            : m_init(init), m_cond(cond), m_step(step), m_stmt(body) { ntype = NodeType::ForStmtNode; }
+
+        std::shared_ptr<ExprNode> m_init;
+        std::shared_ptr<ExprNode> m_cond;
+        std::shared_ptr<ExprNode> m_step;
+        std::shared_ptr<StmtNode> m_stmt;
+    };
+}
+
+#endif // __QUIXCC_PARSE_NODES_CONTROL_FLOW_H__

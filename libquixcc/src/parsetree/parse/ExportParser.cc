@@ -29,63 +29,89 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parsetree/Parser.h>
+#include <LibMacro.h>
+#include <core/Logger.h>
 
-#include <memory>
+using namespace libquixcc;
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
+bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    enum class ExportLangType
+    Token tok = scanner->peek();
+
+    ExportLangType langType = ExportLangType::Default;
+
+    if (tok.type == TT::String)
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+        scanner->next();
 
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
+        std::string lang = tok.as<std::string>();
 
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
+        std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
 
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
+        if (lang == "c")
+            langType = ExportLangType::C;
+        else if (lang == "c++" || lang == "cxx")
+            langType = ExportLangType::CXX;
+        else if (lang == "d" || lang == "dlang")
+            langType = ExportLangType::DLang;
+        else
         {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
+            LOG(ERROR) << feedback[PARSER_UNKNOWN_LANGUAGE] << lang << tok << std::endl;
+            return false;
         }
-    };
 
-};
+        tok = scanner->peek();
+    }
 
-#endif // __QUIXCC_LLVM_CTX_H__
+    if (tok.is<Punctor>(Punctor::OpenBrace))
+    {
+        std::shared_ptr<libquixcc::BlockNode> block;
+        if (!parse(job, scanner, block, true))
+            return false;
+
+        node = std::make_shared<libquixcc::ExportNode>(block->m_stmts, langType);
+        return true;
+    }
+
+    scanner->next();
+    if (tok.type != TT::Keyword)
+    {
+        LOG(ERROR) << feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok << std::endl;
+        return false;
+    }
+
+    std::vector<std::shared_ptr<libquixcc::StmtNode>> stmts;
+    std::shared_ptr<libquixcc::StmtNode> stmt;
+
+    switch (tok.as<Keyword>())
+    {
+    case Keyword::Var:
+        if (!parse_var(job, scanner, stmts))
+            return false;
+        break;
+    case Keyword::Let:
+        if (!parse_let(job, scanner, stmts))
+            return false;
+        break;
+    case Keyword::Subsystem:
+        if (!parse_subsystem(job, scanner, stmt))
+            return false;
+        break;
+    case Keyword::Fn:
+        if (!parse_function(job, scanner, stmt))
+            return false;
+        break;
+    default:
+        LOG(ERROR) << feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok << std::endl;
+        return false;
+    }
+    if (stmt)
+        stmts.push_back(stmt);
+
+    node = std::make_shared<libquixcc::ExportNode>(stmts, langType);
+
+    return true;
+}

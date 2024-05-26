@@ -29,63 +29,56 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#include <parsetree/Parser.h>
+#include <core/Logger.h>
+#include <LibMacro.h>
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <memory>
-
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
+bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    enum class ExportLangType
+    Token tok = scanner->next();
+    if (tok.type != TT::Identifier)
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+        LOG(ERROR) << feedback[SUBSYSTEM_MISSING_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
 
-    class LLVMContext
+    std::string name = tok.as<std::string>();
+    std::set<std::string> deps;
+
+    tok = scanner->peek();
+
+    // check if : item1, item2, item3
+    if (tok.is<Punctor>(Punctor::Colon))
     {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
-
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
-
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
+        scanner->next(); // consume colon
+        tok = scanner->next();
+        if (tok.type != TT::Identifier)
         {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
+            LOG(ERROR) << feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
+            return false;
         }
-    };
+        deps.insert(tok.as<std::string>());
 
-};
+        tok = scanner->peek();
+        while (tok.is<Punctor>(Punctor::Comma))
+        {
+            scanner->next(); // consume comma
+            tok = scanner->next();
+            if (tok.type != TT::Identifier)
+            {
+                LOG(ERROR) << feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
+                return false;
+            }
+            deps.insert(tok.as<std::string>());
+            tok = scanner->peek();
+        }
+    }
 
-#endif // __QUIXCC_LLVM_CTX_H__
+    std::shared_ptr<BlockNode> block;
+    if (!parse(job, scanner, block, true))
+        return false;
+
+    node = std::make_shared<SubsystemNode>(name, deps, block);
+
+    return true;
+}

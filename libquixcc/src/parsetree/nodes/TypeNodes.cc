@@ -29,63 +29,34 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parsetree/nodes/AllNodes.h>
 
-#include <memory>
-
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
-{
-    enum class ExportLangType
-    {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
-
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
-
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
-
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
-        {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
-        }
-    };
-
-};
-
-#endif // __QUIXCC_LLVM_CTX_H__
+std::map<libquixcc::TypeNode *, libquixcc::ImmMutTypeNode *> libquixcc::ImmMutTypeNode::m_instances;
+libquixcc::U8TypeNode *libquixcc::U8TypeNode::m_instance = nullptr;
+libquixcc::U16TypeNode *libquixcc::U16TypeNode::m_instance = nullptr;
+libquixcc::U32TypeNode *libquixcc::U32TypeNode::m_instance = nullptr;
+libquixcc::U64TypeNode *libquixcc::U64TypeNode::m_instance = nullptr;
+libquixcc::U128TypeNode *libquixcc::U128TypeNode::m_instance = nullptr;
+libquixcc::I8TypeNode *libquixcc::I8TypeNode::m_instance = nullptr;
+libquixcc::I16TypeNode *libquixcc::I16TypeNode::m_instance = nullptr;
+libquixcc::I32TypeNode *libquixcc::I32TypeNode::m_instance = nullptr;
+libquixcc::I64TypeNode *libquixcc::I64TypeNode::m_instance = nullptr;
+libquixcc::I128TypeNode *libquixcc::I128TypeNode::m_instance = nullptr;
+libquixcc::F32TypeNode *libquixcc::F32TypeNode::m_instance = nullptr;
+libquixcc::F64TypeNode *libquixcc::F64TypeNode::m_instance = nullptr;
+libquixcc::BoolTypeNode *libquixcc::BoolTypeNode::m_instance = nullptr;
+libquixcc::VoidTypeNode *libquixcc::VoidTypeNode::m_instance = nullptr;
+std::map<libquixcc::TypeNode *, libquixcc::PointerTypeNode *> libquixcc::PointerTypeNode::m_instances;
+std::map<std::string, libquixcc::OpaqueTypeNode *> libquixcc::OpaqueTypeNode::m_instances;
+libquixcc::StringTypeNode *libquixcc::StringTypeNode::m_instance = nullptr;
+std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::StructTypeNode *> libquixcc::StructTypeNode::m_instances;
+std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::GroupTypeNode *> libquixcc::GroupTypeNode::m_instances;
+std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::RegionTypeNode *> libquixcc::RegionTypeNode::m_instances;
+std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::UnionTypeNode *> libquixcc::UnionTypeNode::m_instances;
+thread_local std::map<std::pair<libquixcc::TypeNode *, std::shared_ptr<libquixcc::ConstExprNode>>, libquixcc::ArrayTypeNode *> libquixcc::ArrayTypeNode::m_instances;
+thread_local std::map<libquixcc::TypeNode *, libquixcc::VectorTypeNode *> libquixcc::VectorTypeNode::m_instances;
+thread_local std::unordered_map<std::string, std::shared_ptr<libquixcc::UserTypeNode>> libquixcc::UserTypeNode::m_instances;
+std::map<libquixcc::FunctionTypeNode::Inner, libquixcc::FunctionTypeNode *> libquixcc::FunctionTypeNode::s_instances;
+std::map<std::pair<std::string, libquixcc::TypeNode *>, libquixcc::EnumTypeNode *> libquixcc::EnumTypeNode::m_instances;

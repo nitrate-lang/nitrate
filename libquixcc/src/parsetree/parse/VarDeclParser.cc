@@ -29,63 +29,120 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parsetree/Parser.h>
+#include <LibMacro.h>
+#include <core/Logger.h>
 
-#include <memory>
+using namespace libquixcc;
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
+static bool parse_decl(quixcc_job_t &job, Token tok, libquixcc::Scanner *scanner, std::pair<std::string, libquixcc::TypeNode *> &decl)
 {
-    enum class ExportLangType
+    std::string name = tok.as<std::string>();
+
+    tok = scanner->peek();
+    if (!tok.is<Punctor>(Punctor::Colon))
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+        decl = std::make_pair(name, nullptr);
+        return true;
+    }
 
-    class LLVMContext
+    scanner->next();
+
+    TypeNode *type;
+
+    if (!parse_type(job, scanner, &type))
     {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
+        LOG(ERROR) << feedback[VAR_DECL_TYPE_ERR] << name << tok << std::endl;
+        return false;
+    }
 
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
+    decl = std::make_pair(name, type);
+    return true;
+}
 
-        LLVMContext() = default;
+bool libquixcc::parse_var(quixcc_job_t &job, libquixcc::Scanner *scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &nodes)
+{
+    Token tok = scanner->next();
 
-        void setup(const std::string &filename)
+    std::vector<std::pair<std::string, libquixcc::TypeNode *>> decls;
+    bool multi_decl = false;
+    if (tok.is<Punctor>(Punctor::OpenBracket))
+    {
+        multi_decl = true;
+        /*
+        var [x: i8, y: i8];
+        */
+
+        while (true)
         {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
+            tok = scanner->next();
+
+            std::pair<std::string, libquixcc::TypeNode *> decl;
+            if (!parse_decl(job, tok, scanner, decl))
+                return false;
+
+            decls.push_back(decl);
+
+            tok = scanner->next();
+            if (tok.is<Punctor>(Punctor::Comma))
+                continue;
+            else if (tok.is<Punctor>(Punctor::CloseBracket))
+                break;
+            else
+            {
+                LOG(ERROR) << feedback[VAR_DECL_MISSING_PUNCTOR] << decl.first << tok << std::endl;
+                return false;
+            }
         }
-    };
+    }
+    else if (tok.type == TT::Identifier)
+    {
+        // Parse single variable declaration
+        std::pair<std::string, libquixcc::TypeNode *> decl;
+        if (!parse_decl(job, tok, scanner, decl))
+            return false;
 
-};
+        decls.push_back(decl);
+    }
+    else
+    {
+        LOG(ERROR) << feedback[VAR_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
 
-#endif // __QUIXCC_LLVM_CTX_H__
+    tok = scanner->next();
+    if (tok.is<Punctor>(Punctor::Semicolon))
+    {
+        // No initializer
+        for (auto &decl : decls)
+            nodes.push_back(std::make_shared<VarDeclNode>(decl.first, decl.second, nullptr, false, false, false, false));
+    }
+    else if (tok.is<Operator>(Operator::Assign))
+    {
+        if (multi_decl)
+            throw std::runtime_error("Initializer not implemented for multiple declarations");
+
+        // Parse initializer
+        std::shared_ptr<ExprNode> init;
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, init))
+            return false;
+
+        tok = scanner->next();
+        if (!tok.is<Punctor>(Punctor::Semicolon))
+        {
+            LOG(ERROR) << feedback[VAR_DECL_MISSING_PUNCTOR] << decls[0].first << tok << std::endl;
+            return false;
+        }
+
+        nodes.push_back(std::make_shared<VarDeclNode>(decls[0].first, decls[0].second, init, false, false, false, false));
+    }
+    else
+    {
+        LOG(ERROR) << feedback[VAR_DECL_MISSING_PUNCTOR] << tok << std::endl;
+        return false;
+    }
+
+    return true;
+}

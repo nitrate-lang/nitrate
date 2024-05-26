@@ -29,63 +29,103 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parsetree/Parser.h>
+#include <LibMacro.h>
+#include <core/Logger.h>
 
-#include <memory>
+using namespace libquixcc;
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
+static bool parse_enum_field(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<EnumFieldNode> &node)
 {
-    enum class ExportLangType
+    // <name> [ = <value> ] [,]
+
+    Token tok = scanner->next();
+    if (tok.type != TT::Identifier)
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+        LOG(ERROR) << feedback[ENUM_FIELD_EXPECTED_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
 
-    class LLVMContext
+    node = std::make_shared<EnumFieldNode>();
+
+    node->m_name = tok.as<std::string>();
+
+    tok = scanner->peek();
+    if (tok.is<Operator>(Operator::Assign))
     {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
-
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
-
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
+        scanner->next();
+        if (!parse_const_expr(job, scanner, Token(TT::Punctor, Punctor::Comma), node->m_value))
         {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
+            LOG(ERROR) << feedback[ENUM_FIELD_EXPECTED_CONST_EXPR] << node->m_name << tok << std::endl;
+            return false;
         }
-    };
 
-};
+        tok = scanner->peek();
+    }
 
-#endif // __QUIXCC_LLVM_CTX_H__
+    if (tok.is<Punctor>(Punctor::Comma))
+    {
+        scanner->next();
+        return true;
+    }
+
+    if (!tok.is<Punctor>(Punctor::CloseBrace))
+    {
+        LOG(ERROR) << feedback[ENUM_FIELD_EXPECTED_SEMICOLON] << tok << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+bool libquixcc::parse_enum(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+{
+    Token tok = scanner->next();
+    if (tok.type != TT::Identifier)
+    {
+        LOG(ERROR) << feedback[ENUM_EXPECTED_IDENTIFIER] << tok << std::endl;
+        return false;
+    }
+
+    std::string name = tok.as<std::string>();
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Colon))
+    {
+        LOG(ERROR) << feedback[ENUM_EXPECTED_COLON] << tok << std::endl;
+        return false;
+    }
+
+    TypeNode *type;
+    if (!parse_type(job, scanner, &type))
+        return false;
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::OpenBrace))
+    {
+        LOG(ERROR) << feedback[ENUM_EXPECTED_LEFT_BRACE] << tok << std::endl;
+        return false;
+    }
+
+    std::vector<std::shared_ptr<EnumFieldNode>> fields;
+
+    while (true)
+    {
+        tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::CloseBrace))
+        {
+            scanner->next();
+            break;
+        }
+
+        std::shared_ptr<EnumFieldNode> field;
+        if (!parse_enum_field(job, scanner, field))
+            return false;
+        fields.push_back(field);
+    }
+
+    node = std::make_shared<EnumDefNode>(EnumTypeNode::create(name, type), true, fields);
+    return true;
+}

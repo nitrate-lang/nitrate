@@ -36,7 +36,7 @@
 #error "This header requires C++"
 #endif
 
-#include <parse/nodes/AllNodes.h>
+#include <parsetree/nodes/AllNodes.h>
 #include <IR/IRModule.h>
 #include <IR/Type.h>
 

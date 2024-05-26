@@ -29,63 +29,47 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#ifndef __QUIXCC_PARSE_H__
+#define __QUIXCC_PARSE_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
+#include <lexer/Lex.h>
+#include <parsetree/nodes/AllNodes.h>
+#include <quixcc.h>
 #include <memory>
-
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
 
 namespace libquixcc
 {
-    enum class ExportLangType
-    {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+    typedef BlockNode Ptree;
 
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
+    bool parse(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<BlockNode> &node, bool expect_braces = true, bool single_stmt = false);
+    bool parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
 
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
-
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
-        {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
-        }
-    };
-
+    bool parse_let(quixcc_job_t &job, libquixcc::Scanner *scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
+    bool parse_const(quixcc_job_t &job, libquixcc::Scanner *scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
+    bool parse_var(quixcc_job_t &job, libquixcc::Scanner *scanner, std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
+    bool parse_enum(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_struct(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_region(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_group(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_const_expr(quixcc_job_t &job, libquixcc::Scanner *scanner, Token terminator, std::shared_ptr<libquixcc::ConstExprNode> &node);
+    bool parse_expr(quixcc_job_t &job, libquixcc::Scanner *scanner, std::set<Token> terminators, std::shared_ptr<libquixcc::ExprNode> &node, size_t depth = 0);
+    bool parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner, TypeNode **node);
+    bool parse_typedef(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_return(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_retif(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_retz(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_retv(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_if(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_while(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
+    bool parse_inline_asm(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node);
 };
 
-#endif // __QUIXCC_LLVM_CTX_H__
+#endif // __QUIXCC_PARSE_H__

@@ -29,63 +29,40 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#ifndef __QUIXCC_PARSE_NODES_STRING_H__
+#define __QUIXCC_PARSE_NODES_STRING_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
+#include <string>
+#include <vector>
 #include <memory>
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
+#include <llvm/LLVMWrapper.h>
+#include <parsetree/nodes/BasicNodes.h>
 
 namespace libquixcc
 {
-    enum class ExportLangType
+    class StringTypeNode : public TypeNode
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+        StringTypeNode() { ntype = NodeType::StringTypeNode; }
 
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
+        static StringTypeNode *m_instance;
 
     public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
+        StringTypeNode(StringTypeNode const &) = delete;
+        void operator=(StringTypeNode const &) = delete;
 
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
+        static StringTypeNode *create()
         {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
+            if (m_instance == nullptr)
+                m_instance = new StringTypeNode();
+
+            return m_instance;
         }
     };
+}
 
-};
-
-#endif // __QUIXCC_LLVM_CTX_H__
+#endif // __QUIXCC_PARSE_NODES_STRING_H__

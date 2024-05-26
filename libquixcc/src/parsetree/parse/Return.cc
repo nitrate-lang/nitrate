@@ -31,90 +31,148 @@
 
 #define QUIXCC_INTERNAL
 
+#include <parsetree/Parser.h>
 #include <LibMacro.h>
-#include <mangle/Symbol.h>
-#include <parsetree/nodes/AllNodes.h>
+#include <core/Logger.h>
 
-const std::string libquixcc::Symbol::quix_abiprefix = "_ZJ0";
-const std::string libquixcc::Symbol::cxx_abiprefix = "_Z";
-const std::string libquixcc::Symbol::c_abiprefix = "";
+using namespace libquixcc;
 
-std::string libquixcc::Symbol::join(const std::string &a, const std::string &b)
+bool libquixcc::parse_return(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    if (a.empty())
-        return b;
-    if (b.empty())
-        return a;
-    return a + "::" + b;
-}
+    Token tok = scanner->peek();
 
-std::string libquixcc::Symbol::join(const std::vector<std::string> &namespaces, const std::string &name)
-{
-    std::string result;
-    for (size_t i = 0; i < namespaces.size(); i++)
-        result = join(result, namespaces[i]);
-
-    return join(result, name);
-}
-
-std::string libquixcc::Symbol::mangle(const ir::q::Value *node, const std::string &prefix, ExportLangType lang)
-{
-    switch (lang)
+    if (tok.is<Punctor>(Punctor::Semicolon))
     {
-    case ExportLangType::Default:
-        return mangle_quix(node, prefix);
-    case ExportLangType::C:
-        return mangle_c(node, prefix);
-    case ExportLangType::CXX:
-        return mangle_cxx(node, prefix);
-    case ExportLangType::DLang:
-        throw std::runtime_error("DLang export not yet supported");
-    default:
-        throw std::runtime_error("Invalid export language type");
+        scanner->next();
+        node = std::make_shared<ReturnStmtNode>(nullptr); // void
+        return true;
     }
-}
 
-const libquixcc::ir::q::Value *libquixcc::Symbol::demangle(const std::string &mangled)
-{
-    std::string input;
-
-    try
-    {
-        if (mangled.starts_with(quix_abiprefix))
-            return demangle_quix(mangled);
-        else if (mangled.starts_with(cxx_abiprefix))
-            return demangle_cxx(mangled);
-        else if (mangled.starts_with(c_abiprefix))
-            return demangle_c(mangled);
-        else
-            return nullptr;
-    }
-    catch (const std::exception &e)
-    {
-        std::cerr << "Demangling error: " << e.what() << std::endl;
-        return nullptr;
-    }
-}
-
-bool libquixcc::Symbol::demangle_tocode(const std::string &mangled, std::string &output)
-{
-    auto node = demangle(mangled);
-    if (node == nullptr)
+    std::shared_ptr<ExprNode> expr;
+    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, expr))
         return false;
+    node = std::make_shared<ReturnStmtNode>(expr);
 
-    output = node->to_string();
+    tok = scanner->next();
+
+    if (!tok.is<Punctor>(Punctor::Semicolon))
+    {
+        LOG(ERROR) << feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
+        return false;
+    }
+
     return true;
 }
 
-LIB_EXPORT char *quixcc_demangle(const char *mangled)
+bool libquixcc::parse_retif(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    /* no-op */
-    if (!mangled)
-        return nullptr;
+    /*
+        Syntax:
+            "retif" <return_expr>, <condition>;
 
-    std::string output;
-    if (!libquixcc::Symbol::demangle_tocode(mangled, output))
-        return nullptr;
+        Translates to:
+        if (<condition>)
+        {
+            return <return_expr>;
+        }
+    */
 
-    return strdup(output.c_str());
+    Token tok;
+
+    std::shared_ptr<ExprNode> return_expr;
+    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma)}, return_expr))
+        return false;
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Comma))
+    {
+        LOG(ERROR) << feedback[RETIF_MISSING_COMMA] << tok << std::endl;
+        return false;
+    }
+
+    std::shared_ptr<ExprNode> condition;
+    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, condition))
+        return false;
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Semicolon))
+    {
+        LOG(ERROR) << feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
+        return false;
+    }
+    node = std::make_shared<RetifStmtNode>(condition, return_expr);
+
+    return true;
+}
+
+bool libquixcc::parse_retz(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+{
+    /*
+        Syntax:
+            "retz" <return_expr>, <condition>;
+
+        Translates to:
+        if (<condition>)
+        {
+            return <return_expr>;
+        }
+    */
+
+    Token tok;
+
+    std::shared_ptr<ExprNode> return_expr;
+    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma)}, return_expr))
+        return false;
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Comma))
+    {
+        LOG(ERROR) << feedback[RETZ_MISSING_COMMA] << tok << std::endl;
+        return false;
+    }
+
+    std::shared_ptr<ExprNode> condition;
+    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, condition))
+        return false;
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Semicolon))
+    {
+        LOG(ERROR) << feedback[RETZ_MISSING_SEMICOLON] << tok << std::endl;
+        return false;
+    }
+    node = std::make_shared<RetzStmtNode>(condition, return_expr);
+
+    return true;
+}
+
+bool libquixcc::parse_retv(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+{
+    /*
+        Syntax:
+            "retv" <condition>;
+
+        Translates to:
+        if (<condition>)
+        {
+            return;
+        }
+    */
+
+    Token tok;
+
+    std::shared_ptr<ExprNode> cond;
+    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, cond))
+        return false;
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::Semicolon))
+    {
+        LOG(ERROR) << feedback[RETV_MISSING_SEMICOLON] << tok << std::endl;
+        return false;
+    }
+
+    node = std::make_shared<RetvStmtNode>(cond);
+
+    return true;
 }

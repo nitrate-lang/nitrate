@@ -32,7 +32,7 @@
 #define QUIXCC_INTERNAL
 
 #include <parsetree/Iterate.h>
-#include <parse/nodes/AllNodes.h>
+#include <parsetree/nodes/AllNodes.h>
 
 template <typename T>
 libquixcc::traversal::TraversePtr mk_ptr(std::shared_ptr<T> *ptr)

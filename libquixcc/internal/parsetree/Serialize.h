@@ -40,7 +40,7 @@
 #include <set>
 #include <memory>
 
-#include <parse/NodeType.h>
+#include <parsetree/NodeType.h>
 
 namespace libquixcc
 {

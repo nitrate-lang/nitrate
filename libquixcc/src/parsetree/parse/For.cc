@@ -29,63 +29,92 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <parsetree/Parser.h>
+#include <LibMacro.h>
+#include <core/Logger.h>
 
-#include <memory>
+using namespace libquixcc;
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
+bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
 {
-    enum class ExportLangType
+    std::shared_ptr<ExprNode> x0, x1, x2;
+
+    Token tok = scanner->peek();
+    if (tok.is<Punctor>(Punctor::OpenParen))
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
+        tok = scanner->next();
 
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x0))
+            return false;
 
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
-
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
+        tok = scanner->next();
+        if (!tok.is<Punctor>(Punctor::Semicolon))
         {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
+            LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+            return false;
         }
-    };
 
-};
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x1))
+            return false;
 
-#endif // __QUIXCC_LLVM_CTX_H__
+        tok = scanner->next();
+        if (!tok.is<Punctor>(Punctor::Semicolon))
+        {
+            LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+            return false;
+        }
+
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::CloseParen)}, x2))
+            return false;
+
+        tok = scanner->next();
+        if (!tok.is<Punctor>(Punctor::CloseParen))
+        {
+            LOG(ERROR) << feedback[FOR_EXPECTED_CLOSING_PARANTHESIS] << tok << std::endl;
+            return false;
+        }
+
+        std::shared_ptr<BlockNode> then_block;
+        if (!parse(job, scanner, then_block, true))
+            return false;
+
+        node = std::make_shared<ForStmtNode>(x0, x1, x2, then_block);
+
+        return true;
+    }
+    else
+    {
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x0))
+            return false;
+
+        tok = scanner->next();
+        if (!tok.is<Punctor>(Punctor::Semicolon))
+        {
+            LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+            return false;
+        }
+
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x1))
+            return false;
+
+        tok = scanner->next();
+        if (!tok.is<Punctor>(Punctor::Semicolon))
+        {
+            LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+            return false;
+        }
+
+        if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::OpenBrace)}, x2))
+            return false;
+
+        std::shared_ptr<BlockNode> then_block;
+        if (!parse(job, scanner, then_block, true))
+            return false;
+
+        node = std::make_shared<ForStmtNode>(x0, x1, x2, then_block);
+
+        return true;
+    }
+}

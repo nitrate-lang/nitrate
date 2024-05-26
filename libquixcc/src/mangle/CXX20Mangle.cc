@@ -33,7 +33,7 @@
 
 #include <LibMacro.h>
 #include <mangle/Symbol.h>
-#include <parse/nodes/AllNodes.h>
+#include <parsetree/nodes/AllNodes.h>
 
 std::string libquixcc::Symbol::mangle_cxx(const libquixcc::ir::q::Value *node, const std::string &prefix)
 {

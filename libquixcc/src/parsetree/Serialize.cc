@@ -32,7 +32,7 @@
 #define QUIXCC_INTERNAL
 
 #include <parsetree/Serialize.h>
-#include <parse/nodes/AllNodes.h>
+#include <parsetree/nodes/AllNodes.h>
 #include <functional>
 #include <unordered_map>
 #include <lexer/Lex.h>

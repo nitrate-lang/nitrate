@@ -29,63 +29,77 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#ifndef __QUIXCC_PARSE_NODES_STRUCT_H__
+#define __QUIXCC_PARSE_NODES_STRUCT_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
+#include <string>
+#include <vector>
 #include <memory>
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
+#include <llvm/LLVMWrapper.h>
+#include <parsetree/nodes/BasicNodes.h>
 
 namespace libquixcc
 {
-    enum class ExportLangType
+    class StructTypeNode : public TypeNode
     {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
-
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
+        StructTypeNode(std::vector<TypeNode *> fields, const std::string &name) : m_fields(fields), m_name(name) { ntype = NodeType::StructTypeNode; }
+        static std::map<std::pair<std::vector<TypeNode *>, std::string>, StructTypeNode *> m_instances;
 
     public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
-
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
+        static StructTypeNode *create(const std::vector<TypeNode *> &fields, const std::string &name = "")
         {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
+            auto key = std::make_pair(fields, name);
+            if (m_instances.contains(key))
+                return m_instances[key];
+            auto instance = new StructTypeNode(fields, name);
+            instance->m_fields = fields;
+            m_instances[key] = instance;
+            return instance;
         }
+
+        std::vector<TypeNode *> m_fields;
+        std::string m_name;
     };
 
-};
+    class StructFieldNode : public ParseNode
+    {
+    public:
+        StructFieldNode() { ntype = NodeType::StructFieldNode; }
+        StructFieldNode(const std::string &name, TypeNode *type, std::shared_ptr<ConstExprNode> value = nullptr) : m_name(name), m_type(type), m_value(value) { ntype = NodeType::StructFieldNode; }
 
-#endif // __QUIXCC_LLVM_CTX_H__
+
+        std::string m_name;
+        TypeNode *m_type;
+        std::shared_ptr<ConstExprNode> m_value;
+    };
+
+    class StructDefNode : public DefNode
+    {
+    public:
+        StructDefNode() { ntype = NodeType::StructDefNode; }
+        StructDefNode(const std::string &name, const std::vector<std::shared_ptr<StructFieldNode>> &fields) : m_name(name), m_fields(fields) { ntype = NodeType::StructDefNode; }
+
+        virtual StructTypeNode *get_type() const
+        {
+            std::vector<TypeNode *> fields;
+            for (auto &field : m_fields)
+                fields.push_back(field->m_type);
+            return StructTypeNode::create(fields, m_name);
+        }
+
+        std::string m_name;
+        std::vector<std::shared_ptr<StructFieldNode>> m_fields;
+        std::vector<std::shared_ptr<StmtNode>> m_methods;
+        std::vector<std::shared_ptr<StmtNode>> m_static_methods;
+    };
+}
+
+#endif // __QUIXCC_PARSE_NODES_STRUCT_H__

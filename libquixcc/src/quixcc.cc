@@ -57,7 +57,7 @@
 #include <preprocessor/Preprocessor.h>
 #include <core/Logger.h>
 #include <core/Exception.h>
-#include <parse/Parser.h>
+#include <parsetree/Parser.h>
 #include <libquixcc.h>
 #include <mutate/Routine.h>
 
@@ -1103,7 +1103,7 @@ static bool execute_job(quixcc_job_t *job)
     }
     catch (Exception &e)
     {
-        LOG(FAILED) << log::raw << "Compilation failed: " << e.what() << std::endl;
+        LOG(FAILED) << log::raw << "Compilation failed" << std::endl;
         return false;
     }
     catch (std::runtime_error &e)

@@ -39,7 +39,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
-#include <parse/Parser.h>
+#include <parsetree/Parser.h>
 #include <quixcc.h>
 
 namespace libquixcc

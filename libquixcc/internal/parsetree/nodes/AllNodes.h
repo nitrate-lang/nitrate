@@ -29,63 +29,32 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_LLVM_CTX_H__
-#define __QUIXCC_LLVM_CTX_H__
+#ifndef __QUIXCC_PARSE_NODES_NODES_H__
+#define __QUIXCC_PARSE_NODES_NODES_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <memory>
+#include <parsetree/nodes/BasicNodes.h>
+#include <parsetree/nodes/LiteralNode.h>
+#include <parsetree/nodes/ConstExprNode.h>
+#include <parsetree/nodes/ExprNode.h>
+#include <parsetree/nodes/IdentifierNode.h>
+#include <parsetree/nodes/BasicTypeNode.h>
+#include <parsetree/nodes/StringNode.h>
+#include <parsetree/nodes/VariableNode.h>
+#include <parsetree/nodes/StructNode.h>
+#include <parsetree/nodes/RegionNode.h>
+#include <parsetree/nodes/GroupNode.h>
+#include <parsetree/nodes/ArrayNode.h>
+#include <parsetree/nodes/SubsystemNode.h>
+#include <parsetree/nodes/EnumNode.h>
+#include <parsetree/nodes/UnionNode.h>
+#include <parsetree/nodes/FunctionNode.h>
+#include <parsetree/nodes/ExportNode.h>
+#include <parsetree/nodes/InlineAsmNode.h>
+#include <parsetree/nodes/ControlFlow.h>
+#include <parsetree/nodes/TypedefNode.h>
 
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/Module.h>
-#include <llvm/IR/Value.h>
-#include <llvm/IR/Constants.h>
-#include <llvm/IR/Type.h>
-#include <parsetree/NodeType.h>
-#include <map>
-#include <stack>
-
-namespace libquixcc
-{
-    enum class ExportLangType
-    {
-        Default,
-        C,
-        CXX,
-        DLang,
-        None, /* Internal */
-    };
-
-    class LLVMContext
-    {
-        LLVMContext(const LLVMContext &) = delete;
-        LLVMContext &operator=(const LLVMContext &) = delete;
-
-    public:
-        std::unique_ptr<llvm::LLVMContext> m_ctx;
-        std::unique_ptr<llvm::Module> m_module;
-        std::unique_ptr<llvm::IRBuilder<>> m_builder;
-        std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>> m_named_construsts;
-        std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-        std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-        std::string prefix;
-        bool m_pub = true;
-        size_t m_skipbr = 0;
-        ExportLangType m_lang = ExportLangType::Default;
-
-        LLVMContext() = default;
-
-        void setup(const std::string &filename)
-        {
-            m_ctx = std::make_unique<llvm::LLVMContext>();
-            m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-            m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);    
-        }
-    };
-
-};
-
-#endif // __QUIXCC_LLVM_CTX_H__
+#endif // __QUIXCC_PARSE_NODES_NODES_H__

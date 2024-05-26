@@ -42,7 +42,7 @@
 #include <variant>
 #include <memory>
 #include <functional>
-#include <parse/NodeType.h>
+#include <parsetree/NodeType.h>
 
 namespace libquixcc
 {
