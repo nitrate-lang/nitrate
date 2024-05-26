@@ -115,6 +115,7 @@ namespace libquixcc
             static size_t RegionTypeNode_iter(ParseTreeTraversalState &state, RegionTypeNode *node);
             static size_t UnionTypeNode_iter(ParseTreeTraversalState &state, UnionTypeNode *node);
             static size_t ArrayTypeNode_iter(ParseTreeTraversalState &state, ArrayTypeNode *node);
+            static size_t VectorTypeNode_iter(ParseTreeTraversalState &state, VectorTypeNode *node);
             static size_t FunctionTypeNode_iter(ParseTreeTraversalState &state, FunctionTypeNode *node);
             static size_t UserTypeNode_iter(ParseTreeTraversalState &state, UserTypeNode *node);
             static size_t IntegerNode_iter(ParseTreeTraversalState &state, IntegerNode *node);

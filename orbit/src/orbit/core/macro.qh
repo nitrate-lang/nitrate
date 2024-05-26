@@ -1,0 +1,147 @@
+///////////////////////////////////////////////////////////////////////////////
+///                                                                         ///
+///    ░▒▓██████▓▒░  ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░ ░▒▓████████▓▒░   ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///    ░▒▓██████▓▒░  ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///                                                                         ///
+///     * ORBIT STANDARD LIBRARY - The official stdlib for QUIX.            ///
+///     * Copyright (c) 2024, Wesley C. Jones.                              ///
+///     * License terms may be found in the LICENSE file.                   ///
+///                                                                         ///
+///////////////////////////////////////////////////////////////////////////////
+
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
+
+subsystem orbit::core {
+    /// @brief Returns the file name of the current file.
+    /// @return The file name of the current file.
+    /// @note This function is an intrinsic.
+    @(fn file(): string => ret __QUIX_FILE__;);
+
+    /// @brief Returns the line number of the current line.
+    /// @return The line number of the current line.
+    /// @note This function is an intrinsic.
+    @(fn line(): u64 => ret __QUIX_LINE__;);
+
+    /// @brief Returns the column number of the current column.
+    /// @return The column number of the current column.
+    /// @note This function is an intrinsic.
+    @(fn column(): u64 => ret __QUIX_COLUMN__;);
+
+    /// @brief Returns the function name of the current function.
+    /// @return The function name of the current function.
+    /// @note This function is an intrinsic.
+    @(fn function(): string => ret __QUIX_FUNCTION__;);
+
+    group SourceLocation {
+        line: u64;
+        column: u64;
+        file: string;
+        function: string;
+    };
+
+    /// @brief Returns the keccak256 hash of the current file prior to 
+    /// macro expansion.
+    /// @return The keccak256 hash of the current file prior to compilation.
+    /// @note This function is an intrinsic.
+    @(fn file_keccak256(): [u8; 32] => ret __QUIX_FILE_KECCAK256__;);
+
+    /// @brief Reads a string from the compiler's standard input.
+    /// @return The string read from the compiler's standard input.
+    /// @note This function is an intrinsic.
+    @(fn gets(): string => ret @readstdin(););
+
+    /// @brief Prints a string to the compiler's standard output.
+    /// @param str The string to print.
+    /// @note This function is an intrinsic.
+    @(fn puts(str: string) => @print(str + "\n"););
+
+    /// @brief Prints a string to the compiler's standard error.
+    /// @param str The string to print.
+    /// @note This function is an intrinsic.
+    @(fn eputs(str: string) => @eprint(str + "\n"););
+
+
+		/// @brief Read a line from the compilers standard input 
+		/// using the GNU readline interactive style.
+		/// @param prompt The prompt to display
+		/// @return The line entered (empty of error).
+		@(fn readline(prompt: string): string {
+			@print(prompt);
+			ret @gets();
+		};);
+
+    /// @brief Aborts the compilation process with an error message.
+    /// @param str The error message to print.
+    /// @note This function is an intrinsic.
+    @(fn abort(str: string) => @error(@function() + ":" + str););
+
+    /// @brief Get an 8-Bit cryptographic pseudo-random number from the 
+    /// compiler.
+    /// @return An 8-Bit cryptographic pseudo-random number.
+    /// @note This function is an intrinsic.
+    @(fn crand8(): u8 => ret __QUIX_CRAND8__;);
+
+    /// @brief Get a 16-Bit cryptographic pseudo-random number from the 
+    /// compiler.
+    /// @return A 16-Bit cryptographic pseudo-random number.
+    /// @note This function is an intrinsic.
+    @(fn crand16(): u16 => ret __QUIX_CRAND16__;);
+
+    /// @brief Get a 32-Bit cryptographic pseudo-random number from the 
+    /// compiler.
+    /// @return A 32-Bit cryptographic pseudo-random number.
+    /// @note This function is an intrinsic.
+    @(fn crand32(): u32 => ret __QUIX_CRAND32__;);
+
+    /// @brief Get a 64-Bit cryptographic pseudo-random number from the 
+    /// compiler.
+    /// @return A 64-Bit cryptographic pseudo-random number.
+    /// @note This function is an intrinsic.
+    @(fn crand64(): u64 => ret __QUIX_CRAND64__;);
+
+    /// @brief Get a 128-Bit cryptographic pseudo-random number from the 
+    /// compiler.
+    /// @return A 128-Bit cryptographic pseudo-random number.
+    /// @note This function is an intrinsic.
+    @(fn crand128(): u128 => ret __QUIX_CRAND128__;);
+
+    /// @brief Remind user to implement a feature.
+    /// @param str The message to display.
+    /// @note This function is an intrinsic.
+    @(fn todo(str: string) => @warn(@function() + " --> TODO: " + str););
+
+    /// @brief Get an environment variable from the compiler process.
+    /// @param name The name of the environment variable.
+    /// @return The value of the environment variable.
+    /// @note This function is an intrinsic.
+    /// @warning Using this function may trigger an @abort() if the 
+    /// compiler's security policy is violated.
+    @(fn getenv(name: string): string => ret __QUIX_GETENV__;);
+
+    /// @brief Set an environment variable in the compiler process.
+    /// @param name The name of the environment variable.
+    /// @param value The value of the environment variable.
+    /// @note This function is an intrinsic.
+    /// @warning Using this function may trigger an @abort() if the 
+    /// compiler's security policy is violated.
+    /// @warning Code that uses this is sus.
+    @(fn setenv(name: string, value: string) => __QUIX_SETENV__;);
+
+    /// @brief Get a static string from the compiler's statics table.
+    /// @param name The name of the static string.
+    /// @return The value of the static string. Empty string if not found.
+    /// @note This function is an intrinsic.
+    @(fn statics(name: string): string => __QUIX_STATICS__[name.upper()];);
+		
+		/// @brief Return true with probability `p` at compile time
+		/// @param The probability of returning true.
+		/// @return true with probability p, false otherwise.
+		@(fn prob(p: f32): bool => ret (p*1e9) >= min(crand32(), 1e9););
+};

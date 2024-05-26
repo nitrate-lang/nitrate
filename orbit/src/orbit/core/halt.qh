@@ -1,0 +1,88 @@
+///////////////////////////////////////////////////////////////////////////////
+///                                                                         ///
+///    ░▒▓██████▓▒░  ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░ ░▒▓████████▓▒░   ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///    ░▒▓██████▓▒░  ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///                                                                         ///
+///     * ORBIT STANDARD LIBRARY - The official stdlib for QUIX.            ///
+///     * Copyright (c) 2024, Wesley C. Jones.                              ///
+///     * License terms may be found in the LICENSE file.                   ///
+///                                                                         ///
+///////////////////////////////////////////////////////////////////////////////
+
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
+
+@import orbit::core::macro;
+@import orbit::core::types;
+@import orbit::core::crc;
+
+subsystem orbit::core {
+    contract HaltMachine {
+        fn impure tsafe noexcept panic(message: str, debug: bool = false): null;
+        fn impure tsafe noexcept panic(code: u8, debug: bool = false): null;
+
+        fn impure tsafe noexcept exit(message: str, debug: bool = false): null;
+        fn impure tsafe noexcept exit(code: u8, debug: bool = false): null;
+    };
+
+    group StackFrace {
+        addr: unsafe_ptr,
+        src: SourceLocation,
+    };
+
+    fn backtrace(): List[StackFrace] {
+        @todo("Implement backtrace function")
+
+        return [];
+    }
+
+    impl HaltMachine for orbit::core {
+        fn impure tsafe panic(message: str, debug: bool = false): null {
+            eprintn("Panic: " + message);
+
+            let x = Crc8.digest(message);
+
+            // 0 = no error, otherwise error
+            if (msg != "" && x == 0) x = 1;
+
+            panic(x, debug);
+        }
+
+        fn impure tsafe panic(code: u8, debug: bool = false): null {
+            if (debug) {
+                foreach (let frame in backtrace()) {
+                    eprintn("  at " + frame.src.file + ":" + frame.src.line + ":" + frame.src.column);
+                }
+            }
+
+            exit(code, debug);
+        }
+
+        fn impure tsafe exit(message: str, debug: bool = false): null {
+            eprintn("Exit: " + message);
+
+            let x = Crc8.digest(message);
+
+            // 0 = no error, otherwise error
+            if (msg != "" && x == 0) x = 1;
+
+            exit(x, debug);
+        }
+
+        fn impure tsafe exit(code: u8, debug: bool = false): null {
+            if (debug) {
+                foreach (let frame in backtrace()) {
+                    eprintn("  at " + frame.src.file + ":" + frame.src.line + ":" + frame.src.column);
+                }
+            }
+
+            AsmBuilder::@syscall(0x60, code as u64);
+        }
+    }
+}

@@ -82,6 +82,7 @@ std::unordered_map<libquixcc::NodeType, std::string_view> libquixcc::NodeTypeNam
     {NodeType::RegionTypeNode, "RegionTypeNode"},
     {NodeType::UnionTypeNode, "UnionTypeNode"},
     {NodeType::ArrayTypeNode, "ArrayTypeNode"},
+    {NodeType::VectorTypeNode, "VectorTypeNode"},
     {NodeType::FunctionTypeNode, "FunctionTypeNode"},
     {NodeType::UserTypeNode, "UserTypeNode"},
     {NodeType::LiteralNode, "LiteralNode"},

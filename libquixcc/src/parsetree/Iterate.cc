@@ -102,6 +102,7 @@ size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::P
             {NodeType::RegionTypeNode, (Func)RegionTypeNode_iter},
             {NodeType::UnionTypeNode, (Func)UnionTypeNode_iter},
             {NodeType::ArrayTypeNode, (Func)ArrayTypeNode_iter},
+            {NodeType::VectorTypeNode, (Func)VectorTypeNode_iter},
             {NodeType::FunctionTypeNode, (Func)FunctionTypeNode_iter},
             {NodeType::UserTypeNode, (Func)UserTypeNode_iter},
             {NodeType::IntegerNode, (Func)IntegerNode_iter},
@@ -506,6 +507,14 @@ size_t libquixcc::traversal::ParseTreePreorder::ArrayTypeNode_iter(libquixcc::tr
         state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_size));
         count += next(state, node->m_size);
     }
+    return count + 1;
+}
+
+size_t libquixcc::traversal::ParseTreePreorder::VectorTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::VectorTypeNode *node)
+{
+    size_t count = 0;
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
+    count += next(state, node->m_type);
     return count + 1;
 }
 

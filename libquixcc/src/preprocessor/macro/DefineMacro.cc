@@ -96,7 +96,7 @@ bool libquixcc::macro::ParseDefine(quixcc_job_t *job, const Token &tok, const st
         exp.push_back(Token(TT::String, value));
         break;
     case Bool:
-        exp.push_back(Token(TT::Identifier, "bool"));
+        exp.push_back(Token(TT::Identifier, "i1"));
         exp.push_back(Token(TT::Operator, Operator::Assign));
         if (value == "true")
             exp.push_back(Token(TT::Keyword, Keyword::True));

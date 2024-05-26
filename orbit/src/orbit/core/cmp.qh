@@ -13,18 +13,15 @@
 ///     * License terms may be found in the LICENSE file.                   ///
 ///                                                                         ///
 ///////////////////////////////////////////////////////////////////////////////
-@encoding utf8
-@pragma version 1.0.0
 
-subsystem orbit {
-    import algorithm.algorithm;     ~> Common general-purpose algorithms.
-    import container.container;     ~> Common data structures.
-    import crypto.crypto;           ~> Cryptographic primitives.
-    import data.data;               ~> Data manipulation functions and compression.
-    import math.math;               ~> Mathematical functions and constants.
-    import reflection.reflection;   ~> Reflection and introspection.
-    import runtime.runtime;         ~> Runtime and system functions.
-    import sysio.sysio;             ~> System I/O functions and OS interaction.
-    import time.time;               ~> Time and date functions.
-    import util.util;               ~> Utility functions and miscellaneous.
-};
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
+
+@import orbit::core::types;
+@import orbit::core::typeinfo;
+
+subsystem orbit::core {
+    wfn teq(a: any, b: any): bool => retif a.tag != b.tag, false;
+    wfn tne(a: any, b: any): bool => retif a.tag != b.tag, true;
+}

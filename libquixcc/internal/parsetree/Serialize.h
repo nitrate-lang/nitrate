@@ -97,6 +97,7 @@ namespace libquixcc
             static std::string RegionTypeNode_conv(ParseTreeSerializerState &state, const RegionTypeNode *node);
             static std::string UnionTypeNode_conv(ParseTreeSerializerState &state, const UnionTypeNode *node);
             static std::string ArrayTypeNode_conv(ParseTreeSerializerState &state, const ArrayTypeNode *node);
+            static std::string VectorTypeNode_conv(ParseTreeSerializerState &state, const VectorTypeNode *node);
             static std::string FunctionTypeNode_conv(ParseTreeSerializerState &state, const FunctionTypeNode *node);
             static std::string UserTypeNode_conv(ParseTreeSerializerState &state, const UserTypeNode *node);
             static std::string IntegerNode_conv(ParseTreeSerializerState &state, const IntegerNode *node);

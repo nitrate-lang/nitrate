@@ -64,6 +64,22 @@ namespace libquixcc
         TypeNode *m_type;
         std::shared_ptr<ConstExprNode> m_size;
     };
+
+    class VectorTypeNode : public TypeNode
+    {
+        VectorTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::VectorTypeNode; }
+        static thread_local std::map<TypeNode *, VectorTypeNode *> m_instances;
+
+    public:
+        static VectorTypeNode *create(TypeNode *type)
+        {
+            if (!m_instances.contains(type))
+                m_instances[type] = new VectorTypeNode(type);
+            return m_instances[type];
+        }
+
+        TypeNode *m_type;
+    };
 }
 
 #endif // __QUIXCC_PARSE_NODES_ARRAY_H__

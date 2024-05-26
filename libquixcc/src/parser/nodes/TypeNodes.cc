@@ -56,6 +56,7 @@ std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::
 std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::RegionTypeNode *> libquixcc::RegionTypeNode::m_instances;
 std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>, libquixcc::UnionTypeNode *> libquixcc::UnionTypeNode::m_instances;
 thread_local std::map<std::pair<libquixcc::TypeNode *, std::shared_ptr<libquixcc::ConstExprNode>>, libquixcc::ArrayTypeNode *> libquixcc::ArrayTypeNode::m_instances;
+thread_local std::map<libquixcc::TypeNode *, libquixcc::VectorTypeNode *> libquixcc::VectorTypeNode::m_instances;
 thread_local std::unordered_map<std::string, std::shared_ptr<libquixcc::UserTypeNode>> libquixcc::UserTypeNode::m_instances;
 std::map<libquixcc::FunctionTypeNode::Inner, libquixcc::FunctionTypeNode *> libquixcc::FunctionTypeNode::s_instances;
 std::map<std::pair<std::string, libquixcc::TypeNode *>, libquixcc::EnumTypeNode *> libquixcc::EnumTypeNode::m_instances;

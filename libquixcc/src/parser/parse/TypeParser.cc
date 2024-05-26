@@ -50,7 +50,7 @@ static std::map<std::string, TypeNode *> primitive_types = {
     {"i128", I128TypeNode::create()},
     {"f32", F32TypeNode::create()},
     {"f64", F64TypeNode::create()},
-    {"bool", BoolTypeNode::create()},
+    {"i1", BoolTypeNode::create()},
     {"string", StringTypeNode::create()},
     {"void", VoidTypeNode::create()}};
 
@@ -136,6 +136,12 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner, TypeN
         }
 
         tok = scanner->next();
+        if (tok.is<Punctor>(Punctor::CloseBracket))
+        {
+            *node = VectorTypeNode::create(type);
+            return true;
+        }
+
         if (!tok.is<Punctor>(Punctor::Semicolon))
         {
             LOG(ERROR) << feedback[TYPE_EXPECTED_SEMICOLON] << tok << std::endl;

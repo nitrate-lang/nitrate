@@ -149,6 +149,7 @@ static auto conv(const GroupTypeNode *n, QState &state) -> QResult;
 static auto conv(const RegionTypeNode *n, QState &state) -> QResult;
 static auto conv(const UnionTypeNode *n, QState &state) -> QResult;
 static auto conv(const ArrayTypeNode *n, QState &state) -> QResult;
+static auto conv(const VectorTypeNode *n, QState &state) -> QResult;
 static auto conv(const FunctionTypeNode *n, QState &state) -> QResult;
 static auto conv(const IntegerNode *n, QState &state) -> QResult;
 static auto conv(const FloatLiteralNode *n, QState &state) -> QResult;
@@ -884,6 +885,11 @@ static auto conv(const ArrayTypeNode *n, QState &state) -> QResult
     auto size = std::atoll(conv(n->m_size.get(), state)[0]->as<Number>()->value.c_str());
 
     return Array::create(conv(n->m_type, state)[0]->as<Type>(), size);
+}
+
+static auto conv(const VectorTypeNode *n, QState &state) -> QResult
+{
+    return Vector::create(conv(n->m_type, state)[0]->as<Type>());
 }
 
 static auto conv(const FunctionTypeNode *n, QState &state) -> QResult
@@ -1639,6 +1645,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult
 
     case libquixcc::NodeType::ArrayTypeNode:
         r = conv(n->as<ArrayTypeNode>(), state);
+        break;
+
+    case libquixcc::NodeType::VectorTypeNode:
+        r = conv(n->as<VectorTypeNode>(), state);
         break;
 
     case libquixcc::NodeType::FunctionTypeNode:

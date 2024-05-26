@@ -141,6 +141,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::seria
             {NodeType::RegionTypeNode, (Func)RegionTypeNode_conv},
             {NodeType::UnionTypeNode, (Func)UnionTypeNode_conv},
             {NodeType::ArrayTypeNode, (Func)ArrayTypeNode_conv},
+            {NodeType::VectorTypeNode, (Func)VectorTypeNode_conv},
             {NodeType::FunctionTypeNode, (Func)FunctionTypeNode_conv},
             {NodeType::UserTypeNode, (Func)UserTypeNode_conv},
             {NodeType::IntegerNode, (Func)IntegerNode_conv},
@@ -587,6 +588,13 @@ std::string libquixcc::serialize::ParseTreeSerializer::ArrayTypeNode_conv(libqui
     str += next(state, node->m_type);
     str += ",\"size\":";
     str += next(state, node->m_size);
+    return str + "}";
+}
+
+std::string libquixcc::serialize::ParseTreeSerializer::VectorTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::VectorTypeNode *node)
+{
+    std::string str = "{\"ntype\":\"VectorTypeNode\",\"type\":";
+    str += next(state, node->m_type);
     return str + "}";
 }
 

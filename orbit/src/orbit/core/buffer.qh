@@ -1,0 +1,48 @@
+///////////////////////////////////////////////////////////////////////////////
+///                                                                         ///
+///    ░▒▓██████▓▒░  ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░ ░▒▓████████▓▒░   ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///    ░▒▓██████▓▒░  ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///                                                                         ///
+///     * ORBIT STANDARD LIBRARY - The official stdlib for QUIX.            ///
+///     * Copyright (c) 2024, Wesley C. Jones.                              ///
+///     * License terms may be found in the LICENSE file.                   ///
+///                                                                         ///
+///////////////////////////////////////////////////////////////////////////////
+
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
+
+@import orbit::core::types;
+
+subsystem orbit::core {
+    enum SeekWhence {
+        set = 0,
+        cur = 1,
+        end = 2,
+    };
+
+    interface IBufferReader => fn tsafe impure read(b: ![], len: usize): usize;
+    interface IBufferWriter => fn tsafe impure write(b: [], len: usize): usize;
+    interface IBufferSeeker => fn tsafe impure seek(offset: isize, whence: SeekWhence): usize;
+
+    interface IBasicBuffer: IBufferReader, IBufferWriter;
+    interface IBufferFull: IBasicBuffer, IBufferSeeker;
+
+    wfn crashpoint tsafe impure write(buf: !IBufferWriter, b: [], len: usize): usize {
+        buf.write(b, len);
+    }
+
+    wfn crashpoint tsafe impure read(buf: !IBufferReader, b: ![], len: usize): usize {
+        buf.read(b, len);
+    }
+
+    wfn crashpoint tsafe impure seek(buf: !IBufferSeeker, offset: isize, whence: SeekWhence): usize {
+        buf.seek(offset, whence);
+    }
+}

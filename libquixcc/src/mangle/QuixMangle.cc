@@ -160,6 +160,13 @@ static std::string serialize_type(const libquixcc::ir::q::Type *type, std::set<c
         s += wrap_tag("x" + std::to_string(st->size));
         return "a" + s;
     }
+    else if (type->is<q::Vector>())
+    {
+        const q::Vector *st = static_cast<const q::Vector *>(type);
+        std::string s;
+        s += wrap_tag(serialize_type(st->type, visited));
+        return "r" + s;
+    }
     else if (type->is<q::Ptr>())
     {
         const q::Ptr *st = static_cast<const q::Ptr *>(type);
@@ -267,6 +274,20 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(const std::string &t
                 return nullptr;
 
             return q::Array::create(t, std::stoi(fields.at(1)));
+        } else if (type.at(0) == 'r')
+        {
+            std::vector<std::string> fields;
+            if (!unwrap_tags(type.substr(1), fields))
+                return nullptr;
+
+            if (fields.size() < 1)
+                return nullptr;
+
+            const q::Type *t;
+            if ((t = deserialize_type_inner(fields.at(0), prev)) == nullptr)
+                return nullptr;
+
+            return q::Vector::create(t);
         }
         else if (type.at(0) == 'p')
         {

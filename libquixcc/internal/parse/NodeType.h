@@ -102,6 +102,7 @@ namespace libquixcc
         RegionTypeNode,
         UnionTypeNode,
         ArrayTypeNode,
+        VectorTypeNode,
         FunctionTypeNode,
         UserTypeNode,
 
@@ -199,6 +200,7 @@ namespace libquixcc
     class RegionTypeNode;
     class UnionTypeNode;
     class ArrayTypeNode;
+    class VectorTypeNode;
     class FunctionTypeNode;
     class UserTypeNode;
     class LiteralNode;

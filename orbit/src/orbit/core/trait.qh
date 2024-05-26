@@ -1,0 +1,80 @@
+///////////////////////////////////////////////////////////////////////////////
+///                                                                         ///
+///    ░▒▓██████▓▒░  ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░ ░▒▓████████▓▒░   ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///   ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///    ░▒▓██████▓▒░  ░▒▓█▓▒░░▒▓█▓▒░ ░▒▓███████▓▒░  ░▒▓█▓▒░    ░▒▓█▓▒░       ///
+///                                                                         ///
+///     * ORBIT STANDARD LIBRARY - The official stdlib for QUIX.            ///
+///     * Copyright (c) 2024, Wesley C. Jones.                              ///
+///     * License terms may be found in the LICENSE file.                   ///
+///                                                                         ///
+///////////////////////////////////////////////////////////////////////////////
+
+@use "v1.0"
+@language "en"
+@copyright "Wesley Jones; MIT license"
+
+@import orbit::core::macro;
+
+subsystem orbit::core {
+    trait iter(t: Type, ...args): (this: !Type, i: !u64): !any {
+        ret (this: !Type, i: !u64): !any {
+            `switch i {`
+                @(for i in 0..args.len() {
+                    `case `i`: ret i++, &this.`args[i]`;\n`;
+                });
+                `default: illegal;`
+            `}`
+        }
+    }
+
+    trait mini(t: Type, ...args): Type {
+        ret `group `t.name`__mini {`
+            @(for i in 0..args.len() {
+                let [name, type] = typeof(args[i]);
+                name`: `type`,\n`;
+            });
+        `}`;
+    }
+}
+
+// group Ex {
+//     a: i32,
+//     b: i32,
+// } : @iter{*};
+
+// // ->
+
+// group any {
+//     ptr: unsafe_ptr,
+//     t: TypeInfo,
+
+//     fn any(ptr: unsafe_ptr, t: TypeInfo = typeof(ptr)) {
+//         this.* = ...args;
+//     }
+// }
+
+// group Ex {
+//     a: i32,
+//     b: i32,
+
+//     fn iter(i: !u64): !any {
+//         switch i {
+//             case 0: ret i++, &this.a;
+//             case 1: ret i = u64.max(), &this.b;
+//             default: illegal;
+//         }
+//     }
+// }
+
+// fn demo() {
+//     let x: Ex = [1, 2];
+
+//     for (let it = struct_begin(x); it != struct_end(x); it = struct_next(it)) {
+//         printn(dynamic_bitcast(~it, it.t));
+//     }
+// }

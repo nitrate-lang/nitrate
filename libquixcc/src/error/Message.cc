@@ -100,8 +100,11 @@ std::string libquixcc::LoggerGroup::format_message_ansi(const std::string &messa
     std::stringstream msg;
 
     /* Add the file, line, and column information */
-    msg << "\x1b[49;1m" << tok.loc().file << ":";
-    msg << std::to_string(tok.loc().line) << ":" << std::to_string(tok.loc().col) << ":\x1b[0m ";
+    if (tok.loc().file != "")
+    {
+        msg << "\x1b[49;1m" << tok.loc().file << ":";
+        msg << std::to_string(tok.loc().line) << ":" << std::to_string(tok.loc().col) << ":\x1b[0m ";
+    }
 
     /* ANSI color codes */
     switch (type)
@@ -138,8 +141,11 @@ std::string libquixcc::LoggerGroup::format_message_nocolor(const std::string &me
     std::stringstream msg;
 
     /* Add the file, line, and column information */
-    msg << tok.loc().file << ":";
-    msg << std::to_string(tok.loc().line) << ":" << std::to_string(tok.loc().col) << ": ";
+    if (tok.loc().file != "")
+    {
+        msg << tok.loc().file << ":";
+        msg << std::to_string(tok.loc().line) << ":" << std::to_string(tok.loc().col) << ": ";
+    }
 
     switch (type)
     {
