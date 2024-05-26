@@ -47,12 +47,12 @@ subsystem orbit::core {
         let vtab_idx = *(ptr as *u32);
 
         @(if debug {
-            if vtab_idx >= __QUIX_TYPE_TABEL_GLOBAL__.len() {
+            if vtab_idx >= @__QUIX_TYPE_TABEL_GLOBAL__.len() {
                 panic("Invalid vtable index.");
             }
         })
 
-        ret __QUIX_TYPE_TABEL_GLOBAL__[vtab_idx];
+        ret @__QUIX_TYPE_TABEL_GLOBAL__[vtab_idx];
     }
 
     /// @brief Check if a thing is polymorphic.
@@ -61,11 +61,11 @@ subsystem orbit::core {
     /// @return True if the thing is polymorphic, false otherwise.
     /// @note This function is an intrinsic.
     @(fn is_polymorphic(value: string): bool => 
-            __QUIX_META_TABLE__["typeinfo"][this][value].is_polymorphic;);
+            @__QUIX_META_TABLE__["typeinfo"][this][value].is_polymorphic;);
 
     @(fn is_same(a: string, b: string): bool => 
-            __QUIX_META_TABLE__["typeinfo"][this][a].hash == 
-            __QUIX_META_TABLE__["typeinfo"][this][b].hash;);
+            @__QUIX_META_TABLE__["typeinfo"][this][a].hash == 
+            @__QUIX_META_TABLE__["typeinfo"][this][b].hash;);
 
     /// @brief Get the type information for a thing.
     /// @param value The thing (struct, enum, identifier, function, etc.) to
@@ -75,7 +75,7 @@ subsystem orbit::core {
     /// @note The hash is not guaranteed to be unique accross different 
     /// compilations or different compilers.
     @(fn typeof(value: string): TypeInfo {
-        if __QUIX_META_TABLE__["typeinfo"][this].has(value) {
+        if @__QUIX_META_TABLE__["typeinfo"][this].has(value) {
             if @is_same(value, "any") {
                 ret TypeInfo {
                     mangled: "any",
@@ -97,7 +97,7 @@ subsystem orbit::core {
                 };
             }
 
-            retif !@is_polymorphic(value) __QUIX_META_TABLE__["typeinfo"][this][value];
+            retif !@is_polymorphic(value) @__QUIX_META_TABLE__["typeinfo"][this][value];
         }
 
         ret __polymorphic_type_lookup(destr(value) as unsafe_ptr);
