@@ -40,18 +40,24 @@ void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job, libquixcc::E
 {
     // Create a new message
     quixcc_msg_t *msg = (quixcc_msg_t *)malloc(sizeof(quixcc_msg_t));
+    if (msg == nullptr)
+        throw std::bad_alloc();
     msg->line = 0;
     msg->column = 0;
     msg->message = strdup(message.c_str());
+    if (msg->message == nullptr)
+        throw std::bad_alloc();
     msg->m_level = (quixcc_msg_level_t)type;
 
     // Add the message to the job
     job.m_result.m_messages = (quixcc_msg_t **)realloc(job.m_result.m_messages, (job.m_result.m_count + 1) * sizeof(quixcc_msg_t *));
+    if (job.m_result.m_messages == nullptr)
+        throw std::bad_alloc();
     job.m_result.m_messages[job.m_result.m_count] = msg;
     job.m_result.m_count++;
 
-    // Flush debug messages to stderr
-    if (type == E::DEBUG && job.m_debug)
+    // Flush messages to stderr when debug is enabled
+    if (job.m_debug)
         std::cerr << message << std::endl;
 
     // Throw an exception if the message is an error or fatal

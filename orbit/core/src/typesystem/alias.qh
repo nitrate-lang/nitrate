@@ -36,4 +36,7 @@ subsystem orbit::core {
     type bool = i1;
     type cstr = *i8;
     type unsafe_ptr = *void;
+
+    type usize = u64;
+    type isize = i64;
 }

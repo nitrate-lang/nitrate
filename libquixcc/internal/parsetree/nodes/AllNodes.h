@@ -48,6 +48,7 @@
 #include <parsetree/nodes/RegionNode.h>
 #include <parsetree/nodes/GroupNode.h>
 #include <parsetree/nodes/ArrayNode.h>
+#include <parsetree/nodes/TypeWrapper.h>
 #include <parsetree/nodes/SubsystemNode.h>
 #include <parsetree/nodes/EnumNode.h>
 #include <parsetree/nodes/UnionNode.h>

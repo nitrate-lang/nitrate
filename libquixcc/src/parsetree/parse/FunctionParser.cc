@@ -39,62 +39,73 @@ using namespace libquixcc;
 
 struct GetPropState
 {
-    bool did_nothrow;
-    bool did_foreign;
-    bool did_impure;
-    bool did_tsafe;
+    size_t noexcept_ctr = 0;
+    size_t foreign_ctr = 0;
+    size_t impure_ctr = 0;
+    size_t tsafe_ctr = 0;
+    size_t pure_ctr = 0;
+    size_t quasipure_ctr = 0;
+    size_t retropure_ctr = 0;
+    size_t inline_ctr = 0;
 };
 
 static bool fn_get_property(quixcc_job_t &job, libquixcc::Scanner *scanner, GetPropState &state)
 {
     Token tok = scanner->peek();
 
-    if (tok.is<Keyword>(Keyword::Nothrow))
+    if (tok.is<Keyword>(Keyword::Noexcept))
     {
-        if (state.did_nothrow)
-        {
-            LOG(ERROR) << feedback[FN_NO_THROW_ALREADY_SPECIFIED] << tok << std::endl;
-            return false;
-        }
-
         scanner->next();
-        state.did_nothrow = true;
+        state.noexcept_ctr++;
         return true;
     }
 
     if (tok.is<Keyword>(Keyword::Foreign))
     {
-        if (state.did_foreign)
-        {
-            LOG(ERROR) << feedback[FN_FOREIGN_ALREADY_SPECIFIED] << tok << std::endl;
-            return false;
-        }
         scanner->next();
-        state.did_foreign = true;
-        return true;
-    }
-
-    if (tok.is<Keyword>(Keyword::Tsafe))
-    {
-        if (state.did_tsafe)
-        {
-            LOG(ERROR) << feedback[FN_THREAD_SAFE_ALREADY_SPECIFIED] << tok << std::endl;
-            return false;
-        }
-        scanner->next();
-        state.did_tsafe = true;
+        state.foreign_ctr++;
         return true;
     }
 
     if (tok.is<Keyword>(Keyword::Impure))
     {
-        if (state.did_impure)
-        {
-            LOG(ERROR) << feedback[FN_IMPURE_ALREADY_SPECIFIED] << tok << std::endl;
-            return false;
-        }
         scanner->next();
-        state.did_impure = true;
+        state.impure_ctr++;
+        return true;
+    }
+
+    if (tok.is<Keyword>(Keyword::Tsafe))
+    {
+        scanner->next();
+        state.tsafe_ctr++;
+        return true;
+    }
+
+    if (tok.is<Keyword>(Keyword::Pure))
+    {
+        scanner->next();
+        state.pure_ctr++;
+        return true;
+    }
+
+    if (tok.is<Keyword>(Keyword::Quasipure))
+    {
+        scanner->next();
+        state.quasipure_ctr++;
+        return true;
+    }
+
+    if (tok.is<Keyword>(Keyword::Retropure))
+    {
+        scanner->next();
+        state.retropure_ctr++;
+        return true;
+    }
+
+    if (tok.is<Keyword>(Keyword::Inline))
+    {
+        scanner->next();
+        state.inline_ctr++;
         return true;
     }
 
@@ -155,17 +166,51 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner, s
     return true;
 }
 
-bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+enum class Purity
 {
-    // fn [nothrow] [foreign] [pure] [tsafe] <name> ( [param]... ) [: <type>]; or {}
-    auto fndecl = std::make_shared<FunctionDeclNode>();
+    Pure,
+    QuasiPure,
+    RetroPure,
+    Impure
+};
 
-    GetPropState state = {false, false, false, false};
+struct FunctionProperties
+{
+    bool _noexcept = false;
+    bool _foreign = false;
+    bool _tsafe = false;
+    Purity _purity = Purity::Impure;
+};
+
+static FunctionProperties read_function_properties(quixcc_job_t &job, libquixcc::Scanner *scanner)
+{
+    GetPropState state;
 
     while (fn_get_property(job, scanner, state))
-    {
-        // get all properties
-    }
+        ;
+
+    if (!(state.noexcept_ctr || state.foreign_ctr || state.impure_ctr || state.tsafe_ctr || state.pure_ctr || state.quasipure_ctr || state.retropure_ctr))
+        return FunctionProperties();
+    
+    LOG(WARN) << "Function designators are not supported yet. Ignoring..." << std::endl;
+
+    FunctionProperties props;
+
+    /// TODO: validate properties
+
+    /// TODO: dedude missing properties: i.e. purity implies thread-safety
+
+    return props;
+}
+
+bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<libquixcc::StmtNode> &node)
+{
+    // fn [noexcept] [foreign] [pure] [tsafe] <name> ( [param]... ) [: <type>]; or {}
+    auto fndecl = std::make_shared<FunctionDeclNode>();
+
+    auto prop = read_function_properties(job, scanner);
+
+    (void)prop;
 
     Token tok = scanner->next();
 
@@ -247,7 +292,8 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner, s
 
     if (tok.is<Punctor>(Punctor::Semicolon))
     {
-        fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+        /// TODO: Implement function properties
+        fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic, false, false, false, false);
 
         scanner->next();
         node = fndecl;
@@ -262,7 +308,8 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner, s
         if (!parse_type(job, scanner, &type))
             return false;
 
-        fndecl->m_type = FunctionTypeNode::create(type, params, is_variadic, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+        /// TODO: Implement function properties
+        fndecl->m_type = FunctionTypeNode::create(type, params, is_variadic, false, false, false, false);
 
         tok = scanner->peek();
         if (tok.is<Punctor>(Punctor::Semicolon))
@@ -284,8 +331,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner, s
         if (!parse(job, scanner, fnbody, false, true))
             return false;
 
+        /// TODO: Implement function properties
         if (!fndecl->m_type)
-            fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+            fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic, false, false, false, false);
 
         node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
         return true;
@@ -297,8 +345,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner, s
         if (!parse(job, scanner, fnbody))
             return false;
 
+        /// TODO: Implement function properties
         if (!fndecl->m_type)
-            fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic, !state.did_impure, state.did_tsafe, state.did_foreign, state.did_nothrow);
+            fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic, false, false, false, false);
 
         node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
         return true;

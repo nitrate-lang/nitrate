@@ -40,6 +40,7 @@ std::shared_ptr<libquixcc::BoolLiteralNode> libquixcc::BoolLiteralNode::m_false_
 std::unordered_map<std::string, std::shared_ptr<libquixcc::FloatLiteralNode>> libquixcc::FloatLiteralNode::m_instances;
 std::unordered_map<std::string, std::shared_ptr<libquixcc::IntegerNode>> libquixcc::IntegerNode::m_instances;
 std::shared_ptr<libquixcc::NullLiteralNode> libquixcc::NullLiteralNode::m_instance;
+std::shared_ptr<libquixcc::UndefLiteralNode> libquixcc::UndefLiteralNode::m_instance;
 
 typedef unsigned int uint128_t __attribute__((mode(TI)));
 

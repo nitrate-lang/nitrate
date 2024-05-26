@@ -682,12 +682,12 @@ const libquixcc::ir::q::Vector *libquixcc::ir::q::Vector::create(const Type *typ
     return vector_insts[type];
 }
 
-const libquixcc::ir::q::FType *libquixcc::ir::q::FType::create(std::vector<const Type *> params, const Type *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
+const libquixcc::ir::q::FType *libquixcc::ir::q::FType::create(std::vector<const Type *> params, const Type *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool _noexcept)
 {
     lock(NodeType::FType);
-    auto key = std::make_tuple(params, ret, variadic, pure, thread_safe, foreign, nothrow);
+    auto key = std::make_tuple(params, ret, variadic, pure, thread_safe, foreign, _noexcept);
     if (!ftype_insts.contains(key))
-        ftype_insts[key] = new FType(params, ret, variadic, pure, thread_safe, foreign, nothrow);
+        ftype_insts[key] = new FType(params, ret, variadic, pure, thread_safe, foreign, _noexcept);
     return ftype_insts[key];
 }
 

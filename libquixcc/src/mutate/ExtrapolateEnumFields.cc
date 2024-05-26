@@ -75,6 +75,8 @@ void libquixcc::mutate::ExtrapolateEnumFields(quixcc_job_t *job, std::shared_ptr
 
                 def->m_fields[i]->m_value = last;
             }
+
+            def->m_type->m_member_type = I32TypeNode::create();
         },
         {}));
 }

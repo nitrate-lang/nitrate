@@ -73,11 +73,13 @@ static void resolve_user_type_nodes(quixcc_job_t *job, std::shared_ptr<libquixcc
             }
             else if (!job->m_inner.m_named_types.contains(user_type->m_name))
             {
-                std::vector<std::string> tmp = _scope;
+                std::vector<std::string> tmp = _namespace;
 
                 while (!tmp.empty())
                 {
                     std::string abs = join_ns(tmp) + user_type->m_name;
+
+                    LOG(DEBUG) << "Searching for " << abs << std::endl;
 
                     if (job->m_inner.m_named_types.contains(abs))
                     {

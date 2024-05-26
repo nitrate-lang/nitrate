@@ -69,7 +69,6 @@ static std::map<libquixcc::NodeType, libquixcc::Msg> error_message_index = {
     {NodeType::EnumDefNode, ENUM_NAME_DUPLICATE},
     {NodeType::EnumFieldNode, ENUM_FIELD_DUPLICATE},
     {NodeType::FunctionParamNode, PARAM_NAME_DUPLICATE},
-    {NodeType::SubsystemNode, SUBSYSTEM_NAME_DUPLICATE},
     {NodeType::TypedefNode, TYPEDEF_NAME_DUPLICATE},
 };
 
@@ -139,9 +138,6 @@ void libquixcc::mutate::DiscoverNamedConstructs(quixcc_job_t *job, std::shared_p
                 break;
             case NodeType::FunctionParamNode:
                 tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::FunctionParamNode>(ptr)->m_name);
-                break;
-            case NodeType::SubsystemNode:
-                tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::SubsystemNode>(ptr)->m_name);
                 break;
             case NodeType::TypedefNode:
                 tmp = ConstructName(_scope, std::static_pointer_cast<libquixcc::TypedefNode>(ptr)->m_name);

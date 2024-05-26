@@ -18,6 +18,8 @@
 @language "en"
 @copyright "Wesley Jones; MIT license"
 
+@import typesystem::alias;
+
 subsystem orbit::core::net::socket {
     enum L1Proto {
         IRDA            = 0000000,
@@ -197,14 +199,14 @@ subsystem orbit::core::net::socket {
         l3:  L3Proto,
         l4:  L4Proto,
 
-        static pure fn is_supported(stack: SocketStack): bool?;
-        static pure fn get_supported_l1():  [L1Proto];
-        static pure fn get_supported_l2():  [L2Proto];
-        static pure fn get_supported_l25(): [L25Proto];
-        static pure fn get_supported_l3():  [L3Proto];
-        static pure fn get_supported_l4():  [L4Proto];
+        static fn pure is_supported(stack: SocketStack): i1?;
+        static fn pure get_supported_l1():  [L1Proto]?;
+        static fn pure get_supported_l2():  [L2Proto]?;
+        static fn pure get_supported_l25(): [L25Proto]?;
+        static fn pure get_supported_l3():  [L3Proto]?;
+        static fn pure get_supported_l4():  [L4Proto]?;
 
-        static pure fn get_supported(max: usize): ^SocketStack;
+        static fn pure get_supported(max: usize): SocketStack^?;
 
         fn pure to_str(): string;
     };
@@ -246,11 +248,11 @@ subsystem orbit::core::net::socket {
         /// @brief Create a new socket.
         /// @param stack The OSI stack to use.
         /// @return A new socket, or error.
-        static quasipure noexcept fn new(stack: SocketStack): Socket?;
+        static fn quasipure noexcept new(stack: SocketStack): Socket?;
 
         /// @brief Close the socket.
         /// @return Void or error.
-        fn impurim noexcept close(mode: CloseMode = CloseMode::Both): void?;
+        fn retropure noexcept close(mode: CloseMode = CloseMode::Both): void?;
 
         /// @brief Send data over the socket.
         /// @param data The data to send.
@@ -295,7 +297,7 @@ subsystem orbit::core::net::socket {
         /// @brief Get a socket option.
         /// @param name The name of the option.
         /// @return The value of the option, or error.
-        fn impure noexcept tsafe opt(name: string): [u8]?;
+        // fn impure noexcept tsafe opt(name: string): [u8]?;
 
         /// @brief Perform a generic operation on the socket.
         /// @param op The operation to perform.

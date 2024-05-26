@@ -150,6 +150,8 @@ static auto conv(const RegionTypeNode *n, QState &state) -> QResult;
 static auto conv(const UnionTypeNode *n, QState &state) -> QResult;
 static auto conv(const ArrayTypeNode *n, QState &state) -> QResult;
 static auto conv(const VectorTypeNode *n, QState &state) -> QResult;
+static auto conv(const ResultTypeNode *n, QState &state) -> QResult;
+static auto conv(const GeneratorTypeNode *n, QState &state) -> QResult;
 static auto conv(const FunctionTypeNode *n, QState &state) -> QResult;
 static auto conv(const IntegerNode *n, QState &state) -> QResult;
 static auto conv(const FloatLiteralNode *n, QState &state) -> QResult;
@@ -157,6 +159,7 @@ static auto conv(const StringNode *n, QState &state) -> QResult;
 static auto conv(const CharNode *n, QState &state) -> QResult;
 static auto conv(const BoolLiteralNode *n, QState &state) -> QResult;
 static auto conv(const NullLiteralNode *n, QState &state) -> QResult;
+static auto conv(const UndefLiteralNode *n, QState &state) -> QResult;
 static auto conv(const TypedefNode *n, QState &state) -> QResult;
 static auto conv(const VarDeclNode *n, QState &state) -> QResult;
 static auto conv(const LetDeclNode *n, QState &state) -> QResult;
@@ -892,13 +895,27 @@ static auto conv(const VectorTypeNode *n, QState &state) -> QResult
     return Vector::create(conv(n->m_type, state)[0]->as<Type>());
 }
 
+static auto conv(const ResultTypeNode *n, QState &state) -> QResult
+{
+    LOG(FATAL) << "ResultTypeNode not implemented" << std::endl;
+
+    return nullptr;
+}
+
+static auto conv(const GeneratorTypeNode *n, QState &state) -> QResult
+{
+    LOG(FATAL) << "GeneratorTypeNode not implemented" << std::endl;
+
+    return nullptr;
+}
+
 static auto conv(const FunctionTypeNode *n, QState &state) -> QResult
 {
     std::vector<const Type *> params;
     for (auto &param : n->m_params)
         params.push_back(conv(param.second, state)[0]->as<Type>());
 
-    return FType::create(params, conv(n->m_return_type, state)[0]->as<Type>(), n->m_variadic, n->m_pure, n->m_thread_safe, n->m_foreign, n->m_nothrow);
+    return FType::create(params, conv(n->m_return_type, state)[0]->as<Type>(), n->m_variadic, n->m_pure, n->m_thread_safe, n->m_foreign, n->m_noexcept);
 }
 
 static auto conv(const IntegerNode *n, QState &state) -> QResult
@@ -929,6 +946,15 @@ static auto conv(const BoolLiteralNode *n, QState &state) -> QResult
 static auto conv(const NullLiteralNode *n, QState &state) -> QResult
 {
     return Number::create("0");
+}
+
+static auto conv(const UndefLiteralNode *n, QState &state) -> QResult
+{
+    /// TODO: Implement UndefLiteralNode
+
+    LOG(FATAL) << "UndefLiteralNode not implemented" << std::endl;
+
+    return nullptr;
 }
 
 static auto conv(const TypedefNode *n, QState &state) -> QResult
@@ -1137,7 +1163,7 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
         constraints.insert(FConstraint::ThreadSafe);
     if (n->m_type->m_foreign)
         constraints.insert(FConstraint::C_ABI);
-    if (n->m_type->m_nothrow)
+    if (n->m_type->m_noexcept)
         constraints.insert(FConstraint::NoThrow);
     if (n->m_type->m_variadic)
         constraints.insert(FConstraint::Variadic);
@@ -1651,6 +1677,14 @@ static auto conv(const ParseNode *n, QState &state) -> QResult
         r = conv(n->as<VectorTypeNode>(), state);
         break;
 
+    case libquixcc::NodeType::ResultTypeNode:
+        r = conv(n->as<ResultTypeNode>(), state);
+        break;
+
+    case libquixcc::NodeType::GeneratorTypeNode:
+        r = conv(n->as<GeneratorTypeNode>(), state);
+        break;
+
     case libquixcc::NodeType::FunctionTypeNode:
         r = conv(n->as<FunctionTypeNode>(), state);
         break;
@@ -1677,6 +1711,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult
 
     case libquixcc::NodeType::NullLiteralNode:
         r = conv(n->as<NullLiteralNode>(), state);
+        break;
+
+    case libquixcc::NodeType::UndefLiteralNode:
+        r = conv(n->as<UndefLiteralNode>(), state);
         break;
 
     case libquixcc::NodeType::TypedefNode:

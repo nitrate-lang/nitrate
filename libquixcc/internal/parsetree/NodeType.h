@@ -103,6 +103,8 @@ namespace libquixcc
         UnionTypeNode,
         ArrayTypeNode,
         VectorTypeNode,
+        ResultTypeNode,
+        GeneratorTypeNode,
         FunctionTypeNode,
         UserTypeNode,
 
@@ -113,6 +115,7 @@ namespace libquixcc
         CharNode,
         BoolLiteralNode,
         NullLiteralNode,
+        UndefLiteralNode,
 
         TypedefNode,
 
@@ -201,6 +204,8 @@ namespace libquixcc
     class UnionTypeNode;
     class ArrayTypeNode;
     class VectorTypeNode;
+    class ResultTypeNode;
+    class GeneratorTypeNode;
     class FunctionTypeNode;
     class UserTypeNode;
     class LiteralNode;
@@ -210,6 +215,7 @@ namespace libquixcc
     class CharNode;
     class BoolLiteralNode;
     class NullLiteralNode;
+    class UndefLiteralNode;
     class TypedefNode;
     class VarDeclNode;
     class LetDeclNode;

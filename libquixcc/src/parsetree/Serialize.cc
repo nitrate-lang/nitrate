@@ -142,6 +142,8 @@ std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::seria
             {NodeType::UnionTypeNode, (Func)UnionTypeNode_conv},
             {NodeType::ArrayTypeNode, (Func)ArrayTypeNode_conv},
             {NodeType::VectorTypeNode, (Func)VectorTypeNode_conv},
+            {NodeType::ResultTypeNode, (Func)ResultTypeNode_conv},
+            {NodeType::GeneratorTypeNode, (Func)GeneratorTypeNode_conv},
             {NodeType::FunctionTypeNode, (Func)FunctionTypeNode_conv},
             {NodeType::UserTypeNode, (Func)UserTypeNode_conv},
             {NodeType::IntegerNode, (Func)IntegerNode_conv},
@@ -150,6 +152,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::seria
             {NodeType::CharNode, (Func)CharNode_conv},
             {NodeType::BoolLiteralNode, (Func)BoolLiteralNode_conv},
             {NodeType::NullLiteralNode, (Func)NullLiteralNode_conv},
+            {NodeType::UndefLiteralNode, (Func)UndefLiteralNode_conv},
             {NodeType::TypedefNode, (Func)TypedefNode_conv},
             {NodeType::VarDeclNode, (Func)VarDeclNode_conv},
             {NodeType::LetDeclNode, (Func)LetDeclNode_conv},
@@ -496,7 +499,10 @@ std::string libquixcc::serialize::ParseTreeSerializer::EnumTypeNode_conv(libquix
     std::string str = "{\"ntype\":\"EnumTypeNode\",\"name\":\"";
     str += escape_json(node->m_name);
     str += "\",\"member_type\":";
-    str += next(state, node->m_member_type);
+    if (node->m_member_type)
+        str += next(state, node->m_member_type);
+    else
+        str += "null";
     return str + "}";
 }
 
@@ -598,6 +604,20 @@ std::string libquixcc::serialize::ParseTreeSerializer::VectorTypeNode_conv(libqu
     return str + "}";
 }
 
+std::string libquixcc::serialize::ParseTreeSerializer::ResultTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::ResultTypeNode *node)
+{
+    std::string str = "{\"ntype\":\"ResultTypeNode\",\"type\":";
+    str += next(state, node->m_type);
+    return str + "}";
+}
+
+std::string libquixcc::serialize::ParseTreeSerializer::GeneratorTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::GeneratorTypeNode *node)
+{
+    std::string str = "{\"ntype\":\"GeneratorTypeNode\",\"type\":";
+    str += next(state, node->m_type);
+    return str + "}";
+}
+
 std::string libquixcc::serialize::ParseTreeSerializer::FunctionTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::FunctionTypeNode *node)
 {
     std::string str = "{\"ntype\":\"FunctionTypeNode\",\"params\":[";
@@ -620,8 +640,8 @@ std::string libquixcc::serialize::ParseTreeSerializer::FunctionTypeNode_conv(lib
     str += std::string(node->m_thread_safe ? "true" : "false");
     str += ",\"foreign\":";
     str += std::string(node->m_foreign ? "true" : "false");
-    str += ",\"nothrow\":";
-    str += std::string(node->m_nothrow ? "true" : "false");
+    str += ",\"noexcept\":";
+    str += std::string(node->m_noexcept ? "true" : "false");
     return str + "}";
 }
 
@@ -658,6 +678,11 @@ std::string libquixcc::serialize::ParseTreeSerializer::BoolLiteralNode_conv(libq
 std::string libquixcc::serialize::ParseTreeSerializer::NullLiteralNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::NullLiteralNode *node)
 {
     return "{\"ntype\":\"NullLiteralNode\"}";
+}
+
+std::string libquixcc::serialize::ParseTreeSerializer::UndefLiteralNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::UndefLiteralNode *node)
+{
+    return "{\"ntype\":\"UndefLiteralNode\"}";
 }
 
 std::string libquixcc::serialize::ParseTreeSerializer::TypedefNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::TypedefNode *node)
@@ -769,8 +794,8 @@ std::string libquixcc::serialize::ParseTreeSerializer::FunctionDeclNode_conv(lib
     str += std::string(node->m_type->m_thread_safe ? "true" : "false");
     str += ",\"foreign\":";
     str += std::string(node->m_type->m_foreign ? "true" : "false");
-    str += ",\"nothrow\":";
-    str += std::string(node->m_type->m_nothrow ? "true" : "false");
+    str += ",\"noexcept\":";
+    str += std::string(node->m_type->m_noexcept ? "true" : "false");
     return str + "}";
 }
 

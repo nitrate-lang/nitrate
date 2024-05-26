@@ -64,10 +64,15 @@ namespace libquixcc
         Enum = 45,
 
         Fn = 60,
-        Nothrow = 61,
+        Noexcept = 61,
         Foreign = 62,
         Impure = 63,
         Tsafe = 64,
+        Pure = 65,
+        Quasipure = 66,
+        Retropure = 67,
+        CrashPoint = 68,
+        Inline = 69,
 
         If = 90,
         Else = 91,

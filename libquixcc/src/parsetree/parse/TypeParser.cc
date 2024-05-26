@@ -57,6 +57,8 @@ static std::map<std::string, TypeNode *> primitive_types = {
 bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner, TypeNode **node)
 {
     Token tok = scanner->next();
+    TypeNode *type = nullptr, *inner = nullptr;
+
     if (tok.type == TT::Keyword)
     {
         std::shared_ptr<StmtNode> fn;
@@ -64,136 +66,162 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner, TypeN
         switch (tok.as<Keyword>())
         {
         case Keyword::Void:
-            *node = VoidTypeNode::create();
-            return true;
+            inner = VoidTypeNode::create();
+            goto suffix;
         case Keyword::Fn:
             if (!parse_function(job, scanner, fn))
             {
                 LOG(ERROR) << feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
-                return false;
+                goto error;
             }
 
             if (!fn->is<FunctionDeclNode>())
             {
                 LOG(ERROR) << feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
-                return false;
+                goto error;
             }
 
-            *node = std::static_pointer_cast<FunctionDeclNode>(fn)->m_type;
+            inner = std::static_pointer_cast<FunctionDeclNode>(fn)->m_type;
             scanner->push(Token(TT::Punctor, Punctor::Semicolon));
-            return true;
+            goto suffix;
         case Keyword::Opaque:
         {
             tok = scanner->next();
             if (!tok.is<Punctor>(Punctor::OpenParen))
             {
                 LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_PAREN] << tok << std::endl;
-                return false;
+                goto error;
             }
             tok = scanner->next();
             if (tok.type != TT::Identifier)
             {
                 LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_IDENTIFIER] << tok << std::endl;
-                return false;
+                goto error;
             }
             std::string name = tok.as<std::string>();
             tok = scanner->next();
             if (!tok.is<Punctor>(Punctor::CloseParen))
             {
                 LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_CLOSE_PAREN] << tok << std::endl;
-                return false;
+                goto error;
             }
 
-            *node = OpaqueTypeNode::create(name);
-            return true;
+            inner = OpaqueTypeNode::create(name);
+            goto suffix;
         }
         default:
-            return false;
+            goto error;
         }
     }
     else if (tok.type == TT::Identifier)
     {
         if (primitive_types.contains(tok.as<std::string>()))
         {
-            *node = primitive_types[tok.as<std::string>()];
-            return true;
+            inner = primitive_types[tok.as<std::string>()];
+            goto suffix;
         }
         else
         {
-            *node = UserTypeNode::create(tok.as<std::string>());
-            return true;
+            inner = UserTypeNode::create(tok.as<std::string>());
+            goto suffix;
         }
     }
     else if (tok.is<Punctor>(Punctor::OpenBracket))
     {
-        // Array type
+        // Array type or Vector type
         // syntax [type; size]
-        TypeNode *type;
         if (!parse_type(job, scanner, &type))
         {
             LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
-            return false;
+            goto error;
         }
 
         tok = scanner->next();
         if (tok.is<Punctor>(Punctor::CloseBracket))
         {
-            *node = VectorTypeNode::create(type);
-            return true;
+            inner = VectorTypeNode::create(type);
+            goto suffix;
         }
 
         if (!tok.is<Punctor>(Punctor::Semicolon))
         {
             LOG(ERROR) << feedback[TYPE_EXPECTED_SEMICOLON] << tok << std::endl;
-            return false;
+            goto error;
         }
 
         std::shared_ptr<ConstExprNode> size;
         if (!parse_const_expr(job, scanner, Token(TT::Punctor, Punctor::CloseBracket), size))
         {
             LOG(ERROR) << feedback[TYPE_EXPECTED_CONST_EXPR] << tok << std::endl;
-            return false;
+            goto error;
         }
 
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::CloseBracket))
         {
             LOG(ERROR) << feedback[TYPE_EXPECTED_CLOSE_BRACKET] << tok << std::endl;
-            return false;
+            goto error;
         }
 
-        *node = ArrayTypeNode::create(type, size);
-        return true;
+        inner = ArrayTypeNode::create(type, size);
+        goto suffix;
     }
     else if (tok.is<Operator>(Operator::Multiply))
     {
         // Pointer type
-        TypeNode *type;
         if (!parse_type(job, scanner, &type))
         {
             LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
-            return false;
+            goto error;
         }
 
-        *node = PointerTypeNode::create(type);
-        return true;
+        inner = PointerTypeNode::create(type);
+        goto suffix;
     }
     else if (tok.is<Operator>(Operator::LogicalNot))
     {
         // ! means mutability
-        TypeNode *type;
         if (!parse_type(job, scanner, &type))
         {
             LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
-            return false;
+            goto error;
         }
 
-        *node = MutTypeNode::create(type);
-        return true;
+        inner = MutTypeNode::create(type);
+        goto suffix;
     }
     else
     {
         LOG(ERROR) << feedback[EXPECTED_TYPE] << tok << std::endl;
-        return false;
+        goto error;
     }
+
+suffix:
+    while (true)
+    {
+        tok = scanner->peek();
+        if (tok.is<Operator>(Operator::Question))
+        {
+            // ? means Result type
+            scanner->next();
+            inner = ResultTypeNode::create(inner);
+        }
+        else if (tok.is<Operator>(Operator::BitwiseXor))
+        {
+            // ^ means Generator type
+            scanner->next();
+            inner = GeneratorTypeNode::create(inner);
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    *node = inner;
+
+    return true;
+
+error:
+    return false;
 }

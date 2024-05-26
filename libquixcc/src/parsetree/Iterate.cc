@@ -103,6 +103,8 @@ size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::P
             {NodeType::UnionTypeNode, (Func)UnionTypeNode_iter},
             {NodeType::ArrayTypeNode, (Func)ArrayTypeNode_iter},
             {NodeType::VectorTypeNode, (Func)VectorTypeNode_iter},
+            {NodeType::ResultTypeNode, (Func)ResultTypeNode_iter},
+            {NodeType::GeneratorTypeNode, (Func)GeneratorTypeNode_iter},
             {NodeType::FunctionTypeNode, (Func)FunctionTypeNode_iter},
             {NodeType::UserTypeNode, (Func)UserTypeNode_iter},
             {NodeType::IntegerNode, (Func)IntegerNode_iter},
@@ -111,6 +113,7 @@ size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::P
             {NodeType::CharNode, (Func)CharNode_iter},
             {NodeType::BoolLiteralNode, (Func)BoolLiteralNode_iter},
             {NodeType::NullLiteralNode, (Func)NullLiteralNode_iter},
+            {NodeType::UndefLiteralNode, (Func)UndefLiteralNode_iter},
             {NodeType::TypedefNode, (Func)TypedefNode_iter},
             {NodeType::VarDeclNode, (Func)VarDeclNode_iter},
             {NodeType::LetDeclNode, (Func)LetDeclNode_iter},
@@ -433,6 +436,9 @@ size_t libquixcc::traversal::ParseTreePreorder::StringTypeNode_iter(libquixcc::t
 
 size_t libquixcc::traversal::ParseTreePreorder::EnumTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::EnumTypeNode *node)
 {
+    if (!node->m_member_type)
+        return 1;
+
     state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_member_type));
     return next(state, node->m_member_type) + 1;
 }
@@ -522,6 +528,22 @@ size_t libquixcc::traversal::ParseTreePreorder::VectorTypeNode_iter(libquixcc::t
     return count + 1;
 }
 
+size_t libquixcc::traversal::ParseTreePreorder::ResultTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::ResultTypeNode *node)
+{
+    size_t count = 0;
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
+    count += next(state, node->m_type);
+    return count + 1;
+}
+
+size_t libquixcc::traversal::ParseTreePreorder::GeneratorTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::GeneratorTypeNode *node)
+{
+    size_t count = 0;
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_type));
+    count += next(state, node->m_type);
+    return count + 1;
+}
+
 size_t libquixcc::traversal::ParseTreePreorder::FunctionTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::FunctionTypeNode *node)
 {
     size_t count = 0;
@@ -566,6 +588,11 @@ size_t libquixcc::traversal::ParseTreePreorder::BoolLiteralNode_iter(libquixcc::
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::NullLiteralNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::NullLiteralNode *node)
+{
+    return 1;
+}
+
+size_t libquixcc::traversal::ParseTreePreorder::UndefLiteralNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::UndefLiteralNode *node)
 {
     return 1;
 }

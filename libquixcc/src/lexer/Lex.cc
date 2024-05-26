@@ -58,23 +58,32 @@ namespace libquixcc
     const std::unordered_map<std::string_view, libquixcc::Keyword> keyword_map = {
         {"subsystem", libquixcc::Keyword::Subsystem},
         {"import", libquixcc::Keyword::Import},
+        {"pub", libquixcc::Keyword::Pub},
+
         {"type", libquixcc::Keyword::Type},
         {"let", libquixcc::Keyword::Let},
         {"var", libquixcc::Keyword::Var},
+        {"const", libquixcc::Keyword::Const},
+        {"static", libquixcc::Keyword::Static},
+
         {"struct", libquixcc::Keyword::Struct},
         {"region", libquixcc::Keyword::Region},
         {"group", libquixcc::Keyword::Group},
         {"union", libquixcc::Keyword::Union},
         {"opaque", libquixcc::Keyword::Opaque},
+        {"enum", libquixcc::Keyword::Enum},
+
         {"fn", libquixcc::Keyword::Fn},
-        {"nothrow", libquixcc::Keyword::Nothrow},
+        {"noexcept", libquixcc::Keyword::Noexcept},
         {"foreign", libquixcc::Keyword::Foreign},
         {"impure", libquixcc::Keyword::Impure},
         {"tsafe", libquixcc::Keyword::Tsafe},
-        {"const", libquixcc::Keyword::Const},
-        {"static", libquixcc::Keyword::Static},
-        {"enum", libquixcc::Keyword::Enum},
-        {"pub", libquixcc::Keyword::Pub},
+        {"pure", libquixcc::Keyword::Pure},
+        {"quasipure", libquixcc::Keyword::Quasipure},
+        {"retropure", libquixcc::Keyword::Retropure},
+        {"crashpoint", libquixcc::Keyword::CrashPoint},
+        {"inline", libquixcc::Keyword::Inline},
+
         {"if", libquixcc::Keyword::If},
         {"else", libquixcc::Keyword::Else},
         {"for", libquixcc::Keyword::For},
@@ -89,7 +98,9 @@ namespace libquixcc
         {"retif", libquixcc::Keyword::Retif},
         {"retz", libquixcc::Keyword::Retz},
         {"retv", libquixcc::Keyword::Retv},
+
         {"__asm__", libquixcc::Keyword::__Asm__},
+
         {"void", libquixcc::Keyword::Void},
         {"undef", libquixcc::Keyword::Undef},
         {"null", libquixcc::Keyword::Null},
@@ -99,23 +110,32 @@ namespace libquixcc
     const std::unordered_map<libquixcc::Keyword, std::string_view> keyword_map_inverse = {
         {libquixcc::Keyword::Subsystem, "subsystem"},
         {libquixcc::Keyword::Import, "import"},
+        {libquixcc::Keyword::Pub, "pub"},
+
         {libquixcc::Keyword::Type, "type"},
         {libquixcc::Keyword::Let, "let"},
         {libquixcc::Keyword::Var, "var"},
+        {libquixcc::Keyword::Const, "const"},
+        {libquixcc::Keyword::Static, "static"},
+
         {libquixcc::Keyword::Struct, "struct"},
         {libquixcc::Keyword::Region, "region"},
         {libquixcc::Keyword::Group, "group"},
         {libquixcc::Keyword::Union, "union"},
         {libquixcc::Keyword::Opaque, "opaque"},
+        {libquixcc::Keyword::Enum, "enum"},
+
         {libquixcc::Keyword::Fn, "fn"},
-        {libquixcc::Keyword::Nothrow, "nothrow"},
+        {libquixcc::Keyword::Noexcept, "noexcept"},
         {libquixcc::Keyword::Foreign, "foreign"},
         {libquixcc::Keyword::Impure, "impure"},
         {libquixcc::Keyword::Tsafe, "tsafe"},
-        {libquixcc::Keyword::Const, "const"},
-        {libquixcc::Keyword::Static, "static"},
-        {libquixcc::Keyword::Enum, "enum"},
-        {libquixcc::Keyword::Pub, "pub"},
+        {libquixcc::Keyword::Pure, "pure"},
+        {libquixcc::Keyword::Quasipure, "quasipure"},
+        {libquixcc::Keyword::Retropure, "retropure"},
+        {libquixcc::Keyword::CrashPoint, "crashpoint"},
+        {libquixcc::Keyword::Inline, "inline"},
+
         {libquixcc::Keyword::If, "if"},
         {libquixcc::Keyword::Else, "else"},
         {libquixcc::Keyword::For, "for"},
@@ -130,7 +150,9 @@ namespace libquixcc
         {libquixcc::Keyword::Retif, "retif"},
         {libquixcc::Keyword::Retz, "retz"},
         {libquixcc::Keyword::Retv, "retv"},
+
         {libquixcc::Keyword::__Asm__, "__asm__"},
+
         {libquixcc::Keyword::Void, "void"},
         {libquixcc::Keyword::Undef, "undef"},
         {libquixcc::Keyword::Null, "null"},
@@ -329,7 +351,7 @@ std::string libquixcc::Scanner::escape_string(std::string_view str)
 
 ///=============================================================================
 
-thread_local std::map<std::string, std::unique_ptr<char []>> libquixcc::TLCString::m_data;
+thread_local std::map<std::string, std::unique_ptr<char[]>> libquixcc::TLCString::m_data;
 
 libquixcc::StreamLexer::StreamLexer()
 {

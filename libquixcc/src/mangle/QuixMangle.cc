@@ -185,7 +185,7 @@ static std::string serialize_type(const libquixcc::ir::q::Type *type, std::set<c
 
         if (st->m_foreign)
             prop += "f";
-        if (st->m_nothrow)
+        if (st->m_noexcept)
             prop += "n";
         if (st->m_pure)
             prop += "p";
@@ -328,7 +328,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(const std::string &t
             }
 
             std::string prop = fields.back();
-            bool foreign = false, nothrow = false, pure = false, thread_safe = false, variadic = false;
+            bool foreign = false, _noexcept = false, pure = false, thread_safe = false, variadic = false;
             for (size_t i = 0; i < prop.size(); i++)
             {
                 switch (prop.at(i))
@@ -337,7 +337,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(const std::string &t
                     foreign = true;
                     break;
                 case 'n':
-                    nothrow = true;
+                    _noexcept = true;
                     break;
                 case 'p':
                     pure = true;
@@ -353,7 +353,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(const std::string &t
                 }
             }
 
-            return q::FType::create(params, ret, variadic, pure, thread_safe, foreign, nothrow);
+            return q::FType::create(params, ret, variadic, pure, thread_safe, foreign, _noexcept);
         }
 
         throw std::runtime_error("Unknown type 2");

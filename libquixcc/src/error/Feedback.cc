@@ -123,7 +123,7 @@ libquixcc::Feedback libquixcc::feedback({
     {FN_EXPECTED_OPEN_PAREN, "Expected an open parenthesis after the function name. To fix the issue, insert an open parenthesis after the function name"},
     {FN_EXPECTED_CLOSE_PAREN_OR_COMMA, "Expected a close parenthesis or a comma after the function parameter. To fix the issue, insert a close parenthesis or a comma after the function parameter"},
     {FN_EXPECTED_OPEN_BRACE, "Expected an open brace after the function parameter list. To fix the issue, insert an open brace after the function parameter list"},
-    {FN_NO_THROW_ALREADY_SPECIFIED, "The 'nothrow' specifier was already specified for this function. To fix the issue, remove the duplicate 'nothrow' specifier"},
+    {FN_NO_THROW_ALREADY_SPECIFIED, "The 'noexcept' specifier was already specified for this function. To fix the issue, remove the duplicate 'noexcept' specifier"},
     {FN_FOREIGN_ALREADY_SPECIFIED, "The 'foreign' specifier was already specified for this function. To fix the issue, remove the duplicate 'foreign' specifier"},
     {FN_THREAD_SAFE_ALREADY_SPECIFIED, "The 'tsafe' specifier was already specified for this function. To fix the issue, remove the duplicate 'thread_safe' specifier"},
     {FN_PURE_ALREADY_SPECIFIED, "The 'pure' specifier was already specified for this function. To fix the issue, remove the duplicate 'pure' specifier"},

@@ -192,6 +192,9 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner, std::set<Token> 
             case Keyword::Null:
                 stack.push(NullLiteralNode::create());
                 continue;
+            case Keyword::Undef:
+                stack.push(UndefLiteralNode::create());
+                continue;
             default:
                 LOG(ERROR) << "Unexpected token in non-constant expression '{}'" << tok.serialize() << tok << std::endl;
                 return false;

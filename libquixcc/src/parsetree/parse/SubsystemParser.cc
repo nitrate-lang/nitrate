@@ -43,6 +43,41 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner, 
     }
 
     std::string name = tok.as<std::string>();
+
+    if (name.find("::") != std::string::npos)
+    {
+        /*
+        subsystem a::b::c: hi, world {
+
+        }
+
+        /// ->
+
+        subsystem a {
+            subsystem b {
+                subsystem c: hi, world {
+                }
+            }
+        }
+        */
+
+        std::shared_ptr<StmtNode> sub;
+
+        std::string subname = name.substr(0, name.find("::"));
+
+        scanner->push(Token(TT::Identifier, name.substr(name.find("::") + 2)));
+
+        if (!parse_subsystem(job, scanner, sub))
+            return false;
+
+        std::shared_ptr<BlockNode> block = std::make_shared<BlockNode>();
+        block->m_stmts.push_back(sub);
+
+        node = std::make_shared<SubsystemNode>(subname, std::set<std::string>(), block);
+
+        return true;
+    }
+
     std::set<std::string> deps;
 
     tok = scanner->peek();

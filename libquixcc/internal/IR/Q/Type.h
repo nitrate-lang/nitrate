@@ -325,7 +325,7 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        FType(std::vector<const Type *> params, const Type *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow) : params(params), ret(ret), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_nothrow(nothrow)
+        FType(std::vector<const Type *> params, const Type *ret, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow) : params(params), ret(ret), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_noexcept(nothrow)
         {
             ntype = (int)NodeType::FType;
         }
@@ -340,7 +340,7 @@ namespace libquixcc::ir::q
         bool m_pure;
         bool m_thread_safe;
         bool m_foreign;
-        bool m_nothrow;
+        bool m_noexcept;
     };
 
     class Region : public Type

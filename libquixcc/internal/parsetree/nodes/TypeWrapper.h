@@ -29,92 +29,53 @@
 ///                                                                              ///
 ////////////////////////////////////////////////////////////////////////////////////
 
-#include <IR/Q/Function.h>
-#include <IR/Q/Type.h>
+#ifndef __QUIXCC_PARSE_NODES_TYPE_WRAPPER_H__
+#define __QUIXCC_PARSE_NODES_TYPE_WRAPPER_H__
 
-bool libquixcc::ir::q::Block::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
+
+#include <string>
+#include <vector>
+#include <memory>
+
+#include <llvm/LLVMWrapper.h>
+#include <parsetree/nodes/BasicNodes.h>
+
+namespace libquixcc
 {
-    if (stmts.empty())
+    class ResultTypeNode : public TypeNode
     {
-        os << "{}";
-        return true;
-    }
+        ResultTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::ResultTypeNode; }
+        static thread_local std::map<TypeNode *, ResultTypeNode *> m_instances;
 
-    os << "{\n";
-    state.ind += 2;
+    public:
+        static ResultTypeNode *create(TypeNode *type)
+        {
+            if (!m_instances.contains(type))
+                m_instances[type] = new ResultTypeNode(type);
+            return m_instances[type];
+        }
 
-    for (auto it = stmts.begin(); it != stmts.end(); it++)
+        TypeNode *m_type;
+    };
+
+    class GeneratorTypeNode : public TypeNode
     {
-        os << std::string(state.ind, ' ');
+        GeneratorTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::GeneratorTypeNode; }
+        static thread_local std::map<TypeNode *, GeneratorTypeNode *> m_instances;
 
-        if (!(*it)->print(os, state))
-            return false;
+    public:
+        static GeneratorTypeNode *create(TypeNode *type)
+        {
+            if (!m_instances.contains(type))
+                m_instances[type] = new GeneratorTypeNode(type);
+            return m_instances[type];
+        }
 
-        os << ";";
-
-        if (it != stmts.end())
-            os << "\n";
-    }
-
-    state.ind -= 2;
-    os << std::string(state.ind, ' ') << "}";
-
-    return true;
+        TypeNode *m_type;
+    };
 }
 
-bool libquixcc::ir::q::Segment::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
-{
-    os << "segment ";
-
-    if (constraints.contains(FConstraint::Pure))
-        os << "pure ";
-    else
-        os << "impure ";
-
-    if (constraints.contains(FConstraint::ThreadSafe))
-        os << "tsafe ";
-    if (constraints.contains(FConstraint::NoThrow))
-        os << "noexcept ";
-    if (constraints.contains(FConstraint::C_ABI))
-        os << "cextern ";
-
-    os << "(";
-    for (auto it = params.begin(); it != params.end(); it++)
-    {
-        os << it->first << ": ";
-        if (!it->second->print(os, state))
-            return false;
-        if (it != params.end() - 1)
-            os << ", ";
-        else if (constraints.contains(FConstraint::Variadic))
-            os << ", ...";
-    }
-
-    os << ") -> (";
-    if (!return_type->print(os, state))
-        return false;
-    os << ")";
-
-    if (!block)
-        return true;
-    else
-        os << " ";
-
-    if (!block->print(os, state))
-        return false;
-
-    return true;
-}
-
-bool libquixcc::ir::q::RootNode::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
-{
-    for (auto it = children.begin(); it != children.end(); it++)
-    {
-        if (!(*it)->print(os, state))
-            return false;
-
-        os << ";\n";
-    }
-    
-    return true;
-}
+#endif // __QUIXCC_PARSE_NODES_TYPE_WRAPPER_H__

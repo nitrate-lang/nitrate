@@ -88,6 +88,9 @@ bool libquixcc::parse_const_expr(quixcc_job_t &job, libquixcc::Scanner *scanner,
             case Keyword::Null:
                 stack.push(NullLiteralNode::create());
                 continue;
+            case Keyword::Undef:
+                stack.push(UndefLiteralNode::create());
+                continue;
             default:
                 LOG(ERROR) << "Unexpected token {} 1" << tok.serialize() << tok << std::endl;
                 return false;

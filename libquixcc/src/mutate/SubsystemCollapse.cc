@@ -160,7 +160,7 @@ static void stmt_collapse(const std::vector<std::string> &_namespace, const std:
         case NodeType::EnumDefNode:
         {
             auto def = std::static_pointer_cast<EnumDefNode>(child);
-            def->m_type = EnumTypeNode::create(Symbol::join(ns, def->m_type->m_name), def->m_type->m_member_type);
+            def->m_type->m_name = Symbol::join(ns, def->m_type->m_name);
             stmts->m_stmts.push_back(def);
             break;
         }
@@ -197,18 +197,6 @@ void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<lib
                 auto n = Symbol::join(_namespace, def->m_name);
 
                 *dobptr = UserTypeNode::create(n);
-                visited.insert(n);
-                break;
-            }
-            case NodeType::EnumTypeNode:
-            {
-                auto def = static_cast<EnumTypeNode *>(ptr);
-                if (visited.contains(def->m_name))
-                    return;
-
-                auto n = Symbol::join(_namespace, def->m_name);
-
-                *dobptr = EnumTypeNode::create(n, def->m_member_type);
                 visited.insert(n);
                 break;
             }

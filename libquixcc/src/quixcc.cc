@@ -459,11 +459,11 @@ std::string base64_encode(const std::string &in)
 static bool quixcc_mutate_ptree(quixcc_job_t *job, std::shared_ptr<Ptree> ptree)
 {
     Mutation mutator;
-    mutator.add_routine(mutate::SubsystemCollapse);       ///> Flatten Ptree by collapsing subsystems
     mutator.add_routine(mutate::MethodToFunc);            ///> Convert method calls to function calls
     mutator.add_routine(mutate::DiscoverNamedConstructs); ///> Map named constructs to their respective Ptree nodes
     mutator.add_routine(mutate::ResolveNamedConstructs);  ///> Resolve named constructs to their respective Ptree nodes
     mutator.add_routine(mutate::ExtrapolateEnumFields);   ///> Derive enum field values
+    mutator.add_routine(mutate::SubsystemCollapse);       ///> Flatten Ptree by collapsing subsystems
     mutator.add_routine(mutate::ObjectConstruction);      ///> Object construction
     mutator.add_routine(mutate::ObjectDestruction);       ///> Object destruction
     mutator.add_routine(mutate::ImplicitReturn);          ///> Implicit return statements

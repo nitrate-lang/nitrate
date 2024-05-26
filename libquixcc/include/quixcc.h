@@ -312,6 +312,11 @@ extern "C"
         QUIXCC_KW_FOREIGN = 62,
         QUIXCC_KW_IMPURE = 63,
         QUIXCC_KW_TSAFE = 64,
+        QUIXCC_KW_PURE = 65,
+        QUIXCC_KW_QUASIPURE = 66,
+        QUIXCC_KW_RETROPURE = 67,
+        QUIXCC_KW_CRASHPOINT = 68,
+        QUIXCC_KW_INLINE = 69,
 
         QUIXCC_KW_IF = 90,
         QUIXCC_KW_ELSE = 91,

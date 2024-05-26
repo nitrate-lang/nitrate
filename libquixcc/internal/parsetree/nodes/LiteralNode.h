@@ -53,6 +53,24 @@ namespace libquixcc
         LiteralNode() { ntype = NodeType::LiteralNode; }
     };
 
+    class UndefLiteralNode : public LiteralNode
+    {
+    protected:
+        static std::shared_ptr<UndefLiteralNode> m_instance;
+        UndefLiteralNode() { ntype = NodeType::UndefLiteralNode; }
+
+    public:
+        static const std::shared_ptr<UndefLiteralNode> create()
+        {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
+            if (m_instance == nullptr)
+                m_instance = std::shared_ptr<UndefLiteralNode>(new UndefLiteralNode());
+            return m_instance;
+        }
+    };
+
     typedef std::variant<int64_t, uint64_t> NumbericLiteralNode;
 
     class IntegerNode : public LiteralNode

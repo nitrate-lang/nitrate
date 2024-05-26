@@ -47,8 +47,8 @@ namespace libquixcc
 {
     class FunctionTypeNode : public TypeNode
     {
-        FunctionTypeNode(TypeNode *return_type, std::vector<std::pair<std::string, TypeNode *>> params, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
-            : m_return_type(return_type), m_params(params), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_nothrow(nothrow) { ntype = NodeType::FunctionTypeNode; }
+        FunctionTypeNode(TypeNode *return_type, std::vector<std::pair<std::string, TypeNode *>> params, bool variadic, bool pure, bool thread_safe, bool foreign, bool _noexcept)
+            : m_return_type(return_type), m_params(params), m_variadic(variadic), m_pure(pure), m_thread_safe(thread_safe), m_foreign(foreign), m_noexcept(_noexcept) { ntype = NodeType::FunctionTypeNode; }
 
         struct Inner
         {
@@ -58,10 +58,10 @@ namespace libquixcc
             bool pure;
             bool thread_safe;
             bool foreign;
-            bool nothrow;
+            bool _noexcept;
 
-            Inner(TypeNode *return_type, std::vector<std::pair<std::string, TypeNode *>> params, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
-                : return_type(return_type), params(params), variadic(variadic), pure(pure), thread_safe(thread_safe), foreign(foreign), nothrow(nothrow) {}
+            Inner(TypeNode *return_type, std::vector<std::pair<std::string, TypeNode *>> params, bool variadic, bool pure, bool thread_safe, bool foreign, bool _noexcept)
+                : return_type(return_type), params(params), variadic(variadic), pure(pure), thread_safe(thread_safe), foreign(foreign), _noexcept(_noexcept) {}
 
             bool operator<(const Inner &other) const
             {
@@ -77,8 +77,8 @@ namespace libquixcc
                     return thread_safe < other.thread_safe;
                 if (foreign != other.foreign)
                     return foreign < other.foreign;
-                if (nothrow != other.nothrow)
-                    return nothrow < other.nothrow;
+                if (_noexcept != other._noexcept)
+                    return _noexcept < other._noexcept;
                 return false;
             }
         };
@@ -86,14 +86,14 @@ namespace libquixcc
         static std::map<Inner, FunctionTypeNode *> s_instances;
 
     public:
-        static FunctionTypeNode *create(TypeNode *return_type, std::vector<std::pair<std::string, TypeNode *>> params, bool variadic, bool pure, bool thread_safe, bool foreign, bool nothrow)
+        static FunctionTypeNode *create(TypeNode *return_type, std::vector<std::pair<std::string, TypeNode *>> params, bool variadic, bool pure, bool thread_safe, bool foreign, bool _noexcept)
         {
             static std::mutex mutex;
             std::lock_guard<std::mutex> lock(mutex);
 
-            Inner inner(return_type, params, variadic, pure, thread_safe, foreign, nothrow);
+            Inner inner(return_type, params, variadic, pure, thread_safe, foreign, _noexcept);
             if (s_instances.find(inner) == s_instances.end())
-                s_instances[inner] = new FunctionTypeNode(return_type, params, variadic, pure, thread_safe, foreign, nothrow);
+                s_instances[inner] = new FunctionTypeNode(return_type, params, variadic, pure, thread_safe, foreign, _noexcept);
             return s_instances[inner];
         }
 
@@ -103,7 +103,7 @@ namespace libquixcc
         bool m_pure;
         bool m_thread_safe;
         bool m_foreign;
-        bool m_nothrow;
+        bool m_noexcept;
     };
 
     class FunctionParamNode : public DeclNode

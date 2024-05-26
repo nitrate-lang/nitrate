@@ -116,6 +116,8 @@ namespace libquixcc
             static size_t UnionTypeNode_iter(ParseTreeTraversalState &state, UnionTypeNode *node);
             static size_t ArrayTypeNode_iter(ParseTreeTraversalState &state, ArrayTypeNode *node);
             static size_t VectorTypeNode_iter(ParseTreeTraversalState &state, VectorTypeNode *node);
+            static size_t ResultTypeNode_iter(ParseTreeTraversalState &state, ResultTypeNode *node);
+            static size_t GeneratorTypeNode_iter(ParseTreeTraversalState &state, GeneratorTypeNode *node);
             static size_t FunctionTypeNode_iter(ParseTreeTraversalState &state, FunctionTypeNode *node);
             static size_t UserTypeNode_iter(ParseTreeTraversalState &state, UserTypeNode *node);
             static size_t IntegerNode_iter(ParseTreeTraversalState &state, IntegerNode *node);
@@ -124,6 +126,7 @@ namespace libquixcc
             static size_t CharNode_iter(ParseTreeTraversalState &state, CharNode *node);
             static size_t BoolLiteralNode_iter(ParseTreeTraversalState &state, BoolLiteralNode *node);
             static size_t NullLiteralNode_iter(ParseTreeTraversalState &state, NullLiteralNode *node);
+            static size_t UndefLiteralNode_iter(ParseTreeTraversalState &state, UndefLiteralNode *node);
             static size_t TypedefNode_iter(ParseTreeTraversalState &state, TypedefNode *node);
             static size_t VarDeclNode_iter(ParseTreeTraversalState &state, VarDeclNode *node);
             static size_t LetDeclNode_iter(ParseTreeTraversalState &state, LetDeclNode *node);

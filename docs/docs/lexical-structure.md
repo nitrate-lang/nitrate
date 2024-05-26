@@ -63,7 +63,7 @@ This table contains the types of tokens that are used in QUIX:
 | struct | keyword | Define or declare a structure |
 | union | keyword | Define or declare a union |
 | fn | keyword | Define or declare a function |
-| nothrow | keyword | Declare a function that does not throw exceptions |
+| noexcept | keyword | Declare a function that does not throw exceptions |
 | foreign | keyword | Declare a foreign function |
 | impure | keyword | Declare a function that has side effects |
 | tsafe | keyword | Declare a function that is thread safe |
