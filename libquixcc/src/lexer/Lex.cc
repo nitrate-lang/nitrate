@@ -329,6 +329,8 @@ std::string libquixcc::Scanner::escape_string(std::string_view str)
 
 ///=============================================================================
 
+thread_local std::map<std::string, std::unique_ptr<char []>> libquixcc::TLCString::m_data;
+
 libquixcc::StreamLexer::StreamLexer()
 {
     m_src = nullptr;
@@ -394,7 +396,7 @@ bool libquixcc::StreamLexer::set_source(FILE *src, const std::string &filename)
         return false;
 
     m_filename = filename;
-    m_loc_curr = Loc(1, 1, m_filename);
+    m_loc_curr = Loc(1, 1, TLCString::get(filename));
 
     return true;
 }

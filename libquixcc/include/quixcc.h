@@ -261,10 +261,10 @@ extern "C"
     ///===================================================================================================
 
     /**
-     * @brief Demangle a mangled symbol name into a JSON representation.
+     * @brief Demangle a mangled symbol name into a pretty name.
      *
      * @param mangled The mangled symbol name to be demangled.
-     * @return A malloc'd JSON string representing the demangled symbol name.
+     * @return A malloc'd pretty name or NULL if the symbol could not be demangled.
      *
      * @note This function is thread-safe.
      * @note If `!mangled`, this function is a no-op and returns NULL.

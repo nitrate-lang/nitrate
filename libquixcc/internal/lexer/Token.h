@@ -38,6 +38,8 @@
 
 #include <string>
 #include <variant>
+#include <memory>
+#include <map>
 #include <cstdint>
 
 namespace libquixcc
@@ -165,14 +167,34 @@ namespace libquixcc
         Comment = 12,
     };
 
+    class TLCString
+    {
+        static thread_local std::map<std::string, std::unique_ptr<char[]>> m_data;
+
+    public:
+        /// @brief Create a new Constant C string whose lifetime is that of the current thread
+        /// @param data Data to copy into the new C string
+        /// @return const char* Pointer to the new C string
+        static const char *get(const std::string &data)
+        {
+            if (!m_data.contains(data))
+            {
+                m_data[data] = std::make_unique<char[]>(data.size() + 1);
+                std::copy(data.begin(), data.end(), m_data[data].get());
+                m_data[data][data.size()] = '\0';
+            }
+            return m_data[data].get();
+        }
+    };
+
     struct Loc
     {
-        std::string file;
+        std::string_view file;
         int_fast32_t line;
         int_fast32_t col;
 
         Loc() : file(""), line(1), col(1) {}
-        Loc(int_fast32_t line, int_fast32_t col, std::string file = "") : file(file), line(line), col(col) {}
+        Loc(int_fast32_t line, int_fast32_t col, std::string_view file = "") : file(file), line(line), col(col) {}
 
         Loc operator-(int_fast32_t rhs) const;
     };

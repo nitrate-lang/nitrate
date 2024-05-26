@@ -81,7 +81,6 @@ namespace libquixcc
         std::array<char, GETC_BUFFER_SIZE> m_buffer;
         std::optional<Token> m_tok;
         std::queue<char> m_pushback;
-        std::string m_filename;
         Loc m_loc_curr;
         Loc m_loc;
         size_t m_buf_pos = 0;
@@ -90,6 +89,7 @@ namespace libquixcc
         bool ingore_comments = true;
 
     protected:
+        std::string m_filename;
         char getc();
         const libquixcc::Token &read_token();
         inline void reset_state() { m_pushback = std::queue<char>(); }
