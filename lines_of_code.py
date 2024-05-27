@@ -43,7 +43,7 @@ def get_loc(path) -> (int, int):
                     for line in f:
                         tline = line.strip()
                         # Check if line is a comment or empty
-                        if tline == "" or tline.startswith("//") or tline.startswith("/*") or tline.startswith("*") or tline.startswith("#"):
+                        if tline == "":
                             continue
                         loc += 1
                     file_loc.append((os.path.join(root, file), loc - tmp))
