@@ -105,9 +105,17 @@ def generate_test_cases_for_manifest(manifest_file):
             raise Exception(f'Unknown build mode {build_mode}')
 
         if build_mode == 'asm-sha1' or build_mode == 'obj-sha1':
-
             content += f"    sha1_file_ignstr(output,sha1);\n"
-            content += f"    ASSERT_TRUE(memcmp(sha1, expected, 20) == 0);\n"
+            content += f"    bool match;EXPECT_TRUE(match = (memcmp(sha1, expected, 20) == 0));\n"
+            if build_mode == 'asm-sha1':
+                content += f"    if (!match) {{\n"
+                content += f"        char line[256];\n"
+                content += f"        while (fgets(line, sizeof(line), output)) {{\n"
+                content += f"            std::cout << line;\n"
+                content += f"        }}\n"
+                content += f"    }}\n"
+
+
 
         content += f"    fclose(output);\n"
         content += f"    remove(output_file);\n"

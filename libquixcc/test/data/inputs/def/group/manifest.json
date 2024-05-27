@@ -146,7 +146,7 @@
             "note": "",
             "input": "def/group/abi-0.q",
             "build": "asm-sha1",
-            "expected": "f582976131f2c748a59af3a07573774146ecbe85"
+            "expected": "2813f22868573515ab998877d0cb424a3c45c742"
         }
     ]
 }

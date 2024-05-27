@@ -49,6 +49,8 @@ RUN echo "mkdir -p /app/bin" >> /opt/build.sh
 RUN echo "cp /app/build/qcc/qcc /app/bin/qcc" >> /opt/build.sh
 RUN echo "cp /app/build/qld/qld /app/bin/qld" >> /opt/build.sh  
 RUN echo "cp /app/build/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
+RUN echo "cp /app/build/libquixcc/test/libquixcc-test-suite /app/bin/libquixcc-test-suite" >> /opt/build.sh
+RUN echo "/app/bin/libquixcc-test-suite" >> /opt/build.sh
 RUN chmod +x /opt/build.sh
 
 WORKDIR /app

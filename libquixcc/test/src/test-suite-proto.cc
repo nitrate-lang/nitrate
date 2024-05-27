@@ -26,7 +26,10 @@ static void sha1_file_ignstr(FILE *file, uint8_t sha1[20])
 
   std::string file_contents;
   file_contents.resize(size);
-  assert(fread(&file_contents[0], 1, size, file) == size);
+  if (fread(&file_contents[0], 1, size, file) != size)
+  {
+    throw std::runtime_error("Failed to read file");
+  }
 
   SHA_CTX ctx;
   SHA1_Init(&ctx);

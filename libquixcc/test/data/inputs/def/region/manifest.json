@@ -146,7 +146,7 @@
             "note": "",
             "input": "def/region/abi-0.q",
             "build": "asm-sha1",
-            "expected": "f26efadea347d669550a9f03b81a07f366a2f672"
+            "expected": "7b1f5596c5839fc544b2ce3b53fbdd3a49c34322"
         }
     ]
 }

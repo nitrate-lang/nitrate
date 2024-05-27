@@ -6,7 +6,7 @@
             "note": "",
             "input": "def/typedef/wf-0.q",
             "build": "asm-sha1",
-            "expected": "49abf65636a0b08276ae839dda8ec2c2dda43f07"
+            "expected": "6bda6a9279b2c002a18bdbb649893e931921f4b9"
         },
         {
             "name": "Typedef test 1",

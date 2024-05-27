@@ -69,7 +69,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/random_generator.hpp>
 
-#define PROJECT_REPO_URL "https://github.com/Kracken256/quixcc"
+#define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
 
 #define PRUNE_DEBUG_MESSAGES 1
 

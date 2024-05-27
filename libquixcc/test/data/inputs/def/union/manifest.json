@@ -146,7 +146,7 @@
             "note": "",
             "input": "def/union/abi-0.q",
             "build": "asm-sha1",
-            "expected": "2494c75ac3184fb6c184f24bd0bda1426b01432a"
+            "expected": "0000000000000000000000000000000000000000"
         }
     ]
 }

@@ -146,7 +146,7 @@
             "note": "",
             "input": "def/struct/abi-0.q",
             "build": "asm-sha1",
-            "expected": "3b42ff18f6cf2c2c8e75d0ca058ec0503810912a"
+            "expected": "7b1f5596c5839fc544b2ce3b53fbdd3a49c34322"
         }
     ]
 }

@@ -26,10 +26,14 @@ add_custom_command(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc
     COMMENT "Generating test suite"
 )
 
+set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_EXE_LINKER_FLAGS "-static")
+
 add_executable(libquixcc-test-suite ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc)
-target_link_libraries(libquixcc-test-suite GTest::gtest_main quixcc z crypto)
+target_link_libraries(libquixcc-test-suite GTest::gtest_main quixcc-static z crypto)
 target_link_options(libquixcc-test-suite PRIVATE --coverage)
-add_dependencies(libquixcc-test-suite libquixcc)
+add_dependencies(libquixcc-test-suite quixcc-static)
 target_include_directories(libquixcc-test-suite PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 add_custom_target(libquixcc-test-suite-out ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc)
 
