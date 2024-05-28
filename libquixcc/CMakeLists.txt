@@ -55,12 +55,12 @@ SET(STATIC_PROJECT_RELEASE_FLAGS -O3 -Wno-error=mismatched-new-delete ${BUILD_FL
 # set_target_properties(quixcc PROPERTIES OUTPUT_NAME quixcc)
 
 add_library(quixcc-static STATIC ${LIBQUIX_CXX_SOURCES})
-target_include_directories(quixcc-static PUBLIC "internal" include)
+target_include_directories(quixcc-static PUBLIC "internal" include ../deps/libexecinfo)
 if (CMAKE_BUILD_TYPE STREQUAL "Release") 
     target_compile_options(quixcc-static PRIVATE ${STATIC_PROJECT_RELEASE_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS)
     target_link_options(quixcc-static PRIVATE ${LLVM_LD_FLAGS} -O3 -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
 else()
-    target_compile_options(quixcc-static PRIVATE ${PROJECT_DEBUG_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS)
+    target_compile_options(quixcc-static PRIVATE ${PROJECT_DEBUG_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS -fno-omit-frame-pointer -fno-optimize-sibling-calls)
     target_link_options(quixcc-static PRIVATE ${LLVM_LD_FLAGS})
 endif()
 
@@ -69,7 +69,7 @@ if (BUILD_TESTING)
     target_link_options(quixcc-static PRIVATE -fprofile-arcs -ftest-coverage -O3 --coverage)
 endif()
 
-add_custom_command(TARGET quixcc-static POST_BUILD COMMAND sh -c "armerge --output libquixcc-static.a $<TARGET_FILE:quixcc-static> /usr/lib/libexecinfo.a /usr/lib/libcrypto.a ${LLVM_LIBS_RAW}")
+add_custom_command(TARGET quixcc-static POST_BUILD COMMAND sh -c "armerge --output libquixcc-static.a $<TARGET_FILE:quixcc-static> $<TARGET_FILE:execinfo-static> /usr/lib/libcrypto.a ${LLVM_LIBS_RAW}")
 
 if (BUILD_TESTING)
     add_subdirectory(test)

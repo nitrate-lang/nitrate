@@ -18,14 +18,6 @@ RUN apk add openssl-dev openssl-libs-static zlib-static readline-static \
 # Create symlinks for llvm14
 RUN cd /usr/include && ln -s llvm14/llvm llvm && ln -s llvm14/llvm-c llvm-c
 
-# Build and install libexecinfo for `execinfo.h` header
-WORKDIR /tmp
-RUN git clone https://github.com/ronchaine/libexecinfo.git
-WORKDIR /tmp/libexecinfo
-RUN git reset --hard d15ae4ca2e5e3b56d9abb2c7de03cb38078db474
-RUN make -j2 && make install
-RUN rm -rf /tmp/libexecinfo
-
 # Build and install yaml-cpp static library
 WORKDIR /tmp
 RUN wget https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz -O yaml-cpp-0.8.0.tar.gz

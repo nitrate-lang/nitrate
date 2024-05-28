@@ -218,9 +218,6 @@ bool qpkg::init::Package::createPackage()
 
 bool qpkg::init::Package::create()
 {
-    if (m_verbose)
-        LOG_ENABLE(core::DEBUG);
-
     if (!validateName(m_name))
     {
         LOG(core::ERROR) << "Invalid package name: " << m_name << std::endl;

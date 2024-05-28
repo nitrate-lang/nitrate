@@ -12,6 +12,8 @@
 #include <build/EngineBuilder.hh>
 #include <clean/Cleanup.hh>
 
+#include <core/Logger.hh>
+
 constexpr const char *VERSION_STR = "qpkg version 0.1.0 [2024-03] (generic)";
 constexpr const char *FULL_LICENSE = R"(This file is part of QUIX Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
@@ -522,6 +524,8 @@ static void setup_argparse(ArgumentParser &parser)
 
 static int run_init_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     using namespace qpkg::init;
 
     PackageBuilder builder =
@@ -548,6 +552,8 @@ static int run_init_mode(const ArgumentParser &parser)
 
 static int run_build_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     qpkg::build::EngineBuilder builder;
 
     builder.set_package_src(parser.get<std::string>("package-src"));
@@ -593,11 +599,15 @@ static int run_build_mode(const ArgumentParser &parser)
 
 static int run_clean_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     return qpkg::clean::CleanPackageSource(parser.get<std::string>("package-src"), parser["--verbose"] == true) ? 0 : -1;
 }
 
 static int run_update_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     (void)parser;
     std::cerr << "update not implemented yet" << std::endl;
     return 1;
@@ -605,6 +615,8 @@ static int run_update_mode(const ArgumentParser &parser)
 
 static int run_install_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     (void)parser;
     std::cerr << "install not implemented yet" << std::endl;
     return 1;
@@ -612,6 +624,8 @@ static int run_install_mode(const ArgumentParser &parser)
 
 static int run_doc_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     (void)parser;
     std::cerr << "doc not implemented yet" << std::endl;
     return 1;
@@ -619,6 +633,8 @@ static int run_doc_mode(const ArgumentParser &parser)
 
 static int run_env_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     (void)parser;
     std::cerr << "env not implemented yet" << std::endl;
     return 1;
@@ -626,6 +642,8 @@ static int run_env_mode(const ArgumentParser &parser)
 
 static int run_fmt_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     (void)parser;
     std::cerr << "fmt not implemented yet" << std::endl;
     return 1;
@@ -633,6 +651,8 @@ static int run_fmt_mode(const ArgumentParser &parser)
 
 static int run_list_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     (void)parser;
     std::cerr << "list not implemented yet" << std::endl;
     return 1;
@@ -640,6 +660,8 @@ static int run_list_mode(const ArgumentParser &parser)
 
 static int run_run_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     (void)parser;
     std::cerr << "run not implemented yet" << std::endl;
     return 1;
@@ -647,6 +669,8 @@ static int run_run_mode(const ArgumentParser &parser)
 
 static int run_test_mode(const ArgumentParser &parser)
 {
+    qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+
     (void)parser;
     std::cerr << "test not implemented yet" << std::endl;
     return 1;
@@ -654,6 +678,8 @@ static int run_test_mode(const ArgumentParser &parser)
 
 int main(int argc, char *argv[])
 {
+    qpkg::core::FormatAdapter::PluginAndInit();
+
     std::vector<std::string> args(argv, argv + argc);
     ArgumentParser program("qpkg", VERSION_STR);
     setup_argparse(program);

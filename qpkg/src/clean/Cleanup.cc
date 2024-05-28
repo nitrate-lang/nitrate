@@ -50,9 +50,6 @@ static bool recursve_subpackages(const std::filesystem::path &base, bool verbose
 
 bool qpkg::clean::CleanPackageSource(const std::string &package_src, bool verbose)
 {
-    if (verbose)
-        LOG_ENABLE(core::DEBUG);
-
     std::filesystem::path package_src_path(package_src);
 
     if (!std::filesystem::exists(package_src_path))

@@ -20,12 +20,11 @@ target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquixcc/includ
 set(IGNORE_ERRORS -Wno-predefined-identifier-outside-function)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release") 
-    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror -O3 -flto ${IGNORE_ERRORS} -fPIC)
+    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror -O3 -flto ${IGNORE_ERRORS})
     target_link_options(qpkg PRIVATE -flto)
     add_custom_command(TARGET qpkg POST_BUILD COMMAND strip $<TARGET_FILE:qpkg>)
-    # add_custom_command(TARGET qpkg POST_BUILD COMMAND upx --best $<TARGET_FILE:qpkg>)
 else()
-    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror  ${IGNORE_ERRORS} -fPIC)
+    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror  ${IGNORE_ERRORS})
 endif()
 
 if (BUILD_TESTING)
@@ -33,7 +32,7 @@ if (BUILD_TESTING)
 endif()
 
 target_link_directories(qpkg PRIVATE ${CMAKE_BINARY_DIR}/libquixcc)
-target_link_libraries(qpkg PRIVATE quixcc-static execinfo yaml-cpp blake3 boost_serialization z)
+target_link_libraries(qpkg PRIVATE quixcc-static yaml-cpp blake3 boost_serialization z)
 add_dependencies(qpkg blake3 quixcc-static)
 
 if (BUILD_TESTING)

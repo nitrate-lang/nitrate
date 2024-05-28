@@ -62,7 +62,10 @@ namespace qpkg
                   m_version(version),
                   m_type(type),
                   m_verbose(verbose),
-                  m_force(force) {}
+                  m_force(force)
+            {
+                (void)m_verbose;
+            }
 
             bool create();
         };

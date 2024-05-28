@@ -40,12 +40,14 @@
 #include <vector>
 #include <cstring>
 #include <iostream>
+#include <optional>
 #include <regex>
 #include <filesystem>
 #include <random>
 #include <thread>
 #include <signal.h>
 #include <execinfo.h>
+#include <setjmp.h>
 
 #include <LibMacro.h>
 #include <llvm/LLVMWrapper.h>
@@ -78,6 +80,8 @@ using namespace libquixcc;
 static std::atomic<bool> g_is_initialized = false;
 std::atomic<uint64_t> g_num_of_contexts = 0;
 std::mutex g_library_lock;
+
+static thread_local jmp_buf g_tls_exception;
 
 static void print_stacktrace();
 
@@ -1054,8 +1058,18 @@ void quixcc_fault_handler(int sig)
     std::cerr << "\n";
     print_stacktrace();
     std::cerr << "\n";
-    std::cerr << "The compiler will now abort." << std::endl;
 
+    LOG(WARN) << "Attemping to recover from `fatal` error by `longjmp()`ing into another thread which is hopefully okay." << std::endl;
+    LOG(WARN) << "INTERNAL COMPILER NOTICE: THIS PROCESS IS HAS BEEN TAINTED. IT IS NOW A WIRED-MACHINE. TERMINATE ASAP." << std::endl;
+
+    /* Attempt to recover by longjmp'ing into the job-execution thread */
+    /* I say `attempt` because it feels like there are many ways this could go wrong,
+       even in a static-binary. */
+
+    // Details @ https://man7.org/linux/man-pages/man3/longjmp.3.html
+    longjmp(g_tls_exception, 1);
+
+    // This will never be reached
     abort();
 }
 
@@ -1158,9 +1172,28 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     siglock.unlock();
 
     /* Every compiler job must have its own thread-local storage */
-    bool success = false;
-    std::thread t([&]
-                  { success = execute_job(job); });
+    bool status = false;
+    std::thread t(
+        [&]
+        {
+            /* This is a dirty hack to `catch` segfaults and still be able to return */
+
+            /* We capture the local environment: (stack pointer, PC, registers, etc.) */
+            if (setjmp(g_tls_exception) == 0)
+            {
+                /* Okay, now the confusing part.
+                   The above call to `setjmp()` captures the 'point-of-return' or 'jump-point'
+                   at the exact location it is called from.
+
+                   This fact requires us to install logic to detect whether or not we on the
+                   non-setjmp (normal/common) path or the setjmp path to avoid recursion and chaos.
+
+                   If the thread-local handler is not set, we are on the normal path.
+                */
+                status = execute_job(job);
+            }
+        });
+
     t.join();
 
     /* Restore signal handlers */
@@ -1171,7 +1204,7 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job)
     signal(SIGABRT, old_handlers[3]);
     siglock.unlock();
 
-    return success;
+    return status;
 }
 
 LIB_EXPORT const quixcc_status_t *quixcc_status(quixcc_job_t *job)

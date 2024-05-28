@@ -26,9 +26,6 @@ qpkg::build::Engine::Engine(const std::string &package_src,
                             bool debug,
                             bool verbose)
 {
-    if (verbose)
-        LOG_ENABLE(core::DEBUG);
-
     m_package_src = package_src;
     m_output = output;
     m_cache = std::move(cache);
@@ -182,6 +179,9 @@ public:
 
     void print()
     {
+        /// TODO: remove this
+        return;
+
         uint8_t percent = m_total == 0 ? 0 : (m_current * 100) / m_total;
         std::string percent_pad = "[";
         if (percent < 10)
