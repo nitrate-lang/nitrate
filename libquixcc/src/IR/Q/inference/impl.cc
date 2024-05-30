@@ -103,13 +103,7 @@ const Type *Segment::infer() const
         arg_types.push_back(arg.second);
     }
 
-    bool variadic = constraints.contains(FConstraint::Variadic);
-    bool pure = constraints.contains(FConstraint::Pure);
-    bool thread_safe = constraints.contains(FConstraint::ThreadSafe);
-    bool foreign = constraints.contains(FConstraint::C_ABI);
-    bool no_throw = constraints.contains(FConstraint::NoThrow);
-
-    return FType::create(arg_types, return_type, variadic, pure, thread_safe, foreign, no_throw);
+    return FType::create(arg_types, return_type, is_variadic, is_pure, is_thread_safe, is_foriegn, is_no_throw);
 }
 
 const Type *Ident::infer() const

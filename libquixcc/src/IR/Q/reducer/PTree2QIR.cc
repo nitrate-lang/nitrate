@@ -140,6 +140,7 @@ static auto conv(const F32TypeNode *n, QState &state) -> QResult;
 static auto conv(const F64TypeNode *n, QState &state) -> QResult;
 static auto conv(const BoolTypeNode *n, QState &state) -> QResult;
 static auto conv(const VoidTypeNode *n, QState &state) -> QResult;
+static auto conv(const NullTypeNode *n, QState &state) -> QResult;
 static auto conv(const PointerTypeNode *n, QState &state) -> QResult;
 static auto conv(const OpaqueTypeNode *n, QState &state) -> QResult;
 static auto conv(const StringTypeNode *n, QState &state) -> QResult;
@@ -827,6 +828,11 @@ static auto conv(const VoidTypeNode *n, QState &state) -> QResult
     return Void::create();
 }
 
+static auto conv(const NullTypeNode *n, QState &state) -> QResult
+{
+    return Void::create();
+}
+
 static auto conv(const PointerTypeNode *n, QState &state) -> QResult
 {
     return Ptr::create(conv(n->m_type, state)[0]->as<Type>());
@@ -1156,19 +1162,7 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult
             params.push_back({p->m_name, t});
     }
 
-    std::set<FConstraint> constraints;
-    if (n->m_type->m_pure)
-        constraints.insert(FConstraint::Pure);
-    if (n->m_type->m_thread_safe)
-        constraints.insert(FConstraint::ThreadSafe);
-    if (n->m_type->m_foreign)
-        constraints.insert(FConstraint::C_ABI);
-    if (n->m_type->m_noexcept)
-        constraints.insert(FConstraint::NoThrow);
-    if (n->m_type->m_variadic)
-        constraints.insert(FConstraint::Variadic);
-
-    auto seg = Segment::create(params, conv(n->m_type->m_return_type, state)[0]->as<Type>(), nullptr, constraints);
+    auto seg = Segment::create(params, conv(n->m_type->m_return_type, state)[0]->as<Type>(), nullptr, n->m_type->m_variadic, n->m_type->m_pure, n->m_type->m_thread_safe, n->m_type->m_noexcept, n->m_type->m_return_type->is<NullTypeNode>(), n->m_type->m_foreign);
 
     const Global *g = nullptr;
     std::string mangled;
@@ -1395,7 +1389,7 @@ static auto conv(const FunctionDefNode *n, QState &state) -> QResult
     state.function.pop();
     state.local_idents.pop();
 
-    auto f = Segment::create(dseg->params, dseg->return_type, body, dseg->constraints);
+    auto f = Segment::create(dseg->params, dseg->return_type, body, dseg->is_variadic, dseg->is_pure, dseg->is_thread_safe, dseg->is_no_throw, dseg->is_no_return, dseg->is_foriegn);
 
     return Global::create(glob->name, glob->type, f, glob->_volatile, glob->_atomic, glob->_extern);
 }
@@ -1635,6 +1629,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult
 
     case libquixcc::NodeType::VoidTypeNode:
         r = conv(n->as<VoidTypeNode>(), state);
+        break;
+
+    case libquixcc::NodeType::NullTypeNode:
+        r = conv(n->as<NullTypeNode>(), state);
         break;
 
     case libquixcc::NodeType::PointerTypeNode:

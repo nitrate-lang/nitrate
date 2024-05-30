@@ -183,6 +183,11 @@ void qpkg::core::Process::done()
     m_phase = Phase::HALTED;
 }
 
+void qpkg::core::Process::operator+=(float weight)
+{
+    info("", weight);
+}
+
 ///=============================================================================
 
 qpkg::core::LoggerStream qpkg::core::LOG(qpkg::core::Level lvl)

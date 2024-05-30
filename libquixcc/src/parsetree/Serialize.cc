@@ -132,6 +132,7 @@ std::string libquixcc::serialize::ParseTreeSerializer::dispatch(libquixcc::seria
             {NodeType::F64TypeNode, (Func)F64TypeNode_conv},
             {NodeType::BoolTypeNode, (Func)BoolTypeNode_conv},
             {NodeType::VoidTypeNode, (Func)VoidTypeNode_conv},
+            {NodeType::NullTypeNode, (Func)NullTypeNode_conv},
             {NodeType::PointerTypeNode, (Func)PointerTypeNode_conv},
             {NodeType::OpaqueTypeNode, (Func)OpaqueTypeNode_conv},
             {NodeType::StringTypeNode, (Func)StringTypeNode_conv},
@@ -475,6 +476,11 @@ std::string libquixcc::serialize::ParseTreeSerializer::BoolTypeNode_conv(libquix
 std::string libquixcc::serialize::ParseTreeSerializer::VoidTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::VoidTypeNode *node)
 {
     return "{\"ntype\":\"VoidTypeNode\"}";
+}
+
+std::string libquixcc::serialize::ParseTreeSerializer::NullTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::NullTypeNode *node)
+{
+    return "{\"ntype\":\"NullTypeNode\"}";
 }
 
 std::string libquixcc::serialize::ParseTreeSerializer::PointerTypeNode_conv(libquixcc::serialize::ParseTreeSerializerState &state, const libquixcc::PointerTypeNode *node)

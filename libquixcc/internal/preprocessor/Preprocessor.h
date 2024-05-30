@@ -65,6 +65,7 @@ namespace libquixcc
             Entry() : path(), file(nullptr), buffer(nullptr) {}
         };
         std::set<std::string> m_include_dirs;
+        std::set<std::string> m_already_included; // dont allow headers to be included more than once
         std::vector<std::string> m_include_files; // for circular include detection
         std::stack<Entry> m_stack;
         quixcc_job_t *job;

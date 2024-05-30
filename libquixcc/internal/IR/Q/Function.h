@@ -60,15 +60,6 @@ namespace libquixcc::ir::q
         std::vector<const Value *> stmts;
     };
 
-    enum class FConstraint
-    {
-        C_ABI,
-        Variadic,
-        Pure,
-        ThreadSafe,
-        NoThrow,
-    };
-
     class Segment : public Expr
     {
     protected:
@@ -76,19 +67,24 @@ namespace libquixcc::ir::q
         boost::uuids::uuid hash_impl() const override;
         bool verify_impl() const override;
 
-        Segment(std::vector<std::pair<std::string, const Type *>> params, const Type *return_type, const Block *block, std::set<FConstraint> constraints) : constraints(constraints), params(params), return_type(return_type), block(block)
+        Segment(std::vector<std::pair<std::string, const Type *>> params, const Type *return_type, const Block *block, bool is_variadic, bool is_pure, bool is_thread_safe, bool is_no_throw, bool is_no_return, bool is_foriegn) : params(params), return_type(return_type), block(block), is_variadic(is_variadic), is_pure(is_pure), is_thread_safe(is_thread_safe), is_no_throw(is_no_throw), is_no_return(is_no_return), is_foriegn(is_foriegn)
         {
             ntype = (int)NodeType::Segment;
         }
 
     public:
-        static const Segment *create(std::vector<std::pair<std::string, const Type *>> params, const Type *return_type, const Block *block, std::set<FConstraint> constraints);
+        static const Segment *create(std::vector<std::pair<std::string, const Type *>> params, const Type *return_type, const Block *block, bool is_variadic, bool is_pure, bool is_thread_safe, bool is_no_throw, bool is_no_return, bool is_foriegn);
         const Type *infer() const override;
 
-        std::set<FConstraint> constraints;
         std::vector<std::pair<std::string, const Type *>> params;
         const Type *return_type;
         const Block *block;
+        bool is_variadic;
+        bool is_pure;
+        bool is_thread_safe;
+        bool is_no_throw;
+        bool is_no_return;
+        bool is_foriegn;
     };
 }
 

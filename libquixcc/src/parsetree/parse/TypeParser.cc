@@ -52,7 +52,8 @@ static std::map<std::string, TypeNode *> primitive_types = {
     {"f64", F64TypeNode::create()},
     {"i1", BoolTypeNode::create()},
     {"string", StringTypeNode::create()},
-    {"void", VoidTypeNode::create()}};
+    {"void", VoidTypeNode::create()},
+    {"null", NullTypeNode::create()}};
 
 bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner, TypeNode **node)
 {
@@ -67,6 +68,9 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner, TypeN
         {
         case Keyword::Void:
             inner = VoidTypeNode::create();
+            goto suffix;
+        case Keyword::Null:
+            inner = NullTypeNode::create();
             goto suffix;
         case Keyword::Fn:
             if (!parse_function(job, scanner, fn))

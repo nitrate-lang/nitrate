@@ -49,8 +49,12 @@ boost::uuids::uuid libquixcc::ir::q::Segment::hash_impl() const
     for (const auto &p : params)
         h.add(p.first).add(p.second);
 
-    for (const auto &c : constraints)
-        h.add((size_t)c);
+    h.add(is_variadic)
+    .add(is_pure)
+    .add(is_thread_safe)
+    .add(is_no_throw)
+    .add(is_no_return)
+    .add(is_foriegn);
 
     if (block)
         h.add(block);

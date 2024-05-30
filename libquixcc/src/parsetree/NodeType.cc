@@ -74,6 +74,7 @@ std::unordered_map<libquixcc::NodeType, std::string_view> libquixcc::NodeTypeNam
     {NodeType::F64TypeNode, "F64TypeNode"},
     {NodeType::BoolTypeNode, "BoolTypeNode"},
     {NodeType::VoidTypeNode, "VoidTypeNode"},
+    {NodeType::NullTypeNode, "NullTypeNode"},
     {NodeType::PointerTypeNode, "PointerTypeNode"},
     {NodeType::OpaqueTypeNode, "OpaqueTypeNode"},
     {NodeType::StringTypeNode, "StringTypeNode"},

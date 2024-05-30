@@ -70,7 +70,7 @@ static std::map<std::tuple<const Value *, const std::set<const Case *>, const Va
 static std::map<std::pair<std::string, const Type *>, const Ident *> ident_insts;
 static Asm *asm_inst = nullptr;
 static std::map<std::vector<const Value *>, const Block *> functionblock_insts;
-static std::map<std::tuple<std::vector<std::pair<std::string, const Type *>>, const Value *, const Value *, std::set<FConstraint>>, const Segment *> function_insts;
+static std::map<std::tuple<std::vector<std::pair<std::string, const Type *>>, const Value *, const Value *, bool, bool, bool, bool, bool, bool>, const Segment *> function_insts;
 static std::map<const Value *, const Ret *> ret_insts;
 static std::map<std::pair<const Global *, std::vector<const Expr *>>, const Call *> call_insts;
 static std::map<std::pair<const Value *, std::vector<const Expr *>>, const CallIndirect *> ptrcall_insts;
@@ -331,12 +331,12 @@ const ir::q::Block *ir::q::Block::create(std::vector<const Value *> stmts)
     return functionblock_insts[key];
 }
 
-const ir::q::Segment *ir::q::Segment::create(std::vector<std::pair<std::string, const Type *>> params, const Type *return_type, const Block *block, std::set<ir::q::FConstraint> constraints)
+const libquixcc::ir::q::Segment *libquixcc::ir::q::Segment::create(std::vector<std::pair<std::string, const Type *>> params, const libquixcc::ir::q::Type *return_type, const libquixcc::ir::q::Block *block, bool is_variadic, bool is_pure, bool is_thread_safe, bool is_no_throw, bool is_no_return, bool is_foriegn)
 {
     lock(NodeType::Segment);
-    auto key = std::make_tuple(params, return_type, block, constraints);
+    auto key = std::make_tuple(params, return_type, block, is_variadic, is_pure, is_thread_safe, is_no_throw, is_no_return, is_foriegn);
     if (!function_insts.contains(key))
-        function_insts[key] = new Segment(params, return_type, block, constraints);
+        function_insts[key] = new Segment(params, return_type, block, is_variadic, is_pure, is_thread_safe, is_no_throw, is_no_return, is_foriegn);
     return function_insts[key];
 }
 

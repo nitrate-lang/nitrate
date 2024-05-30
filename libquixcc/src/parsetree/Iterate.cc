@@ -93,6 +93,7 @@ size_t libquixcc::traversal::ParseTreePreorder::dispatch(libquixcc::traversal::P
             {NodeType::F64TypeNode, (Func)F64TypeNode_iter},
             {NodeType::BoolTypeNode, (Func)BoolTypeNode_iter},
             {NodeType::VoidTypeNode, (Func)VoidTypeNode_iter},
+            {NodeType::NullTypeNode, (Func)NullTypeNode_iter},
             {NodeType::PointerTypeNode, (Func)PointerTypeNode_iter},
             {NodeType::OpaqueTypeNode, (Func)OpaqueTypeNode_iter},
             {NodeType::StringTypeNode, (Func)StringTypeNode_iter},
@@ -414,6 +415,11 @@ size_t libquixcc::traversal::ParseTreePreorder::BoolTypeNode_iter(libquixcc::tra
 }
 
 size_t libquixcc::traversal::ParseTreePreorder::VoidTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::VoidTypeNode *node)
+{
+    return 1;
+}
+
+size_t libquixcc::traversal::ParseTreePreorder::NullTypeNode_iter(libquixcc::traversal::ParseTreeTraversalState &state, libquixcc::NullTypeNode *node)
 {
     return 1;
 }

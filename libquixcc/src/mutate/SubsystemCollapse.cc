@@ -36,6 +36,8 @@
 #include <stack>
 #include <queue>
 
+/// TODO: this code is slow and needs to be optimized. ideally, we do this in-place while lowering the parsetree.
+
 using namespace libquixcc;
 
 static void expr_collapse(const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
@@ -164,6 +166,13 @@ static void stmt_collapse(const std::vector<std::string> &_namespace, const std:
             stmts->m_stmts.push_back(def);
             break;
         }
+        case NodeType::SubsystemNode:
+        {
+            auto def = std::static_pointer_cast<SubsystemNode>(child);
+            stmt_collapse(ns, _scope, parent, std::make_pair(traversal::TraversePtrType::Smart, reinterpret_cast<std::shared_ptr<ParseNode> *>(&def)));
+            stmts->m_stmts.push_back(def);
+            break;
+        }
         default:
             stmts->m_stmts.push_back(child);
             break;
@@ -178,7 +187,7 @@ void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<lib
     std::set<std::string> visited;
 
     ast->dfs_preorder(traversal::ParseTreeTraversalState(
-        [&visited](const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
+        [&visited](const std::vector<std::string> &ns, const std::vector<std::string> &_scope, libquixcc::ParseNode *parent, traversal::TraversePtr node)
         {
             if (node.first != traversal::TraversePtrType::Raw)
                 return;
@@ -194,7 +203,7 @@ void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<lib
                 if (visited.contains(def->m_name))
                     return;
 
-                auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(ns, def->m_name);
 
                 *dobptr = UserTypeNode::create(n);
                 visited.insert(n);
@@ -206,7 +215,7 @@ void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<lib
                 if (visited.contains(def->m_name))
                     return;
 
-                auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(ns, def->m_name);
 
                 *dobptr = UnionTypeNode::create(def->m_fields, n);
                 visited.insert(n);
@@ -218,7 +227,7 @@ void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<lib
                 if (visited.contains(def->m_name))
                     return;
 
-                auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(ns, def->m_name);
 
                 *dobptr = StructTypeNode::create(def->m_fields, n);
                 visited.insert(n);
@@ -230,7 +239,7 @@ void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<lib
                 if (visited.contains(def->m_name))
                     return;
 
-                auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(ns, def->m_name);
 
                 *dobptr = RegionTypeNode::create(def->m_fields, n);
                 visited.insert(n);
@@ -242,7 +251,7 @@ void libquixcc::mutate::SubsystemCollapse(quixcc_job_t *job, std::shared_ptr<lib
                 if (visited.contains(def->m_name))
                     return;
 
-                auto n = Symbol::join(_namespace, def->m_name);
+                auto n = Symbol::join(ns, def->m_name);
 
                 *dobptr = OpaqueTypeNode::create(n);
                 visited.insert(n);

@@ -66,17 +66,19 @@ bool libquixcc::ir::q::Segment::print_impl(std::ostream &os, libquixcc::ir::PSta
 {
     os << "segment ";
 
-    if (constraints.contains(FConstraint::Pure))
+    if (is_pure)
         os << "pure ";
     else
         os << "impure ";
 
-    if (constraints.contains(FConstraint::ThreadSafe))
+    if (is_thread_safe)
         os << "tsafe ";
-    if (constraints.contains(FConstraint::NoThrow))
+    if (is_no_throw)
         os << "noexcept ";
-    if (constraints.contains(FConstraint::C_ABI))
-        os << "cextern ";
+    if (is_no_return)
+        os << "noreturn ";
+    if (is_foriegn)
+        os << "foreign ";
 
     os << "(";
     for (auto it = params.begin(); it != params.end(); it++)
@@ -86,7 +88,7 @@ bool libquixcc::ir::q::Segment::print_impl(std::ostream &os, libquixcc::ir::PSta
             return false;
         if (it != params.end() - 1)
             os << ", ";
-        else if (constraints.contains(FConstraint::Variadic))
+        else if (is_variadic)
             os << ", ...";
     }
 

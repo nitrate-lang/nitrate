@@ -1,9 +1,11 @@
 #include <build/Engine.hh>
-#include <core/Logger.hh>
 #include <conf/Validate.hh>
 #include <set>
 #include <fstream>
 #include <thread>
+#include <atomic>
+#include <mutex>
+#include <cassert>
 #include <quixcc.hpp>
 
 #include <iostream>
@@ -108,155 +110,6 @@ static qpkg::cache::CacheKey compute_cachekey(const std::filesystem::path &file)
 
     return hasher.finalize();
 }
-
-static int get_terminal_width()
-{
-    struct winsize w;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-
-    return w.ws_col;
-}
-
-class CompilationProgressPrinter
-{
-    enum class State
-    {
-        NOT_STARTED,
-        STARTING,
-        FINISHED,
-        TAINTED
-    };
-
-    size_t m_total, m_real, m_current;
-    State m_linker;
-    State m_state;
-    bool m_linking;
-    std::queue<std::pair<State, std::string>> m_messages;
-
-public:
-    CompilationProgressPrinter() : m_total(0), m_real(0), m_current(0), m_linker(State::NOT_STARTED), m_state(State::NOT_STARTED), m_linking(false) {}
-
-    void reset(size_t total, size_t real)
-    {
-        m_total = total;
-        m_real = real;
-        m_current = 0;
-    }
-
-    void starting(const std::string &msg)
-    {
-        if (m_current >= m_total)
-            return;
-
-        m_messages.push({State::STARTING, msg});
-    }
-
-    void finished(const std::string &msg)
-    {
-        if (m_current >= m_total)
-            return;
-
-        m_current++;
-
-        m_messages.push({State::FINISHED, msg});
-    }
-
-    void linking()
-    {
-        m_linking = true;
-        m_linker = State::STARTING;
-    }
-
-    void linked()
-    {
-        m_linker = State::FINISHED;
-    }
-
-    void tainted()
-    {
-        m_state = State::TAINTED;
-    }
-
-    void print()
-    {
-        /// TODO: remove this
-        return;
-
-        uint8_t percent = m_total == 0 ? 0 : (m_current * 100) / m_total;
-        std::string percent_pad = "[";
-        if (percent < 10)
-            percent_pad += "  ";
-        else if (percent < 100)
-            percent_pad += " ";
-
-        percent_pad += std::to_string(percent) + "%]";
-
-        int width = get_terminal_width();
-
-        // Clear the line
-        std::cout << "\x1b[2K";
-
-        while (!m_messages.empty())
-        {
-            auto [state, msg] = m_messages.front();
-            m_messages.pop();
-
-            switch (state)
-            {
-            case State::STARTING:
-                std::cout << percent_pad << " \x1b[32mBuilding QUIX object " << msg << "\x1b[0m" << std::endl;
-                break;
-            case State::FINISHED:
-                std::cout << percent_pad << " \x1b[32mFinished building QUIX object " << msg << "\x1b[0m" << std::endl;
-                break;
-            case State::TAINTED:
-                std::cout << percent_pad << " \x1b[31mFailed to build QUIX object\x1b[0m" << std::endl;
-                break;
-            default:
-                break;
-            }
-        }
-
-        if (m_linking)
-        {
-            std::cout << percent_pad << " \x1b[32;1mLinking QUIX target\x1b[0m" << std::endl;
-            m_linking = false;
-        }
-
-        std::cout << "\r\x1b[2K\x1b[37;42mProgress: " << percent_pad << "\x1b[0m [";
-
-        int bar_width = width - 20;
-        int pos = bar_width * percent / 100;
-
-        for (int i = 0; i < bar_width; i++)
-        {
-            if (i < pos)
-                std::cout << "=";
-            else if (i == pos)
-                std::cout << ">";
-            else
-                std::cout << " ";
-        }
-        if (percent < 100)
-            std::cout << "]\r";
-        else if (m_linker == State::FINISHED)
-        {
-            std::cout << "\r\x1b[2K";
-            std::cout << "Build complete" << std::endl;
-            m_state = State::FINISHED;
-        }
-
-        std::cout.flush();
-    }
-
-    bool is_done()
-    {
-        return m_state == State::FINISHED || m_state == State::TAINTED;
-    }
-};
-
-static CompilationProgressPrinter g_cc_printer;
-static std::mutex g_cc_printer_mutex;
 
 bool qpkg::build::Engine::build_source_file(const std::filesystem::path &base, const std::filesystem::path &build_dir, const std::filesystem::path &file) const
 {
@@ -370,59 +223,37 @@ bool qpkg::build::Engine::link_objects(const std::vector<std::filesystem::path> 
     return true;
 }
 
-bool qpkg::build::Engine::run_threads(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir) const
+bool qpkg::build::Engine::run_threads(const std::filesystem::path &base, const std::vector<std::string> &source_files,
+                                      const std::filesystem::path &build_dir, qpkg::core::Process &log) const
 {
     size_t i, tcount;
     std::vector<std::thread> threads;
     std::atomic<bool> tainted = false;
 
+    assert(source_files.size() > 0);
+
     tcount = std::min<size_t>(m_jobs, source_files.size());
 
-    g_cc_printer_mutex.lock();
-    g_cc_printer.reset(source_files.size(), source_files.size());
-    g_cc_printer_mutex.unlock();
+    float w = 1.0f / source_files.size();
 
     for (i = 0; i < tcount; i++)
     {
-        threads.push_back(std::thread([this, &base, &build_dir, &source_files, i, tcount, &tainted]()
+        threads.push_back(std::thread([this, &base, &log, w, &build_dir, &source_files, i, tcount, &tainted]()
                                       {
             for (size_t j = i; j < source_files.size(); j += tcount)
             {
-                g_cc_printer_mutex.lock();
-                g_cc_printer.starting(source_files[j]);
-                g_cc_printer_mutex.unlock();
+                log.good("Building QUIX object " + source_files[j]);
 
                 if (!build_source_file(base, build_dir, source_files[j]))
                 {
-                    g_cc_printer_mutex.lock();
-                    g_cc_printer.tainted();
+                    log.error("Failed to build QUIX object " + source_files[j]);
                     tainted = true;
-                    g_cc_printer_mutex.unlock();
                     return;
                 }
 
-                g_cc_printer_mutex.lock();
-                g_cc_printer.finished(source_files[j]);
-                g_cc_printer_mutex.unlock();
+                log += w;
             } }));
     }
-
-    std::thread printer_thread([&tainted]()
-                               {
-        while (!tainted)
-        {
-            g_cc_printer_mutex.lock();
-            g_cc_printer.print();
-            bool done = g_cc_printer.is_done();
-            g_cc_printer_mutex.unlock();
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-            if (done)
-                return;
-        } });
-
-    printer_thread.detach();
 
     for (auto &thread : threads)
         thread.join();
@@ -432,9 +263,13 @@ bool qpkg::build::Engine::run_threads(const std::filesystem::path &base, const s
 
 bool qpkg::build::Engine::build_package(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir)
 {
+    auto log = Process::create("Build");
+
+    log.info("Building package " + m_package_name);
+
     if (!source_files.empty())
     {
-        if (!run_threads(base, source_files, build_dir))
+        if (!run_threads(base, source_files, build_dir, log))
         {
             LOG(core::ERROR) << "Failed to build package " << m_package_name << std::endl;
             return false;
@@ -446,9 +281,7 @@ bool qpkg::build::Engine::build_package(const std::filesystem::path &base, const
 
         if (m_config["nolink"].as<bool>() == false)
         {
-            g_cc_printer_mutex.lock();
-            g_cc_printer.linking();
-            g_cc_printer_mutex.unlock();
+            log.bold("Linking package " + m_package_name);
 
             if (!link_objects(objects))
             {
@@ -456,30 +289,15 @@ bool qpkg::build::Engine::build_package(const std::filesystem::path &base, const
                 return false;
             }
 
-            g_cc_printer_mutex.lock();
-            g_cc_printer.linked();
-            g_cc_printer_mutex.unlock();
+            log.info("Built target " + m_package_name, 1);
         }
         else
         {
             LOG(core::DEBUG) << "Skipping linking" << std::endl;
 
-            g_cc_printer_mutex.lock();
-            g_cc_printer.linked();
-            g_cc_printer_mutex.unlock();
+            log.info("Skipped linking");
         }
 
-        while (true)
-        {
-            g_cc_printer_mutex.lock();
-            bool done = g_cc_printer.is_done();
-            g_cc_printer_mutex.unlock();
-
-            if (done)
-                break;
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
         return true;
     }
     else if (m_config["packages"].as<std::vector<std::string>>().empty())

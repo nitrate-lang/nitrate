@@ -4,15 +4,21 @@
 #include <mutex>
 #include <sstream>
 
+#include <iostream>
+
 std::string qpkg::core::FormatAdapter::format(const std::string &msg, qpkg::core::Level lvl, float weight)
 {
-    static std::mutex m_mutex;
-    std::lock_guard<std::mutex> lock(m_mutex);
-
     struct State
     {
         float m_progress;
-    } state;
+    };
+
+    // std::cout << "weight: " << weight << "\n";
+
+    static std::mutex m_mutex;
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    static State state = {0.0f};
 
     state.m_progress += weight;
 
@@ -67,15 +73,21 @@ void qpkg::core::FormatAdapter::push(const std::string &msg, qpkg::core::Level l
 
     (void)use_colors;
 
+    auto f = format(msg, lvl, weight);
+
+    /* We must call format because empty messages may update internal state (weight). */
+    if (msg.empty())
+        return;
+
     /// TODO: implement no-color support
 
     if (lvl == qpkg::core::Level::ERROR || lvl == qpkg::core::Level::FATAL)
     {
-        log_ewrite(format(msg, lvl, weight));
+        log_ewrite(f);
     }
     else
     {
-        log_owrite(format(msg, lvl, weight));
+        log_owrite(f);
     }
 }
 

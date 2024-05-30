@@ -106,6 +106,7 @@ namespace libquixcc
             static size_t F64TypeNode_iter(ParseTreeTraversalState &state, F64TypeNode *node);
             static size_t BoolTypeNode_iter(ParseTreeTraversalState &state, BoolTypeNode *node);
             static size_t VoidTypeNode_iter(ParseTreeTraversalState &state, VoidTypeNode *node);
+            static size_t NullTypeNode_iter(ParseTreeTraversalState &state, NullTypeNode *node);
             static size_t PointerTypeNode_iter(ParseTreeTraversalState &state, PointerTypeNode *node);
             static size_t OpaqueTypeNode_iter(ParseTreeTraversalState &state, OpaqueTypeNode *node);
             static size_t StringTypeNode_iter(ParseTreeTraversalState &state, StringTypeNode *node);

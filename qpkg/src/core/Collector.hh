@@ -146,6 +146,8 @@ namespace qpkg
 
             LoggerStream stream(Level lvl, float weight = 0);
             void done();
+
+            void operator+=(float weight);
         };
 
         LoggerStream LOG(Level lvl);

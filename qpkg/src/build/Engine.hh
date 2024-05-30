@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <cache/CacheDirectory.hh>
 #include <conf/Config.hh>
+#include <core/Logger.hh>
 
 namespace qpkg
 {
@@ -58,7 +59,8 @@ namespace qpkg
 
             std::optional<qpkg::conf::Config> load_config(const std::filesystem::path &base);
             std::vector<std::string> get_source_files(const std::filesystem::path &base);
-            bool run_threads(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir) const;
+            bool run_threads(const std::filesystem::path &base, const std::vector<std::string> &source_files,
+                             const std::filesystem::path &build_dir, qpkg::core::Process &log) const;
             bool build_package(const std::filesystem::path &base, const std::vector<std::string> &source_files, const std::filesystem::path &build_dir);
             bool build_source_file(const std::filesystem::path &base, const std::filesystem::path &build_dir, const std::filesystem::path &file) const;
             bool link_objects(const std::vector<std::filesystem::path> &objects) const;

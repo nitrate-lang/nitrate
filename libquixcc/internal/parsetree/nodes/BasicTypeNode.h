@@ -302,6 +302,23 @@ namespace libquixcc
         }
     };
 
+    class NullTypeNode : public TypeNode
+    {
+        NullTypeNode() { ntype = NodeType::NullTypeNode; }
+        static NullTypeNode *m_instance;
+
+    public:
+        static NullTypeNode *create()
+        {
+            static std::mutex mutex;
+            std::lock_guard<std::mutex> lock(mutex);
+
+            if (m_instance == nullptr)
+                m_instance = new NullTypeNode();
+            return m_instance;
+        }
+    };
+
     class PointerTypeNode : public TypeNode
     {
         PointerTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::PointerTypeNode; }
