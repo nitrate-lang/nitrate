@@ -39,6 +39,8 @@
 #include <iostream>
 #include <stdexcept>
 
+using namespace libquixcc;
+
 LIB_EXPORT void quixcc_lexconf(quixcc_job_t *job,
                                quixcc_lexer_config_t config) {
   // if (config & QUIXCC_LEXCONF_IGN_COM)
@@ -68,11 +70,11 @@ static quix_inline void erase_sid(quixcc_job_t *job, quixcc_sid_t sid) {
 
 static quix_inline bool check_and_init(quixcc_job_t *job) {
   bool preprocessor_config(quixcc_job_t * job,
-                           std::unique_ptr<libquixcc::PrepEngine> & prep);
+                           std::unique_ptr<PrepEngine> & prep);
 
   if (job->m_prep) return true;
 
-  job->m_prep = std::make_unique<libquixcc::PrepEngine>(*job);
+  job->m_prep = std::make_unique<PrepEngine>(*job);
 
   if (!preprocessor_config(job, job->m_prep)) return false;
 
@@ -103,14 +105,14 @@ static quix_inline quixcc_tok_t fetch_token(quixcc_job_t *job) {
       ret.val.voucher = publish_string(job, tok.as<std::string>());
       break;
     case QUIXCC_LEX_KW:
-      ret.val.kw = static_cast<quixcc_lex_kw_t>(tok.as<libquixcc::Keyword>());
+      ret.val.kw = static_cast<quixcc_lex_kw_t>(tok.as<Keyword>());
       break;
     case QUIXCC_LEX_OP:
-      ret.val.op = static_cast<quixcc_lex_op_t>(tok.as<libquixcc::Operator>());
+      ret.val.op = static_cast<quixcc_lex_op_t>(tok.as<Operator>());
       break;
     case QUIXCC_LEX_PUNCT:
       ret.val.punct =
-          static_cast<quixcc_lex_punct_t>(tok.as<libquixcc::Punctor>());
+          static_cast<quixcc_lex_punct_t>(tok.as<Punctor>());
       break;
     case QUIXCC_LEX_INT:
       ret.val.voucher = publish_string(job, tok.as<std::string>());
@@ -217,18 +219,18 @@ LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job,
       return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
     case QUIXCC_LEX_KW:
       return snprintf(buf, len, "%s",
-                      libquixcc::keyword_map_inverse
-                          .at(static_cast<libquixcc::Keyword>(tok->val.kw))
+                      keyword_map_inverse
+                          .at(static_cast<Keyword>(tok->val.kw))
                           .data());
     case QUIXCC_LEX_OP:
       return snprintf(buf, len, "%s",
-                      libquixcc::operator_map_inverse
-                          .at(static_cast<libquixcc::Operator>(tok->val.op))
+                      operator_map_inverse
+                          .at(static_cast<Operator>(tok->val.op))
                           .data());
     case QUIXCC_LEX_PUNCT:
       return snprintf(buf, len, "%s",
-                      libquixcc::punctor_map_inverse
-                          .at(static_cast<libquixcc::Punctor>(tok->val.punct))
+                      punctor_map_inverse
+                          .at(static_cast<Punctor>(tok->val.punct))
                           .data());
     case QUIXCC_LEX_INT:
       return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
@@ -266,18 +268,18 @@ LIB_EXPORT size_t quixcc_tok_humanize(quixcc_job_t *job,
                       quixcc_getstr(job, tok->val.voucher));
     case QUIXCC_LEX_KW:
       return snprintf(buf, len, "KW(%s)",
-                      libquixcc::keyword_map_inverse
-                          .at(static_cast<libquixcc::Keyword>(tok->val.kw))
+                      keyword_map_inverse
+                          .at(static_cast<Keyword>(tok->val.kw))
                           .data());
     case QUIXCC_LEX_OP:
       return snprintf(buf, len, "OP(%s)",
-                      libquixcc::operator_map_inverse
-                          .at(static_cast<libquixcc::Operator>(tok->val.op))
+                      operator_map_inverse
+                          .at(static_cast<Operator>(tok->val.op))
                           .data());
     case QUIXCC_LEX_PUNCT:
       return snprintf(buf, len, "PUNCT(%s)",
-                      libquixcc::punctor_map_inverse
-                          .at(static_cast<libquixcc::Punctor>(tok->val.punct))
+                      punctor_map_inverse
+                          .at(static_cast<Punctor>(tok->val.punct))
                           .data());
     case QUIXCC_LEX_INT:
       return snprintf(buf, len, "INT(%s)",

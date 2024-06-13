@@ -36,7 +36,9 @@
 
 #include <sstream>
 
-libquixcc::Loc libquixcc::Loc::operator-(int_fast32_t rhs) const {
+using namespace libquixcc;
+
+Loc Loc::operator-(int_fast32_t rhs) const {
   if (rhs <= col) return Loc(line, col - rhs, file);
 
   Loc new_loc = *this;
@@ -52,14 +54,13 @@ libquixcc::Loc libquixcc::Loc::operator-(int_fast32_t rhs) const {
   return new_loc;
 }
 
-libquixcc::Token::Token(libquixcc::TT _type, libquixcc::TokVal value,
-                        libquixcc::Loc _loc) {
+Token::Token(TT _type, TokVal value, Loc _loc) {
   type = _type;
   m_value = value;
   m_loc = _loc;
 }
 
-std::string libquixcc::Token::serialize(bool human_readable) const {
+std::string Token::serialize(bool human_readable) const {
   (void)human_readable;
   std::stringstream ss;
 

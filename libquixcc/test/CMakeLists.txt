@@ -30,11 +30,13 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_EXE_LINKER_FLAGS "-static")
 
-add_executable(libquixcc-test-suite ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc)
+file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*/*.cc")
+
+add_executable(libquixcc-test-suite ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc ${SOURCES})
 target_link_libraries(libquixcc-test-suite GTest::gtest_main quixcc-static z crypto)
 target_link_options(libquixcc-test-suite PRIVATE --coverage)
 add_dependencies(libquixcc-test-suite quixcc-static)
-target_include_directories(libquixcc-test-suite PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+target_include_directories(libquixcc-test-suite PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include ${CMAKE_CURRENT_SOURCE_DIR}/src)
 add_custom_target(libquixcc-test-suite-out ALL DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/test-suite.cc)
 
 add_test(NAME libquixcc-test-suite COMMAND libquixcc-test-suite)

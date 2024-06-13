@@ -33,55 +33,45 @@
 
 #include <parsetree/nodes/AllNodes.h>
 
-std::map<libquixcc::TypeNode *, libquixcc::MutTypeNode *>
-    libquixcc::MutTypeNode::m_instances;
-libquixcc::U8TypeNode *libquixcc::U8TypeNode::m_instance = nullptr;
-libquixcc::U16TypeNode *libquixcc::U16TypeNode::m_instance = nullptr;
-libquixcc::U32TypeNode *libquixcc::U32TypeNode::m_instance = nullptr;
-libquixcc::U64TypeNode *libquixcc::U64TypeNode::m_instance = nullptr;
-libquixcc::U128TypeNode *libquixcc::U128TypeNode::m_instance = nullptr;
-libquixcc::I8TypeNode *libquixcc::I8TypeNode::m_instance = nullptr;
-libquixcc::I16TypeNode *libquixcc::I16TypeNode::m_instance = nullptr;
-libquixcc::I32TypeNode *libquixcc::I32TypeNode::m_instance = nullptr;
-libquixcc::I64TypeNode *libquixcc::I64TypeNode::m_instance = nullptr;
-libquixcc::I128TypeNode *libquixcc::I128TypeNode::m_instance = nullptr;
-libquixcc::F32TypeNode *libquixcc::F32TypeNode::m_instance = nullptr;
-libquixcc::F64TypeNode *libquixcc::F64TypeNode::m_instance = nullptr;
-libquixcc::BoolTypeNode *libquixcc::BoolTypeNode::m_instance = nullptr;
-libquixcc::VoidTypeNode *libquixcc::VoidTypeNode::m_instance = nullptr;
-libquixcc::NullTypeNode *libquixcc::NullTypeNode::m_instance = nullptr;
-std::map<libquixcc::TypeNode *, libquixcc::PointerTypeNode *>
-    libquixcc::PointerTypeNode::m_instances;
-std::map<std::string, libquixcc::OpaqueTypeNode *>
-    libquixcc::OpaqueTypeNode::m_instances;
-libquixcc::StringTypeNode *libquixcc::StringTypeNode::m_instance = nullptr;
-std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>,
-         libquixcc::StructTypeNode *>
-    libquixcc::StructTypeNode::m_instances;
-std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>,
-         libquixcc::GroupTypeNode *>
-    libquixcc::GroupTypeNode::m_instances;
-std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>,
-         libquixcc::RegionTypeNode *>
-    libquixcc::RegionTypeNode::m_instances;
-std::map<std::pair<std::vector<libquixcc::TypeNode *>, std::string>,
-         libquixcc::UnionTypeNode *>
-    libquixcc::UnionTypeNode::m_instances;
-thread_local std::map<
-    std::pair<libquixcc::TypeNode *, std::shared_ptr<libquixcc::ConstExprNode>>,
-    libquixcc::ArrayTypeNode *>
-    libquixcc::ArrayTypeNode::m_instances;
-thread_local std::map<libquixcc::TypeNode *, libquixcc::VectorTypeNode *>
-    libquixcc::VectorTypeNode::m_instances;
-thread_local std::map<libquixcc::TypeNode *, libquixcc::ResultTypeNode *>
-    libquixcc::ResultTypeNode::m_instances;
-thread_local std::map<libquixcc::TypeNode *, libquixcc::GeneratorTypeNode *>
-    libquixcc::GeneratorTypeNode::m_instances;
-thread_local std::unordered_map<std::string,
-                                std::shared_ptr<libquixcc::UserTypeNode>>
-    libquixcc::UserTypeNode::m_instances;
-std::map<libquixcc::FunctionTypeNode::Inner, libquixcc::FunctionTypeNode *>
-    libquixcc::FunctionTypeNode::s_instances;
-std::map<std::pair<std::string, libquixcc::TypeNode *>,
-         libquixcc::EnumTypeNode *>
-    libquixcc::EnumTypeNode::m_instances;
+using namespace libquixcc;
+
+std::map<TypeNode *, MutTypeNode *> MutTypeNode::m_instances;
+U8TypeNode *U8TypeNode::m_instance = nullptr;
+U16TypeNode *U16TypeNode::m_instance = nullptr;
+U32TypeNode *U32TypeNode::m_instance = nullptr;
+U64TypeNode *U64TypeNode::m_instance = nullptr;
+U128TypeNode *U128TypeNode::m_instance = nullptr;
+I8TypeNode *I8TypeNode::m_instance = nullptr;
+I16TypeNode *I16TypeNode::m_instance = nullptr;
+I32TypeNode *I32TypeNode::m_instance = nullptr;
+I64TypeNode *I64TypeNode::m_instance = nullptr;
+I128TypeNode *I128TypeNode::m_instance = nullptr;
+F32TypeNode *F32TypeNode::m_instance = nullptr;
+F64TypeNode *F64TypeNode::m_instance = nullptr;
+BoolTypeNode *BoolTypeNode::m_instance = nullptr;
+VoidTypeNode *VoidTypeNode::m_instance = nullptr;
+NullTypeNode *NullTypeNode::m_instance = nullptr;
+std::map<TypeNode *, PointerTypeNode *> PointerTypeNode::m_instances;
+std::map<std::string, OpaqueTypeNode *> OpaqueTypeNode::m_instances;
+StringTypeNode *StringTypeNode::m_instance = nullptr;
+std::map<std::pair<std::vector<TypeNode *>, std::string>, StructTypeNode *>
+    StructTypeNode::m_instances;
+std::map<std::pair<std::vector<TypeNode *>, std::string>, GroupTypeNode *>
+    GroupTypeNode::m_instances;
+std::map<std::pair<std::vector<TypeNode *>, std::string>, RegionTypeNode *>
+    RegionTypeNode::m_instances;
+std::map<std::pair<std::vector<TypeNode *>, std::string>, UnionTypeNode *>
+    UnionTypeNode::m_instances;
+thread_local std::map<std::pair<TypeNode *, std::shared_ptr<ConstExprNode>>,
+                      ArrayTypeNode *>
+    ArrayTypeNode::m_instances;
+thread_local std::map<TypeNode *, VectorTypeNode *> VectorTypeNode::m_instances;
+thread_local std::map<TypeNode *, ResultTypeNode *> ResultTypeNode::m_instances;
+thread_local std::map<TypeNode *, GeneratorTypeNode *>
+    GeneratorTypeNode::m_instances;
+thread_local std::unordered_map<std::string, std::shared_ptr<UserTypeNode>>
+    UserTypeNode::m_instances;
+std::map<FunctionTypeNode::Inner, FunctionTypeNode *>
+    FunctionTypeNode::s_instances;
+std::map<std::pair<std::string, TypeNode *>, EnumTypeNode *>
+    EnumTypeNode::m_instances;

@@ -50,222 +50,224 @@
 #include <stdexcept>
 #include <unordered_map>
 
+using namespace libquixcc;
+
 ///=============================================================================
 
 #define FLOATING_POINT_PRECISION 32
 
 namespace libquixcc {
-const std::unordered_map<std::string_view, libquixcc::Keyword> keyword_map = {
-    {"subsystem", libquixcc::Keyword::Subsystem},
-    {"import", libquixcc::Keyword::Import},
-    {"pub", libquixcc::Keyword::Pub},
+const std::unordered_map<std::string_view, Keyword> keyword_map = {
+    {"subsystem", Keyword::Subsystem},
+    {"import", Keyword::Import},
+    {"pub", Keyword::Pub},
 
-    {"type", libquixcc::Keyword::Type},
-    {"let", libquixcc::Keyword::Let},
-    {"var", libquixcc::Keyword::Var},
-    {"const", libquixcc::Keyword::Const},
-    {"static", libquixcc::Keyword::Static},
+    {"type", Keyword::Type},
+    {"let", Keyword::Let},
+    {"var", Keyword::Var},
+    {"const", Keyword::Const},
+    {"static", Keyword::Static},
 
-    {"struct", libquixcc::Keyword::Struct},
-    {"region", libquixcc::Keyword::Region},
-    {"group", libquixcc::Keyword::Group},
-    {"union", libquixcc::Keyword::Union},
-    {"opaque", libquixcc::Keyword::Opaque},
-    {"enum", libquixcc::Keyword::Enum},
+    {"struct", Keyword::Struct},
+    {"region", Keyword::Region},
+    {"group", Keyword::Group},
+    {"union", Keyword::Union},
+    {"opaque", Keyword::Opaque},
+    {"enum", Keyword::Enum},
 
-    {"fn", libquixcc::Keyword::Fn},
-    {"noexcept", libquixcc::Keyword::Noexcept},
-    {"foreign", libquixcc::Keyword::Foreign},
-    {"impure", libquixcc::Keyword::Impure},
-    {"tsafe", libquixcc::Keyword::Tsafe},
-    {"pure", libquixcc::Keyword::Pure},
-    {"quasipure", libquixcc::Keyword::Quasipure},
-    {"retropure", libquixcc::Keyword::Retropure},
-    {"crashpoint", libquixcc::Keyword::CrashPoint},
-    {"inline", libquixcc::Keyword::Inline},
+    {"fn", Keyword::Fn},
+    {"noexcept", Keyword::Noexcept},
+    {"foreign", Keyword::Foreign},
+    {"impure", Keyword::Impure},
+    {"tsafe", Keyword::Tsafe},
+    {"pure", Keyword::Pure},
+    {"quasipure", Keyword::Quasipure},
+    {"retropure", Keyword::Retropure},
+    {"crashpoint", Keyword::CrashPoint},
+    {"inline", Keyword::Inline},
 
-    {"if", libquixcc::Keyword::If},
-    {"else", libquixcc::Keyword::Else},
-    {"for", libquixcc::Keyword::For},
-    {"while", libquixcc::Keyword::While},
-    {"do", libquixcc::Keyword::Do},
-    {"switch", libquixcc::Keyword::Switch},
-    {"case", libquixcc::Keyword::Case},
-    {"default", libquixcc::Keyword::Default},
-    {"break", libquixcc::Keyword::Break},
-    {"continue", libquixcc::Keyword::Continue},
-    {"ret", libquixcc::Keyword::Return},
-    {"retif", libquixcc::Keyword::Retif},
-    {"retz", libquixcc::Keyword::Retz},
-    {"retv", libquixcc::Keyword::Retv},
+    {"if", Keyword::If},
+    {"else", Keyword::Else},
+    {"for", Keyword::For},
+    {"while", Keyword::While},
+    {"do", Keyword::Do},
+    {"switch", Keyword::Switch},
+    {"case", Keyword::Case},
+    {"default", Keyword::Default},
+    {"break", Keyword::Break},
+    {"continue", Keyword::Continue},
+    {"ret", Keyword::Return},
+    {"retif", Keyword::Retif},
+    {"retz", Keyword::Retz},
+    {"retv", Keyword::Retv},
 
-    {"__asm__", libquixcc::Keyword::__Asm__},
+    {"__asm__", Keyword::__Asm__},
 
-    {"void", libquixcc::Keyword::Void},
-    {"undef", libquixcc::Keyword::Undef},
-    {"null", libquixcc::Keyword::Null},
-    {"true", libquixcc::Keyword::True},
-    {"false", libquixcc::Keyword::False}};
+    {"void", Keyword::Void},
+    {"undef", Keyword::Undef},
+    {"null", Keyword::Null},
+    {"true", Keyword::True},
+    {"false", Keyword::False}};
 
-const std::unordered_map<libquixcc::Keyword, std::string_view>
-    keyword_map_inverse = {{libquixcc::Keyword::Subsystem, "subsystem"},
-                           {libquixcc::Keyword::Import, "import"},
-                           {libquixcc::Keyword::Pub, "pub"},
+const std::unordered_map<Keyword, std::string_view>
+    keyword_map_inverse = {{Keyword::Subsystem, "subsystem"},
+                           {Keyword::Import, "import"},
+                           {Keyword::Pub, "pub"},
 
-                           {libquixcc::Keyword::Type, "type"},
-                           {libquixcc::Keyword::Let, "let"},
-                           {libquixcc::Keyword::Var, "var"},
-                           {libquixcc::Keyword::Const, "const"},
-                           {libquixcc::Keyword::Static, "static"},
+                           {Keyword::Type, "type"},
+                           {Keyword::Let, "let"},
+                           {Keyword::Var, "var"},
+                           {Keyword::Const, "const"},
+                           {Keyword::Static, "static"},
 
-                           {libquixcc::Keyword::Struct, "struct"},
-                           {libquixcc::Keyword::Region, "region"},
-                           {libquixcc::Keyword::Group, "group"},
-                           {libquixcc::Keyword::Union, "union"},
-                           {libquixcc::Keyword::Opaque, "opaque"},
-                           {libquixcc::Keyword::Enum, "enum"},
+                           {Keyword::Struct, "struct"},
+                           {Keyword::Region, "region"},
+                           {Keyword::Group, "group"},
+                           {Keyword::Union, "union"},
+                           {Keyword::Opaque, "opaque"},
+                           {Keyword::Enum, "enum"},
 
-                           {libquixcc::Keyword::Fn, "fn"},
-                           {libquixcc::Keyword::Noexcept, "noexcept"},
-                           {libquixcc::Keyword::Foreign, "foreign"},
-                           {libquixcc::Keyword::Impure, "impure"},
-                           {libquixcc::Keyword::Tsafe, "tsafe"},
-                           {libquixcc::Keyword::Pure, "pure"},
-                           {libquixcc::Keyword::Quasipure, "quasipure"},
-                           {libquixcc::Keyword::Retropure, "retropure"},
-                           {libquixcc::Keyword::CrashPoint, "crashpoint"},
-                           {libquixcc::Keyword::Inline, "inline"},
+                           {Keyword::Fn, "fn"},
+                           {Keyword::Noexcept, "noexcept"},
+                           {Keyword::Foreign, "foreign"},
+                           {Keyword::Impure, "impure"},
+                           {Keyword::Tsafe, "tsafe"},
+                           {Keyword::Pure, "pure"},
+                           {Keyword::Quasipure, "quasipure"},
+                           {Keyword::Retropure, "retropure"},
+                           {Keyword::CrashPoint, "crashpoint"},
+                           {Keyword::Inline, "inline"},
 
-                           {libquixcc::Keyword::If, "if"},
-                           {libquixcc::Keyword::Else, "else"},
-                           {libquixcc::Keyword::For, "for"},
-                           {libquixcc::Keyword::While, "while"},
-                           {libquixcc::Keyword::Do, "do"},
-                           {libquixcc::Keyword::Switch, "switch"},
-                           {libquixcc::Keyword::Case, "case"},
-                           {libquixcc::Keyword::Default, "default"},
-                           {libquixcc::Keyword::Break, "break"},
-                           {libquixcc::Keyword::Continue, "continue"},
-                           {libquixcc::Keyword::Return, "ret"},
-                           {libquixcc::Keyword::Retif, "retif"},
-                           {libquixcc::Keyword::Retz, "retz"},
-                           {libquixcc::Keyword::Retv, "retv"},
+                           {Keyword::If, "if"},
+                           {Keyword::Else, "else"},
+                           {Keyword::For, "for"},
+                           {Keyword::While, "while"},
+                           {Keyword::Do, "do"},
+                           {Keyword::Switch, "switch"},
+                           {Keyword::Case, "case"},
+                           {Keyword::Default, "default"},
+                           {Keyword::Break, "break"},
+                           {Keyword::Continue, "continue"},
+                           {Keyword::Return, "ret"},
+                           {Keyword::Retif, "retif"},
+                           {Keyword::Retz, "retz"},
+                           {Keyword::Retv, "retv"},
 
-                           {libquixcc::Keyword::__Asm__, "__asm__"},
+                           {Keyword::__Asm__, "__asm__"},
 
-                           {libquixcc::Keyword::Void, "void"},
-                           {libquixcc::Keyword::Undef, "undef"},
-                           {libquixcc::Keyword::Null, "null"},
-                           {libquixcc::Keyword::True, "true"},
-                           {libquixcc::Keyword::False, "false"}};
+                           {Keyword::Void, "void"},
+                           {Keyword::Undef, "undef"},
+                           {Keyword::Null, "null"},
+                           {Keyword::True, "true"},
+                           {Keyword::False, "false"}};
 
-const std::unordered_map<std::string_view, libquixcc::Punctor> punctor_map = {
-    {"(", libquixcc::Punctor::OpenParen},
-    {")", libquixcc::Punctor::CloseParen},
-    {"{", libquixcc::Punctor::OpenBrace},
-    {"}", libquixcc::Punctor::CloseBrace},
-    {"[", libquixcc::Punctor::OpenBracket},
-    {"]", libquixcc::Punctor::CloseBracket},
-    {".", libquixcc::Punctor::Dot},
-    {",", libquixcc::Punctor::Comma},
-    {":", libquixcc::Punctor::Colon},
-    {";", libquixcc::Punctor::Semicolon}};
+const std::unordered_map<std::string_view, Punctor> punctor_map = {
+    {"(", Punctor::OpenParen},
+    {")", Punctor::CloseParen},
+    {"{", Punctor::OpenBrace},
+    {"}", Punctor::CloseBrace},
+    {"[", Punctor::OpenBracket},
+    {"]", Punctor::CloseBracket},
+    {".", Punctor::Dot},
+    {",", Punctor::Comma},
+    {":", Punctor::Colon},
+    {";", Punctor::Semicolon}};
 
-const std::unordered_map<libquixcc::Punctor, std::string_view>
-    punctor_map_inverse = {{libquixcc::Punctor::OpenParen, "("},
-                           {libquixcc::Punctor::CloseParen, ")"},
-                           {libquixcc::Punctor::OpenBrace, "{"},
-                           {libquixcc::Punctor::CloseBrace, "}"},
-                           {libquixcc::Punctor::OpenBracket, "["},
-                           {libquixcc::Punctor::CloseBracket, "]"},
-                           {libquixcc::Punctor::Dot, "."},
-                           {libquixcc::Punctor::Comma, ","},
-                           {libquixcc::Punctor::Colon, ":"},
-                           {libquixcc::Punctor::Semicolon, ";"}};
+const std::unordered_map<Punctor, std::string_view>
+    punctor_map_inverse = {{Punctor::OpenParen, "("},
+                           {Punctor::CloseParen, ")"},
+                           {Punctor::OpenBrace, "{"},
+                           {Punctor::CloseBrace, "}"},
+                           {Punctor::OpenBracket, "["},
+                           {Punctor::CloseBracket, "]"},
+                           {Punctor::Dot, "."},
+                           {Punctor::Comma, ","},
+                           {Punctor::Colon, ":"},
+                           {Punctor::Semicolon, ";"}};
 
-const std::unordered_map<std::string_view, libquixcc::Operator> operator_map = {
-    {"<", libquixcc::Operator::LessThan},
-    {">", libquixcc::Operator::GreaterThan},
-    {"=", libquixcc::Operator::Assign},
-    {"@", libquixcc::Operator::At},
-    {"=>", libquixcc::Operator::Arrow},
-    {"-", libquixcc::Operator::Minus},
-    {"+", libquixcc::Operator::Plus},
-    {"*", libquixcc::Operator::Multiply},
-    {"/", libquixcc::Operator::Divide},
-    {"%", libquixcc::Operator::Modulo},
-    {"&", libquixcc::Operator::BitwiseAnd},
-    {"|", libquixcc::Operator::BitwiseOr},
-    {"^", libquixcc::Operator::BitwiseXor},
-    {"~", libquixcc::Operator::BitwiseNot},
-    {"!", libquixcc::Operator::LogicalNot},
-    {"?", libquixcc::Operator::Question},
-    {"+=", libquixcc::Operator::PlusAssign},
-    {"-=", libquixcc::Operator::MinusAssign},
-    {"*=", libquixcc::Operator::MultiplyAssign},
-    {"/=", libquixcc::Operator::DivideAssign},
-    {"%=", libquixcc::Operator::ModuloAssign},
-    {"|=", libquixcc::Operator::BitwiseOrAssign},
-    {"&=", libquixcc::Operator::BitwiseAndAssign},
-    {"^=", libquixcc::Operator::BitwiseXorAssign},
-    {"<<", libquixcc::Operator::LeftShift},
-    {">>", libquixcc::Operator::RightShift},
-    {"==", libquixcc::Operator::Equal},
-    {"!=", libquixcc::Operator::NotEqual},
-    {"&&", libquixcc::Operator::LogicalAnd},
-    {"||", libquixcc::Operator::LogicalOr},
-    {"^^", libquixcc::Operator::LogicalXor},
-    {"<=", libquixcc::Operator::LessThanEqual},
-    {">=", libquixcc::Operator::GreaterThanEqual},
-    {"++", libquixcc::Operator::Increment},
-    {"--", libquixcc::Operator::Decrement},
-    {"^^=", libquixcc::Operator::XorAssign},
-    {"||=", libquixcc::Operator::OrAssign},
-    {"&&=", libquixcc::Operator::AndAssign},
-    {"<<=", libquixcc::Operator::LeftShiftAssign},
-    {">>=", libquixcc::Operator::RightShiftAssign}};
+const std::unordered_map<std::string_view, Operator> operator_map = {
+    {"<", Operator::LessThan},
+    {">", Operator::GreaterThan},
+    {"=", Operator::Assign},
+    {"@", Operator::At},
+    {"=>", Operator::Arrow},
+    {"-", Operator::Minus},
+    {"+", Operator::Plus},
+    {"*", Operator::Multiply},
+    {"/", Operator::Divide},
+    {"%", Operator::Modulo},
+    {"&", Operator::BitwiseAnd},
+    {"|", Operator::BitwiseOr},
+    {"^", Operator::BitwiseXor},
+    {"~", Operator::BitwiseNot},
+    {"!", Operator::LogicalNot},
+    {"?", Operator::Question},
+    {"+=", Operator::PlusAssign},
+    {"-=", Operator::MinusAssign},
+    {"*=", Operator::MultiplyAssign},
+    {"/=", Operator::DivideAssign},
+    {"%=", Operator::ModuloAssign},
+    {"|=", Operator::BitwiseOrAssign},
+    {"&=", Operator::BitwiseAndAssign},
+    {"^=", Operator::BitwiseXorAssign},
+    {"<<", Operator::LeftShift},
+    {">>", Operator::RightShift},
+    {"==", Operator::Equal},
+    {"!=", Operator::NotEqual},
+    {"&&", Operator::LogicalAnd},
+    {"||", Operator::LogicalOr},
+    {"^^", Operator::LogicalXor},
+    {"<=", Operator::LessThanEqual},
+    {">=", Operator::GreaterThanEqual},
+    {"++", Operator::Increment},
+    {"--", Operator::Decrement},
+    {"^^=", Operator::XorAssign},
+    {"||=", Operator::OrAssign},
+    {"&&=", Operator::AndAssign},
+    {"<<=", Operator::LeftShiftAssign},
+    {">>=", Operator::RightShiftAssign}};
 
-const std::unordered_map<libquixcc::Operator, std::string_view>
-    operator_map_inverse = {{libquixcc::Operator::LessThan, "<"},
-                            {libquixcc::Operator::GreaterThan, ">"},
-                            {libquixcc::Operator::Assign, "="},
-                            {libquixcc::Operator::At, "@"},
-                            {libquixcc::Operator::Arrow, "=>"},
-                            {libquixcc::Operator::Minus, "-"},
-                            {libquixcc::Operator::Plus, "+"},
-                            {libquixcc::Operator::Multiply, "*"},
-                            {libquixcc::Operator::Divide, "/"},
-                            {libquixcc::Operator::Modulo, "%"},
-                            {libquixcc::Operator::BitwiseAnd, "&"},
-                            {libquixcc::Operator::BitwiseOr, "|"},
-                            {libquixcc::Operator::BitwiseXor, "^"},
-                            {libquixcc::Operator::BitwiseNot, "~"},
-                            {libquixcc::Operator::LogicalNot, "!"},
-                            {libquixcc::Operator::Question, "?"},
-                            {libquixcc::Operator::PlusAssign, "+="},
-                            {libquixcc::Operator::MinusAssign, "-="},
-                            {libquixcc::Operator::MultiplyAssign, "*="},
-                            {libquixcc::Operator::DivideAssign, "/="},
-                            {libquixcc::Operator::ModuloAssign, "%="},
-                            {libquixcc::Operator::BitwiseOrAssign, "|="},
-                            {libquixcc::Operator::BitwiseAndAssign, "&="},
-                            {libquixcc::Operator::BitwiseXorAssign, "^="},
-                            {libquixcc::Operator::LeftShift, "<<"},
-                            {libquixcc::Operator::RightShift, ">>"},
-                            {libquixcc::Operator::Equal, "=="},
-                            {libquixcc::Operator::NotEqual, "!="},
-                            {libquixcc::Operator::LogicalAnd, "&&"},
-                            {libquixcc::Operator::LogicalOr, "||"},
-                            {libquixcc::Operator::LogicalXor, "^^"},
-                            {libquixcc::Operator::LessThanEqual, "<="},
-                            {libquixcc::Operator::GreaterThanEqual, ">="},
-                            {libquixcc::Operator::Increment, "++"},
-                            {libquixcc::Operator::Decrement, "--"},
-                            {libquixcc::Operator::XorAssign, "^^="},
-                            {libquixcc::Operator::OrAssign, "||="},
-                            {libquixcc::Operator::AndAssign, "&&="},
-                            {libquixcc::Operator::LeftShiftAssign, "<<="},
-                            {libquixcc::Operator::RightShiftAssign, ">>="}};
+const std::unordered_map<Operator, std::string_view>
+    operator_map_inverse = {{Operator::LessThan, "<"},
+                            {Operator::GreaterThan, ">"},
+                            {Operator::Assign, "="},
+                            {Operator::At, "@"},
+                            {Operator::Arrow, "=>"},
+                            {Operator::Minus, "-"},
+                            {Operator::Plus, "+"},
+                            {Operator::Multiply, "*"},
+                            {Operator::Divide, "/"},
+                            {Operator::Modulo, "%"},
+                            {Operator::BitwiseAnd, "&"},
+                            {Operator::BitwiseOr, "|"},
+                            {Operator::BitwiseXor, "^"},
+                            {Operator::BitwiseNot, "~"},
+                            {Operator::LogicalNot, "!"},
+                            {Operator::Question, "?"},
+                            {Operator::PlusAssign, "+="},
+                            {Operator::MinusAssign, "-="},
+                            {Operator::MultiplyAssign, "*="},
+                            {Operator::DivideAssign, "/="},
+                            {Operator::ModuloAssign, "%="},
+                            {Operator::BitwiseOrAssign, "|="},
+                            {Operator::BitwiseAndAssign, "&="},
+                            {Operator::BitwiseXorAssign, "^="},
+                            {Operator::LeftShift, "<<"},
+                            {Operator::RightShift, ">>"},
+                            {Operator::Equal, "=="},
+                            {Operator::NotEqual, "!="},
+                            {Operator::LogicalAnd, "&&"},
+                            {Operator::LogicalOr, "||"},
+                            {Operator::LogicalXor, "^^"},
+                            {Operator::LessThanEqual, "<="},
+                            {Operator::GreaterThanEqual, ">="},
+                            {Operator::Increment, "++"},
+                            {Operator::Decrement, "--"},
+                            {Operator::XorAssign, "^^="},
+                            {Operator::OrAssign, "||="},
+                            {Operator::AndAssign, "&&="},
+                            {Operator::LeftShiftAssign, "<<="},
+                            {Operator::RightShiftAssign, ">>="}};
 
 const std::set<char> operator_chars = {'<', '>', '=', '@', '-', '+', '*', '/',
                                        '%', '&', '|', '^', '~', '!', '?'};
@@ -299,7 +301,7 @@ static constexpr std::array<uint8_t, 256> hexLookup = []() {
   return hexLookup;
 }();
 
-std::string libquixcc::Scanner::escape_string(std::string_view str) {
+std::string Scanner::escape_string(std::string_view str) {
   std::ostringstream output;
 
   for (char c : str) {
@@ -344,16 +346,16 @@ std::string libquixcc::Scanner::escape_string(std::string_view str) {
 ///=============================================================================
 
 thread_local std::map<std::string, std::unique_ptr<char[]>>
-    libquixcc::TLCString::m_data;
+    TLCString::m_data;
 
-libquixcc::StreamLexer::StreamLexer() {
+StreamLexer::StreamLexer() {
   m_src = nullptr;
   m_buf_pos = GETC_BUFFER_SIZE;
   m_tok = std::nullopt;
   added_newline = false;
 }
 
-char libquixcc::StreamLexer::getc() {
+char StreamLexer::getc() {
   if (m_buf_pos > GETC_BUFFER_SIZE) [[unlikely]]
     return EOF;
 
@@ -389,7 +391,7 @@ char libquixcc::StreamLexer::getc() {
   return c;
 }
 
-bool libquixcc::StreamLexer::set_source(FILE *src,
+bool StreamLexer::set_source(FILE *src,
                                         const std::string &filename) {
   if (src == nullptr) return false;
 
@@ -623,7 +625,7 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type) {
   return g_canonicalize_number_cache[number] = (norm = s), true;
 }
 
-const libquixcc::Token &libquixcc::StreamLexer::read_token() {
+const Token &StreamLexer::read_token() {
   enum class LexState {
     Start,
     Identifier,
@@ -1006,7 +1008,7 @@ const libquixcc::Token &libquixcc::StreamLexer::read_token() {
   }
 }
 
-const libquixcc::Token &libquixcc::StreamLexer::peek() {
+const Token &StreamLexer::peek() {
   /* If we have a token, return it */
   if (m_tok.has_value()) return std::move(m_tok.value());
 
@@ -1024,13 +1026,13 @@ const libquixcc::Token &libquixcc::StreamLexer::peek() {
   }
 }
 
-libquixcc::Token libquixcc::StreamLexer::next() {
+Token StreamLexer::next() {
   Token tok = peek();
   m_tok = std::nullopt;
   return tok;
 }
 
-bool libquixcc::StringLexer::set_source(const std::string &source_code,
+bool StringLexer::set_source(const std::string &source_code,
                                         const std::string &filename) {
   /* Copy the source internally */
   m_src = source_code;
@@ -1043,15 +1045,15 @@ bool libquixcc::StringLexer::set_source(const std::string &source_code,
   return StreamLexer::set_source(m_file, filename);
 }
 
-libquixcc::StringLexer::~StringLexer() {
+StringLexer::~StringLexer() {
   if (m_file != nullptr) {
     fclose(m_file);
     m_file = nullptr;
   }
 }
 
-bool libquixcc::StringLexer::QuickLex(const std::string &source_code,
-                                      std::vector<libquixcc::Token> &tokens,
+bool StringLexer::QuickLex(const std::string &source_code,
+                                      std::vector<Token> &tokens,
                                       const std::string &filename) {
   tokens.clear();
 

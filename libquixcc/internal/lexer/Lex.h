@@ -142,6 +142,43 @@ class StringLexer : public StreamLexer {
                        std::vector<Token> &tokens,
                        const std::string &filename = "quicklex");
 };
+
+class MockScanner : public Scanner {
+ private:
+  std::deque<Token> m_tokens;
+  Token m_tok;
+
+ public:
+  MockScanner() : m_tok(Token(TT::Eof, "")) {}
+  MockScanner(const std::vector<Token> &tokens) {
+    for (const auto &tok : tokens) {
+      m_tokens.push_back(tok);
+    }
+
+    if (!m_tokens.empty()) {
+      m_tok = m_tokens.front();
+      m_tokens.pop_front();
+    } else {
+      m_tok = Token(TT::Eof, "");
+    }
+  }
+  ~MockScanner() = default;
+
+  Token next() override {
+    if (m_tokens.empty()) {
+      m_tok = Token(TT::Eof, "");
+    } else {
+      m_tok = m_tokens.front();
+      m_tokens.pop_front();
+    }
+
+    return m_tok;
+  }
+
+  const Token &peek() override { return m_tok; }
+
+  void push(Token tok) override { m_tokens.push_front(tok); }
+};
 };  // namespace libquixcc
 
 #endif  // __QUIXCC_LEX_H__
