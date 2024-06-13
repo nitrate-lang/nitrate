@@ -105,12 +105,14 @@ static auto conv(const DowncastExprNode *n, QState &state) -> QResult;
 static auto conv(const PtrToIntCastExprNode *n, QState &state) -> QResult;
 static auto conv(const IntToPtrCastExprNode *n, QState &state) -> QResult;
 static auto conv(const UnaryExprNode *n, QState &state) -> QResult;
+static auto conv(const PostUnaryExprNode *n, QState &state) -> QResult;
 static auto conv(const BinaryExprNode *n, QState &state) -> QResult;
 static auto conv(const CallExprNode *n, QState &state) -> QResult;
 static auto conv(const ListExprNode *n, QState &state) -> QResult;
 static auto conv(const MemberAccessNode *n, QState &state) -> QResult;
 static auto conv(const IndexNode *n, QState &state) -> QResult;
 static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult;
+static auto conv(const ConstPostUnaryExprNode *n, QState &state) -> QResult;
 static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult;
 static auto conv(const IdentifierNode *n, QState &state) -> QResult;
 static auto conv(const MutTypeNode *n, QState &state) -> QResult;
@@ -296,6 +298,19 @@ static auto conv(const UnaryExprNode *n, QState &state) -> QResult {
       return Deref::create(e);
     default:
       throw std::runtime_error("UnaryExprNode not implemented");
+  }
+}
+
+static auto conv(const PostUnaryExprNode *n, QState &state) -> QResult {
+  auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
+
+  switch (n->m_op) {
+    case Operator::Increment:
+      return PostInc::create(e);
+    case Operator::Decrement:
+      return PostDec::create(e);
+    default:
+      throw std::runtime_error("PostUnaryExprNode not implemented");
   }
 }
 
@@ -615,6 +630,19 @@ static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult {
       return BitNot::create(e);
     default:
       throw std::runtime_error("ConstUnaryExprNode not implemented");
+  }
+}
+
+static auto conv(const ConstPostUnaryExprNode *n, QState &state) -> QResult {
+  auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
+
+  switch (n->m_op) {
+    case Operator::Increment:
+      return PostInc::create(e);
+    case Operator::Decrement:
+      return PostDec::create(e);
+    default:
+      throw std::runtime_error("ConstPostUnaryExprNode not implemented");
   }
 }
 
@@ -1362,6 +1390,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
       r = conv(n->as<ConstUnaryExprNode>(), state);
       break;
 
+    case libquixcc::NodeType::ConstPostUnaryExprNode:
+      r = conv(n->as<ConstPostUnaryExprNode>(), state);
+      break;
+
     case libquixcc::NodeType::ConstBinaryExprNode:
       r = conv(n->as<ConstBinaryExprNode>(), state);
       break;
@@ -1396,6 +1428,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
 
     case libquixcc::NodeType::UnaryExprNode:
       r = conv(n->as<UnaryExprNode>(), state);
+      break;
+
+    case libquixcc::NodeType::PostUnaryExprNode:
+      r = conv(n->as<PostUnaryExprNode>(), state);
       break;
 
     case libquixcc::NodeType::BinaryExprNode:

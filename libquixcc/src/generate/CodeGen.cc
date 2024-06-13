@@ -345,6 +345,38 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Assign *node) {
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(
+    const libquixcc::ir::delta::PostInc *node) {
+  bool old = m_state.m_deref;
+  m_state.m_deref = false;
+  auto ptr = special_load(node->var);
+
+  auto v = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(),
+                                        ptr);
+  auto inc = m_ctx->m_builder->CreateAdd(
+      v, llvm::ConstantInt::get(v->getType(), 1, true));
+  m_ctx->m_builder->CreateStore(inc, ptr);
+
+  m_state.m_deref = old;
+  return v;
+}
+
+llvm::Value *libquixcc::LLVM14Codegen::gen(
+    const libquixcc::ir::delta::PostDec *node) {
+  bool old = m_state.m_deref;
+  m_state.m_deref = false;
+  auto ptr = special_load(node->var);
+
+  auto v = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(),
+                                        ptr);
+  auto dec = m_ctx->m_builder->CreateSub(
+      v, llvm::ConstantInt::get(v->getType(), 1, true));
+  m_ctx->m_builder->CreateStore(dec, ptr);
+
+  m_state.m_deref = old;
+  return v;
+}
+
+llvm::Value *libquixcc::LLVM14Codegen::gen(
     const libquixcc::ir::delta::AddressOf *node) {
   bool old = m_state.m_deref;
   m_state.m_deref = false;
@@ -854,6 +886,8 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(
   match(List);
   match(Ident);
   match(Assign);
+  match(PostInc);
+  match(PostDec);
   match(AddressOf);
   match(Deref);
   match(Member);

@@ -57,6 +57,17 @@ class UnaryExprNode : public ExprNode {
   std::shared_ptr<ExprNode> m_expr;
 };
 
+class PostUnaryExprNode : public ExprNode {
+ public:
+  PostUnaryExprNode(Operator op, const std::shared_ptr<ExprNode> &expr)
+      : m_op(op), m_expr(expr) {
+    ntype = NodeType::PostUnaryExprNode;
+  }
+
+  Operator m_op;
+  std::shared_ptr<ExprNode> m_expr;
+};
+
 class BinaryExprNode : public ExprNode {
  public:
   BinaryExprNode(Operator op, const std::shared_ptr<ExprNode> &lhs,

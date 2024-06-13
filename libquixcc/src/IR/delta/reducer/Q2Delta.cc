@@ -173,6 +173,8 @@ static auto conv(const ir::q::String *n, DState &state) -> DResult;
 static auto conv(const ir::q::Char *n, DState &state) -> DResult;
 static auto conv(const ir::q::List *n, DState &state) -> DResult;
 static auto conv(const ir::q::Assign *n, DState &state) -> DResult;
+static auto conv(const ir::q::PostInc *n, DState &state) -> DResult;
+static auto conv(const ir::q::PostDec *n, DState &state) -> DResult;
 static auto conv(const ir::q::AddressOf *n, DState &state) -> DResult;
 static auto conv(const ir::q::Deref *n, DState &state) -> DResult;
 static auto conv(const ir::q::Member *n, DState &state) -> DResult;
@@ -707,6 +709,14 @@ static auto conv(const ir::q::Assign *n, DState &state) -> DResult {
                         conv(n->rhs, state)[0]->as<Expr>());
 }
 
+static auto conv(const ir::q::PostInc *n, DState &state) -> DResult {
+  return PostInc::create(conv(n->lhs, state)[0]->as<Expr>());
+}
+
+static auto conv(const ir::q::PostDec *n, DState &state) -> DResult {
+  return PostDec::create(conv(n->lhs, state)[0]->as<Expr>());
+}
+
 static auto conv(const ir::q::AddressOf *n, DState &state) -> DResult {
   return AddressOf::create(conv(n->lhs, state)[0]->as<Expr>());
 }
@@ -1044,6 +1054,14 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult {
 
     case libquixcc::ir::q::NodeType::Assign:
       r = conv(n->as<ir::q::Assign>(), state);
+      break;
+
+    case libquixcc::ir::q::NodeType::PostInc:
+      r = conv(n->as<ir::q::PostInc>(), state);
+      break;
+
+    case libquixcc::ir::q::NodeType::PostDec:
+      r = conv(n->as<ir::q::PostDec>(), state);
       break;
 
     case libquixcc::ir::q::NodeType::AddressOf:

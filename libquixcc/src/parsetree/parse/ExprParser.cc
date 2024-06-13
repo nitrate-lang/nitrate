@@ -338,15 +338,13 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
       case TT::Operator: {
         auto op = tok.as<Operator>();
         std::shared_ptr<ExprNode> expr;
-        if (!parse_expr(job, scanner, terminators, expr, depth + 1))
+        if (!parse_expr(job, scanner, terminators, expr, depth + 1) || !expr)
           return false;
 
         if (stack.empty()) {
-          // Unary operator
           stack.push(std::make_shared<UnaryExprNode>(op, expr));
           continue;
         } else if (stack.size() == 1) {
-          // Binary operator
           auto left = stack.top();
           stack.pop();
           stack.push(std::make_shared<BinaryExprNode>(op, left, expr));
@@ -368,6 +366,18 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           if (fcall == nullptr) return false;
 
           stack.push(fcall);
+          continue;
+        } else if (scanner->peek().is<Operator>(Operator::Increment)) {
+          auto p = std::make_shared<PostUnaryExprNode>(
+              Operator::Increment, std::make_shared<IdentifierNode>(ident));
+          stack.push(p);
+          scanner->next();
+          continue;
+        } else if (scanner->peek().is<Operator>(Operator::Decrement)) {
+          auto p = std::make_shared<PostUnaryExprNode>(
+              Operator::Decrement, std::make_shared<IdentifierNode>(ident));
+          stack.push(p);
+          scanner->next();
           continue;
         } else {
           stack.push(std::make_shared<IdentifierNode>(ident));

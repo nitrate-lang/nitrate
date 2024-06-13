@@ -93,7 +93,8 @@ class ParseNode {
     if (is<T>()) return true;
 
     if (std::is_same_v<T, ConstExprNode>)
-      return is<ConstUnaryExprNode>() || is<ConstBinaryExprNode>();
+      return is<ConstUnaryExprNode>() || is<ConstPostUnaryExprNode>() ||
+             is<ConstBinaryExprNode>();
 
     if (std::is_same_v<T, LiteralNode>)
       return is<IntegerNode>() || is<FloatLiteralNode>() || is<StringNode>() ||
@@ -107,8 +108,8 @@ class ParseNode {
              is<PtrToIntCastExprNode>();
 
     if (std::is_same_v<T, ExprNode>)
-      return is<UnaryExprNode>() || is<BinaryExprNode>() ||
-             is<CallExprNode>() || is<ListExprNode>() ||
+      return is<UnaryExprNode>() || is<PostUnaryExprNode>() ||
+             is<BinaryExprNode>() || is<CallExprNode>() || is<ListExprNode>() ||
              is<MemberAccessNode>() || isof<CastExprNode>() ||
              isof<LiteralNode>();
 

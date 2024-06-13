@@ -192,6 +192,10 @@ const Type *Xor::infer() const { return I1::create(); }
 
 const Type *Assign::infer() const { return value->infer(); }
 
+const Type *PostInc::infer() const { return var->infer(); }
+
+const Type *PostDec::infer() const { return var->infer(); }
+
 const Type *AddressOf::infer() const { return Ptr::create(lhs->infer()); }
 
 const Type *Deref::infer() const { return lhs->infer()->as<Ptr>()->type; }

@@ -39,6 +39,18 @@ bool libquixcc::ir::q::Assign::verify_impl() const {
   return lhs->verify() && rhs->verify();
 }
 
+boost::uuids::uuid libquixcc::ir::q::PostInc::hash_impl() const {
+  return Hasher().gettag().add(lhs).hash();
+}
+
+bool libquixcc::ir::q::PostInc::verify_impl() const { return lhs->verify(); }
+
+boost::uuids::uuid libquixcc::ir::q::PostDec::hash_impl() const {
+  return Hasher().gettag().add(lhs).hash();
+}
+
+bool libquixcc::ir::q::PostDec::verify_impl() const { return lhs->verify(); }
+
 boost::uuids::uuid libquixcc::ir::q::AddressOf::hash_impl() const {
   return Hasher().gettag().add(lhs).hash();
 }

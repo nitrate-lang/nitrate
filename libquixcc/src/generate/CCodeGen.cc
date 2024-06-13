@@ -296,6 +296,18 @@ void libquixcc::C11Codegen::gen(const ir::delta::Assign *n,
   gen(n->value, code);
 }
 
+void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::PostInc *node, std::ostream &code)
+{
+  gen(node->var, code);
+  code << "++";
+}
+
+void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::PostDec *node, std::ostream &code)
+{
+  gen(node->var, code);
+  code << "--";
+}
+
 void libquixcc::C11Codegen::gen(const ir::delta::AddressOf *n,
                                 std::ostream &code) {
   code << "&";

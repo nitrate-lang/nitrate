@@ -70,12 +70,14 @@ size_t traversal::ParseTreePreorder::dispatch(
       {NodeType::PtrToIntCastExprNode, (Func)PtrToIntCastExprNode_iter},
       {NodeType::IntToPtrCastExprNode, (Func)IntToPtrCastExprNode_iter},
       {NodeType::UnaryExprNode, (Func)UnaryExprNode_iter},
+      {NodeType::PostUnaryExprNode, (Func)UnaryExprNode_iter},
       {NodeType::BinaryExprNode, (Func)BinaryExprNode_iter},
       {NodeType::CallExprNode, (Func)CallExprNode_iter},
       {NodeType::ListExprNode, (Func)ListExprNode_iter},
       {NodeType::MemberAccessNode, (Func)MemberAccessNode_iter},
       {NodeType::IndexNode, (Func)IndexNode_iter},
       {NodeType::ConstUnaryExprNode, (Func)ConstUnaryExprNode_iter},
+      {NodeType::ConstPostUnaryExprNode, (Func)ConstUnaryExprNode_iter},
       {NodeType::ConstBinaryExprNode, (Func)ConstBinaryExprNode_iter},
       {NodeType::IdentifierNode, (Func)IdentifierNode_iter},
       {NodeType::MutTypeNode, (Func)MutTypeNode_iter},
@@ -260,6 +262,12 @@ size_t traversal::ParseTreePreorder::UnaryExprNode_iter(
   return next(state, node->m_expr) + 1;
 }
 
+size_t traversal::ParseTreePreorder::PostUnaryExprNode_iter(
+    traversal::ParseTreeTraversalState &state, PostUnaryExprNode *node) {
+  state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
+  return next(state, node->m_expr) + 1;
+}
+
 size_t traversal::ParseTreePreorder::BinaryExprNode_iter(
     traversal::ParseTreeTraversalState &state, BinaryExprNode *node) {
   state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_lhs));
@@ -320,6 +328,12 @@ size_t traversal::ParseTreePreorder::IndexNode_iter(
 
 size_t traversal::ParseTreePreorder::ConstUnaryExprNode_iter(
     traversal::ParseTreeTraversalState &state, ConstUnaryExprNode *node) {
+  state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
+  return next(state, node->m_expr) + 1;
+}
+
+size_t traversal::ParseTreePreorder::ConstPostUnaryExprNode_iter(
+    traversal::ParseTreeTraversalState &state, ConstPostUnaryExprNode *node) {
   state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
   return next(state, node->m_expr) + 1;
 }

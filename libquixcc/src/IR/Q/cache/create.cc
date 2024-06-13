@@ -185,6 +185,8 @@ static std::map<std::string, const Char *> char_insts;
 static std::map<std::vector<const Expr *>, const List *> list_insts;
 static std::map<std::pair<const Value *, const Value *>, const Assign *>
     assign_insts;
+static std::map<const Value *, const PostInc *> postinc_insts;
+static std::map<const Value *, const PostDec *> postdec_insts;
 static std::map<const Expr *, const AddressOf *> addressof_insts;
 static std::map<const Expr *, const Deref *> deref_insts;
 static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *>
@@ -771,6 +773,20 @@ const libquixcc::ir::q::Assign *libquixcc::ir::q::Assign::create(
   auto key = std::make_pair(lhs, rhs);
   if (!assign_insts.contains(key)) assign_insts[key] = new Assign(lhs, rhs);
   return assign_insts[key];
+}
+
+const libquixcc::ir::q::PostInc *libquixcc::ir::q::PostInc::create(
+    const libquixcc::ir::q::Expr *lhs) {
+  lock(NodeType::PostInc);
+  if (!postinc_insts.contains(lhs)) postinc_insts[lhs] = new PostInc(lhs);
+  return postinc_insts[lhs];
+}
+
+const libquixcc::ir::q::PostDec *libquixcc::ir::q::PostDec::create(
+    const libquixcc::ir::q::Expr *lhs) {
+  lock(NodeType::PostDec);
+  if (!postdec_insts.contains(lhs)) postdec_insts[lhs] = new PostDec(lhs);
+  return postdec_insts[lhs];
 }
 
 const libquixcc::ir::q::AddressOf *libquixcc::ir::q::AddressOf::create(

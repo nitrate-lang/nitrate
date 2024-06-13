@@ -194,6 +194,10 @@ const Type *Xor::infer() const { return I1::create(); }
 
 const Type *Assign::infer() const { return rhs->infer(); }
 
+const Type *PostInc::infer() const { return lhs->infer(); }
+
+const Type *PostDec::infer() const { return lhs->infer(); }
+
 const libquixcc::ir::q::Type *libquixcc::ir::q::AddressOf::infer() const {
   return Ptr::create(lhs->infer());
 }

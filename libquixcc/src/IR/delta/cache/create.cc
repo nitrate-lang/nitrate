@@ -111,6 +111,8 @@ static std::map<std::pair<const Value *, const Value *>, const Xor *> xor_insts;
 static std::map<std::tuple<const Value *, const Value *, uint64_t>,
                 const Assign *>
     assign_insts;
+static std::map<const Expr *, const PostInc *> postinc_insts;
+static std::map<const Expr *, const PostDec *> postdec_insts;
 static std::map<const Expr *, const AddressOf *> addressof_insts;
 static std::map<const Expr *, const Deref *> deref_insts;
 static std::map<std::tuple<const Value *, size_t, const Type *>, const Member *>
@@ -467,6 +469,20 @@ const delta::Assign *delta::Assign::create(const Expr *var, const Expr *value,
   if (!assign_insts.contains(key))
     assign_insts[key] = new Assign(var, value, rank);
   return assign_insts[key];
+}
+
+const libquixcc::ir::delta::PostInc *libquixcc::ir::delta::PostInc::create(
+    const libquixcc::ir::delta::Expr *var) {
+  lock(NodeType::PostInc);
+  if (!postinc_insts.contains(var)) postinc_insts[var] = new PostInc(var);
+  return postinc_insts[var];
+}
+
+const libquixcc::ir::delta::PostDec *libquixcc::ir::delta::PostDec::create(
+    const libquixcc::ir::delta::Expr *var) {
+  lock(NodeType::PostDec);
+  if (!postdec_insts.contains(var)) postdec_insts[var] = new PostDec(var);
+  return postdec_insts[var];
 }
 
 const delta::AddressOf *delta::AddressOf::create(const delta::Expr *lhs) {

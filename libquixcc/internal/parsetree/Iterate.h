@@ -96,6 +96,8 @@ class ParseTreePreorder {
                                           IntToPtrCastExprNode *node);
   static size_t UnaryExprNode_iter(ParseTreeTraversalState &state,
                                    UnaryExprNode *node);
+  static size_t PostUnaryExprNode_iter(ParseTreeTraversalState &state,
+                                       PostUnaryExprNode *node);
   static size_t BinaryExprNode_iter(ParseTreeTraversalState &state,
                                     BinaryExprNode *node);
   static size_t CallExprNode_iter(ParseTreeTraversalState &state,
@@ -107,6 +109,8 @@ class ParseTreePreorder {
   static size_t IndexNode_iter(ParseTreeTraversalState &state, IndexNode *node);
   static size_t ConstUnaryExprNode_iter(ParseTreeTraversalState &state,
                                         ConstUnaryExprNode *node);
+  static size_t ConstPostUnaryExprNode_iter(ParseTreeTraversalState &state,
+                                            ConstPostUnaryExprNode *node);
   static size_t ConstBinaryExprNode_iter(ParseTreeTraversalState &state,
                                          ConstBinaryExprNode *node);
   static size_t IdentifierNode_iter(ParseTreeTraversalState &state,

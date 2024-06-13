@@ -107,12 +107,14 @@ std::string serialize::ParseTreeSerializer::dispatch(
       {NodeType::PtrToIntCastExprNode, (Func)PtrToIntCastExprNode_conv},
       {NodeType::IntToPtrCastExprNode, (Func)IntToPtrCastExprNode_conv},
       {NodeType::UnaryExprNode, (Func)UnaryExprNode_conv},
+      {NodeType::PostUnaryExprNode, (Func)PostUnaryExprNode_conv},
       {NodeType::BinaryExprNode, (Func)BinaryExprNode_conv},
       {NodeType::CallExprNode, (Func)CallExprNode_conv},
       {NodeType::ListExprNode, (Func)ListExprNode_conv},
       {NodeType::MemberAccessNode, (Func)MemberAccessNode_conv},
       {NodeType::IndexNode, (Func)IndexNode_conv},
       {NodeType::ConstUnaryExprNode, (Func)ConstUnaryExprNode_conv},
+      {NodeType::ConstPostUnaryExprNode, (Func)ConstPostUnaryExprNode_conv},
       {NodeType::ConstBinaryExprNode, (Func)ConstBinaryExprNode_conv},
       {NodeType::IdentifierNode, (Func)IdentifierNode_conv},
       {NodeType::MutTypeNode, (Func)MutTypeNode_conv},
@@ -304,6 +306,16 @@ std::string serialize::ParseTreeSerializer::UnaryExprNode_conv(
   return str + "}";
 }
 
+std::string serialize::ParseTreeSerializer::PostUnaryExprNode_conv(
+    serialize::ParseTreeSerializerState &state, const PostUnaryExprNode *node) {
+  std::string str = "{\"ntype\":\"PostUnaryExprNode\",\"op\":\"";
+  str += operator_map_inverse.at(node->m_op);
+  str += "\",\"operand\":";
+  str += next(state, node->m_expr);
+
+  return str + "}";
+}
+
 std::string serialize::ParseTreeSerializer::BinaryExprNode_conv(
     serialize::ParseTreeSerializerState &state, const BinaryExprNode *node) {
   std::string str = "{\"ntype\":\"BinaryExprNode\",\"op\":\"";
@@ -378,6 +390,17 @@ std::string serialize::ParseTreeSerializer::ConstUnaryExprNode_conv(
     serialize::ParseTreeSerializerState &state,
     const ConstUnaryExprNode *node) {
   std::string str = "{\"ntype\":\"ConstUnaryExprNode\",\"op\":\"";
+  str += operator_map_inverse.at(node->m_op);
+  str += "\",\"operand\":";
+  str += next(state, node->m_expr);
+
+  return str + "}";
+}
+
+std::string serialize::ParseTreeSerializer::ConstPostUnaryExprNode_conv(
+    serialize::ParseTreeSerializerState &state,
+    const ConstPostUnaryExprNode *node) {
+  std::string str = "{\"ntype\":\"ConstPostUnaryExprNode\",\"op\":\"";
   str += operator_map_inverse.at(node->m_op);
   str += "\",\"operand\":";
   str += next(state, node->m_expr);

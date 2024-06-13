@@ -117,6 +117,8 @@ class LLVM14Codegen {
   llvm::Value *gen(const ir::delta::List *node);
   llvm::Value *gen(const ir::delta::Ident *node);
   llvm::Value *gen(const ir::delta::Assign *node);
+  llvm::Value *gen(const ir::delta::PostInc *node);
+  llvm::Value *gen(const ir::delta::PostDec *node);
   llvm::Value *gen(const ir::delta::AddressOf *node);
   llvm::Value *gen(const ir::delta::Deref *node);
   llvm::Value *gen(const ir::delta::Member *node);
@@ -216,6 +218,8 @@ class C11Codegen {
   void gen(const ir::delta::List *node, std::ostream &code);
   void gen(const ir::delta::Ident *node, std::ostream &code);
   void gen(const ir::delta::Assign *node, std::ostream &code);
+  void gen(const ir::delta::PostInc *node, std::ostream &code);
+  void gen(const ir::delta::PostDec *node, std::ostream &code);
   void gen(const ir::delta::AddressOf *node, std::ostream &code);
   void gen(const ir::delta::Deref *node, std::ostream &code);
   void gen(const ir::delta::Member *node, std::ostream &code);

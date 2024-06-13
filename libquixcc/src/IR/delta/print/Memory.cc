@@ -49,6 +49,22 @@ bool libquixcc::ir::delta::Assign::print_impl(std::ostream &os,
   return true;
 }
 
+bool libquixcc::ir::delta::PostInc::print_impl(
+    std::ostream &os, libquixcc::ir::PState &state) const {
+  os << "(";
+  if (!var->print(os, state)) return false;
+  os << "++)";
+  return true;
+}
+
+bool libquixcc::ir::delta::PostDec::print_impl(
+    std::ostream &os, libquixcc::ir::PState &state) const {
+  os << "(";
+  if (!var->print(os, state)) return false;
+  os << "--)";
+  return true;
+}
+
 bool libquixcc::ir::delta::AddressOf::print_impl(
     std::ostream &os, libquixcc::ir::PState &state) const {
   os << "(&";

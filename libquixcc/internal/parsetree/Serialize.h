@@ -73,6 +73,8 @@ class ParseTreeSerializer {
       ParseTreeSerializerState &state, const IntToPtrCastExprNode *node);
   static std::string UnaryExprNode_conv(ParseTreeSerializerState &state,
                                         const UnaryExprNode *node);
+  static std::string PostUnaryExprNode_conv(ParseTreeSerializerState &state,
+                                            const PostUnaryExprNode *node);
   static std::string BinaryExprNode_conv(ParseTreeSerializerState &state,
                                          const BinaryExprNode *node);
   static std::string CallExprNode_conv(ParseTreeSerializerState &state,
@@ -85,6 +87,8 @@ class ParseTreeSerializer {
                                     const IndexNode *node);
   static std::string ConstUnaryExprNode_conv(ParseTreeSerializerState &state,
                                              const ConstUnaryExprNode *node);
+  static std::string ConstPostUnaryExprNode_conv(
+      ParseTreeSerializerState &state, const ConstPostUnaryExprNode *node);
   static std::string ConstBinaryExprNode_conv(ParseTreeSerializerState &state,
                                               const ConstBinaryExprNode *node);
   static std::string IdentifierNode_conv(ParseTreeSerializerState &state,

@@ -62,6 +62,36 @@ class Assign : public Expr {
   const Expr *value;
 };
 
+class PostInc : public Expr {
+ protected:
+  bool print_impl(std::ostream &os, PState &state) const override;
+  boost::uuids::uuid hash_impl() const override;
+  bool verify_impl() const override;
+
+  PostInc(const Expr *var) : var(var) { ntype = (int)NodeType::PostInc; }
+
+ public:
+  static const PostInc *create(const Expr *var);
+  const Type *infer() const override;
+
+  const Expr *var;
+};
+
+class PostDec : public Expr {
+ protected:
+  bool print_impl(std::ostream &os, PState &state) const override;
+  boost::uuids::uuid hash_impl() const override;
+  bool verify_impl() const override;
+
+  PostDec(const Expr *var) : var(var) { ntype = (int)NodeType::PostDec; }
+
+ public:
+  static const PostDec *create(const Expr *var);
+  const Type *infer() const override;
+
+  const Expr *var;
+};
+
 class AddressOf : public Expr {
  protected:
   bool print_impl(std::ostream &os, PState &state) const override;

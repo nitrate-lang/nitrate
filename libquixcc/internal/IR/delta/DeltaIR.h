@@ -78,6 +78,8 @@ enum class NodeType {
 
   /* Memory */
   Assign,
+  PostInc,
+  PostDec,
   AddressOf,
   Deref,
   Member,
