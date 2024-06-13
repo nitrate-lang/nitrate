@@ -1,33 +1,33 @@
-////////////////////////////////////////////////////////////////////////////////////
-///                                                                              ///
-///    ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
-///    ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
-///      ░▒▓█▓▒░                                                                 ///
-///       ░▒▓██▓▒░                                                               ///
-///                                                                              ///
-///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
-///     * Copyright (C) 2024 Wesley C. Jones                                     ///
-///                                                                              ///
-///     The QUIX Compiler Suite is free software; you can redistribute it and/or ///
-///     modify it under the terms of the GNU Lesser General Public               ///
-///     License as published by the Free Software Foundation; either             ///
-///     version 2.1 of the License, or (at your option) any later version.       ///
-///                                                                              ///
-///     The QUIX Compiler Suite is distributed in the hope that it will be       ///
-///     useful, but WITHOUT ANY WARRANTY; without even the implied warranty of   ///
-///     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU        ///
-///     Lesser General Public License for more details.                          ///
-///                                                                              ///
-///     You should have received a copy of the GNU Lesser General Public         ///
-///     License along with the QUIX Compiler Suite; if not, see                  ///
-///     <https://www.gnu.org/licenses/>.                                         ///
-///                                                                              ///
-////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+///    ░▒▓█▓▒░                                                               ///
+///     ░▒▓██▓▒░                                                             ///
+///                                                                          ///
+///   * QUIX LANG COMPILER - The official compiler for the Quix language.    ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The QUIX Compiler Suite is free software; you can redistribute it or   ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The QUIX Compiler Suite is distributed in the hope that it will be     ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the QUIX Compiler Suite; if not, see                ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __QUIXCC_PARSE_NODES_EXPR_H__
 #define __QUIXCC_PARSE_NODES_EXPR_H__
@@ -36,127 +36,153 @@
 #error "This header requires C++"
 #endif
 
-#include <string>
-#include <vector>
-#include <memory>
-
-#include <llvm/LLVMWrapper.h>
 #include <lexer/Token.h>
+#include <llvm/LLVMWrapper.h>
 #include <parsetree/nodes/BasicNodes.h>
 #include <parsetree/nodes/LiteralNode.h>
 
-namespace libquixcc
-{
-    class UnaryExprNode : public ExprNode
-    {
-    public:
-        UnaryExprNode(Operator op, const std::shared_ptr<ExprNode> &expr) : m_op(op), m_expr(expr) { ntype = NodeType::UnaryExprNode; }
+#include <memory>
+#include <string>
+#include <vector>
 
-        Operator m_op;
-        std::shared_ptr<ExprNode> m_expr;
-    };
+namespace libquixcc {
+class UnaryExprNode : public ExprNode {
+ public:
+  UnaryExprNode(Operator op, const std::shared_ptr<ExprNode> &expr)
+      : m_op(op), m_expr(expr) {
+    ntype = NodeType::UnaryExprNode;
+  }
 
-    class BinaryExprNode : public ExprNode
-    {
-    public:
-        BinaryExprNode(Operator op, const std::shared_ptr<ExprNode> &lhs, const std::shared_ptr<ExprNode> &rhs)
-            : m_op(op), m_lhs(lhs), m_rhs(rhs) { ntype = NodeType::BinaryExprNode; }
+  Operator m_op;
+  std::shared_ptr<ExprNode> m_expr;
+};
 
-        Operator m_op;
-        std::shared_ptr<ExprNode> m_lhs;
-        std::shared_ptr<ExprNode> m_rhs;
-    };
+class BinaryExprNode : public ExprNode {
+ public:
+  BinaryExprNode(Operator op, const std::shared_ptr<ExprNode> &lhs,
+                 const std::shared_ptr<ExprNode> &rhs)
+      : m_op(op), m_lhs(lhs), m_rhs(rhs) {
+    ntype = NodeType::BinaryExprNode;
+  }
 
-    class FunctionDeclNode;
+  Operator m_op;
+  std::shared_ptr<ExprNode> m_lhs;
+  std::shared_ptr<ExprNode> m_rhs;
+};
 
-    class CallExprNode : public ExprNode
-    {
-    public:
-        CallExprNode() { ntype = NodeType::CallExprNode; }
+class FunctionDeclNode;
 
-        std::shared_ptr<ExprNode> m_callee;
-        std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_named_args;
-        std::vector<std::shared_ptr<ExprNode>> m_positional_args;
-        std::shared_ptr<FunctionDeclNode> m_decl;
-    };
+class CallExprNode : public ExprNode {
+ public:
+  CallExprNode() { ntype = NodeType::CallExprNode; }
 
-    class ListExprNode : public ExprNode
-    {
-    public:
-        ListExprNode(std::vector<std::shared_ptr<ExprNode>> elements) : m_elements(elements) { ntype = NodeType::ListExprNode; }
+  std::shared_ptr<ExprNode> m_callee;
+  std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_named_args;
+  std::vector<std::shared_ptr<ExprNode>> m_positional_args;
+  std::shared_ptr<FunctionDeclNode> m_decl;
+};
 
-        std::vector<std::shared_ptr<ExprNode>> m_elements;
-    };
+class ListExprNode : public ExprNode {
+ public:
+  ListExprNode(std::vector<std::shared_ptr<ExprNode>> elements)
+      : m_elements(elements) {
+    ntype = NodeType::ListExprNode;
+  }
 
-    class MemberAccessNode : public ExprNode
-    {
-    public:
-        MemberAccessNode(const std::shared_ptr<ExprNode> &expr, const std::string &field) : m_expr(expr), m_field(field) { ntype = NodeType::MemberAccessNode; }
+  std::vector<std::shared_ptr<ExprNode>> m_elements;
+};
 
-        std::shared_ptr<ExprNode> m_expr;
-        std::string m_field;
-    };
+class MemberAccessNode : public ExprNode {
+ public:
+  MemberAccessNode(const std::shared_ptr<ExprNode> &expr,
+                   const std::string &field)
+      : m_expr(expr), m_field(field) {
+    ntype = NodeType::MemberAccessNode;
+  }
 
-    class IndexNode : public ExprNode
-    {
-    public:
-        IndexNode(const std::shared_ptr<ExprNode> &expr, const std::shared_ptr<ExprNode> &index) : m_expr(expr), m_index(index) { ntype = NodeType::IndexNode; }
+  std::shared_ptr<ExprNode> m_expr;
+  std::string m_field;
+};
 
-        std::shared_ptr<ExprNode> m_expr;
-        std::shared_ptr<ExprNode> m_index;
-    };
+class IndexNode : public ExprNode {
+ public:
+  IndexNode(const std::shared_ptr<ExprNode> &expr,
+            const std::shared_ptr<ExprNode> &index)
+      : m_expr(expr), m_index(index) {
+    ntype = NodeType::IndexNode;
+  }
 
-    class CastExprNode : public ExprNode
-    {
-    public:
-        CastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : m_expr(expr), m_type(type) { ntype = NodeType::CastExprNode; }
+  std::shared_ptr<ExprNode> m_expr;
+  std::shared_ptr<ExprNode> m_index;
+};
 
-        std::shared_ptr<ExprNode> m_expr;
-        TypeNode *m_type;
-    };
+class CastExprNode : public ExprNode {
+ public:
+  CastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type)
+      : m_expr(expr), m_type(type) {
+    ntype = NodeType::CastExprNode;
+  }
 
-    class StaticCastExprNode : public CastExprNode
-    {
-    public:
-        StaticCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::StaticCastExprNode; }
-    };
+  std::shared_ptr<ExprNode> m_expr;
+  TypeNode *m_type;
+};
 
-    class BitCastExprNode : public CastExprNode
-    {
-    public:
-        BitCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::BitCastExprNode; }
-    };
+class StaticCastExprNode : public CastExprNode {
+ public:
+  StaticCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type)
+      : CastExprNode(expr, type) {
+    ntype = NodeType::StaticCastExprNode;
+  }
+};
 
-    class SignedUpcastExprNode : public CastExprNode
-    {
-    public:
-        SignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::SignedUpcastExprNode; }
-    };
+class BitCastExprNode : public CastExprNode {
+ public:
+  BitCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type)
+      : CastExprNode(expr, type) {
+    ntype = NodeType::BitCastExprNode;
+  }
+};
 
-    class UnsignedUpcastExprNode : public CastExprNode
-    {
-    public:
-        UnsignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::UnsignedUpcastExprNode; }
-    };
+class SignedUpcastExprNode : public CastExprNode {
+ public:
+  SignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type)
+      : CastExprNode(expr, type) {
+    ntype = NodeType::SignedUpcastExprNode;
+  }
+};
 
-    class DowncastExprNode : public CastExprNode
-    {
-    public:
-        DowncastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::DowncastExprNode; }
-    };
+class UnsignedUpcastExprNode : public CastExprNode {
+ public:
+  UnsignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type)
+      : CastExprNode(expr, type) {
+    ntype = NodeType::UnsignedUpcastExprNode;
+  }
+};
 
-    class PtrToIntCastExprNode : public CastExprNode
-    {
-    public:
-        PtrToIntCastExprNode(const std::shared_ptr<ExprNode> &expr) : CastExprNode(expr, nullptr) { ntype = NodeType::PtrToIntCastExprNode; }
-    };
+class DowncastExprNode : public CastExprNode {
+ public:
+  DowncastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type)
+      : CastExprNode(expr, type) {
+    ntype = NodeType::DowncastExprNode;
+  }
+};
 
-    class IntToPtrCastExprNode : public CastExprNode
-    {
-    public:
-        IntToPtrCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type) : CastExprNode(expr, type) { ntype = NodeType::IntToPtrCastExprNode; }
-    };
+class PtrToIntCastExprNode : public CastExprNode {
+ public:
+  PtrToIntCastExprNode(const std::shared_ptr<ExprNode> &expr)
+      : CastExprNode(expr, nullptr) {
+    ntype = NodeType::PtrToIntCastExprNode;
+  }
+};
 
-}
+class IntToPtrCastExprNode : public CastExprNode {
+ public:
+  IntToPtrCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type)
+      : CastExprNode(expr, type) {
+    ntype = NodeType::IntToPtrCastExprNode;
+  }
+};
 
-#endif // __QUIXCC_PARSE_NODES_EXPR_H__
+}  // namespace libquixcc
+
+#endif  // __QUIXCC_PARSE_NODES_EXPR_H__

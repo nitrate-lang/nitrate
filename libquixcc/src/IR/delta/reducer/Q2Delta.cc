@@ -1,36 +1,33 @@
-////////////////////////////////////////////////////////////////////////////////////
-///                                                                              ///
-///    ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░
-///    ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-///   /// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░ ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░ ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░ ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░
-///   ///
-///    ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░
-///    ///
-///      ░▒▓█▓▒░ ///
-///       ░▒▓██▓▒░ ///
-///                                                                              ///
-///     * QUIX LANG COMPILER - The official compiler for the Quix language. ///
-///     * Copyright (C) 2024 Wesley C. Jones ///
-///                                                                              ///
-///     The QUIX Compiler Suite is free software; you can redistribute it and/or
-///     /// modify it under the terms of the GNU Lesser General Public ///
-///     License as published by the Free Software Foundation; either ///
-///     version 2.1 of the License, or (at your option) any later version. ///
-///                                                                              ///
-///     The QUIX Compiler Suite is distributed in the hope that it will be ///
-///     useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
-///     /// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-///     /// Lesser General Public License for more details. ///
-///                                                                              ///
-///     You should have received a copy of the GNU Lesser General Public ///
-///     License along with the QUIX Compiler Suite; if not, see ///
-///     <https://www.gnu.org/licenses/>. ///
-///                                                                              ///
-////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+///    ░▒▓█▓▒░                                                               ///
+///     ░▒▓██▓▒░                                                             ///
+///                                                                          ///
+///   * QUIX LANG COMPILER - The official compiler for the Quix language.    ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The QUIX Compiler Suite is free software; you can redistribute it or   ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The QUIX Compiler Suite is distributed in the hope that it will be     ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the QUIX Compiler Suite; if not, see                ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
 
 #include <IR/Q/Asm.h>
 #include <IR/Q/Call.h>
@@ -500,13 +497,11 @@ static auto conv(const ir::q::Loop *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::Break *n, DState &state) -> DResult {
-  /// TODO: Implement Break
-  throw std::runtime_error("DeltaIR translation: Break not implemented");
+  return Break::create();
 }
 
 static auto conv(const ir::q::Continue *n, DState &state) -> DResult {
-  /// TODO: Implement Continue
-  throw std::runtime_error("DeltaIR translation: Continue not implemented");
+  return Continue::create();
 }
 
 static auto conv(const ir::q::Ret *n, DState &state) -> DResult {
@@ -527,13 +522,28 @@ static auto conv(const ir::q::TryCatchFinally *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::Case *n, DState &state) -> DResult {
-  /// TODO: Implement Case
-  throw std::runtime_error("DeltaIR translation: Case not implemented");
+  auto value = conv(n->value, state)[0]->as<Expr>();
+  auto block = conv(n->body, state)[0]->as<Block>();
+
+  return Case::create(value, block);
 }
 
 static auto conv(const ir::q::Switch *n, DState &state) -> DResult {
   /// TODO: Implement Switch
-  throw std::runtime_error("DeltaIR translation: Switch not implemented");
+
+  auto value = conv(n->value, state)[0]->as<Expr>();
+
+  auto def =
+      n->defaultcase ? conv(n->defaultcase, state)[0]->as<Case>() : nullptr;
+
+  if (value->infer()->is_numeric()) {
+    std::vector<const Case *> cases;
+    for (auto c : n->cases) cases.push_back(conv(c, state)[0]->as<Case>());
+    return Switch::create(value, cases, def);
+  } else {
+    throw std::runtime_error(
+        "DeltaIR translation: Switch not implemented for non-numeric types");
+  }
 }
 
 static auto conv(const ir::q::Ident *n, DState &state) -> DResult {

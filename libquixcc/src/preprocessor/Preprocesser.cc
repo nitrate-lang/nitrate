@@ -1,357 +1,315 @@
-////////////////////////////////////////////////////////////////////////////////////
-///                                                                              ///
-///    ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
-///    ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
-///      ░▒▓█▓▒░                                                                 ///
-///       ░▒▓██▓▒░                                                               ///
-///                                                                              ///
-///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
-///     * Copyright (C) 2024 Wesley C. Jones                                     ///
-///                                                                              ///
-///     The QUIX Compiler Suite is free software; you can redistribute it and/or ///
-///     modify it under the terms of the GNU Lesser General Public               ///
-///     License as published by the Free Software Foundation; either             ///
-///     version 2.1 of the License, or (at your option) any later version.       ///
-///                                                                              ///
-///     The QUIX Compiler Suite is distributed in the hope that it will be       ///
-///     useful, but WITHOUT ANY WARRANTY; without even the implied warranty of   ///
-///     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU        ///
-///     Lesser General Public License for more details.                          ///
-///                                                                              ///
-///     You should have received a copy of the GNU Lesser General Public         ///
-///     License along with the QUIX Compiler Suite; if not, see                  ///
-///     <https://www.gnu.org/licenses/>.                                         ///
-///                                                                              ///
-////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+///    ░▒▓█▓▒░                                                               ///
+///     ░▒▓██▓▒░                                                             ///
+///                                                                          ///
+///   * QUIX LANG COMPILER - The official compiler for the Quix language.    ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The QUIX Compiler Suite is free software; you can redistribute it or   ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The QUIX Compiler Suite is distributed in the hope that it will be     ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the QUIX Compiler Suite; if not, see                ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
 
 #define QUIXCC_INTERNAL
 
+#include <LibMacro.h>
+#include <core/Logger.h>
+#include <preprocessor/AllMacros.h>
 #include <preprocessor/Preprocessor.h>
-#include <cstdio>
+
 #include <cctype>
-#include <stdexcept>
+#include <cmath>
+#include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <iomanip>
 #include <regex>
-#include <cmath>
-#include <core/Logger.h>
-#include <LibMacro.h>
-#include <filesystem>
-#include <preprocessor/AllMacros.h>
+#include <stdexcept>
 
 #define QUIX_HEADER_EXTENSION ".qh"
 #define QUIX_STATICS_FILE "~statics.qh"
 
-void libquixcc::PrepEngine::setup()
-{
-    m_macro_parser.add_routine("define", libquixcc::macro::ParseDefine);
-    m_macro_parser.add_routine("pragma", libquixcc::macro::ParsePragma);
-    m_macro_parser.add_routine("print", libquixcc::macro::ParsePrint);
-    m_macro_parser.add_routine("readstdin", libquixcc::macro::ParseReadStdin);
-    m_macro_parser.add_routine("encoding", libquixcc::macro::ParseEncoding);
-    m_macro_parser.add_routine("lang", libquixcc::macro::ParseLang);
-    m_macro_parser.add_routine("language", libquixcc::macro::ParseLang);
-    m_macro_parser.add_routine("copyright", libquixcc::macro::ParseAuthor);
-    m_macro_parser.add_routine("license", libquixcc::macro::ParseLicense);
-    m_macro_parser.add_routine("use", libquixcc::macro::ParseUse);
-    m_macro_parser.add_routine("description", libquixcc::macro::ParseDescription);
+void libquixcc::PrepEngine::setup() {
+  m_macro_parser.add_routine("define", libquixcc::macro::ParseDefine);
+  m_macro_parser.add_routine("pragma", libquixcc::macro::ParsePragma);
+  m_macro_parser.add_routine("print", libquixcc::macro::ParsePrint);
+  m_macro_parser.add_routine("readstdin", libquixcc::macro::ParseReadStdin);
+  m_macro_parser.add_routine("encoding", libquixcc::macro::ParseEncoding);
+  m_macro_parser.add_routine("lang", libquixcc::macro::ParseLang);
+  m_macro_parser.add_routine("language", libquixcc::macro::ParseLang);
+  m_macro_parser.add_routine("copyright", libquixcc::macro::ParseAuthor);
+  m_macro_parser.add_routine("license", libquixcc::macro::ParseLicense);
+  m_macro_parser.add_routine("use", libquixcc::macro::ParseUse);
+  m_macro_parser.add_routine("description", libquixcc::macro::ParseDescription);
 }
 
-void libquixcc::PrepEngine::addpath(const std::string &path)
-{
-    m_include_dirs.insert(path);
+void libquixcc::PrepEngine::addpath(const std::string &path) {
+  m_include_dirs.insert(path);
 
-    include_path = "";
-    for (auto &dir : m_include_dirs)
-    {
-        include_path += std::filesystem::absolute(dir).string();
+  include_path = "";
+  for (auto &dir : m_include_dirs) {
+    include_path += std::filesystem::absolute(dir).string();
 
-        if (dir != *m_include_dirs.rbegin())
-            include_path += ":";
+    if (dir != *m_include_dirs.rbegin()) include_path += ":";
+  }
+}
+
+libquixcc::PrepEngine::Entry libquixcc::PrepEngine::build_statics_decl() {
+  std::stringstream declcode;
+  declcode << "/* BEGIN AUTOGENERATED STATIC DECLARATIONS */\n";
+  for (auto &statics : m_statics) {
+    LOG(DEBUG) << log::raw << "Adding static declaration: " << statics.first
+               << " = " << statics.second << std::endl;
+    declcode << "@define " << statics.first << " " << statics.second << "\n";
+  }
+
+  /// TODO: detect actual platform and do this properly
+  declcode << "type usize = u64;\n";
+  declcode << "type isize = i64;\n";
+
+  declcode << "/* END AUTOGENERATED STATIC DECLARATIONS */\n";
+
+  auto ptr = new std::string(declcode.str());
+  FILE *f = fmemopen((void *)ptr->c_str(), ptr->size(), "r");
+  if (!f) throw std::runtime_error("Failed to create statics declaration file");
+  StreamLexer l;
+  if (!l.set_source(f, QUIX_STATICS_FILE))
+    throw std::runtime_error("Failed to set source for statics declaration");
+  return Entry(l, QUIX_STATICS_FILE, f, ptr);
+}
+
+bool libquixcc::PrepEngine::set_source(FILE *src, const std::string &filename) {
+  StreamLexer l;
+  if (!l.set_source(src, filename)) return false;
+  m_stack.push({l, filename, src});
+  job->m_filename.push(filename);
+
+  m_stack.push(build_statics_decl());
+  job->m_filename.push(QUIX_STATICS_FILE);
+  m_include_files.push_back(QUIX_STATICS_FILE);
+
+  return true;
+}
+
+libquixcc::Token libquixcc::PrepEngine::next() {
+  Token tok = peek();
+  m_tok = std::nullopt;
+  return tok;
+}
+
+const libquixcc::Token &libquixcc::PrepEngine::peek() {
+  if (m_tok) return m_tok.value();
+
+  m_tok = read_token();
+
+  return m_tok.value();
+}
+
+bool libquixcc::PrepEngine::get_static(const std::string &name,
+                                       std::string &value) const {
+  auto it = m_statics.find(name);
+  if (it == m_statics.end()) return false;
+  value = it->second;
+  return true;
+}
+
+bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok) {
+  StringLexer lexer;
+  if (!lexer.set_source(input_tok.as<std::string>().substr(6), "import")) {
+    LOG(ERROR) << "Failed to set source for import" << input_tok << std::endl;
+    return false;
+  }
+
+  Token tok = lexer.next();
+  if (tok.type != TT::Identifier) {
+    LOG(ERROR) << "Expected identifier after import" << tok << std::endl;
+    return false;
+  }
+
+  std::string filename =
+      std::regex_replace(tok.as<std::string>(), std::regex("::"), "/");
+
+  tok = lexer.peek();
+  if (tok.is<Punctor>(Punctor::OpenParen)) {
+    // <name>(version)
+    lexer.next();
+    tok = lexer.next();
+    if (tok.type == TT::Identifier) {
+      filename = filename + "/" + tok.as<std::string>() + QUIX_HEADER_EXTENSION;
+    } else if (tok.type == TT::Integer) {
+      filename = filename + "/" + tok.as<std::string>() + QUIX_HEADER_EXTENSION;
+    } else {
+      LOG(ERROR) << "Expected identifier or integer literal after import" << tok
+                 << std::endl;
+      return false;
     }
-}
-
-libquixcc::PrepEngine::Entry libquixcc::PrepEngine::build_statics_decl()
-{
-    std::stringstream declcode;
-    declcode << "/* BEGIN AUTOGENERATED STATIC DECLARATIONS */\n";
-    for (auto &statics : m_statics)
-    {
-        LOG(DEBUG) << log::raw << "Adding static declaration: " << statics.first << " = " << statics.second << std::endl;
-        declcode << "@define " << statics.first << " " << statics.second << "\n";
-    }
-
-    /// TODO: detect actual platform and do this properly
-    declcode << "type usize = u64;\n";
-    declcode << "type isize = i64;\n";
-
-    declcode << "/* END AUTOGENERATED STATIC DECLARATIONS */\n";
-
-    auto ptr = new std::string(declcode.str());
-    FILE *f = fmemopen((void *)ptr->c_str(), ptr->size(), "r");
-    if (!f)
-        throw std::runtime_error("Failed to create statics declaration file");
-    StreamLexer l;
-    if (!l.set_source(f, QUIX_STATICS_FILE))
-        throw std::runtime_error("Failed to set source for statics declaration");
-    return Entry(l, QUIX_STATICS_FILE, f, ptr);
-}
-
-bool libquixcc::PrepEngine::set_source(FILE *src, const std::string &filename)
-{
-    StreamLexer l;
-    if (!l.set_source(src, filename))
-        return false;
-    m_stack.push({l, filename, src});
-    job->m_filename.push(filename);
-
-    m_stack.push(build_statics_decl());
-    job->m_filename.push(QUIX_STATICS_FILE);
-    m_include_files.push_back(QUIX_STATICS_FILE);
-
-    return true;
-}
-
-libquixcc::Token libquixcc::PrepEngine::next()
-{
-    Token tok = peek();
-    m_tok = std::nullopt;
-    return tok;
-}
-
-const libquixcc::Token &libquixcc::PrepEngine::peek()
-{
-    if (m_tok)
-        return m_tok.value();
-
-    m_tok = read_token();
-
-    return m_tok.value();
-}
-
-bool libquixcc::PrepEngine::get_static(const std::string &name, std::string &value) const
-{
-    auto it = m_statics.find(name);
-    if (it == m_statics.end())
-        return false;
-    value = it->second;
-    return true;
-}
-
-bool libquixcc::PrepEngine::handle_import(const libquixcc::Token &input_tok)
-{
-    StringLexer lexer;
-    if (!lexer.set_source(input_tok.as<std::string>().substr(6), "import"))
-    {
-        LOG(ERROR) << "Failed to set source for import" << input_tok << std::endl;
-        return false;
-    }
-
-    Token tok = lexer.next();
-    if (tok.type != TT::Identifier)
-    {
-        LOG(ERROR) << "Expected identifier after import" << tok << std::endl;
-        return false;
-    }
-
-    std::string filename = std::regex_replace(tok.as<std::string>(), std::regex("::"), "/");
-
-    tok = lexer.peek();
-    if (tok.is<Punctor>(Punctor::OpenParen))
-    {
-        // <name>(version)
-        lexer.next();
-        tok = lexer.next();
-        if (tok.type == TT::Identifier)
-        {
-            filename = filename + "/" + tok.as<std::string>() + QUIX_HEADER_EXTENSION;
-        }
-        else if (tok.type == TT::Integer)
-        {
-            filename = filename + "/" + tok.as<std::string>() + QUIX_HEADER_EXTENSION;
-        }
-        else
-        {
-            LOG(ERROR) << "Expected identifier or integer literal after import" << tok << std::endl;
-            return false;
-        }
-
-        tok = lexer.next();
-        if (!tok.is<Punctor>(Punctor::CloseParen))
-        {
-            LOG(ERROR) << "Expected closing parenthesis after import" << tok << std::endl;
-            return false;
-        }
-    }
-    else
-    {
-        filename += QUIX_HEADER_EXTENSION;
-    }
-
-    LOG(DEBUG) << log::raw << "Requested import of file: " << filename << std::endl;
 
     tok = lexer.next();
-    if (!tok.is<Punctor>(Punctor::Semicolon))
-    {
-        LOG(ERROR) << "Expected semicolon after import" << tok << std::endl;
-        return false;
+    if (!tok.is<Punctor>(Punctor::CloseParen)) {
+      LOG(ERROR) << "Expected closing parenthesis after import" << tok
+                 << std::endl;
+      return false;
+    }
+  } else {
+    filename += QUIX_HEADER_EXTENSION;
+  }
+
+  LOG(DEBUG) << log::raw << "Requested import of file: " << filename
+             << std::endl;
+
+  tok = lexer.next();
+  if (!tok.is<Punctor>(Punctor::Semicolon)) {
+    LOG(ERROR) << "Expected semicolon after import" << tok << std::endl;
+    return false;
+  }
+
+  LOG(DEBUG) << "Searching for file: {} in include directories [{}]" << filename
+             << include_path << tok << std::endl;
+  std::string filepath;
+  for (auto &dir : m_include_dirs) {
+    std::string path = dir + "/" + filename;
+    if (!std::filesystem::exists(path)) continue;
+
+    filepath = path;
+    break;
+  }
+
+  if (filepath.empty()) {
+    LOG(ERROR) << "Could not find file: \"{}\" in include directories [{}]"
+               << filename << include_path << tok << std::endl;
+    return false;
+  }
+
+  filepath = std::filesystem::absolute(filepath).string();
+
+  // skip if it's already included
+  if (m_already_included.contains(filepath)) return true;
+
+  // circular include detection
+  if (std::find(m_include_files.begin(), m_include_files.end(), filepath) !=
+      m_include_files.end()) {
+    std::string msg;
+    for (auto &file : m_include_files) msg += "  -> " + file + "\n";
+    msg += "  -> " + filepath + "\n";
+    LOG(ERROR) << "Circular include detected: \n" << msg << tok << std::endl;
+    LOG(ERROR) << "Refusing to enter infinite loop. Try to split your "
+                  "dependencies into smaller files."
+               << tok << std::endl;
+    return false;
+  }
+
+  // don't double include in the same file
+  if (!m_stack.top().already_included.contains(filepath)) {
+    FILE *f;
+
+    if (!(f = fopen(filepath.c_str(), "r"))) {
+      LOG(ERROR) << "Could not open file: \"{}\" in include directories [{}]"
+                 << filepath << include_path << tok << std::endl;
+      return false;
     }
 
-    LOG(DEBUG) << "Searching for file: {} in include directories [{}]" << filename << include_path << tok << std::endl;
-    std::string filepath;
-    for (auto &dir : m_include_dirs)
-    {
-        std::string path = dir + "/" + filename;
-        if (!std::filesystem::exists(path))
-            continue;
-
-        filepath = path;
-        break;
-    }
-
-    if (filepath.empty())
-    {
-        LOG(ERROR) << "Could not find file: \"{}\" in include directories [{}]" << filename << include_path << tok << std::endl;
-        return false;
-    }
-
-    filepath = std::filesystem::absolute(filepath).string();
-
-    // skip if it's already included
-    if (m_already_included.contains(filepath))
-        return true;
-
-    // circular include detection
-    if (std::find(m_include_files.begin(), m_include_files.end(), filepath) != m_include_files.end())
-    {
-        std::string msg;
-        for (auto &file : m_include_files)
-            msg += "  -> " + file + "\n";
-        msg += "  -> " + filepath + "\n";
-        LOG(ERROR) << "Circular include detected: \n"
-                   << msg << tok << std::endl;
-        LOG(ERROR) << "Refusing to enter infinite loop. Try to split your dependencies into smaller files." << tok << std::endl;
-        return false;
-    }
-
-    // don't double include in the same file
-    if (!m_stack.top().already_included.contains(filepath))
-    {
-        FILE *f;
-
-        if (!(f = fopen(filepath.c_str(), "r")))
-        {
-            LOG(ERROR) << "Could not open file: \"{}\" in include directories [{}]" << filepath << include_path << tok << std::endl;
-            return false;
-        }
-
-        m_stack.top().already_included.insert(filepath);
-        m_include_files.push_back(filepath);
-        m_stack.push({StreamLexer(), filepath, f});
-        job->m_filename.push(filepath);
-        m_already_included.insert(filepath);
-        if (!m_stack.top().lexer.set_source(f, filepath))
-        {
-            LOG(ERROR) << "Failed to set source for file: " << filepath << tok << std::endl;
-            return false;
-        }
-
-        return true;
-    }
-    else
-    {
-        LOG(ERROR) << feedback[PREP_DUPLICATE_IMPORT] << m_stack.top().path << filepath << tok << std::endl;
-        return false;
-    }
-
-    return true;
-}
-
-bool libquixcc::PrepEngine::handle_macro(const libquixcc::Token &tok)
-{
-    std::vector<libquixcc::Token> expanded;
-    if (!m_macro_parser.parse(tok, expanded))
-    {
-        LOG(ERROR) << "Failed to expand macro" << tok << std::endl;
-        return false;
-    }
-
-    for (auto &tok : expanded)
-    {
-        if (tok.type == TT::MacroSingleLine || tok.type == TT::MacroBlock)
-        {
-            if (!handle_macro(tok))
-                return false;
-        }
-        else
-        {
-            m_buffer.push(tok);
-        }
+    m_stack.top().already_included.insert(filepath);
+    m_include_files.push_back(filepath);
+    m_stack.push({StreamLexer(), filepath, f});
+    job->m_filename.push(filepath);
+    m_already_included.insert(filepath);
+    if (!m_stack.top().lexer.set_source(f, filepath)) {
+      LOG(ERROR) << "Failed to set source for file: " << filepath << tok
+                 << std::endl;
+      return false;
     }
 
     return true;
+  } else {
+    LOG(ERROR) << feedback[PREP_DUPLICATE_IMPORT] << m_stack.top().path
+               << filepath << tok << std::endl;
+    return false;
+  }
+
+  return true;
 }
 
-libquixcc::Token libquixcc::PrepEngine::read_token()
-{
-    libquixcc::Token tok;
+bool libquixcc::PrepEngine::handle_macro(const libquixcc::Token &tok) {
+  std::vector<libquixcc::Token> expanded;
+  if (!m_macro_parser.parse(tok, expanded)) {
+    LOG(ERROR) << "Failed to expand macro" << tok << std::endl;
+    return false;
+  }
 
-    while (true)
-    {
-        while (!m_buffer.empty())
-        {
-            tok = m_buffer.front();
-            m_buffer.pop();
-            goto end;
-        }
-
-        if (m_stack.empty())
-        {
-            tok = Token(TT::Eof, "");
-            goto end;
-        }
-
-        tok = m_stack.top().lexer.next();
-
-        if (tok.type == TT::MacroSingleLine || tok.type == TT::MacroBlock)
-        {
-            if (tok.as<std::string>().starts_with("import"))
-            {
-                if (!handle_import(tok))
-                {
-                    LOG(ERROR) << "Failed to process import" << tok << std::endl;
-                    continue;
-                }
-                continue;
-            }
-
-            if (!handle_macro(tok))
-                LOG(ERROR) << "Failed to process macro" << tok << std::endl;
-
-            continue;
-        }
-        else if (tok.type == TT::Eof)
-        {
-            if (m_stack.size() == 1)
-                goto end;
-
-            fclose(m_stack.top().file);
-            m_include_files.pop_back();
-            if (m_stack.top().buffer)
-                delete m_stack.top().buffer;
-            m_stack.pop();
-            job->m_filename.pop();
-            continue;
-        }
-
-        break;
+  for (auto &tok : expanded) {
+    if (tok.type == TT::MacroSingleLine || tok.type == TT::MacroBlock) {
+      if (!handle_macro(tok)) return false;
+    } else {
+      m_buffer.push(tok);
     }
+  }
+
+  return true;
+}
+
+libquixcc::Token libquixcc::PrepEngine::read_token() {
+  libquixcc::Token tok;
+
+  while (true) {
+    while (!m_buffer.empty()) {
+      tok = m_buffer.front();
+      m_buffer.pop();
+      goto end;
+    }
+
+    if (m_stack.empty()) {
+      tok = Token(TT::Eof, "");
+      goto end;
+    }
+
+    tok = m_stack.top().lexer.next();
+
+    if (tok.type == TT::MacroSingleLine || tok.type == TT::MacroBlock) {
+      if (tok.as<std::string>().starts_with("import")) {
+        if (!handle_import(tok)) {
+          LOG(ERROR) << "Failed to process import" << tok << std::endl;
+          continue;
+        }
+        continue;
+      }
+
+      if (!handle_macro(tok))
+        LOG(ERROR) << "Failed to process macro" << tok << std::endl;
+
+      continue;
+    } else if (tok.type == TT::Eof) {
+      if (m_stack.size() == 1) goto end;
+
+      fclose(m_stack.top().file);
+      m_include_files.pop_back();
+      if (m_stack.top().buffer) delete m_stack.top().buffer;
+      m_stack.pop();
+      job->m_filename.pop();
+      continue;
+    }
+
+    break;
+  }
 
 end:
-    return tok;
+  return tok;
 }

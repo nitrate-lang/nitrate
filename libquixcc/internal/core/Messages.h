@@ -1,33 +1,33 @@
-////////////////////////////////////////////////////////////////////////////////////
-///                                                                              ///
-///    ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
-///    ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
-///      ░▒▓█▓▒░                                                                 ///
-///       ░▒▓██▓▒░                                                               ///
-///                                                                              ///
-///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
-///     * Copyright (C) 2024 Wesley C. Jones                                     ///
-///                                                                              ///
-///     The QUIX Compiler Suite is free software; you can redistribute it and/or ///
-///     modify it under the terms of the GNU Lesser General Public               ///
-///     License as published by the Free Software Foundation; either             ///
-///     version 2.1 of the License, or (at your option) any later version.       ///
-///                                                                              ///
-///     The QUIX Compiler Suite is distributed in the hope that it will be       ///
-///     useful, but WITHOUT ANY WARRANTY; without even the implied warranty of   ///
-///     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU        ///
-///     Lesser General Public License for more details.                          ///
-///                                                                              ///
-///     You should have received a copy of the GNU Lesser General Public         ///
-///     License along with the QUIX Compiler Suite; if not, see                  ///
-///     <https://www.gnu.org/licenses/>.                                         ///
-///                                                                              ///
-////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+///    ░▒▓█▓▒░                                                               ///
+///     ░▒▓██▓▒░                                                             ///
+///                                                                          ///
+///   * QUIX LANG COMPILER - The official compiler for the Quix language.    ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The QUIX Compiler Suite is free software; you can redistribute it or   ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The QUIX Compiler Suite is distributed in the hope that it will be     ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the QUIX Compiler Suite; if not, see                ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __QUIXCC_MESSAGES_HPP__
 #define __QUIXCC_MESSAGES_HPP__
@@ -38,180 +38,178 @@
 
 #include <unordered_map>
 
-namespace libquixcc
-{
-    enum Msg
-    {
-        PARSER_EXPECTED_KEYWORD,
-        PARSER_ILLEGAL_KEYWORD,
-        PARSER_EXPECTED_LEFT_BRACE,
-        PARSER_EXPECTED_RIGHT_BRACE,
-        PARSER_EXPECTED_SEMICOLON,
-        PARSER_UNKNOWN_LANGUAGE,
+namespace libquixcc {
+enum Msg {
+  PARSER_EXPECTED_KEYWORD,
+  PARSER_ILLEGAL_KEYWORD,
+  PARSER_EXPECTED_LEFT_BRACE,
+  PARSER_EXPECTED_RIGHT_BRACE,
+  PARSER_EXPECTED_SEMICOLON,
+  PARSER_UNKNOWN_LANGUAGE,
 
-        EXPECTED_TYPE,
-        TYPE_EXPECTED_FUNCTION,
-        TYPE_OPAQUE_EXPECTED_IDENTIFIER,
-        TYPE_OPAQUE_EXPECTED_PAREN,
-        TYPE_OPAQUE_EXPECTED_CLOSE_PAREN,
+  EXPECTED_TYPE,
+  TYPE_EXPECTED_FUNCTION,
+  TYPE_OPAQUE_EXPECTED_IDENTIFIER,
+  TYPE_OPAQUE_EXPECTED_PAREN,
+  TYPE_OPAQUE_EXPECTED_CLOSE_PAREN,
 
-        LET_DECL_MISSING_IDENTIFIER,
-        LET_DECL_MISSING_COLON,
-        LET_DECL_TYPE_ERR,
-        LET_DECL_INIT_ERR,
-        LET_DECL_MISSING_PUNCTOR,
+  LET_DECL_MISSING_IDENTIFIER,
+  LET_DECL_MISSING_COLON,
+  LET_DECL_TYPE_ERR,
+  LET_DECL_INIT_ERR,
+  LET_DECL_MISSING_PUNCTOR,
 
-        CONST_DECL_TYPE_ERR,
+  CONST_DECL_TYPE_ERR,
 
-        VAR_DECL_MISSING_IDENTIFIER,
-        VAR_DECL_MISSING_COLON,
-        VAR_DECL_TYPE_ERR,
-        VAR_DECL_INIT_ERR,
-        VAR_DECL_MISSING_PUNCTOR,
+  VAR_DECL_MISSING_IDENTIFIER,
+  VAR_DECL_MISSING_COLON,
+  VAR_DECL_TYPE_ERR,
+  VAR_DECL_INIT_ERR,
+  VAR_DECL_MISSING_PUNCTOR,
 
-        CONST_DECL_MISSING_IDENTIFIER,
-        CONST_DECL_MISSING_COLON,
-        CONST_DECL_INIT_ERR,
-        CONST_DECL_MISSING_PUNCTOR,
+  CONST_DECL_MISSING_IDENTIFIER,
+  CONST_DECL_MISSING_COLON,
+  CONST_DECL_INIT_ERR,
+  CONST_DECL_MISSING_PUNCTOR,
 
-        STRUCT_DECL_MISSING_IDENTIFIER,
-        STRUCT_FIELD_MISSING_IDENTIFIER,
-        STRUCT_DEF_EXPECTED_OPEN_BRACE,
-        STRUCT_FIELD_MISSING_COLON,
-        STRUCT_FIELD_TYPE_ERR,
-        STRUCT_FIELD_INIT_ERR,
-        STRUCT_FIELD_MISSING_PUNCTOR,
-        STRUCT_DEF_EXPECTED_FN,
+  STRUCT_DECL_MISSING_IDENTIFIER,
+  STRUCT_FIELD_MISSING_IDENTIFIER,
+  STRUCT_DEF_EXPECTED_OPEN_BRACE,
+  STRUCT_FIELD_MISSING_COLON,
+  STRUCT_FIELD_TYPE_ERR,
+  STRUCT_FIELD_INIT_ERR,
+  STRUCT_FIELD_MISSING_PUNCTOR,
+  STRUCT_DEF_EXPECTED_FN,
 
-        REGION_DECL_MISSING_IDENTIFIER,
-        REGION_FIELD_MISSING_IDENTIFIER,
-        REGION_DEF_EXPECTED_OPEN_BRACE,
-        REGION_FIELD_MISSING_COLON,
-        REGION_FIELD_TYPE_ERR,
-        REGION_FIELD_INIT_ERR,
-        REGION_FIELD_MISSING_PUNCTOR,
-        REGION_DEF_EXPECTED_FN,
+  REGION_DECL_MISSING_IDENTIFIER,
+  REGION_FIELD_MISSING_IDENTIFIER,
+  REGION_DEF_EXPECTED_OPEN_BRACE,
+  REGION_FIELD_MISSING_COLON,
+  REGION_FIELD_TYPE_ERR,
+  REGION_FIELD_INIT_ERR,
+  REGION_FIELD_MISSING_PUNCTOR,
+  REGION_DEF_EXPECTED_FN,
 
-        GROUP_DECL_MISSING_IDENTIFIER,
-        GROUP_FIELD_MISSING_IDENTIFIER,
-        GROUP_DEF_EXPECTED_OPEN_BRACE,
-        GROUP_FIELD_MISSING_COLON,
-        GROUP_FIELD_TYPE_ERR,
-        GROUP_FIELD_INIT_ERR,
-        GROUP_FIELD_MISSING_PUNCTOR,
-        GROUP_DEF_EXPECTED_FN,
+  GROUP_DECL_MISSING_IDENTIFIER,
+  GROUP_FIELD_MISSING_IDENTIFIER,
+  GROUP_DEF_EXPECTED_OPEN_BRACE,
+  GROUP_FIELD_MISSING_COLON,
+  GROUP_FIELD_TYPE_ERR,
+  GROUP_FIELD_INIT_ERR,
+  GROUP_FIELD_MISSING_PUNCTOR,
+  GROUP_DEF_EXPECTED_FN,
 
-        UNION_DECL_MISSING_IDENTIFIER,
-        UNION_DEF_EXPECTED_OPEN_BRACE,
-        UNION_FIELD_MISSING_IDENTIFIER,
-        UNION_DEF_EXPECTED_SEMICOLON,
-        UNION_FIELD_MISSING_COLON,
-        UNION_FIELD_TYPE_ERR,
-        UNION_FIELD_MISSING_PUNCTOR,
-        UNION_DEF_EXPECTED_FN,
+  UNION_DECL_MISSING_IDENTIFIER,
+  UNION_DEF_EXPECTED_OPEN_BRACE,
+  UNION_FIELD_MISSING_IDENTIFIER,
+  UNION_DEF_EXPECTED_SEMICOLON,
+  UNION_FIELD_MISSING_COLON,
+  UNION_FIELD_TYPE_ERR,
+  UNION_FIELD_MISSING_PUNCTOR,
+  UNION_DEF_EXPECTED_FN,
 
-        TYPE_EXPECTED_TYPE,
-        TYPE_EXPECTED_SEMICOLON,
-        TYPE_EXPECTED_CONST_EXPR,
-        TYPE_EXPECTED_CLOSE_BRACKET,
+  TYPE_EXPECTED_TYPE,
+  TYPE_EXPECTED_SEMICOLON,
+  TYPE_EXPECTED_CONST_EXPR,
+  TYPE_EXPECTED_CLOSE_BRACKET,
 
-        SUBSYSTEM_MISSING_IDENTIFIER,
-        SUBSYSTEM_EXPECTED_IDENTIFIER,
-        SUBSYSTEM_EXPECTED_SEMICOLON,
+  SUBSYSTEM_MISSING_IDENTIFIER,
+  SUBSYSTEM_EXPECTED_IDENTIFIER,
+  SUBSYSTEM_EXPECTED_SEMICOLON,
 
-        ENUM_EXPECTED_IDENTIFIER,
-        ENUM_EXPECTED_COLON,
-        ENUM_EXPECTED_LEFT_BRACE,
-        ENUM_DEF_EXPECTED_SEMICOLON,
-        ENUM_FIELD_EXPECTED_IDENTIFIER,
-        ENUM_FIELD_EXPECTED_CONST_EXPR,
-        ENUM_FIELD_EXPECTED_SEMICOLON,
+  ENUM_EXPECTED_IDENTIFIER,
+  ENUM_EXPECTED_COLON,
+  ENUM_EXPECTED_LEFT_BRACE,
+  ENUM_DEF_EXPECTED_SEMICOLON,
+  ENUM_FIELD_EXPECTED_IDENTIFIER,
+  ENUM_FIELD_EXPECTED_CONST_EXPR,
+  ENUM_FIELD_EXPECTED_SEMICOLON,
 
-        FN_EXPECTED_IDENTIFIER,
-        FN_EXPECTED_OPEN_PAREN,
-        FN_EXPECTED_CLOSE_PAREN_OR_COMMA,
-        FN_EXPECTED_OPEN_BRACE,
-        FN_NO_THROW_ALREADY_SPECIFIED,
-        FN_FOREIGN_ALREADY_SPECIFIED,
-        FN_THREAD_SAFE_ALREADY_SPECIFIED,
-        FN_PURE_ALREADY_SPECIFIED,
-        FN_IMPURE_ALREADY_SPECIFIED,
-        FN_PURE_AND_IMPURE_SPECIFIED,
-        FN_PARAM_PARSE_ERROR,
-        FN_PARAM_EXPECTED_IDENTIFIER,
-        FN_PARAM_EXPECTED_COLON,
-        FN_PARAM_TYPE_ERR,
-        FN_PARAM_INIT_ERR,
-        FN_EXPECTED_VARARG,
+  FN_EXPECTED_IDENTIFIER,
+  FN_EXPECTED_OPEN_PAREN,
+  FN_EXPECTED_CLOSE_PAREN_OR_COMMA,
+  FN_EXPECTED_OPEN_BRACE,
+  FN_NO_THROW_ALREADY_SPECIFIED,
+  FN_FOREIGN_ALREADY_SPECIFIED,
+  FN_THREAD_SAFE_ALREADY_SPECIFIED,
+  FN_PURE_ALREADY_SPECIFIED,
+  FN_IMPURE_ALREADY_SPECIFIED,
+  FN_PURE_AND_IMPURE_SPECIFIED,
+  FN_PARAM_PARSE_ERROR,
+  FN_PARAM_EXPECTED_IDENTIFIER,
+  FN_PARAM_EXPECTED_COLON,
+  FN_PARAM_TYPE_ERR,
+  FN_PARAM_INIT_ERR,
+  FN_EXPECTED_VARARG,
 
-        PREP_DUPLICATE_IMPORT,
+  PREP_DUPLICATE_IMPORT,
 
-        VAR_NAME_DUPLICATE,
-        LET_NAME_DUPLICATE,
-        CONST_NAME_DUPLICATE,
-        STRUCT_NAME_DUPLICATE,
-        REGION_NAME_DUPLICATE,
-        GROUP_NAME_DUPLICATE,
-        UNION_NAME_DUPLICATE,
-        ENUM_NAME_DUPLICATE,
-        FUNC_NAME_DUPLICATE,
-        STRUCT_FIELD_DUPLICATE,
-        REGION_FIELD_DUPLICATE,
-        GROUP_FIELD_DUPLICATE,
-        UNION_FIELD_DUPLICATE,
-        ENUM_FIELD_DUPLICATE,
-        PARAM_NAME_DUPLICATE,
-        SUBSYSTEM_NAME_DUPLICATE,
+  VAR_NAME_DUPLICATE,
+  LET_NAME_DUPLICATE,
+  CONST_NAME_DUPLICATE,
+  STRUCT_NAME_DUPLICATE,
+  REGION_NAME_DUPLICATE,
+  GROUP_NAME_DUPLICATE,
+  UNION_NAME_DUPLICATE,
+  ENUM_NAME_DUPLICATE,
+  FUNC_NAME_DUPLICATE,
+  STRUCT_FIELD_DUPLICATE,
+  REGION_FIELD_DUPLICATE,
+  GROUP_FIELD_DUPLICATE,
+  UNION_FIELD_DUPLICATE,
+  ENUM_FIELD_DUPLICATE,
+  PARAM_NAME_DUPLICATE,
+  SUBSYSTEM_NAME_DUPLICATE,
 
-        RETIF_MISSING_SEMICOLON,
-        RETIF_MISSING_COMMA,
-        RETZ_MISSING_SEMICOLON,
-        RETZ_MISSING_COMMA,
-        RETV_MISSING_SEMICOLON,
-        RETV_MISSING_COMMA,
+  RETIF_MISSING_SEMICOLON,
+  RETIF_MISSING_COMMA,
+  RETZ_MISSING_SEMICOLON,
+  RETZ_MISSING_COMMA,
+  RETV_MISSING_SEMICOLON,
+  RETV_MISSING_COMMA,
 
-        TYPEDEF_EXPECTED_IDENTIFIER,
-        TYPEDEF_EXPECTED_ASSIGN,
-        TYPEDEF_INVALID_TYPE,
-        TYPEDEF_EXPECTED_SEMICOLON,
-        TYPEDEF_NAME_DUPLICATE,
+  TYPEDEF_EXPECTED_IDENTIFIER,
+  TYPEDEF_EXPECTED_ASSIGN,
+  TYPEDEF_INVALID_TYPE,
+  TYPEDEF_EXPECTED_SEMICOLON,
+  TYPEDEF_NAME_DUPLICATE,
 
-        FOR_EXPECTED_SEMICOLON,
-        FOR_EXPECTED_CLOSING_PARANTHESIS,
+  FOR_EXPECTED_SEMICOLON,
+  FOR_EXPECTED_CLOSING_PARANTHESIS,
 
-        ASM_EXPECTED_LEFT_PAREN,
-        ASM_EXPECTED_STRING_LITERAL,
-        ASM_EXPECTED_COMMA,
-        ASM_EXPECTED_OUTPUTS,
-        ASM_EXPECTED_INPUTS,
-        ASM_EXPECTED_CLOBBERS,
-        ASM_EXPECTED_RIGHT_PAREN,
-        ASM_EXPECTED_SEMICOLON,
-        ASM_EXPECTED_LEFT_BRACE,
-        ASM_PARAM_EXPECTED_STRING_LITERAL,
-        ASM_PARAM_EXPECTED_COLON,
-        ASM_PARAM_EXPECTED_EXPR,
+  ASM_EXPECTED_LEFT_PAREN,
+  ASM_EXPECTED_STRING_LITERAL,
+  ASM_EXPECTED_COMMA,
+  ASM_EXPECTED_OUTPUTS,
+  ASM_EXPECTED_INPUTS,
+  ASM_EXPECTED_CLOBBERS,
+  ASM_EXPECTED_RIGHT_PAREN,
+  ASM_EXPECTED_SEMICOLON,
+  ASM_EXPECTED_LEFT_BRACE,
+  ASM_PARAM_EXPECTED_STRING_LITERAL,
+  ASM_PARAM_EXPECTED_COLON,
+  ASM_PARAM_EXPECTED_EXPR,
 
-        UNRESOLVED_TYPE,
-        UNRESOLVED_FUNCTION,
-        RESOLVED_TYPE,
+  UNRESOLVED_TYPE,
+  UNRESOLVED_FUNCTION,
+  RESOLVED_TYPE,
 
-        GENERIC_ERROR,
+  GENERIC_ERROR,
 
-        MAX_MSG
-    };
-
-    class Feedback
-    {
-        std::unordered_map<Msg, const char *> m_feedback;
-
-    public:
-        const char *operator[](Msg msg) const { return m_feedback.at(msg); }
-        Feedback(const std::unordered_map<Msg, const char *> &feedback) : m_feedback(feedback) {}
-    };
-
-    extern Feedback feedback;
-
+  MAX_MSG
 };
+
+class Feedback {
+  std::unordered_map<Msg, const char *> m_feedback;
+
+ public:
+  const char *operator[](Msg msg) const { return m_feedback.at(msg); }
+  Feedback(const std::unordered_map<Msg, const char *> &feedback)
+      : m_feedback(feedback) {}
+};
+
+extern Feedback feedback;
+
+};  // namespace libquixcc
 
 #endif

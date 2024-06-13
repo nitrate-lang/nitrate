@@ -1,33 +1,33 @@
-////////////////////////////////////////////////////////////////////////////////////
-///                                                                              ///
-///    ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░          ///
-///   ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░   ///
-///    ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░    ///
-///      ░▒▓█▓▒░                                                                 ///
-///       ░▒▓██▓▒░                                                               ///
-///                                                                              ///
-///     * QUIX LANG COMPILER - The official compiler for the Quix language.      ///
-///     * Copyright (C) 2024 Wesley C. Jones                                     ///
-///                                                                              ///
-///     The QUIX Compiler Suite is free software; you can redistribute it and/or ///
-///     modify it under the terms of the GNU Lesser General Public               ///
-///     License as published by the Free Software Foundation; either             ///
-///     version 2.1 of the License, or (at your option) any later version.       ///
-///                                                                              ///
-///     The QUIX Compiler Suite is distributed in the hope that it will be       ///
-///     useful, but WITHOUT ANY WARRANTY; without even the implied warranty of   ///
-///     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU        ///
-///     Lesser General Public License for more details.                          ///
-///                                                                              ///
-///     You should have received a copy of the GNU Lesser General Public         ///
-///     License along with the QUIX Compiler Suite; if not, see                  ///
-///     <https://www.gnu.org/licenses/>.                                         ///
-///                                                                              ///
-////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░        ///
+/// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
+///  ░▒▓██████▓▒░ ░▒▓██████▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
+///    ░▒▓█▓▒░                                                               ///
+///     ░▒▓██▓▒░                                                             ///
+///                                                                          ///
+///   * QUIX LANG COMPILER - The official compiler for the Quix language.    ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The QUIX Compiler Suite is free software; you can redistribute it or   ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The QUIX Compiler Suite is distributed in the hope that it will be     ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the QUIX Compiler Suite; if not, see                ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __QUIXCC_IR_Q_NODES_FUNCTION_H__
 #define __QUIXCC_IR_Q_NODES_FUNCTION_H__
@@ -36,56 +36,67 @@
 #error "This header requires C++"
 #endif
 
-#include <IR/Q/QIR.h>
 #include <IR/Q/Expr.h>
+#include <IR/Q/QIR.h>
 #include <IR/Q/Type.h>
 
-namespace libquixcc::ir::q
-{
-    class Block : public Value
-    {
-    protected:
-        bool print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
+namespace libquixcc::ir::q {
+class Block : public Value {
+ protected:
+  bool print_impl(std::ostream &os, PState &state) const override;
+  boost::uuids::uuid hash_impl() const override;
+  bool verify_impl() const override;
 
-        Block(std::vector<const Value *> stmts) : stmts(stmts)
-        {
-            ntype = (int)NodeType::Block;
-        }
+  Block(std::vector<const Value *> stmts) : stmts(stmts) {
+    ntype = (int)NodeType::Block;
+  }
 
-    public:
-        static const Block *create(std::vector<const Value *> stmts);
+ public:
+  static const Block *create(std::vector<const Value *> stmts);
 
-        std::vector<const Value *> stmts;
-    };
+  std::vector<const Value *> stmts;
+};
 
-    class Segment : public Expr
-    {
-    protected:
-        bool print_impl(std::ostream &os, PState &state) const override;
-        boost::uuids::uuid hash_impl() const override;
-        bool verify_impl() const override;
+class Segment : public Expr {
+ protected:
+  bool print_impl(std::ostream &os, PState &state) const override;
+  boost::uuids::uuid hash_impl() const override;
+  bool verify_impl() const override;
 
-        Segment(std::vector<std::pair<std::string, const Type *>> params, const Type *return_type, const Block *block, bool is_variadic, bool is_pure, bool is_thread_safe, bool is_no_throw, bool is_no_return, bool is_foriegn) : params(params), return_type(return_type), block(block), is_variadic(is_variadic), is_pure(is_pure), is_thread_safe(is_thread_safe), is_no_throw(is_no_throw), is_no_return(is_no_return), is_foriegn(is_foriegn)
-        {
-            ntype = (int)NodeType::Segment;
-        }
+  Segment(std::vector<std::pair<std::string, const Type *>> params,
+          const Type *return_type, const Block *block, bool is_variadic,
+          bool is_pure, bool is_thread_safe, bool is_no_throw,
+          bool is_no_return, bool is_foriegn)
+      : params(params),
+        return_type(return_type),
+        block(block),
+        is_variadic(is_variadic),
+        is_pure(is_pure),
+        is_thread_safe(is_thread_safe),
+        is_no_throw(is_no_throw),
+        is_no_return(is_no_return),
+        is_foriegn(is_foriegn) {
+    ntype = (int)NodeType::Segment;
+  }
 
-    public:
-        static const Segment *create(std::vector<std::pair<std::string, const Type *>> params, const Type *return_type, const Block *block, bool is_variadic, bool is_pure, bool is_thread_safe, bool is_no_throw, bool is_no_return, bool is_foriegn);
-        const Type *infer() const override;
+ public:
+  static const Segment *create(
+      std::vector<std::pair<std::string, const Type *>> params,
+      const Type *return_type, const Block *block, bool is_variadic,
+      bool is_pure, bool is_thread_safe, bool is_no_throw, bool is_no_return,
+      bool is_foriegn);
+  const Type *infer() const override;
 
-        std::vector<std::pair<std::string, const Type *>> params;
-        const Type *return_type;
-        const Block *block;
-        bool is_variadic;
-        bool is_pure;
-        bool is_thread_safe;
-        bool is_no_throw;
-        bool is_no_return;
-        bool is_foriegn;
-    };
-}
+  std::vector<std::pair<std::string, const Type *>> params;
+  const Type *return_type;
+  const Block *block;
+  bool is_variadic;
+  bool is_pure;
+  bool is_thread_safe;
+  bool is_no_throw;
+  bool is_no_return;
+  bool is_foriegn;
+};
+}  // namespace libquixcc::ir::q
 
-#endif // __QUIXCC_IR_Q_NODES_FUNCTION_H__
+#endif  // __QUIXCC_IR_Q_NODES_FUNCTION_H__
