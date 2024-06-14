@@ -296,14 +296,14 @@ void libquixcc::C11Codegen::gen(const ir::delta::Assign *n,
   gen(n->value, code);
 }
 
-void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::PostInc *node, std::ostream &code)
-{
+void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::PostInc *node,
+                                std::ostream &code) {
   gen(node->var, code);
   code << "++";
 }
 
-void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::PostDec *node, std::ostream &code)
-{
+void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::PostDec *node,
+                                std::ostream &code) {
   gen(node->var, code);
   code << "--";
 }
@@ -533,6 +533,12 @@ void libquixcc::C11Codegen::gen(const ir::delta::Segment *n,
     code << " ";
     gen(n->block, code);
   }
+}
+
+void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Asm *node,
+                                std::ostream &code) {
+  /// TODO: Implement Asm
+  throw std::runtime_error("C11Codegen: Asm not implemented");
 }
 
 void libquixcc::C11Codegen::gen(const ir::delta::Add *n, std::ostream &code) {
@@ -896,6 +902,7 @@ void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Value *n,
   match(Halt);
   match(Block);
   match(Segment);
+  match(Asm);
   match(Add);
   match(Sub);
   match(Mul);

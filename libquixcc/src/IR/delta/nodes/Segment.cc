@@ -59,6 +59,30 @@ bool libquixcc::ir::delta::Segment::verify_impl() const {
   return ret->verify();
 }
 
+boost::uuids::uuid libquixcc::ir::delta::Asm::hash_impl() const {
+  auto h = Hasher().gettag().add(asm_str);
+
+  for (auto &p : outputs) h.add(p.first).add(p.second);
+  for (auto &p : inputs) h.add(p.first).add(p.second);
+  for (auto &p : clobbers) h.add(p);
+
+  return h.hash();
+}
+
+bool libquixcc::ir::delta::Asm::verify_impl() const {
+  if (!std::all_of(outputs.begin(), outputs.end(),
+                   [](const auto &p) { return p.second->verify(); })) {
+    return false;
+  }
+
+  if (!std::all_of(inputs.begin(), inputs.end(),
+                   [](const auto &p) { return p.second->verify(); })) {
+    return false;
+  }
+
+  return true;
+}
+
 boost::uuids::uuid libquixcc::ir::delta::RootNode::hash_impl() const {
   auto h = Hasher().gettag();
 

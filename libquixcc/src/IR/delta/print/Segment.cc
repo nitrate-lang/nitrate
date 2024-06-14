@@ -84,6 +84,32 @@ bool libquixcc::ir::delta::Segment::print_impl(std::ostream &os,
   return true;
 }
 
+bool libquixcc::ir::delta::Asm::print_impl(std::ostream &os,
+                                           libquixcc::ir::PState &state) const {
+  os << "asm(" << asm_str << ", {";
+  for (uint64_t i = 0; i < outputs.size(); i++) {
+    os << outputs[i].first << ": ";
+    if (!outputs[i].second->print(os, state)) return false;
+    if (i + 1 < outputs.size()) os << ", ";
+  }
+
+  os << "}, {";
+  for (uint64_t i = 0; i < inputs.size(); i++) {
+    os << inputs[i].first << ": ";
+    if (!inputs[i].second->print(os, state)) return false;
+    if (i + 1 < inputs.size()) os << ", ";
+  }
+
+  os << "}, [";
+  for (uint64_t i = 0; i < clobbers.size(); i++) {
+    os << clobbers[i];
+    if (i + 1 < clobbers.size()) os << ", ";
+  }
+
+  os << "])";
+  return true;
+}
+
 bool libquixcc::ir::delta::RootNode::print_impl(std::ostream &os,
                                                 PState &state) const {
   for (auto it = children.begin(); it != children.end(); it++) {

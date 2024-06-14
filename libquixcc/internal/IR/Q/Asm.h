@@ -45,10 +45,25 @@ class Asm : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Asm() { ntype = (int)NodeType::Asm; }
+  Asm(std::string asm_str,
+      std::vector<std::pair<std::string, const Value *>> inputs,
+      std::vector<std::pair<std::string, const Value *>> outputs,
+      std::vector<std::string> clobbers)
+      : asm_str(asm_str), inputs(inputs), outputs(outputs), clobbers(clobbers) {
+    ntype = (int)NodeType::Asm;
+  }
 
  public:
-  static const Asm *create();
+  static const Asm *create(
+      std::string asm_str,
+      std::vector<std::pair<std::string, const Value *>> inputs,
+      std::vector<std::pair<std::string, const Value *>> outputs,
+      std::vector<std::string> clobbers);
+
+  std::string asm_str;
+  std::vector<std::pair<std::string, const Value *>> inputs;
+  std::vector<std::pair<std::string, const Value *>> outputs;
+  std::vector<std::string> clobbers;
 };
 }  // namespace libquixcc::ir::q
 

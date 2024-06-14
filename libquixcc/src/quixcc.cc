@@ -463,10 +463,10 @@ static bool quixcc_mutate_ptree(quixcc_job_t *job,
       mutate::MethodToFunc);  ///> Convert method calls to function calls
   mutator.add_routine(
       mutate::DiscoverNamedConstructs);  ///> Map named constructs to their
-                                         ///respective Ptree nodes
+                                         /// respective Ptree nodes
   mutator.add_routine(
       mutate::ResolveNamedConstructs);  ///> Resolve named constructs to their
-                                        ///respective Ptree nodes
+                                        /// respective Ptree nodes
   mutator.add_routine(
       mutate::ExtrapolateEnumFields);  ///> Derive enum field values
   mutator.add_routine(
@@ -695,6 +695,16 @@ static bool compile(quixcc_job_t *job) {
     if (job->m_debug)
       LOG(DEBUG) << log::raw << "Dumping Ptree 1 (JSON): "
                  << base64_encode(ptree->to_json()) << std::endl;
+
+    if (job->m_argset.contains("-emit-parse")) {
+      auto serial = ptree->to_json();
+      if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
+        return false;
+      fflush(job->m_out);
+
+      LOG(DEBUG) << "Parse only" << std::endl;
+      return true;
+    }
     /// END:   PARSER
     ///=========================================
   } /* Destruct PrepEngine */
@@ -804,6 +814,7 @@ static bool verify_build_option(const std::string &option,
       "-S",            // assembly output
       "-PREP",         // preprocessor/Lexer output
       "-emit-tokens",  // lexer output (no preprocessing)
+      "-emit-parse",   // parse tree output
       "-emit-ir",      // IR output
       "-emit-c11",     // C11 output
       "-emit-bc",      // bitcode output

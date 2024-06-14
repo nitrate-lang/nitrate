@@ -69,7 +69,7 @@ enum class NodeType {
   FType,
   PacketDef,
 
-  /* Variables & Literals*/
+  /* Variables & Literals */
   Local,
   Global,
   Number,
@@ -110,6 +110,7 @@ enum class NodeType {
   /* Blocks */
   Segment,
   Block,
+  Asm,
 
   /* Arithmetic */
   Add,

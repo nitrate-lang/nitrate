@@ -1310,8 +1310,20 @@ static auto conv(const ExportNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const InlineAsmNode *n, QState &state) -> QResult {
-  /// TODO: Implement InlineAsmNode
-  throw std::runtime_error("QIR translation: InlineAsmNode not implemented");
+  std::vector<std::pair<std::string, const Value *>> outputs;
+  std::vector<std::pair<std::string, const Value *>> inputs;
+
+  for (auto &output : n->m_outputs) {
+    auto res = conv(output.second.get(), state);
+    outputs.push_back({output.first, res[0]});
+  }
+
+  for (auto &input : n->m_inputs) {
+    auto res = conv(input.second.get(), state);
+    inputs.push_back({input.first, res[0]});
+  }
+
+  return Asm::create(n->m_asm, outputs, inputs, n->m_clobbers);
 }
 
 static auto conv(const ReturnStmtNode *n, QState &state) -> QResult {

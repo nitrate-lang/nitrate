@@ -151,6 +151,12 @@ static std::map<std::pair<const Type *, uint64_t>, const Array *> array_insts;
 static std::map<std::tuple<std::vector<const Type *>, const Type *, bool>,
                 const FType *>
     ftype_insts;
+static std::map<
+    std::tuple<std::string, std::vector<std::pair<std::string, const Value *>>,
+               std::vector<std::pair<std::string, const Value *>>,
+               std::vector<std::string>>,
+    const Asm *>
+    asm_insts;
 static std::map<std::tuple<std::string, const Value *, const Value *>,
                 const Local *>
     local_insts;
@@ -471,15 +477,13 @@ const delta::Assign *delta::Assign::create(const Expr *var, const Expr *value,
   return assign_insts[key];
 }
 
-const libquixcc::ir::delta::PostInc *libquixcc::ir::delta::PostInc::create(
-    const libquixcc::ir::delta::Expr *var) {
+const delta::PostInc *delta::PostInc::create(const delta::Expr *var) {
   lock(NodeType::PostInc);
   if (!postinc_insts.contains(var)) postinc_insts[var] = new PostInc(var);
   return postinc_insts[var];
 }
 
-const libquixcc::ir::delta::PostDec *libquixcc::ir::delta::PostDec::create(
-    const libquixcc::ir::delta::Expr *var) {
+const delta::PostDec *delta::PostDec::create(const delta::Expr *var) {
   lock(NodeType::PostDec);
   if (!postdec_insts.contains(var)) postdec_insts[var] = new PostDec(var);
   return postdec_insts[var];
@@ -652,6 +656,18 @@ const delta::FType *delta::FType::create(std::vector<const Type *> params,
   if (!ftype_insts.contains(key))
     ftype_insts[key] = new FType(params, ret, variadic);
   return ftype_insts[key];
+}
+
+const delta::Asm *delta::Asm::create(
+    const std::string &asm_str,
+    const std::vector<std::pair<std::string, const Value *>> &inputs,
+    const std::vector<std::pair<std::string, const Value *>> &outputs,
+    const std::vector<std::string> &clobbers) {
+  lock(NodeType::Asm);
+  auto key = std::make_tuple(asm_str, inputs, outputs, clobbers);
+  if (!asm_insts.contains(key))
+    asm_insts[key] = new Asm(asm_str, inputs, outputs, clobbers);
+  return asm_insts[key];
 }
 
 const delta::Local *delta::Local::create(std::string name, const Type *type,

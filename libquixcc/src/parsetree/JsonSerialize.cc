@@ -42,8 +42,7 @@ using namespace libquixcc;
 
 std::string escape_json(const std::string &input) {
   std::string output;
-  output.reserve(input.length() *
-                 2);  // Reserving enough space for escaped characters
+  output.reserve(input.length() * 2);
 
   for (char ch : input) {
     switch (ch) {
@@ -1082,7 +1081,7 @@ std::string serialize::ParseTreeSerializer::InlineAsmNode_conv(
   for (auto it = node->m_outputs.begin(); it != node->m_outputs.end(); ++it) {
     str += next(state, (*it).second);
 
-    if (it != node->m_outputs.end()) {
+    if (it != node->m_outputs.end() - 1) {
       str += ",";
     }
   }
@@ -1092,7 +1091,7 @@ std::string serialize::ParseTreeSerializer::InlineAsmNode_conv(
   for (auto it = node->m_inputs.begin(); it != node->m_inputs.end(); ++it) {
     str += next(state, (*it).second);
 
-    if (it != node->m_inputs.end()) {
+    if (it != node->m_inputs.end() - 1) {
       str += ",";
     }
   }
@@ -1100,7 +1099,7 @@ std::string serialize::ParseTreeSerializer::InlineAsmNode_conv(
   str += "],\"clobbers\":[";
 
   for (auto it = node->m_clobbers.begin(); it != node->m_clobbers.end(); ++it) {
-    str += *it;
+    str += "\"" + escape_json(*it) + "\"";
 
     if (it != node->m_clobbers.end() - 1) {
       str += ",";

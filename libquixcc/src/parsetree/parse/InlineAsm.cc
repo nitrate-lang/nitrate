@@ -80,6 +80,15 @@ static bool asm_parse_param(
     }
 
     result.push_back({name, expr});
+
+    tok = scanner->next();
+    if (tok.is<Punctor>(Punctor::CloseBrace)) {
+      break;
+    } else if (!tok.is<Punctor>(Punctor::Comma)) {
+      LOG(ERROR) << feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok
+                 << std::endl;
+      return false;
+    }
   }
 
   return true;
@@ -98,7 +107,12 @@ static bool asm_parse_clobbers(quixcc_job_t &job, libquixcc::Scanner *scanner,
     return false;
   }
 
-  while (!(tok = scanner->next()).is<Punctor>(Punctor::CloseBracket)) {
+  while (true) {
+    tok = scanner->next();
+    if (tok.is<Punctor>(Punctor::CloseBracket)) {
+      break;
+    }
+
     if (tok.type != TT::String) {
       LOG(ERROR) << feedback[ASM_PARAM_EXPECTED_STRING_LITERAL]
                  << tok.serialize() << tok << std::endl;
@@ -106,6 +120,15 @@ static bool asm_parse_clobbers(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
 
     result.push_back(tok.as<std::string>());
+
+    tok = scanner->next();
+    if (tok.is<Punctor>(Punctor::CloseBracket)) {
+      break;
+    } else if (!tok.is<Punctor>(Punctor::Comma)) {
+      LOG(ERROR) << feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok
+                 << std::endl;
+      return false;
+    }
   }
 
   return true;

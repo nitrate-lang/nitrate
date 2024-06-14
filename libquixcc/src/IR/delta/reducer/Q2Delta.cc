@@ -373,8 +373,16 @@ static auto conv(const ir::q::Segment *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::Asm *n, DState &state) -> DResult {
-  /// TODO: Implement Asm
-  throw std::runtime_error("DeltaIR translation: Asm not implemented");
+  std::vector<std::pair<std::string, const Value *>> outputs;
+  std::vector<std::pair<std::string, const Value *>> inputs;
+
+  for (auto output : n->outputs)
+    outputs.push_back({output.first, conv(output.second, state)[0]});
+
+  for (auto input : n->inputs)
+    inputs.push_back({input.first, conv(input.second, state)[0]});
+
+  return Asm::create(n->asm_str, outputs, inputs, n->clobbers);
 }
 
 static auto conv(const ir::q::RegionDef *n, DState &state) -> DResult {

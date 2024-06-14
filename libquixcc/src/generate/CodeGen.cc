@@ -713,6 +713,23 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node) {
   return func;
 }
 
+llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Asm *node) {
+  /// TODO: implement inline assembly
+  // throw std::runtime_error("Inline assembly not implemented");
+
+  std::string constraints;
+  bool sideeffects = false;
+  bool alignstack = false;
+
+  /// TODO: build out parameters in LLVM inline asm format
+
+  llvm::InlineAsm *asm_ = llvm::InlineAsm::get(
+      llvm::FunctionType::get(llvm::Type::getVoidTy(*m_ctx->m_ctx), false),
+      node->asm_str, constraints, sideeffects, alignstack);
+
+  return m_ctx->m_builder->CreateCall(asm_, {});
+}
+
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Add *node) {
   return m_ctx->m_builder->CreateAdd(gen(node->lhs), gen(node->rhs));
 }
@@ -907,6 +924,7 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(
   match(Halt);
   match(Block);
   match(Segment);
+  match(Asm);
   match(Add);
   match(Sub);
   match(Mul);

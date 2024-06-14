@@ -86,7 +86,12 @@ static std::map<
     switch_insts;
 static std::map<std::pair<std::string, const Type *>, const Ident *>
     ident_insts;
-static Asm *asm_inst = nullptr;
+static std::map<
+    std::tuple<std::string, std::vector<std::pair<std::string, const Value *>>,
+               std::vector<std::pair<std::string, const Value *>>,
+               std::vector<std::string>>,
+    const Asm *>
+    asm_inst;
 static std::map<std::vector<const Value *>, const Block *> functionblock_insts;
 static std::map<
     std::tuple<std::vector<std::pair<std::string, const Type *>>, const Value *,
@@ -354,10 +359,16 @@ const ir::q::Ident *ir::q::Ident::create(std::string name, const Type *type) {
   return ident_insts[key];
 }
 
-const ir::q::Asm *ir::q::Asm::create() {
+const ir::q::Asm *ir::q::Asm::create(
+    std::string asm_str,
+    std::vector<std::pair<std::string, const Value *>> inputs,
+    std::vector<std::pair<std::string, const Value *>> outputs,
+    std::vector<std::string> clobbers) {
   lock(NodeType::Asm);
-  if (asm_inst == nullptr) asm_inst = new Asm();
-  return asm_inst;
+  auto key = std::make_tuple(asm_str, inputs, outputs, clobbers);
+  if (!asm_inst.contains(key))
+    asm_inst[key] = new Asm(asm_str, inputs, outputs, clobbers);
+  return asm_inst[key];
 }
 
 const ir::q::Block *ir::q::Block::create(std::vector<const Value *> stmts) {

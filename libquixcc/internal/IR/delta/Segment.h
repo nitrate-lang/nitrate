@@ -88,6 +88,34 @@ class Segment : public Expr {
   const Type *ret;
   bool variadic;
 };
+
+class Asm : public Value {
+ protected:
+  bool print_impl(std::ostream &os, PState &state) const override;
+  boost::uuids::uuid hash_impl() const override;
+  bool verify_impl() const override;
+
+  Asm(const std::string &asm_str,
+      const std::vector<std::pair<std::string, const Value *>> &inputs,
+      const std::vector<std::pair<std::string, const Value *>> &outputs,
+      const std::vector<std::string> &clobbers)
+      : asm_str(asm_str), inputs(inputs), outputs(outputs), clobbers(clobbers) {
+    ntype = (int)NodeType::Asm;
+  }
+
+ public:
+  static const Asm *create(
+      const std::string &asm_str,
+      const std::vector<std::pair<std::string, const Value *>> &inputs,
+      const std::vector<std::pair<std::string, const Value *>> &outputs,
+      const std::vector<std::string> &clobbers);
+
+  std::string asm_str;
+  std::vector<std::pair<std::string, const Value *>> inputs;
+  std::vector<std::pair<std::string, const Value *>> outputs;
+  std::vector<std::string> clobbers;
+};
+
 }  // namespace libquixcc::ir::delta
 
 #endif  // __QUIXCC_IR_DELTA_NODES_SEGMENT_H__

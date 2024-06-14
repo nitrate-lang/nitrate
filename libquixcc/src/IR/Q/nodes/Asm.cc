@@ -32,8 +32,21 @@
 #include <IR/Q/Asm.h>
 
 boost::uuids::uuid libquixcc::ir::q::Asm::hash_impl() const {
-  /// TODO: implement
-  return Hasher().gettag().hash();
+  auto h = Hasher().gettag().add(asm_str);
+
+  for (const auto &[name, val] : outputs) h.add(name).add(val);
+  for (const auto &[name, val] : inputs) h.add(name).add(val);
+  for (const auto &clobber : clobbers) h.add(clobber);
+
+  return h.hash();
 }
 
-bool libquixcc::ir::q::Asm::verify_impl() const { return false; }
+bool libquixcc::ir::q::Asm::verify_impl() const {
+  if (!std::all_of(outputs.begin(), outputs.end(),
+                   [](const auto &p) { return p.second->verify(); }))
+    return false;
+  if (!std::all_of(inputs.begin(), inputs.end(),
+                   [](const auto &p) { return p.second->verify(); }))
+    return false;
+  return true;
+}

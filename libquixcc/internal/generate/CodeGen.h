@@ -138,6 +138,7 @@ class LLVM14Codegen {
   llvm::Value *gen(const ir::delta::Halt *node);
   llvm::Value *gen(const ir::delta::Block *node);
   llvm::Function *gen(const ir::delta::Segment *node);
+  llvm::Value *gen(const ir::delta::Asm *node);
   llvm::Value *gen(const ir::delta::Add *node);
   llvm::Value *gen(const ir::delta::Sub *node);
   llvm::Value *gen(const ir::delta::Mul *node);
@@ -239,6 +240,7 @@ class C11Codegen {
   void gen(const ir::delta::Halt *node, std::ostream &code);
   void gen(const ir::delta::Block *node, std::ostream &code);
   void gen(const ir::delta::Segment *node, std::ostream &code);
+  void gen(const ir::delta::Asm *node, std::ostream &code);
   void gen(const ir::delta::Add *node, std::ostream &code);
   void gen(const ir::delta::Sub *node, std::ostream &code);
   void gen(const ir::delta::Mul *node, std::ostream &code);
