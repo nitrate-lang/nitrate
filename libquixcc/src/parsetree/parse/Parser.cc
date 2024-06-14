@@ -72,8 +72,11 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
     if (tok.type != TT::Keyword) {
       std::shared_ptr<ExprNode> expr;
       if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
-                      expr))
+                      expr)) {
+        LOG(ERROR) << "Error parsing expression in block statement." << tok
+                   << std::endl;
         return false;
+      }
 
       if (!expr)
         LOG(ERROR) << "Null expressions are illegal in ExprStmtNode." << tok
@@ -162,9 +165,34 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
       case Keyword::For:
         if (!parse_for(job, scanner, node)) return false;
         break;
-      case Keyword::__Asm__:  // inline assembly
+      case Keyword::__Asm__:
         if (!parse_inline_asm(job, scanner, node)) return false;
         break;
+      case Keyword::Unsafe: {
+        std::shared_ptr<BlockNode> block;
+        Token tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::OpenBrace)) {
+          if (!parse(job, scanner, block)) return false;
+        } else {
+          if (!parse(job, scanner, block, false, true)) return false;
+        }
+
+        block->m_unsafe = true;
+        group->m_stmts.push_back(block);
+        break;
+      }
+      case Keyword::Safe: {
+        std::shared_ptr<BlockNode> block;
+        Token tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::OpenBrace)) {
+          if (!parse(job, scanner, block)) return false;
+        } else {
+          if (!parse(job, scanner, block, false, true)) return false;
+        }
+        block->m_unsafe = false;
+        group->m_stmts.push_back(block);
+        break;
+      }
       default:
         LOG(ERROR) << feedback[PARSER_ILLEGAL_KEYWORD] << tok.serialize() << tok
                    << std::endl;

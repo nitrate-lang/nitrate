@@ -239,7 +239,15 @@ void ParseTreeSerializer::conv(const BlockNode *n) {
     next(stmt);
   }
 
-  o << "])";
+  o << "]";
+
+  if (n->m_unsafe) {
+    o << " 1";
+  } else {
+    o << " 0";
+  }
+
+  o << ')';
 
   indent--;
 }

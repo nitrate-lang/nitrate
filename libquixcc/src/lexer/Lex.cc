@@ -86,6 +86,8 @@ const std::unordered_map<std::string_view, Keyword> keyword_map = {
     {"retropure", Keyword::Retropure},
     {"crashpoint", Keyword::CrashPoint},
     {"inline", Keyword::Inline},
+    {"unsafe", Keyword::Unsafe},
+    {"safe", Keyword::Safe},
 
     {"if", Keyword::If},
     {"else", Keyword::Else},
@@ -139,6 +141,8 @@ const std::unordered_map<Keyword, std::string_view> keyword_map_inverse = {
     {Keyword::Retropure, "retropure"},
     {Keyword::CrashPoint, "crashpoint"},
     {Keyword::Inline, "inline"},
+    {Keyword::Unsafe, "unsafe"},
+    {Keyword::Safe, "safe"},
 
     {Keyword::If, "if"},
     {Keyword::Else, "else"},

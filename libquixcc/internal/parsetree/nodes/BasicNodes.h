@@ -244,6 +244,7 @@ class BlockNode : public StmtNode {
   BlockNode() { ntype = NodeType::BlockNode; }
 
   std::vector<std::shared_ptr<StmtNode>> m_stmts;
+  bool m_unsafe = false;
 };
 
 class StmtGroupNode : public StmtNode {

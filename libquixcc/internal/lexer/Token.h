@@ -72,6 +72,8 @@ enum class Keyword {
   Retropure = 67,
   CrashPoint = 68,
   Inline = 69,
+  Unsafe = 70,
+  Safe = 71,
 
   If = 90,
   Else = 91,
