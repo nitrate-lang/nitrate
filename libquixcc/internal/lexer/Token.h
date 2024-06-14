@@ -60,6 +60,7 @@ enum class Keyword {
   Union = 43,
   Opaque = 44,
   Enum = 45,
+  FString = 46,
 
   Fn = 60,
   Noexcept = 61,
@@ -155,6 +156,18 @@ enum class Operator {
   GreaterThanEqual = 63,
   Equal = 64,
   NotEqual = 65,
+
+  As = 80,
+  Is = 81,
+  In = 82,
+  NotIn = 83,
+  Sizeof = 84,
+  Alignof = 85,
+  Typeof = 86,
+  Offsetof = 87,
+  Range = 88,
+  Ellipsis = 89,
+  Spaceship = 90,
 };
 
 enum class TT {

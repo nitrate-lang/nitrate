@@ -94,6 +94,7 @@ struct QState {
 
 static auto conv(const ParseNode *n, QState &state) -> QResult;
 static auto conv(const ExprStmtNode *n, QState &state) -> QResult;
+static auto conv(const StmtExprNode *n, QState &state) -> QResult;
 static auto conv(const NopStmtNode *n, QState &state) -> QResult;
 static auto conv(const BlockNode *n, QState &state) -> QResult;
 static auto conv(const StmtGroupNode *n, QState &state) -> QResult;
@@ -111,6 +112,7 @@ static auto conv(const CallExprNode *n, QState &state) -> QResult;
 static auto conv(const ListExprNode *n, QState &state) -> QResult;
 static auto conv(const MemberAccessNode *n, QState &state) -> QResult;
 static auto conv(const IndexNode *n, QState &state) -> QResult;
+static auto conv(const FStringNode *n, QState &state) -> QResult;
 static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult;
 static auto conv(const ConstPostUnaryExprNode *n, QState &state) -> QResult;
 static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult;
@@ -180,6 +182,10 @@ static auto conv(const ForStmtNode *n, QState &state) -> QResult;
 
 static auto conv(const ExprStmtNode *n, QState &state) -> QResult {
   return conv(n->m_expr.get(), state);
+}
+
+static auto conv(const StmtExprNode *n, QState &state) -> QResult {
+  return conv(n->m_stmt.get(), state);
 }
 
 static auto conv(const NopStmtNode *n, QState &state) -> QResult {
@@ -614,6 +620,11 @@ static auto conv(const IndexNode *n, QState &state) -> QResult {
   if (t->is_ptr()) return Index::create(e, i, t->as<Ptr>()->type);
 
   return Index::create(e, i, t->as<Array>()->type);
+}
+
+static auto conv(const FStringNode *n, QState &state) -> QResult {
+  /// TODO: Implement FStringNode
+  throw std::runtime_error("FStringNode not implemented");
 }
 
 static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult {
@@ -1386,6 +1397,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
       r = conv(n->as<ExprStmtNode>(), state);
       break;
 
+    case libquixcc::NodeType::StmtExprNode:
+      r = conv(n->as<StmtExprNode>(), state);
+      break;
+
     case libquixcc::NodeType::NopStmtNode:
       r = conv(n->as<NopStmtNode>(), state);
       break;
@@ -1464,6 +1479,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
 
     case libquixcc::NodeType::IndexNode:
       r = conv(n->as<IndexNode>(), state);
+      break;
+
+    case libquixcc::NodeType::FStringNode:
+      r = conv(n->as<FStringNode>(), state);
       break;
 
     case libquixcc::NodeType::IdentifierNode:

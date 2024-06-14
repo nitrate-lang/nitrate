@@ -59,6 +59,18 @@ class StringTypeNode : public TypeNode {
     return m_instance;
   }
 };
+
+class FStringNode : public ExprNode {
+ public:
+  FStringNode(std::string _template,
+              std::vector<std::shared_ptr<ExprNode>> _args)
+      : template_string(_template), args(_args) {
+    ntype = NodeType::FStringNode;
+  }
+
+  std::string template_string;
+  std::vector<std::shared_ptr<ExprNode>> args;
+};
 }  // namespace libquixcc
 
 #endif  // __QUIXCC_PARSE_NODES_STRING_H__

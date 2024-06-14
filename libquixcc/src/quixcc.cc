@@ -79,6 +79,7 @@ std::atomic<uint64_t> g_num_of_contexts = 0;
 std::mutex g_library_lock;
 
 static thread_local jmp_buf g_tls_exception;
+static thread_local bool g_tls_exception_set = false;
 
 static void print_stacktrace();
 
@@ -713,9 +714,8 @@ static bool compile(quixcc_job_t *job) {
   /// BEGIN: INTERMEDIATE PROCESSING
   if (!quixcc_mutate_ptree(job, ptree) || job->m_tainted) return false;
   if (job->m_debug)
-    LOG(DEBUG) << log::raw
-               << "Dumping Ptree 2 (JSON): " << base64_encode(ptree->to_string())
-               << std::endl;
+    LOG(DEBUG) << log::raw << "Dumping Ptree 2 (JSON): "
+               << base64_encode(ptree->to_string()) << std::endl;
   /// END:   INTERMEDIATE PROCESSING
   ///=========================================
 
@@ -829,6 +829,7 @@ static bool verify_build_option(const std::string &option,
       "-fPIC",         // position independent code
       "-fPIE",         // position independent executable
       "-v",            // verbose
+      "-fcoredump",    // dump core on crash
   };
   const static std::vector<std::pair<std::regex, std::regex>> static_regexes = {
       {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex("[a-zA-Z0-9_ ]*")},
@@ -1043,15 +1044,16 @@ void quixcc_fault_handler(int sig) {
                "IS NOW A WIRED-MACHINE. TERMINATE ASAP."
             << std::endl;
 
-  /* Attempt to recover by longjmp'ing into the job-execution thread */
-  /* I say `attempt` because it feels like there are many ways this could go
-     wrong, even in a static-binary. */
+  if (g_tls_exception_set) {
+    /* Attempt to recover by longjmp'ing into the job-execution thread */
+    /* I say `attempt` because it feels like there are many ways this could go
+       wrong, even in a static-binary. */
 
-  // Details @ https://man7.org/linux/man-pages/man3/longjmp.3.html
-  longjmp(g_tls_exception, 1);
-
-  // This will never be reached
-  abort();
+    // Details @ https://man7.org/linux/man-pages/man3/longjmp.3.html
+    longjmp(g_tls_exception, 1);
+  } else {
+    abort();
+  }
 }
 
 static bool execute_job(quixcc_job_t *job) {
@@ -1147,18 +1149,32 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job) {
   std::thread t([&] {
     /* This is a dirty hack to `catch` segfaults and still be able to return */
 
-    /* We capture the local environment: (stack pointer, PC, registers, etc.) */
-    if (setjmp(g_tls_exception) == 0) {
-      /* Okay, now the confusing part.
-         The above call to `setjmp()` captures the 'point-of-return' or
-         'jump-point' at the exact location it is called from.
+    bool has_core_dump = false;
+    for (uint32_t i = 0; i < job->m_options.m_count; i++) {
+      if (std::string(job->m_options.m_options[i]) == "-fcoredump") {
+        has_core_dump = true;
+        break;
+      }
+    }
 
-         This fact requires us to install logic to detect whether or not we on
-         the non-setjmp (normal/common) path or the setjmp path to avoid
-         recursion and chaos.
+    if (!has_core_dump) {
+      /* We capture the local environment: (stack pointer, PC, registers, etc.)
+       */
+      if (setjmp(g_tls_exception) == 0) {
+        /* Okay, now the confusing part.
+           The above call to `setjmp()` captures the 'point-of-return' or
+           'jump-point' at the exact location it is called from.
 
-         If the thread-local handler is not set, we are on the normal path.
-      */
+           This fact requires us to install logic to detect whether or not we on
+           the non-setjmp (normal/common) path or the setjmp path to avoid
+           recursion and chaos.
+
+           If the thread-local handler is not set, we are on the normal path.
+        */
+        g_tls_exception_set = true;
+        status = execute_job(job);
+      }
+    } else {
       status = execute_job(job);
     }
   });

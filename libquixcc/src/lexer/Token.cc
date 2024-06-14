@@ -85,10 +85,10 @@ std::string Token::serialize(bool human_readable) const {
       ss << "Punctor(" << punctor_map_inverse.at(as<Punctor>()).data() << ")";
       break;
     case TT::String:
-      ss << "\"" << as<std::string>() << "\"";
+      ss << "String(\"" << as<std::string>() << "\")";
       break;
     case TT::Char:
-      ss << "'" << as<std::string>() << "'";
+      ss << "Char('" << as<std::string>() << "')";
       break;
     case TT::Integer:
       ss << "Number(" << as<std::string>() << ")";
@@ -97,7 +97,7 @@ std::string Token::serialize(bool human_readable) const {
       ss << "Float(" << as<std::string>() << ")";
       break;
     case TT::Comment:
-      ss << "/* " << as<std::string>() << " */";
+      ss << "Comment(" << as<std::string>() << ")";
       break;
     case TT::MacroBlock:
       ss << "MacroBlock(" << as<std::string>() << ")";
@@ -106,7 +106,7 @@ std::string Token::serialize(bool human_readable) const {
       ss << "MacroSingleLine(" << as<std::string>() << ")";
       break;
     default:
-      ss << "Unknown";
+      ss << "Unknown(" << as<std::string>() << ")";
       break;
   }
 

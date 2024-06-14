@@ -110,6 +110,7 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
   if (n->is<type>()) return conv(n->as<type>())
 
   match(ExprStmtNode);
+  match(StmtExprNode);
   match(NopStmtNode);
   match(BlockNode);
   match(StmtGroupNode);
@@ -127,6 +128,7 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
   match(ListExprNode);
   match(MemberAccessNode);
   match(IndexNode);
+  match(FStringNode);
   match(ConstUnaryExprNode);
   match(ConstPostUnaryExprNode);
   match(ConstBinaryExprNode);
@@ -205,15 +207,21 @@ void ParseTreeSerializer::ind() {
 }
 
 void ParseTreeSerializer::conv(const ExprStmtNode *n) {
-  (void)n;
-
   indent++;
   ind();
 
   o << "(EStmt";
-
   next(n->m_expr);
+  o << ')';
+  indent--;
+}
 
+void ParseTreeSerializer::conv(const StmtExprNode *n) {
+  indent++;
+  ind();
+
+  o << "(SExpr";
+  next(n->m_stmt);
   o << ')';
   indent--;
 }
@@ -407,6 +415,20 @@ void ParseTreeSerializer::conv(const IndexNode *n) {
   next(n->m_expr);
   next(n->m_index);
   o << ')';
+}
+
+void ParseTreeSerializer::conv(const FStringNode *n) {
+  indent++;
+  ind();
+
+  o << "(FStr \"" << escape_string(n->template_string) << "\" [";
+
+  for (const auto &arg : n->args) {
+    next(arg);
+  }
+
+  o << "])";
+  indent--;
 }
 
 void ParseTreeSerializer::conv(const ConstUnaryExprNode *n) {

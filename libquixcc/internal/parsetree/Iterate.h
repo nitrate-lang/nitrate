@@ -73,6 +73,8 @@ struct ParseTreeTraversalState {
 class ParseTreePreorder {
   static size_t ExprStmtNode_iter(ParseTreeTraversalState &state,
                                   ExprStmtNode *node);
+  static size_t StmtExprNode_iter(ParseTreeTraversalState &state,
+                                  StmtExprNode *node);
   static size_t NopStmtNode_iter(ParseTreeTraversalState &state,
                                  NopStmtNode *node);
   static size_t BlockNode_iter(ParseTreeTraversalState &state, BlockNode *node);
@@ -107,6 +109,8 @@ class ParseTreePreorder {
   static size_t MemberAccessNode_iter(ParseTreeTraversalState &state,
                                       MemberAccessNode *node);
   static size_t IndexNode_iter(ParseTreeTraversalState &state, IndexNode *node);
+  static size_t FStringNode_iter(ParseTreeTraversalState &state,
+                                 FStringNode *node);
   static size_t ConstUnaryExprNode_iter(ParseTreeTraversalState &state,
                                         ConstUnaryExprNode *node);
   static size_t ConstPostUnaryExprNode_iter(ParseTreeTraversalState &state,

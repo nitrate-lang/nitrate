@@ -98,12 +98,70 @@ static std::shared_ptr<CallExprNode> parse_function_call(
   return expr;
 }
 
+static bool parse_fstring(quixcc_job_t &job, std::shared_ptr<FStringNode> &node,
+                          Scanner *scanner, size_t depth) {
+  Token tok = scanner->next();
+  if (tok.type != TT::String) {
+    LOG(ERROR) << "Expected a string literal template in f-string" << tok
+               << std::endl;
+    return false;
+  }
+
+  std::string fstr = tok.as<std::string>();
+  std::string rectified_template;
+  std::vector<std::shared_ptr<ExprNode>> args;
+  size_t state = 0, w_beg = 0, w_end = 0;
+
+  for (size_t i = 0; i < fstr.size(); i++) {
+    char c = fstr[i];
+
+    if (c == '{' && state == 0) {
+      w_beg = i + 1;
+      state = 1;
+    } else if (c == '}' && state == 1) {
+      w_end = i + 1;
+      state = 0;
+
+      auto sub = fstr.substr(w_beg, w_end - w_beg) + "\n";
+
+      StringLexer subscanner(sub);
+
+      std::shared_ptr<ExprNode> expr;
+      if (!parse_expr(job, &subscanner,
+                      {Token(TT::Punctor, Punctor::CloseBrace)}, expr, 0)) {
+        return false;
+      }
+
+      args.push_back(expr);
+      rectified_template += "{}";
+    } else if (c == '{') {
+      rectified_template += c;
+      state = 0;
+    } else if (c == '}') {
+      rectified_template += c;
+      state = 0;
+    } else if (state == 0) {
+      rectified_template += c;
+    }
+  }
+
+  if (state != 0) {
+    LOG(ERROR) << "Unbalanced braces in f-string" << tok << std::endl;
+    return false;
+  }
+
+  node = std::make_shared<FStringNode>(rectified_template, args);
+
+  return true;
+}
+
 bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
                            std::set<Token> terminators,
                            std::shared_ptr<ExprNode> &node, size_t depth) {
   std::stack<std::shared_ptr<ExprNode>> stack;
 
-  // Operator precedence
+  /// TODO: Operator precedence
+  /// TODO: Operator associativity
   static std::map<Operator, int> operator_precedence = {
       {Operator::LessThan, 10},
       {Operator::GreaterThan, 10},
@@ -193,8 +251,22 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           case Keyword::Undef:
             stack.push(UndefLiteralNode::create());
             continue;
+          case Keyword::Fn: {
+            std::shared_ptr<StmtNode> f;
+            if (!parse_function(job, scanner, f)) return false;
+            auto adapter = std::make_shared<StmtExprNode>(f);
+            stack.push(adapter);
+            continue;
+          }
+          case Keyword::FString: {
+            std::shared_ptr<FStringNode> f;
+            if (!parse_fstring(job, f, scanner, depth)) return false;
+            stack.push(f);
+            continue;
+          }
+
           default:
-            LOG(ERROR) << "Unexpected token in non-constant expression '{}'"
+            LOG(ERROR) << "Unexpected keyword in non-constant expression '{}'"
                        << tok.serialize() << tok << std::endl;
             return false;
         }

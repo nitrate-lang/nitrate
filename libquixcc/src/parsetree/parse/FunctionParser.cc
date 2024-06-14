@@ -111,13 +111,13 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   auto tok = scanner->next();
 
+  std::string name;
   if (tok.type != TT::Identifier) {
     LOG(ERROR) << feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
-  std::string name = tok.as<std::string>();
-
+  name = tok.as<std::string>();
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Colon)) {
     LOG(ERROR) << feedback[FN_PARAM_EXPECTED_COLON] << tok << std::endl;
@@ -197,14 +197,10 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   Token tok = scanner->next();
 
-  if (tok.type != TT::Identifier) {
-    LOG(ERROR) << feedback[FN_EXPECTED_IDENTIFIER] << tok << std::endl;
-    return false;
+  if (tok.type == TT::Identifier) {
+    fndecl->m_name = tok.as<std::string>();
+    tok = scanner->next();
   }
-
-  fndecl->m_name = tok.as<std::string>();
-
-  tok = scanner->next();
 
   if (!tok.is<Punctor>(Punctor::OpenParen)) {
     LOG(ERROR) << feedback[FN_EXPECTED_OPEN_PAREN] << tok << std::endl;

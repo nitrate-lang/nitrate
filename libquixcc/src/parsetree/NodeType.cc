@@ -38,6 +38,7 @@ std::unordered_map<libquixcc::NodeType, std::string_view>
         {NodeType::ConstExprNode, "ConstExprNode"},
         {NodeType::StmtNode, "StmtNode"},
         {NodeType::ExprStmtNode, "ExprStmtNode"},
+        {NodeType::StmtExprNode, "StmtExprNode"},
         {NodeType::NopStmtNode, "NopStmtNode"},
         {NodeType::TypeNode, "TypeNode"},
         {NodeType::DeclNode, "DeclNode"},

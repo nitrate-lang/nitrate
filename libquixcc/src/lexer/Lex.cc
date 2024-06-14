@@ -74,6 +74,7 @@ const std::unordered_map<std::string_view, Keyword> keyword_map = {
     {"union", Keyword::Union},
     {"opaque", Keyword::Opaque},
     {"enum", Keyword::Enum},
+    {"fstring", Keyword::FString},
 
     {"fn", Keyword::Fn},
     {"noexcept", Keyword::Noexcept},
@@ -109,81 +110,72 @@ const std::unordered_map<std::string_view, Keyword> keyword_map = {
     {"true", Keyword::True},
     {"false", Keyword::False}};
 
-const std::unordered_map<Keyword, std::string_view>
-    keyword_map_inverse = {{Keyword::Subsystem, "subsystem"},
-                           {Keyword::Import, "import"},
-                           {Keyword::Pub, "pub"},
+const std::unordered_map<Keyword, std::string_view> keyword_map_inverse = {
+    {Keyword::Subsystem, "subsystem"},
+    {Keyword::Import, "import"},
+    {Keyword::Pub, "pub"},
 
-                           {Keyword::Type, "type"},
-                           {Keyword::Let, "let"},
-                           {Keyword::Var, "var"},
-                           {Keyword::Const, "const"},
-                           {Keyword::Static, "static"},
+    {Keyword::Type, "type"},
+    {Keyword::Let, "let"},
+    {Keyword::Var, "var"},
+    {Keyword::Const, "const"},
+    {Keyword::Static, "static"},
 
-                           {Keyword::Struct, "struct"},
-                           {Keyword::Region, "region"},
-                           {Keyword::Group, "group"},
-                           {Keyword::Union, "union"},
-                           {Keyword::Opaque, "opaque"},
-                           {Keyword::Enum, "enum"},
+    {Keyword::Struct, "struct"},
+    {Keyword::Region, "region"},
+    {Keyword::Group, "group"},
+    {Keyword::Union, "union"},
+    {Keyword::Opaque, "opaque"},
+    {Keyword::Enum, "enum"},
+    {Keyword::FString, "fstring"},
 
-                           {Keyword::Fn, "fn"},
-                           {Keyword::Noexcept, "noexcept"},
-                           {Keyword::Foreign, "foreign"},
-                           {Keyword::Impure, "impure"},
-                           {Keyword::Tsafe, "tsafe"},
-                           {Keyword::Pure, "pure"},
-                           {Keyword::Quasipure, "quasipure"},
-                           {Keyword::Retropure, "retropure"},
-                           {Keyword::CrashPoint, "crashpoint"},
-                           {Keyword::Inline, "inline"},
+    {Keyword::Fn, "fn"},
+    {Keyword::Noexcept, "noexcept"},
+    {Keyword::Foreign, "foreign"},
+    {Keyword::Impure, "impure"},
+    {Keyword::Tsafe, "tsafe"},
+    {Keyword::Pure, "pure"},
+    {Keyword::Quasipure, "quasipure"},
+    {Keyword::Retropure, "retropure"},
+    {Keyword::CrashPoint, "crashpoint"},
+    {Keyword::Inline, "inline"},
 
-                           {Keyword::If, "if"},
-                           {Keyword::Else, "else"},
-                           {Keyword::For, "for"},
-                           {Keyword::While, "while"},
-                           {Keyword::Do, "do"},
-                           {Keyword::Switch, "switch"},
-                           {Keyword::Case, "case"},
-                           {Keyword::Default, "default"},
-                           {Keyword::Break, "break"},
-                           {Keyword::Continue, "continue"},
-                           {Keyword::Return, "ret"},
-                           {Keyword::Retif, "retif"},
-                           {Keyword::Retz, "retz"},
-                           {Keyword::Retv, "retv"},
+    {Keyword::If, "if"},
+    {Keyword::Else, "else"},
+    {Keyword::For, "for"},
+    {Keyword::While, "while"},
+    {Keyword::Do, "do"},
+    {Keyword::Switch, "switch"},
+    {Keyword::Case, "case"},
+    {Keyword::Default, "default"},
+    {Keyword::Break, "break"},
+    {Keyword::Continue, "continue"},
+    {Keyword::Return, "ret"},
+    {Keyword::Retif, "retif"},
+    {Keyword::Retz, "retz"},
+    {Keyword::Retv, "retv"},
 
-                           {Keyword::__Asm__, "__asm__"},
+    {Keyword::__Asm__, "__asm__"},
 
-                           {Keyword::Void, "void"},
-                           {Keyword::Undef, "undef"},
-                           {Keyword::Null, "null"},
-                           {Keyword::True, "true"},
-                           {Keyword::False, "false"}};
+    {Keyword::Void, "void"},
+    {Keyword::Undef, "undef"},
+    {Keyword::Null, "null"},
+    {Keyword::True, "true"},
+    {Keyword::False, "false"}};
 
 const std::unordered_map<std::string_view, Punctor> punctor_map = {
-    {"(", Punctor::OpenParen},
-    {")", Punctor::CloseParen},
-    {"{", Punctor::OpenBrace},
-    {"}", Punctor::CloseBrace},
-    {"[", Punctor::OpenBracket},
-    {"]", Punctor::CloseBracket},
-    {".", Punctor::Dot},
-    {",", Punctor::Comma},
-    {":", Punctor::Colon},
-    {";", Punctor::Semicolon}};
+    {"(", Punctor::OpenParen},   {")", Punctor::CloseParen},
+    {"{", Punctor::OpenBrace},   {"}", Punctor::CloseBrace},
+    {"[", Punctor::OpenBracket}, {"]", Punctor::CloseBracket},
+    {".", Punctor::Dot},         {",", Punctor::Comma},
+    {":", Punctor::Colon},       {";", Punctor::Semicolon}};
 
-const std::unordered_map<Punctor, std::string_view>
-    punctor_map_inverse = {{Punctor::OpenParen, "("},
-                           {Punctor::CloseParen, ")"},
-                           {Punctor::OpenBrace, "{"},
-                           {Punctor::CloseBrace, "}"},
-                           {Punctor::OpenBracket, "["},
-                           {Punctor::CloseBracket, "]"},
-                           {Punctor::Dot, "."},
-                           {Punctor::Comma, ","},
-                           {Punctor::Colon, ":"},
-                           {Punctor::Semicolon, ";"}};
+const std::unordered_map<Punctor, std::string_view> punctor_map_inverse = {
+    {Punctor::OpenParen, "("},   {Punctor::CloseParen, ")"},
+    {Punctor::OpenBrace, "{"},   {Punctor::CloseBrace, "}"},
+    {Punctor::OpenBracket, "["}, {Punctor::CloseBracket, "]"},
+    {Punctor::Dot, "."},         {Punctor::Comma, ","},
+    {Punctor::Colon, ":"},       {Punctor::Semicolon, ";"}};
 
 const std::unordered_map<std::string_view, Operator> operator_map = {
     {"<", Operator::LessThan},
@@ -214,6 +206,17 @@ const std::unordered_map<std::string_view, Operator> operator_map = {
     {">>", Operator::RightShift},
     {"==", Operator::Equal},
     {"!=", Operator::NotEqual},
+    {"as", Operator::As},
+    {"is", Operator::Is},
+    {"in", Operator::In},
+    {"nin", Operator::NotIn},
+    {"sizeof", Operator::Sizeof},
+    {"alignof", Operator::Alignof},
+    {"typeof", Operator::Typeof},
+    {"offsetof", Operator::Offsetof},
+    {"..", Operator::Range},
+    {"...", Operator::Ellipsis},
+    {"<=>", Operator::Spaceship},
     {"&&", Operator::LogicalAnd},
     {"||", Operator::LogicalOr},
     {"^^", Operator::LogicalXor},
@@ -227,50 +230,58 @@ const std::unordered_map<std::string_view, Operator> operator_map = {
     {"<<=", Operator::LeftShiftAssign},
     {">>=", Operator::RightShiftAssign}};
 
-const std::unordered_map<Operator, std::string_view>
-    operator_map_inverse = {{Operator::LessThan, "<"},
-                            {Operator::GreaterThan, ">"},
-                            {Operator::Assign, "="},
-                            {Operator::At, "@"},
-                            {Operator::Arrow, "=>"},
-                            {Operator::Minus, "-"},
-                            {Operator::Plus, "+"},
-                            {Operator::Multiply, "*"},
-                            {Operator::Divide, "/"},
-                            {Operator::Modulo, "%"},
-                            {Operator::BitwiseAnd, "&"},
-                            {Operator::BitwiseOr, "|"},
-                            {Operator::BitwiseXor, "^"},
-                            {Operator::BitwiseNot, "~"},
-                            {Operator::LogicalNot, "!"},
-                            {Operator::Question, "?"},
-                            {Operator::PlusAssign, "+="},
-                            {Operator::MinusAssign, "-="},
-                            {Operator::MultiplyAssign, "*="},
-                            {Operator::DivideAssign, "/="},
-                            {Operator::ModuloAssign, "%="},
-                            {Operator::BitwiseOrAssign, "|="},
-                            {Operator::BitwiseAndAssign, "&="},
-                            {Operator::BitwiseXorAssign, "^="},
-                            {Operator::LeftShift, "<<"},
-                            {Operator::RightShift, ">>"},
-                            {Operator::Equal, "=="},
-                            {Operator::NotEqual, "!="},
-                            {Operator::LogicalAnd, "&&"},
-                            {Operator::LogicalOr, "||"},
-                            {Operator::LogicalXor, "^^"},
-                            {Operator::LessThanEqual, "<="},
-                            {Operator::GreaterThanEqual, ">="},
-                            {Operator::Increment, "++"},
-                            {Operator::Decrement, "--"},
-                            {Operator::XorAssign, "^^="},
-                            {Operator::OrAssign, "||="},
-                            {Operator::AndAssign, "&&="},
-                            {Operator::LeftShiftAssign, "<<="},
-                            {Operator::RightShiftAssign, ">>="}};
-
-const std::set<char> operator_chars = {'<', '>', '=', '@', '-', '+', '*', '/',
-                                       '%', '&', '|', '^', '~', '!', '?'};
+const std::unordered_map<Operator, std::string_view> operator_map_inverse = {
+    {Operator::LessThan, "<"},
+    {Operator::GreaterThan, ">"},
+    {Operator::Assign, "="},
+    {Operator::At, "@"},
+    {Operator::Arrow, "=>"},
+    {Operator::Minus, "-"},
+    {Operator::Plus, "+"},
+    {Operator::Multiply, "*"},
+    {Operator::Divide, "/"},
+    {Operator::Modulo, "%"},
+    {Operator::BitwiseAnd, "&"},
+    {Operator::BitwiseOr, "|"},
+    {Operator::BitwiseXor, "^"},
+    {Operator::BitwiseNot, "~"},
+    {Operator::LogicalNot, "!"},
+    {Operator::Question, "?"},
+    {Operator::PlusAssign, "+="},
+    {Operator::MinusAssign, "-="},
+    {Operator::MultiplyAssign, "*="},
+    {Operator::DivideAssign, "/="},
+    {Operator::ModuloAssign, "%="},
+    {Operator::BitwiseOrAssign, "|="},
+    {Operator::BitwiseAndAssign, "&="},
+    {Operator::BitwiseXorAssign, "^="},
+    {Operator::LeftShift, "<<"},
+    {Operator::RightShift, ">>"},
+    {Operator::Equal, "=="},
+    {Operator::NotEqual, "!="},
+    {Operator::As, "as"},
+    {Operator::Is, "is"},
+    {Operator::In, "in"},
+    {Operator::NotIn, "nin"},
+    {Operator::Sizeof, "sizeof"},
+    {Operator::Alignof, "alignof"},
+    {Operator::Typeof, "typeof"},
+    {Operator::Offsetof, "offsetof"},
+    {Operator::Range, ".."},
+    {Operator::Ellipsis, "..."},
+    {Operator::Spaceship, "<=>"},
+    {Operator::LogicalAnd, "&&"},
+    {Operator::LogicalOr, "||"},
+    {Operator::LogicalXor, "^^"},
+    {Operator::LessThanEqual, "<="},
+    {Operator::GreaterThanEqual, ">="},
+    {Operator::Increment, "++"},
+    {Operator::Decrement, "--"},
+    {Operator::XorAssign, "^^="},
+    {Operator::OrAssign, "||="},
+    {Operator::AndAssign, "&&="},
+    {Operator::LeftShiftAssign, "<<="},
+    {Operator::RightShiftAssign, ">>="}};
 }  // namespace libquixcc
 
 // Precomputed lookup table for hex char to byte conversion
@@ -345,8 +356,7 @@ std::string Scanner::escape_string(std::string_view str) {
 
 ///=============================================================================
 
-thread_local std::map<std::string, std::unique_ptr<char[]>>
-    TLCString::m_data;
+thread_local std::map<std::string, std::unique_ptr<char[]>> TLCString::m_data;
 
 StreamLexer::StreamLexer() {
   m_src = nullptr;
@@ -391,8 +401,7 @@ char StreamLexer::getc() {
   return c;
 }
 
-bool StreamLexer::set_source(FILE *src,
-                                        const std::string &filename) {
+bool StreamLexer::set_source(FILE *src, const std::string &filename) {
   if (src == nullptr) return false;
 
   /* Test if the file is 'usable' */
@@ -662,7 +671,8 @@ const Token &StreamLexer::read_token() {
           // Skip whitespace
           if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
             continue;
-          } else if (std::isalpha(c) || c == '_') /* Identifier or keyword */
+          } else if (std::isalpha(c) ||
+                     c == '_') /* Identifier or keyword or operator */
           {
             buf += c, state = LexState::Identifier;
             continue;
@@ -691,10 +701,18 @@ const Token &StreamLexer::read_token() {
                  c == '>') {
             buf += c;
 
-            if ((c = getc()) == EOF)
+            if ((c = getc()) == EOF) {
               return reset_state(),
                      (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                          .value();
+            }
+          }
+
+          /* Check for f-string */
+          if (buf == "f" && c == '"') {
+            m_pushback.push(c);
+            return (m_tok = Token(TT::Keyword, Keyword::FString, m_loc - 1))
+                .value();
           }
 
           /* We overshot; this must be a punctor ':' */
@@ -705,17 +723,29 @@ const Token &StreamLexer::read_token() {
           m_pushback.push(c);
 
           /* Determine if it's a keyword or an identifier */
-          for (const auto &kw : keyword_map)
-            if (buf == kw.first)
+          for (const auto &kw : keyword_map) {
+            if (buf == kw.first) {
               return (m_tok = Token(TT::Keyword, keyword_map.at(buf),
                                     m_loc - buf.size()))
                   .value();
+            }
+          }
+
+          /* Check if it's an operator */
+          for (const auto &op : operator_map) {
+            if (buf == op.first) {
+              return (m_tok = Token(TT::Operator, operator_map.at(buf),
+                                    m_loc - buf.size()))
+                  .value();
+            }
+          }
 
           /* Check if it's a valid identifier */
-          if (!canonicalize_identifier(buf))
+          if (!canonicalize_identifier(buf)) {
             return reset_state(),
                    (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                        .value();
+          }
 
           /* Canonicalize the identifier to the correct format */
           return (m_tok = Token(TT::Identifier, buf, m_loc - buf.size()))
@@ -726,10 +756,11 @@ const Token &StreamLexer::read_token() {
                  c == 'b' || c == 'd' || c == 'o' || c == 'e') {
             buf += c;
 
-            if ((c = getc()) == EOF)
+            if ((c = getc()) == EOF) {
               return reset_state(),
                      (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                          .value();
+            }
           }
 
           NumType type;
@@ -737,22 +768,25 @@ const Token &StreamLexer::read_token() {
           m_pushback.push(c);
 
           /* Check if it's a floating point number */
-          if ((type = check_number_literal_type(buf)) == NumType::Floating)
+          if ((type = check_number_literal_type(buf)) == NumType::Floating) {
             return (m_tok = Token(TT::Float, canonicalize_float(buf),
                                   m_loc - buf.size()))
                 .value();
+          }
 
           /* Check if it's a valid number */
-          if (type == NumType::Invalid)
+          if (type == NumType::Invalid) {
             return reset_state(),
                    (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                        .value();
+          }
 
           /* Canonicalize the number */
           std::string norm;
-          if (canonicalize_number(buf, norm, type))
+          if (canonicalize_number(buf, norm, type)) {
             return (m_tok = Token(TT::Integer, norm, m_loc - buf.size()))
                 .value();
+          }
 
           /* Invalid number */
           std::cerr << "Tokenization error: Numeric literal is too large to "
@@ -781,10 +815,11 @@ const Token &StreamLexer::read_token() {
           while (c != '\n') {
             buf += c;
 
-            if ((c = getc()) == EOF)
+            if ((c = getc()) == EOF) {
               return reset_state(),
                      (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                          .value();
+            }
           }
 
           return (m_tok = Token(TT::Comment, buf, m_loc - buf.size())).value();
@@ -795,19 +830,21 @@ const Token &StreamLexer::read_token() {
           while (c != '*') {
             buf += c;
 
-            if ((c = getc()) == EOF)
+            if ((c = getc()) == EOF) {
               return reset_state(),
                      (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                          .value();
+            }
           }
 
-          if ((c = getc()) == '/')
+          if ((c = getc()) == '/') {
             return (m_tok = Token(TT::Comment, buf, m_loc - buf.size()))
                 .value();
-          else if (c == EOF)
+          } else if (c == EOF) {
             return reset_state(),
                    (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                        .value();
+          }
 
           buf += '*';
           goto loop;
@@ -873,13 +910,14 @@ const Token &StreamLexer::read_token() {
           }
 
           /* Character or string */
-          if (buf.front() == '\'' && buf.size() == 2)
+          if (buf.front() == '\'' && buf.size() == 2) {
             return (m_tok = Token(TT::Char, std::string(1, buf[1]), m_loc - 2))
                 .value();
-          else
+          } else {
             return (m_tok = Token(TT::String, buf.substr(1, buf.size() - 1),
                                   m_loc - buf.size()))
                 .value();
+          }
         }
         case LexState::MacroStart: {
           /*
@@ -926,10 +964,11 @@ const Token &StreamLexer::read_token() {
               else if (c == ')')
                 buf += c, state_parens--;
 
-              if (state_parens == 0)
+              if (state_parens == 0) {
                 return (m_tok =
                             Token(TT::MacroSingleLine, buf, m_loc - buf.size()))
                     .value();
+              }
 
               buf += c;
               continue;
@@ -942,9 +981,10 @@ const Token &StreamLexer::read_token() {
           else if (c == ')')
             state_parens--;
 
-          if (state_parens == 0)
+          if (state_parens == 0) {
             return (m_tok = Token(TT::MacroBlock, buf, m_loc - buf.size() - 1))
                 .value();
+          }
 
           buf += c;
           continue;
@@ -991,9 +1031,10 @@ const Token &StreamLexer::read_token() {
                          .value();
             }
 
-            if ((c = getc()) == EOF)
+            if ((c = getc()) == EOF) {
               return (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                   .value();
+            }
           }
         }
       }
@@ -1033,7 +1074,7 @@ Token StreamLexer::next() {
 }
 
 bool StringLexer::set_source(const std::string &source_code,
-                                        const std::string &filename) {
+                             const std::string &filename) {
   /* Copy the source internally */
   m_src = source_code;
 
@@ -1053,8 +1094,8 @@ StringLexer::~StringLexer() {
 }
 
 bool StringLexer::QuickLex(const std::string &source_code,
-                                      std::vector<Token> &tokens,
-                                      const std::string &filename) {
+                           std::vector<Token> &tokens,
+                           const std::string &filename) {
   tokens.clear();
 
   try {

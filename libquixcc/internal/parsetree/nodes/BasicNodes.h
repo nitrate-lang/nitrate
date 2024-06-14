@@ -107,10 +107,11 @@ class ParseNode {
              is<PtrToIntCastExprNode>();
 
     if (std::is_same_v<T, ExprNode>)
-      return is<UnaryExprNode>() || is<PostUnaryExprNode>() ||
-             is<BinaryExprNode>() || is<CallExprNode>() || is<ListExprNode>() ||
-             is<MemberAccessNode>() || isof<CastExprNode>() ||
-             isof<LiteralNode>();
+      return is<StmtExprNode>() || is<UnaryExprNode>() ||
+             is<PostUnaryExprNode>() || is<BinaryExprNode>() ||
+             is<CallExprNode>() || is<ListExprNode>() ||
+             is<MemberAccessNode>() || is<IndexNode>() || is<FStringNode>() ||
+             isof<CastExprNode>() || isof<LiteralNode>();
 
     if (std::is_same_v<T, TypeNode>)
       return is<MutTypeNode>() || is<U8TypeNode>() || is<U16TypeNode>() ||
@@ -182,6 +183,15 @@ class ExprStmtNode : public StmtNode {
   }
 
   std::shared_ptr<ExprNode> m_expr;
+};
+
+class StmtExprNode : public ExprNode {
+ public:
+  StmtExprNode(std::shared_ptr<StmtNode> stmt) : m_stmt(stmt) {
+    ntype = NodeType::StmtExprNode;
+  }
+
+  std::shared_ptr<StmtNode> m_stmt;
 };
 
 class NopStmtNode : public StmtNode {

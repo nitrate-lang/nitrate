@@ -58,6 +58,7 @@ size_t traversal::ParseTreePreorder::dispatch(
 
   static const std::unordered_map<NodeType, Func> node_map = {
       {NodeType::ExprStmtNode, (Func)ExprStmtNode_iter},
+      {NodeType::StmtExprNode, (Func)ExprStmtNode_iter},
       {NodeType::NopStmtNode, (Func)NopStmtNode_iter},
       {NodeType::BlockNode, (Func)BlockNode_iter},
       {NodeType::StmtGroupNode, (Func)StmtGroupNode_iter},
@@ -76,6 +77,7 @@ size_t traversal::ParseTreePreorder::dispatch(
       {NodeType::ListExprNode, (Func)ListExprNode_iter},
       {NodeType::MemberAccessNode, (Func)MemberAccessNode_iter},
       {NodeType::IndexNode, (Func)IndexNode_iter},
+      {NodeType::FStringNode, (Func)FStringNode_iter},
       {NodeType::ConstUnaryExprNode, (Func)ConstUnaryExprNode_iter},
       {NodeType::ConstPostUnaryExprNode, (Func)ConstUnaryExprNode_iter},
       {NodeType::ConstBinaryExprNode, (Func)ConstBinaryExprNode_iter},
@@ -157,6 +159,12 @@ size_t traversal::ParseTreePreorder::ExprStmtNode_iter(
     traversal::ParseTreeTraversalState &state, ExprStmtNode *node) {
   state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_expr));
   return next(state, node->m_expr) + 1;
+}
+
+size_t traversal::ParseTreePreorder::StmtExprNode_iter(
+    traversal::ParseTreeTraversalState &state, StmtExprNode *node) {
+  state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_stmt));
+  return next(state, node->m_stmt) + 1;
 }
 
 size_t traversal::ParseTreePreorder::NopStmtNode_iter(
@@ -323,6 +331,17 @@ size_t traversal::ParseTreePreorder::IndexNode_iter(
   size_t count = next(state, node->m_expr);
   state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_index));
   count += next(state, node->m_index);
+  return count + 1;
+}
+
+size_t traversal::ParseTreePreorder::FStringNode_iter(
+    traversal::ParseTreeTraversalState &state, FStringNode *node) {
+  size_t count = 0;
+  for (auto &elem : node->args) {
+    state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&elem));
+    count += next(state, elem);
+  }
+
   return count + 1;
 }
 
