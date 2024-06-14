@@ -40,7 +40,7 @@
 
 using namespace libquixcc;
 
-std::string escape_json(const std::string &input) {
+std::string escape_string(const std::string &input) {
   std::string output;
   output.reserve(input.length() * 2);
 
@@ -83,7 +83,7 @@ std::string escape_json(const std::string &input) {
   return output;
 }
 
-std::string ParseNode::to_json(
+std::string ParseNode::to_string(
     serialize::ParseTreeSerializerState state) const {
   return serialize::ParseTreeSerializer::next(state, this);
 }
@@ -334,7 +334,7 @@ std::string serialize::ParseTreeSerializer::CallExprNode_conv(
   str += ",\"named_args\":[";
   for (auto it = node->m_named_args.begin(); it != node->m_named_args.end();
        ++it) {
-    str += "{\"name\":\"" + escape_json(it->first) +
+    str += "{\"name\":\"" + escape_string(it->first) +
            "\",\"value\":" + next(state, it->second) + "}";
     if (it != node->m_named_args.end() - 1) {
       str += ",";
@@ -370,7 +370,7 @@ std::string serialize::ParseTreeSerializer::MemberAccessNode_conv(
     serialize::ParseTreeSerializerState &state, const MemberAccessNode *node) {
   std::string str = "{\"ntype\":\"MemberAccessNode\",\"lhs\":";
   str += next(state, node->m_expr);
-  str += ",\"field\":\"" + escape_json(node->m_field) + "\"";
+  str += ",\"field\":\"" + escape_string(node->m_field) + "\"";
 
   return str + "}";
 }
@@ -423,7 +423,7 @@ std::string serialize::ParseTreeSerializer::ConstBinaryExprNode_conv(
 std::string serialize::ParseTreeSerializer::IdentifierNode_conv(
     serialize::ParseTreeSerializerState &state, const IdentifierNode *node) {
   return "{\"ntype\":\"IdentifierNode\",\"name\":\"" +
-         escape_json(node->m_name) + "\"}";
+         escape_string(node->m_name) + "\"}";
 }
 
 std::string serialize::ParseTreeSerializer::MutTypeNode_conv(
@@ -517,7 +517,7 @@ std::string serialize::ParseTreeSerializer::PointerTypeNode_conv(
 std::string serialize::ParseTreeSerializer::OpaqueTypeNode_conv(
     serialize::ParseTreeSerializerState &state, const OpaqueTypeNode *node) {
   return "{\"ntype\":\"OpaqueTypeNode\",\"name\":\"" +
-         escape_json(node->m_name) + "\"}";
+         escape_string(node->m_name) + "\"}";
 }
 
 std::string serialize::ParseTreeSerializer::StringTypeNode_conv(
@@ -528,7 +528,7 @@ std::string serialize::ParseTreeSerializer::StringTypeNode_conv(
 std::string serialize::ParseTreeSerializer::EnumTypeNode_conv(
     serialize::ParseTreeSerializerState &state, const EnumTypeNode *node) {
   std::string str = "{\"ntype\":\"EnumTypeNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"member_type\":";
   if (node->m_member_type)
     str += next(state, node->m_member_type);
@@ -541,7 +541,7 @@ std::string serialize::ParseTreeSerializer::StructTypeNode_conv(
     serialize::ParseTreeSerializerState &state, const StructTypeNode *node) {
   if (state.m_visited.contains(node))
     return "{\"ntype\":\"StructTypeNode\",\"name\":\"" +
-           escape_json(node->m_name) + "\"}";
+           escape_string(node->m_name) + "\"}";
 
   state.m_visited.insert(node);  // Prevent infinite recursion
 
@@ -553,7 +553,7 @@ std::string serialize::ParseTreeSerializer::StructTypeNode_conv(
     }
   }
 
-  str += "],\"name\":\"" + escape_json(node->m_name) + "\"";
+  str += "],\"name\":\"" + escape_string(node->m_name) + "\"";
 
   return str + "}";
 }
@@ -562,7 +562,7 @@ std::string serialize::ParseTreeSerializer::GroupTypeNode_conv(
     serialize::ParseTreeSerializerState &state, const GroupTypeNode *node) {
   if (state.m_visited.contains(node))
     return "{\"ntype\":\"GroupTypeNode\",\"name\":\"" +
-           escape_json(node->m_name) + "\"}";
+           escape_string(node->m_name) + "\"}";
 
   state.m_visited.insert(node);  // Prevent infinite recursion
 
@@ -581,7 +581,7 @@ std::string serialize::ParseTreeSerializer::RegionTypeNode_conv(
     serialize::ParseTreeSerializerState &state, const RegionTypeNode *node) {
   if (state.m_visited.contains(node))
     return "{\"ntype\":\"RegionTypeNode\",\"name\":\"" +
-           escape_json(node->m_name) + "\"}";
+           escape_string(node->m_name) + "\"}";
 
   state.m_visited.insert(node);  // Prevent infinite recursion
 
@@ -600,7 +600,7 @@ std::string serialize::ParseTreeSerializer::UnionTypeNode_conv(
     serialize::ParseTreeSerializerState &state, const UnionTypeNode *node) {
   if (state.m_visited.contains(node))
     return "{\"ntype\":\"UnionTypeNode\",\"name\":\"" +
-           escape_json(node->m_name) + "\"}";
+           escape_string(node->m_name) + "\"}";
 
   state.m_visited.insert(node);  // Prevent infinite recursion
 
@@ -672,7 +672,7 @@ std::string serialize::ParseTreeSerializer::FunctionTypeNode_conv(
 
 std::string serialize::ParseTreeSerializer::UserTypeNode_conv(
     serialize::ParseTreeSerializerState &state, const UserTypeNode *node) {
-  return "{\"ntype\":\"UserTypeNode\",\"name\":\"" + escape_json(node->m_name) +
+  return "{\"ntype\":\"UserTypeNode\",\"name\":\"" + escape_string(node->m_name) +
          "\"}";
 }
 
@@ -688,7 +688,7 @@ std::string serialize::ParseTreeSerializer::FloatLiteralNode_conv(
 
 std::string serialize::ParseTreeSerializer::StringNode_conv(
     serialize::ParseTreeSerializerState &state, const StringNode *node) {
-  return "{\"ntype\":\"StringNode\",\"value\":\"" + escape_json(node->m_val) +
+  return "{\"ntype\":\"StringNode\",\"value\":\"" + escape_string(node->m_val) +
          "\"}";
 }
 
@@ -717,7 +717,7 @@ std::string serialize::ParseTreeSerializer::TypedefNode_conv(
     serialize::ParseTreeSerializerState &state, const TypedefNode *node) {
   std::string str = "{\"ntype\":\"TypedefNode\",\"base\":";
   str += next(state, node->m_orig);
-  str += ",\"name\":\"" + escape_json(node->m_name);
+  str += ",\"name\":\"" + escape_string(node->m_name);
   return str + "\"}";
 }
 
@@ -726,7 +726,7 @@ std::string serialize::ParseTreeSerializer::VarDeclNode_conv(
   state.m_visited.clear();
 
   std::string str = "{\"ntype\":\"VarDeclNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"type\":";
   if (node->m_type)
     str += next(state, node->m_type);
@@ -753,7 +753,7 @@ std::string serialize::ParseTreeSerializer::LetDeclNode_conv(
   state.m_visited.clear();
 
   std::string str = "{\"ntype\":\"LetDeclNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"type\":";
   if (node->m_type)
     str += next(state, node->m_type);
@@ -780,7 +780,7 @@ std::string serialize::ParseTreeSerializer::ConstDeclNode_conv(
   state.m_visited.clear();
 
   std::string str = "{\"ntype\":\"ConstDeclNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"type\":";
   if (node->m_type)
     str += next(state, node->m_type);
@@ -801,7 +801,7 @@ std::string serialize::ParseTreeSerializer::FunctionDeclNode_conv(
   state.m_visited.clear();
 
   std::string str = "{\"ntype\":\"FunctionDeclNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"params\":[";
   for (auto it = node->m_params.begin(); it != node->m_params.end(); ++it) {
     str += next(state, *it);
@@ -828,7 +828,7 @@ std::string serialize::ParseTreeSerializer::FunctionDeclNode_conv(
 std::string serialize::ParseTreeSerializer::StructDefNode_conv(
     serialize::ParseTreeSerializerState &state, const StructDefNode *node) {
   std::string str = "{\"ntype\":\"StructDefNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"fields\":[";
   for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it) {
     str += next(state, *it);
@@ -859,7 +859,7 @@ std::string serialize::ParseTreeSerializer::StructDefNode_conv(
 std::string serialize::ParseTreeSerializer::StructFieldNode_conv(
     serialize::ParseTreeSerializerState &state, const StructFieldNode *node) {
   std::string str = "{\"ntype\":\"StructFieldNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"type\":";
   str += next(state, node->m_type);
   str += ",\"value\":";
@@ -870,7 +870,7 @@ std::string serialize::ParseTreeSerializer::StructFieldNode_conv(
 std::string serialize::ParseTreeSerializer::RegionDefNode_conv(
     serialize::ParseTreeSerializerState &state, const RegionDefNode *node) {
   std::string str = "{\"ntype\":\"RegionDefNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"fields\":[";
   for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it) {
     str += next(state, *it);
@@ -901,7 +901,7 @@ std::string serialize::ParseTreeSerializer::RegionDefNode_conv(
 std::string serialize::ParseTreeSerializer::RegionFieldNode_conv(
     serialize::ParseTreeSerializerState &state, const RegionFieldNode *node) {
   std::string str = "{\"ntype\":\"RegionFieldNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"type\":";
   str += next(state, node->m_type);
   str += ",\"value\":";
@@ -912,7 +912,7 @@ std::string serialize::ParseTreeSerializer::RegionFieldNode_conv(
 std::string serialize::ParseTreeSerializer::GroupDefNode_conv(
     serialize::ParseTreeSerializerState &state, const GroupDefNode *node) {
   std::string str = "{\"ntype\":\"GroupDefNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"fields\":[";
   for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it) {
     str += next(state, *it);
@@ -943,7 +943,7 @@ std::string serialize::ParseTreeSerializer::GroupDefNode_conv(
 std::string serialize::ParseTreeSerializer::GroupFieldNode_conv(
     serialize::ParseTreeSerializerState &state, const GroupFieldNode *node) {
   std::string str = "{\"ntype\":\"GroupFieldNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"type\":";
   str += next(state, node->m_type);
   str += ",\"value\":";
@@ -954,7 +954,7 @@ std::string serialize::ParseTreeSerializer::GroupFieldNode_conv(
 std::string serialize::ParseTreeSerializer::UnionDefNode_conv(
     serialize::ParseTreeSerializerState &state, const UnionDefNode *node) {
   std::string str = "{\"ntype\":\"UnionDefNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"fields\":[";
   for (auto it = node->m_fields.begin(); it != node->m_fields.end(); ++it) {
     str += next(state, *it);
@@ -985,7 +985,7 @@ std::string serialize::ParseTreeSerializer::UnionDefNode_conv(
 std::string serialize::ParseTreeSerializer::UnionFieldNode_conv(
     serialize::ParseTreeSerializerState &state, const UnionFieldNode *node) {
   std::string str = "{\"ntype\":\"UnionFieldNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"type\":";
   str += next(state, node->m_type);
   str += ",\"value\":";
@@ -1011,7 +1011,7 @@ std::string serialize::ParseTreeSerializer::EnumDefNode_conv(
 std::string serialize::ParseTreeSerializer::EnumFieldNode_conv(
     serialize::ParseTreeSerializerState &state, const EnumFieldNode *node) {
   std::string str = "{\"ntype\":\"EnumFieldNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   if (node->m_value) {
     str += "\",\"value\":";
     str += next(state, node->m_value);
@@ -1033,7 +1033,7 @@ std::string serialize::ParseTreeSerializer::FunctionParamNode_conv(
   state.m_visited.clear();
 
   std::string str = "{\"ntype\":\"FunctionParamNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"type\":";
   str += next(state, node->m_type);
   str += ",\"value\":";
@@ -1048,10 +1048,10 @@ std::string serialize::ParseTreeSerializer::FunctionParamNode_conv(
 std::string serialize::ParseTreeSerializer::SubsystemNode_conv(
     serialize::ParseTreeSerializerState &state, const SubsystemNode *node) {
   std::string str = "{\"ntype\":\"SubsystemNode\",\"name\":\"";
-  str += escape_json(node->m_name);
+  str += escape_string(node->m_name);
   str += "\",\"deps\":[";
   for (auto it = node->m_deps.begin(); it != node->m_deps.end(); ++it) {
-    str += "\"" + escape_json(*it) + "\"";
+    str += "\"" + escape_string(*it) + "\"";
     if (it != node->m_deps.end()) {
       str += ",";
     }
@@ -1076,7 +1076,7 @@ std::string serialize::ParseTreeSerializer::ExportNode_conv(
 std::string serialize::ParseTreeSerializer::InlineAsmNode_conv(
     serialize::ParseTreeSerializerState &state, const InlineAsmNode *node) {
   std::string str = "{\"ntype\":\"InlineAsmNode\",\"asm\":\"";
-  str += escape_json(node->m_asm);
+  str += escape_string(node->m_asm);
   str += "\",\"outputs\":[";
   for (auto it = node->m_outputs.begin(); it != node->m_outputs.end(); ++it) {
     str += next(state, (*it).second);
@@ -1099,7 +1099,7 @@ std::string serialize::ParseTreeSerializer::InlineAsmNode_conv(
   str += "],\"clobbers\":[";
 
   for (auto it = node->m_clobbers.begin(); it != node->m_clobbers.end(); ++it) {
-    str += "\"" + escape_json(*it) + "\"";
+    str += "\"" + escape_string(*it) + "\"";
 
     if (it != node->m_clobbers.end() - 1) {
       str += ",";

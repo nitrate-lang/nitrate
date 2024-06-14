@@ -45,8 +45,8 @@ bool libquixcc::test::parser_test_suite() {
       return false;
     }
 
-    auto serial = node->to_json();
-    if (vec.ast_serial != node->to_json()) {
+    auto serial = node->to_string();
+    if (vec.ast_serial != node->to_string()) {
       quixcc_dispose(job);
       return false;
     }

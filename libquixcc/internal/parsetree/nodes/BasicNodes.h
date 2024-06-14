@@ -56,7 +56,7 @@ class ParseNode {
   virtual ~ParseNode() = default;
 
   virtual size_t dfs_preorder(traversal::ParseTreeTraversalState state);
-  virtual std::string to_json(serialize::ParseTreeSerializerState state =
+  virtual std::string to_string(serialize::ParseTreeSerializerState state =
                                   serialize::ParseTreeSerializerState()) const;
 
   /// @brief Count the number of nodes in the tree.

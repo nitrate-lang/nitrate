@@ -694,10 +694,10 @@ static bool compile(quixcc_job_t *job) {
     LOG(DEBUG) << "Finished building Ptree 1" << std::endl;
     if (job->m_debug)
       LOG(DEBUG) << log::raw << "Dumping Ptree 1 (JSON): "
-                 << base64_encode(ptree->to_json()) << std::endl;
+                 << base64_encode(ptree->to_string()) << std::endl;
 
     if (job->m_argset.contains("-emit-parse")) {
-      auto serial = ptree->to_json();
+      auto serial = ptree->to_string();
       if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
         return false;
       fflush(job->m_out);
@@ -714,7 +714,7 @@ static bool compile(quixcc_job_t *job) {
   if (!quixcc_mutate_ptree(job, ptree) || job->m_tainted) return false;
   if (job->m_debug)
     LOG(DEBUG) << log::raw
-               << "Dumping Ptree 2 (JSON): " << base64_encode(ptree->to_json())
+               << "Dumping Ptree 2 (JSON): " << base64_encode(ptree->to_string())
                << std::endl;
   /// END:   INTERMEDIATE PROCESSING
   ///=========================================
