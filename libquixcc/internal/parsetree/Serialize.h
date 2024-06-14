@@ -40,200 +40,126 @@
 
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 
 namespace libquixcc {
 namespace serialize {
-struct ParseTreeSerializerState {
-  std::set<const TypeNode *> m_visited;
-};
 
 class ParseTreeSerializer {
-  static std::string ExprStmtNode_conv(ParseTreeSerializerState &state,
-                                       const ExprStmtNode *node);
-  static std::string NopStmtNode_conv(ParseTreeSerializerState &state,
-                                      const NopStmtNode *node);
-  static std::string BlockNode_conv(ParseTreeSerializerState &state,
-                                    const BlockNode *node);
-  static std::string StmtGroupNode_conv(ParseTreeSerializerState &state,
-                                        const StmtGroupNode *node);
-  static std::string StaticCastExprNode_conv(ParseTreeSerializerState &state,
-                                             const StaticCastExprNode *node);
-  static std::string BitCastExprNode_conv(ParseTreeSerializerState &state,
-                                          const BitCastExprNode *node);
-  static std::string SignedUpcastExprNode_conv(
-      ParseTreeSerializerState &state, const SignedUpcastExprNode *node);
-  static std::string UnsignedUpcastExprNode_conv(
-      ParseTreeSerializerState &state, const UnsignedUpcastExprNode *node);
-  static std::string DowncastExprNode_conv(ParseTreeSerializerState &state,
-                                           const DowncastExprNode *node);
-  static std::string PtrToIntCastExprNode_conv(
-      ParseTreeSerializerState &state, const PtrToIntCastExprNode *node);
-  static std::string IntToPtrCastExprNode_conv(
-      ParseTreeSerializerState &state, const IntToPtrCastExprNode *node);
-  static std::string UnaryExprNode_conv(ParseTreeSerializerState &state,
-                                        const UnaryExprNode *node);
-  static std::string PostUnaryExprNode_conv(ParseTreeSerializerState &state,
-                                            const PostUnaryExprNode *node);
-  static std::string BinaryExprNode_conv(ParseTreeSerializerState &state,
-                                         const BinaryExprNode *node);
-  static std::string CallExprNode_conv(ParseTreeSerializerState &state,
-                                       const CallExprNode *node);
-  static std::string ListExprNode_conv(ParseTreeSerializerState &state,
-                                       const ListExprNode *node);
-  static std::string MemberAccessNode_conv(ParseTreeSerializerState &state,
-                                           const MemberAccessNode *node);
-  static std::string IndexNode_conv(ParseTreeSerializerState &state,
-                                    const IndexNode *node);
-  static std::string ConstUnaryExprNode_conv(ParseTreeSerializerState &state,
-                                             const ConstUnaryExprNode *node);
-  static std::string ConstPostUnaryExprNode_conv(
-      ParseTreeSerializerState &state, const ConstPostUnaryExprNode *node);
-  static std::string ConstBinaryExprNode_conv(ParseTreeSerializerState &state,
-                                              const ConstBinaryExprNode *node);
-  static std::string IdentifierNode_conv(ParseTreeSerializerState &state,
-                                         const IdentifierNode *node);
-  static std::string MutTypeNode_conv(ParseTreeSerializerState &state,
-                                      const MutTypeNode *node);
-  static std::string U8TypeNode_conv(ParseTreeSerializerState &state,
-                                     const U8TypeNode *node);
-  static std::string U16TypeNode_conv(ParseTreeSerializerState &state,
-                                      const U16TypeNode *node);
-  static std::string U32TypeNode_conv(ParseTreeSerializerState &state,
-                                      const U32TypeNode *node);
-  static std::string U64TypeNode_conv(ParseTreeSerializerState &state,
-                                      const U64TypeNode *node);
-  static std::string U128TypeNode_conv(ParseTreeSerializerState &state,
-                                       const U128TypeNode *node);
-  static std::string I8TypeNode_conv(ParseTreeSerializerState &state,
-                                     const I8TypeNode *node);
-  static std::string I16TypeNode_conv(ParseTreeSerializerState &state,
-                                      const I16TypeNode *node);
-  static std::string I32TypeNode_conv(ParseTreeSerializerState &state,
-                                      const I32TypeNode *node);
-  static std::string I64TypeNode_conv(ParseTreeSerializerState &state,
-                                      const I64TypeNode *node);
-  static std::string I128TypeNode_conv(ParseTreeSerializerState &state,
-                                       const I128TypeNode *node);
-  static std::string F32TypeNode_conv(ParseTreeSerializerState &state,
-                                      const F32TypeNode *node);
-  static std::string F64TypeNode_conv(ParseTreeSerializerState &state,
-                                      const F64TypeNode *node);
-  static std::string BoolTypeNode_conv(ParseTreeSerializerState &state,
-                                       const BoolTypeNode *node);
-  static std::string VoidTypeNode_conv(ParseTreeSerializerState &state,
-                                       const VoidTypeNode *node);
-  static std::string NullTypeNode_conv(ParseTreeSerializerState &state,
-                                       const NullTypeNode *node);
-  static std::string PointerTypeNode_conv(ParseTreeSerializerState &state,
-                                          const PointerTypeNode *node);
-  static std::string OpaqueTypeNode_conv(ParseTreeSerializerState &state,
-                                         const OpaqueTypeNode *node);
-  static std::string StringTypeNode_conv(ParseTreeSerializerState &state,
-                                         const StringTypeNode *node);
-  static std::string EnumTypeNode_conv(ParseTreeSerializerState &state,
-                                       const EnumTypeNode *node);
-  static std::string StructTypeNode_conv(ParseTreeSerializerState &state,
-                                         const StructTypeNode *node);
-  static std::string GroupTypeNode_conv(ParseTreeSerializerState &state,
-                                        const GroupTypeNode *node);
-  static std::string RegionTypeNode_conv(ParseTreeSerializerState &state,
-                                         const RegionTypeNode *node);
-  static std::string UnionTypeNode_conv(ParseTreeSerializerState &state,
-                                        const UnionTypeNode *node);
-  static std::string ArrayTypeNode_conv(ParseTreeSerializerState &state,
-                                        const ArrayTypeNode *node);
-  static std::string VectorTypeNode_conv(ParseTreeSerializerState &state,
-                                         const VectorTypeNode *node);
-  static std::string ResultTypeNode_conv(ParseTreeSerializerState &state,
-                                         const ResultTypeNode *node);
-  static std::string GeneratorTypeNode_conv(ParseTreeSerializerState &state,
-                                            const GeneratorTypeNode *node);
-  static std::string FunctionTypeNode_conv(ParseTreeSerializerState &state,
-                                           const FunctionTypeNode *node);
-  static std::string UserTypeNode_conv(ParseTreeSerializerState &state,
-                                       const UserTypeNode *node);
-  static std::string IntegerNode_conv(ParseTreeSerializerState &state,
-                                      const IntegerNode *node);
-  static std::string FloatLiteralNode_conv(ParseTreeSerializerState &state,
-                                           const FloatLiteralNode *node);
-  static std::string StringNode_conv(ParseTreeSerializerState &state,
-                                     const StringNode *node);
-  static std::string CharNode_conv(ParseTreeSerializerState &state,
-                                   const CharNode *node);
-  static std::string BoolLiteralNode_conv(ParseTreeSerializerState &state,
-                                          const BoolLiteralNode *node);
-  static std::string NullLiteralNode_conv(ParseTreeSerializerState &state,
-                                          const NullLiteralNode *node);
-  static std::string UndefLiteralNode_conv(ParseTreeSerializerState &state,
-                                           const UndefLiteralNode *node);
-  static std::string TypedefNode_conv(ParseTreeSerializerState &state,
-                                      const TypedefNode *node);
-  static std::string VarDeclNode_conv(ParseTreeSerializerState &state,
-                                      const VarDeclNode *node);
-  static std::string LetDeclNode_conv(ParseTreeSerializerState &state,
-                                      const LetDeclNode *node);
-  static std::string ConstDeclNode_conv(ParseTreeSerializerState &state,
-                                        const ConstDeclNode *node);
-  static std::string FunctionDeclNode_conv(ParseTreeSerializerState &state,
-                                           const FunctionDeclNode *node);
-  static std::string StructDefNode_conv(ParseTreeSerializerState &state,
-                                        const StructDefNode *node);
-  static std::string StructFieldNode_conv(ParseTreeSerializerState &state,
-                                          const StructFieldNode *node);
-  static std::string RegionDefNode_conv(ParseTreeSerializerState &state,
-                                        const RegionDefNode *node);
-  static std::string RegionFieldNode_conv(ParseTreeSerializerState &state,
-                                          const RegionFieldNode *node);
-  static std::string GroupDefNode_conv(ParseTreeSerializerState &state,
-                                       const GroupDefNode *node);
-  static std::string GroupFieldNode_conv(ParseTreeSerializerState &state,
-                                         const GroupFieldNode *node);
-  static std::string UnionDefNode_conv(ParseTreeSerializerState &state,
-                                       const UnionDefNode *node);
-  static std::string UnionFieldNode_conv(ParseTreeSerializerState &state,
-                                         const UnionFieldNode *node);
-  static std::string EnumDefNode_conv(ParseTreeSerializerState &state,
-                                      const EnumDefNode *node);
-  static std::string EnumFieldNode_conv(ParseTreeSerializerState &state,
-                                        const EnumFieldNode *node);
-  static std::string FunctionDefNode_conv(ParseTreeSerializerState &state,
-                                          const FunctionDefNode *node);
-  static std::string FunctionParamNode_conv(ParseTreeSerializerState &state,
-                                            const FunctionParamNode *node);
-  static std::string SubsystemNode_conv(ParseTreeSerializerState &state,
-                                        const SubsystemNode *node);
-  static std::string ExportNode_conv(ParseTreeSerializerState &state,
-                                     const ExportNode *node);
-  static std::string InlineAsmNode_conv(ParseTreeSerializerState &state,
-                                        const InlineAsmNode *node);
-  static std::string ReturnStmtNode_conv(ParseTreeSerializerState &state,
-                                         const ReturnStmtNode *node);
-  static std::string RetifStmtNode_conv(ParseTreeSerializerState &state,
-                                        const RetifStmtNode *node);
-  static std::string RetzStmtNode_conv(ParseTreeSerializerState &state,
-                                       const RetzStmtNode *node);
-  static std::string RetvStmtNode_conv(ParseTreeSerializerState &state,
-                                       const RetvStmtNode *node);
-  static std::string IfStmtNode_conv(ParseTreeSerializerState &state,
-                                     const IfStmtNode *node);
-  static std::string WhileStmtNode_conv(ParseTreeSerializerState &state,
-                                        const WhileStmtNode *node);
-  static std::string ForStmtNode_conv(ParseTreeSerializerState &state,
-                                      const ForStmtNode *node);
+  std::set<const TypeNode *> visited;
+  size_t indent = 0;
+  std::ostringstream o;
 
-  static std::string dispatch(ParseTreeSerializerState &state,
-                              const ParseNode *node);
+  void ind();
+  void conv(const ExprStmtNode *);
+  void conv(const NopStmtNode *);
+  void conv(const BlockNode *);
+  void conv(const StmtGroupNode *);
+  void conv(const StaticCastExprNode *);
+  void conv(const BitCastExprNode *);
+  void conv(const SignedUpcastExprNode *);
+  void conv(const UnsignedUpcastExprNode *);
+  void conv(const DowncastExprNode *);
+  void conv(const PtrToIntCastExprNode *);
+  void conv(const IntToPtrCastExprNode *);
+  void conv(const UnaryExprNode *);
+  void conv(const PostUnaryExprNode *);
+  void conv(const BinaryExprNode *);
+  void conv(const CallExprNode *);
+  void conv(const ListExprNode *);
+  void conv(const MemberAccessNode *);
+  void conv(const IndexNode *);
+  void conv(const ConstUnaryExprNode *);
+  void conv(const ConstPostUnaryExprNode *);
+  void conv(const ConstBinaryExprNode *);
+  void conv(const IdentifierNode *);
+  void conv(const MutTypeNode *);
+  void conv(const U8TypeNode *);
+  void conv(const U16TypeNode *);
+  void conv(const U32TypeNode *);
+  void conv(const U64TypeNode *);
+  void conv(const U128TypeNode *);
+  void conv(const I8TypeNode *);
+  void conv(const I16TypeNode *);
+  void conv(const I32TypeNode *);
+  void conv(const I64TypeNode *);
+  void conv(const I128TypeNode *);
+  void conv(const F32TypeNode *);
+  void conv(const F64TypeNode *);
+  void conv(const BoolTypeNode *);
+  void conv(const VoidTypeNode *);
+  void conv(const NullTypeNode *);
+  void conv(const PointerTypeNode *);
+  void conv(const OpaqueTypeNode *);
+  void conv(const StringTypeNode *);
+  void conv(const EnumTypeNode *);
+  void conv(const StructTypeNode *);
+  void conv(const GroupTypeNode *);
+  void conv(const RegionTypeNode *);
+  void conv(const UnionTypeNode *);
+  void conv(const ArrayTypeNode *);
+  void conv(const VectorTypeNode *);
+  void conv(const ResultTypeNode *);
+  void conv(const GeneratorTypeNode *);
+  void conv(const FunctionTypeNode *);
+  void conv(const UserTypeNode *);
+  void conv(const IntegerNode *);
+  void conv(const FloatLiteralNode *);
+  void conv(const StringNode *);
+  void conv(const CharNode *);
+  void conv(const BoolLiteralNode *);
+  void conv(const NullLiteralNode *);
+  void conv(const UndefLiteralNode *);
+  void conv(const TypedefNode *);
+  void conv(const VarDeclNode *);
+  void conv(const LetDeclNode *);
+  void conv(const ConstDeclNode *);
+  void conv(const FunctionDeclNode *);
+  void conv(const StructDefNode *);
+  void conv(const StructFieldNode *);
+  void conv(const RegionDefNode *);
+  void conv(const RegionFieldNode *);
+  void conv(const GroupDefNode *);
+  void conv(const GroupFieldNode *);
+  void conv(const UnionDefNode *);
+  void conv(const UnionFieldNode *);
+  void conv(const EnumDefNode *);
+  void conv(const EnumFieldNode *);
+  void conv(const FunctionDefNode *);
+  void conv(const FunctionParamNode *);
+  void conv(const SubsystemNode *);
+  void conv(const ExportNode *);
+  void conv(const InlineAsmNode *);
+  void conv(const ReturnStmtNode *);
+  void conv(const RetifStmtNode *);
+  void conv(const RetzStmtNode *);
+  void conv(const RetvStmtNode *);
+  void conv(const IfStmtNode *);
+  void conv(const WhileStmtNode *);
+  void conv(const ForStmtNode *);
+  void dispatch(const ParseNode *);
 
- public:
   template <typename T>
-  static std::string next(ParseTreeSerializerState &state, const T node) {
+  inline void next(const T node) {
+    if (!node) {
+      indent++;
+      ind();
+      o << "(nil)";
+      indent--;
+      return;
+    }
     if constexpr (std::is_pointer<T>::value) {
-      return dispatch(state, node);
+      return dispatch(node);
     } else {
-      return dispatch(state, node.get());
+      return dispatch(node.get());
     }
   }
+
+ public:
+  ParseTreeSerializer() = default;
+
+  std::string serialize(const ParseNode *node);
 };
 }  // namespace serialize
 }  // namespace libquixcc
