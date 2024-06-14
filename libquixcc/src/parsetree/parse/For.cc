@@ -75,7 +75,13 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
 
     std::shared_ptr<BlockNode> then_block;
-    if (!parse(job, scanner, then_block, true)) return false;
+
+    if (scanner->peek().is<Operator>(Operator::Arrow)) {
+      tok = scanner->next();
+      if (!parse(job, scanner, then_block, false, true)) return false;
+    } else {
+      if (!parse(job, scanner, then_block, true)) return false;
+    }
 
     node = std::make_shared<ForStmtNode>(x0, x1, x2, then_block);
 
@@ -99,11 +105,20 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       return false;
     }
 
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::OpenBrace)}, x2))
+    if (!parse_expr(job, scanner,
+                    {Token(TT::Punctor, Punctor::OpenBrace),
+                     Token(TT::Operator, Operator::Arrow)},
+                    x2))
       return false;
 
     std::shared_ptr<BlockNode> then_block;
-    if (!parse(job, scanner, then_block, true)) return false;
+
+    if (scanner->peek().is<Operator>(Operator::Arrow)) {
+      tok = scanner->next();
+      if (!parse(job, scanner, then_block, false, true)) return false;
+    } else {
+      if (!parse(job, scanner, then_block, true)) return false;
+    }
 
     node = std::make_shared<ForStmtNode>(x0, x1, x2, then_block);
 

@@ -59,3 +59,5 @@ s.json
 TODO.md
 
 .qpkg/
+app
+main.c

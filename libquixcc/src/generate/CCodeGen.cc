@@ -875,6 +875,8 @@ void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Value *n,
   match(List);
   match(Ident);
   match(Assign);
+  match(PostInc);
+  match(PostDec);
   match(AddressOf);
   match(Deref);
   match(Member);

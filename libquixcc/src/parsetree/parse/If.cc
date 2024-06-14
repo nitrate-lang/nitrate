@@ -40,17 +40,31 @@ using namespace libquixcc;
 bool libquixcc::parse_if(quixcc_job_t &job, libquixcc::Scanner *scanner,
                          std::shared_ptr<libquixcc::StmtNode> &node) {
   std::shared_ptr<ExprNode> cond;
-  if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::OpenBrace)}, cond))
+  if (!parse_expr(job, scanner,
+                  {Token(TT::Punctor, Punctor::OpenBrace),
+                   Token(TT::Operator, Operator::Arrow)},
+                  cond))
     return false;
 
   std::shared_ptr<BlockNode> then_block;
-  if (!parse(job, scanner, then_block, true)) return false;
+  if (scanner->peek().is<Operator>(Operator::Arrow)) {
+    scanner->next();
+    if (!parse(job, scanner, then_block, false, true)) return false;
+  } else {
+    if (!parse(job, scanner, then_block, true)) return false;
+  }
 
   Token tok = scanner->peek();
   if (tok.is<Keyword>(Keyword::Else)) {
     scanner->next();
     std::shared_ptr<BlockNode> else_block;
-    if (!parse(job, scanner, else_block, true)) return false;
+
+    if (scanner->peek().is<Operator>(Operator::Arrow)) {
+      scanner->next();
+      if (!parse(job, scanner, else_block, false, true)) return false;
+    } else {
+      if (!parse(job, scanner, else_block, true)) return false;
+    }
 
     node = std::make_shared<IfStmtNode>(cond, then_block, else_block);
   } else {
