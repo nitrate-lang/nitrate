@@ -368,18 +368,37 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
 
             std::shared_ptr<ExprNode> index;
             if (!parse_expr(job, scanner,
-                            {Token(TT::Punctor, Punctor::CloseBracket)}, index,
-                            depth + 1))
+                            {Token(TT::Punctor, Punctor::CloseBracket),
+                             Token(TT::Punctor, Punctor::Colon)},
+                            index, depth + 1)) {
               return false;
+            }
 
-            auto tok = scanner->peek();
+            auto tok = scanner->next();
+            if (tok.is<Punctor>(Punctor::Colon)) {
+              std::shared_ptr<ExprNode> end;
+              if (!parse_expr(job, scanner,
+                              {Token(TT::Punctor, Punctor::CloseBracket)}, end,
+                              depth + 1)) {
+                return false;
+              }
+
+              tok = scanner->next();
+              if (!tok.is<Punctor>(Punctor::CloseBracket)) {
+                LOG(ERROR) << "Expected a closing bracket" << tok << std::endl;
+                return false;
+              }
+
+              stack.push(std::make_shared<SliceNode>(left, index, end));
+              continue;
+            }
+
             if (!tok.is<Punctor>(Punctor::CloseBracket)) {
               LOG(ERROR) << "Expected a closing bracket" << tok << std::endl;
               return false;
             }
 
             stack.push(std::make_shared<IndexNode>(left, index));
-            scanner->next();
             continue;
           }
           default:
@@ -412,8 +431,21 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           continue;
         }
         std::shared_ptr<ExprNode> expr;
-        if (!parse_expr(job, scanner, terminators, expr, depth + 1) || !expr)
-          return false;
+
+        if (op != Operator::As) {
+          if (!parse_expr(job, scanner, terminators, expr, depth + 1) || !expr)
+            return false;
+        } else {
+          TypeNode *type;
+          if (!parse_type(job, scanner, &type)) return false;
+
+          /// TODO: Type -> Expression Adapter
+
+          auto left = stack.top();
+          stack.pop();
+          stack.push(std::make_shared<StaticCastExprNode>(left, type));
+          continue;
+        }
 
         if (stack.empty()) {
           stack.push(std::make_shared<UnaryExprNode>(op, expr));

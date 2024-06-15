@@ -127,6 +127,20 @@ class IndexNode : public ExprNode {
   std::shared_ptr<ExprNode> m_index;
 };
 
+class SliceNode : public ExprNode {
+ public:
+  SliceNode(const std::shared_ptr<ExprNode> &expr,
+            const std::shared_ptr<ExprNode> &start,
+            const std::shared_ptr<ExprNode> &end)
+      : m_expr(expr), m_start(start), m_end(end) {
+    ntype = NodeType::SliceNode;
+  }
+
+  std::shared_ptr<ExprNode> m_expr;
+  std::shared_ptr<ExprNode> m_start;
+  std::shared_ptr<ExprNode> m_end;
+};
+
 class CastExprNode : public ExprNode {
  public:
   CastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type)

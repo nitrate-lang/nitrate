@@ -85,6 +85,7 @@ class ParseTreePreorder {
   size_t iter(ListExprNode *node);
   size_t iter(MemberAccessNode *node);
   size_t iter(IndexNode *node);
+  size_t iter(SliceNode *node);
   size_t iter(FStringNode *node);
   size_t iter(ConstUnaryExprNode *node);
   size_t iter(ConstPostUnaryExprNode *node);

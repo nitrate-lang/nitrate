@@ -75,6 +75,7 @@ enum class NodeType : uint8_t {
   ListExprNode,
   MemberAccessNode,
   IndexNode,
+  SliceNode,
   FStringNode,
 
   IdentifierNode,
@@ -185,6 +186,7 @@ class CallExprNode;
 class ListExprNode;
 class MemberAccessNode;
 class IndexNode;
+class SliceNode;
 class FStringNode;
 class ConstUnaryExprNode;
 class ConstPostUnaryExprNode;

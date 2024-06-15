@@ -77,6 +77,7 @@ size_t ParseTreePreorder::dispatch(ParseNode *n) {
   match(ListExprNode);
   match(MemberAccessNode);
   match(IndexNode);
+  match(SliceNode);
   match(FStringNode);
   match(ConstUnaryExprNode);
   match(ConstPostUnaryExprNode);
@@ -311,6 +312,16 @@ size_t ParseTreePreorder::iter(IndexNode *node) {
   size_t count = next(node->m_expr);
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_index));
   count += next(node->m_index);
+  return count + 1;
+}
+
+size_t ParseTreePreorder::iter(SliceNode *node) {
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_expr));
+  size_t count = next(node->m_expr);
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_start));
+  count += next(node->m_start);
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_end));
+  count += next(node->m_end);
   return count + 1;
 }
 

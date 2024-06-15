@@ -112,6 +112,7 @@ static auto conv(const CallExprNode *n, QState &state) -> QResult;
 static auto conv(const ListExprNode *n, QState &state) -> QResult;
 static auto conv(const MemberAccessNode *n, QState &state) -> QResult;
 static auto conv(const IndexNode *n, QState &state) -> QResult;
+static auto conv(const SliceNode *n, QState &state) -> QResult;
 static auto conv(const FStringNode *n, QState &state) -> QResult;
 static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult;
 static auto conv(const ConstPostUnaryExprNode *n, QState &state) -> QResult;
@@ -628,6 +629,11 @@ static auto conv(const IndexNode *n, QState &state) -> QResult {
   if (t->is_ptr()) return Index::create(e, i, t->as<Ptr>()->type);
 
   return Index::create(e, i, t->as<Array>()->type);
+}
+
+static auto conv(const SliceNode *n, QState &state) -> QResult {
+  /// TODO: Implement SliceNode
+  throw std::runtime_error("SliceNode not implemented");
 }
 
 static auto conv(const FStringNode *n, QState &state) -> QResult {
@@ -1507,6 +1513,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
 
     case libquixcc::NodeType::IndexNode:
       r = conv(n->as<IndexNode>(), state);
+      break;
+
+    case libquixcc::NodeType::SliceNode:
+      r = conv(n->as<SliceNode>(), state);
       break;
 
     case libquixcc::NodeType::FStringNode:

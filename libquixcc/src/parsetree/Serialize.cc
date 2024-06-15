@@ -130,6 +130,7 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
   match(ListExprNode);
   match(MemberAccessNode);
   match(IndexNode);
+  match(SliceNode);
   match(FStringNode);
   match(ConstUnaryExprNode);
   match(ConstPostUnaryExprNode);
@@ -429,6 +430,18 @@ void ParseTreeSerializer::conv(const IndexNode *n) {
   next(n->m_expr);
   next(n->m_index);
   o << ')';
+}
+
+void ParseTreeSerializer::conv(const SliceNode *n) {
+  indent++;
+  ind();
+
+  o << "(Slice";
+  next(n->m_expr);
+  next(n->m_start);
+  next(n->m_end);
+  o << ')';
+  indent--;
 }
 
 void ParseTreeSerializer::conv(const FStringNode *n) {

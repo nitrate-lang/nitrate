@@ -110,8 +110,8 @@ class ParseNode {
       return is<StmtExprNode>() || is<UnaryExprNode>() ||
              is<PostUnaryExprNode>() || is<BinaryExprNode>() ||
              is<CallExprNode>() || is<ListExprNode>() ||
-             is<MemberAccessNode>() || is<IndexNode>() || is<FStringNode>() ||
-             isof<CastExprNode>() || isof<LiteralNode>();
+             is<MemberAccessNode>() || is<IndexNode>() || is<SliceNode>() ||
+             is<FStringNode>() || isof<CastExprNode>() || isof<LiteralNode>();
 
     if (std::is_same_v<T, TypeNode>)
       return is<MutTypeNode>() || is<U8TypeNode>() || is<U16TypeNode>() ||
