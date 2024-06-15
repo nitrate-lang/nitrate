@@ -29,24 +29,22 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PREP_MACRO_H__
-#define __QUIXCC_PREP_MACRO_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
-#include <preprocessor/macro/AuthorMacro.h>
-#include <preprocessor/macro/DefineMacro.h>
-#include <preprocessor/macro/DescriptionMacro.h>
-#include <preprocessor/macro/EncodingMacro.h>
-#include <preprocessor/macro/LangMacro.h>
-#include <preprocessor/macro/LicenseMacro.h>
-#include <preprocessor/macro/MacroParser.h>
-#include <preprocessor/macro/PragmaMacro.h>
-#include <preprocessor/macro/PrintMacro.h>
-#include <preprocessor/macro/ReadstdinMacro.h>
-#include <preprocessor/macro/UseMacro.h>
+#include <core/Logger.h>
 #include <preprocessor/macro/InvariantMacro.h>
 
-#endif  // __QUIXCC_PREP_MACRO_H__
+bool libquixcc::macro::ParseInvariant(quixcc_job_t *job, const Token &tok,
+                                      const std::string &directive,
+                                      const std::string &parameter,
+                                      std::vector<libquixcc::Token> &exp) {
+  (void)job;
+  (void)tok;
+  (void)directive;
+
+  LOG(WARN) << "Invariant macro not implemented." << tok << std::endl;
+
+  /// TODO: Implement the ParseLang function.
+
+  return true;
+}

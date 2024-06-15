@@ -60,6 +60,7 @@ void libquixcc::PrepEngine::setup() {
   m_macro_parser.add_routine("license", libquixcc::macro::ParseLicense);
   m_macro_parser.add_routine("use", libquixcc::macro::ParseUse);
   m_macro_parser.add_routine("description", libquixcc::macro::ParseDescription);
+  m_macro_parser.add_routine("invariant", libquixcc::macro::ParseInvariant);
 }
 
 void libquixcc::PrepEngine::addpath(const std::string &path) {

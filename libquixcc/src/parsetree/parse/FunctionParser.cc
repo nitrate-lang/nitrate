@@ -173,8 +173,8 @@ static FunctionProperties read_function_properties(
         state.retropure_ctr))
     return FunctionProperties();
 
-  LOG(WARN) << "Function designators are not supported yet. Ignoring..."
-            << std::endl;
+  LOG(WARN) << "Function designators are not supported yet."
+            << scanner->peek() << std::endl;
 
   FunctionProperties props;
 
