@@ -492,6 +492,23 @@ libquixcc::Feedback libquixcc::feedback({
      "Expected an expression after the colon in the inline assembly parameter "
      "list. Syntax: __asm__ ( \"mov x0, $0\", {}, {'$0': x}, [\"x0\"] );"},
 
+    {SWITCH_EXPECTED_LEFT_BRACE,
+     "Expected an open brace after the switch keyword. To fix the issue, "
+     "insert "
+     "an open brace after the switch keyword"},
+    {SWITCH_MULTIPLE_DEFAULT,
+     "Multiple default cases are not allowed in a switch statement. To fix the "
+     "issue, remove the duplicate default case"},
+    {SWITCH_EXPECTED_COLON,
+     "Expected a colon after the switch case'. To fix the issue, insert a "
+     "colon after the switch case"},
+    {SWITCH_EXPECTED_CASE,
+     "Expected a case statement after the switch keyword. To fix the issue, "
+     "insert a case statement after the switch keyword"},
+    {SWITCH_EXPECTED_RIGHT_BRACE,
+     "Expected a close brace after the switch statement. To fix the issue, "
+     "insert a close brace after the switch statement"},
+
     {UNRESOLVED_FUNCTION,
      "Function '{}' is not defined in the current scope. To fix the issue, "
      "define the function or import the module that defines the function"},

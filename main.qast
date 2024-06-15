@@ -1,0 +1,332 @@
+(Program "v1.0" "quix:1.0"
+ (Blk [
+  (TypeDef "usize"
+   (U64))
+  (TypeDef "isize"
+   (I64))
+  (Subsystem "quartz" []
+   (Blk [
+    (Subsystem "kernel" []
+     (Blk [
+      (Subsystem "io" []
+       (Blk [
+        (Subsystem "vga" []
+         (Blk [
+          (Subsystem "text" []
+           (Blk [
+            (Blk [
+             (GroupDef "Screen" [
+              (GField "cur_x"
+               (I32)
+               (nil))
+              (GField "cur_y"
+               (I32)
+               (nil))
+              (GField "width"
+               (I32)
+               (nil))
+              (GField "height"
+               (I32)
+               (nil))] [
+              (FuncDef
+               (FuncDecl "Screen" 0 0 0 0 0
+                (Void) [
+                (FParam "this"
+                 (Ptr
+                  (Name "Screen"))
+                 (nil))])
+               (Blk [
+                (EStmt
+                 (BExpr "="
+                  (Id "cur_x")
+                  (ILit "0"
+                   (U64))))
+                (EStmt
+                 (BExpr "="
+                  (Id "cur_y")
+                  (ILit "0"
+                   (U64))))
+                (EStmt
+                 (BExpr "="
+                  (Id "width")
+                  (ILit "80"
+                   (U64))))
+                (EStmt
+                 (BExpr "="
+                  (Id "height")
+                  (ILit "25"
+                   (U64))))] 0))
+              (FuncDef
+               (FuncDecl "write" 0 0 0 0 0
+                (Void) [
+                (FParam "this"
+                 (Ptr
+                  (Name "Screen"))
+                 (nil))
+                (FParam "buf"
+                 (Vec
+                  (I8))
+                 (nil))])
+               (Blk [
+                (EStmt
+                 (Call
+                  (Get "each"
+                   (Id "buf")) [
+                  (SExpr
+                   (FuncDef
+                    (FuncDecl "" 0 0 0 0 0
+                     (Void) [
+                     (FParam "c"
+                      (I8)
+                      (nil))])
+                    (Blk [
+                     (EStmt
+                      (Call
+                       (Id "putc") [
+                       (Id "c")] []))] 0)))] []))] 0))
+              (FuncDef
+               (FuncDecl "putc" 0 0 0 0 0
+                (Void) [
+                (FParam "this"
+                 (Ptr
+                  (Name "Screen"))
+                 (nil))
+                (FParam "c"
+                 (I8)
+                 (nil))])
+               (Blk [
+                (Const "off"
+                 (I32)
+                 (BExpr "*"
+                  (Id "y")
+                  (BExpr "*"
+                   (BExpr "+"
+                    (Id "width")
+                    (Id "x"))
+                   (ILit "2"
+                    (U64)))) 0)
+                (Let "mem"
+                 (Ptr
+                  (I8))
+                 (BExpr "as"
+                  (ILit "753664"
+                   (U64))
+                  (UExpr "*"
+                   (Id "i8"))) 0 0 0 0)
+                (Switch
+                 (Id "c") [
+                 (Case
+                  (CLit "\n")
+                  (Blk [
+                   (EStmt
+                    (BExpr "="
+                     (Id "x")
+                     (ILit "0"
+                      (U64))))
+                   (EStmt
+                    (PExpr "++"
+                     (Id "y")))
+                   (EStmt
+                    (Id "brk"))] 0))
+                 (Case
+                  (CLit "\r")
+                  (Blk [
+                   (EStmt
+                    (BExpr "="
+                     (Id "x")
+                     (ILit "0"
+                      (U64))))
+                   (EStmt
+                    (Id "brk"))] 0))
+                 (Case
+                  (CLit "\t")
+                  (Blk [
+                   (EStmt
+                    (BExpr "+="
+                     (Id "x")
+                     (ILit "4"
+                      (U64))))
+                   (EStmt
+                    (Id "brk"))] 0))
+                 (Case
+                  (CLit "b")
+                  (Blk [
+                   (EStmt
+                    (PExpr "--"
+                     (Id "x")))
+                   (If
+                    (BExpr "<"
+                     (Id "x")
+                     (ILit "0"
+                      (U64)))
+                    (Blk [
+                     (EStmt
+                      (BExpr "="
+                       (Id "x")
+                       (ILit "0"
+                        (U64))))] 0)
+                    (nil))
+                   (EStmt
+                    (Id "brk"))] 0))
+                 (Case
+                  (CLit "\u0000")
+                  (Blk [
+                   (EStmt
+                    (Id "brk"))] 0))]
+                 (Blk [
+                  (EStmt
+                   (BExpr "="
+                    (Idx
+                     (Id "mem")
+                     (Id "off"))
+                     (Id "c")))
+                   (EStmt
+                    (BExpr "="
+                     (Idx
+                      (Id "mem")
+                      (BExpr "+"
+                       (Id "off")
+                       (ILit "1"
+                        (U64))))
+                      (ILit "15"
+                       (U64))))
+                    (EStmt
+                     (PExpr "++"
+                      (Id "x")))
+                    (If
+                     (BExpr ">="
+                      (Id "x")
+                      (Id "width"))
+                     (Blk [
+                      (EStmt
+                       (BExpr "="
+                        (Id "x")
+                        (ILit "0"
+                         (U64))))] 0)
+                     (nil))
+                    (EStmt
+                     (PExpr "++"
+                      (Id "y")))
+                    (EStmt
+                     (Id "brk"))] 0))] 0))
+                (FuncDef
+                 (FuncDecl "clear" 0 0 0 0 0
+                  (Void) [
+                  (FParam "this"
+                   (Ptr
+                    (Name "Screen"))
+                   (nil))])
+                 (Blk [
+                  (Let "mem"
+                   (Ptr
+                    (I8))
+                   (BExpr "as"
+                    (ILit "753664"
+                     (U64))
+                    (UExpr "*"
+                     (Id "i8"))) 0 0 0 0)
+                  (Form "pos"
+                   (BExpr ".."
+                    (ILit "0"
+                     (U64))
+                    (BExpr "*"
+                     (Id "height")
+                     (Id "width")))
+                   (Blk [
+                    (Let "off"
+                     (I32)
+                     (BExpr "*"
+                      (Id "pos")
+                      (ILit "2"
+                       (U64))) 0 0 0 0)
+                    (EStmt
+                     (BExpr "="
+                      (Idx
+                       (Id "mem")
+                       (Id "off"))
+                       (CLit " ")))
+                     (EStmt
+                      (BExpr "="
+                       (Idx
+                        (Id "mem")
+                        (BExpr "+"
+                         (Id "off")
+                         (ILit "1"
+                          (U64))))
+                        (ILit "15"
+                         (U64))))] 0))] 0))
+                  (FuncDef
+                   (FuncDecl "set_cursor" 0 0 0 0 0
+                    (Void) [
+                    (FParam "this"
+                     (Ptr
+                      (Name "Screen"))
+                     (nil))
+                    (FParam "x"
+                     (I32)
+                     (nil))
+                    (FParam "y"
+                     (I32)
+                     (nil))])
+                   (Blk [
+                    (EStmt
+                     (BExpr "="
+                      (Id "x")
+                      (Call
+                       (Get "clamp"
+                        (Id "x")) [
+                       (ILit "0"
+                        (U64))
+                       (Id "width")] [])))
+                    (EStmt
+                     (BExpr "="
+                      (Id "y")
+                      (Call
+                       (Get "clamp"
+                        (Id "y")) [
+                       (ILit "0"
+                        (U64))
+                       (Id "height")] [])))] 0))
+                  (FuncDef
+                   (FuncDecl "get_cursor" 0 0 0 0 0
+                    (Arr
+                     (I32)
+                     (ILit "2"
+                      (U64))) [
+                    (FParam "this"
+                     (Ptr
+                      (Name "Screen"))
+                     (nil))])
+                   (Blk [
+                    (Ret
+                     (List [
+                      (Id "x")
+                      (Id "y")]))] 0))] [])] 1)] 0))] 0))] 0))] 0))] 0))
+      (Blk [
+       (FuncDef
+        (FuncDecl "main" 0 0 0 0 0
+         (Void) [])
+        (Blk [
+         (Let "scr"
+          (nil)
+          (Call
+           (Id "Screen") [] []) 0 0 0 0)
+         (EStmt
+          (Call
+           (Get "clear"
+            (Id "scr")) [] []))
+         (EStmt
+          (Call
+           (Get "write"
+            (Id "scr")) [
+           (SLit "Hello, world!\n")] []))
+         (EStmt
+          (Call
+           (Get "write"
+            (Id "scr")) [
+           (SLit "This is QuartzOS!\n")] []))
+         (EStmt
+          (Call
+           (Get "write"
+            (Id "scr")) [
+           (SLit "Welcome!\n")] []))] 0))] 1)] 0))
