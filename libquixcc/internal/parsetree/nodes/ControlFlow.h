@@ -143,6 +143,20 @@ class FormStmtNode : public StmtNode {
   std::shared_ptr<BlockNode> m_block;
 };
 
+class ForeachStmtNode : public StmtNode {
+ public:
+  ForeachStmtNode(const std::string &var,
+                  const std::shared_ptr<ExprNode> &range,
+                  const std::shared_ptr<BlockNode> &block)
+      : m_var(var), m_range(range), m_block(block) {
+    ntype = NodeType::ForeachStmtNode;
+  }
+
+  std::string m_var;
+  std::shared_ptr<ExprNode> m_range;
+  std::shared_ptr<BlockNode> m_block;
+};
+
 class CaseStmtNode : public StmtNode {
  public:
   CaseStmtNode(const std::shared_ptr<ExprNode> &expr,

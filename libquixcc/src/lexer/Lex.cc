@@ -104,6 +104,7 @@ const std::unordered_map<std::string_view, Keyword> keyword_map = {
     {"retz", Keyword::Retz},
     {"retv", Keyword::Retv},
     {"form", Keyword::Form},
+    {"foreach", Keyword::Foreach},
 
     {"__asm__", Keyword::__Asm__},
 
@@ -160,6 +161,7 @@ const std::unordered_map<Keyword, std::string_view> keyword_map_inverse = {
     {Keyword::Retz, "retz"},
     {Keyword::Retv, "retv"},
     {Keyword::Form, "form"},
+    {Keyword::Foreach, "foreach"},
 
     {Keyword::__Asm__, "__asm__"},
 

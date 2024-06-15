@@ -453,6 +453,34 @@ libquixcc::Feedback libquixcc::feedback({
      "insert "
      "an open brace after the form expression. Syntax: form name in expr { ... "
      "};"},
+    {FORM_EXPECTED_CLOSE_PAREN,
+     "Expected a closing parenthesis after the "
+     "form block. To fix the issue, insert a "
+     "closing parenthesis after the form block"},
+
+    {FOREACH_EXPECTED_IDENTIFIER,
+     "Expected identifier in foreach declaration. To fix the issue, name your "
+     "foreach. Syntax: foreach name in expr { ... };"},
+    {FOREACH_EXPECTED_IN,
+     "Expected the keyword 'in' after the foreach name. To fix the issue, "
+     "insert "
+     "the keyword 'in' after the foreach name. Syntax: foreach name in expr { "
+     "... "
+     "};"},
+    {FOREACH_EXPECTED_EXPR,
+     "Expected an expression after the keyword 'in'. To fix the issue, insert "
+     "an expression after the keyword 'in'. Syntax: foreach name in expr { ... "
+     "};"},
+    {FOREACH_EXPECTED_BLOCK,
+     "Expected an open brace after the foreach expression. To fix the issue, "
+     "insert "
+     "an open brace after the foreach expression. Syntax: foreach name in expr "
+     "{ ... "
+     "};"},
+    {FOREACH_EXPECTED_CLOSE_PAREN,
+     "Expected a closing parenthesis after the "
+     "foreach block. To fix the issue, insert a "
+     "closing parenthesis after the foreach block"},
 
     {ASM_EXPECTED_LEFT_PAREN,
      "Expected an open parenthesis after the keyword '__asm__'. Syntax: "

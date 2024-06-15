@@ -155,6 +155,7 @@ class ParseTreePreorder {
   size_t iter(WhileStmtNode *node);
   size_t iter(ForStmtNode *node);
   size_t iter(FormStmtNode *node);
+  size_t iter(ForeachStmtNode *node);
   size_t iter(CaseStmtNode *node);
   size_t iter(SwitchStmtNode *node);
   size_t dispatch(ParseNode *node);

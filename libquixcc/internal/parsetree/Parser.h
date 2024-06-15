@@ -97,6 +97,8 @@ bool parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
                std::shared_ptr<libquixcc::StmtNode> &node);
 bool parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
                 std::shared_ptr<libquixcc::StmtNode> &node);
+bool parse_foreach(quixcc_job_t &job, libquixcc::Scanner *scanner,
+                   std::shared_ptr<libquixcc::StmtNode> &node);
 bool parse_case(quixcc_job_t &job, libquixcc::Scanner *scanner,
                 std::shared_ptr<libquixcc::StmtNode> &node);
 bool parse_switch(quixcc_job_t &job, libquixcc::Scanner *scanner,

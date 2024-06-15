@@ -90,6 +90,7 @@ enum class Keyword {
   Retz = 102,
   Retv = 103,
   Form = 104,
+  Foreach = 105,
 
   __Asm__ = 130,
 

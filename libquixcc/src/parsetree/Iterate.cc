@@ -147,6 +147,7 @@ size_t ParseTreePreorder::dispatch(ParseNode *n) {
   match(WhileStmtNode);
   match(ForStmtNode);
   match(FormStmtNode);
+  match(ForeachStmtNode);
   match(CaseStmtNode);
   match(SwitchStmtNode);
 
@@ -870,6 +871,18 @@ size_t ParseTreePreorder::iter(ForStmtNode *node) {
 }
 
 size_t ParseTreePreorder::iter(FormStmtNode *node) {
+  size_t count = 0;
+
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_range));
+  count += next(node->m_range);
+
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_block));
+  count += next(node->m_block);
+
+  return count + 1;
+}
+
+size_t ParseTreePreorder::iter(ForeachStmtNode *node) {
   size_t count = 0;
 
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_range));

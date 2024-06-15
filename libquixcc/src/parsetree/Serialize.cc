@@ -200,6 +200,7 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
   match(WhileStmtNode);
   match(ForStmtNode);
   match(FormStmtNode);
+  match(ForeachStmtNode);
   match(CaseStmtNode);
   match(SwitchStmtNode);
 
@@ -1388,6 +1389,18 @@ void ParseTreeSerializer::conv(const FormStmtNode *n) {
   ind();
 
   o << "(Form \"" + escape_string(n->m_var) + "\"";
+  next(n->m_range);
+  next(n->m_block);
+
+  o << ')';
+  indent--;
+}
+
+void ParseTreeSerializer::conv(const ForeachStmtNode *n) {
+  indent++;
+  ind();
+
+  o << "(Foreach \"" + escape_string(n->m_var) + "\"";
   next(n->m_range);
   next(n->m_block);
 

@@ -153,6 +153,7 @@ enum class NodeType : uint8_t {
   WhileStmtNode,
   ForStmtNode,
   FormStmtNode,
+  ForeachStmtNode,
   CaseStmtNode,
   SwitchStmtNode,
 };
@@ -255,6 +256,7 @@ class IfStmtNode;
 class WhileStmtNode;
 class ForStmtNode;
 class FormStmtNode;
+class ForeachStmtNode;
 class CaseStmtNode;
 class SwitchStmtNode;
 
