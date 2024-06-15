@@ -339,6 +339,50 @@ libquixcc::Feedback libquixcc::feedback({
      "To fix the issue, insert '...' after the last parameter in the function "
      "parameter list"},
 
+    /*
+    FN_NOEXCEPT_MULTIPLE,
+ FN_FOREIGN_MULTIPLE,
+ FN_IMPURE_MULTIPLE,
+ FN_TSAFE_MULTIPLE,
+ FN_PURE_MULTIPLE,
+ FN_QUASIPURE_MULTIPLE,
+ FN_RETROPURE_MULTIPLE,
+ FN_INLINE_MULTIPLE,
+ FN_PURE_IMPURE_MIX,
+ FN_PURE_MIX,*/
+    {FN_NOEXCEPT_MULTIPLE,
+     "The 'noexcept' specifier was already specified for this function. To fix "
+     "the issue, remove the duplicate 'noexcept' specifier"},
+    {FN_FOREIGN_MULTIPLE,
+     "The 'foreign' specifier was already specified for this function. To fix "
+     "the issue, remove the duplicate 'foreign' specifier"},
+    {FN_IMPURE_MULTIPLE,
+     "The 'impure' specifier was already specified for this function. To fix "
+     "the issue, remove the duplicate 'impure' specifier"},
+    {FN_TSAFE_MULTIPLE,
+     "The 'tsafe' specifier was already specified for this function. To fix "
+     "the issue, remove the duplicate 'thread_safe' specifier"},
+    {FN_PURE_MULTIPLE,
+     "The 'pure' specifier was already specified for this function. To fix "
+     "the issue, remove the duplicate 'pure' specifier"},
+    {FN_QUASIPURE_MULTIPLE,
+     "The 'quasipure' specifier was already specified for this function. To "
+     "fix "
+     "the issue, remove the duplicate 'quasipure' specifier"},
+    {FN_RETROPURE_MULTIPLE,
+     "The 'retropure' specifier was already specified for this function. To "
+     "fix "
+     "the issue, remove the duplicate 'retropure' specifier"},
+    {FN_INLINE_MULTIPLE,
+     "The 'inline' specifier was already specified for this function. To fix "
+     "the issue, remove the duplicate 'inline' specifier"},
+    {FN_PURE_IMPURE_MIX,
+     "Conflicting function purity specifiers are illegal. To fix the issue, "
+     "remove the conflicting purity specifiers"},
+    {FN_PURE_MIX,
+     "Purity constraints are mutually exclusive. To fix the issue, remove the "
+      "conflicting purity specifiers"},
+
     {PREP_DUPLICATE_IMPORT,
      "Source file \"{}\" contains duplicate import of \"{}\""},
 

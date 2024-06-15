@@ -398,6 +398,23 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
               return false;
             }
 
+            tok = scanner->peek();
+            if (tok.is<Operator>(Operator::Increment)) {
+              auto p = std::make_shared<PostUnaryExprNode>(
+                  Operator::Increment,
+                  std::make_shared<IndexNode>(left, index));
+              stack.push(p);
+              scanner->next();
+              continue;
+            } else if (tok.is<Operator>(Operator::Decrement)) {
+              auto p = std::make_shared<PostUnaryExprNode>(
+                  Operator::Decrement,
+                  std::make_shared<IndexNode>(left, index));
+              stack.push(p);
+              scanner->next();
+              continue;
+            }
+
             stack.push(std::make_shared<IndexNode>(left, index));
             continue;
           }
@@ -418,7 +435,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           auto left = stack.top();
           stack.pop();
 
-          tok = scanner->peek();
+          tok = scanner->next();
           if (tok.type != TT::Identifier) {
             LOG(ERROR) << "Expected an identifier in member access" << tok
                        << std::endl;
@@ -426,8 +443,24 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           }
 
           auto ident = tok.as<std::string>();
+          tok = scanner->peek();
+          if (tok.is<Operator>(Operator::Increment)) {
+            auto p = std::make_shared<PostUnaryExprNode>(
+                Operator::Increment,
+                std::make_shared<MemberAccessNode>(left, ident));
+            stack.push(p);
+            scanner->next();
+            continue;
+          } else if (tok.is<Operator>(Operator::Decrement)) {
+            auto p = std::make_shared<PostUnaryExprNode>(
+                Operator::Decrement,
+                std::make_shared<MemberAccessNode>(left, ident));
+            stack.push(p);
+            scanner->next();
+            continue;
+          }
+
           stack.push(std::make_shared<MemberAccessNode>(left, ident));
-          scanner->next();
           continue;
         }
         std::shared_ptr<ExprNode> expr;
@@ -438,8 +471,6 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
         } else {
           TypeNode *type;
           if (!parse_type(job, scanner, &type)) return false;
-
-          /// TODO: Type -> Expression Adapter
 
           auto left = stack.top();
           stack.pop();

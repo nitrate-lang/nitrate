@@ -168,32 +168,94 @@ static FunctionProperties read_function_properties(
 
   while (fn_get_property(job, scanner, state));
 
-  if (!(state.noexcept_ctr || state.foreign_ctr || state.impure_ctr ||
-        state.tsafe_ctr || state.pure_ctr || state.quasipure_ctr ||
-        state.retropure_ctr))
+  if (state.noexcept_ctr > 1) {
+    LOG(ERROR) << feedback[FN_NOEXCEPT_MULTIPLE] << scanner->peek()
+               << std::endl;
     return FunctionProperties();
+  }
 
-  LOG(WARN) << "Function designators are not supported yet."
-            << scanner->peek() << std::endl;
+  if (state.foreign_ctr > 1) {
+    LOG(ERROR) << feedback[FN_FOREIGN_MULTIPLE] << scanner->peek() << std::endl;
+    return FunctionProperties();
+  }
+
+  if (state.impure_ctr > 1) {
+    LOG(ERROR) << feedback[FN_IMPURE_MULTIPLE] << scanner->peek() << std::endl;
+    return FunctionProperties();
+  }
+
+  if (state.tsafe_ctr > 1) {
+    LOG(ERROR) << feedback[FN_TSAFE_MULTIPLE] << scanner->peek() << std::endl;
+    return FunctionProperties();
+  }
+
+  if (state.pure_ctr > 1) {
+    LOG(ERROR) << feedback[FN_PURE_MULTIPLE] << scanner->peek() << std::endl;
+    return FunctionProperties();
+  }
+
+  if (state.quasipure_ctr > 1) {
+    LOG(ERROR) << feedback[FN_QUASIPURE_MULTIPLE] << scanner->peek()
+               << std::endl;
+    return FunctionProperties();
+  }
+
+  if (state.retropure_ctr > 1) {
+    LOG(ERROR) << feedback[FN_RETROPURE_MULTIPLE] << scanner->peek()
+               << std::endl;
+    return FunctionProperties();
+  }
+
+  if (state.inline_ctr > 1) {
+    LOG(ERROR) << feedback[FN_INLINE_MULTIPLE] << scanner->peek() << std::endl;
+    return FunctionProperties();
+  }
+
+  bool partial_pure = state.pure_ctr || state.quasipure_ctr ||
+                      state.retropure_ctr || !state.impure_ctr;
+
+  if (partial_pure && state.impure_ctr) {
+    LOG(ERROR) << feedback[FN_PURE_IMPURE_MIX] << scanner->peek() << std::endl;
+    return FunctionProperties();
+  }
+
+  if (partial_pure &&
+      (state.pure_ctr + state.quasipure_ctr + state.retropure_ctr) != 1) {
+    LOG(ERROR) << feedback[FN_PURE_MIX] << scanner->peek() << std::endl;
+    return FunctionProperties();
+  }
+
+  if (partial_pure) {
+    state.tsafe_ctr = 1;
+    state.noexcept_ctr = 1;
+  }
 
   FunctionProperties props;
 
-  /// TODO: validate properties
+  /// TODO: verify that this is what i want
 
-  /// TODO: dedude missing properties: i.e. purity implies thread-safety
+  props._foreign = state.foreign_ctr;
+  props._noexcept = state.noexcept_ctr;
+  props._tsafe = state.tsafe_ctr;
+
+  if (state.pure_ctr) {
+    props._purity = Purity::Pure;
+  } else if (state.quasipure_ctr) {
+    props._purity = Purity::QuasiPure;
+  } else if (state.retropure_ctr) {
+    props._purity = Purity::RetroPure;
+  } else {
+    props._purity = Purity::Impure;
+  }
 
   return props;
 }
 
 bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
                                std::shared_ptr<libquixcc::StmtNode> &node) {
-  // fn [noexcept] [foreign] [pure] [tsafe] <name> ( [param]... ) [: <type>]; or
-  // {}
   auto fndecl = std::make_shared<FunctionDeclNode>();
 
   auto prop = read_function_properties(job, scanner);
-
-  (void)prop;
 
   Token tok = scanner->next();
 
@@ -207,7 +269,6 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     return false;
   }
   bool is_variadic = false;
-  /// TODO: Implement function properties
 
   while (1) {
     tok = scanner->peek();
@@ -248,12 +309,12 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     params.push_back({param->m_name, param->m_type});
 
   tok = scanner->peek();
+  /// TODO: Implement function properties
 
   if (tok.is<Punctor>(Punctor::Semicolon)) {
-    fndecl->m_type =
-        FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic,
-                                 false, false, false, false);
-
+    fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params,
+                                              is_variadic, false, prop._tsafe,
+                                              prop._foreign, prop._noexcept);
     scanner->next();
     node = fndecl;
     return true;
@@ -265,8 +326,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     if (!parse_type(job, scanner, &type)) return false;
 
-    fndecl->m_type = FunctionTypeNode::create(type, params, is_variadic, false,
-                                              false, false, false);
+    fndecl->m_type =
+        FunctionTypeNode::create(type, params, is_variadic, false, prop._tsafe,
+                                 prop._foreign, prop._noexcept);
 
     tok = scanner->peek();
     if (tok.is<Punctor>(Punctor::Semicolon)) {
@@ -284,9 +346,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     if (!parse(job, scanner, fnbody, false, true)) return false;
 
     if (!fndecl->m_type)
-      fndecl->m_type =
-          FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic,
-                                   false, false, false, false);
+      fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params,
+                                                is_variadic, false, prop._tsafe,
+                                                prop._foreign, prop._noexcept);
 
     node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
     return true;
@@ -296,9 +358,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     if (!parse(job, scanner, fnbody)) return false;
 
     if (!fndecl->m_type)
-      fndecl->m_type =
-          FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic,
-                                   false, false, false, false);
+      fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params,
+                                                is_variadic, false, prop._tsafe,
+                                                prop._foreign, prop._noexcept);
 
     node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
     return true;
