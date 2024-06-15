@@ -52,7 +52,7 @@
 
 namespace libquixcc {
 constexpr std::array<char, 10> punctors = {'(', ')', '{', '}', '[',
-                                           ']', '.', ',', ':', ';'};
+                                           ']', ',', ':', ';'};
 
 extern const std::unordered_map<std::string_view, libquixcc::Keyword>
     keyword_map;

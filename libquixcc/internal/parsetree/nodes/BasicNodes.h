@@ -132,8 +132,8 @@ class ParseNode {
              is<DefNode>() || is<BlockNode>() || is<StmtGroupNode>() ||
              is<ReturnStmtNode>() || is<RetifStmtNode>() ||
              is<RetzStmtNode>() || is<RetvStmtNode>() || is<IfStmtNode>() ||
-             is<WhileStmtNode>() || is<ForStmtNode>() || is<SubsystemNode>() ||
-             is<ExportNode>() || is<InlineAsmNode>();
+             is<WhileStmtNode>() || is<ForStmtNode>() || is<FormStmtNode>() ||
+             is<SubsystemNode>() || is<ExportNode>() || is<InlineAsmNode>();
 
     if (std::is_same_v<T, DeclNode>)
       return is<VarDeclNode>() || is<LetDeclNode>() || is<FunctionDeclNode>() ||

@@ -165,6 +165,9 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
       case Keyword::For:
         if (!parse_for(job, scanner, node)) return false;
         break;
+      case Keyword::Form:
+        if (!parse_form(job, scanner, node)) return false;
+        break;
       case Keyword::__Asm__:
         if (!parse_inline_asm(job, scanner, node)) return false;
         break;

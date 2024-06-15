@@ -215,19 +215,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
       break;
     }
 
-    if (tok.is<Punctor>(Punctor::Dot)) {
-      scanner->next();
-      tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::Dot)) {
-        LOG(ERROR) << feedback[FN_EXPECTED_VARARG] << tok << std::endl;
-        return false;
-      }
-      tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::Dot)) {
-        LOG(ERROR) << feedback[FN_EXPECTED_VARARG] << tok << std::endl;
-        return false;
-      }
-
+    if (tok.is<Operator>(Operator::Ellipsis)) {
       is_variadic = true;
 
       tok = scanner->next();

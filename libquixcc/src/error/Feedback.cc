@@ -437,6 +437,23 @@ libquixcc::Feedback libquixcc::feedback({
      "Expected a closing parenthesis after the for loop condition. To fix the "
      "issue, insert a closing parenthesis after the for loop condition"},
 
+    {FORM_EXPECTED_IDENTIFIER,
+     "Expected identifier in form declaration. To fix the issue, name your "
+     "form. Syntax: form name in expr { ... };"},
+    {FORM_EXPECTED_IN,
+     "Expected the keyword 'in' after the form name. To fix the issue, insert "
+     "the keyword 'in' after the form name. Syntax: form name in expr { ... "
+     "};"},
+    {FORM_EXPECTED_EXPR,
+     "Expected an expression after the keyword 'in'. To fix the issue, insert "
+     "an expression after the keyword 'in'. Syntax: form name in expr { ... "
+     "};"},
+    {FORM_EXPECTED_BLOCK,
+     "Expected an open brace after the form expression. To fix the issue, "
+     "insert "
+     "an open brace after the form expression. Syntax: form name in expr { ... "
+     "};"},
+
     {ASM_EXPECTED_LEFT_PAREN,
      "Expected an open parenthesis after the keyword '__asm__'. Syntax: "
      "__asm__ ( ... );"},

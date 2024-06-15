@@ -29,119 +29,56 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_CONTROL_FLOW_H__
-#define __QUIXCC_PARSE_NODES_CONTROL_FLOW_H__
+#define QUIXCC_INTERNAL
 
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
+#include <LibMacro.h>
+#include <core/Logger.h>
+#include <parsetree/Parser.h>
 
-#include <lexer/Token.h>
-#include <llvm/LLVMWrapper.h>
-#include <parsetree/nodes/BasicNodes.h>
-#include <parsetree/nodes/LiteralNode.h>
+using namespace libquixcc;
 
-#include <memory>
-#include <string>
-#include <vector>
-
-namespace libquixcc {
-class ReturnStmtNode : public StmtNode {
- public:
-  ReturnStmtNode(const std::shared_ptr<ExprNode> &expr) : m_expr(expr) {
-    ntype = NodeType::ReturnStmtNode;
+bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
+                           std::shared_ptr<libquixcc::StmtNode> &node) {
+  Token tok = scanner->next();
+  if (tok.type != TT::Identifier) {
+    LOG(ERROR) << feedback[FORM_EXPECTED_IDENTIFIER] << std::endl;
+    return false;
   }
 
-  std::shared_ptr<ExprNode> m_expr;
-};
+  std::string var = tok.as<std::string>();
 
-class RetifStmtNode : public StmtNode {
- public:
-  RetifStmtNode(const std::shared_ptr<ExprNode> &cond,
-                const std::shared_ptr<ExprNode> &return_val)
-      : m_cond(cond), m_return(return_val) {
-    ntype = NodeType::RetifStmtNode;
+  tok = scanner->next();
+  if (!tok.is<Operator>(Operator::In)) {
+    LOG(ERROR) << feedback[FORM_EXPECTED_IN] << std::endl;
+    return false;
   }
 
-  std::shared_ptr<ExprNode> m_cond;
-  std::shared_ptr<ExprNode> m_return;
-};
-
-class RetzStmtNode : public StmtNode {
- public:
-  RetzStmtNode(const std::shared_ptr<ExprNode> &cond,
-               const std::shared_ptr<ExprNode> &return_val)
-      : m_cond(cond), m_return(return_val) {
-    ntype = NodeType::RetzStmtNode;
+  std::shared_ptr<ExprNode> expr;
+  if (!parse_expr(job, scanner,
+                  {Token(TT::Punctor, Punctor::OpenBrace),
+                   Token(TT::Operator, Operator::Arrow)},
+                  expr)) {
+    LOG(ERROR) << feedback[FORM_EXPECTED_EXPR] << std::endl;
+    return false;
   }
 
-  std::shared_ptr<ExprNode> m_cond;
-  std::shared_ptr<ExprNode> m_return;
-};
+  tok = scanner->peek();
 
-class RetvStmtNode : public StmtNode {
- public:
-  RetvStmtNode(const std::shared_ptr<ExprNode> &cond) : m_cond(cond) {
-    ntype = NodeType::RetvStmtNode;
+  std::shared_ptr<BlockNode> block;
+  if (tok.is<Operator>(Operator::Arrow)) {
+    scanner->next();
+    if (!parse(job, scanner, block, false, true)) {
+      LOG(ERROR) << feedback[FORM_EXPECTED_BLOCK] << std::endl;
+      return false;
+    }
+  } else {
+    if (!parse(job, scanner, block)) {
+      LOG(ERROR) << feedback[FORM_EXPECTED_BLOCK] << std::endl;
+      return false;
+    }
   }
 
-  std::shared_ptr<ExprNode> m_cond;
-};
+  node = std::make_shared<FormStmtNode>(var, expr, block);
 
-class IfStmtNode : public StmtNode {
- public:
-  IfStmtNode(const std::shared_ptr<ExprNode> &cond,
-             const std::shared_ptr<StmtNode> &then,
-             const std::shared_ptr<StmtNode> &els)
-      : m_cond(cond), m_then(then), m_else(els) {
-    ntype = NodeType::IfStmtNode;
-  }
-
-  std::shared_ptr<ExprNode> m_cond;
-  std::shared_ptr<StmtNode> m_then;
-  std::shared_ptr<StmtNode> m_else;
-};
-
-class WhileStmtNode : public StmtNode {
- public:
-  WhileStmtNode(const std::shared_ptr<ExprNode> &cond,
-                const std::shared_ptr<StmtNode> &body)
-      : m_cond(cond), m_stmt(body) {
-    ntype = NodeType::WhileStmtNode;
-  }
-
-  std::shared_ptr<ExprNode> m_cond;
-  std::shared_ptr<StmtNode> m_stmt;
-};
-
-class ForStmtNode : public StmtNode {
- public:
-  ForStmtNode(const std::shared_ptr<ExprNode> &init,
-              const std::shared_ptr<ExprNode> &cond,
-              const std::shared_ptr<ExprNode> &step,
-              const std::shared_ptr<StmtNode> &body)
-      : m_init(init), m_cond(cond), m_step(step), m_stmt(body) {
-    ntype = NodeType::ForStmtNode;
-  }
-
-  std::shared_ptr<ExprNode> m_init;
-  std::shared_ptr<ExprNode> m_cond;
-  std::shared_ptr<ExprNode> m_step;
-  std::shared_ptr<StmtNode> m_stmt;
-};
-
-class FormStmtNode : public StmtNode {
- public:
-  FormStmtNode(const std::string &var, const std::shared_ptr<ExprNode> &range,
-               const std::shared_ptr<BlockNode> &block)
-      : m_var(var), m_range(range), m_block(block) {
-    ntype = NodeType::FormStmtNode;
-  }
-
-  std::string m_var;
-  std::shared_ptr<ExprNode> m_range;
-  std::shared_ptr<BlockNode> m_block;
-};
-}  // namespace libquixcc
-
-#endif  // __QUIXCC_PARSE_NODES_CONTROL_FLOW_H__
+  return true;
+}

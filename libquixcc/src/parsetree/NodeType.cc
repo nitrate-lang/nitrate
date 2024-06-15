@@ -127,4 +127,5 @@ std::unordered_map<libquixcc::NodeType, std::string_view>
         {NodeType::IfStmtNode, "IfStmtNode"},
         {NodeType::WhileStmtNode, "WhileStmtNode"},
         {NodeType::ForStmtNode, "ForStmtNode"},
+        {NodeType::FormStmtNode, "FormStmtNode"},
 };

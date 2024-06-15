@@ -103,6 +103,7 @@ const std::unordered_map<std::string_view, Keyword> keyword_map = {
     {"retif", Keyword::Retif},
     {"retz", Keyword::Retz},
     {"retv", Keyword::Retv},
+    {"form", Keyword::Form},
 
     {"__asm__", Keyword::__Asm__},
 
@@ -158,6 +159,7 @@ const std::unordered_map<Keyword, std::string_view> keyword_map_inverse = {
     {Keyword::Retif, "retif"},
     {Keyword::Retz, "retz"},
     {Keyword::Retv, "retv"},
+    {Keyword::Form, "form"},
 
     {Keyword::__Asm__, "__asm__"},
 
@@ -171,15 +173,15 @@ const std::unordered_map<std::string_view, Punctor> punctor_map = {
     {"(", Punctor::OpenParen},   {")", Punctor::CloseParen},
     {"{", Punctor::OpenBrace},   {"}", Punctor::CloseBrace},
     {"[", Punctor::OpenBracket}, {"]", Punctor::CloseBracket},
-    {".", Punctor::Dot},         {",", Punctor::Comma},
-    {":", Punctor::Colon},       {";", Punctor::Semicolon}};
+    {",", Punctor::Comma},       {":", Punctor::Colon},
+    {";", Punctor::Semicolon}};
 
 const std::unordered_map<Punctor, std::string_view> punctor_map_inverse = {
     {Punctor::OpenParen, "("},   {Punctor::CloseParen, ")"},
     {Punctor::OpenBrace, "{"},   {Punctor::CloseBrace, "}"},
     {Punctor::OpenBracket, "["}, {Punctor::CloseBracket, "]"},
-    {Punctor::Dot, "."},         {Punctor::Comma, ","},
-    {Punctor::Colon, ":"},       {Punctor::Semicolon, ";"}};
+    {Punctor::Comma, ","},       {Punctor::Colon, ":"},
+    {Punctor::Semicolon, ";"}};
 
 const std::unordered_map<std::string_view, Operator> operator_map = {
     {"<", Operator::LessThan},
@@ -187,6 +189,7 @@ const std::unordered_map<std::string_view, Operator> operator_map = {
     {"=", Operator::Assign},
     {"@", Operator::At},
     {"=>", Operator::Arrow},
+    {".", Operator::Dot},
     {"-", Operator::Minus},
     {"+", Operator::Plus},
     {"*", Operator::Multiply},
@@ -234,12 +237,20 @@ const std::unordered_map<std::string_view, Operator> operator_map = {
     {"<<=", Operator::LeftShiftAssign},
     {">>=", Operator::RightShiftAssign}};
 
+const std::unordered_map<std::string_view, Operator> word_operators = {
+    {"as", Operator::As},         {"is", Operator::Is},
+    {"in", Operator::In},         {"nin", Operator::NotIn},
+    {"sizeof", Operator::Sizeof}, {"alignof", Operator::Alignof},
+    {"typeof", Operator::Typeof}, {"offsetof", Operator::Offsetof},
+};
+
 const std::unordered_map<Operator, std::string_view> operator_map_inverse = {
     {Operator::LessThan, "<"},
     {Operator::GreaterThan, ">"},
     {Operator::Assign, "="},
     {Operator::At, "@"},
     {Operator::Arrow, "=>"},
+    {Operator::Dot, "."},
     {Operator::Minus, "-"},
     {Operator::Plus, "+"},
     {Operator::Multiply, "*"},
@@ -701,8 +712,21 @@ const Token &StreamLexer::read_token() {
           }
         }
         case LexState::Identifier: {
+          int colon_state = 0;
           while (std::isalnum(c) || c == '_' || c == ':' || c == '<' ||
                  c == '>') {
+            if (c != ':' && colon_state == 1) {
+              if (!buf.ends_with("::")) {
+                char tc = buf.back();
+                buf.pop_back();
+                m_pushback.push(tc);
+                break;
+              }
+              colon_state = 0;
+            } else if (c == ':') {
+              colon_state = 1;
+            }
+
             buf += c;
 
             if ((c = getc()) == EOF) {
@@ -721,8 +745,9 @@ const Token &StreamLexer::read_token() {
 
           /* We overshot; this must be a punctor ':' */
           if (buf.size() > 0 && buf.back() == ':') {
-            char tc;
-            m_pushback.push((tc = buf.back(), buf.pop_back(), tc));
+            char tc = buf.back();
+            buf.pop_back();
+            m_pushback.push(tc);
           }
           m_pushback.push(c);
 
@@ -736,9 +761,9 @@ const Token &StreamLexer::read_token() {
           }
 
           /* Check if it's an operator */
-          for (const auto &op : operator_map) {
+          for (const auto &op : word_operators) {
             if (buf == op.first) {
-              return (m_tok = Token(TT::Operator, operator_map.at(buf),
+              return (m_tok = Token(TT::Operator, word_operators.at(buf),
                                     m_loc - buf.size()))
                   .value();
             }
@@ -756,8 +781,13 @@ const Token &StreamLexer::read_token() {
               .value();
         }
         case LexState::Integer: {
-          while (std::isxdigit(c) || c == '_' || c == '.' || c == 'x' ||
-                 c == 'b' || c == 'd' || c == 'o' || c == 'e') {
+          while (true) {
+            if (!(std::isxdigit(c) || c == '_' || c == '.' || c == 'x' ||
+                  c == 'b' || c == 'd' || c == 'o' || c == 'e') ||
+                (buf.ends_with(".") && c == '.')) {
+              m_pushback.push(c);
+              break;
+            }
             buf += c;
 
             if ((c = getc()) == EOF) {
@@ -769,7 +799,10 @@ const Token &StreamLexer::read_token() {
 
           NumType type;
 
-          m_pushback.push(c);
+          while (buf.ends_with(".")) {
+            m_pushback.push('.');
+            buf.pop_back();
+          }
 
           /* Check if it's a floating point number */
           if ((type = check_number_literal_type(buf)) == NumType::Floating) {
@@ -995,12 +1028,14 @@ const Token &StreamLexer::read_token() {
         }
         case LexState::Other: {
           /* Check if it's a punctor */
-          for (const char punc : punctors) {
-            if (punc == buf[0]) {
-              m_pushback.push(c);
-              return (m_tok = Token(TT::Punctor, punctor_map.at(buf),
-                                    m_loc - buf.size()))
-                  .value();
+          if (buf.size() == 1) {
+            for (const char punc : punctors) {
+              if (punc == buf[0]) {
+                m_pushback.push(c);
+                return (m_tok = Token(TT::Punctor, punctor_map.at(buf),
+                                      m_loc - buf.size()))
+                    .value();
+              }
             }
           }
 

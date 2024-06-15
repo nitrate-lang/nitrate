@@ -246,6 +246,8 @@ class ParseTreePreorder {
                                    WhileStmtNode *node);
   static size_t ForStmtNode_iter(ParseTreeTraversalState &state,
                                  ForStmtNode *node);
+  static size_t FormStmtNode_iter(ParseTreeTraversalState &state,
+                                  FormStmtNode *node);
 
   static size_t dispatch(ParseTreeTraversalState &state,
                          libquixcc::ParseNode *node);

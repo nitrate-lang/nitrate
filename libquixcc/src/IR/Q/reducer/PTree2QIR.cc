@@ -179,6 +179,7 @@ static auto conv(const RetvStmtNode *n, QState &state) -> QResult;
 static auto conv(const IfStmtNode *n, QState &state) -> QResult;
 static auto conv(const WhileStmtNode *n, QState &state) -> QResult;
 static auto conv(const ForStmtNode *n, QState &state) -> QResult;
+static auto conv(const FormStmtNode *n, QState &state) -> QResult;
 
 static auto conv(const ExprStmtNode *n, QState &state) -> QResult {
   return conv(n->m_expr.get(), state);
@@ -1389,6 +1390,11 @@ static auto conv(const ForStmtNode *n, QState &state) -> QResult {
   return For::create(init, cond, step, stmt);
 }
 
+static auto conv(const FormStmtNode *n, QState &state) -> QResult {
+  /// TODO: Implement FormStmtNode
+  throw std::runtime_error("QIR translation: FormStmtNode not implemented");
+}
+
 static auto conv(const ParseNode *n, QState &state) -> QResult {
   QResult r;
 
@@ -1735,6 +1741,10 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
 
     case libquixcc::NodeType::ForStmtNode:
       r = conv(n->as<ForStmtNode>(), state);
+      break;
+    
+    case libquixcc::NodeType::FormStmtNode:
+      r = conv(n->as<FormStmtNode>(), state);
       break;
     default:
       throw std::runtime_error("QIR translation: Unknown node type");

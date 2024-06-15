@@ -146,6 +146,7 @@ size_t traversal::ParseTreePreorder::dispatch(
       {NodeType::IfStmtNode, (Func)IfStmtNode_iter},
       {NodeType::WhileStmtNode, (Func)WhileStmtNode_iter},
       {NodeType::ForStmtNode, (Func)ForStmtNode_iter},
+      {NodeType::FormStmtNode, (Func)FormStmtNode_iter},
   };
 
   if (!node_map.contains(node->ntype))
@@ -1011,4 +1012,17 @@ size_t traversal::ParseTreePreorder::ForStmtNode_iter(
   count += next(state, node->m_stmt);
 
   return count;
+}
+
+size_t traversal::ParseTreePreorder::FormStmtNode_iter(
+    traversal::ParseTreeTraversalState &state, FormStmtNode *node) {
+  size_t count = 0;
+
+  state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_range));
+  count += next(state, node->m_range);
+
+  state.m_callback(state.m_ns, state.m_scope, node, mk_ptr(&node->m_block));
+  count += next(state, node->m_block);
+
+  return count + 1;
 }

@@ -95,6 +95,8 @@ bool parse_while(quixcc_job_t &job, libquixcc::Scanner *scanner,
                  std::shared_ptr<libquixcc::StmtNode> &node);
 bool parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
                std::shared_ptr<libquixcc::StmtNode> &node);
+bool parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
+                std::shared_ptr<libquixcc::StmtNode> &node);
 bool parse_inline_asm(quixcc_job_t &job, libquixcc::Scanner *scanner,
                       std::shared_ptr<libquixcc::StmtNode> &node);
 };  // namespace libquixcc

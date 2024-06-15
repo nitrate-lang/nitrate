@@ -327,27 +327,6 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
             stack.push(std::make_shared<ListExprNode>(elements));
             continue;
           }
-          case Punctor::Dot: {
-            if (stack.size() != 1) {
-              LOG(ERROR) << "Expected a single expression" << tok << std::endl;
-              return false;
-            }
-
-            auto left = stack.top();
-            stack.pop();
-
-            tok = scanner->peek();
-            if (tok.type != TT::Identifier) {
-              LOG(ERROR) << "Expected an identifier in member access" << tok
-                         << std::endl;
-              return false;
-            }
-
-            auto ident = tok.as<std::string>();
-            stack.push(std::make_shared<MemberAccessNode>(left, ident));
-            scanner->next();
-            continue;
-          }
           case Punctor::OpenBracket: {
             if (stack.empty()) {
               // List literal
@@ -409,6 +388,27 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
         break;
       case TT::Operator: {
         auto op = tok.as<Operator>();
+        if (op == Operator::Dot) {
+          if (stack.size() != 1) {
+            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+            return false;
+          }
+
+          auto left = stack.top();
+          stack.pop();
+
+          tok = scanner->peek();
+          if (tok.type != TT::Identifier) {
+            LOG(ERROR) << "Expected an identifier in member access" << tok
+                       << std::endl;
+            return false;
+          }
+
+          auto ident = tok.as<std::string>();
+          stack.push(std::make_shared<MemberAccessNode>(left, ident));
+          scanner->next();
+          continue;
+        }
         std::shared_ptr<ExprNode> expr;
         if (!parse_expr(job, scanner, terminators, expr, depth + 1) || !expr)
           return false;

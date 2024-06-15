@@ -152,6 +152,7 @@ enum class NodeType : uint8_t {
   IfStmtNode,
   WhileStmtNode,
   ForStmtNode,
+  FormStmtNode,
 };
 
 class ParseNode;
@@ -251,6 +252,7 @@ class RetvStmtNode;
 class IfStmtNode;
 class WhileStmtNode;
 class ForStmtNode;
+class FormStmtNode;
 
 extern std::unordered_map<NodeType, std::string_view> NodeTypeNames;
 }  // namespace libquixcc

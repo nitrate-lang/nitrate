@@ -89,6 +89,7 @@ enum class Keyword {
   Retif = 101,
   Retz = 102,
   Retv = 103,
+  Form = 104,
 
   __Asm__ = 130,
 
@@ -106,7 +107,6 @@ enum class Punctor {
   CloseBrace = 4,
   OpenBracket = 5,
   CloseBracket = 6,
-  Dot = 7,
   Comma = 8,
   Colon = 9,
   Semicolon = 10,
@@ -116,6 +116,7 @@ enum class Operator {
   At = 1,
   Question = 2,
   Arrow = 3,
+  Dot = 4,
 
   Plus = 10,
   Minus = 11,
