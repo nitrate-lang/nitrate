@@ -44,35 +44,34 @@ using namespace libquixcc;
 
 void libquixcc::mutate::ExtrapolateEnumFields(
     quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
-  ast->dfs_preorder(traversal::ParseTreeTraversalState(
-      [](const std::vector<std::string> &_namespace,
-         const std::vector<std::string> &_scope, libquixcc::ParseNode *parent,
-         traversal::TraversePtr node) {
-        if (node.first != traversal::TraversePtrType::Smart) return;
-        auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+  ast->dfs_preorder([](const std::vector<std::string> &_namespace,
+                       const std::vector<std::string> &_scope,
+                       libquixcc::ParseNode *parent,
+                       traversal::TraversePtr node) {
+    if (node.first != traversal::TraversePtrType::Smart) return;
+    auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 
-        if (!(ptr)->is<EnumDefNode>()) return;
+    if (!(ptr)->is<EnumDefNode>()) return;
 
-        auto def = std::static_pointer_cast<libquixcc::EnumDefNode>(ptr);
+    auto def = std::static_pointer_cast<libquixcc::EnumDefNode>(ptr);
 
-        std::shared_ptr<ConstExprNode> last;
+    std::shared_ptr<ConstExprNode> last;
 
-        for (size_t i = 0; i < def->m_fields.size(); i++) {
-          if (def->m_fields[i]->m_value) {
-            last = def->m_fields[i]->m_value;
-            continue;
-          } else if (i == 0) {
-            def->m_fields[i]->m_value = last = IntegerNode::create("0");
-            continue;
-          }
+    for (size_t i = 0; i < def->m_fields.size(); i++) {
+      if (def->m_fields[i]->m_value) {
+        last = def->m_fields[i]->m_value;
+        continue;
+      } else if (i == 0) {
+        def->m_fields[i]->m_value = last = IntegerNode::create("0");
+        continue;
+      }
 
-          last = std::make_shared<ConstBinaryExprNode>(
-              Operator::Plus, last, IntegerNode::create("1"));
+      last = std::make_shared<ConstBinaryExprNode>(Operator::Plus, last,
+                                                   IntegerNode::create("1"));
 
-          def->m_fields[i]->m_value = last;
-        }
+      def->m_fields[i]->m_value = last;
+    }
 
-        def->m_type->m_member_type = I32TypeNode::create();
-      },
-      {}));
+    def->m_type->m_member_type = I32TypeNode::create();
+  });
 }

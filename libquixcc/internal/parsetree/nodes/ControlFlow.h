@@ -142,6 +142,32 @@ class FormStmtNode : public StmtNode {
   std::shared_ptr<ExprNode> m_range;
   std::shared_ptr<BlockNode> m_block;
 };
+
+class CaseStmtNode : public StmtNode {
+ public:
+  CaseStmtNode(const std::shared_ptr<ExprNode> &expr,
+               const std::shared_ptr<BlockNode> &block)
+      : m_expr(expr), m_block(block) {
+    ntype = NodeType::CaseStmtNode;
+  }
+
+  std::shared_ptr<ExprNode> m_expr;
+  std::shared_ptr<BlockNode> m_block;
+};
+
+class SwitchStmtNode : public StmtNode {
+ public:
+  SwitchStmtNode(const std::shared_ptr<ExprNode> &expr,
+                 const std::vector<std::shared_ptr<CaseStmtNode>> &cases,
+                 const std::shared_ptr<BlockNode> &def)
+      : m_expr(expr), m_cases(cases), m_default(def) {
+    ntype = NodeType::SwitchStmtNode;
+  }
+
+  std::shared_ptr<ExprNode> m_expr;
+  std::vector<std::shared_ptr<CaseStmtNode>> m_cases;
+  std::shared_ptr<BlockNode> m_default;
+};
 }  // namespace libquixcc
 
 #endif  // __QUIXCC_PARSE_NODES_CONTROL_FLOW_H__

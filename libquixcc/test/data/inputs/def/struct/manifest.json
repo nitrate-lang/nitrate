@@ -1,152 +1,152 @@
 {
-    "version": "1.0",
-    "test_cases": [
-        {
-            "name": "Struct test 0",
-            "note": "",
-            "input": "def/struct/il-0.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 1",
-            "note": "",
-            "input": "def/struct/il-1.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 2",
-            "note": "",
-            "input": "def/struct/il-2.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 3",
-            "note": "",
-            "input": "def/struct/il-3.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 4",
-            "note": "",
-            "input": "def/struct/il-4.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 5",
-            "note": "",
-            "input": "def/struct/il-5.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 6",
-            "note": "",
-            "input": "def/struct/il-6.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 7",
-            "note": "",
-            "input": "def/struct/il-7.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 8",
-            "note": "",
-            "input": "def/struct/il-8.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 9",
-            "note": "",
-            "input": "def/struct/il-9.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 10",
-            "note": "",
-            "input": "def/struct/il-10.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 11",
-            "note": "",
-            "input": "def/struct/il-11.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 12",
-            "note": "",
-            "input": "def/struct/il-12.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 13",
-            "note": "",
-            "input": "def/struct/il-13.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 14",
-            "note": "",
-            "input": "def/struct/il-14.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 15",
-            "note": "",
-            "input": "def/struct/il-15.q",
-            "build": "asm",
-            "expected": "false"
-        },
-        {
-            "name": "Struct test 16",
-            "note": "",
-            "input": "def/struct/wf-0.q",
-            "build": "asm",
-            "expected": "true"
-        },
-        {
-            "name": "Struct test 17",
-            "note": "",
-            "input": "def/struct/wf-1.q",
-            "build": "asm",
-            "expected": "true"
-        },
-        {
-            "name": "Struct test 18",
-            "note": "",
-            "input": "def/struct/wf-init-0.q",
-            "build": "asm",
-            "expected": "true"
-        },
-        {
-            "name": "Struct test 19",
-            "note": "",
-            "input": "def/struct/wf-init-1.q",
-            "build": "asm",
-            "expected": "true"
-        },
-        {
-            "name": "Struct ABI 0",
-            "note": "",
-            "input": "def/struct/abi-0.q",
-            "build": "asm-sha1",
-            "expected": "7b1f5596c5839fc544b2ce3b53fbdd3a49c34322"
-        }
-    ]
+  "version": "1.0",
+  "test_cases": [
+    {
+      "name": "Struct test 0",
+      "note": "",
+      "input": "def/struct/il-0.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 1",
+      "note": "",
+      "input": "def/struct/il-1.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 2",
+      "note": "",
+      "input": "def/struct/il-2.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 3",
+      "note": "",
+      "input": "def/struct/il-3.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 4",
+      "note": "",
+      "input": "def/struct/il-4.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 5",
+      "note": "",
+      "input": "def/struct/il-5.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 6",
+      "note": "",
+      "input": "def/struct/il-6.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 7",
+      "note": "",
+      "input": "def/struct/il-7.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 8",
+      "note": "",
+      "input": "def/struct/il-8.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 9",
+      "note": "",
+      "input": "def/struct/il-9.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 10",
+      "note": "",
+      "input": "def/struct/il-10.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 11",
+      "note": "",
+      "input": "def/struct/il-11.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 12",
+      "note": "",
+      "input": "def/struct/il-12.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 13",
+      "note": "",
+      "input": "def/struct/il-13.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 14",
+      "note": "",
+      "input": "def/struct/il-14.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 15",
+      "note": "",
+      "input": "def/struct/il-15.q",
+      "build": "asm",
+      "expected": "false"
+    },
+    {
+      "name": "Struct test 16",
+      "note": "",
+      "input": "def/struct/wf-0.q",
+      "build": "asm",
+      "expected": "true"
+    },
+    {
+      "name": "Struct test 17",
+      "note": "",
+      "input": "def/struct/wf-1.q",
+      "build": "asm",
+      "expected": "true"
+    },
+    {
+      "name": "Struct test 18",
+      "note": "",
+      "input": "def/struct/wf-init-0.q",
+      "build": "asm",
+      "expected": "true"
+    },
+    {
+      "name": "Struct test 19",
+      "note": "",
+      "input": "def/struct/wf-init-1.q",
+      "build": "asm",
+      "expected": "true"
+    },
+    {
+      "name": "Struct ABI 0",
+      "note": "",
+      "input": "def/struct/abi-0.q",
+      "build": "asm-sha1",
+      "expected": "7b1f5596c5839fc544b2ce3b53fbdd3a49c34322"
+    }
+  ]
 }

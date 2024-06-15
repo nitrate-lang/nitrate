@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 #include <lexer-test/suite.h>
 #include <openssl/sha.h>
-#include <parser-test/suite.h>
 #include <optimizer-test/suite.h>
+#include <parser-test/suite.h>
 #include <stdio.h>
 
 #include <fstream>
@@ -18,11 +18,17 @@ TEST(libquixcc, create_build_context) {
   ASSERT_TRUE(quixcc_dispose(job));
 }
 
-TEST(libquixcc_lexer, all_tests) { ASSERT_TRUE(libquixcc::test::lexer_test_suite()); }
+TEST(libquixcc_lexer, all_tests) {
+  ASSERT_TRUE(libquixcc::test::lexer_test_suite());
+}
 
-TEST(libquixcc_parser, all_tests) { ASSERT_TRUE(libquixcc::test::parser_test_suite()); }
+TEST(libquixcc_parser, all_tests) {
+  ASSERT_TRUE(libquixcc::test::parser_test_suite());
+}
 
-TEST(libquixcc_optimizer, all_tests) { ASSERT_TRUE(libquixcc::test::optimizer_test_suite()); }
+TEST(libquixcc_optimizer, all_tests) {
+  ASSERT_TRUE(libquixcc::test::optimizer_test_suite());
+}
 
 static void sha1_file_ignstr(FILE *file, uint8_t sha1[20]) {
   fseek(file, 0, SEEK_END);

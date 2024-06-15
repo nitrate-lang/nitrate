@@ -46,4 +46,5 @@ bool libquixcc::test::lexer_test_suite() {
   return true;
 }
 
-const std::vector<libquixcc::test::LexerVector> libquixcc::test::lexer_test_vectors = {};
+const std::vector<libquixcc::test::LexerVector>
+    libquixcc::test::lexer_test_vectors = {};

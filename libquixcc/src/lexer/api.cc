@@ -111,8 +111,7 @@ static quix_inline quixcc_tok_t fetch_token(quixcc_job_t *job) {
       ret.val.op = static_cast<quixcc_lex_op_t>(tok.as<Operator>());
       break;
     case QUIXCC_LEX_PUNCT:
-      ret.val.punct =
-          static_cast<quixcc_lex_punct_t>(tok.as<Punctor>());
+      ret.val.punct = static_cast<quixcc_lex_punct_t>(tok.as<Punctor>());
       break;
     case QUIXCC_LEX_INT:
       ret.val.voucher = publish_string(job, tok.as<std::string>());
@@ -218,20 +217,17 @@ LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job,
     case QUIXCC_LEX_IDENT:
       return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
     case QUIXCC_LEX_KW:
-      return snprintf(buf, len, "%s",
-                      keyword_map_inverse
-                          .at(static_cast<Keyword>(tok->val.kw))
-                          .data());
+      return snprintf(
+          buf, len, "%s",
+          keyword_map_inverse.at(static_cast<Keyword>(tok->val.kw)).data());
     case QUIXCC_LEX_OP:
-      return snprintf(buf, len, "%s",
-                      operator_map_inverse
-                          .at(static_cast<Operator>(tok->val.op))
-                          .data());
+      return snprintf(
+          buf, len, "%s",
+          operator_map_inverse.at(static_cast<Operator>(tok->val.op)).data());
     case QUIXCC_LEX_PUNCT:
-      return snprintf(buf, len, "%s",
-                      punctor_map_inverse
-                          .at(static_cast<Punctor>(tok->val.punct))
-                          .data());
+      return snprintf(
+          buf, len, "%s",
+          punctor_map_inverse.at(static_cast<Punctor>(tok->val.punct)).data());
     case QUIXCC_LEX_INT:
       return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
     case QUIXCC_LEX_FLOAT:
@@ -267,20 +263,17 @@ LIB_EXPORT size_t quixcc_tok_humanize(quixcc_job_t *job,
       return snprintf(buf, len, "IDENT(%s)",
                       quixcc_getstr(job, tok->val.voucher));
     case QUIXCC_LEX_KW:
-      return snprintf(buf, len, "KW(%s)",
-                      keyword_map_inverse
-                          .at(static_cast<Keyword>(tok->val.kw))
-                          .data());
+      return snprintf(
+          buf, len, "KW(%s)",
+          keyword_map_inverse.at(static_cast<Keyword>(tok->val.kw)).data());
     case QUIXCC_LEX_OP:
-      return snprintf(buf, len, "OP(%s)",
-                      operator_map_inverse
-                          .at(static_cast<Operator>(tok->val.op))
-                          .data());
+      return snprintf(
+          buf, len, "OP(%s)",
+          operator_map_inverse.at(static_cast<Operator>(tok->val.op)).data());
     case QUIXCC_LEX_PUNCT:
-      return snprintf(buf, len, "PUNCT(%s)",
-                      punctor_map_inverse
-                          .at(static_cast<Punctor>(tok->val.punct))
-                          .data());
+      return snprintf(
+          buf, len, "PUNCT(%s)",
+          punctor_map_inverse.at(static_cast<Punctor>(tok->val.punct)).data());
     case QUIXCC_LEX_INT:
       return snprintf(buf, len, "INT(%s)",
                       quixcc_getstr(job, tok->val.voucher));

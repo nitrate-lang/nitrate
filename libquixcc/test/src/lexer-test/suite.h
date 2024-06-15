@@ -36,9 +36,10 @@
 #error "This header requires C++"
 #endif
 
+#include <lexer/Lex.h>
+
 #include <string_view>
 #include <vector>
-#include <lexer/Lex.h>
 
 namespace libquixcc::test {
 struct LexerVector {

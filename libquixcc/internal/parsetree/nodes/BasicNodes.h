@@ -55,7 +55,7 @@ class ParseNode {
   ParseNode() = default;
   virtual ~ParseNode() = default;
 
-  virtual size_t dfs_preorder(traversal::ParseTreeTraversalState state);
+  virtual size_t dfs_preorder(traversal::ParseTreePreorderCallback state);
   virtual std::string to_string() const;
 
   /// @brief Count the number of nodes in the tree.
@@ -133,6 +133,7 @@ class ParseNode {
              is<ReturnStmtNode>() || is<RetifStmtNode>() ||
              is<RetzStmtNode>() || is<RetvStmtNode>() || is<IfStmtNode>() ||
              is<WhileStmtNode>() || is<ForStmtNode>() || is<FormStmtNode>() ||
+             is<CaseStmtNode>() || is<SwitchStmtNode>() ||
              is<SubsystemNode>() || is<ExportNode>() || is<InlineAsmNode>();
 
     if (std::is_same_v<T, DeclNode>)

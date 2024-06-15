@@ -46,6 +46,4 @@ static void nop(const std::vector<std::string> &_namespace,
   return;
 }
 
-size_t ParseNode::count() {
-  return dfs_preorder(traversal::ParseTreeTraversalState(nop, {}));
-}
+size_t ParseNode::count() { return dfs_preorder(nop); }

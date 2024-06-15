@@ -141,6 +141,8 @@ class ParseTreeSerializer {
   void conv(const WhileStmtNode *);
   void conv(const ForStmtNode *);
   void conv(const FormStmtNode *);
+  void conv(const CaseStmtNode *);
+  void conv(const SwitchStmtNode *);
   void dispatch(const ParseNode *);
 
   template <typename T>

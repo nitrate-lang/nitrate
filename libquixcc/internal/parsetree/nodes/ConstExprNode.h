@@ -59,7 +59,8 @@ class ConstUnaryExprNode : public ConstExprNode {
 
 class ConstPostUnaryExprNode : public ConstExprNode {
  public:
-  ConstPostUnaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &expr)
+  ConstPostUnaryExprNode(Operator op,
+                         const std::shared_ptr<ConstExprNode> &expr)
       : m_op(op), m_expr(expr) {
     ntype = NodeType::ConstPostUnaryExprNode;
   }

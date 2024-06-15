@@ -198,6 +198,8 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
   match(WhileStmtNode);
   match(ForStmtNode);
   match(FormStmtNode);
+  match(CaseStmtNode);
+  match(SwitchStmtNode);
 
   LOG(FATAL) << "No conversion function for node type " << (int)n->ntype
              << " found." << std::endl;
@@ -1386,6 +1388,39 @@ void ParseTreeSerializer::conv(const FormStmtNode *n) {
   o << "(Form \"" + escape_string(n->m_var) + "\"";
   next(n->m_range);
   next(n->m_block);
+
+  o << ')';
+  indent--;
+}
+
+void ParseTreeSerializer::conv(const CaseStmtNode *n) {
+  indent++;
+  ind();
+
+  o << "(Case";
+  next(n->m_expr);
+  next(n->m_block);
+
+  o << ')';
+  indent--;
+}
+
+void ParseTreeSerializer::conv(const SwitchStmtNode *n) {
+  indent++;
+  ind();
+
+  o << "(Switch";
+  next(n->m_expr);
+
+  o << " [";
+
+  for (const auto &case_stmt : n->m_cases) {
+    next(case_stmt);
+  }
+
+  o << ']';
+
+  next(n->m_default);
 
   o << ')';
   indent--;

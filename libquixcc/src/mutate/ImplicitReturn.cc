@@ -44,29 +44,28 @@ using namespace libquixcc;
 
 void libquixcc::mutate::ImplicitReturn(
     quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
-  ast->dfs_preorder(traversal::ParseTreeTraversalState(
-      [](const std::vector<std::string> &_namespace,
-         const std::vector<std::string> &_scope, libquixcc::ParseNode *parent,
-         libquixcc::traversal::TraversePtr node) {
-        if (node.first != traversal::TraversePtrType::Smart) return;
-        auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
-        if (!ptr->is<libquixcc::FunctionDefNode>()) return;
+  ast->dfs_preorder([](const std::vector<std::string> &_namespace,
+                       const std::vector<std::string> &_scope,
+                       libquixcc::ParseNode *parent,
+                       libquixcc::traversal::TraversePtr node) {
+    if (node.first != traversal::TraversePtrType::Smart) return;
+    auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+    if (!ptr->is<libquixcc::FunctionDefNode>()) return;
 
-        auto func = std::static_pointer_cast<libquixcc::FunctionDefNode>(ptr);
+    auto func = std::static_pointer_cast<libquixcc::FunctionDefNode>(ptr);
 
-        if (!func->m_decl->m_type->m_return_type->is<VoidTypeNode>()) return;
+    if (!func->m_decl->m_type->m_return_type->is<VoidTypeNode>()) return;
 
-        for (auto &stmt : func->m_body->m_stmts) {
-          if (stmt->is<libquixcc::ReturnStmtNode>() ||
-              stmt->is<libquixcc::RetifStmtNode>() ||
-              stmt->is<libquixcc::RetzStmtNode>() ||
-              stmt->is<libquixcc::RetvStmtNode>()) {
-            return;
-          }
-        }
+    for (auto &stmt : func->m_body->m_stmts) {
+      if (stmt->is<libquixcc::ReturnStmtNode>() ||
+          stmt->is<libquixcc::RetifStmtNode>() ||
+          stmt->is<libquixcc::RetzStmtNode>() ||
+          stmt->is<libquixcc::RetvStmtNode>()) {
+        return;
+      }
+    }
 
-        func->m_body->m_stmts.push_back(
-            std::make_shared<libquixcc::ReturnStmtNode>(nullptr));
-      },
-      {}));
+    func->m_body->m_stmts.push_back(
+        std::make_shared<libquixcc::ReturnStmtNode>(nullptr));
+  });
 }

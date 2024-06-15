@@ -59,206 +59,116 @@ typedef std::function<void(const std::vector<std::string> &_namespace,
                            libquixcc::ParseNode *, TraversePtr)>
     ParseTreePreorderCallback;
 
-struct ParseTreeTraversalState {
+class ParseTreePreorder {
   std::vector<std::string> m_ns;
   std::vector<std::string> m_scope;
   std::set<TypeNode *> m_visited;
   ParseTreePreorderCallback m_callback;
 
-  ParseTreeTraversalState(ParseTreePreorderCallback callback,
-                          const std::vector<std::string> &_namespace)
-      : m_ns(_namespace), m_visited(), m_callback(callback) {}
-};
-
-class ParseTreePreorder {
-  static size_t ExprStmtNode_iter(ParseTreeTraversalState &state,
-                                  ExprStmtNode *node);
-  static size_t StmtExprNode_iter(ParseTreeTraversalState &state,
-                                  StmtExprNode *node);
-  static size_t NopStmtNode_iter(ParseTreeTraversalState &state,
-                                 NopStmtNode *node);
-  static size_t BlockNode_iter(ParseTreeTraversalState &state, BlockNode *node);
-  static size_t StmtGroupNode_iter(ParseTreeTraversalState &state,
-                                   StmtGroupNode *node);
-  static size_t CastExprNode_iter(ParseTreeTraversalState &state,
-                                  CastExprNode *node);
-  static size_t StaticCastExprNode_iter(ParseTreeTraversalState &state,
-                                        StaticCastExprNode *node);
-  static size_t BitCastExprNode_iter(ParseTreeTraversalState &state,
-                                     BitCastExprNode *node);
-  static size_t SignedUpcastExprNode_iter(ParseTreeTraversalState &state,
-                                          SignedUpcastExprNode *node);
-  static size_t UnsignedUpcastExprNode_iter(ParseTreeTraversalState &state,
-                                            UnsignedUpcastExprNode *node);
-  static size_t DowncastExprNode_iter(ParseTreeTraversalState &state,
-                                      DowncastExprNode *node);
-  static size_t PtrToIntCastExprNode_iter(ParseTreeTraversalState &state,
-                                          PtrToIntCastExprNode *node);
-  static size_t IntToPtrCastExprNode_iter(ParseTreeTraversalState &state,
-                                          IntToPtrCastExprNode *node);
-  static size_t UnaryExprNode_iter(ParseTreeTraversalState &state,
-                                   UnaryExprNode *node);
-  static size_t PostUnaryExprNode_iter(ParseTreeTraversalState &state,
-                                       PostUnaryExprNode *node);
-  static size_t BinaryExprNode_iter(ParseTreeTraversalState &state,
-                                    BinaryExprNode *node);
-  static size_t CallExprNode_iter(ParseTreeTraversalState &state,
-                                  CallExprNode *node);
-  static size_t ListExprNode_iter(ParseTreeTraversalState &state,
-                                  ListExprNode *node);
-  static size_t MemberAccessNode_iter(ParseTreeTraversalState &state,
-                                      MemberAccessNode *node);
-  static size_t IndexNode_iter(ParseTreeTraversalState &state, IndexNode *node);
-  static size_t FStringNode_iter(ParseTreeTraversalState &state,
-                                 FStringNode *node);
-  static size_t ConstUnaryExprNode_iter(ParseTreeTraversalState &state,
-                                        ConstUnaryExprNode *node);
-  static size_t ConstPostUnaryExprNode_iter(ParseTreeTraversalState &state,
-                                            ConstPostUnaryExprNode *node);
-  static size_t ConstBinaryExprNode_iter(ParseTreeTraversalState &state,
-                                         ConstBinaryExprNode *node);
-  static size_t IdentifierNode_iter(ParseTreeTraversalState &state,
-                                    IdentifierNode *node);
-  static size_t MutTypeNode_iter(ParseTreeTraversalState &state,
-                                 MutTypeNode *node);
-  static size_t U8TypeNode_iter(ParseTreeTraversalState &state,
-                                U8TypeNode *node);
-  static size_t U16TypeNode_iter(ParseTreeTraversalState &state,
-                                 U16TypeNode *node);
-  static size_t U32TypeNode_iter(ParseTreeTraversalState &state,
-                                 U32TypeNode *node);
-  static size_t U64TypeNode_iter(ParseTreeTraversalState &state,
-                                 U64TypeNode *node);
-  static size_t U128TypeNode_iter(ParseTreeTraversalState &state,
-                                  U128TypeNode *node);
-  static size_t I8TypeNode_iter(ParseTreeTraversalState &state,
-                                I8TypeNode *node);
-  static size_t I16TypeNode_iter(ParseTreeTraversalState &state,
-                                 I16TypeNode *node);
-  static size_t I32TypeNode_iter(ParseTreeTraversalState &state,
-                                 I32TypeNode *node);
-  static size_t I64TypeNode_iter(ParseTreeTraversalState &state,
-                                 I64TypeNode *node);
-  static size_t I128TypeNode_iter(ParseTreeTraversalState &state,
-                                  I128TypeNode *node);
-  static size_t F32TypeNode_iter(ParseTreeTraversalState &state,
-                                 F32TypeNode *node);
-  static size_t F64TypeNode_iter(ParseTreeTraversalState &state,
-                                 F64TypeNode *node);
-  static size_t BoolTypeNode_iter(ParseTreeTraversalState &state,
-                                  BoolTypeNode *node);
-  static size_t VoidTypeNode_iter(ParseTreeTraversalState &state,
-                                  VoidTypeNode *node);
-  static size_t NullTypeNode_iter(ParseTreeTraversalState &state,
-                                  NullTypeNode *node);
-  static size_t PointerTypeNode_iter(ParseTreeTraversalState &state,
-                                     PointerTypeNode *node);
-  static size_t OpaqueTypeNode_iter(ParseTreeTraversalState &state,
-                                    OpaqueTypeNode *node);
-  static size_t StringTypeNode_iter(ParseTreeTraversalState &state,
-                                    StringTypeNode *node);
-  static size_t EnumTypeNode_iter(ParseTreeTraversalState &state,
-                                  EnumTypeNode *node);
-  static size_t StructTypeNode_iter(ParseTreeTraversalState &state,
-                                    StructTypeNode *node);
-  static size_t GroupTypeNode_iter(ParseTreeTraversalState &state,
-                                   GroupTypeNode *node);
-  static size_t RegionTypeNode_iter(ParseTreeTraversalState &state,
-                                    RegionTypeNode *node);
-  static size_t UnionTypeNode_iter(ParseTreeTraversalState &state,
-                                   UnionTypeNode *node);
-  static size_t ArrayTypeNode_iter(ParseTreeTraversalState &state,
-                                   ArrayTypeNode *node);
-  static size_t VectorTypeNode_iter(ParseTreeTraversalState &state,
-                                    VectorTypeNode *node);
-  static size_t ResultTypeNode_iter(ParseTreeTraversalState &state,
-                                    ResultTypeNode *node);
-  static size_t GeneratorTypeNode_iter(ParseTreeTraversalState &state,
-                                       GeneratorTypeNode *node);
-  static size_t FunctionTypeNode_iter(ParseTreeTraversalState &state,
-                                      FunctionTypeNode *node);
-  static size_t UserTypeNode_iter(ParseTreeTraversalState &state,
-                                  UserTypeNode *node);
-  static size_t IntegerNode_iter(ParseTreeTraversalState &state,
-                                 IntegerNode *node);
-  static size_t FloatLiteralNode_iter(ParseTreeTraversalState &state,
-                                      FloatLiteralNode *node);
-  static size_t StringNode_iter(ParseTreeTraversalState &state,
-                                StringNode *node);
-  static size_t CharNode_iter(ParseTreeTraversalState &state, CharNode *node);
-  static size_t BoolLiteralNode_iter(ParseTreeTraversalState &state,
-                                     BoolLiteralNode *node);
-  static size_t NullLiteralNode_iter(ParseTreeTraversalState &state,
-                                     NullLiteralNode *node);
-  static size_t UndefLiteralNode_iter(ParseTreeTraversalState &state,
-                                      UndefLiteralNode *node);
-  static size_t TypedefNode_iter(ParseTreeTraversalState &state,
-                                 TypedefNode *node);
-  static size_t VarDeclNode_iter(ParseTreeTraversalState &state,
-                                 VarDeclNode *node);
-  static size_t LetDeclNode_iter(ParseTreeTraversalState &state,
-                                 LetDeclNode *node);
-  static size_t ConstDeclNode_iter(ParseTreeTraversalState &state,
-                                   ConstDeclNode *node);
-  static size_t FunctionDeclNode_iter(ParseTreeTraversalState &state,
-                                      FunctionDeclNode *node);
-  static size_t StructDefNode_iter(ParseTreeTraversalState &state,
-                                   StructDefNode *node);
-  static size_t StructFieldNode_iter(ParseTreeTraversalState &state,
-                                     StructFieldNode *node);
-  static size_t RegionDefNode_iter(ParseTreeTraversalState &state,
-                                   RegionDefNode *node);
-  static size_t RegionFieldNode_iter(ParseTreeTraversalState &state,
-                                     RegionFieldNode *node);
-  static size_t GroupDefNode_iter(ParseTreeTraversalState &state,
-                                  GroupDefNode *node);
-  static size_t GroupFieldNode_iter(ParseTreeTraversalState &state,
-                                    GroupFieldNode *node);
-  static size_t UnionDefNode_iter(ParseTreeTraversalState &state,
-                                  UnionDefNode *node);
-  static size_t UnionFieldNode_iter(ParseTreeTraversalState &state,
-                                    UnionFieldNode *node);
-  static size_t EnumDefNode_iter(ParseTreeTraversalState &state,
-                                 EnumDefNode *node);
-  static size_t EnumFieldNode_iter(ParseTreeTraversalState &state,
-                                   EnumFieldNode *node);
-  static size_t FunctionDefNode_iter(ParseTreeTraversalState &state,
-                                     FunctionDefNode *node);
-  static size_t FunctionParamNode_iter(ParseTreeTraversalState &state,
-                                       FunctionParamNode *node);
-  static size_t SubsystemNode_iter(ParseTreeTraversalState &state,
-                                   SubsystemNode *node);
-  static size_t ExportNode_iter(ParseTreeTraversalState &state,
-                                ExportNode *node);
-  static size_t InlineAsmNode_iter(ParseTreeTraversalState &state,
-                                   InlineAsmNode *node);
-  static size_t ReturnStmtNode_iter(ParseTreeTraversalState &state,
-                                    ReturnStmtNode *node);
-  static size_t RetifStmtNode_iter(ParseTreeTraversalState &state,
-                                   RetifStmtNode *node);
-  static size_t RetzStmtNode_iter(ParseTreeTraversalState &state,
-                                  RetzStmtNode *node);
-  static size_t RetvStmtNode_iter(ParseTreeTraversalState &state,
-                                  RetvStmtNode *node);
-  static size_t IfStmtNode_iter(ParseTreeTraversalState &state,
-                                IfStmtNode *node);
-  static size_t WhileStmtNode_iter(ParseTreeTraversalState &state,
-                                   WhileStmtNode *node);
-  static size_t ForStmtNode_iter(ParseTreeTraversalState &state,
-                                 ForStmtNode *node);
-  static size_t FormStmtNode_iter(ParseTreeTraversalState &state,
-                                  FormStmtNode *node);
-
-  static size_t dispatch(ParseTreeTraversalState &state,
-                         libquixcc::ParseNode *node);
+  size_t iter(ExprStmtNode *node);
+  size_t iter(StmtExprNode *node);
+  size_t iter(NopStmtNode *node);
+  size_t iter(BlockNode *node);
+  size_t iter(StmtGroupNode *node);
+  size_t iter(CastExprNode *node);
+  size_t iter(StaticCastExprNode *node);
+  size_t iter(BitCastExprNode *node);
+  size_t iter(SignedUpcastExprNode *node);
+  size_t iter(UnsignedUpcastExprNode *node);
+  size_t iter(DowncastExprNode *node);
+  size_t iter(PtrToIntCastExprNode *node);
+  size_t iter(IntToPtrCastExprNode *node);
+  size_t iter(UnaryExprNode *node);
+  size_t iter(PostUnaryExprNode *node);
+  size_t iter(BinaryExprNode *node);
+  size_t iter(CallExprNode *node);
+  size_t iter(ListExprNode *node);
+  size_t iter(MemberAccessNode *node);
+  size_t iter(IndexNode *node);
+  size_t iter(FStringNode *node);
+  size_t iter(ConstUnaryExprNode *node);
+  size_t iter(ConstPostUnaryExprNode *node);
+  size_t iter(ConstBinaryExprNode *node);
+  size_t iter(IdentifierNode *node);
+  size_t iter(MutTypeNode *node);
+  size_t iter(U8TypeNode *node);
+  size_t iter(U16TypeNode *node);
+  size_t iter(U32TypeNode *node);
+  size_t iter(U64TypeNode *node);
+  size_t iter(U128TypeNode *node);
+  size_t iter(I8TypeNode *node);
+  size_t iter(I16TypeNode *node);
+  size_t iter(I32TypeNode *node);
+  size_t iter(I64TypeNode *node);
+  size_t iter(I128TypeNode *node);
+  size_t iter(F32TypeNode *node);
+  size_t iter(F64TypeNode *node);
+  size_t iter(BoolTypeNode *node);
+  size_t iter(VoidTypeNode *node);
+  size_t iter(NullTypeNode *node);
+  size_t iter(PointerTypeNode *node);
+  size_t iter(OpaqueTypeNode *node);
+  size_t iter(StringTypeNode *node);
+  size_t iter(EnumTypeNode *node);
+  size_t iter(StructTypeNode *node);
+  size_t iter(GroupTypeNode *node);
+  size_t iter(RegionTypeNode *node);
+  size_t iter(UnionTypeNode *node);
+  size_t iter(ArrayTypeNode *node);
+  size_t iter(VectorTypeNode *node);
+  size_t iter(ResultTypeNode *node);
+  size_t iter(GeneratorTypeNode *node);
+  size_t iter(FunctionTypeNode *node);
+  size_t iter(UserTypeNode *node);
+  size_t iter(IntegerNode *node);
+  size_t iter(FloatLiteralNode *node);
+  size_t iter(StringNode *node);
+  size_t iter(CharNode *node);
+  size_t iter(BoolLiteralNode *node);
+  size_t iter(NullLiteralNode *node);
+  size_t iter(UndefLiteralNode *node);
+  size_t iter(TypedefNode *node);
+  size_t iter(VarDeclNode *node);
+  size_t iter(LetDeclNode *node);
+  size_t iter(ConstDeclNode *node);
+  size_t iter(FunctionDeclNode *node);
+  size_t iter(StructDefNode *node);
+  size_t iter(StructFieldNode *node);
+  size_t iter(RegionDefNode *node);
+  size_t iter(RegionFieldNode *node);
+  size_t iter(GroupDefNode *node);
+  size_t iter(GroupFieldNode *node);
+  size_t iter(UnionDefNode *node);
+  size_t iter(UnionFieldNode *node);
+  size_t iter(EnumDefNode *node);
+  size_t iter(EnumFieldNode *node);
+  size_t iter(FunctionDefNode *node);
+  size_t iter(FunctionParamNode *node);
+  size_t iter(SubsystemNode *node);
+  size_t iter(ExportNode *node);
+  size_t iter(InlineAsmNode *node);
+  size_t iter(ReturnStmtNode *node);
+  size_t iter(RetifStmtNode *node);
+  size_t iter(RetzStmtNode *node);
+  size_t iter(RetvStmtNode *node);
+  size_t iter(IfStmtNode *node);
+  size_t iter(WhileStmtNode *node);
+  size_t iter(ForStmtNode *node);
+  size_t iter(FormStmtNode *node);
+  size_t iter(CaseStmtNode *node);
+  size_t iter(SwitchStmtNode *node);
+  size_t dispatch(ParseNode *node);
 
  public:
+  ParseTreePreorder(ParseTreePreorderCallback callback)
+      : m_callback(callback) {}
+
   template <typename T>
-  static size_t next(ParseTreeTraversalState &state, T node) {
+  inline size_t next(T node) {
     if constexpr (std::is_pointer<T>::value) {
-      return dispatch(state, node);
+      return dispatch(node);
     } else {
-      return dispatch(state, node.get());
+      return dispatch(node.get());
     }
   }
 };

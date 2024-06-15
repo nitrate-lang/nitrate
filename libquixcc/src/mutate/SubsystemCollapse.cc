@@ -175,72 +175,71 @@ void libquixcc::mutate::SubsystemCollapse(
     quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
   std::set<std::string> visited;
 
-  ast->dfs_preorder(traversal::ParseTreeTraversalState(
-      [&visited](const std::vector<std::string> &ns,
-                 const std::vector<std::string> &_scope,
-                 libquixcc::ParseNode *parent, traversal::TraversePtr node) {
-        if (node.first != traversal::TraversePtrType::Raw) return;
+  ast->dfs_preorder([&visited](const std::vector<std::string> &ns,
+                               const std::vector<std::string> &_scope,
+                               libquixcc::ParseNode *parent,
+                               traversal::TraversePtr node) {
+    if (node.first != traversal::TraversePtrType::Raw) return;
 
-        auto ptr = *std::get<ParseNode **>(node.second);
-        auto dobptr = std::get<ParseNode **>(node.second);
+    auto ptr = *std::get<ParseNode **>(node.second);
+    auto dobptr = std::get<ParseNode **>(node.second);
 
-        switch (ptr->ntype) {
-          case NodeType::UserTypeNode: {
-            auto def = static_cast<UserTypeNode *>(ptr);
-            if (visited.contains(def->m_name)) return;
+    switch (ptr->ntype) {
+      case NodeType::UserTypeNode: {
+        auto def = static_cast<UserTypeNode *>(ptr);
+        if (visited.contains(def->m_name)) return;
 
-            auto n = Symbol::join(ns, def->m_name);
+        auto n = Symbol::join(ns, def->m_name);
 
-            *dobptr = UserTypeNode::create(n);
-            visited.insert(n);
-            break;
-          }
-          case NodeType::UnionTypeNode: {
-            auto def = static_cast<UnionTypeNode *>(ptr);
-            if (visited.contains(def->m_name)) return;
+        *dobptr = UserTypeNode::create(n);
+        visited.insert(n);
+        break;
+      }
+      case NodeType::UnionTypeNode: {
+        auto def = static_cast<UnionTypeNode *>(ptr);
+        if (visited.contains(def->m_name)) return;
 
-            auto n = Symbol::join(ns, def->m_name);
+        auto n = Symbol::join(ns, def->m_name);
 
-            *dobptr = UnionTypeNode::create(def->m_fields, n);
-            visited.insert(n);
-            break;
-          }
-          case NodeType::StructTypeNode: {
-            auto def = static_cast<StructTypeNode *>(ptr);
-            if (visited.contains(def->m_name)) return;
+        *dobptr = UnionTypeNode::create(def->m_fields, n);
+        visited.insert(n);
+        break;
+      }
+      case NodeType::StructTypeNode: {
+        auto def = static_cast<StructTypeNode *>(ptr);
+        if (visited.contains(def->m_name)) return;
 
-            auto n = Symbol::join(ns, def->m_name);
+        auto n = Symbol::join(ns, def->m_name);
 
-            *dobptr = StructTypeNode::create(def->m_fields, n);
-            visited.insert(n);
-            break;
-          }
-          case NodeType::RegionTypeNode: {
-            auto def = static_cast<RegionTypeNode *>(ptr);
-            if (visited.contains(def->m_name)) return;
+        *dobptr = StructTypeNode::create(def->m_fields, n);
+        visited.insert(n);
+        break;
+      }
+      case NodeType::RegionTypeNode: {
+        auto def = static_cast<RegionTypeNode *>(ptr);
+        if (visited.contains(def->m_name)) return;
 
-            auto n = Symbol::join(ns, def->m_name);
+        auto n = Symbol::join(ns, def->m_name);
 
-            *dobptr = RegionTypeNode::create(def->m_fields, n);
-            visited.insert(n);
-            break;
-          }
-          case NodeType::OpaqueTypeNode: {
-            auto def = static_cast<OpaqueTypeNode *>(ptr);
-            if (visited.contains(def->m_name)) return;
+        *dobptr = RegionTypeNode::create(def->m_fields, n);
+        visited.insert(n);
+        break;
+      }
+      case NodeType::OpaqueTypeNode: {
+        auto def = static_cast<OpaqueTypeNode *>(ptr);
+        if (visited.contains(def->m_name)) return;
 
-            auto n = Symbol::join(ns, def->m_name);
+        auto n = Symbol::join(ns, def->m_name);
 
-            *dobptr = OpaqueTypeNode::create(n);
-            visited.insert(n);
-            break;
-          }
-          default:
-            break;
-        }
-      },
-      {}));
+        *dobptr = OpaqueTypeNode::create(n);
+        visited.insert(n);
+        break;
+      }
+      default:
+        break;
+    }
+  });
 
-  ast->dfs_preorder(traversal::ParseTreeTraversalState(expr_collapse, {}));
-  ast->dfs_preorder(traversal::ParseTreeTraversalState(stmt_collapse, {}));
+  ast->dfs_preorder(expr_collapse);
+  ast->dfs_preorder(stmt_collapse);
 }

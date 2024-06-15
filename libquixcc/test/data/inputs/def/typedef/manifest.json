@@ -1,33 +1,33 @@
 {
-    "version": "1.0",
-    "test_cases": [
-        {
-            "name": "Typedef test 0",
-            "note": "",
-            "input": "def/typedef/wf-0.q",
-            "build": "asm-sha1",
-            "expected": "6bda6a9279b2c002a18bdbb649893e931921f4b9"
-        },
-        {
-            "name": "Typedef test 1",
-            "note": "",
-            "input": "def/typedef/wf-1.q",
-            "build": "asm-sha1",
-            "expected": "00eb78732bb6b45acae7c5201e9ec31f0ee1305b"
-        },
-        {
-            "name": "Typedef test 2",
-            "note": "",
-            "input": "def/typedef/wf-2.q",
-            "build": "asm-sha1",
-            "expected": "2eef1d87e1ea707b38b7f00638977695f874a6a0"
-        },
-        {
-            "name": "Typedef test 3",
-            "note": "",
-            "input": "def/typedef/wf-3.q",
-            "build": "asm-sha1",
-            "expected": "fe2b54055f64165093caf34c6fa1e007ecf94f28"
-        }
-    ]
+  "version": "1.0",
+  "test_cases": [
+    {
+      "name": "Typedef test 0",
+      "note": "",
+      "input": "def/typedef/wf-0.q",
+      "build": "asm-sha1",
+      "expected": "6bda6a9279b2c002a18bdbb649893e931921f4b9"
+    },
+    {
+      "name": "Typedef test 1",
+      "note": "",
+      "input": "def/typedef/wf-1.q",
+      "build": "asm-sha1",
+      "expected": "00eb78732bb6b45acae7c5201e9ec31f0ee1305b"
+    },
+    {
+      "name": "Typedef test 2",
+      "note": "",
+      "input": "def/typedef/wf-2.q",
+      "build": "asm-sha1",
+      "expected": "2eef1d87e1ea707b38b7f00638977695f874a6a0"
+    },
+    {
+      "name": "Typedef test 3",
+      "note": "",
+      "input": "def/typedef/wf-3.q",
+      "build": "asm-sha1",
+      "expected": "fe2b54055f64165093caf34c6fa1e007ecf94f28"
+    }
+  ]
 }
