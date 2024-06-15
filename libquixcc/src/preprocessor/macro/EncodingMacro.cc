@@ -31,6 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
+#include <core/Logger.h>
 #include <preprocessor/macro/EncodingMacro.h>
 
 bool libquixcc::macro::ParseEncoding(quixcc_job_t *job, const Token &tok,
@@ -41,7 +42,7 @@ bool libquixcc::macro::ParseEncoding(quixcc_job_t *job, const Token &tok,
   (void)tok;
   (void)directive;
 
-  /// TODO: Implement source encoding directive
+  LOG(INFO) << "Ignoring encoding directive: " << parameter << std::endl;
 
   return true;
 }

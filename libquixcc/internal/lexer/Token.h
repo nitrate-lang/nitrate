@@ -130,6 +130,8 @@ enum class Operator {
   BitwiseNot = 23,
   LeftShift = 24,
   RightShift = 25,
+  RotateRight = 26,
+  RotateLeft = 27,
 
   Increment = 30,
   Decrement = 31,

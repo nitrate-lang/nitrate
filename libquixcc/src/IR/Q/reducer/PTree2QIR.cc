@@ -306,7 +306,7 @@ static auto conv(const UnaryExprNode *n, QState &state) -> QResult {
     case Operator::Multiply:
       return Deref::create(e);
     default:
-      throw std::runtime_error("UnaryExprNode not implemented");
+      throw std::runtime_error("QIR UnaryExprNode not implemented");
   }
 }
 
@@ -319,7 +319,7 @@ static auto conv(const PostUnaryExprNode *n, QState &state) -> QResult {
     case Operator::Decrement:
       return PostDec::create(e);
     default:
-      throw std::runtime_error("PostUnaryExprNode not implemented");
+      throw std::runtime_error("QIR PostUnaryExprNode not implemented");
   }
 }
 
@@ -445,6 +445,10 @@ static auto conv(const BinaryExprNode *n, QState &state) -> QResult {
       return bipromote(&lhs, &rhs), Shl::create(lhs, rhs);
     case Operator::RightShift:
       return bipromote(&lhs, &rhs), Shr::create(lhs, rhs);
+    case Operator::RotateLeft:
+      return bipromote(&lhs, &rhs), Rotl::create(lhs, rhs);
+    case Operator::RotateRight:
+      return bipromote(&lhs, &rhs), Rotr::create(lhs, rhs);
     case Operator::LogicalAnd:
       return bipromote(&lhs, &rhs), And::create(lhs, rhs);
     case Operator::LogicalOr:
@@ -493,7 +497,7 @@ static auto conv(const BinaryExprNode *n, QState &state) -> QResult {
       return Assign::create(lhs, Shr::create(lhs, promote(lhs, rhs)));
 
     default:
-      throw std::runtime_error("BinaryExprNode not implemented");
+      throw std::runtime_error("QIR BinaryExprNode not implemented");
   }
 }
 
@@ -643,7 +647,7 @@ static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult {
     case Operator::BitwiseNot:
       return BitNot::create(e);
     default:
-      throw std::runtime_error("ConstUnaryExprNode not implemented");
+      throw std::runtime_error("QIR ConstUnaryExprNode not implemented");
   }
 }
 
@@ -656,7 +660,7 @@ static auto conv(const ConstPostUnaryExprNode *n, QState &state) -> QResult {
     case Operator::Decrement:
       return PostDec::create(e);
     default:
-      throw std::runtime_error("ConstPostUnaryExprNode not implemented");
+      throw std::runtime_error("QIR ConstPostUnaryExprNode not implemented");
   }
 }
 
@@ -705,7 +709,7 @@ static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult {
       return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
 
     default:
-      throw std::runtime_error("ConstBinaryExprNode not implemented");
+      throw std::runtime_error("QIR ConstBinaryExprNode not implemented");
   }
 }
 

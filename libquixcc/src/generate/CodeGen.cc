@@ -714,9 +714,6 @@ llvm::Function *libquixcc::LLVM14Codegen::gen(const ir::delta::Segment *node) {
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Asm *node) {
-  /// TODO: implement inline assembly
-  // throw std::runtime_error("Inline assembly not implemented");
-
   std::string constraints;
   bool sideeffects = false;
   bool alignstack = false;
@@ -780,6 +777,9 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Shr *node) {
     return m_ctx->m_builder->CreateLShr(l, r);
 }
 
+#define ROTL(x, n, w) (((x) << (n)) | ((x) >> ((w) - (n))))
+#define ROTR(x, n, w) (((x) >> (n)) | ((x) << ((w) - (n))))
+
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotl *node) {
   /// TODO: verify this formula
 
@@ -787,15 +787,13 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotl *node) {
   auto rhs = gen(node->rhs);
 
   auto bits = lhs->getType()->getIntegerBitWidth();
-  auto n = m_ctx->m_builder->CreateURem(
-      rhs, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits));
-  auto w = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits);
 
-  auto shl = m_ctx->m_builder->CreateShl(lhs, n);
-  auto shr =
-      m_ctx->m_builder->CreateLShr(lhs, m_ctx->m_builder->CreateSub(w, n));
+  auto ls = m_ctx->m_builder->CreateShl(lhs, rhs);
+  auto sub = m_ctx->m_builder->CreateSub(
+      llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits), rhs);
+  auto rs = m_ctx->m_builder->CreateLShr(lhs, sub);
 
-  return m_ctx->m_builder->CreateOr(shl, shr);
+  return m_ctx->m_builder->CreateOr(ls, rs);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotr *node) {
@@ -805,15 +803,13 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Rotr *node) {
   auto rhs = gen(node->rhs);
 
   auto bits = lhs->getType()->getIntegerBitWidth();
-  auto n = m_ctx->m_builder->CreateURem(
-      rhs, llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits));
-  auto w = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits);
 
-  auto shr = m_ctx->m_builder->CreateLShr(lhs, n);
-  auto shl =
-      m_ctx->m_builder->CreateShl(lhs, m_ctx->m_builder->CreateSub(w, n));
+  auto rs = m_ctx->m_builder->CreateLShr(lhs, rhs);
+  auto sub = m_ctx->m_builder->CreateSub(
+      llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), bits), rhs);
+  auto ls = m_ctx->m_builder->CreateShl(lhs, sub);
 
-  return m_ctx->m_builder->CreateOr(shl, shr);
+  return m_ctx->m_builder->CreateOr(ls, rs);
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Eq *node) {

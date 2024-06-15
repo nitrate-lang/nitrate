@@ -43,6 +43,9 @@
 #include <IR/Q/Type.h>
 #include <IR/Q/Variable.h>
 
+#include <iomanip>
+#include <sstream>
+
 using namespace libquixcc::ir::q;
 
 const Type *Call::infer() const { return func->type->as<FType>()->ret; }
@@ -241,6 +244,17 @@ const Type *Number::infer() const {
   }
 }
 
+static std::string unqiue_typehash(const std::vector<const Type *> &types) {
+  auto h = libquixcc::ir::Hasher().gettag();
+  for (auto &type : types) h.add(type);
+
+  std::stringstream ss;
+  ss << std::hex << std::setfill('0') << std::setw(2);
+  for (auto b : h.hash().data) ss << (int)b;
+
+  return ss.str().substr(16);
+}
+
 const libquixcc::ir::q::Type *libquixcc::ir::q::List::infer() const {
   std::vector<const Type *> types;
   for (auto &elem : values) types.push_back(elem->infer());
@@ -249,13 +263,12 @@ const libquixcc::ir::q::Type *libquixcc::ir::q::List::infer() const {
     throw std::runtime_error(
         "Codegen failed: Can not perform inference on empty list");
 
-  /// TODO: Do this for real
-
   const Type *type = types[0];
 
   for (size_t i = 1; i < types.size(); i++) {
-    if (types[i] != type)
-      throw std::runtime_error("Codegen failed: List type not supported");
+    if (types[i] != type) {
+      return Region::create("__t" + unqiue_typehash(types) + "_t", types);
+    }
   }
 
   return Array::create(type, values.size());

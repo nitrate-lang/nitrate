@@ -207,6 +207,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     return false;
   }
   bool is_variadic = false;
+  /// TODO: Implement function properties
 
   while (1) {
     tok = scanner->peek();
@@ -218,6 +219,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     if (tok.is<Operator>(Operator::Ellipsis)) {
       is_variadic = true;
 
+      scanner->next();
       tok = scanner->next();
       if (!tok.is<Punctor>(Punctor::CloseParen)) {
         LOG(ERROR) << feedback[FN_EXPECTED_VARARG] << tok << std::endl;
@@ -248,7 +250,6 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
   tok = scanner->peek();
 
   if (tok.is<Punctor>(Punctor::Semicolon)) {
-    /// TODO: Implement function properties
     fndecl->m_type =
         FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic,
                                  false, false, false, false);
@@ -264,7 +265,6 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     if (!parse_type(job, scanner, &type)) return false;
 
-    /// TODO: Implement function properties
     fndecl->m_type = FunctionTypeNode::create(type, params, is_variadic, false,
                                               false, false, false);
 
@@ -278,14 +278,11 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   if (tok.is<Operator>(Operator::Arrow)) {
     scanner->next();
-    /// TODO: Implement arrow function
-    // throw std::runtime_error("Arrow functions are not yet implemented.");
 
     auto fnbody = std::make_shared<BlockNode>();
 
     if (!parse(job, scanner, fnbody, false, true)) return false;
 
-    /// TODO: Implement function properties
     if (!fndecl->m_type)
       fndecl->m_type =
           FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic,
@@ -298,7 +295,6 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     if (!parse(job, scanner, fnbody)) return false;
 
-    /// TODO: Implement function properties
     if (!fndecl->m_type)
       fndecl->m_type =
           FunctionTypeNode::create(VoidTypeNode::create(), params, is_variadic,
