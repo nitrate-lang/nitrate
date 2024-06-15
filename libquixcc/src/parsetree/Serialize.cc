@@ -78,14 +78,16 @@ std::string escape_string(const std::string &input) {
       case '\t':
         output += "\\t";
         break;
+      case '\0':
+        output += "\\0";
+        break;
       default:
-        if (ch < ' ') {
-          // Unicode escape sequence
-          char hex[7];
-          snprintf(hex, sizeof(hex), "\\u%04x", ch);
-          output += hex;
-        } else {
+        if (ch >= 32 && ch < 127) {
           output += ch;
+        } else {
+          char hex[5];
+          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
+          output += hex;
         }
         break;
     }
