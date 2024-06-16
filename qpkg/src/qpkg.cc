@@ -9,6 +9,7 @@
 #include <iostream>
 #include <map>
 #include <optional>
+#include <run/RunScript.hh>
 #include <string>
 #include <thread>
 #include <vector>
@@ -400,36 +401,6 @@ void setup_argparse_list(ArgumentParser &parser) {
       .implicit_value(true);
 }
 
-void setup_argparse_run(ArgumentParser &parser) {
-  parser.add_argument("package-name").help("name of package to run").nargs(1);
-
-  parser.add_argument("-v", "--verbose")
-      .help("print verbose output")
-      .default_value(false)
-      .implicit_value(true);
-
-  parser.add_argument("--supply-chain-insecure")
-      .help(
-          "do not verify OR require dependencies to be validly signed by a "
-          "trusted source")
-      .default_value(false)
-      .implicit_value(true);
-
-  parser.add_argument("--trustkey")
-      .help(
-          "add a trusted public key fingerprint that may be used to verify "
-          "dependencies (only applies to this build)")
-      .default_value(std::string(""))
-      .nargs(1);
-
-  parser.add_argument("--trustkeys")
-      .help(
-          "add a file containing trusted public key fingerprints that may be "
-          "used to verify dependencies (only applies to this build)")
-      .default_value(std::string(""))
-      .nargs(1);
-}
-
 void setup_argparse_test(ArgumentParser &parser) {
   parser.add_argument("package-name").help("name of package to test").nargs(1);
 
@@ -508,8 +479,7 @@ void setup_argparse(ArgumentParser &parser, ArgumentParser &init_parser,
                     ArgumentParser &update_parser,
                     ArgumentParser &install_parser, ArgumentParser &doc_parser,
                     ArgumentParser &env_parser, ArgumentParser &fmt_parser,
-                    ArgumentParser &list_parser, ArgumentParser &run_parser,
-                    ArgumentParser &test_parser) {
+                    ArgumentParser &list_parser, ArgumentParser &test_parser) {
   using namespace argparse;
 
   setup_argparse_init(init_parser);
@@ -521,7 +491,6 @@ void setup_argparse(ArgumentParser &parser, ArgumentParser &init_parser,
   setup_argparse_env(env_parser);
   setup_argparse_fmt(fmt_parser);
   setup_argparse_list(list_parser);
-  setup_argparse_run(run_parser);
   setup_argparse_test(test_parser);
 
   parser.add_subparser(init_parser);
@@ -533,7 +502,6 @@ void setup_argparse(ArgumentParser &parser, ArgumentParser &init_parser,
   parser.add_subparser(env_parser);
   parser.add_subparser(fmt_parser);
   parser.add_subparser(list_parser);
-  parser.add_subparser(run_parser);
   parser.add_subparser(test_parser);
 
   parser.add_argument("--license")
@@ -670,12 +638,18 @@ int run_list_mode(const ArgumentParser &parser) {
   return 1;
 }
 
-int run_run_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+int run_run_mode(const std::vector<std::string> &args) {
+  qpkg::core::FormatAdapter::PluginAndInit(false);
 
-  (void)parser;
-  std::cerr << "run not implemented yet" << std::endl;
-  return 1;
+  if (args.size() < 1) {
+    std::cerr << "No script specified" << std::endl;
+    return -1;
+  }
+
+  qpkg::run::RunScript script(args[0]);
+  if (!script.is_okay()) return -1;
+
+  return script.run(args);
 }
 
 int run_test_mode(const ArgumentParser &parser) {
@@ -687,6 +661,11 @@ int run_test_mode(const ArgumentParser &parser) {
 }
 
 int qpkg_main(std::vector<std::string> args) {
+  if (args.size() >= 2 && args[1] == "run") {
+    std::vector<std::string> run_args(args.begin() + 2, args.end());
+    return run_run_mode(run_args);
+  }
+
   ArgumentParser init_parser("init", "initialize a new package");
   ArgumentParser build_parser("build", "compile packages and dependencies");
   ArgumentParser clean_parser("clean", "remove object files and cached files");
@@ -697,13 +676,12 @@ int qpkg_main(std::vector<std::string> args) {
   ArgumentParser env_parser("env", "print QUIX environment information");
   ArgumentParser fmt_parser("fmt", "reformat package sources");
   ArgumentParser list_parser("list", "list packages or modules");
-  ArgumentParser run_parser("run", "compile and run QUIX program");
   ArgumentParser test_parser("test", "test packages");
 
   ArgumentParser program("qpkg", VERSION_STR);
   setup_argparse(program, init_parser, build_parser, clean_parser,
                  update_parser, install_parser, doc_parser, env_parser,
-                 fmt_parser, list_parser, run_parser, test_parser);
+                 fmt_parser, list_parser, test_parser);
 
   try {
     program.parse_args(args);
@@ -736,8 +714,6 @@ int qpkg_main(std::vector<std::string> args) {
     return run_fmt_mode(fmt_parser);
   else if (program.is_subcommand_used("list"))
     return run_list_mode(list_parser);
-  else if (program.is_subcommand_used("run"))
-    return run_run_mode(run_parser);
   else if (program.is_subcommand_used("test"))
     return run_test_mode(test_parser);
   else {

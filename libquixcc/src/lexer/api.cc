@@ -143,8 +143,13 @@ LIB_EXPORT quixcc_tok_t quixcc_next(quixcc_job_t *job) {
   /* Safe code is good code */
   assert(job != nullptr);
 
+  quixcc_tok_t tokr{};
+  tokr.ty = QUIXCC_LEX_EOF;
+
   /* Code is self-initializing */
-  if (!check_and_init(job)) return {.ty = QUIXCC_LEX_EOF};
+  if (!check_and_init(job)) {
+    return tokr;
+  }
 
   auto tok = fetch_token(job);
   job->m_prep->next();
@@ -155,8 +160,11 @@ LIB_EXPORT quixcc_tok_t quixcc_peek(quixcc_job_t *job) {
   /* Safe code is good code */
   assert(job != nullptr);
 
+  quixcc_tok_t tok{};
+  tok.ty = QUIXCC_LEX_EOF;
+
   /* Code is self-initializing */
-  if (!check_and_init(job)) return {.ty = QUIXCC_LEX_EOF};
+  if (!check_and_init(job)) return tok;
 
   return fetch_token(job);
 }
@@ -242,6 +250,8 @@ LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job,
       return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
     case QUIXCC_LEX_NOTE:
       return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+    default:
+      return snprintf(buf, len, "UNK");
   }
 }
 
@@ -295,5 +305,7 @@ LIB_EXPORT size_t quixcc_tok_humanize(quixcc_job_t *job,
     case QUIXCC_LEX_NOTE:
       return snprintf(buf, len, "NOTE(%s)",
                       quixcc_getstr(job, tok->val.voucher));
+    default:
+      return snprintf(buf, len, "UNK");
   }
 }

@@ -35,7 +35,7 @@ RUN mv /root/.cargo/bin/armerge /usr/bin
 
 # Make the build script
 RUN echo "#!/bin/sh" > /opt/build.sh
-RUN echo "cmake -S /app -B /app/build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=On" >> /opt/build.sh
+RUN echo "cmake -S /app -B /app/build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=On -DLIBQUIXCC_SHARED=Off -DLIBQUIXCC_STATIC=On" >> /opt/build.sh
 RUN echo "cmake --build /app/build -j`nproc`" >> /opt/build.sh
 RUN echo "mkdir -p /app/bin" >> /opt/build.sh
 RUN echo "cp /app/build/qcc/qcc /app/bin/qcc" >> /opt/build.sh

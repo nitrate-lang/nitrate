@@ -82,6 +82,7 @@ static thread_local jmp_buf g_tls_exception;
 static thread_local bool g_tls_exception_set = false;
 
 static void print_stacktrace();
+static void print_general_fault_message();
 
 [[noreturn]] static void quixcc_panic(std::string msg) noexcept {
   msg = "LIBQUIXCC LIBRARY PANIC: " + msg;
@@ -110,6 +111,12 @@ static void print_stacktrace();
 
   print_stacktrace();
 
+  std::cerr << std::endl;
+
+  print_general_fault_message();
+
+  std::cerr << "\nAborting..." << std::endl;
+  
   abort();
 
   while (true) std::this_thread::yield();

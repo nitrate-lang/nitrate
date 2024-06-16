@@ -31,9 +31,11 @@
 
 #define QUIXCC_INTERNAL
 
+#include <IR/Q/Variable.h>
 #include <LibMacro.h>
 #include <mangle/Symbol.h>
-#include <parsetree/nodes/AllNodes.h>
+
+#include <thread>
 
 const std::string libquixcc::Symbol::quix_abiprefix = "_ZJ0";
 const std::string libquixcc::Symbol::cxx_abiprefix = "_Z";
@@ -74,17 +76,16 @@ std::string libquixcc::Symbol::mangle(const ir::q::Value *node,
 
 libquixcc::ir::q::Value *libquixcc::Symbol::demangle(
     const std::string &mangled) {
-  std::string input;
-
   try {
-    if (mangled.starts_with(quix_abiprefix))
+    if (mangled.starts_with(quix_abiprefix)) {
       return demangle_quix(mangled);
-    else if (mangled.starts_with(cxx_abiprefix))
+    } else if (mangled.starts_with(cxx_abiprefix)) {
       return demangle_cxx(mangled);
-    else if (mangled.starts_with(c_abiprefix))
+    } else if (mangled.starts_with(c_abiprefix)) {
       return demangle_c(mangled);
-    else
+    } else {
       return nullptr;
+    }
   } catch (const std::exception &e) {
     std::cerr << "Demangling error: " << e.what() << std::endl;
     return nullptr;
@@ -97,6 +98,7 @@ bool libquixcc::Symbol::demangle_tocode(const std::string &mangled,
   if (node == nullptr) return false;
 
   output = node->to_string();
+
   return true;
 }
 

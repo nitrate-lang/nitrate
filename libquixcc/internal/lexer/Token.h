@@ -265,7 +265,7 @@ class Token {
   }
 
   template <typename T>
-  const T &as() const {
+  T as() const {
 #if !defined(NDEBUG)
     return std::get<T>(m_value);
 #else
@@ -273,15 +273,16 @@ class Token {
       return m_value.str;
     } else if constexpr (std::is_same_v<T, Punctor>) {
       static_assert(sizeof(m_value.val) == sizeof(Punctor));
-      return *reinterpret_cast<const Punctor *>(&m_value.val);
+      return static_cast<Punctor>(m_value.val);
     } else if constexpr (std::is_same_v<T, Keyword>) {
       static_assert(sizeof(m_value.val) == sizeof(Keyword));
-      return *reinterpret_cast<const Keyword *>(&m_value.val);
+      return static_cast<Keyword>(m_value.val);
     } else if constexpr (std::is_same_v<T, Operator>) {
       static_assert(sizeof(m_value.val) == sizeof(Operator));
-      return *reinterpret_cast<const Operator *>(&m_value.val);
+      return static_cast<Operator>(m_value.val);
     } else {
-      static_assert(false, "Invalid type");
+      // static_assert(false, "Invalid type");
+      throw std::runtime_error("Invalid type");
     }
 #endif
   }

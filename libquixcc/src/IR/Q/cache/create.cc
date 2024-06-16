@@ -65,20 +65,12 @@ class ThreadGarbageCollecter {
 
  public:
   ThreadGarbageCollecter() {
-    LOG(libquixcc::DEBUG) << "Constructing thread-local garbage collector"
-                          << std::endl;
   }
 
   ~ThreadGarbageCollecter() {
-    LOG(libquixcc::DEBUG) << "Destructing thread-local garbage collector with "
-                          << m_ptrs.size() << " pointers" << std::endl;
-
     for (auto ptr : m_ptrs) {
       delete ptr;
     }
-
-    LOG(libquixcc::DEBUG) << "Destroyed " << m_ptrs.size() << " pointers"
-                          << std::endl;
   }
 
   template <typename T>

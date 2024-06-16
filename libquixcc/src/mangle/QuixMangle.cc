@@ -36,6 +36,7 @@
 #include <LibMacro.h>
 #include <core/Logger.h>
 #include <mangle/Symbol.h>
+#include <iostream>
 
 static std::string wrap_tag(const std::string &tag) {
   std::string s;
@@ -56,8 +57,9 @@ static bool unwrap_tags(const std::string &input,
                         std::vector<std::string> &out) {
   size_t i = 0;
   try {
+    std::string len;
     while (i < input.size()) {
-      std::string len;
+      len.clear();
       while (i < input.size() && std::isdigit(input.at(i))) {
         len += input.at(i);
         i++;
@@ -69,6 +71,10 @@ static bool unwrap_tags(const std::string &input,
       out.push_back(input.substr(i, l));
 
       i += l;
+    }
+
+    if (len == "0") {
+      out.push_back("");
     }
   } catch (std::out_of_range &e) {
     throw std::runtime_error("Out of range");
@@ -248,6 +254,7 @@ static libquixcc::ir::q::Type *deserialize_type_inner(
 
       std::vector<q::Type *> params;
       for (size_t i = 1; i < fields.size() - 1; i++) {
+        if (fields.at(i).empty()) break;
         q::Type *t;
         if ((t = deserialize_type_inner(fields.at(i), prev)) == nullptr)
           return nullptr;
@@ -340,7 +347,9 @@ libquixcc::ir::q::Value *libquixcc::Symbol::demangle_quix(std::string input) {
         if (parts.size() < 3) return nullptr;
 
         auto t = deserialize_type(parts.at(1));
-        if (!t) return nullptr;
+        if (!t) {
+          return nullptr;
+        }
 
         bool atomic = false, _volatile = false;
         std::string flags = parts.at(2);

@@ -5,7 +5,6 @@
 void *
 __attribute__ ((noinline)) getreturnaddr(int level)
 {
-
     switch(level) {
     case 0: return __builtin_return_address(1);
     case 1: return __builtin_return_address(2);

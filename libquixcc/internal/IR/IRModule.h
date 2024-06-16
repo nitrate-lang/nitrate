@@ -40,12 +40,6 @@
 
 #include <algorithm>
 #include <boost/endian/conversion.hpp>
-#include <boost/serialization/access.hpp>
-#include <boost/serialization/library_version_type.hpp>
-#include <boost/serialization/optional.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/serialization/unordered_set.hpp>
-#include <boost/serialization/vector.hpp>
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -92,7 +86,8 @@ class Node {
 
   template <typename T>
   bool is() const {
-    if (!static_cast<const volatile T *>(this))
+    uintptr_t p = reinterpret_cast<uintptr_t>(this);
+    if (p == 0)
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
     return typeid(T) == typeid(*this);
@@ -100,7 +95,8 @@ class Node {
 
   template <typename T>
   bool is(const T *other) const {
-    if (!static_cast<const volatile T *>(this))
+    uintptr_t p = reinterpret_cast<uintptr_t>(this);
+    if (p == 0)
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
     if (!other)
@@ -111,7 +107,8 @@ class Node {
 
   template <typename T>
   const T *as() const {
-    if (!static_cast<const volatile T *>(this))
+    uintptr_t ptr = reinterpret_cast<uintptr_t>(this);
+    if (ptr == 0)
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
 
@@ -127,7 +124,8 @@ class Node {
 
   template <typename T>
   T *as() {
-    if (!static_cast<volatile T *>(this))
+    uintptr_t ptr = reinterpret_cast<uintptr_t>(this);
+    if (ptr == 0)
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
 
