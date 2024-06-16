@@ -45,6 +45,8 @@ static std::shared_ptr<CallExprNode> parse_function_call(
   Token tok;
 
   std::vector<std::shared_ptr<ExprNode>> args;
+  std::vector<std::pair<std::string, std::shared_ptr<libquixcc::ExprNode>>>
+      named_args;
   while (true) {
     tok = scanner->peek();
     if (tok == Token(TT::Punctor, Punctor::CloseParen)) {
@@ -52,48 +54,61 @@ static std::shared_ptr<CallExprNode> parse_function_call(
       break;
     }
 
+    if (tok.type != TT::Identifier) {
+      goto parse_pos_arg;
+    }
+
+    { /* Parse named argument */
+      scanner->next();
+      Token ident = tok;
+      tok = scanner->peek();
+
+      if (!tok.is<Punctor>(Punctor::Colon)) {
+        scanner->push(ident);
+        goto parse_pos_arg;
+      }
+
+      scanner->next();
+
+      std::shared_ptr<ExprNode> arg;
+      if (!parse_expr(job, scanner,
+                      {Token(TT::Punctor, Punctor::Comma),
+                       Token(TT::Punctor, Punctor::CloseParen)},
+                      arg, depth + 1)) {
+        return nullptr;
+      }
+
+      named_args.push_back({ident.as<std::string>(), arg});
+      goto comma;
+    }
+
+  parse_pos_arg: {
     std::shared_ptr<ExprNode> arg;
     if (!parse_expr(job, scanner,
                     {Token(TT::Punctor, Punctor::Comma),
                      Token(TT::Punctor, Punctor::CloseParen)},
-                    arg, depth + 1))
+                    arg, depth + 1)) {
       return nullptr;
+    }
     args.push_back(arg);
 
+    goto comma;
+  }
+
+  comma: {
     tok = scanner->peek();
     if (tok.is<Punctor>(Punctor::Comma)) {
       scanner->next();
     }
+    continue;
+  }
   }
 
   auto expr = std::make_shared<CallExprNode>();
   expr->m_callee = callee;
 
-  // if (callee->is<IdentifierNode>())
-  // {
-  //     expr->m_name =
-  //     std::dynamic_pointer_cast<IdentifierNode>(callee)->m_name;
-  // }
-  // else if (callee->is<MemberAccessNode>())
-  // {
-  //     auto member = std::dynamic_pointer_cast<MemberAccessNode>(callee);
-  //     if (!member->m_expr->is<IdentifierNode>())
-  //     {
-  //         LOG(ERROR) << "Expected an identifier in member access expression"
-  //         << tok << std::endl; return nullptr;
-  //     }
-
-  //     std::string name =
-  //     std::dynamic_pointer_cast<IdentifierNode>(member->m_expr)->m_name;
-  //     expr->m_name = name + "." + member->m_field;
-  // }
-  // else
-  // {
-  //     LOG(ERROR) << "Expected an identifier or member access expression" <<
-  //     tok << std::endl; return nullptr;
-  // }
-
   expr->m_positional_args = args;
+  expr->m_named_args = named_args;
 
   return expr;
 }
