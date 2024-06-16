@@ -59,6 +59,11 @@ bool libquixcc::macro::ParseUse(quixcc_job_t *job, const Token &tok,
 
   std::string version = tok2.as<std::string>();
 
+  if (version == "undef") {
+    job->version = std::nullopt;
+    return true;
+  }
+
   if (!match_format(version)) {
     LOG(ERROR) << "Invalid version format for use directive" << tok
                << std::endl;
@@ -68,9 +73,13 @@ bool libquixcc::macro::ParseUse(quixcc_job_t *job, const Token &tok,
   uint major = std::stoi(version.substr(1, version.find('.')));
   uint minor = std::stoi(version.substr(version.find('.') + 1));
 
+  job->version = std::make_pair(major, minor);
+
   if (major != 1 || minor != 0) {
     LOG(ERROR) << "Language version [" << major << "." << minor
                << "] is not supported by this toolchain" << tok << std::endl;
+
+    return false;
   }
 
   return true;

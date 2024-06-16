@@ -96,7 +96,10 @@ void setup_argparse_init(ArgumentParser &parser) {
 }
 
 void setup_argparse_build(ArgumentParser &parser) {
-  parser.add_argument("package-src").help("path to package source").nargs(1);
+  parser.add_argument("package-src")
+      .help("path to package source")
+      .nargs(1)
+      .default_value(std::string("."));
 
   parser.add_argument("-o", "--output")
       .help("output directory")
@@ -601,7 +604,13 @@ int run_build_mode(const ArgumentParser &parser) {
   if (parser.is_used("--trustkeys"))
     builder.trustkeys(parser.get<std::string>("--trustkeys"));
 
-  return builder.build().run() ? 0 : -1;
+  auto engine = builder.build();
+  if (!engine) {
+    std::cerr << "Failed to construct engine" << std::endl;
+    return -1;
+  }
+
+  return engine->run() ? 0 : -1;
 }
 
 int run_clean_mode(const ArgumentParser &parser) {

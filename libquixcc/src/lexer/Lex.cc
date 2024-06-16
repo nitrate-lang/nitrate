@@ -684,7 +684,9 @@ const Token &StreamLexer::read_token() {
         c = m_pushback.front();
         m_pushback.pop();
       } else {
-        if ((c = getc()) == EOF) break;
+        if ((c = getc()) == EOF) {
+          return reset_state(), (m_tok = Token(TT::Eof, "", m_loc)).value();
+        }
       }
 
       switch (state) {
@@ -1019,17 +1021,27 @@ const Token &StreamLexer::read_token() {
           }
         }
         case LexState::BlockMacro: {
-          if (c == '(')
-            state_parens++;
-          else if (c == ')')
-            state_parens--;
+          while (true) {
+            if (c == '(') {
+              state_parens++;
+            } else if (c == ')') {
+              state_parens--;
+            }
 
-          if (state_parens == 0) {
-            return (m_tok = Token(TT::MacroBlock, buf, m_loc - buf.size() - 1))
-                .value();
+            if (state_parens == 0) {
+              return (m_tok =
+                          Token(TT::MacroBlock, buf, m_loc - buf.size() - 1))
+                  .value();
+            }
+
+            buf += c;
+
+            if ((c = getc()) == EOF) {
+              return reset_state(),
+                     (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                         .value();
+            }
           }
-
-          buf += c;
           continue;
         }
         case LexState::Other: {
@@ -1052,7 +1064,7 @@ const Token &StreamLexer::read_token() {
           }
 
           /* Special case for a comment */
-          if (buf[0] == '#' && std::isspace(c)) {
+          if (buf[0] == '#') {
             state = LexState::CommentSingleLine;
             continue;
           }

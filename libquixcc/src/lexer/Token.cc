@@ -38,15 +38,17 @@
 
 using namespace libquixcc;
 
-Loc Loc::operator-(int_fast32_t rhs) const {
+Loc Loc::operator-(uint_fast32_t rhs) const {
   if (rhs <= col) return Loc(line, col - rhs, file);
 
   Loc new_loc = *this;
 
   while (rhs > col) {
     rhs -= col;
-    new_loc.line--;
     new_loc.col = 1;
+
+    if (new_loc.line == 0) break;
+    new_loc.line--;
   }
 
   new_loc.col -= rhs;

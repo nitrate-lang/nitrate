@@ -212,14 +212,14 @@ class TLCString {
 
 struct Loc {
   std::string_view file;
-  int_fast32_t line;
-  int_fast32_t col;
+  uint_fast32_t line;
+  uint_fast32_t col;
 
   Loc() : file(""), line(1), col(1) {}
-  Loc(int_fast32_t line, int_fast32_t col, std::string_view file = "")
+  Loc(uint_fast32_t line, uint_fast32_t col, std::string_view file = "")
       : file(file), line(line), col(col) {}
 
-  Loc operator-(int_fast32_t rhs) const;
+  Loc operator-(uint_fast32_t rhs) const;
 };
 
 #if !defined(NDEBUG)

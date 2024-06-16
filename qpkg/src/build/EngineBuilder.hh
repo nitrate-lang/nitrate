@@ -45,7 +45,7 @@ class EngineBuilder {
   EngineBuilder &trustkey(const std::string &key);
   EngineBuilder &trustkeys(const std::string &keyfile);
 
-  Engine build();
+  std::optional<Engine> build();
 };
 }  // namespace build
 }  // namespace qpkg

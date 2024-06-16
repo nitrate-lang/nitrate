@@ -60,20 +60,21 @@ typedef struct quixcc_uuid_t {
 
 struct quixcc_job_t {
   volatile uint64_t m_magic;
-  std::unique_ptr<libquixcc::PrepEngine> m_prep;
   libquixcc::LLVMContext m_inner;
-  std::map<std::string, std::string> m_argset;
+  std::stack<std::string> m_filename;
   std::unordered_map<quixcc_sid_t, char *> m_owned_strings;
-  quixcc_sid_t m_sid_ctr;
+  std::map<std::string, std::string> m_argset;
   std::mutex m_lock;
   std::string m_triple;
   std::string m_cpu;
   quixcc_uuid_t m_id;
   quixcc_options_t m_options;
   quixcc_status_t m_result;
+  std::unique_ptr<libquixcc::PrepEngine> m_prep;
+  std::optional<std::pair<uint32_t, uint32_t>> version;
   FILE *m_in;
   FILE *m_out;
-  std::stack<std::string> m_filename;
+  quixcc_sid_t m_sid_ctr;
   uint8_t m_priority;
   bool m_debug;
   bool m_tainted;

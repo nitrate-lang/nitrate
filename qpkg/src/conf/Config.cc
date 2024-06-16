@@ -1,4 +1,5 @@
 #include <conf/Parser.hh>
+#include <core/Logger.hh>
 #include <fstream>
 #include <sstream>
 
@@ -97,7 +98,7 @@ std::string qpkg::conf::ConfigGroup::dump(
       if (std::next(it) != m_items.end()) ss << std::endl;
     }
   } else {
-    throw ConfigSerializerException("Unsupported serialization target");
+    LOG(qpkg::core::FATAL) << "Unsupported serialization target" << std::endl;
   }
 
   return ss.str();

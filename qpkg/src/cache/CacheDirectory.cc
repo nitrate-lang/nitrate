@@ -129,42 +129,39 @@ std::set<qpkg::cache::CacheKey> qpkg::cache::DirectoryCache::keys() {
 
 void qpkg::cache::DirectoryCache::loadb(const CacheKey &key,
                                         std::vector<uint8_t> &value) {
-  if (!m_cacheMap.contains(key))
-    throw std::out_of_range("Key not found in cache");
+  if (!m_cacheMap.contains(key)) {
+    LOG(core::FATAL) << "Key not found in cache" << std::endl;
+  }
 
   if (!std::filesystem::exists(m_cacheMap[key].first)) {
-    LOG(core::ERROR) << "Cache corrupted. Unable to locate file: "
+    LOG(core::FATAL) << "Cache corrupted. Unable to locate file: "
                      << m_cacheMap[key].first << std::endl;
-    throw std::runtime_error("Cache corrupted. Unable to locate file: " +
-                             m_cacheMap[key].first);
   }
 
   try {
     std::ifstream file(m_cacheMap[key].first, std::ios::binary | std::ios::in);
-    if (!file.is_open())
-      throw std::runtime_error("Failed to open cache file: " +
-                               m_cacheMap[key].first);
+    if (!file.is_open()) {
+      LOG(core::FATAL) << "Failed to open cache file: " << m_cacheMap[key].first << std::endl;
+    }
 
     file.seekg(0, std::ios::end);
     value.resize(file.tellg());
     file.seekg(0, std::ios::beg);
     file.read(reinterpret_cast<char *>(value.data()), value.size());
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to load cache entry: " << keyToString(key)
+    LOG(core::FATAL) << "Failed to load cache entry: " << keyToString(key)
                      << std::endl;
-    throw std::runtime_error("Failed to load cache entry: " + keyToString(key));
   }
 }
 
 std::string qpkg::cache::DirectoryCache::loadf(const CacheKey &key) {
-  if (!m_cacheMap.contains(key))
-    throw std::out_of_range("Key not found in cache");
+  if (!m_cacheMap.contains(key)) {
+    LOG(core::FATAL) << "Key not found in cache" << std::endl;
+  }
 
   if (!std::filesystem::exists(m_cacheMap[key].first)) {
-    LOG(core::ERROR) << "Cache corrupted. Unable to locate file: "
+    LOG(core::FATAL) << "Cache corrupted. Unable to locate file: "
                      << m_cacheMap[key].first << std::endl;
-    throw std::runtime_error("Cache corrupted. Unable to locate file: " +
-                             m_cacheMap[key].first);
   }
 
   return m_cacheMap[key].first;
@@ -172,8 +169,9 @@ std::string qpkg::cache::DirectoryCache::loadf(const CacheKey &key) {
 
 std::chrono::_V2::system_clock::time_point
 qpkg::cache::DirectoryCache::timestamp(const qpkg::cache::CacheKey &key) {
-  if (!m_cacheMap.contains(key))
-    throw std::out_of_range("Key not found in cache");
+  if (!m_cacheMap.contains(key)) {
+    LOG(core::FATAL) << "Key not found in cache" << std::endl;
+  }
 
   return m_cacheMap[key].second;
 }
@@ -185,8 +183,10 @@ void qpkg::cache::DirectoryCache::storeb(const CacheKey &key,
   try {
     std::ofstream file(filepath,
                        std::ios::binary | std::ios::out | std::ios::trunc);
-    if (!file.is_open())
-      throw std::runtime_error("Failed to open cache file: " + filepath);
+    if (!file.is_open()) {
+      LOG(core::FATAL) << "Failed to open cache file: " << filepath
+                       << std::endl;
+    }
 
     file.write(reinterpret_cast<const char *>(value.data()), value.size());
 
@@ -194,10 +194,8 @@ void qpkg::cache::DirectoryCache::storeb(const CacheKey &key,
         std::make_pair(filepath, std::chrono::system_clock::now());
     m_keys.insert(key);
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to store cache entry: " << keyToString(key)
+    LOG(core::FATAL) << "Failed to store cache entry: " << keyToString(key)
                      << std::endl;
-    throw std::runtime_error("Failed to store cache entry: " +
-                             keyToString(key));
   }
 }
 
@@ -208,8 +206,7 @@ void qpkg::cache::DirectoryCache::storef(const CacheKey &key,
   std::string cache_file = m_cacheDir / "data" / keyToString(key);
 
   if (!std::filesystem::exists(filepath)) {
-    LOG(core::ERROR) << "File not found: " << filepath << std::endl;
-    throw std::runtime_error("File not found: " + filepath);
+    LOG(core::FATAL) << "File not found: " << filepath << std::endl;
   }
 
   try {
@@ -220,10 +217,8 @@ void qpkg::cache::DirectoryCache::storef(const CacheKey &key,
         std::make_pair(cache_file, std::chrono::system_clock::now());
     m_keys.insert(key);
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to store cache entry: " << keyToString(key)
+    LOG(core::FATAL) << "Failed to store cache entry: " << keyToString(key)
                      << std::endl;
-    throw std::runtime_error("Failed to store cache entry: " +
-                             keyToString(key));
   }
 }
 
@@ -246,10 +241,8 @@ size_t qpkg::cache::DirectoryCache::size() {
 
   for (const auto &[_, value] : m_cacheMap) {
     if (!std::filesystem::exists(value.first)) {
-      LOG(core::ERROR) << "Cache corrupted. Unable to locate file: "
+      LOG(core::FATAL) << "Cache corrupted. Unable to locate file: "
                        << value.first << std::endl;
-      throw std::runtime_error("Cache corrupted. Unable to locate file: " +
-                               value.first);
     }
 
     size += std::filesystem::file_size(value.first);
@@ -267,19 +260,16 @@ void qpkg::cache::DirectoryCache::sync() {
     std::ofstream record(record_file,
                          std::ios::binary | std::ios::out | std::ios::trunc);
     if (!record.is_open()) {
-      LOG(core::ERROR) << "Failed to open cache index file: " << record_file
+      LOG(core::FATAL) << "Failed to open cache index file: " << record_file
                        << std::endl;
-      throw std::runtime_error("Failed to open cache index file: " +
-                               record_file);
     }
 
     record.write(CACHE_INDEX_HEADER, sizeof(CACHE_INDEX_HEADER));
 
     for (const auto &[key, value] : m_cacheMap) {
       if (value.first.size() > std::numeric_limits<uint16_t>::max()) {
-        LOG(core::ERROR) << "Cache entry too large: " << keyToString(key)
+        LOG(core::FATAL) << "Cache entry too large: " << keyToString(key)
                          << std::endl;
-        throw std::runtime_error("Cache entry too large: " + keyToString(key));
       }
 
       Record entry;
@@ -293,9 +283,7 @@ void qpkg::cache::DirectoryCache::sync() {
                      << std::endl;
     LOG(core::DEBUG) << "Cache directory synced: " << m_cacheDir << std::endl;
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to sync cache directory: " << m_cacheDir
+    LOG(core::FATAL) << "Failed to sync cache directory: " << m_cacheDir
                      << std::endl;
-    throw std::runtime_error("Failed to sync cache directory: " +
-                             m_cacheDir.string());
   }
 }

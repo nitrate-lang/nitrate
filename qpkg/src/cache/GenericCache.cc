@@ -1,4 +1,5 @@
 #include <cache/GenericCache.hh>
+#include <core/Logger.hh>
 #include <iomanip>
 #include <sstream>
 
@@ -36,7 +37,7 @@ std::string qpkg::cache::keyToString(const qpkg::cache::CacheKey &key,
     case Format::BASE64:
       return base64_encode(std::string(key.begin(), key.end()));
     default:
-      throw std::runtime_error("Invalid format");
+      LOG(core::FATAL) << "Invalid format" << std::endl;
   }
 }
 

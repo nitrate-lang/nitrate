@@ -115,21 +115,21 @@ static bool validate_certify(
   return true;
 }
 
-qpkg::build::Engine qpkg::build::EngineBuilder::build() {
+std::optional<qpkg::build::Engine> qpkg::build::EngineBuilder::build() {
   if (!std::filesystem::exists(m_package_src)) {
     LOG(core::ERROR) << "Package source directory does not exist" << std::endl;
-    throw std::runtime_error("Package source directory does not exist");
+    return std::nullopt;
   }
 
   if (m_jobs < 0) {
     LOG(core::ERROR) << "Invalid number of jobs" << std::endl;
-    throw std::runtime_error("Invalid number of jobs");
+    return std::nullopt;
   }
 
   for (const auto &key : m_trustkeys) {
     if (!validate_trustkey(key)) {
       LOG(core::ERROR) << "Invalid trust key: " << key << std::endl;
-      throw std::runtime_error("Invalid trust key");
+      return std::nullopt;
     }
   }
 
@@ -137,7 +137,7 @@ qpkg::build::Engine qpkg::build::EngineBuilder::build() {
     std::set<std::string> trustkeys;
     if (!validate_and_extract_trustkeyfile(keyfile, trustkeys)) {
       LOG(core::ERROR) << "Invalid trust key file: " << keyfile << std::endl;
-      throw std::runtime_error("Invalid trust key file");
+      return std::nullopt;
     }
 
     m_trustkeys.insert(trustkeys.begin(), trustkeys.end());
@@ -145,7 +145,7 @@ qpkg::build::Engine qpkg::build::EngineBuilder::build() {
 
   if (!validate_certify(m_certify)) {
     LOG(core::ERROR) << "Invalid certification" << std::endl;
-    throw std::runtime_error("Invalid certification");
+    return std::nullopt;
   }
 
   BuildSecurityConfig security(
@@ -166,7 +166,7 @@ qpkg::build::Engine qpkg::build::EngineBuilder::build() {
     cache = std::make_unique<cache::DirectoryCache>();
     if (!cache->setup(m_package_src, true)) {
       LOG(core::ERROR) << "Failed to setup cache" << std::endl;
-      throw std::runtime_error("Failed to setup cache");
+      return std::nullopt;
     }
   }
 
