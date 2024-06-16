@@ -41,6 +41,7 @@ namespace qpkg
 
             void writeGitIgnore();
             void writeLicense();
+            void writeMain();
 
         public:
             Package(std::filesystem::path output,

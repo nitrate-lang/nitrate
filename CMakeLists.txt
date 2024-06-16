@@ -5,8 +5,6 @@ if (BUILD_TESTING)
     enable_testing()
 endif()
 
-add_subdirectory(deps/libexecinfo)
-
 add_subdirectory(libquixcc)
 add_subdirectory(qcc)
 add_subdirectory(qld)

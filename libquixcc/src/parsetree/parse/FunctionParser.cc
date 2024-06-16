@@ -211,8 +211,8 @@ static FunctionProperties read_function_properties(
     return FunctionProperties();
   }
 
-  bool partial_pure = state.pure_ctr || state.quasipure_ctr ||
-                      state.retropure_ctr || !state.impure_ctr;
+  bool partial_pure =
+      state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
 
   if (partial_pure && state.impure_ctr) {
     LOG(ERROR) << feedback[FN_PURE_IMPURE_MIX] << scanner->peek() << std::endl;

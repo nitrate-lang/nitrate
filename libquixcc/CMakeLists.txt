@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(libquixcc CXX)
 
+add_subdirectory(deps/libexecinfo)
+
 set(CMAKE_CXX_STANDARD 20)
 
 # Find C++23 source files
@@ -55,7 +57,7 @@ SET(STATIC_PROJECT_RELEASE_FLAGS -O3 -Wno-error=mismatched-new-delete ${BUILD_FL
 # set_target_properties(quixcc PROPERTIES OUTPUT_NAME quixcc)
 
 add_library(quixcc-static STATIC ${LIBQUIX_CXX_SOURCES})
-target_include_directories(quixcc-static PUBLIC "internal" include ../deps/libexecinfo)
+target_include_directories(quixcc-static PUBLIC "internal" include deps/libexecinfo)
 if (CMAKE_BUILD_TYPE STREQUAL "Release") 
     target_compile_options(quixcc-static PRIVATE ${STATIC_PROJECT_RELEASE_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS)
     target_link_options(quixcc-static PRIVATE ${LLVM_LD_FLAGS} -O3 -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
