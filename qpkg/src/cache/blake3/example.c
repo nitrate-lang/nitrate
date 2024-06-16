@@ -1,9 +1,10 @@
-#include "blake3.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
+#include "blake3.h"
 
 int main(void) {
   // Initialize the hasher.
@@ -17,7 +18,7 @@ int main(void) {
     if (n > 0) {
       blake3_hasher_update(&hasher, buf, n);
     } else if (n == 0) {
-      break; // end of file
+      break;  // end of file
     } else {
       fprintf(stderr, "read failed: %s\n", strerror(errno));
       exit(1);

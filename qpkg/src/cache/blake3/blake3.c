@@ -1,8 +1,9 @@
+#include "blake3.h"
+
 #include <assert.h>
 #include <stdbool.h>
 #include <string.h>
 
-#include "blake3.h"
 #include "blake3_impl.h"
 
 const char *blake3_version(void) { return BLAKE3_VERSION_STRING; }
@@ -227,10 +228,10 @@ INLINE size_t compress_parents_parallel(const uint8_t *child_chaining_values,
   }
 
   blake3_hash_many(parents_array, parents_array_len, 1, key,
-                   0, // Parents always use counter 0.
+                   0,  // Parents always use counter 0.
                    false, flags | PARENT,
-                   0, // Parents have no start flags.
-                   0, // Parents have no end flags.
+                   0,  // Parents have no start flags.
+                   0,  // Parents have no end flags.
                    out);
 
   // If there's an odd child left over, it becomes an output.

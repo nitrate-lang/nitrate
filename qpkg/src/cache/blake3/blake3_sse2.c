@@ -1,11 +1,11 @@
-#include "blake3_impl.h"
-
 #include <immintrin.h>
+
+#include "blake3_impl.h"
 
 #define DEGREE 4
 
-#define _mm_shuffle_ps2(a, b, c)                                               \
-  (_mm_castps_si128(                                                           \
+#define _mm_shuffle_ps2(a, b, c) \
+  (_mm_castps_si128(             \
       _mm_shuffle_ps(_mm_castsi128_ps(a), _mm_castsi128_ps(b), (c))))
 
 INLINE __m128i loadu(const uint8_t src[16]) {
@@ -79,7 +79,8 @@ INLINE void undiagonalize(__m128i *row0, __m128i *row2, __m128i *row3) {
 }
 
 INLINE __m128i blend_epi16(__m128i a, __m128i b, const int16_t imm8) {
-  const __m128i bits = _mm_set_epi16(0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01);
+  const __m128i bits =
+      _mm_set_epi16(0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01);
   __m128i mask = _mm_set1_epi16(imm8);
   mask = _mm_and_si128(mask, bits);
   mask = _mm_cmpeq_epi16(mask, bits);
@@ -104,16 +105,16 @@ INLINE void compress_pre(__m128i rows[4], const uint32_t cv[8],
 
   // Round 1. The first round permutes the message words from the original
   // input order, into the groups that get mixed in parallel.
-  t0 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(2, 0, 2, 0)); //  6  4  2  0
+  t0 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(2, 0, 2, 0));  //  6  4  2  0
   g1(&rows[0], &rows[1], &rows[2], &rows[3], t0);
-  t1 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(3, 1, 3, 1)); //  7  5  3  1
+  t1 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(3, 1, 3, 1));  //  7  5  3  1
   g2(&rows[0], &rows[1], &rows[2], &rows[3], t1);
   diagonalize(&rows[0], &rows[2], &rows[3]);
-  t2 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(2, 0, 2, 0)); // 14 12 10  8
-  t2 = _mm_shuffle_epi32(t2, _MM_SHUFFLE(2, 1, 0, 3));   // 12 10  8 14
+  t2 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(2, 0, 2, 0));  // 14 12 10  8
+  t2 = _mm_shuffle_epi32(t2, _MM_SHUFFLE(2, 1, 0, 3));    // 12 10  8 14
   g1(&rows[0], &rows[1], &rows[2], &rows[3], t2);
-  t3 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(3, 1, 3, 1)); // 15 13 11  9
-  t3 = _mm_shuffle_epi32(t3, _MM_SHUFFLE(2, 1, 0, 3));   // 13 11  9 15
+  t3 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(3, 1, 3, 1));  // 15 13 11  9
+  t3 = _mm_shuffle_epi32(t3, _MM_SHUFFLE(2, 1, 0, 3));    // 13 11  9 15
   g2(&rows[0], &rows[1], &rows[2], &rows[3], t3);
   undiagonalize(&rows[0], &rows[2], &rows[3]);
   m0 = t0;
@@ -449,18 +450,19 @@ INLINE void load_counters(uint64_t counter, bool increment_counter,
   const __m128i add0 = _mm_set_epi32(3, 2, 1, 0);
   const __m128i add1 = _mm_and_si128(mask, add0);
   __m128i l = _mm_add_epi32(_mm_set1_epi32((int32_t)counter), add1);
-  __m128i carry = _mm_cmpgt_epi32(_mm_xor_si128(add1, _mm_set1_epi32(0x80000000)), 
-                                  _mm_xor_si128(   l, _mm_set1_epi32(0x80000000)));
+  __m128i carry =
+      _mm_cmpgt_epi32(_mm_xor_si128(add1, _mm_set1_epi32(0x80000000)),
+                      _mm_xor_si128(l, _mm_set1_epi32(0x80000000)));
   __m128i h = _mm_sub_epi32(_mm_set1_epi32((int32_t)(counter >> 32)), carry);
   *out_lo = l;
   *out_hi = h;
 }
 
-static
-void blake3_hash4_sse2(const uint8_t *const *inputs, size_t blocks,
-                       const uint32_t key[8], uint64_t counter,
-                       bool increment_counter, uint8_t flags,
-                       uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
+static void blake3_hash4_sse2(const uint8_t *const *inputs, size_t blocks,
+                              const uint32_t key[8], uint64_t counter,
+                              bool increment_counter, uint8_t flags,
+                              uint8_t flags_start, uint8_t flags_end,
+                              uint8_t *out) {
   __m128i h_vecs[8] = {
       set1(key[0]), set1(key[1]), set1(key[2]), set1(key[3]),
       set1(key[4]), set1(key[5]), set1(key[6]), set1(key[7]),
@@ -520,8 +522,8 @@ void blake3_hash4_sse2(const uint8_t *const *inputs, size_t blocks,
 
 INLINE void hash_one_sse2(const uint8_t *input, size_t blocks,
                           const uint32_t key[8], uint64_t counter,
-                          uint8_t flags, uint8_t flags_start,
-                          uint8_t flags_end, uint8_t out[BLAKE3_OUT_LEN]) {
+                          uint8_t flags, uint8_t flags_start, uint8_t flags_end,
+                          uint8_t out[BLAKE3_OUT_LEN]) {
   uint32_t cv[8];
   memcpy(cv, key, BLAKE3_KEY_LEN);
   uint8_t block_flags = flags | flags_start;

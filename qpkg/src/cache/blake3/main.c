@@ -132,17 +132,17 @@ int main(int argc, char **argv) {
     g_cpu_features = feature;
     blake3_hasher hasher;
     switch (mode) {
-    case HASH_MODE:
-      blake3_hasher_init(&hasher);
-      break;
-    case KEYED_HASH_MODE:
-      blake3_hasher_init_keyed(&hasher, key);
-      break;
-    case DERIVE_KEY_MODE:
-      blake3_hasher_init_derive_key(&hasher, context);
-      break;
-    default:
-      abort();
+      case HASH_MODE:
+        blake3_hasher_init(&hasher);
+        break;
+      case KEYED_HASH_MODE:
+        blake3_hasher_init_keyed(&hasher, key);
+        break;
+      case DERIVE_KEY_MODE:
+        blake3_hasher_init_derive_key(&hasher, context);
+        break;
+      default:
+        abort();
     }
 
     blake3_hasher_update(&hasher, buf, buf_len);

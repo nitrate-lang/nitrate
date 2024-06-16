@@ -4,13 +4,11 @@
 #include <conf/Parser.hh>
 #include <filesystem>
 
-namespace qpkg
-{
-    namespace conf
-    {
-        bool ValidateConfig(const Config &config, const std::filesystem::path &base);
-        void PopulateConfig(Config &config);
-    }
-}
+namespace qpkg {
+namespace conf {
+bool ValidateConfig(const Config &config, const std::filesystem::path &base);
+void PopulateConfig(Config &config);
+}  // namespace conf
+}  // namespace qpkg
 
-#endif // __QPKG_CONF_VALIDATE_HH__
+#endif  // __QPKG_CONF_VALIDATE_HH__

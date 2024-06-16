@@ -5,4 +5,4 @@
 #include <core/Collector.hh>
 #include <core/Writer.hh>
 
-#endif // __QPKG_CORE_LOGGER_HH__
+#endif  // __QPKG_CORE_LOGGER_HH__
