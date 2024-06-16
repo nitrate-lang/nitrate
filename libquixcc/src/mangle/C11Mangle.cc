@@ -53,7 +53,6 @@ std::string libquixcc::Symbol::mangle_c(const libquixcc::ir::q::Value *node,
   }
 }
 
-const libquixcc::ir::q::Value *libquixcc::Symbol::demangle_c(
-    std::string input) {
+libquixcc::ir::q::Value *libquixcc::Symbol::demangle_c(std::string input) {
   throw std::runtime_error("Can not deserialize C mangled name");
 }

@@ -42,8 +42,7 @@ std::string libquixcc::Symbol::mangle_cxx(const libquixcc::ir::q::Value *node,
   return "";
 }
 
-const libquixcc::ir::q::Value *libquixcc::Symbol::demangle_cxx(
-    std::string input) {
+libquixcc::ir::q::Value *libquixcc::Symbol::demangle_cxx(std::string input) {
   throw std::runtime_error("CXX mangling: Not implemented");
   /// TODO: Implement C++20 demangling
   return nullptr;

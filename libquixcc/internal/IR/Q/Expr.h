@@ -47,7 +47,7 @@ class Expr : public Value {
   bool verify_impl() const override = 0;
 
  public:
-  virtual const Type *infer() const = 0;
+  virtual Type *infer() const = 0;
 };
 }  // namespace libquixcc::ir::q
 

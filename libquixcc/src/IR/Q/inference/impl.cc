@@ -48,15 +48,15 @@
 
 using namespace libquixcc::ir::q;
 
-const Type *Call::infer() const { return func->type->as<FType>()->ret; }
+Type *Call::infer() const { return func->type->as<FType>()->ret; }
 
-const Type *CallIndirect::infer() const { return exprfunc->return_type; }
+Type *CallIndirect::infer() const { return exprfunc->return_type; }
 
-const Type *SCast::infer() const { return type; }
+Type *SCast::infer() const { return type; }
 
-const Type *UCast::infer() const { return type; }
+Type *UCast::infer() const { return type; }
 
-const Type *PtrICast::infer() const {
+Type *PtrICast::infer() const {
   switch (Ptr::create(Void::create())->size()) {
     case 1:
       return U8::create();
@@ -73,12 +73,12 @@ const Type *PtrICast::infer() const {
   }
 }
 
-const Type *IPtrCast::infer() const { return type; }
+Type *IPtrCast::infer() const { return type; }
 
-const Type *Bitcast::infer() const { return type; }
+Type *Bitcast::infer() const { return type; }
 
-const Type *Segment::infer() const {
-  std::vector<const Type *> arg_types;
+Type *Segment::infer() const {
+  std::vector<Type *> arg_types;
   for (auto &arg : params) {
     arg_types.push_back(arg.second);
   }
@@ -87,9 +87,9 @@ const Type *Segment::infer() const {
                        is_thread_safe, is_foriegn, is_no_throw);
 }
 
-const Type *Ident::infer() const { return type; }
+Type *Ident::infer() const { return type; }
 
-static const Type *do_infer(const Type *lhs, const Type *rhs) {
+static Type *do_infer(Type *lhs, Type *rhs) {
   /// TOOD: Implement binary inference
 
   /*
@@ -143,83 +143,69 @@ static const Type *do_infer(const Type *lhs, const Type *rhs) {
       "Codegen failed: Binary operation type not supported");
 }
 
-const Type *Add::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
+Type *Add::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *Sub::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
+Type *Sub::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *Mul::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
+Type *Mul::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *Div::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
+Type *Div::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *Mod::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
+Type *Mod::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *BitAnd::infer() const {
-  return do_infer(lhs->infer(), rhs->infer());
-}
+Type *BitAnd::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *BitOr::infer() const {
-  return do_infer(lhs->infer(), rhs->infer());
-}
+Type *BitOr::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *BitXor::infer() const {
-  return do_infer(lhs->infer(), rhs->infer());
-}
+Type *BitXor::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *BitNot::infer() const { return operand->infer(); }
+Type *BitNot::infer() const { return operand->infer(); }
 
-const Type *Shl::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
+Type *Shl::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *Shr::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
+Type *Shr::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *Rotl::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
+Type *Rotl::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *Rotr::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
+Type *Rotr::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *Eq::infer() const { return I1::create(); }
+Type *Eq::infer() const { return I1::create(); }
 
-const Type *Ne::infer() const { return I1::create(); }
+Type *Ne::infer() const { return I1::create(); }
 
-const Type *Lt::infer() const { return I1::create(); }
+Type *Lt::infer() const { return I1::create(); }
 
-const Type *Gt::infer() const { return I1::create(); }
+Type *Gt::infer() const { return I1::create(); }
 
-const Type *Le::infer() const { return I1::create(); }
+Type *Le::infer() const { return I1::create(); }
 
-const Type *Ge::infer() const { return I1::create(); }
+Type *Ge::infer() const { return I1::create(); }
 
-const Type *And::infer() const { return I1::create(); }
+Type *And::infer() const { return I1::create(); }
 
-const Type *Or::infer() const { return I1::create(); }
+Type *Or::infer() const { return I1::create(); }
 
-const Type *Not::infer() const { return I1::create(); }
+Type *Not::infer() const { return I1::create(); }
 
-const Type *Xor::infer() const { return I1::create(); }
+Type *Xor::infer() const { return I1::create(); }
 
-const Type *Assign::infer() const { return rhs->infer(); }
+Type *Assign::infer() const { return rhs->infer(); }
 
-const Type *PostInc::infer() const { return lhs->infer(); }
+Type *PostInc::infer() const { return lhs->infer(); }
 
-const Type *PostDec::infer() const { return lhs->infer(); }
+Type *PostDec::infer() const { return lhs->infer(); }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::AddressOf::infer() const {
-  return Ptr::create(lhs->infer());
-}
+Type *AddressOf::infer() const { return Ptr::create(lhs->infer()); }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::Deref::infer() const {
-  return lhs->infer()->as<Ptr>()->type;
-}
+Type *Deref::infer() const { return lhs->infer()->as<Ptr>()->type; }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::Member::infer() const {
-  return field_type;
-}
+Type *Member::infer() const { return field_type; }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::Index::infer() const {
-  return type;
-}
+Type *Index::infer() const { return type; }
 
 uint8_t get_numbits(std::string s);
 
-const Type *Number::infer() const {
+Type *Number::infer() const {
   uint8_t bits = get_numbits(value);
 
   if (value.find(".") != std::string::npos) {
@@ -244,7 +230,7 @@ const Type *Number::infer() const {
   }
 }
 
-static std::string unqiue_typehash(const std::vector<const Type *> &types) {
+static std::string unqiue_typehash(const std::vector<Type *> &types) {
   auto h = libquixcc::ir::Hasher().gettag();
   for (auto &type : types) h.add(type);
 
@@ -255,15 +241,15 @@ static std::string unqiue_typehash(const std::vector<const Type *> &types) {
   return ss.str().substr(16);
 }
 
-const libquixcc::ir::q::Type *libquixcc::ir::q::List::infer() const {
-  std::vector<const Type *> types;
+Type *List::infer() const {
+  std::vector<Type *> types;
   for (auto &elem : values) types.push_back(elem->infer());
 
   if (types.empty())
     throw std::runtime_error(
         "Codegen failed: Can not perform inference on empty list");
 
-  const Type *type = types[0];
+  Type *type = types[0];
 
   for (size_t i = 1; i < types.size(); i++) {
     if (types[i] != type) {
@@ -274,6 +260,6 @@ const libquixcc::ir::q::Type *libquixcc::ir::q::List::infer() const {
   return Array::create(type, values.size());
 }
 
-const Type *String::infer() const { return Ptr::create(U8::create()); }
+Type *String::infer() const { return Ptr::create(U8::create()); }
 
-const Type *Char::infer() const { return U8::create(); }
+Type *Char::infer() const { return U8::create(); }

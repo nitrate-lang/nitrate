@@ -47,16 +47,16 @@ class Ident : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Ident(std::string name, const Type *type) : name(name), type(type) {
+  Ident(std::string name, Type *type) : name(name), type(type) {
     ntype = (int)NodeType::Ident;
   }
 
  public:
-  static const Ident *create(std::string name, const Type *type);
-  const Type *infer() const override;
+  static Ident *create(std::string name, Type *type);
+  Type *infer() const override;
 
   std::string name;
-  const Type *type;
+  Type *type;
 };
 }  // namespace libquixcc::ir::q
 

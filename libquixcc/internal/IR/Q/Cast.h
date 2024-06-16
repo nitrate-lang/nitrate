@@ -47,16 +47,16 @@ class SCast : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  SCast(const Type *type, const Expr *value) : type(type), value(value) {
+  SCast(Type *type, Expr *value) : type(type), value(value) {
     ntype = (int)NodeType::SCast;
   }
 
  public:
-  static const SCast *create(const Type *type, const Expr *value);
-  const Type *infer() const override;
+  static SCast *create(Type *type, Expr *value);
+  Type *infer() const override;
 
-  const Type *type;
-  const Expr *value;
+  Type *type;
+  Expr *value;
 };
 
 class UCast : public Expr {
@@ -65,16 +65,16 @@ class UCast : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  UCast(const Type *type, const Expr *value) : type(type), value(value) {
+  UCast(Type *type, Expr *value) : type(type), value(value) {
     ntype = (int)NodeType::UCast;
   }
 
  public:
-  static const UCast *create(const Type *type, const Expr *value);
-  const Type *infer() const override;
+  static UCast *create(Type *type, Expr *value);
+  Type *infer() const override;
 
-  const Type *type;
-  const Expr *value;
+  Type *type;
+  Expr *value;
 };
 
 class PtrICast : public Expr {
@@ -83,15 +83,13 @@ class PtrICast : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  PtrICast(const Expr *value) : value(value) {
-    ntype = (int)NodeType::PtrICast;
-  }
+  PtrICast(Expr *value) : value(value) { ntype = (int)NodeType::PtrICast; }
 
  public:
-  static const PtrICast *create(const Expr *value);
-  const Type *infer() const override;
+  static PtrICast *create(Expr *value);
+  Type *infer() const override;
 
-  const Expr *value;
+  Expr *value;
 };
 
 class IPtrCast : public Expr {
@@ -100,16 +98,16 @@ class IPtrCast : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  IPtrCast(const Type *type, const Expr *value) : type(type), value(value) {
+  IPtrCast(Type *type, Expr *value) : type(type), value(value) {
     ntype = (int)NodeType::IPtrCast;
   }
 
  public:
-  static const IPtrCast *create(const Type *type, const Expr *value);
-  const Type *infer() const override;
+  static IPtrCast *create(Type *type, Expr *value);
+  Type *infer() const override;
 
-  const Type *type;
-  const Expr *value;
+  Type *type;
+  Expr *value;
 };
 
 class Bitcast : public Expr {
@@ -118,16 +116,16 @@ class Bitcast : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Bitcast(const Type *type, const Expr *value) : type(type), value(value) {
+  Bitcast(Type *type, Expr *value) : type(type), value(value) {
     ntype = (int)NodeType::Bitcast;
   }
 
  public:
-  static const Bitcast *create(const Type *type, const Expr *value);
-  const Type *infer() const override;
+  static Bitcast *create(Type *type, Expr *value);
+  Type *infer() const override;
 
-  const Type *type;
-  const Expr *value;
+  Type *type;
+  Expr *value;
 };
 }  // namespace libquixcc::ir::q
 

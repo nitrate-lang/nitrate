@@ -164,21 +164,22 @@ static std::string serialize_type(
   throw std::runtime_error("Unknown type: " + std::to_string((int)type->ntype));
 }
 
-static const libquixcc::ir::q::Type *deserialize_type_inner(
+static libquixcc::ir::q::Type *deserialize_type_inner(
     const std::string &type,
     std::map<std::string, libquixcc::ir::q::Type *> &prev) {
   using namespace libquixcc;
 
-  static std::map<std::string, const q::Type *> basic_typesmap = {
-      {"y", q::I1::create()},   {"b", q::U8::create()},
-      {"w", q::U16::create()},  {"d", q::U32::create()},
-      {"q", q::U64::create()},  {"o", q::U128::create()},
-      {"c", q::I8::create()},   {"s", q::I16::create()},
-      {"i", q::I32::create()},  {"l", q::I64::create()},
-      {"p", q::I128::create()}, {"g", q::F32::create()},
-      {"e", q::F64::create()},  {"v", q::Void::create()}};
+  typedef libquixcc::ir::q::Type *(*fn)(void);
+  static std::map<std::string, fn> basic_typesmap = {
+      {"y", (fn)q::I1::create},   {"b", (fn)q::U8::create},
+      {"w", (fn)q::U16::create},  {"d", (fn)q::U32::create},
+      {"q", (fn)q::U64::create},  {"o", (fn)q::U128::create},
+      {"c", (fn)q::I8::create},   {"s", (fn)q::I16::create},
+      {"i", (fn)q::I32::create},  {"l", (fn)q::I64::create},
+      {"p", (fn)q::I128::create}, {"g", (fn)q::F32::create},
+      {"e", (fn)q::F64::create},  {"v", (fn)q::Void::create}};
 
-  if (basic_typesmap.contains(type)) return basic_typesmap.at(type);
+  if (basic_typesmap.contains(type)) return basic_typesmap.at(type)();
 
   try {
     if (type.at(0) == 't') {
@@ -208,7 +209,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(
 
       if (fields.size() < 2) return nullptr;
 
-      const q::Type *t;
+      q::Type *t;
       if ((t = deserialize_type_inner(fields.at(0), prev)) == nullptr)
         return nullptr;
 
@@ -219,7 +220,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(
 
       if (fields.size() < 1) return nullptr;
 
-      const q::Type *t;
+      q::Type *t;
       if ((t = deserialize_type_inner(fields.at(0), prev)) == nullptr)
         return nullptr;
 
@@ -230,7 +231,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(
 
       if (fields.size() < 1) return nullptr;
 
-      const q::Type *t;
+      q::Type *t;
       if ((t = deserialize_type_inner(fields.at(0), prev)) == nullptr)
         return nullptr;
 
@@ -241,13 +242,13 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(
 
       if (fields.size() < 3) return nullptr;
 
-      const q::Type *ret;
+      q::Type *ret;
       if ((ret = deserialize_type_inner(fields.at(0), prev)) == nullptr)
         return nullptr;
 
-      std::vector<const q::Type *> params;
+      std::vector<q::Type *> params;
       for (size_t i = 1; i < fields.size() - 1; i++) {
-        const q::Type *t;
+        q::Type *t;
         if ((t = deserialize_type_inner(fields.at(i), prev)) == nullptr)
           return nullptr;
 
@@ -289,8 +290,7 @@ static const libquixcc::ir::q::Type *deserialize_type_inner(
   }
 }
 
-static const libquixcc::ir::q::Type *deserialize_type(
-    const std::string &input) {
+static libquixcc::ir::q::Type *deserialize_type(const std::string &input) {
   std::map<std::string, libquixcc::ir::q::Type *> prev;
 
   auto type = deserialize_type_inner(input, prev);
@@ -327,8 +327,7 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::ir::q::Value *node,
   return "";
 }
 
-const libquixcc::ir::q::Value *libquixcc::Symbol::demangle_quix(
-    std::string input) {
+libquixcc::ir::q::Value *libquixcc::Symbol::demangle_quix(std::string input) {
   try {
     input = input.substr(quix_abiprefix.size());
 

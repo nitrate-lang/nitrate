@@ -47,14 +47,14 @@ class Block : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Block(std::vector<const Value *> stmts) : stmts(stmts) {
+  Block(std::vector<Value *> stmts) : stmts(stmts) {
     ntype = (int)NodeType::Block;
   }
 
  public:
-  static const Block *create(std::vector<const Value *> stmts);
+  static Block *create(std::vector<Value *> stmts);
 
-  std::vector<const Value *> stmts;
+  std::vector<Value *> stmts;
 };
 
 class Segment : public Expr {
@@ -63,10 +63,9 @@ class Segment : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Segment(std::vector<std::pair<std::string, const Type *>> params,
-          const Type *return_type, const Block *block, bool is_variadic,
-          bool is_pure, bool is_thread_safe, bool is_no_throw,
-          bool is_no_return, bool is_foriegn)
+  Segment(std::vector<std::pair<std::string, Type *>> params, Type *return_type,
+          Block *block, bool is_variadic, bool is_pure, bool is_thread_safe,
+          bool is_no_throw, bool is_no_return, bool is_foriegn)
       : params(params),
         return_type(return_type),
         block(block),
@@ -80,16 +79,15 @@ class Segment : public Expr {
   }
 
  public:
-  static const Segment *create(
-      std::vector<std::pair<std::string, const Type *>> params,
-      const Type *return_type, const Block *block, bool is_variadic,
-      bool is_pure, bool is_thread_safe, bool is_no_throw, bool is_no_return,
-      bool is_foriegn);
-  const Type *infer() const override;
+  static Segment *create(std::vector<std::pair<std::string, Type *>> params,
+                         Type *return_type, Block *block, bool is_variadic,
+                         bool is_pure, bool is_thread_safe, bool is_no_throw,
+                         bool is_no_return, bool is_foriegn);
+  Type *infer() const override;
 
-  std::vector<std::pair<std::string, const Type *>> params;
-  const Type *return_type;
-  const Block *block;
+  std::vector<std::pair<std::string, Type *>> params;
+  Type *return_type;
+  Block *block;
   bool is_variadic;
   bool is_pure;
   bool is_thread_safe;

@@ -68,7 +68,7 @@ class I1 : public Type {
   I1() { ntype = (int)NodeType::I1; }
 
  public:
-  static const I1 *create();
+  static I1 *create();
   size_t bitcount() const override { return 1; }
 };
 
@@ -81,7 +81,7 @@ class I8 : public Type {
   I8() { ntype = (int)NodeType::I8; }
 
  public:
-  static const I8 *create();
+  static I8 *create();
   size_t bitcount() const override { return 8; }
 };
 
@@ -94,7 +94,7 @@ class I16 : public Type {
   I16() { ntype = (int)NodeType::I16; }
 
  public:
-  static const I16 *create();
+  static I16 *create();
   size_t bitcount() const override { return 16; }
 };
 
@@ -107,7 +107,7 @@ class I32 : public Type {
   I32() { ntype = (int)NodeType::I32; }
 
  public:
-  static const I32 *create();
+  static I32 *create();
   size_t bitcount() const override { return 32; }
 };
 
@@ -120,7 +120,7 @@ class I64 : public Type {
   I64() { ntype = (int)NodeType::I64; }
 
  public:
-  static const I64 *create();
+  static I64 *create();
   size_t bitcount() const override { return 64; }
 };
 
@@ -133,7 +133,7 @@ class I128 : public Type {
   I128() { ntype = (int)NodeType::I128; }
 
  public:
-  static const I128 *create();
+  static I128 *create();
   size_t bitcount() const override { return 128; }
 };
 
@@ -146,7 +146,7 @@ class U8 : public Type {
   U8() { ntype = (int)NodeType::U8; }
 
  public:
-  static const U8 *create();
+  static U8 *create();
   size_t bitcount() const override { return 8; }
 };
 
@@ -159,7 +159,7 @@ class U16 : public Type {
   U16() { ntype = (int)NodeType::U16; }
 
  public:
-  static const U16 *create();
+  static U16 *create();
   size_t bitcount() const override { return 16; }
 };
 
@@ -172,7 +172,7 @@ class U32 : public Type {
   U32() { ntype = (int)NodeType::U32; }
 
  public:
-  static const U32 *create();
+  static U32 *create();
   size_t bitcount() const override { return 32; }
 };
 
@@ -185,7 +185,7 @@ class U64 : public Type {
   U64() { ntype = (int)NodeType::U64; }
 
  public:
-  static const U64 *create();
+  static U64 *create();
   size_t bitcount() const override { return 64; }
 };
 
@@ -198,7 +198,7 @@ class U128 : public Type {
   U128() { ntype = (int)NodeType::U128; }
 
  public:
-  static const U128 *create();
+  static U128 *create();
   size_t bitcount() const override { return 128; }
 };
 
@@ -211,7 +211,7 @@ class F32 : public Type {
   F32() { ntype = (int)NodeType::F32; }
 
  public:
-  static const F32 *create();
+  static F32 *create();
   size_t bitcount() const override { return 32; }
 };
 
@@ -224,7 +224,7 @@ class F64 : public Type {
   F64() { ntype = (int)NodeType::F64; }
 
  public:
-  static const F64 *create();
+  static F64 *create();
   size_t bitcount() const override { return 64; }
 };
 
@@ -237,7 +237,7 @@ class Void : public Type {
   Void() { ntype = (int)NodeType::Void; }
 
  public:
-  static const Void *create();
+  static Void *create();
   size_t bitcount() const override { return 0; }
 };
 
@@ -247,17 +247,17 @@ class Ptr : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Ptr(const Type *type) : type(type) { ntype = (int)NodeType::Ptr; }
+  Ptr(Type *type) : type(type) { ntype = (int)NodeType::Ptr; }
 
  public:
-  static const Ptr *create(const Type *type);
+  static Ptr *create(Type *type);
   size_t bitcount() const override {
     /// TODO: This is a temporary solution. We need to find a better way to
     /// handle this.
     return 64;
   }
 
-  const Type *type;
+  Type *type;
 };
 
 class Array : public Type {
@@ -266,15 +266,15 @@ class Array : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Array(const Type *type, uint64_t size) : type(type), size(size) {
+  Array(Type *type, uint64_t size) : type(type), size(size) {
     ntype = (int)NodeType::Array;
   }
 
  public:
-  static const Array *create(const Type *type, uint64_t size);
+  static Array *create(Type *type, uint64_t size);
   size_t bitcount() const override { return type->bitcount() * size; }
 
-  const Type *type;
+  Type *type;
   uint64_t size;
 };
 
@@ -284,15 +284,15 @@ class Vector : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Vector(const Type *type) : type(type) { ntype = (int)NodeType::Vector; }
+  Vector(Type *type) : type(type) { ntype = (int)NodeType::Vector; }
 
  public:
-  static const Vector *create(const Type *type);
+  static Vector *create(Type *type);
   size_t bitcount() const override {
     throw std::runtime_error("Cannot get bitcount of vector type");
   }
 
-  const Type *type;
+  Type *type;
 };
 
 class FType : public Type {
@@ -301,8 +301,8 @@ class FType : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  FType(std::vector<const Type *> params, const Type *ret, bool variadic,
-        bool pure, bool thread_safe, bool foreign, bool nothrow)
+  FType(std::vector<Type *> params, Type *ret, bool variadic, bool pure,
+        bool thread_safe, bool foreign, bool nothrow)
       : params(params),
         ret(ret),
         m_variadic(variadic),
@@ -314,16 +314,16 @@ class FType : public Type {
   }
 
  public:
-  static const FType *create(std::vector<const Type *> params, const Type *ret,
-                             bool variadic = false, bool pure = false,
-                             bool thread_safe = false, bool foreign = false,
-                             bool nothrow = false);
+  static FType *create(std::vector<Type *> params, Type *ret,
+                       bool variadic = false, bool pure = false,
+                       bool thread_safe = false, bool foreign = false,
+                       bool nothrow = false);
   size_t bitcount() const override {
     return Ptr::create(Void::create())->bitcount();
   }
 
-  std::vector<const Type *> params;
-  const Type *ret;
+  std::vector<Type *> params;
+  Type *ret;
   bool m_variadic;
   bool m_pure;
   bool m_thread_safe;
@@ -337,20 +337,19 @@ class Region : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Region(std::string name, std::vector<const Type *> fields)
+  Region(std::string name, std::vector<Type *> fields)
       : name(name), fields(fields) {
     ntype = (int)NodeType::Region;
   }
 
  public:
-  static const Region *create(std::string name,
-                              std::vector<const Type *> fields);
+  static Region *create(std::string name, std::vector<Type *> fields);
   size_t bitcount() const override {
     throw std::runtime_error("Cannot get bitcount of region type");
   }
 
   std::string name;
-  std::vector<const Type *> fields;
+  std::vector<Type *> fields;
 };
 
 class Group : public Type {
@@ -359,20 +358,19 @@ class Group : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Group(std::string name, std::vector<const Type *> fields)
+  Group(std::string name, std::vector<Type *> fields)
       : name(name), fields(fields) {
     ntype = (int)NodeType::Group;
   }
 
  public:
-  static const Group *create(std::string name,
-                             std::vector<const Type *> fields);
+  static Group *create(std::string name, std::vector<Type *> fields);
   size_t bitcount() const override {
     throw std::runtime_error("Cannot get bitcount of group type");
   }
 
   std::string name;
-  std::vector<const Type *> fields;
+  std::vector<Type *> fields;
 };
 
 class Union : public Type {
@@ -381,20 +379,19 @@ class Union : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Union(std::string name, std::vector<const Type *> fields)
+  Union(std::string name, std::vector<Type *> fields)
       : name(name), fields(fields) {
     ntype = (int)NodeType::Union;
   }
 
  public:
-  static const Union *create(std::string name,
-                             std::vector<const Type *> fields);
+  static Union *create(std::string name, std::vector<Type *> fields);
   size_t bitcount() const override {
     throw std::runtime_error("Cannot get bitcount of union type");
   }
 
   std::string name;
-  std::vector<const Type *> fields;
+  std::vector<Type *> fields;
 };
 
 class Opaque : public Type {
@@ -406,7 +403,7 @@ class Opaque : public Type {
   Opaque(std::string name) : name(name) { ntype = (int)NodeType::Opaque; }
 
  public:
-  static const Opaque *create(std::string name);
+  static Opaque *create(std::string name);
   size_t bitcount() const override {
     throw std::runtime_error("Cannot get bitcount of opaque type");
   }

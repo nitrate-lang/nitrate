@@ -72,7 +72,7 @@ std::string libquixcc::Symbol::mangle(const ir::q::Value *node,
   }
 }
 
-const libquixcc::ir::q::Value *libquixcc::Symbol::demangle(
+libquixcc::ir::q::Value *libquixcc::Symbol::demangle(
     const std::string &mangled) {
   std::string input;
 

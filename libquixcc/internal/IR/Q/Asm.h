@@ -45,24 +45,22 @@ class Asm : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Asm(std::string asm_str,
-      std::vector<std::pair<std::string, const Value *>> inputs,
-      std::vector<std::pair<std::string, const Value *>> outputs,
+  Asm(std::string asm_str, std::vector<std::pair<std::string, Value *>> inputs,
+      std::vector<std::pair<std::string, Value *>> outputs,
       std::vector<std::string> clobbers)
       : asm_str(asm_str), inputs(inputs), outputs(outputs), clobbers(clobbers) {
     ntype = (int)NodeType::Asm;
   }
 
  public:
-  static const Asm *create(
-      std::string asm_str,
-      std::vector<std::pair<std::string, const Value *>> inputs,
-      std::vector<std::pair<std::string, const Value *>> outputs,
-      std::vector<std::string> clobbers);
+  static Asm *create(std::string asm_str,
+                     std::vector<std::pair<std::string, Value *>> inputs,
+                     std::vector<std::pair<std::string, Value *>> outputs,
+                     std::vector<std::string> clobbers);
 
   std::string asm_str;
-  std::vector<std::pair<std::string, const Value *>> inputs;
-  std::vector<std::pair<std::string, const Value *>> outputs;
+  std::vector<std::pair<std::string, Value *>> inputs;
+  std::vector<std::pair<std::string, Value *>> outputs;
   std::vector<std::string> clobbers;
 };
 }  // namespace libquixcc::ir::q

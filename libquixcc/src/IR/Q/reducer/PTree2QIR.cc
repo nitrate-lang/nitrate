@@ -51,7 +51,7 @@
 using namespace libquixcc;
 using namespace libquixcc::ir::q;
 
-typedef const Value *QValue;
+typedef Value *QValue;
 
 class QResult {
   std::vector<QValue> m_values;
@@ -79,8 +79,8 @@ class QResult {
 
 struct QState {
   std::map<std::string, std::pair<ExportLangType, QResult>> exported;
-  std::stack<std::map<std::string, const Type *>> local_idents;
-  std::map<std::string, const Type *> global_idents;
+  std::stack<std::map<std::string, Type *>> local_idents;
+  std::map<std::string, Type *> global_idents;
   bool inside_segment;
   ExportLangType lang;
   std::stack<const FunctionDefNode *> function;
@@ -325,7 +325,7 @@ static auto conv(const PostUnaryExprNode *n, QState &state) -> QResult {
   }
 }
 
-static const Expr *promote(const Type *lht, const libquixcc::ir::q::Expr *rhs) {
+static Expr *promote(Type *lht, libquixcc::ir::q::Expr *rhs) {
   auto rht = rhs->infer();
 
   if (lht->is(rht)) return rhs;
@@ -365,13 +365,12 @@ static const Expr *promote(const Type *lht, const libquixcc::ir::q::Expr *rhs) {
   throw std::runtime_error("cannot promote types");
 }
 
-static const Expr *promote(const libquixcc::ir::q::Expr *lhs,
-                           const libquixcc::ir::q::Expr *rhs) {
+static Expr *promote(libquixcc::ir::q::Expr *lhs, libquixcc::ir::q::Expr *rhs) {
   return promote(lhs->infer(), rhs);
 }
 
-static void bipromote(const libquixcc::ir::q::Expr **lhs,
-                      const libquixcc::ir::q::Expr **rhs) {
+static void bipromote(libquixcc::ir::q::Expr **lhs,
+                      libquixcc::ir::q::Expr **rhs) {
   auto lht = (*lhs)->infer();
   auto rht = (*rhs)->infer();
 
@@ -504,15 +503,15 @@ static auto conv(const BinaryExprNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const CallExprNode *n, QState &state) -> QResult {
-  const Global *callee = nullptr;
+  Global *callee = nullptr;
 
   if (state.exported.contains(n->m_decl->m_name))
     callee = state.exported[n->m_decl->m_name].second[0]->as<Global>();
   else
     callee = conv(n->m_decl.get(), state)[0]->as<Global>();
 
-  std::vector<const Expr *> args;
-  const Segment *seg = callee->value->as<Segment>();
+  std::vector<Expr *> args;
+  Segment *seg = callee->value->as<Segment>();
 
   size_t i = 0;
   for (auto &arg : n->m_positional_args) {
@@ -540,7 +539,7 @@ static auto conv(const CallExprNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const ListExprNode *n, QState &state) -> QResult {
-  std::vector<const Expr *> values;
+  std::vector<Expr *> values;
   for (auto &elem : n->m_elements) {
     auto v = conv(elem.get(), state)[0]->as<Expr>();
     values.push_back(v);
@@ -814,7 +813,7 @@ static auto conv(const EnumTypeNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const StructTypeNode *n, QState &state) -> QResult {
-  std::vector<const Type *> fields;
+  std::vector<Type *> fields;
   for (auto &field : n->m_fields)
     fields.push_back(conv(field, state)[0]->as<Type>());
 
@@ -822,7 +821,7 @@ static auto conv(const StructTypeNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const libquixcc::GroupTypeNode *n, QState &state) -> QResult {
-  std::vector<const Type *> fields;
+  std::vector<Type *> fields;
   for (auto &field : n->m_fields)
     fields.push_back(conv(field, state)[0]->as<Type>());
 
@@ -830,7 +829,7 @@ static auto conv(const libquixcc::GroupTypeNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const RegionTypeNode *n, QState &state) -> QResult {
-  std::vector<const Type *> fields;
+  std::vector<Type *> fields;
   for (auto &field : n->m_fields)
     fields.push_back(conv(field, state)[0]->as<Type>());
 
@@ -838,7 +837,7 @@ static auto conv(const RegionTypeNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const UnionTypeNode *n, QState &state) -> QResult {
-  std::vector<const Type *> fields;
+  std::vector<Type *> fields;
   for (auto &field : n->m_fields)
     fields.push_back(conv(field, state)[0]->as<Type>());
 
@@ -869,7 +868,7 @@ static auto conv(const GeneratorTypeNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const FunctionTypeNode *n, QState &state) -> QResult {
-  std::vector<const Type *> params;
+  std::vector<Type *> params;
   for (auto &param : n->m_params)
     params.push_back(conv(param.second, state)[0]->as<Type>());
 
@@ -919,7 +918,7 @@ static auto conv(const VarDeclNode *n, QState &state) -> QResult {
   throw std::runtime_error("QIR translation: VarDeclNode not implemented");
 }
 
-static auto create_defaults(const libquixcc::ir::q::Value *var,
+static auto create_defaults(libquixcc::ir::q::Value *var,
                             libquixcc::TypeNode *type,
                             QState &state) -> QResult {
   switch (type->ntype) {
@@ -1007,11 +1006,11 @@ static bool is_composite(const TypeNode *n) {
 
 static auto conv(const LetDeclNode *n, QState &state) -> QResult {
   if (state.inside_segment) {
-    const Expr *init = nullptr;
+    Expr *init = nullptr;
 
     if (n->m_init) init = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-    const Type *type = nullptr;
+    Type *type = nullptr;
     if (n->m_type)
       type = conv(n->m_type, state)[0]->as<Type>();
     else if (init)
@@ -1032,7 +1031,7 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult {
     return res;
   }
 
-  const Expr *expr = nullptr;
+  Expr *expr = nullptr;
   if (n->m_init) expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
   auto tmp = Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(),
@@ -1056,7 +1055,7 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult {
   if (state.inside_segment) {
     auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-    const Type *type = nullptr;
+    Type *type = nullptr;
     if (n->m_type)
       type = conv(n->m_type, state)[0]->as<Type>();
     else
@@ -1068,10 +1067,10 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult {
     return l;
   }
 
-  const Expr *expr = nullptr;
+  Expr *expr = nullptr;
   if (n->m_init) expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-  const Type *type = nullptr;
+  Type *type = nullptr;
   if (n->m_type)
     type = conv(n->m_type, state)[0]->as<Type>();
   else
@@ -1093,7 +1092,7 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const FunctionDeclNode *n, QState &state) -> QResult {
-  std::vector<std::pair<std::string, const Type *>> params;
+  std::vector<std::pair<std::string, Type *>> params;
   for (auto &p : n->m_params) {
     auto res = conv(p.get(), state);
     auto t = res[0]->as<Type>();
@@ -1110,7 +1109,7 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult {
       n->m_type->m_noexcept, n->m_type->m_return_type->is<NullTypeNode>(),
       n->m_type->m_foreign);
 
-  const Global *g = nullptr;
+  Global *g = nullptr;
   std::string mangled;
 
   g = Global::create(n->m_name, seg->infer(), seg, false, false, true);
@@ -1137,7 +1136,7 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult {
 
 static auto conv(const StructDefNode *n, QState &state) -> QResult {
   std::vector<std::pair<std::string, QValue>> fields;
-  std::map<std::string, const Segment *> methods;
+  std::map<std::string, Segment *> methods;
 
   state.typedefs[n->m_name] = n;
   for (auto &field : n->m_fields) {
@@ -1180,7 +1179,7 @@ static auto conv(const StructFieldNode *n, QState &state) -> QResult {
 
 static auto conv(const RegionDefNode *n, QState &state) -> QResult {
   std::vector<std::pair<std::string, QValue>> fields;
-  std::map<std::string, const Segment *> methods;
+  std::map<std::string, Segment *> methods;
 
   state.typedefs[n->m_name] = n;
   for (auto &field : n->m_fields) {
@@ -1223,7 +1222,7 @@ static auto conv(const RegionFieldNode *n, QState &state) -> QResult {
 
 static auto conv(const GroupDefNode *n, QState &state) -> QResult {
   std::map<std::string, QValue> fields;
-  std::map<std::string, const Segment *> methods;
+  std::map<std::string, Segment *> methods;
 
   state.typedefs[n->m_name] = n;
   for (auto &field : n->m_fields) {
@@ -1335,8 +1334,8 @@ static auto conv(const ExportNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const InlineAsmNode *n, QState &state) -> QResult {
-  std::vector<std::pair<std::string, const Value *>> outputs;
-  std::vector<std::pair<std::string, const Value *>> inputs;
+  std::vector<std::pair<std::string, Value *>> outputs;
+  std::vector<std::pair<std::string, Value *>> inputs;
 
   for (auto &output : n->m_outputs) {
     auto res = conv(output.second.get(), state);

@@ -125,6 +125,22 @@ class Node {
     __builtin_unreachable();
   }
 
+  template <typename T>
+  T *as() {
+    if (!static_cast<volatile T *>(this))
+      LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
+                 << std::endl;
+
+    auto p = dynamic_cast<T *>(this);
+
+    if (p) return p;
+
+    LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `"
+               << typeid(T).name() << "`" << std::endl;
+
+    __builtin_unreachable();
+  }
+
   /* Write IR to Output Stream */
   bool print(std::ostream &os, PState &state) const {
     return print_impl(os, state);

@@ -46,16 +46,16 @@ class Assign : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Assign(const Expr *lhs, const Expr *rhs) : lhs(lhs), rhs(rhs) {
+  Assign(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
     ntype = (int)NodeType::Assign;
   }
 
  public:
-  static const Assign *create(const Expr *lhs, const Expr *rhs);
-  const Type *infer() const override;
+  static Assign *create(Expr *lhs, Expr *rhs);
+  Type *infer() const override;
 
-  const Expr *lhs;
-  const Expr *rhs;
+  Expr *lhs;
+  Expr *rhs;
 };
 
 class PostInc : public Expr {
@@ -64,13 +64,13 @@ class PostInc : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  PostInc(const Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::PostInc; }
+  PostInc(Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::PostInc; }
 
  public:
-  static const PostInc *create(const Expr *lhs);
-  const Type *infer() const override;
+  static PostInc *create(Expr *lhs);
+  Type *infer() const override;
 
-  const Expr *lhs;
+  Expr *lhs;
 };
 
 class PostDec : public Expr {
@@ -79,13 +79,13 @@ class PostDec : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  PostDec(const Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::PostDec; }
+  PostDec(Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::PostDec; }
 
  public:
-  static const PostDec *create(const Expr *lhs);
-  const Type *infer() const override;
+  static PostDec *create(Expr *lhs);
+  Type *infer() const override;
 
-  const Expr *lhs;
+  Expr *lhs;
 };
 
 class AddressOf : public Expr {
@@ -94,13 +94,13 @@ class AddressOf : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  AddressOf(const Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::AddressOf; }
+  AddressOf(Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::AddressOf; }
 
  public:
-  static const AddressOf *create(const Expr *lhs);
-  const Type *infer() const override;
+  static AddressOf *create(Expr *lhs);
+  Type *infer() const override;
 
-  const Expr *lhs;
+  Expr *lhs;
 };
 
 class Deref : public Expr {
@@ -109,13 +109,13 @@ class Deref : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Deref(const Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::Deref; }
+  Deref(Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::Deref; }
 
  public:
-  static const Deref *create(const Expr *lhs);
-  const Type *infer() const override;
+  static Deref *create(Expr *lhs);
+  Type *infer() const override;
 
-  const Expr *lhs;
+  Expr *lhs;
 };
 
 class Member : public Expr {
@@ -124,19 +124,18 @@ class Member : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Member(const Value *lhs, size_t field, const Type *field_type)
+  Member(Value *lhs, size_t field, Type *field_type)
       : field(field), lhs(lhs), field_type(field_type) {
     ntype = (int)NodeType::Member;
   }
 
  public:
-  static const Member *create(const Value *lhs, size_t field,
-                              const Type *field_type);
-  const Type *infer() const override;
+  static Member *create(Value *lhs, size_t field, Type *field_type);
+  Type *infer() const override;
 
   size_t field;
-  const Value *lhs;
-  const Type *field_type;
+  Value *lhs;
+  Type *field_type;
 };
 
 class Index : public Expr {
@@ -145,19 +144,18 @@ class Index : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Index(const Value *lhs, const Expr *index, const Type *type)
+  Index(Value *lhs, Expr *index, Type *type)
       : lhs(lhs), index(index), type(type) {
     ntype = (int)NodeType::Index;
   }
 
  public:
-  static const Index *create(const Value *lhs, const Expr *index,
-                             const Type *type);
-  const Type *infer() const override;
+  static Index *create(Value *lhs, Expr *index, Type *type);
+  Type *infer() const override;
 
-  const Value *lhs;
-  const Expr *index;
-  const Type *type;
+  Value *lhs;
+  Expr *index;
+  Type *type;
 };
 }  // namespace libquixcc::ir::q
 

@@ -47,18 +47,17 @@ class Local : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Local(std::string name, const Type *type, const Expr *value)
+  Local(std::string name, Type *type, Expr *value)
       : name(name), type(type), value(value) {
     ntype = (int)NodeType::Local;
   }
 
  public:
-  static const Local *create(std::string name, const Type *type,
-                             const Expr *value = nullptr);
+  static Local *create(std::string name, Type *type, Expr *value = nullptr);
 
   std::string name;
-  const Type *type;
-  const Expr *value;
+  Type *type;
+  Expr *value;
 };
 
 class Global : public Value {
@@ -67,7 +66,7 @@ class Global : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Global(std::string name, const Type *type, const Expr *value, bool _volatile,
+  Global(std::string name, Type *type, Expr *value, bool _volatile,
          bool _atomic, bool _extern)
       : name(name),
         type(type),
@@ -79,13 +78,13 @@ class Global : public Value {
   }
 
  public:
-  static const Global *create(std::string name, const Type *type,
-                              const Expr *value, bool _volatile = false,
-                              bool _atomic = false, bool _extern = false);
+  static Global *create(std::string name, Type *type, Expr *value,
+                        bool _volatile = false, bool _atomic = false,
+                        bool _extern = false);
 
   std::string name;
-  const Type *type;
-  const Expr *value;
+  Type *type;
+  Expr *value;
   bool _volatile;
   bool _atomic;
   bool _extern;
@@ -100,8 +99,8 @@ class Number : public Expr {
   Number(std::string value) : value(value) { ntype = (int)NodeType::Number; }
 
  public:
-  static const Number *create(std::string value);
-  const Type *infer() const override;
+  static Number *create(std::string value);
+  Type *infer() const override;
 
   std::string value;
 };
@@ -115,8 +114,8 @@ class String : public Expr {
   String(std::string value) : value(value) { ntype = (int)NodeType::String; }
 
  public:
-  static const String *create(std::string value);
-  const Type *infer() const override;
+  static String *create(std::string value);
+  Type *infer() const override;
 
   std::string value;
 };
@@ -130,8 +129,8 @@ class Char : public Expr {
   Char(std::string value) : value(value) { ntype = (int)NodeType::Char; }
 
  public:
-  static const Char *create(std::string value);
-  const Type *infer() const override;
+  static Char *create(std::string value);
+  Type *infer() const override;
 
   std::string value;
 };
@@ -142,15 +141,15 @@ class List : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  List(std::vector<const Expr *> values) : values(values) {
+  List(std::vector<Expr *> values) : values(values) {
     ntype = (int)NodeType::List;
   }
 
  public:
-  static const List *create(std::vector<const Expr *> values);
-  const Type *infer() const override;
+  static List *create(std::vector<Expr *> values);
+  Type *infer() const override;
 
-  std::vector<const Expr *> values;
+  std::vector<Expr *> values;
 };
 }  // namespace libquixcc::ir::q
 

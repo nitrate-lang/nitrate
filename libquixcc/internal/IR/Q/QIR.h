@@ -166,17 +166,17 @@ class RootNode : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  RootNode(std::vector<const Value *> children) : children(children) {
+  RootNode(std::vector<Value *> children) : children(children) {
     ntype = (int)NodeType::Root;
   }
 
  public:
-  static const RootNode *create(std::vector<const Value *> children = {});
+  static RootNode *create(std::vector<Value *> children = {});
 
-  std::vector<const Value *> children;
+  std::vector<Value *> children;
 };
 
-class QModule : public libquixcc::ir::IRModule<IR::Q, const RootNode *> {
+class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *> {
  protected:
   bool print_impl(std::ostream &os, PState &state) const override;
   std::string_view ir_dialect_name_impl() const override;
@@ -186,8 +186,7 @@ class QModule : public libquixcc::ir::IRModule<IR::Q, const RootNode *> {
   bool verify_impl() const override;
 
  public:
-  QModule(const std::string_view &name)
-      : IRModule<IR::Q, const RootNode *>(name) {}
+  QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {}
   ~QModule() = default;
 
   bool from_ptree(std::shared_ptr<BlockNode> ast);
