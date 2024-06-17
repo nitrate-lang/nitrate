@@ -48,7 +48,7 @@
 #include <optimizer/Optimizer.h>
 #include <parsetree/Parser.h>
 #include <preprocessor/Preprocessor.h>
-#include <quixcc.h>
+#include <quixcc/Quix.h>
 #include <setjmp.h>
 #include <signal.h>
 
@@ -84,7 +84,7 @@ static thread_local bool g_tls_exception_set = false;
 static void print_stacktrace();
 static void print_general_fault_message();
 
-[[noreturn]] static void quixcc_panic(std::string msg) noexcept {
+[[noreturn]] void quixcc_panic(std::string msg) noexcept {
   msg = "LIBQUIXCC LIBRARY PANIC: " + msg;
   // Split msg into lines of `max` characters
   std::vector<std::string> lines;
@@ -116,7 +116,7 @@ static void print_general_fault_message();
   print_general_fault_message();
 
   std::cerr << "\nAborting..." << std::endl;
-  
+
   abort();
 
   while (true) std::this_thread::yield();
@@ -257,10 +257,10 @@ LIB_EXPORT bool quixcc_dispose(quixcc_job_t *job) {
   job->m_priority = 0;
   job->m_debug = job->m_tainted = false;
 
-  job->m_lock.unlock();
-
   /* Hopefully, this will cache library usage errors */
   job->m_magic = 0;
+
+  job->m_lock.unlock();
 
   delete job;  // Destruct C++ object members implicitly
 

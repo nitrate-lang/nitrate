@@ -3,7 +3,7 @@
 #include <iostream>
 #include <map>
 #include <optional>
-#include <quixcc.hpp>
+#include <quixcc/Quix.hpp>
 #include <string>
 #include <thread>
 #include <vector>

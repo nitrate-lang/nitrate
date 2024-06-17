@@ -37,9 +37,12 @@
 #endif
 
 #include <lexer/Lex.h>
-#include <quixcc.h>
+#include <quixcc/Quix.h>
+#include <quixcc/Types.h>
 #include <stdio.h>
 
+#include <functional>
+#include <map>
 #include <memory>
 #include <optional>
 #include <queue>
@@ -49,6 +52,15 @@
 #include <vector>
 
 namespace libquixcc {
+namespace ir {
+namespace q {
+class QModule;
+}
+}  // namespace ir
+
+/// @brief The Preprocessor Engine
+/// @warning Plugins must not interact with this class directly use the C Engine
+/// API instead.
 class PrepEngine : public libquixcc::Scanner {
   using rstr = const std::string &;
 
@@ -64,8 +76,8 @@ class PrepEngine : public libquixcc::Scanner {
     Entry() : path(), file(nullptr) {}
   };
   std::set<std::string> m_include_dirs;
-  std::set<std::string> m_already_included;  
-  std::vector<std::string> m_include_files;  
+  std::set<std::string> m_already_included;
+  std::vector<std::string> m_include_files;
   std::stack<Entry> m_stack;
   quixcc_job_t *job;
   std::string m_content;
@@ -79,7 +91,6 @@ class PrepEngine : public libquixcc::Scanner {
   bool m_we_are_root;
 
   libquixcc::Token read_token();
-  void emit(const Token &tok);
   bool handle_import(const Token &tok);
   Entry build_statics_decl();
   bool parse_macro(const libquixcc::Token &macro);
@@ -92,16 +103,19 @@ class PrepEngine : public libquixcc::Scanner {
   /*================== PREPROCESSOR CONFIGURATION ==================*/
   void setup();
   void addpath(rstr path);
+  void set_include_path(rstr path);
   bool set_source(FILE *src, rstr filename) override;
   void set_source(rstr src, rstr filename);
+  quixcc_job_t *get_job() const;
 
   /*================== PREPROCESSOR INTERFACE ==================*/
   Token next() override;
   const Token &peek() override;
   void push(Token tok) override;
+  void emit(const Token &tok);
 
   /*================== PREPROCESSOR DEFINES ==================*/
-  void set_static(rstr name, rstr value) ;
+  void set_static(rstr name, rstr value);
   bool get_static(rstr name, std::string &value) const;
 
   /*================== MACRO PROCESSING ==================*/
@@ -111,13 +125,37 @@ class PrepEngine : public libquixcc::Scanner {
   bool ParseEncoding(const Token &tok, rstr der, rstr param);
   bool ParseLang(const Token &tok, rstr der, rstr param);
   bool ParseLicense(const Token &tok, rstr der, rstr param);
-  bool ParseMacroP(const Token &tok, rstr der, rstr param);
   bool ParsePragma(const Token &tok, rstr der, rstr param);
   bool ParsePrint(const Token &tok, rstr der, rstr param);
   bool ParseReadstdin(const Token &tok, rstr der, rstr param);
   bool ParseUse(const Token &tok, rstr der, rstr param);
   bool ParseInvariant(const Token &tok, rstr der, rstr param);
+  bool ParseQSys(const Token &tok, rstr der, rstr param);
+  bool ParseFn(const Token &tok, rstr der, rstr param);
 };
+
+class QSysCallRegistry {
+  struct Impl;
+
+  Impl *m_impl;
+
+ public:
+  typedef quixcc_expr_t *QSysArg;
+  typedef std::vector<QSysArg> QSysArgs;
+  typedef quixcc_qsys_impl_t QSysCall;
+
+  QSysCallRegistry();
+  ~QSysCallRegistry();
+
+  void Register(uint32_t num, QSysCall call);
+  bool Unregister(uint32_t num);
+  bool IsRegistered(uint32_t num) const;
+  std::vector<uint32_t> GetRegistered() const;
+  std::optional<QSysCall> Get(uint32_t num) const;
+
+  bool Call(quixcc_engine_t *handle, uint32_t num, QSysArgs args);
+};
+
 }  // namespace libquixcc
 
 #endif  // __QUIXCC_PREP_PREPROCESS_H__

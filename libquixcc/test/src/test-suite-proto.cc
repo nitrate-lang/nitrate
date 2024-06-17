@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #include <fstream>
-#include <quixcc.hpp>
+#include <quixcc/Quix.hpp>
 
 TEST(libquixcc, library_init) { ASSERT_TRUE(quixcc_init()); }
 

@@ -37,7 +37,7 @@
 #endif
 
 #include <IR/delta/DeltaIR.h>
-#include <quixcc.h>
+#include <quixcc/Quix.h>
 #include <stdio.h>
 
 namespace libquixcc {

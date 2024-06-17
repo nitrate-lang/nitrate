@@ -40,21 +40,25 @@
 
 bool libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os,
                                                PState &state) const {
-  os << "use QDelta_1_0;\n";
-  os << "; ModuleID = '" << m_name << "'\n";
+  if (state.modinfo) {
+    os << "use QDelta_1_0;\n";
+    os << "; ModuleID = '" << m_name << "'\n";
 
-  if (!m_root) return true;
+    if (!m_root) return true;
 
-  os << "; ModuleHash = '";
-  m_root->printid(os);
-  os << "'\n\n";
+    os << "; ModuleHash = '";
+    m_root->printid(os);
+    os << "'\n\n";
+  }
 
   if (!m_root->print(os, state)) return false;
 
-  os << "\n; End of module '";
-  this->m_root->printid(os);
+  if (state.modinfo) {
+    os << "\n; End of module '";
+    this->m_root->printid(os);
 
-  os << "'\n";
+    os << "'\n";
+  }
 
   return true;
 }

@@ -34,11 +34,12 @@
 #include <LibMacro.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
+#include <quixcc/EngineAPI.h>
 #include <sys/mman.h>
 
 #include <filesystem>
 #include <fstream>
-#include <quixcc.hpp>
+#include <quixcc/Quix.hpp>
 #include <thread>
 
 LIB_CXX_EXPORT quixcc::TargetTriple::TargetTriple(const char *_triple) {
@@ -313,6 +314,12 @@ bool quixcc::CompilerBuilder::verify() {
   return true;
 }
 
+bool qsys_foo(quixcc_engine_t *engine, uint32_t num, quixcc_expr_t **args,
+              uint32_t argc);
+
+bool qsys_bar(quixcc_engine_t *engine, uint32_t num, quixcc_expr_t **args,
+              uint32_t argc);
+
 LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build() {
   if (!verify()) throw std::runtime_error("Invalid compiler configuration.");
 
@@ -349,6 +356,11 @@ LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build() {
       throw CpuException("Invalid or unsupported LLVM CPU: " + m_cpu.cpu());
 
     quixcc_output(job, m_output, nullptr);
+
+    /// TODO: remove me
+
+    quixcc_qsys_add(job, 10, qsys_foo);
+    quixcc_qsys_add(job, 20, qsys_bar);
 
     jobs.push_back(job);
   }

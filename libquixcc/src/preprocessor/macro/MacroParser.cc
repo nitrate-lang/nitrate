@@ -60,6 +60,8 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
       {"use", &PrepEngine::ParseUse},
       {"description", &PrepEngine::ParseDescription},
       {"invariant", &PrepEngine::ParseInvariant},
+      {"qsys", &PrepEngine::ParseQSys},
+      {"fn", &PrepEngine::ParseFn},
   };
 
   std::string content = trim(macro.as<std::string>());
@@ -109,8 +111,28 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
       return true;
     }
   } else if (macro.type == TT::MacroBlock) {
-    /// TODO: implement block macro parsing
-    return parse_macro(Token(TT::MacroSingleLine, content));
+    std::string directive;
+    std::string body;
+
+    size_t start = content.find(' ');
+    if (start == std::string::npos) {
+      directive = content;
+    } else {
+      directive = content.substr(0, start);
+      body = content.substr(start + 1);
+    }
+
+    if (!routines.contains(directive)) {
+      LOG(ERROR) << "Unknown macro directive: {}" << directive << macro
+                 << std::endl;
+    }
+
+    if (!(this->*routines.at(directive))(macro, directive, body)) {
+      LOG(ERROR) << "Failed to process macro directive: {}" << directive
+                 << macro << std::endl;
+    }
+
+    return true;
   } else {
     throw std::runtime_error("Invalid macro type");
   }

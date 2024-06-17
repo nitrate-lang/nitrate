@@ -1796,7 +1796,7 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
   return r;
 }
 
-bool ir::q::QModule::from_ptree(std::shared_ptr<BlockNode> ast) {
+bool ir::q::QModule::from_ptree(std::shared_ptr<ParseNode> ast) {
   LOG(DEBUG) << "Converting Ptree to QUIX intermediate representation"
              << std::endl;
 
@@ -1804,7 +1804,7 @@ bool ir::q::QModule::from_ptree(std::shared_ptr<BlockNode> ast) {
 
   auto r = conv(ast.get(), state);
 
-  m_root = RootNode::create(r[0]->as<Block>()->stmts);
+  m_root = RootNode::create(*r);
 
   if (!verify()) {
     LOG(FATAL) << "Failed to qualify QUIX intermediate representation"
@@ -1819,4 +1819,8 @@ bool ir::q::QModule::from_ptree(std::shared_ptr<BlockNode> ast) {
       << std::endl;
 
   return true;
+}
+
+void libquixcc::ir::q::QModule::reduce() {
+  /// TODO: Implement QModule::reduce
 }

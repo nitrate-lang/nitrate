@@ -1,4 +1,4 @@
-#include <quixcc.h>
+#include <quixcc/Quix.h>
 #include <iostream>
 #include <string>
 

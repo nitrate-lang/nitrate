@@ -39,7 +39,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <quixcc.hpp>
+#include <quixcc/Quix.hpp>
 #include <string>
 #include <vector>
 

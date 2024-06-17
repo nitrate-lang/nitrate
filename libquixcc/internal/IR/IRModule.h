@@ -62,6 +62,7 @@ namespace libquixcc {
 namespace ir {
 struct PState {
   size_t ind;
+  bool modinfo = true;
 
   PState() { ind = 0; }
 };
@@ -280,14 +281,16 @@ class IRModule {
   auto getIRType() const { return m_ir_type; }
 
   /* Write IR to Output Stream */
-  bool print(std::ostream &os) const {
+  bool print(std::ostream &os, bool modinfo = true) const {
     PState state;
+    state.modinfo = modinfo;
     return print_impl(os, state);
   }
 
-  std::string to_string() const {
+  std::string to_string(bool modinfo = true) const {
     std::ostringstream ss;
-    if (!print(ss)) throw std::runtime_error("Failed to print IR Module");
+    if (!print(ss, modinfo))
+      throw std::runtime_error("Failed to print IR Module");
     return ss.str();
   }
 

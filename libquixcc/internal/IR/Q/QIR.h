@@ -189,7 +189,9 @@ class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *> {
   QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {}
   ~QModule() = default;
 
-  bool from_ptree(std::shared_ptr<BlockNode> ast);
+  bool from_ptree(std::shared_ptr<ParseNode> ast);
+
+  void reduce();
 };
 }  // namespace q
 }  // namespace ir

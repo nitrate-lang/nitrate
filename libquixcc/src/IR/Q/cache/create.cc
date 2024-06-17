@@ -64,8 +64,7 @@ class ThreadGarbageCollecter {
   std::vector<Value *> m_ptrs;
 
  public:
-  ThreadGarbageCollecter() {
-  }
+  ThreadGarbageCollecter() {}
 
   ~ThreadGarbageCollecter() {
     for (auto ptr : m_ptrs) {

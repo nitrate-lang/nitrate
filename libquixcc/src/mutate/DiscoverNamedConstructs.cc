@@ -33,7 +33,7 @@
 
 #include <core/Logger.h>
 #include <mutate/Routine.h>
-#include <quixcc.h>
+#include <quixcc/Quix.h>
 
 #include <algorithm>
 #include <iostream>

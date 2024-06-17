@@ -34,7 +34,7 @@
 #include <LibMacro.h>
 #include <lexer/Lex.h>
 #include <libquixcc.h>
-#include <quixcc.h>
+#include <quixcc/Quix.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -43,6 +43,7 @@ using namespace libquixcc;
 
 LIB_EXPORT void quixcc_lexconf(quixcc_job_t *job,
                                quixcc_lexer_config_t config) {
+  std::lock_guard<std::mutex> lock(job->m_lock);
   // if (config & QUIXCC_LEXCONF_IGN_COM)
   //     job->m_prep->comments(false);
   // else
@@ -143,6 +144,8 @@ LIB_EXPORT quixcc_tok_t quixcc_next(quixcc_job_t *job) {
   /* Safe code is good code */
   assert(job != nullptr);
 
+  std::lock_guard<std::mutex> lock(job->m_lock);
+
   quixcc_tok_t tokr{};
   tokr.ty = QUIXCC_LEX_EOF;
 
@@ -159,6 +162,8 @@ LIB_EXPORT quixcc_tok_t quixcc_next(quixcc_job_t *job) {
 LIB_EXPORT quixcc_tok_t quixcc_peek(quixcc_job_t *job) {
   /* Safe code is good code */
   assert(job != nullptr);
+
+  std::lock_guard<std::mutex> lock(job->m_lock);
 
   quixcc_tok_t tok{};
   tok.ty = QUIXCC_LEX_EOF;

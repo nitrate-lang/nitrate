@@ -87,6 +87,22 @@ void PrepEngine::addpath(const std::string &path) {
   }
 }
 
+void libquixcc::PrepEngine::set_include_path(libquixcc::PrepEngine::rstr path) {
+  /*============== SET INCLUDE PATH ================*/
+  include_path = path;
+  m_include_dirs.clear();
+
+  std::string::size_type start = 0;
+  std::string::size_type end = 0;
+
+  while ((end = path.find(':', start)) != std::string::npos) {
+    m_include_dirs.insert(path.substr(start, end - start));
+    start = end + 1;
+  }
+
+  m_include_dirs.insert(path.substr(start));
+}
+
 PrepEngine::Entry PrepEngine::build_statics_decl() {
   /// TODO: detect actual platform and do this properly
 
@@ -187,6 +203,8 @@ void PrepEngine::set_source(PrepEngine::rstr src, PrepEngine::rstr filename) {
     throw e;
   }
 }
+
+quixcc_job_t *libquixcc::PrepEngine::get_job() const { return job; }
 
 void PrepEngine::push(Token tok) {
   /*============== PUBLIC INTERFACE FOR PUSHING TOKEN ================*/
@@ -450,4 +468,59 @@ end:
     }
   }
   return tok;
+}
+
+///=============================================================================
+
+struct libquixcc::QSysCallRegistry::Impl {
+  std::map<uint32_t, QSysCall> m_syscalls;
+};
+
+libquixcc::QSysCallRegistry::QSysCallRegistry() { m_impl = new Impl(); }
+
+libquixcc::QSysCallRegistry::~QSysCallRegistry() { delete m_impl; }
+
+void libquixcc::QSysCallRegistry::Register(
+    uint32_t num, libquixcc::QSysCallRegistry::QSysCall call) {
+  m_impl->m_syscalls[num] = call;
+}
+
+bool libquixcc::QSysCallRegistry::Unregister(uint32_t num) {
+  if (m_impl->m_syscalls.contains(num)) {
+    m_impl->m_syscalls.erase(num);
+    return true;
+  }
+  return false;
+}
+
+bool libquixcc::QSysCallRegistry::IsRegistered(uint32_t num) const {
+  return m_impl->m_syscalls.contains(num);
+}
+
+std::vector<uint32_t> libquixcc::QSysCallRegistry::GetRegistered() const {
+  std::vector<uint32_t> nums;
+  for (auto &pair : m_impl->m_syscalls) {
+    nums.push_back(pair.first);
+  }
+  return nums;
+}
+
+std::optional<libquixcc::QSysCallRegistry::QSysCall>
+libquixcc::QSysCallRegistry::Get(uint32_t num) const {
+  if (m_impl->m_syscalls.contains(num)) {
+    return m_impl->m_syscalls.at(num);
+  }
+  return std::nullopt;
+}
+
+bool libquixcc::QSysCallRegistry::Call(
+    quixcc_engine_t *handle, uint32_t num,
+    libquixcc::QSysCallRegistry::QSysArgs args) {
+  if (!m_impl->m_syscalls.contains(num)) {
+    return false;
+  }
+
+  assert(args.size() <= UINT32_MAX);
+
+  return m_impl->m_syscalls.at(num)(handle, num, args.data(), args.size());
 }

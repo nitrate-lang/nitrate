@@ -1,5 +1,5 @@
 #include <iostream>
-#include <quixcc.hpp>
+#include <quixcc/Quix.hpp>
 #include <run/RunScript.hh>
 
 #if __linux__

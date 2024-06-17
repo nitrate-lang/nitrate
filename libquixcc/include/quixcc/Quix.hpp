@@ -36,7 +36,7 @@
 #error "This header requires C++"
 #endif
 
-#include <quixcc.h>
+#include <quixcc/Quix.h>
 
 #include <iostream>
 #include <memory>

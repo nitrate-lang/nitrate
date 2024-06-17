@@ -19,6 +19,7 @@ content = content.replace(headerinc, f'#include "{loc}"')
 content = content.split('/* PYTHON_INSERT_POINT_SYNTHESIZE_TEST_SUITE */')[
     0] + '/* PYTHON_INSERT_POINT_SYNTHESIZE_TEST_SUITE */\n\n'
 
+
 def generate_test_cases_for_manifest(manifest_file):
     global content
 
@@ -33,36 +34,31 @@ def generate_test_cases_for_manifest(manifest_file):
 
     test_suite_name = 'libquixcc'
 
-
     def make_test_name(name):
         tmp = (''.join([c if c.isalnum() else '_' for c in name])).lower()
         return '_'.join([x for x in tmp.split('_') if x])
 
-
     def rectify_path(path) -> str:
         return os.path.abspath('../../../libquixcc/test/data/inputs/' + path)
-
 
     def assert_exists(file):
         if not os.path.exists(file):
             raise Exception(f'{file} does not exist')
 
-
     def generate_output_name(test_name):
         return f'/tmp/{test_suite_name}_{test_name}.tmp.out'
-
 
     for test_case in test_cases_manifest['test_cases']:
         name = make_test_name(test_case['name'])
         description = test_case['note']
         source_file = rectify_path(test_case['input'])
         build_mode = test_case['build']
-        expected_output =  test_case['expected']
+        expected_output = test_case['expected']
         output_name = generate_output_name(name)
         flags = []
         if 'cflags' in test_case:
             flags += test_case['cflags']
-        
+
         assert_exists(source_file)
 
         content += f"TEST({test_suite_name}, {name}) {{\n"
@@ -115,21 +111,22 @@ def generate_test_cases_for_manifest(manifest_file):
                 content += f"        }}\n"
                 content += f"    }}\n"
 
-
-
         content += f"    fclose(output);\n"
         content += f"    remove(output_file);\n"
         content += f"}}\n"
 
+
 def generate_test_suite():
     with open(sys.argv[2] + '/manifest.json', 'r') as f:
         root_manifest = json.load(f)
-    
+
     if root_manifest['version'] != '1.0':
         raise Exception('Unsupported manifest version')
-    
+
     for file in root_manifest['imports']:
-        generate_test_cases_for_manifest(sys.argv[2] + '/inputs/' + file + '/manifest.json')
+        generate_test_cases_for_manifest(
+            sys.argv[2] + '/inputs/' + file + '/manifest.json')
+
 
 generate_test_suite()
 

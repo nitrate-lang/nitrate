@@ -32,40 +32,21 @@
 #define QUIXCC_INTERNAL
 
 #include <core/Logger.h>
-#include <mutate/Routine.h>
-#include <quixcc/Quix.h>
+#include <lexer/Lex.h>
+#include <preprocessor/Preprocessor.h>
 
-#include <algorithm>
-#include <iostream>
-#include <mutex>
-#include <set>
+bool libquixcc::PrepEngine::ParseFn(const Token &tok,
+                                    const std::string &directive,
+                                    const std::string &parameter) {
+  (void)job;
+  (void)tok;
+  (void)directive;
+  (void)parameter;
 
-using namespace libquixcc;
+  /// TODO: Implement the Fn directive
 
-void libquixcc::mutate::ImplicitReturn(
-    quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
-  ast->dfs_preorder([](const std::vector<std::string> &_namespace,
-                       const std::vector<std::string> &_scope,
-                       libquixcc::ParseNode *parent,
-                       libquixcc::traversal::TraversePtr node) {
-    if (node.first != traversal::TraversePtrType::Smart) return;
-    auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
-    if (!ptr->is<libquixcc::FunctionDefNode>()) return;
+  LOG(WARN) << "Fn directive not yet implemented\n";
+  LOG(WARN) << "Discarding macro body: " << parameter << std::endl;
 
-    auto func = std::static_pointer_cast<libquixcc::FunctionDefNode>(ptr);
-
-    if (!func->m_decl->m_type->m_return_type->is<VoidTypeNode>()) return;
-
-    for (auto &stmt : func->m_body->m_stmts) {
-      if (stmt->is<libquixcc::ReturnStmtNode>() ||
-          stmt->is<libquixcc::RetifStmtNode>() ||
-          stmt->is<libquixcc::RetzStmtNode>() ||
-          stmt->is<libquixcc::RetvStmtNode>()) {
-        return;
-      }
-    }
-
-    func->m_body->m_stmts.push_back(
-        std::make_shared<libquixcc::ReturnStmtNode>(nullptr));
-  });
+  return true;
 }

@@ -38,7 +38,7 @@
 
 #include <lexer/Lex.h>
 #include <parsetree/nodes/AllNodes.h>
-#include <quixcc.h>
+#include <quixcc/Quix.h>
 
 #include <memory>
 

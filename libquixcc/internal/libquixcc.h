@@ -38,14 +38,18 @@
 
 #include <llvm/LLVMWrapper.h>
 #include <preprocessor/Preprocessor.h>
-#include <quixcc.h>
+#include <quixcc/Quix.h>
 
 #include <atomic>
+#include <functional>
 #include <map>
+#include <memory>
 #include <mutex>
+#include <optional>
 #include <stack>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 typedef struct quixcc_options_t {
   const char **m_options;
@@ -64,6 +68,7 @@ struct quixcc_job_t {
   std::stack<std::string> m_filename;
   std::unordered_map<quixcc_sid_t, char *> m_owned_strings;
   std::map<std::string, std::string> m_argset;
+  libquixcc::QSysCallRegistry m_qsyscalls;
   std::mutex m_lock;
   std::string m_triple;
   std::string m_cpu;

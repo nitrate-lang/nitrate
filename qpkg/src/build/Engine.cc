@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <mutex>
-#include <quixcc.hpp>
+#include <quixcc/Quix.hpp>
 #include <set>
 #include <thread>
 

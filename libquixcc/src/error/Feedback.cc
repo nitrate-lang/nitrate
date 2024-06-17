@@ -381,7 +381,7 @@ libquixcc::Feedback libquixcc::feedback({
      "remove the conflicting purity specifiers"},
     {FN_PURE_MIX,
      "Purity constraints are mutually exclusive. To fix the issue, remove the "
-      "conflicting purity specifiers"},
+     "conflicting purity specifiers"},
 
     {PREP_DUPLICATE_IMPORT,
      "Source file \"{}\" contains duplicate import of \"{}\""},

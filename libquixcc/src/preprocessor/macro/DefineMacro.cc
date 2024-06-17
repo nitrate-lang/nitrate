@@ -81,7 +81,8 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
     dvalue += tok.serialize(false);
   }
 
-  std::cout << "DEFINE: \"" << dname << "\" = \"" << dvalue << "\"" << std::endl;
+  std::cout << "DEFINE: \"" << dname << "\" = \"" << dvalue << "\""
+            << std::endl;
 
   set_static(dname, dvalue);
 
