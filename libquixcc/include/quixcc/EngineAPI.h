@@ -35,6 +35,7 @@
 #include <quixcc/Types.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -117,11 +118,29 @@ enum quixcc_message_t {
 /// @brief Send a message to the engine.
 /// @param engine QUIX Engine
 /// @param mode Message type
-/// @param message The message to send
+/// @param format Printf-style format string
+/// @param ... Printf-style arguments
 bool quixcc_engine_message(quixcc_engine_t* engine, quixcc_message_t mode,
-                           const char* message);
+                           const char* format, ...);
 
 bool quixcc_engine_emit(quixcc_engine_t* engine, quixcc_tok_t tok);
+
+/// @brief Get string from expression
+/// @param expr QUIX Expression
+/// @param len Output length of the string
+/// @return The string representation of the expression. NULL if failed.
+/// @note The lifetime of the returned string is tied to the expression.
+/// @note The string is NOT guaranteed to be null-terminated.
+/// @warning The string may contain any byte within, including null bytes.
+/// @note This function is thread-safe.
+const char* quixcc_expr_to_string(quixcc_expr_t* expr, size_t* len);
+
+/// @brief Get int64 from expression
+/// @param expr QUIX Expression
+/// @param out Output int64_t
+/// @return true if successful, false otherwise
+/// @note This function is thread-safe.
+bool quixcc_expr_to_int64(quixcc_expr_t* expr, int64_t* out);
 
 ///=============================================================================
 /// END: QUIXCC ENGINE API

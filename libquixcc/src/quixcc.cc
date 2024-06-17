@@ -48,6 +48,7 @@
 #include <optimizer/Optimizer.h>
 #include <parsetree/Parser.h>
 #include <preprocessor/Preprocessor.h>
+#include <preprocessor/QSys.h>
 #include <quixcc/Quix.h>
 #include <setjmp.h>
 #include <signal.h>
@@ -199,6 +200,8 @@ LIB_EXPORT quixcc_job_t *quixcc_new() {
   job->m_priority = 0;
   job->m_debug = job->m_tainted = job->m_running = false;
   job->m_sid_ctr = 0;
+
+  qsys::bind_qsyscalls(job);
 
   /* Set magic structure field */
   job->m_magic = JOB_MAGIC;

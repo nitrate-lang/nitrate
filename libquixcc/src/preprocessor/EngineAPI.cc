@@ -31,11 +31,14 @@
 
 #define QUIXCC_INTERNAL
 
+#include <IR/Q/QIR.h>
+#include <IR/Q/Variable.h>
 #include <LibMacro.h>
 #include <core/Logger.h>
 #include <libquixcc.h>
 #include <preprocessor/Preprocessor.h>
 #include <quixcc/EngineAPI.h>
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -159,10 +162,10 @@ LIB_EXPORT bool quixcc_engine_include(quixcc_engine_t *engine,
 }
 
 LIB_EXPORT bool quixcc_engine_message(quixcc_engine_t *engine,
-                                      quixcc_message_t mode,
-                                      const char *message) {
+                                      quixcc_message_t mode, const char *format,
+                                      ...) {
   if (!engine) quixcc_panic("quixcc_engine_message: engine is NULL");
-  if (!message) quixcc_panic("quixcc_engine_message: message is NULL");
+  if (!format) quixcc_panic("quixcc_engine_message: message is NULL");
 
   auto job = quixcc_engine_job(engine);
 
@@ -170,6 +173,15 @@ LIB_EXPORT bool quixcc_engine_message(quixcc_engine_t *engine,
   LoggerConfigure(*job);
 
   /*================ LOG MESSAGE =================*/
+  va_list args;
+  va_start(args, format);
+  char *buffer = nullptr;
+  vasprintf(&buffer, format, args);
+  va_end(args);
+
+  std::string message(buffer);
+  free(buffer);
+
   switch (mode) {
     case QUIXCC_MESSAGE_DEBUG:
       LOG(DEBUG) << message << std::endl;
@@ -255,30 +267,52 @@ LIB_EXPORT bool quixcc_engine_emit(quixcc_engine_t *engine, quixcc_tok_t tok) {
   return true;
 }
 
-bool qsys_foo(quixcc_engine_t *engine, uint32_t num, quixcc_expr_t **args,
-              uint32_t argc) {
-  if (argc != 3) {
-    quixcc_engine_message(engine, QUIXCC_MESSAGE_ERROR,
-                          "qsys_foo: expected 3 arguments");
-    return false;
+LIB_EXPORT const char *quixcc_expr_to_string(quixcc_expr_t *expr, size_t *len) {
+  if (!expr) quixcc_panic("quixcc_expr_to_string: expr is NULL");
+  if (!len) quixcc_panic("quixcc_expr_to_string: len is NULL");
+
+  auto qir = reinterpret_cast<libquixcc::ir::q::QModule *>(expr);
+  auto root = qir->root();
+
+  if (root->children.size() != 1) {
+    return nullptr;
   }
 
-  std::cerr << "QSYS FOO INVOKED" << std::endl;
+  if (!qir->root()->children[0]->is<ir::q::String>()) {
+    return nullptr;
+  }
 
-  return true;
+  auto &str = root->children[0]->as<ir::q::String>()->value;
+  *len = str.size();
+
+  return str.c_str();
 }
 
-bool qsys_bar(quixcc_engine_t *engine, uint32_t num, quixcc_expr_t **args,
-              uint32_t argc) {
-  if (argc != 3) {
-    quixcc_engine_message(engine, QUIXCC_MESSAGE_ERROR,
-                          "qsys_barr: expected 3 arguments");
+LIB_EXPORT bool quixcc_expr_to_int64(quixcc_expr_t *expr, int64_t *out) {
+  if (!expr) quixcc_panic("quixcc_expr_to_int64: expr is NULL");
+  if (!out) quixcc_panic("quixcc_expr_to_int64: out is NULL");
+
+  *out = INT64_MIN;
+
+  auto qir = reinterpret_cast<libquixcc::ir::q::QModule *>(expr);
+  auto root = qir->root();
+
+  if (root->children.size() != 1) {
     return false;
   }
 
-  std::cerr << "QSYS BAR INVOKED" << std::endl;
+  if (!qir->root()->children[0]->is<ir::q::Number>()) {
+    return false;
+  }
 
-  return true;
+  auto &intstr = root->children[0]->as<ir::q::Number>()->value;
+
+  try {
+    *out = std::stoll(intstr);
+    return true;
+  } catch (std::exception &e) {
+    return false;
+  }
 }
 
 ///=============================================================================

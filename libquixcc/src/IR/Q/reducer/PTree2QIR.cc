@@ -894,7 +894,7 @@ static auto conv(const CharNode *n, QState &state) -> QResult {
 }
 
 static auto conv(const BoolLiteralNode *n, QState &state) -> QResult {
-  return UCast::create(I1::create(), Number::create(n->m_val ? "1" : "0"));
+  return Number::create(n->m_val ? "1" : "0");
 }
 
 static auto conv(const NullLiteralNode *n, QState &state) -> QResult {
