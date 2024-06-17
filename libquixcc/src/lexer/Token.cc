@@ -62,8 +62,7 @@ Token::Token(TT _type, TokVal value, Loc _loc) {
   m_loc = _loc;
 }
 
-std::string Token::serialize(bool human_readable) const {
-  (void)human_readable;
+std::string libquixcc::Token::serialize_human_readable() const {
   std::stringstream ss;
 
   switch (type) {
@@ -110,6 +109,46 @@ std::string Token::serialize(bool human_readable) const {
     default:
       ss << "Unknown(" << as<std::string>() << ")";
       break;
+  }
+
+  return ss.str();
+}
+
+std::string Token::serialize(bool human_readable) const {
+  if (human_readable) return serialize_human_readable();
+
+  std::stringstream ss;
+  switch (type) {
+    case TT::Eof:
+      break;
+    case TT::Unknown:
+    case TT::Identifier:
+    case TT::Integer:
+    case TT::Float:
+    case TT::Comment:
+    case TT::String:
+      ss << "\"" << as<std::string>() << "\"";
+      break;
+    case TT::Char:
+      ss << "'" << as<std::string>() << "'";
+      break;
+    case TT::MacroBlock:
+      ss << "@(" << as<std::string>() << ")";
+      break;
+    case TT::MacroSingleLine:
+      ss << "@" << as<std::string>();
+      break;
+    case TT::Keyword:
+      ss << keyword_map_inverse.at(as<Keyword>()).data();
+      break;
+    case TT::Operator:
+      ss << operator_map_inverse.at(as<Operator>()).data();
+      break;
+    case TT::Punctor:
+      ss << punctor_map_inverse.at(as<Punctor>()).data();
+      break;
+    default:
+      throw std::runtime_error("Invalid type");
   }
 
   return ss.str();

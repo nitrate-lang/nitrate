@@ -242,6 +242,8 @@ class Token {
   Loc m_loc;
   TokVal m_value;
 
+  std::string serialize_human_readable() const;
+
  public:
   TT type;
 

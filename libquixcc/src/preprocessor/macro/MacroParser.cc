@@ -33,7 +33,7 @@
 
 #include <LibMacro.h>
 #include <core/Logger.h>
-#include <preprocessor/macro/MacroParser.h>
+#include <preprocessor/Preprocessor.h>
 
 #include <map>
 #include <stdexcept>
@@ -43,8 +43,25 @@ static std::string trim(const std::string &str) {
                     str.find_last_not_of(" \t\n\r\f\v") + 1);
 }
 
-bool libquixcc::MacroParser::parse(const libquixcc::Token &macro,
-                                   std::vector<libquixcc::Token> &exp) const {
+bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
+  typedef bool (libquixcc::PrepEngine::*Routine)(
+      const libquixcc::Token &, const std::string &, const std::string &);
+
+  const static std::map<std::string, Routine> routines = {
+      {"define", &PrepEngine::ParseDefine},
+      {"pragma", &PrepEngine::ParsePragma},
+      {"print", &PrepEngine::ParsePrint},
+      {"readstdin", &PrepEngine::ParseReadstdin},
+      {"encoding", &PrepEngine::ParseEncoding},
+      {"lang", &PrepEngine::ParseLang},
+      {"language", &PrepEngine::ParseLang},
+      {"copyright", &PrepEngine::ParseAuthor},
+      {"license", &PrepEngine::ParseLicense},
+      {"use", &PrepEngine::ParseUse},
+      {"description", &PrepEngine::ParseDescription},
+      {"invariant", &PrepEngine::ParseInvariant},
+  };
+
   std::string content = trim(macro.as<std::string>());
 
   if (macro.type == TT::MacroSingleLine) {
@@ -63,22 +80,25 @@ bool libquixcc::MacroParser::parse(const libquixcc::Token &macro,
       if (start + 1 < content.size())
         parameter = content.substr(start + 1, end - start - 1);
 
-      if (!m_routines.contains(directive))
+      if (!routines.contains(directive)) {
         LOG(ERROR) << "Unknown macro directive: {}" << directive << macro
                    << std::endl;
+      }
 
-      if (!m_routines.at(directive)(job, macro, directive, parameter, exp))
+      if (!(this->*routines.at(directive))(macro, directive, parameter)) {
         LOG(ERROR) << "Failed to process macro directive: {}" << directive
                    << macro << std::endl;
+      }
 
       return true;
     } else {
-      for (auto &routine : m_routines) {
+      for (auto &routine : routines) {
         if (content.starts_with(routine.first)) {
-          if (!routine.second(job, macro, routine.first,
-                              content.substr(routine.first.size()), exp))
+          if (!(this->*routine.second)(macro, routine.first,
+                                       content.substr(routine.first.size()))) {
             LOG(ERROR) << "Failed to process macro directive: {}"
                        << routine.first << macro << std::endl;
+          }
 
           return true;
         }
@@ -90,7 +110,7 @@ bool libquixcc::MacroParser::parse(const libquixcc::Token &macro,
     }
   } else if (macro.type == TT::MacroBlock) {
     /// TODO: implement block macro parsing
-    return parse(Token(TT::MacroSingleLine, content), exp);
+    return parse_macro(Token(TT::MacroSingleLine, content));
   } else {
     throw std::runtime_error("Invalid macro type");
   }

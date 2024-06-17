@@ -33,7 +33,7 @@
 
 #include <core/Logger.h>
 #include <lexer/Lex.h>
-#include <preprocessor/macro/UseMacro.h>
+#include <preprocessor/Preprocessor.h>
 
 #include <regex>
 
@@ -42,10 +42,9 @@ static bool match_format(const std::string &str) {
   return std::regex_match(str, re);
 }
 
-bool libquixcc::macro::ParseUse(quixcc_job_t *job, const Token &tok,
-                                const std::string &directive,
-                                const std::string &parameter,
-                                std::vector<libquixcc::Token> &exp) {
+bool libquixcc::PrepEngine::ParseUse(const Token &tok,
+                                     const std::string &directive,
+                                     const std::string &parameter) {
   (void)tok;
   (void)directive;
 

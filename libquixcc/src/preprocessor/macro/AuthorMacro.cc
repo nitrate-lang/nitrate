@@ -33,12 +33,11 @@
 
 #include <core/Logger.h>
 #include <lexer/Lex.h>
-#include <preprocessor/macro/AuthorMacro.h>
+#include <preprocessor/Preprocessor.h>
 
-bool libquixcc::macro::ParseAuthor(quixcc_job_t *job, const Token &tok,
-                                   const std::string &directive,
-                                   const std::string &parameter,
-                                   std::vector<libquixcc::Token> &exp) {
+bool libquixcc::PrepEngine::ParseAuthor(const Token &tok,
+                                        const std::string &directive,
+                                        const std::string &parameter) {
   (void)tok;
   (void)directive;
 
@@ -61,14 +60,14 @@ bool libquixcc::macro::ParseAuthor(quixcc_job_t *job, const Token &tok,
       identifier += '_';
   }
 
-  exp.push_back(Token(TT::Keyword, Keyword::Pub));
-  exp.push_back(Token(TT::Keyword, Keyword::Let));
-  exp.push_back(Token(TT::Identifier, identifier));
-  exp.push_back(Token(TT::Punctor, Punctor::Colon));
-  exp.push_back(Token(TT::Identifier, "string"));
-  exp.push_back(Token(TT::Operator, Operator::Assign));
-  exp.push_back(Token(TT::String, name));
-  exp.push_back(Token(TT::Punctor, Punctor::Semicolon));
+  emit(Token(TT::Keyword, Keyword::Pub));
+  emit(Token(TT::Keyword, Keyword::Let));
+  emit(Token(TT::Identifier, identifier));
+  emit(Token(TT::Punctor, Punctor::Colon));
+  emit(Token(TT::Identifier, "string"));
+  emit(Token(TT::Operator, Operator::Assign));
+  emit(Token(TT::String, name));
+  emit(Token(TT::Punctor, Punctor::Semicolon));
 
   return true;
 }

@@ -34,17 +34,15 @@
 #include <core/Exception.h>
 #include <core/Logger.h>
 #include <lexer/Lex.h>
-#include <preprocessor/macro/PrintMacro.h>
+#include <preprocessor/Preprocessor.h>
 
 #include <iostream>
 
-bool libquixcc::macro::ParsePrint(quixcc_job_t *job, const Token &tok,
-                                  const std::string &directive,
-                                  const std::string &parameter,
-                                  std::vector<libquixcc::Token> &exp) {
+bool libquixcc::PrepEngine::ParsePrint(const Token &tok,
+                                       const std::string &directive,
+                                       const std::string &parameter) {
   // print [mode] "<message>"
   (void)directive;
-  (void)exp;
 
   std::vector<libquixcc::Token> tokens;
   if (!libquixcc::StringLexer::QuickLex(parameter, tokens)) {

@@ -33,7 +33,7 @@
 
 #include <core/Logger.h>
 #include <lexer/Lex.h>
-#include <preprocessor/macro/ReadstdinMacro.h>
+#include <preprocessor/Preprocessor.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -62,10 +62,9 @@ static void disable_noecho() {
   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
 
-bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok,
-                                      const std::string &directive,
-                                      const std::string &parameter,
-                                      std::vector<libquixcc::Token> &exp) {
+bool libquixcc::PrepEngine::ParseReadstdin(const Token &tok,
+                                           const std::string &directive,
+                                           const std::string &parameter) {
   // readstdin [noecho] [binary] <maxlen>
 
   (void)directive;
@@ -135,13 +134,17 @@ bool libquixcc::macro::ParseReadStdin(quixcc_job_t *job, const Token &tok,
   }
 
   if (expand) {
+    std::vector<Token> exp;
     if (!StringLexer::QuickLex(input, exp)) {
       LOG(ERROR) << "Failed to lex readstdin input" << std::endl;
       disable_noecho();
       return false;
     }
+    for (const Token &t : exp) {
+      emit(t);
+    }
   } else {
-    exp.push_back(Token(TT::String, input));
+    emit(Token(TT::String, input));
   }
 
   if (noecho) disable_noecho();

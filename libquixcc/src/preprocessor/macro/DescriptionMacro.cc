@@ -33,12 +33,11 @@
 
 #include <core/Logger.h>
 #include <lexer/Lex.h>
-#include <preprocessor/macro/DescriptionMacro.h>
+#include <preprocessor/Preprocessor.h>
 
-bool libquixcc::macro::ParseDescription(quixcc_job_t *job, const Token &tok,
-                                        const std::string &directive,
-                                        const std::string &parameter,
-                                        std::vector<libquixcc::Token> &exp) {
+bool libquixcc::PrepEngine::ParseDescription(const Token &tok,
+                                             const std::string &directive,
+                                             const std::string &parameter) {
   (void)job;
   (void)tok;
   (void)directive;

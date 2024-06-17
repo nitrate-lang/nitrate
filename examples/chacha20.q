@@ -22,7 +22,7 @@ fn pure pack4(a: [u8; 4]): u32 {
 }
 
 fn pure chacha20_block_next(ctx: !chacha20) {
-  foreach (i in 0..16) => ctx.cha[i] = ctx.s[i];
+  ctx.cha = ctx.s;
 
   fn pure quarterround(x: ![u32; 16], a: u32, b: u32, c: u32, d: u32) {
     x[a] += x[b];
@@ -46,7 +46,7 @@ fn pure chacha20_block_next(ctx: !chacha20) {
     quarterround(ctx.cha, 03, 04, 09, 14);
   }
 
-  foreach (i in 0..16) => ctx.cha[i] += ctx.s[i];
+  ctx.cha[] += ctx.s[];
 
   ctx.s[12]++;
   if (ctx.s[12] == 0) {

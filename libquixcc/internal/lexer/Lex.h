@@ -70,14 +70,13 @@ extern const std::unordered_map<libquixcc::Operator, std::string_view>
 class Scanner {
  public:
   Scanner() = default;
-  ~Scanner() = default;
+  virtual ~Scanner() = default;
 
   virtual Token next() = 0;
   virtual const Token &peek() = 0;
-
   static std::string escape_string(std::string_view str);
-
   virtual void push(Token tok) = 0;
+  virtual bool set_source(FILE *src, const std::string &filename) = 0;
 };
 
 class StreamLexer : public Scanner {
@@ -105,7 +104,7 @@ class StreamLexer : public Scanner {
   /// @brief Set the source file
   /// @param src C FILE pointer
   /// @return true if the source file is set successfully
-  virtual bool set_source(FILE *src, const std::string &filename);
+  virtual bool set_source(FILE *src, const std::string &filename) override;
 
   Token next() override;
   const Token &peek() override;
@@ -162,7 +161,7 @@ class MockScanner : public Scanner {
       m_tok = Token(TT::Eof, "");
     }
   }
-  ~MockScanner() = default;
+  virtual ~MockScanner() = default;
 
   Token next() override {
     if (m_tokens.empty()) {

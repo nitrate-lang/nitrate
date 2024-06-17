@@ -389,9 +389,13 @@ void ParseTreeSerializer::conv(const CallExprNode *n) {
   o << "] [";
 
   for (const auto &arg : n->m_named_args) {
-    o << "(\"" << escape_string(arg.first) << "\"";
+    indent++;
+    ind();
+
+    o << "(Narg \"" << escape_string(arg.first) << "\"";
     next(arg.second);
     o << ')';
+    indent--;
   }
 
   o << "])";

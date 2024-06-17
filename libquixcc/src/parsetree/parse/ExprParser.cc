@@ -59,8 +59,8 @@ static std::shared_ptr<CallExprNode> parse_function_call(
     }
 
     { /* Parse named argument */
-      scanner->next();
       Token ident = tok;
+      scanner->next();
       tok = scanner->peek();
 
       if (!tok.is<Punctor>(Punctor::Colon)) {
@@ -106,7 +106,6 @@ static std::shared_ptr<CallExprNode> parse_function_call(
 
   auto expr = std::make_shared<CallExprNode>();
   expr->m_callee = callee;
-
   expr->m_positional_args = args;
   expr->m_named_args = named_args;
 

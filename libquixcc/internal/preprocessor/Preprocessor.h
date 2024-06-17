@@ -37,7 +37,6 @@
 #endif
 
 #include <lexer/Lex.h>
-#include <preprocessor/AllMacros.h>
 #include <quixcc.h>
 #include <stdio.h>
 
@@ -51,66 +50,73 @@
 
 namespace libquixcc {
 class PrepEngine : public libquixcc::Scanner {
+  using rstr = const std::string &;
+
  protected:
   struct Entry {
-    StreamLexer lexer;
+    std::unique_ptr<Scanner> scanner;
     std::string path;
     std::set<std::string> already_included;
     FILE *file;
-    std::string *buffer;
 
-    Entry(StreamLexer l, const std::string &p, FILE *f = nullptr,
-          std::string *buf = nullptr)
-        : lexer(l), path(p), file(f), buffer(buf) {}
-    Entry() : path(), file(nullptr), buffer(nullptr) {}
+    Entry(std::unique_ptr<Scanner> l, rstr p, FILE *f = nullptr)
+        : scanner(std::move(l)), path(p), file(f) {}
+    Entry() : path(), file(nullptr) {}
   };
   std::set<std::string> m_include_dirs;
-  std::set<std::string>
-      m_already_included;  // dont allow headers to be included more than once
-  std::vector<std::string> m_include_files;  // for circular include detection
+  std::set<std::string> m_already_included;  
+  std::vector<std::string> m_include_files;  
   std::stack<Entry> m_stack;
   quixcc_job_t *job;
+  std::string m_content;
   std::string include_path;
   std::optional<Token> m_tok;
-  std::map<std::string, std::string> m_statics;
+  std::queue<Token> m_pushed;
+  std::shared_ptr<std::map<std::string, std::string>> m_statics;
   std::queue<Token> m_buffer;
-  MacroParser m_macro_parser;
+  FILE *m_file;
+  bool m_we_own_file;
+  bool m_we_are_root;
 
   libquixcc::Token read_token();
-
-  bool handle_macro(const Token &tok);
+  void emit(const Token &tok);
   bool handle_import(const Token &tok);
-
   Entry build_statics_decl();
-
-  inline void push(Token tok) override { m_tok = tok; }
+  bool parse_macro(const libquixcc::Token &macro);
+  std::unique_ptr<PrepEngine> clone() const;
 
  public:
-  PrepEngine(quixcc_job_t &job) : job(&job), m_macro_parser(job) {}
-  virtual ~PrepEngine() = default;
+  PrepEngine(quixcc_job_t &job);
+  virtual ~PrepEngine();
 
-  // Install macro routines
+  /*================== PREPROCESSOR CONFIGURATION ==================*/
   void setup();
+  void addpath(rstr path);
+  bool set_source(FILE *src, rstr filename) override;
+  void set_source(rstr src, rstr filename);
 
-  void addpath(const std::string &path);
-
-  /// @brief Set the source file
-  /// @param src C FILE pointer
-  /// @return true if the source file is set successfully
-  virtual bool set_source(FILE *src, const std::string &filename);
-
-  /// @brief Get the next token
-  /// @return The next token
+  /*================== PREPROCESSOR INTERFACE ==================*/
   Token next() override;
-
-  /// @brief Peek the next token
-  /// @return The next token
   const Token &peek() override;
+  void push(Token tok) override;
 
-  void set_static(const std::string &name, const std::string &value) {
-    m_statics[name] = value;
-  }
-  bool get_static(const std::string &name, std::string &value) const;
+  /*================== PREPROCESSOR DEFINES ==================*/
+  void set_static(rstr name, rstr value) ;
+  bool get_static(rstr name, std::string &value) const;
+
+  /*================== MACRO PROCESSING ==================*/
+  bool ParseAuthor(const Token &tok, rstr der, rstr param);
+  bool ParseDefine(const Token &tok, rstr der, rstr param);
+  bool ParseDescription(const Token &tok, rstr der, rstr param);
+  bool ParseEncoding(const Token &tok, rstr der, rstr param);
+  bool ParseLang(const Token &tok, rstr der, rstr param);
+  bool ParseLicense(const Token &tok, rstr der, rstr param);
+  bool ParseMacroP(const Token &tok, rstr der, rstr param);
+  bool ParsePragma(const Token &tok, rstr der, rstr param);
+  bool ParsePrint(const Token &tok, rstr der, rstr param);
+  bool ParseReadstdin(const Token &tok, rstr der, rstr param);
+  bool ParseUse(const Token &tok, rstr der, rstr param);
+  bool ParseInvariant(const Token &tok, rstr der, rstr param);
 };
 }  // namespace libquixcc
 

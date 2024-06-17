@@ -31,18 +31,16 @@
 
 #define QUIXCC_INTERNAL
 
-#include <preprocessor/macro/PragmaMacro.h>
+#include <preprocessor/Preprocessor.h>
 
 #include <iostream>
 
-bool libquixcc::macro::ParsePragma(quixcc_job_t *job, const Token &tok,
-                                   const std::string &directive,
-                                   const std::string &parameter,
-                                   std::vector<libquixcc::Token> &exp) {
+bool libquixcc::PrepEngine::ParsePragma(const Token &tok,
+                                        const std::string &directive,
+                                        const std::string &parameter) {
   // pragma <directive>
   (void)job;
   (void)tok;
-  (void)exp;
 
   std::cout << "Pragma: " << directive << " " << parameter << std::endl;
 

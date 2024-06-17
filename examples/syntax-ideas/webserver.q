@@ -13,7 +13,7 @@ using orbit::log::* as .;
 fn main(): i32 {
     let srv = HttpServerBuilder()
             .bind("0.0.0.0", 8443)          ~> Bind to 0.0.0.0:8443
-            .certs<SnakeOil>(discard=true)  ~> Generate SSL certificates
+            .certs<SnakeOil>(discard: true)  ~> Generate SSL certificates
             .build<Perf>();                 ~> Optimize the HTTP server for performance 
                                             ~> (yep, it's that easy! Configure threads
                                             ~> and other settings with the builder)

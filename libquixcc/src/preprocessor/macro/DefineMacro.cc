@@ -31,73 +31,59 @@
 
 #define QUIXCC_INTERNAL
 
-#include <preprocessor/macro/DefineMacro.h>
+#include <core/Logger.h>
+#include <preprocessor/Preprocessor.h>
 
-bool libquixcc::macro::ParseDefine(quixcc_job_t *job, const Token &tok,
-                                   const std::string &directive,
-                                   const std::string &parameter,
-                                   std::vector<libquixcc::Token> &exp) {
+#include <iostream>
+
+bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
+                                        const std::string &directive,
+                                        const std::string &parameter) {
   (void)job;
   (void)tok;
   (void)directive;
 
-  std::string name;
-  std::string value;
-  enum Type { Int, String, Bool } type;
+  StringLexer lex(parameter);
+  std::string dname;
 
-  size_t pos = parameter.find(' ');
+  Token t = lex.next();
+  if (t.type != TT::Identifier) {
+    LOG(ERROR) << "Expected identifier in @define directive" << t << std::endl;
+    return false;
+  }
+  dname = t.as<std::string>();
 
-  if (pos == std::string::npos) {
-    name = parameter;
-    type = Bool;
-  } else {
-    name = parameter.substr(0, pos);
-    if (pos + 1 < parameter.size()) value = parameter.substr(pos + 1);
+  t = lex.next();
+  if (!t.is<Operator>(Operator::Assign)) {
+    LOG(ERROR) << "Expected '=' in @define directive" << t << std::endl;
+    return false;
+  }
 
-    bool is_int = true;
-    for (char c : value) {
-      if (!std::isdigit(c)) {
-        is_int = false;
-        break;
-      }
+  std::vector<Token> tokens;
+  while (true) {
+    t = lex.next();
+    if (t.type == TT::Eof) {
+      break;
     }
-
-    if (value == "true" || value == "false")
-      type = Bool;
-    else if (is_int)
-      type = Int;
-    else
-      type = String;
+    tokens.push_back(t);
   }
 
-  exp.push_back(Token(TT::Keyword, Keyword::Let));
-  exp.push_back(Token(TT::Identifier, name));
-  exp.push_back(Token(TT::Punctor, Punctor::Colon));
-
-  switch (type) {
-    case Int:
-      exp.push_back(Token(TT::Identifier, "i64"));
-      exp.push_back(Token(TT::Operator, Operator::Assign));
-      exp.push_back(Token(TT::Integer, value));
-      break;
-    case String:
-      exp.push_back(Token(TT::Identifier, "string"));
-      exp.push_back(Token(TT::Operator, Operator::Assign));
-      exp.push_back(Token(TT::String, value));
-      break;
-    case Bool:
-      exp.push_back(Token(TT::Identifier, "i1"));
-      exp.push_back(Token(TT::Operator, Operator::Assign));
-      if (value == "true")
-        exp.push_back(Token(TT::Keyword, Keyword::True));
-      else
-        exp.push_back(Token(TT::Keyword, Keyword::False));
-      break;
-    default:
-      break;
+  if (tokens.size() == 0) {
+    LOG(ERROR) << "Expected value in @define directive" << t << std::endl;
+    return false;
   }
 
-  exp.push_back(Token(TT::Punctor, Punctor::Semicolon));
+  if (tokens.back().is<Punctor>(Punctor::Semicolon)) {
+    tokens.pop_back();
+  }
+  std::string dvalue;
+  for (const auto &tok : tokens) {
+    dvalue += tok.serialize(false);
+  }
+
+  std::cout << "DEFINE: \"" << dname << "\" = \"" << dvalue << "\"" << std::endl;
+
+  set_static(dname, dvalue);
 
   return true;
 }

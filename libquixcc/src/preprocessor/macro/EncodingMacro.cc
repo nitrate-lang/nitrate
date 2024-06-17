@@ -32,12 +32,11 @@
 #define QUIXCC_INTERNAL
 
 #include <core/Logger.h>
-#include <preprocessor/macro/EncodingMacro.h>
+#include <preprocessor/Preprocessor.h>
 
-bool libquixcc::macro::ParseEncoding(quixcc_job_t *job, const Token &tok,
-                                     const std::string &directive,
-                                     const std::string &parameter,
-                                     std::vector<libquixcc::Token> &exp) {
+bool libquixcc::PrepEngine::ParseEncoding(const Token &tok,
+                                          const std::string &directive,
+                                          const std::string &parameter) {
   (void)job;
   (void)tok;
   (void)directive;

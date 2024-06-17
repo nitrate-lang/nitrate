@@ -31,12 +31,11 @@
 
 #define QUIXCC_INTERNAL
 
-#include <preprocessor/macro/LangMacro.h>
+#include <preprocessor/Preprocessor.h>
 
-bool libquixcc::macro::ParseLang(quixcc_job_t *job, const Token &tok,
-                                 const std::string &directive,
-                                 const std::string &parameter,
-                                 std::vector<libquixcc::Token> &exp) {
+bool libquixcc::PrepEngine::ParseLang(const Token &tok,
+                                      const std::string &directive,
+                                      const std::string &parameter) {
   (void)job;
   (void)tok;
   (void)directive;
