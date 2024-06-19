@@ -125,7 +125,11 @@ std::string Token::serialize(bool human_readable) const {
     case TT::Identifier:
     case TT::Integer:
     case TT::Float:
+      ss << as<std::string>();
+      break;
     case TT::Comment:
+      ss << "/*" << as<std::string>() << "*/";
+      break;
     case TT::String:
       ss << "\"" << as<std::string>() << "\"";
       break;

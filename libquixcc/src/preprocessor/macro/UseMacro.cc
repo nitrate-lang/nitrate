@@ -48,9 +48,10 @@ bool libquixcc::PrepEngine::ParseUse(const Token &tok,
   (void)tok;
   (void)directive;
 
-  StringLexer lexer(parameter);
+  auto lexer = clone();
+  lexer->set_source(parameter, "<use-macro>");
 
-  Token tok2 = lexer.next();
+  Token tok2 = lexer->next();
   if (tok2.type != TT::String) {
     LOG(ERROR) << "Invalid parameter for use directive" << tok << std::endl;
     return false;

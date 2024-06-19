@@ -41,8 +41,10 @@
 bool libquixcc::PrepEngine::ParsePrint(const Token &tok,
                                        const std::string &directive,
                                        const std::string &parameter) {
-  // print [mode] "<message>"
   (void)directive;
+
+  LOG(WARN) << "This macro is deprecated and will be removed in the future"
+            << tok << std::endl;
 
   std::vector<libquixcc::Token> tokens;
   if (!libquixcc::StringLexer::QuickLex(parameter, tokens)) {

@@ -43,17 +43,18 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
   (void)tok;
   (void)directive;
 
-  StringLexer lex(parameter);
+  auto lex = clone();
+  lex->set_source(parameter, "<define-macro>");
   std::string dname;
 
-  Token t = lex.next();
+  Token t = lex->next();
   if (t.type != TT::Identifier) {
     LOG(ERROR) << "Expected identifier in @define directive" << t << std::endl;
     return false;
   }
   dname = t.as<std::string>();
 
-  t = lex.next();
+  t = lex->next();
   if (!t.is<Operator>(Operator::Assign)) {
     LOG(ERROR) << "Expected '=' in @define directive" << t << std::endl;
     return false;
@@ -61,7 +62,7 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
 
   std::vector<Token> tokens;
   while (true) {
-    t = lex.next();
+    t = lex->next();
     if (t.type == TT::Eof) {
       break;
     }
@@ -80,9 +81,6 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
   for (const auto &tok : tokens) {
     dvalue += tok.serialize(false);
   }
-
-  std::cout << "DEFINE: \"" << dname << "\" = \"" << dvalue << "\""
-            << std::endl;
 
   set_static(dname, dvalue);
 

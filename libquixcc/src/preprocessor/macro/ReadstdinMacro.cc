@@ -65,7 +65,8 @@ static void disable_noecho() {
 bool libquixcc::PrepEngine::ParseReadstdin(const Token &tok,
                                            const std::string &directive,
                                            const std::string &parameter) {
-  // readstdin [noecho] [binary] <maxlen>
+  LOG(WARN) << "This macro is deprecated and will be removed in the future"
+            << tok << std::endl;
 
   (void)directive;
 
