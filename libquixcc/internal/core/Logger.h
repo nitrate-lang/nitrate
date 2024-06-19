@@ -130,16 +130,20 @@ class Logger {
   inline void mode(libquixcc::log m) { m_mode = m; }
 
   inline void flush() {
-    if (!m_dispatch || !m_fmt)
-      throw std::runtime_error("Logger dispatch function not set");
+    if (m_dispatch && m_fmt)
+      m_dispatch(m_fmt(m_buf.str(), m_level, m_tok), m_level);
 
-    m_dispatch(m_fmt(m_buf.str(), m_level, m_tok), m_level);
+    std::string s = m_buf.str();
     m_buf.str("");
     m_parts = {};
     m_replacement_idx = {};
     m_tok = Token();
 
     mode(log::format);
+
+    if (m_level == ERROR || m_level == FATAL) {
+      throw std::runtime_error(s);
+    }
   }
 
   inline void base(const Token &tok) { m_tok = tok; }

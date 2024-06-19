@@ -78,6 +78,10 @@ void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job,
 }
 
 libquixcc::Logger &libquixcc::LoggerGroup::operator[](libquixcc::E level) {
+  if (!m_job) {
+    /// TOOD: fix other code that errorously uses the logger without a job
+    return *m_hole; /* No job, no logging */
+  }
   if (!m_job->m_debug && level == E::DEBUG)
     return *m_hole;  // Null-object pattern
 

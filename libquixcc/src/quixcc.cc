@@ -208,6 +208,8 @@ LIB_EXPORT quixcc_job_t *quixcc_new() {
 
   g_num_of_contexts++;
 
+  LoggerConfigure(*job);
+
   return job;
 }
 

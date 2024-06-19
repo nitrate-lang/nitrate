@@ -16,13 +16,14 @@ set(CMAKE_EXE_LINKER_FLAGS "-static")
 
 add_executable(qpkg ${QPKG_CXX_SOURCES})
 target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquixcc/include)
+target_compile_options(qpkg PRIVATE -Wno-error=overlength-strings)
 
 set(IGNORE_ERRORS -Wno-predefined-identifier-outside-function)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release") 
     target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror -O3 -flto ${IGNORE_ERRORS})
     target_link_options(qpkg PRIVATE -flto)
-    add_custom_command(TARGET qpkg POST_BUILD COMMAND strip $<TARGET_FILE:qpkg>)
+    # add_custom_command(TARGET qpkg POST_BUILD COMMAND strip $<TARGET_FILE:qpkg>)
 else()
     target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror  ${IGNORE_ERRORS})
 endif()
