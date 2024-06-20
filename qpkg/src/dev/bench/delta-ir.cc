@@ -31,7 +31,7 @@
 
 #include <quixcc/Quix.h>
 
-#include <bench/bench.hh>
+#include <dev/bench/bench.hh>
 #include <chrono>
 #include <cmath>
 #include <fstream>
@@ -39,10 +39,10 @@
 
 #define ROUNDS 10
 
-#define RESULT_FILE "llvm_obj_benchmark.csv"
+#define RESULT_FILE "delta_ir_benchmark.csv"
 
-bool do_bench_llvm_codegen(std::chrono::system_clock::time_point &start,
-                           std::chrono::system_clock::time_point &end) {
+bool do_bench_delta_ir(std::chrono::system_clock::time_point &start,
+                       std::chrono::system_clock::time_point &end) {
   size_t outlen = 0;
   char *outbuf = nullptr;
   FILE *outf = nullptr, *code = nullptr;
@@ -52,8 +52,8 @@ bool do_bench_llvm_codegen(std::chrono::system_clock::time_point &start,
     return false;
   }
 
-  code = fmemopen((void *)qpkg::bench::test_source_code.data(),
-                  qpkg::bench::test_source_code.size(), "r");
+  code = fmemopen((void *)qpkg::dev::bench::test_source_code.data(),
+                  qpkg::dev::bench::test_source_code.size(), "r");
   if (!code) {
     std::cerr << "do_bench (internal error): Failed to open code stream."
               << std::endl;
@@ -62,7 +62,7 @@ bool do_bench_llvm_codegen(std::chrono::system_clock::time_point &start,
   }
 
   start = std::chrono::system_clock::now();
-  const char *options[] = {"-c", NULL};
+  const char *options[] = {"-emit-delta-ir", NULL};
   char **result = quixcc_compile(code, outf, options);
   if (result != NULL) {
     fclose(outf);
@@ -84,7 +84,7 @@ bool do_bench_llvm_codegen(std::chrono::system_clock::time_point &start,
   return true;
 }
 
-static void write_llvm_obj_result_csv(const std::vector<double> &throughput) {
+static void write_delta_ir_result_csv(const std::vector<double> &throughput) {
   std::ofstream file(RESULT_FILE);
   if (!file.is_open()) {
     std::cerr << "Failed to open file " RESULT_FILE << std::endl;
@@ -99,15 +99,15 @@ static void write_llvm_obj_result_csv(const std::vector<double> &throughput) {
   file.close();
 }
 
-int qpkg::bench::run_benchmark_llvm_codegen() {
-  Progress progress("LLVM OBJECT CODEGEN");
+int qpkg::dev::bench::run_benchmark_delta_ir() {
+  Progress progress("DeltaIR Codegen");
   std::vector<double> times;
 
   /*=================== DO BENCHMARK ===================*/
   for (size_t i = 0; i < ROUNDS; i++) {
     std::chrono::system_clock::time_point start, end;
-    if (!do_bench_llvm_codegen(start, end)) {
-      std::cerr << "Failed to run benchmark for llvm_obj." << std::endl;
+    if (!do_bench_delta_ir(start, end)) {
+      std::cerr << "Failed to run benchmark for delta_ir." << std::endl;
       return -1;
     }
 
@@ -127,13 +127,13 @@ int qpkg::bench::run_benchmark_llvm_codegen() {
   std::vector<double> throughput;  // Kbit/s
 
   for (size_t i = 0; i < ROUNDS; i++) {
-    size_t total_kbit = qpkg::bench::test_source_code.size() / 1024 * 8;
+    size_t total_kbit = qpkg::dev::bench::test_source_code.size() / 1024 * 8;
     double kbit_per_ns = total_kbit / times[i];
     double kbit_per_s = kbit_per_ns * 1e9;
     throughput.push_back(kbit_per_s);
   }
 
-  write_llvm_obj_result_csv(throughput);
+  write_delta_ir_result_csv(throughput);
   progress.done(RESULT_FILE);
 
   progress.begin_result(Progress::Result::THROUGHPUT);

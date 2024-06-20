@@ -31,10 +31,16 @@
 
 #include <argparse.h>
 
-#include <bench/bench.hh>
 #include <build/EngineBuilder.hh>
 #include <clean/Cleanup.hh>
+#include <core/Config.hh>
 #include <core/Logger.hh>
+
+#if QPKG_DEV_TOOLS
+#include <dev/bench/bench.hh>
+#include <dev/test/test.hh>
+#endif
+
 #include <filesystem>
 #include <functional>
 #include <init/Package.hh>
@@ -506,6 +512,7 @@ void setup_argparse_test(ArgumentParser &parser) {
       .nargs(1);
 }
 
+#if QPKG_DEV_TOOLS
 void setup_argparse_dev(
     ArgumentParser &parser,
     std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
@@ -517,8 +524,7 @@ void setup_argparse_dev(
       .implicit_value(true);
 
   /*================= BENCH SUBPARSER =================*/
-  auto bench =
-      std::make_unique<ArgumentParser>("bench", "run internal benchmarks");
+  auto bench = std::make_unique<ArgumentParser>("bench");
 
   bench->add_argument("-n", "--name")
       .choices("lexer", "parser", "quix-ir", "delta-ir", "llvm-ir",
@@ -532,8 +538,16 @@ void setup_argparse_dev(
 
   subparsers["bench"] = std::move(bench);
 
+  /*================= TEST SUBPARSER =================*/
+  auto test = std::make_unique<ArgumentParser>("test");
+
+  subparsers["test"] = std::move(test);
+
   parser.add_subparser(*subparsers["bench"]);
+  parser.add_subparser(*subparsers["test"]);
 }
+
+#endif
 
 void setup_argparse(
     ArgumentParser &parser, ArgumentParser &init_parser,
@@ -541,9 +555,14 @@ void setup_argparse(
     ArgumentParser &update_parser, ArgumentParser &install_parser,
     ArgumentParser &doc_parser, ArgumentParser &env_parser,
     ArgumentParser &fmt_parser, ArgumentParser &list_parser,
-    ArgumentParser &test_parser, ArgumentParser &dev_parser,
+    ArgumentParser &test_parser
+#if QPKG_DEV_TOOLS
+    ,
+    ArgumentParser &dev_parser,
     std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
-        &dev_subparsers) {
+        &dev_subparsers
+#endif
+) {
   using namespace argparse;
 
   setup_argparse_init(init_parser);
@@ -556,7 +575,9 @@ void setup_argparse(
   setup_argparse_fmt(fmt_parser);
   setup_argparse_list(list_parser);
   setup_argparse_test(test_parser);
+#if QPKG_DEV_TOOLS
   setup_argparse_dev(dev_parser, dev_subparsers);
+#endif
 
   parser.add_subparser(init_parser);
   parser.add_subparser(build_parser);
@@ -568,7 +589,9 @@ void setup_argparse(
   parser.add_subparser(fmt_parser);
   parser.add_subparser(list_parser);
   parser.add_subparser(test_parser);
+#if QPKG_DEV_TOOLS
   parser.add_subparser(dev_parser);
+#endif
 
   parser.add_argument("--license")
       .help("show license information")
@@ -726,6 +749,7 @@ int run_test_mode(const ArgumentParser &parser) {
   return 1;
 }
 
+#if QPKG_DEV_TOOLS
 int run_dev_mode(
     const ArgumentParser &parser,
     const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
@@ -793,34 +817,36 @@ int run_dev_mode(
 
     switch (bench_type) {
       case Benchmark::LEXER:
-        return qpkg::bench::run_benchmark_lexer();
+        return qpkg::dev::bench::run_benchmark_lexer();
       case Benchmark::PARSER:
-        return qpkg::bench::run_benchmark_parser();
+        return qpkg::dev::bench::run_benchmark_parser();
       case Benchmark::Q_IR:
-        return qpkg::bench::run_benchmark_quix_ir();
+        return qpkg::dev::bench::run_benchmark_quix_ir();
       case Benchmark::DELTA_IR:
-        return qpkg::bench::run_benchmark_delta_ir();
+        return qpkg::dev::bench::run_benchmark_delta_ir();
       case Benchmark::LLVM_IR:
-        return qpkg::bench::run_benchmark_llvm_ir();
+        return qpkg::dev::bench::run_benchmark_llvm_ir();
       case Benchmark::LLVM_CODEGEN:
-        return qpkg::bench::run_benchmark_llvm_codegen();
+        return qpkg::dev::bench::run_benchmark_llvm_codegen();
       case Benchmark::C11_CODEGEN:
-        return qpkg::bench::run_benchmark_c11_codegen();
+        return qpkg::dev::bench::run_benchmark_c11_codegen();
       case Benchmark::PIPELINE:
-        return qpkg::bench::run_benchmark_pipeline();
+        return qpkg::dev::bench::run_benchmark_pipeline();
       default:
         std::cerr << "Unknown benchmark name: " << bench_name << std::endl;
         return 1;
     }
 
     return 0;
+  } else if (parser.is_subcommand_used("test")) {
+    return qpkg::dev::test::run_tests();
   }
-
   std::cerr << "Unknown subcommand for dev" << std::endl;
   std::cerr << parser;
 
   return 1;
 }
+#endif
 
 int qpkg_main(std::vector<std::string> args) {
   if (args.size() >= 2 && args[1] == "run") {
@@ -828,27 +854,32 @@ int qpkg_main(std::vector<std::string> args) {
     return run_run_mode(run_args);
   }
 
-  ArgumentParser init_parser("init", "initialize a new package");
-  ArgumentParser build_parser("build", "compile packages and dependencies");
-  ArgumentParser clean_parser("clean", "remove object files and cached files");
-  ArgumentParser update_parser("update", "update package dependencies");
-  ArgumentParser install_parser("install",
-                                "download and compile remote source");
-  ArgumentParser doc_parser("doc", "show documentation for package or symbol");
-  ArgumentParser env_parser("env", "print QUIX environment information");
-  ArgumentParser fmt_parser("fmt", "reformat package sources");
-  ArgumentParser list_parser("list", "list packages or modules");
-  ArgumentParser test_parser("test", "test packages");
-  ArgumentParser dev_parser("dev", "run internal development");
+  ArgumentParser init_parser("init");
+  ArgumentParser build_parser("build");
+  ArgumentParser clean_parser("clean");
+  ArgumentParser update_parser("update");
+  ArgumentParser install_parser("install");
+  ArgumentParser doc_parser("doc");
+  ArgumentParser env_parser("env");
+  ArgumentParser fmt_parser("fmt");
+  ArgumentParser list_parser("list");
+  ArgumentParser test_parser("test");
+#if QPKG_DEV_TOOLS
+  ArgumentParser dev_parser("dev");
 
   std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
       dev_subparsers;
+#endif
 
   ArgumentParser program("qpkg", VERSION_STR);
   setup_argparse(program, init_parser, build_parser, clean_parser,
                  update_parser, install_parser, doc_parser, env_parser,
-                 fmt_parser, list_parser, test_parser, dev_parser,
-                 dev_subparsers);
+                 fmt_parser, list_parser, test_parser
+#if QPKG_DEV_TOOLS
+                 ,
+                 dev_parser, dev_subparsers
+#endif
+  );
 
   try {
     program.parse_args(args);
@@ -883,8 +914,10 @@ int qpkg_main(std::vector<std::string> args) {
     return run_list_mode(list_parser);
   else if (program.is_subcommand_used("test"))
     return run_test_mode(test_parser);
+#if QPKG_DEV_TOOLS
   else if (program.is_subcommand_used("dev"))
     return run_dev_mode(dev_parser, dev_subparsers);
+#endif
   else {
     std::cerr << "No command specified" << std::endl;
     std::cerr << program;

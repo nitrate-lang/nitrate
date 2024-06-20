@@ -31,7 +31,7 @@
 
 #include <quixcc/Quix.h>
 
-#include <bench/bench.hh>
+#include <dev/bench/bench.hh>
 #include <chrono>
 #include <cmath>
 #include <fstream>
@@ -39,23 +39,21 @@
 
 #define ROUNDS 10
 
-#define RESULT_FILE "lexer_benchmark.csv"
+#define RESULT_FILE "llvm_ir_benchmark.csv"
 
-bool do_bench_lexer(std::chrono::system_clock::time_point &start,
-                    std::chrono::system_clock::time_point &end) {
+bool do_bench_llvm_ir(std::chrono::system_clock::time_point &start,
+                      std::chrono::system_clock::time_point &end) {
   size_t outlen = 0;
-  quixcc_tok_t tok;
   char *outbuf = nullptr;
   FILE *outf = nullptr, *code = nullptr;
-  quixcc_job_t *job = nullptr;
 
   outf = open_memstream(&outbuf, &outlen);
   if (!outf) {
     return false;
   }
 
-  code = fmemopen((void *)qpkg::bench::test_source_code.data(),
-                  qpkg::bench::test_source_code.size(), "r");
+  code = fmemopen((void *)qpkg::dev::bench::test_source_code.data(),
+                  qpkg::dev::bench::test_source_code.size(), "r");
   if (!code) {
     std::cerr << "do_bench (internal error): Failed to open code stream."
               << std::endl;
@@ -63,35 +61,21 @@ bool do_bench_lexer(std::chrono::system_clock::time_point &start,
     return false;
   }
 
-  job = quixcc_new();
-  if (!job) {
-    std::cerr << "do_bench (internal error): Failed to create job."
-              << std::endl;
-    fclose(outf);
-    fclose(code);
-    return false;
-  }
-
-  quixcc_output(job, outf, nullptr);
-  quixcc_source(job, code, "bench");
-
   start = std::chrono::system_clock::now();
-  while (1) {
-    tok = quixcc_next(job);
-    if (quixcc_lex_is(&tok, QUIXCC_LEX_EOF)) break;
-
-    quixcc_tok_release(job, &tok);
-  }
-  end = std::chrono::system_clock::now();
-
-  if (!quixcc_dispose(job)) {
-    std::cerr << "do_bench (internal error): Failed to dispose job."
-              << std::endl;
+  const char *options[] = {"-emit-ir", NULL};
+  char **result = quixcc_compile(code, outf, options);
+  if (result != NULL) {
     fclose(outf);
     fclose(code);
     free(outbuf);
+
+    std::cerr << "do_bench (internal error): Compilation failed." << std::endl;
+    for (size_t i = 0; result[i] != NULL; i++) {
+      std::cerr << result[i] << std::endl;
+    }
     return false;
   }
+  end = std::chrono::system_clock::now();
 
   fclose(outf);
   fclose(code);
@@ -100,7 +84,7 @@ bool do_bench_lexer(std::chrono::system_clock::time_point &start,
   return true;
 }
 
-static void write_lexer_result_csv(const std::vector<double> &throughput) {
+static void write_llvm_ir_result_csv(const std::vector<double> &throughput) {
   std::ofstream file(RESULT_FILE);
   if (!file.is_open()) {
     std::cerr << "Failed to open file " RESULT_FILE << std::endl;
@@ -115,15 +99,15 @@ static void write_lexer_result_csv(const std::vector<double> &throughput) {
   file.close();
 }
 
-int qpkg::bench::run_benchmark_lexer() {
-  Progress progress("Lexer");
+int qpkg::dev::bench::run_benchmark_llvm_ir() {
+  Progress progress("LLVM IR");
   std::vector<double> times;
 
   /*=================== DO BENCHMARK ===================*/
   for (size_t i = 0; i < ROUNDS; i++) {
     std::chrono::system_clock::time_point start, end;
-    if (!do_bench_lexer(start, end)) {
-      std::cerr << "Failed to run benchmark for lexer." << std::endl;
+    if (!do_bench_llvm_ir(start, end)) {
+      std::cerr << "Failed to run benchmark for llvm_ir." << std::endl;
       return -1;
     }
 
@@ -143,13 +127,13 @@ int qpkg::bench::run_benchmark_lexer() {
   std::vector<double> throughput;  // Kbit/s
 
   for (size_t i = 0; i < ROUNDS; i++) {
-    size_t total_kbit = qpkg::bench::test_source_code.size() / 1024 * 8;
+    size_t total_kbit = qpkg::dev::bench::test_source_code.size() / 1024 * 8;
     double kbit_per_ns = total_kbit / times[i];
     double kbit_per_s = kbit_per_ns * 1e9;
     throughput.push_back(kbit_per_s);
   }
 
-  write_lexer_result_csv(throughput);
+  write_llvm_ir_result_csv(throughput);
   progress.done(RESULT_FILE);
 
   progress.begin_result(Progress::Result::THROUGHPUT);

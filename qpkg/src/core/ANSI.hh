@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QPKG_BENCH_HH__
-#define __QPKG_BENCH_HH__
+#ifndef __QPKG_CORE_ANSI_HH__
+#define __QPKG_CORE_ANSI_HH__
 
 #include <chrono>
 #include <cstdint>
@@ -41,7 +41,6 @@
 #include <string_view>
 
 namespace qpkg {
-
 namespace ansi {
 enum class Style {
   /*==== Text Color ====*/
@@ -137,46 +136,6 @@ static inline void operator|=(AnsiCout &out, Style style) {
 extern thread_local AnsiCout acout;
 }  // namespace ansi
 
-namespace bench {
-int run_benchmark_lexer();
-int run_benchmark_parser();
-int run_benchmark_quix_ir();
-int run_benchmark_delta_ir();
-int run_benchmark_llvm_ir();
-int run_benchmark_llvm_codegen();
-int run_benchmark_c11_codegen();
-int run_benchmark_pipeline();
-
-extern const std::string_view test_source_code;
-
-class Progress {
-  std::string m_title;
-  std::string m_last_msg;
-  std::queue<std::pair<std::string, double>> m_queue;
-  std::chrono::high_resolution_clock::time_point m_last_print;
-  constexpr static std::chrono::milliseconds m_print_interval =
-      std::chrono::milliseconds(1000);
-
-  void print(double percent, const std::string &msg);
-
- public:
-  Progress(const std::string &title);
-
-  void update(double percent, const std::string &msg = "");
-  void done(const std::string &outfile_name = "");
-
-  enum class Result {
-    THROUGHPUT,
-    MEMORY,
-    TIME,
-  };
-
-  void begin_result(Result type);
-  void result(const std::string &msg);
-  void end_result();
-};
-}  // namespace bench
-
 }  // namespace qpkg
 
-#endif  // __QPKG_BENCH_HH__
+#endif  // __QPKG_CORE_ANSI_HH__

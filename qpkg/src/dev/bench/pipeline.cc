@@ -33,7 +33,7 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
-#include <bench/bench.hh>
+#include <dev/bench/bench.hh>
 #include <iostream>
 
 bool do_bench_lexer(std::chrono::system_clock::time_point &start,
@@ -51,7 +51,7 @@ bool do_bench_c11(std::chrono::system_clock::time_point &start,
 bool do_bench_llvm_codegen(std::chrono::system_clock::time_point &start,
                            std::chrono::system_clock::time_point &end);
 
-int qpkg::bench::run_benchmark_pipeline() {
+int qpkg::dev::bench::run_benchmark_pipeline() {
   struct SuitePerf {
     double lexer;
     double parser;
@@ -74,7 +74,7 @@ int qpkg::bench::run_benchmark_pipeline() {
     double time_ns =                                                        \
         std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)   \
             .count();                                                       \
-    size_t total_kbit = qpkg::bench::test_source_code.size() / 1024 * 8;    \
+    size_t total_kbit = qpkg::dev::bench::test_source_code.size() / 1024 * 8;    \
     double kbit_per_ns = total_kbit / time_ns;                              \
     double kbit_per_s = kbit_per_ns * 1e9;                                  \
     suite_perf.name = kbit_per_s;                                           \
