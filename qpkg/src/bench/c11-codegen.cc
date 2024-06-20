@@ -41,7 +41,7 @@
 
 #define RESULT_FILE "c11_benchmark.csv"
 
-static bool do_bench(std::chrono::system_clock::time_point &start,
+bool do_bench_c11(std::chrono::system_clock::time_point &start,
                      std::chrono::system_clock::time_point &end) {
   size_t outlen = 0;
   char *outbuf = nullptr;
@@ -106,7 +106,7 @@ int qpkg::bench::run_benchmark_c11_codegen() {
   /*=================== DO BENCHMARK ===================*/
   for (size_t i = 0; i < ROUNDS; i++) {
     std::chrono::system_clock::time_point start, end;
-    if (!do_bench(start, end)) {
+    if (!do_bench_c11(start, end)) {
       std::cerr << "Failed to run benchmark for c11." << std::endl;
       return -1;
     }

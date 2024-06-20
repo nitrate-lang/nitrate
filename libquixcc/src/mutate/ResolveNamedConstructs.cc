@@ -129,8 +129,10 @@ static void resolve_user_type_nodes(quixcc_job_t *job,
 
     *user_type_ptr = reinterpret_cast<libquixcc::UserTypeNode *>(type);
 
-    LOG(DEBUG) << feedback[RESOLVED_TYPE] << name << type->to_string()
-               << std::endl;
+    if (job->m_debug) {
+      LOG(DEBUG) << feedback[RESOLVED_TYPE] << name << type->to_string()
+                 << std::endl;
+    }
   });
 }
 

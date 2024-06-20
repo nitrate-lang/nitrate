@@ -1095,7 +1095,7 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult {
 }
 
 bool libquixcc::ir::delta::IRDelta::from_qir(
-    const std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
+    quixcc_job_t *job, const std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
   LOG(DEBUG) << "Translating QUIX intermediate representation to DeltaIR"
              << std::endl;
 
@@ -1109,7 +1109,9 @@ bool libquixcc::ir::delta::IRDelta::from_qir(
     return false;
   }
 
-  LOG(DEBUG) << log::raw << to_string() << std::endl;
+  if (job->m_debug) {
+    LOG(DEBUG) << log::raw << to_string() << std::endl;
+  }
 
   LOG(DEBUG)
       << "Successfully translated QUIX intermediate representation to DeltaIR"

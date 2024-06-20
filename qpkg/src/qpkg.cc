@@ -522,7 +522,7 @@ void setup_argparse_dev(
 
   bench->add_argument("-n", "--name")
       .choices("lexer", "parser", "quix-ir", "delta-ir", "llvm-ir",
-               "llvm-codegen", "c11-codegen", "cxx-codegen", "pipeline")
+               "llvm-codegen", "c11-codegen", "pipeline")
       .help("name of benchmark to run");
 
   bench->add_argument("--list")
@@ -741,7 +741,6 @@ int run_dev_mode(
       LLVM_IR,
       LLVM_CODEGEN,
       C11_CODEGEN,
-      CXX_CODEGEN,
       PIPELINE
     };
 
@@ -756,7 +755,6 @@ int run_dev_mode(
       std::cout << "  llvm-ir" << std::endl;
       std::cout << "  llvm-codegen" << std::endl;
       std::cout << "  c11-codegen" << std::endl;
-      std::cout << "  cxx-codegen" << std::endl;
       std::cout << "  pipeline" << std::endl;
       return 0;
     }
@@ -785,8 +783,6 @@ int run_dev_mode(
       bench_type = Benchmark::LLVM_CODEGEN;
     else if (bench_name == "c11-codegen")
       bench_type = Benchmark::C11_CODEGEN;
-    else if (bench_name == "cxx-codegen")
-      bench_type = Benchmark::CXX_CODEGEN;
     else if (bench_name == "pipeline")
       bench_type = Benchmark::PIPELINE;
     else {
@@ -810,8 +806,6 @@ int run_dev_mode(
         return qpkg::bench::run_benchmark_llvm_codegen();
       case Benchmark::C11_CODEGEN:
         return qpkg::bench::run_benchmark_c11_codegen();
-      case Benchmark::CXX_CODEGEN:
-        return qpkg::bench::run_benchmark_cxx_codegen();
       case Benchmark::PIPELINE:
         return qpkg::bench::run_benchmark_pipeline();
       default:

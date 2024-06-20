@@ -181,7 +181,7 @@ class IRDelta : public libquixcc::ir::IRModule<IR::Delta, const RootNode *> {
       : IRModule<IR::Delta, const RootNode *>(name) {}
   ~IRDelta() = default;
 
-  bool from_qir(const std::unique_ptr<libquixcc::ir::q::QModule> &qir);
+  bool from_qir(quixcc_job_t *job, const std::unique_ptr<libquixcc::ir::q::QModule> &qir);
 };
 }  // namespace delta
 }  // namespace ir

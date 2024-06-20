@@ -145,7 +145,6 @@ int run_benchmark_delta_ir();
 int run_benchmark_llvm_ir();
 int run_benchmark_llvm_codegen();
 int run_benchmark_c11_codegen();
-int run_benchmark_cxx_codegen();
 int run_benchmark_pipeline();
 
 extern const std::string_view test_source_code;

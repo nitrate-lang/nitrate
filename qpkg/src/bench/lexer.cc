@@ -41,10 +41,9 @@
 
 #define RESULT_FILE "lexer_benchmark.csv"
 
-static bool do_bench(size_t *total_toks,
-                     std::chrono::system_clock::time_point &start,
-                     std::chrono::system_clock::time_point &end) {
-  size_t outlen = 0, tokens = 0;
+bool do_bench_lexer(std::chrono::system_clock::time_point &start,
+                    std::chrono::system_clock::time_point &end) {
+  size_t outlen = 0;
   quixcc_tok_t tok;
   char *outbuf = nullptr;
   FILE *outf = nullptr, *code = nullptr;
@@ -82,8 +81,6 @@ static bool do_bench(size_t *total_toks,
     if (quixcc_lex_is(&tok, QUIXCC_LEX_EOF)) break;
 
     quixcc_tok_release(job, &tok);
-
-    tokens++;
   }
   end = std::chrono::system_clock::now();
 
@@ -99,8 +96,6 @@ static bool do_bench(size_t *total_toks,
   fclose(outf);
   fclose(code);
   free(outbuf);
-
-  *total_toks = tokens;
 
   return true;
 }
@@ -126,10 +121,8 @@ int qpkg::bench::run_benchmark_lexer() {
 
   /*=================== DO BENCHMARK ===================*/
   for (size_t i = 0; i < ROUNDS; i++) {
-    size_t total_toks = 0;
-
     std::chrono::system_clock::time_point start, end;
-    if (!do_bench(&total_toks, start, end)) {
+    if (!do_bench_lexer(start, end)) {
       std::cerr << "Failed to run benchmark for lexer." << std::endl;
       return -1;
     }

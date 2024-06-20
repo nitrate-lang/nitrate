@@ -200,6 +200,7 @@ LIB_EXPORT quixcc_job_t *quixcc_new() {
   job->m_priority = 0;
   job->m_debug = job->m_tainted = job->m_running = false;
   job->m_sid_ctr = 0;
+  job->m_triple = llvm::sys::getDefaultTargetTriple();
 
   qsys::bind_qsyscalls(job);
 
@@ -749,7 +750,7 @@ static bool compile(quixcc_job_t *job) {
   ///=========================================
   /// BEGIN: OPTIMIZATION PIPELINE
   auto QIR = std::make_unique<ir::q::QModule>(job->m_filename.top());
-  if (!QIR->from_ptree(std::move(ptree))) /* This will modify the Ptree */
+  if (!QIR->from_ptree(job, std::move(ptree))) /* This will modify the Ptree */
     return false;
 
   if (job->m_argset.contains("-emit-quix-ir")) {
@@ -811,7 +812,7 @@ static bool compile(quixcc_job_t *job) {
   }
 
   auto DIR = std::make_unique<ir::delta::IRDelta>(job->m_filename.top());
-  if (!DIR->from_qir(QIR)) return false;
+  if (!DIR->from_qir(job, QIR)) return false;
 
   if (job->m_argset.contains("-emit-delta-ir")) {
     auto serial = DIR->to_string();

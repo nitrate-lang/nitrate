@@ -119,7 +119,7 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
     for (size_t i = 1; i < call->m_positional_args.size(); i++) {
       auto qir_arg = std::make_unique<ir::q::QModule>(job->m_filename.top());
 
-      if (!qir_arg->from_ptree(call->m_positional_args[i])) {
+      if (!qir_arg->from_ptree(job, call->m_positional_args[i])) {
         LOG(ERROR) << "Failed to parse QSys directive argument." << tok
                    << std::endl;
         return false;

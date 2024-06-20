@@ -1796,7 +1796,8 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
   return r;
 }
 
-bool ir::q::QModule::from_ptree(std::shared_ptr<ParseNode> ast) {
+bool ir::q::QModule::from_ptree(quixcc_job_t *job,
+                                std::shared_ptr<ParseNode> ast) {
   LOG(DEBUG) << "Converting Ptree to QUIX intermediate representation"
              << std::endl;
 
@@ -1812,8 +1813,10 @@ bool ir::q::QModule::from_ptree(std::shared_ptr<ParseNode> ast) {
     return false;
   }
 
-  LOG(DEBUG) << log::raw << this->to_string() << std::endl;
-
+  if (job->m_debug) {
+    LOG(DEBUG) << log::raw << this->to_string() << std::endl;
+  }
+  
   LOG(DEBUG)
       << "Successfully converted Ptree to QUIX intermediate representation"
       << std::endl;

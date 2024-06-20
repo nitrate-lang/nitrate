@@ -41,8 +41,8 @@
 
 #define RESULT_FILE "llvm_ir_benchmark.csv"
 
-static bool do_bench(std::chrono::system_clock::time_point &start,
-                     std::chrono::system_clock::time_point &end) {
+bool do_bench_llvm_ir(std::chrono::system_clock::time_point &start,
+                      std::chrono::system_clock::time_point &end) {
   size_t outlen = 0;
   char *outbuf = nullptr;
   FILE *outf = nullptr, *code = nullptr;
@@ -106,7 +106,7 @@ int qpkg::bench::run_benchmark_llvm_ir() {
   /*=================== DO BENCHMARK ===================*/
   for (size_t i = 0; i < ROUNDS; i++) {
     std::chrono::system_clock::time_point start, end;
-    if (!do_bench(start, end)) {
+    if (!do_bench_llvm_ir(start, end)) {
       std::cerr << "Failed to run benchmark for llvm_ir." << std::endl;
       return -1;
     }
