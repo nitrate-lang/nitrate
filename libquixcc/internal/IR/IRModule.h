@@ -87,32 +87,41 @@ class Node {
 
   template <typename T>
   bool is() const {
+#if !defined(NDEBUG)
     uintptr_t p = reinterpret_cast<uintptr_t>(this);
-    if (p == 0)
+    if (p == 0) {
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
+    }
+#endif
     return typeid(T) == typeid(*this);
   }
 
   template <typename T>
   bool is(const T *other) const {
+#if !defined(NDEBUG)
     uintptr_t p = reinterpret_cast<uintptr_t>(this);
-    if (p == 0)
+    if (p == 0) {
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
-    if (!other)
+    }
+    if (!other) {
       LOG(FATAL) << "Invalid cast from `" << typeid(*this).name()
                  << "` to nullptr" << std::endl;
+    }
+#endif
     return reinterpret_cast<const T *>(this) == other;
   }
 
   template <typename T>
   const T *as() const {
+#if !defined(NDEBUG)
     uintptr_t ptr = reinterpret_cast<uintptr_t>(this);
-    if (ptr == 0)
+    if (ptr == 0) {
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
-
+    }
+#endif
     auto p = dynamic_cast<const T *>(this);
 
     if (p) return p;
@@ -125,10 +134,13 @@ class Node {
 
   template <typename T>
   T *as() {
+#if !defined(NDEBUG)
     uintptr_t ptr = reinterpret_cast<uintptr_t>(this);
-    if (ptr == 0)
+    if (ptr == 0) {
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
+    }
+#endif
 
     auto p = dynamic_cast<T *>(this);
 

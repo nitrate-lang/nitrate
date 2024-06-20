@@ -858,101 +858,171 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::RootNode *node) {
   return nullptr;
 }
 
-#define match(type) \
-  if (n->is<type>()) return gen(n->as<type>())
-
-#define ignore(type) \
-  if (n->is<type>()) return nullptr
-
 llvm::Type *libquixcc::LLVM14Codegen::gent(
     const libquixcc::ir::delta::Type *n) {
-  match(I1);
-  match(I8);
-  match(I16);
-  match(I32);
-  match(I64);
-  match(I128);
-  match(U8);
-  match(U16);
-  match(U32);
-  match(U64);
-  match(U128);
-  match(F32);
-  match(F64);
-  match(Void);
-  match(Ptr);
-  match(Packet);
-  match(Array);
-  match(FType);
-
-  throw std::runtime_error(
-      "Codegen failed: codegen not implemented for type: " +
-      std::to_string(n->ntype));
+  switch ((delta::NodeType)n->ntype) {
+    case delta::NodeType::I1:
+      return gen(n->as<I1>());
+    case delta::NodeType::I8:
+      return gen(n->as<I8>());
+    case delta::NodeType::I16:
+      return gen(n->as<I16>());
+    case delta::NodeType::I32:
+      return gen(n->as<I32>());
+    case delta::NodeType::I64:
+      return gen(n->as<I64>());
+    case delta::NodeType::I128:
+      return gen(n->as<I128>());
+    case delta::NodeType::U8:
+      return gen(n->as<U8>());
+    case delta::NodeType::U16:
+      return gen(n->as<U16>());
+    case delta::NodeType::U32:
+      return gen(n->as<U32>());
+    case delta::NodeType::U64:
+      return gen(n->as<U64>());
+    case delta::NodeType::U128:
+      return gen(n->as<U128>());
+    case delta::NodeType::F32:
+      return gen(n->as<F32>());
+    case delta::NodeType::F64:
+      return gen(n->as<F64>());
+    case delta::NodeType::Void:
+      return gen(n->as<Void>());
+    case delta::NodeType::Ptr:
+      return gen(n->as<Ptr>());
+    case delta::NodeType::Packet:
+      return gen(n->as<Packet>());
+    case delta::NodeType::Array:
+      return gen(n->as<Array>());
+    case delta::NodeType::FType:
+      return gen(n->as<FType>());
+    default:
+      throw std::runtime_error(
+          "Codegen failed: codegen not implemented for type: " +
+          std::to_string(n->ntype));
+  }
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(
     const libquixcc::ir::delta::Value *n) {
-  match(Local);
-  match(Global);
-  match(Number);
-  match(String);
-  match(List);
-  match(Ident);
-  match(Assign);
-  match(PostInc);
-  match(PostDec);
-  match(AddressOf);
-  match(Deref);
-  match(Member);
-  match(Index);
-  match(SCast);
-  match(UCast);
-  match(PtrICast);
-  match(IPtrCast);
-  match(Bitcast);
-  match(IfElse);
-  match(While);
-  match(Jmp);
-  match(Label);
-  match(Ret);
-  match(Call);
-  match(PtrCall);
-  match(Halt);
-  match(Block);
-  match(Segment);
-  match(Asm);
-  match(Add);
-  match(Sub);
-  match(Mul);
-  match(Div);
-  match(Mod);
-  match(BitAnd);
-  match(BitOr);
-  match(BitXor);
-  match(BitNot);
-  match(Shl);
-  match(Shr);
-  match(Rotl);
-  match(Rotr);
-  match(Eq);
-  match(Ne);
-  match(Lt);
-  match(Gt);
-  match(Le);
-  match(Ge);
-  match(And);
-  match(Or);
-  match(Not);
-  match(Xor);
-  match(RootNode);
+  switch ((delta::NodeType)n->ntype) {
+    case delta::NodeType::Local:
+      return gen(n->as<Local>());
+    case delta::NodeType::Global:
+      return gen(n->as<Global>());
+    case delta::NodeType::Number:
+      return gen(n->as<Number>());
+    case delta::NodeType::String:
+      return gen(n->as<String>());
+    case delta::NodeType::List:
+      return gen(n->as<List>());
+    case delta::NodeType::Ident:
+      return gen(n->as<Ident>());
+    case delta::NodeType::Assign:
+      return gen(n->as<Assign>());
+    case delta::NodeType::PostInc:
+      return gen(n->as<PostInc>());
+    case delta::NodeType::PostDec:
+      return gen(n->as<PostDec>());
+    case delta::NodeType::AddressOf:
+      return gen(n->as<AddressOf>());
+    case delta::NodeType::Deref:
+      return gen(n->as<Deref>());
+    case delta::NodeType::Member:
+      return gen(n->as<Member>());
+    case delta::NodeType::Index:
+      return gen(n->as<Index>());
+    case delta::NodeType::SCast:
+      return gen(n->as<SCast>());
+    case delta::NodeType::UCast:
+      return gen(n->as<UCast>());
+    case delta::NodeType::PtrICast:
+      return gen(n->as<PtrICast>());
+    case delta::NodeType::IPtrCast:
+      return gen(n->as<IPtrCast>());
+    case delta::NodeType::Bitcast:
+      return gen(n->as<Bitcast>());
+    case delta::NodeType::IfElse:
+      return gen(n->as<IfElse>());
+    case delta::NodeType::While:
+      return gen(n->as<While>());
+    case delta::NodeType::Jmp:
+      return gen(n->as<Jmp>());
+    case delta::NodeType::Label:
+      return gen(n->as<Label>());
+    case delta::NodeType::Ret:
+      return gen(n->as<Ret>());
+    case delta::NodeType::Call:
+      return gen(n->as<Call>());
+    case delta::NodeType::PtrCall:
+      return gen(n->as<PtrCall>());
+    case delta::NodeType::Halt:
+      return gen(n->as<Halt>());
+    case delta::NodeType::Block:
+      return gen(n->as<Block>());
+    case delta::NodeType::Segment:
+      return gen(n->as<Segment>());
+    case delta::NodeType::Asm:
+      return gen(n->as<Asm>());
+    case delta::NodeType::Add:
+      return gen(n->as<Add>());
+    case delta::NodeType::Sub:
+      return gen(n->as<Sub>());
+    case delta::NodeType::Mul:
+      return gen(n->as<Mul>());
+    case delta::NodeType::Div:
+      return gen(n->as<Div>());
+    case delta::NodeType::Mod:
+      return gen(n->as<Mod>());
+    case delta::NodeType::BitAnd:
+      return gen(n->as<BitAnd>());
+    case delta::NodeType::BitOr:
+      return gen(n->as<BitOr>());
+    case delta::NodeType::BitXor:
+      return gen(n->as<BitXor>());
+    case delta::NodeType::BitNot:
+      return gen(n->as<BitNot>());
+    case delta::NodeType::Shl:
+      return gen(n->as<Shl>());
+    case delta::NodeType::Shr:
+      return gen(n->as<Shr>());
+    case delta::NodeType::Rotl:
+      return gen(n->as<Rotl>());
+    case delta::NodeType::Rotr:
+      return gen(n->as<Rotr>());
+    case delta::NodeType::Eq:
+      return gen(n->as<Eq>());
+    case delta::NodeType::Ne:
+      return gen(n->as<Ne>());
+    case delta::NodeType::Lt:
+      return gen(n->as<Lt>());
+    case delta::NodeType::Gt:
+      return gen(n->as<Gt>());
+    case delta::NodeType::Le:
+      return gen(n->as<Le>());
+    case delta::NodeType::Ge:
+      return gen(n->as<Ge>());
+    case delta::NodeType::And:
+      return gen(n->as<And>());
+    case delta::NodeType::Or:
+      return gen(n->as<Or>());
+    case delta::NodeType::Not:
+      return gen(n->as<Not>());
+    case delta::NodeType::Xor:
+      return gen(n->as<Xor>());
+    case delta::NodeType::Root:
+      return gen(n->as<RootNode>());
+    case delta::NodeType::Packet:
+    case delta::NodeType::PacketDef:
+    case delta::NodeType::FType:
+      return nullptr;
 
-  ignore(Packet);
-  ignore(PacketDef);
-  ignore(FType);
-
-  throw std::runtime_error(
-      "Codegen failed: codegen not implemented for value: " +
-      std::to_string(n->ntype));
+    default:
+      throw std::runtime_error(
+          "Codegen failed: codegen not implemented for value: " +
+          std::to_string(n->ntype));
+  }
 }
 
 bool libquixcc::LLVM14Codegen::codegen(

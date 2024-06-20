@@ -65,19 +65,26 @@ class ParseNode {
   template <typename T>
   T *as() {
     auto p = dynamic_cast<T *>(this);
-    if (!p)
+
+#if !defined(NDEBUG)
+    if (!p) {
       LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `"
                  << typeid(T).name() << "`" << std::endl;
-
+    }
+#endif
     return p;
   }
 
   template <typename T>
   const T *as() const {
     auto p = dynamic_cast<const T *>(this);
-    if (!p)
+
+#if !defined(NDEBUG)
+    if (!p) {
       LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `"
                  << typeid(T).name() << "`" << std::endl;
+    }
+#endif
 
     return p;
   }
