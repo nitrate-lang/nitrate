@@ -273,6 +273,7 @@ bool libquixcc::generate(quixcc_job_t &job,
     return write_llvm(job, ir, job.m_out, llvm::CGFT_ObjectFile);
 
   LOG(ERROR) << "Output format was not specified. Expected: [-emit-ir, "
+                "-emit-quix-ir, -emit-delta-ir, "
                 "-emit-c11, -emit-bc, -S, -c]"
              << std::endl;
 

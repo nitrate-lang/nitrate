@@ -38,6 +38,8 @@ enum class OperatingMode {
   IR,
   C11,
   IR_BITCODE,
+  QUIX_IR,
+  DELTA_IR,
   LEX,
   PARSE_TREE,
 
@@ -83,6 +85,8 @@ struct Options {
         return true;
       case OperatingMode::IR:
       case OperatingMode::IR_BITCODE:
+      case OperatingMode::QUIX_IR:
+      case OperatingMode::DELTA_IR:
       case OperatingMode::C11:
       case OperatingMode::LEX:
         if (output.empty()) {
@@ -171,6 +175,12 @@ static void print_help() {
   println("  -C, --cpu <cpu>           Specify the LLVM target CPU");
   println(
       "  -emit-ir                  Emit the intermediate representation (LLVM "
+      "IR)");
+  println(
+      "  -emit-quix-ir             Emit the intermediate representation (QUIX "
+      "IR)");
+  println(
+      "  -emit-delta-ir            Emit the intermediate representation (Delta "
       "IR)");
   println(
       "  -emit-c11                 Emit the intermediate representation (LLVM "
@@ -330,6 +340,10 @@ static std::optional<Options> parse_options(
       options.cpu = *it;
     } else if (*it == "-emit-ir") {
       options.mode = OperatingMode::IR;
+    } else if (*it == "-emit-quix-ir") {
+      options.mode = OperatingMode::QUIX_IR;
+    } else if (*it == "-emit-delta-ir") {
+      options.mode = OperatingMode::DELTA_IR;
     } else if (*it == "-emit-c11") {
       options.mode = OperatingMode::C11;
     } else if (*it == "-emit-bc") {
@@ -441,6 +455,12 @@ int main(int argc, char *argv[]) {
   switch (options->mode) {
     case OperatingMode::IR:
       builder.opt("-emit-ir");
+      break;
+    case OperatingMode::QUIX_IR:
+      builder.opt("-emit-quix-ir");
+      break;
+    case OperatingMode::DELTA_IR:
+      builder.opt("-emit-delta-ir");
       break;
     case OperatingMode::C11:
       builder.opt("-emit-c11");

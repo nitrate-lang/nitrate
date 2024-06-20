@@ -39,7 +39,7 @@
 
 #define ROUNDS 10
 
-#define RESULT_FILE "c11_benchmark.csv"
+#define RESULT_FILE "quix_ir_benchmark.csv"
 
 static bool do_bench(std::chrono::system_clock::time_point &start,
                      std::chrono::system_clock::time_point &end) {
@@ -62,7 +62,7 @@ static bool do_bench(std::chrono::system_clock::time_point &start,
   }
 
   start = std::chrono::system_clock::now();
-  const char *options[] = {"-emit-c11", NULL};
+  const char *options[] = {"-emit-quix-ir", NULL};
   char **result = quixcc_compile(code, outf, options);
   if (result != NULL) {
     fclose(outf);
@@ -84,7 +84,7 @@ static bool do_bench(std::chrono::system_clock::time_point &start,
   return true;
 }
 
-static void write_c11_result_csv(const std::vector<double> &throughput) {
+static void write_quix_ir_result_csv(const std::vector<double> &throughput) {
   std::ofstream file(RESULT_FILE);
   if (!file.is_open()) {
     std::cerr << "Failed to open file " RESULT_FILE << std::endl;
@@ -99,15 +99,15 @@ static void write_c11_result_csv(const std::vector<double> &throughput) {
   file.close();
 }
 
-int qpkg::bench::run_benchmark_c11_codegen() {
-  Progress progress("C11 Codegen");
+int qpkg::bench::run_benchmark_quix_ir() {
+  Progress progress("QIR Codegen");
   std::vector<double> times;
 
   /*=================== DO BENCHMARK ===================*/
   for (size_t i = 0; i < ROUNDS; i++) {
     std::chrono::system_clock::time_point start, end;
     if (!do_bench(start, end)) {
-      std::cerr << "Failed to run benchmark for c11." << std::endl;
+      std::cerr << "Failed to run benchmark for quix_ir." << std::endl;
       return -1;
     }
 
@@ -133,7 +133,7 @@ int qpkg::bench::run_benchmark_c11_codegen() {
     throughput.push_back(kbit_per_s);
   }
 
-  write_c11_result_csv(throughput);
+  write_quix_ir_result_csv(throughput);
   progress.done(RESULT_FILE);
 
   progress.begin_result(Progress::Result::THROUGHPUT);

@@ -752,6 +752,16 @@ static bool compile(quixcc_job_t *job) {
   if (!QIR->from_ptree(std::move(ptree))) /* This will modify the Ptree */
     return false;
 
+  if (job->m_argset.contains("-emit-quix-ir")) {
+    auto serial = QIR->to_string();
+    if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
+      return false;
+    fflush(job->m_out);
+
+    LOG(DEBUG) << "Quix IR only" << std::endl;
+    return true;
+  }
+
   if (!job->m_argset.contains("-O0")) {
     /* Apply architecural optimizations
      * - Transform single threaded code into multi-threaded code
@@ -802,6 +812,16 @@ static bool compile(quixcc_job_t *job) {
 
   auto DIR = std::make_unique<ir::delta::IRDelta>(job->m_filename.top());
   if (!DIR->from_qir(QIR)) return false;
+
+  if (job->m_argset.contains("-emit-delta-ir")) {
+    auto serial = DIR->to_string();
+    if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
+      return false;
+    fflush(job->m_out);
+
+    LOG(DEBUG) << "Delta IR only" << std::endl;
+    return true;
+  }
   /// END:   OPTIMIZATION PIPELINE
   ///=========================================
 
@@ -823,25 +843,27 @@ static bool compile(quixcc_job_t *job) {
 static bool verify_build_option(const std::string &option,
                                 const std::string &value) {
   const static std::set<std::string> static_options = {
-      "-S",            // assembly output
-      "-PREP",         // preprocessor/Lexer output
-      "-emit-tokens",  // lexer output (no preprocessing)
-      "-emit-parse",   // parse tree output
-      "-emit-ir",      // IR output
-      "-emit-c11",     // C11 output
-      "-emit-bc",      // bitcode output
-      "-c",            // compile only
-      "-O0",           // optimization levels
-      "-O1",           // optimization levels
-      "-O2",           // optimization levels
-      "-O3",           // optimization levels
-      "-Os",           // optimization levels
-      "-g",            // debug information
-      "-flto",         // link time optimization
-      "-fPIC",         // position independent code
-      "-fPIE",         // position independent executable
-      "-v",            // verbose
-      "-fcoredump",    // dump core on crash
+      "-S",              // assembly output
+      "-PREP",           // preprocessor/Lexer output
+      "-emit-tokens",    // lexer output (no preprocessing)
+      "-emit-parse",     // parse tree output
+      "-emit-ir",        // IR output
+      "-emit-quix-ir",   // Quix IR output
+      "-emit-delta-ir",  // Delta IR output
+      "-emit-c11",       // C11 output
+      "-emit-bc",        // bitcode output
+      "-c",              // compile only
+      "-O0",             // optimization levels
+      "-O1",             // optimization levels
+      "-O2",             // optimization levels
+      "-O3",             // optimization levels
+      "-Os",             // optimization levels
+      "-g",              // debug information
+      "-flto",           // link time optimization
+      "-fPIC",           // position independent code
+      "-fPIE",           // position independent executable
+      "-v",              // verbose
+      "-fcoredump",      // dump core on crash
   };
   const static std::vector<std::pair<std::regex, std::regex>> static_regexes = {
       {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex("[a-zA-Z0-9_ ]*")},

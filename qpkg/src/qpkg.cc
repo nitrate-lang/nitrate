@@ -1,3 +1,34 @@
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///           ░▒▓██████▓▒░░▒▓███████▓▒░░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
+///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
+///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░                  ///
+///          ░▒▓█▓▒░░▒▓█▓▒░▒▓███████▓▒░░▒▓███████▓▒░░▒▓█▓▒▒▓███▓▒░           ///
+///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
+///          ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░           ///
+///           ░▒▓██████▓▒░░▒▓█▓▒░      ░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░            ///
+///             ░▒▓█▓▒░                                                      ///
+///              ░▒▓██▓▒░                                                    ///
+///                                                                          ///
+///   * QUIX PACKAGE MANAGER - The official tool for the Quix language.      ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The QUIX Compiler Suite is free software; you can redistribute it or   ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The QUIX Compiler Suite is distributed in the hope that it will be     ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the QUIX Compiler Suite; if not, see                ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
+
 #include <argparse.h>
 
 #include <bench/bench.hh>
@@ -490,9 +521,14 @@ void setup_argparse_dev(
       std::make_unique<ArgumentParser>("bench", "run internal benchmarks");
 
   bench->add_argument("-n", "--name")
-      .choices("lexer", "preprocessor", "parser", "q-ir", "delta-ir", "llvm-ir",
+      .choices("lexer", "parser", "quix-ir", "delta-ir", "llvm-ir",
                "llvm-codegen", "c11-codegen", "cxx-codegen", "pipeline")
       .help("name of benchmark to run");
+
+  bench->add_argument("--list")
+      .help("list available benchmarks")
+      .default_value(false)
+      .implicit_value(true);
 
   subparsers["bench"] = std::move(bench);
 
@@ -699,7 +735,6 @@ int run_dev_mode(
   if (parser.is_subcommand_used("bench")) {
     enum class Benchmark {
       LEXER,
-      PREPROCESSOR,
       PARSER,
       Q_IR,
       DELTA_IR,
@@ -711,6 +746,20 @@ int run_dev_mode(
     };
 
     auto &bench_parser = *subparsers.at("bench");
+
+    if (bench_parser["--list"] == true) {
+      std::cout << "Available benchmarks:" << std::endl;
+      std::cout << "  lexer" << std::endl;
+      std::cout << "  parser" << std::endl;
+      std::cout << "  quix-ir" << std::endl;
+      std::cout << "  delta-ir" << std::endl;
+      std::cout << "  llvm-ir" << std::endl;
+      std::cout << "  llvm-codegen" << std::endl;
+      std::cout << "  c11-codegen" << std::endl;
+      std::cout << "  cxx-codegen" << std::endl;
+      std::cout << "  pipeline" << std::endl;
+      return 0;
+    }
 
     if (!bench_parser.is_used("--name")) {
       std::cerr << "No benchmark specified" << std::endl;
@@ -724,11 +773,9 @@ int run_dev_mode(
 
     if (bench_name == "lexer")
       bench_type = Benchmark::LEXER;
-    else if (bench_name == "preprocessor")
-      bench_type = Benchmark::PREPROCESSOR;
     else if (bench_name == "parser")
       bench_type = Benchmark::PARSER;
-    else if (bench_name == "q-ir")
+    else if (bench_name == "quix-ir")
       bench_type = Benchmark::Q_IR;
     else if (bench_name == "delta-ir")
       bench_type = Benchmark::DELTA_IR;
@@ -751,12 +798,10 @@ int run_dev_mode(
     switch (bench_type) {
       case Benchmark::LEXER:
         return qpkg::bench::run_benchmark_lexer();
-      case Benchmark::PREPROCESSOR:
-        return qpkg::bench::run_benchmark_preprocessor();
       case Benchmark::PARSER:
         return qpkg::bench::run_benchmark_parser();
       case Benchmark::Q_IR:
-        return qpkg::bench::run_benchmark_q_ir();
+        return qpkg::bench::run_benchmark_quix_ir();
       case Benchmark::DELTA_IR:
         return qpkg::bench::run_benchmark_delta_ir();
       case Benchmark::LLVM_IR:

@@ -265,7 +265,8 @@ quixcc_tok_t quixcc_peek(quixcc_job_t *job);
 /// @param job The compiler job.
 /// @param voucher The String ID.
 /// @return The string value or NULL if the voucher does not exist.
-/// @note This function is thread-safe.
+/// @note This function is not thread-safe on the same job context, but is
+/// thread-safe across different job contexts.
 /// @warning The returned string is owned by the job. Its lifetime is tied to
 /// the job and the lifetime of the token which created it.
 ///          If the token which created the string is released via
@@ -300,7 +301,8 @@ static inline bool quixcc_lex_is(const quixcc_tok_t *tok,
 /// no longer needed.
 /// @param job The compiler job.
 /// @param tok The token to release.
-/// @note This function is thread-safe.
+/// @note This function is not thread-safe on the same job context, but is
+/// thread-safe across different job contexts.
 void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok);
 
 /// @brief Get raw string representation of a token.

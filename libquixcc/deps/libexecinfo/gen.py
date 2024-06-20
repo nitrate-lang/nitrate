@@ -32,14 +32,16 @@ EPILOGUE = '    default: return NULL;\n    }\n}'
 
 MAXDEPTH = 127
 
+
 def gen(name, maxnum):
-	# print PROLOGUE % name
-	print(PROLOGUE % name)
-	for i in range(0, maxnum):
-		# print BODY % (i, name, i + 1)
-		print(BODY % (i, name, i + 1))
-	# print EPILOGUE
-	print(EPILOGUE)
+    # print PROLOGUE % name
+    print(PROLOGUE % name)
+    for i in range(0, maxnum):
+        # print BODY % (i, name, i + 1)
+        print(BODY % (i, name, i + 1))
+    # print EPILOGUE
+    print(EPILOGUE)
+
 
 gen("return", MAXDEPTH)
 # print ''

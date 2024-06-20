@@ -41,6 +41,7 @@
 #include <quixcc/Quix.h>
 
 #include <atomic>
+#include <boost/unordered_map.hpp>
 #include <functional>
 #include <map>
 #include <memory>
@@ -66,7 +67,7 @@ struct quixcc_job_t {
   volatile uint64_t m_magic;
   libquixcc::LLVMContext m_inner;
   std::stack<std::string> m_filename;
-  std::unordered_map<quixcc_sid_t, char *> m_owned_strings;
+  boost::unordered_map<quixcc_sid_t, char *> m_owned_strings;
   std::map<std::string, std::string> m_argset;
   libquixcc::QSysCallRegistry m_qsyscalls;
   std::mutex m_lock;

@@ -24,7 +24,7 @@ string(REPLACE "\n" " " LLVM_LIBS_BASH "${LLVM_LIBS_RAW}")
 
 set(BUILD_FLAGS_COMMON -fno-omit-frame-pointer -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter -Wno-error=unused-variable -Wno-predefined-identifier-outside-function)
 
-SET(PROJECT_RELEASE_FLAGS -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete -flto ${BUILD_FLAGS_COMMON} -DNDEBUG)
+SET(PROJECT_RELEASE_FLAGS -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete ${BUILD_FLAGS_COMMON} -DNDEBUG)
 
 SET(PROJECT_DEBUG_FLAGS -Wno-error=unused-variable -Wno-error=mismatched-new-delete ${BUILD_FLAGS_COMMON})
 

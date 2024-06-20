@@ -51,22 +51,27 @@ LIB_EXPORT void quixcc_lexconf(quixcc_job_t *job,
 }
 
 static quix_inline quixcc_sid_t publish_string(quixcc_job_t *job,
-                                               const std::string &str) {
+                                               std::string_view str) {
   if (job->m_sid_ctr == std::numeric_limits<quixcc_sid_t>::max())
     throw std::runtime_error("String ID counter overflow");
 
   auto sid = job->m_sid_ctr++;
 
-  job->m_owned_strings[sid] = strdup(str.c_str());
+  job->m_owned_strings[sid] = strdup(str.data());
 
   return sid;
 }
 
 static quix_inline void erase_sid(quixcc_job_t *job, quixcc_sid_t sid) {
-  if (!job->m_owned_strings.contains(sid)) return;
+  if (sid == std::numeric_limits<quixcc_sid_t>::max()) return;
+  free(job->m_owned_strings.at(sid));
 
-  free(job->m_owned_strings[sid]);
-  job->m_owned_strings.erase(sid);
+  /* For performance reasons, we don't actually erase the string */
+  /* The reference will be deallocated when the job is destroyed */
+
+#if !defined(NDEBUG)
+  job->m_owned_strings.at(sid) = nullptr;
+#endif
 }
 
 static quix_inline bool check_and_init(quixcc_job_t *job) {
@@ -144,7 +149,7 @@ LIB_EXPORT quixcc_tok_t quixcc_next(quixcc_job_t *job) {
   /* Safe code is good code */
   assert(job != nullptr);
 
-  std::lock_guard<std::mutex> lock(job->m_lock);
+  /* This function is not thread-safe on the same job */
 
   quixcc_tok_t tokr{};
   tokr.ty = QUIXCC_LEX_EOF;
@@ -163,7 +168,7 @@ LIB_EXPORT quixcc_tok_t quixcc_peek(quixcc_job_t *job) {
   /* Safe code is good code */
   assert(job != nullptr);
 
-  std::lock_guard<std::mutex> lock(job->m_lock);
+  /* This function is not thread-safe on the same job */
 
   quixcc_tok_t tok{};
   tok.ty = QUIXCC_LEX_EOF;
@@ -178,8 +183,6 @@ LIB_EXPORT const char *quixcc_getstr(quixcc_job_t *job, quixcc_sid_t voucher) {
   /* Safe code is good code */
   assert(job != nullptr);
 
-  std::lock_guard<std::mutex> lock(job->m_lock);
-
   if (!job->m_owned_strings.contains(voucher)) return nullptr;
 
   return job->m_owned_strings[voucher];
@@ -190,8 +193,7 @@ LIB_EXPORT void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok) {
   assert(job != nullptr);
   assert(tok != nullptr);
 
-  /* Require Lock */
-  std::lock_guard<std::mutex> lock(job->m_lock);
+  /* This function is not thread-safe on the same job */
 
   switch (tok->ty) {
     case QUIXCC_LEX_UNK:

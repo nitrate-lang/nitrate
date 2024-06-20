@@ -15,7 +15,7 @@ def rname(l: int) -> str:
 
 
 def rtype() -> str:
-    return random.choice(['i32', 'i64', 'i128', 'f32', 'f64', 'u32', 'u64', 'u128'])
+    return random.choice(['i32', 'i64', 'i128', 'u32', 'u64', 'u128'])
 
 
 def rreal() -> str:
@@ -23,7 +23,7 @@ def rreal() -> str:
 
 
 def rident() -> str:
-    return "_"+rname(abs(math.floor(random.normalvariate(6, 2)))+7)
+    return "_"+rname(abs(math.floor(random.normalvariate(6, 2)))+3)
 
 
 def rletdecl() -> str:
@@ -31,8 +31,6 @@ def rletdecl() -> str:
 
     if x == 0:
         return f'let {rident()}: {rtype()};'
-    elif x == 1:
-        return f'let {rident()}: {rtype()} = {rreal()};'
     else:
         return f'let {rident()} = {rreal()};'
 
