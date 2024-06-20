@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_TYPES_H__
-#define __QUIXCC_TYPES_H__
+#ifndef __QUIXCC_PREPROCESSOR_ENGINE_API_H__
+#define __QUIXCC_PREPROCESSOR_ENGINE_API_H__
 
 #include <quixcc/Types.h>
 #include <stdbool.h>
@@ -106,14 +106,14 @@ quixcc_job_t* quixcc_engine_job(quixcc_engine_t* engine);
 /// @note This function is thread-safe.
 bool quixcc_engine_include(quixcc_engine_t* engine, const char* include_path);
 
-enum quixcc_message_t {
+typedef enum quixcc_message_t {
   QUIXCC_MESSAGE_DEBUG = 0,
   QUIXCC_MESSAGE_INFO = 1,
   QUIXCC_MESSAGE_WARNING = 2,
   QUIXCC_MESSAGE_ERROR = 3,
   QUIXCC_MESSAGE_FAILED = 4,
   QUIXCC_MESSAGE_FATAL = 5,
-};
+} quixcc_message_t;
 
 /// @brief Send a message to the engine.
 /// @param engine QUIX Engine
@@ -142,8 +142,103 @@ const char* quixcc_expr_to_string(quixcc_expr_t* expr, size_t* len);
 /// @note This function is thread-safe.
 bool quixcc_expr_to_int64(quixcc_expr_t* expr, int64_t* out);
 
+/// @brief Create a new token
+/// @param engine QUIX Engine
+/// @param ty Token type
+/// @param str C-string body of the token
+/// @return A new token
+/// @warning The token is managed by the engine and must not be mutated.
+/// @note The data is copied internally.
+quixcc_tok_t quixcc_tok_new(quixcc_engine_t* engine, quixcc_lex_type_t ty,
+                            const char* str);
+
+/// @brief Create a new token with a length
+/// @param engine QUIX Engine
+/// @param ty Token type
+/// @param str Arbitrary buffer of the token body
+/// @param len Length of the buffer
+/// @return A new token
+/// @warning The token is managed by the engine and must not be mutated.
+/// @note The data is copied internally.
+quixcc_tok_t quixcc_tok_new_ex(quixcc_engine_t* engine, quixcc_lex_type_t ty,
+                               const char* str, size_t len);
+
+/// @brief Create a new keyword token
+/// @param engine QUIX Engine
+/// @param kw Keyword
+/// @return A new token
+/// @warning The token is managed by the engine and must not be mutated.
+quixcc_tok_t quixcc_tok_new_kw(quixcc_engine_t* engine, quixcc_lex_kw_t kw);
+
+/// @brief Create a new operator token
+/// @param engine QUIX Engine
+/// @param op Operator
+/// @return A new token
+/// @warning The token is managed by the engine and must not be mutated.
+quixcc_tok_t quixcc_tok_new_op(quixcc_engine_t* engine, quixcc_lex_op_t op);
+
+/// @brief Create a new punctuation token
+/// @param engine QUIX Engine
+/// @param punct Punctuation
+/// @return A new token
+/// @warning The token is managed by the engine and must not be mutated.
+quixcc_tok_t quixcc_tok_new_punct(quixcc_engine_t* engine,
+                                  quixcc_lex_punct_t punct);
+
+#define quixcc_tok_new_ident(engine, str) \
+  quixcc_tok_new(engine, QUIXCC_LEX_IDENT, str)
+
 ///=============================================================================
 /// END: QUIXCC ENGINE API
+///=============================================================================
+
+///=============================================================================
+/// BEGIN: MACROS
+///=============================================================================
+#define QSYS_DECL(name) \
+  bool name(quixcc_engine_t*, uint32_t, quixcc_expr_t**, uint32_t)
+
+#define QSYS_ARGASSERT(name, nargs)                                        \
+  if (c != nargs) {                                                        \
+    quixcc_engine_message(e, QUIXCC_MESSAGE_ERROR,                         \
+                          "QSys Call \"%s\" expects %d arguments, got %d", \
+                          #name, nargs, c);                                \
+    return false;                                                          \
+  }
+
+#define QSYS_ARG_STRING(_qname, _varname, _idx)                           \
+  if (c <= _idx) {                                                        \
+    quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL,                        \
+                          "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
+    return false;                                                         \
+  }                                                                       \
+  size_t _varname##_len = 0;                                              \
+  const char* _varname = quixcc_expr_to_string(v[_idx], &_varname##_len); \
+  if (_varname == NULL) {                                                 \
+    quixcc_engine_message(                                                \
+        e, QUIXCC_MESSAGE_ERROR,                                          \
+        "%s: Failed to convert argument %d to string \"" #_varname "\"",  \
+        #_qname, _idx);                                                   \
+    return false;                                                         \
+  }
+
+#define QSYS_ARG_INT64(_qname, _varname, _idx)                            \
+  if (c <= _idx) {                                                        \
+    quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL,                        \
+                          "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
+    return false;                                                         \
+  }                                                                       \
+  int64_t _varname = 0;                                                   \
+  if (!quixcc_expr_to_int64(v[_idx], &_varname)) {                        \
+    quixcc_engine_message(                                                \
+        e, QUIXCC_MESSAGE_ERROR,                                          \
+        "%s: Failed to convert argument %d to int64_t \"" #_varname "\"", \
+        #_qname, _idx);                                                   \
+    return false;                                                         \
+  }
+
+///=============================================================================
+/// END: MACROS
 ///=============================================================================
 
 #ifdef __cplusplus

@@ -50,9 +50,8 @@ LIB_EXPORT void quixcc_lexconf(quixcc_job_t *job,
   //     job->m_prep->comments(true);
 }
 
-static quix_inline quixcc_sid_t publish_string(quixcc_job_t *job,
-                                               std::string_view str) {
-  if (job->m_sid_ctr == std::numeric_limits<quixcc_sid_t>::max())
+quixcc_sid_t publish_string(quixcc_job_t *job, std::string_view str) {
+  if (job->m_sid_ctr == QUIXCC_SID_NAN)
     throw std::runtime_error("String ID counter overflow");
 
   auto sid = job->m_sid_ctr++;
@@ -63,7 +62,7 @@ static quix_inline quixcc_sid_t publish_string(quixcc_job_t *job,
 }
 
 static quix_inline void erase_sid(quixcc_job_t *job, quixcc_sid_t sid) {
-  if (sid == std::numeric_limits<quixcc_sid_t>::max()) return;
+  if (sid == QUIXCC_SID_NAN) return;
   free(job->m_owned_strings.at(sid));
 
   /* For performance reasons, we don't actually erase the string */
@@ -183,7 +182,8 @@ LIB_EXPORT const char *quixcc_getstr(quixcc_job_t *job, quixcc_sid_t voucher) {
   /* Safe code is good code */
   assert(job != nullptr);
 
-  if (job->m_owned_strings.find(voucher) == job->m_owned_strings.end()) return nullptr;
+  if (job->m_owned_strings.find(voucher) == job->m_owned_strings.end())
+    return nullptr;
 
   return job->m_owned_strings[voucher];
 }
@@ -206,14 +206,14 @@ LIB_EXPORT void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok) {
     case QUIXCC_LEX_METASEG:
     case QUIXCC_LEX_NOTE:
       erase_sid(job, tok->val.voucher);
-      tok->val.voucher = std::numeric_limits<quixcc_sid_t>::max();
+      tok->val.voucher = QUIXCC_SID_NAN;
       break;
     default:
       break;
   }
 
   erase_sid(job, tok->loc.voucher);
-  tok->loc.voucher = std::numeric_limits<quixcc_sid_t>::max();
+  tok->loc.voucher = QUIXCC_SID_NAN;
 }
 
 LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job,

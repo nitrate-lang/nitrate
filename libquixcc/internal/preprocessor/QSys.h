@@ -36,61 +36,23 @@
 #error "This header requires C++"
 #endif
 
+#include <quixcc/EngineAPI.h>
 #include <quixcc/Types.h>
 
 namespace libquixcc::qsys {
-#define QSYS_DECL(name) \
-  bool name(quixcc_engine_t *, uint32_t, quixcc_expr_t **, uint32_t)
 
 #define QSYS_DEFINE(_name, _desc)                             \
-  bool libquixcc::qsys::_name(quixcc_engine_t *e, uint32_t n, \
-                              quixcc_expr_t **v, uint32_t c)
-#define QSYS_ARGASSERT(name, nargs)                                        \
-  if (c != nargs) {                                                        \
-    quixcc_engine_message(e, QUIXCC_MESSAGE_ERROR,                         \
-                          "QSys Call \"%s\" expects %d arguments, got %d", \
-                          #name, nargs, c);                                \
-    return false;                                                          \
-  }
-
-#define QSYS_ARG_STRING(_qname, _varname, _idx)                           \
-  if (c <= _idx) {                                                        \
-    quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL,                        \
-                          "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
-    return false;                                                         \
-  }                                                                       \
-  size_t _varname##_len = 0;                                              \
-  const char *_varname = quixcc_expr_to_string(v[_idx], &_varname##_len); \
-  if (_varname == nullptr) {                                              \
-    quixcc_engine_message(                                                \
-        e, QUIXCC_MESSAGE_ERROR,                                          \
-        "%s: Failed to convert argument %d to string \"" #_varname "\"",  \
-        #_qname, _idx);                                                   \
-    return false;                                                         \
-  }
-
-#define QSYS_ARG_INT64(_qname, _varname, _idx)                            \
-  if (c <= _idx) {                                                        \
-    quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL,                        \
-                          "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
-    return false;                                                         \
-  }                                                                       \
-  int64_t _varname = 0;                                                   \
-  if (!quixcc_expr_to_int64(v[_idx], &_varname)) {                        \
-    quixcc_engine_message(                                                \
-        e, QUIXCC_MESSAGE_ERROR,                                          \
-        "%s: Failed to convert argument %d to int64_t \"" #_varname "\"", \
-        #_qname, _idx);                                                   \
-    return false;                                                         \
-  }
+  bool libquixcc::qsys::_name(quixcc_engine_t* e, uint32_t n, \
+                              quixcc_expr_t** v, uint32_t c)
 
 #define QSYS_NOT_IMPLEMENTED(name)                                       \
-  bool libquixcc::qsys::name(quixcc_engine_t *e, uint32_t n,             \
-                             quixcc_expr_t **v, uint32_t c) {            \
+  bool libquixcc::qsys::name(quixcc_engine_t* e, uint32_t n,             \
+                             quixcc_expr_t** v, uint32_t c) {            \
     quixcc_engine_message(e, QUIXCC_MESSAGE_WARNING,                     \
                           "QSys Call \"%s\" is not implemented", #name); \
     return true;                                                         \
   }
+
 /*==================== TEXT IO ====================*/
 QSYS_DECL(qsys_write_stdout);
 QSYS_DECL(qsys_write_stderr);
@@ -150,7 +112,7 @@ QSYS_DECL(qsys_get_type_body);
 QSYS_DECL(qsys_set_global_meta_variable);
 QSYS_DECL(qsys_get_global_meta_variable);
 
-void bind_qsyscalls(quixcc_job_t *job);
+void bind_qsyscalls(quixcc_job_t* job);
 }  // namespace libquixcc::qsys
 
 #endif  // __QUIXCC_PREP_QSYS_H__

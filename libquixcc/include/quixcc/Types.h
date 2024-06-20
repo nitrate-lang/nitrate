@@ -29,11 +29,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PREPROCESSOR_ENGINE_API_H__
-#define __QUIXCC_PREPROCESSOR_ENGINE_API_H__
+#ifndef __QUIXCC_TYPES_H__
+#define __QUIXCC_TYPES_H__
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,11 +63,11 @@ struct quixcc_msg_t {
   enum quixcc_msg_level_t m_level;
 };
 
-struct quixcc_status_t {
+typedef struct quixcc_status_t {
   struct quixcc_msg_t** m_messages;
   uint32_t m_count;
   bool m_success;
-};
+} quixcc_status_t;
 
 /// @brief Opaque compiler job context
 /// @note It is opaque for a reason, treat it with respect.
@@ -158,6 +159,7 @@ typedef enum {
   QUIXCC_OP_AT = 1,
   QUIXCC_OP_TERNARY = 2,
   QUIXCC_OP_ARROW = 3,
+  QUIXCC_OP_DOT = 4,
 
   QUIXCC_OP_PLUS = 10,
   QUIXCC_OP_MINUS = 11,
@@ -171,6 +173,8 @@ typedef enum {
   QUIXCC_OP_BIT_NOT = 23,
   QUIXCC_OP_SHL = 24,
   QUIXCC_OP_SHR = 25,
+  QUIXCC_OP_ROTR = 26,
+  QUIXCC_OP_ROTL = 27,
 
   QUIXCC_OP_INC = 30,
   QUIXCC_OP_DEC = 31,
@@ -200,17 +204,30 @@ typedef enum {
   QUIXCC_OP_GE = 63,
   QUIXCC_OP_EQ = 64,
   QUIXCC_OP_NE = 65,
+
+  QUIXCC_OP_AS = 80,
+  QUIXCC_OP_IS = 81,
+  QUIXCC_OP_IN = 82,
+  QUIXCC_OP_NOTIN = 83,
+  QUIXCC_OP_SIZEOF = 84,
+  QUIXCC_OP_ALIGNOF = 85,
+  QUIXCC_OP_TYPEOF = 86,
+  QUIXCC_OP_OFFSETOF = 87,
+  QUIXCC_OP_RANGE = 88,
+  QUIXCC_OP_ELLIPSIS = 89,
+  QUIXCC_OP_SPACESHIP = 90,
 } quixcc_lex_op_t;
 
 typedef uint32_t quixcc_sid_t;
+#define QUIXCC_SID_NAN UINT32_MAX
 
-typedef struct {
+typedef struct quixcc_lex_loc_t {
   uint32_t line;
   uint32_t column : 24;
   quixcc_sid_t voucher;
 } __attribute__((packed)) quixcc_lex_loc_t;
 
-typedef struct {
+typedef struct quixcc_tok_t {
   quixcc_lex_loc_t loc;
   union {
     quixcc_lex_op_t op;
@@ -234,4 +251,4 @@ typedef bool (*quixcc_qsys_impl_t)(quixcc_engine_t* engine, uint32_t num,
 }
 #endif
 
-#endif  // __QUIXCC_PREPROCESSOR_ENGINE_API_H__
+#endif  // __QUIXCC_TYPES_H__
