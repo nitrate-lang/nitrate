@@ -38,17 +38,28 @@ To build the Quix compiler from source, follow these steps:
    ```
    cd quix
    ```
-4. **Build the Compiler**: Build the Quix compiler by running the `build.py` script:
-5. **Verify Installation**: After the build process completes successfully, verify that the compiler executable is generated.
+4. **Build the Compiler**: Build the Quix compiler by running the `make.py --release` command. This will compile the compiler in release mode, which is optimized for performance:
+   ```
+   python make.py --release
+   ```
+   If you want to build the compiler in debug mode, which includes additional debugging information, run the following command instead:
+   ```
+   python make.py --debug
+   ```
+   The build process may take some time to complete, depending on your system's hardware and the size of the Quix compiler source code.
+5. **Verify**: The pipeline will produce a `./bin` folder in the repository root. Inside this folder, you will find the `qpkg` executable, among other binaries. Congratulations! You have successfully built the Quix compiler.
 
 ## Contributing
 
+This is my hobby project. I work on it in my free time. Until this project is more mature, if ever, I will not be accepting contributions. If you have any questions or suggestions, feel free to open an issue on GitHub. I may take an extremely long time to respond.
+
+<!-- 
 Contributions to the Quix compiler are welcome! If you'd like to contribute, please follow these guidelines:
 
 - Fork the repository on GitHub.
 - Make your changes in a new branch.
 - Test your changes thoroughly.
-- Submit a pull request with a clear description of your changes.
+- Submit a pull request with a clear description of your changes. -->
 
 ## License
 

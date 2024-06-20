@@ -183,7 +183,7 @@ LIB_EXPORT const char *quixcc_getstr(quixcc_job_t *job, quixcc_sid_t voucher) {
   /* Safe code is good code */
   assert(job != nullptr);
 
-  if (!job->m_owned_strings.contains(voucher)) return nullptr;
+  if (job->m_owned_strings.find(voucher) == job->m_owned_strings.end()) return nullptr;
 
   return job->m_owned_strings[voucher];
 }
