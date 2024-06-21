@@ -50,6 +50,7 @@ class Package {
   std::string m_email;
   std::string m_url;
   std::string m_version;
+  std::string m_description;
   PackageType m_type;
   bool m_verbose;
   bool m_force;
@@ -69,7 +70,8 @@ class Package {
  public:
   Package(std::filesystem::path output, std::string name, std::string license,
           std::string author, std::string email, std::string url,
-          std::string version, PackageType type, bool verbose, bool force)
+          std::string version, std::string description, PackageType type,
+          bool verbose, bool force)
       : m_output(output),
         m_name(name),
         m_license(license),
@@ -77,6 +79,7 @@ class Package {
         m_email(email),
         m_url(url),
         m_version(version),
+        m_description(description),
         m_type(type),
         m_verbose(verbose),
         m_force(force) {
@@ -94,6 +97,7 @@ class PackageBuilder {
   std::string m_email;
   std::string m_url;
   std::string m_version;
+  std::string m_description;
   PackageType m_type;
   bool m_verbose;
   bool m_force;
@@ -108,6 +112,7 @@ class PackageBuilder {
   PackageBuilder &email(const std::string &email);
   PackageBuilder &url(const std::string &url);
   PackageBuilder &version(const std::string &version);
+  PackageBuilder &description(const std::string &description);
   PackageBuilder &type(PackageType type);
   PackageBuilder &verbose(bool verbose);
   PackageBuilder &force(bool force);

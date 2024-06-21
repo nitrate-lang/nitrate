@@ -169,7 +169,7 @@ bool qpkg::init::Package::createPackage() {
 
     grp.set("version", 1);
     grp.set("name", m_name);
-    grp.set("description", "");
+    grp.set("description", m_description);
 
     if (!m_author.empty())
       grp.set("authors", std::vector<std::string>({m_author}));
@@ -333,6 +333,13 @@ qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::version(
   return *this;
 }
 
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::description(const std::string &description)
+{
+  m_description = description;
+  return *this;
+
+}
+
 qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::type(
     qpkg::init::PackageType type) {
   m_type = type;
@@ -351,5 +358,5 @@ qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::force(bool force) {
 
 qpkg::init::Package qpkg::init::PackageBuilder::build() {
   return qpkg::init::Package(m_output, m_name, m_license, m_author, m_email,
-                             m_url, m_version, m_type, m_verbose, m_force);
+                             m_url, m_version, m_description, m_type, m_verbose, m_force);
 }

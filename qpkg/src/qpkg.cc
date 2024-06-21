@@ -613,6 +613,7 @@ int run_init_mode(const ArgumentParser &parser) {
                                .email(parser.get<std::string>("--email"))
                                .url(parser.get<std::string>("--url"))
                                .version(parser.get<std::string>("--version"))
+                               .description(parser.get<std::string>("--description"))
                                .verbose(parser["--verbose"] == true)
                                .force(parser["--force"] == true);
 
