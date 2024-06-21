@@ -214,7 +214,8 @@ bool qpkg::init::Package::createPackage() {
     writeLicense();
     writeMain();
 
-    if (system(("git init " + (m_output / m_name).string()).c_str()) != 0) {
+    setenv("QPKG_GIT_INJECT_DEST", (m_output / m_name).string().c_str(), 1);
+    if (system("git init $QPKG_GIT_INJECT_DEST") != 0) {
       LOG(core::ERROR) << "Failed to initialize git repository" << std::endl;
       return false;
     }

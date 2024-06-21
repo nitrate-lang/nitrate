@@ -29,11 +29,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QPKG_CORE_CONFIG_HH__
-#define __QPKG_CORE_CONFIG_HH__
+#ifndef __QPKG_INSTALL_HH__
+#define __QPKG_INSTALL_HH__
 
-#define QPKG_DEV_TOOLS 1
-#define QPKG_GLOBAL_PACKAGE_DIR "/usr/local/share/qpkg/packages"
-#define QPKG_GLOBAL_BINARY_DIR "/usr/local/bin"
+#include <string>
 
-#endif  // __QPKG_CORE_CONFIG_HH__
+namespace qpkg::install {
+bool install_from_url(std::string url, const std::string& dest, std::string &package_name,
+                      bool overwrite = false);
+}  // namespace qpkg::install
+
+#endif /* __QPKG_INSTALL_HH__ */

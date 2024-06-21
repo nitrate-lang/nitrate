@@ -44,6 +44,7 @@
 #include <filesystem>
 #include <functional>
 #include <init/Package.hh>
+#include <install/Install.hh>
 #include <iostream>
 #include <map>
 #include <optional>
@@ -274,8 +275,8 @@ void setup_argparse_install(ArgumentParser &parser) {
       .default_value(false)
       .implicit_value(true);
 
-  parser.add_argument("-u", "--utility")
-      .help("install package as a utility")
+  parser.add_argument("-n", "--no-build")
+      .help("do not build package after downloading")
       .default_value(false)
       .implicit_value(true);
 
@@ -690,9 +691,67 @@ int run_update_mode(const ArgumentParser &parser) {
 int run_install_mode(const ArgumentParser &parser) {
   qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
 
-  (void)parser;
-  std::cerr << "install not implemented yet" << std::endl;
-  return 1;
+  std::string url = parser.get<std::string>("src");
+  std::string dest, package_name;
+  bool overwrite = parser["--override"] == true;
+  bool global = parser["--global"] == true;
+
+  if (global) {
+    /// TODO: fix platform-specific global install
+    try {
+      std::filesystem::create_directories(QPKG_GLOBAL_PACKAGE_DIR);
+    } catch (std::filesystem::filesystem_error &e) {
+      std::cerr << e.what() << std::endl;
+      std::cerr << "Try running with higher permissions" << std::endl;
+      return -1;
+    }
+    dest = QPKG_GLOBAL_PACKAGE_DIR;
+  } else {
+    dest = ".";
+  }
+
+  if (!qpkg::install::install_from_url(url, dest, package_name, overwrite)) {
+    return -1;
+  }
+
+  if (parser["--no-build"] == true) return 0;
+
+  qpkg::build::EngineBuilder builder;
+  std::filesystem::path dest_path = dest + "/" + package_name;
+  builder.set_package_src(dest_path.string());
+
+  if (global) {
+    try {
+      std::filesystem::path app_file = QPKG_GLOBAL_BINARY_DIR;
+      app_file /= package_name;
+
+      std::filesystem::create_directories(QPKG_GLOBAL_BINARY_DIR);
+
+      builder.set_output(app_file.string());
+    } catch (std::filesystem::filesystem_error &e) {
+      std::cerr << e.what() << std::endl;
+      std::cerr << "Try running with higher permissions" << std::endl;
+      return -1;
+    }
+  }
+
+  auto engine = builder.build();
+  if (!engine) {
+    std::cerr << "Failed to construct engine" << std::endl;
+    return -1;
+  }
+
+  if (!engine->run()) {
+    std::cerr << "Failed to build package" << std::endl;
+    return -1;
+  }
+
+  if (!global) {
+    std::cout << "Package installed to: " << dest_path << std::endl;
+    return 0;
+  }
+
+  return 0;
 }
 
 int run_doc_mode(const ArgumentParser &parser) {
