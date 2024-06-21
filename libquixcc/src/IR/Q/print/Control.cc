@@ -120,10 +120,12 @@ bool libquixcc::ir::q::TryCatchFinally::print_impl(
 
 bool libquixcc::ir::q::Case::print_impl(std::ostream &os,
                                         libquixcc::ir::PState &state) const {
-  os << "case ";
+  os << std::string(state.ind, ' ') << "case ";
   if (!value->print(os, state)) return false;
   os << ": ";
   if (!body->print(os, state)) return false;
+
+  os << "\n";
   return true;
 }
 
@@ -131,10 +133,23 @@ bool libquixcc::ir::q::Switch::print_impl(std::ostream &os,
                                           libquixcc::ir::PState &state) const {
   os << "switch (";
   if (!value->print(os, state)) return false;
-  os << ") {";
+  os << ") {\n";
+
+  state.ind += 2;
+
   for (const auto &c : cases) {
     if (!c->print(os, state)) return false;
   }
-  os << "}";
+  
+  if (defaultcase) {
+    os << std::string(state.ind, ' ') << "default: ";
+    if (!defaultcase->print(os, state)) return false;
+
+    os << "\n";
+  }
+  
+  state.ind -= 2;
+
+  os << std::string(state.ind, ' ') << "}";
   return true;
 }

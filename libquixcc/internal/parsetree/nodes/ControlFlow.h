@@ -88,6 +88,16 @@ class RetvStmtNode : public StmtNode {
   std::shared_ptr<ExprNode> m_cond;
 };
 
+class BreakStmtNode : public StmtNode {
+ public:
+  BreakStmtNode() { ntype = NodeType::BreakStmtNode; }
+};
+
+class ContinueStmtNode : public StmtNode {
+ public:
+  ContinueStmtNode() { ntype = NodeType::ContinueStmtNode; }
+};
+
 class IfStmtNode : public StmtNode {
  public:
   IfStmtNode(const std::shared_ptr<ExprNode> &cond,

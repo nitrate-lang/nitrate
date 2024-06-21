@@ -65,9 +65,9 @@ class I1 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I1() { ntype = (int)NodeType::I1; }
 
- public:
   static I1 *create();
   size_t bitcount() const override { return 1; }
 };
@@ -78,9 +78,9 @@ class I8 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I8() { ntype = (int)NodeType::I8; }
 
- public:
   static I8 *create();
   size_t bitcount() const override { return 8; }
 };
@@ -91,9 +91,9 @@ class I16 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I16() { ntype = (int)NodeType::I16; }
 
- public:
   static I16 *create();
   size_t bitcount() const override { return 16; }
 };
@@ -104,9 +104,9 @@ class I32 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I32() { ntype = (int)NodeType::I32; }
 
- public:
   static I32 *create();
   size_t bitcount() const override { return 32; }
 };
@@ -117,9 +117,9 @@ class I64 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I64() { ntype = (int)NodeType::I64; }
 
- public:
   static I64 *create();
   size_t bitcount() const override { return 64; }
 };
@@ -130,9 +130,9 @@ class I128 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I128() { ntype = (int)NodeType::I128; }
 
- public:
   static I128 *create();
   size_t bitcount() const override { return 128; }
 };
@@ -143,9 +143,9 @@ class U8 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U8() { ntype = (int)NodeType::U8; }
 
- public:
   static U8 *create();
   size_t bitcount() const override { return 8; }
 };
@@ -156,9 +156,9 @@ class U16 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U16() { ntype = (int)NodeType::U16; }
 
- public:
   static U16 *create();
   size_t bitcount() const override { return 16; }
 };
@@ -169,9 +169,9 @@ class U32 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U32() { ntype = (int)NodeType::U32; }
 
- public:
   static U32 *create();
   size_t bitcount() const override { return 32; }
 };
@@ -182,9 +182,9 @@ class U64 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U64() { ntype = (int)NodeType::U64; }
 
- public:
   static U64 *create();
   size_t bitcount() const override { return 64; }
 };
@@ -195,9 +195,9 @@ class U128 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U128() { ntype = (int)NodeType::U128; }
 
- public:
   static U128 *create();
   size_t bitcount() const override { return 128; }
 };
@@ -208,9 +208,9 @@ class F32 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   F32() { ntype = (int)NodeType::F32; }
 
- public:
   static F32 *create();
   size_t bitcount() const override { return 32; }
 };
@@ -221,9 +221,9 @@ class F64 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   F64() { ntype = (int)NodeType::F64; }
 
- public:
   static F64 *create();
   size_t bitcount() const override { return 64; }
 };
@@ -234,9 +234,9 @@ class Void : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   Void() { ntype = (int)NodeType::Void; }
 
- public:
   static Void *create();
   size_t bitcount() const override { return 0; }
 };
@@ -337,40 +337,22 @@ class Region : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Region(std::string name, std::vector<Type *> fields)
-      : name(name), fields(fields) {
+  Region(std::string name, std::vector<Type *> fields, bool packed, bool ordered)
+      : name(name), fields(fields), m_packed(packed), m_ordered(ordered) {
     ntype = (int)NodeType::Region;
   }
 
  public:
-  static Region *create(std::string name, std::vector<Type *> fields);
+  static Region *create(std::string name, std::vector<Type *> fields,
+                        bool packed, bool ordered);
   size_t bitcount() const override {
     throw std::runtime_error("Cannot get bitcount of region type");
   }
 
   std::string name;
   std::vector<Type *> fields;
-};
-
-class Group : public Type {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
-
-  Group(std::string name, std::vector<Type *> fields)
-      : name(name), fields(fields) {
-    ntype = (int)NodeType::Group;
-  }
-
- public:
-  static Group *create(std::string name, std::vector<Type *> fields);
-  size_t bitcount() const override {
-    throw std::runtime_error("Cannot get bitcount of group type");
-  }
-
-  std::string name;
-  std::vector<Type *> fields;
+  bool m_packed;
+  bool m_ordered;
 };
 
 class Union : public Type {

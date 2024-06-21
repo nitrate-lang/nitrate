@@ -115,7 +115,6 @@ static auto conv(const ir::q::Array *n, DState &state) -> DResult;
 static auto conv(const ir::q::Vector *n, DState &state) -> DResult;
 static auto conv(const ir::q::FType *n, DState &state) -> DResult;
 static auto conv(const ir::q::Region *n, DState &state) -> DResult;
-static auto conv(const ir::q::Group *n, DState &state) -> DResult;
 static auto conv(const ir::q::Union *n, DState &state) -> DResult;
 static auto conv(const ir::q::Opaque *n, DState &state) -> DResult;
 static auto conv(const ir::q::Block *n, DState &state) -> DResult;
@@ -328,13 +327,6 @@ static auto conv(const ir::q::Region *n, DState &state) -> DResult {
   return state.regions[n->name] = Packet::create(packet);
 }
 
-static auto conv(const ir::q::Group *n, DState &state) -> DResult {
-  if (!state.regions.contains(n->name))
-    throw std::runtime_error("DeltaIR translation: Group not found");
-
-  return state.regions.at(n->name);
-}
-
 static auto conv(const ir::q::Union *n, DState &state) -> DResult {
   if (!state.regions.contains(n->name))
     throw std::runtime_error("DeltaIR translation: Union not found");
@@ -484,10 +476,19 @@ static auto conv(const ir::q::While *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::For *n, DState &state) -> DResult {
-  auto init = conv(n->init, state)[0]->as<Expr>();
-  auto cond = conv(n->cond, state)[0]->as<Expr>();
-  auto step = conv(n->step, state)[0]->as<Expr>();
-  auto body = conv(n->body, state)[0];
+  const Expr *init = nullptr;
+  const Expr *cond = nullptr;
+  const Expr *step = nullptr;
+  const Value *body = nullptr;
+
+  if (n->init) init = conv(n->init, state)[0]->as<Expr>();
+  if (n->cond) cond = conv(n->cond, state)[0]->as<Expr>();
+  if (n->step) step = conv(n->step, state)[0]->as<Expr>();
+  if (n->body) body = conv(n->body, state)[0];
+
+  if (!init) init = Number::create("1");
+  if (!cond) cond = Number::create("1");
+  if (!step) step = Number::create("1");
 
   std::string label = "__step" + std::to_string(state.loop_depth++);
 
@@ -495,8 +496,6 @@ static auto conv(const ir::q::For *n, DState &state) -> DResult {
   auto loop = While::create(cond, block);
 
   auto x = Block::create({init, loop});
-
-  //   state.loop_depth--;
 
   return x;
 }
@@ -544,7 +543,7 @@ static auto conv(const ir::q::Switch *n, DState &state) -> DResult {
   auto value = conv(n->value, state)[0]->as<Expr>();
 
   auto def =
-      n->defaultcase ? conv(n->defaultcase, state)[0]->as<Case>() : nullptr;
+      n->defaultcase ? conv(n->defaultcase, state)[0]->as<Block>() : nullptr;
 
   if (value->infer()->is_numeric()) {
     std::vector<const Case *> cases;
@@ -830,10 +829,6 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult {
 
     case libquixcc::ir::q::NodeType::Region:
       r = conv(n->as<ir::q::Region>(), state);
-      break;
-
-    case libquixcc::ir::q::NodeType::Group:
-      r = conv(n->as<ir::q::Group>(), state);
       break;
 
     case libquixcc::ir::q::NodeType::Union:

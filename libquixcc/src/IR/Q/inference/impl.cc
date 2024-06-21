@@ -252,8 +252,8 @@ Type *List::infer() const {
   Type *type = types[0];
 
   for (size_t i = 1; i < types.size(); i++) {
-    if (types[i] != type) {
-      return Region::create("__t" + unqiue_typehash(types) + "_t", types);
+    if (!types[i]->is(type)) {
+      return Region::create("__t" + unqiue_typehash(types) + "_t", types, true, true);
     }
   }
 

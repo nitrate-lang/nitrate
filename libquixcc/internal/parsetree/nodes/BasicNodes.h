@@ -110,8 +110,7 @@ class ParseNode {
     if (std::is_same_v<T, CastExprNode>)
       return is<StaticCastExprNode>() || is<BitCastExprNode>() ||
              is<SignedUpcastExprNode>() || is<UnsignedUpcastExprNode>() ||
-             is<DowncastExprNode>() || is<IntToPtrCastExprNode>() ||
-             is<PtrToIntCastExprNode>();
+             is<DowncastExprNode>();
 
     if (std::is_same_v<T, ExprNode>)
       return is<StmtExprNode>() || is<UnaryExprNode>() ||
@@ -138,7 +137,7 @@ class ParseNode {
       return is<ExprStmtNode>() || is<NopStmtNode>() || is<DeclNode>() ||
              is<DefNode>() || is<BlockNode>() || is<StmtGroupNode>() ||
              is<ReturnStmtNode>() || is<RetifStmtNode>() ||
-             is<RetzStmtNode>() || is<RetvStmtNode>() || is<IfStmtNode>() ||
+             is<RetzStmtNode>() || is<RetvStmtNode>() || is<BreakStmtNode>() || is<ContinueStmtNode>() || is<IfStmtNode>() ||
              is<WhileStmtNode>() || is<ForStmtNode>() || is<FormStmtNode>() ||
              is<ForeachStmtNode>() || is<CaseStmtNode>() ||
              is<SwitchStmtNode>() || is<SubsystemNode>() || is<ExportNode>() ||

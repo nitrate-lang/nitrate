@@ -62,8 +62,6 @@ class ParseTreeSerializer {
   void conv(const SignedUpcastExprNode *);
   void conv(const UnsignedUpcastExprNode *);
   void conv(const DowncastExprNode *);
-  void conv(const PtrToIntCastExprNode *);
-  void conv(const IntToPtrCastExprNode *);
   void conv(const UnaryExprNode *);
   void conv(const PostUnaryExprNode *);
   void conv(const BinaryExprNode *);
@@ -138,6 +136,8 @@ class ParseTreeSerializer {
   void conv(const RetifStmtNode *);
   void conv(const RetzStmtNode *);
   void conv(const RetvStmtNode *);
+  void conv(const BreakStmtNode *);
+  void conv(const ContinueStmtNode *);
   void conv(const IfStmtNode *);
   void conv(const WhileStmtNode *);
   void conv(const ForStmtNode *);

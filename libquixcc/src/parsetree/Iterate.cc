@@ -76,10 +76,6 @@ size_t ParseTreePreorder::dispatch(ParseNode *n) {
       return iter(n->as<UnsignedUpcastExprNode>());
     case libquixcc::NodeType::DowncastExprNode:
       return iter(n->as<DowncastExprNode>());
-    case libquixcc::NodeType::PtrToIntCastExprNode:
-      return iter(n->as<PtrToIntCastExprNode>());
-    case libquixcc::NodeType::IntToPtrCastExprNode:
-      return iter(n->as<IntToPtrCastExprNode>());
     case libquixcc::NodeType::UnaryExprNode:
       return iter(n->as<UnaryExprNode>());
     case libquixcc::NodeType::PostUnaryExprNode:
@@ -228,6 +224,10 @@ size_t ParseTreePreorder::dispatch(ParseNode *n) {
       return iter(n->as<RetzStmtNode>());
     case libquixcc::NodeType::RetvStmtNode:
       return iter(n->as<RetvStmtNode>());
+    case libquixcc::NodeType::BreakStmtNode:
+      return iter(n->as<BreakStmtNode>());
+    case libquixcc::NodeType::ContinueStmtNode:
+      return iter(n->as<ContinueStmtNode>());
     case libquixcc::NodeType::IfStmtNode:
       return iter(n->as<IfStmtNode>());
     case libquixcc::NodeType::WhileStmtNode:
@@ -322,22 +322,6 @@ size_t ParseTreePreorder::iter(UnsignedUpcastExprNode *node) {
 }
 
 size_t ParseTreePreorder::iter(DowncastExprNode *node) {
-  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_type));
-  size_t count = next(node->m_type);
-  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_expr));
-  count += next(node->m_expr);
-  return count + 1;
-}
-
-size_t ParseTreePreorder::iter(PtrToIntCastExprNode *node) {
-  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_type));
-  size_t count = next(node->m_type);
-  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_expr));
-  count += next(node->m_expr);
-  return count + 1;
-}
-
-size_t ParseTreePreorder::iter(IntToPtrCastExprNode *node) {
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_type));
   size_t count = next(node->m_type);
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_expr));
@@ -930,6 +914,10 @@ size_t ParseTreePreorder::iter(RetvStmtNode *node) {
   return next(node->m_cond) + 1;
 }
 
+size_t ParseTreePreorder::iter(BreakStmtNode *node) { return 1; }
+
+size_t ParseTreePreorder::iter(ContinueStmtNode *node) { return 1; }
+
 size_t ParseTreePreorder::iter(IfStmtNode *node) {
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_cond));
   size_t count = next(node->m_cond);
@@ -1021,8 +1009,10 @@ size_t ParseTreePreorder::iter(SwitchStmtNode *node) {
     count += next(stmt);
   }
 
-  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_default));
-  count += next(node->m_default);
+  if (node->m_default) {
+    m_callback(m_ns, m_scope, node, mk_ptr(&node->m_default));
+    count += next(node->m_default);
+  }
 
   return count + 1;
 }

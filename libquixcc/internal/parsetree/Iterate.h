@@ -76,8 +76,6 @@ class ParseTreePreorder {
   size_t iter(SignedUpcastExprNode *node);
   size_t iter(UnsignedUpcastExprNode *node);
   size_t iter(DowncastExprNode *node);
-  size_t iter(PtrToIntCastExprNode *node);
-  size_t iter(IntToPtrCastExprNode *node);
   size_t iter(UnaryExprNode *node);
   size_t iter(PostUnaryExprNode *node);
   size_t iter(BinaryExprNode *node);
@@ -152,6 +150,8 @@ class ParseTreePreorder {
   size_t iter(RetifStmtNode *node);
   size_t iter(RetzStmtNode *node);
   size_t iter(RetvStmtNode *node);
+  size_t iter(BreakStmtNode *node);
+  size_t iter(ContinueStmtNode *node);
   size_t iter(IfStmtNode *node);
   size_t iter(WhileStmtNode *node);
   size_t iter(ForStmtNode *node);

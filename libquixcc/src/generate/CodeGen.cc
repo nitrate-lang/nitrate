@@ -462,21 +462,42 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Index *node) {
 
   if (e->getType()->isPointerTy() &&
       e->getType()->getPointerElementType()->isArrayTy()) {
-    auto red = bounds_wrap(
-        i, llvm::ConstantInt::get(
-               llvm::Type::getInt32Ty(*m_ctx->m_ctx),
-               e->getType()->getPointerElementType()->getArrayNumElements()));
+    llvm::ConstantInt *mod_n = nullptr;
+    uint64_t n = e->getType()->getPointerElementType()->getArrayNumElements();
+
+    auto it = i->getType();
+    if (it->isIntegerTy(128)) {
+      mod_n = llvm::ConstantInt::get(llvm::Type::getInt128Ty(*m_ctx->m_ctx), n);
+    } else if (it->isIntegerTy(64))
+      mod_n = llvm::ConstantInt::get(llvm::Type::getInt64Ty(*m_ctx->m_ctx), n);
+    else if (it->isIntegerTy(32))
+      mod_n = llvm::ConstantInt::get(llvm::Type::getInt32Ty(*m_ctx->m_ctx), n);
+    else if (it->isIntegerTy(16))
+      mod_n = llvm::ConstantInt::get(llvm::Type::getInt16Ty(*m_ctx->m_ctx), n);
+    else if (it->isIntegerTy(8))
+      mod_n = llvm::ConstantInt::get(llvm::Type::getInt8Ty(*m_ctx->m_ctx), n);
+    else if (it->isIntegerTy(1))
+      mod_n = llvm::ConstantInt::get(llvm::Type::getInt1Ty(*m_ctx->m_ctx), n);
+    else
+      throw std::runtime_error("Codegen failed: Indexing TYPE not supported");
+
+    auto red = bounds_wrap(i, mod_n);
     v = m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e,
                                     {zero, red});
-    if (!m_state.m_deref) return v;
-    return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(),
-                                        v);
+
+    if (!m_state.m_deref) {
+      return v;
+    }
+    auto tv = v->getType()->getPointerElementType();
+    return m_ctx->m_builder->CreateLoad(tv, v);
   } else if (e->getType()->isPointerTy()) {
-    v = m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e,
-                                    i);
-    if (!m_state.m_deref && !is_inarr) return v;
-    return m_ctx->m_builder->CreateLoad(v->getType()->getPointerElementType(),
-                                        v);
+    auto ev = e->getType()->getPointerElementType();
+    v = m_ctx->m_builder->CreateGEP(ev, e, i);
+    if (!m_state.m_deref && !is_inarr) {
+      return v;
+    }
+    auto tv = v->getType()->getPointerElementType();
+    return m_ctx->m_builder->CreateLoad(tv, v);
   } else {
     throw std::runtime_error("Codegen failed: Indexing TYPE not supported");
   }
@@ -634,6 +655,26 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::PtrCall *node) {
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Halt *node) {
   throw std::runtime_error("Halt not implemented");
+}
+
+llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Break *node)
+{
+  throw std::runtime_error("Break not implemented");
+}
+
+llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Continue *node)
+{
+  throw std::runtime_error("Continue not implemented");
+}
+
+llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Switch *node)
+{
+  throw std::runtime_error("Switch not implemented");
+}
+
+llvm::Value *libquixcc::LLVM14Codegen::gen(const libquixcc::ir::delta::Case *node)
+{
+  throw std::runtime_error("Case not implemented");
 }
 
 llvm::Value *libquixcc::LLVM14Codegen::gen(const ir::delta::Block *node) {
@@ -959,6 +1000,14 @@ llvm::Value *libquixcc::LLVM14Codegen::gen(
       return gen(n->as<PtrCall>());
     case delta::NodeType::Halt:
       return gen(n->as<Halt>());
+    case delta::NodeType::Break:
+      return gen(n->as<Break>());
+    case delta::NodeType::Continue:
+      return gen(n->as<Continue>());
+    case delta::NodeType::Switch:
+      return gen(n->as<Switch>());
+    case delta::NodeType::Case:
+      return gen(n->as<Case>());
     case delta::NodeType::Block:
       return gen(n->as<Block>());
     case delta::NodeType::Segment:

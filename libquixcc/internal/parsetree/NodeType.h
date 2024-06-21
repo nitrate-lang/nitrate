@@ -65,8 +65,6 @@ enum class NodeType : uint8_t {
   SignedUpcastExprNode,
   UnsignedUpcastExprNode,
   DowncastExprNode,
-  PtrToIntCastExprNode,
-  IntToPtrCastExprNode,
 
   UnaryExprNode,
   PostUnaryExprNode,
@@ -150,6 +148,8 @@ enum class NodeType : uint8_t {
   RetifStmtNode,
   RetzStmtNode,
   RetvStmtNode,
+  BreakStmtNode,
+  ContinueStmtNode,
   IfStmtNode,
   WhileStmtNode,
   ForStmtNode,
@@ -177,8 +177,6 @@ class BitCastExprNode;
 class SignedUpcastExprNode;
 class UnsignedUpcastExprNode;
 class DowncastExprNode;
-class PtrToIntCastExprNode;
-class IntToPtrCastExprNode;
 class UnaryExprNode;
 class PostUnaryExprNode;
 class BinaryExprNode;
@@ -254,6 +252,8 @@ class ReturnStmtNode;
 class RetifStmtNode;
 class RetzStmtNode;
 class RetvStmtNode;
+class BreakStmtNode;
+class ContinueStmtNode;
 class IfStmtNode;
 class WhileStmtNode;
 class ForStmtNode;

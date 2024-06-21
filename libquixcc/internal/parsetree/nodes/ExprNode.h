@@ -192,22 +192,6 @@ class DowncastExprNode : public CastExprNode {
   }
 };
 
-class PtrToIntCastExprNode : public CastExprNode {
- public:
-  PtrToIntCastExprNode(const std::shared_ptr<ExprNode> &expr)
-      : CastExprNode(expr, nullptr) {
-    ntype = NodeType::PtrToIntCastExprNode;
-  }
-};
-
-class IntToPtrCastExprNode : public CastExprNode {
- public:
-  IntToPtrCastExprNode(const std::shared_ptr<ExprNode> &expr, TypeNode *type)
-      : CastExprNode(expr, type) {
-    ntype = NodeType::IntToPtrCastExprNode;
-  }
-};
-
 }  // namespace libquixcc
 
 #endif  // __QUIXCC_PARSE_NODES_EXPR_H__

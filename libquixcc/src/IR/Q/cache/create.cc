@@ -78,6 +78,21 @@ class ThreadGarbageCollecter {
   }
 };
 
+static I1 *g_i1 = new I1();
+static I8 *g_i8 = new I8();
+static I16 *g_i16 = new I16();
+static I32 *g_i32 = new I32();
+static I64 *g_i64 = new I64();
+static I128 *g_i128 = new I128();
+static U8 *g_u8 = new U8();
+static U16 *g_u16 = new U16();
+static U32 *g_u32 = new U32();
+static U64 *g_u64 = new U64();
+static U128 *g_u128 = new U128();
+static F32 *g_f32 = new F32();
+static F64 *g_f64 = new F64();
+static Void *g_void = new Void();
+
 static thread_local ThreadGarbageCollecter thread_gc;
 
 #define MAKE_GC(T, ...)          \
@@ -209,33 +224,33 @@ Not *Not::create(Expr *value) { MAKE_GC(Not, value); }
 
 Xor *Xor::create(Expr *lhs, Expr *rhs) { MAKE_GC(Xor, lhs, rhs); }
 
-I1 *I1::create() { MAKE_GC(I1, ); }
+I1 *I1::create() { return g_i1; }
 
-I8 *I8::create() { MAKE_GC(I8, ); }
+I8 *I8::create() { return g_i8; }
 
-I16 *I16::create() { MAKE_GC(I16, ); }
+I16 *I16::create() { return g_i16; }
 
-I32 *I32::create() { MAKE_GC(I32, ); }
+I32 *I32::create() { return g_i32; }
 
-I64 *I64::create() { MAKE_GC(I64, ); }
+I64 *I64::create() { return g_i64; }
 
-I128 *I128::create() { MAKE_GC(I128, ); }
+I128 *I128::create() { return g_i128; }
 
-U8 *U8::create() { MAKE_GC(U8, ); }
+U8 *U8::create() { return g_u8; }
 
-U16 *U16::create() { MAKE_GC(U16, ); }
+U16 *U16::create() { return g_u16; }
 
-U32 *U32::create() { MAKE_GC(U32, ); }
+U32 *U32::create() { return g_u32; }
 
-U64 *U64::create() { MAKE_GC(U64, ); }
+U64 *U64::create() { return g_u64; }
 
-U128 *U128::create() { MAKE_GC(U128, ); }
+U128 *U128::create() { return g_u128; }
 
-F32 *F32::create() { MAKE_GC(F32, ); }
+F32 *F32::create() { return g_f32; }
 
-F64 *F64::create() { MAKE_GC(F64, ); }
+F64 *F64::create() { return g_f64; }
 
-Void *Void::create() { MAKE_GC(Void, ); }
+Void *Void::create() { return g_void; }
 
 Ptr *Ptr::create(Type *type) { MAKE_GC(Ptr, type); }
 
@@ -248,12 +263,9 @@ FType *FType::create(vec<Type *> params, Type *ret, bool variadic, bool pure,
   MAKE_GC(FType, params, ret, variadic, pure, thread_safe, foreign, _noexcept);
 }
 
-Region *Region::create(str name, vec<Type *> fields) {
-  MAKE_GC(Region, name, fields);
-}
-
-Group *Group::create(str name, vec<Type *> fields) {
-  MAKE_GC(Group, name, fields);
+Region *Region::create(str name, vec<Type *> fields, bool packed,
+                       bool ordered) {
+  MAKE_GC(Region, name, fields, packed, ordered);
 }
 
 Union *Union::create(str name, vec<Type *> fields) {

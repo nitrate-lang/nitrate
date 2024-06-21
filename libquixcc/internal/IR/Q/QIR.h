@@ -66,7 +66,6 @@ enum class NodeType {
   Vector,
   FType,
   Region,
-  Group,
   Union,
   Opaque,
 

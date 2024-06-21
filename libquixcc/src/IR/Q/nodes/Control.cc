@@ -139,12 +139,24 @@ bool libquixcc::ir::q::Case::verify_impl() const {
 }
 
 boost::uuids::uuid libquixcc::ir::q::Switch::hash_impl() const {
-  return Hasher().gettag().add(value).add(cases).add(defaultcase).hash();
+  auto h = Hasher().gettag().add(value).add(cases);
+
+  if (defaultcase) h.add(defaultcase);
+
+  return h.hash();
 }
 
 bool libquixcc::ir::q::Switch::verify_impl() const {
-  return value->verify() &&
-         std::all_of(cases.begin(), cases.end(),
-                     [](const Case *c) { return c->verify(); }) &&
-         defaultcase->verify();
+  if (!value) return false;
+
+  if (!value->verify()) return false;
+
+  if (!std::all_of(cases.begin(), cases.end(),
+                   [](const auto &c) { return c->verify(); })) {
+    return false;
+  }
+
+  if (defaultcase && !defaultcase->verify()) return false;
+
+  return true;
 }

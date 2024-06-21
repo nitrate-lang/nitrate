@@ -156,6 +156,12 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
       case Keyword::Retv:
         if (!parse_retv(job, scanner, node)) return false;
         break;
+      case Keyword::Break:
+        node = std::make_shared<BreakStmtNode>();
+        break;
+      case Keyword::Continue:
+        node = std::make_shared<ContinueStmtNode>();
+        break;
       case Keyword::If:
         if (!parse_if(job, scanner, node)) return false;
         break;

@@ -121,28 +121,34 @@ bool libquixcc::ir::delta::Switch::print_impl(
     std::ostream &os, libquixcc::ir::PState &state) const {
   os << "switch (";
   if (!cond->print(os, state)) return false;
+  os << ") {\n";
 
-  os << ") {";
-  for (auto &c : cases) {
+  state.ind += 2;
+
+  for (const auto &c : cases) {
     if (!c->print(os, state)) return false;
   }
 
   if (def) {
-    os << "default: ";
+    os << std::string(state.ind, ' ') << "default: ";
     if (!def->print(os, state)) return false;
+
+    os << "\n";
   }
 
-  os << "}";
+  state.ind -= 2;
+
+  os << std::string(state.ind, ' ') << "}";
   return true;
 }
 
 bool libquixcc::ir::delta::Case::print_impl(
     std::ostream &os, libquixcc::ir::PState &state) const {
-  os << "case ";
+  os << std::string(state.ind, ' ') << "case ";
   if (!value->print(os, state)) return false;
-
   os << ": ";
   if (!code->print(os, state)) return false;
 
+  os << "\n";
   return true;
 }

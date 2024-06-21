@@ -153,12 +153,6 @@ boost::uuids::uuid libquixcc::ir::q::Region::hash_impl() const {
 
 bool libquixcc::ir::q::Region::verify_impl() const { return !name.empty(); }
 
-boost::uuids::uuid libquixcc::ir::q::Group::hash_impl() const {
-  return Hasher().gettag().add(name).hash();
-}
-
-bool libquixcc::ir::q::Group::verify_impl() const { return !name.empty(); }
-
 boost::uuids::uuid libquixcc::ir::q::Union::hash_impl() const {
   return Hasher().gettag().add(name).hash();
 }

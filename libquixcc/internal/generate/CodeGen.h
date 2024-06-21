@@ -136,6 +136,11 @@ class LLVM14Codegen {
   llvm::Value *gen(const ir::delta::Call *node);
   llvm::Value *gen(const ir::delta::PtrCall *node);
   llvm::Value *gen(const ir::delta::Halt *node);
+  llvm::Value *gen(const ir::delta::Break *node);
+  llvm::Value *gen(const ir::delta::Continue *node);
+  llvm::Value *gen(const ir::delta::Switch *node);
+  llvm::Value *gen(const ir::delta::Case *node);
+
   llvm::Value *gen(const ir::delta::Block *node);
   llvm::Function *gen(const ir::delta::Segment *node);
   llvm::Value *gen(const ir::delta::Asm *node);
@@ -238,6 +243,10 @@ class C11Codegen {
   void gen(const ir::delta::Call *node, std::ostream &code);
   void gen(const ir::delta::PtrCall *node, std::ostream &code);
   void gen(const ir::delta::Halt *node, std::ostream &code);
+  void gen(const ir::delta::Break *node, std::ostream &code);
+  void gen(const ir::delta::Continue *node, std::ostream &code);
+  void gen(const ir::delta::Switch *node, std::ostream &code);
+  void gen(const ir::delta::Case *node, std::ostream &code);
   void gen(const ir::delta::Block *node, std::ostream &code);
   void gen(const ir::delta::Segment *node, std::ostream &code);
   void gen(const ir::delta::Asm *node, std::ostream &code);

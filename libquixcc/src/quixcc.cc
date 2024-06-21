@@ -473,21 +473,14 @@ std::string base64_encode(const std::string &in) {
 static bool quixcc_mutate_ptree(quixcc_job_t *job,
                                 std::shared_ptr<Ptree> ptree) {
   Mutation mutator;
-  mutator.add_routine(
-      mutate::MethodToFunc);  ///> Convert method calls to function calls
-  mutator.add_routine(
-      mutate::DiscoverNamedConstructs);  ///> Map named constructs to their
-                                         /// respective Ptree nodes
-  mutator.add_routine(
-      mutate::ResolveNamedConstructs);  ///> Resolve named constructs to their
-                                        /// respective Ptree nodes
-  mutator.add_routine(
-      mutate::ExtrapolateEnumFields);  ///> Derive enum field values
-  mutator.add_routine(
-      mutate::SubsystemCollapse);  ///> Flatten Ptree by collapsing subsystems
-  mutator.add_routine(mutate::ObjectConstruction);  ///> Object construction
-  mutator.add_routine(mutate::ObjectDestruction);   ///> Object destruction
-  mutator.add_routine(mutate::ImplicitReturn);  ///> Implicit return statements
+  // mutator.add_routine(mutate::MethodToFunc);
+  mutator.add_routine(mutate::DiscoverNamedConstructs);
+  mutator.add_routine(mutate::ResolveNamedConstructs);
+  mutator.add_routine(mutate::ExtrapolateEnumFields);
+  mutator.add_routine(mutate::SubsystemCollapse);
+  mutator.add_routine(mutate::ObjectConstruction);
+  mutator.add_routine(mutate::ObjectDestruction);
+  mutator.add_routine(mutate::ImplicitReturn);
   mutator.run(job, ptree);
 
   return true;
@@ -1093,9 +1086,9 @@ void quixcc_fault_handler(int sig) {
 
 static bool execute_job(quixcc_job_t *job) {
   if (!job->m_in || !job->m_out || job->m_filename.empty()) return false;
+
   try {
     LoggerConfigure(*job);
-
     job->m_inner.setup(job->m_filename.top());
 
     LOG(DEBUG) << log::raw << "Starting quixcc run @ " << get_datetime()
@@ -1105,7 +1098,18 @@ static bool execute_job(quixcc_job_t *job) {
       LOG(ERROR) << "failed to build argmap" << std::endl;
       return false;
     }
+  } catch (Exception &e) {
+    LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+    return false;
+  } catch (std::exception &e) {
+    LOG(FAILED) << "Compilation failed: " << e.what() << std::endl;
+    return false;
+  } catch (...) {
+    LOG(FAILED) << "Compilation failed" << std::endl;
+    return false;
+  }
 
+  if (job->m_argset.contains("-fcoredump")) {
     if (!compile(job)) LOG(ERROR) << "Compilation failed" << std::endl;
 
     LOG(DEBUG) << "Compilation successful" << std::endl;
@@ -1114,36 +1118,49 @@ static bool execute_job(quixcc_job_t *job) {
 
     job->m_result.m_success = true;
     return true;
-  } catch (ProgrammaticPreprocessorException &) {
-    LOG(FAILED)
-        << "Compilation was programmatically aborted while preprocessing source"
-        << std::endl;
-    return false;
-  } catch (PreprocessorException &e) {
-    LOG(FAILED) << log::raw
-                << "Compilation was aborted while preprocessing source: "
-                << e.what() << std::endl;
-    return false;
-  } catch (ParseException &e) {
-    LOG(FAILED) << log::raw
-                << "Compilation was aborted while parsing source: " << e.what()
-                << std::endl;
-    return false;
-  } catch (Exception &e) {
-    LOG(FAILED) << log::raw << "Compilation failed" << std::endl;
-    return false;
-  } catch (std::runtime_error &e) {
-    LOG(FAILED) << log::raw << "Compilation failed: " << e.what() << std::endl;
-    return false;
-  } catch (std::exception &e) {
-    LOG(FAILED) << log::raw << "Compilation failed: " << e.what() << std::endl;
-    return false;
-  } catch (const char *e) {
-    LOG(FAILED) << log::raw << "Compilation failed: " << e << std::endl;
-    return false;
-  } catch (...) {
-    LOG(FAILED) << "Compilation failed" << std::endl;
-    return false;
+  } else {
+    try {
+      if (!compile(job)) LOG(ERROR) << "Compilation failed" << std::endl;
+
+      LOG(DEBUG) << "Compilation successful" << std::endl;
+      LOG(DEBUG) << log::raw << "Finished quixcc run @ " << get_datetime()
+                 << std::endl;
+
+      job->m_result.m_success = true;
+      return true;
+    } catch (ProgrammaticPreprocessorException &) {
+      LOG(FAILED) << "Compilation was programmatically aborted while "
+                     "preprocessing source"
+                  << std::endl;
+      return false;
+    } catch (PreprocessorException &e) {
+      LOG(FAILED) << log::raw
+                  << "Compilation was aborted while preprocessing source: "
+                  << e.what() << std::endl;
+      return false;
+    } catch (ParseException &e) {
+      LOG(FAILED) << log::raw
+                  << "Compilation was aborted while parsing source: "
+                  << e.what() << std::endl;
+      return false;
+    } catch (Exception &e) {
+      LOG(FAILED) << log::raw << "Compilation failed" << std::endl;
+      return false;
+    } catch (std::runtime_error &e) {
+      LOG(FAILED) << log::raw << "Compilation failed: " << e.what()
+                  << std::endl;
+      return false;
+    } catch (std::exception &e) {
+      LOG(FAILED) << log::raw << "Compilation failed: " << e.what()
+                  << std::endl;
+      return false;
+    } catch (const char *e) {
+      LOG(FAILED) << log::raw << "Compilation failed: " << e << std::endl;
+      return false;
+    } catch (...) {
+      LOG(FAILED) << "Compilation failed" << std::endl;
+      return false;
+    }
   }
 
   return false;

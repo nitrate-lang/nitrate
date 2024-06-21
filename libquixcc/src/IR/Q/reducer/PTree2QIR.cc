@@ -43,6 +43,7 @@
 #include <IR/Q/Variable.h>
 #include <core/Logger.h>
 #include <mangle/Symbol.h>
+#include <openssl/rand.h>
 
 #include <any>
 #include <optional>
@@ -92,140 +93,249 @@ struct QState {
   }
 };
 
-static auto conv(const ParseNode *n, QState &state) -> QResult;
-static auto conv(const ExprStmtNode *n, QState &state) -> QResult;
-static auto conv(const StmtExprNode *n, QState &state) -> QResult;
-static auto conv(const NopStmtNode *n, QState &state) -> QResult;
-static auto conv(const BlockNode *n, QState &state) -> QResult;
-static auto conv(const StmtGroupNode *n, QState &state) -> QResult;
-static auto conv(const StaticCastExprNode *n, QState &state) -> QResult;
-static auto conv(const BitCastExprNode *n, QState &state) -> QResult;
-static auto conv(const SignedUpcastExprNode *n, QState &state) -> QResult;
-static auto conv(const UnsignedUpcastExprNode *n, QState &state) -> QResult;
-static auto conv(const DowncastExprNode *n, QState &state) -> QResult;
-static auto conv(const PtrToIntCastExprNode *n, QState &state) -> QResult;
-static auto conv(const IntToPtrCastExprNode *n, QState &state) -> QResult;
-static auto conv(const UnaryExprNode *n, QState &state) -> QResult;
-static auto conv(const PostUnaryExprNode *n, QState &state) -> QResult;
-static auto conv(const BinaryExprNode *n, QState &state) -> QResult;
-static auto conv(const CallExprNode *n, QState &state) -> QResult;
-static auto conv(const ListExprNode *n, QState &state) -> QResult;
-static auto conv(const MemberAccessNode *n, QState &state) -> QResult;
-static auto conv(const IndexNode *n, QState &state) -> QResult;
-static auto conv(const SliceNode *n, QState &state) -> QResult;
-static auto conv(const FStringNode *n, QState &state) -> QResult;
-static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult;
-static auto conv(const ConstPostUnaryExprNode *n, QState &state) -> QResult;
-static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult;
-static auto conv(const IdentifierNode *n, QState &state) -> QResult;
-static auto conv(const MutTypeNode *n, QState &state) -> QResult;
-static auto conv(const U8TypeNode *n, QState &state) -> QResult;
-static auto conv(const U16TypeNode *n, QState &state) -> QResult;
-static auto conv(const U32TypeNode *n, QState &state) -> QResult;
-static auto conv(const U64TypeNode *n, QState &state) -> QResult;
-static auto conv(const U128TypeNode *n, QState &state) -> QResult;
-static auto conv(const I8TypeNode *n, QState &state) -> QResult;
-static auto conv(const I16TypeNode *n, QState &state) -> QResult;
-static auto conv(const I32TypeNode *n, QState &state) -> QResult;
-static auto conv(const I64TypeNode *n, QState &state) -> QResult;
-static auto conv(const I128TypeNode *n, QState &state) -> QResult;
-static auto conv(const F32TypeNode *n, QState &state) -> QResult;
-static auto conv(const F64TypeNode *n, QState &state) -> QResult;
-static auto conv(const BoolTypeNode *n, QState &state) -> QResult;
-static auto conv(const VoidTypeNode *n, QState &state) -> QResult;
-static auto conv(const NullTypeNode *n, QState &state) -> QResult;
-static auto conv(const PointerTypeNode *n, QState &state) -> QResult;
-static auto conv(const OpaqueTypeNode *n, QState &state) -> QResult;
-static auto conv(const StringTypeNode *n, QState &state) -> QResult;
-static auto conv(const EnumTypeNode *n, QState &state) -> QResult;
-static auto conv(const StructTypeNode *n, QState &state) -> QResult;
-static auto conv(const GroupTypeNode *n, QState &state) -> QResult;
-static auto conv(const RegionTypeNode *n, QState &state) -> QResult;
-static auto conv(const UnionTypeNode *n, QState &state) -> QResult;
-static auto conv(const ArrayTypeNode *n, QState &state) -> QResult;
-static auto conv(const VectorTypeNode *n, QState &state) -> QResult;
-static auto conv(const ResultTypeNode *n, QState &state) -> QResult;
-static auto conv(const GeneratorTypeNode *n, QState &state) -> QResult;
-static auto conv(const FunctionTypeNode *n, QState &state) -> QResult;
-static auto conv(const IntegerNode *n, QState &state) -> QResult;
-static auto conv(const FloatLiteralNode *n, QState &state) -> QResult;
-static auto conv(const StringNode *n, QState &state) -> QResult;
-static auto conv(const CharNode *n, QState &state) -> QResult;
-static auto conv(const BoolLiteralNode *n, QState &state) -> QResult;
-static auto conv(const NullLiteralNode *n, QState &state) -> QResult;
-static auto conv(const UndefLiteralNode *n, QState &state) -> QResult;
-static auto conv(const TypedefNode *n, QState &state) -> QResult;
-static auto conv(const VarDeclNode *n, QState &state) -> QResult;
-static auto conv(const LetDeclNode *n, QState &state) -> QResult;
-static auto conv(const ConstDeclNode *n, QState &state) -> QResult;
-static auto conv(const FunctionDeclNode *n, QState &state) -> QResult;
-static auto conv(const StructDefNode *n, QState &state) -> QResult;
-static auto conv(const StructFieldNode *n, QState &state) -> QResult;
-static auto conv(const RegionDefNode *n, QState &state) -> QResult;
-static auto conv(const RegionFieldNode *n, QState &state) -> QResult;
-static auto conv(const GroupDefNode *n, QState &state) -> QResult;
-static auto conv(const GroupFieldNode *n, QState &state) -> QResult;
-static auto conv(const UnionDefNode *n, QState &state) -> QResult;
-static auto conv(const UnionFieldNode *n, QState &state) -> QResult;
-static auto conv(const EnumDefNode *n, QState &state) -> QResult;
-static auto conv(const EnumFieldNode *n, QState &state) -> QResult;
-static auto conv(const FunctionDefNode *n, QState &state) -> QResult;
-static auto conv(const FunctionParamNode *n, QState &state) -> QResult;
-static auto conv(const ExportNode *n, QState &state) -> QResult;
-static auto conv(const InlineAsmNode *n, QState &state) -> QResult;
-static auto conv(const ReturnStmtNode *n, QState &state) -> QResult;
-static auto conv(const RetifStmtNode *n, QState &state) -> QResult;
-static auto conv(const RetzStmtNode *n, QState &state) -> QResult;
-static auto conv(const RetvStmtNode *n, QState &state) -> QResult;
-static auto conv(const IfStmtNode *n, QState &state) -> QResult;
-static auto conv(const WhileStmtNode *n, QState &state) -> QResult;
-static auto conv(const ForStmtNode *n, QState &state) -> QResult;
-static auto conv(const FormStmtNode *n, QState &state) -> QResult;
-static auto conv(const ForeachStmtNode *n, QState &state) -> QResult;
-static auto conv(const CaseStmtNode *n, QState &state) -> QResult;
-static auto conv(const SwitchStmtNode *n, QState &state) -> QResult;
+///=============================================================================
+/// BEGIN: FORWARD DECLARATIONS
+static QResult conv(const ParseNode *n, QState &state);
+static QResult conv(const ExprStmtNode *n, QState &state);
+static QResult conv(const StmtExprNode *n, QState &state);
+static QResult conv(const NopStmtNode *n, QState &state);
+static QResult conv(const BlockNode *n, QState &state);
+static QResult conv(const StmtGroupNode *n, QState &state);
+static QResult conv(const StaticCastExprNode *n, QState &state);
+static QResult conv(const BitCastExprNode *n, QState &state);
+static QResult conv(const SignedUpcastExprNode *n, QState &state);
+static QResult conv(const UnsignedUpcastExprNode *n, QState &state);
+static QResult conv(const DowncastExprNode *n, QState &state);
+static QResult conv(const UnaryExprNode *n, QState &state);
+static QResult conv(const PostUnaryExprNode *n, QState &state);
+static QResult conv(const BinaryExprNode *n, QState &state);
+static QResult conv(const CallExprNode *n, QState &state);
+static QResult conv(const ListExprNode *n, QState &state);
+static QResult conv(const MemberAccessNode *n, QState &state);
+static QResult conv(const IndexNode *n, QState &state);
+static QResult conv(const SliceNode *n, QState &state);
+static QResult conv(const FStringNode *n, QState &state);
+static QResult conv(const ConstUnaryExprNode *n, QState &state);
+static QResult conv(const ConstPostUnaryExprNode *n, QState &state);
+static QResult conv(const ConstBinaryExprNode *n, QState &state);
+static QResult conv(const IdentifierNode *n, QState &state);
+static QResult conv(const MutTypeNode *n, QState &state);
+static QResult conv(const U8TypeNode *n, QState &state);
+static QResult conv(const U16TypeNode *n, QState &state);
+static QResult conv(const U32TypeNode *n, QState &state);
+static QResult conv(const U64TypeNode *n, QState &state);
+static QResult conv(const U128TypeNode *n, QState &state);
+static QResult conv(const I8TypeNode *n, QState &state);
+static QResult conv(const I16TypeNode *n, QState &state);
+static QResult conv(const I32TypeNode *n, QState &state);
+static QResult conv(const I64TypeNode *n, QState &state);
+static QResult conv(const I128TypeNode *n, QState &state);
+static QResult conv(const F32TypeNode *n, QState &state);
+static QResult conv(const F64TypeNode *n, QState &state);
+static QResult conv(const BoolTypeNode *n, QState &state);
+static QResult conv(const VoidTypeNode *n, QState &state);
+static QResult conv(const NullTypeNode *n, QState &state);
+static QResult conv(const PointerTypeNode *n, QState &state);
+static QResult conv(const OpaqueTypeNode *n, QState &state);
+static QResult conv(const StringTypeNode *n, QState &state);
+static QResult conv(const EnumTypeNode *n, QState &state);
+static QResult conv(const StructTypeNode *n, QState &state);
+static QResult conv(const GroupTypeNode *n, QState &state);
+static QResult conv(const RegionTypeNode *n, QState &state);
+static QResult conv(const UnionTypeNode *n, QState &state);
+static QResult conv(const ArrayTypeNode *n, QState &state);
+static QResult conv(const VectorTypeNode *n, QState &state);
+static QResult conv(const ResultTypeNode *n, QState &state);
+static QResult conv(const GeneratorTypeNode *n, QState &state);
+static QResult conv(const FunctionTypeNode *n, QState &state);
+static QResult conv(const IntegerNode *n, QState &state);
+static QResult conv(const FloatLiteralNode *n, QState &state);
+static QResult conv(const StringNode *n, QState &state);
+static QResult conv(const CharNode *n, QState &state);
+static QResult conv(const BoolLiteralNode *n, QState &state);
+static QResult conv(const NullLiteralNode *n, QState &state);
+static QResult conv(const UndefLiteralNode *n, QState &state);
+static QResult conv(const TypedefNode *n, QState &state);
+static QResult conv(const VarDeclNode *n, QState &state);
+static QResult conv(const LetDeclNode *n, QState &state);
+static QResult conv(const ConstDeclNode *n, QState &state);
+static QResult conv(const FunctionDeclNode *n, QState &state);
+static QResult conv(const StructDefNode *n, QState &state);
+static QResult conv(const StructFieldNode *n, QState &state);
+static QResult conv(const RegionDefNode *n, QState &state);
+static QResult conv(const RegionFieldNode *n, QState &state);
+static QResult conv(const GroupDefNode *n, QState &state);
+static QResult conv(const GroupFieldNode *n, QState &state);
+static QResult conv(const UnionDefNode *n, QState &state);
+static QResult conv(const UnionFieldNode *n, QState &state);
+static QResult conv(const EnumDefNode *n, QState &state);
+static QResult conv(const EnumFieldNode *n, QState &state);
+static QResult conv(const FunctionDefNode *n, QState &state);
+static QResult conv(const FunctionParamNode *n, QState &state);
+static QResult conv(const ExportNode *n, QState &state);
+static QResult conv(const InlineAsmNode *n, QState &state);
+static QResult conv(const ReturnStmtNode *n, QState &state);
+static QResult conv(const RetifStmtNode *n, QState &state);
+static QResult conv(const RetzStmtNode *n, QState &state);
+static QResult conv(const RetvStmtNode *n, QState &state);
+static QResult conv(const BreakStmtNode *n, QState &state);
+static QResult conv(const ContinueStmtNode *n, QState &state);
+static QResult conv(const IfStmtNode *n, QState &state);
+static QResult conv(const WhileStmtNode *n, QState &state);
+static QResult conv(const ForStmtNode *n, QState &state);
+static QResult conv(const FormStmtNode *n, QState &state);
+static QResult conv(const ForeachStmtNode *n, QState &state);
+static QResult conv(const CaseStmtNode *n, QState &state);
+static QResult conv(const SwitchStmtNode *n, QState &state);
+/// END: FORWARD DECLARATIONS
+///=============================================================================
 
-static auto conv(const ExprStmtNode *n, QState &state) -> QResult {
+///=============================================================================
+/// BEGIN: COMMON UTILITIES
+
+/// END: COMMON UTILITIES
+///=============================================================================
+
+///=============================================================================
+/// BEGIN: CONVERSION FUNCTIONS
+static QResult conv(const ExprStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree expression-statement adapter
+   *           into a QIR expression node.
+   *
+   * Edge Cases:
+   *  - If the body of the adapter is null, return null.
+   *
+   * General Behavior:
+   * - Polymporphically convert the body of the adapter into a QIR
+   *   expression node.
+   **/
+
+  if (!n->m_expr) {
+    return nullptr;
+  }
+
   return conv(n->m_expr.get(), state);
 }
 
-static auto conv(const StmtExprNode *n, QState &state) -> QResult {
+static QResult conv(const StmtExprNode *n, QState &state) {
+  /* Function: Convert a parse tree statement-expression adapter
+   *           into a QIR statement node.
+   *
+   * Edge Cases:
+   *  - If the body of the adapter is null, return null.
+   *
+   * General Behavior:
+   * - Polymporphically convert the body of the adapter into a QIR
+   *   statement node.
+   **/
+
+  if (!n->m_stmt) {
+    return nullptr;
+  }
+
   return conv(n->m_stmt.get(), state);
 }
 
-static auto conv(const NopStmtNode *n, QState &state) -> QResult {
+static QResult conv(const NopStmtNode *n, QState &state) {
+  /* Function: Disregard a no-operation statement
+   *           (compiler internal construct).
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - Return null.
+   **/
+
   return nullptr;
 }
 
-static auto conv(const BlockNode *n, QState &state) -> QResult {
-  std::vector<QValue> sub;
-  for (auto &stmt : n->m_stmts) {
-    auto res = conv(stmt.get(), state);
-    if (!res) continue;
+static QResult conv(const BlockNode *n, QState &state) {
+  /* Function: Convert a parse tree block into a QIR block.
+   *
+   * Edge Cases:
+   *  - Any null children in the input shall be skipped.
+   *  - Any null children derived from the conversion shall be discarded.
+   *
+   * General Behavior:
+   * - Foreach child in the input, convert the child into a QIR node.
+   *   Construct a single block from the resulting QIR nodes.
+   **/
 
-    for (auto val : *res) {
-      if (!val) continue;
+  std::vector<QValue> sub;
+  sub.reserve(n->m_stmts.size());
+
+  for (const auto &stmt : n->m_stmts) {
+    /* Skip null input children */
+    if (!stmt) {
+      continue;
+    }
+
+    /* Convert the child into a QIR node */
+    auto res = conv(stmt.get(), state);
+    if (!res) {
+      continue;
+    }
+
+    /* Foreach resulting QIR node, add it to the block */
+    for (const auto &val : *res) {
+      /* Skip null output children */
+      if (!val) {
+        continue;
+      }
 
       sub.push_back(val);
     }
   }
+
+  /* Construct a block from the resulting QIR nodes */
   return Block::create(sub);
 }
 
-static auto conv(const StmtGroupNode *n, QState &state) -> QResult {
+static QResult conv(const StmtGroupNode *n, QState &state) {
+  /* Function: Convert a vector of parse tree statements directly
+   *           into a QIR list (no intermediate block).
+   *
+   * Edge Cases:
+   *  - Any null children in the input shall be skipped.
+   *
+   * General Behavior:
+   * -  Foreach child in the input, convert the child into a QIR node.
+   *    Return the list of QIR children, "AS IS".
+   **/
+
   std::vector<QValue> sub;
-  for (auto &stmt : n->m_stmts) {
+  sub.reserve(n->m_stmts.size());
+
+  for (const auto &stmt : n->m_stmts) {
+    /* Skip null input children */
+    if (!stmt) {
+      continue;
+    }
+
     auto res = conv(stmt.get(), state);
-    if (!res) continue;
-    for (auto &val : *res) {
-      if (!val) continue;
+
+    /* Skip null output children */
+    if (!res) {
+      continue;
+    }
+
+    for (const auto &val : *res) {
+      /* Skip null output children */
+      if (!val) {
+        continue;
+      }
+
       sub.push_back(val);
     }
   }
+
+  /* Return the list of QIR children, "AS IS" */
   return sub;
 }
 
-static auto conv(const StaticCastExprNode *n, QState &state) -> QResult {
+static QResult conv(const StaticCastExprNode *n, QState &state) {
+  /// TODO: cleanup
+
   /*
   | Type A    | Type B    | Cast Type     |
   |-----------|-----------|---------------|
@@ -256,36 +366,161 @@ static auto conv(const StaticCastExprNode *n, QState &state) -> QResult {
   return nullptr;
 }
 
-static auto conv(const BitCastExprNode *n, QState &state) -> QResult {
-  return Bitcast::create(conv(n->m_type, state)[0]->as<Type>(),
-                         conv(n->m_expr.get(), state)[0]->as<Expr>());
+static QResult conv(const BitCastExprNode *n, QState &state) {
+  /* Function: Convert a parse tree bit-cast expression into a QIR bit-cast.
+   *
+   * Edge Cases:
+   *  - If the input expression is null, abort.
+   *  - If the input type is null, abort.
+   *
+   * General Behavior:
+   * -  One-for-one lowering of the bit-cast expression.
+   **/
+
+  if (!n->m_expr) { /* If the input expression is null, abort */
+    LOG(ERROR) << "QIR conv: bit-cast expression has no expression"
+               << std::endl;
+    return nullptr;
+  }
+
+  if (!n->m_type) { /* If the input type is null, abort */
+    LOG(ERROR) << "QIR conv: bit-cast expression has no type" << std::endl;
+    return nullptr;
+  }
+
+  auto expr = conv(n->m_expr.get(), state);
+  auto to = conv(n->m_type, state);
+
+  if (!expr) { /* If the output expression is null, abort */
+    LOG(ERROR) << "QIR conv: QIR bit-cast expression == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  if (!to) { /* If the output type is null, abort */
+    LOG(ERROR) << "QIR conv: QIR bit-cast type == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  return Bitcast::create(to[0]->as<Type>(), expr[0]->as<Expr>());
 }
 
-static auto conv(const SignedUpcastExprNode *n, QState &state) -> QResult {
-  return SCast::create(conv(n->m_type, state)[0]->as<Type>(),
-                       conv(n->m_expr.get(), state)[0]->as<Expr>());
+static QResult conv(const SignedUpcastExprNode *n, QState &state) {
+  /* Function: Convert a parse tree s-cast expression into a QIR s-cast.
+   *
+   * Edge Cases:
+   *  - If the input expression is null, abort.
+   *  - If the input type is null, abort.
+   *
+   * General Behavior:
+   * -  One-for-one lowering of the s-cast expression.
+   **/
+
+  if (!n->m_expr) { /* If the input expression is null, abort */
+    LOG(ERROR) << "QIR conv: s-cast expression has no expression" << std::endl;
+    return nullptr;
+  }
+
+  if (!n->m_type) { /* If the input type is null, abort */
+    LOG(ERROR) << "QIR conv: s-cast expression has no type" << std::endl;
+    return nullptr;
+  }
+
+  auto expr = conv(n->m_expr.get(), state);
+  auto to = conv(n->m_type, state);
+
+  if (!expr) { /* If the output expression is null, abort */
+    LOG(ERROR) << "QIR conv: QIR s-cast expression == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  if (!to) { /* If the output type is null, abort */
+    LOG(ERROR) << "QIR conv: QIR s-cast type == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  return SCast::create(to[0]->as<Type>(), expr[0]->as<Expr>());
 }
 
-static auto conv(const UnsignedUpcastExprNode *n, QState &state) -> QResult {
-  return UCast::create(conv(n->m_type, state)[0]->as<Type>(),
-                       conv(n->m_expr.get(), state)[0]->as<Expr>());
+static QResult conv(const UnsignedUpcastExprNode *n, QState &state) {
+  /* Function: Convert a parse tree u-cast expression into a QIR u-cast.
+   *
+   * Edge Cases:
+   *  - If the input expression is null, abort.
+   *  - If the input type is null, abort.
+   *
+   * General Behavior:
+   * -  One-for-one lowering of the u-cast expression.
+   **/
+
+  if (!n->m_expr) { /* If the input expression is null, abort */
+    LOG(ERROR) << "QIR conv: u-cast expression has no expression" << std::endl;
+    return nullptr;
+  }
+
+  if (!n->m_type) { /* If the input type is null, abort */
+    LOG(ERROR) << "QIR conv: u-cast expression has no type" << std::endl;
+    return nullptr;
+  }
+
+  auto expr = conv(n->m_expr.get(), state);
+  auto to = conv(n->m_type, state);
+
+  if (!expr) { /* If the output expression is null, abort */
+    LOG(ERROR) << "QIR conv: QIR u-cast expression == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  if (!to) { /* If the output type is null, abort */
+    LOG(ERROR) << "QIR conv: QIR u-cast type == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  return UCast::create(to[0]->as<Type>(), expr[0]->as<Expr>());
 }
 
-static auto conv(const DowncastExprNode *n, QState &state) -> QResult {
-  return UCast::create(conv(n->m_type, state)[0]->as<Type>(),
-                       conv(n->m_expr.get(), state)[0]->as<Expr>());
+static QResult conv(const DowncastExprNode *n, QState &state) {
+  /* Function: Convert a parse tree dc-cast expression into a QIR u-cast.
+   *
+   * Edge Cases:
+   *  - If the input expression is null, abort.
+   *  - If the input type is null, abort.
+   *
+   * General Behavior:
+   * -  One-for-one lowering of the dc-cast expression.
+   **/
+
+  if (!n->m_expr) { /* If the input expression is null, abort */
+    LOG(ERROR) << "QIR conv: downcast expression has no expression"
+               << std::endl;
+    return nullptr;
+  }
+
+  if (!n->m_type) { /* If the input type is null, abort */
+    LOG(ERROR) << "QIR conv: downcast expression has no type" << std::endl;
+    return nullptr;
+  }
+
+  auto expr = conv(n->m_expr.get(), state);
+  auto to = conv(n->m_type, state);
+
+  if (!expr) { /* If the output expression is null, abort */
+    LOG(ERROR) << "QIR conv: QIR u-cast (downcast) expression == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  if (!to) { /* If the output type is null, abort */
+    LOG(ERROR) << "QIR conv: QIR u-cast (downcast) type == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  return UCast::create(to[0]->as<Type>(), expr[0]->as<Expr>());
 }
 
-static auto conv(const PtrToIntCastExprNode *n, QState &state) -> QResult {
-  return PtrICast::create(conv(n->m_expr.get(), state)[0]->as<Expr>());
-}
+static QResult conv(const UnaryExprNode *n, QState &state) {
+  /// TODO: cleanup
 
-static auto conv(const IntToPtrCastExprNode *n, QState &state) -> QResult {
-  return IPtrCast::create(conv(n->m_type, state)[0]->as<Type>(),
-                          conv(n->m_expr.get(), state)[0]->as<Expr>());
-}
-
-static auto conv(const UnaryExprNode *n, QState &state) -> QResult {
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
@@ -312,7 +547,9 @@ static auto conv(const UnaryExprNode *n, QState &state) -> QResult {
   }
 }
 
-static auto conv(const PostUnaryExprNode *n, QState &state) -> QResult {
+static QResult conv(const PostUnaryExprNode *n, QState &state) {
+  /// TODO: cleanup
+
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
@@ -326,6 +563,8 @@ static auto conv(const PostUnaryExprNode *n, QState &state) -> QResult {
 }
 
 static Expr *promote(Type *lht, libquixcc::ir::q::Expr *rhs) {
+  /// TODO: cleanup
+
   auto rht = rhs->infer();
 
   if (lht->is(rht)) return rhs;
@@ -366,11 +605,14 @@ static Expr *promote(Type *lht, libquixcc::ir::q::Expr *rhs) {
 }
 
 static Expr *promote(libquixcc::ir::q::Expr *lhs, libquixcc::ir::q::Expr *rhs) {
+  /// TODO: cleanup
   return promote(lhs->infer(), rhs);
 }
 
 static void bipromote(libquixcc::ir::q::Expr **lhs,
                       libquixcc::ir::q::Expr **rhs) {
+  /// TODO: cleanup
+
   auto lht = (*lhs)->infer();
   auto rht = (*rhs)->infer();
 
@@ -421,7 +663,9 @@ static void bipromote(libquixcc::ir::q::Expr **lhs,
   return;
 }
 
-static auto conv(const BinaryExprNode *n, QState &state) -> QResult {
+static QResult conv(const BinaryExprNode *n, QState &state) {
+  /// TODO: cleanup
+
   auto lhs = conv(n->m_lhs.get(), state)[0]->as<Expr>();
   auto rhs = conv(n->m_rhs.get(), state)[0]->as<Expr>();
 
@@ -502,7 +746,9 @@ static auto conv(const BinaryExprNode *n, QState &state) -> QResult {
   }
 }
 
-static auto conv(const CallExprNode *n, QState &state) -> QResult {
+static QResult conv(const CallExprNode *n, QState &state) {
+  /// TODO: cleanup
+
   Global *callee = nullptr;
 
   if (state.exported.contains(n->m_decl->m_name))
@@ -538,17 +784,43 @@ static auto conv(const CallExprNode *n, QState &state) -> QResult {
   return Call::create(callee, args);
 }
 
-static auto conv(const ListExprNode *n, QState &state) -> QResult {
+static QResult conv(const ListExprNode *n, QState &state) {
+  /* Function: Convert a parse tree list expression into a QIR list.
+   *
+   * Edge Cases:
+   *  - If the input list is empty, return an empty list.
+   *  - If any element in the input list is null, abort.
+   *  - If any element in the output list is null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the list expression.
+   **/
+
   std::vector<Expr *> values;
-  for (auto &elem : n->m_elements) {
-    auto v = conv(elem.get(), state)[0]->as<Expr>();
-    values.push_back(v);
+  values.reserve(n->m_elements.size());
+
+  for (const auto &elem : n->m_elements) {
+    if (!elem) { /* If any element in the input list is null, abort */
+      LOG(ERROR) << "QIR conv: list expression has null element" << std::endl;
+      return nullptr;
+    }
+
+    auto res = conv(elem.get(), state);
+    if (!res) { /* If any element in the output list is null, abort */
+      LOG(ERROR) << "QIR conv: list expression has null element" << std::endl;
+      return nullptr;
+    }
+
+    values.push_back(res[0]->as<Expr>());
   }
 
+  /* One-for-one lowering of the list expression */
   return List::create(values);
 }
 
-static auto conv(const MemberAccessNode *n, QState &state) -> QResult {
+static QResult conv(const MemberAccessNode *n, QState &state) {
+  /// TODO: cleanup
+
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
   auto t = e->infer()->as<Type>();
 
@@ -583,22 +855,6 @@ static auto conv(const MemberAccessNode *n, QState &state) -> QResult {
 
       throw std::runtime_error("QIR translation: MemberAccessNode not found");
     }
-    case ir::q::NodeType::Group: {
-      auto x = t->as<Group>();
-
-      if (!state.typedefs.contains(x->name))
-        throw std::runtime_error("QIR translation: MemberAccessNode not found");
-
-      auto def = state.typedefs[x->name]->as<GroupDefNode>();
-      for (size_t i = 0; i < def->m_fields.size(); i++) {
-        if (def->m_fields[i]->m_name == n->m_field) {
-          auto t = conv(def->m_fields[i]->m_type, state)[0]->as<Type>();
-          return Member::create(e, i, t);
-        }
-      }
-
-      throw std::runtime_error("QIR translation: MemberAccessNode not found");
-    }
     case ir::q::NodeType::Union: {
       auto x = t->as<Union>();
 
@@ -620,7 +876,9 @@ static auto conv(const MemberAccessNode *n, QState &state) -> QResult {
   }
 }
 
-static auto conv(const IndexNode *n, QState &state) -> QResult {
+static QResult conv(const IndexNode *n, QState &state) {
+  /// TODO: cleanup
+
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
   auto i = conv(n->m_index.get(), state)[0]->as<Expr>();
   auto t = e->infer()->as<Type>();
@@ -630,17 +888,23 @@ static auto conv(const IndexNode *n, QState &state) -> QResult {
   return Index::create(e, i, t->as<Array>()->type);
 }
 
-static auto conv(const SliceNode *n, QState &state) -> QResult {
+static QResult conv(const SliceNode *n, QState &state) {
+  /// TODO: cleanup
+
   /// TODO: Implement SliceNode
   throw std::runtime_error("SliceNode not implemented");
 }
 
-static auto conv(const FStringNode *n, QState &state) -> QResult {
+static QResult conv(const FStringNode *n, QState &state) {
+  /// TODO: cleanup
+
   /// TODO: Implement FStringNode
   throw std::runtime_error("FStringNode not implemented");
 }
 
-static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult {
+static QResult conv(const ConstUnaryExprNode *n, QState &state) {
+  /// TODO: cleanup
+
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
@@ -657,7 +921,9 @@ static auto conv(const ConstUnaryExprNode *n, QState &state) -> QResult {
   }
 }
 
-static auto conv(const ConstPostUnaryExprNode *n, QState &state) -> QResult {
+static QResult conv(const ConstPostUnaryExprNode *n, QState &state) {
+  /// TODO: cleanup
+
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
@@ -670,7 +936,9 @@ static auto conv(const ConstPostUnaryExprNode *n, QState &state) -> QResult {
   }
 }
 
-static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult {
+static QResult conv(const ConstBinaryExprNode *n, QState &state) {
+  /// TODO: cleanup
+
   auto lhs = conv(n->m_lhs.get(), state)[0]->as<Expr>();
   auto rhs = conv(n->m_rhs.get(), state)[0]->as<Expr>();
 
@@ -719,7 +987,9 @@ static auto conv(const ConstBinaryExprNode *n, QState &state) -> QResult {
   }
 }
 
-static auto conv(const IdentifierNode *n, QState &state) -> QResult {
+static QResult conv(const IdentifierNode *n, QState &state) {
+  /// TODO: cleanup
+
   if (state.inside_segment) {
     if (state.local_idents.top().contains(n->m_name))
       return Ident::create(n->m_name, state.local_idents.top()[n->m_name]);
@@ -732,142 +1002,519 @@ static auto conv(const IdentifierNode *n, QState &state) -> QResult {
   return Ident::create(n->m_name, state.global_idents[n->m_name]);
 }
 
-static auto conv(const MutTypeNode *n, QState &state) -> QResult {
-  return conv(n->m_type, state)[0]->as<Type>();
+static QResult conv(const MutTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree mutable type node into a QIR type.
+   *
+   * Edge Cases:
+   *  - If the input type is null, abort.
+   *
+   * General Behavior:
+   * - Disregard mutability, it only has semantic significance.
+   **/
+
+  if (!n->m_type) { /* If the input type is null, abort */
+    LOG(ERROR) << "QIR conv: mutable type has no type" << std::endl;
+    return nullptr;
+  }
+
+  auto t = conv(n->m_type, state);
+
+  if (!t) { /* If the output type is null, abort */
+    LOG(ERROR) << "QIR conv: mutable type == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  return t[0]->as<Type>();
 }
 
-static auto conv(const U8TypeNode *n, QState &state) -> QResult {
+static QResult conv(const U8TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree U8 type node into a QIR U8 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the U8 type node.
+   **/
+
   return U8::create();
 }
 
-static auto conv(const U16TypeNode *n, QState &state) -> QResult {
+static QResult conv(const U16TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree U16 type node into a QIR U16 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the U16 type node.
+   **/
+
   return U16::create();
 }
 
-static auto conv(const U32TypeNode *n, QState &state) -> QResult {
+static QResult conv(const U32TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree U32 type node into a QIR U32 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the U32 type node.
+   **/
+
   return U32::create();
 }
 
-static auto conv(const U64TypeNode *n, QState &state) -> QResult {
+static QResult conv(const U64TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree U64 type node into a QIR U64 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the U64 type node.
+   **/
+
   return U64::create();
 }
 
-static auto conv(const U128TypeNode *n, QState &state) -> QResult {
+static QResult conv(const U128TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree U128 type node into a QIR U128 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the U128 type node.
+   **/
+
   return U128::create();
 }
 
-static auto conv(const I8TypeNode *n, QState &state) -> QResult {
+static QResult conv(const I8TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree I8 type node into a QIR I8 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the I8 type node.
+   **/
+
   return I8::create();
 }
 
-static auto conv(const I16TypeNode *n, QState &state) -> QResult {
+static QResult conv(const I16TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree I16 type node into a QIR I16 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the I16 type node.
+   **/
+
   return I16::create();
 }
 
-static auto conv(const I32TypeNode *n, QState &state) -> QResult {
+static QResult conv(const I32TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree I32 type node into a QIR I32 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the I32 type node.
+   **/
+
   return I32::create();
 }
 
-static auto conv(const I64TypeNode *n, QState &state) -> QResult {
+static QResult conv(const I64TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree I64 type node into a QIR I64 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the I64 type node.
+   **/
+
   return I64::create();
 }
 
-static auto conv(const I128TypeNode *n, QState &state) -> QResult {
+static QResult conv(const I128TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree I128 type node into a QIR I128 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the I128 type node.
+   **/
+
   return I128::create();
 }
 
-static auto conv(const F32TypeNode *n, QState &state) -> QResult {
+static QResult conv(const F32TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree F32 type node into a QIR F32 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the F32 type node.
+   **/
+
   return F32::create();
 }
 
-static auto conv(const F64TypeNode *n, QState &state) -> QResult {
+static QResult conv(const F64TypeNode *n, QState &state) {
+  /* Function: Convert a parse tree F64 type node into a QIR F64 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the F64 type node.
+   **/
+
   return F64::create();
 }
 
-static auto conv(const BoolTypeNode *n, QState &state) -> QResult {
+static QResult conv(const BoolTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree bool type node into a QIR i1 type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the bool type node.
+   **/
+
   return I1::create();
 }
 
-static auto conv(const VoidTypeNode *n, QState &state) -> QResult {
+static QResult conv(const VoidTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree void type node into a QIR void type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the void type node.
+   **/
+
   return Void::create();
 }
 
-static auto conv(const NullTypeNode *n, QState &state) -> QResult {
+static QResult conv(const NullTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree null type node into a QIR void type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - The NullTypeNode is used to denote the concept of `noreturn`.
+   *   In reality, this is a void type with special semantics.
+   **/
+
   return Void::create();
 }
 
-static auto conv(const PointerTypeNode *n, QState &state) -> QResult {
-  return Ptr::create(conv(n->m_type, state)[0]->as<Type>());
+static QResult conv(const PointerTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree pointer type node into a QIR pointer type.
+   *
+   * Edge Cases:
+   *  - If the input type is null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the pointer type node.
+   **/
+
+  if (!n->m_type) { /* If the input type is null, abort */
+    LOG(ERROR) << "QIR conv: pointer type has no type" << std::endl;
+    return nullptr;
+  }
+
+  auto t = conv(n->m_type, state);
+  if (!t) { /* If the output type is null, abort */
+    LOG(ERROR) << "QIR conv: pointer type == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  return Ptr::create(t[0]->as<Type>());
 }
 
-static auto conv(const OpaqueTypeNode *n, QState &state) -> QResult {
+static QResult conv(const OpaqueTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree opaque type node into a QIR opaque type.
+   *
+   * Edge Cases:
+   *  - If the name is empty, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the opaque type node.
+   **/
+
+  if (n->m_name.empty()) { /* If the name is empty, abort */
+    LOG(ERROR) << "QIR conv: opaque type has no name" << std::endl;
+    return nullptr;
+  }
+
   return Opaque::create(n->m_name);
 }
 
-static auto conv(const StringTypeNode *n, QState &state) -> QResult {
+static QResult conv(const StringTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree string type node into a QIR string type.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - Convert into QIR Intrinsic[String]
+   **/
+
+  /// TODO: implement intrinsic types
+
+  // QIntrinsic::create_type(QIntrinsic::String);
+
   return Ptr::create(U8::create());
 }
 
-static auto conv(const EnumTypeNode *n, QState &state) -> QResult {
-  return conv(n->m_member_type, state)[0]->as<Type>();
+static QResult conv(const EnumTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree enum type node into underlying QIR type.
+   *
+   * Edge Cases:
+   *  - If the input member_type is null, abort.
+   *
+   * General Behavior:
+   * - TODO: move convertion here
+   **/
+
+  if (!n->m_member_type) { /* If the input member_type is null, abort */
+    LOG(ERROR) << "QIR conv: enum type has no member type" << std::endl;
+    return nullptr;
+  }
+
+  auto t = conv(n->m_member_type, state);
+  if (!t) { /* If the output type is null, abort */
+    LOG(ERROR) << "QIR conv: enum type == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  return t[0]->as<Type>();
 }
 
-static auto conv(const StructTypeNode *n, QState &state) -> QResult {
-  std::vector<Type *> fields;
-  for (auto &field : n->m_fields)
-    fields.push_back(conv(field, state)[0]->as<Type>());
+static QResult conv(const StructTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree struct type node into a QIR region
+   *           (packed) type.
+   *
+   * Edge Cases:
+   *  - If any of the input fields are null, abort.
+   *  - If any of the QIR fields are null, abort.
+   *
+   * General Behavior:
+   * -
+   **/
 
-  return Region::create(n->m_name, fields);
+  std::vector<Type *> fields;
+  fields.reserve(n->m_fields.size());
+
+  for (const auto &field : n->m_fields) {
+    if (!field) { /* If the input field is null, abort */
+      LOG(ERROR) << "QIR conv: struct field is null" << std::endl;
+      return nullptr;
+    }
+
+    auto ft = conv(field, state);
+    if (!ft) { /* If the output field is null, abort */
+      LOG(ERROR) << "QIR conv: struct field == nullptr" << std::endl;
+      return nullptr;
+    }
+
+    fields.push_back(ft[0]->as<Type>());
+  }
+
+  return Region::create(n->m_name, fields, false, true);
 }
 
-static auto conv(const libquixcc::GroupTypeNode *n, QState &state) -> QResult {
-  std::vector<Type *> fields;
-  for (auto &field : n->m_fields)
-    fields.push_back(conv(field, state)[0]->as<Type>());
+static QResult conv(const libquixcc::GroupTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree group type node into a QIR group type.
+   *
+   * Edge Cases:
+   *  - If any of the input fields are null, abort.
+   *  - If any of the QIR fields are null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the group type node.
+   **/
 
-  return Group::create(n->m_name, fields);
+  std::vector<Type *> fields;
+  fields.reserve(n->m_fields.size());
+
+  for (const auto &field : n->m_fields) {
+    if (!field) { /* If the input field is null, abort */
+      LOG(ERROR) << "QIR conv: group field is null" << std::endl;
+      return nullptr;
+    }
+
+    auto ft = conv(field, state);
+    if (!ft) { /* If the output field is null, abort */
+      LOG(ERROR) << "QIR conv: group field == nullptr" << std::endl;
+      return nullptr;
+    }
+
+    fields.push_back(ft[0]->as<Type>());
+  }
+
+  return Region::create(n->m_name, fields, false, false);
 }
 
-static auto conv(const RegionTypeNode *n, QState &state) -> QResult {
-  std::vector<Type *> fields;
-  for (auto &field : n->m_fields)
-    fields.push_back(conv(field, state)[0]->as<Type>());
+static QResult conv(const RegionTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree region type node into a QIR region
+   *           (packed) type.
+   *
+   * Edge Cases:
+   *  - If any of the input fields are null, abort.
+   *  - If any of the QIR fields are null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the region type node.
+   **/
 
-  return Region::create(n->m_name, fields);
+  std::vector<Type *> fields;
+  fields.reserve(n->m_fields.size());
+
+  for (const auto &field : n->m_fields) {
+    if (!field) { /* If the input field is null, abort */
+      LOG(ERROR) << "QIR conv: region field is null" << std::endl;
+      return nullptr;
+    }
+
+    auto ft = conv(field, state);
+    if (!ft) { /* If the output field is null, abort */
+      LOG(ERROR) << "QIR conv: region field == nullptr" << std::endl;
+      return nullptr;
+    }
+
+    fields.push_back(ft[0]->as<Type>());
+  }
+
+  return Region::create(n->m_name, fields, true, true);
 }
 
-static auto conv(const UnionTypeNode *n, QState &state) -> QResult {
+static QResult conv(const UnionTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree union type node into a QIR union type.
+   *
+   * Edge Cases:
+   *  - If any of the input fields are null, abort.
+   * - If any of the QIR fields are null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the union type node.
+   **/
+
   std::vector<Type *> fields;
-  for (auto &field : n->m_fields)
-    fields.push_back(conv(field, state)[0]->as<Type>());
+  fields.reserve(n->m_fields.size());
+
+  for (const auto &field : n->m_fields) {
+    if (!field) { /* If the input field is null, abort */
+      LOG(ERROR) << "QIR conv: union field is null" << std::endl;
+      return nullptr;
+    }
+
+    auto ft = conv(field, state);
+    if (!ft) { /* If the output field is null, abort */
+      LOG(ERROR) << "QIR conv: union field == nullptr" << std::endl;
+      return nullptr;
+    }
+
+    fields.push_back(ft[0]->as<Type>());
+  }
 
   return Union::create(n->m_name, fields);
 }
 
-static auto conv(const ArrayTypeNode *n, QState &state) -> QResult {
-  auto size =
-      std::atoll(conv(n->m_size.get(), state)[0]->as<Number>()->value.c_str());
+static QResult conv(const ArrayTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree array type node into a QIR array type.
+   *
+   * Edge Cases:
+   *  - If the input size is null, abort.
+   *  - If the size is not an integer, abort.
+   *  - If the input type is null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the array type node.
+   **/
 
-  return Array::create(conv(n->m_type, state)[0]->as<Type>(), size);
+  if (!n->m_size) { /* If the input size is null, abort */
+    LOG(ERROR) << "QIR conv: array type has no size" << std::endl;
+    return nullptr;
+  }
+
+  if (!n->m_type) { /* If the input type is null, abort */
+    LOG(ERROR) << "QIR conv: array type has no type" << std::endl;
+    return nullptr;
+  }
+
+  auto s = conv(n->m_size.get(), state);
+  if (!s) { /* If the output size is null, abort */
+    LOG(ERROR) << "QIR conv: array size == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  auto t = conv(n->m_type, state);
+  if (!t) { /* If the output type is null, abort */
+    LOG(ERROR) << "QIR conv: array type == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  const auto &size_str = s[0]->as<Number>()->value;
+
+  if (!std::all_of(size_str.begin(), size_str.end(), ::isdigit)) {
+    LOG(ERROR) << "QIR conv: array size is not an integer" << std::endl;
+    return nullptr;
+  }
+
+  uint64_t size;
+  try {
+    size = std::stoull(size_str);
+  } catch (const std::out_of_range &e) {
+    LOG(ERROR) << "QIR conv: array size is out of range" << std::endl;
+    return nullptr;
+  }
+
+  return Array::create(t[0]->as<Type>(), size);
 }
 
-static auto conv(const VectorTypeNode *n, QState &state) -> QResult {
-  return Vector::create(conv(n->m_type, state)[0]->as<Type>());
+static QResult conv(const VectorTypeNode *n, QState &state) {
+  /* Function: Convert a parse tree vector type node into a QIR vector type.
+   *
+   * Edge Cases:
+   *  - If the input type is null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the vector type node.
+   **/
+
+  if (!n->m_type) { /* If the input type is null, abort */
+    LOG(ERROR) << "QIR conv: vector type has no type" << std::endl;
+    return nullptr;
+  }
+
+  auto t = conv(n->m_type, state);
+  if (!t) { /* If the output type is null, abort */
+    LOG(ERROR) << "QIR conv: vector type == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  return Vector::create(t[0]->as<Type>());
 }
 
-static auto conv(const ResultTypeNode *n, QState &state) -> QResult {
+static QResult conv(const ResultTypeNode *n, QState &state) {
+  /// TODO: cleanup
+
   LOG(FATAL) << "ResultTypeNode not implemented" << std::endl;
 
   return nullptr;
 }
 
-static auto conv(const GeneratorTypeNode *n, QState &state) -> QResult {
+static QResult conv(const GeneratorTypeNode *n, QState &state) {
+  /// TODO: cleanup
+
   LOG(FATAL) << "GeneratorTypeNode not implemented" << std::endl;
 
   return nullptr;
 }
 
-static auto conv(const FunctionTypeNode *n, QState &state) -> QResult {
+static QResult conv(const FunctionTypeNode *n, QState &state) {
+  /// TODO: cleanup
+
   std::vector<Type *> params;
   for (auto &param : n->m_params)
     params.push_back(conv(param.second, state)[0]->as<Type>());
@@ -877,50 +1524,159 @@ static auto conv(const FunctionTypeNode *n, QState &state) -> QResult {
                        n->m_noexcept);
 }
 
-static auto conv(const IntegerNode *n, QState &state) -> QResult {
+static QResult conv(const IntegerNode *n, QState &state) {
+  /* Function: Convert a parse tree integer literal node into a QIR integer
+   *           literal.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the integer literal node.
+   **/
+
   return Number::create(n->m_val);
 }
 
-static auto conv(const FloatLiteralNode *n, QState &state) -> QResult {
+static QResult conv(const FloatLiteralNode *n, QState &state) {
+  /* Function: Convert a parse tree float literal node into a QIR float
+   *           literal.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the float literal node.
+   **/
+
   return Number::create(n->m_val);
 }
 
-static auto conv(const StringNode *n, QState &state) -> QResult {
+static QResult conv(const StringNode *n, QState &state) {
+  /* Function: Convert a parse tree string literal node into a QIR string
+   *           literal.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the string literal node.
+   **/
+
   return String::create(n->m_val);
 }
 
-static auto conv(const CharNode *n, QState &state) -> QResult {
+static QResult conv(const CharNode *n, QState &state) {
+  /* Function: Convert a parse tree char literal node into a QIR char literal.
+   *
+   * Edge Cases:
+   *  - CharNode is UTF-???.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the char literal node.
+   **/
+
+  /// TODO: Decree the size of the char type
+
   return Char::create(n->m_val);
 }
 
-static auto conv(const BoolLiteralNode *n, QState &state) -> QResult {
-  return Number::create(n->m_val ? "1" : "0");
-}
+static QResult conv(const BoolLiteralNode *n, QState &state) {
+  /* Function: Convert a parse tree boolean literal node into a QIR boolean
+   *           literal.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the boolean literal node.
+   **/
 
-static auto conv(const NullLiteralNode *n, QState &state) -> QResult {
+  if (n->m_val == true) {
+    return Number::create("1");
+  }
+
   return Number::create("0");
 }
 
-static auto conv(const UndefLiteralNode *n, QState &state) -> QResult {
-  /// TODO: Implement UndefLiteralNode
+static QResult conv(const NullLiteralNode *n, QState &state) {
+  /* Function: Convert a parse tree null literal node into a QIR null literal.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the null literal node.
+   **/
 
-  LOG(FATAL) << "UndefLiteralNode not implemented" << std::endl;
+  return Number::create("0");
+}
+
+/// WARNING: BEGIN CHATGPT-3.5 GENERATED CODE
+typedef __uint128_t uint128_t;
+
+std::string uint128ToString(uint128_t value) {
+  if (value == 0) {
+    return "0";
+  }
+
+  std::stringstream ss;
+  std::string result;
+
+  while (value > 0) {
+    uint64_t part = value % 10;
+    result = std::to_string(part) + result;
+    value /= 10;
+  }
+
+  return result;
+}
+/// WARNING: END CHATGPT-3.5 GENERATED CODE
+
+static QResult conv(const UndefLiteralNode *n, QState &state) {
+  /* Function: Convert a parse tree undefined literal into random unsigned
+   * 128-bit integer literal.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - Generate a cryptographically secure random number.
+   **/
+
+  union {
+    __uint128_t i;
+    uint8_t b[16];
+  } __attribute__((packed)) b;
+
+  if (RAND_bytes(b.b, sizeof(b.b)) != 1) {
+    LOG(ERROR) << "QIR conv: RAND_bytes failed" << std::endl;
+    return nullptr;
+  }
+
+  /* Convert to decimal */
+  std::string val = uint128ToString(b.i);
+
+  return Number::create(val);
+}
+
+static QResult conv(const TypedefNode *n, QState &state) {
+  /* Function: Disregard typedefs.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - Disregard typedefs, they have already been processed.
+   **/
 
   return nullptr;
 }
 
-static auto conv(const TypedefNode *n, QState &state) -> QResult {
-  return nullptr;
-}
+static QResult conv(const VarDeclNode *n, QState &state) {
+  /// TODO: cleanup
 
-static auto conv(const VarDeclNode *n, QState &state) -> QResult {
   /// TODO: Implement VarDeclNode
   throw std::runtime_error("QIR translation: VarDeclNode not implemented");
 }
 
-static auto create_defaults(libquixcc::ir::q::Value *var,
-                            libquixcc::TypeNode *type,
-                            QState &state) -> QResult {
+static QResult create_defaults(libquixcc::ir::q::Value *var,
+                               libquixcc::TypeNode *type, QState &state) {
+  /// TODO: cleanup
+
   switch (type->ntype) {
     case libquixcc::NodeType::StructTypeNode: {
       auto s = type->as<libquixcc::StructTypeNode>();
@@ -993,6 +1749,8 @@ static auto create_defaults(libquixcc::ir::q::Value *var,
 }
 
 static bool is_composite(const TypeNode *n) {
+  /// TODO: cleanup
+
   switch (n->ntype) {
     case libquixcc::NodeType::StructTypeNode:
     case libquixcc::NodeType::GroupTypeNode:
@@ -1004,7 +1762,9 @@ static bool is_composite(const TypeNode *n) {
   }
 }
 
-static auto conv(const LetDeclNode *n, QState &state) -> QResult {
+static QResult conv(const LetDeclNode *n, QState &state) {
+  /// TODO: cleanup
+
   if (state.inside_segment) {
     Expr *init = nullptr;
 
@@ -1051,7 +1811,9 @@ static auto conv(const LetDeclNode *n, QState &state) -> QResult {
   return g;
 }
 
-static auto conv(const ConstDeclNode *n, QState &state) -> QResult {
+static QResult conv(const ConstDeclNode *n, QState &state) {
+  /// TODO: cleanup
+
   if (state.inside_segment) {
     auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
 
@@ -1091,7 +1853,9 @@ static auto conv(const ConstDeclNode *n, QState &state) -> QResult {
   return g;
 }
 
-static auto conv(const FunctionDeclNode *n, QState &state) -> QResult {
+static QResult conv(const FunctionDeclNode *n, QState &state) {
+  /// TODO: cleanup
+
   std::vector<std::pair<std::string, Type *>> params;
   for (auto &p : n->m_params) {
     auto res = conv(p.get(), state);
@@ -1134,7 +1898,9 @@ static auto conv(const FunctionDeclNode *n, QState &state) -> QResult {
   return g;
 }
 
-static auto conv(const StructDefNode *n, QState &state) -> QResult {
+static QResult conv(const StructDefNode *n, QState &state) {
+  /// TODO: cleanup
+
   std::vector<std::pair<std::string, QValue>> fields;
   std::map<std::string, Segment *> methods;
 
@@ -1173,11 +1939,15 @@ static auto conv(const StructDefNode *n, QState &state) -> QResult {
   return result;
 }
 
-static auto conv(const StructFieldNode *n, QState &state) -> QResult {
+static QResult conv(const StructFieldNode *n, QState &state) {
+  /// TODO: cleanup
+
   return conv(n->m_type, state)[0]->as<Type>();
 }
 
-static auto conv(const RegionDefNode *n, QState &state) -> QResult {
+static QResult conv(const RegionDefNode *n, QState &state) {
+  /// TODO: cleanup
+
   std::vector<std::pair<std::string, QValue>> fields;
   std::map<std::string, Segment *> methods;
 
@@ -1216,11 +1986,15 @@ static auto conv(const RegionDefNode *n, QState &state) -> QResult {
   return result;
 }
 
-static auto conv(const RegionFieldNode *n, QState &state) -> QResult {
+static QResult conv(const RegionFieldNode *n, QState &state) {
+  /// TODO: cleanup
+
   return conv(n->m_type, state)[0]->as<Type>();
 }
 
-static auto conv(const GroupDefNode *n, QState &state) -> QResult {
+static QResult conv(const GroupDefNode *n, QState &state) {
+  /// TODO: cleanup
+
   std::map<std::string, QValue> fields;
   std::map<std::string, Segment *> methods;
 
@@ -1259,11 +2033,15 @@ static auto conv(const GroupDefNode *n, QState &state) -> QResult {
   return result;
 }
 
-static auto conv(const GroupFieldNode *n, QState &state) -> QResult {
+static QResult conv(const GroupFieldNode *n, QState &state) {
+  /// TODO: cleanup
+
   return conv(n->m_type, state)[0]->as<Type>();
 }
 
-static auto conv(const UnionDefNode *n, QState &state) -> QResult {
+static QResult conv(const UnionDefNode *n, QState &state) {
+  /// TODO: cleanup
+
   /// TODO: Implement UnionDefNode
   std::map<std::string, QValue> fields;
   for (auto &field : n->m_fields) {
@@ -1275,19 +2053,25 @@ static auto conv(const UnionDefNode *n, QState &state) -> QResult {
   return UnionDef::create(n->m_name, fields, {});
 }
 
-static auto conv(const UnionFieldNode *n, QState &state) -> QResult {
+static QResult conv(const UnionFieldNode *n, QState &state) {
+  /// TODO: cleanup
+
   return conv(n->m_type, state)[0]->as<Type>();
 }
 
-static auto conv(const EnumDefNode *n, QState &state) -> QResult {
+static QResult conv(const EnumDefNode *n, QState &state) {
+  /// TODO: cleanup
   return nullptr;
 }
 
-static auto conv(const EnumFieldNode *n, QState &state) -> QResult {
+static QResult conv(const EnumFieldNode *n, QState &state) {
+  /// TODO: cleanup
   return nullptr;
 }
 
-static auto conv(const FunctionDefNode *n, QState &state) -> QResult {
+static QResult conv(const FunctionDefNode *n, QState &state) {
+  /// TODO: cleanup
+
   state.local_idents.push({});
   state.function.push(n);
 
@@ -1312,13 +2096,17 @@ static auto conv(const FunctionDefNode *n, QState &state) -> QResult {
                         glob->_atomic, glob->_extern);
 }
 
-static auto conv(const FunctionParamNode *n, QState &state) -> QResult {
+static QResult conv(const FunctionParamNode *n, QState &state) {
+  /// TODO: cleanup
+
   auto t = conv(n->m_type, state)[0]->as<Type>();
   if (state.inside_segment) state.local_idents.top()[n->m_name] = t;
   return t;
 }
 
-static auto conv(const ExportNode *n, QState &state) -> QResult {
+static QResult conv(const ExportNode *n, QState &state) {
+  /// TODO: cleanup
+
   std::vector<QValue> sub;
   ExportLangType old = state.lang;
   state.lang = n->m_lang_type;
@@ -1333,7 +2121,9 @@ static auto conv(const ExportNode *n, QState &state) -> QResult {
   return sub;
 }
 
-static auto conv(const InlineAsmNode *n, QState &state) -> QResult {
+static QResult conv(const InlineAsmNode *n, QState &state) {
+  /// TODO: cleanup
+
   std::vector<std::pair<std::string, Value *>> outputs;
   std::vector<std::pair<std::string, Value *>> inputs;
 
@@ -1350,79 +2140,399 @@ static auto conv(const InlineAsmNode *n, QState &state) -> QResult {
   return Asm::create(n->m_asm, outputs, inputs, n->m_clobbers);
 }
 
-static auto conv(const ReturnStmtNode *n, QState &state) -> QResult {
-  if (!n->m_expr) return Ret::create(nullptr);
+static QResult conv(const ReturnStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree return statement node into a QIR return
+   *           statement.
+   *
+   * Edge Cases:
+   *  - If the expr is null, it is void.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the return statement node.
+   **/
 
-  auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
-  auto t = conv(state.function.top()->m_decl->m_type->m_return_type, state)[0]
-               ->as<Type>();
-  return Ret::create(promote(t, e));
+  if (!n->m_expr) { /* If the expr is null, it is void */
+    return Ret::create(nullptr);
+  }
+
+  auto e = conv(n->m_expr.get(), state);
+  if (!e) {
+    LOG(ERROR) << "QIR conv: return statement expr == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  return Ret::create(e[0]->as<Expr>());
 }
 
-static auto conv(const RetifStmtNode *n, QState &state) -> QResult {
-  auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
-  auto ret = conv(n->m_return.get(), state)[0]->as<Expr>();
-  return IfElse::create(cond, Ret::create(ret), nullptr);
+static QResult conv(const RetifStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree return-if statement node into a QIR
+   *           conditional return block.
+   *
+   * Edge Cases:
+   *  - If the cond is null, abort.
+   *  - If the return is null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the return-if statement node.
+   **/
+
+  if (!n->m_cond) { /* If the cond is null, abort */
+    LOG(ERROR) << "QIR conv: return-if statement condition == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  if (!n->m_return) { /* If the return is null, abort */
+    LOG(ERROR) << "QIR conv: return-if statement return == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  auto cond = conv(n->m_cond.get(), state);
+  if (!cond) { /* If the output condition is null, abort */
+    LOG(ERROR) << "QIR conv: return-if statement condition == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  auto ret = conv(n->m_return.get(), state);
+  if (!ret) { /* If the output return is null, abort */
+    LOG(ERROR) << "QIR conv: return-if statement return == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  /* One-for-one lowering of the return-if statement node */
+  return IfElse::create(cond[0]->as<Expr>(), Ret::create(ret[0]->as<Expr>()),
+                        nullptr);
 }
 
-static auto conv(const RetzStmtNode *n, QState &state) -> QResult {
-  auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
-  auto ret = conv(n->m_return.get(), state)[0]->as<Expr>();
-  return IfElse::create(Not::create(cond), Ret::create(ret), nullptr);
+static QResult conv(const RetzStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree return-if-not statement node into a QIR
+   *           conditional return block.
+   *
+   * Edge Cases:
+   *  - If the cond is null, abort.
+   *  - If the return is null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the return-if statement node.
+   **/
+
+  if (!n->m_cond) { /* If the cond is null, abort */
+    LOG(ERROR) << "QIR conv: return-if-not statement condition == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  if (!n->m_return) { /* If the return is null, abort */
+    LOG(ERROR) << "QIR conv: return-if-not statement return == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  auto cond = conv(n->m_cond.get(), state);
+  if (!cond) { /* If the output condition is null, abort */
+    LOG(ERROR) << "QIR conv: return-if-not statement condition == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  auto inv_cond = Not::create(cond[0]->as<Expr>());
+
+  auto ret = conv(n->m_return.get(), state);
+  if (!ret) { /* If the output return is null, abort */
+    LOG(ERROR) << "QIR conv: return-if-not statement return == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  /* One-for-one lowering of the return-if-not statement node */
+  return IfElse::create(inv_cond, Ret::create(ret[0]->as<Expr>()), nullptr);
 }
 
-static auto conv(const RetvStmtNode *n, QState &state) -> QResult {
-  auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
-  return IfElse::create(cond, Ret::create(nullptr), nullptr);
+static QResult conv(const RetvStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree return-void statement node into a QIR return
+   *           statement.
+   *
+   * Edge Cases:
+   *  - If the cond is null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the return-void statement node.
+   **/
+
+  if (!n->m_cond) { /* If the cond is null, abort */
+    LOG(ERROR) << "QIR conv: return-void statement condition == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  auto cond = conv(n->m_cond.get(), state);
+  if (!cond) { /* If the output condition is null, abort */
+    LOG(ERROR) << "QIR conv: return-void statement condition == nullptr"
+               << std::endl;
+    return nullptr;
+  }
+
+  /* One-for-one lowering of the return-void statement node */
+  return IfElse::create(cond[0]->as<Expr>(), Ret::create(nullptr), nullptr);
 }
 
-static auto conv(const IfStmtNode *n, QState &state) -> QResult {
-  auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
-  auto then_block = conv(n->m_then.get(), state)[0]->as<Block>();
-  QResult else_block;
-  if (n->m_else)
+static QResult conv(const BreakStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree break statement node into a QIR break
+   *           statement.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the break statement node.
+   **/
+
+  return Break::create();
+}
+
+static QResult conv(const ContinueStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree continue statement node into a QIR continue
+   *           statement.
+   *
+   * Edge Cases:
+   *
+   * General Behavior:
+   * - One-for-one lowering of the continue statement node.
+   **/
+
+  return Continue::create();
+}
+
+static QResult conv(const IfStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree if statement node into a QIR if statement.
+   *
+   * Edge Cases:
+   *  - If the cond is null, use a default condition of true.
+   *  - If the then block is null, use a default block of an empty block.
+   *  - If the else block is null, use a default block of an empty block.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the if statement node.
+   **/
+
+  QResult cond = nullptr;
+  QResult then_block = nullptr;
+  QResult else_block = nullptr;
+
+  if (n->m_cond) { /* If the cond is null, use a default condition of true */
+    cond = conv(n->m_cond.get(), state);
+    if (!cond) {
+      LOG(ERROR) << "QIR conv: if statement condition == nullptr" << std::endl;
+      return nullptr;
+    }
+  } else {
+    cond = Number::create("1");
+  }
+
+  if (n->m_then) { /* If the then block is null, use a default block of an
+                      empty block */
+    then_block = conv(n->m_then.get(), state);
+    if (!then_block) {
+      LOG(ERROR) << "QIR conv: if statement then block == nullptr" << std::endl;
+      return nullptr;
+    }
+  } else {
+    then_block = Block::create({});
+  }
+
+  if (n->m_else) { /* If the else block is null, use a default block of an
+                      empty block */
     else_block = conv(n->m_else.get(), state);
-  else
+    if (!else_block) {
+      LOG(ERROR) << "QIR conv: if statement else block == nullptr" << std::endl;
+      return nullptr;
+    }
+  } else {
     else_block = Block::create({});
+  }
 
-  return IfElse::create(cond, then_block, else_block[0]->as<Block>());
+  /* One-for-one lowering of the if statement node */
+  return IfElse::create(cond[0]->as<Expr>(), then_block[0]->as<Block>(),
+                        else_block[0]->as<Block>());
 }
 
-static auto conv(const WhileStmtNode *n, QState &state) -> QResult {
-  auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
-  auto stmt = conv(n->m_stmt.get(), state)[0]->as<Block>();
-  return While::create(cond, stmt);
+static QResult conv(const WhileStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree while loop node into a QIR while loop.
+   *
+   * Edge Cases:
+   *  - If the cond is null, use a default condition of true.
+   *  - If the stmt is null, use a default statement of an empty block.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the while loop node.
+   **/
+
+  /// TODO: cleanup
+
+  QResult cond = nullptr;
+  QResult stmt = nullptr;
+
+  if (n->m_cond) { /* If the cond is null, use a default condition of true */
+    cond = conv(n->m_cond.get(), state);
+
+    if (!cond) {
+      LOG(ERROR) << "QIR conv: while loop condition == nullptr" << std::endl;
+      return nullptr;
+    }
+  } else {
+    cond = Number::create("1");
+  }
+
+  if (n->m_stmt) { /* If the stmt is null, use a default statement of an empty
+                      block */
+    stmt = conv(n->m_stmt.get(), state);
+    if (!stmt) {
+      LOG(ERROR) << "QIR conv: while loop statement == nullptr" << std::endl;
+      return nullptr;
+    }
+  } else {
+    stmt = Block::create({});
+  }
+
+  /* One-for-one lowering of the while loop node */
+  return While::create(cond[0]->as<Expr>(), stmt[0]->as<Block>());
 }
 
-static auto conv(const ForStmtNode *n, QState &state) -> QResult {
-  auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
-  auto cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
-  auto step = conv(n->m_step.get(), state)[0]->as<Expr>();
-  auto stmt = conv(n->m_stmt.get(), state)[0]->as<Block>();
+static QResult conv(const ForStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree for loop node into a QIR for loop.
+   *
+   * Edge Cases:
+   *  - If the init, cond, step, or stmt fields are null, ignore them.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the for loop node.
+   **/
+
+  Expr *init = nullptr;
+  Expr *cond = nullptr;
+  Expr *step = nullptr;
+  Block *stmt = nullptr;
+
+  /* If the init, cond, step, or stmt fields are null, ignore them */
+  if (n->m_init) init = conv(n->m_init.get(), state)[0]->as<Expr>();
+  if (n->m_cond) cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
+  if (n->m_step) step = conv(n->m_step.get(), state)[0]->as<Expr>();
+  if (n->m_stmt) stmt = conv(n->m_stmt.get(), state)[0]->as<Block>();
+
+  /* One-for-one lowering of the for loop node */
   return For::create(init, cond, step, stmt);
 }
 
-static auto conv(const FormStmtNode *n, QState &state) -> QResult {
+static QResult conv(const FormStmtNode *n, QState &state) {
+  /// TODO: cleanup
+
   /// TODO: Implement FormStmtNode
   throw std::runtime_error("QIR translation: FormStmtNode not implemented");
 }
 
-static auto conv(const ForeachStmtNode *n, QState &state) -> QResult {
+static QResult conv(const ForeachStmtNode *n, QState &state) {
+  /// TODO: cleanup
+
   /// TODO: Implement ForeachStmtNode
   throw std::runtime_error("QIR translation: ForeachStmtNode not implemented");
 }
 
-static auto conv(const CaseStmtNode *n, QState &state) -> QResult {
-  /// TODO: Implement CaseStmtNode
-  throw std::runtime_error("QIR translation: CaseStmtNode not implemented");
+static QResult conv(const CaseStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree case statement node into a QIR case
+   *           statement.
+   *
+   * Edge Cases:
+   *  - If the expr is null, abort.
+   *  - If the stmt is null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the case statement node.
+   **/
+
+  if (!n->m_expr) { /* If the expr is null, abort */
+    LOG(ERROR) << "QIR conv: case statement expr == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  if (!n->m_block) { /* If the stmt is null, abort */
+    LOG(ERROR) << "QIR conv: case statement stmt == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  auto expr = conv(n->m_expr.get(), state);
+  if (!expr) { /* If the output expr is null, abort */
+    LOG(ERROR) << "QIR conv: case statement expr == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  auto stmt = conv(n->m_block.get(), state);
+  if (!stmt) { /* If the output stmt is null, abort */
+    LOG(ERROR) << "QIR conv: case statement stmt == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  /* One-for-one lowering of the case statement node */
+  return Case::create(expr[0]->as<Expr>(), stmt[0]->as<Block>());
 }
 
-static auto conv(const SwitchStmtNode *n, QState &state) -> QResult {
-  /// TODO: Implement SwitchStmtNode
-  throw std::runtime_error("QIR translation: SwitchStmtNode not implemented");
+static QResult conv(const SwitchStmtNode *n, QState &state) {
+  /* Function: Convert a parse tree switch statement node into a QIR switch
+   *           statement.
+   *
+   * Edge Cases:
+   *  - If the input expr is null, abort.
+   *  - If the expr is null, abort.
+   *
+   * General Behavior:
+   * - One-for-one lowering of the switch statement node.
+   **/
+
+  if (!n->m_expr) { /* If the expr is null, abort */
+    LOG(ERROR) << "QIR conv: switch statement expr == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  auto expr = conv(n->m_expr.get(), state);
+  if (!expr) { /* If the output expr is null, abort */
+    LOG(ERROR) << "QIR conv: switch statement expr == nullptr" << std::endl;
+    return nullptr;
+  }
+
+  QResult def;
+  if (n->m_default) {
+    def = conv(n->m_default.get(), state);
+    if (!def) { /* If the output default is null, ignore it */
+      LOG(ERROR) << "QIR conv: switch statement default == nullptr"
+                 << std::endl;
+      return nullptr;
+    }
+  }
+  Value *default_block = nullptr;
+  if (def) default_block = def[0]->as<Block>();
+
+  std::set<Case *> cases;
+  for (const auto &c : n->m_cases) {
+    if (!c) { /* If the case is null, ignore it */
+      LOG(ERROR) << "QIR conv: switch statement case == nullptr" << std::endl;
+      continue;
+    }
+
+    auto res = conv(c.get(), state);
+    if (!res) { /* If the output case is null, ignore it */
+      LOG(ERROR) << "QIR conv: switch statement case == nullptr" << std::endl;
+      continue;
+    }
+
+    cases.insert(res[0]->as<Case>());
+  }
+
+  /* One-for-one lowering of the switch statement node */
+  return Switch::create(expr[0]->as<Expr>(), cases, default_block);
 }
 
-static auto conv(const ParseNode *n, QState &state) -> QResult {
+static QResult conv(const ParseNode *n, QState &state) {
   QResult r;
 
   switch (n->ntype) {
@@ -1476,14 +2586,6 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
 
     case libquixcc::NodeType::DowncastExprNode:
       r = conv(n->as<DowncastExprNode>(), state);
-      break;
-
-    case libquixcc::NodeType::PtrToIntCastExprNode:
-      r = conv(n->as<PtrToIntCastExprNode>(), state);
-      break;
-
-    case libquixcc::NodeType::IntToPtrCastExprNode:
-      r = conv(n->as<IntToPtrCastExprNode>(), state);
       break;
 
     case libquixcc::NodeType::UnaryExprNode:
@@ -1762,6 +2864,14 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
       r = conv(n->as<RetvStmtNode>(), state);
       break;
 
+    case libquixcc::NodeType::BreakStmtNode:
+      r = conv(n->as<BreakStmtNode>(), state);
+      break;
+
+    case libquixcc::NodeType::ContinueStmtNode:
+      r = conv(n->as<ContinueStmtNode>(), state);
+      break;
+
     case libquixcc::NodeType::IfStmtNode:
       r = conv(n->as<IfStmtNode>(), state);
       break;
@@ -1795,17 +2905,30 @@ static auto conv(const ParseNode *n, QState &state) -> QResult {
 
   return r;
 }
+/// END: CONVERSION FUNCTIONS
+///============================================================================
 
 bool ir::q::QModule::from_ptree(quixcc_job_t *job,
                                 std::shared_ptr<ParseNode> ast) {
+  /// TODO: cleanup
+
   LOG(DEBUG) << "Converting Ptree to QUIX intermediate representation"
              << std::endl;
 
+  auto block_node = std::static_pointer_cast<BlockNode>(ast);
+
   QState state;
+  std::vector<QValue> children;
+  for (auto &child : block_node->m_stmts) {
+    auto res = conv(child.get(), state);
+    if (!res) continue;
 
-  auto r = conv(ast.get(), state);
+    for (auto &r : res) {
+      children.push_back(r);
+    }
+  }
 
-  m_root = RootNode::create(*r);
+  m_root = RootNode::create(children);
 
   if (!verify()) {
     LOG(FATAL) << "Failed to qualify QUIX intermediate representation"
@@ -1816,7 +2939,7 @@ bool ir::q::QModule::from_ptree(quixcc_job_t *job,
   if (job->m_debug) {
     LOG(DEBUG) << log::raw << this->to_string() << std::endl;
   }
-  
+
   LOG(DEBUG)
       << "Successfully converted Ptree to QUIX intermediate representation"
       << std::endl;
@@ -1825,5 +2948,7 @@ bool ir::q::QModule::from_ptree(quixcc_job_t *job,
 }
 
 void libquixcc::ir::q::QModule::reduce() {
+  /// TODO: cleanup
+
   /// TODO: Implement QModule::reduce
 }

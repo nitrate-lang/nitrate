@@ -487,6 +487,53 @@ void libquixcc::C11Codegen::gen(const ir::delta::Halt *n, std::ostream &code) {
   code << "quix__halt()";
 }
 
+void libquixcc::C11Codegen::gen(const ir::delta::Break *n, std::ostream &code) {
+  code << "break";
+}
+
+void libquixcc::C11Codegen::gen(const ir::delta::Continue *n,
+                                std::ostream &code) {
+  code << "continue";
+}
+
+void libquixcc::C11Codegen::gen(const ir::delta::Switch *n,
+                                std::ostream &code) {
+  code << "switch (";
+  gen(n->cond, code);
+  code << ") {\n";
+
+  m_state.indent++;
+
+  for (auto &node : n->cases) {
+    gen(node, code);
+  }
+
+  if (n->def) {
+    ind(code);
+    code << "default: ";
+    gen(n->def, code);
+
+    code << "\n";
+  }
+
+  m_state.indent--;
+
+  ind(code);
+  code << "}";
+}
+
+void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Case *node, std::ostream &code)
+{
+  ind(code);
+  code << "case ";
+  gen(node->value, code);
+  code << ": ";
+
+  gen(node->code, code);
+
+  code << "\n";
+}
+
 void libquixcc::C11Codegen::gen(const ir::delta::Block *n, std::ostream &code) {
   code << "{\n";
 
@@ -757,18 +804,15 @@ void libquixcc::C11Codegen::gen(const ir::delta::RootNode *n,
 
   code << "#ifndef __QUIX_CODEGEN__\n";
   code << "#define __QUIX_CODEGEN__\n\n";
-
-  /* Define our language primitive types */
-  code << "/* QUIX Primitive Type Definitions */\n";
+  code << "typedef uint8_t quint8;\n";
+  code << "typedef uint16_t quint16;\n";
+  code << "typedef uint32_t quint32;\n";
+  code << "typedef uint64_t quint64;\n";
   code << "typedef int8_t qint8;\n";
   code << "typedef int16_t qint16;\n";
   code << "typedef int32_t qint32;\n";
   code << "typedef int64_t qint64;\n";
   code << "typedef bool qbool;\n";
-  code << "typedef uint8_t quint8;\n";
-  code << "typedef uint16_t quint16;\n";
-  code << "typedef uint32_t quint32;\n";
-  code << "typedef uint64_t quint64;\n";
   code << "typedef float qfloat32;\n";
   code << "typedef double qfloat64;\n";
   code << "typedef void qvoid;\n\n";
@@ -942,6 +986,12 @@ void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Value *n,
       return gen(n->as<PtrCall>(), code);
     case delta::NodeType::Halt:
       return gen(n->as<Halt>(), code);
+    case delta::NodeType::Break:
+      return gen(n->as<Break>(), code);
+    case delta::NodeType::Continue:
+      return gen(n->as<Continue>(), code);
+    case delta::NodeType::Switch:
+      return gen(n->as<Switch>(), code);
     case delta::NodeType::Block:
       return gen(n->as<Block>(), code);
     case delta::NodeType::Segment:

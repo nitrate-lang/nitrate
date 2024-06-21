@@ -107,10 +107,15 @@ static std::string serialize_type(
 
   if (visited.contains(type)) {
     switch ((q::NodeType)type->ntype) {
-      case q::NodeType::Group:
-        return "t" + wrap_tag(static_cast<const q::Group *>(type)->name);
-      case q::NodeType::Region:
-        return "j" + wrap_tag(static_cast<const q::Region *>(type)->name);
+      case q::NodeType::Region: {
+        auto t = static_cast<const q::Region *>(type);
+        std::string s;
+        s += wrap_tag(t->name);
+        std::string prop;
+        prop += t->m_packed ? "1" : "0";
+        prop += t->m_ordered ? "1" : "0";
+        return "j" + wrap_tag(s) + wrap_tag(prop);
+      }
       case q::NodeType::Union:
         return "u" + wrap_tag(static_cast<const q::Union *>(type)->name);
       default:
@@ -119,12 +124,7 @@ static std::string serialize_type(
     }
   }
 
-  if (type->is<q::Group>()) {
-    visited.insert(type);
-
-    const q::Group *st = static_cast<const q::Group *>(type);
-    return "t" + wrap_tag(st->name);
-  } else if (type->is<q::Region>()) {
+  if (type->is<q::Region>()) {
     visited.insert(type);
 
     const q::Region *st = static_cast<const q::Region *>(type);
@@ -189,20 +189,18 @@ static libquixcc::ir::q::Type *deserialize_type_inner(
   if (basic_typesmap.contains(type)) return basic_typesmap.at(type)();
 
   try {
-    if (type.at(0) == 't') {
+    if (type.at(0) == 'j') {
       std::vector<std::string> fields;
       if (!unwrap_tags(type.substr(1), fields)) return nullptr;
 
-      if (fields.size() < 1) return nullptr;
+      if (fields.size() < 2) return nullptr;
+      bool packed = false, ordered = false;
+      std::string prop = fields.at(1);
+      if (prop.size() != 2) return nullptr;
+      if (prop.at(0) == '1') packed = true;
+      if (prop.at(1) == '1') ordered = true;
 
-      return q::Group::create(fields.at(0), {});
-    } else if (type.at(0) == 'j') {
-      std::vector<std::string> fields;
-      if (!unwrap_tags(type.substr(1), fields)) return nullptr;
-
-      if (fields.size() < 1) return nullptr;
-
-      return q::Region::create(fields.at(0), {});
+      return q::Region::create(fields.at(0), {}, packed, ordered);
     } else if (type.at(0) == 'u') {
       std::vector<std::string> fields;
       if (!unwrap_tags(type.substr(1), fields)) return nullptr;

@@ -139,12 +139,6 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
     case libquixcc::NodeType::DowncastExprNode:
       conv(n->as<DowncastExprNode>());
       break;
-    case libquixcc::NodeType::PtrToIntCastExprNode:
-      conv(n->as<PtrToIntCastExprNode>());
-      break;
-    case libquixcc::NodeType::IntToPtrCastExprNode:
-      conv(n->as<IntToPtrCastExprNode>());
-      break;
     case libquixcc::NodeType::UnaryExprNode:
       conv(n->as<UnaryExprNode>());
       break;
@@ -367,6 +361,12 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
     case libquixcc::NodeType::RetvStmtNode:
       conv(n->as<RetvStmtNode>());
       break;
+    case libquixcc::NodeType::BreakStmtNode:
+      conv(n->as<BreakStmtNode>());
+      break;
+    case libquixcc::NodeType::ContinueStmtNode:
+      conv(n->as<ContinueStmtNode>());
+      break;
     case libquixcc::NodeType::IfStmtNode:
       conv(n->as<IfStmtNode>());
       break;
@@ -500,28 +500,6 @@ void ParseTreeSerializer::conv(const DowncastExprNode *n) {
   ind();
 
   o << "(Trunc";
-  next(n->m_type);
-  next(n->m_expr);
-  o << ')';
-  indent--;
-}
-
-void ParseTreeSerializer::conv(const PtrToIntCastExprNode *n) {
-  indent++;
-  ind();
-
-  o << "(Ptr2Int";
-  next(n->m_type);
-  next(n->m_expr);
-  o << ')';
-  indent--;
-}
-
-void ParseTreeSerializer::conv(const IntToPtrCastExprNode *n) {
-  indent++;
-  ind();
-
-  o << "(Int2Ptr";
   next(n->m_type);
   next(n->m_expr);
   o << ')';
@@ -1545,6 +1523,22 @@ void ParseTreeSerializer::conv(const RetvStmtNode *n) {
   o << "(Retv";
   next(n->m_cond);
   o << ')';
+  indent--;
+}
+
+void ParseTreeSerializer::conv(const BreakStmtNode *n) {
+  indent++;
+  ind();
+
+  o << "(Break)";
+  indent--;
+}
+
+void ParseTreeSerializer::conv(const ContinueStmtNode *n) {
+  indent++;
+  ind();
+
+  o << "(Continue)";
   indent--;
 }
 

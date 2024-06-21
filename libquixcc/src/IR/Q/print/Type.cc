@@ -126,12 +126,6 @@ bool libquixcc::ir::q::Region::print_impl(std::ostream &os,
   return true;
 }
 
-bool libquixcc::ir::q::Group::print_impl(std::ostream &os,
-                                         libquixcc::ir::PState &state) const {
-  os << "group " << name;
-  return true;
-}
-
 bool libquixcc::ir::q::Union::print_impl(std::ostream &os,
                                          libquixcc::ir::PState &state) const {
   os << "union " << name;
