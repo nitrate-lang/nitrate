@@ -52,6 +52,15 @@ Type *Call::infer() const { return func->type->as<FType>()->ret; }
 
 Type *CallIndirect::infer() const { return exprfunc->return_type; }
 
+Type *IntrinsicCall::infer() const {
+  /// TODO: Implement intrinsic type inference
+
+  return I32::create();
+
+  throw std::runtime_error(
+      "Codegen failed: Can not perform type inference on IntrinsicCall");
+}
+
 Type *SCast::infer() const { return type; }
 
 Type *UCast::infer() const { return type; }
@@ -138,6 +147,10 @@ static Type *do_infer(Type *lhs, Type *rhs) {
   if (lhs->is<U8>() || rhs->is<U8>()) return U8::create();
 
   if (lhs->is<I1>() || rhs->is<I1>()) return I1::create();
+
+  if (lhs->is<Ptr>() && rhs->is<Ptr>()) {
+    if (lhs->as<Ptr>()->type->is(rhs->as<Ptr>()->type)) return lhs;
+  }
 
   throw std::runtime_error(
       "Codegen failed: Binary operation type not supported");
@@ -253,7 +266,8 @@ Type *List::infer() const {
 
   for (size_t i = 1; i < types.size(); i++) {
     if (!types[i]->is(type)) {
-      return Region::create("__t" + unqiue_typehash(types) + "_t", types, true, true);
+      return Region::create("__t" + unqiue_typehash(types) + "_t", types, true,
+                            true);
     }
   }
 

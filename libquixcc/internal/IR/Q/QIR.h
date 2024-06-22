@@ -40,6 +40,9 @@
 #include <IR/Type.h>
 #include <parsetree/nodes/AllNodes.h>
 
+#include <unordered_map>
+
+
 namespace libquixcc {
 namespace ir {
 namespace q {
@@ -149,6 +152,10 @@ enum class NodeType {
   Member,
   Index,
 
+  /* Intrinsics */
+  IntrinsicCall,
+  IntrinsicType,
+
   EnumMax,
 };
 
@@ -175,6 +182,11 @@ class RootNode : public Value {
   std::vector<Value *> children;
 };
 
+enum class QPassType {
+  Solver,
+  Optimizer,
+};
+
 class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *> {
  protected:
   bool print_impl(std::ostream &os, PState &state) const override;
@@ -183,12 +195,33 @@ class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *> {
   std::string_view ir_dialect_family_impl() const override;
   std::string_view ir_dialect_description_impl() const override;
   bool verify_impl() const override;
+  std::unordered_map<QPassType, std::vector<std::string>> m_passes;
+  std::set<std::string> m_tags;
 
  public:
-  QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {}
+  QModule(const std::string_view &name) : IRModule<IR::Q, RootNode *>(name) {
+    m_passes[QPassType::Solver] = {};
+    m_passes[QPassType::Optimizer] = {};
+  }
   ~QModule() = default;
 
   bool from_ptree(quixcc_job_t *job, std::shared_ptr<ParseNode> ast);
+
+  void acknowledge_pass(QPassType pass, const std::string &name) {
+    m_passes[pass].push_back(name);
+  }
+
+  void unacknowledge_pass(QPassType pass, const std::string &name) {
+    m_passes[pass].erase(std::remove(m_passes[pass].begin(), m_passes[pass].end(), name), m_passes[pass].end());
+  }
+
+  void add_tag(const std::string &tag) {
+    m_tags.insert(tag);
+  }
+
+  void remove_tag(const std::string &tag) {
+    m_tags.erase(tag);
+  }
 
   void reduce();
 };

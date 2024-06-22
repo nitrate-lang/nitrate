@@ -50,3 +50,14 @@ bool libquixcc::ir::q::CallIndirect::verify_impl() const {
          std::all_of(args.begin(), args.end(),
                      [](const Value *arg) { return arg->verify(); });
 }
+
+boost::uuids::uuid libquixcc::ir::q::IntrinsicCall::hash_impl() const
+{
+  return Hasher().gettag().add((uint64_t)name).add(args).hash();
+}
+
+bool libquixcc::ir::q::IntrinsicCall::verify_impl() const
+{
+  return std::all_of(args.begin(), args.end(),
+                     [](const Value *arg) { return arg->verify(); });
+}

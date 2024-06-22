@@ -165,6 +165,14 @@ boost::uuids::uuid libquixcc::ir::q::Opaque::hash_impl() const {
 
 bool libquixcc::ir::q::Opaque::verify_impl() const { return !name.empty(); }
 
+boost::uuids::uuid libquixcc::ir::q::IntrinsicType::hash_impl() const {
+  return Hasher().gettag().add(name).hash();
+}
+
+bool libquixcc::ir::q::IntrinsicType::verify_impl() const {
+  return !name.empty();
+}
+
 size_t libquixcc::ir::q::Type::size() const {
   return std::ceil(bitcount() / 8.0);
 }

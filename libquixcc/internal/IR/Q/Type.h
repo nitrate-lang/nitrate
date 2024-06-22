@@ -337,7 +337,8 @@ class Region : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Region(std::string name, std::vector<Type *> fields, bool packed, bool ordered)
+  Region(std::string name, std::vector<Type *> fields, bool packed,
+         bool ordered)
       : name(name), fields(fields), m_packed(packed), m_ordered(ordered) {
     ntype = (int)NodeType::Region;
   }
@@ -388,6 +389,25 @@ class Opaque : public Type {
   static Opaque *create(std::string name);
   size_t bitcount() const override {
     throw std::runtime_error("Cannot get bitcount of opaque type");
+  }
+
+  std::string name;
+};
+
+class IntrinsicType : public Type {
+ protected:
+  bool print_impl(std::ostream &os, PState &state) const override;
+  boost::uuids::uuid hash_impl() const override;
+  bool verify_impl() const override;
+
+  IntrinsicType(std::string name) : name(name) {
+    ntype = (int)NodeType::IntrinsicType;
+  }
+
+ public:
+  static IntrinsicType *create(std::string name);
+  size_t bitcount() const override {
+    throw std::runtime_error("Cannot get bitcount of intrinsic type");
   }
 
   std::string name;

@@ -40,6 +40,7 @@
 #include <IR/delta/Expr.h>
 #include <IR/delta/Segment.h>
 #include <IR/delta/Type.h>
+#include <IR/delta/Variable.h>
 
 namespace libquixcc::ir::delta {
 class IfElse : public Value {
@@ -151,17 +152,17 @@ class PtrCall : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  PtrCall(const Value *callee, std::vector<const Expr *> args)
+  PtrCall(const Expr *callee, std::vector<const Expr *> args)
       : callee(callee), args(args) {
     ntype = (int)NodeType::PtrCall;
   }
 
  public:
-  static const PtrCall *create(const Value *callee,
+  static const PtrCall *create(const Expr *callee,
                                std::vector<const Expr *> args);
   const Type *infer() const override;
 
-  const Value *callee;
+  const Expr *callee;
   std::vector<const Expr *> args;
 };
 
@@ -207,14 +208,14 @@ class Case : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Case(const Expr *value, const Value *code) : value(value), code(code) {
+  Case(const Number *value, const Value *code) : value(value), code(code) {
     ntype = (int)NodeType::Case;
   }
 
  public:
-  static const Case *create(const Expr *value, const Value *code);
+  static const Case *create(const Number *value, const Value *code);
 
-  const Expr *value;
+  const Number *value;
   const Value *code;
 };
 

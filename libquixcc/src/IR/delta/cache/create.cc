@@ -68,13 +68,13 @@ static std::map<
     std::tuple<std::string, std::vector<const Expr *>, const FType *>,
     const Call *>
     call_insts;
-static std::map<std::pair<const Value *, std::vector<const Expr *>>,
+static std::map<std::pair<const Expr *, std::vector<const Expr *>>,
                 const PtrCall *>
     ptrcall_insts;
 static Halt *halt_inst = nullptr;
 static Break *break_inst = nullptr;
 static Continue *continue_inst = nullptr;
-static std::map<std::pair<const Value *, const Value *>, const Case *>
+static std::map<std::pair<const Number *, const Value *>, const Case *>
     case_insts;
 static std::map<
     std::tuple<const Value *, std::vector<const Case *>, const Value *>,
@@ -265,7 +265,7 @@ const delta::Call *delta::Call::create(std::string callee,
   return call_insts[key];
 }
 
-const delta::PtrCall *delta::PtrCall::create(const Value *callee,
+const delta::PtrCall *delta::PtrCall::create(const Expr *callee,
                                              std::vector<const Expr *> args) {
   lock(NodeType::PtrCall);
   auto key = std::make_pair(callee, args);
@@ -292,13 +292,14 @@ const delta::Continue *delta::Continue::create() {
   return continue_inst;
 }
 
-const delta::Case *delta::Case::create(const delta::Expr *value,
+const delta::Case *delta::Case::create(const delta::Number *value,
                                        const delta::Value *code) {
   lock(NodeType::Case);
   auto key = std::make_pair(value, code);
   if (!case_insts.contains(key)) case_insts[key] = new Case(value, code);
   return case_insts[key];
 }
+
 const delta::Switch *delta::Switch::create(
     const delta::Expr *cond, std::vector<const delta::Case *> cases,
     const delta::Value *def) {

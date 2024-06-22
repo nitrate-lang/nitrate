@@ -479,10 +479,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
         }
         std::shared_ptr<ExprNode> expr;
 
-        if (op != Operator::As) {
-          if (!parse_expr(job, scanner, terminators, expr, depth + 1) || !expr)
-            return false;
-        } else {
+        if (op == Operator::As) {
           TypeNode *type;
           if (!parse_type(job, scanner, &type)) return false;
 
@@ -491,6 +488,31 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           stack.push(std::make_shared<StaticCastExprNode>(left, type));
           continue;
         }
+
+        if (op == Operator::BitcastAs) {
+          TypeNode *type;
+          if (!parse_type(job, scanner, &type)) return false;
+
+          auto left = stack.top();
+          stack.pop();
+          stack.push(std::make_shared<BitCastExprNode>(left, type));
+          continue;
+        }
+
+        if (op == Operator::ReinterpretAs) {
+          TypeNode *type;
+          if (!parse_type(job, scanner, &type)) return false;
+
+          auto left = stack.top();
+          stack.pop();
+
+          throw std::runtime_error("Reinterpret cast not implemented");
+          // stack.push(std::make_shared<ReinterpretCastExprNode>(left, type));
+          continue;
+        }
+
+        if (!parse_expr(job, scanner, terminators, expr, depth + 1) || !expr)
+          return false;
 
         if (stack.empty()) {
           stack.push(std::make_shared<UnaryExprNode>(op, expr));

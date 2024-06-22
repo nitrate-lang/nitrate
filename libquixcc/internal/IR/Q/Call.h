@@ -78,6 +78,33 @@ class CallIndirect : public Expr {
   Segment *exprfunc;
   std::vector<Expr *> args;
 };
+
+enum class QIntrinsic {
+  Malloc,
+  Free,
+
+  ToString,
+};
+
+class IntrinsicCall : public Expr {
+ protected:
+  bool print_impl(std::ostream &os, PState &state) const override;
+  boost::uuids::uuid hash_impl() const override;
+  bool verify_impl() const override;
+
+  IntrinsicCall(QIntrinsic name, std::vector<Expr *> args)
+      : name(name), args(args) {
+    ntype = (int)NodeType::IntrinsicCall;
+  }
+
+ public:
+  static IntrinsicCall *create(QIntrinsic name, std::vector<Expr *> args);
+  Type *infer() const override;
+
+  QIntrinsic name;
+  std::vector<Expr *> args;
+};
+
 }  // namespace libquixcc::ir::q
 
 #endif  // __QUIXCC_IR_Q_NODES_CALL_H__

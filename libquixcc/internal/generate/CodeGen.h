@@ -69,6 +69,8 @@ class LLVM14Codegen {
     std::stack<std::map<std::string, llvm::AllocaInst *>> locals;
     std::stack<std::map<std::string, llvm::Argument *>> params;
     std::stack<std::map<std::string, llvm::BasicBlock *>> labels;
+    std::stack<std::stack<llvm::BasicBlock *>> breaks;
+    std::stack<std::stack<llvm::BasicBlock *>> continues;
     std::map<std::string, llvm::GlobalVariable *> globals;
     std::map<std::string, llvm::Function *> functions;
     std::map<std::string, llvm::Type *> types;
@@ -139,8 +141,6 @@ class LLVM14Codegen {
   llvm::Value *gen(const ir::delta::Break *node);
   llvm::Value *gen(const ir::delta::Continue *node);
   llvm::Value *gen(const ir::delta::Switch *node);
-  llvm::Value *gen(const ir::delta::Case *node);
-
   llvm::Value *gen(const ir::delta::Block *node);
   llvm::Function *gen(const ir::delta::Segment *node);
   llvm::Value *gen(const ir::delta::Asm *node);

@@ -360,6 +360,8 @@ static QResult conv(const StaticCastExprNode *n, QState &state) {
     return ir::q::SCast::create(to, expr);
   if (from->is_unsigned() && to->is_unsigned())
     return ir::q::UCast::create(to, expr);
+  if (from->is_float() && to->is_float())
+    return ir::q::SCast::create(to, expr);
 
   LOG(FATAL) << "error converting from static_cast to primitive casts"
              << std::endl;
@@ -898,8 +900,61 @@ static QResult conv(const SliceNode *n, QState &state) {
 static QResult conv(const FStringNode *n, QState &state) {
   /// TODO: cleanup
 
-  /// TODO: Implement FStringNode
-  throw std::runtime_error("FStringNode not implemented");
+  enum State {
+    init,
+    check,
+  } fstate = init;
+
+  if (n->template_string.empty()) {
+    return String::create("");
+  }
+
+  std::vector<String *> literal_parts;
+  std::string literal;
+
+  for (char c : n->template_string) {
+    switch (fstate) {
+      case init: {
+        if (c == '{') {
+          fstate = check;
+          break;
+        }
+
+        literal += c;
+        break;
+      }
+      case check: {
+        if (c == '{') {
+          literal += '{';
+          break;
+        }
+
+        literal_parts.push_back(String::create(literal));
+        literal.clear();
+        fstate = init;
+        break;
+      }
+    }
+  }
+
+  if (!literal.empty()) {
+    literal_parts.push_back(String::create(literal));
+  }
+
+  if (literal_parts.empty()) {
+    return String::create("");
+  }
+
+  Expr *result = literal_parts[0];
+
+  for (auto arg : n->args) {
+    auto val = conv(arg.get(), state)[0]->as<Expr>();
+    auto stringified = IntrinsicCall::create(QIntrinsic::ToString, {val});
+
+    result = Add::create(result, stringified);
+  }
+
+  return result;
 }
 
 static QResult conv(const ConstUnaryExprNode *n, QState &state) {
@@ -1589,10 +1644,10 @@ static QResult conv(const BoolLiteralNode *n, QState &state) {
    **/
 
   if (n->m_val == true) {
-    return Number::create("1");
+    return UCast::create(I1::create(), Number::create("1"));
   }
 
-  return Number::create("0");
+  return UCast::create(I1::create(), Number::create("0"));
 }
 
 static QResult conv(const NullLiteralNode *n, QState &state) {
@@ -2354,8 +2409,8 @@ static QResult conv(const IfStmtNode *n, QState &state) {
   }
 
   /* One-for-one lowering of the if statement node */
-  return IfElse::create(cond[0]->as<Expr>(), then_block[0]->as<Block>(),
-                        else_block[0]->as<Block>());
+  return IfElse::create(UCast::create(I1::create(), cond[0]->as<Expr>()),
+                        then_block[0]->as<Block>(), else_block[0]->as<Block>());
 }
 
 static QResult conv(const WhileStmtNode *n, QState &state) {
@@ -2368,8 +2423,6 @@ static QResult conv(const WhileStmtNode *n, QState &state) {
    * General Behavior:
    * - One-for-one lowering of the while loop node.
    **/
-
-  /// TODO: cleanup
 
   QResult cond = nullptr;
   QResult stmt = nullptr;
@@ -2397,14 +2450,15 @@ static QResult conv(const WhileStmtNode *n, QState &state) {
   }
 
   /* One-for-one lowering of the while loop node */
-  return While::create(cond[0]->as<Expr>(), stmt[0]->as<Block>());
+  return While::create(UCast::create(I1::create(), cond[0]->as<Expr>()),
+                       stmt[0]->as<Block>());
 }
 
 static QResult conv(const ForStmtNode *n, QState &state) {
   /* Function: Convert a parse tree for loop node into a QIR for loop.
    *
    * Edge Cases:
-   *  - If the init, cond, step, or stmt fields are null, ignore them.
+   *  - If the init, cond, step, or stmt fields are null, default them.
    *
    * General Behavior:
    * - One-for-one lowering of the for loop node.
@@ -2416,13 +2470,28 @@ static QResult conv(const ForStmtNode *n, QState &state) {
   Block *stmt = nullptr;
 
   /* If the init, cond, step, or stmt fields are null, ignore them */
-  if (n->m_init) init = conv(n->m_init.get(), state)[0]->as<Expr>();
-  if (n->m_cond) cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
-  if (n->m_step) step = conv(n->m_step.get(), state)[0]->as<Expr>();
-  if (n->m_stmt) stmt = conv(n->m_stmt.get(), state)[0]->as<Block>();
+  if (n->m_init)
+    init = conv(n->m_init.get(), state)[0]->as<Expr>();
+  else
+    init = Number::create("0");
+
+  if (n->m_cond)
+    cond = conv(n->m_cond.get(), state)[0]->as<Expr>();
+  else
+    cond = Number::create("1");
+
+  if (n->m_step)
+    step = conv(n->m_step.get(), state)[0]->as<Expr>();
+  else
+    step = Number::create("0");
+
+  if (n->m_stmt)
+    stmt = conv(n->m_stmt.get(), state)[0]->as<Block>();
+  else
+    stmt = Block::create({});
 
   /* One-for-one lowering of the for loop node */
-  return For::create(init, cond, step, stmt);
+  return For::create(init, UCast::create(I1::create(), cond), step, stmt);
 }
 
 static QResult conv(const FormStmtNode *n, QState &state) {

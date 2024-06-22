@@ -137,3 +137,9 @@ bool libquixcc::ir::q::Opaque::print_impl(std::ostream &os,
   os << "opaque " << name;
   return true;
 }
+
+bool libquixcc::ir::q::IntrinsicType::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
+{
+  os << "#" << name;
+  return true;
+}

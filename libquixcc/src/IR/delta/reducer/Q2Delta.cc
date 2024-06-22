@@ -442,8 +442,18 @@ static auto conv(const ir::q::IPtrCast *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::Bitcast *n, DState &state) -> DResult {
-  return Bitcast::create(conv(n->type, state)[0]->as<Type>(),
-                         conv(n->value, state)[0]->as<Expr>());
+  auto t = conv(n->type, state)[0]->as<Type>();
+  auto v = conv(n->value, state)[0]->as<Expr>();
+
+  if (t->is_integer() && v->infer()->is_ptr()) {
+    return Bitcast::create(t, PtrICast::create(v));
+  }
+
+  if (t->is_ptr() && v->infer()->is_integer()) {
+    return Bitcast::create(t, IPtrCast::create(t, v));
+  }
+  
+  return Bitcast::create(t, v);
 }
 
 static auto conv(const ir::q::Call *n, DState &state) -> DResult {
@@ -531,7 +541,7 @@ static auto conv(const ir::q::TryCatchFinally *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::Case *n, DState &state) -> DResult {
-  auto value = conv(n->value, state)[0]->as<Expr>();
+  auto value = conv(n->value, state)[0]->as<Number>();
   auto block = conv(n->body, state)[0]->as<Block>();
 
   return Case::create(value, block);

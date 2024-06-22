@@ -161,6 +161,10 @@ CallIndirect *CallIndirect::create(Segment *callee, vec<Expr *> args) {
   MAKE_GC(CallIndirect, callee, args);
 }
 
+IntrinsicCall *IntrinsicCall::create(QIntrinsic name, vec<Expr *> args) {
+  MAKE_GC(IntrinsicCall, name, args);
+}
+
 Ident *Ident::create(str name, Type *type) { MAKE_GC(Ident, name, type); }
 
 Asm *Asm::create(str asm_str, vec<pair<str, Value *>> inputs,

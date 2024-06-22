@@ -931,8 +931,11 @@ size_t ParseTreePreorder::iter(IfStmtNode *node) {
 }
 
 size_t ParseTreePreorder::iter(WhileStmtNode *node) {
-  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_cond));
-  size_t count = next(node->m_cond);
+  size_t count = 1;
+  if (node->m_cond) {
+    m_callback(m_ns, m_scope, node, mk_ptr(&node->m_cond));
+    count += next(node->m_cond);
+  }
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_stmt));
   count += next(node->m_stmt);
   return count + 1;

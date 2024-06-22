@@ -174,6 +174,8 @@ enum class Operator {
   Range = 88,
   Ellipsis = 89,
   Spaceship = 90,
+  BitcastAs = 91,
+  ReinterpretAs = 92,
 };
 
 enum class TT {

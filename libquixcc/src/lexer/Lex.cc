@@ -225,6 +225,8 @@ const std::unordered_map<std::string_view, Operator> operator_map = {
     {"alignof", Operator::Alignof},
     {"typeof", Operator::Typeof},
     {"offsetof", Operator::Offsetof},
+    {"bitcast_as", Operator::BitcastAs},
+    {"reinterpret_as", Operator::ReinterpretAs},
     {"..", Operator::Range},
     {"...", Operator::Ellipsis},
     {"<=>", Operator::Spaceship},
@@ -246,6 +248,8 @@ const std::unordered_map<std::string_view, Operator> word_operators = {
     {"in", Operator::In},         {"nin", Operator::NotIn},
     {"sizeof", Operator::Sizeof}, {"alignof", Operator::Alignof},
     {"typeof", Operator::Typeof}, {"offsetof", Operator::Offsetof},
+    {"bitcast_as", Operator::BitcastAs},
+    {"reinterpret_as", Operator::ReinterpretAs},
 };
 
 const std::unordered_map<Operator, std::string_view> operator_map_inverse = {

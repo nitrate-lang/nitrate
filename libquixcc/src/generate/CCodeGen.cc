@@ -522,8 +522,8 @@ void libquixcc::C11Codegen::gen(const ir::delta::Switch *n,
   code << "}";
 }
 
-void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Case *node, std::ostream &code)
-{
+void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Case *node,
+                                std::ostream &code) {
   ind(code);
   code << "case ";
   gen(node->value, code);

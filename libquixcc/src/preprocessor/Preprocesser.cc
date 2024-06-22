@@ -68,6 +68,8 @@ PrepEngine::~PrepEngine() {
   if (m_we_own_file) {
     fclose(m_file);
   }
+
+  job->m_filename.pop();
 }
 
 void PrepEngine::setup() {}

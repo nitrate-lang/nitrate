@@ -41,7 +41,29 @@ bool libquixcc::ir::q::QModule::print_impl(std::ostream &os,
 
     os << "; ModuleHash = '";
     m_root->printid(os);
-    os << "'\n\n";
+    os << "'\n";
+
+    os << "; SolverPasses = [";
+    for (size_t i = 0; i < m_passes.at(QPassType::Solver).size(); i++) {
+      os << "'" << m_passes.at(QPassType::Solver).at(i) << "'";
+      if (i < m_passes.at(QPassType::Solver).size() - 1) os << ", ";
+    }
+    os << "]\n";
+
+    os << "; OptimizerPasses = [";
+    for (size_t i = 0; i < m_passes.at(QPassType::Optimizer).size(); i++) {
+      os << "'" << m_passes.at(QPassType::Optimizer).at(i) << "'";
+      if (i < m_passes.at(QPassType::Optimizer).size() - 1) os << ", ";
+    }
+
+    os << "]\n";
+
+    os << "; Tags = [";
+    for (auto it = m_tags.begin(); it != m_tags.end(); it++) {
+      os << "'" << *it << "'";
+      if (std::next(it) != m_tags.end()) os << ", ";
+    }
+    os << "]\n\n";
   }
 
   if (!m_root->print(os, state)) return false;
