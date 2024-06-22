@@ -100,8 +100,12 @@ bool libquixcc::ir::q::RootNode::print_impl(
     std::ostream &os, libquixcc::ir::PState &state) const {
   for (auto it = children.begin(); it != children.end(); it++) {
     if (!(*it)->print(os, state)) return false;
-
     os << ";\n";
+
+    if (state.last_node_type != (*it)->ntype)
+      os << "\n";
+
+    state.last_node_type = (*it)->ntype;
   }
 
   return true;

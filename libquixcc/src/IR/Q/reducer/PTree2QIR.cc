@@ -86,6 +86,7 @@ struct QState {
   ExportLangType lang;
   std::stack<const FunctionDefNode *> function;
   std::map<std::string, const DefNode *> typedefs;
+  std::unordered_map<std::string, Expr *> enum_values;
 
   QState() {
     inside_segment = false;
@@ -360,8 +361,7 @@ static QResult conv(const StaticCastExprNode *n, QState &state) {
     return ir::q::SCast::create(to, expr);
   if (from->is_unsigned() && to->is_unsigned())
     return ir::q::UCast::create(to, expr);
-  if (from->is_float() && to->is_float())
-    return ir::q::SCast::create(to, expr);
+  if (from->is_float() && to->is_float()) return ir::q::SCast::create(to, expr);
 
   LOG(FATAL) << "error converting from static_cast to primitive casts"
              << std::endl;
@@ -1050,9 +1050,14 @@ static QResult conv(const IdentifierNode *n, QState &state) {
       return Ident::create(n->m_name, state.local_idents.top()[n->m_name]);
   }
 
-  if (!state.global_idents.contains(n->m_name))
+  if (state.enum_values.contains(n->m_name)) {
+    return state.enum_values[n->m_name];
+  }
+
+  if (!state.global_idents.contains(n->m_name)) {
     throw std::runtime_error("QIR translation: IdentifierNode not found: " +
                              n->m_name);
+  }
 
   return Ident::create(n->m_name, state.global_idents[n->m_name]);
 }
@@ -2116,12 +2121,37 @@ static QResult conv(const UnionFieldNode *n, QState &state) {
 
 static QResult conv(const EnumDefNode *n, QState &state) {
   /// TODO: cleanup
+
+  if (n->m_fields.empty()) {
+    return nullptr;
+  }
+
+  Expr *last = nullptr;
+
+  for (auto &field : n->m_fields) {
+    if (field->m_value) {
+      last = conv(field->m_value.get(), state)[0]->as<Expr>();
+    } else {
+      if (!last) {
+        last = Number::create("0");
+      } else {
+        last = Add::create(last, Number::create("1"));
+      }
+    }
+
+    state.enum_values[Symbol::join(n->m_type->m_name, field->m_name)] = last;
+  }
+
   return nullptr;
 }
 
 static QResult conv(const EnumFieldNode *n, QState &state) {
   /// TODO: cleanup
-  return nullptr;
+  if (!n->m_value) {
+    return nullptr;
+  }
+
+  return conv(n->m_value.get(), state);
 }
 
 static QResult conv(const FunctionDefNode *n, QState &state) {
@@ -2137,6 +2167,16 @@ static QResult conv(const FunctionDefNode *n, QState &state) {
   auto dseg = glob->value->as<Segment>();
 
   auto body = conv(n->m_body.get(), state)[0]->as<Block>();
+
+  if (body->stmts.empty() || !body->stmts.back()->is<Ret>()) {
+    if (dseg->return_type->is<Void>()) {
+      body->stmts.push_back(Ret::create(nullptr));
+    } else {
+      LOG(ERROR) << "QIR conv: function does not return" << std::endl;
+      return nullptr;
+    }
+  }
+
   state.inside_segment = old;
 
   state.function.pop();
@@ -2464,14 +2504,14 @@ static QResult conv(const ForStmtNode *n, QState &state) {
    * - One-for-one lowering of the for loop node.
    **/
 
-  Expr *init = nullptr;
+  Value *init = nullptr;
   Expr *cond = nullptr;
   Expr *step = nullptr;
   Block *stmt = nullptr;
 
   /* If the init, cond, step, or stmt fields are null, ignore them */
   if (n->m_init)
-    init = conv(n->m_init.get(), state)[0]->as<Expr>();
+    init = conv(n->m_init.get(), state)[0]->as<Value>();
   else
     init = Number::create("0");
 

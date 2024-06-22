@@ -476,11 +476,7 @@ static bool quixcc_mutate_ptree(quixcc_job_t *job,
   // mutator.add_routine(mutate::MethodToFunc);
   mutator.add_routine(mutate::DiscoverNamedConstructs);
   mutator.add_routine(mutate::ResolveNamedConstructs);
-  mutator.add_routine(mutate::ExtrapolateEnumFields);
   mutator.add_routine(mutate::SubsystemCollapse);
-  mutator.add_routine(mutate::ObjectConstruction);
-  mutator.add_routine(mutate::ObjectDestruction);
-  mutator.add_routine(mutate::ImplicitReturn);
   mutator.run(job, ptree);
 
   return true;

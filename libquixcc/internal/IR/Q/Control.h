@@ -82,15 +82,15 @@ class For : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  For(Expr *init, Expr *cond, Expr *step, Value *body)
+  For(Value *init, Expr *cond, Expr *step, Value *body)
       : init(init), cond(cond), step(step), body(body) {
     ntype = (int)NodeType::For;
   }
 
  public:
-  static For *create(Expr *init, Expr *cond, Expr *step, Value *body);
+  static For *create(Value *init, Expr *cond, Expr *step, Value *body);
 
-  Expr *init;
+  Value *init;
   Expr *cond;
   Expr *step;
   Value *body;

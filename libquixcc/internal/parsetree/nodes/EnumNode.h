@@ -83,16 +83,15 @@ class EnumFieldNode : public ParseNode {
 class EnumDefNode : public DefNode {
  public:
   EnumDefNode() { ntype = NodeType::EnumDefNode; }
-  EnumDefNode(EnumTypeNode *type, bool scoped,
+  EnumDefNode(EnumTypeNode *type,
               const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {})
-      : m_type(type), m_fields(fields), m_scoped(scoped) {
+      : m_type(type), m_fields(fields) {
     ntype = NodeType::EnumDefNode;
   }
   virtual TypeNode *get_type() const { return m_type; }
 
   EnumTypeNode *m_type;
   std::vector<std::shared_ptr<EnumFieldNode>> m_fields;
-  bool m_scoped = false;
 };
 }  // namespace libquixcc
 

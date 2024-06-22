@@ -53,14 +53,8 @@ void ResolveNamedConstructs(quixcc_job_t *job,
                             const std::shared_ptr<libquixcc::Ptree> ptree);
 void MethodToFunc(quixcc_job_t *job,
                   const std::shared_ptr<libquixcc::Ptree> ptree);
-inline void ObjectConstruction(quixcc_job_t *job,
-                               const std::shared_ptr<libquixcc::Ptree> ptree) {}
-inline void ObjectDestruction(quixcc_job_t *job,
-                              const std::shared_ptr<libquixcc::Ptree> ptree) {}
 void SubsystemCollapse(quixcc_job_t *job,
                        const std::shared_ptr<libquixcc::Ptree> ptree);
-void ImplicitReturn(quixcc_job_t *job,
-                    const std::shared_ptr<libquixcc::Ptree> ptree);
 }  // namespace mutate
 
 typedef std::function<void(quixcc_job_t *job,

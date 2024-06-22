@@ -126,7 +126,7 @@ class WhileStmtNode : public StmtNode {
 
 class ForStmtNode : public StmtNode {
  public:
-  ForStmtNode(const std::shared_ptr<ExprNode> &init,
+  ForStmtNode(const std::shared_ptr<StmtNode> &init,
               const std::shared_ptr<ExprNode> &cond,
               const std::shared_ptr<ExprNode> &step,
               const std::shared_ptr<StmtNode> &body)
@@ -134,7 +134,7 @@ class ForStmtNode : public StmtNode {
     ntype = NodeType::ForStmtNode;
   }
 
-  std::shared_ptr<ExprNode> m_init;
+  std::shared_ptr<StmtNode> m_init;
   std::shared_ptr<ExprNode> m_cond;
   std::shared_ptr<ExprNode> m_step;
   std::shared_ptr<StmtNode> m_stmt;

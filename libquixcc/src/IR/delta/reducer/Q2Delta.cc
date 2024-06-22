@@ -486,12 +486,12 @@ static auto conv(const ir::q::While *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::For *n, DState &state) -> DResult {
-  const Expr *init = nullptr;
+  const Value *init = nullptr;
   const Expr *cond = nullptr;
   const Expr *step = nullptr;
   const Value *body = nullptr;
 
-  if (n->init) init = conv(n->init, state)[0]->as<Expr>();
+  if (n->init) init = conv(n->init, state)[0]->as<Value>();
   if (n->cond) cond = conv(n->cond, state)[0]->as<Expr>();
   if (n->step) step = conv(n->step, state)[0]->as<Expr>();
   if (n->body) body = conv(n->body, state)[0];

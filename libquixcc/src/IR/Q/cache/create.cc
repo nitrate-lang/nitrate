@@ -126,7 +126,7 @@ IfElse *IfElse::create(Expr *cond, Value *then, Value *els) {
 
 While *While::create(Expr *cond, Value *body) { MAKE_GC(While, cond, body); }
 
-For *For::create(Expr *init, Expr *cond, Expr *step, Value *body) {
+For *For::create(Value *init, Expr *cond, Expr *step, Value *body) {
   MAKE_GC(For, init, cond, step, body);
 }
 

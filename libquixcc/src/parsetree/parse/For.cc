@@ -39,19 +39,37 @@ using namespace libquixcc;
 
 bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
                           std::shared_ptr<libquixcc::StmtNode> &node) {
-  std::shared_ptr<ExprNode> x0, x1, x2;
+  std::shared_ptr<StmtNode> x0;
+  std::shared_ptr<ExprNode> x1, x2;
 
   Token tok = scanner->peek();
   if (tok.is<Punctor>(Punctor::OpenParen)) {
     tok = scanner->next();
+    tok = scanner->peek();
 
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x0))
-      return false;
+    if (tok.is<Keyword>(Keyword::Let)) {
+      scanner->next();
+      std::vector<std::shared_ptr<libquixcc::StmtNode>> let_node;
+      if (!parse_let(job, scanner, let_node)) {
+        LOG(ERROR) << "Failed to parse let statement in for loop" << tok
+                   << std::endl;
+        return false;
+      }
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Semicolon)) {
-      LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
-      return false;
+      x0 = std::make_shared<StmtGroupNode>(let_node);
+    } else {
+      std::shared_ptr<ExprNode> x0_tmp;
+      if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
+                      x0_tmp)) {
+        return false;
+      }
+      x0 = std::make_shared<ExprStmtNode>(x0_tmp);
+
+      tok = scanner->next();
+      if (!tok.is<Punctor>(Punctor::Semicolon)) {
+        LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+        return false;
+      }
     }
 
     if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x1))
@@ -87,13 +105,31 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     return true;
   } else {
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x0))
-      return false;
+    tok = scanner->peek();
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Semicolon)) {
-      LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
-      return false;
+    if (tok.is<Keyword>(Keyword::Let)) {
+      scanner->next();
+      std::vector<std::shared_ptr<libquixcc::StmtNode>> let_node;
+      if (!parse_let(job, scanner, let_node)) {
+        LOG(ERROR) << "Failed to parse let statement in for loop" << tok
+                   << std::endl;
+        return false;
+      }
+
+      x0 = std::make_shared<StmtGroupNode>(let_node);
+    } else {
+      std::shared_ptr<ExprNode> x0_tmp;
+      if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
+                      x0_tmp)) {
+        return false;
+      }
+      x0 = std::make_shared<ExprStmtNode>(x0_tmp);
+
+      tok = scanner->next();
+      if (!tok.is<Punctor>(Punctor::Semicolon)) {
+        LOG(ERROR) << feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+        return false;
+      }
     }
 
     if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x1))

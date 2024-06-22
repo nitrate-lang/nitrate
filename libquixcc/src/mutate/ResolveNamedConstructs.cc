@@ -49,22 +49,20 @@ static std::string join_ns(const std::vector<std::string> &ns) {
 }
 
 static void resolve_user_type_nodes(quixcc_job_t *job,
-                                    std::shared_ptr<libquixcc::BlockNode> ast) {
+                                    std::shared_ptr<BlockNode> ast) {
   ast->dfs_preorder([job](const std::vector<std::string> &_namespace,
                           const std::vector<std::string> &_scope,
-                          libquixcc::ParseNode *parent,
-                          traversal::TraversePtr node) {
+                          ParseNode *parent, traversal::TraversePtr node) {
     if (node.first != traversal::TraversePtrType::Raw) return;
     auto ptr = *std::get<ParseNode **>(node.second);
 
     if (!(ptr)->is<UserTypeNode>()) return;
 
-    libquixcc::UserTypeNode **user_type_ptr =
-        reinterpret_cast<libquixcc::UserTypeNode **>(
-            std::get<ParseNode **>(node.second));
-    libquixcc::UserTypeNode *user_type = *user_type_ptr;
+    UserTypeNode **user_type_ptr =
+        reinterpret_cast<UserTypeNode **>(std::get<ParseNode **>(node.second));
+    UserTypeNode *user_type = *user_type_ptr;
     std::string name = user_type->m_name;
-    std::shared_ptr<libquixcc::ParseNode> named_type;
+    std::shared_ptr<ParseNode> named_type;
 
     if (!job->m_inner.m_named_types.contains(user_type->m_name) &&
         _scope.empty()) {
@@ -99,35 +97,29 @@ static void resolve_user_type_nodes(quixcc_job_t *job,
 
     switch (named_type->ntype) {
       case NodeType::StructDefNode:
-        type = std::static_pointer_cast<libquixcc::StructDefNode>(named_type)
-                   ->get_type();
+        type = std::static_pointer_cast<StructDefNode>(named_type)->get_type();
         break;
       case NodeType::RegionDefNode:
-        type = std::static_pointer_cast<libquixcc::RegionDefNode>(named_type)
-                   ->get_type();
+        type = std::static_pointer_cast<RegionDefNode>(named_type)->get_type();
         break;
       case NodeType::GroupDefNode:
-        type = std::static_pointer_cast<libquixcc::GroupDefNode>(named_type)
-                   ->get_type();
+        type = std::static_pointer_cast<GroupDefNode>(named_type)->get_type();
         break;
       case NodeType::UnionDefNode:
-        type = std::static_pointer_cast<libquixcc::UnionDefNode>(named_type)
-                   ->get_type();
+        type = std::static_pointer_cast<UnionDefNode>(named_type)->get_type();
         break;
       case NodeType::EnumDefNode:
-        type = std::static_pointer_cast<libquixcc::EnumDefNode>(named_type)
-                   ->get_type();
+        type = std::static_pointer_cast<EnumDefNode>(named_type)->get_type();
         break;
       case NodeType::TypedefNode:
-        type = std::static_pointer_cast<libquixcc::TypedefNode>(named_type)
-                   ->m_orig;
+        type = std::static_pointer_cast<TypedefNode>(named_type)->m_orig;
         break;
       default:
         throw std::runtime_error(
             "Unimplemented typeid in ResolveNamedConstructs");
     }
 
-    *user_type_ptr = reinterpret_cast<libquixcc::UserTypeNode *>(type);
+    *user_type_ptr = reinterpret_cast<UserTypeNode *>(type);
 
     if (job->m_debug) {
       LOG(DEBUG) << feedback[RESOLVED_TYPE] << name << type->to_string()
@@ -136,43 +128,17 @@ static void resolve_user_type_nodes(quixcc_job_t *job,
   });
 }
 
-static void resolve_enum_values(quixcc_job_t *job,
-                                std::shared_ptr<libquixcc::BlockNode> ast) {
+static void resolve_function_decls_to_calls(quixcc_job_t *job,
+                                            std::shared_ptr<BlockNode> ast) {
   ast->dfs_preorder([job](const std::vector<std::string> &_namespace,
                           const std::vector<std::string> &_scope,
-                          libquixcc::ParseNode *parent,
-                          traversal::TraversePtr node) {
-    if (node.first != traversal::TraversePtrType::Smart) return;
-    auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
-
-    if (!(ptr)->is<IdentifierNode>()) return;
-
-    auto ident = std::static_pointer_cast<libquixcc::IdentifierNode>(ptr);
-
-    if (!job->m_inner.m_named_construsts.contains(
-            std::make_pair(NodeType::EnumFieldNode, ident->m_name)))
-      return;
-
-    auto enum_field = std::static_pointer_cast<libquixcc::EnumFieldNode>(
-        job->m_inner.m_named_construsts[std::make_pair(NodeType::EnumFieldNode,
-                                                       ident->m_name)]);
-
-    *std::get<std::shared_ptr<ParseNode> *>(node.second) = enum_field->m_value;
-  });
-}
-
-static void resolve_function_decls_to_calls(
-    quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
-  ast->dfs_preorder([job](const std::vector<std::string> &_namespace,
-                          const std::vector<std::string> &_scope,
-                          libquixcc::ParseNode *parent,
-                          traversal::TraversePtr node) {
+                          ParseNode *parent, traversal::TraversePtr node) {
     if (node.first != traversal::TraversePtrType::Smart) return;
     auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 
     if (!(ptr)->is<CallExprNode>()) return;
 
-    auto call = std::static_pointer_cast<libquixcc::CallExprNode>(ptr);
+    auto call = std::static_pointer_cast<CallExprNode>(ptr);
 
     std::string callee_name;
 
@@ -181,13 +147,11 @@ static void resolve_function_decls_to_calls(
     switch (call->m_callee->ntype) {
       case NodeType::IdentifierNode:
         callee_name =
-            std::static_pointer_cast<libquixcc::IdentifierNode>(call->m_callee)
-                ->m_name;
+            std::static_pointer_cast<IdentifierNode>(call->m_callee)->m_name;
         break;
       case NodeType::MemberAccessNode:
-        callee_name = std::static_pointer_cast<libquixcc::MemberAccessNode>(
-                          call->m_callee)
-                          ->m_field;
+        callee_name =
+            std::static_pointer_cast<MemberAccessNode>(call->m_callee)->m_field;
         break;
       default:
         throw std::runtime_error(
@@ -201,7 +165,7 @@ static void resolve_function_decls_to_calls(
       std::string abs = join_ns(tmp) + callee_name;
       if (job->m_inner.m_named_construsts.contains(
               std::make_pair(NodeType::FunctionDeclNode, abs))) {
-        auto func_decl = std::static_pointer_cast<libquixcc::FunctionDeclNode>(
+        auto func_decl = std::static_pointer_cast<FunctionDeclNode>(
             job->m_inner.m_named_construsts[std::make_pair(
                 NodeType::FunctionDeclNode, abs)]);
         call->m_decl = func_decl;
@@ -217,16 +181,15 @@ static void resolve_function_decls_to_calls(
       return;
     }
 
-    auto func_decl = std::static_pointer_cast<libquixcc::FunctionDeclNode>(
+    auto func_decl = std::static_pointer_cast<FunctionDeclNode>(
         job->m_inner.m_named_construsts[std::make_pair(
             NodeType::FunctionDeclNode, callee_name)]);
     call->m_decl = func_decl;
   });
 }
 
-void libquixcc::mutate::ResolveNamedConstructs(
-    quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
+void mutate::ResolveNamedConstructs(quixcc_job_t *job,
+                                    std::shared_ptr<BlockNode> ast) {
   resolve_user_type_nodes(job, ast);
-  resolve_enum_values(job, ast);
   resolve_function_decls_to_calls(job, ast);
 }

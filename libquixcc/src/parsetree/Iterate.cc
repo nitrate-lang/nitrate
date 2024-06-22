@@ -799,7 +799,9 @@ size_t ParseTreePreorder::iter(UnionFieldNode *node) {
 }
 
 size_t ParseTreePreorder::iter(EnumDefNode *node) {
-  if (node->m_scoped) m_scope.push_back(node->m_type->m_name);
+  bool scoped = !node->m_type->m_name.empty();
+  
+  if (scoped) m_scope.push_back(node->m_type->m_name);
 
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_type));
   size_t count = next(node->m_type);
@@ -808,7 +810,7 @@ size_t ParseTreePreorder::iter(EnumDefNode *node) {
     count += next(field);
   }
 
-  if (node->m_scoped) m_scope.pop_back();
+  if (scoped) m_scope.pop_back();
 
   return count + 1;
 }

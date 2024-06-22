@@ -63,6 +63,7 @@ namespace ir {
 struct PState {
   size_t ind;
   bool modinfo = true;
+  int last_node_type = -1;
 
   PState() { ind = 0; }
 };

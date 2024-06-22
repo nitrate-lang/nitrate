@@ -1348,12 +1348,6 @@ void ParseTreeSerializer::conv(const EnumDefNode *n) {
 
   o << "]";
 
-  if (n->m_scoped) {
-    o << " 1";
-  } else {
-    o << " 0";
-  }
-
   o << ')';
 
   indent--;

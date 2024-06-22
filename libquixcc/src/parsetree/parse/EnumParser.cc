@@ -114,7 +114,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, libquixcc::Scanner *scanner,
     fields.push_back(field);
   }
 
-  node = std::make_shared<EnumDefNode>(EnumTypeNode::create(name, type), true,
-                                       fields);
+  node =
+      std::make_shared<EnumDefNode>(EnumTypeNode::create(name, type), fields);
   return true;
 }
