@@ -742,6 +742,54 @@ static bool compile(quixcc_job_t *job) {
   if (!QIR->from_ptree(job, std::move(ptree))) /* This will modify the Ptree */
     return false;
 
+  {
+    LOG(DEBUG) << "Optimizing Quix IR" << std::endl;
+
+    using namespace optimizer;
+    OptLevel opt;
+    if (job->m_argset.contains("-O0"))
+      opt = OptLevel::O0;
+    else if (job->m_argset.contains("-O1"))
+      opt = OptLevel::O1;
+    else if (job->m_argset.contains("-O2"))
+      opt = OptLevel::O2;
+    else if (job->m_argset.contains("-O3"))
+      opt = OptLevel::O3;
+    else if (job->m_argset.contains("-Os"))
+      opt = OptLevel::Os;
+    else if (job->m_argset.contains("-Oz"))
+      opt = OptLevel::Oz;
+    else
+      opt = OptLevel::O2;
+
+    std::unique_ptr<OptPassManager> architecture_opt, behavior_opt, general_opt;
+
+    architecture_opt = OptPassMgrFactory::create(opt, OptType::Architecture);
+    behavior_opt = OptPassMgrFactory::create(opt, OptType::Behavior);
+    general_opt = OptPassMgrFactory::create(opt, OptType::General);
+
+    architecture_opt->optimize_phase_order();
+    behavior_opt->optimize_phase_order();
+    general_opt->optimize_phase_order();
+
+    if (!architecture_opt->run_passes(*job, QIR)) {
+      LOG(FATAL) << "Architecture optimization failed; aborting" << std::endl;
+      return false;
+    }
+
+    if (!behavior_opt->run_passes(*job, QIR)) {
+      LOG(FATAL) << "Behavior optimization failed; aborting" << std::endl;
+      return false;
+    }
+
+    if (!general_opt->run_passes(*job, QIR)) {
+      LOG(FATAL) << "General optimization failed; aborting" << std::endl;
+      return false;
+    }
+
+    LOG(DEBUG) << "Optimization pipeline complete" << std::endl;
+  }
+
   if (job->m_argset.contains("-emit-quix-ir")) {
     auto serial = QIR->to_string();
     if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
@@ -750,54 +798,6 @@ static bool compile(quixcc_job_t *job) {
 
     LOG(DEBUG) << "Quix IR only" << std::endl;
     return true;
-  }
-
-  if (!job->m_argset.contains("-O0")) {
-    /* Apply architecural optimizations
-     * - Transform single threaded code into multi-threaded code
-     * - Recognize common structural patterns and replace them with optimized
-     * equivalents (remove polymorphism, etc.)
-     * - Break large functions into smaller functions
-     * - Move large code segments into dynamic library bundles
-     */
-    if (job->m_argset.contains("-OA") && !optimizer::optimize_architecture(QIR))
-      return false;
-
-    /* Apply behavioral optimizations
-     * - Replace math with SIMD instructions
-     * - Algebraic reduction
-     * - Remove redundant locks
-     * - Auto-generate comparison methods for user defined types
-     * - Remove redundant threads
-     * - Remove redundant memory allocations
-     * - Replace allocators with flyweight patterns
-     * - Replace heap with stack whenever possible
-     * - Replace stack with static memory whenever possible
-     * - Replace static memory with compile time constants whenever possible
-     * - If allowed, install huristics into opaque algorithms
-     * - Replace opaque algorithms with specialized algorithms
-     * - Replace out-of-band messaging with direct functional messaging
-     * - Replace exceptions with composite return values
-     * - Eliminate dynamic runtime deallocations (garbage collection) whenever
-     * possible
-     */
-    if (job->m_argset.contains("-OB") && !optimizer::optimize_behavior(QIR))
-      return false;
-
-    /* Apply general optimizations
-     * - Replace stringy code with enums
-     * - Native TypeSize optimizations
-     * - Generator unrolling
-     * - Cache the results of complex pure functions
-     * - Replace pure functions with lookup tables
-     * - Remove trivially constructable unused allocations/deallocations
-     * - Replace non-trivially constructable unused allocations with direct
-     * constructor calls
-     * - ML-smart branch prediction / rearangement
-     * - Don't construct fields that are unused
-     */
-    if (job->m_argset.contains("-OG") && !optimizer::optimize_general(QIR))
-      return false;
   }
 
   auto DIR = std::make_unique<ir::delta::IRDelta>(job->m_filename.top());

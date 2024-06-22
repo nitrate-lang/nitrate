@@ -394,23 +394,28 @@ class Opaque : public Type {
   std::string name;
 };
 
+enum class QIntrinsicType {
+  String,
+  Null,
+};
+
 class IntrinsicType : public Type {
  protected:
   bool print_impl(std::ostream &os, PState &state) const override;
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  IntrinsicType(std::string name) : name(name) {
+  IntrinsicType(QIntrinsicType name) : name(name) {
     ntype = (int)NodeType::IntrinsicType;
   }
 
  public:
-  static IntrinsicType *create(std::string name);
+  static IntrinsicType *create(QIntrinsicType name);
   size_t bitcount() const override {
     throw std::runtime_error("Cannot get bitcount of intrinsic type");
   }
 
-  std::string name;
+  QIntrinsicType name;
 };
 }  // namespace libquixcc::ir::q
 

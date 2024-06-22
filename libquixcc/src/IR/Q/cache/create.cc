@@ -278,6 +278,10 @@ Union *Union::create(str name, vec<Type *> fields) {
 
 Opaque *Opaque::create(str name) { MAKE_GC(Opaque, name); }
 
+IntrinsicType *IntrinsicType::create(QIntrinsicType name) {
+  MAKE_GC(IntrinsicType, name);
+}
+
 RegionDef *RegionDef::create(str name, vec<pair<str, Value *>> fields,
                              map<str, Segment *> methods) {
   MAKE_GC(RegionDef, name, fields, methods);

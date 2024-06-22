@@ -138,8 +138,14 @@ bool libquixcc::ir::q::Opaque::print_impl(std::ostream &os,
   return true;
 }
 
-bool libquixcc::ir::q::IntrinsicType::print_impl(std::ostream &os, libquixcc::ir::PState &state) const
-{
-  os << "#" << name;
-  return true;
+bool libquixcc::ir::q::IntrinsicType::print_impl(
+    std::ostream &os, libquixcc::ir::PState &state) const {
+  switch (name) {
+    case QIntrinsicType::String:
+      return os << "string!", true;
+    case QIntrinsicType::Null:
+      return os << "null!", true;
+    default:
+      return false;
+  }
 }

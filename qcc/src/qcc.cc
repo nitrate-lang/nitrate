@@ -97,11 +97,6 @@ struct Options {
           std::cerr << "Error: missing input files" << std::endl;
           return false;
         }
-        if (optimization != quixcc::OptimizationLevel::NONE) {
-          std::cerr << "Warning: ignoring optimization flags for IR generation"
-                    << std::endl;
-          optimization = quixcc::OptimizationLevel::NONE;
-        }
         return true;
       case OperatingMode::PARSE_TREE:
         if (output.empty()) {

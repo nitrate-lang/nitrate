@@ -46,10 +46,13 @@ bool libquixcc::ir::q::Block::print_impl(std::ostream &os,
     os << std::string(state.ind, ' ');
 
     if (!(*it)->print(os, state)) return false;
+    os << ";\n";
 
-    os << ";";
-
-    if (it != stmts.end()) os << "\n";
+    if (it < stmts.end() - 1) {
+      int tid = (*it)->ntype;
+      int next_node_type = (*std::next(it))->ntype;
+      if (next_node_type != tid) os << "\n";
+    }
   }
 
   state.ind -= 2;
@@ -102,10 +105,11 @@ bool libquixcc::ir::q::RootNode::print_impl(
     if (!(*it)->print(os, state)) return false;
     os << ";\n";
 
-    if (state.last_node_type != (*it)->ntype)
-      os << "\n";
-
-    state.last_node_type = (*it)->ntype;
+    if (it < children.end() - 1) {
+      int tid = (*it)->ntype;
+      int next_node_type = (*std::next(it))->ntype;
+      if (next_node_type != tid) os << "\n";
+    }
   }
 
   return true;

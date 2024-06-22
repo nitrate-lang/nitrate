@@ -571,6 +571,9 @@ static Expr *promote(Type *lht, libquixcc::ir::q::Expr *rhs) {
 
   if (lht->is(rht)) return rhs;
 
+  /* The Intrinsic solver will handle this */
+  if (lht->is<IntrinsicType>() || rht->is<IntrinsicType>()) return rhs;
+
   if (lht->is_void() || rht->is_void())
     throw std::runtime_error("cannot promote void type");
 
@@ -1319,11 +1322,7 @@ static QResult conv(const StringTypeNode *n, QState &state) {
    * - Convert into QIR Intrinsic[String]
    **/
 
-  /// TODO: implement intrinsic types
-
-  // QIntrinsic::create_type(QIntrinsic::String);
-
-  return Ptr::create(U8::create());
+  return IntrinsicType::create(QIntrinsicType::String);
 }
 
 static QResult conv(const EnumTypeNode *n, QState &state) {
@@ -1656,15 +1655,16 @@ static QResult conv(const BoolLiteralNode *n, QState &state) {
 }
 
 static QResult conv(const NullLiteralNode *n, QState &state) {
-  /* Function: Convert a parse tree null literal node into a QIR null literal.
+  /* Function: Convert a parse tree null literal node into a QIR intrinsic null.
    *
    * Edge Cases:
    *
    * General Behavior:
-   * - One-for-one lowering of the null literal node.
+   * - Convert into intrinsic null.
    **/
 
-  return Number::create("0");
+  return UCast::create(IntrinsicType::create(QIntrinsicType::Null),
+                       Number::create("0"));
 }
 
 /// WARNING: BEGIN CHATGPT-3.5 GENERATED CODE

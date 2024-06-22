@@ -274,6 +274,6 @@ Type *List::infer() const {
   return Array::create(type, values.size());
 }
 
-Type *String::infer() const { return Ptr::create(U8::create()); }
+Type *String::infer() const { return IntrinsicType::create(QIntrinsicType::String); }
 
 Type *Char::infer() const { return U8::create(); }

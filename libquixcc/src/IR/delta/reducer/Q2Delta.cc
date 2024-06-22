@@ -117,6 +117,7 @@ static auto conv(const ir::q::FType *n, DState &state) -> DResult;
 static auto conv(const ir::q::Region *n, DState &state) -> DResult;
 static auto conv(const ir::q::Union *n, DState &state) -> DResult;
 static auto conv(const ir::q::Opaque *n, DState &state) -> DResult;
+static auto conv(const ir::q::IntrinsicType *n, DState &state) -> DResult;
 static auto conv(const ir::q::Block *n, DState &state) -> DResult;
 static auto conv(const ir::q::Segment *n, DState &state) -> DResult;
 static auto conv(const ir::q::Asm *n, DState &state) -> DResult;
@@ -130,6 +131,7 @@ static auto conv(const ir::q::IPtrCast *n, DState &state) -> DResult;
 static auto conv(const ir::q::Bitcast *n, DState &state) -> DResult;
 static auto conv(const ir::q::Call *n, DState &state) -> DResult;
 static auto conv(const ir::q::CallIndirect *n, DState &state) -> DResult;
+static auto conv(const ir::q::IntrinsicCall *n, DState &state) -> DResult;
 static auto conv(const ir::q::IfElse *n, DState &state) -> DResult;
 static auto conv(const ir::q::While *n, DState &state) -> DResult;
 static auto conv(const ir::q::For *n, DState &state) -> DResult;
@@ -338,6 +340,11 @@ static auto conv(const ir::q::Opaque *n, DState &state) -> DResult {
   return Void::create();
 }
 
+static auto conv(const ir::q::IntrinsicType *n, DState &state) -> DResult {
+  LOG(FATAL) << "DeltaIR translation: IntrinsicType should have been lowered" << std::endl;
+  return nullptr;
+}
+
 static auto conv(const ir::q::Block *n, DState &state) -> DResult {
   std::vector<DValue> values;
   for (auto node : n->stmts) {
@@ -468,6 +475,11 @@ static auto conv(const ir::q::Call *n, DState &state) -> DResult {
 static auto conv(const ir::q::CallIndirect *n, DState &state) -> DResult {
   /// TODO: Implement CallIndirect
   throw std::runtime_error("DeltaIR translation: CallIndirect not implemented");
+}
+
+static auto conv(const ir::q::IntrinsicCall *n, DState &state) -> DResult {
+  LOG(FATAL) << "DeltaIR translation: IntrinsicCall should have been lowered" << std::endl;
+  return nullptr;
 }
 
 static auto conv(const ir::q::IfElse *n, DState &state) -> DResult {
@@ -849,6 +861,10 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult {
       r = conv(n->as<ir::q::Opaque>(), state);
       break;
 
+    case libquixcc::ir::q::NodeType::IntrinsicType:
+      r = conv(n->as<ir::q::IntrinsicType>(), state);
+      break;
+
     case libquixcc::ir::q::NodeType::Block:
       r = conv(n->as<ir::q::Block>(), state);
       break;
@@ -899,6 +915,10 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult {
 
     case libquixcc::ir::q::NodeType::CallIndirect:
       r = conv(n->as<ir::q::CallIndirect>(), state);
+      break;
+
+    case libquixcc::ir::q::NodeType::IntrinsicCall:
+      r = conv(n->as<ir::q::IntrinsicCall>(), state);
       break;
 
     case libquixcc::ir::q::NodeType::IfElse:
