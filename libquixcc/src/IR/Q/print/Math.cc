@@ -135,7 +135,7 @@ bool libquixcc::ir::q::Shr::print_impl(std::ostream &os, PState &state) const {
 bool libquixcc::ir::q::Rotl::print_impl(std::ostream &os, PState &state) const {
   os << "(";
   if (!lhs->print(os, state)) return false;
-  os << "<~";
+  os << "<<<";
   if (!rhs->print(os, state)) return false;
   os << ")";
   return true;
@@ -144,7 +144,7 @@ bool libquixcc::ir::q::Rotl::print_impl(std::ostream &os, PState &state) const {
 bool libquixcc::ir::q::Rotr::print_impl(std::ostream &os, PState &state) const {
   os << "(";
   if (!lhs->print(os, state)) return false;
-  os << "~>";
+  os << ">>>";
   if (!rhs->print(os, state)) return false;
   os << ")";
   return true;
