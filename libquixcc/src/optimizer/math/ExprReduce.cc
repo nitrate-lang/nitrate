@@ -29,104 +29,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_Q_NODES_CAST_H__
-#define __QUIXCC_IR_Q_NODES_CAST_H__
-
-#ifndef __cplusplus
-#error "This header requires C++"
-#endif
-
 #include <IR/Q/Expr.h>
-#include <IR/Q/QIR.h>
-#include <IR/Q/Type.h>
+#include <IR/Q/Function.h>
+#include <IR/Q/Variable.h>
+#include <optimizer/Passes.h>
 
-namespace libquixcc::ir::q {
-class SCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+bool libquixcc::optimizer::passes::ExprReduce(
+    quixcc_job_t &job, std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
+  using namespace libquixcc::ir::q;
 
-  SCast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::SCast;
-  }
+  /// TODO: implement this pass
 
- public:
-  static SCast *create(Type *type, Expr *value);
-  Type *infer() const override;
+  auto filter_expr = [](const ir::q::Value *val) -> IterOp {
+    /* Test if the value is an expression */
+    if (dynamic_cast<const ir::q::Expr *>(val) == nullptr) {
+      /* Skip non-expression values */
+      return IterOp::Skip;
+    }
 
-  Type *type;
-  Expr *value;
-};
+    /* Continue iterating */
+    return IterOp::Do;
+  };
 
-class UCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  auto func = [](ir::q::Value **val) {
+    LOG(INFO) << "ExprReduce: " << (*val)->ntype_str() << std::endl;
+  };
 
-  UCast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::UCast;
-  }
+  ir->bft_iter(func, filter_expr);
 
- public:
-  static UCast *create(Type *type, Expr *value);
-  Type *infer() const override;
-
-  Type *type;
-  Expr *value;
-};
-
-class PtrICast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
-
-  PtrICast(Expr *value) : value(value) { ntype = (int)QType::PtrICast; }
-
- public:
-  static PtrICast *create(Expr *value);
-  Type *infer() const override;
-
-  Expr *value;
-};
-
-class IPtrCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
-
-  IPtrCast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::IPtrCast;
-  }
-
- public:
-  static IPtrCast *create(Type *type, Expr *value);
-  Type *infer() const override;
-
-  Type *type;
-  Expr *value;
-};
-
-class Bitcast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
-
-  Bitcast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::Bitcast;
-  }
-
- public:
-  static Bitcast *create(Type *type, Expr *value);
-  Type *infer() const override;
-
-  Type *type;
-  Expr *value;
-};
-}  // namespace libquixcc::ir::q
-
-#endif  // __QUIXCC_IR_Q_NODES_CAST_H__
+  return true;
+}

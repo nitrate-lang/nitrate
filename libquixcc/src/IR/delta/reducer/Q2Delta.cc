@@ -341,7 +341,8 @@ static auto conv(const ir::q::Opaque *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::IntrinsicType *n, DState &state) -> DResult {
-  LOG(FATAL) << "DeltaIR translation: IntrinsicType should have been lowered" << std::endl;
+  LOG(FATAL) << "DeltaIR translation: IntrinsicType should have been lowered"
+             << std::endl;
   return nullptr;
 }
 
@@ -459,7 +460,7 @@ static auto conv(const ir::q::Bitcast *n, DState &state) -> DResult {
   if (t->is_ptr() && v->infer()->is_integer()) {
     return Bitcast::create(t, IPtrCast::create(t, v));
   }
-  
+
   return Bitcast::create(t, v);
 }
 
@@ -478,7 +479,8 @@ static auto conv(const ir::q::CallIndirect *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::IntrinsicCall *n, DState &state) -> DResult {
-  LOG(FATAL) << "DeltaIR translation: IntrinsicCall should have been lowered" << std::endl;
+  LOG(FATAL) << "DeltaIR translation: IntrinsicCall should have been lowered"
+             << std::endl;
   return nullptr;
 }
 
@@ -772,344 +774,344 @@ auto conv(const libquixcc::ir::q::Index *n, DState &state) -> DResult {
 static auto conv(const ir::q::Value *n, DState &state) -> DResult {
   DResult r;
 
-  switch ((libquixcc::ir::q::NodeType)n->ntype) {
-    case libquixcc::ir::q::NodeType::Root:
+  switch ((libquixcc::ir::q::QType)n->ntype) {
+    case libquixcc::ir::q::QType::Root:
       r = conv(n->as<ir::q::RootNode>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::I1:
+    case libquixcc::ir::q::QType::I1:
       r = conv(n->as<ir::q::I1>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::I8:
+    case libquixcc::ir::q::QType::I8:
       r = conv(n->as<ir::q::I8>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::I16:
+    case libquixcc::ir::q::QType::I16:
       r = conv(n->as<ir::q::I16>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::I32:
+    case libquixcc::ir::q::QType::I32:
       r = conv(n->as<ir::q::I32>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::I64:
+    case libquixcc::ir::q::QType::I64:
       r = conv(n->as<ir::q::I64>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::I128:
+    case libquixcc::ir::q::QType::I128:
       r = conv(n->as<ir::q::I128>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::U8:
+    case libquixcc::ir::q::QType::U8:
       r = conv(n->as<ir::q::U8>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::U16:
+    case libquixcc::ir::q::QType::U16:
       r = conv(n->as<ir::q::U16>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::U32:
+    case libquixcc::ir::q::QType::U32:
       r = conv(n->as<ir::q::U32>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::U64:
+    case libquixcc::ir::q::QType::U64:
       r = conv(n->as<ir::q::U64>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::U128:
+    case libquixcc::ir::q::QType::U128:
       r = conv(n->as<ir::q::U128>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::F32:
+    case libquixcc::ir::q::QType::F32:
       r = conv(n->as<ir::q::F32>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::F64:
+    case libquixcc::ir::q::QType::F64:
       r = conv(n->as<ir::q::F64>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Void:
+    case libquixcc::ir::q::QType::Void:
       r = conv(n->as<ir::q::Void>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Ptr:
+    case libquixcc::ir::q::QType::Ptr:
       r = conv(n->as<ir::q::Ptr>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Array:
+    case libquixcc::ir::q::QType::Array:
       r = conv(n->as<ir::q::Array>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Vector:
+    case libquixcc::ir::q::QType::Vector:
       r = conv(n->as<ir::q::Vector>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::FType:
+    case libquixcc::ir::q::QType::FType:
       r = conv(n->as<ir::q::FType>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Region:
+    case libquixcc::ir::q::QType::Region:
       r = conv(n->as<ir::q::Region>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Union:
+    case libquixcc::ir::q::QType::Union:
       r = conv(n->as<ir::q::Union>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Opaque:
+    case libquixcc::ir::q::QType::Opaque:
       r = conv(n->as<ir::q::Opaque>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::IntrinsicType:
+    case libquixcc::ir::q::QType::IntrinsicType:
       r = conv(n->as<ir::q::IntrinsicType>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Block:
+    case libquixcc::ir::q::QType::Block:
       r = conv(n->as<ir::q::Block>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Segment:
+    case libquixcc::ir::q::QType::Segment:
       r = conv(n->as<ir::q::Segment>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Asm:
+    case libquixcc::ir::q::QType::Asm:
       r = conv(n->as<ir::q::Asm>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::RegionDef:
+    case libquixcc::ir::q::QType::RegionDef:
       r = conv(n->as<ir::q::RegionDef>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::GroupDef:
+    case libquixcc::ir::q::QType::GroupDef:
       r = conv(n->as<ir::q::GroupDef>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::UnionDef:
+    case libquixcc::ir::q::QType::UnionDef:
       r = conv(n->as<ir::q::UnionDef>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::SCast:
+    case libquixcc::ir::q::QType::SCast:
       r = conv(n->as<ir::q::SCast>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::UCast:
+    case libquixcc::ir::q::QType::UCast:
       r = conv(n->as<ir::q::UCast>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::PtrICast:
+    case libquixcc::ir::q::QType::PtrICast:
       r = conv(n->as<ir::q::PtrICast>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::IPtrCast:
+    case libquixcc::ir::q::QType::IPtrCast:
       r = conv(n->as<ir::q::IPtrCast>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Bitcast:
+    case libquixcc::ir::q::QType::Bitcast:
       r = conv(n->as<ir::q::Bitcast>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Call:
+    case libquixcc::ir::q::QType::Call:
       r = conv(n->as<ir::q::Call>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::CallIndirect:
+    case libquixcc::ir::q::QType::CallIndirect:
       r = conv(n->as<ir::q::CallIndirect>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::IntrinsicCall:
+    case libquixcc::ir::q::QType::IntrinsicCall:
       r = conv(n->as<ir::q::IntrinsicCall>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::IfElse:
+    case libquixcc::ir::q::QType::IfElse:
       r = conv(n->as<ir::q::IfElse>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::While:
+    case libquixcc::ir::q::QType::While:
       r = conv(n->as<ir::q::While>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::For:
+    case libquixcc::ir::q::QType::For:
       r = conv(n->as<ir::q::For>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Loop:
+    case libquixcc::ir::q::QType::Loop:
       r = conv(n->as<ir::q::Loop>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Break:
+    case libquixcc::ir::q::QType::Break:
       r = conv(n->as<ir::q::Break>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Continue:
+    case libquixcc::ir::q::QType::Continue:
       r = conv(n->as<ir::q::Continue>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Ret:
+    case libquixcc::ir::q::QType::Ret:
       r = conv(n->as<ir::q::Ret>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Throw:
+    case libquixcc::ir::q::QType::Throw:
       r = conv(n->as<ir::q::Throw>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::TryCatchFinally:
+    case libquixcc::ir::q::QType::TryCatchFinally:
       r = conv(n->as<ir::q::TryCatchFinally>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Case:
+    case libquixcc::ir::q::QType::Case:
       r = conv(n->as<ir::q::Case>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Switch:
+    case libquixcc::ir::q::QType::Switch:
       r = conv(n->as<ir::q::Switch>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Ident:
+    case libquixcc::ir::q::QType::Ident:
       r = conv(n->as<ir::q::Ident>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Add:
+    case libquixcc::ir::q::QType::Add:
       r = conv(n->as<ir::q::Add>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Sub:
+    case libquixcc::ir::q::QType::Sub:
       r = conv(n->as<ir::q::Sub>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Mul:
+    case libquixcc::ir::q::QType::Mul:
       r = conv(n->as<ir::q::Mul>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Div:
+    case libquixcc::ir::q::QType::Div:
       r = conv(n->as<ir::q::Div>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Mod:
+    case libquixcc::ir::q::QType::Mod:
       r = conv(n->as<ir::q::Mod>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::BitAnd:
+    case libquixcc::ir::q::QType::BitAnd:
       r = conv(n->as<ir::q::BitAnd>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::BitOr:
+    case libquixcc::ir::q::QType::BitOr:
       r = conv(n->as<ir::q::BitOr>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::BitXor:
+    case libquixcc::ir::q::QType::BitXor:
       r = conv(n->as<ir::q::BitXor>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::BitNot:
+    case libquixcc::ir::q::QType::BitNot:
       r = conv(n->as<ir::q::BitNot>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Shl:
+    case libquixcc::ir::q::QType::Shl:
       r = conv(n->as<ir::q::Shl>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Shr:
+    case libquixcc::ir::q::QType::Shr:
       r = conv(n->as<ir::q::Shr>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Rotl:
+    case libquixcc::ir::q::QType::Rotl:
       r = conv(n->as<ir::q::Rotl>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Rotr:
+    case libquixcc::ir::q::QType::Rotr:
       r = conv(n->as<ir::q::Rotr>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Eq:
+    case libquixcc::ir::q::QType::Eq:
       r = conv(n->as<ir::q::Eq>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Ne:
+    case libquixcc::ir::q::QType::Ne:
       r = conv(n->as<ir::q::Ne>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Lt:
+    case libquixcc::ir::q::QType::Lt:
       r = conv(n->as<ir::q::Lt>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Gt:
+    case libquixcc::ir::q::QType::Gt:
       r = conv(n->as<ir::q::Gt>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Le:
+    case libquixcc::ir::q::QType::Le:
       r = conv(n->as<ir::q::Le>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Ge:
+    case libquixcc::ir::q::QType::Ge:
       r = conv(n->as<ir::q::Ge>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::And:
+    case libquixcc::ir::q::QType::And:
       r = conv(n->as<ir::q::And>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Or:
+    case libquixcc::ir::q::QType::Or:
       r = conv(n->as<ir::q::Or>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Not:
+    case libquixcc::ir::q::QType::Not:
       r = conv(n->as<ir::q::Not>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Xor:
+    case libquixcc::ir::q::QType::Xor:
       r = conv(n->as<ir::q::Xor>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Local:
+    case libquixcc::ir::q::QType::Local:
       r = conv(n->as<ir::q::Local>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Global:
+    case libquixcc::ir::q::QType::Global:
       r = conv(n->as<ir::q::Global>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Number:
+    case libquixcc::ir::q::QType::Number:
       r = conv(n->as<ir::q::Number>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::String:
+    case libquixcc::ir::q::QType::String:
       r = conv(n->as<ir::q::String>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Char:
+    case libquixcc::ir::q::QType::Char:
       r = conv(n->as<ir::q::Char>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::List:
+    case libquixcc::ir::q::QType::List:
       r = conv(n->as<ir::q::List>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Assign:
+    case libquixcc::ir::q::QType::Assign:
       r = conv(n->as<ir::q::Assign>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::PostInc:
+    case libquixcc::ir::q::QType::PostInc:
       r = conv(n->as<ir::q::PostInc>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::PostDec:
+    case libquixcc::ir::q::QType::PostDec:
       r = conv(n->as<ir::q::PostDec>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::AddressOf:
+    case libquixcc::ir::q::QType::AddressOf:
       r = conv(n->as<ir::q::AddressOf>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Deref:
+    case libquixcc::ir::q::QType::Deref:
       r = conv(n->as<ir::q::Deref>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Member:
+    case libquixcc::ir::q::QType::Member:
       r = conv(n->as<ir::q::Member>(), state);
       break;
 
-    case libquixcc::ir::q::NodeType::Index:
+    case libquixcc::ir::q::QType::Index:
       r = conv(n->as<ir::q::Index>(), state);
       break;
 
@@ -1132,10 +1134,6 @@ bool libquixcc::ir::delta::IRDelta::from_qir(
     LOG(FATAL) << "Failed to qualify QUIX intermediate representation"
                << std::endl;
     return false;
-  }
-
-  if (job->m_debug) {
-    LOG(DEBUG) << log::raw << to_string() << std::endl;
   }
 
   LOG(DEBUG)

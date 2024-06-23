@@ -50,7 +50,7 @@ class RegionDef : public Value {
             std::vector<std::pair<std::string, Value *>> fields,
             std::map<std::string, Segment *> methods)
       : name(name), fields(fields), methods(methods) {
-    ntype = (int)NodeType::RegionDef;
+    ntype = (int)QType::RegionDef;
   }
 
  public:
@@ -72,7 +72,7 @@ class GroupDef : public Value {
   GroupDef(std::string name, std::map<std::string, Value *> fields,
            std::map<std::string, Segment *> methods)
       : name(name), fields(fields), methods(methods) {
-    ntype = (int)NodeType::GroupDef;
+    ntype = (int)QType::GroupDef;
   }
 
  public:
@@ -94,7 +94,7 @@ class UnionDef : public Value {
   UnionDef(std::string name, std::map<std::string, Value *> fields,
            std::map<std::string, Segment *> methods)
       : name(name), fields(fields), methods(methods) {
-    ntype = (int)NodeType::UnionDef;
+    ntype = (int)QType::UnionDef;
   }
 
  public:

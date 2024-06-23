@@ -48,7 +48,7 @@ class IfElse : public Value {
 
   IfElse(Expr *cond, Value *then, Value *els)
       : cond(cond), then(then), els(els) {
-    ntype = (int)NodeType::IfElse;
+    ntype = (int)QType::IfElse;
   }
 
  public:
@@ -66,7 +66,7 @@ class While : public Value {
   bool verify_impl() const override;
 
   While(Expr *cond, Value *body) : cond(cond), body(body) {
-    ntype = (int)NodeType::While;
+    ntype = (int)QType::While;
   }
 
  public:
@@ -84,7 +84,7 @@ class For : public Value {
 
   For(Value *init, Expr *cond, Expr *step, Value *body)
       : init(init), cond(cond), step(step), body(body) {
-    ntype = (int)NodeType::For;
+    ntype = (int)QType::For;
   }
 
  public:
@@ -102,7 +102,7 @@ class Loop : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Loop(Value *body) : body(body) { ntype = (int)NodeType::Loop; }
+  Loop(Value *body) : body(body) { ntype = (int)QType::Loop; }
 
  public:
   static Loop *create(Value *body);
@@ -116,7 +116,7 @@ class Break : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Break() { ntype = (int)NodeType::Break; }
+  Break() { ntype = (int)QType::Break; }
 
  public:
   static Break *create();
@@ -128,7 +128,7 @@ class Continue : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Continue() { ntype = (int)NodeType::Continue; }
+  Continue() { ntype = (int)QType::Continue; }
 
  public:
   static Continue *create();
@@ -140,7 +140,7 @@ class Ret : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Ret(Expr *value) : value(value) { ntype = (int)NodeType::Ret; }
+  Ret(Expr *value) : value(value) { ntype = (int)QType::Ret; }
 
  public:
   static Ret *create(Expr *value);
@@ -154,7 +154,7 @@ class Throw : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Throw(Expr *value) : value(value) { ntype = (int)NodeType::Throw; }
+  Throw(Expr *value) : value(value) { ntype = (int)QType::Throw; }
 
  public:
   static Throw *create(Expr *value);
@@ -174,7 +174,7 @@ class TryCatchFinally : public Value {
       : tryblock(tryblock),
         catchblocks(catchblocks),
         finallyblock(finallyblock) {
-    ntype = (int)NodeType::TryCatchFinally;
+    ntype = (int)QType::TryCatchFinally;
   }
 
  public:
@@ -194,7 +194,7 @@ class Case : public Value {
   bool verify_impl() const override;
 
   Case(Expr *value, Value *body) : value(value), body(body) {
-    ntype = (int)NodeType::Case;
+    ntype = (int)QType::Case;
   }
 
  public:
@@ -210,17 +210,17 @@ class Switch : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Switch(Expr *value, const std::set<Case *> &cases, Value *defaultcase)
+  Switch(Expr *value, std::vector<Case *> &cases, Value *defaultcase)
       : value(value), cases(cases), defaultcase(defaultcase) {
-    ntype = (int)NodeType::Switch;
+    ntype = (int)QType::Switch;
   }
 
  public:
-  static Switch *create(Expr *value, const std::set<Case *> &cases,
+  static Switch *create(Expr *value, std::vector<Case *> &cases,
                         Value *defaultcase);
 
   Expr *value;
-  const std::set<Case *> cases;
+  std::vector<Case *> cases;
   Value *defaultcase;
 };
 }  // namespace libquixcc::ir::q

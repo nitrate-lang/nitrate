@@ -50,7 +50,7 @@
 #include <stack>
 
 using namespace libquixcc;
-using namespace libquixcc::ir::q;
+using namespace ir::q;
 
 typedef Value *QValue;
 
@@ -564,7 +564,7 @@ static QResult conv(const PostUnaryExprNode *n, QState &state) {
   }
 }
 
-static Expr *promote(Type *lht, libquixcc::ir::q::Expr *rhs) {
+static Expr *promote(Type *lht, ir::q::Expr *rhs) {
   /// TODO: cleanup
 
   auto rht = rhs->infer();
@@ -609,13 +609,12 @@ static Expr *promote(Type *lht, libquixcc::ir::q::Expr *rhs) {
   throw std::runtime_error("cannot promote types");
 }
 
-static Expr *promote(libquixcc::ir::q::Expr *lhs, libquixcc::ir::q::Expr *rhs) {
+static Expr *promote(ir::q::Expr *lhs, ir::q::Expr *rhs) {
   /// TODO: cleanup
   return promote(lhs->infer(), rhs);
 }
 
-static void bipromote(libquixcc::ir::q::Expr **lhs,
-                      libquixcc::ir::q::Expr **rhs) {
+static void bipromote(ir::q::Expr **lhs, ir::q::Expr **rhs) {
   /// TODO: cleanup
 
   auto lht = (*lhs)->infer();
@@ -833,8 +832,8 @@ static QResult conv(const MemberAccessNode *n, QState &state) {
     t = t->as<Ptr>()->type;
   }
 
-  switch ((ir::q::NodeType)t->ntype) {
-    case ir::q::NodeType::Region: {
+  switch ((ir::q::QType)t->ntype) {
+    case ir::q::QType::Region: {
       auto x = t->as<Region>();
 
       if (!state.typedefs.contains(x->name))
@@ -860,7 +859,7 @@ static QResult conv(const MemberAccessNode *n, QState &state) {
 
       throw std::runtime_error("QIR translation: MemberAccessNode not found");
     }
-    case ir::q::NodeType::Union: {
+    case ir::q::QType::Union: {
       auto x = t->as<Union>();
 
       if (!state.typedefs.contains(x->name))
@@ -1382,7 +1381,7 @@ static QResult conv(const StructTypeNode *n, QState &state) {
   return Region::create(n->m_name, fields, false, true);
 }
 
-static QResult conv(const libquixcc::GroupTypeNode *n, QState &state) {
+static QResult conv(const GroupTypeNode *n, QState &state) {
   /* Function: Convert a parse tree group type node into a QIR group type.
    *
    * Edge Cases:
@@ -1733,13 +1732,13 @@ static QResult conv(const VarDeclNode *n, QState &state) {
   throw std::runtime_error("QIR translation: VarDeclNode not implemented");
 }
 
-static QResult create_defaults(libquixcc::ir::q::Value *var,
-                               libquixcc::TypeNode *type, QState &state) {
+static QResult create_defaults(ir::q::Value *var, TypeNode *type,
+                               QState &state) {
   /// TODO: cleanup
 
   switch (type->ntype) {
-    case libquixcc::NodeType::StructTypeNode: {
-      auto s = type->as<libquixcc::StructTypeNode>();
+    case NodeType::StructTypeNode: {
+      auto s = type->as<StructTypeNode>();
       if (!state.typedefs.contains(s->m_name))
         throw std::runtime_error("QIR translation: structdef not found");
 
@@ -1759,8 +1758,8 @@ static QResult create_defaults(libquixcc::ir::q::Value *var,
 
       return res;
     }
-    case libquixcc::NodeType::RegionTypeNode: {
-      auto r = type->as<libquixcc::RegionTypeNode>();
+    case NodeType::RegionTypeNode: {
+      auto r = type->as<RegionTypeNode>();
       if (!state.typedefs.contains(r->m_name))
         throw std::runtime_error("QIR translation: regiondef not found");
 
@@ -1780,10 +1779,10 @@ static QResult create_defaults(libquixcc::ir::q::Value *var,
 
       return res;
     }
-    case libquixcc::NodeType::UnionTypeNode: {
+    case NodeType::UnionTypeNode: {
       /// TODO: think about this one
 
-      auto u = type->as<libquixcc::UnionTypeNode>();
+      auto u = type->as<UnionTypeNode>();
       if (!state.typedefs.contains(u->m_name))
         throw std::runtime_error("QIR translation: uniondef not found");
 
@@ -1812,10 +1811,10 @@ static bool is_composite(const TypeNode *n) {
   /// TODO: cleanup
 
   switch (n->ntype) {
-    case libquixcc::NodeType::StructTypeNode:
-    case libquixcc::NodeType::GroupTypeNode:
-    case libquixcc::NodeType::RegionTypeNode:
-    case libquixcc::NodeType::UnionTypeNode:
+    case NodeType::StructTypeNode:
+    case NodeType::GroupTypeNode:
+    case NodeType::RegionTypeNode:
+    case NodeType::UnionTypeNode:
       return true;
     default:
       return false;
@@ -2621,7 +2620,7 @@ static QResult conv(const SwitchStmtNode *n, QState &state) {
   Value *default_block = nullptr;
   if (def) default_block = def[0]->as<Block>();
 
-  std::set<Case *> cases;
+  std::vector<Case *> cases;
   for (const auto &c : n->m_cases) {
     if (!c) { /* If the case is null, ignore it */
       LOG(ERROR) << "QIR conv: switch statement case == nullptr" << std::endl;
@@ -2634,7 +2633,7 @@ static QResult conv(const SwitchStmtNode *n, QState &state) {
       continue;
     }
 
-    cases.insert(res[0]->as<Case>());
+    cases.push_back(res[0]->as<Case>());
   }
 
   /* One-for-one lowering of the switch statement node */
@@ -2645,367 +2644,367 @@ static QResult conv(const ParseNode *n, QState &state) {
   QResult r;
 
   switch (n->ntype) {
-    case libquixcc::NodeType::ExprStmtNode:
+    case NodeType::ExprStmtNode:
       r = conv(n->as<ExprStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::StmtExprNode:
+    case NodeType::StmtExprNode:
       r = conv(n->as<StmtExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::NopStmtNode:
+    case NodeType::NopStmtNode:
       r = conv(n->as<NopStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::BlockNode:
+    case NodeType::BlockNode:
       r = conv(n->as<BlockNode>(), state);
       break;
 
-    case libquixcc::NodeType::StmtGroupNode:
+    case NodeType::StmtGroupNode:
       r = conv(n->as<StmtGroupNode>(), state);
       break;
 
-    case libquixcc::NodeType::ConstUnaryExprNode:
+    case NodeType::ConstUnaryExprNode:
       r = conv(n->as<ConstUnaryExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::ConstPostUnaryExprNode:
+    case NodeType::ConstPostUnaryExprNode:
       r = conv(n->as<ConstPostUnaryExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::ConstBinaryExprNode:
+    case NodeType::ConstBinaryExprNode:
       r = conv(n->as<ConstBinaryExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::StaticCastExprNode:
+    case NodeType::StaticCastExprNode:
       r = conv(n->as<StaticCastExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::BitCastExprNode:
+    case NodeType::BitCastExprNode:
       r = conv(n->as<BitCastExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::SignedUpcastExprNode:
+    case NodeType::SignedUpcastExprNode:
       r = conv(n->as<SignedUpcastExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::UnsignedUpcastExprNode:
+    case NodeType::UnsignedUpcastExprNode:
       r = conv(n->as<UnsignedUpcastExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::DowncastExprNode:
+    case NodeType::DowncastExprNode:
       r = conv(n->as<DowncastExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::UnaryExprNode:
+    case NodeType::UnaryExprNode:
       r = conv(n->as<UnaryExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::PostUnaryExprNode:
+    case NodeType::PostUnaryExprNode:
       r = conv(n->as<PostUnaryExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::BinaryExprNode:
+    case NodeType::BinaryExprNode:
       r = conv(n->as<BinaryExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::CallExprNode:
+    case NodeType::CallExprNode:
       r = conv(n->as<CallExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::ListExprNode:
+    case NodeType::ListExprNode:
       r = conv(n->as<ListExprNode>(), state);
       break;
 
-    case libquixcc::NodeType::MemberAccessNode:
+    case NodeType::MemberAccessNode:
       r = conv(n->as<MemberAccessNode>(), state);
       break;
 
-    case libquixcc::NodeType::IndexNode:
+    case NodeType::IndexNode:
       r = conv(n->as<IndexNode>(), state);
       break;
 
-    case libquixcc::NodeType::SliceNode:
+    case NodeType::SliceNode:
       r = conv(n->as<SliceNode>(), state);
       break;
 
-    case libquixcc::NodeType::FStringNode:
+    case NodeType::FStringNode:
       r = conv(n->as<FStringNode>(), state);
       break;
 
-    case libquixcc::NodeType::IdentifierNode:
+    case NodeType::IdentifierNode:
       r = conv(n->as<IdentifierNode>(), state);
       break;
 
-    case libquixcc::NodeType::MutTypeNode:
+    case NodeType::MutTypeNode:
       r = conv(n->as<MutTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::U8TypeNode:
+    case NodeType::U8TypeNode:
       r = conv(n->as<U8TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::U16TypeNode:
+    case NodeType::U16TypeNode:
       r = conv(n->as<U16TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::U32TypeNode:
+    case NodeType::U32TypeNode:
       r = conv(n->as<U32TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::U64TypeNode:
+    case NodeType::U64TypeNode:
       r = conv(n->as<U64TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::U128TypeNode:
+    case NodeType::U128TypeNode:
       r = conv(n->as<U128TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::I8TypeNode:
+    case NodeType::I8TypeNode:
       r = conv(n->as<I8TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::I16TypeNode:
+    case NodeType::I16TypeNode:
       r = conv(n->as<I16TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::I32TypeNode:
+    case NodeType::I32TypeNode:
       r = conv(n->as<I32TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::I64TypeNode:
+    case NodeType::I64TypeNode:
       r = conv(n->as<I64TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::I128TypeNode:
+    case NodeType::I128TypeNode:
       r = conv(n->as<I128TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::F32TypeNode:
+    case NodeType::F32TypeNode:
       r = conv(n->as<F32TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::F64TypeNode:
+    case NodeType::F64TypeNode:
       r = conv(n->as<F64TypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::BoolTypeNode:
+    case NodeType::BoolTypeNode:
       r = conv(n->as<BoolTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::VoidTypeNode:
+    case NodeType::VoidTypeNode:
       r = conv(n->as<VoidTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::NullTypeNode:
+    case NodeType::NullTypeNode:
       r = conv(n->as<NullTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::PointerTypeNode:
+    case NodeType::PointerTypeNode:
       r = conv(n->as<PointerTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::OpaqueTypeNode:
+    case NodeType::OpaqueTypeNode:
       r = conv(n->as<OpaqueTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::StringTypeNode:
+    case NodeType::StringTypeNode:
       r = conv(n->as<StringTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::EnumTypeNode:
+    case NodeType::EnumTypeNode:
       r = conv(n->as<EnumTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::StructTypeNode:
+    case NodeType::StructTypeNode:
       r = conv(n->as<StructTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::GroupTypeNode:
+    case NodeType::GroupTypeNode:
       r = conv(n->as<GroupTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::RegionTypeNode:
+    case NodeType::RegionTypeNode:
       r = conv(n->as<RegionTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::UnionTypeNode:
+    case NodeType::UnionTypeNode:
       r = conv(n->as<UnionTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::ArrayTypeNode:
+    case NodeType::ArrayTypeNode:
       r = conv(n->as<ArrayTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::VectorTypeNode:
+    case NodeType::VectorTypeNode:
       r = conv(n->as<VectorTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::ResultTypeNode:
+    case NodeType::ResultTypeNode:
       r = conv(n->as<ResultTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::GeneratorTypeNode:
+    case NodeType::GeneratorTypeNode:
       r = conv(n->as<GeneratorTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::FunctionTypeNode:
+    case NodeType::FunctionTypeNode:
       r = conv(n->as<FunctionTypeNode>(), state);
       break;
 
-    case libquixcc::NodeType::IntegerNode:
+    case NodeType::IntegerNode:
       r = conv(n->as<IntegerNode>(), state);
       break;
 
-    case libquixcc::NodeType::FloatLiteralNode:
+    case NodeType::FloatLiteralNode:
       r = conv(n->as<FloatLiteralNode>(), state);
       break;
 
-    case libquixcc::NodeType::StringNode:
+    case NodeType::StringNode:
       r = conv(n->as<StringNode>(), state);
       break;
 
-    case libquixcc::NodeType::CharNode:
+    case NodeType::CharNode:
       r = conv(n->as<CharNode>(), state);
       break;
 
-    case libquixcc::NodeType::BoolLiteralNode:
+    case NodeType::BoolLiteralNode:
       r = conv(n->as<BoolLiteralNode>(), state);
       break;
 
-    case libquixcc::NodeType::NullLiteralNode:
+    case NodeType::NullLiteralNode:
       r = conv(n->as<NullLiteralNode>(), state);
       break;
 
-    case libquixcc::NodeType::UndefLiteralNode:
+    case NodeType::UndefLiteralNode:
       r = conv(n->as<UndefLiteralNode>(), state);
       break;
 
-    case libquixcc::NodeType::TypedefNode:
+    case NodeType::TypedefNode:
       r = conv(n->as<TypedefNode>(), state);
       break;
 
-    case libquixcc::NodeType::VarDeclNode:
+    case NodeType::VarDeclNode:
       r = conv(n->as<VarDeclNode>(), state);
       break;
 
-    case libquixcc::NodeType::LetDeclNode:
+    case NodeType::LetDeclNode:
       r = conv(n->as<LetDeclNode>(), state);
       break;
 
-    case libquixcc::NodeType::ConstDeclNode:
+    case NodeType::ConstDeclNode:
       r = conv(n->as<ConstDeclNode>(), state);
       break;
 
-    case libquixcc::NodeType::FunctionDeclNode:
+    case NodeType::FunctionDeclNode:
       r = conv(n->as<FunctionDeclNode>(), state);
       break;
 
-    case libquixcc::NodeType::StructDefNode:
+    case NodeType::StructDefNode:
       r = conv(n->as<StructDefNode>(), state);
       break;
 
-    case libquixcc::NodeType::StructFieldNode:
+    case NodeType::StructFieldNode:
       r = conv(n->as<StructFieldNode>(), state);
       break;
 
-    case libquixcc::NodeType::RegionDefNode:
+    case NodeType::RegionDefNode:
       r = conv(n->as<RegionDefNode>(), state);
       break;
 
-    case libquixcc::NodeType::RegionFieldNode:
+    case NodeType::RegionFieldNode:
       r = conv(n->as<RegionFieldNode>(), state);
       break;
 
-    case libquixcc::NodeType::GroupDefNode:
+    case NodeType::GroupDefNode:
       r = conv(n->as<GroupDefNode>(), state);
       break;
 
-    case libquixcc::NodeType::GroupFieldNode:
+    case NodeType::GroupFieldNode:
       r = conv(n->as<GroupFieldNode>(), state);
       break;
 
-    case libquixcc::NodeType::UnionDefNode:
+    case NodeType::UnionDefNode:
       r = conv(n->as<UnionDefNode>(), state);
       break;
 
-    case libquixcc::NodeType::UnionFieldNode:
+    case NodeType::UnionFieldNode:
       r = conv(n->as<UnionFieldNode>(), state);
       break;
 
-    case libquixcc::NodeType::EnumDefNode:
+    case NodeType::EnumDefNode:
       r = conv(n->as<EnumDefNode>(), state);
       break;
 
-    case libquixcc::NodeType::EnumFieldNode:
+    case NodeType::EnumFieldNode:
       r = conv(n->as<EnumFieldNode>(), state);
       break;
 
-    case libquixcc::NodeType::FunctionDefNode:
+    case NodeType::FunctionDefNode:
       r = conv(n->as<FunctionDefNode>(), state);
       break;
 
-    case libquixcc::NodeType::FunctionParamNode:
+    case NodeType::FunctionParamNode:
       r = conv(n->as<FunctionParamNode>(), state);
       break;
 
-    case libquixcc::NodeType::ExportNode:
+    case NodeType::ExportNode:
       r = conv(n->as<ExportNode>(), state);
       break;
 
-    case libquixcc::NodeType::InlineAsmNode:
+    case NodeType::InlineAsmNode:
       r = conv(n->as<InlineAsmNode>(), state);
       break;
 
-    case libquixcc::NodeType::ReturnStmtNode:
+    case NodeType::ReturnStmtNode:
       r = conv(n->as<ReturnStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::RetifStmtNode:
+    case NodeType::RetifStmtNode:
       r = conv(n->as<RetifStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::RetzStmtNode:
+    case NodeType::RetzStmtNode:
       r = conv(n->as<RetzStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::RetvStmtNode:
+    case NodeType::RetvStmtNode:
       r = conv(n->as<RetvStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::BreakStmtNode:
+    case NodeType::BreakStmtNode:
       r = conv(n->as<BreakStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::ContinueStmtNode:
+    case NodeType::ContinueStmtNode:
       r = conv(n->as<ContinueStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::IfStmtNode:
+    case NodeType::IfStmtNode:
       r = conv(n->as<IfStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::WhileStmtNode:
+    case NodeType::WhileStmtNode:
       r = conv(n->as<WhileStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::ForStmtNode:
+    case NodeType::ForStmtNode:
       r = conv(n->as<ForStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::FormStmtNode:
+    case NodeType::FormStmtNode:
       r = conv(n->as<FormStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::ForeachStmtNode:
+    case NodeType::ForeachStmtNode:
       r = conv(n->as<ForeachStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::CaseStmtNode:
+    case NodeType::CaseStmtNode:
       r = conv(n->as<CaseStmtNode>(), state);
       break;
 
-    case libquixcc::NodeType::SwitchStmtNode:
+    case NodeType::SwitchStmtNode:
       r = conv(n->as<SwitchStmtNode>(), state);
       break;
     default:
@@ -3045,10 +3044,6 @@ bool ir::q::QModule::from_ptree(quixcc_job_t *job,
     return false;
   }
 
-  if (job->m_debug) {
-    LOG(DEBUG) << log::raw << this->to_string() << std::endl;
-  }
-
   LOG(DEBUG)
       << "Successfully converted Ptree to QUIX intermediate representation"
       << std::endl;
@@ -3056,8 +3051,18 @@ bool ir::q::QModule::from_ptree(quixcc_job_t *job,
   return true;
 }
 
-void libquixcc::ir::q::QModule::reduce() {
-  /// TODO: cleanup
-
-  /// TODO: Implement QModule::reduce
+void ir::q::QModule::acknowledge_pass(ir::q::QPassType pass,
+                                      const std::string &name) {
+  m_passes[pass].push_back(name);
 }
+
+void ir::q::QModule::unacknowledge_pass(ir::q::QPassType pass,
+                                        const std::string &name) {
+  m_passes[pass].erase(
+      std::remove(m_passes[pass].begin(), m_passes[pass].end(), name),
+      m_passes[pass].end());
+}
+
+void ir::q::QModule::add_tag(const std::string &tag) { m_tags.insert(tag); }
+
+void ir::q::QModule::remove_tag(const std::string &tag) { m_tags.erase(tag); }

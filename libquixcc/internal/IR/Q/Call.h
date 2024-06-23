@@ -49,7 +49,7 @@ class Call : public Expr {
   bool verify_impl() const override;
 
   Call(Global *func, std::vector<Expr *> args) : func(func), args(args) {
-    ntype = (int)NodeType::Call;
+    ntype = (int)QType::Call;
   }
 
  public:
@@ -68,7 +68,7 @@ class CallIndirect : public Expr {
 
   CallIndirect(Segment *exprfunc, std::vector<Expr *> args)
       : exprfunc(exprfunc), args(args) {
-    ntype = (int)NodeType::CallIndirect;
+    ntype = (int)QType::CallIndirect;
   }
 
  public:
@@ -94,7 +94,7 @@ class IntrinsicCall : public Expr {
 
   IntrinsicCall(QIntrinsic name, std::vector<Expr *> args)
       : name(name), args(args) {
-    ntype = (int)NodeType::IntrinsicCall;
+    ntype = (int)QType::IntrinsicCall;
   }
 
  public:

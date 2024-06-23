@@ -48,7 +48,7 @@ class Ident : public Expr {
   bool verify_impl() const override;
 
   Ident(std::string name, Type *type) : name(name), type(type) {
-    ntype = (int)NodeType::Ident;
+    ntype = (int)QType::Ident;
   }
 
  public:

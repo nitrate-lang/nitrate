@@ -49,7 +49,7 @@ class Asm : public Value {
       std::vector<std::pair<std::string, Value *>> outputs,
       std::vector<std::string> clobbers)
       : asm_str(asm_str), inputs(inputs), outputs(outputs), clobbers(clobbers) {
-    ntype = (int)NodeType::Asm;
+    ntype = (int)QType::Asm;
   }
 
  public:

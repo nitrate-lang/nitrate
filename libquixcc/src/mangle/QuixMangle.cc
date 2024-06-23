@@ -93,21 +93,21 @@ static std::string serialize_type(
   using namespace libquixcc;
 
   static std::map<int, std::string> basic_typesmap = {
-      {(int)q::NodeType::I1, "y"},   {(int)q::NodeType::U8, "b"},
-      {(int)q::NodeType::U16, "w"},  {(int)q::NodeType::U32, "d"},
-      {(int)q::NodeType::U64, "q"},  {(int)q::NodeType::U128, "o"},
-      {(int)q::NodeType::I8, "c"},   {(int)q::NodeType::I16, "s"},
-      {(int)q::NodeType::I32, "i"},  {(int)q::NodeType::I64, "l"},
-      {(int)q::NodeType::I128, "p"}, {(int)q::NodeType::F32, "g"},
-      {(int)q::NodeType::F64, "e"},  {(int)q::NodeType::Void, "v"},
+      {(int)q::QType::I1, "y"},   {(int)q::QType::U8, "b"},
+      {(int)q::QType::U16, "w"},  {(int)q::QType::U32, "d"},
+      {(int)q::QType::U64, "q"},  {(int)q::QType::U128, "o"},
+      {(int)q::QType::I8, "c"},   {(int)q::QType::I16, "s"},
+      {(int)q::QType::I32, "i"},  {(int)q::QType::I64, "l"},
+      {(int)q::QType::I128, "p"}, {(int)q::QType::F32, "g"},
+      {(int)q::QType::F64, "e"},  {(int)q::QType::Void, "v"},
   };
 
   if (basic_typesmap.contains(type->ntype))
     return basic_typesmap.at(type->ntype);
 
   if (visited.contains(type)) {
-    switch ((q::NodeType)type->ntype) {
-      case q::NodeType::Region: {
+    switch ((q::QType)type->ntype) {
+      case q::QType::Region: {
         auto t = static_cast<const q::Region *>(type);
         std::string s;
         s += wrap_tag(t->name);
@@ -116,7 +116,7 @@ static std::string serialize_type(
         prop += t->m_ordered ? "1" : "0";
         return "j" + wrap_tag(s) + wrap_tag(prop);
       }
-      case q::NodeType::Union:
+      case q::QType::Union:
         return "u" + wrap_tag(static_cast<const q::Union *>(type)->name);
       default:
         throw std::runtime_error("Unknown type: " +
@@ -310,8 +310,8 @@ std::string libquixcc::Symbol::mangle_quix(const libquixcc::ir::q::Value *node,
   std::string res = quix_abiprefix;
   std::set<const libquixcc::ir::q::Type *> visited;
 
-  switch ((q::NodeType)node->ntype) {
-    case q::NodeType::Global: {
+  switch ((q::QType)node->ntype) {
+    case q::QType::Global: {
       res += "g";
       auto var = static_cast<const q::Global *>(node);
       res += wrap_tag(join(prefix, var->name));

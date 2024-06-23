@@ -125,8 +125,6 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
         return false;
       }
 
-      qir_arg->reduce();
-
       args_ptrs.push_back(std::move(qir_arg));
       args.push_back((QSysCallRegistry::QSysArg)args_ptrs.back().get());
     }

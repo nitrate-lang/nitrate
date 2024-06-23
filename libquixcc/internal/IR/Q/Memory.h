@@ -47,7 +47,7 @@ class Assign : public Expr {
   bool verify_impl() const override;
 
   Assign(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
-    ntype = (int)NodeType::Assign;
+    ntype = (int)QType::Assign;
   }
 
  public:
@@ -64,7 +64,7 @@ class PostInc : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  PostInc(Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::PostInc; }
+  PostInc(Expr *lhs) : lhs(lhs) { ntype = (int)QType::PostInc; }
 
  public:
   static PostInc *create(Expr *lhs);
@@ -79,7 +79,7 @@ class PostDec : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  PostDec(Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::PostDec; }
+  PostDec(Expr *lhs) : lhs(lhs) { ntype = (int)QType::PostDec; }
 
  public:
   static PostDec *create(Expr *lhs);
@@ -94,7 +94,7 @@ class AddressOf : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  AddressOf(Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::AddressOf; }
+  AddressOf(Expr *lhs) : lhs(lhs) { ntype = (int)QType::AddressOf; }
 
  public:
   static AddressOf *create(Expr *lhs);
@@ -109,7 +109,7 @@ class Deref : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Deref(Expr *lhs) : lhs(lhs) { ntype = (int)NodeType::Deref; }
+  Deref(Expr *lhs) : lhs(lhs) { ntype = (int)QType::Deref; }
 
  public:
   static Deref *create(Expr *lhs);
@@ -126,7 +126,7 @@ class Member : public Expr {
 
   Member(Value *lhs, size_t field, Type *field_type)
       : field(field), lhs(lhs), field_type(field_type) {
-    ntype = (int)NodeType::Member;
+    ntype = (int)QType::Member;
   }
 
  public:
@@ -146,7 +146,7 @@ class Index : public Expr {
 
   Index(Value *lhs, Expr *index, Type *type)
       : lhs(lhs), index(index), type(type) {
-    ntype = (int)NodeType::Index;
+    ntype = (int)QType::Index;
   }
 
  public:

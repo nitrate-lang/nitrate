@@ -29,104 +29,29 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_IR_Q_NODES_CAST_H__
-#define __QUIXCC_IR_Q_NODES_CAST_H__
+#ifndef __QUIXCC_OPTIMIZER_PASSES_H__
+#define __QUIXCC_OPTIMIZER_PASSES_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
 #endif
 
-#include <IR/Q/Expr.h>
-#include <IR/Q/QIR.h>
-#include <IR/Q/Type.h>
+#include <optimizer/Optimizer.h>
 
-namespace libquixcc::ir::q {
-class SCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+namespace libquixcc::optimizer::passes {
+/*================== MATH OPTIMIZATIONS ======================*/
+bool ExprReduce(quixcc_job_t &job, std::unique_ptr<ir::q::QModule> &ir);
 
-  SCast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::SCast;
-  }
+/*================== MEMORY OPTIMIZATIONS ====================*/
 
- public:
-  static SCast *create(Type *type, Expr *value);
-  Type *infer() const override;
+/*================== CODE PATTERN OPTIMIZATIONS ==============*/
 
-  Type *type;
-  Expr *value;
-};
+/*================== LOCALITY OPTIMIZATIONS ==================*/
 
-class UCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+/*================== DATAFLOW OPTIMIZATIONS ==================*/
 
-  UCast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::UCast;
-  }
+/*================== CONCURRENCY OPTIMIZATIONS ===============*/
 
- public:
-  static UCast *create(Type *type, Expr *value);
-  Type *infer() const override;
-
-  Type *type;
-  Expr *value;
-};
-
-class PtrICast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
-
-  PtrICast(Expr *value) : value(value) { ntype = (int)QType::PtrICast; }
-
- public:
-  static PtrICast *create(Expr *value);
-  Type *infer() const override;
-
-  Expr *value;
-};
-
-class IPtrCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
-
-  IPtrCast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::IPtrCast;
-  }
-
- public:
-  static IPtrCast *create(Type *type, Expr *value);
-  Type *infer() const override;
-
-  Type *type;
-  Expr *value;
-};
-
-class Bitcast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
-
-  Bitcast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::Bitcast;
-  }
-
- public:
-  static Bitcast *create(Type *type, Expr *value);
-  Type *infer() const override;
-
-  Type *type;
-  Expr *value;
-};
-}  // namespace libquixcc::ir::q
-
-#endif  // __QUIXCC_IR_Q_NODES_CAST_H__
+/*=================== ALGORITHM OPTIMIZATIONS ================*/
+}  // namespace libquixcc::optimizer::passes
+#endif  // __QUIXCC_OPTIMIZER_PASSES_H__

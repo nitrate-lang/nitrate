@@ -46,7 +46,7 @@ class Add : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Add(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Add; }
+  Add(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Add; }
 
  public:
   static Add *create(Expr *lhs, Expr *rhs);
@@ -62,7 +62,7 @@ class Sub : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Sub(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Sub; }
+  Sub(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Sub; }
 
  public:
   static Sub *create(Expr *lhs, Expr *rhs);
@@ -78,7 +78,7 @@ class Mul : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Mul(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Mul; }
+  Mul(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Mul; }
 
  public:
   static Mul *create(Expr *lhs, Expr *rhs);
@@ -94,7 +94,7 @@ class Div : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Div(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Div; }
+  Div(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Div; }
 
  public:
   static Div *create(Expr *lhs, Expr *rhs);
@@ -110,7 +110,7 @@ class Mod : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Mod(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Mod; }
+  Mod(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Mod; }
 
  public:
   static Mod *create(Expr *lhs, Expr *rhs);
@@ -127,7 +127,7 @@ class BitAnd : public Expr {
   bool verify_impl() const override;
 
   BitAnd(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
-    ntype = (int)NodeType::BitAnd;
+    ntype = (int)QType::BitAnd;
   }
 
  public:
@@ -145,7 +145,7 @@ class BitOr : public Expr {
   bool verify_impl() const override;
 
   BitOr(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
-    ntype = (int)NodeType::BitOr;
+    ntype = (int)QType::BitOr;
   }
 
  public:
@@ -163,7 +163,7 @@ class BitXor : public Expr {
   bool verify_impl() const override;
 
   BitXor(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
-    ntype = (int)NodeType::BitXor;
+    ntype = (int)QType::BitXor;
   }
 
  public:
@@ -180,7 +180,7 @@ class BitNot : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  BitNot(Expr *operand) : operand(operand) { ntype = (int)NodeType::BitNot; }
+  BitNot(Expr *operand) : operand(operand) { ntype = (int)QType::BitNot; }
 
  public:
   static BitNot *create(Expr *operand);
@@ -195,7 +195,7 @@ class Shl : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Shl(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Shl; }
+  Shl(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Shl; }
 
  public:
   static Shl *create(Expr *lhs, Expr *rhs);
@@ -211,7 +211,7 @@ class Shr : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Shr(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Shr; }
+  Shr(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Shr; }
 
  public:
   static Shr *create(Expr *lhs, Expr *rhs);
@@ -228,7 +228,7 @@ class Rotl : public Expr {
   bool verify_impl() const override;
 
   Rotl(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
-    ntype = (int)NodeType::Rotl;
+    ntype = (int)QType::Rotl;
   }
 
  public:
@@ -246,7 +246,7 @@ class Rotr : public Expr {
   bool verify_impl() const override;
 
   Rotr(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
-    ntype = (int)NodeType::Rotr;
+    ntype = (int)QType::Rotr;
   }
 
  public:
@@ -263,7 +263,7 @@ class Eq : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Eq(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Eq; }
+  Eq(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Eq; }
 
  public:
   static Eq *create(Expr *lhs, Expr *rhs);
@@ -279,7 +279,7 @@ class Ne : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Ne(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Ne; }
+  Ne(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Ne; }
 
  public:
   static Ne *create(Expr *lhs, Expr *rhs);
@@ -295,7 +295,7 @@ class Lt : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Lt(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Lt; }
+  Lt(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Lt; }
 
  public:
   static Lt *create(Expr *lhs, Expr *rhs);
@@ -311,7 +311,7 @@ class Gt : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Gt(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Gt; }
+  Gt(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Gt; }
 
  public:
   static Gt *create(Expr *lhs, Expr *rhs);
@@ -327,7 +327,7 @@ class Le : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Le(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Le; }
+  Le(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Le; }
 
  public:
   static Le *create(Expr *lhs, Expr *rhs);
@@ -343,7 +343,7 @@ class Ge : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Ge(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Ge; }
+  Ge(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Ge; }
 
  public:
   static Ge *create(Expr *lhs, Expr *rhs);
@@ -359,7 +359,7 @@ class And : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  And(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::And; }
+  And(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::And; }
 
  public:
   static And *create(Expr *lhs, Expr *rhs);
@@ -375,7 +375,7 @@ class Or : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Or(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Or; }
+  Or(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Or; }
 
  public:
   static Or *create(Expr *lhs, Expr *rhs);
@@ -391,7 +391,7 @@ class Not : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Not(Expr *operand) : operand(operand) { ntype = (int)NodeType::Not; }
+  Not(Expr *operand) : operand(operand) { ntype = (int)QType::Not; }
 
  public:
   static Not *create(Expr *operand);
@@ -406,7 +406,7 @@ class Xor : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Xor(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)NodeType::Xor; }
+  Xor(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Xor; }
 
  public:
   static Xor *create(Expr *lhs, Expr *rhs);

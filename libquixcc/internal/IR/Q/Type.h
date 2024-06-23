@@ -66,7 +66,7 @@ class I1 : public Type {
   bool verify_impl() const override;
 
  public:
-  I1() { ntype = (int)NodeType::I1; }
+  I1() { ntype = (int)QType::I1; }
 
   static I1 *create();
   size_t bitcount() const override { return 1; }
@@ -79,7 +79,7 @@ class I8 : public Type {
   bool verify_impl() const override;
 
  public:
-  I8() { ntype = (int)NodeType::I8; }
+  I8() { ntype = (int)QType::I8; }
 
   static I8 *create();
   size_t bitcount() const override { return 8; }
@@ -92,7 +92,7 @@ class I16 : public Type {
   bool verify_impl() const override;
 
  public:
-  I16() { ntype = (int)NodeType::I16; }
+  I16() { ntype = (int)QType::I16; }
 
   static I16 *create();
   size_t bitcount() const override { return 16; }
@@ -105,7 +105,7 @@ class I32 : public Type {
   bool verify_impl() const override;
 
  public:
-  I32() { ntype = (int)NodeType::I32; }
+  I32() { ntype = (int)QType::I32; }
 
   static I32 *create();
   size_t bitcount() const override { return 32; }
@@ -118,7 +118,7 @@ class I64 : public Type {
   bool verify_impl() const override;
 
  public:
-  I64() { ntype = (int)NodeType::I64; }
+  I64() { ntype = (int)QType::I64; }
 
   static I64 *create();
   size_t bitcount() const override { return 64; }
@@ -131,7 +131,7 @@ class I128 : public Type {
   bool verify_impl() const override;
 
  public:
-  I128() { ntype = (int)NodeType::I128; }
+  I128() { ntype = (int)QType::I128; }
 
   static I128 *create();
   size_t bitcount() const override { return 128; }
@@ -144,7 +144,7 @@ class U8 : public Type {
   bool verify_impl() const override;
 
  public:
-  U8() { ntype = (int)NodeType::U8; }
+  U8() { ntype = (int)QType::U8; }
 
   static U8 *create();
   size_t bitcount() const override { return 8; }
@@ -157,7 +157,7 @@ class U16 : public Type {
   bool verify_impl() const override;
 
  public:
-  U16() { ntype = (int)NodeType::U16; }
+  U16() { ntype = (int)QType::U16; }
 
   static U16 *create();
   size_t bitcount() const override { return 16; }
@@ -170,7 +170,7 @@ class U32 : public Type {
   bool verify_impl() const override;
 
  public:
-  U32() { ntype = (int)NodeType::U32; }
+  U32() { ntype = (int)QType::U32; }
 
   static U32 *create();
   size_t bitcount() const override { return 32; }
@@ -183,7 +183,7 @@ class U64 : public Type {
   bool verify_impl() const override;
 
  public:
-  U64() { ntype = (int)NodeType::U64; }
+  U64() { ntype = (int)QType::U64; }
 
   static U64 *create();
   size_t bitcount() const override { return 64; }
@@ -196,7 +196,7 @@ class U128 : public Type {
   bool verify_impl() const override;
 
  public:
-  U128() { ntype = (int)NodeType::U128; }
+  U128() { ntype = (int)QType::U128; }
 
   static U128 *create();
   size_t bitcount() const override { return 128; }
@@ -209,7 +209,7 @@ class F32 : public Type {
   bool verify_impl() const override;
 
  public:
-  F32() { ntype = (int)NodeType::F32; }
+  F32() { ntype = (int)QType::F32; }
 
   static F32 *create();
   size_t bitcount() const override { return 32; }
@@ -222,7 +222,7 @@ class F64 : public Type {
   bool verify_impl() const override;
 
  public:
-  F64() { ntype = (int)NodeType::F64; }
+  F64() { ntype = (int)QType::F64; }
 
   static F64 *create();
   size_t bitcount() const override { return 64; }
@@ -235,7 +235,7 @@ class Void : public Type {
   bool verify_impl() const override;
 
  public:
-  Void() { ntype = (int)NodeType::Void; }
+  Void() { ntype = (int)QType::Void; }
 
   static Void *create();
   size_t bitcount() const override { return 0; }
@@ -247,7 +247,7 @@ class Ptr : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Ptr(Type *type) : type(type) { ntype = (int)NodeType::Ptr; }
+  Ptr(Type *type) : type(type) { ntype = (int)QType::Ptr; }
 
  public:
   static Ptr *create(Type *type);
@@ -267,7 +267,7 @@ class Array : public Type {
   bool verify_impl() const override;
 
   Array(Type *type, uint64_t size) : type(type), size(size) {
-    ntype = (int)NodeType::Array;
+    ntype = (int)QType::Array;
   }
 
  public:
@@ -284,7 +284,7 @@ class Vector : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Vector(Type *type) : type(type) { ntype = (int)NodeType::Vector; }
+  Vector(Type *type) : type(type) { ntype = (int)QType::Vector; }
 
  public:
   static Vector *create(Type *type);
@@ -310,7 +310,7 @@ class FType : public Type {
         m_thread_safe(thread_safe),
         m_foreign(foreign),
         m_noexcept(nothrow) {
-    ntype = (int)NodeType::FType;
+    ntype = (int)QType::FType;
   }
 
  public:
@@ -340,7 +340,7 @@ class Region : public Type {
   Region(std::string name, std::vector<Type *> fields, bool packed,
          bool ordered)
       : name(name), fields(fields), m_packed(packed), m_ordered(ordered) {
-    ntype = (int)NodeType::Region;
+    ntype = (int)QType::Region;
   }
 
  public:
@@ -364,7 +364,7 @@ class Union : public Type {
 
   Union(std::string name, std::vector<Type *> fields)
       : name(name), fields(fields) {
-    ntype = (int)NodeType::Union;
+    ntype = (int)QType::Union;
   }
 
  public:
@@ -383,7 +383,7 @@ class Opaque : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Opaque(std::string name) : name(name) { ntype = (int)NodeType::Opaque; }
+  Opaque(std::string name) : name(name) { ntype = (int)QType::Opaque; }
 
  public:
   static Opaque *create(std::string name);
@@ -406,7 +406,7 @@ class IntrinsicType : public Type {
   bool verify_impl() const override;
 
   IntrinsicType(QIntrinsicType name) : name(name) {
-    ntype = (int)NodeType::IntrinsicType;
+    ntype = (int)QType::IntrinsicType;
   }
 
  public:

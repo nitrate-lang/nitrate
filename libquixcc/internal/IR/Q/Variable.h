@@ -49,7 +49,7 @@ class Local : public Value {
 
   Local(std::string name, Type *type, Expr *value)
       : name(name), type(type), value(value) {
-    ntype = (int)NodeType::Local;
+    ntype = (int)QType::Local;
   }
 
  public:
@@ -74,7 +74,7 @@ class Global : public Value {
         _volatile(_volatile),
         _atomic(_atomic),
         _extern(_extern) {
-    ntype = (int)NodeType::Global;
+    ntype = (int)QType::Global;
   }
 
  public:
@@ -96,7 +96,7 @@ class Number : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Number(std::string value) : value(value) { ntype = (int)NodeType::Number; }
+  Number(std::string value) : value(value) { ntype = (int)QType::Number; }
 
  public:
   static Number *create(std::string value);
@@ -111,7 +111,7 @@ class String : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  String(std::string value) : value(value) { ntype = (int)NodeType::String; }
+  String(std::string value) : value(value) { ntype = (int)QType::String; }
 
  public:
   static String *create(std::string value);
@@ -126,7 +126,7 @@ class Char : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Char(std::string value) : value(value) { ntype = (int)NodeType::Char; }
+  Char(std::string value) : value(value) { ntype = (int)QType::Char; }
 
  public:
   static Char *create(std::string value);
@@ -142,7 +142,7 @@ class List : public Expr {
   bool verify_impl() const override;
 
   List(std::vector<Expr *> values) : values(values) {
-    ntype = (int)NodeType::List;
+    ntype = (int)QType::List;
   }
 
  public:

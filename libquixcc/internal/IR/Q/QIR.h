@@ -41,12 +41,12 @@
 #include <parsetree/nodes/AllNodes.h>
 
 #include <unordered_map>
-
+#include <string_view>
 
 namespace libquixcc {
 namespace ir {
 namespace q {
-enum class NodeType {
+enum class QType {
   Root,
 
   /* Types */
@@ -164,6 +164,10 @@ class Value : public libquixcc::ir::Node<Q> {
   bool print_impl(std::ostream &os, PState &state) const override = 0;
   boost::uuids::uuid hash_impl() const override = 0;
   bool verify_impl() const override = 0;
+
+ public:
+
+ std::string_view ntype_str();
 };
 
 class RootNode : public Value {
@@ -173,7 +177,7 @@ class RootNode : public Value {
   bool verify_impl() const override;
 
   RootNode(std::vector<Value *> children) : children(children) {
-    ntype = (int)NodeType::Root;
+    ntype = (int)QType::Root;
   }
 
  public:
@@ -185,6 +189,12 @@ class RootNode : public Value {
 enum class QPassType {
   Solver,
   Optimizer,
+};
+
+enum class IterOp {
+  Do,
+  Skip,
+  Abort,
 };
 
 class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *> {
@@ -203,27 +213,45 @@ class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *> {
     m_passes[QPassType::Solver] = {};
     m_passes[QPassType::Optimizer] = {};
   }
-  ~QModule() = default;
+  virtual ~QModule() = default;
 
   bool from_ptree(quixcc_job_t *job, std::shared_ptr<ParseNode> ast);
 
-  void acknowledge_pass(QPassType pass, const std::string &name) {
-    m_passes[pass].push_back(name);
-  }
+  /*========================== METADATA ==========================*/
+  void acknowledge_pass(QPassType pass, const std::string &name);
+  void unacknowledge_pass(QPassType pass, const std::string &name);
+  void add_tag(const std::string &tag);
+  void remove_tag(const std::string &tag);
 
-  void unacknowledge_pass(QPassType pass, const std::string &name) {
-    m_passes[pass].erase(std::remove(m_passes[pass].begin(), m_passes[pass].end(), name), m_passes[pass].end());
-  }
+  typedef std::function<void(Value **)> IterFunc;
+  typedef std::function<IterOp(Value *)> PredFunc;
+  typedef std::function<bool(Value *)> MatchFunc;
 
-  void add_tag(const std::string &tag) {
-    m_tags.insert(tag);
-  }
+  /*========================== ITERATION ==========================*/
+  void dft_iter(IterFunc func, PredFunc predicate = nullptr,
+                bool post_order = false);
 
-  void remove_tag(const std::string &tag) {
-    m_tags.erase(tag);
-  }
+  void bft_iter(IterFunc func, PredFunc predicate = nullptr,
+                bool post_order = false);
 
-  void reduce();
+  /*=========================== SEARCH ============================*/
+  Value *dfs_find_first(MatchFunc match, PredFunc predicate = nullptr,
+                        bool post_order = false);
+
+  Value *bfs_find_first(MatchFunc match, PredFunc predicate = nullptr,
+                        bool post_order = false);
+
+  void dfs_find_all(MatchFunc match, std::vector<Value *> &results,
+                    PredFunc predicate = nullptr, bool post_order = false);
+
+  void bfs_find_all(MatchFunc match, std::vector<Value *> &results,
+                    PredFunc predicate = nullptr, bool post_order = false);
+
+  void dfs_find_all(MatchFunc match, std::vector<Value **> &results,
+                    PredFunc predicate = nullptr, bool post_order = false);
+
+  void bfs_find_all(MatchFunc match, std::vector<Value **> &results,
+                    PredFunc predicate = nullptr, bool post_order = false);
 };
 }  // namespace q
 }  // namespace ir

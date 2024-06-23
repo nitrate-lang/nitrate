@@ -30,6 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <optimizer/Optimizer.h>
+#include <optimizer/Passes.h>
 
 #include <algorithm>
 #include <boost/uuid/detail/sha1.hpp>
@@ -47,8 +48,7 @@ void OptPass::derive_uuid() {
   boost::uuids::detail::sha1::digest_type digest;
   m_hasher.get_digest(digest);
 
-  boost::uuids::uuid ret;
-  auto p = ret.begin();
+  auto p = m_uuid.begin();
   for (std::size_t i{}; i != 4; p += 4, ++i) {
     auto const d = boost::endian::native_to_big(digest[i]);
     std::memcpy(p, &d, 4);
@@ -90,21 +90,12 @@ OptPass &OptPassRegistry::get_pass_by_name(std::string_view name) {
 }
 
 std::shared_ptr<OptPassRegistry> OptPassRegistry::GetBuiltinRegistry() {
+#define ADD(_name, _desc, _func) \
+  reg->register_pass(OptPass(_name, _desc, passes::_func, "Wesley C. Jones"))
+
   auto reg = std::make_shared<OptPassRegistry>();
 
-  reg->register_pass(
-      OptPass("test-pass", "Test pass",
-              [](quixcc_job_t &job, std::unique_ptr<ir::q::QModule> &ir) {
-                LOG(INFO) << "Running test pass" << std::endl;
-                return true;
-              }));
-
-  reg->register_pass(
-      OptPass("llvm-reincarnate", "Reincarnate LLVM",
-              [](quixcc_job_t &job, std::unique_ptr<ir::q::QModule> &ir) {
-                LOG(INFO) << "Reincarnating LLVM" << std::endl;
-                return true;
-              }));
+  ADD("expr-red", "Simiplify simple expressions", ExprReduce);
 
   return reg;
 }
@@ -167,9 +158,17 @@ bool OptPassManager::run_passes(
   for (const auto &uuid : m_phase) {
     auto pass = m_registry->get_pass_by_uuid(uuid);
 
+    std::string uuid_str = boost::uuids::to_string(uuid);
+
+    LOG(DEBUG) << "Running optimizer pass: " << pass.name() << " - " << uuid_str
+               << std::endl;
     if (!pass(job, ir)) {
+      LOG(ERROR) << "Failed to apply optimizer pass: " << pass.name() << " - "
+                 << uuid_str << std::endl;
       return false;
     }
+    LOG(DEBUG) << "Applied optimizer pass: " << pass.name() << " - " << uuid_str
+               << std::endl;
 
     ir->acknowledge_pass(ir::q::QPassType::Optimizer, pass.name());
   }
@@ -203,54 +202,80 @@ void OptPassManager::optimize_phase_order() {
 
 std::unique_ptr<OptPassManager> OptPassMgrFactory::create(OptLevel level,
                                                           OptType type) {
+  std::unique_ptr<OptPassManager> mgr;
+
   switch (type) {
     case OptType::General:
       switch (level) {
         case OptLevel::O0:
-          return create_gen_0();
+          mgr = create_gen_0();
+          break;
         case OptLevel::O1:
-          return create_gen_1();
+          mgr = create_gen_1();
+          break;
         case OptLevel::O2:
-          return create_gen_2();
+          mgr = create_gen_2();
+          break;
         case OptLevel::O3:
-          return create_gen_3();
+          mgr = create_gen_3();
+          break;
         default:
           throw std::invalid_argument("Invalid optimization level");
       }
+      break;
     case OptType::Behavior:
       switch (level) {
         case OptLevel::O0:
-          return create_beh_0();
+          mgr = create_beh_0();
+          break;
         case OptLevel::O1:
-          return create_beh_1();
+          mgr = create_beh_1();
+          break;
         case OptLevel::O2:
-          return create_beh_2();
+          mgr = create_beh_2();
+          break;
         case OptLevel::O3:
-          return create_beh_3();
+          mgr = create_beh_3();
+          break;
         default:
           throw std::invalid_argument("Invalid optimization level");
       }
+      break;
     case OptType::Architecture:
       switch (level) {
         case OptLevel::O0:
-          return create_arch_0();
+          mgr = create_arch_0();
+          break;
         case OptLevel::O1:
-          return create_arch_1();
+          mgr = create_arch_1();
+          break;
         case OptLevel::O2:
-          return create_arch_2();
+          mgr = create_arch_2();
+          break;
         case OptLevel::O3:
-          return create_arch_3();
+          mgr = create_arch_3();
+          break;
         default:
           throw std::invalid_argument("Invalid optimization level");
       }
+      break;
     default:
       throw std::invalid_argument("Invalid optimization type");
   }
+
+  if (!mgr->verify_phase_order()) {
+    throw std::runtime_error("Invalid phase order");
+  }
+
+  return mgr;
 }
 
 #define PLACEHOLDER                        \
   return std::make_unique<OptPassManager>( \
       OptPassRegistry::GetBuiltinRegistry());
+
+#define GET_BASE() \
+  std::make_unique<OptPassManager>(OptPassRegistry::GetBuiltinRegistry());
 
 std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_0() {
   PLACEHOLDER;
@@ -265,17 +290,9 @@ std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_2() {
 }
 
 std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_3() {
-  // PLACEHOLDER;
+  auto mgr = GET_BASE();
 
-  auto mgr =
-      std::make_unique<OptPassManager>(OptPassRegistry::GetBuiltinRegistry());
-
-  mgr->append_pass("test-pass");
-  mgr->add_before("llvm-reincarnate", "test-pass");
-
-  if (!mgr->verify_phase_order()) {
-    throw std::runtime_error("Invalid phase order");
-  }
+  mgr->append_pass("expr-red");
 
   return mgr;
 }

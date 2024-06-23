@@ -45,8 +45,8 @@ static std::string filter(const std::string &input) {
 
 std::string libquixcc::Symbol::mangle_c(const libquixcc::ir::q::Value *node,
                                         const std::string &prefix) {
-  switch ((ir::q::NodeType)node->ntype) {
-    case ir::q::NodeType::Global:
+  switch ((ir::q::QType)node->ntype) {
+    case ir::q::QType::Global:
       return filter(static_cast<const ir::q::Global *>(node)->name);
     default:
       throw std::runtime_error("Invalid node type");

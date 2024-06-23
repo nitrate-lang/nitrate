@@ -48,7 +48,7 @@ class Block : public Value {
   bool verify_impl() const override;
 
   Block(std::vector<Value *> stmts) : stmts(stmts) {
-    ntype = (int)NodeType::Block;
+    ntype = (int)QType::Block;
   }
 
  public:
@@ -75,7 +75,7 @@ class Segment : public Expr {
         is_no_throw(is_no_throw),
         is_no_return(is_no_return),
         is_foriegn(is_foriegn) {
-    ntype = (int)NodeType::Segment;
+    ntype = (int)QType::Segment;
   }
 
  public:
