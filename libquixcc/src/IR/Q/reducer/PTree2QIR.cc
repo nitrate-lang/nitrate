@@ -1331,7 +1331,7 @@ static QResult conv(const EnumTypeNode *n, QState &state) {
    *  - If the input member_type is null, abort.
    *
    * General Behavior:
-   * - TODO: move convertion here
+   * - One-for-one lowering of the enum type node.
    **/
 
   if (!n->m_member_type) { /* If the input member_type is null, abort */
@@ -2253,6 +2253,13 @@ static QResult conv(const ReturnStmtNode *n, QState &state) {
   if (!e) {
     LOG(ERROR) << "QIR conv: return statement expr == nullptr" << std::endl;
     return nullptr;
+  }
+
+  if (!state.function.empty())
+  {
+    auto f = state.function.top();
+    auto rettype = conv(f->m_decl->m_type->m_return_type, state)[0]->as<Type>();
+    return Ret::create(promote(rettype, e[0]->as<Expr>()));
   }
 
   return Ret::create(e[0]->as<Expr>());

@@ -40,8 +40,8 @@
 #include <IR/Type.h>
 #include <parsetree/nodes/AllNodes.h>
 
-#include <unordered_map>
 #include <string_view>
+#include <unordered_map>
 
 namespace libquixcc {
 namespace ir {
@@ -166,8 +166,11 @@ class Value : public libquixcc::ir::Node<Q> {
   bool verify_impl() const override = 0;
 
  public:
+  virtual ~Value() = default;
 
- std::string_view ntype_str();
+  std::string_view ntype_str() const;
+
+  Token m_start;
 };
 
 class RootNode : public Value {

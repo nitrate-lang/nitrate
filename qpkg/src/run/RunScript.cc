@@ -43,10 +43,7 @@ qpkg::run::RunScript::RunScript(const std::string &scriptfile) {
   m_scriptfile = scriptfile;
 }
 
-bool qpkg::run::RunScript::is_okay() const {
-  /// TODO: This is a dummy implementation
-  return true;
-}
+bool qpkg::run::RunScript::is_okay() const { return true; }
 
 int qpkg::run::RunScript::run(const std::vector<std::string> &args) {
   if (!std::filesystem::exists(m_scriptfile)) {
@@ -101,6 +98,6 @@ int qpkg::run::RunScript::run(const std::vector<std::string> &args) {
   }
 
   std::filesystem::remove(tempfile);
-  // std::filesystem::remove(std::string(tempfile) + ".tmp");
+  std::filesystem::remove(std::string(tempfile) + ".tmp");
   return exit_code;
 }

@@ -48,7 +48,7 @@
 
 using namespace libquixcc::ir::q;
 
-std::string_view libquixcc::ir::q::Value::ntype_str() {
+std::string_view libquixcc::ir::q::Value::ntype_str() const {
   switch ((QType)ntype) {
     case QType::Root:
       return "Root";
@@ -221,7 +221,7 @@ std::string_view libquixcc::ir::q::Value::ntype_str() {
     case QType::IntrinsicType:
       return "IntrinsicType";
     case QType::EnumMax:
-      return "...";
+      throw std::out_of_range("EnumMax is not a valid QType");
   }
 }
 

@@ -53,7 +53,7 @@ Type *Call::infer() const { return func->type->as<FType>()->ret; }
 Type *CallIndirect::infer() const { return exprfunc->return_type; }
 
 Type *IntrinsicCall::infer() const {
-  /// TODO: Implement intrinsic type inference
+  /// TODO: Implement intrinsic type inference??
 
   return I32::create();
 

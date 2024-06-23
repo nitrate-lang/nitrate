@@ -43,7 +43,7 @@ bool libquixcc::PrepEngine::ParseInvariant(const Token &tok,
 
   LOG(WARN) << "Invariant macro not implemented." << tok << std::endl;
 
-  /// TODO: Implement the ParseLang function.
+  /// TODO: Implement the ParseInvariant function.
 
   return true;
 }

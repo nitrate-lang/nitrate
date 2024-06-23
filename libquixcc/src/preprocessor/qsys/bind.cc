@@ -94,7 +94,6 @@
 #define QSYS_GET_GLOBAL_META_VARIABLE 0x0FF9
 
 void libquixcc::qsys::bind_qsyscalls(quixcc_job_t *job) {
-  /// TODO: Implement this function
   const std::unordered_map<uint32_t, quixcc_qsys_impl_t> qsyscalls = {
       /*==================== TEXT IO ====================*/
       {QSYS_WRITE_STDOUT, qsys_write_stdout},

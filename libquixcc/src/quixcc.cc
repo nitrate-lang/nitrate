@@ -482,7 +482,7 @@ static bool quixcc_mutate_ptree(quixcc_job_t *job,
   return true;
 }
 
-static bool quixcc_qualify(quixcc_job_t *job, std::shared_ptr<Ptree> ptree) {
+static bool quixcc_qualify(quixcc_job_t *job, std::unique_ptr<ir::q::QModule> &module) {
   /// TODO: implement semantic analysis
   return true;
 }
@@ -715,26 +715,26 @@ static bool compile(quixcc_job_t *job) {
   /// END:   INTERMEDIATE PROCESSING
   ///=========================================
 
+  ///=========================================
+  /// BEGIN: OPTIMIZATION PIPELINE
+  auto QIR = std::make_unique<ir::q::QModule>(job->m_filename.top());
+  if (!QIR->from_ptree(job, std::move(ptree))) /* This will modify the Ptree */
+    return false;
+
   if (!job->m_argset.contains(
           "-fno-check"))  // -fno-check disables semantic analysis
   {
     ///=========================================
     /// BEGIN: SEMANTIC ANALYSIS
     LOG(DEBUG) << "Performing semantic analysis" << std::endl;
-    if (!quixcc_qualify(job, ptree)) {
-      LOG(ERROR) << "failed to verify Ptree" << std::endl;
+    if (!quixcc_qualify(job, QIR)) {
+      LOG(ERROR) << "failed to qualify program" << std::endl;
       return false;
     }
     LOG(DEBUG) << "Finished semantic analysis" << std::endl;
     /// END:   SEMANTIC ANALYSIS
     ///=========================================
   }
-
-  ///=========================================
-  /// BEGIN: OPTIMIZATION PIPELINE
-  auto QIR = std::make_unique<ir::q::QModule>(job->m_filename.top());
-  if (!QIR->from_ptree(job, std::move(ptree))) /* This will modify the Ptree */
-    return false;
 
   {
     LOG(DEBUG) << "Optimizing Quix IR" << std::endl;
