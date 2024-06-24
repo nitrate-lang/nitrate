@@ -5,15 +5,12 @@ add_subdirectory(deps/libexecinfo)
 
 set(CMAKE_CXX_STANDARD 20)
 
-# Find C++23 source files
 file(GLOB_RECURSE LIBQUIX_CXX_SOURCES "src/*.cc")
 
-# Get LLVM flags from llvm14-config --ldflags 
 execute_process(COMMAND llvm14-config --ldflags
 OUTPUT_VARIABLE LLVM_LD_FLAGS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-# Get LLVM flags from llvm14-config --link-static --libfiles
 execute_process(COMMAND llvm14-config --link-static --libfiles
 OUTPUT_VARIABLE LLVM_LIBS_RAW
 OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -22,12 +19,9 @@ string(REPLACE "\n" " " LLVM_LIBS "${LLVM_LIBS_RAW}")
 string(REPLACE " " ";" LLVM_LIBS "${LLVM_LIBS}")
 string(REPLACE "\n" " " LLVM_LIBS_BASH "${LLVM_LIBS_RAW}")
 
-set(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter -Wno-error=unused-variable -Wno-predefined-identifier-outside-function)
-
+SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-unused-parameter -Wno-error=unused-parameter -Wno-error=unused-variable -Wno-predefined-identifier-outside-function)
 SET(PROJECT_RELEASE_FLAGS -O3 -fvisibility=hidden -fvisibility-inlines-hidden -Wno-error=mismatched-new-delete ${BUILD_FLAGS_COMMON} -DNDEBUG)
-
-SET(PROJECT_DEBUG_FLAGS -Wno-error=unused-variable -Wno-error=mismatched-new-delete ${BUILD_FLAGS_COMMON})
-
+SET(PROJECT_DEBUG_FLAGS -Wno-error=unused-variable -Wno-error=mismatched-new-delete -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer ${BUILD_FLAGS_COMMON})
 SET(STATIC_PROJECT_RELEASE_FLAGS -O3 -Wno-error=mismatched-new-delete ${BUILD_FLAGS_COMMON})
 
 if (LIBQUIXCC_SHARED)
@@ -36,10 +30,14 @@ if (LIBQUIXCC_SHARED)
   if (CMAKE_BUILD_TYPE STREQUAL "Release") 
       target_compile_options(quixcc PRIVATE ${PROJECT_RELEASE_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS -flto)
       target_link_options(quixcc PRIVATE ${LLVM_LD_FLAGS} -O3 -flto -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
+      target_link_libraries(quixcc PRIVATE tinfo)
       add_custom_command(TARGET quixcc POST_BUILD COMMAND ${CMAKE_STRIP} $<TARGET_FILE:quixcc>)
   else()
       target_compile_options(quixcc PRIVATE ${PROJECT_DEBUG_FLAGS} -DLLVM_SUUPORT_ALL_TARGETS)
+
       target_link_options(quixcc PRIVATE ${LLVM_LD_FLAGS})
+      target_link_libraries(quixcc PRIVATE -fsanitize=address -fsanitize=undefined)
+      target_link_libraries(quixcc PRIVATE tinfo)
   endif()
 
   if (BUILD_TESTING)
@@ -51,7 +49,7 @@ if (LIBQUIXCC_SHARED)
       target_link_libraries(quixcc PRIVATE ${lib})
       message(STATUS "Linking ${lib}")
   endforeach()
-  target_link_libraries(quixcc PRIVATE pthread zstd z tinfo boost_serialization execinfo-static crypto libstdc++.a)
+  target_link_libraries(quixcc PRIVATE pthread zstd z boost_serialization execinfo-static crypto libstdc++.a)
   set_target_properties(quixcc PROPERTIES OUTPUT_NAME quixcc)
 endif()
 
@@ -70,7 +68,7 @@ if (LIBQUIXCC_STATIC)
       target_compile_options(quixcc-static PRIVATE -fprofile-arcs -ftest-coverage -O3 --coverage)
       target_link_options(quixcc-static PRIVATE -fprofile-arcs -ftest-coverage -O3 --coverage)
   endif()
-  add_custom_command(TARGET quixcc-static POST_BUILD COMMAND sh -c "armerge --output libquixcc-static.a $<TARGET_FILE:quixcc-static> $<TARGET_FILE:execinfo-static> /usr/lib/libcrypto.a ${LLVM_LIBS_RAW}")
+  add_custom_command(TARGET quixcc-static POST_BUILD COMMAND sh -c "armerge --output libquixcc-static.a $<TARGET_FILE:quixcc-static> $<TARGET_FILE:execinfo-static> /usr/lib/libncurses.a /usr/lib/libcrypto.a ${LLVM_LIBS_RAW}")
 
   if (BUILD_TESTING)
     add_subdirectory(test)

@@ -64,9 +64,9 @@ class I1 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I1() { ntype = (int)NodeType::I1; }
 
- public:
   static const I1 *create();
   size_t bitcount() const override { return 1; }
 };
@@ -77,9 +77,9 @@ class I8 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I8() { ntype = (int)NodeType::I8; }
 
- public:
   static const I8 *create();
   size_t bitcount() const override { return 8; }
 };
@@ -90,9 +90,9 @@ class I16 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I16() { ntype = (int)NodeType::I16; }
 
- public:
   static const I16 *create();
   size_t bitcount() const override { return 16; }
 };
@@ -103,9 +103,9 @@ class I32 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I32() { ntype = (int)NodeType::I32; }
 
- public:
   static const I32 *create();
   size_t bitcount() const override { return 32; }
 };
@@ -116,9 +116,9 @@ class I64 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I64() { ntype = (int)NodeType::I64; }
 
- public:
   static const I64 *create();
   size_t bitcount() const override { return 64; }
 };
@@ -129,9 +129,9 @@ class I128 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   I128() { ntype = (int)NodeType::I128; }
 
- public:
   static const I128 *create();
   size_t bitcount() const override { return 128; }
 };
@@ -142,9 +142,9 @@ class U8 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U8() { ntype = (int)NodeType::U8; }
 
- public:
   static const U8 *create();
   size_t bitcount() const override { return 8; }
 };
@@ -155,9 +155,9 @@ class U16 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U16() { ntype = (int)NodeType::U16; }
 
- public:
   static const U16 *create();
   size_t bitcount() const override { return 16; }
 };
@@ -168,9 +168,9 @@ class U32 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U32() { ntype = (int)NodeType::U32; }
 
- public:
   static const U32 *create();
   size_t bitcount() const override { return 32; }
 };
@@ -181,9 +181,9 @@ class U64 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U64() { ntype = (int)NodeType::U64; }
 
- public:
   static const U64 *create();
   size_t bitcount() const override { return 64; }
 };
@@ -194,9 +194,9 @@ class U128 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   U128() { ntype = (int)NodeType::U128; }
 
- public:
   static const U128 *create();
   size_t bitcount() const override { return 128; }
 };
@@ -207,9 +207,9 @@ class F32 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   F32() { ntype = (int)NodeType::F32; }
 
- public:
   static const F32 *create();
   size_t bitcount() const override { return 32; }
 };
@@ -220,9 +220,9 @@ class F64 : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   F64() { ntype = (int)NodeType::F64; }
 
- public:
   static const F64 *create();
   size_t bitcount() const override { return 64; }
 };
@@ -233,9 +233,9 @@ class Void : public Type {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
+ public:
   Void() { ntype = (int)NodeType::Void; }
 
- public:
   static const Void *create();
   size_t bitcount() const override { return 0; }
 };

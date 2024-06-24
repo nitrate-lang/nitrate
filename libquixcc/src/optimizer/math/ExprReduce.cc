@@ -35,11 +35,13 @@
 #include <core/Logger.h>
 #include <optimizer/Passes.h>
 
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 
 using namespace libquixcc;
 using namespace libquixcc::ir::q;
 using cpp_int = boost::multiprecision::cpp_int;
+using cpp_dec_float_100 = boost::multiprecision::cpp_dec_float_100;
 
 static void try_to_merge(Expr *lhs, Expr *rhs, Expr **merged) {
   if (!((lhs->is<Number>() && rhs->is<Number>()) ||
@@ -69,133 +71,254 @@ static void try_to_merge(Expr *lhs, Expr *rhs, Expr **merged) {
   }
 
   /* Calculate constant expression */
-  cpp_int lhs_val, rhs_val;
-  lhs_val.assign(dynamic_cast<Number *>(lhs)->value);
-  rhs_val.assign(dynamic_cast<Number *>(rhs)->value);
+  Number *nlhs = dynamic_cast<Number *>(lhs);
+  Number *nrhs = dynamic_cast<Number *>(rhs);
 
-  switch ((QType)(*merged)->ntype) {
-    case QType::Add: {
-      *merged = Number::create(cpp_int(lhs_val + rhs_val).str());
-      break;
-    }
-    case QType::Sub: {
-      *merged = Number::create(cpp_int(lhs_val - rhs_val).str());
-      break;
-    }
-    case QType::Mul: {
-      *merged = Number::create(cpp_int(lhs_val * rhs_val).str());
-      break;
-    }
-    case QType::Div: {
-      if (rhs_val == 0) {
-        LOG(ERROR) << "Division by zero is undefined" << std::endl;
-        return;
+  if (nlhs->value.find(".") != std::string::npos ||
+      nrhs->value.find(".") != std::string::npos) {
+    cpp_dec_float_100 lhs_val, rhs_val;
+    lhs_val.assign(nlhs->value);
+    rhs_val.assign(nrhs->value);
+
+    switch ((QType)(*merged)->ntype) {
+      case QType::Add: {
+        *merged = Number::create(cpp_dec_float_100(lhs_val + rhs_val).str());
+        break;
       }
-      *merged = Number::create(cpp_int(lhs_val / rhs_val).str());
-      break;
-    }
-    case QType::Mod: {
-      if (rhs_val == 0) {
-        LOG(ERROR) << "Modulo by zero is undefined" << std::endl;
-        return;
+      case QType::Sub: {
+        *merged = Number::create(cpp_dec_float_100(lhs_val - rhs_val).str());
+        break;
       }
-      *merged = Number::create(cpp_int(lhs_val % rhs_val).str());
-      break;
-    }
-    case QType::BitAnd: {
-      *merged = Number::create(cpp_int(lhs_val & rhs_val).str());
-      break;
-    }
-    case QType::BitOr: {
-      *merged = Number::create(cpp_int(lhs_val | rhs_val).str());
-      break;
-    }
-    case QType::BitXor: {
-      *merged = Number::create(cpp_int(lhs_val ^ rhs_val).str());
-      break;
-    }
-    case QType::Shl: {
-      /// TOOD: implement Shl
-      break;
-    }
-    case QType::Shr: {
-      /// TOOD: implement Shr
-      break;
-    }
-    case QType::Rotl: {
-      /// TOOD: implement Rotl
-      break;
-    }
-    case QType::Rotr: {
-      /// TOOD: implement Rotr
-      break;
-    }
-    case QType::Eq: {
-      if (lhs_val == rhs_val) {
-        *merged = Number::create("1");
-      } else {
-        *merged = Number::create("0");
+      case QType::Mul: {
+        *merged = Number::create(cpp_dec_float_100(lhs_val * rhs_val).str());
+        break;
       }
-      break;
-    }
-    case QType::Ne: {
-      if (lhs_val != rhs_val) {
-        *merged = Number::create("1");
-      } else {
-        *merged = Number::create("0");
+      case QType::Div: {
+        if (rhs_val == 0) {
+          LOG(ERROR) << "Division by zero is undefined" << std::endl;
+          return;
+        }
+        *merged = Number::create(cpp_dec_float_100(lhs_val / rhs_val).str());
+        break;
       }
-      break;
-    }
-    case QType::Lt: {
-      if (lhs_val < rhs_val) {
-        *merged = Number::create("1");
-      } else {
-        *merged = Number::create("0");
+      case QType::Mod: {
+        double lhs_valf = lhs_val.convert_to<double>();
+        double rhs_valf = rhs_val.convert_to<double>();
+        if (rhs_valf == 0) {
+          LOG(ERROR) << "Modulo by zero is undefined" << std::endl;
+          return;
+        }
+        double result = fmod(lhs_valf, rhs_valf);
+        *merged = Number::create(std::to_string((double)result));
+        break;
       }
-      break;
-    }
-    case QType::Gt: {
-      if (lhs_val > rhs_val) {
-        *merged = Number::create("1");
-      } else {
-        *merged = Number::create("0");
+      case QType::BitAnd:
+      case QType::BitOr:
+      case QType::BitXor:
+      case QType::Shl:
+      case QType::Shr:
+      case QType::Rotl:
+      case QType::Rotr:
+        LOG(ERROR)
+            << "Bitwise operations are not supported on floating-point numbers"
+            << std::endl;
+        break;
+      case QType::Eq: {
+        if (lhs_val == rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
       }
-      break;
-    }
-    case QType::Le: {
-      if (lhs_val <= rhs_val) {
-        *merged = Number::create("1");
-      } else {
-        *merged = Number::create("0");
+      case QType::Ne: {
+        if (lhs_val != rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
       }
-      break;
-    }
-    case QType::Ge: {
-      if (lhs_val >= rhs_val) {
-        *merged = Number::create("1");
-      } else {
-        *merged = Number::create("0");
+      case QType::Lt: {
+        if (lhs_val < rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
       }
-      break;
-    }
-    case QType::And: {
-      *merged = Number::create(cpp_int(lhs_val && rhs_val).str());
-      break;
-    }
-    case QType::Or: {
-      *merged = Number::create(cpp_int(lhs_val || rhs_val).str());
-      break;
-    }
-    case QType::Xor: {
-      if ((lhs_val && rhs_val) || (!lhs_val && !rhs_val)) {
-        *merged = Number::create("0");
-      } else {
-        *merged = Number::create("1");
+      case QType::Gt: {
+        if (lhs_val > rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
       }
-      break;
+      case QType::Le: {
+        if (lhs_val <= rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
+      }
+      case QType::Ge: {
+        if (lhs_val >= rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
+      }
+      case QType::And: {
+        *merged = Number::create(cpp_dec_float_100(lhs_val && rhs_val).str());
+        break;
+      }
+      case QType::Or: {
+        *merged = Number::create(cpp_dec_float_100(lhs_val || rhs_val).str());
+        break;
+      }
+      case QType::Xor: {
+        if ((lhs_val && rhs_val) || (!lhs_val && !rhs_val)) {
+          *merged = Number::create("0");
+        } else {
+          *merged = Number::create("1");
+        }
+        break;
+      }
+      default:
+        break;
     }
-    default:
-      break;
+  } else {
+    cpp_int lhs_val, rhs_val;
+    lhs_val.assign(nlhs->value);
+    rhs_val.assign(nrhs->value);
+
+    switch ((QType)(*merged)->ntype) {
+      case QType::Add: {
+        *merged = Number::create(cpp_int(lhs_val + rhs_val).str());
+        break;
+      }
+      case QType::Sub: {
+        *merged = Number::create(cpp_int(lhs_val - rhs_val).str());
+        break;
+      }
+      case QType::Mul: {
+        *merged = Number::create(cpp_int(lhs_val * rhs_val).str());
+        break;
+      }
+      case QType::Div: {
+        if (rhs_val == 0) {
+          LOG(ERROR) << "Division by zero is undefined" << std::endl;
+          return;
+        }
+        *merged = Number::create(cpp_int(lhs_val / rhs_val).str());
+        break;
+      }
+      case QType::Mod: {
+        if (rhs_val == 0) {
+          LOG(ERROR) << "Modulo by zero is undefined" << std::endl;
+          return;
+        }
+        *merged = Number::create(cpp_int(lhs_val % rhs_val).str());
+        break;
+      }
+      case QType::BitAnd: {
+        *merged = Number::create(cpp_int(lhs_val & rhs_val).str());
+        break;
+      }
+      case QType::BitOr: {
+        *merged = Number::create(cpp_int(lhs_val | rhs_val).str());
+        break;
+      }
+      case QType::BitXor: {
+        *merged = Number::create(cpp_int(lhs_val ^ rhs_val).str());
+        break;
+      }
+      case QType::Shl: {
+        /// TOOD: implement Shl
+        break;
+      }
+      case QType::Shr: {
+        /// TOOD: implement Shr
+        break;
+      }
+      case QType::Rotl: {
+        /// TOOD: implement Rotl
+        break;
+      }
+      case QType::Rotr: {
+        /// TOOD: implement Rotr
+        break;
+      }
+      case QType::Eq: {
+        if (lhs_val == rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
+      }
+      case QType::Ne: {
+        if (lhs_val != rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
+      }
+      case QType::Lt: {
+        if (lhs_val < rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
+      }
+      case QType::Gt: {
+        if (lhs_val > rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
+      }
+      case QType::Le: {
+        if (lhs_val <= rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
+      }
+      case QType::Ge: {
+        if (lhs_val >= rhs_val) {
+          *merged = Number::create("1");
+        } else {
+          *merged = Number::create("0");
+        }
+        break;
+      }
+      case QType::And: {
+        *merged = Number::create(cpp_int(lhs_val && rhs_val).str());
+        break;
+      }
+      case QType::Or: {
+        *merged = Number::create(cpp_int(lhs_val || rhs_val).str());
+        break;
+      }
+      case QType::Xor: {
+        if ((lhs_val && rhs_val) || (!lhs_val && !rhs_val)) {
+          *merged = Number::create("0");
+        } else {
+          *merged = Number::create("1");
+        }
+        break;
+      }
+      default:
+        break;
+    }
   }
 }
 

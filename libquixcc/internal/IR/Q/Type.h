@@ -48,6 +48,8 @@ class Type : public Value {
   bool verify_impl() const override = 0;
 
  public:
+  virtual ~Type() = default;
+
   virtual size_t bitcount() const = 0;
   size_t size() const;
   bool is_ptr() const;

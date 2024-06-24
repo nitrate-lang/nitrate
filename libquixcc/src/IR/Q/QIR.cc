@@ -223,6 +223,7 @@ std::string_view libquixcc::ir::q::Value::ntype_str() const {
     case QType::EnumMax:
       throw std::out_of_range("EnumMax is not a valid QType");
   }
+  return "Unknown";
 }
 
 bool QModule::print_impl(std::ostream &os, PState &state) const {

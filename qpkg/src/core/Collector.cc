@@ -194,6 +194,8 @@ qpkg::core::LoggerStream qpkg::core::Process::stream(qpkg::core::Level lvl,
       return GlobalCollector::get().error().stream(weight);
     case Level::FATAL:
       return GlobalCollector::get().fatal().stream(weight);
+    default:
+      __builtin_unreachable();
   }
 }
 
@@ -219,5 +221,7 @@ qpkg::core::LoggerStream qpkg::core::LOG(qpkg::core::Level lvl) {
       return GlobalCollector::get().error().stream(0);
     case Level::FATAL:
       return GlobalCollector::get().fatal().stream(0);
+    default:
+      __builtin_unreachable();
   }
 }

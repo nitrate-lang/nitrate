@@ -163,6 +163,10 @@ class MockScanner : public Scanner {
   }
   virtual ~MockScanner() = default;
 
+  bool set_source(FILE *src, const std::string &filename) override {
+    return false;
+  }
+
   Token next() override {
     if (m_tokens.empty()) {
       m_tok = Token(TT::Eof, "");

@@ -138,6 +138,11 @@ bool libquixcc::ir::q::Vector::verify_impl() const { return type->verify(); }
 boost::uuids::uuid libquixcc::ir::q::FType::hash_impl() const {
   auto h = Hasher().gettag().add(ret);
   for (auto &p : params) h.add(p);
+  h.add(m_variadic);
+  h.add(m_pure);
+  h.add(m_thread_safe);
+  h.add(m_foreign);
+  h.add(m_noexcept);
   return h.hash();
 }
 
@@ -148,16 +153,34 @@ bool libquixcc::ir::q::FType::verify_impl() const {
 }
 
 boost::uuids::uuid libquixcc::ir::q::Region::hash_impl() const {
-  return Hasher().gettag().add(name).hash();
+  return Hasher()
+      .gettag()
+      .add(name)
+      .add(fields)
+      .add(m_packed)
+      .add(m_ordered)
+      .hash();
 }
 
-bool libquixcc::ir::q::Region::verify_impl() const { return !name.empty(); }
+bool libquixcc::ir::q::Region::verify_impl() const {
+  if (name.empty()) return false;
+  for (auto &f : fields)
+    if (!f->verify()) return false;
+
+  return true;
+}
 
 boost::uuids::uuid libquixcc::ir::q::Union::hash_impl() const {
-  return Hasher().gettag().add(name).hash();
+  return Hasher().gettag().add(name).add(fields).hash();
 }
 
-bool libquixcc::ir::q::Union::verify_impl() const { return !name.empty(); }
+bool libquixcc::ir::q::Union::verify_impl() const {
+  if (name.empty()) return false;
+  for (auto &f : fields)
+    if (!f->verify()) return false;
+
+  return true;
+}
 
 boost::uuids::uuid libquixcc::ir::q::Opaque::hash_impl() const {
   return Hasher().gettag().add(name).hash();

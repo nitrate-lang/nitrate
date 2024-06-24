@@ -71,7 +71,8 @@ thread_local std::map<TypeNode *, GeneratorTypeNode *>
     GeneratorTypeNode::m_instances;
 thread_local std::unordered_map<std::string, std::shared_ptr<UserTypeNode>>
     UserTypeNode::m_instances;
-std::map<FunctionTypeNode::Inner, FunctionTypeNode *>
+thread_local std::map<FunctionTypeNode::Inner,
+                      std::unique_ptr<FunctionTypeNode>>
     FunctionTypeNode::s_instances;
 std::map<std::pair<std::string, TypeNode *>, EnumTypeNode *>
     EnumTypeNode::m_instances;

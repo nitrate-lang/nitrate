@@ -71,7 +71,7 @@ bool qpkg::install::install_from_url(std::string url, const std::string &dest,
   if (url.ends_with(".git")) {
     url = url.substr(0, url.size() - 4);
   }
-  if (!url.contains("/")) {
+  if (url.find("/") == std::string::npos) {
     std::cerr << "Excpected URL pattern like: 'https://example.com/package'"
               << std::endl;
     return false;

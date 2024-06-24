@@ -88,8 +88,8 @@ bool libquixcc::ir::q::Void::print_impl(std::ostream &os, PState &state) const {
 }
 
 bool libquixcc::ir::q::Ptr::print_impl(std::ostream &os, PState &state) const {
-  if (!type->print(os, state)) return false;
-  return os << "*", true;
+  os << "*";
+  return type->print(os, state);
 }
 
 bool libquixcc::ir::q::Array::print_impl(std::ostream &os,

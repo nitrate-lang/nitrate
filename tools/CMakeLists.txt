@@ -7,10 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 file(GLOB_RECURSE TOOLS "*.cc")
 
-set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-set(BUILD_SHARED_LIBS OFF)
-set(CMAKE_EXE_LINKER_FLAGS "-static")
-
 foreach(TOOL ${TOOLS})
     get_filename_component(TOOL_NAME ${TOOL} NAME_WE)
     add_executable(quixcc-${TOOL_NAME} ${TOOL})

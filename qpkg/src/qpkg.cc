@@ -524,6 +524,12 @@ void setup_argparse_dev(
       .default_value(false)
       .implicit_value(true);
 
+  /*================== OTHER STUFF =================*/
+  parser.add_argument("--demangle")
+      .help("demangle QUIX symbol names")
+      .default_value(false)
+      .implicit_value(true);
+
   /*================= BENCH SUBPARSER =================*/
   auto bench = std::make_unique<ArgumentParser>("bench");
 
@@ -605,17 +611,18 @@ int run_init_mode(const ArgumentParser &parser) {
 
   using namespace qpkg::init;
 
-  PackageBuilder builder = PackageBuilder()
-                               .output(parser.get<std::string>("--output"))
-                               .name(parser.get<std::string>("package-name"))
-                               .license(parser.get<std::string>("--license"))
-                               .author(parser.get<std::string>("--author"))
-                               .email(parser.get<std::string>("--email"))
-                               .url(parser.get<std::string>("--url"))
-                               .version(parser.get<std::string>("--version"))
-                               .description(parser.get<std::string>("--description"))
-                               .verbose(parser["--verbose"] == true)
-                               .force(parser["--force"] == true);
+  PackageBuilder builder =
+      PackageBuilder()
+          .output(parser.get<std::string>("--output"))
+          .name(parser.get<std::string>("package-name"))
+          .license(parser.get<std::string>("--license"))
+          .author(parser.get<std::string>("--author"))
+          .email(parser.get<std::string>("--email"))
+          .url(parser.get<std::string>("--url"))
+          .version(parser.get<std::string>("--version"))
+          .description(parser.get<std::string>("--description"))
+          .verbose(parser["--verbose"] == true)
+          .force(parser["--force"] == true);
 
   if (parser.get<std::string>("--type") == "program")
     builder.type(PackageType::PROGRAM);

@@ -45,20 +45,6 @@
 
 namespace libquixcc {
 class FunctionTypeNode : public TypeNode {
-  FunctionTypeNode(TypeNode *return_type,
-                   std::vector<std::pair<std::string, TypeNode *>> params,
-                   bool variadic, bool pure, bool thread_safe, bool foreign,
-                   bool _noexcept)
-      : m_return_type(return_type),
-        m_params(params),
-        m_variadic(variadic),
-        m_pure(pure),
-        m_thread_safe(thread_safe),
-        m_foreign(foreign),
-        m_noexcept(_noexcept) {
-    ntype = NodeType::FunctionTypeNode;
-  }
-
   struct Inner {
     TypeNode *return_type;
     std::vector<std::pair<std::string, TypeNode *>> params;
@@ -93,9 +79,24 @@ class FunctionTypeNode : public TypeNode {
     }
   };
 
-  static std::map<Inner, FunctionTypeNode *> s_instances;
+  static thread_local std::map<Inner, std::unique_ptr<FunctionTypeNode>>
+      s_instances;
 
  public:
+  FunctionTypeNode(TypeNode *return_type,
+                   std::vector<std::pair<std::string, TypeNode *>> params,
+                   bool variadic, bool pure, bool thread_safe, bool foreign,
+                   bool _noexcept)
+      : m_return_type(return_type),
+        m_params(params),
+        m_variadic(variadic),
+        m_pure(pure),
+        m_thread_safe(thread_safe),
+        m_foreign(foreign),
+        m_noexcept(_noexcept) {
+    ntype = NodeType::FunctionTypeNode;
+  }
+
   static FunctionTypeNode *create(
       TypeNode *return_type,
       std::vector<std::pair<std::string, TypeNode *>> params, bool variadic,
@@ -105,10 +106,11 @@ class FunctionTypeNode : public TypeNode {
 
     Inner inner(return_type, params, variadic, pure, thread_safe, foreign,
                 _noexcept);
-    if (s_instances.find(inner) == s_instances.end())
-      s_instances[inner] = new FunctionTypeNode(
+    if (s_instances.find(inner) == s_instances.end()) {
+      s_instances[inner] = std::make_unique<FunctionTypeNode>(
           return_type, params, variadic, pure, thread_safe, foreign, _noexcept);
-    return s_instances[inner];
+    }
+    return s_instances[inner].get();
   }
 
   TypeNode *m_return_type;

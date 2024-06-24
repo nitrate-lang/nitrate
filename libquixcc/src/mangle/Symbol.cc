@@ -37,7 +37,7 @@
 
 #include <thread>
 
-const std::string libquixcc::Symbol::quix_abiprefix = "_ZJ0";
+const std::string libquixcc::Symbol::quix_abiprefix = "_Q";
 const std::string libquixcc::Symbol::cxx_abiprefix = "_Z";
 const std::string libquixcc::Symbol::c_abiprefix = "";
 
@@ -98,6 +98,10 @@ bool libquixcc::Symbol::demangle_tocode(const std::string &mangled,
   if (node == nullptr) return false;
 
   output = node->to_string();
+
+  if (output.ends_with(" = undef")) {
+    output = output.substr(0, output.size() - 8);
+  }
 
   return true;
 }

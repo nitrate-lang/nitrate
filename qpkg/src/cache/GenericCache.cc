@@ -70,6 +70,8 @@ std::string qpkg::cache::keyToString(const qpkg::cache::CacheKey &key,
     default:
       LOG(core::FATAL) << "Invalid format" << std::endl;
   }
+
+  return "";
 }
 
 qpkg::cache::CacheHasher::CacheHasher() { blake3_hasher_init(&m_ctx); }

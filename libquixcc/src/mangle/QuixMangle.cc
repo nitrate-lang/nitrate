@@ -37,300 +37,281 @@
 #include <core/Logger.h>
 #include <mangle/Symbol.h>
 
+#include <iomanip>
 #include <iostream>
-
-static std::string wrap_tag(const std::string &tag) {
-  std::string s;
-
-  for (size_t i = 0; i < tag.size(); i++) {
-    if (tag.at(i) == ':') {
-      s += "__";
-      i++;
-    } else {
-      s += tag.at(i);
-    }
-  }
-
-  return std::to_string(s.size()) + s;
-}
-
-static bool unwrap_tags(const std::string &input,
-                        std::vector<std::string> &out) {
-  size_t i = 0;
-  try {
-    std::string len;
-    while (i < input.size()) {
-      len.clear();
-      while (i < input.size() && std::isdigit(input.at(i))) {
-        len += input.at(i);
-        i++;
-      }
-
-      if (len.empty()) return false;
-
-      size_t l = std::stoi(len);
-      out.push_back(input.substr(i, l));
-
-      i += l;
-    }
-
-    if (len == "0") {
-      out.push_back("");
-    }
-  } catch (std::out_of_range &e) {
-    throw std::runtime_error("Out of range");
-    return false;
-  }
-
-  return true;
-}
+#include <sstream>
 
 using namespace libquixcc::ir;
 
-static std::string serialize_type(
-    const libquixcc::ir::q::Type *type,
-    std::set<const libquixcc::ir::q::Type *> visited) {
+static std::string serialize_name(const std::string &str) {
+  std::stringstream ss;
+
+  if (str.find("::") != std::string::npos) {
+    size_t pos = 0;
+    while (pos < str.size()) {
+      size_t next = str.find("::", pos);
+      if (next != std::string::npos) {
+        ss << "N" << std::to_string(next - pos) << str.substr(pos, next - pos);
+        pos = next + 2;
+      } else {
+        ss << "N" << std::to_string(str.size() - pos) << str.substr(pos);
+        break;
+      }
+    }
+  } else {
+    ss << str.size() << str;
+  }
+
+  return ss.str();
+}
+
+static std::string deserialize_name(std::stringstream &str) {
+  std::stringstream ss;
+
+  char c;
+  size_t size = 0, i = 0;
+  bool first = true;
+
+  if (str.peek() == 'N') {
+    do {
+      str.ignore();
+      str >> size;
+
+      if (!first) ss << "::";
+      first = false;
+
+      for (i = 0; i < size; i++) {
+        str >> c;
+        ss << c;
+      }
+
+    } while (str.peek() == 'N');
+
+    return ss.str();
+  }
+
+  str >> size;
+
+  for (i = 0; i < size; i++) {
+    str >> c;
+    ss << c;
+  }
+
+  return ss.str();
+}
+
+static std::string type_hash(const libquixcc::ir::q::Type *type) {
+  auto uuid = type->hash();
+
+  uint32_t hash;
+  hash = (uuid.data[0] << 24);
+  hash |= (uuid.data[1] << 16);
+  hash |= (uuid.data[2] << 8);
+  hash |= (uuid.data[3]);
+
+  std::stringstream ss;
+  ss << std::setw(8) << std::setfill('0') << std::hex << hash;
+
+  return ss.str();
+}
+
+static std::string serialize_type(const libquixcc::ir::q::Type *type) {
   using namespace libquixcc;
 
   static std::map<int, std::string> basic_typesmap = {
-      {(int)q::QType::I1, "y"},   {(int)q::QType::U8, "b"},
-      {(int)q::QType::U16, "w"},  {(int)q::QType::U32, "d"},
-      {(int)q::QType::U64, "q"},  {(int)q::QType::U128, "o"},
-      {(int)q::QType::I8, "c"},   {(int)q::QType::I16, "s"},
-      {(int)q::QType::I32, "i"},  {(int)q::QType::I64, "l"},
-      {(int)q::QType::I128, "p"}, {(int)q::QType::F32, "g"},
+      {(int)q::QType::I1, "y"},   {(int)q::QType::I8, "c"},
+      {(int)q::QType::I16, "s"},  {(int)q::QType::I32, "i"},
+      {(int)q::QType::I64, "l"},  {(int)q::QType::I128, "p"},
+      {(int)q::QType::U8, "b"},   {(int)q::QType::U16, "w"},
+      {(int)q::QType::U32, "d"},  {(int)q::QType::U64, "q"},
+      {(int)q::QType::U128, "o"}, {(int)q::QType::F32, "g"},
       {(int)q::QType::F64, "e"},  {(int)q::QType::Void, "v"},
   };
 
   if (basic_typesmap.contains(type->ntype))
     return basic_typesmap.at(type->ntype);
 
-  if (visited.contains(type)) {
-    switch ((q::QType)type->ntype) {
-      case q::QType::Region: {
-        auto t = static_cast<const q::Region *>(type);
-        std::string s;
-        s += wrap_tag(t->name);
-        std::string prop;
-        prop += t->m_packed ? "1" : "0";
-        prop += t->m_ordered ? "1" : "0";
-        return "j" + wrap_tag(s) + wrap_tag(prop);
-      }
-      case q::QType::Union:
-        return "u" + wrap_tag(static_cast<const q::Union *>(type)->name);
-      default:
-        throw std::runtime_error("Unknown type: " +
-                                 std::to_string((int)type->ntype));
-    }
-  }
+  std::stringstream ss;
 
   if (type->is<q::Region>()) {
-    visited.insert(type);
+    auto region = type->as<q::Region>();
+    ss << "R";
+    ss << serialize_name(region->name);
+    if (region->m_packed) ss << "X";
+    if (region->m_ordered) ss << "Y";
 
-    const q::Region *st = static_cast<const q::Region *>(type);
-    return "j" + wrap_tag(st->name);
+    return ss.str();
   } else if (type->is<q::Union>()) {
-    visited.insert(type);
+    auto union_ = type->as<q::Union>();
+    ss << "U";
+    ss << serialize_name(union_->name);
 
-    const q::Union *st = static_cast<const q::Union *>(type);
-    return "u" + wrap_tag(st->name);
+    return ss.str();
   } else if (type->is<q::Array>()) {
-    const q::Array *st = static_cast<const q::Array *>(type);
-    std::string s;
-    s += wrap_tag(serialize_type(st->type, visited));
-    s += wrap_tag("x" + std::to_string(st->size));
-    return "a" + s;
+    auto array = type->as<q::Array>();
+    ss << "A";
+    ss << serialize_type(array->type);
+    ss << "_";
+    ss << array->size;
+
+    return ss.str();
   } else if (type->is<q::Vector>()) {
-    const q::Vector *st = static_cast<const q::Vector *>(type);
-    std::string s;
-    s += wrap_tag(serialize_type(st->type, visited));
-    return "r" + s;
+    auto vector = type->as<q::Vector>();
+    ss << "V";
+    ss << serialize_type(vector->type);
+
+    return ss.str();
   } else if (type->is<q::Ptr>()) {
-    const q::Ptr *st = static_cast<const q::Ptr *>(type);
-    return "p" + wrap_tag(serialize_type(st->type, visited));
+    auto ptr = type->as<q::Ptr>();
+    ss << "P";
+    ss << serialize_type(ptr->type);
+
+    return ss.str();
   } else if (type->is<q::FType>()) {
-    const q::FType *st = static_cast<const q::FType *>(type);
-    std::string s;
-    s += wrap_tag(serialize_type(st->ret, visited));
+    auto ftype = type->as<q::FType>();
+    ss << "F";
+    ss << serialize_type(ftype->ret);
+    for (auto &arg : ftype->params) {
+      ss << serialize_type(arg);
+    }
 
-    for (auto param : st->params) s += wrap_tag(serialize_type(param, visited));
-
-    std::string prop;
-
-    if (st->m_foreign) prop += "f";
-    if (st->m_noexcept) prop += "n";
-    if (st->m_pure) prop += "p";
-    if (st->m_thread_safe) prop += "t";
-    if (st->m_variadic) prop += "v";
-
-    s += wrap_tag(prop);
-
-    return "f" + s;
+    return ss.str();
   }
 
   throw std::runtime_error("Unknown type: " + std::to_string((int)type->ntype));
 }
 
-static libquixcc::ir::q::Type *deserialize_type_inner(
-    const std::string &type,
-    std::map<std::string, libquixcc::ir::q::Type *> &prev) {
-  using namespace libquixcc;
+static q::Type *deserialize_type(std::stringstream &str) {
+  char c;
 
-  typedef libquixcc::ir::q::Type *(*fn)(void);
-  static std::map<std::string, fn> basic_typesmap = {
-      {"y", (fn)q::I1::create},   {"b", (fn)q::U8::create},
-      {"w", (fn)q::U16::create},  {"d", (fn)q::U32::create},
-      {"q", (fn)q::U64::create},  {"o", (fn)q::U128::create},
-      {"c", (fn)q::I8::create},   {"s", (fn)q::I16::create},
-      {"i", (fn)q::I32::create},  {"l", (fn)q::I64::create},
-      {"p", (fn)q::I128::create}, {"g", (fn)q::F32::create},
-      {"e", (fn)q::F64::create},  {"v", (fn)q::Void::create}};
+  str >> c;
 
-  if (basic_typesmap.contains(type)) return basic_typesmap.at(type)();
+  switch (c) {
+    case 'y':
+      return q::I1::create();
+    case 'c':
+      return q::I8::create();
+    case 's':
+      return q::I16::create();
+    case 'i':
+      return q::I32::create();
+    case 'l':
+      return q::I64::create();
+    case 'p':
+      return q::I128::create();
+    case 'b':
+      return q::U8::create();
+    case 'w':
+      return q::U16::create();
+    case 'd':
+      return q::U32::create();
+    case 'q':
+      return q::U64::create();
+    case 'o':
+      return q::U128::create();
+    case 'g':
+      return q::F32::create();
+    case 'e':
+      return q::F64::create();
+    case 'v':
+      return q::Void::create();
+    case 'R': {
+      auto name = deserialize_name(str);
+      bool packed = false;
+      bool ordered = false;
 
-  try {
-    if (type.at(0) == 'j') {
-      std::vector<std::string> fields;
-      if (!unwrap_tags(type.substr(1), fields)) return nullptr;
-
-      if (fields.size() < 2) return nullptr;
-      bool packed = false, ordered = false;
-      std::string prop = fields.at(1);
-      if (prop.size() != 2) return nullptr;
-      if (prop.at(0) == '1') packed = true;
-      if (prop.at(1) == '1') ordered = true;
-
-      return q::Region::create(fields.at(0), {}, packed, ordered);
-    } else if (type.at(0) == 'u') {
-      std::vector<std::string> fields;
-      if (!unwrap_tags(type.substr(1), fields)) return nullptr;
-
-      if (fields.size() < 1) return nullptr;
-
-      return q::Union::create(fields.at(0), {});
-    } else if (type.at(0) == 'a') {
-      std::vector<std::string> fields;
-      if (!unwrap_tags(type.substr(1), fields)) return nullptr;
-
-      if (fields.size() < 2) return nullptr;
-
-      q::Type *t;
-      if ((t = deserialize_type_inner(fields.at(0), prev)) == nullptr)
-        return nullptr;
-
-      return q::Array::create(t, std::stoi(fields.at(1)));
-    } else if (type.at(0) == 'r') {
-      std::vector<std::string> fields;
-      if (!unwrap_tags(type.substr(1), fields)) return nullptr;
-
-      if (fields.size() < 1) return nullptr;
-
-      q::Type *t;
-      if ((t = deserialize_type_inner(fields.at(0), prev)) == nullptr)
-        return nullptr;
-
-      return q::Vector::create(t);
-    } else if (type.at(0) == 'p') {
-      std::vector<std::string> fields;
-      if (!unwrap_tags(type.substr(1), fields)) return nullptr;
-
-      if (fields.size() < 1) return nullptr;
-
-      q::Type *t;
-      if ((t = deserialize_type_inner(fields.at(0), prev)) == nullptr)
-        return nullptr;
-
-      return q::Ptr::create(t);
-    } else if (type.at(0) == 'f') {
-      std::vector<std::string> fields;
-      if (!unwrap_tags(type.substr(1), fields)) return nullptr;
-
-      if (fields.size() < 3) return nullptr;
-
-      q::Type *ret;
-      if ((ret = deserialize_type_inner(fields.at(0), prev)) == nullptr)
-        return nullptr;
-
-      std::vector<q::Type *> params;
-      for (size_t i = 1; i < fields.size() - 1; i++) {
-        if (fields.at(i).empty()) break;
-        q::Type *t;
-        if ((t = deserialize_type_inner(fields.at(i), prev)) == nullptr)
-          return nullptr;
-
-        params.push_back(t);
+      while (str.peek() == 'X' || str.peek() == 'Y') {
+        char c;
+        str >> c;
+        if (c == 'X') packed = true;
+        if (c == 'Y') ordered = true;
       }
 
-      std::string prop = fields.back();
-      bool foreign = false, _noexcept = false, pure = false,
-           thread_safe = false, variadic = false;
-      for (size_t i = 0; i < prop.size(); i++) {
-        switch (prop.at(i)) {
-          case 'f':
-            foreign = true;
-            break;
-          case 'n':
-            _noexcept = true;
-            break;
-          case 'p':
-            pure = true;
-            break;
-          case 't':
-            thread_safe = true;
-            break;
-          case 'v':
-            variadic = true;
-            break;
-          default:
-            return nullptr;
-        }
-      }
-
-      return q::FType::create(params, ret, variadic, pure, thread_safe, foreign,
-                              _noexcept);
+      return q::Region::create(name, {}, packed, ordered);
     }
+    case 'U': {
+      auto name = deserialize_name(str);
+      return q::Union::create(name, {});
+    }
+    case 'A': {
+      auto type = deserialize_type(str);
 
-    throw std::runtime_error("Unknown type 2");
-  } catch (std::exception &e) {
-    return nullptr;
+      if (str.peek() != '_') {
+        std::cerr << "Error deserializing array type" << std::endl;
+        return nullptr;
+      }
+
+      str.ignore();
+      size_t size = 0;
+      str >> size;
+
+      return q::Array::create(type, size);
+    }
+    case 'V': {
+      auto type = deserialize_type(str);
+      return q::Vector::create(type);
+    }
+    case 'P': {
+      auto type = deserialize_type(str);
+      return q::Ptr::create(type);
+    }
+    case 'F': {
+      auto ret = deserialize_type(str);
+      std::vector<q::Type *> params;
+
+      while (str.peek() != '_') {
+        auto type = deserialize_type(str);
+        if (!type) {
+          std::cerr << "Error deserializing function type" << std::endl;
+          return nullptr;
+        }
+        params.push_back(type);
+      }
+
+      return q::FType::create(params, ret);
+    }
+    default:
+      break;
   }
-}
-
-static libquixcc::ir::q::Type *deserialize_type(const std::string &input) {
-  std::map<std::string, libquixcc::ir::q::Type *> prev;
-
-  auto type = deserialize_type_inner(input, prev);
-  if (!type) return nullptr;
-
-  return type;
+  return nullptr;
 }
 
 std::string libquixcc::Symbol::mangle_quix(const libquixcc::ir::q::Value *node,
                                            const std::string &prefix) {
-  std::string res = quix_abiprefix;
-  std::set<const libquixcc::ir::q::Type *> visited;
+  std::stringstream res;
 
   switch ((q::QType)node->ntype) {
     case q::QType::Global: {
-      res += "g";
-      auto var = static_cast<const q::Global *>(node);
-      res += wrap_tag(join(prefix, var->name));
-      res += wrap_tag(serialize_type(var->type, visited));
+      auto global = node->as<q::Global>();
+      if (!global->type->is<q::FType>()) {
+        /* Normal global variable */
 
-      std::string flags;
-      if (var->_atomic) flags += "a";
-      if (var->_volatile) flags += "o";
+        res << quix_abiprefix;
+        res << "G";
+        res << serialize_name(global->name);
+        res << serialize_type(global->type);
+        res << "_";
+        res << type_hash(global->type);
+      } else {
+        auto ftype = global->type->as<q::FType>();
+        /* Function */
 
-      res += wrap_tag(flags);
-
-      return res;
+        res << quix_abiprefix;
+        res << "F";
+        res << serialize_name(global->name);
+        res << serialize_type(ftype->ret);
+        for (auto &arg : ftype->params) {
+          res << serialize_type(arg);
+        }
+        res << "_";
+        res << type_hash(global->type);
+      }
+      return res.str();
     }
 
     default:
-      break;
+      return "!!!";
   }
-
-  return "";
 }
 
 libquixcc::ir::q::Value *libquixcc::Symbol::demangle_quix(std::string input) {
@@ -340,35 +321,59 @@ libquixcc::ir::q::Value *libquixcc::Symbol::demangle_quix(std::string input) {
     std::vector<std::string> parts;
 
     switch (input.at(0)) {
-      case 'g': {
-        if (!unwrap_tags(input.substr(1), parts)) return nullptr;
+      case 'G': {
+        std::stringstream ss(input.substr(1));
 
-        if (parts.size() < 3) return nullptr;
+        std::string name;
+        q::Type *type;
+        std::string hash;
 
-        auto t = deserialize_type(parts.at(1));
-        if (!t) {
+        name = deserialize_name(ss);
+        type = deserialize_type(ss);
+        if (!type) {
+          std::cerr << "Error demangling type 0: " << input << std::endl;
           return nullptr;
         }
 
-        bool atomic = false, _volatile = false;
-        std::string flags = parts.at(2);
-        for (size_t i = 0; i < flags.size(); i++) {
-          switch (flags.at(i)) {
-            case 'a':
-              atomic = true;
-              break;
-            case 'o':
-              _volatile = true;
-              break;
-            default:
-              return nullptr;
-          }
+        if (ss.peek() == '_') {
+          ss.ignore();
+          hash = ss.str();
         }
 
-        return q::Global::create(parts.at(0), t, nullptr, _volatile, atomic,
-                                 false);
+        return q::Global::create(name, type, nullptr, false, false, true);
       }
+      case 'F': {
+        std::stringstream ss(input.substr(1));
 
+        std::string name;
+        q::Type *ret;
+        std::vector<q::Type *> params;
+        std::string hash;
+
+        name = deserialize_name(ss);
+        ret = deserialize_type(ss);
+        if (!ret) {
+          std::cerr << "Error demangling type 1: " << input << std::endl;
+          return nullptr;
+        }
+
+        while (ss.peek() != '_') {
+          auto type = deserialize_type(ss);
+          if (!type) {
+            std::cerr << "Error demangling type 2: " << input << std::endl;
+            return nullptr;
+          }
+          params.push_back(type);
+        }
+
+        if (ss.peek() == '_') {
+          ss.ignore();
+          hash = ss.str();
+        }
+
+        return q::Global::create(name, q::FType::create(params, ret), nullptr,
+                                 false, false, true);
+      }
       default:
         return nullptr;
     }

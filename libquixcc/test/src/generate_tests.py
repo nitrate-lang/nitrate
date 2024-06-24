@@ -9,7 +9,7 @@ with open(sys.argv[1], 'r') as f:
 
 headerinc = '/* PYTHON_INSERT_INCLUDE */'
 
-loc = os.path.abspath('../../../libquixcc/include/quixcc.h')
+loc = os.path.abspath('../../../libquixcc/include/quixcc/Quix.h')
 if not os.path.exists(loc):
     raise Exception(f'{loc} does not exist')
 

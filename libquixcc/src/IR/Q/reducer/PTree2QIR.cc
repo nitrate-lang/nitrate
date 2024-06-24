@@ -606,6 +606,8 @@ static Expr *promote(Type *lht, ir::q::Expr *rhs) {
         ir::q::Index::create(rhs, ir::q::Number::create("0"), l->type));
   }
 
+  return rhs;
+
   throw std::runtime_error("cannot promote types");
 }
 
