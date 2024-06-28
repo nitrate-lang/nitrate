@@ -476,13 +476,6 @@ static bool canonicalize_identifier(std::string &str) {
   if (g_canonicalize_identifier_cache.contains(str))
     return str = g_canonicalize_identifier_cache[str], true;
 
-  // Replace all `name::<string>` syntax should be replaced with `name_::string`
-  size_t first, last;
-  while ((first = str.find('<')) != std::string::npos &&
-         (last = str.find('>')) != std::string::npos)
-    str.replace(first, last - first + 1,
-                "::_" + str.substr(first + 1, last - first - 1));
-
   if (!validate_identifier(str)) return false;
 
   /* Cache the result */
@@ -725,8 +718,7 @@ const Token &StreamLexer::read_token() {
         }
         case LexState::Identifier: {
           int colon_state = 0;
-          while (std::isalnum(c) || c == '_' || c == ':' || c == '<' ||
-                 c == '>') {
+          while (std::isalnum(c) || c == '_' || c == ':') {
             if (c != ':' && colon_state == 1) {
               if (!buf.ends_with("::")) {
                 char tc = buf.back();
