@@ -432,6 +432,23 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
             stack.push(std::make_shared<IndexNode>(left, index));
             continue;
           }
+          case Punctor::Comma: {
+            if (stack.size() != 1) {
+              LOG(ERROR) << "Expected a single expression before sequence point"
+                         << tok << std::endl;
+              return false;
+            }
+
+            auto left = stack.top();
+            stack.pop();
+
+            std::shared_ptr<ExprNode> right;
+            if (!parse_expr(job, scanner, terminators, right, depth + 1))
+              return false;
+
+            stack.push(std::make_shared<SeqExprNode>(left, right));
+            continue;
+          }
           default:
             LOG(ERROR) << "Unexpected token in non-constant expression '{}'"
                        << tok.serialize() << tok << std::endl;

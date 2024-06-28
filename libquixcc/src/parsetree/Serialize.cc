@@ -148,6 +148,9 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
     case libquixcc::NodeType::BinaryExprNode:
       conv(n->as<BinaryExprNode>());
       break;
+    case libquixcc::NodeType::SeqExprNode:
+      conv(n->as<SeqExprNode>());
+      break;
     case libquixcc::NodeType::CallExprNode:
       conv(n->as<CallExprNode>());
       break;
@@ -531,6 +534,17 @@ void ParseTreeSerializer::conv(const BinaryExprNode *n) {
   ind();
 
   o << "(BExpr \"" << operator_map_inverse.at(n->m_op) << "\"";
+  next(n->m_lhs);
+  next(n->m_rhs);
+  o << ')';
+  indent--;
+}
+
+void ParseTreeSerializer::conv(const SeqExprNode *n) {
+  indent++;
+  ind();
+
+  o << "(Seq";
   next(n->m_lhs);
   next(n->m_rhs);
   o << ')';

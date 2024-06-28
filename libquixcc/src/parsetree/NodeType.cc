@@ -54,6 +54,7 @@ std::unordered_map<libquixcc::NodeType, std::string_view>
         {NodeType::UnaryExprNode, "UnaryExprNode"},
         {NodeType::PostUnaryExprNode, "PostUnaryExprNode"},
         {NodeType::BinaryExprNode, "BinaryExprNode"},
+        {NodeType::SeqExprNode, "SeqExprNode"},
         {NodeType::CallExprNode, "CallExprNode"},
         {NodeType::ListExprNode, "ListExprNode"},
         {NodeType::MemberAccessNode, "MemberAccessNode"},

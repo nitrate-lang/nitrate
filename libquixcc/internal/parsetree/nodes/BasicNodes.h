@@ -115,7 +115,7 @@ class ParseNode {
     if (std::is_same_v<T, ExprNode>)
       return is<StmtExprNode>() || is<UnaryExprNode>() ||
              is<PostUnaryExprNode>() || is<BinaryExprNode>() ||
-             is<CallExprNode>() || is<ListExprNode>() ||
+             is<SeqExprNode>() || is<CallExprNode>() || is<ListExprNode>() ||
              is<MemberAccessNode>() || is<IndexNode>() || is<SliceNode>() ||
              is<FStringNode>() || isof<CastExprNode>() || isof<LiteralNode>();
 
@@ -137,7 +137,8 @@ class ParseNode {
       return is<ExprStmtNode>() || is<NopStmtNode>() || is<DeclNode>() ||
              is<DefNode>() || is<BlockNode>() || is<StmtGroupNode>() ||
              is<ReturnStmtNode>() || is<RetifStmtNode>() ||
-             is<RetzStmtNode>() || is<RetvStmtNode>() || is<BreakStmtNode>() || is<ContinueStmtNode>() || is<IfStmtNode>() ||
+             is<RetzStmtNode>() || is<RetvStmtNode>() || is<BreakStmtNode>() ||
+             is<ContinueStmtNode>() || is<IfStmtNode>() ||
              is<WhileStmtNode>() || is<ForStmtNode>() || is<FormStmtNode>() ||
              is<ForeachStmtNode>() || is<CaseStmtNode>() ||
              is<SwitchStmtNode>() || is<SubsystemNode>() || is<ExportNode>() ||

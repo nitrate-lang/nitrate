@@ -65,6 +65,7 @@ class ParseTreeSerializer {
   void conv(const UnaryExprNode *);
   void conv(const PostUnaryExprNode *);
   void conv(const BinaryExprNode *);
+  void conv(const SeqExprNode *);
   void conv(const CallExprNode *);
   void conv(const ListExprNode *);
   void conv(const MemberAccessNode *);

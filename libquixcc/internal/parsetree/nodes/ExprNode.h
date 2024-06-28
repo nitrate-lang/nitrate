@@ -81,6 +81,18 @@ class BinaryExprNode : public ExprNode {
   std::shared_ptr<ExprNode> m_rhs;
 };
 
+class SeqExprNode : public ExprNode {
+ public:
+  SeqExprNode(const std::shared_ptr<ExprNode> &lhs,
+              const std::shared_ptr<ExprNode> &rhs)
+      : m_lhs(lhs), m_rhs(rhs) {
+    ntype = NodeType::SeqExprNode;
+  }
+
+  std::shared_ptr<ExprNode> m_lhs;
+  std::shared_ptr<ExprNode> m_rhs;
+};
+
 class FunctionDeclNode;
 
 class CallExprNode : public ExprNode {

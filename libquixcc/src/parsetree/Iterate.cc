@@ -82,6 +82,8 @@ size_t ParseTreePreorder::dispatch(ParseNode *n) {
       return iter(n->as<PostUnaryExprNode>());
     case libquixcc::NodeType::BinaryExprNode:
       return iter(n->as<BinaryExprNode>());
+    case libquixcc::NodeType::SeqExprNode:
+      return iter(n->as<SeqExprNode>());
     case libquixcc::NodeType::CallExprNode:
       return iter(n->as<CallExprNode>());
     case libquixcc::NodeType::ListExprNode:
@@ -340,6 +342,14 @@ size_t ParseTreePreorder::iter(PostUnaryExprNode *node) {
 }
 
 size_t ParseTreePreorder::iter(BinaryExprNode *node) {
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_lhs));
+  size_t count = next(node->m_lhs);
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_rhs));
+  count += next(node->m_rhs);
+  return count + 1;
+}
+
+size_t ParseTreePreorder::iter(SeqExprNode *node) {
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_lhs));
   size_t count = next(node->m_lhs);
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_rhs));

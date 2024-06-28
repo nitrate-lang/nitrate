@@ -69,6 +69,7 @@ enum class NodeType : uint8_t {
   UnaryExprNode,
   PostUnaryExprNode,
   BinaryExprNode,
+  SeqExprNode,
   CallExprNode,
   ListExprNode,
   MemberAccessNode,
@@ -180,6 +181,7 @@ class DowncastExprNode;
 class UnaryExprNode;
 class PostUnaryExprNode;
 class BinaryExprNode;
+class SeqExprNode;
 class CallExprNode;
 class ListExprNode;
 class MemberAccessNode;

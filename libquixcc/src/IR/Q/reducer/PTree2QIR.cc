@@ -110,6 +110,7 @@ static QResult conv(const DowncastExprNode *n, QState &state);
 static QResult conv(const UnaryExprNode *n, QState &state);
 static QResult conv(const PostUnaryExprNode *n, QState &state);
 static QResult conv(const BinaryExprNode *n, QState &state);
+static QResult conv(const SeqExprNode *n, QState &state);
 static QResult conv(const CallExprNode *n, QState &state);
 static QResult conv(const ListExprNode *n, QState &state);
 static QResult conv(const MemberAccessNode *n, QState &state);
@@ -750,6 +751,10 @@ static QResult conv(const BinaryExprNode *n, QState &state) {
     default:
       throw std::runtime_error("QIR BinaryExprNode not implemented");
   }
+}
+
+static QResult conv(const SeqExprNode *n, QState &state) {
+  throw std::runtime_error("SeqExprNode not implemented");
 }
 
 static QResult conv(const CallExprNode *n, QState &state) {
@@ -2683,6 +2688,10 @@ static QResult conv(const ParseNode *n, QState &state) {
 
     case NodeType::ConstBinaryExprNode:
       r = conv(n->as<ConstBinaryExprNode>(), state);
+      break;
+
+    case NodeType::SeqExprNode:
+      r = conv(n->as<SeqExprNode>(), state);
       break;
 
     case NodeType::StaticCastExprNode:
