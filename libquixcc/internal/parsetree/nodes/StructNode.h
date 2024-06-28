@@ -49,7 +49,7 @@ class StructTypeNode : public TypeNode {
       : m_fields(fields), m_name(name) {
     ntype = NodeType::StructTypeNode;
   }
-  static std::map<std::pair<std::vector<TypeNode *>, std::string>,
+  static thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
                   StructTypeNode *>
       m_instances;
 

@@ -49,7 +49,7 @@ class RegionTypeNode : public TypeNode {
       : m_fields(fields), m_name(name) {
     ntype = NodeType::RegionTypeNode;
   }
-  static std::map<std::pair<std::vector<TypeNode *>, std::string>,
+  static thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
                   RegionTypeNode *>
       m_instances;
 

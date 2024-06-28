@@ -45,7 +45,7 @@
 
 namespace libquixcc {
 class EnumTypeNode : public TypeNode {
-  static std::map<std::pair<std::string, TypeNode *>, EnumTypeNode *>
+  static thread_local std::map<std::pair<std::string, TypeNode *>, EnumTypeNode *>
       m_instances;
   EnumTypeNode(const std::string &name, TypeNode *member_type)
       : m_name(name), m_member_type(member_type) {

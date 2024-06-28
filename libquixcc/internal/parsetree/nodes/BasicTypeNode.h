@@ -46,7 +46,7 @@
 namespace libquixcc {
 class MutTypeNode : public TypeNode {
   MutTypeNode(TypeNode *type) : m_type(type) { ntype = NodeType::MutTypeNode; }
-  static std::map<TypeNode *, MutTypeNode *> m_instances;
+  static thread_local std::map<TypeNode *, MutTypeNode *> m_instances;
 
  public:
   static MutTypeNode *create(TypeNode *type) {
@@ -274,7 +274,7 @@ class PointerTypeNode : public TypeNode {
   PointerTypeNode(TypeNode *type) : m_type(type) {
     ntype = NodeType::PointerTypeNode;
   }
-  static std::map<TypeNode *, PointerTypeNode *> m_instances;
+  static thread_local std::map<TypeNode *, PointerTypeNode *> m_instances;
 
  public:
   static PointerTypeNode *create(TypeNode *type) {
@@ -293,7 +293,7 @@ class OpaqueTypeNode : public TypeNode {
   OpaqueTypeNode(std::string name) : m_name(name) {
     ntype = NodeType::OpaqueTypeNode;
   }
-  static std::map<std::string, OpaqueTypeNode *> m_instances;
+  static thread_local std::map<std::string, OpaqueTypeNode *> m_instances;
 
  public:
   static OpaqueTypeNode *create(std::string name) {

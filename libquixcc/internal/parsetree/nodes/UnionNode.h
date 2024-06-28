@@ -49,7 +49,7 @@ class UnionTypeNode : public TypeNode {
       : m_fields(fields), m_name(name) {
     ntype = NodeType::UnionTypeNode;
   }
-  static std::map<std::pair<std::vector<TypeNode *>, std::string>,
+  static thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
                   UnionTypeNode *>
       m_instances;
 

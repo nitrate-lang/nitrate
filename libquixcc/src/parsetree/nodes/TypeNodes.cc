@@ -35,7 +35,6 @@
 
 using namespace libquixcc;
 
-std::map<TypeNode *, MutTypeNode *> MutTypeNode::m_instances;
 U8TypeNode *U8TypeNode::m_instance = nullptr;
 U16TypeNode *U16TypeNode::m_instance = nullptr;
 U32TypeNode *U32TypeNode::m_instance = nullptr;
@@ -51,16 +50,23 @@ F64TypeNode *F64TypeNode::m_instance = nullptr;
 BoolTypeNode *BoolTypeNode::m_instance = nullptr;
 VoidTypeNode *VoidTypeNode::m_instance = nullptr;
 NullTypeNode *NullTypeNode::m_instance = nullptr;
-std::map<TypeNode *, PointerTypeNode *> PointerTypeNode::m_instances;
-std::map<std::string, OpaqueTypeNode *> OpaqueTypeNode::m_instances;
 StringTypeNode *StringTypeNode::m_instance = nullptr;
-std::map<std::pair<std::vector<TypeNode *>, std::string>, StructTypeNode *>
+thread_local std::map<TypeNode *, MutTypeNode *> MutTypeNode::m_instances;
+thread_local std::map<TypeNode *, PointerTypeNode *>
+    PointerTypeNode::m_instances;
+thread_local std::map<std::string, OpaqueTypeNode *>
+    OpaqueTypeNode::m_instances;
+thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
+                      StructTypeNode *>
     StructTypeNode::m_instances;
-std::map<std::pair<std::vector<TypeNode *>, std::string>, GroupTypeNode *>
+thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
+                      GroupTypeNode *>
     GroupTypeNode::m_instances;
-std::map<std::pair<std::vector<TypeNode *>, std::string>, RegionTypeNode *>
+thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
+                      RegionTypeNode *>
     RegionTypeNode::m_instances;
-std::map<std::pair<std::vector<TypeNode *>, std::string>, UnionTypeNode *>
+thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
+                      UnionTypeNode *>
     UnionTypeNode::m_instances;
 thread_local std::map<std::pair<TypeNode *, std::shared_ptr<ConstExprNode>>,
                       ArrayTypeNode *>
@@ -74,5 +80,5 @@ thread_local std::unordered_map<std::string, std::shared_ptr<UserTypeNode>>
 thread_local std::map<FunctionTypeNode::Inner,
                       std::unique_ptr<FunctionTypeNode>>
     FunctionTypeNode::s_instances;
-std::map<std::pair<std::string, TypeNode *>, EnumTypeNode *>
+thread_local std::map<std::pair<std::string, TypeNode *>, EnumTypeNode *>
     EnumTypeNode::m_instances;
