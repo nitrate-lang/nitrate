@@ -11,7 +11,7 @@ fn main(args: [string]): i32 {
 
   let input = args[0];
 
-  // retif !fs::dir_exists(input), eprintn(e), 2;
+  retif !fs::dir_exists(input), eprintn(e), 2;
 
   let backup = "/tmp/" + sha3_256(input)[0: 16];
 

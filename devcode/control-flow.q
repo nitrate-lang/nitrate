@@ -1,6 +1,6 @@
 @use "v1.0";
 
-@import std::generic;
+// @import std::generic;
 
 group vec<T: solid> {
   req {
@@ -114,7 +114,7 @@ group vec<T: solid> {
     ret sizeof(usize) + this.length * T::serialize_unit_size();
   }
 
-  @ass("compress-algo:lz4,deflate")
+  @tag("compress-algo:lz4,deflate")
   pub fn const pure serialize(): [u8] {
     let !buf = [u8](this.length * T::serialize_unit_size());
     buf << this.length.to_bytes<LE>(sizeof(usize));
@@ -126,7 +126,7 @@ group vec<T: solid> {
     ret buf;
   }
 
-  @ass("compress-algo:lz4,deflate")
+  @tag("compress-algo:lz4,deflate")
   pub fn crashpoint pure deserialize(buf: [u8]): void? {
     if buf.len() < sizeof(usize) {
       throw @info() || "invalid buffer length";
