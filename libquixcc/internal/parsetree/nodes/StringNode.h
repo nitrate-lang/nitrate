@@ -45,19 +45,8 @@
 
 namespace libquixcc {
 class StringTypeNode : public TypeNode {
-  StringTypeNode() { ntype = NodeType::StringTypeNode; }
-
-  static StringTypeNode *m_instance;
-
  public:
-  StringTypeNode(StringTypeNode const &) = delete;
-  void operator=(StringTypeNode const &) = delete;
-
-  static StringTypeNode *create() {
-    if (m_instance == nullptr) m_instance = new StringTypeNode();
-
-    return m_instance;
-  }
+  StringTypeNode() { ntype = NodeType::StringTypeNode; }
 };
 
 class FStringNode : public ExprNode {

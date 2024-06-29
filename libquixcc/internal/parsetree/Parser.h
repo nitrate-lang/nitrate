@@ -78,7 +78,7 @@ bool parse_expr(quixcc_job_t &job, libquixcc::Scanner *scanner,
                 std::set<Token> terminators,
                 std::shared_ptr<libquixcc::ExprNode> &node, size_t depth = 0);
 bool parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
-                TypeNode **node);
+                std::shared_ptr<TypeNode> &node);
 bool parse_typedef(quixcc_job_t &job, libquixcc::Scanner *scanner,
                    std::shared_ptr<libquixcc::StmtNode> &node);
 bool parse_return(quixcc_job_t &job, libquixcc::Scanner *scanner,

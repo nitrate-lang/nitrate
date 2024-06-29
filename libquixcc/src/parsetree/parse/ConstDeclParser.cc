@@ -39,7 +39,7 @@ using namespace libquixcc;
 
 static bool parse_decl(quixcc_job_t &job, Token tok,
                        libquixcc::Scanner *scanner,
-                       std::pair<std::string, libquixcc::TypeNode *> &decl) {
+                       std::pair<std::string, std::shared_ptr<TypeNode> > &decl) {
   std::string name = tok.as<std::string>();
 
   tok = scanner->peek();
@@ -50,9 +50,9 @@ static bool parse_decl(quixcc_job_t &job, Token tok,
 
   scanner->next();
 
-  TypeNode *type;
+  std::shared_ptr<TypeNode> type;
 
-  if (!parse_type(job, scanner, &type)) {
+  if (!parse_type(job, scanner, type)) {
     LOG(ERROR) << feedback[CONST_DECL_TYPE_ERR] << name << tok << std::endl;
     return false;
   }
@@ -66,7 +66,7 @@ bool libquixcc::parse_const(
     std::vector<std::shared_ptr<libquixcc::StmtNode>> &nodes) {
   Token tok = scanner->next();
 
-  std::vector<std::pair<std::string, libquixcc::TypeNode *>> decls;
+  std::vector<std::pair<std::string, std::shared_ptr<TypeNode> >> decls;
   bool multi_decl = false;
   if (tok.is<Punctor>(Punctor::OpenBracket)) {
     multi_decl = true;
@@ -74,7 +74,7 @@ bool libquixcc::parse_const(
     while (true) {
       tok = scanner->next();
 
-      std::pair<std::string, libquixcc::TypeNode *> decl;
+      std::pair<std::string, std::shared_ptr<TypeNode> > decl;
       if (!parse_decl(job, tok, scanner, decl)) return false;
 
       decls.push_back(decl);
@@ -92,7 +92,7 @@ bool libquixcc::parse_const(
     }
   } else if (tok.type == TT::Identifier) {
     // Parse single variable declaration
-    std::pair<std::string, libquixcc::TypeNode *> decl;
+    std::pair<std::string, std::shared_ptr<TypeNode> > decl;
     if (!parse_decl(job, tok, scanner, decl)) return false;
 
     decls.push_back(decl);

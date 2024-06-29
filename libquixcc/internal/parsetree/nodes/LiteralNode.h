@@ -57,80 +57,46 @@ class UndefLiteralNode : public LiteralNode {
   UndefLiteralNode() { ntype = NodeType::UndefLiteralNode; }
 
  public:
-  static const std::shared_ptr<UndefLiteralNode> create() {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    if (m_instance == nullptr)
-      m_instance = std::shared_ptr<UndefLiteralNode>(new UndefLiteralNode());
-    return m_instance;
-  }
+  static const std::shared_ptr<UndefLiteralNode> create() { return m_instance; }
 };
-
-typedef std::variant<int64_t, uint64_t> NumbericLiteralNode;
 
 class IntegerNode : public LiteralNode {
  protected:
-  static std::unordered_map<std::string, std::shared_ptr<IntegerNode>>
-      m_instances;
   IntegerNode(const std::string &val);
 
  public:
   static const std::shared_ptr<IntegerNode> create(const std::string &val) {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    if (m_instances.find(val) != m_instances.end()) return m_instances[val];
-
-    m_instances[val] = std::shared_ptr<IntegerNode>(new IntegerNode(val));
-    return m_instances[val];
+    return std::shared_ptr<IntegerNode>(new IntegerNode(val));
   }
 
   std::string m_val;
-  TypeNode *m_val_type;
+  std::shared_ptr<TypeNode> m_val_type;
 };
 
 class FloatLiteralNode : public LiteralNode {
  protected:
-  static std::unordered_map<std::string, std::shared_ptr<FloatLiteralNode>>
-      m_instances;
   FloatLiteralNode(const std::string &val);
 
  public:
   static const std::shared_ptr<FloatLiteralNode> create(
       const std::string &val) {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    if (m_instances.find(val) != m_instances.end()) return m_instances[val];
-
-    m_instances[val] =
-        std::shared_ptr<FloatLiteralNode>(new FloatLiteralNode(val));
-    return m_instances[val];
+    return std::shared_ptr<FloatLiteralNode>(new FloatLiteralNode(val));
   }
 
   std::string m_val;
-  TypeNode *m_val_type;
+  std::shared_ptr<TypeNode> m_val_type;
   double m_value;
 };
 
 class StringNode : public LiteralNode {
  protected:
-  static std::unordered_map<std::string, std::shared_ptr<StringNode>>
-      m_instances;
   StringNode(const std::string &val) : m_val(val) {
     ntype = NodeType::StringNode;
   }
 
  public:
   static const std::shared_ptr<StringNode> create(const std::string &val) {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    if (m_instances.find(val) != m_instances.end()) return m_instances[val];
-
-    m_instances[val] = std::shared_ptr<StringNode>(new StringNode(val));
-    return m_instances[val];
+    return std::shared_ptr<StringNode>(new StringNode(val));
   }
 
   std::string m_val;
@@ -138,18 +104,11 @@ class StringNode : public LiteralNode {
 
 class CharNode : public LiteralNode {
  protected:
-  static std::unordered_map<std::string, std::shared_ptr<CharNode>> m_instances;
   CharNode(const std::string &val) : m_val(val) { ntype = NodeType::CharNode; }
 
  public:
   static const std::shared_ptr<CharNode> create(const std::string &val) {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    if (m_instances.find(val) != m_instances.end()) return m_instances[val];
-
-    m_instances[val] = std::shared_ptr<CharNode>(new CharNode(val));
-    return m_instances[val];
+    return std::shared_ptr<CharNode>(new CharNode(val));
   }
 
   std::string m_val;
@@ -159,24 +118,15 @@ class BoolLiteralNode : public LiteralNode {
  protected:
   static std::shared_ptr<BoolLiteralNode> m_true_instance;
   static std::shared_ptr<BoolLiteralNode> m_false_instance;
+
   BoolLiteralNode(bool val) : m_val(val) { ntype = NodeType::BoolLiteralNode; }
 
  public:
   static const std::shared_ptr<BoolLiteralNode> create(bool val) {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    if (val) {
-      if (m_true_instance == nullptr)
-        m_true_instance =
-            std::shared_ptr<BoolLiteralNode>(new BoolLiteralNode(true));
+    if (val)
       return m_true_instance;
-    } else {
-      if (m_false_instance == nullptr)
-        m_false_instance =
-            std::shared_ptr<BoolLiteralNode>(new BoolLiteralNode(false));
+    else
       return m_false_instance;
-    }
   }
 
   bool m_val;
@@ -188,14 +138,7 @@ class NullLiteralNode : public LiteralNode {
   NullLiteralNode() { ntype = NodeType::NullLiteralNode; }
 
  public:
-  static const std::shared_ptr<NullLiteralNode> create() {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    if (m_instance == nullptr)
-      m_instance = std::shared_ptr<NullLiteralNode>(new NullLiteralNode());
-    return m_instance;
-  }
+  static const std::shared_ptr<NullLiteralNode> create() { return m_instance; }
 };
 }  // namespace libquixcc
 

@@ -53,8 +53,8 @@ static bool parse_struct_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
     return false;
   }
 
-  TypeNode *type;
-  if (!parse_type(job, scanner, &type)) {
+  std::shared_ptr<TypeNode> type;
+  if (!parse_type(job, scanner, type)) {
     LOG(ERROR) << feedback[STRUCT_FIELD_TYPE_ERR] << name << tok << std::endl;
     return false;
   }
@@ -123,7 +123,7 @@ bool libquixcc::parse_struct(quixcc_job_t &job, libquixcc::Scanner *scanner,
       if (!parse_function(job, scanner, method)) return false;
 
       auto fn_this = std::make_shared<FunctionParamNode>(
-          "this", PointerTypeNode::create(UserTypeNode::create(name)), nullptr);
+          "this", std::make_shared<PointerTypeNode>(std::make_shared<UserTypeNode>(name)), nullptr);
 
       if (method->is<FunctionDeclNode>()) {
         auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);

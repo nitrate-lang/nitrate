@@ -45,43 +45,28 @@
 
 namespace libquixcc {
 class RegionTypeNode : public TypeNode {
-  RegionTypeNode(std::vector<TypeNode *> fields, const std::string &name)
+ public:
+  RegionTypeNode(std::vector<std::shared_ptr<TypeNode>> fields,
+                 const std::string &name)
       : m_fields(fields), m_name(name) {
     ntype = NodeType::RegionTypeNode;
   }
-  static thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
-                  RegionTypeNode *>
-      m_instances;
 
- public:
-  static RegionTypeNode *create(const std::vector<TypeNode *> &fields,
-                                const std::string &name) {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    auto key = std::make_pair(fields, name);
-    if (m_instances.contains(key)) return m_instances[key];
-    auto instance = new RegionTypeNode(fields, name);
-    instance->m_fields = fields;
-    m_instances[key] = instance;
-    return instance;
-  }
-
-  std::vector<TypeNode *> m_fields;
+  std::vector<std::shared_ptr<TypeNode>> m_fields;
   std::string m_name;
 };
 
 class RegionFieldNode : public ParseNode {
  public:
   RegionFieldNode() : m_type(nullptr) { ntype = NodeType::RegionFieldNode; }
-  RegionFieldNode(const std::string &name, TypeNode *type,
+  RegionFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
                   std::shared_ptr<ConstExprNode> value = nullptr)
       : m_name(name), m_type(type), m_value(value) {
     ntype = NodeType::RegionFieldNode;
   }
 
   std::string m_name;
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
   std::shared_ptr<ConstExprNode> m_value;
 };
 
@@ -94,10 +79,10 @@ class RegionDefNode : public DefNode {
     ntype = NodeType::RegionDefNode;
   }
 
-  virtual RegionTypeNode *get_type() const {
-    std::vector<TypeNode *> fields;
+  virtual std::shared_ptr<RegionTypeNode> get_type() const {
+    std::vector<std::shared_ptr<TypeNode>> fields;
     for (auto &field : m_fields) fields.push_back(field->m_type);
-    return RegionTypeNode::create(fields, m_name);
+    return std::make_shared<RegionTypeNode>(fields, m_name);
   }
 
   std::string m_name;

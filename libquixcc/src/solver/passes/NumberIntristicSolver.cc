@@ -29,21 +29,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#include <solver/Passes.h>
+#include <solver/Solver.h>
 
-#include <core/Logger.h>
-#include <preprocessor/Preprocessor.h>
-
-bool libquixcc::PrepEngine::ParseInvariant(const Token &tok,
-                                           const std::string &directive,
-                                           const std::string &parameter) {
+bool libquixcc::solver::passes::NumberIntristicSolver(
+    quixcc_job_t &job, libquixcc::solver::passes::qmod ir) {
   (void)job;
-  (void)tok;
-  (void)directive;
+  (void)ir;
 
-  LOG(WARN) << "Invariant macro not implemented." << tok << std::endl;
+  /// TODO: Implement NumberIntristicSolver
 
-  /// TODO: Implement the ParseInvariant function.
+  LOG(WARN) << "NumberIntristicSolver not implemented yet." << std::endl;
 
   return true;
 }

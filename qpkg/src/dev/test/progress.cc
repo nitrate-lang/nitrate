@@ -39,10 +39,7 @@
 #include <iomanip>
 #include <iostream>
 
-/// TODO: write CMake code to generate commit number define
-#define QPKG_COMMIT_NUMBER "0"
-
-#define PROGRAM_STRING "Quix Compiler Suite (qpkg) - v" QPKG_COMMIT_NUMBER
+#define PROGRAM_STRING "Quix Compiler Suite (qpkg) - " QUIX_BUILD_ID
 #define COPYRIGHT_STRING "Copyright (C) 2024 Wesley C. Jones"
 
 using namespace qpkg::ansi;

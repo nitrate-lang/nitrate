@@ -250,11 +250,7 @@ class Ptr : public Type {
 
  public:
   static const Ptr *create(const Type *type);
-  size_t bitcount() const override {
-    // throw std::runtime_error("Pointer size is not known");
-    /// TODO: Get the word size from thread-local singleton or something
-    return 64;
-  }
+  size_t bitcount() const override { return g_target_word_size * 8; }
 
   const Type *type;
 };

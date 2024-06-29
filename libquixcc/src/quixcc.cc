@@ -52,6 +52,7 @@
 #include <quixcc/Quix.h>
 #include <setjmp.h>
 #include <signal.h>
+#include <solver/Solver.h>
 
 #include <atomic>
 #include <boost/uuid/random_generator.hpp>
@@ -81,6 +82,8 @@ std::mutex g_library_lock;
 
 static thread_local jmp_buf g_tls_exception;
 static thread_local bool g_tls_exception_set = false;
+
+thread_local uint8_t g_target_word_size;
 
 static void print_stacktrace();
 static void print_general_fault_message();
@@ -199,7 +202,7 @@ LIB_EXPORT quixcc_job_t *quixcc_new() {
   job->m_in = job->m_out = nullptr;
   job->m_priority = 0;
   job->m_debug = job->m_tainted = job->m_running = false;
-  job->m_sid_ctr = 0;
+  job->m_sid_ctr = job->m_wordsize = 0;
   job->m_triple = llvm::sys::getDefaultTargetTriple();
 
   qsys::bind_qsyscalls(job);
@@ -482,7 +485,8 @@ static bool quixcc_mutate_ptree(quixcc_job_t *job,
   return true;
 }
 
-static bool quixcc_qualify(quixcc_job_t *job, std::unique_ptr<ir::q::QModule> &module) {
+static bool quixcc_qualify(quixcc_job_t *job,
+                           std::unique_ptr<ir::q::QModule> &module) {
   /// TODO: implement semantic analysis
   return true;
 }
@@ -733,6 +737,18 @@ static bool compile(quixcc_job_t *job) {
     }
     LOG(DEBUG) << "Finished semantic analysis" << std::endl;
     /// END:   SEMANTIC ANALYSIS
+    ///=========================================
+  }
+
+  {
+    ///=========================================
+    /// BEGIN: INTERMEDIATE PROCESSING
+    auto solvermgr = solver::SolPassMgrFactory::CreateStandard();
+    if (!solvermgr->run_passes(*job, QIR)) {
+      LOG(ERROR) << "failed to run solver passes" << std::endl;
+      return false;
+    }
+    /// END:   INTERMEDIATE PROCESSING
     ///=========================================
   }
 
@@ -1156,6 +1172,11 @@ static bool execute_job(quixcc_job_t *job) {
   return false;
 }
 
+static uint8_t get_target_word_size(quixcc_job_t *job) {
+  //
+  return 8;
+}
+
 LIB_EXPORT bool quixcc_run(quixcc_job_t *job) {
   if (!g_is_initialized && !quixcc_init()) {
     quixcc_panic(
@@ -1198,6 +1219,10 @@ LIB_EXPORT bool quixcc_run(quixcc_job_t *job) {
         break;
       }
     }
+
+    /* Set the target word size */
+    job->m_wordsize = get_target_word_size(job);
+    g_target_word_size = job->m_wordsize;
 
     if (!has_core_dump) {
       /* We capture the local environment: (stack pointer, PC, registers, etc.)

@@ -85,7 +85,7 @@ const Type *Segment::infer() const {
 const Type *Ident::infer() const { return type; }
 
 static const Type *do_infer(const Type *lhs, const Type *rhs) {
-  /// TOOD: Implement binary inference
+  /// TODO: Implement binary inference
 
   /*
       Wat we are doing:

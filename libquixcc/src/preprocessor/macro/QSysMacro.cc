@@ -72,7 +72,7 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
    * - Read/Append to the compiler log
    * - Read/Write to users terminal (if available)
    * - Read/Write to the local filesystem (if available)
-   * - Read/Write to the network (if connected, of available)
+   * - Read/Write to the network (if available)
    * - Compile and execute arbitrary low-level code
    **/
 
@@ -122,6 +122,7 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
       if (!qir_arg->from_ptree(job, call->m_positional_args[i])) {
         LOG(ERROR) << "Failed to parse QSys directive argument." << tok
                    << std::endl;
+
         return false;
       }
 

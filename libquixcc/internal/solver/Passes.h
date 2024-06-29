@@ -29,56 +29,23 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#ifndef __QUIXCC_OPTIMIZER_PASSES_H__
+#define __QUIXCC_OPTIMIZER_PASSES_H__
 
-#include <parsetree/nodes/AllNodes.h>
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
 
-using namespace libquixcc;
+#include <solver/Solver.h>
 
-U8TypeNode *U8TypeNode::m_instance = nullptr;
-U16TypeNode *U16TypeNode::m_instance = nullptr;
-U32TypeNode *U32TypeNode::m_instance = nullptr;
-U64TypeNode *U64TypeNode::m_instance = nullptr;
-U128TypeNode *U128TypeNode::m_instance = nullptr;
-I8TypeNode *I8TypeNode::m_instance = nullptr;
-I16TypeNode *I16TypeNode::m_instance = nullptr;
-I32TypeNode *I32TypeNode::m_instance = nullptr;
-I64TypeNode *I64TypeNode::m_instance = nullptr;
-I128TypeNode *I128TypeNode::m_instance = nullptr;
-F32TypeNode *F32TypeNode::m_instance = nullptr;
-F64TypeNode *F64TypeNode::m_instance = nullptr;
-BoolTypeNode *BoolTypeNode::m_instance = nullptr;
-VoidTypeNode *VoidTypeNode::m_instance = nullptr;
-NullTypeNode *NullTypeNode::m_instance = nullptr;
-StringTypeNode *StringTypeNode::m_instance = nullptr;
-thread_local std::map<TypeNode *, MutTypeNode *> MutTypeNode::m_instances;
-thread_local std::map<TypeNode *, PointerTypeNode *>
-    PointerTypeNode::m_instances;
-thread_local std::map<std::string, OpaqueTypeNode *>
-    OpaqueTypeNode::m_instances;
-thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
-                      StructTypeNode *>
-    StructTypeNode::m_instances;
-thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
-                      GroupTypeNode *>
-    GroupTypeNode::m_instances;
-thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
-                      RegionTypeNode *>
-    RegionTypeNode::m_instances;
-thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
-                      UnionTypeNode *>
-    UnionTypeNode::m_instances;
-thread_local std::map<std::pair<TypeNode *, std::shared_ptr<ConstExprNode>>,
-                      ArrayTypeNode *>
-    ArrayTypeNode::m_instances;
-thread_local std::map<TypeNode *, VectorTypeNode *> VectorTypeNode::m_instances;
-thread_local std::map<TypeNode *, ResultTypeNode *> ResultTypeNode::m_instances;
-thread_local std::map<TypeNode *, GeneratorTypeNode *>
-    GeneratorTypeNode::m_instances;
-thread_local std::unordered_map<std::string, std::shared_ptr<UserTypeNode>>
-    UserTypeNode::m_instances;
-thread_local std::map<FunctionTypeNode::Inner,
-                      std::unique_ptr<FunctionTypeNode>>
-    FunctionTypeNode::s_instances;
-thread_local std::map<std::pair<std::string, TypeNode *>, EnumTypeNode *>
-    EnumTypeNode::m_instances;
+namespace libquixcc::solver::passes {
+using qmod = std::unique_ptr<ir::q::QModule> &;
+
+bool StringIntristicSolver(quixcc_job_t &job, qmod ir);
+bool VectorIntristicSolver(quixcc_job_t &job, qmod ir);
+bool HashmapIntristicSolver(quixcc_job_t &job, qmod ir);
+bool NumberIntristicSolver(quixcc_job_t &job, qmod ir);
+bool ReferenceIntristicSolver(quixcc_job_t &job, qmod ir);
+
+}  // namespace libquixcc::solver::passes
+#endif  // __QUIXCC_OPTIMIZER_PASSES_H__

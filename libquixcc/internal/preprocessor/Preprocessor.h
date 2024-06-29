@@ -129,7 +129,6 @@ class PrepEngine : public libquixcc::Scanner {
   bool ParsePrint(const Token &tok, rstr der, rstr param);
   bool ParseReadstdin(const Token &tok, rstr der, rstr param);
   bool ParseUse(const Token &tok, rstr der, rstr param);
-  bool ParseInvariant(const Token &tok, rstr der, rstr param);
   bool ParseQSys(const Token &tok, rstr der, rstr param);
   bool ParseFn(const Token &tok, rstr der, rstr param);
 };

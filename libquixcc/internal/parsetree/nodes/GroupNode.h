@@ -46,43 +46,28 @@
 
 namespace libquixcc {
 class GroupTypeNode : public TypeNode {
-  GroupTypeNode(std::vector<TypeNode *> fields, const std::string &name)
+ public:
+  GroupTypeNode(std::vector<std::shared_ptr<TypeNode>> fields,
+                const std::string &name)
       : m_fields(fields), m_name(name) {
     ntype = NodeType::GroupTypeNode;
   }
-  static thread_local std::map<std::pair<std::vector<TypeNode *>, std::string>,
-                  GroupTypeNode *>
-      m_instances;
 
- public:
-  static GroupTypeNode *create(const std::vector<TypeNode *> &fields,
-                               const std::string &name = "") {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    auto key = std::make_pair(fields, name);
-    if (m_instances.contains(key)) return m_instances[key];
-    auto instance = new GroupTypeNode(fields, name);
-    instance->m_fields = fields;
-    m_instances[key] = instance;
-    return instance;
-  }
-
-  std::vector<TypeNode *> m_fields;
+  std::vector<std::shared_ptr<TypeNode>> m_fields;
   std::string m_name;
 };
 
 class GroupFieldNode : public ParseNode {
  public:
   GroupFieldNode() { ntype = NodeType::GroupFieldNode; }
-  GroupFieldNode(const std::string &name, TypeNode *type,
+  GroupFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
                  std::shared_ptr<ConstExprNode> value = nullptr)
       : m_name(name), m_type(type), m_value(value) {
     ntype = NodeType::GroupFieldNode;
   }
 
   std::string m_name;
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
   std::shared_ptr<ConstExprNode> m_value;
 };
 
@@ -95,10 +80,10 @@ class GroupDefNode : public DefNode {
     ntype = NodeType::GroupDefNode;
   }
 
-  virtual GroupTypeNode *get_type() const {
-    std::vector<TypeNode *> types;
+  virtual std::shared_ptr<GroupTypeNode> get_type() const {
+    std::vector<std::shared_ptr<TypeNode>> types;
     for (auto &field : m_fields) types.push_back(field->m_type);
-    return GroupTypeNode::create(types, m_name);
+    return std::make_shared<GroupTypeNode>(types, m_name);
   }
 
   std::string m_name;

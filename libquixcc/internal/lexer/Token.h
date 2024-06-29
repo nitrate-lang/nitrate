@@ -176,6 +176,7 @@ enum class Operator {
   Spaceship = 90,
   BitcastAs = 91,
   ReinterpretAs = 92,
+  Bitsizeof = 93,
 };
 
 enum class TT {

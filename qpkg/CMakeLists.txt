@@ -12,7 +12,7 @@ add_subdirectory(src/cache/blake3)
 
 add_executable(qpkg ${QPKG_CXX_SOURCES})
 target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquixcc/include)
-target_compile_options(qpkg PRIVATE -Wno-error=overlength-strings)
+target_compile_options(qpkg PRIVATE -Wno-error=overlength-strings -DQUIX_BUILD_ID=${QUIX_BUILD_ID})
 
 set(IGNORE_ERRORS -Wno-predefined-identifier-outside-function)
 

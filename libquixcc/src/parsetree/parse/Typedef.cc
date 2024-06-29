@@ -57,8 +57,8 @@ bool libquixcc::parse_typedef(quixcc_job_t &job, libquixcc::Scanner *scanner,
     return false;
   }
 
-  TypeNode *type;
-  if (!parse_type(job, scanner, &type)) {
+  std::shared_ptr<TypeNode> type;
+  if (!parse_type(job, scanner, type)) {
     LOG(ERROR) << feedback[TYPEDEF_INVALID_TYPE] << name << tok << std::endl;
     return false;
   }

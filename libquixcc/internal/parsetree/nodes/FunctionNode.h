@@ -45,48 +45,11 @@
 
 namespace libquixcc {
 class FunctionTypeNode : public TypeNode {
-  struct Inner {
-    TypeNode *return_type;
-    std::vector<std::pair<std::string, TypeNode *>> params;
-    bool variadic;
-    bool pure;
-    bool thread_safe;
-    bool foreign;
-    bool _noexcept;
-
-    Inner(TypeNode *return_type,
-          std::vector<std::pair<std::string, TypeNode *>> params, bool variadic,
-          bool pure, bool thread_safe, bool foreign, bool _noexcept)
-        : return_type(return_type),
-          params(params),
-          variadic(variadic),
-          pure(pure),
-          thread_safe(thread_safe),
-          foreign(foreign),
-          _noexcept(_noexcept) {}
-
-    bool operator<(const Inner &other) const {
-      if (return_type != other.return_type)
-        return return_type < other.return_type;
-      if (params != other.params) return params < other.params;
-      if (variadic != other.variadic) return variadic < other.variadic;
-      if (pure != other.pure) return pure < other.pure;
-      if (thread_safe != other.thread_safe)
-        return thread_safe < other.thread_safe;
-      if (foreign != other.foreign) return foreign < other.foreign;
-      if (_noexcept != other._noexcept) return _noexcept < other._noexcept;
-      return false;
-    }
-  };
-
-  static thread_local std::map<Inner, std::unique_ptr<FunctionTypeNode>>
-      s_instances;
-
  public:
-  FunctionTypeNode(TypeNode *return_type,
-                   std::vector<std::pair<std::string, TypeNode *>> params,
-                   bool variadic, bool pure, bool thread_safe, bool foreign,
-                   bool _noexcept)
+  FunctionTypeNode(
+      std::shared_ptr<TypeNode> return_type,
+      std::vector<std::pair<std::string, std::shared_ptr<TypeNode>>> params,
+      bool variadic, bool pure, bool thread_safe, bool foreign, bool _noexcept)
       : m_return_type(return_type),
         m_params(params),
         m_variadic(variadic),
@@ -97,24 +60,8 @@ class FunctionTypeNode : public TypeNode {
     ntype = NodeType::FunctionTypeNode;
   }
 
-  static FunctionTypeNode *create(
-      TypeNode *return_type,
-      std::vector<std::pair<std::string, TypeNode *>> params, bool variadic,
-      bool pure, bool thread_safe, bool foreign, bool _noexcept) {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    Inner inner(return_type, params, variadic, pure, thread_safe, foreign,
-                _noexcept);
-    if (s_instances.find(inner) == s_instances.end()) {
-      s_instances[inner] = std::make_unique<FunctionTypeNode>(
-          return_type, params, variadic, pure, thread_safe, foreign, _noexcept);
-    }
-    return s_instances[inner].get();
-  }
-
-  TypeNode *m_return_type;
-  std::vector<std::pair<std::string, TypeNode *>> m_params;
+  std::shared_ptr<TypeNode> m_return_type;
+  std::vector<std::pair<std::string, std::shared_ptr<TypeNode>>> m_params;
   bool m_variadic;
   bool m_pure;
   bool m_thread_safe;
@@ -125,14 +72,14 @@ class FunctionTypeNode : public TypeNode {
 class FunctionParamNode : public DeclNode {
  public:
   FunctionParamNode() : m_type(nullptr) { ntype = NodeType::FunctionParamNode; }
-  FunctionParamNode(const std::string &name, TypeNode *type,
+  FunctionParamNode(const std::string &name, std::shared_ptr<TypeNode> type,
                     std::shared_ptr<ExprNode> value)
       : m_name(name), m_type(type), m_value(value) {
     ntype = NodeType::FunctionParamNode;
   }
 
   std::string m_name;
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
   std::shared_ptr<ExprNode> m_value;
 };
 
@@ -142,7 +89,7 @@ class FunctionDeclNode : public DeclNode {
 
   std::string m_name;
   std::vector<std::shared_ptr<FunctionParamNode>> m_params;
-  FunctionTypeNode *m_type;
+  std::shared_ptr<FunctionTypeNode> m_type;
 };
 
 class FunctionDefNode : public DefNode {

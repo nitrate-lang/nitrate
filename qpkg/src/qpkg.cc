@@ -30,6 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <argparse.h>
+#include <quixcc/Quix.h>
 
 #include <build/EngineBuilder.hh>
 #include <clean/Cleanup.hh>
@@ -72,6 +73,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.)";
 
 using namespace argparse;
+
+bool g_use_colors = false;
 
 void setup_argparse_init(ArgumentParser &parser) {
   parser.add_argument("package-name")
@@ -525,10 +528,7 @@ void setup_argparse_dev(
       .implicit_value(true);
 
   /*================== OTHER STUFF =================*/
-  parser.add_argument("--demangle")
-      .help("demangle QUIX symbol names")
-      .default_value(false)
-      .implicit_value(true);
+  parser.add_argument("--demangle").help("demangle QUIX symbol names").nargs(1);
 
   /*================= BENCH SUBPARSER =================*/
   auto bench = std::make_unique<ArgumentParser>("bench");
@@ -607,7 +607,8 @@ void setup_argparse(
 }
 
 int run_init_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   using namespace qpkg::init;
 
@@ -635,7 +636,8 @@ int run_init_mode(const ArgumentParser &parser) {
 }
 
 int run_build_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   qpkg::build::EngineBuilder builder;
 
@@ -680,7 +682,8 @@ int run_build_mode(const ArgumentParser &parser) {
 }
 
 int run_clean_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   return qpkg::clean::CleanPackageSource(parser.get<std::string>("package-src"),
                                          parser["--verbose"] == true)
@@ -689,7 +692,8 @@ int run_clean_mode(const ArgumentParser &parser) {
 }
 
 int run_update_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   (void)parser;
   std::cerr << "update not implemented yet" << std::endl;
@@ -697,7 +701,8 @@ int run_update_mode(const ArgumentParser &parser) {
 }
 
 int run_install_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   std::string url = parser.get<std::string>("src");
   std::string dest, package_name;
@@ -763,7 +768,8 @@ int run_install_mode(const ArgumentParser &parser) {
 }
 
 int run_doc_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   (void)parser;
   std::cerr << "doc not implemented yet" << std::endl;
@@ -771,7 +777,8 @@ int run_doc_mode(const ArgumentParser &parser) {
 }
 
 int run_env_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   (void)parser;
   std::cerr << "env not implemented yet" << std::endl;
@@ -779,7 +786,8 @@ int run_env_mode(const ArgumentParser &parser) {
 }
 
 int run_fmt_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   (void)parser;
   std::cerr << "fmt not implemented yet" << std::endl;
@@ -787,7 +795,8 @@ int run_fmt_mode(const ArgumentParser &parser) {
 }
 
 int run_list_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   (void)parser;
   std::cerr << "list not implemented yet" << std::endl;
@@ -795,7 +804,7 @@ int run_list_mode(const ArgumentParser &parser) {
 }
 
 int run_run_mode(const std::vector<std::string> &args) {
-  qpkg::core::FormatAdapter::PluginAndInit(false);
+  qpkg::core::FormatAdapter::PluginAndInit(false, g_use_colors);
 
   if (args.size() < 1) {
     std::cerr << "No script specified" << std::endl;
@@ -809,7 +818,8 @@ int run_run_mode(const std::vector<std::string> &args) {
 }
 
 int run_test_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   (void)parser;
   std::cerr << "test not implemented yet" << std::endl;
@@ -821,7 +831,8 @@ int run_dev_mode(
     const ArgumentParser &parser,
     const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
         &subparsers) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
+                                           g_use_colors);
 
   if (parser.is_subcommand_used("bench")) {
     enum class Benchmark {
@@ -907,7 +918,20 @@ int run_dev_mode(
     return 0;
   } else if (parser.is_subcommand_used("test")) {
     return qpkg::dev::test::run_tests();
+  } else if (parser.is_used("--demangle")) {
+    std::string input = parser.get<std::string>("--demangle");
+    char *demangled_name = quixcc_demangle(input.c_str());
+    if (!demangled_name) {
+      std::cerr << "Failed to demangle symbol" << std::endl;
+      return 1;
+    }
+
+    std::cout << demangled_name << std::endl;
+
+    free(demangled_name);
+    return 0;
   }
+
   std::cerr << "Unknown subcommand for dev" << std::endl;
   std::cerr << parser;
 
@@ -993,7 +1017,14 @@ int qpkg_main(std::vector<std::string> args) {
 }
 
 int main(int argc, char *argv[]) {
-  qpkg::core::FormatAdapter::PluginAndInit();
+  if (getenv("QUIXCC_COLOR") != nullptr) {
+    if (std::string(getenv("QUIXCC_COLOR")) == "0")
+      g_use_colors = false;
+    else
+      g_use_colors = true;
+  }
+
+  qpkg::core::FormatAdapter::PluginAndInit(false, g_use_colors);
 
   std::vector<std::string> args(argv, argv + argc);
 

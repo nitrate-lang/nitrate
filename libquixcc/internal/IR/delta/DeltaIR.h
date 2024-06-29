@@ -149,6 +149,10 @@ class Value : public libquixcc::ir::Node<Delta> {
   bool print_impl(std::ostream &os, PState &state) const override = 0;
   boost::uuids::uuid hash_impl() const override = 0;
   bool verify_impl() const override = 0;
+
+ public:
+  Value() = default;
+  virtual ~Value() = default;
 };
 
 class RootNode : public Value {
@@ -181,7 +185,8 @@ class IRDelta : public libquixcc::ir::IRModule<IR::Delta, const RootNode *> {
       : IRModule<IR::Delta, const RootNode *>(name) {}
   ~IRDelta() = default;
 
-  bool from_qir(quixcc_job_t *job, const std::unique_ptr<libquixcc::ir::q::QModule> &qir);
+  bool from_qir(quixcc_job_t *job,
+                const std::unique_ptr<libquixcc::ir::q::QModule> &qir);
 };
 }  // namespace delta
 }  // namespace ir

@@ -217,22 +217,9 @@ class TypeNode : public ParseNode {
 };
 
 class UserTypeNode : public TypeNode {
+ public:
   UserTypeNode(const std::string &name) : m_name(name) {
     ntype = NodeType::UserTypeNode;
-  }
-
-  static thread_local std::unordered_map<std::string,
-                                         std::shared_ptr<UserTypeNode>>
-      m_instances;
-
- public:
-  virtual ~UserTypeNode() = default;
-
-  static UserTypeNode *create(const std::string &name) {
-    if (!m_instances.contains(name))
-      m_instances[name] = std::shared_ptr<UserTypeNode>(new UserTypeNode(name));
-
-    return m_instances[name].get();
   }
 
   std::string m_name;

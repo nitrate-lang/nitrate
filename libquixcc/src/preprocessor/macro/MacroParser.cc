@@ -59,7 +59,6 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
       {"license", &PrepEngine::ParseLicense},
       {"use", &PrepEngine::ParseUse},
       {"description", &PrepEngine::ParseDescription},
-      {"invariant", &PrepEngine::ParseInvariant},
       {"qsys", &PrepEngine::ParseQSys},
       {"fn", &PrepEngine::ParseFn},
   };

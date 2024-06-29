@@ -88,10 +88,10 @@ bool libquixcc::parse_enum(quixcc_job_t &job, libquixcc::Scanner *scanner,
   std::string name = tok.as<std::string>();
 
   tok = scanner->peek();
-  TypeNode *type = nullptr;
+  std::shared_ptr<TypeNode> type = nullptr;
   if (tok.is<Punctor>(Punctor::Colon)) {
     scanner->next();
-    if (!parse_type(job, scanner, &type)) return false;
+    if (!parse_type(job, scanner, type)) return false;
   }
 
   tok = scanner->next();
@@ -115,6 +115,6 @@ bool libquixcc::parse_enum(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   node =
-      std::make_shared<EnumDefNode>(EnumTypeNode::create(name, type), fields);
+      std::make_shared<EnumDefNode>(std::make_shared<EnumTypeNode>(name, type), fields);
   return true;
 }

@@ -43,8 +43,6 @@ std::string qpkg::core::FormatAdapter::format(const std::string &msg,
     float m_progress;
   };
 
-  // std::cout << "weight: " << weight << "\n";
-
   static std::mutex m_mutex;
   std::lock_guard<std::mutex> lock(m_mutex);
 
@@ -95,20 +93,77 @@ std::string qpkg::core::FormatAdapter::format(const std::string &msg,
   return ss.str();
 }
 
+std::string qpkg::core::FormatAdapter::format_nocolor(const std::string &msg,
+                                                      qpkg::core::Level lvl,
+                                                      float weight) {
+  struct State {
+    float m_progress;
+  };
+
+  static std::mutex m_mutex;
+  std::lock_guard<std::mutex> lock(m_mutex);
+
+  static State state = {0.0f};
+
+  state.m_progress += weight;
+
+  if (state.m_progress < 0.0f)
+    state.m_progress = 0.0f;
+  else if (state.m_progress > 1.0f)
+    state.m_progress = 1.0f;
+
+  int percent = static_cast<int>(state.m_progress * 100.0f);
+
+  std::stringstream ss;
+
+  ss << "[";
+  if (percent < 10)
+    ss << "  ";
+  else if (percent < 100)
+    ss << " ";
+  ss << percent << "%] ";
+
+  switch (lvl) {
+    case qpkg::core::Level::DEBUG:
+      ss << msg;
+      break;
+    case qpkg::core::Level::GOOD:
+      ss << "[OKAY   " << msg << "]";
+      break;
+    case qpkg::core::Level::BOLD:
+      ss << "[!OKAY  " << msg << "]";
+      break;
+    case qpkg::core::Level::INFO:
+      ss << msg;
+      break;
+    case qpkg::core::Level::WARN:
+      ss << "[WARN   " << msg << "]";
+      break;
+    case qpkg::core::Level::ERROR:
+      ss << "[!ERROR " << msg << "]";
+      break;
+    case qpkg::core::Level::FATAL:
+      ss << "[!PANIC " << msg << "]";
+      break;
+  }
+
+  return ss.str();
+}
+
 void qpkg::core::FormatAdapter::push(const std::string &msg,
                                      qpkg::core::Level lvl, float weight,
                                      bool use_colors, bool debug) {
   if (lvl == qpkg::core::Level::DEBUG && !debug) return;
 
-  (void)use_colors;
-
-  auto f = format(msg, lvl, weight);
+  std::string f;
+  if (use_colors)
+    f = format(msg, lvl, weight);
+  else
+    f = format_nocolor(msg, lvl, weight);
 
   /* We must call format because empty messages may update internal state
    * (weight). */
   if (msg.empty()) return;
-
-  /// TODO: implement no-color support
 
   if (lvl == qpkg::core::Level::ERROR || lvl == qpkg::core::Level::FATAL) {
     log_ewrite(f);

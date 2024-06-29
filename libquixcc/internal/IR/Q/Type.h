@@ -52,6 +52,8 @@ class Type : public Value {
 
   virtual size_t bitcount() const = 0;
   size_t size() const;
+  virtual size_t align() const { throw std::runtime_error("QIR: align: Not implemented"); }
+
   bool is_ptr() const;
   bool is_integer() const;
   bool is_float() const;
@@ -253,11 +255,7 @@ class Ptr : public Type {
 
  public:
   static Ptr *create(Type *type);
-  size_t bitcount() const override {
-    /// TODO: This is a temporary solution. We need to find a better way to
-    /// handle this.
-    return 64;
-  }
+  size_t bitcount() const override { return g_target_word_size * 8; }
 
   Type *type;
 };

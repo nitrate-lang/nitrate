@@ -37,30 +37,38 @@
 
 using namespace libquixcc;
 
-static std::map<std::string, TypeNode *> primitive_types = {
-    {"u8", U8TypeNode::create()},     {"u16", U16TypeNode::create()},
-    {"u32", U32TypeNode::create()},   {"u64", U64TypeNode::create()},
-    {"u128", U128TypeNode::create()}, {"i8", I8TypeNode::create()},
-    {"i16", I16TypeNode::create()},   {"i32", I32TypeNode::create()},
-    {"i64", I64TypeNode::create()},   {"i128", I128TypeNode::create()},
-    {"f32", F32TypeNode::create()},   {"f64", F64TypeNode::create()},
-    {"i1", BoolTypeNode::create()},   {"string", StringTypeNode::create()},
-    {"void", VoidTypeNode::create()}, {"null", NullTypeNode::create()}};
+static std::map<std::string, std::shared_ptr<TypeNode>> primitive_types = {
+    {"u8", std::make_shared<U8TypeNode>()},
+    {"u16", std::make_shared<U16TypeNode>()},
+    {"u32", std::make_shared<U32TypeNode>()},
+    {"u64", std::make_shared<U64TypeNode>()},
+    {"u128", std::make_shared<U128TypeNode>()},
+    {"i8", std::make_shared<I8TypeNode>()},
+    {"i16", std::make_shared<I16TypeNode>()},
+    {"i32", std::make_shared<I32TypeNode>()},
+    {"i64", std::make_shared<I64TypeNode>()},
+    {"i128", std::make_shared<I128TypeNode>()},
+    {"f32", std::make_shared<F32TypeNode>()},
+    {"f64", std::make_shared<F64TypeNode>()},
+    {"i1", std::make_shared<BoolTypeNode>()},
+    {"string", std::make_shared<StringTypeNode>()},
+    {"void", std::make_shared<VoidTypeNode>()},
+    {"null", std::make_shared<NullTypeNode>()}};
 
 bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
-                           TypeNode **node) {
+                           std::shared_ptr<TypeNode> &node) {
   Token tok = scanner->next();
-  TypeNode *type = nullptr, *inner = nullptr;
+  std::shared_ptr<TypeNode> type = nullptr, inner = nullptr;
 
   if (tok.type == TT::Keyword) {
     std::shared_ptr<StmtNode> fn;
 
     switch (tok.as<Keyword>()) {
       case Keyword::Void:
-        inner = VoidTypeNode::create();
+        inner = std::make_shared<VoidTypeNode>();
         goto suffix;
       case Keyword::Null:
-        inner = NullTypeNode::create();
+        inner = std::make_shared<NullTypeNode>();
         goto suffix;
       case Keyword::Fn:
         if (!parse_function(job, scanner, fn)) {
@@ -97,7 +105,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
           goto error;
         }
 
-        inner = OpaqueTypeNode::create(name);
+        inner = std::make_shared<OpaqueTypeNode>(name);
         goto suffix;
       }
       default:
@@ -108,20 +116,20 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
       inner = primitive_types[tok.as<std::string>()];
       goto suffix;
     } else {
-      inner = UserTypeNode::create(tok.as<std::string>());
+      inner = std::make_shared<UserTypeNode>(tok.as<std::string>());
       goto suffix;
     }
   } else if (tok.is<Punctor>(Punctor::OpenBracket)) {
     // Array type or Vector type
     // syntax [type; size]
-    if (!parse_type(job, scanner, &type)) {
+    if (!parse_type(job, scanner, type)) {
       LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
       goto error;
     }
 
     tok = scanner->next();
     if (tok.is<Punctor>(Punctor::CloseBracket)) {
-      inner = VectorTypeNode::create(type);
+      inner = std::make_shared<VectorTypeNode>(type);
       goto suffix;
     }
 
@@ -143,25 +151,25 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
       goto error;
     }
 
-    inner = ArrayTypeNode::create(type, size);
+    inner = std::make_shared<ArrayTypeNode>(type, size);
     goto suffix;
   } else if (tok.is<Operator>(Operator::Multiply)) {
     // Pointer type
-    if (!parse_type(job, scanner, &type)) {
+    if (!parse_type(job, scanner, type)) {
       LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
       goto error;
     }
 
-    inner = PointerTypeNode::create(type);
+    inner = std::make_shared<PointerTypeNode>(type);
     goto suffix;
   } else if (tok.is<Operator>(Operator::LogicalNot)) {
     // ! means mutability
-    if (!parse_type(job, scanner, &type)) {
+    if (!parse_type(job, scanner, type)) {
       LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
       goto error;
     }
 
-    inner = MutTypeNode::create(type);
+    inner = std::make_shared<MutTypeNode>(type);
     goto suffix;
   } else {
     LOG(ERROR) << feedback[EXPECTED_TYPE] << tok << std::endl;
@@ -174,17 +182,19 @@ suffix:
     if (tok.is<Operator>(Operator::Question)) {
       // ? means Result type
       scanner->next();
-      inner = ResultTypeNode::create(inner);
+      inner = std::make_shared<ResultTypeNode>(inner);
     } else if (tok.is<Operator>(Operator::BitwiseXor)) {
       // ^ means Generator type
       scanner->next();
-      inner = GeneratorTypeNode::create(inner);
+      inner = std::make_shared<GeneratorTypeNode>(inner);
     } else {
       break;
     }
   }
 
-  *node = inner;
+  assert(inner != nullptr);
+
+  node = inner;
 
   return true;
 

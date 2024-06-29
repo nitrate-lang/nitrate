@@ -45,26 +45,14 @@
 
 namespace libquixcc {
 class EnumTypeNode : public TypeNode {
-  static thread_local std::map<std::pair<std::string, TypeNode *>, EnumTypeNode *>
-      m_instances;
-  EnumTypeNode(const std::string &name, TypeNode *member_type)
+ public:
+  EnumTypeNode(const std::string &name, std::shared_ptr<TypeNode> member_type)
       : m_name(name), m_member_type(member_type) {
     ntype = NodeType::EnumTypeNode;
   }
 
- public:
-  static EnumTypeNode *create(const std::string &name, TypeNode *member_type) {
-    static std::mutex mutex;
-    std::lock_guard<std::mutex> lock(mutex);
-
-    auto key = std::make_pair(name, member_type);
-    if (m_instances.find(key) == m_instances.end())
-      m_instances[key] = new EnumTypeNode(name, member_type);
-    return m_instances[key];
-  }
-
   std::string m_name;
-  TypeNode *m_member_type;
+  std::shared_ptr<TypeNode> m_member_type;
 };
 
 class EnumFieldNode : public ParseNode {
@@ -83,14 +71,14 @@ class EnumFieldNode : public ParseNode {
 class EnumDefNode : public DefNode {
  public:
   EnumDefNode() { ntype = NodeType::EnumDefNode; }
-  EnumDefNode(EnumTypeNode *type,
+  EnumDefNode(std::shared_ptr<EnumTypeNode> type,
               const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {})
       : m_type(type), m_fields(fields) {
     ntype = NodeType::EnumDefNode;
   }
-  virtual TypeNode *get_type() const { return m_type; }
+  virtual std::shared_ptr<TypeNode> get_type() const { return m_type; }
 
-  EnumTypeNode *m_type;
+  std::shared_ptr<EnumTypeNode> m_type;
   std::vector<std::shared_ptr<EnumFieldNode>> m_fields;
 };
 }  // namespace libquixcc

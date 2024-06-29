@@ -45,42 +45,24 @@
 
 namespace libquixcc {
 class ArrayTypeNode : public TypeNode {
-  ArrayTypeNode(TypeNode *type, std::shared_ptr<ConstExprNode> size)
+ public:
+  ArrayTypeNode(std::shared_ptr<TypeNode> type,
+                std::shared_ptr<ConstExprNode> size)
       : m_type(type), m_size(size) {
     ntype = NodeType::ArrayTypeNode;
   }
-  static thread_local std::map<
-      std::pair<TypeNode *, std::shared_ptr<ConstExprNode>>, ArrayTypeNode *>
-      m_instances;
 
- public:
-  static ArrayTypeNode *create(TypeNode *type,
-                               std::shared_ptr<ConstExprNode> size) {
-    auto key = std::make_pair(type, size);
-    if (m_instances.contains(key)) return m_instances[key];
-    auto instance = new ArrayTypeNode(type, size);
-    m_instances[key] = instance;
-    return instance;
-  }
-
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
   std::shared_ptr<ConstExprNode> m_size;
 };
 
 class VectorTypeNode : public TypeNode {
-  VectorTypeNode(TypeNode *type) : m_type(type) {
+ public:
+  VectorTypeNode(std::shared_ptr<TypeNode> type) : m_type(type) {
     ntype = NodeType::VectorTypeNode;
   }
-  static thread_local std::map<TypeNode *, VectorTypeNode *> m_instances;
 
- public:
-  static VectorTypeNode *create(TypeNode *type) {
-    if (!m_instances.contains(type))
-      m_instances[type] = new VectorTypeNode(type);
-    return m_instances[type];
-  }
-
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
 };
 }  // namespace libquixcc
 

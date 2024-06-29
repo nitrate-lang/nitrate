@@ -46,12 +46,12 @@
 namespace libquixcc {
 class TypedefNode : public DeclNode {
  public:
-  TypedefNode(TypeNode *orig, const std::string &name)
+  TypedefNode(std::shared_ptr<TypeNode> orig, const std::string &name)
       : m_orig(orig), m_name(name) {
     ntype = NodeType::TypedefNode;
   }
 
-  TypeNode *m_orig;
+  std::shared_ptr<TypeNode> m_orig;
   std::string m_name;
 };
 }  // namespace libquixcc

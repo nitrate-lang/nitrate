@@ -350,7 +350,7 @@ static QResult conv(const StaticCastExprNode *n, QState &state) {
   */
 
   auto expr = conv(n->m_expr.get(), state)[0]->as<Expr>();
-  auto to = conv(n->m_type, state)[0]->as<Type>();
+  auto to = conv(n->m_type.get(), state)[0]->as<Type>();
 
   auto from = expr->infer();
   if (to->is(from)) return expr;
@@ -386,13 +386,13 @@ static QResult conv(const BitCastExprNode *n, QState &state) {
     return nullptr;
   }
 
-  if (!n->m_type) { /* If the input type is null, abort */
+  if (!n->m_type.get()) { /* If the input type is null, abort */
     LOG(ERROR) << "QIR conv: bit-cast expression has no type" << std::endl;
     return nullptr;
   }
 
   auto expr = conv(n->m_expr.get(), state);
-  auto to = conv(n->m_type, state);
+  auto to = conv(n->m_type.get(), state);
 
   if (!expr) { /* If the output expression is null, abort */
     LOG(ERROR) << "QIR conv: QIR bit-cast expression == nullptr" << std::endl;
@@ -423,13 +423,13 @@ static QResult conv(const SignedUpcastExprNode *n, QState &state) {
     return nullptr;
   }
 
-  if (!n->m_type) { /* If the input type is null, abort */
+  if (!n->m_type.get()) { /* If the input type is null, abort */
     LOG(ERROR) << "QIR conv: s-cast expression has no type" << std::endl;
     return nullptr;
   }
 
   auto expr = conv(n->m_expr.get(), state);
-  auto to = conv(n->m_type, state);
+  auto to = conv(n->m_type.get(), state);
 
   if (!expr) { /* If the output expression is null, abort */
     LOG(ERROR) << "QIR conv: QIR s-cast expression == nullptr" << std::endl;
@@ -460,13 +460,13 @@ static QResult conv(const UnsignedUpcastExprNode *n, QState &state) {
     return nullptr;
   }
 
-  if (!n->m_type) { /* If the input type is null, abort */
+  if (!n->m_type.get()) { /* If the input type is null, abort */
     LOG(ERROR) << "QIR conv: u-cast expression has no type" << std::endl;
     return nullptr;
   }
 
   auto expr = conv(n->m_expr.get(), state);
-  auto to = conv(n->m_type, state);
+  auto to = conv(n->m_type.get(), state);
 
   if (!expr) { /* If the output expression is null, abort */
     LOG(ERROR) << "QIR conv: QIR u-cast expression == nullptr" << std::endl;
@@ -498,13 +498,13 @@ static QResult conv(const DowncastExprNode *n, QState &state) {
     return nullptr;
   }
 
-  if (!n->m_type) { /* If the input type is null, abort */
+  if (!n->m_type.get()) { /* If the input type is null, abort */
     LOG(ERROR) << "QIR conv: downcast expression has no type" << std::endl;
     return nullptr;
   }
 
   auto expr = conv(n->m_expr.get(), state);
-  auto to = conv(n->m_type, state);
+  auto to = conv(n->m_type.get(), state);
 
   if (!expr) { /* If the output expression is null, abort */
     LOG(ERROR) << "QIR conv: QIR u-cast (downcast) expression == nullptr"
@@ -545,8 +545,16 @@ static QResult conv(const UnaryExprNode *n, QState &state) {
       return AddressOf::create(e);
     case Operator::Multiply:
       return Deref::create(e);
+    case Operator::Sizeof:
+      return Number::create(std::to_string(e->infer()->size()));
+    case Operator::Bitsizeof:
+      return Number::create(std::to_string(e->infer()->bitcount()));
+    case Operator::Alignof:
+      return Number::create(std::to_string(e->infer()->align()));
+    case Operator::Typeof:
+      return String::create(e->infer()->to_string());
     default:
-      throw std::runtime_error("QIR UnaryExprNode not implemented");
+      throw std::runtime_error("QIR UnaryExprNode operator not supported");
   }
 }
 
@@ -561,7 +569,7 @@ static QResult conv(const PostUnaryExprNode *n, QState &state) {
     case Operator::Decrement:
       return PostDec::create(e);
     default:
-      throw std::runtime_error("QIR PostUnaryExprNode not implemented");
+      throw std::runtime_error("QIR PostUnaryExprNode operator not supported");
   }
 }
 
@@ -749,7 +757,7 @@ static QResult conv(const BinaryExprNode *n, QState &state) {
       return Assign::create(lhs, Shr::create(lhs, promote(lhs, rhs)));
 
     default:
-      throw std::runtime_error("QIR BinaryExprNode not implemented");
+      throw std::runtime_error("QIR BinaryExprNode operator not supported");
   }
 }
 
@@ -850,7 +858,7 @@ static QResult conv(const MemberAccessNode *n, QState &state) {
         auto def = state.typedefs[x->name]->as<RegionDefNode>();
         for (size_t i = 0; i < def->m_fields.size(); i++) {
           if (def->m_fields[i]->m_name == n->m_field) {
-            auto t = conv(def->m_fields[i]->m_type, state)[0]->as<Type>();
+            auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
             return Member::create(e, i, t);
           }
         }
@@ -858,7 +866,7 @@ static QResult conv(const MemberAccessNode *n, QState &state) {
         auto def = state.typedefs[x->name]->as<StructDefNode>();
         for (size_t i = 0; i < def->m_fields.size(); i++) {
           if (def->m_fields[i]->m_name == n->m_field) {
-            auto t = conv(def->m_fields[i]->m_type, state)[0]->as<Type>();
+            auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
             return Member::create(e, i, t);
           }
         }
@@ -875,7 +883,7 @@ static QResult conv(const MemberAccessNode *n, QState &state) {
       auto def = state.typedefs[x->name]->as<UnionDefNode>();
       for (size_t i = 0; i < def->m_fields.size(); i++) {
         if (def->m_fields[i]->m_name == n->m_field) {
-          auto t = conv(def->m_fields[i]->m_type, state)[0]->as<Type>();
+          auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
           return Member::create(e, i, t);
         }
       }
@@ -1081,12 +1089,12 @@ static QResult conv(const MutTypeNode *n, QState &state) {
    * - Disregard mutability, it only has semantic significance.
    **/
 
-  if (!n->m_type) { /* If the input type is null, abort */
+  if (!n->m_type.get()) { /* If the input type is null, abort */
     LOG(ERROR) << "QIR conv: mutable type has no type" << std::endl;
     return nullptr;
   }
 
-  auto t = conv(n->m_type, state);
+  auto t = conv(n->m_type.get(), state);
 
   if (!t) { /* If the output type is null, abort */
     LOG(ERROR) << "QIR conv: mutable type == nullptr" << std::endl;
@@ -1287,12 +1295,12 @@ static QResult conv(const PointerTypeNode *n, QState &state) {
    * - One-for-one lowering of the pointer type node.
    **/
 
-  if (!n->m_type) { /* If the input type is null, abort */
+  if (!n->m_type.get()) { /* If the input type is null, abort */
     LOG(ERROR) << "QIR conv: pointer type has no type" << std::endl;
     return nullptr;
   }
 
-  auto t = conv(n->m_type, state);
+  auto t = conv(n->m_type.get(), state);
   if (!t) { /* If the output type is null, abort */
     LOG(ERROR) << "QIR conv: pointer type == nullptr" << std::endl;
     return nullptr;
@@ -1346,7 +1354,7 @@ static QResult conv(const EnumTypeNode *n, QState &state) {
     return nullptr;
   }
 
-  auto t = conv(n->m_member_type, state);
+  auto t = conv(n->m_member_type.get(), state);
   if (!t) { /* If the output type is null, abort */
     LOG(ERROR) << "QIR conv: enum type == nullptr" << std::endl;
     return nullptr;
@@ -1376,7 +1384,7 @@ static QResult conv(const StructTypeNode *n, QState &state) {
       return nullptr;
     }
 
-    auto ft = conv(field, state);
+    auto ft = conv(field.get(), state);
     if (!ft) { /* If the output field is null, abort */
       LOG(ERROR) << "QIR conv: struct field == nullptr" << std::endl;
       return nullptr;
@@ -1408,7 +1416,7 @@ static QResult conv(const GroupTypeNode *n, QState &state) {
       return nullptr;
     }
 
-    auto ft = conv(field, state);
+    auto ft = conv(field.get(), state);
     if (!ft) { /* If the output field is null, abort */
       LOG(ERROR) << "QIR conv: group field == nullptr" << std::endl;
       return nullptr;
@@ -1441,7 +1449,7 @@ static QResult conv(const RegionTypeNode *n, QState &state) {
       return nullptr;
     }
 
-    auto ft = conv(field, state);
+    auto ft = conv(field.get(), state);
     if (!ft) { /* If the output field is null, abort */
       LOG(ERROR) << "QIR conv: region field == nullptr" << std::endl;
       return nullptr;
@@ -1473,7 +1481,7 @@ static QResult conv(const UnionTypeNode *n, QState &state) {
       return nullptr;
     }
 
-    auto ft = conv(field, state);
+    auto ft = conv(field.get(), state);
     if (!ft) { /* If the output field is null, abort */
       LOG(ERROR) << "QIR conv: union field == nullptr" << std::endl;
       return nullptr;
@@ -1502,7 +1510,7 @@ static QResult conv(const ArrayTypeNode *n, QState &state) {
     return nullptr;
   }
 
-  if (!n->m_type) { /* If the input type is null, abort */
+  if (!n->m_type.get()) { /* If the input type is null, abort */
     LOG(ERROR) << "QIR conv: array type has no type" << std::endl;
     return nullptr;
   }
@@ -1513,7 +1521,7 @@ static QResult conv(const ArrayTypeNode *n, QState &state) {
     return nullptr;
   }
 
-  auto t = conv(n->m_type, state);
+  auto t = conv(n->m_type.get(), state);
   if (!t) { /* If the output type is null, abort */
     LOG(ERROR) << "QIR conv: array type == nullptr" << std::endl;
     return nullptr;
@@ -1547,12 +1555,12 @@ static QResult conv(const VectorTypeNode *n, QState &state) {
    * - One-for-one lowering of the vector type node.
    **/
 
-  if (!n->m_type) { /* If the input type is null, abort */
+  if (!n->m_type.get()) { /* If the input type is null, abort */
     LOG(ERROR) << "QIR conv: vector type has no type" << std::endl;
     return nullptr;
   }
 
-  auto t = conv(n->m_type, state);
+  auto t = conv(n->m_type.get(), state);
   if (!t) { /* If the output type is null, abort */
     LOG(ERROR) << "QIR conv: vector type == nullptr" << std::endl;
     return nullptr;
@@ -1582,11 +1590,11 @@ static QResult conv(const FunctionTypeNode *n, QState &state) {
 
   std::vector<Type *> params;
   for (auto &param : n->m_params)
-    params.push_back(conv(param.second, state)[0]->as<Type>());
+    params.push_back(conv(param.second.get(), state)[0]->as<Type>());
 
-  return FType::create(params, conv(n->m_return_type, state)[0]->as<Type>(),
-                       n->m_variadic, n->m_pure, n->m_thread_safe, n->m_foreign,
-                       n->m_noexcept);
+  return FType::create(
+      params, conv(n->m_return_type.get(), state)[0]->as<Type>(), n->m_variadic,
+      n->m_pure, n->m_thread_safe, n->m_foreign, n->m_noexcept);
 }
 
 static QResult conv(const IntegerNode *n, QState &state) {
@@ -1758,7 +1766,7 @@ static QResult create_defaults(ir::q::Value *var, TypeNode *type,
         if (!field->m_value) continue;
 
         auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
-        auto t = conv(field->m_type, state)[0]->as<Type>();
+        auto t = conv(field->m_type.get(), state)[0]->as<Type>();
 
         res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
       }
@@ -1779,7 +1787,7 @@ static QResult create_defaults(ir::q::Value *var, TypeNode *type,
         if (!field->m_value) continue;
 
         auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
-        auto t = conv(field->m_type, state)[0]->as<Type>();
+        auto t = conv(field->m_type.get(), state)[0]->as<Type>();
 
         res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
       }
@@ -1801,7 +1809,7 @@ static QResult create_defaults(ir::q::Value *var, TypeNode *type,
         if (!field->m_value) continue;
 
         auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
-        auto t = conv(field->m_type, state)[0]->as<Type>();
+        auto t = conv(field->m_type.get(), state)[0]->as<Type>();
 
         res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
       }
@@ -1837,8 +1845,8 @@ static QResult conv(const LetDeclNode *n, QState &state) {
     if (n->m_init) init = conv(n->m_init.get(), state)[0]->as<Expr>();
 
     Type *type = nullptr;
-    if (n->m_type)
-      type = conv(n->m_type, state)[0]->as<Type>();
+    if (n->m_type.get())
+      type = conv(n->m_type.get(), state)[0]->as<Type>();
     else if (init)
       type = init->infer();
     else
@@ -1849,8 +1857,9 @@ static QResult conv(const LetDeclNode *n, QState &state) {
     std::vector<QValue> res = {l};
     auto ident = Ident::create(n->m_name, l->type);
 
-    if (l->type == nullptr && n->m_type && is_composite(n->m_type)) {
-      auto defaults = create_defaults(ident, n->m_type, state);
+    if (l->type == nullptr && n->m_type.get() &&
+        is_composite(n->m_type.get())) {
+      auto defaults = create_defaults(ident, n->m_type.get(), state);
       for (auto &d : defaults) res.push_back(d);
     }
 
@@ -1860,16 +1869,18 @@ static QResult conv(const LetDeclNode *n, QState &state) {
   Expr *expr = nullptr;
   if (n->m_init) expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-  auto tmp = Global::create(n->m_name, conv(n->m_type, state)[0]->as<Type>(),
-                            expr, false, false, false);
+  auto tmp =
+      Global::create(n->m_name, conv(n->m_type.get(), state)[0]->as<Type>(),
+                     expr, false, false, false);
 
   std::string mangled = Symbol::mangle(tmp, "",
                                        state.lang == ExportLangType::None
                                            ? ExportLangType::Default
                                            : state.lang);
 
-  auto g = Global::create(mangled, conv(n->m_type, state)[0]->as<Type>(), expr,
-                          false, false, state.lang != ExportLangType::None);
+  auto g =
+      Global::create(mangled, conv(n->m_type.get(), state)[0]->as<Type>(), expr,
+                     false, false, state.lang != ExportLangType::None);
 
   state.global_idents[n->m_name] = g->type;
   state.global_idents[mangled] = g->type;
@@ -1884,8 +1895,8 @@ static QResult conv(const ConstDeclNode *n, QState &state) {
     auto init = conv(n->m_init.get(), state)[0]->as<Expr>();
 
     Type *type = nullptr;
-    if (n->m_type)
-      type = conv(n->m_type, state)[0]->as<Type>();
+    if (n->m_type.get())
+      type = conv(n->m_type.get(), state)[0]->as<Type>();
     else
       type = init->infer();
 
@@ -1899,8 +1910,8 @@ static QResult conv(const ConstDeclNode *n, QState &state) {
   if (n->m_init) expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
   Type *type = nullptr;
-  if (n->m_type)
-    type = conv(n->m_type, state)[0]->as<Type>();
+  if (n->m_type.get())
+    type = conv(n->m_type.get(), state)[0]->as<Type>();
   else
     type = expr->infer();
 
@@ -1934,10 +1945,11 @@ static QResult conv(const FunctionDeclNode *n, QState &state) {
   }
 
   auto seg = Segment::create(
-      params, conv(n->m_type->m_return_type, state)[0]->as<Type>(), nullptr,
-      n->m_type->m_variadic, n->m_type->m_pure, n->m_type->m_thread_safe,
-      n->m_type->m_noexcept, n->m_type->m_return_type->is<NullTypeNode>(),
-      n->m_type->m_foreign);
+      params, conv(n->m_type.get()->m_return_type.get(), state)[0]->as<Type>(),
+      nullptr, n->m_type.get()->m_variadic, n->m_type.get()->m_pure,
+      n->m_type.get()->m_thread_safe, n->m_type.get()->m_noexcept,
+      n->m_type.get()->m_return_type->is<NullTypeNode>(),
+      n->m_type.get()->m_foreign);
 
   Global *g = nullptr;
   std::string mangled;
@@ -2008,7 +2020,7 @@ static QResult conv(const StructDefNode *n, QState &state) {
 static QResult conv(const StructFieldNode *n, QState &state) {
   /// TODO: cleanup
 
-  return conv(n->m_type, state)[0]->as<Type>();
+  return conv(n->m_type.get(), state)[0]->as<Type>();
 }
 
 static QResult conv(const RegionDefNode *n, QState &state) {
@@ -2055,7 +2067,7 @@ static QResult conv(const RegionDefNode *n, QState &state) {
 static QResult conv(const RegionFieldNode *n, QState &state) {
   /// TODO: cleanup
 
-  return conv(n->m_type, state)[0]->as<Type>();
+  return conv(n->m_type.get(), state)[0]->as<Type>();
 }
 
 static QResult conv(const GroupDefNode *n, QState &state) {
@@ -2102,7 +2114,7 @@ static QResult conv(const GroupDefNode *n, QState &state) {
 static QResult conv(const GroupFieldNode *n, QState &state) {
   /// TODO: cleanup
 
-  return conv(n->m_type, state)[0]->as<Type>();
+  return conv(n->m_type.get(), state)[0]->as<Type>();
 }
 
 static QResult conv(const UnionDefNode *n, QState &state) {
@@ -2122,7 +2134,7 @@ static QResult conv(const UnionDefNode *n, QState &state) {
 static QResult conv(const UnionFieldNode *n, QState &state) {
   /// TODO: cleanup
 
-  return conv(n->m_type, state)[0]->as<Type>();
+  return conv(n->m_type.get(), state)[0]->as<Type>();
 }
 
 static QResult conv(const EnumDefNode *n, QState &state) {
@@ -2145,7 +2157,8 @@ static QResult conv(const EnumDefNode *n, QState &state) {
       }
     }
 
-    state.enum_values[Symbol::join(n->m_type->m_name, field->m_name)] = last;
+    state.enum_values[Symbol::join(n->m_type.get()->m_name, field->m_name)] =
+        last;
   }
 
   return nullptr;
@@ -2200,7 +2213,7 @@ static QResult conv(const FunctionDefNode *n, QState &state) {
 static QResult conv(const FunctionParamNode *n, QState &state) {
   /// TODO: cleanup
 
-  auto t = conv(n->m_type, state)[0]->as<Type>();
+  auto t = conv(n->m_type.get(), state)[0]->as<Type>();
   if (state.inside_segment) state.local_idents.top()[n->m_name] = t;
   return t;
 }
@@ -2262,10 +2275,10 @@ static QResult conv(const ReturnStmtNode *n, QState &state) {
     return nullptr;
   }
 
-  if (!state.function.empty())
-  {
+  if (!state.function.empty()) {
     auto f = state.function.top();
-    auto rettype = conv(f->m_decl->m_type->m_return_type, state)[0]->as<Type>();
+    auto rettype =
+        conv(f->m_decl->m_type->m_return_type.get(), state)[0]->as<Type>();
     return Ret::create(promote(rettype, e[0]->as<Expr>()));
   }
 

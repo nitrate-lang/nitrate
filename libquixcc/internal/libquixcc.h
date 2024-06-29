@@ -82,11 +82,13 @@ struct quixcc_job_t {
   FILE *m_out;
   quixcc_sid_t m_sid_ctr;
   uint8_t m_priority;
+  uint8_t m_wordsize;
   bool m_debug;
   bool m_tainted;
   bool m_running;
 };
 
+extern thread_local uint8_t g_target_word_size;
 extern std::atomic<uint64_t> g_num_of_contexts;
 extern std::mutex g_library_lock;
 

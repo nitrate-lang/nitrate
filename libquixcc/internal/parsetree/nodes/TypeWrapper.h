@@ -45,35 +45,21 @@
 
 namespace libquixcc {
 class ResultTypeNode : public TypeNode {
-  ResultTypeNode(TypeNode *type) : m_type(type) {
+ public:
+  ResultTypeNode(std::shared_ptr<TypeNode> type) : m_type(type) {
     ntype = NodeType::ResultTypeNode;
   }
-  static thread_local std::map<TypeNode *, ResultTypeNode *> m_instances;
 
- public:
-  static ResultTypeNode *create(TypeNode *type) {
-    if (!m_instances.contains(type))
-      m_instances[type] = new ResultTypeNode(type);
-    return m_instances[type];
-  }
-
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
 };
 
 class GeneratorTypeNode : public TypeNode {
-  GeneratorTypeNode(TypeNode *type) : m_type(type) {
+ public:
+  GeneratorTypeNode(std::shared_ptr<TypeNode> type) : m_type(type) {
     ntype = NodeType::GeneratorTypeNode;
   }
-  static thread_local std::map<TypeNode *, GeneratorTypeNode *> m_instances;
 
- public:
-  static GeneratorTypeNode *create(TypeNode *type) {
-    if (!m_instances.contains(type))
-      m_instances[type] = new GeneratorTypeNode(type);
-    return m_instances[type];
-  }
-
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
 };
 }  // namespace libquixcc
 

@@ -53,14 +53,17 @@ static void resolve_user_type_nodes(quixcc_job_t *job,
   ast->dfs_preorder([job](const std::vector<std::string> &_namespace,
                           const std::vector<std::string> &_scope,
                           ParseNode *parent, traversal::TraversePtr node) {
-    if (node.first != traversal::TraversePtrType::Raw) return;
-    auto ptr = *std::get<ParseNode **>(node.second);
+    if (node.first != traversal::TraversePtrType::Smart) return;
 
-    if (!(ptr)->is<UserTypeNode>()) return;
+    auto sptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 
-    UserTypeNode **user_type_ptr =
-        reinterpret_cast<UserTypeNode **>(std::get<ParseNode **>(node.second));
-    UserTypeNode *user_type = *user_type_ptr;
+    if (!(sptr)->is<UserTypeNode>()) return;
+
+    std::shared_ptr<ParseNode> *user_type_ptr =
+        std::get<std::shared_ptr<ParseNode> *>(node.second);
+
+    std::shared_ptr<UserTypeNode> user_type =
+        std::static_pointer_cast<UserTypeNode>(*user_type_ptr);
     std::string name = user_type->m_name;
     std::shared_ptr<ParseNode> named_type;
 
@@ -93,7 +96,7 @@ static void resolve_user_type_nodes(quixcc_job_t *job,
       named_type = job->m_inner.m_named_types[user_type->m_name];
     }
 
-    TypeNode *type = nullptr;
+    std::shared_ptr<TypeNode> type = nullptr;
 
     switch (named_type->ntype) {
       case NodeType::StructDefNode:
@@ -119,7 +122,7 @@ static void resolve_user_type_nodes(quixcc_job_t *job,
             "Unimplemented typeid in ResolveNamedConstructs");
     }
 
-    *user_type_ptr = reinterpret_cast<UserTypeNode *>(type);
+    *user_type_ptr = std::static_pointer_cast<ParseNode>(type);
 
     if (job->m_debug) {
       LOG(DEBUG) << feedback[RESOLVED_TYPE] << name << type->to_string()

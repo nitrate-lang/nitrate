@@ -99,7 +99,7 @@ Type *Segment::infer() const {
 Type *Ident::infer() const { return type; }
 
 static Type *do_infer(Type *lhs, Type *rhs) {
-  /// TOOD: Implement binary inference
+  /// TODO: Implement binary inference
 
   /*
       Wat we are doing:

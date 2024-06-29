@@ -179,59 +179,59 @@ void libquixcc::mutate::SubsystemCollapse(
                                const std::vector<std::string> &_scope,
                                libquixcc::ParseNode *parent,
                                traversal::TraversePtr node) {
-    if (node.first != traversal::TraversePtrType::Raw) return;
+    if (node.first != traversal::TraversePtrType::Smart) return;
 
-    auto ptr = *std::get<ParseNode **>(node.second);
-    auto dobptr = std::get<ParseNode **>(node.second);
+    auto sptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
+    auto dobptr = std::get<std::shared_ptr<ParseNode> *>(node.second);
 
-    switch (ptr->ntype) {
+    switch (sptr->ntype) {
       case NodeType::UserTypeNode: {
-        auto def = static_cast<UserTypeNode *>(ptr);
+        auto def = std::static_pointer_cast<UserTypeNode>(sptr);
         if (visited.contains(def->m_name)) return;
 
         auto n = Symbol::join(ns, def->m_name);
 
-        *dobptr = UserTypeNode::create(n);
+        *dobptr = std::make_shared<UserTypeNode>(n);
         visited.insert(n);
         break;
       }
       case NodeType::UnionTypeNode: {
-        auto def = static_cast<UnionTypeNode *>(ptr);
+        auto def = std::static_pointer_cast<UnionTypeNode>(sptr);
         if (visited.contains(def->m_name)) return;
 
         auto n = Symbol::join(ns, def->m_name);
 
-        *dobptr = UnionTypeNode::create(def->m_fields, n);
+        *dobptr = std::make_shared<UnionTypeNode>(def->m_fields, n);
         visited.insert(n);
         break;
       }
       case NodeType::StructTypeNode: {
-        auto def = static_cast<StructTypeNode *>(ptr);
+        auto def = std::static_pointer_cast<StructTypeNode>(sptr);
         if (visited.contains(def->m_name)) return;
 
         auto n = Symbol::join(ns, def->m_name);
 
-        *dobptr = StructTypeNode::create(def->m_fields, n);
+        *dobptr = std::make_shared<StructTypeNode>(def->m_fields, n);
         visited.insert(n);
         break;
       }
       case NodeType::RegionTypeNode: {
-        auto def = static_cast<RegionTypeNode *>(ptr);
+        auto def = std::static_pointer_cast<RegionTypeNode>(sptr);
         if (visited.contains(def->m_name)) return;
 
         auto n = Symbol::join(ns, def->m_name);
 
-        *dobptr = RegionTypeNode::create(def->m_fields, n);
+        *dobptr = std::make_shared<RegionTypeNode>(def->m_fields, n);
         visited.insert(n);
         break;
       }
       case NodeType::OpaqueTypeNode: {
-        auto def = static_cast<OpaqueTypeNode *>(ptr);
+        auto def = std::static_pointer_cast<OpaqueTypeNode>(sptr);
         if (visited.contains(def->m_name)) return;
 
         auto n = Symbol::join(ns, def->m_name);
 
-        *dobptr = OpaqueTypeNode::create(n);
+        *dobptr = std::make_shared<OpaqueTypeNode>(n);
         visited.insert(n);
         break;
       }

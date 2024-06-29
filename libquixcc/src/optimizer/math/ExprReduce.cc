@@ -237,19 +237,19 @@ static void try_to_merge(Expr *lhs, Expr *rhs, Expr **merged) {
         break;
       }
       case QType::Shl: {
-        /// TOOD: implement Shl
+        /// TODO: implement Shl
         break;
       }
       case QType::Shr: {
-        /// TOOD: implement Shr
+        /// TODO: implement Shr
         break;
       }
       case QType::Rotl: {
-        /// TOOD: implement Rotl
+        /// TODO: implement Rotl
         break;
       }
       case QType::Rotr: {
-        /// TOOD: implement Rotr
+        /// TODO: implement Rotr
         break;
       }
       case QType::Eq: {

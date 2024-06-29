@@ -56,7 +56,7 @@ class VarDeclNode : public DeclNode {
         m_is_deprecated(false) {
     ntype = NodeType::VarDeclNode;
   }
-  VarDeclNode(const std::string &name, TypeNode *type,
+  VarDeclNode(const std::string &name, std::shared_ptr<TypeNode> type,
               const std::shared_ptr<ExprNode> init, bool is_mut,
               bool is_thread_local, bool is_static, bool is_deprecated = false)
       : m_name(name),
@@ -70,7 +70,7 @@ class VarDeclNode : public DeclNode {
   }
 
   std::string m_name;
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
   std::shared_ptr<ExprNode> m_init;
 
   bool m_is_mut;
@@ -91,7 +91,7 @@ class LetDeclNode : public DeclNode {
         m_is_deprecated(false) {
     ntype = NodeType::LetDeclNode;
   }
-  LetDeclNode(const std::string &name, TypeNode *type,
+  LetDeclNode(const std::string &name, std::shared_ptr<TypeNode> type,
               const std::shared_ptr<ExprNode> init, bool is_mut = false,
               bool is_thread_local = false, bool is_static = false,
               bool is_deprecated = false)
@@ -106,7 +106,7 @@ class LetDeclNode : public DeclNode {
   }
 
   std::string m_name;
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
   std::shared_ptr<ExprNode> m_init;
 
   bool m_is_mut;
@@ -121,7 +121,7 @@ class ConstDeclNode : public DeclNode {
       : m_name(""), m_type(nullptr), m_init(nullptr), m_is_deprecated(false) {
     ntype = NodeType::ConstDeclNode;
   }
-  ConstDeclNode(const std::string &name, TypeNode *type,
+  ConstDeclNode(const std::string &name, std::shared_ptr<TypeNode> type,
                 const std::shared_ptr<ExprNode> init,
                 bool is_deprecated = false)
       : m_name(name),
@@ -132,7 +132,7 @@ class ConstDeclNode : public DeclNode {
   }
 
   std::string m_name;
-  TypeNode *m_type;
+  std::shared_ptr<TypeNode> m_type;
   std::shared_ptr<ExprNode> m_init;
 
   bool m_is_deprecated;

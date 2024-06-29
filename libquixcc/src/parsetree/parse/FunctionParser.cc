@@ -124,9 +124,9 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
     return false;
   }
 
-  TypeNode *type;
+  std::shared_ptr<TypeNode> type;
 
-  if (!parse_type(job, scanner, &type)) {
+  if (!parse_type(job, scanner, type)) {
     LOG(ERROR) << feedback[FN_PARAM_TYPE_ERR] << tok << std::endl;
     return false;
   }
@@ -304,7 +304,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
   }
 
-  std::vector<std::pair<std::string, TypeNode *>> params;
+  std::vector<std::pair<std::string, std::shared_ptr<TypeNode>>> params;
   for (auto &param : fndecl->m_params)
     params.push_back({param->m_name, param->m_type});
 
@@ -312,9 +312,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
   /// TODO: Implement function properties
 
   if (tok.is<Punctor>(Punctor::Semicolon)) {
-    fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params,
-                                              is_variadic, false, prop._tsafe,
-                                              prop._foreign, prop._noexcept);
+    fndecl->m_type = std::make_shared<FunctionTypeNode>(
+        std::make_shared<VoidTypeNode>(), params, is_variadic, false, prop._tsafe,
+        prop._foreign, prop._noexcept);
     scanner->next();
     node = fndecl;
     return true;
@@ -322,13 +322,13 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   if (tok.is<Punctor>(Punctor::Colon)) {
     scanner->next();
-    TypeNode *type;
+    std::shared_ptr<TypeNode> type;
 
-    if (!parse_type(job, scanner, &type)) return false;
+    if (!parse_type(job, scanner, type)) return false;
 
-    fndecl->m_type =
-        FunctionTypeNode::create(type, params, is_variadic, false, prop._tsafe,
-                                 prop._foreign, prop._noexcept);
+    fndecl->m_type = std::make_shared<FunctionTypeNode>(
+        type, params, is_variadic, false, prop._tsafe, prop._foreign,
+        prop._noexcept);
 
     tok = scanner->peek();
     if (tok.is<Punctor>(Punctor::Semicolon)) {
@@ -346,9 +346,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     if (!parse(job, scanner, fnbody, false, true)) return false;
 
     if (!fndecl->m_type)
-      fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params,
-                                                is_variadic, false, prop._tsafe,
-                                                prop._foreign, prop._noexcept);
+      fndecl->m_type = std::make_shared<FunctionTypeNode>(
+          std::make_shared<VoidTypeNode>(), params, is_variadic, false, prop._tsafe,
+          prop._foreign, prop._noexcept);
 
     node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
     return true;
@@ -358,9 +358,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     if (!parse(job, scanner, fnbody)) return false;
 
     if (!fndecl->m_type)
-      fndecl->m_type = FunctionTypeNode::create(VoidTypeNode::create(), params,
-                                                is_variadic, false, prop._tsafe,
-                                                prop._foreign, prop._noexcept);
+      fndecl->m_type = std::make_shared<FunctionTypeNode>(
+          std::make_shared<VoidTypeNode>(), params, is_variadic, false, prop._tsafe,
+          prop._foreign, prop._noexcept);
 
     node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
     return true;

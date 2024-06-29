@@ -497,8 +497,13 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
         std::shared_ptr<ExprNode> expr;
 
         if (op == Operator::As) {
-          TypeNode *type;
-          if (!parse_type(job, scanner, &type)) return false;
+          if (stack.size() != 1) {
+            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+            return false;
+          }
+
+          std::shared_ptr<TypeNode> type;
+          if (!parse_type(job, scanner, type)) return false;
 
           auto left = stack.top();
           stack.pop();
@@ -507,8 +512,13 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
         }
 
         if (op == Operator::BitcastAs) {
-          TypeNode *type;
-          if (!parse_type(job, scanner, &type)) return false;
+          if (stack.size() != 1) {
+            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+            return false;
+          }
+
+          std::shared_ptr<TypeNode> type;
+          if (!parse_type(job, scanner, type)) return false;
 
           auto left = stack.top();
           stack.pop();
@@ -517,8 +527,13 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
         }
 
         if (op == Operator::ReinterpretAs) {
-          TypeNode *type;
-          if (!parse_type(job, scanner, &type)) return false;
+          if (stack.size() != 1) {
+            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+            return false;
+          }
+
+          std::shared_ptr<TypeNode> type;
+          if (!parse_type(job, scanner, type)) return false;
 
           auto left = stack.top();
           stack.pop();
