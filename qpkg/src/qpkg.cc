@@ -74,7 +74,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.)";
 
 using namespace argparse;
 
-bool g_use_colors = false;
+bool g_use_colors = true;
 
 void setup_argparse_init(ArgumentParser &parser) {
   parser.add_argument("package-name")

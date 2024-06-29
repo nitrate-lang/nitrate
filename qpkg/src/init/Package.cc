@@ -54,7 +54,7 @@ static bool touch(const std::filesystem::path &path) {
 }
 
 bool qpkg::init::Package::validateName(const std::string &name) {
-  static std::regex regex("^[a-zA-Z0-9_]+$");
+  static std::regex regex("^[a-zA-Z0-9_-]+$");
   return std::regex_match(name, regex);
 }
 

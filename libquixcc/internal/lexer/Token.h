@@ -230,7 +230,14 @@ typedef std::variant<std::string, Punctor, Keyword, Operator> TokVal;
 #else
 struct TokVal {
   std::string str;
-  int val;
+  union TokValVal {
+    int val;
+    Punctor punctor;
+    Keyword keyword;
+    Operator op;
+
+    TokValVal(int val = 0) : val(val) {}
+  } val;
 
   TokVal() : val(0) {}
   TokVal(std::string str) : str(str) {}
@@ -277,16 +284,12 @@ class Token {
     if constexpr (std::is_same_v<T, std::string>) {
       return m_value.str;
     } else if constexpr (std::is_same_v<T, Punctor>) {
-      static_assert(sizeof(m_value.val) == sizeof(Punctor));
-      return reinterpret_cast<const Punctor &>(m_value.val);
+      return m_value.val.punctor;
     } else if constexpr (std::is_same_v<T, Keyword>) {
-      static_assert(sizeof(m_value.val) == sizeof(Keyword));
-      return reinterpret_cast<const Keyword &>(m_value.val);
+      return m_value.val.keyword;
     } else if constexpr (std::is_same_v<T, Operator>) {
-      static_assert(sizeof(m_value.val) == sizeof(Operator));
-      return reinterpret_cast<const Operator &>(m_value.val);
+      return m_value.val.op;
     } else {
-      // static_assert(false, "Invalid type");
       throw std::runtime_error("Invalid type");
     }
 #endif

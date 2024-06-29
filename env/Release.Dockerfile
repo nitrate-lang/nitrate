@@ -5,7 +5,7 @@ VOLUME /app/
 
 # Install dependencies
 RUN apk update
-RUN apk add cmake clang make upx git cargo patchelf
+RUN apk add cmake g++ make upx git cargo patchelf
 RUN apk add -X http://dl-cdn.alpinelinux.org/alpine/v3.18/main llvm14-dev llvm14-static
 
 # I don't know if all of these are needed, but I use them a lot in other projects

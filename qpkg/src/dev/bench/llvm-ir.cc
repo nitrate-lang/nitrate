@@ -31,9 +31,9 @@
 
 #include <quixcc/Quix.h>
 
-#include <dev/bench/bench.hh>
 #include <chrono>
 #include <cmath>
+#include <dev/bench/bench.hh>
 #include <fstream>
 #include <iostream>
 
@@ -140,23 +140,24 @@ int qpkg::dev::bench::run_benchmark_llvm_ir() {
   double sum = 0;
   double min = throughput[0], max = throughput[0];
   double std_dev = 0;
+  double mean = 0;
   for (size_t i = 0; i < throughput.size(); i++) {
     progress.result("Round " + std::to_string(i + 1) + ":\t" +
                     std::to_string(throughput[i]) + " Kbit/s");
     sum += throughput[i];
     if (throughput[i] < min) min = throughput[i];
     if (throughput[i] > max) max = throughput[i];
-
-    std_dev += (throughput[i] - sum / throughput.size()) *
-               (throughput[i] - sum / throughput.size());
   }
-  std_dev = std::sqrt(std_dev / throughput.size());
+  mean = sum / throughput.size();
+
+  for (size_t i = 0; i < throughput.size(); i++) {
+    std_dev += (throughput[i] - mean) * (throughput[i] - mean);
+  }
+  std_dev = std::sqrt(std_dev / (throughput.size() - 1));
   progress.result("Min:\t" + std::to_string(min) + " Kbit/s");
   progress.result("Max:\t" + std::to_string(max) + " Kbit/s");
-  progress.result("Mean:\t" + std::to_string(sum / throughput.size()) +
-                  " Kbit/s");
+  progress.result("Mean:\t" + std::to_string(mean) + " Kbit/s");
   progress.result("Std. Dev.:\t" + std::to_string(std_dev) + " Kbit/s");
-
   progress.end_result();
 
   return 0;
