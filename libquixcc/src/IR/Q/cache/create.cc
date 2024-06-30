@@ -287,7 +287,7 @@ RegionDef *RegionDef::create(str name, vec<pair<str, Value *>> fields,
   MAKE_GC(RegionDef, name, fields, methods);
 }
 
-GroupDef *GroupDef::create(str name, map<str, Value *> fields,
+GroupDef *GroupDef::create(str name, vec<pair<str, Value *>> fields,
                            map<str, Segment *> methods) {
   MAKE_GC(GroupDef, name, fields, methods);
 }

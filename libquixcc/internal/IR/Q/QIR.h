@@ -225,6 +225,7 @@ class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *> {
   void unacknowledge_pass(QPassType pass, const std::string &name);
   void add_tag(const std::string &tag);
   void remove_tag(const std::string &tag);
+  std::set<std::string> &get_tags() { return m_tags; }
 
   typedef std::function<void(Value **)> IterFunc;
   typedef std::function<IterOp(Value *)> PredFunc;

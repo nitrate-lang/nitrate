@@ -45,10 +45,13 @@ bool libquixcc::ir::delta::Block::print_impl(
     os << std::string(state.ind, ' ');
 
     if (!(*it)->print(os, state)) return false;
+    os << ";\n";
 
-    os << ";";
-
-    if (it != stmts.end()) os << "\n";
+    if (it < stmts.end() - 1) {
+      int tid = (*it)->ntype;
+      int next_node_type = (*std::next(it))->ntype;
+      if (next_node_type != tid) os << "\n";
+    }
   }
 
   state.ind -= 2;
@@ -61,16 +64,17 @@ bool libquixcc::ir::delta::Segment::print_impl(std::ostream &os,
                                                PState &state) const {
   os << "segment ";
 
-  os << " (";
-  for (uint64_t i = 0; i < params.size(); i++) {
-    os << params[i].first << " : ";
-    if (!params[i].second->print(os, state)) return false;
-    if (i + 1 < params.size())
+  os << "(";
+  for (auto it = params.begin(); it != params.end(); it++) {
+    os << it->first << ": ";
+    if (!it->second->print(os, state)) return false;
+    if (it != params.end() - 1)
       os << ", ";
     else if (variadic)
       os << ", ...";
   }
-  os << ") (";
+
+  os << ") -> (";
   if (!ret->print(os, state)) return false;
   os << ")";
 
@@ -114,8 +118,13 @@ bool libquixcc::ir::delta::RootNode::print_impl(std::ostream &os,
                                                 PState &state) const {
   for (auto it = children.begin(); it != children.end(); it++) {
     if (!(*it)->print(os, state)) return false;
-
     os << ";\n";
+
+    if (it < children.end() - 1) {
+      int tid = (*it)->ntype;
+      int next_node_type = (*std::next(it))->ntype;
+      if (next_node_type != tid) os << "\n";
+    }
   }
 
   return true;

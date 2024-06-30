@@ -180,10 +180,20 @@ class IRDelta : public libquixcc::ir::IRModule<IR::Delta, const RootNode *> {
   std::string_view ir_dialect_description_impl() const override;
   bool verify_impl() const override;
 
+  std::set<std::string> m_tags;
+
  public:
   IRDelta(const std::string_view &name)
       : IRModule<IR::Delta, const RootNode *>(name) {}
   ~IRDelta() = default;
+
+  void add_tag(const std::string &tag) { m_tags.insert(tag); }
+  void remove_tag(const std::string &tag) {
+    auto it = m_tags.find(tag);
+    if (it != m_tags.end()) m_tags.erase(it);
+  }
+  void clear_tags() { m_tags.clear(); }
+  std::set<std::string> &get_tags() { return m_tags; }
 
   bool from_qir(quixcc_job_t *job,
                 const std::unique_ptr<libquixcc::ir::q::QModule> &qir);

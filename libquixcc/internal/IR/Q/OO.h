@@ -69,7 +69,8 @@ class GroupDef : public Value {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  GroupDef(std::string name, std::map<std::string, Value *> fields,
+  GroupDef(std::string name,
+           std::vector<std::pair<std::string, Value *>> fields,
            std::map<std::string, Segment *> methods)
       : name(name), fields(fields), methods(methods) {
     ntype = (int)QType::GroupDef;
@@ -77,11 +78,11 @@ class GroupDef : public Value {
 
  public:
   static GroupDef *create(std::string name,
-                          std::map<std::string, Value *> fields,
+                          std::vector<std::pair<std::string, Value *>> fields,
                           std::map<std::string, Segment *> methods);
 
   std::string name;
-  std::map<std::string, Value *> fields;
+  std::vector<std::pair<std::string, Value *>> fields;
   std::map<std::string, Segment *> methods;
 };
 

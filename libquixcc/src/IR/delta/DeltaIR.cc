@@ -48,7 +48,15 @@ bool libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os,
 
     os << "; ModuleHash = '";
     m_root->printid(os);
-    os << "'\n\n";
+    os << "'\n; Tags = [";
+
+    for (auto it = m_tags.begin(); it != m_tags.end(); it++) {
+      os << *it;
+
+      if (std::next(it) != m_tags.end()) os << ", ";
+    }
+
+    os << "]\n\n";
   }
 
   if (!m_root->print(os, state)) return false;

@@ -862,6 +862,14 @@ static QResult conv(const MemberAccessNode *n, QState &state) {
             return Member::create(e, i, t);
           }
         }
+      } else if (state.typedefs[x->name]->is<GroupDefNode>()) {
+        auto def = state.typedefs[x->name]->as<GroupDefNode>();
+        for (size_t i = 0; i < def->m_fields.size(); i++) {
+          if (def->m_fields[i]->m_name == n->m_field) {
+            auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
+            return Member::create(e, i, t);
+          }
+        }
       } else {
         auto def = state.typedefs[x->name]->as<StructDefNode>();
         for (size_t i = 0; i < def->m_fields.size(); i++) {
@@ -2073,13 +2081,13 @@ static QResult conv(const RegionFieldNode *n, QState &state) {
 static QResult conv(const GroupDefNode *n, QState &state) {
   /// TODO: cleanup
 
-  std::map<std::string, QValue> fields;
+  std::vector<std::pair<std::string, Value *>> fields;
   std::map<std::string, Segment *> methods;
 
   state.typedefs[n->m_name] = n;
   for (auto &field : n->m_fields) {
     auto res = conv(field.get(), state);
-    fields[field->m_name] = res[0];
+    fields.push_back({field->m_name, res[0]});
   }
 
   for (auto &method : n->m_methods) {

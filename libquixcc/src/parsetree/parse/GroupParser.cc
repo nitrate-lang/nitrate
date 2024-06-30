@@ -116,6 +116,12 @@ bool libquixcc::parse_group(quixcc_job_t &job, libquixcc::Scanner *scanner,
       break;
     }
 
+    if (tok.is<Keyword>(Keyword::Pub)) {
+      /// TODO: Implement visibility semantics
+      scanner->next();
+      tok = scanner->peek();
+    }
+
     if (tok.is<Keyword>(Keyword::Fn)) {
       scanner->next();
 
@@ -123,7 +129,10 @@ bool libquixcc::parse_group(quixcc_job_t &job, libquixcc::Scanner *scanner,
       if (!parse_function(job, scanner, method)) return false;
 
       auto fn_this = std::make_shared<FunctionParamNode>(
-          "this", std::make_shared<PointerTypeNode>(std::make_shared<UserTypeNode>(name)), nullptr);
+          "this",
+          std::make_shared<PointerTypeNode>(
+              std::make_shared<UserTypeNode>(name)),
+          nullptr);
 
       if (method->is<FunctionDeclNode>()) {
         auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);

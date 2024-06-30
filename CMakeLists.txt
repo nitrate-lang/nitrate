@@ -26,6 +26,8 @@ set(QUIX_BUILD_ID "\"QPKG_${SHA256SUMS}\"")
 message(STATUS "Quix BuildID: ${QUIX_BUILD_ID}")
 
 add_subdirectory(libquixcc)
+add_subdirectory(qcc)
+add_subdirectory(qld)
 
 if (NOT ONLY_BUILD_LIBQUIXCC)
   add_subdirectory(qcc)

@@ -167,6 +167,11 @@ class ParseNode {
 
 #define PARSE_NODE_SIZE sizeof(ParseNode)
 
+enum class Visibility {
+  Private,
+  Public,
+};
+
 class ExprNode : public ParseNode {
  public:
   ExprNode() = default;

@@ -182,60 +182,54 @@ static auto conv(const ir::q::Member *n, DState &state) -> DResult;
 static auto conv(const ir::q::Index *n, DState &state) -> DResult;
 
 static auto conv(const ir::q::RootNode *n, DState &state) -> DResult {
-  std::vector<DValue> content;
+  enum class Type {
+    FnDecl,
+    GlobalDecl,
+    TypeDecl,
+    FnForward,
+  };
+
+  std::map<Type, std::vector<DValue>> bins;
+
   for (auto node : n->children) {
     auto result = conv(node, state);
     if (!result) continue;
 
-    for (auto &value : *result) content.push_back(value);
+    for (auto value : *result) {
+      if (value->is<Global>()) {
+        if (value->as<Global>()->value->is<Segment>()) {
+          if (value->as<Global>()->value->as<Segment>()->block) {
+            bins[Type::FnDecl].push_back(value);
+          } else {
+            bins[Type::FnForward].push_back(value);
+          }
+        } else {
+          bins[Type::GlobalDecl].push_back(value);
+        }
+      } else if (value->is<PacketDef>()) {
+        bins[Type::TypeDecl].push_back(value);
+      }
+    }
   }
 
   for (auto it = state.oop.begin(); it != state.oop.end();) {
     auto packet = it->first;
     auto methods = it->second;
 
-    for (auto method : methods) content.push_back(method);
+    for (auto method : methods) bins[Type::FnDecl].push_back(method);
 
-    content.insert(content.begin(), packet);
+    bins[Type::TypeDecl].insert(bins[Type::TypeDecl].begin(), packet);
 
     it = state.oop.erase(it);
   }
 
-  std::vector<const Global *> forward_decls;
+  std::vector<DValue> sorted;
+  for (auto typedefs : bins[Type::TypeDecl]) sorted.push_back(typedefs);
+  for (auto globals : bins[Type::GlobalDecl]) sorted.push_back(globals);
+  for (auto functions : bins[Type::FnForward]) sorted.push_back(functions);
+  for (auto functions : bins[Type::FnDecl]) sorted.push_back(functions);
 
-  for (auto it = content.begin(); it != content.end();) {
-    if (!(*it)->is<Global>()) {
-      ++it;
-      continue;
-    }
-
-    auto global = (*it)->as<Global>();
-
-    if (!global->value || !global->value->is<Segment>()) {
-      ++it;
-      continue;
-    }
-
-    auto seg = global->value->as<Segment>();
-
-    if (!seg->block) {
-      ++it;
-      continue;
-    }
-
-    forward_decls.push_back(Global::create(
-        global->name, seg->infer(),
-        Segment::create(seg->ret, seg->variadic, seg->params, nullptr),
-        global->_volatile, global->_atomic, global->_extern));
-
-    ++it;
-  }
-
-  std::vector<DValue> values;
-  for (auto decl : forward_decls) values.push_back(decl);
-  for (auto value : content) values.push_back(value);
-
-  return RootNode::create(values);
+  return RootNode::create(sorted);
 }
 
 static auto conv(const ir::q::I1 *n, DState &state) -> DResult {
@@ -1127,6 +1121,8 @@ bool libquixcc::ir::delta::IRDelta::from_qir(
              << std::endl;
 
   DState state;
+
+  m_tags = ir->get_tags();
 
   m_root = conv(ir->root(), state)[0]->as<RootNode>();
 

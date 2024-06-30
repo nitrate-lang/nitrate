@@ -61,10 +61,8 @@ bool libquixcc::parse_if(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     if (scanner->peek().is<Operator>(Operator::Arrow)) {
       scanner->next();
-      if (!parse(job, scanner, else_block, false, true)) return false;
-    } else {
-      if (!parse(job, scanner, else_block, true)) return false;
     }
+    if (!parse(job, scanner, else_block, false, true)) return false;
 
     node = std::make_shared<IfStmtNode>(cond, then_block, else_block);
   } else {
