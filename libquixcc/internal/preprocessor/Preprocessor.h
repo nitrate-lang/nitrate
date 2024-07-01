@@ -89,12 +89,30 @@ class PrepEngine : public libquixcc::Scanner {
   FILE *m_file;
   bool m_we_own_file;
   bool m_we_are_root;
+  bool m_expansion_enabled;
 
   libquixcc::Token read_token();
   bool handle_import(const Token &tok);
   Entry build_statics_decl();
   bool parse_macro(const libquixcc::Token &macro);
   std::unique_ptr<PrepEngine> clone() const;
+
+  void disable_expansion();
+  void enable_expansion();
+
+  std::string build_macro_sourcecode(rstr parameter);
+  bool acquire_shared_object(rstr metacode,
+                             std::vector<uint8_t> &shared_object);
+  bool write_shared_object_to_temp_file(
+      const std::vector<uint8_t> &shared_object,
+      std::unique_ptr<std::string, std::function<void(std::string *)>>
+          &tempfile);
+  bool load_shared_object(
+      rstr filename,
+      std::unique_ptr<void, std::function<void(void *)>> &handle);
+  bool load_function_from_shared_object(
+      rstr function_name,
+      std::unique_ptr<void, std::function<void(void *)>> &handle);
 
  public:
   PrepEngine(quixcc_job_t &job);

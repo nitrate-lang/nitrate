@@ -47,7 +47,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << feedback[FORM_EXPECTED_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -55,7 +55,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Operator>(Operator::In)) {
-    LOG(ERROR) << feedback[FORM_EXPECTED_IN] << tok << std::endl;
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_IN] << tok << std::endl;
     return false;
   }
 
@@ -63,12 +63,12 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
   if (has_parens) {
     if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::CloseParen)},
                     expr)) {
-      LOG(ERROR) << feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
+      LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
       return false;
     }
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::CloseParen)) {
-      LOG(ERROR) << feedback[FORM_EXPECTED_CLOSE_PAREN] << tok << std::endl;
+      LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok << std::endl;
       return false;
     }
   } else {
@@ -76,7 +76,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
                     {Token(TT::Punctor, Punctor::OpenBrace),
                      Token(TT::Operator, Operator::Arrow)},
                     expr)) {
-      LOG(ERROR) << feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
+      LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
       return false;
     }
   }
@@ -87,12 +87,12 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
   if (tok.is<Operator>(Operator::Arrow)) {
     scanner->next();
     if (!parse(job, scanner, block, false, true)) {
-      LOG(ERROR) << feedback[FORM_EXPECTED_BLOCK] << tok << std::endl;
+      LOG(ERROR) << core::feedback[FORM_EXPECTED_BLOCK] << tok << std::endl;
       return false;
     }
   } else {
     if (!parse(job, scanner, block)) {
-      LOG(ERROR) << feedback[FORM_EXPECTED_BLOCK] << tok << std::endl;
+      LOG(ERROR) << core::feedback[FORM_EXPECTED_BLOCK] << tok << std::endl;
       return false;
     }
   }

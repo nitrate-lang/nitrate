@@ -186,11 +186,15 @@ class LoggerGroup {
     m_loggers[FAILED] = new Logger(FAILED);
     m_loggers[FATAL] = new Logger(FATAL);
     m_hole = new Logger(DEBUG);
+    m_job = nullptr;
   }
 
   ~LoggerGroup() {
     for (auto &logger : m_loggers) delete logger.second;
     delete m_hole;
+    m_loggers.clear();
+    m_hole = nullptr;
+    m_job = nullptr;
   }
 
   inline void setup(quixcc_job_t &job) {
@@ -222,7 +226,13 @@ class LoggerGroup {
 
 template <class T>
 Logger &operator<<(Logger &logger, const T &msg) {
-  return logger += msg;
+  if constexpr (std::is_same<T, void *>::value) {
+    std::stringstream ss;
+    ss << "0x" << std::hex << reinterpret_cast<uintptr_t>(&msg);
+    return logger += ss.str();
+  } else {
+    return logger += msg;
+  }
 }
 
 static inline Logger &operator<<(Logger &l, libquixcc::log m) {

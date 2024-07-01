@@ -341,6 +341,131 @@ size_t quixcc_tok_humanize(quixcc_job_t *job, const quixcc_tok_t *tok,
  */
 bool quixcc_cache_reset();
 
+///===================================================================================================
+/// BEGIN: HOST CACHING
+///===================================================================================================
+
+/**
+ * @brief Cache check signature
+ *
+ * @param key The cache key
+ * @param len The length of the cache key
+ *
+ * @return The size of the cached object in bytes, or -1 if the object is not
+ *         cached.
+ */
+typedef ssize_t (*quixcc_cache_has_t)(const char *, size_t);
+
+/**
+ * @brief Cache read signature
+ *
+ * @param key The cache key
+ * @param len The length of the cache key
+ * @param buf The buffer to read the cached object into
+ * @param len The maximum number of bytes to read
+ *
+ * @note The data consumer is not required to read the entire object.
+ * @note The provider is required to be able to provide the entire object
+ *       (if sufficient space is provided) in a single call.
+ * @note Data integrity is the responsibility of the cache provider.
+ *
+ * @return true if the object was read successfully, false otherwise.
+ */
+typedef bool (*quixcc_cache_read_t)(const char *, size_t, void *, size_t);
+
+/**
+ * @brief Cache write signature
+ *
+ * @param key The cache key
+ * @param len The length of the cache key
+ * @param data The data to write to the cache
+ * @param len The length of the data to write
+ *
+ * @note The writer must write the entire object in a single call.
+ * @note Data integrity is the responsibility of the cache provider.
+ *
+ * @return true if the object was written successfully, false otherwise.
+ */
+typedef bool (*quixcc_cache_write_t)(const char *, size_t, const void *,
+                                     size_t);
+
+/**
+ * @brief Bind a cache provider to the QUIX compiler library.
+ *
+ * @param has The cache check function.
+ * @param read The cache read function.
+ * @param write The cache write function.
+ *
+ * @return true if the provider was bound successfully. false otherwise.
+ *
+ * @note This function is thread-safe.
+ * @note This function will return false if a provider is already bound.
+ */
+bool quixcc_bind_provider(quixcc_cache_has_t has, quixcc_cache_read_t read,
+                          quixcc_cache_write_t write);
+
+/**
+ * @brief Unbind the current cache provider from the QUIX compiler library.
+ *
+ * @note This function is thread-safe.
+ */
+void quixcc_unbind_provider();
+
+/**
+ * @brief Check if an object is currently cached.
+ *
+ * @param key The cache key.
+ * @param keylen The length of the cache key.
+ *
+ * @return The size of the cached object in bytes, or -1 if the object is not
+ *         cached.
+ *
+ * @note This function is thread-safe.
+ * @warning This function does not guarantee that the object will be available
+ *          when read. Ensure to protect against race conditions.
+ */
+ssize_t quixcc_cache_has(const char *key, size_t keylen);
+
+/**
+ * @brief Read a cached object into a buffer.
+ *
+ * @param key The cache key.
+ * @param keylen The length of the cache key.
+ * @param data The buffer to read the cached object into.
+ * @param datalen The maximum number of bytes to read.
+ *
+ * @return true if the object was read successfully, false otherwise.
+ *
+ * @note This function is thread-safe.
+ * @note The data consumer is not required to read the entire object.
+ * @note The provider is required to be able to provide the entire object
+ *       (if sufficient space is provided) in a single call.
+ * @note Data integrity is the responsibility of the cache provider.
+ */
+bool quixcc_cache_read(const char *key, size_t keylen, void *data,
+                       size_t datalen);
+
+/**
+ * @brief Write an object to the cache.
+ *
+ * @param key The cache key.
+ * @param keylen The length of the cache key.
+ * @param data The data to write to the cache.
+ * @param datalen The length of the data to write.
+ *
+ * @return true if the object was written successfully, false otherwise.
+ *
+ * @note This function is thread-safe.
+ * @note The writer must write the entire object in a single call.
+ * @note Data integrity is the responsibility of the cache provider.
+ */
+bool quixcc_cache_write(const char *key, size_t keylen, const void *data,
+                        size_t datalen);
+
+///===================================================================================================
+/// END: HOST CACHING
+///===================================================================================================
+
 #ifdef __cplusplus
 }
 #endif

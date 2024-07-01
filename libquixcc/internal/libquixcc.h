@@ -61,6 +61,8 @@ typedef struct quixcc_uuid_t {
   uint8_t data[16];
 } quixcc_uuid_t;
 
+typedef char *(*quixcc_macro_fn_t)(uint32_t argc, const char **argv);
+
 #define JOB_MAGIC 0x32b287410bbef790
 
 struct quixcc_job_t {
@@ -69,6 +71,8 @@ struct quixcc_job_t {
   std::stack<std::string> m_filename;
   boost::unordered_map<quixcc_sid_t, char *> m_owned_strings;
   std::map<std::string, std::string> m_argset;
+  std::unordered_map<std::string, quixcc_macro_fn_t> m_macros;
+  std::set<std::unique_ptr<void, std::function<void (void *)>>> m_dlhandles;
   libquixcc::QSysCallRegistry m_qsyscalls;
   std::mutex m_lock;
   std::string m_triple;
@@ -86,6 +90,18 @@ struct quixcc_job_t {
   bool m_debug;
   bool m_tainted;
   bool m_running;
+
+  quixcc_job_t() {
+    m_magic = JOB_MAGIC;
+    m_in = nullptr;
+    m_out = nullptr;
+    m_sid_ctr = 0;
+    m_priority = 0;
+    m_wordsize = 0;
+    m_debug = false;
+    m_tainted = false;
+    m_running = false;
+  }
 };
 
 extern thread_local uint8_t g_target_word_size;

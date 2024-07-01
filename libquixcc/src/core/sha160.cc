@@ -29,96 +29,38 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#include <core/sha160.h>
+#include <openssl/evp.h>
 
-#include <LibMacro.h>
-#include <core/Logger.h>
-#include <parsetree/Parser.h>
+#include <stdexcept>
 
-using namespace libquixcc;
-
-bool libquixcc::parse_switch(quixcc_job_t &job, libquixcc::Scanner *scanner,
-                             std::shared_ptr<libquixcc::StmtNode> &node) {
-  std::shared_ptr<ExprNode> cond;
-  if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::OpenBrace)},
-                  cond)) {
-    return false;
+libquixcc::core::SHA160::SHA160() {
+  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  if (EVP_DigestInit(ctx, EVP_sha3_512()) != 1) {
+    EVP_MD_CTX_free(ctx);
+    throw std::runtime_error("Failed to initialize SHA-160 context");
   }
 
-  std::vector<std::shared_ptr<libquixcc::CaseStmtNode>> cases;
-  std::shared_ptr<BlockNode> default_case;
-
-  Token tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::OpenBrace)) {
-    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_LEFT_BRACE] << tok.serialize() << tok
-               << std::endl;
-    return false;
+  if ((m_ossl_ctx = reinterpret_cast<void *>(ctx)) == nullptr) {
+    EVP_MD_CTX_free(ctx);
+    throw std::runtime_error("Failed to initialize SHA-160 context");
   }
+}
 
-  while (true) {
-    tok = scanner->peek();
-    if (tok.is<Punctor>(Punctor::CloseBrace)) {
-      break;
-    }
+libquixcc::core::SHA160::~SHA160() {
+  EVP_MD_CTX_free(reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx));
+}
 
-    if (tok.is<Keyword>(Keyword::Default)) {
-      scanner->next();
-      if (default_case) {
-        LOG(ERROR) << core::feedback[SWITCH_MULTIPLE_DEFAULT] << tok.serialize()
-                   << tok << std::endl;
-        return false;
-      }
-
-      tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::Colon)) {
-        LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok
-                   << std::endl;
-        return false;
-      }
-
-      if (!parse(job, scanner, default_case)) {
-        return false;
-      }
-
-      continue;
-    }
-
-    if (!tok.is<Keyword>(Keyword::Case)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_CASE] << tok.serialize() << tok
-                 << std::endl;
-      return false;
-    }
-    scanner->next();
-
-    std::shared_ptr<ExprNode> case_expr;
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Colon)},
-                    case_expr)) {
-      return false;
-    }
-
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Colon)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok
-                 << std::endl;
-      return false;
-    }
-
-    std::shared_ptr<BlockNode> case_block;
-    if (!parse(job, scanner, case_block)) {
-      return false;
-    }
-
-    cases.push_back(std::make_shared<CaseStmtNode>(case_expr, case_block));
+void libquixcc::core::SHA160::process(std::string_view data) {
+  EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);
+  if (EVP_DigestUpdate(ctx, data.data(), data.size()) != 1) {
+    throw std::runtime_error("Failed to update SHA-160 context");
   }
+}
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::CloseBrace)) {
-    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_RIGHT_BRACE] << tok.serialize()
-               << tok << std::endl;
-    return false;
+void libquixcc::core::SHA160::finalize(std::array<uint8_t, 20UL> &sum) {
+  EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);
+  if (EVP_DigestFinal(ctx, sum.data(), nullptr) != 1) {
+    throw std::runtime_error("Failed to finalize SHA-160 context");
   }
-
-  node = std::make_shared<SwitchStmtNode>(cond, cases, default_case);
-
-  return true;
 }

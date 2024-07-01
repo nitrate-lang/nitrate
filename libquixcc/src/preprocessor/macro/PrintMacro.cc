@@ -107,7 +107,7 @@ bool libquixcc::PrepEngine::ParsePrint(const Token &tok,
       case E::ERROR:
         LOG(ERROR) << log::raw << tokens[2].as<std::string>() << tok
                    << std::endl;
-        throw libquixcc::ProgrammaticPreprocessorException();
+        throw libquixcc::core::ProgrammaticPreprocessorException();
       case E::RAW:
         std::cout << tokens[2].as<std::string>();
         break;

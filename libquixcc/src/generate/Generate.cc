@@ -51,6 +51,9 @@
 #include <fstream>
 #include <iostream>
 
+using namespace libquixcc;
+using namespace libquixcc::codegen;
+
 static std::map<std::string, std::string> acceptable_objgen_flags = {
     {"-O0", "-O0"},     {"-O1", "-O1"},     {"-O2", "-O2"},
     {"-O3", "-O3"},     {"-g", "-g"},       {"-v", "-v"},
@@ -67,11 +70,15 @@ class CFILE_raw_pwrite_ostream : public llvm::raw_pwrite_stream {
   FILE *m_file;
 
   void pwrite_impl(const char *Ptr, size_t Size, uint64_t Offset) override {
+    size_t CurPos = ftell(m_file);
     if (fseek(m_file, Offset, SEEK_SET) == -1)
       llvm::report_fatal_error("Failed to seek in file");
 
     if (fwrite(Ptr, 1, Size, m_file) != Size)
       llvm::report_fatal_error("Failed to write to file");
+
+    if (fseek(m_file, CurPos + Size, SEEK_SET) == -1)
+      llvm::report_fatal_error("Failed to seek in file");
   }
 
   void write_impl(const char *Ptr, size_t Size) override {
@@ -88,9 +95,8 @@ class CFILE_raw_pwrite_ostream : public llvm::raw_pwrite_stream {
   }
 };
 
-bool libquixcc::write_IR(quixcc_job_t &ctx,
-                         std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir,
-                         FILE *out, bool generate_bitcode) {
+bool libquixcc::codegen::write_IR(quixcc_job_t &ctx, std::unique_ptr<ir::delta::IRDelta> &ir,
+              FILE *out, bool generate_bitcode) {
   std::error_code ec;
   CFILE_raw_pwrite_ostream os(out);
 
@@ -134,9 +140,8 @@ bool libquixcc::write_IR(quixcc_job_t &ctx,
   return true;
 }
 
-bool libquixcc::write_c11(quixcc_job_t &ctx,
-                          std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir,
-                          FILE *out) {
+bool libquixcc::codegen::write_c11(quixcc_job_t &ctx, std::unique_ptr<ir::delta::IRDelta> &ir,
+               FILE *out) {
   LOG(DEBUG) << "Generating C" << std::endl;
 
   std::stringstream stream;
@@ -158,9 +163,8 @@ bool libquixcc::write_c11(quixcc_job_t &ctx,
   return true;
 }
 
-bool libquixcc::write_llvm(quixcc_job_t &ctx,
-                           std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir,
-                           FILE *out, llvm::CodeGenFileType mode) {
+bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx, std::unique_ptr<ir::delta::IRDelta> &ir,
+                FILE *out, llvm::CodeGenFileType mode) {
 #if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && \
     !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
   LOG(FATAL) << "Unsupported operating system" << std::endl;
@@ -256,8 +260,7 @@ bool libquixcc::write_llvm(quixcc_job_t &ctx,
 #endif
 }
 
-bool libquixcc::generate(quixcc_job_t &job,
-                         std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir) {
+bool libquixcc::codegen::generate(quixcc_job_t &job, std::unique_ptr<ir::delta::IRDelta> &ir) {
   if (job.m_argset.contains("-emit-ir"))
     return write_IR(job, ir, job.m_out, false);
 

@@ -29,96 +29,28 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#ifndef __QUIXCC_CORE_SHA_160__
+#define __QUIXCC_CORE_SHA_160__
 
-#include <LibMacro.h>
-#include <core/Logger.h>
-#include <parsetree/Parser.h>
+#ifndef __cplusplus
+#error "This header requires C++"
+#endif
 
-using namespace libquixcc;
+#include <array>
+#include <cstdint>
+#include <string_view>
 
-bool libquixcc::parse_switch(quixcc_job_t &job, libquixcc::Scanner *scanner,
-                             std::shared_ptr<libquixcc::StmtNode> &node) {
-  std::shared_ptr<ExprNode> cond;
-  if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::OpenBrace)},
-                  cond)) {
-    return false;
-  }
+namespace libquixcc::core {
+class SHA160 {
+  void *m_ossl_ctx;
 
-  std::vector<std::shared_ptr<libquixcc::CaseStmtNode>> cases;
-  std::shared_ptr<BlockNode> default_case;
+ public:
+  SHA160();
+  ~SHA160();
 
-  Token tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::OpenBrace)) {
-    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_LEFT_BRACE] << tok.serialize() << tok
-               << std::endl;
-    return false;
-  }
+  void process(std::string_view data);
+  void finalize(std::array<std::uint8_t, 20> &sum);
+};
+};  // namespace libquixcc::core
 
-  while (true) {
-    tok = scanner->peek();
-    if (tok.is<Punctor>(Punctor::CloseBrace)) {
-      break;
-    }
-
-    if (tok.is<Keyword>(Keyword::Default)) {
-      scanner->next();
-      if (default_case) {
-        LOG(ERROR) << core::feedback[SWITCH_MULTIPLE_DEFAULT] << tok.serialize()
-                   << tok << std::endl;
-        return false;
-      }
-
-      tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::Colon)) {
-        LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok
-                   << std::endl;
-        return false;
-      }
-
-      if (!parse(job, scanner, default_case)) {
-        return false;
-      }
-
-      continue;
-    }
-
-    if (!tok.is<Keyword>(Keyword::Case)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_CASE] << tok.serialize() << tok
-                 << std::endl;
-      return false;
-    }
-    scanner->next();
-
-    std::shared_ptr<ExprNode> case_expr;
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Colon)},
-                    case_expr)) {
-      return false;
-    }
-
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Colon)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok
-                 << std::endl;
-      return false;
-    }
-
-    std::shared_ptr<BlockNode> case_block;
-    if (!parse(job, scanner, case_block)) {
-      return false;
-    }
-
-    cases.push_back(std::make_shared<CaseStmtNode>(case_expr, case_block));
-  }
-
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::CloseBrace)) {
-    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_RIGHT_BRACE] << tok.serialize()
-               << tok << std::endl;
-    return false;
-  }
-
-  node = std::make_shared<SwitchStmtNode>(cond, cases, default_case);
-
-  return true;
-}
+#endif  // __QUIXCC_CORE_SHA_160__

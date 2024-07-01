@@ -53,7 +53,7 @@ static bool parse_decl(quixcc_job_t &job, Token tok,
   std::shared_ptr<TypeNode> type;
 
   if (!parse_type(job, scanner, type)) {
-    LOG(ERROR) << feedback[VAR_DECL_TYPE_ERR] << name << tok << std::endl;
+    LOG(ERROR) << core::feedback[VAR_DECL_TYPE_ERR] << name << tok << std::endl;
     return false;
   }
 
@@ -88,7 +88,7 @@ bool libquixcc::parse_var(
       else if (tok.is<Punctor>(Punctor::CloseBracket))
         break;
       else {
-        LOG(ERROR) << feedback[VAR_DECL_MISSING_PUNCTOR] << decl.first << tok
+        LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decl.first << tok
                    << std::endl;
         return false;
       }
@@ -100,7 +100,7 @@ bool libquixcc::parse_var(
 
     decls.push_back(decl);
   } else {
-    LOG(ERROR) << feedback[VAR_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[VAR_DECL_MISSING_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -123,7 +123,7 @@ bool libquixcc::parse_var(
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon)) {
-      LOG(ERROR) << feedback[VAR_DECL_MISSING_PUNCTOR] << decls[0].first << tok
+      LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decls[0].first << tok
                  << std::endl;
       return false;
     }
@@ -131,7 +131,7 @@ bool libquixcc::parse_var(
     nodes.push_back(std::make_shared<VarDeclNode>(
         decls[0].first, decls[0].second, init, false, false, false, false));
   } else {
-    LOG(ERROR) << feedback[VAR_DECL_MISSING_PUNCTOR] << tok << std::endl;
+    LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << tok << std::endl;
     return false;
   }
 

@@ -40,7 +40,7 @@
 #include <quixcc/Quix.h>
 #include <stdio.h>
 
-namespace libquixcc {
+namespace libquixcc::codegen {
 bool write_IR(quixcc_job_t &ctx,
               std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out,
               bool generate_bitcode);
@@ -51,6 +51,6 @@ bool write_llvm(quixcc_job_t &ctx,
                 llvm::CodeGenFileType mode);
 bool generate(quixcc_job_t &ctx,
               std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir);
-};  // namespace libquixcc
+};  // namespace libquixcc::codegen
 
 #endif  // __QUIXCC_LLVM_GEN_H__

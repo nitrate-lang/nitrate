@@ -53,6 +53,10 @@ Loc Loc::operator-(uint_fast32_t rhs) const {
 
   new_loc.col -= rhs;
 
+  if (new_loc.col < 1) {
+    new_loc.col = 1;
+  }
+
   return new_loc;
 }
 

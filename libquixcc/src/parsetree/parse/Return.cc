@@ -55,7 +55,7 @@ bool libquixcc::parse_return(quixcc_job_t &job, libquixcc::Scanner *scanner,
   tok = scanner->next();
 
   if (!tok.is<Punctor>(Punctor::Semicolon)) {
-    LOG(ERROR) << feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
+    LOG(ERROR) << core::feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
     return false;
   }
 
@@ -84,7 +84,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Comma)) {
-    LOG(ERROR) << feedback[RETIF_MISSING_COMMA] << tok << std::endl;
+    LOG(ERROR) << core::feedback[RETIF_MISSING_COMMA] << tok << std::endl;
     return false;
   }
 
@@ -95,7 +95,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Semicolon)) {
-    LOG(ERROR) << feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
+    LOG(ERROR) << core::feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
     return false;
   }
   node = std::make_shared<RetifStmtNode>(condition, return_expr);
@@ -125,7 +125,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Comma)) {
-    LOG(ERROR) << feedback[RETZ_MISSING_COMMA] << tok << std::endl;
+    LOG(ERROR) << core::feedback[RETZ_MISSING_COMMA] << tok << std::endl;
     return false;
   }
 
@@ -136,7 +136,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Semicolon)) {
-    LOG(ERROR) << feedback[RETZ_MISSING_SEMICOLON] << tok << std::endl;
+    LOG(ERROR) << core::feedback[RETZ_MISSING_SEMICOLON] << tok << std::endl;
     return false;
   }
   node = std::make_shared<RetzStmtNode>(condition, return_expr);
@@ -165,7 +165,7 @@ bool libquixcc::parse_retv(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Semicolon)) {
-    LOG(ERROR) << feedback[RETV_MISSING_SEMICOLON] << tok << std::endl;
+    LOG(ERROR) << core::feedback[RETV_MISSING_SEMICOLON] << tok << std::endl;
     return false;
   }
 

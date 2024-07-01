@@ -39,7 +39,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace libquixcc {
+namespace libquixcc::core {
 class Exception : public std::runtime_error {
  public:
   Exception(const std::string &msg = "") : std::runtime_error(msg) {}
@@ -65,6 +65,6 @@ class SemanticException : public Exception {
  public:
   SemanticException(const std::string &msg = "") : Exception(msg) {}
 };
-}  // namespace libquixcc
+}  // namespace libquixcc::core
 
 #endif  // __QUIXCC_ERROR_EXCEPTIONS_H__

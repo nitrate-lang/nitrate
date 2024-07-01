@@ -69,7 +69,7 @@ void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job,
       abort();
     }
 
-    throw Exception(message);
+    throw core::Exception(message);
   } else if (type == E::FAILED) {
     // This means we are in an invalid state, behavior is probably undefined.
     // If/When we segfault, the compiler will catch this upstream

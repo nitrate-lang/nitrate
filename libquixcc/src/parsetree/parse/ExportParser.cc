@@ -57,7 +57,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner,
     else if (lang == "d" || lang == "dlang")
       langType = ExportLangType::DLang;
     else {
-      LOG(ERROR) << feedback[PARSER_UNKNOWN_LANGUAGE] << lang << tok
+      LOG(ERROR) << core::feedback[PARSER_UNKNOWN_LANGUAGE] << lang << tok
                  << std::endl;
       return false;
     }
@@ -75,7 +75,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   scanner->next();
   if (tok.type != TT::Keyword) {
-    LOG(ERROR) << feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok
+    LOG(ERROR) << core::feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok
                << std::endl;
     return false;
   }
@@ -97,7 +97,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner,
       if (!parse_function(job, scanner, stmt)) return false;
       break;
     default:
-      LOG(ERROR) << feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok
+      LOG(ERROR) << core::feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok
                  << std::endl;
       return false;
   }

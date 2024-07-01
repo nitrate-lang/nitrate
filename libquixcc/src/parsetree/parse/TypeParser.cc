@@ -72,12 +72,12 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
         goto suffix;
       case Keyword::Fn:
         if (!parse_function(job, scanner, fn)) {
-          LOG(ERROR) << feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
+          LOG(ERROR) << core::feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
           goto error;
         }
 
         if (!fn->is<FunctionDeclNode>()) {
-          LOG(ERROR) << feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
+          LOG(ERROR) << core::feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
           goto error;
         }
 
@@ -87,20 +87,20 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
       case Keyword::Opaque: {
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::OpenParen)) {
-          LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_PAREN] << tok
+          LOG(ERROR) << core::feedback[TYPE_OPAQUE_EXPECTED_PAREN] << tok
                      << std::endl;
           goto error;
         }
         tok = scanner->next();
         if (tok.type != TT::Identifier) {
-          LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_IDENTIFIER] << tok
+          LOG(ERROR) << core::feedback[TYPE_OPAQUE_EXPECTED_IDENTIFIER] << tok
                      << std::endl;
           goto error;
         }
         std::string name = tok.as<std::string>();
         tok = scanner->next();
         if (!tok.is<Punctor>(Punctor::CloseParen)) {
-          LOG(ERROR) << feedback[TYPE_OPAQUE_EXPECTED_CLOSE_PAREN] << tok
+          LOG(ERROR) << core::feedback[TYPE_OPAQUE_EXPECTED_CLOSE_PAREN] << tok
                      << std::endl;
           goto error;
         }
@@ -123,7 +123,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
     // Array type or Vector type
     // syntax [type; size]
     if (!parse_type(job, scanner, type)) {
-      LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
+      LOG(ERROR) << core::feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
       goto error;
     }
 
@@ -134,20 +134,20 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
 
     if (!tok.is<Punctor>(Punctor::Semicolon)) {
-      LOG(ERROR) << feedback[TYPE_EXPECTED_SEMICOLON] << tok << std::endl;
+      LOG(ERROR) << core::feedback[TYPE_EXPECTED_SEMICOLON] << tok << std::endl;
       goto error;
     }
 
     std::shared_ptr<ConstExprNode> size;
     if (!parse_const_expr(job, scanner,
                           Token(TT::Punctor, Punctor::CloseBracket), size)) {
-      LOG(ERROR) << feedback[TYPE_EXPECTED_CONST_EXPR] << tok << std::endl;
+      LOG(ERROR) << core::feedback[TYPE_EXPECTED_CONST_EXPR] << tok << std::endl;
       goto error;
     }
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::CloseBracket)) {
-      LOG(ERROR) << feedback[TYPE_EXPECTED_CLOSE_BRACKET] << tok << std::endl;
+      LOG(ERROR) << core::feedback[TYPE_EXPECTED_CLOSE_BRACKET] << tok << std::endl;
       goto error;
     }
 
@@ -156,7 +156,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
   } else if (tok.is<Operator>(Operator::Multiply)) {
     // Pointer type
     if (!parse_type(job, scanner, type)) {
-      LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
+      LOG(ERROR) << core::feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
       goto error;
     }
 
@@ -165,14 +165,14 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
   } else if (tok.is<Operator>(Operator::LogicalNot)) {
     // ! means mutability
     if (!parse_type(job, scanner, type)) {
-      LOG(ERROR) << feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
+      LOG(ERROR) << core::feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
       goto error;
     }
 
     inner = std::make_shared<MutTypeNode>(type);
     goto suffix;
   } else {
-    LOG(ERROR) << feedback[EXPECTED_TYPE] << tok << std::endl;
+    LOG(ERROR) << core::feedback[EXPECTED_TYPE] << tok << std::endl;
     goto error;
   }
 

@@ -227,6 +227,9 @@ enum Msg {
 
   MAX_MSG
 };
+}
+
+namespace libquixcc::core {
 
 class Feedback {
   std::unordered_map<Msg, const char *> m_feedback;
@@ -239,6 +242,6 @@ class Feedback {
 
 extern Feedback feedback;
 
-};  // namespace libquixcc
+};  // namespace libquixcc::core
 
 #endif

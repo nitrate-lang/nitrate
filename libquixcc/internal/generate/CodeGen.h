@@ -53,7 +53,7 @@
 #include <optional>
 #include <string>
 
-namespace libquixcc {
+namespace libquixcc::codegen {
 class CodegenException : public std::exception {
   std::string m_msg;
 
@@ -183,7 +183,7 @@ class LLVM14Codegen {
 };
 
 class C11Codegen {
-  const size_t INDENT_SIZE = 4;
+  const size_t INDENT_SIZE = 2;
   struct CodegenState {
     const ir::delta::Global *segmentvar;
     std::set<std::string> autogen;
@@ -281,6 +281,6 @@ class C11Codegen {
   static bool codegen(const std::unique_ptr<ir::delta::IRDelta> &ir,
                       std::ostream &os);
 };
-}  // namespace libquixcc
+}  // namespace libquixcc::codegen
 
 #endif  // __QUIXCC_LLVM_CODEGEN_H__

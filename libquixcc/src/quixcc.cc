@@ -75,6 +75,7 @@
 #define PRUNE_DEBUG_MESSAGES 1
 
 using namespace libquixcc;
+using namespace libquixcc::core;
 
 static std::atomic<bool> g_is_initialized = false;
 std::atomic<uint64_t> g_num_of_contexts = 0;
@@ -82,8 +83,14 @@ std::mutex g_library_lock;
 
 static thread_local jmp_buf g_tls_exception;
 static thread_local bool g_tls_exception_set = false;
-
 thread_local uint8_t g_target_word_size;
+
+static struct {
+  std::mutex m_lock;
+  quixcc_cache_has_t m_has;
+  quixcc_cache_read_t m_read;
+  quixcc_cache_write_t m_write;
+} g_cache_provider{};
 
 static void print_stacktrace();
 static void print_general_fault_message();
@@ -212,7 +219,7 @@ LIB_EXPORT quixcc_job_t *quixcc_new() {
 
   g_num_of_contexts++;
 
-  LoggerConfigure(*job);
+  // LoggerConfigure(*job);
 
   return job;
 }
@@ -828,7 +835,7 @@ static bool compile(quixcc_job_t *job) {
   ///=========================================
   /// BEGIN: GENERATOR
   LOG(DEBUG) << "Generating output" << std::endl;
-  if (!generate(*job, DIR)) /* Apply LLVM optimizations */
+  if (!codegen::generate(*job, DIR)) /* Apply LLVM optimizations */
   {
     LOG(ERROR) << "failed to generate output" << std::endl;
     return false;
@@ -1345,4 +1352,105 @@ LIB_EXPORT char **quixcc_compile(FILE *in, FILE *out, const char *options[]) {
 
   quixcc_dispose(job);
   return messages;
+}
+
+LIB_EXPORT bool quixcc_bind_provider(quixcc_cache_has_t has,
+                                     quixcc_cache_read_t read,
+                                     quixcc_cache_write_t write) {
+  if (!g_is_initialized && !quixcc_init()) {
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_init() is required before calling quixcc_bind_provider(). "
+        "quixcc_bind_provider() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
+  }
+
+  if (!has || !read || !write) {
+    return false;
+  }
+
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
+
+  if (g_cache_provider.m_has || g_cache_provider.m_read ||
+      g_cache_provider.m_write) {
+    return false;
+  }
+
+  g_cache_provider.m_has = has;
+  g_cache_provider.m_read = read;
+  g_cache_provider.m_write = write;
+
+  return true;
+}
+
+LIB_EXPORT void quixcc_unbind_provider() {
+  if (!g_is_initialized && !quixcc_init()) {
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_init() is required before calling quixcc_bind_provider(). "
+        "quixcc_bind_provider() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
+  }
+
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
+
+  g_cache_provider.m_has = nullptr;
+  g_cache_provider.m_read = nullptr;
+  g_cache_provider.m_write = nullptr;
+}
+
+LIB_EXPORT ssize_t quixcc_cache_has(const char *key, size_t keylen) {
+  if (!g_is_initialized && !quixcc_init()) {
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_init() is required before calling quixcc_bind_provider(). "
+        "quixcc_bind_provider() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
+  }
+
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
+
+  if (!g_cache_provider.m_has) {
+    return -1;
+  }
+
+  return g_cache_provider.m_has(key, keylen);
+}
+
+LIB_EXPORT bool quixcc_cache_read(const char *key, size_t keylen, void *data,
+                                  size_t datalen) {
+  if (!g_is_initialized && !quixcc_init()) {
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_init() is required before calling quixcc_bind_provider(). "
+        "quixcc_bind_provider() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
+  }
+
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
+
+  if (!g_cache_provider.m_read) {
+    return false;
+  }
+
+  return g_cache_provider.m_read(key, keylen, data, datalen);
+}
+
+LIB_EXPORT bool quixcc_cache_write(const char *key, size_t keylen,
+                                   const void *data, size_t datalen) {
+  if (!g_is_initialized && !quixcc_init()) {
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_init() is required before calling quixcc_bind_provider(). "
+        "quixcc_bind_provider() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
+  }
+
+  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
+
+  if (!g_cache_provider.m_write) {
+    return false;
+  }
+
+  return g_cache_provider.m_write(key, keylen, data, datalen);
 }

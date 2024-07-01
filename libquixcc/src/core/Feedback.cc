@@ -35,7 +35,7 @@
 
 /// TODO: write better error messages
 
-libquixcc::Feedback libquixcc::feedback({
+libquixcc::core::Feedback libquixcc::core::feedback({
     {PARSER_EXPECTED_KEYWORD,
      "Parser failed because a keyword was expected, but the token {} was "
      "found"},

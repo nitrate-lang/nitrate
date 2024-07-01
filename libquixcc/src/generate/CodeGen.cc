@@ -44,8 +44,9 @@
 #include <mangle/Symbol.h>
 
 using namespace libquixcc;
-using namespace ir;
-using namespace ir::delta;
+using namespace libquixcc::codegen;
+using namespace libquixcc::ir;
+using namespace libquixcc::ir::delta;
 
 uint8_t get_numbits(std::string s);
 

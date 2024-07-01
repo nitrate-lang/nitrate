@@ -41,7 +41,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
                               std::shared_ptr<UnionFieldNode> &node) {
   Token tok = scanner->next();
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << feedback[UNION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -51,13 +51,13 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Colon)) {
-    LOG(ERROR) << feedback[UNION_FIELD_MISSING_COLON] << tok << std::endl;
+    LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_COLON] << tok << std::endl;
     return false;
   }
 
   std::shared_ptr<TypeNode> type;
   if (!parse_type(job, scanner, type)) {
-    LOG(ERROR) << feedback[UNION_FIELD_TYPE_ERR] << node->m_name << tok
+    LOG(ERROR) << core::feedback[UNION_FIELD_TYPE_ERR] << node->m_name << tok
                << std::endl;
     return false;
   }
@@ -66,7 +66,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Comma)) {
-    LOG(ERROR) << feedback[UNION_FIELD_MISSING_PUNCTOR] << tok << std::endl;
+    LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_PUNCTOR] << tok << std::endl;
     return false;
   }
 
@@ -77,7 +77,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
                             std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << feedback[UNION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[UNION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -85,7 +85,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::OpenBrace)) {
-    LOG(ERROR) << feedback[UNION_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
+    LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
     return false;
   }
 

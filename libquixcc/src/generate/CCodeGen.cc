@@ -39,6 +39,7 @@
 #include <iomanip>
 
 using namespace libquixcc;
+using namespace libquixcc::codegen;
 using namespace libquixcc::ir;
 using namespace libquixcc::ir::delta;
 
@@ -81,73 +82,72 @@ static std::string escape_cstr(const std::string &str) {
   return escaped;
 }
 
-void libquixcc::C11Codegen::ind(std::ostream &code) {
+void C11Codegen::ind(std::ostream &code) {
   code << std::string(m_state.indent * INDENT_SIZE, ' ');
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::I1 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::I1 *n, std::ostream &code) {
   code << "qbool";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::I8 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::I8 *n, std::ostream &code) {
   code << "qint8";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::I16 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::I16 *n, std::ostream &code) {
   code << "qint16";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::I32 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::I32 *n, std::ostream &code) {
   code << "qint32";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::I64 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::I64 *n, std::ostream &code) {
   code << "qint64";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::I128 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::I128 *n, std::ostream &code) {
   code << "qint128";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::U8 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::U8 *n, std::ostream &code) {
   code << "quint8";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::U16 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::U16 *n, std::ostream &code) {
   code << "quint16";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::U32 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::U32 *n, std::ostream &code) {
   code << "quint32";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::U64 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::U64 *n, std::ostream &code) {
   code << "quint64";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::U128 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::U128 *n, std::ostream &code) {
   code << "quint128";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::F32 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::F32 *n, std::ostream &code) {
   code << "qfloat32";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::F64 *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::F64 *n, std::ostream &code) {
   code << "qfloat64";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Void *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Void *n, std::ostream &code) {
   code << "qvoid";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Ptr *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Ptr *n, std::ostream &code) {
   gen(n->type, code);
   code << " *";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::PacketDef *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::PacketDef *n, std::ostream &code) {
   std::stringstream ss;
   ss << "struct quix_" << n->name << " {\n";
 
@@ -166,17 +166,16 @@ void libquixcc::C11Codegen::gen(const ir::delta::PacketDef *n,
   m_state.structs.push_back(ss.str());
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Packet *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Packet *n, std::ostream &code) {
   code << "struct quix_" << n->def->name;
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Array *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Array *n, std::ostream &code) {
   gen(n->type, code);
   code << "[" << n->size << "]";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::FType *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::FType *n, std::ostream &code) {
   gen(n->ret, code);
   code << " (*)(";
   for (size_t i = 0; i < n->params.size(); i++) {
@@ -190,7 +189,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::FType *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Local *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Local *n, std::ostream &code) {
   if (n->type->is<Array>()) {
     gen(n->type->as<Array>()->type, code);
     code << " " << n->name << "[" << n->type->as<Array>()->size << "]";
@@ -206,8 +205,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Local *n, std::ostream &code) {
   }
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Global *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Global *n, std::ostream &code) {
   enum class Linkage {
     Private,
     Public,
@@ -262,19 +260,17 @@ void libquixcc::C11Codegen::gen(const ir::delta::Global *n,
   }
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Number *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Number *n, std::ostream &code) {
   /// TODO: Implement Number 128 bit stuff
 
   code << n->value;
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::String *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::String *n, std::ostream &code) {
   code << "\"" << escape_cstr(n->value) << "\"";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::List *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::List *n, std::ostream &code) {
   code << "{";
 
   for (size_t i = 0; i < n->values.size(); i++) {
@@ -285,42 +281,39 @@ void libquixcc::C11Codegen::gen(const ir::delta::List *n, std::ostream &code) {
   code << "}";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Ident *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Ident *n, std::ostream &code) {
   code << n->name;
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Assign *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Assign *n, std::ostream &code) {
   gen(n->var, code);
   code << " = ";
   gen(n->value, code);
 }
 
-void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::PostInc *node,
-                                std::ostream &code) {
+void C11Codegen::gen(const libquixcc::ir::delta::PostInc *node,
+                     std::ostream &code) {
   gen(node->var, code);
   code << "++";
 }
 
-void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::PostDec *node,
-                                std::ostream &code) {
+void C11Codegen::gen(const libquixcc::ir::delta::PostDec *node,
+                     std::ostream &code) {
   gen(node->var, code);
   code << "--";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::AddressOf *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::AddressOf *n, std::ostream &code) {
   code << "&";
   gen(n->lhs, code);
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Deref *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Deref *n, std::ostream &code) {
   code << "*";
   gen(n->lhs, code);
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Member *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Member *n, std::ostream &code) {
   gen(n->lhs, code);
 
   if (n->lhs->infer()->is_ptr())
@@ -331,35 +324,33 @@ void libquixcc::C11Codegen::gen(const ir::delta::Member *n,
   code << "_" << n->field;
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Index *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Index *n, std::ostream &code) {
   gen(n->expr, code);
   code << "[";
   gen(n->index, code);
   code << "]";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::SCast *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::SCast *n, std::ostream &code) {
   code << "(";
   gen(n->type, code);
   code << ")";
   gen(n->value, code);
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::UCast *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::UCast *n, std::ostream &code) {
   code << "(";
   gen(n->type, code);
   code << ")";
   gen(n->value, code);
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::PtrICast *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::PtrICast *n, std::ostream &code) {
   code << "(quintptr)";
   gen(n->value, code);
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::IPtrCast *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::IPtrCast *n, std::ostream &code) {
   code << "(";
   gen(n->type, code);
   code << ")" << "(quintptr)";
@@ -385,8 +376,7 @@ static std::string escape_into_unqiue_ident(const std::string &str) {
   return "_" + ss.str();
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Bitcast *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Bitcast *n, std::ostream &code) {
   std::stringstream fn, tmp;
 
   std::string vali, tp;
@@ -420,8 +410,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Bitcast *n,
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::IfElse *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::IfElse *n, std::ostream &code) {
   code << "if (";
   gen(n->cond, code);
   code << ") ";
@@ -433,25 +422,25 @@ void libquixcc::C11Codegen::gen(const ir::delta::IfElse *n,
   }
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::While *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::While *n, std::ostream &code) {
   code << "while (";
   gen(n->cond, code);
   code << ") ";
   gen(n->body, code);
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Jmp *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Jmp *n, std::ostream &code) {
   code << "goto " << n->target;
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Label *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Label *n, std::ostream &code) {
   code << n->name << ":";
 
   ind(code);
   gen(n->code, code);
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Ret *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Ret *n, std::ostream &code) {
   if (n->value) {
     code << "return ";
     gen(n->value, code);
@@ -460,7 +449,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Ret *n, std::ostream &code) {
   }
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Call *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Call *n, std::ostream &code) {
   code << n->callee << "(";
   for (size_t i = 0; i < n->args.size(); i++) {
     gen(n->args[i], code);
@@ -470,8 +459,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Call *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::PtrCall *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::PtrCall *n, std::ostream &code) {
   code << "(";
   gen(n->callee, code);
   code << ")(";
@@ -483,21 +471,19 @@ void libquixcc::C11Codegen::gen(const ir::delta::PtrCall *n,
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Halt *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Halt *n, std::ostream &code) {
   code << "quix__halt()";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Break *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Break *n, std::ostream &code) {
   code << "break";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Continue *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Continue *n, std::ostream &code) {
   code << "continue";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Switch *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Switch *n, std::ostream &code) {
   code << "switch (";
   gen(n->cond, code);
   code << ") {\n";
@@ -522,8 +508,8 @@ void libquixcc::C11Codegen::gen(const ir::delta::Switch *n,
   code << "}";
 }
 
-void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Case *node,
-                                std::ostream &code) {
+void C11Codegen::gen(const libquixcc::ir::delta::Case *node,
+                     std::ostream &code) {
   ind(code);
   code << "case ";
   gen(node->value, code);
@@ -534,7 +520,7 @@ void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Case *node,
   code << "\n";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Block *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Block *n, std::ostream &code) {
   code << "{\n";
 
   m_state.indent++;
@@ -551,8 +537,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Block *n, std::ostream &code) {
   code << "}";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Segment *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Segment *n, std::ostream &code) {
   if (!m_state.segmentvar)
     throw std::runtime_error("C11Codegen: Segment outside of global scope");
 
@@ -582,13 +567,13 @@ void libquixcc::C11Codegen::gen(const ir::delta::Segment *n,
   }
 }
 
-void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Asm *node,
-                                std::ostream &code) {
+void C11Codegen::gen(const libquixcc::ir::delta::Asm *node,
+                     std::ostream &code) {
   /// TODO: Implement Asm
   throw std::runtime_error("C11Codegen: Asm not implemented");
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Add *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Add *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " + ";
@@ -596,7 +581,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Add *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Sub *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Sub *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " - ";
@@ -604,7 +589,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Sub *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Mul *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Mul *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " * ";
@@ -612,7 +597,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Mul *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Div *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Div *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " / ";
@@ -620,7 +605,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Div *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Mod *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Mod *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " % ";
@@ -628,8 +613,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Mod *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::BitAnd *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::BitAnd *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " & ";
@@ -637,7 +621,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::BitAnd *n,
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::BitOr *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::BitOr *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " | ";
@@ -645,8 +629,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::BitOr *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::BitXor *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::BitXor *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " ^ ";
@@ -654,14 +637,13 @@ void libquixcc::C11Codegen::gen(const ir::delta::BitXor *n,
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::BitNot *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::BitNot *n, std::ostream &code) {
   code << "(~";
   gen(n->operand, code);
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Shl *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Shl *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " << ";
@@ -669,7 +651,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Shl *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Shr *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Shr *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " >> ";
@@ -677,7 +659,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Shr *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Rotl *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Rotl *n, std::ostream &code) {
   code << "QROTL_EXPR(";
   gen(n->lhs, code);
   code << ", ";
@@ -685,7 +667,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Rotl *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Rotr *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Rotr *n, std::ostream &code) {
   code << "QROTR_EXPR(";
   gen(n->lhs, code);
   code << ", ";
@@ -693,7 +675,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Rotr *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Eq *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Eq *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " == ";
@@ -701,7 +683,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Eq *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Ne *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Ne *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " != ";
@@ -709,7 +691,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Ne *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Lt *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Lt *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " < ";
@@ -717,7 +699,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Lt *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Gt *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Gt *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " > ";
@@ -725,7 +707,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Gt *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Le *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Le *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " <= ";
@@ -733,7 +715,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Le *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Ge *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Ge *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " >= ";
@@ -741,7 +723,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Ge *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::And *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::And *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " && ";
@@ -749,7 +731,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::And *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Or *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Or *n, std::ostream &code) {
   code << "(";
   gen(n->lhs, code);
   code << " || ";
@@ -757,13 +739,13 @@ void libquixcc::C11Codegen::gen(const ir::delta::Or *n, std::ostream &code) {
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Not *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Not *n, std::ostream &code) {
   code << "(!";
   gen(n->operand, code);
   code << ")";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::Xor *n, std::ostream &code) {
+void C11Codegen::gen(const ir::delta::Xor *n, std::ostream &code) {
   code << "((!";
   gen(n->lhs, code);
   code << " && ";
@@ -775,8 +757,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::Xor *n, std::ostream &code) {
   code << "))";
 }
 
-void libquixcc::C11Codegen::gen(const ir::delta::RootNode *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const ir::delta::RootNode *n, std::ostream &code) {
   /* Comment headers */
   code << "/////////////////////////////////////////////////////////\n";
   code << "///                                                   ///\n";
@@ -893,8 +874,7 @@ void libquixcc::C11Codegen::gen(const ir::delta::RootNode *n,
   code << ss.str();
 }
 
-void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Value *n,
-                                std::ostream &code) {
+void C11Codegen::gen(const libquixcc::ir::delta::Value *n, std::ostream &code) {
   switch ((delta::NodeType)n->ntype) {
     case delta::NodeType::I1:
       return gen(n->as<I1>(), code);
@@ -1053,7 +1033,7 @@ void libquixcc::C11Codegen::gen(const libquixcc::ir::delta::Value *n,
   }
 }
 
-bool libquixcc::C11Codegen::codegen(
+bool C11Codegen::codegen(
     const std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir,
     std::ostream &os) {
   C11Codegen codegen;

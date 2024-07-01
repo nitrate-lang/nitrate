@@ -43,7 +43,7 @@ static bool parse_enum_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   Token tok = scanner->next();
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << feedback[ENUM_FIELD_EXPECTED_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -56,7 +56,7 @@ static bool parse_enum_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
     scanner->next();
     if (!parse_const_expr(job, scanner, Token(TT::Punctor, Punctor::Comma),
                           node->m_value)) {
-      LOG(ERROR) << feedback[ENUM_FIELD_EXPECTED_CONST_EXPR] << node->m_name
+      LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_CONST_EXPR] << node->m_name
                  << tok << std::endl;
       return false;
     }
@@ -70,7 +70,7 @@ static bool parse_enum_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   if (!tok.is<Punctor>(Punctor::CloseBrace)) {
-    LOG(ERROR) << feedback[ENUM_FIELD_EXPECTED_SEMICOLON] << tok << std::endl;
+    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_SEMICOLON] << tok << std::endl;
     return false;
   }
 
@@ -81,7 +81,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, libquixcc::Scanner *scanner,
                            std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << feedback[ENUM_EXPECTED_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[ENUM_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -96,7 +96,7 @@ bool libquixcc::parse_enum(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::OpenBrace)) {
-    LOG(ERROR) << feedback[ENUM_EXPECTED_LEFT_BRACE] << tok << std::endl;
+    LOG(ERROR) << core::feedback[ENUM_EXPECTED_LEFT_BRACE] << tok << std::endl;
     return false;
   }
 

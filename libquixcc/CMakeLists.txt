@@ -49,7 +49,7 @@ if (LIBQUIXCC_SHARED)
       target_link_libraries(quixcc PRIVATE ${lib})
       message(STATUS "Linking ${lib}")
   endforeach()
-  target_link_libraries(quixcc PRIVATE pthread zstd z boost_serialization execinfo-static crypto libstdc++.a)
+  target_link_libraries(quixcc PRIVATE pthread zstd z boost_serialization boost_filesystem execinfo-static crypto libstdc++.a)
   set_target_properties(quixcc PROPERTIES OUTPUT_NAME quixcc)
 endif()
 
