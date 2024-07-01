@@ -60,13 +60,13 @@ using pair = std::pair<X, Y>;
 
 using str = std::string;
 
-class ThreadGarbageCollecter {
+class QThreadGarbageCollecter {
   std::vector<Value *> m_ptrs;
 
  public:
-  ThreadGarbageCollecter() {}
+  QThreadGarbageCollecter() {}
 
-  ~ThreadGarbageCollecter() {
+  ~QThreadGarbageCollecter() {
     for (auto ptr : m_ptrs) {
       delete ptr;
     }
@@ -93,7 +93,7 @@ static F32 *g_f32 = new F32();
 static F64 *g_f64 = new F64();
 static Void *g_void = new Void();
 
-static thread_local ThreadGarbageCollecter thread_gc;
+static thread_local QThreadGarbageCollecter thread_gc;
 
 #define MAKE_GC(T, ...)          \
   {                              \

@@ -241,6 +241,7 @@ static inline Logger &operator<<(Logger &l, libquixcc::log m) {
 }
 static inline void operator<<(Logger &log,
                               std::ostream &(*var)(std::ostream &)) {
+  (void)var;
   log.flush();
 }
 static inline Logger &operator<<(Logger &log, const Token &tok) {

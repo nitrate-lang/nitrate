@@ -39,7 +39,7 @@ bool libquixcc::solver::passes::HashmapIntristicSolver(
 
   /// TODO: Implement HashmapIntristicSolver
 
-  LOG(WARN) << "HashmapIntristicSolver not implemented yet." << std::endl;
+  LOG(DEBUG) << "HashmapIntristicSolver not implemented yet." << std::endl;
 
   return true;
 }

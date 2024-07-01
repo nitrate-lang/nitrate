@@ -39,7 +39,7 @@ bool libquixcc::solver::passes::VectorIntristicSolver(
 
   /// TODO: Implement VectorIntristicSolver
 
-  LOG(WARN) << "VectorIntristicSolver not implemented yet." << std::endl;
+  LOG(DEBUG) << "VectorIntristicSolver not implemented yet." << std::endl;
 
   return true;
 }

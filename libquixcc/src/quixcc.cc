@@ -209,7 +209,8 @@ LIB_EXPORT quixcc_job_t *quixcc_new() {
   job->m_in = job->m_out = nullptr;
   job->m_priority = 0;
   job->m_debug = job->m_tainted = job->m_running = false;
-  job->m_sid_ctr = job->m_wordsize = 0;
+  job->m_sid_ctr = 0;
+  job->m_wordsize = 64;
   job->m_triple = llvm::sys::getDefaultTargetTriple();
 
   qsys::bind_qsyscalls(job);

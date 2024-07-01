@@ -39,7 +39,7 @@ bool libquixcc::solver::passes::ReferenceIntristicSolver(
 
   /// TODO: Implement ReferenceIntristicSolver
 
-  LOG(WARN) << "ReferenceIntristicSolver not implemented yet." << std::endl;
+  LOG(DEBUG) << "ReferenceIntristicSolver not implemented yet." << std::endl;
 
   return true;
 }

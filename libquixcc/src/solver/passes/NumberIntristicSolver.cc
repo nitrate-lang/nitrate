@@ -39,7 +39,7 @@ bool libquixcc::solver::passes::NumberIntristicSolver(
 
   /// TODO: Implement NumberIntristicSolver
 
-  LOG(WARN) << "NumberIntristicSolver not implemented yet." << std::endl;
+  LOG(DEBUG) << "NumberIntristicSolver not implemented yet." << std::endl;
 
   return true;
 }

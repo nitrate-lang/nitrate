@@ -176,7 +176,10 @@ LIB_EXPORT bool quixcc_engine_message(quixcc_engine_t *engine,
   va_list args;
   va_start(args, format);
   char *buffer = nullptr;
-  vasprintf(&buffer, format, args);
+  if (vasprintf(&buffer, format, args) == -1) {
+    va_end(args);
+    return false;
+  }
   va_end(args);
 
   std::string message(buffer);

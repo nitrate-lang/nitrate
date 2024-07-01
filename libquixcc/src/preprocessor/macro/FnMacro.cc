@@ -38,6 +38,7 @@
 
 #include <boost/filesystem.hpp>
 #include <filesystem>
+#include <fstream>
 #include <quixcc/Quix.hpp>
 
 #if defined(__linux__) || defined(__APPLE__)
@@ -101,14 +102,16 @@ str PrepEngine::build_macro_sourcecode(rstr parameter) {
   ss << "    fn strdup(s: *i8): *i8;\n";
   ss << "  }\n\n";
 
-  std::string placeholder_str_notimpl = "\"\\\"" + escape_string(escape_string(parameter)) + " not implemented\\\"\"";
+  std::string placeholder_str_notimpl =
+      "\"\\\"" + escape_string(escape_string(parameter)) +
+      " not implemented\\\"\"";
   ss << "  let exp = " << placeholder_str_notimpl << ";\n";
   /// TODO: implement based on parameter return type / in parameters
 
   ss << "  ret strdup(exp);\n";
   ss << "}\n";
 
-  std::cout << "\"" << ss.str() << "\"\n";
+  // std::cout << "\"" << ss.str() << "\"\n";
 
   return ss.str();
 }
@@ -221,19 +224,23 @@ bool PrepEngine::write_shared_object_to_temp_file(
       filesystem::absolute(boost::filesystem::unique_path().native()).string() +
       ".o";
 
-  ofstream temp_file(tmpname, ios::binary);
-  if (!temp_file.is_open()) {
-    LOG(FATAL) << "Failed to open temp file for shared object" << endl;
-    return false;
+  {
+    ofstream temp_file(tmpname, ios::binary);
+    if (!temp_file.is_open()) {
+      LOG(FATAL) << "Failed to open temp file for shared object" << endl;
+      return false;
+    }
+
+    temp_file.write(reinterpret_cast<const char *>(shared_object.data()),
+                    shared_object.size());
+    temp_file.close();
   }
 
-  temp_file.write(reinterpret_cast<const char *>(shared_object.data()),
-                  shared_object.size());
-  temp_file.close();
-
   if (system(("gcc -shared -o " + tmpname + ".so " + tmpname).c_str()) != 0) {
+    std::filesystem::remove(tmpname);
     LOG(FATAL) << "Failed to compile shared object file during macro function "
-                  "synthesis.\n";
+                  "synthesis.\n"
+               << endl;
     return false;
   }
 
@@ -312,12 +319,11 @@ bool PrepEngine::ParseFn(const Token &tok, rstr directive, rstr parameter) {
       delete s;
     }
   });
-  unique_ptr<void, function<void(void *)>> managed_handle(nullptr,
-                                                          [this](void *h) {
-                                                            if (h) {
-                                                              dlclose(h);
-                                                            }
-                                                          });
+  unique_ptr<void, function<void(void *)>> managed_handle(nullptr, [](void *h) {
+    if (h) {
+      dlclose(h);
+    }
+  });
 
   /*========================= SYNTHESIZE MACRO CODE= ========================*/
   metacode = build_macro_sourcecode(parameter);
