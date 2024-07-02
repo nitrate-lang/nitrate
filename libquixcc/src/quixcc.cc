@@ -72,6 +72,11 @@
 
 #define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
 
+#ifndef LIBQUIX_VERSION
+#warning "LIBQUIX_VERSION not defined; using default value"
+#define LIBQUIX_VERSION "undefined"
+#endif
+
 #define PRUNE_DEBUG_MESSAGES 1
 
 using namespace libquixcc;
@@ -468,16 +473,15 @@ std::string base64_encode(const std::string &in) {
     valb += 8;
     while (valb >= 0) {
       out.push_back(
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
               [(val >> valb) & 0x3F]);
       valb -= 6;
     }
   }
   if (valb > -6)
     out.push_back(
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
             [((val << 8) >> (valb + 8)) & 0x3F]);
-  while (out.size() % 4) out.push_back('=');
   return out;
 }
 
@@ -996,9 +1000,49 @@ static std::string geterror_report_string() {
 
   free(strings);
 
-  std::string report = "{\"version\":\"1.0\",\"quixcc_run\":\"";
+  std::string report = "{\"version\":\"1.0\",";
+  report += "\"quixcc_version\":\"" LIBQUIX_VERSION "\",";
 
-  char buf[17];
+#if NDEBUG
+  report += "\"build\":\"release\",";
+#else
+  report += "\"build\":\"debug\",";
+#endif
+
+#if defined(__clang__)
+  report += "\"compiler\":\"clang\",";
+#elif defined(__GNUC__)
+  report += "\"compiler\":\"gnu\",";
+#else
+  report += "\"compiler\":\"unknown\",";
+#endif
+
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
+    defined(_M_X64) || defined(_M_AMD64)
+  report += "\"arch\":\"x86_64\",";
+#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
+  report += "\"arch\":\"x86\",";
+#elif defined(__aarch64__)
+  report += "\"arch\":\"aarch64\",";
+#elif defined(__arm__)
+  report += "\"arch\":\"arm\",";
+#else
+  report += "\"arch\":\"unknown\",";
+#endif
+
+#if defined(__linux__)
+  report += "\"os\":\"linux\",";
+#elif defined(__APPLE__)
+  report += "\"os\":\"macos\",";
+#elif defined(_WIN32)
+  report += "\"os\":\"windows\",";
+#else
+  report += "\"os\":\"unknown\",";
+#endif
+
+  report += "\"quixcc_run\":\"";
+
+  char buf[(sizeof(void *) * 2) + 2 + 1] = {0};  // 0x[hex word]\0
   snprintf(buf, sizeof(buf), "%p", (void *)quixcc_run);
   report += buf;
 
@@ -1010,7 +1054,7 @@ static std::string geterror_report_string() {
 
   report += "]}";
 
-  return "QUIXCC_TRACE-{" + base64_encode(report) + "}";
+  return "LIBQUIXCC_CRASHINFO_" + base64_encode(report);
 }
 
 static void print_general_fault_message() {
