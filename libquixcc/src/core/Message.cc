@@ -60,17 +60,11 @@ void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job,
   if (job.m_debug) std::cerr << message << std::endl;
 
   // Throw an exception if the message is an error or fatal
-  if (type == E::ERROR || type == E::FATAL) {
+  if (type == E::ERROR) {
+    /// TODO: Don't use error handling as control flow
     job.m_tainted = true;
-
-    // We don't want the stack to unwind
-    if (type == E::FATAL) {
-      std::cerr << message << std::endl;
-      abort();
-    }
-
     throw core::Exception(message);
-  } else if (type == E::FAILED) {
+  } else if (type == E::FAILED || type == E::FATAL) {
     // This means we are in an invalid state, behavior is probably undefined.
     // If/When we segfault, the compiler will catch this upstream
     job.m_tainted = true;

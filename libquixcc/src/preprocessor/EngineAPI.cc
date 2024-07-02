@@ -34,6 +34,7 @@
 #include <IR/Q/QIR.h>
 #include <IR/Q/Variable.h>
 #include <LibMacro.h>
+#include <core/Exception.h>
 #include <core/Logger.h>
 #include <libquixcc.h>
 #include <preprocessor/Preprocessor.h>
@@ -203,6 +204,7 @@ LIB_EXPORT bool quixcc_engine_message(quixcc_engine_t *engine,
       break;
     case QUIXCC_MESSAGE_FATAL:
       LOG(FATAL) << message << std::endl;
+      throw core::Exception();
       break;
     default:
       return false;

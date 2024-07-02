@@ -12,23 +12,14 @@ add_subdirectory(src/cache/blake3)
 
 add_executable(qpkg ${QPKG_CXX_SOURCES})
 target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquixcc/include)
-target_compile_options(qpkg PRIVATE -Wno-error=overlength-strings -DQUIX_BUILD_ID=${QUIX_BUILD_ID})
+target_compile_options(qpkg PRIVATE  -Werror -O3 -flto -g -Wall -Wextra -Wpedantic -Wno-error=overlength-strings -Wno-predefined-identifier-outside-function -DQUIX_BUILD_ID=${QUIX_BUILD_ID})
 
-set(IGNORE_ERRORS -Wno-predefined-identifier-outside-function)
-
-if (CMAKE_BUILD_TYPE STREQUAL "Release" AND LIBQUIXCC_STATIC) 
-    set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
-    set(BUILD_SHARED_LIBS OFF)
-    set(CMAKE_EXE_LINKER_FLAGS "-static")
-  
-    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror -O3 -flto ${IGNORE_ERRORS})
-    target_link_options(qpkg PRIVATE -flto)
-    target_link_libraries(qpkg PRIVATE quixcc-static yaml-cpp blake3 boost_serialization z)
-    add_dependencies(qpkg quixcc-static)
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    target_link_libraries(qpkg PRIVATE quixcc libyaml-cpp.a blake3 libstdc++.a)
+    add_dependencies(qpkg quixcc)
     add_custom_command(TARGET qpkg POST_BUILD COMMAND strip $<TARGET_FILE:qpkg>)
 else()
-    target_compile_options(qpkg PRIVATE -g -Wall -Wextra -Wpedantic -Werror  ${IGNORE_ERRORS})
-    target_link_libraries(qpkg PRIVATE quixcc yaml-cpp blake3 boost_serialization z -fsanitize=address -fsanitize=undefined )
+    target_link_libraries(qpkg PRIVATE quixcc libyaml-cpp.a blake3 libstdc++.a -fsanitize=address -fsanitize=undefined )
     add_dependencies(qpkg quixcc)
 endif()
 

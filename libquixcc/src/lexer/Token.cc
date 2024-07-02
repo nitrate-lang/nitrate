@@ -43,20 +43,22 @@ Loc Loc::operator-(uint_fast32_t rhs) const {
 
   Loc new_loc = *this;
 
-  while (rhs > col) {
-    rhs -= col;
-    new_loc.col = 1;
+  while (true) {
+    if (rhs < new_loc.col) {
+      new_loc.col -= rhs;
+      break;
+    }
 
-    if (new_loc.line == 0) break;
+    if (new_loc.line == 1) {
+      new_loc.col = 1;
+      break;
+    }
+
+    rhs -= new_loc.col;
+    new_loc.col = 1;
     new_loc.line--;
   }
-
-  new_loc.col -= rhs;
-
-  if (new_loc.col < 1) {
-    new_loc.col = 1;
-  }
-
+    
   return new_loc;
 }
 

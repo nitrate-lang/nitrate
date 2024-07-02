@@ -169,10 +169,8 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &shared_object) {
         return false;
       }
 
-      auto compiler = builder.build();
-
       /* Get the object code and print any 2nd order compiler messages */
-      if (!compiler.run().puts().ok()) {
+      if (!builder.build().run().puts().ok()) {
         fclose(temp);
         free(raw_output);
         LOG(FAILED) << "Failed to build compiler for metacode" << endl;
@@ -189,11 +187,10 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &shared_object) {
       /* Write the shared object to the cache */
       if (!quixcc_cache_write(key.c_str(), key.size(), shared_object.data(),
                               shared_object.size())) {
-        LOG(WARN) << "Failed to write shared object to cache" << endl;
+        LOG(WARN) << "libquixcc: Failed to write shared object to cache provider. (no cache provider?)" << endl;
       }
 
       return true;
-
     } catch (const exception &e) {
       fclose(temp);
       free(raw_output);
@@ -236,7 +233,10 @@ bool PrepEngine::write_shared_object_to_temp_file(
     temp_file.close();
   }
 
-  if (system(("gcc -shared -o " + tmpname + ".so " + tmpname).c_str()) != 0) {
+  std::string gcc_cmd = "gcc -shared -o " + tmpname + ".so " + tmpname;
+  LOG(DEBUG) << "Compiling shared object: " << gcc_cmd << endl;
+
+  if (system(gcc_cmd.c_str()) != 0) {
     std::filesystem::remove(tmpname);
     LOG(FATAL) << "Failed to compile shared object file during macro function "
                   "synthesis.\n"
@@ -249,25 +249,27 @@ bool PrepEngine::write_shared_object_to_temp_file(
   tmpname += ".so";
 
   /*==================== CREATE A MANAGED DELETER FOR THE TEMP FILE =========*/
-  tempfile = unique_ptr<str, void (*)(str *)>(new str(tmpname), [](str *s) {
-    if (s) {
-      filesystem::remove(*s);
-      delete s;
-    }
-  });
+  tempfile =
+      unique_ptr<str, std::function<void(str *)>>(new str(tmpname), [](str *s) {
+        if (s) {
+          std::filesystem::remove(*s);
+          delete s;
+        }
+      });
 
   return true;
 }
 
 bool PrepEngine::load_shared_object(
-    rstr filename, unique_ptr<void, function<void(void *)>> &managed_handle) {
+    std::unique_ptr<std::string, std::function<void(std::string *)>> &filename,
+    unique_ptr<void, function<void(void *)>> &managed_handle) {
   void *handle_raw = nullptr;
 
   /*==================== LOAD SHARED OBJECT INTO MEMORY =====================*/
 
   dlerror();  // Clear any existing errors
 
-  handle_raw = dlopen(filename.c_str(), RTLD_LAZY);
+  handle_raw = dlopen(filename->c_str(), RTLD_LAZY);
   if (!handle_raw) {
     LOG(FATAL) << "Preprocessor failed to load shared object file during macro "
                   "function synthesis.\n";
@@ -336,11 +338,13 @@ bool PrepEngine::ParseFn(const Token &tok, rstr directive, rstr parameter) {
 
   /*================== WRITE SHARED OBJECT TO TEMP FILE =====================*/
   if (!write_shared_object_to_temp_file(shared_object, temp_file_access)) {
+    LOG(FAILED) << "Failed to compile macro function" << tok << endl;
     return false;
   }
 
   /*==================== LOAD SHARED OBJECT INTO MEMORY =====================*/
-  if (!load_shared_object(*temp_file_access, managed_handle)) {
+  if (!load_shared_object(temp_file_access, managed_handle)) {
+    LOG(FAILED) << "Failed to compile macro function" << tok << endl;
     return false;
   }
 
@@ -349,6 +353,7 @@ bool PrepEngine::ParseFn(const Token &tok, rstr directive, rstr parameter) {
   name = name.substr(0, name.find_first_of("("));
 
   if (!load_function_from_shared_object(name, managed_handle)) {
+    LOG(FAILED) << "Failed to compile macro function" << tok << endl;
     return false;
   }
 

@@ -1,14 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
 project(quix-compiler-suite)
 
-option(ONLY_BUILD_LIBQUIXCC "Only build libquixcc" OFF)
-
 if (BUILD_TESTING)
 enable_testing()
 endif()
 
 
-# Calculate build ID
+#================== CALCULATE BUILD ID ==================
 set(ENV_CONCAT_DATA "")
 get_cmake_property(_variableNames VARIABLES)
 list (SORT _variableNames)
@@ -25,16 +23,17 @@ string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(QUIX_BUILD_ID "\"QPKG_${SHA256SUMS}\"")
 message(STATUS "Quix BuildID: ${QUIX_BUILD_ID}")
 
-add_subdirectory(libquixcc)
-add_subdirectory(qcc)
-add_subdirectory(qld)
-
-if (NOT ONLY_BUILD_LIBQUIXCC)
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  #================== CREATE DEBUG BUILD ==================
+  add_subdirectory(libquixcc)
   add_subdirectory(qcc)
   add_subdirectory(qld)
   add_subdirectory(qpkg)
-
-  if (LIBQUIXCC_STATIC)
-    add_subdirectory(tools)
-  endif()
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+  #================= CREATE RELEASE BUILD =================
+  add_subdirectory(libquixcc)
+  add_subdirectory(qcc)
+  add_subdirectory(qld)
+  add_subdirectory(qpkg)
 endif()
+  

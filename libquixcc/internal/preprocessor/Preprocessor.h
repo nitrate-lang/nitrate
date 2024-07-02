@@ -108,7 +108,8 @@ class PrepEngine : public libquixcc::Scanner {
       std::unique_ptr<std::string, std::function<void(std::string *)>>
           &tempfile);
   bool load_shared_object(
-      rstr filename,
+      std::unique_ptr<std::string, std::function<void(std::string *)>>
+          &filename,
       std::unique_ptr<void, std::function<void(void *)>> &handle);
   bool load_function_from_shared_object(
       rstr function_name,

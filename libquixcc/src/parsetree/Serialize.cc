@@ -34,6 +34,7 @@
 #include <lexer/Lex.h>
 #include <parsetree/Serialize.h>
 #include <parsetree/nodes/AllNodes.h>
+#include <core/Exception.h>
 
 #include <functional>
 #include <unordered_map>
@@ -395,6 +396,7 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
     default:
       LOG(FATAL) << "No conversion function for node type " << (int)n->ntype
                  << " found." << std::endl;
+      throw core::Exception();
   }
 }
 

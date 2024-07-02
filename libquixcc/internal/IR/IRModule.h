@@ -36,6 +36,7 @@
 #error "This header requires C++"
 #endif
 
+#include <core/Exception.h>
 #include <core/Logger.h>
 
 #include <algorithm>
@@ -93,6 +94,7 @@ class Node {
     if (p == 0) {
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
+      throw core::Exception();
     }
 #endif
     return typeid(T) == typeid(*this);
@@ -105,10 +107,12 @@ class Node {
     if (p == 0) {
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
+      throw core::Exception();
     }
     if (!other) {
       LOG(FATAL) << "Invalid cast from `" << typeid(*this).name()
                  << "` to nullptr" << std::endl;
+      throw core::Exception();
     }
 #endif
     return reinterpret_cast<const T *>(this) == other;
@@ -121,6 +125,7 @@ class Node {
     if (ptr == 0) {
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
+      throw core::Exception();
     }
 #endif
     auto p = dynamic_cast<const T *>(this);
@@ -129,8 +134,7 @@ class Node {
 
     LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `"
                << typeid(T).name() << "`" << std::endl;
-
-    __builtin_unreachable();
+    throw core::Exception();
   }
 
   template <typename T>
@@ -140,6 +144,7 @@ class Node {
     if (ptr == 0) {
       LOG(FATAL) << "Invalid cast from nullptr to `" << typeid(T).name() << "`"
                  << std::endl;
+      throw core::Exception();
     }
 #endif
 
@@ -149,8 +154,7 @@ class Node {
 
     LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `"
                << typeid(T).name() << "`" << std::endl;
-
-    __builtin_unreachable();
+    throw core::Exception();
   }
 
   /* Write IR to Output Stream */

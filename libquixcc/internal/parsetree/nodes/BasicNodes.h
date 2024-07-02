@@ -36,6 +36,7 @@
 #error "This header requires C++"
 #endif
 
+#include <core/Exception.h>
 #include <core/Logger.h>
 #include <lexer/Token.h>
 #include <parsetree/Iterate.h>
@@ -70,6 +71,7 @@ class ParseNode {
     if (!p) {
       LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `"
                  << typeid(T).name() << "`" << std::endl;
+      throw core::Exception();
     }
 #endif
     return p;
@@ -83,6 +85,7 @@ class ParseNode {
     if (!p) {
       LOG(FATAL) << "Invalid cast from `" << typeid(*this).name() << "` to `"
                  << typeid(T).name() << "`" << std::endl;
+      throw core::Exception();
     }
 #endif
 

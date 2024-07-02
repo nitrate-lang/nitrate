@@ -93,8 +93,6 @@ typedef qint64 qintptr;
 #endif /* __QUIX_CODEGEN__ */
 
 qexport qvoid main() {
-  qint8 *mac1 = "macro_1(): *i8 {\n  ret \"\";\n} not implemented";
-  qint8 *mac2 = "macro_2(): *i8 {\n  ret \"\";\n} not implemented";
-  qint8 *mac3 = "macro_3(): *i8 {\n  ret \"\";\n} not implemented";
+  qint8 *mac1 = "macro_1() {\n} not implemented";
   return;
 };

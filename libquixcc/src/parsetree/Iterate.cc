@@ -31,6 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
+#include <core/Exception.h>
 #include <parsetree/Iterate.h>
 #include <parsetree/nodes/AllNodes.h>
 
@@ -248,8 +249,7 @@ size_t ParseTreePreorder::dispatch(ParseNode *n) {
     default:
       LOG(FATAL) << "No conversion function for node type " << (int)n->ntype
                  << " found." << std::endl;
-
-      return 0;
+      throw core::Exception();
   }
 }
 
@@ -810,7 +810,7 @@ size_t ParseTreePreorder::iter(UnionFieldNode *node) {
 
 size_t ParseTreePreorder::iter(EnumDefNode *node) {
   bool scoped = !node->m_type->m_name.empty();
-  
+
   if (scoped) m_scope.push_back(node->m_type->m_name);
 
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_type));

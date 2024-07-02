@@ -59,61 +59,12 @@ static std::map<std::string, std::string> acceptable_objgen_flags = {
     {"-O3", "-O3"},     {"-g", "-g"},       {"-v", "-v"},
     {"-flto", "-flto"}, {"-fPIC", "-fPIC"}, {"-fPIE", "-fPIE"}};
 
-class CFILE_raw_pwrite_ostream : public llvm::raw_pwrite_stream {
- public:
-  explicit CFILE_raw_pwrite_ostream(FILE *file)
-      : llvm::raw_pwrite_stream(true) {
-    m_file = file;
-  }
-
- protected:
-  FILE *m_file;
-
-  void pwrite_impl(const char *Ptr, size_t Size, uint64_t Offset) override {
-    size_t CurPos = ftell(m_file);
-    if (fseek(m_file, Offset, SEEK_SET) == -1)
-      llvm::report_fatal_error("Failed to seek in file");
-
-    if (fwrite(Ptr, 1, Size, m_file) != Size)
-      llvm::report_fatal_error("Failed to write to file");
-
-    if (fseek(m_file, CurPos, SEEK_SET) == -1)
-      llvm::report_fatal_error("Failed to seek in file");
-
-    fflush(m_file);
-
-    std::cout << "pwrite_impl(" << (void *)Ptr << ", " << Size << ", " << Offset
-              << ")" << std::endl;
-  }
-
-  void write_impl(const char *Ptr, size_t Size) override {
-    if (fwrite(Ptr, 1, Size, m_file) != Size)
-      llvm::report_fatal_error("Failed to write to file");
-
-    fflush(m_file);
-
-    std::cout << "write_impl(" << (void *)Ptr << ", " << Size << ")"
-              << std::endl;
-  }
-
-  uint64_t current_pos() const override {
-    fflush(m_file);
-
-    long pos = ftell(m_file);
-    if (pos == -1)
-      llvm::report_fatal_error("Failed to get current position in file");
-
-    std::cout << "current_pos() -> " << pos << std::endl;
-
-    return pos;
-  }
-};
-
 bool libquixcc::codegen::write_IR(quixcc_job_t &ctx,
                                   std::unique_ptr<ir::delta::IRDelta> &ir,
                                   FILE *out, bool generate_bitcode) {
   std::error_code ec;
-  CFILE_raw_pwrite_ostream os(out);
+  std::string output_buffer;
+  llvm::raw_string_ostream os(output_buffer);
 
   if (!LLVM14Codegen::codegen(ir, ctx.m_inner)) {
     LOG(ERROR) << log::raw << ctx.m_filename.top()
@@ -148,6 +99,11 @@ bool libquixcc::codegen::write_IR(quixcc_job_t &ctx,
   } else {
     LOG(DEBUG) << "Generating LLVM IR" << std::endl;
     ctx.m_inner.m_module->print(os, nullptr, ctx.m_argset.contains("-g"));
+    if (!fwrite(output_buffer.c_str(), 1, output_buffer.size(), out)) {
+      LOG(ERROR) << "Failed to write LLVM IR to file" << std::endl;
+      return false;
+    }
+    fflush(out);
   }
 
   LOG(DEBUG) << "Finished generating LLVM IR" << std::endl;
@@ -187,7 +143,7 @@ bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx,
 #if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && \
     !defined(__OpenBSD__) && !defined(__FreeBSD__) && !defined(__NetBSD__)
   LOG(FATAL) << "Unsupported operating system" << std::endl;
-  throw std::runtime_error("Unsupported operating system");
+  throw core::Exception();
 #else
   auto &TargetTriple = ctx.m_triple;
 
@@ -212,7 +168,8 @@ bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx,
   ctx.m_inner.m_module->setTargetTriple(TargetTriple);
 
   std::error_code ec;
-  CFILE_raw_pwrite_ostream os(out);
+  llvm::SmallVector<char> output_buffer;
+  llvm::raw_svector_ostream os(output_buffer);
 
   if (!LLVM14Codegen::codegen(ir, ctx.m_inner)) {
     LOG(ERROR) << log::raw << "Failed to generate LLVM Code for file"
@@ -272,7 +229,13 @@ bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx,
     return false;
   }
 
-  pass.run(*ctx.m_inner.m_module);
+  if (!pass.run(*ctx.m_inner.m_module)) {
+    LOG(ERROR) << "Failed to generate code for file" << ctx.m_filename.top()
+               << std::endl;
+    return false;
+  }
+
+  fwrite(output_buffer.data(), 1, output_buffer.size(), out);
   fflush(out);
 
   return true;

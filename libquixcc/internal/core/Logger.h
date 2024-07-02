@@ -141,7 +141,7 @@ class Logger {
 
     mode(log::format);
 
-    if (m_level == ERROR || m_level == FATAL) {
+    if (m_level == ERROR) {
       throw std::runtime_error(s);
     }
   }
