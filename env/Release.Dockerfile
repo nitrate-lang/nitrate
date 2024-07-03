@@ -14,13 +14,15 @@ RUN cd /usr/bin && ln -s llvm-config-14 llvm14-config
 
 # Make the build script
 RUN echo "#!/bin/sh" > /opt/build.sh
-RUN echo "cmake -S /app -B /app/build -DCMAKE_BUILD_TYPE=Release" >> /opt/build.sh
-RUN echo "cmake --build /app/build -j`nproc`" >> /opt/build.sh
+RUN echo "mkdir -p /app/build/release" >> /opt/build.sh
+RUN echo "cmake -S /app -B /app/build/release -DCMAKE_BUILD_TYPE=Release" >> /opt/build.sh
+RUN echo "cmake --build /app/build/release -j`nproc`" >> /opt/build.sh
 RUN echo "mkdir -p /app/bin" >> /opt/build.sh
-RUN echo "cp /app/build/libquixcc/libquixcc.so /app/bin/libquixcc.so" >> /opt/build.sh
-RUN echo "cp /app/build/qcc/qcc /app/bin/qcc" >> /opt/build.sh
-RUN echo "cp /app/build/qld/qld /app/bin/qld" >> /opt/build.sh  
-RUN echo "cp /app/build/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
+RUN echo "rm -rf /app/bin/*" >> /opt/build.sh
+RUN echo "cp /app/build/release/libquixcc/libquixcc.so /app/bin/libquixcc.so" >> /opt/build.sh
+RUN echo "cp /app/build/release/qcc/qcc /app/bin/qcc" >> /opt/build.sh
+RUN echo "cp /app/build/release/qld/qld /app/bin/qld" >> /opt/build.sh  
+RUN echo "cp /app/build/release/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
 RUN chmod +x /opt/build.sh
 
 WORKDIR /app
