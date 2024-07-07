@@ -151,6 +151,7 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder::CompilerBuilder() {
   m_verbose = Verbosity::NORMAL;
   m_target = "";  // Host target
   m_input = m_output = nullptr;
+  m_disregard = false;
 }
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_source(

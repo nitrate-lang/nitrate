@@ -180,7 +180,7 @@ static void resolve_function_decls_to_calls(quixcc_job_t *job,
 
     if (!job->m_inner.m_named_construsts.contains(
             std::make_pair(NodeType::FunctionDeclNode, callee_name))) {
-      LOG(ERROR) << core::feedback[UNRESOLVED_FUNCTION] << callee_name << std::endl;
+      LOG(DEBUG) << core::feedback[UNRESOLVED_FUNCTION] << callee_name << std::endl;
       return;
     }
 

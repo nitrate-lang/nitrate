@@ -34,9 +34,9 @@ string(REPLACE "\n" " " LLVM_LIBS "${LLVM_LIBS_RAW}")
 string(REPLACE " " ";" LLVM_LIBS "${LLVM_LIBS}")
 string(REPLACE "\n" " " LLVM_LIBS_BASH "${LLVM_LIBS_RAW}")
 
-SET(BUILD_FLAGS_COMMON -g -O3 -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter -Wno-error=mismatched-new-delete -DLLVM_SUUPORT_ALL_TARGETS)
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -DNDEBUG -DLIBQUIX_VERSION=${LIBQUIX_VERSION})
-SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-unused-parameter -DLIBQUIX_VERSION="undefined")
+SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter -Wno-error=mismatched-new-delete -DLLVM_SUUPORT_ALL_TARGETS)
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DLIBQUIX_VERSION=${LIBQUIX_VERSION})
+SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-unused-parameter -DLIBQUIX_VERSION="undefined")
 
 file(GLOB_RECURSE LIBQUIX_CXX_SOURCES "src/*.cc")
 
@@ -44,8 +44,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   #================== CREATE DEBUG BUILD ==================
   add_library(quixcc SHARED ${LIBQUIX_CXX_SOURCES})
   target_include_directories(quixcc PUBLIC "internal" include)
-  target_compile_options(quixcc PRIVATE ${PROJECT_DEBUG_FLAGS} -fprofile-arcs -ftest-coverage --coverage)
-  target_link_options(quixcc PRIVATE ${LLVM_LD_FLAGS} -fprofile-arcs -ftest-coverage --coverage)
+  target_compile_options(quixcc PRIVATE ${PROJECT_DEBUG_FLAGS})
+  target_link_options(quixcc PRIVATE ${LLVM_LD_FLAGS} )
 
   foreach(lib ${LLVM_LIBS})
     target_link_libraries(quixcc PRIVATE ${lib})

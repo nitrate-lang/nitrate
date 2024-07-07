@@ -176,6 +176,12 @@ static std::string serialize_type(const libquixcc::ir::q::Type *type) {
     }
 
     return ss.str();
+  } else if (type->is<q::IntrinsicType>()) {
+    auto intrinsic = type->as<q::IntrinsicType>();
+    ss << "I";
+    ss << serialize_name(q::intrinsic_type_names.at(intrinsic->name).data());
+
+    return ss.str();
   }
 
   throw std::runtime_error("Unknown type: " + std::to_string((int)type->ntype));
@@ -269,6 +275,15 @@ static q::Type *deserialize_type(std::stringstream &str) {
       }
 
       return q::FType::create(params, ret);
+    } 
+    case 'I': {
+      auto name = deserialize_name(str);
+      if (!q::intrinsic_type_map.contains(name)) {
+        std::cerr << "Error deserializing intrinsic type" << std::endl;
+        return nullptr;
+      }
+
+      return q::IntrinsicType::create(q::intrinsic_type_map.at(name));
     }
     default:
       break;

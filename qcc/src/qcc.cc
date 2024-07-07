@@ -40,6 +40,7 @@ enum class OperatingMode {
   IR_BITCODE,
   QUIX_IR,
   DELTA_IR,
+  PREPROCESSED,
   LEX,
   PARSE_TREE,
 
@@ -65,12 +66,14 @@ struct Options {
   quixcc::Verbosity verbosity;
   quixcc::OptimizationLevel optimization;
   bool debug;
+  bool noprofile;
   OperatingMode mode;
 
   Options() {
     verbosity = quixcc::Verbosity::NORMAL;
     optimization = (quixcc::OptimizationLevel)-1;
     debug = false;
+    noprofile = false;
     mode = OperatingMode::QUIXCC_TARGET_DEFAULT;
     output = "a.out";
   }
@@ -89,6 +92,7 @@ struct Options {
       case OperatingMode::DELTA_IR:
       case OperatingMode::C11:
       case OperatingMode::LEX:
+      case OperatingMode::PREPROCESSED:
         if (output.empty()) {
           std::cerr << "Error: missing output file" << std::endl;
           return false;
@@ -183,6 +187,7 @@ static void print_help() {
   println(
       "  -emit-bc                  Emit the intermediate representation (LLVM "
       "bitcode)");
+  println("  -emit-prep                Emit the preprocessed source");
   println("  -emit-tokens              Emit the tokenized source");
   println("  -emit-parse               Emit the parse tree");
   println("  -S                        Compile only; do not assemble or link");
@@ -343,6 +348,8 @@ static std::optional<Options> parse_options(
       options.mode = OperatingMode::C11;
     } else if (*it == "-emit-bc") {
       options.mode = OperatingMode::IR_BITCODE;
+    } else if (*it == "-emit-prep") {
+      options.mode = OperatingMode::PREPROCESSED;
     } else if (*it == "-emit-tokens") {
       options.mode = OperatingMode::LEX;
     } else if (*it == "-emit-parse") {
@@ -353,6 +360,8 @@ static std::optional<Options> parse_options(
       options.mode = OperatingMode::OBJECT;
     } else if (*it == "-g") {
       options.debug = true;
+    } else if (*it == "--noprofile") {
+      options.noprofile = true;
     } else if (*it == "-O0") {
       options.optimization = quixcc::OptimizationLevel::NONE;
     } else if (*it == "-Os") {
@@ -395,6 +404,8 @@ static std::optional<Options> parse_options(
   return options;
 }
 
+extern "C" void moncontrol(int);
+
 int main(int argc, char *argv[]) {
   std::vector<std::string> args(argv, argv + argc);
 
@@ -403,8 +414,9 @@ int main(int argc, char *argv[]) {
   std::optional<Options> options;
 
   if (options = parse_options(args), !options.has_value()) return 2;
-
   if (!options->validate()) return 3;
+
+  if (options->noprofile) moncontrol(0);
 
   switch (options->mode) {
     case OperatingMode::DISP_HELP:
@@ -462,6 +474,9 @@ int main(int argc, char *argv[]) {
       break;
     case OperatingMode::IR_BITCODE:
       builder.opt("-emit-bc");
+      break;
+    case OperatingMode::PREPROCESSED:
+      builder.opt("-emit-prep");
       break;
     case OperatingMode::LEX:
       builder.opt("-emit-tokens");

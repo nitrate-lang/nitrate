@@ -399,6 +399,9 @@ enum class QIntrinsicType {
   Null,
 };
 
+extern const std::map<QIntrinsicType, std::string_view> intrinsic_type_names;
+extern const std::map<std::string_view, QIntrinsicType> intrinsic_type_map;
+
 class IntrinsicType : public Type {
  protected:
   bool print_impl(std::ostream &os, PState &state) const override;

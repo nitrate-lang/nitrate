@@ -100,11 +100,12 @@ class PrepEngine : public libquixcc::Scanner {
   void disable_expansion();
   void enable_expansion();
 
+  std::optional<std::string> generate_adapter_entrypoint(rstr metastatic);
   std::string build_macro_sourcecode(rstr parameter);
   bool acquire_shared_object(rstr metacode,
                              std::vector<uint8_t> &shared_object);
   bool write_shared_object_to_temp_file(
-      const std::vector<uint8_t> &shared_object,
+      rstr metacode,
       std::unique_ptr<std::string, std::function<void(std::string *)>>
           &tempfile);
   bool load_shared_object(

@@ -768,6 +768,12 @@ static QResult conv(const SeqExprNode *n, QState &state) {
 static QResult conv(const CallExprNode *n, QState &state) {
   /// TODO: cleanup
 
+  if (!n->m_decl) {
+    LOG(ERROR) << "QIR conv: call expression has no declaration" << std::endl;
+    /// TODO: Implement builtins
+    return nullptr;
+  }
+
   Global *callee = nullptr;
 
   if (state.exported.contains(n->m_decl->m_name))
@@ -2333,7 +2339,7 @@ static QResult conv(const RetifStmtNode *n, QState &state) {
 
   /* One-for-one lowering of the return-if statement node */
   return IfElse::create(cond[0]->as<Expr>(), Ret::create(ret[0]->as<Expr>()),
-                        nullptr);
+                        Block::create({}));
 }
 
 static QResult conv(const RetzStmtNode *n, QState &state) {
@@ -2377,7 +2383,8 @@ static QResult conv(const RetzStmtNode *n, QState &state) {
   }
 
   /* One-for-one lowering of the return-if-not statement node */
-  return IfElse::create(inv_cond, Ret::create(ret[0]->as<Expr>()), nullptr);
+  return IfElse::create(inv_cond, Ret::create(ret[0]->as<Expr>()),
+                        Block::create({}));
 }
 
 static QResult conv(const RetvStmtNode *n, QState &state) {
@@ -2405,7 +2412,8 @@ static QResult conv(const RetvStmtNode *n, QState &state) {
   }
 
   /* One-for-one lowering of the return-void statement node */
-  return IfElse::create(cond[0]->as<Expr>(), Ret::create(nullptr), nullptr);
+  return IfElse::create(cond[0]->as<Expr>(), Ret::create(nullptr),
+                        Block::create({}));
 }
 
 static QResult conv(const BreakStmtNode *n, QState &state) {

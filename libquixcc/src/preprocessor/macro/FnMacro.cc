@@ -31,9 +31,13 @@
 
 #define QUIXCC_INTERNAL
 
+#include <IR/Q/Function.h>
+#include <IR/Q/QIR.h>
+#include <IR/Q/Variable.h>
 #include <core/Logger.h>
 #include <core/sha160.h>
 #include <lexer/Lex.h>
+#include <parsetree/Parser.h>
 #include <preprocessor/Preprocessor.h>
 
 #include <boost/filesystem.hpp>
@@ -69,6 +73,141 @@ static str calculate_key(rstr data) {
   return key;
 }
 
+std::optional<std::string> PrepEngine::generate_adapter_entrypoint(
+    PrepEngine::rstr metastatic) {
+  stringstream ss;
+
+  /* Begin Macro Entrypoint */
+  ss << "/* Begin Macro Entrypoint */\n";
+  ss << "pub \"C\" fn __quix_macro(argc: u32, argv: *string): string {\n";
+  ss << "  import \"C\" {\n";
+  ss << "    fn strdup(s: string): string;\n";
+  ss << "  }\n\n";
+
+  std::unique_ptr<ir::q::QModule> qmodule;
+  ir::q::Segment *metafn = nullptr;
+  std::string mname;
+
+  { /* Parse and generate Quix-IR for the metastatic definition */
+    std::shared_ptr<BlockNode> block;
+    auto lexer = clone();
+    lexer->set_source(metastatic, "metastatic");
+    if (!parse(*job, lexer.get(), block, false, true) || !block) {
+      LOG(ERROR) << "Failed to parse metastatic" << endl;
+      return std::nullopt;
+    }
+
+    if (block->m_stmts.size() != 1) {
+      LOG(ERROR) << "Metastatic must be a single function definition" << endl;
+      return std::nullopt;
+    }
+
+    qmodule = std::make_unique<ir::q::QModule>("metatstatic");
+    if (!qmodule->from_ptree(job, block)) {
+      LOG(ERROR) << "Failed to convert metastatic to QIR" << endl;
+      return std::nullopt;
+    }
+
+    if (qmodule->root()->children.size() != 1) {
+      LOG(ERROR) << "Metastatic must be a single function definition" << endl;
+      return std::nullopt;
+    }
+
+    if (!qmodule->root()->children.at(0)->is<ir::q::Global>()) {
+      LOG(ERROR) << "Metastatic must be a function definition" << endl;
+      return std::nullopt;
+    }
+
+    if (!qmodule->root()
+             ->children.at(0)
+             ->as<ir::q::Global>()
+             ->value->is<ir::q::Segment>()) {
+      LOG(ERROR) << "Metastatic must be a function definition" << endl;
+      return std::nullopt;
+    }
+
+    /* Save the function name and the function definition */
+    auto glob = qmodule->root()->children.at(0)->as<ir::q::Global>();
+    metafn = glob->value->as<ir::q::Segment>();
+    mname = glob->name;
+  }
+
+  /* Code to validate the number of arguments */
+  size_t argc = metafn->params.size();
+  ss << "  if argc != " << argc
+     << " {\n"
+        "    ret strdup(\"__scanner_halt__\");\n"
+        "  }\n\n";
+
+  /* Generate code to convert strings to the expected internal types */
+  std::string arguments;
+  size_t i = 0;
+
+  for (auto it = metafn->params.begin(); it != metafn->params.end();
+       it++, i++) {
+    auto pparam = *it;
+    auto p = pparam.second;
+
+    switch ((ir::q::QType)p->ntype) {
+      using namespace ir::q;
+
+      case QType::I1:  /* 0-1 */
+      case QType::U8:  /* 0-255 */
+      case QType::U16: /* 0-65535 */
+      case QType::I8:  /* -128-127 */
+      case QType::I16: /* -32768-32767 */
+      case QType::I32: /* -2147483648-2147483647 */
+        arguments += "atoi(argv[" + to_string(i) + "])";
+        break;
+      case QType::U32: /* 0-4294967295 */
+      case QType::I64: /* -9223372036854775808-9223372036854775807 */
+        arguments += "atol(argv[" + to_string(i) + "])";
+        break;
+      case QType::U64: /* 0-18446744073709551615 */
+        arguments += "atoll(argv[" + to_string(i) + "])";
+        break;
+      case QType::F32: /* ??? */
+      case QType::F64: /* ??? */
+        arguments += "atof(argv[" + to_string(i) + "])";
+        break;
+      case QType::I128:
+      case QType::U128:
+        LOG(ERROR) << "128-bit integers are not yet supported in macro "
+                      "functions"
+                   << endl;
+        return std::nullopt;
+      case QType::IntrinsicType: {
+        switch (p->as<IntrinsicType>()->name) {
+          case QIntrinsicType::String:
+            arguments += "argv[" + to_string(i) + "]";
+            break;
+          default:
+            LOG(ERROR) << "Unsupported intrinsic type in macro function"
+                       << endl;
+            return std::nullopt;
+        }
+        break;
+      }
+
+      default:
+        LOG(ERROR) << "Unsupported parameter type in macro function" << endl;
+        return std::nullopt;
+    }
+
+    if (i < argc - 1) {
+      arguments += ", ";
+    }
+  }
+
+  /* Call the internal function; Use `to_str()` builtin to convert to string */
+  ss << "  ret strdup(" + mname + "(" + arguments + ").to_str());\n";
+  ss << "}\n";
+
+  ss << "/* End Macro Entrypoint */\n";
+
+  return ss.str();
+};
+
 str PrepEngine::build_macro_sourcecode(rstr parameter) {
   stringstream ss;
 
@@ -90,132 +229,208 @@ str PrepEngine::build_macro_sourcecode(rstr parameter) {
   }
   ss << "/* End Header Inclusions */\n\n";
 
+  /// TODO: change 'pub' here to 'namestyle' keyword (invent it)
+
   /* Begin Macro Body */
   ss << "/* Begin Macro Body */\n";
-  ss << "fn " << parameter << "\n";
+  ss << "pub \"C\" fn " << parameter << "\n";
   ss << "/* End Macro Body */\n\n";
 
   /* Begin Macro Entrypoint */
-  ss << "/* Begin Macro Entrypoint */\n";
-  ss << "pub \"C\" fn __quix_macro(argc: u32, argv: **i8): *i8 {\n";
-  ss << "  import \"C\" {\n";
-  ss << "    fn strdup(s: *i8): *i8;\n";
-  ss << "  }\n\n";
+  auto ret = generate_adapter_entrypoint("pub \"C\" fn " + parameter + "\n");
+  if (!ret.has_value()) {
+    LOG(ERROR) << "Failed to generate adapter entrypoint" << endl;
+    return "";
+  }
 
-  std::string placeholder_str_notimpl =
-      "\"\\\"" + escape_string(escape_string(parameter)) +
-      " not implemented\\\"\"";
-  ss << "  let exp = " << placeholder_str_notimpl << ";\n";
-  /// TODO: implement based on parameter return type / in parameters
-
-  ss << "  ret strdup(exp);\n";
-  ss << "}\n";
+  ss << ret.value();
 
   // std::cout << "\"" << ss.str() << "\"\n";
 
   return ss.str();
 }
 
-bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &shared_object) {
-  ssize_t shared_object_size = 0;
-  size_t raw_output_size = 0;
-  char *raw_output = nullptr;
+bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
+  char *rawbuf = nullptr;
   FILE *temp = nullptr;
 
-  /*=================== CHECK CACHE FOR SHARED OBJECT ========================*/
+  ///=========================================================================
+  /// BEGIN: CHECK CACHE FOR SHARED OBJECT
+  ///=========================================================================
+
   auto key = calculate_key(metacode);
-  shared_object_size = quixcc_cache_has(key.c_str(), key.size());
+  ssize_t objsize = quixcc_cache_has(key.c_str(), key.size());
 
-  if (shared_object_size < 0) {
-    /**
-     * If the shared object is not in the cache, we need to compile the metacode
-     * and write the shared object to the cache.
-     */
+  if (objsize > 0) {
+    LOG(DEBUG) << "Cache hit on metacode: " << key << endl;
 
-    LOG(DEBUG) << "Cache miss on metacode: " << key << endl;
-
-    /*=================== CREATE MEMORY BUFFER FOR SHARED OBJECT
-     * ==============*/
-    temp = open_memstream(&raw_output, &raw_output_size);
-    if (!temp) {
-      LOG(FATAL) << "Failed to open memory stream for metacode" << endl;
+    /*========== READ SHARED OBJECT FROM CACHE ============*/
+    output.resize(objsize);
+    if (!quixcc_cache_read(key.c_str(), key.size(), output.data(), objsize)) {
+      LOG(FATAL) << "Failed to read shared object from cache" << endl;
       return false;
     }
 
-    try {
-      /**
-       * Build the compiler object and compile the metacode to a shared object.
-       *
-       * -fPIC is used to generate position-independent code, which is required
-       * for shared objects.
-       */
+    /**
+     * Validation is not our responsibility.
+     * The cache provider is assumed to be reliable.
+     */
 
-      auto builder = quixcc::CompilerBuilder()
-                         .add_code(metacode.c_str(), metacode.size())
-                         .set_flag("-fPIC")
-                         .set_output(temp)
-                         .set_flag("-c")
-                         .target("");
+    return true;
+  }
 
-      /* Add "our" include directories to the compiler */
+  ///=========================================================================
+  /// END: CHECK CACHE FOR SHARED OBJECT
+  ///=========================================================================
+
+  try {
+    {
+      ///=========================================================================
+      /// BEGIN: COMPILE METACODE TO OBJECT
+      ///=========================================================================
+
+      LOG(DEBUG) << "Cache miss on metacode: " << key << endl;
+
+      size_t rawsz = 0;
+      if ((temp = open_memstream(&rawbuf, &rawsz)) == nullptr) {
+        LOG(FATAL) << "Failed to open memory stream for metacode" << endl;
+        return false;
+      }
+
+      auto builder =
+          quixcc::CompilerBuilder()
+              .add_code(metacode.c_str(), metacode.size()) /* Add code */
+              .set_flag("-fPIC") /* Generate position-independent code */
+              .set_output(temp)  /* Output to memory stream */
+              .set_flag("-c")    /* Compile only */
+              .target("");       /* Default target */
+
+      /* Carry over include directories */
       for (const auto &dir : m_include_dirs) {
         builder.add_include(dir);
       }
 
+      /* Verify the compiler instance */
       if (!builder.verify()) {
         fclose(temp);
-        free(raw_output);
+        free(rawbuf);
         LOG(FAILED) << "Failed to verify compiler for metacode" << endl;
         return false;
       }
 
-      /* Get the object code and print any 2nd order compiler messages */
+      /* Build and run the compiler */
       if (!builder.build().run().puts().ok()) {
         fclose(temp);
-        free(raw_output);
+        free(rawbuf);
         LOG(FAILED) << "Failed to build compiler for metacode" << endl;
         return false;
       }
 
-      /* Close the memory stream and write the shared object to the cache */
+      /* Implicitly Flush and close the memory stream */
       fclose(temp);
 
-      shared_object.resize(raw_output_size);
-      memcpy(shared_object.data(), raw_output, raw_output_size);
-      free(raw_output);
+      /* Copy into STL vector */
+      output.resize(rawsz);
+      memcpy(output.data(), rawbuf, rawsz);
+      free(rawbuf);
 
-      /* Write the shared object to the cache */
-      if (!quixcc_cache_write(key.c_str(), key.size(), shared_object.data(),
-                              shared_object.size())) {
-        LOG(WARN) << "libquixcc: Failed to write shared object to cache provider. (no cache provider?)" << endl;
-      }
-
-      return true;
-    } catch (const exception &e) {
-      fclose(temp);
-      free(raw_output);
-      LOG(FATAL) << "Failed to build compiler for metacode: " << e.what()
-                 << endl;
-      return false;
+      ///=========================================================================
+      /// END: COMPILE METACODE TO OBJECT
+      ///=========================================================================
     }
-  }
 
-  LOG(DEBUG) << "Cache hit on metacode: " << key << endl;
+    ///=========================================================================
+    /// BEGIN: COMPILE OBJECT TO SHARED OBJECT
+    ///=========================================================================
 
-  /*=================== READ SHARED OBJECT FROM CACHE ========================*/
-  shared_object.resize(shared_object_size);
-  if (!quixcc_cache_read(key.c_str(), key.size(), shared_object.data(),
-                         shared_object_size)) {
-    LOG(FATAL) << "Failed to read shared object from cache" << endl;
+    {
+      using namespace filesystem;
+      namespace bfs = boost::filesystem;
+
+      auto tmpname = absolute(bfs::unique_path().native()).string() + ".o";
+
+      {  /// Write object to temp file
+        ofstream temp_file(tmpname, ios::binary);
+        if (!temp_file.is_open()) {
+          LOG(FATAL) << "Failed to open temp file for shared object" << endl;
+          return false;
+        }
+
+        temp_file.write((const char *)output.data(), output.size());
+      }  /// End Write object to temp file
+
+      {  /// INVOKE OS COMMAND TO COMPILE OBJECT TO SHARED OBJECT
+        const std::string gcc_cmd =
+            "qld -sharedlib -o " + tmpname + ".so " + tmpname;
+        LOG(DEBUG) << "Compiling shared object: " << gcc_cmd << endl;
+
+        if (system(gcc_cmd.c_str()) != 0) {
+          std::filesystem::remove(tmpname);
+          LOG(FATAL)
+              << "Failed to compile shared object file during macro function "
+                 "synthesis"
+              << endl;
+          return false;
+        }
+
+        std::filesystem::remove(tmpname);  // Remove the input object file
+        tmpname += ".so";  // Update the filename to the output file
+      }  /// End INVOKE OS COMMAND TO COMPILE OBJECT TO SHARED OBJECT
+
+      {  /// READ OUTPUT FILE INTO MEMORY
+        ifstream shared_object_file(tmpname, ios::binary);
+        if (!shared_object_file.is_open()) {
+          LOG(FATAL) << "Failed to open shared object file for reading" << endl;
+          return false;
+        }
+
+        shared_object_file.seekg(0, ios::end);
+        objsize = shared_object_file.tellg();
+        shared_object_file.seekg(0, ios::beg);
+
+        output.resize(objsize);
+        if (!shared_object_file.read((char *)output.data(), objsize)) {
+          LOG(FATAL) << "Failed to read shared object file" << endl;
+          return false;
+        }
+      }  /// End READ OUTPUT FILE INTO MEMORY
+    }
+
+    /* Write shared object to cache */
+    if (!quixcc_cache_write(key.c_str(), key.size(), output.data(),
+                            output.size())) {
+      LOG(WARN) << "libquixcc: Failed to write shared object to cache "
+                   "provider. (no cache provider?)"
+                << endl;
+    }
+
+    return true;
+  } catch (const exception &e) {
+    fclose(temp);
+    free(rawbuf);
+    LOG(FATAL) << "Failed to build compiler for metacode: " << e.what() << endl;
+    return false;
+  } catch (...) {
+    fclose(temp);
+    free(rawbuf);
+    LOG(FATAL) << "Failed to build compiler for metacode: unknown error"
+               << endl;
     return false;
   }
 
-  return true;
+  ///=========================================================================
+  /// END: COMPILE OBJECT TO SHARED OBJECT
+  ///=========================================================================
 }
 
 bool PrepEngine::write_shared_object_to_temp_file(
-    const vec8 &shared_object,
-    unique_ptr<str, function<void(str *)>> &tempfile) {
+    rstr metacode, unique_ptr<str, function<void(str *)>> &tempfile) {
+  /*=================== COMPILE METACODE TO SHARED OBJECT ===================*/
+  vec8 shared_object;
+  if (!acquire_shared_object(metacode, shared_object)) {
+    return false;
+  }
+
   /*=================== WRITE SHARED OBJECT TO TEMP FILE =====================*/
   auto tmpname =
       filesystem::absolute(boost::filesystem::unique_path().native()).string() +
@@ -308,13 +523,10 @@ bool PrepEngine::load_function_from_shared_object(
 }
 
 bool PrepEngine::ParseFn(const Token &tok, rstr directive, rstr parameter) {
-  /// TODO: Implement the Fn directive
-
   (void)tok;
   (void)directive;
 
   str metacode;
-  vec8 shared_object;
   unique_ptr<str, function<void(str *)>> temp_file_access(nullptr, [](str *s) {
     if (s) {
       filesystem::remove(*s);
@@ -330,14 +542,8 @@ bool PrepEngine::ParseFn(const Token &tok, rstr directive, rstr parameter) {
   /*========================= SYNTHESIZE MACRO CODE= ========================*/
   metacode = build_macro_sourcecode(parameter);
 
-  /*=================== COMPILE METACODE TO SHARED OBJECT ===================*/
-  if (!acquire_shared_object(metacode, shared_object)) {
-    LOG(FAILED) << "Failed to compile macro function" << tok << endl;
-    return false;
-  }
-
   /*================== WRITE SHARED OBJECT TO TEMP FILE =====================*/
-  if (!write_shared_object_to_temp_file(shared_object, temp_file_access)) {
+  if (!write_shared_object_to_temp_file(metacode, temp_file_access)) {
     LOG(FAILED) << "Failed to compile macro function" << tok << endl;
     return false;
   }

@@ -658,7 +658,7 @@ bool preprocessor_config(quixcc_job_t *job, std::unique_ptr<PrepEngine> &prep) {
 static bool compile(quixcc_job_t *job) {
   auto ptree = std::make_shared<Ptree>();
 
-  if (job->m_argset.contains("-PREP")) {
+  if (job->m_argset.contains("-emit-prep")) {
     LOG(DEBUG) << "Preprocessing only" << std::endl;
     std::unique_ptr<PrepEngine> prep = std::make_unique<PrepEngine>(*job);
     if (!preprocessor_config(job, prep)) return false;
@@ -856,8 +856,8 @@ static bool verify_build_option(const std::string &option,
                                 const std::string &value) {
   const static std::set<std::string> static_options = {
       "-S",              // assembly output
-      "-PREP",           // preprocessor/Lexer output
       "-emit-tokens",    // lexer output (no preprocessing)
+      "-emit-prep",      // preprocessor/Lexer output
       "-emit-parse",     // parse tree output
       "-emit-ir",        // IR output
       "-emit-quix-ir",   // Quix IR output
