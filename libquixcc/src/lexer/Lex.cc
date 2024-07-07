@@ -686,7 +686,7 @@ const Token &StreamLexer::read_token() {
       /* If the Lexer overshot, we will return the saved character */
       if (!m_pushback.empty()) {
         c = m_pushback.front();
-        m_pushback.pop();
+        m_pushback.pop_front();
       } else {
         if ((c = getc()) == EOF) {
           return reset_state(), (m_tok = Token(TT::Eof, "", m_loc)).value();
@@ -730,7 +730,7 @@ const Token &StreamLexer::read_token() {
               if (!buf.ends_with("::")) {
                 char tc = buf.back();
                 buf.pop_back();
-                m_pushback.push(tc);
+                m_pushback.push_back(tc);
                 break;
               }
               colon_state = 0;
@@ -749,7 +749,7 @@ const Token &StreamLexer::read_token() {
 
           /* Check for f-string */
           if (buf == "f" && c == '"') {
-            m_pushback.push(c);
+            m_pushback.push_back(c);
             return (m_tok = Token(TT::Keyword, Keyword::FString, m_loc - 1))
                 .value();
           }
@@ -758,9 +758,9 @@ const Token &StreamLexer::read_token() {
           if (buf.size() > 0 && buf.back() == ':') {
             char tc = buf.back();
             buf.pop_back();
-            m_pushback.push(tc);
+            m_pushback.push_back(tc);
           }
-          m_pushback.push(c);
+          m_pushback.push_back(c);
 
           /* Determine if it's a keyword or an identifier */
           for (const auto &kw : keyword_map) {
@@ -794,9 +794,7 @@ const Token &StreamLexer::read_token() {
         case LexState::Integer: {
           while (true) {
             if (!(std::isxdigit(c) || c == '_' || c == '.' || c == 'x' ||
-                  c == 'b' || c == 'd' || c == 'o' || c == 'e') ||
-                (buf.ends_with(".") && c == '.')) {
-              m_pushback.push(c);
+                  c == 'b' || c == 'd' || c == 'o' || c == 'e' || c == '.')) {
               break;
             }
             buf += c;
@@ -809,11 +807,32 @@ const Token &StreamLexer::read_token() {
           }
 
           NumType type;
+          std::vector<char> items;
 
-          while (buf.ends_with(".")) {
-            m_pushback.push('.');
-            buf.pop_back();
+          bool cutting = true;
+          while (cutting) {
+            if (buf.empty()) {
+              break;
+            }
+
+            char last = buf.back();
+
+            switch (last) {
+              case '_':
+              case '.':
+                items.push_back(last);
+                buf.pop_back();
+                break;
+              default:
+                cutting = false;
+                break;
+            }
           }
+
+          for (auto it = items.rbegin(); it != items.rend(); ++it) {
+            m_pushback.push_back(*it);
+          }
+          m_pushback.push_back(c);
 
           /* Check if it's a floating point number */
           if ((type = check_number_literal_type(buf)) == NumType::Floating) {
@@ -824,6 +843,8 @@ const Token &StreamLexer::read_token() {
 
           /* Check if it's a valid number */
           if (type == NumType::Invalid) {
+            std::cerr << "Tokenization error: Invalid numeric literal: '" << buf
+                      << "'" << std::endl;
             return reset_state(),
                    (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                        .value();
@@ -1052,7 +1073,7 @@ const Token &StreamLexer::read_token() {
           if (buf.size() == 1) {
             for (const char punc : punctors) {
               if (punc == buf[0]) {
-                m_pushback.push(c);
+                m_pushback.push_back(c);
                 return (m_tok = Token(TT::Punctor, punctor_map.at(buf),
                                       m_loc - buf.size()))
                     .value();
@@ -1074,8 +1095,8 @@ const Token &StreamLexer::read_token() {
 
           while (1) {
             if (!operator_map.contains(buf)) {
-              m_pushback.push(buf.back());
-              m_pushback.push(c);
+              m_pushback.push_back(buf.back());
+              m_pushback.push_back(c);
               return (m_tok =
                           Token(TT::Operator,
                                 operator_map.at(buf.substr(0, buf.size() - 1)),

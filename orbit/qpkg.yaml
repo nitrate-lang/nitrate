@@ -2,5 +2,5 @@ version: 1
 name: "orbit"
 description: "Standard library for the Quix programming language"
 licenses: ["MIT"]
-packages: ["core", "std", "cstd"]
+packages: ["core", "std"]
 target: "sharedlib"

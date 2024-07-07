@@ -16,26 +16,37 @@
 
 @use "v1.0"
 @language "en"
-@copyright "Wesley Jones; MIT license"
 
-@import cstd::cint;
+// @import core::panic;
 
-subsystem core::cstd {
-    import "c"
-    {
-        fn pure noexcept isalnum(c: int): int;
-        fn pure noexcept isalpha(c: int): int;
-        fn pure noexcept isblank(c: int): int;
-        fn pure noexcept iscntrl(c: int): int;
-        fn pure noexcept isdigit(c: int): int;
-        fn pure noexcept isgraph(c: int): int;
-        fn pure noexcept islower(c: int): int;
-        fn pure noexcept isprint(c: int): int;
-        fn pure noexcept ispunct(c: int): int;
-        fn pure noexcept isspace(c: int): int;
-        fn pure noexcept isupper(c: int): int;
-        fn pure noexcept isxdigit(c: int): int;
-        fn pure noexcept tolower(c: int): int;
-        fn pure noexcept toupper(c: int): int;
+subsystem core::mem: [core::panic, 
+                      ex::cstdlib::malloc, 
+                      ex::cstdlib::free] {
+  unsafe {
+    /// @brief Allocates a region of memory.
+    /// @param size The size of the region to allocate.
+    /// @return A pointer to the allocated region.
+    /// @SECURITY This is just an alias for C's stdlib malloc function.
+    pub fn tsafe unsafe_allocate(size: usize): *u8 {
+      import "C" fn malloc(size: usize): *u8;
+
+      let ptr = malloc(size);
+
+      if ptr == null {
+        core::panic("Out of memory");
+      }
+
+      ret ptr;
     }
+
+    /// @brief Deallocates a region of memory.
+    /// @param ptr A pointer to the region to deallocate.
+    /// @param size The size of the region to deallocate.
+    /// @SECURITY This is just an alias for C's stdlib `free` function.
+    pub fn tsafe unsafe_deallocate(ptr: *u8, size: usize) {
+      import "C" fn free(ptr: *u8);
+
+      free(ptr);
+    }
+  }
 }

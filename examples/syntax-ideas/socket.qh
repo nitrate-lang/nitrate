@@ -16,7 +16,6 @@
 
 @use "v1.0"
 @language "en"
-@copyright "Wesley Jones; MIT license"
 
 @import typesystem::alias;
 

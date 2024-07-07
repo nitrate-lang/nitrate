@@ -183,8 +183,8 @@ void libquixcc::mutate::DiscoverNamedConstructs(
 
     auto key = std::make_pair((ptr)->ntype, tmp);
     if (named_construct_map.contains(key) && !(ptr)->is<FunctionDeclNode>()) {
-      LOG(ERROR) << core::feedback[error_message_index[(ptr)->ntype]] << tmp
-                 << std::endl;
+      // LOG(ERROR) << core::feedback[error_message_index[(ptr)->ntype]] << tmp
+      //            << std::endl;
       return;
     }
 

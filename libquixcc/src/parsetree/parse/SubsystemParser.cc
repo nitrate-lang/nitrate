@@ -37,7 +37,8 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner,
                                 std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << core::feedback[SUBSYSTEM_MISSING_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[SUBSYSTEM_MISSING_IDENTIFIER] << tok
+               << std::endl;
     return false;
   }
 
@@ -84,8 +85,16 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner,
   if (tok.is<Punctor>(Punctor::Colon)) {
     scanner->next();  // consume colon
     tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::OpenBracket)) {
+      LOG(ERROR) << "Expected '[' before subsystem dependencies" << tok
+                 << std::endl;
+      return false;
+    }
+    tok = scanner->next();
+
     if (tok.type != TT::Identifier) {
-      LOG(ERROR) << core::feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
+      LOG(ERROR) << core::feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok
+                 << std::endl;
       return false;
     }
     deps.insert(tok.as<std::string>());
@@ -101,6 +110,13 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner,
       }
       deps.insert(tok.as<std::string>());
       tok = scanner->peek();
+    }
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::CloseBracket)) {
+      LOG(ERROR) << "Expected ']' after subsystem dependencies" << tok
+                 << std::endl;
+      return false;
     }
   }
 

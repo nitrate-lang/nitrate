@@ -937,6 +937,20 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Xor *node) {
 llvm::Value *LLVM14Codegen::gen(const ir::delta::RootNode *node) {
   for (auto child : node->children) gen(child);
 
+  if (node->children.empty()) {
+    llvm::FunctionType *ftype =
+        llvm::FunctionType::get(llvm::Type::getVoidTy(*m_ctx->m_ctx), false);
+    llvm::Function *func =
+        llvm::Function::Create(ftype, llvm::Function::InternalLinkage,
+                               "__placeholder__", m_ctx->m_module.get());
+    llvm::BasicBlock *bb =
+        llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
+    m_ctx->m_builder->SetInsertPoint(bb);
+    m_ctx->m_builder->CreateRetVoid();
+
+    return func;
+  }
+
   return nullptr;
 }
 

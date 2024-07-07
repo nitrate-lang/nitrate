@@ -230,7 +230,7 @@ bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx,
   }
 
   if (!pass.run(*ctx.m_inner.m_module)) {
-    LOG(ERROR) << "Failed to generate code for file" << ctx.m_filename.top()
+    LOG(ERROR) << "Failed to generate code for file: " << ctx.m_filename.top()
                << std::endl;
     return false;
   }

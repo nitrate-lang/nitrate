@@ -769,9 +769,22 @@ static QResult conv(const CallExprNode *n, QState &state) {
   /// TODO: cleanup
 
   if (!n->m_decl) {
-    LOG(ERROR) << "QIR conv: call expression has no declaration" << std::endl;
+    if (!n->m_callee->is<MemberAccessNode>()) {
+      LOG(WARN) << "QIR conv: call expression has no declaration" << std::endl;
+      return Call::create(nullptr, {});
+    }
+
+    auto mem = n->m_callee->as<MemberAccessNode>();
+
+    if (mem->m_field == "to_str") {
+      /// TODO: Built-in function
+    } else if (mem->m_field == "sizeof") {
+      /// TODO: Built-in function
+    }
+
     /// TODO: Implement builtins
-    return nullptr;
+    LOG(WARN) << "QIR conv: call expression has no declaration" << std::endl;
+    return Call::create(nullptr, {});
   }
 
   Global *callee = nullptr;
@@ -1293,10 +1306,9 @@ static QResult conv(const NullTypeNode *n, QState &state) {
    *
    * General Behavior:
    * - The NullTypeNode is used to denote the concept of `noreturn`.
-   *   In reality, this is a void type with special semantics.
    **/
 
-  return Void::create();
+  return Ptr::create(Void::create());
 }
 
 static QResult conv(const PointerTypeNode *n, QState &state) {
@@ -1691,8 +1703,7 @@ static QResult conv(const NullLiteralNode *n, QState &state) {
    * - Convert into intrinsic null.
    **/
 
-  return UCast::create(IntrinsicType::create(QIntrinsicType::Null),
-                       Number::create("0"));
+  return IPtrCast::create(Ptr::create(Void::create()), Number::create("0"));
 }
 
 /// WARNING: BEGIN CHATGPT-3.5 GENERATED CODE

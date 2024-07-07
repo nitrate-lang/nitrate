@@ -83,7 +83,7 @@ class StreamLexer : public Scanner {
   constexpr static size_t GETC_BUFFER_SIZE = 1024;
   std::array<char, GETC_BUFFER_SIZE> m_buffer;
   std::optional<Token> m_tok;
-  std::queue<char> m_pushback;
+  std::deque<char> m_pushback;
   Loc m_loc_curr;
   Loc m_loc;
   size_t m_buf_pos = 0;
@@ -95,7 +95,7 @@ class StreamLexer : public Scanner {
   std::string m_filename;
   char getc();
   const libquixcc::Token &read_token();
-  inline void reset_state() { m_pushback = std::queue<char>(); }
+  inline void reset_state() { m_pushback = std::deque<char>(); }
 
  public:
   StreamLexer();

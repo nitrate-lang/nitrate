@@ -16,23 +16,31 @@
 
 @use "v1.0"
 @language "en"
-@copyright "Wesley Jones; MIT license"
 
-subsystem core::cstd {
-    import "c"
-    {
-        type int = i32;
-        type uint = u32;
-        type long = i64;
-        type ulong = u64;
-        type short = i16;
-        type ushort = u16;
-        type char = i8;
-        type uchar = u8;
-        type float = f32;
-        type double = f64;
-        type size_t = usize;
-        type ssize_t = isize;
-        type ptrdiff_t = isize;
+@import core::platform;
+@import core::reflect;
+
+subsystem core: [core::platform::write,
+                 core::platform::abort,
+                 core::reflect::trace] {
+  pub fn tsafe panic(msg: string = ""): null {
+    volatile {
+      platform::write("Panic: ");
+      platform::write(msg);
+      platform::write("\n");
+
+      let buffer: [u8; 4096];
+      let size = reflect::trace_volatile(buffer);
+      
+      platform::write("Stack trace:\n");
+      platform::write(buffer, size);
+
+      if size > sizeof(buffer) {
+        platform::write("... (stack trace truncated)\n");
+      }
+
+      platform::write("Aborting...\n");
+      platform::abort();
     }
+  }
 }
