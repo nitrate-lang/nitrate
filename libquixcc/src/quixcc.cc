@@ -214,7 +214,6 @@ LIB_EXPORT quixcc_job_t *quixcc_new() {
   job->m_in = job->m_out = nullptr;
   job->m_priority = 0;
   job->m_debug = job->m_tainted = job->m_running = false;
-  job->m_sid_ctr = 0;
   job->m_wordsize = 64;
   job->m_triple = llvm::sys::getDefaultTargetTriple();
 
@@ -662,6 +661,9 @@ static bool compile(quixcc_job_t *job) {
     LOG(DEBUG) << "Preprocessing only" << std::endl;
     std::unique_ptr<PrepEngine> prep = std::make_unique<PrepEngine>(*job);
     if (!preprocessor_config(job, prep)) return false;
+    if (job->m_argset.contains("-fkeep-comments")) {
+      prep->comments(false);
+    }
 
     // Generate output
     std::string tmp;
@@ -678,6 +680,9 @@ static bool compile(quixcc_job_t *job) {
   if (job->m_argset.contains("-emit-tokens")) {
     LOG(DEBUG) << "Lexing only" << std::endl;
     StreamLexer lexer;
+    if (job->m_argset.contains("-fkeep-comments")) {
+      lexer.comments(false);
+    }
 
     if (!lexer.set_source(job->m_in, job->m_filename.top())) {
       LOG(ERROR) << "failed to set source" << std::endl;
@@ -702,6 +707,9 @@ static bool compile(quixcc_job_t *job) {
     auto prep = std::make_unique<PrepEngine>(*job);
     LOG(DEBUG) << "Preprocessing source" << std::endl;
     if (!preprocessor_config(job, prep)) return false;
+    if (job->m_argset.contains("-fkeep-comments")) {
+      prep->comments(false);
+    }
     LOG(DEBUG) << "Finished preprocessing source" << std::endl;
     /// END:   PREPROCESSOR/LEXER
     ///=========================================
@@ -855,27 +863,28 @@ static bool compile(quixcc_job_t *job) {
 static bool verify_build_option(const std::string &option,
                                 const std::string &value) {
   const static std::set<std::string> static_options = {
-      "-S",              // assembly output
-      "-emit-tokens",    // lexer output (no preprocessing)
-      "-emit-prep",      // preprocessor/Lexer output
-      "-emit-parse",     // parse tree output
-      "-emit-ir",        // IR output
-      "-emit-quix-ir",   // Quix IR output
-      "-emit-delta-ir",  // Delta IR output
-      "-emit-c11",       // C11 output
-      "-emit-bc",        // bitcode output
-      "-c",              // compile only
-      "-O0",             // optimization levels
-      "-O1",             // optimization levels
-      "-O2",             // optimization levels
-      "-O3",             // optimization levels
-      "-Os",             // optimization levels
-      "-g",              // debug information
-      "-flto",           // link time optimization
-      "-fPIC",           // position independent code
-      "-fPIE",           // position independent executable
-      "-v",              // verbose
-      "-fcoredump",      // dump core on crash
+      "-S",               // assembly output
+      "-emit-tokens",     // lexer output (no preprocessing)
+      "-emit-prep",       // preprocessor/Lexer output
+      "-emit-parse",      // parse tree output
+      "-emit-ir",         // IR output
+      "-emit-quix-ir",    // Quix IR output
+      "-emit-delta-ir",   // Delta IR output
+      "-emit-c11",        // C11 output
+      "-emit-bc",         // bitcode output
+      "-c",               // compile only
+      "-O0",              // optimization levels
+      "-O1",              // optimization levels
+      "-O2",              // optimization levels
+      "-O3",              // optimization levels
+      "-Os",              // optimization levels
+      "-g",               // debug information
+      "-flto",            // link time optimization
+      "-fPIC",            // position independent code
+      "-fPIE",            // position independent executable
+      "-v",               // verbose
+      "-fcoredump",       // dump core on crash
+      "-fkeep-comments",  // keep comments from scanner
   };
   const static std::vector<std::pair<std::regex, std::regex>> static_regexes = {
       {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex("[a-zA-Z0-9_ ]*")},

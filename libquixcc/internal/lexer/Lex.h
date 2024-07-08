@@ -77,6 +77,7 @@ class Scanner {
   static std::string escape_string(std::string_view str);
   virtual void push(Token tok) = 0;
   virtual bool set_source(FILE *src, const std::string &filename) = 0;
+  virtual void comments(bool ignore) = 0;
 };
 
 class StreamLexer : public Scanner {
@@ -109,7 +110,7 @@ class StreamLexer : public Scanner {
   Token next() override;
   const Token &peek() override;
 
-  inline void comments(bool ignore) { ingore_comments = ignore; }
+  void comments(bool ignore) override { ingore_comments = ignore; }
 
   inline void push(Token tok) override { m_tok = tok; }
 };

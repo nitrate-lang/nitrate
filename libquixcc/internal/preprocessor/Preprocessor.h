@@ -133,6 +133,9 @@ class PrepEngine : public libquixcc::Scanner {
   const Token &peek() override;
   void push(Token tok) override;
   void emit(const Token &tok);
+  void comments(bool ignore) override {
+    throw std::runtime_error("Not implemented");
+  }
 
   /*================== PREPROCESSOR DEFINES ==================*/
   void set_static(rstr name, rstr value);

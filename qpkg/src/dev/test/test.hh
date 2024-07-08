@@ -29,7 +29,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <quixcc/Quix.h>
+
 #include <core/Config.hh>
+#include <map>
+#include <string>
+#include <string_view>
+#include <unordered_map>
+#include <vector>
 
 #if QPKG_DEV_TOOLS
 
@@ -61,18 +68,40 @@ class Progress {
   void result(const std::string &msg, Result type);
   void end_result();
 
+  void begin_detail();
+  void detail(std::string_view test_id, std::string_view name, Result type);
+  void end_detail();
+
   void done(const std::string &outfile_name = "");
 };
 
 int run_tests();
 
-int run_lexer_test(Progress &progress);
-int run_parser_test(Progress &progress);
-int run_quix_ir_test(Progress &progress);
-int run_delta_ir_test(Progress &progress);
-int run_llvm_ir_test(Progress &progress);
-int run_llvm_codegen_test(Progress &progress);
-int run_c11_codegen_test(Progress &progress);
+int run_lexer_test(
+    Progress &progress,
+    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+int run_parser_test(
+    Progress &progress,
+    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+int run_quix_ir_test(
+    Progress &progress,
+    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+int run_delta_ir_test(
+    Progress &progress,
+    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+int run_llvm_ir_test(
+    Progress &progress,
+    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+int run_llvm_codegen_test(
+    Progress &progress,
+    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+int run_c11_codegen_test(
+    Progress &progress,
+    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+
+extern const std::map<std::pair<std::string_view, std::string_view>,
+                      std::pair<std::string_view, std::vector<quixcc_tok_t>>>
+    g_lexer_test_vectors;
 
 }  // namespace qpkg::dev::test
 

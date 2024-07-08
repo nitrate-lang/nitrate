@@ -895,28 +895,45 @@ const Token &StreamLexer::read_token() {
         }
         case LexState::CommentMultiLine: {
           /* Automota for multi-line comments */
-        loop:
-          while (c != '*') {
-            buf += c;
+          size_t level = 1;
 
-            if ((c = getc()) == EOF) {
+          while (true) {
+            if (c == '/') {
+              char tmp = getc();
+              if (tmp == '*') {
+                level++;
+                buf += "/*";
+              } else {
+                buf += c;
+                buf += tmp;
+              }
+
+              c = getc();
+            } else if (c == '*') {
+              char tmp = getc();
+              if (tmp == '/') {
+                level--;
+                if (level == 0) {
+                  return (m_tok = Token(TT::Comment, buf, m_loc - buf.size()))
+                      .value();
+                } else {
+                  buf += "*";
+                  buf += tmp;
+                }
+              } else {
+                buf += c;
+                buf += tmp;
+              }
+              c = getc();
+            } else if (c == EOF) {
               return reset_state(),
                      (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
                          .value();
+            } else {
+              buf += c;
+              c = getc();
             }
           }
-
-          if ((c = getc()) == '/') {
-            return (m_tok = Token(TT::Comment, buf, m_loc - buf.size()))
-                .value();
-          } else if (c == EOF) {
-            return reset_state(),
-                   (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
-                       .value();
-          }
-
-          buf += '*';
-          goto loop;
         }
         case LexState::String: {
           if (c != buf[0]) {
@@ -1141,10 +1158,11 @@ const Token &StreamLexer::peek() {
   while (true) {
     read_token();
 
-    /* Skip comments */
-    if (m_tok->type != TT::Comment) return std::move(m_tok.value());
-
-    /* We will ignore comments */
+    if (ingore_comments) {
+      if (m_tok->type != TT::Comment) return std::move(m_tok.value());
+    } else {
+      return std::move(m_tok.value());
+    }
   }
 }
 

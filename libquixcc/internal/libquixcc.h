@@ -50,6 +50,7 @@
 #include <stack>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 typedef struct quixcc_options_t {
@@ -69,10 +70,10 @@ struct quixcc_job_t {
   volatile uint64_t m_magic;
   libquixcc::LLVMContext m_inner;
   std::stack<std::string> m_filename;
-  boost::unordered_map<quixcc_sid_t, char *> m_owned_strings;
+  std::unordered_set<char *> m_owned_strings;
   std::map<std::string, std::string> m_argset;
   std::unordered_map<std::string, quixcc_macro_fn_t> m_macros;
-  std::set<std::unique_ptr<void, std::function<void (void *)>>> m_dlhandles;
+  std::set<std::unique_ptr<void, std::function<void(void *)>>> m_dlhandles;
   libquixcc::QSysCallRegistry m_qsyscalls;
   std::mutex m_lock;
   std::string m_triple;
@@ -80,11 +81,10 @@ struct quixcc_job_t {
   quixcc_uuid_t m_id;
   quixcc_options_t m_options;
   quixcc_status_t m_result;
-  std::unique_ptr<libquixcc::PrepEngine> m_prep;
+  std::unique_ptr<libquixcc::Scanner> m_scanner;
   std::optional<std::pair<uint32_t, uint32_t>> version;
   FILE *m_in;
   FILE *m_out;
-  quixcc_sid_t m_sid_ctr;
   uint8_t m_priority;
   uint8_t m_wordsize;
   bool m_debug;
@@ -95,7 +95,6 @@ struct quixcc_job_t {
     m_magic = JOB_MAGIC;
     m_in = nullptr;
     m_out = nullptr;
-    m_sid_ctr = 0;
     m_priority = 0;
     m_wordsize = 0;
     m_debug = false;

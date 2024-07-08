@@ -44,50 +44,44 @@ using namespace libquixcc;
 LIB_EXPORT void quixcc_lexconf(quixcc_job_t *job,
                                quixcc_lexer_config_t config) {
   std::lock_guard<std::mutex> lock(job->m_lock);
-  // if (config & QUIXCC_LEXCONF_IGN_COM)
-  //     job->m_prep->comments(false);
-  // else
-  //     job->m_prep->comments(true);
 }
 
-quixcc_sid_t publish_string(quixcc_job_t *job, std::string_view str) {
-  if (job->m_sid_ctr == QUIXCC_SID_NAN)
-    throw std::runtime_error("String ID counter overflow");
+const char *publish_string(quixcc_job_t *job, std::string_view str) {
+  char *ptr = strdup(str.data());
+  job->m_owned_strings.insert(ptr);
 
-  auto sid = job->m_sid_ctr++;
-
-  job->m_owned_strings[sid] = strdup(str.data());
-
-  return sid;
+  return ptr;
 }
 
-static quix_inline void erase_sid(quixcc_job_t *job, quixcc_sid_t sid) {
-  if (sid == QUIXCC_SID_NAN) return;
-  free(job->m_owned_strings.at(sid));
+static quix_inline void erase_sid(quixcc_job_t *job, const char *sid) {
+  auto it =
+      std::find(job->m_owned_strings.begin(), job->m_owned_strings.end(), sid);
 
-  /* For performance reasons, we don't actually erase the string */
-  /* The reference will be deallocated when the job is destroyed */
-
-#if !defined(NDEBUG)
-  job->m_owned_strings.at(sid) = nullptr;
-#endif
+  if (it != job->m_owned_strings.end()) {
+    free(*it);
+    job->m_owned_strings.erase(it);
+  }
 }
 
 static quix_inline bool check_and_init(quixcc_job_t *job) {
-  bool preprocessor_config(quixcc_job_t * job,
-                           std::unique_ptr<PrepEngine> & prep);
+  if (job->m_scanner) return true;
 
-  if (job->m_prep) return true;
+  job->m_scanner = std::make_unique<StreamLexer>();
+  job->m_scanner->set_source(job->m_in, job->m_filename.top().c_str());
 
-  job->m_prep = std::make_unique<PrepEngine>(*job);
-
-  if (!preprocessor_config(job, job->m_prep)) return false;
+  for (size_t i = 0; i < job->m_options.m_count; i++) {
+    if (strcmp(job->m_options.m_options[i], "-fkeep-comments") == 0) {
+      std::cout << "Keeping comments" << std::endl;
+      job->m_scanner->comments(false);
+      break;
+    }
+  }
 
   return true;
 }
 
 static quix_inline quixcc_tok_t fetch_token(quixcc_job_t *job) {
-  auto tok = job->m_prep->peek();
+  auto tok = job->m_scanner->peek();
 
   quixcc_tok_t ret;
 
@@ -97,17 +91,17 @@ static quix_inline quixcc_tok_t fetch_token(quixcc_job_t *job) {
   /* Source info */
   ret.loc.column = tok.loc().col;
   ret.loc.line = tok.loc().line;
-  ret.loc.voucher = publish_string(job, tok.loc().file.data());
+  ret.loc.file = publish_string(job, tok.loc().file.data());
 
   /* Token value */
   switch (ret.ty) {
     case QUIXCC_LEX_EOF:
       break;
     case QUIXCC_LEX_UNK:
-      ret.val.voucher = publish_string(job, tok.as<std::string>());
+      ret.val.data = publish_string(job, tok.as<std::string>());
       break;
     case QUIXCC_LEX_IDENT:
-      ret.val.voucher = publish_string(job, tok.as<std::string>());
+      ret.val.data = publish_string(job, tok.as<std::string>());
       break;
     case QUIXCC_LEX_KW:
       ret.val.kw = static_cast<quixcc_lex_kw_t>(tok.as<Keyword>());
@@ -119,25 +113,25 @@ static quix_inline quixcc_tok_t fetch_token(quixcc_job_t *job) {
       ret.val.punct = static_cast<quixcc_lex_punct_t>(tok.as<Punctor>());
       break;
     case QUIXCC_LEX_INT:
-      ret.val.voucher = publish_string(job, tok.as<std::string>());
+      ret.val.data = publish_string(job, tok.as<std::string>());
       break;
     case QUIXCC_LEX_FLOAT:
-      ret.val.voucher = publish_string(job, tok.as<std::string>());
+      ret.val.data = publish_string(job, tok.as<std::string>());
       break;
     case QUIXCC_LEX_STR:
-      ret.val.voucher = publish_string(job, tok.as<std::string>());
+      ret.val.data = publish_string(job, tok.as<std::string>());
       break;
     case QUIXCC_LEX_CHAR:
-      ret.val.voucher = publish_string(job, tok.as<std::string>());
+      ret.val.data = publish_string(job, tok.as<std::string>());
       break;
     case QUIXCC_LEX_METABLK:
-      ret.val.voucher = publish_string(job, tok.as<std::string>());
+      ret.val.data = publish_string(job, tok.as<std::string>());
       break;
     case QUIXCC_LEX_METASEG:
-      ret.val.voucher = publish_string(job, tok.as<std::string>());
+      ret.val.data = publish_string(job, tok.as<std::string>());
       break;
     case QUIXCC_LEX_NOTE:
-      ret.val.voucher = publish_string(job, tok.as<std::string>());
+      ret.val.data = publish_string(job, tok.as<std::string>());
       break;
   }
 
@@ -159,7 +153,7 @@ LIB_EXPORT quixcc_tok_t quixcc_next(quixcc_job_t *job) {
   }
 
   auto tok = fetch_token(job);
-  job->m_prep->next();
+  job->m_scanner->next();
   return tok;
 }
 
@@ -178,14 +172,33 @@ LIB_EXPORT quixcc_tok_t quixcc_peek(quixcc_job_t *job) {
   return fetch_token(job);
 }
 
-LIB_EXPORT const char *quixcc_getstr(quixcc_job_t *job, quixcc_sid_t voucher) {
-  /* Safe code is good code */
-  assert(job != nullptr);
+LIB_EXPORT bool quixcc_tokeq(quixcc_tok_t a, quixcc_tok_t b) {
+  if (a.ty != b.ty) return false;
 
-  if (job->m_owned_strings.find(voucher) == job->m_owned_strings.end())
-    return nullptr;
-
-  return job->m_owned_strings[voucher];
+  switch (a.ty) {
+    case QUIXCC_LEX_EOF:
+      return true;
+    case QUIXCC_LEX_UNK:
+    case QUIXCC_LEX_IDENT:
+    case QUIXCC_LEX_INT:
+    case QUIXCC_LEX_FLOAT:
+    case QUIXCC_LEX_STR:
+    case QUIXCC_LEX_CHAR:
+    case QUIXCC_LEX_METABLK:
+    case QUIXCC_LEX_METASEG:
+    case QUIXCC_LEX_NOTE: {
+      if (!a.val.data || !b.val.data) return false;
+      return strcmp(a.val.data, b.val.data) == 0;
+    }
+    case QUIXCC_LEX_KW:
+      return a.val.kw == b.val.kw;
+    case QUIXCC_LEX_OP:
+      return a.val.op == b.val.op;
+    case QUIXCC_LEX_PUNCT:
+      return a.val.punct == b.val.punct;
+    default:
+      return false;
+  }
 }
 
 LIB_EXPORT void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok) {
@@ -205,15 +218,15 @@ LIB_EXPORT void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok) {
     case QUIXCC_LEX_METABLK:
     case QUIXCC_LEX_METASEG:
     case QUIXCC_LEX_NOTE:
-      erase_sid(job, tok->val.voucher);
-      tok->val.voucher = QUIXCC_SID_NAN;
+      erase_sid(job, tok->val.data);
+      tok->val.data = NULL;
       break;
     default:
       break;
   }
 
-  erase_sid(job, tok->loc.voucher);
-  tok->loc.voucher = QUIXCC_SID_NAN;
+  erase_sid(job, tok->loc.file);
+  tok->loc.file = NULL;
 }
 
 LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job,
@@ -228,9 +241,9 @@ LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job,
     case QUIXCC_LEX_EOF:
       return snprintf(buf, len, "EOF");
     case QUIXCC_LEX_UNK:
-      return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "%s", tok->val.data);
     case QUIXCC_LEX_IDENT:
-      return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "%s", tok->val.data);
     case QUIXCC_LEX_KW:
       return snprintf(
           buf, len, "%s",
@@ -244,19 +257,19 @@ LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job,
           buf, len, "%s",
           punctor_map_inverse.at(static_cast<Punctor>(tok->val.punct)).data());
     case QUIXCC_LEX_INT:
-      return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "%s", tok->val.data);
     case QUIXCC_LEX_FLOAT:
-      return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "%s", tok->val.data);
     case QUIXCC_LEX_STR:
-      return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "%s", tok->val.data);
     case QUIXCC_LEX_CHAR:
-      return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "%s", tok->val.data);
     case QUIXCC_LEX_METABLK:
-      return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "%s", tok->val.data);
     case QUIXCC_LEX_METASEG:
-      return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "%s", tok->val.data);
     case QUIXCC_LEX_NOTE:
-      return snprintf(buf, len, "%s", quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "%s", tok->val.data);
     default:
       return snprintf(buf, len, "UNK");
   }
@@ -274,11 +287,9 @@ LIB_EXPORT size_t quixcc_tok_humanize(quixcc_job_t *job,
     case QUIXCC_LEX_EOF:
       return snprintf(buf, len, "EOF()");
     case QUIXCC_LEX_UNK:
-      return snprintf(buf, len, "UNK(%s)",
-                      quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "UNK(%s)", tok->val.data);
     case QUIXCC_LEX_IDENT:
-      return snprintf(buf, len, "IDENT(%s)",
-                      quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "IDENT(%s)", tok->val.data);
     case QUIXCC_LEX_KW:
       return snprintf(
           buf, len, "KW(%s)",
@@ -292,26 +303,19 @@ LIB_EXPORT size_t quixcc_tok_humanize(quixcc_job_t *job,
           buf, len, "PUNCT(%s)",
           punctor_map_inverse.at(static_cast<Punctor>(tok->val.punct)).data());
     case QUIXCC_LEX_INT:
-      return snprintf(buf, len, "INT(%s)",
-                      quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "INT(%s)", tok->val.data);
     case QUIXCC_LEX_FLOAT:
-      return snprintf(buf, len, "REAL(%s)",
-                      quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "REAL(%s)", tok->val.data);
     case QUIXCC_LEX_STR:
-      return snprintf(buf, len, "STR(%s)",
-                      quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "STR(%s)", tok->val.data);
     case QUIXCC_LEX_CHAR:
-      return snprintf(buf, len, "CHAR(%s)",
-                      quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "CHAR(%s)", tok->val.data);
     case QUIXCC_LEX_METABLK:
-      return snprintf(buf, len, "METABLK(%s)",
-                      quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "METABLK(%s)", tok->val.data);
     case QUIXCC_LEX_METASEG:
-      return snprintf(buf, len, "METASEG(%s)",
-                      quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "METASEG(%s)", tok->val.data);
     case QUIXCC_LEX_NOTE:
-      return snprintf(buf, len, "NOTE(%s)",
-                      quixcc_getstr(job, tok->val.voucher));
+      return snprintf(buf, len, "NOTE(%s)", tok->val.data);
     default:
       return snprintf(buf, len, "UNK");
   }

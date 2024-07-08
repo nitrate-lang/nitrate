@@ -164,26 +164,19 @@ quixcc_tok_t quixcc_tok_new_ex(quixcc_engine_t* engine, quixcc_lex_type_t ty,
                                const char* str, size_t len);
 
 /// @brief Create a new keyword token
-/// @param engine QUIX Engine
 /// @param kw Keyword
 /// @return A new token
-/// @warning The token is managed by the engine and must not be mutated.
-quixcc_tok_t quixcc_tok_new_kw(quixcc_engine_t* engine, quixcc_lex_kw_t kw);
+quixcc_tok_t quixcc_tok_new_kw(quixcc_lex_kw_t kw);
 
 /// @brief Create a new operator token
-/// @param engine QUIX Engine
 /// @param op Operator
 /// @return A new token
-/// @warning The token is managed by the engine and must not be mutated.
-quixcc_tok_t quixcc_tok_new_op(quixcc_engine_t* engine, quixcc_lex_op_t op);
+quixcc_tok_t quixcc_tok_new_op(quixcc_lex_op_t op);
 
 /// @brief Create a new punctuation token
-/// @param engine QUIX Engine
 /// @param punct Punctuation
 /// @return A new token
-/// @warning The token is managed by the engine and must not be mutated.
-quixcc_tok_t quixcc_tok_new_punct(quixcc_engine_t* engine,
-                                  quixcc_lex_punct_t punct);
+quixcc_tok_t quixcc_tok_new_punct(quixcc_lex_punct_t punct);
 
 #define quixcc_tok_new_ident(engine, str) \
   quixcc_tok_new(engine, QUIXCC_LEX_IDENT, str)

@@ -33,8 +33,8 @@
 #define __QUIXCC_TYPES_H__
 
 #include <stdbool.h>
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -106,6 +106,7 @@ typedef enum {
   QUIXCC_KW_UNION = 43,
   QUIXCC_KW_OPAQUE = 44,
   QUIXCC_KW_ENUM = 45,
+  QUIXCC_KW_FSTRING = 46,
 
   QUIXCC_KW_FN = 60,
   QUIXCC_KW_NOTHROW = 61,
@@ -117,6 +118,8 @@ typedef enum {
   QUIXCC_KW_RETROPURE = 67,
   QUIXCC_KW_CRASHPOINT = 68,
   QUIXCC_KW_INLINE = 69,
+  QUIXCC_KW_UNSAFE = 70,
+  QUIXCC_KW_SAFE = 71,
 
   QUIXCC_KW_IF = 90,
   QUIXCC_KW_ELSE = 91,
@@ -132,6 +135,8 @@ typedef enum {
   QUIXCC_KW_RETIF = 101,
   QUIXCC_KW_RETZ = 102,
   QUIXCC_KW_RETV = 103,
+  QUIXCC_KW_FORM = 104,
+  QUIXCC_KW_FOREACH = 105,
 
   QUIXCC_KW_ASM = 130,
 
@@ -149,7 +154,6 @@ typedef enum {
   QUIXCC_PUNCT_CLOSE_BRACE = 4,
   QUIXCC_PUNCT_OPEN_BRACKET = 5,
   QUIXCC_PUNCT_CLOSE_BRACKET = 6,
-  QUIXCC_PUNCT_DOT = 7,
   QUIXCC_PUNCT_COMMA = 8,
   QUIXCC_PUNCT_COLON = 9,
   QUIXCC_PUNCT_SEMICOLON = 10,
@@ -218,13 +222,10 @@ typedef enum {
   QUIXCC_OP_SPACESHIP = 90,
 } quixcc_lex_op_t;
 
-typedef uint32_t quixcc_sid_t;
-#define QUIXCC_SID_NAN UINT32_MAX
-
 typedef struct quixcc_lex_loc_t {
   uint32_t line;
   uint32_t column : 24;
-  quixcc_sid_t voucher;
+  const char* file;
 } __attribute__((packed)) quixcc_lex_loc_t;
 
 typedef struct quixcc_tok_t {
@@ -233,7 +234,7 @@ typedef struct quixcc_tok_t {
     quixcc_lex_op_t op;
     quixcc_lex_punct_t punct;
     quixcc_lex_kw_t kw;
-    quixcc_sid_t voucher;
+    const char* data;
   } val;
   quixcc_lex_type_t ty : 8;
 } __attribute__((packed)) quixcc_tok_t;

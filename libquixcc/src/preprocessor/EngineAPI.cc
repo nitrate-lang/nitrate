@@ -222,7 +222,7 @@ LIB_EXPORT bool quixcc_engine_emit(quixcc_engine_t *engine, quixcc_tok_t tok) {
 
   const char *s;
 
-#define GETSTR(x) ((s = quixcc_getstr(job, x.val.voucher)) ? s : "")
+#define GETSTR(x) ((s = x.val.data) ? s : "")
 
   switch (tok.ty) {
     case QUIXCC_LEX_EOF:
@@ -320,73 +320,74 @@ LIB_EXPORT bool quixcc_expr_to_int64(quixcc_expr_t *expr, int64_t *out) {
   }
 }
 
-extern quixcc_sid_t publish_string(quixcc_job_t *job, std::string_view str);
+extern const char *publish_string(quixcc_job_t *job, std::string_view str);
 
 LIB_EXPORT quixcc_tok_t quixcc_tok_new(quixcc_engine_t *engine,
                                        quixcc_lex_type_t ty, const char *str) {
-  if (!engine) quixcc_panic("quixcc_tok_new: engine is NULL");
   if (!str) quixcc_panic("quixcc_tok_new: str is NULL");
 
-  auto job = quixcc_engine_job(engine);
-  auto sid = publish_string(job, str);
+  const char *sid = str;
+  if (engine) {
+    auto job = quixcc_engine_job(engine);
+    sid = publish_string(job, str);
+  }
 
   quixcc_tok_t tok;
   tok.ty = ty;
-  tok.val.voucher = sid;
+  tok.val.data = sid;
   tok.loc.line = 0;
   tok.loc.column = 0;
-  tok.loc.voucher = QUIXCC_SID_NAN;
+  tok.loc.file = NULL;
   return tok;
 }
 
 LIB_EXPORT quixcc_tok_t quixcc_tok_new_ex(quixcc_engine_t *engine,
                                           quixcc_lex_type_t ty, const char *str,
                                           size_t len) {
-  if (!engine) quixcc_panic("quixcc_tok_new: engine is NULL");
   if (!str) quixcc_panic("quixcc_tok_new: str is NULL");
 
-  auto job = quixcc_engine_job(engine);
-  auto sid = publish_string(job, std::string_view(str, len));
+  const char *sid = str;
+  if (engine) {
+    auto job = quixcc_engine_job(engine);
+    sid = publish_string(job, std::string_view(str, len));
+  }
 
   quixcc_tok_t tok;
   tok.ty = ty;
-  tok.val.voucher = sid;
+  tok.val.data = sid;
   tok.loc.line = 0;
   tok.loc.column = 0;
-  tok.loc.voucher = QUIXCC_SID_NAN;
+  tok.loc.file = NULL;
   return tok;
 }
 
-LIB_EXPORT quixcc_tok_t quixcc_tok_new_kw(quixcc_engine_t *engine,
-                                          quixcc_lex_kw_t kw) {
+LIB_EXPORT quixcc_tok_t quixcc_tok_new_kw(quixcc_lex_kw_t kw) {
   quixcc_tok_t tok;
   tok.ty = QUIXCC_LEX_KW;
   tok.val.kw = kw;
   tok.loc.line = 0;
   tok.loc.column = 0;
-  tok.loc.voucher = QUIXCC_SID_NAN;
+  tok.loc.file = NULL;
   return tok;
 }
 
-LIB_EXPORT quixcc_tok_t quixcc_tok_new_op(quixcc_engine_t *engine,
-                                          quixcc_lex_op_t op) {
+LIB_EXPORT quixcc_tok_t quixcc_tok_new_op(quixcc_lex_op_t op) {
   quixcc_tok_t tok;
   tok.ty = QUIXCC_LEX_OP;
   tok.val.op = op;
   tok.loc.line = 0;
   tok.loc.column = 0;
-  tok.loc.voucher = QUIXCC_SID_NAN;
+  tok.loc.file = NULL;
   return tok;
 }
 
-LIB_EXPORT quixcc_tok_t quixcc_tok_new_punct(quixcc_engine_t *engine,
-                                             quixcc_lex_punct_t punct) {
+LIB_EXPORT quixcc_tok_t quixcc_tok_new_punct(quixcc_lex_punct_t punct) {
   quixcc_tok_t tok;
   tok.ty = QUIXCC_LEX_PUNCT;
   tok.val.punct = punct;
   tok.loc.line = 0;
   tok.loc.column = 0;
-  tok.loc.voucher = QUIXCC_SID_NAN;
+  tok.loc.file = NULL;
   return tok;
 }
 

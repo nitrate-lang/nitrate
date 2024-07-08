@@ -498,7 +498,6 @@ end:
       LOG(ERROR) << "Language version must be specified before any other "
                     "directives or code. Example: `@use \"v1.0\";`"
                  << tok << std::endl;
-      __builtin_unreachable();
     }
   }
   return tok;

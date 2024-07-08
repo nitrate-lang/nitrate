@@ -261,23 +261,12 @@ quixcc_tok_t quixcc_next(quixcc_job_t *job);
 /// thread-safe across different job contexts.
 quixcc_tok_t quixcc_peek(quixcc_job_t *job);
 
-/// @brief Get the value of a string given its String ID.
-/// @param job The compiler job.
-/// @param voucher The String ID.
-/// @return The string value or NULL if the voucher does not exist.
-/// @note This function is not thread-safe on the same job context, but is
-/// thread-safe across different job contexts.
-/// @warning The returned string is owned by the job. Its lifetime is tied to
-/// the job and the lifetime of the token which created it.
-///          If the token which created the string is released via
-///          `quixcc_tok_release()`, the string will be deallocated and
-///          therefore invalid. To prevent this, ensure either to never release
-///          the token or dispose of the job before releasing the token. Or copy
-///          the string.
-/// @note This exists to save memory and decrease the size of the `quixcc_tok_t`
-/// structure.
-/// @note This function is very fast and simply indexes into a string table.
-const char *quixcc_getstr(quixcc_job_t *job, quixcc_sid_t voucher);
+/// @brief Compare two tokens for equality.
+/// @param a The first token.
+/// @param b The second token.
+/// @return true if the tokens are equal, false otherwise.
+/// @note This function is thread-safe.
+bool quixcc_tokeq(const quixcc_tok_t a, const quixcc_tok_t b);
 
 /// @brief Check if a token is valid (no error occurred).
 /// @param tok The token to check.
