@@ -216,8 +216,6 @@ LIB_EXPORT bool quixcc_engine_message(quixcc_engine_t *engine,
 LIB_EXPORT bool quixcc_engine_emit(quixcc_engine_t *engine, quixcc_tok_t tok) {
   if (!engine) quixcc_panic("quixcc_engine_emit: engine is NULL");
 
-  auto job = quixcc_engine_job(engine);
-
   Token token;
 
   const char *s;

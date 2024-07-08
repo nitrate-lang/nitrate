@@ -70,7 +70,7 @@ struct quixcc_job_t {
   volatile uint64_t m_magic;
   libquixcc::LLVMContext m_inner;
   std::stack<std::string> m_filename;
-  std::unordered_set<char *> m_owned_strings;
+  std::unordered_set<std::string> m_owned_strings;
   std::map<std::string, std::string> m_argset;
   std::unordered_map<std::string, quixcc_macro_fn_t> m_macros;
   std::set<std::unique_ptr<void, std::function<void(void *)>>> m_dlhandles;

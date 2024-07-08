@@ -572,7 +572,7 @@ static std::string canonicalize_float(std::string_view input) {
 
   if ((e_pos = input.find('e')) == std::string::npos) return input.data();
 
-  mantissa = std::stod(input.substr(0, e_pos).data());
+  mantissa = std::stod(std::string(input.substr(0, e_pos)));
   exponent = std::stod(input.substr(e_pos + 1).data());
 
   x = mantissa * std::pow(10.0, exponent);
@@ -613,7 +613,7 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type) {
     case NumType::Binary:
       for (i = 2; i < number.size(); ++i) {
         // Check for overflow
-        if (x & 0x8000000000000000) return false;
+        if ((x >> 64) & 0x8000000000000000) return false;
 
         if (number[i] != '0' && number[i] != '1') return false;
 
@@ -623,7 +623,7 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type) {
     case NumType::Octal:
       for (i = 2; i < number.size(); ++i) {
         // Check for overflow
-        if (x & 0xE000000000000000) return false;
+        if ((x >> 64) & 0xE000000000000000) return false;
 
         if (number[i] < '0' || number[i] > '7') return false;
 
@@ -631,18 +631,25 @@ bool canonicalize_number(std::string &number, std::string &norm, NumType type) {
       }
       break;
     case NumType::DecimalExplicit:
-      try {
-        x = std::stoull(number.substr(2));
-      } catch (...) {
-        return false;
+      for (i = 2; i < number.size(); ++i) {
+        if (number[i] < '0' || number[i] > '9') return false;
+
+        // check for overflow
+        auto tmp = x;
+        x = (x * 10) + (number[i] - '0');
+        if (x < tmp) return false;
       }
       break;
     case NumType::Decimal:
-      try {
-        x = std::stoull(number);
-      } catch (...) {
-        return false;
+      for (i = 0; i < number.size(); ++i) {
+        if (number[i] < '0' || number[i] > '9') return false;
+
+        // check for overflow
+        auto tmp = x;
+        x = (x * 10) + (number[i] - '0');
+        if (x < tmp) return false;
       }
+      break;
     default:
       break;
   }
@@ -793,7 +800,7 @@ const Token &StreamLexer::read_token() {
         }
         case LexState::Integer: {
           while (true) {
-            if (!(std::isxdigit(c) || c == '_' || c == '.' || c == 'x' ||
+            if (!(std::isxdigit(c) || c == '_' || c == '-' || c == '.' || c == 'x' ||
                   c == 'b' || c == 'd' || c == 'o' || c == 'e' || c == '.')) {
               break;
             }
@@ -820,6 +827,7 @@ const Token &StreamLexer::read_token() {
             switch (last) {
               case '_':
               case '.':
+              case '-':
                 items.push_back(last);
                 buf.pop_back();
                 break;
@@ -875,6 +883,7 @@ const Token &StreamLexer::read_token() {
             continue;
           } else {
             /* Divide operator */
+            m_pushback.push_back(c);
             return (m_tok = Token(TT::Operator, Operator::Divide, m_loc))
                 .value();
           }
@@ -1100,12 +1109,15 @@ const Token &StreamLexer::read_token() {
 
           /* Special case for a comment */
           if ((buf[0] == '~' && c == '>')) {
+            buf.clear();
             state = LexState::CommentSingleLine;
             continue;
           }
 
           /* Special case for a comment */
           if (buf[0] == '#') {
+            buf.clear();
+            buf += c;
             state = LexState::CommentSingleLine;
             continue;
           }

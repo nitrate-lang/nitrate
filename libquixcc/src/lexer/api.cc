@@ -47,19 +47,16 @@ LIB_EXPORT void quixcc_lexconf(quixcc_job_t *job,
 }
 
 const char *publish_string(quixcc_job_t *job, std::string_view str) {
-  char *ptr = strdup(str.data());
-  job->m_owned_strings.insert(ptr);
-
-  return ptr;
+  return job->m_owned_strings.insert(std::string(str)).first->c_str();
 }
 
 static quix_inline void erase_sid(quixcc_job_t *job, const char *sid) {
-  auto it =
-      std::find(job->m_owned_strings.begin(), job->m_owned_strings.end(), sid);
-
-  if (it != job->m_owned_strings.end()) {
-    free(*it);
-    job->m_owned_strings.erase(it);
+  for (auto it = job->m_owned_strings.begin(); it != job->m_owned_strings.end();
+       it++) {
+    if (strcmp(it->c_str(), sid) == 0) {
+      job->m_owned_strings.erase(it);
+      break;
+    }
   }
 }
 
@@ -71,7 +68,6 @@ static quix_inline bool check_and_init(quixcc_job_t *job) {
 
   for (size_t i = 0; i < job->m_options.m_count; i++) {
     if (strcmp(job->m_options.m_options[i], "-fkeep-comments") == 0) {
-      std::cout << "Keeping comments" << std::endl;
       job->m_scanner->comments(false);
       break;
     }
