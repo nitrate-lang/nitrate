@@ -69,7 +69,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
     return true;
   } else if (tok.is<Operator>(Operator::Assign)) {
     if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma)},
-                          value)) {
+                    value)) {
       LOG(ERROR) << core::feedback[UNION_FIELD_INIT_ERR] << name << tok
                  << std::endl;
       return false;
@@ -123,7 +123,8 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     if (tok.is<Keyword>(Keyword::Pub)) {
       /// TODO: Implement visibility semantics
-      LOG(WARN) << "Visibility semantics not implemented yet." << tok << std::endl;
+      LOG(WARN) << "Visibility semantics not implemented yet." << tok
+                << std::endl;
       scanner->next();
       tok = scanner->peek();
     }
@@ -168,11 +169,47 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
   }
 
+  tok = scanner->peek();
+  if (tok.is<Punctor>(Punctor::Semicolon)) {
+    scanner->next();
+  }
+
+  tok = scanner->peek();
+  std::vector<std::string> implements;
+  if (tok.is<Keyword>(Keyword::Impl)) {
+    scanner->next();
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Punctor::OpenBracket)) {
+      LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_OPEN_BRACKET] << tok
+                 << std::endl;
+      return false;
+    }
+
+    while (true) {
+      tok = scanner->next();
+      if (tok.is<Punctor>(Punctor::CloseBracket)) break;
+
+      if (tok.type != TT::Identifier) {
+        LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_IDENTIFIER] << tok
+                   << std::endl;
+        return false;
+      }
+
+      implements.push_back(tok.as<std::string>());
+
+      tok = scanner->peek();
+      if (tok.is<Punctor>(Punctor::Comma)) {
+        scanner->next();
+      }
+    }
+  }
+
   auto sdef = std::make_shared<UnionDefNode>();
   sdef->m_name = name;
   sdef->m_fields = fields;
   sdef->m_methods = methods;
   sdef->m_static_methods = static_methods;
+  sdef->m_implements = implements;
   node = sdef;
   return true;
 }

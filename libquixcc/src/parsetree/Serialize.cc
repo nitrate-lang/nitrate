@@ -1251,6 +1251,15 @@ void ParseTreeSerializer::conv(const StructDefNode *n) {
     next(static_method);
   }
 
+  o << "] [";
+
+  for (size_t i = 0; i < n->m_implements.size(); i++) {
+    o << "\"" << escape_string(n->m_implements[i]) << "\"";
+    if (i != n->m_implements.size() - 1) {
+      o << " ";
+    }
+  }
+
   o << "])";
   indent--;
 }
@@ -1286,6 +1295,15 @@ void ParseTreeSerializer::conv(const RegionDefNode *n) {
 
   for (const auto &static_method : n->m_static_methods) {
     next(static_method);
+  }
+
+  o << "] [";
+
+  for (size_t i = 0; i < n->m_implements.size(); i++) {
+    o << "\"" << escape_string(n->m_implements[i]) << "\"";
+    if (i != n->m_implements.size() - 1) {
+      o << " ";
+    }
   }
 
   o << "])";
@@ -1325,6 +1343,15 @@ void ParseTreeSerializer::conv(const GroupDefNode *n) {
     next(static_method);
   }
 
+  o << "] [";
+
+  for (size_t i = 0; i < n->m_implements.size(); i++) {
+    o << "\"" << escape_string(n->m_implements[i]) << "\"";
+    if (i != n->m_implements.size() - 1) {
+      o << " ";
+    }
+  }
+
   o << "])";
   indent--;
 }
@@ -1360,6 +1387,15 @@ void ParseTreeSerializer::conv(const UnionDefNode *n) {
 
   for (const auto &static_method : n->m_static_methods) {
     next(static_method);
+  }
+
+  o << "] [";
+
+  for (size_t i = 0; i < n->m_implements.size(); i++) {
+    o << "\"" << escape_string(n->m_implements[i]) << "\"";
+    if (i != n->m_implements.size() - 1) {
+      o << " ";
+    }
   }
 
   o << "])";

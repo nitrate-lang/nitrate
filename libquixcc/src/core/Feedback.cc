@@ -137,6 +137,8 @@ libquixcc::core::Feedback libquixcc::core::feedback({
      "Expected a function declaration after the struct definition. To fix the "
      "issue, insert a function declaration after the struct definition. "
      "Syntax: struct name { ... }; fn name() { ... };"},
+    {STRUCT_DEF_EXPECTED_OPEN_BRACKET, "Expected an open bracket"},
+    {STRUCT_DEF_EXPECTED_IDENTIFIER, "Expected an identifier"},
 
     {REGION_DECL_MISSING_IDENTIFIER,
      "Expected identifier in region declaration. To fix the issue, name your "
@@ -165,6 +167,8 @@ libquixcc::core::Feedback libquixcc::core::feedback({
      "Expected a function declaration after the region definition. To fix the "
      "issue, insert a function declaration after the region definition. "
      "Syntax: region name { ... }; fn name() { ... };"},
+    {REGION_DEF_EXPECTED_OPEN_BRACKET, "Expected an open bracket"},
+    {REGION_DEF_EXPECTED_IDENTIFIER, "Expected an identifier"},
 
     {GROUP_DECL_MISSING_IDENTIFIER,
      "Expected identifier in group declaration. To fix the issue, name your "
@@ -193,6 +197,8 @@ libquixcc::core::Feedback libquixcc::core::feedback({
      "Expected a function declaration after the group definition. To fix the "
      "issue, insert a function declaration after the group definition. Syntax: "
      "group name { ... }; fn name() { ... };"},
+    {GROUP_DEF_EXPECTED_OPEN_BRACKET, "Expected an open bracket"},
+    {GROUP_DEF_EXPECTED_IDENTIFIER, "Expected an identifier"},
 
     {UNION_DECL_MISSING_IDENTIFIER,
      "Expected identifier in union declaration. To fix the issue, name your "
@@ -225,6 +231,8 @@ libquixcc::core::Feedback libquixcc::core::feedback({
      "Expected a function declaration after the union definition. To fix the "
      "issue, insert a function declaration after the union definition. Syntax: "
      "union name { ... }; fn name() { ... };"},
+    {UNION_DEF_EXPECTED_OPEN_BRACKET, "Expected an open bracket"},
+    {UNION_DEF_EXPECTED_IDENTIFIER, "Expected an identifier"},
 
     {TYPE_EXPECTED_TYPE,
      "Expected a type name after the open bracket. To fix the issue, insert a "

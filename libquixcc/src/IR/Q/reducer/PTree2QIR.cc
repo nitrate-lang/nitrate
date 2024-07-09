@@ -3076,7 +3076,8 @@ static QResult conv(const ParseNode *n, QState &state) {
       r = conv(n->as<SwitchStmtNode>(), state);
       break;
     default:
-      throw std::runtime_error("QIR translation: Unknown node type");
+      throw std::runtime_error("QIR translation: Unknown node type: " +
+                               std::to_string(static_cast<int>(n->ntype)));
   }
 
   return r;

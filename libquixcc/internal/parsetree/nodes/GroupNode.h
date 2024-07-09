@@ -75,8 +75,9 @@ class GroupDefNode : public DefNode {
  public:
   GroupDefNode() { ntype = NodeType::GroupDefNode; }
   GroupDefNode(const std::string &name,
-               const std::vector<std::shared_ptr<GroupFieldNode>> &fields)
-      : m_name(name) {
+               const std::vector<std::shared_ptr<GroupFieldNode>> &fields,
+               std::vector<std::string> implements = {})
+      : m_name(name), m_fields(fields), m_implements(implements) {
     ntype = NodeType::GroupDefNode;
   }
 
@@ -90,6 +91,7 @@ class GroupDefNode : public DefNode {
   std::vector<std::shared_ptr<GroupFieldNode>> m_fields;
   std::vector<std::shared_ptr<StmtNode>> m_methods;
   std::vector<std::shared_ptr<StmtNode>> m_static_methods;
+  std::vector<std::string> m_implements;
 };
 }  // namespace libquixcc
 
