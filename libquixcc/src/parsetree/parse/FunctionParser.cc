@@ -113,7 +113,8 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   std::string name;
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << core::feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok
+               << std::endl;
     return false;
   }
 
@@ -175,22 +176,26 @@ static FunctionProperties read_function_properties(
   }
 
   if (state.foreign_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_FOREIGN_MULTIPLE] << scanner->peek() << std::endl;
+    LOG(ERROR) << core::feedback[FN_FOREIGN_MULTIPLE] << scanner->peek()
+               << std::endl;
     return FunctionProperties();
   }
 
   if (state.impure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_IMPURE_MULTIPLE] << scanner->peek() << std::endl;
+    LOG(ERROR) << core::feedback[FN_IMPURE_MULTIPLE] << scanner->peek()
+               << std::endl;
     return FunctionProperties();
   }
 
   if (state.tsafe_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_TSAFE_MULTIPLE] << scanner->peek() << std::endl;
+    LOG(ERROR) << core::feedback[FN_TSAFE_MULTIPLE] << scanner->peek()
+               << std::endl;
     return FunctionProperties();
   }
 
   if (state.pure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_PURE_MULTIPLE] << scanner->peek() << std::endl;
+    LOG(ERROR) << core::feedback[FN_PURE_MULTIPLE] << scanner->peek()
+               << std::endl;
     return FunctionProperties();
   }
 
@@ -207,7 +212,8 @@ static FunctionProperties read_function_properties(
   }
 
   if (state.inline_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_INLINE_MULTIPLE] << scanner->peek() << std::endl;
+    LOG(ERROR) << core::feedback[FN_INLINE_MULTIPLE] << scanner->peek()
+               << std::endl;
     return FunctionProperties();
   }
 
@@ -215,7 +221,8 @@ static FunctionProperties read_function_properties(
       state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
 
   if (partial_pure && state.impure_ctr) {
-    LOG(ERROR) << core::feedback[FN_PURE_IMPURE_MIX] << scanner->peek() << std::endl;
+    LOG(ERROR) << core::feedback[FN_PURE_IMPURE_MIX] << scanner->peek()
+               << std::endl;
     return FunctionProperties();
   }
 
@@ -313,8 +320,8 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   if (tok.is<Punctor>(Punctor::Semicolon)) {
     fndecl->m_type = std::make_shared<FunctionTypeNode>(
-        std::make_shared<VoidTypeNode>(), params, is_variadic, false, prop._tsafe,
-        prop._foreign, prop._noexcept);
+        std::make_shared<VoidTypeNode>(), params, is_variadic, false,
+        prop._tsafe, prop._foreign, prop._noexcept);
     scanner->next();
     node = fndecl;
     return true;
@@ -347,22 +354,98 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     if (!fndecl->m_type)
       fndecl->m_type = std::make_shared<FunctionTypeNode>(
-          std::make_shared<VoidTypeNode>(), params, is_variadic, false, prop._tsafe,
-          prop._foreign, prop._noexcept);
+          std::make_shared<VoidTypeNode>(), params, is_variadic, false,
+          prop._tsafe, prop._foreign, prop._noexcept);
 
     node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
     return true;
   } else if (tok.is<Punctor>(Punctor::OpenBrace)) {
     auto fnbody = std::make_shared<BlockNode>();
 
-    if (!parse(job, scanner, fnbody)) return false;
+    if (!parse(job, scanner, fnbody)) {
+      return false;
+    }
+
+    tok = scanner->peek();
+    std::shared_ptr<ExprNode> req_in, req_out;
+    if (tok.is<Keyword>(Keyword::Req)) {
+      /* Parse constraint block */
+      scanner->next();
+
+      tok = scanner->next();
+      if (!tok.is<Punctor>(Punctor::OpenBrace)) {
+        LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_BRACE] << tok
+                   << std::endl;
+        return false;
+      }
+
+      while (true) {
+        tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::CloseBrace)) {
+          scanner->next();
+          break;
+        }
+
+        std::shared_ptr<libquixcc::ExprNode> expr;
+        scanner->next();
+        if (tok.is<Keyword>(Keyword::In)) {
+          if (!req_in) {
+            req_in = BoolLiteralNode::create(true);
+          }
+
+          if (!parse_expr(job, scanner,
+                          {Token(TT::Punctor, Punctor::Semicolon)}, expr)) {
+            return false;
+          }
+
+          tok = scanner->next();
+          if (!tok.is<Punctor>(Punctor::Semicolon)) {
+            LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok
+                       << std::endl;
+            return false;
+          }
+
+          expr = std::make_shared<UnaryExprNode>(Operator::LogicalNot, expr);
+          expr = std::make_shared<UnaryExprNode>(Operator::LogicalNot, expr);
+
+          req_in = std::make_shared<BinaryExprNode>(Operator::LogicalAnd,
+                                                    req_in, expr);
+        } else if (tok.is<Keyword>(Keyword::Out)) {
+          if (!req_out) {
+            req_out = BoolLiteralNode::create(true);
+          }
+
+          if (!parse_expr(job, scanner,
+                          {Token(TT::Punctor, Punctor::Semicolon)}, expr)) {
+            return false;
+          }
+
+          tok = scanner->next();
+          if (!tok.is<Punctor>(Punctor::Semicolon)) {
+            LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok
+                       << std::endl;
+            return false;
+          }
+
+          expr = std::make_shared<UnaryExprNode>(Operator::LogicalNot, expr);
+          expr = std::make_shared<UnaryExprNode>(Operator::LogicalNot, expr);
+          req_out = std::make_shared<BinaryExprNode>(Operator::LogicalAnd,
+                                                     req_out, expr);
+        } else {
+          LOG(ERROR) << core::feedback[FN_EXPECTED_IN_OUT] << tok << std::endl;
+          return false;
+        }
+      }
+
+      tok = scanner->peek();
+    }
 
     if (!fndecl->m_type)
       fndecl->m_type = std::make_shared<FunctionTypeNode>(
-          std::make_shared<VoidTypeNode>(), params, is_variadic, false, prop._tsafe,
-          prop._foreign, prop._noexcept);
+          std::make_shared<VoidTypeNode>(), params, is_variadic, false,
+          prop._tsafe, prop._foreign, prop._noexcept);
 
-    node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
+    node = std::make_shared<FunctionDefNode>(fndecl, fnbody, req_in, req_out);
     return true;
   } else {
     LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_BRACE] << tok << std::endl;

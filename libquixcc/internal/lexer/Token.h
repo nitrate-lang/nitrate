@@ -61,6 +61,7 @@ enum class Keyword {
   Opaque = 44,
   Enum = 45,
   FString = 46,
+  Impl = 47,
 
   Fn = 60,
   Noexcept = 61,
@@ -74,6 +75,9 @@ enum class Keyword {
   Inline = 69,
   Unsafe = 70,
   Safe = 71,
+  In = 72,
+  Out = 73,
+  Req = 74,
 
   If = 90,
   Else = 91,

@@ -97,16 +97,16 @@ class FunctionDefNode : public DefNode {
   FunctionDefNode() { ntype = NodeType::FunctionDefNode; }
   FunctionDefNode(std::shared_ptr<FunctionDeclNode> decl,
                   std::shared_ptr<BlockNode> body,
-                  std::shared_ptr<BlockNode> req_in = nullptr,
-                  std::shared_ptr<BlockNode> req_out = nullptr)
+                  std::shared_ptr<ExprNode> req_in = nullptr,
+                  std::shared_ptr<ExprNode> req_out = nullptr)
       : m_decl(decl), m_body(body), m_req_in(req_in), m_req_out(req_out) {
     ntype = NodeType::FunctionDefNode;
   }
 
   std::shared_ptr<FunctionDeclNode> m_decl;
   std::shared_ptr<BlockNode> m_body;
-  std::shared_ptr<BlockNode> m_req_in;
-  std::shared_ptr<BlockNode> m_req_out;
+  std::shared_ptr<ExprNode> m_req_in;
+  std::shared_ptr<ExprNode> m_req_out;
 };
 }  // namespace libquixcc
 

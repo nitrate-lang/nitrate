@@ -303,8 +303,12 @@ libquixcc::core::Feedback libquixcc::core::feedback({
     {FN_EXPECTED_OPEN_BRACE,
      "Expected an open brace after the function parameter list. To fix the "
      "issue, insert an open brace after the function parameter list"},
+    {FN_EXPECTED_CLOSE_BRACE,
+     "Expected a close brace after the function body. To fix the issue, insert "
+     "a close brace after the function body"},
     {FN_NO_THROW_ALREADY_SPECIFIED,
-     "The 'noexcept' specifier was already specified for this function. To fix "
+     "The 'noexcept' specifier was already specified for this function. To "
+     "fix "
      "the issue, remove the duplicate 'noexcept' specifier"},
     {FN_FOREIGN_ALREADY_SPECIFIED,
      "The 'foreign' specifier was already specified for this function. To fix "
@@ -341,6 +345,12 @@ libquixcc::core::Feedback libquixcc::core::feedback({
      "Expected '...' after the last parameter in the function parameter list. "
      "To fix the issue, insert '...' after the last parameter in the function "
      "parameter list"},
+    {FN_EXPECTED_SEMICOLON,
+     "Expected a semicolon after the function declaration. To fix the issue, "
+     "insert a semicolon after the function declaration"},
+    {FN_EXPECTED_IN_OUT,
+     "Expected 'in' or 'out' after the function name. To fix the issue, insert "
+     "'in' or 'out' after the function name"},
 
     /*
     FN_NOEXCEPT_MULTIPLE,

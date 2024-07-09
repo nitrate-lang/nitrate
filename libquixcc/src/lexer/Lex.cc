@@ -75,6 +75,7 @@ const std::unordered_map<std::string_view, Keyword> keyword_map = {
     {"opaque", Keyword::Opaque},
     {"enum", Keyword::Enum},
     {"fstring", Keyword::FString},
+    {"impl", Keyword::Impl},
 
     {"fn", Keyword::Fn},
     {"noexcept", Keyword::Noexcept},
@@ -88,6 +89,9 @@ const std::unordered_map<std::string_view, Keyword> keyword_map = {
     {"inline", Keyword::Inline},
     {"unsafe", Keyword::Unsafe},
     {"safe", Keyword::Safe},
+    {"in", Keyword::In},
+    {"out", Keyword::Out},
+    {"req", Keyword::Req},
 
     {"if", Keyword::If},
     {"else", Keyword::Else},
@@ -132,6 +136,7 @@ const std::unordered_map<Keyword, std::string_view> keyword_map_inverse = {
     {Keyword::Opaque, "opaque"},
     {Keyword::Enum, "enum"},
     {Keyword::FString, "fstring"},
+    {Keyword::Impl, "impl"},
 
     {Keyword::Fn, "fn"},
     {Keyword::Noexcept, "noexcept"},
@@ -145,6 +150,9 @@ const std::unordered_map<Keyword, std::string_view> keyword_map_inverse = {
     {Keyword::Inline, "inline"},
     {Keyword::Unsafe, "unsafe"},
     {Keyword::Safe, "safe"},
+    {Keyword::In, "in"},
+    {Keyword::Out, "out"},
+    {Keyword::Req, "req"},
 
     {Keyword::If, "if"},
     {Keyword::Else, "else"},
@@ -800,8 +808,9 @@ const Token &StreamLexer::read_token() {
         }
         case LexState::Integer: {
           while (true) {
-            if (!(std::isxdigit(c) || c == '_' || c == '-' || c == '.' || c == 'x' ||
-                  c == 'b' || c == 'd' || c == 'o' || c == 'e' || c == '.')) {
+            if (!(std::isxdigit(c) || c == '_' || c == '-' || c == '.' ||
+                  c == 'x' || c == 'b' || c == 'd' || c == 'o' || c == 'e' ||
+                  c == '.')) {
               break;
             }
             buf += c;
