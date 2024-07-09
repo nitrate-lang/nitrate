@@ -47,6 +47,8 @@ enum class Keyword {
   Subsystem = 10,
   Import = 11,
   Pub = 12,
+  Sec = 13,
+  Pro = 14,
 
   Type = 20,
   Let = 21,

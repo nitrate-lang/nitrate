@@ -144,6 +144,8 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
       case Keyword::Import:  // they both declare external functions
         if (!parse_pub(job, scanner, node)) return false;
         break;
+      case Keyword::Sec:
+        break;
       case Keyword::Return:
         if (!parse_return(job, scanner, node)) return false;
         break;

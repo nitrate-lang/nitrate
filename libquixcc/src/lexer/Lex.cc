@@ -61,6 +61,8 @@ const std::unordered_map<std::string_view, Keyword> keyword_map = {
     {"subsystem", Keyword::Subsystem},
     {"import", Keyword::Import},
     {"pub", Keyword::Pub},
+    {"sec", Keyword::Sec},
+    {"pro", Keyword::Pro},
 
     {"type", Keyword::Type},
     {"let", Keyword::Let},
@@ -122,6 +124,8 @@ const std::unordered_map<Keyword, std::string_view> keyword_map_inverse = {
     {Keyword::Subsystem, "subsystem"},
     {Keyword::Import, "import"},
     {Keyword::Pub, "pub"},
+    {Keyword::Sec, "sec"},
+    {Keyword::Pro, "pro"},
 
     {Keyword::Type, "type"},
     {Keyword::Let, "let"},

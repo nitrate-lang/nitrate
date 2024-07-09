@@ -132,6 +132,18 @@ bool libquixcc::parse_group(quixcc_job_t &job, libquixcc::Scanner *scanner,
                 << std::endl;
       scanner->next();
       tok = scanner->peek();
+    } else if (tok.is<Keyword>(Keyword::Sec)) {
+      /// TODO: Implement visibility semantics
+      LOG(WARN) << "Visibility semantics not implemented yet." << tok
+                << std::endl;
+      scanner->next();
+      tok = scanner->peek();
+    } else if (tok.is<Keyword>(Keyword::Pro)) {
+      /// TODO: Implement visibility semantics
+      LOG(WARN) << "Visibility semantics not implemented yet." << tok
+                << std::endl;
+      scanner->next();
+      tok = scanner->peek();
     }
 
     if (tok.is<Keyword>(Keyword::Fn)) {
