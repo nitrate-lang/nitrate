@@ -41,13 +41,12 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
                               std::shared_ptr<UnionFieldNode> &node) {
   Token tok = scanner->next();
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_IDENTIFIER] << tok
+               << std::endl;
     return false;
   }
 
-  node = std::make_shared<UnionFieldNode>();
-
-  node->m_name = tok.as<std::string>();
+  auto name = tok.as<std::string>();
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Colon)) {
@@ -57,18 +56,38 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   std::shared_ptr<TypeNode> type;
   if (!parse_type(job, scanner, type)) {
-    LOG(ERROR) << core::feedback[UNION_FIELD_TYPE_ERR] << node->m_name << tok
+    LOG(ERROR) << core::feedback[UNION_FIELD_TYPE_ERR] << name << tok
                << std::endl;
     return false;
   }
 
-  node->m_type = type;
+  std::shared_ptr<ConstExprNode> value;
+
+  tok = scanner->next();
+  if (tok.is<Punctor>(Punctor::Comma)) {
+    node = std::make_shared<UnionFieldNode>(name, type);
+    return true;
+  } else if (tok.is<Operator>(Operator::Assign)) {
+    if (!parse_const_expr(job, scanner, Token(TT::Punctor, Punctor::Comma),
+                          value)) {
+      LOG(ERROR) << core::feedback[UNION_FIELD_INIT_ERR] << name << tok
+                 << std::endl;
+      return false;
+    }
+  } else {
+    LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_PUNCTOR] << name << tok
+               << std::endl;
+    return false;
+  }
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Comma)) {
-    LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_PUNCTOR] << tok << std::endl;
+    LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_PUNCTOR] << name << tok
+               << std::endl;
     return false;
   }
+
+  node = std::make_shared<UnionFieldNode>(name, type, value);
 
   return true;
 }
@@ -77,7 +96,8 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
                             std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << core::feedback[UNION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[UNION_DECL_MISSING_IDENTIFIER] << tok
+               << std::endl;
     return false;
   }
 
@@ -85,11 +105,14 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::OpenBrace)) {
-    LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
+    LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_OPEN_BRACE] << tok
+               << std::endl;
     return false;
   }
 
   std::vector<std::shared_ptr<UnionFieldNode>> fields;
+  std::vector<std::shared_ptr<StmtNode>> methods;
+  std::vector<std::shared_ptr<StmtNode>> static_methods;
 
   while (true) {
     tok = scanner->peek();
@@ -98,14 +121,58 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
       break;
     }
 
-    std::shared_ptr<UnionFieldNode> field;
-    if (!parse_union_field(job, scanner, field)) return false;
-    fields.push_back(field);
+    if (tok.is<Keyword>(Keyword::Pub)) {
+      /// TODO: Implement visibility semantics
+      LOG(WARN) << "Visibility semantics not implemented yet." << tok << std::endl;
+      scanner->next();
+      tok = scanner->peek();
+    }
+
+    if (tok.is<Keyword>(Keyword::Fn)) {
+      scanner->next();
+
+      std::shared_ptr<StmtNode> method;
+      if (!parse_function(job, scanner, method)) return false;
+
+      auto fn_this = std::make_shared<FunctionParamNode>(
+          "this",
+          std::make_shared<PointerTypeNode>(
+              std::make_shared<UserTypeNode>(name)),
+          nullptr);
+
+      if (method->is<FunctionDeclNode>()) {
+        auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);
+        fdecl->m_params.insert(fdecl->m_params.begin(), fn_this);
+      } else {
+        auto fdef = std::static_pointer_cast<FunctionDefNode>(method);
+        fdef->m_decl->m_params.insert(fdef->m_decl->m_params.begin(), fn_this);
+      }
+
+      methods.push_back(method);
+    } else if (tok.is<Keyword>(Keyword::Static)) {
+      scanner->next();
+      tok = scanner->next();
+      if (!tok.is<Keyword>(Keyword::Fn)) {
+        LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_FN] << tok << std::endl;
+        return false;
+      }
+
+      std::shared_ptr<StmtNode> method;
+      if (!parse_function(job, scanner, method)) return false;
+
+      static_methods.push_back(method);
+    } else {
+      std::shared_ptr<UnionFieldNode> field;
+      if (!parse_union_field(job, scanner, field)) return false;
+      fields.push_back(field);
+    }
   }
 
   auto sdef = std::make_shared<UnionDefNode>();
   sdef->m_name = name;
   sdef->m_fields = fields;
+  sdef->m_methods = methods;
+  sdef->m_static_methods = static_methods;
   node = sdef;
   return true;
 }

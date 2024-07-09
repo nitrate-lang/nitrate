@@ -31,10 +31,10 @@
 
 #define QUIXCC_INTERNAL
 
+#include <core/Exception.h>
 #include <lexer/Lex.h>
 #include <parsetree/Serialize.h>
 #include <parsetree/nodes/AllNodes.h>
-#include <core/Exception.h>
 
 #include <functional>
 #include <unordered_map>
@@ -929,7 +929,7 @@ void ParseTreeSerializer::conv(const FunctionTypeNode *n) {
   indent++;
   ind();
 
-  o << "(Func";
+  o << "(Func ";
   if (n->m_variadic) {
     o << "1 ";
   } else {
@@ -1386,6 +1386,8 @@ void ParseTreeSerializer::conv(const FunctionDefNode *n) {
   o << "(FuncDef";
   next(n->m_decl);
   next(n->m_body);
+  next(n->m_req_in);
+  next(n->m_req_out);
   o << ')';
   indent--;
 }

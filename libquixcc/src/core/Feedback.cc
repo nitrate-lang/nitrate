@@ -214,6 +214,9 @@ libquixcc::core::Feedback libquixcc::core::feedback({
     {UNION_FIELD_TYPE_ERR,
      "An error occurred while parsing the type of field '{}'. Syntax: name: "
      "type [= expr];"},
+    {UNION_FIELD_INIT_ERR,
+     "Declaration of field '{}' requires an initializer, but an error occurred "
+     "while parsing the initializer. Syntax: name: type [= expr];"},
     {UNION_FIELD_MISSING_PUNCTOR,
      "Declaration of field '{}' requires an initializer OR a semicolon "
      "punctuator, but neither was found. Make sure to terminate all statements "

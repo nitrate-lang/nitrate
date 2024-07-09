@@ -352,6 +352,9 @@ static QResult conv(const StaticCastExprNode *n, QState &state) {
   auto expr = conv(n->m_expr.get(), state)[0]->as<Expr>();
   auto to = conv(n->m_type.get(), state)[0]->as<Type>();
 
+  assert(expr);
+  assert(to);
+
   auto from = expr->infer();
   if (to->is(from)) return expr;
 

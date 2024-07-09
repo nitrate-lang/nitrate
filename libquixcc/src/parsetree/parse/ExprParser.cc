@@ -330,8 +330,10 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
               if (!parse_expr(job, scanner,
                               {Token(TT::Punctor, Punctor::Comma),
                                Token(TT::Punctor, Punctor::CloseBrace)},
-                              element, depth + 1))
+                              element, depth + 1)) {
                 return false;
+              }
+
               elements.push_back(element);
 
               tok = scanner->peek();
@@ -359,19 +361,19 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
                                 {Token(TT::Punctor, Punctor::Comma),
                                  Token(TT::Punctor, Punctor::Semicolon),
                                  Token(TT::Punctor, Punctor::CloseBracket)},
-                                element, depth + 1))
+                                element, depth + 1)) {
                   return false;
-                elements.push_back(element);
+                }
 
                 tok = scanner->peek();
                 // Array literal with count
-                if (tok.is<Punctor>(Punctor::Semicolon) &&
-                    elements.size() == 1) {
+                if (tok.is<Punctor>(Punctor::Semicolon)) {
                   scanner->next();
 
                   std::shared_ptr<ExprNode> count;
                   if (!parse_expr(job, scanner,
-                                  {Token(TT::Punctor, Punctor::CloseBracket)},
+                                  {Token(TT::Punctor, Punctor::CloseBracket),
+                                   Token(TT::Punctor, Punctor::Comma)},
                                   count, depth + 1)) {
                     return false;
                   }
@@ -382,21 +384,13 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
                     return false;
                   }
 
-                  tok = scanner->next();
-                  if (!tok.is<Punctor>(Punctor::CloseBracket)) {
-                    LOG(ERROR)
-                        << "Expected a closing bracket" << tok << std::endl;
-                    return false;
-                  }
-
                   size_t count_val =
-                      std::atoi(count->as<IntegerNode>()->m_val.c_str()) + 1;
+                      std::atoi(count->as<IntegerNode>()->m_val.c_str());
                   for (size_t i = 0; i < count_val; i++) {
                     elements.push_back(element);
                   }
-
-                  stack.push(std::make_shared<ListExprNode>(elements));
-                  break;
+                } else if (element) {
+                  elements.push_back(element);
                 }
 
                 if (tok.is<Punctor>(Punctor::Comma)) {

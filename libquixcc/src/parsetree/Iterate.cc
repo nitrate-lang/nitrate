@@ -842,6 +842,16 @@ size_t ParseTreePreorder::iter(FunctionDefNode *node) {
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_body));
   count += next(node->m_body);
 
+  if (node->m_req_in) {
+    m_callback(m_ns, m_scope, node, mk_ptr(&node->m_req_in));
+    count += next(node->m_req_in);
+  }
+
+  if (node->m_req_out) {
+    m_callback(m_ns, m_scope, node, mk_ptr(&node->m_req_out));
+    count += next(node->m_req_out);
+  }
+
   m_scope.pop_back();
 
   return count + 1;

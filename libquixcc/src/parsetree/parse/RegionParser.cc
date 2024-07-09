@@ -41,7 +41,8 @@ static bool parse_region_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
                                std::shared_ptr<RegionFieldNode> &node) {
   Token tok = scanner->next();
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << core::feedback[REGION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[REGION_FIELD_MISSING_IDENTIFIER] << tok
+               << std::endl;
     return false;
   }
 
@@ -49,13 +50,15 @@ static bool parse_region_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Colon)) {
-    LOG(ERROR) << core::feedback[REGION_FIELD_MISSING_COLON] << tok << std::endl;
+    LOG(ERROR) << core::feedback[REGION_FIELD_MISSING_COLON] << tok
+               << std::endl;
     return false;
   }
 
   std::shared_ptr<TypeNode> type;
   if (!parse_type(job, scanner, type)) {
-    LOG(ERROR) << core::feedback[REGION_FIELD_TYPE_ERR] << name << tok << std::endl;
+    LOG(ERROR) << core::feedback[REGION_FIELD_TYPE_ERR] << name << tok
+               << std::endl;
     return false;
   }
 
@@ -68,7 +71,8 @@ static bool parse_region_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
   } else if (tok.is<Operator>(Operator::Assign)) {
     if (!parse_const_expr(job, scanner, Token(TT::Punctor, Punctor::Comma),
                           value)) {
-      LOG(ERROR) << core::feedback[REGION_FIELD_INIT_ERR] << name << tok << std::endl;
+      LOG(ERROR) << core::feedback[REGION_FIELD_INIT_ERR] << name << tok
+                 << std::endl;
       return false;
     }
   } else {
@@ -93,7 +97,8 @@ bool libquixcc::parse_region(quixcc_job_t &job, libquixcc::Scanner *scanner,
                              std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (tok.type != TT::Identifier) {
-    LOG(ERROR) << core::feedback[REGION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[REGION_DECL_MISSING_IDENTIFIER] << tok
+               << std::endl;
     return false;
   }
 
@@ -101,7 +106,8 @@ bool libquixcc::parse_region(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::OpenBrace)) {
-    LOG(ERROR) << core::feedback[REGION_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
+    LOG(ERROR) << core::feedback[REGION_DEF_EXPECTED_OPEN_BRACE] << tok
+               << std::endl;
     return false;
   }
 
@@ -116,6 +122,13 @@ bool libquixcc::parse_region(quixcc_job_t &job, libquixcc::Scanner *scanner,
       break;
     }
 
+    if (tok.is<Keyword>(Keyword::Pub)) {
+      /// TODO: Implement visibility semantics
+      LOG(WARN) << "Visibility semantics not implemented yet." << tok << std::endl;
+      scanner->next();
+      tok = scanner->peek();
+    }
+
     if (tok.is<Keyword>(Keyword::Fn)) {
       scanner->next();
 
@@ -123,7 +136,10 @@ bool libquixcc::parse_region(quixcc_job_t &job, libquixcc::Scanner *scanner,
       if (!parse_function(job, scanner, method)) return false;
 
       auto fn_this = std::make_shared<FunctionParamNode>(
-          "this", std::make_shared<PointerTypeNode>(std::make_shared<UserTypeNode>(name)), nullptr);
+          "this",
+          std::make_shared<PointerTypeNode>(
+              std::make_shared<UserTypeNode>(name)),
+          nullptr);
 
       if (method->is<FunctionDeclNode>()) {
         auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);
@@ -138,7 +154,8 @@ bool libquixcc::parse_region(quixcc_job_t &job, libquixcc::Scanner *scanner,
       scanner->next();
       tok = scanner->next();
       if (!tok.is<Keyword>(Keyword::Fn)) {
-        LOG(ERROR) << core::feedback[REGION_DEF_EXPECTED_FN] << tok << std::endl;
+        LOG(ERROR) << core::feedback[REGION_DEF_EXPECTED_FN] << tok
+                   << std::endl;
         return false;
       }
 
