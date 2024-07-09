@@ -42,6 +42,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <set>
 
 namespace libquixcc {
 class FunctionTypeNode : public TypeNode {
@@ -98,8 +99,13 @@ class FunctionDefNode : public DefNode {
   FunctionDefNode(std::shared_ptr<FunctionDeclNode> decl,
                   std::shared_ptr<BlockNode> body,
                   std::shared_ptr<ExprNode> req_in = nullptr,
-                  std::shared_ptr<ExprNode> req_out = nullptr)
-      : m_decl(decl), m_body(body), m_req_in(req_in), m_req_out(req_out) {
+                  std::shared_ptr<ExprNode> req_out = nullptr,
+                  std::set<std::string> items = {})
+      : m_decl(decl),
+        m_body(body),
+        m_req_in(req_in),
+        m_req_out(req_out),
+        m_items(items) {
     ntype = NodeType::FunctionDefNode;
   }
 
@@ -107,6 +113,7 @@ class FunctionDefNode : public DefNode {
   std::shared_ptr<BlockNode> m_body;
   std::shared_ptr<ExprNode> m_req_in;
   std::shared_ptr<ExprNode> m_req_out;
+  std::set<std::string> m_items;
 };
 }  // namespace libquixcc
 

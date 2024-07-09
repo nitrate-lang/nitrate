@@ -121,6 +121,11 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
       break;
     }
 
+    if (tok.is<Punctor>(Punctor::Semicolon)) {
+      scanner->next();
+      continue;
+    }
+
     if (tok.is<Keyword>(Keyword::Pub)) {
       /// TODO: Implement visibility semantics
       LOG(WARN) << "Visibility semantics not implemented yet." << tok
@@ -175,7 +180,11 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   tok = scanner->peek();
-  std::vector<std::string> implements;
+  std::set<std::string> implements;
+  if (!job.has("-fno-auto-impl", "union")) {
+    implements.insert("auto");
+  }
+
   if (tok.is<Keyword>(Keyword::Impl)) {
     scanner->next();
     tok = scanner->next();
@@ -195,7 +204,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
         return false;
       }
 
-      implements.push_back(tok.as<std::string>());
+      implements.insert(tok.as<std::string>());
 
       tok = scanner->peek();
       if (tok.is<Punctor>(Punctor::Comma)) {

@@ -657,11 +657,11 @@ bool preprocessor_config(quixcc_job_t *job, std::unique_ptr<PrepEngine> &prep) {
 static bool compile(quixcc_job_t *job) {
   auto ptree = std::make_shared<Ptree>();
 
-  if (job->m_argset.contains("-emit-prep")) {
+  if (job->has("-emit-prep")) {
     LOG(DEBUG) << "Preprocessing only" << std::endl;
     std::unique_ptr<PrepEngine> prep = std::make_unique<PrepEngine>(*job);
     if (!preprocessor_config(job, prep)) return false;
-    if (job->m_argset.contains("-fkeep-comments")) {
+    if (job->has("-fkeep-comments")) {
       prep->comments(false);
     }
 
@@ -677,10 +677,10 @@ static bool compile(quixcc_job_t *job) {
     return true;
   }
 
-  if (job->m_argset.contains("-emit-tokens")) {
+  if (job->has("-emit-tokens")) {
     LOG(DEBUG) << "Lexing only" << std::endl;
     StreamLexer lexer;
-    if (job->m_argset.contains("-fkeep-comments")) {
+    if (job->has("-fkeep-comments")) {
       lexer.comments(false);
     }
 
@@ -707,7 +707,7 @@ static bool compile(quixcc_job_t *job) {
     auto prep = std::make_unique<PrepEngine>(*job);
     LOG(DEBUG) << "Preprocessing source" << std::endl;
     if (!preprocessor_config(job, prep)) return false;
-    if (job->m_argset.contains("-fkeep-comments")) {
+    if (job->has("-fkeep-comments")) {
       prep->comments(false);
     }
     LOG(DEBUG) << "Finished preprocessing source" << std::endl;
@@ -720,8 +720,8 @@ static bool compile(quixcc_job_t *job) {
     if (!parse(*job, prep.get(), ptree, false)) return false;
     LOG(DEBUG) << "Finished building Ptree 1" << std::endl;
 
-    if (job->m_argset.contains("-emit-parse")) {
-      auto serial = ptree->to_string(job->m_argset.contains("-emit-minify"));
+    if (job->has("-emit-parse")) {
+      auto serial = ptree->to_string(job->has("-emit-minify"));
       if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
         return false;
       fflush(job->m_out);
@@ -745,8 +745,7 @@ static bool compile(quixcc_job_t *job) {
   if (!QIR->from_ptree(job, std::move(ptree))) /* This will modify the Ptree */
     return false;
 
-  if (!job->m_argset.contains(
-          "-fno-check"))  // -fno-check disables semantic analysis
+  if (!job->has("-fno-check"))  // -fno-check disables semantic analysis
   {
     ///=========================================
     /// BEGIN: SEMANTIC ANALYSIS
@@ -777,17 +776,17 @@ static bool compile(quixcc_job_t *job) {
 
     using namespace optimizer;
     OptLevel opt;
-    if (job->m_argset.contains("-O0"))
+    if (job->has("-O0"))
       opt = OptLevel::O0;
-    else if (job->m_argset.contains("-O1"))
+    else if (job->has("-O1"))
       opt = OptLevel::O1;
-    else if (job->m_argset.contains("-O2"))
+    else if (job->has("-O2"))
       opt = OptLevel::O2;
-    else if (job->m_argset.contains("-O3"))
+    else if (job->has("-O3"))
       opt = OptLevel::O3;
-    else if (job->m_argset.contains("-Os"))
+    else if (job->has("-Os"))
       opt = OptLevel::Os;
-    else if (job->m_argset.contains("-Oz"))
+    else if (job->has("-Oz"))
       opt = OptLevel::Oz;
     else
       opt = OptLevel::O2;
@@ -820,7 +819,7 @@ static bool compile(quixcc_job_t *job) {
     LOG(DEBUG) << "Optimization pipeline complete" << std::endl;
   }
 
-  if (job->m_argset.contains("-emit-quix-ir")) {
+  if (job->has("-emit-quix-ir")) {
     auto serial = QIR->to_string();
     if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
       return false;
@@ -833,7 +832,7 @@ static bool compile(quixcc_job_t *job) {
   auto DIR = std::make_unique<ir::delta::IRDelta>(job->m_filename.top());
   if (!DIR->from_qir(job, QIR)) return false;
 
-  if (job->m_argset.contains("-emit-delta-ir")) {
+  if (job->has("-emit-delta-ir")) {
     auto serial = DIR->to_string();
     if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
       return false;
@@ -890,6 +889,8 @@ static bool verify_build_option(const std::string &option,
   const static std::vector<std::pair<std::regex, std::regex>> static_regexes = {
       {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex("[a-zA-Z0-9_ ]*")},
       {std::regex("-I.+"), std::regex("")},
+      {std::regex("-fno-auto-impl"),
+       std::regex("function|group|struct|region|union")},
   };
 
   if (static_options.contains(option)) return true;
@@ -934,7 +935,7 @@ static bool build_argmap(quixcc_job_t *job) {
 
     if (key == "-v" && value.empty()) job->m_debug = true;
 
-    job->m_argset.insert({key, value});
+    job->m_argset.push_back({key, value});
 
     if (!value.empty())
       LOG(DEBUG) << log::raw << "Added switch entry: " << key << "=" << value
@@ -1177,7 +1178,7 @@ static bool execute_job(quixcc_job_t *job) {
     return false;
   }
 
-  if (job->m_argset.contains("-fcoredump")) {
+  if (job->has("-fcoredump")) {
     if (!compile(job)) LOG(ERROR) << "Compilation failed" << std::endl;
 
     LOG(DEBUG) << "Compilation successful" << std::endl;

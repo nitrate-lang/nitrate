@@ -1253,10 +1253,10 @@ void ParseTreeSerializer::conv(const StructDefNode *n) {
 
   o << "] [";
 
-  for (size_t i = 0; i < n->m_implements.size(); i++) {
-    o << "\"" << escape_string(n->m_implements[i]) << "\"";
-    if (i != n->m_implements.size() - 1) {
-      o << " ";
+  for (auto it = n->m_implements.begin(); it != n->m_implements.end(); ++it) {
+    o << "\"" << escape_string(*it) << "\"";
+    if (std::next(it) != n->m_implements.end()) {
+      o << ' ';
     }
   }
 
@@ -1299,10 +1299,10 @@ void ParseTreeSerializer::conv(const RegionDefNode *n) {
 
   o << "] [";
 
-  for (size_t i = 0; i < n->m_implements.size(); i++) {
-    o << "\"" << escape_string(n->m_implements[i]) << "\"";
-    if (i != n->m_implements.size() - 1) {
-      o << " ";
+  for (auto it = n->m_implements.begin(); it != n->m_implements.end(); ++it) {
+    o << "\"" << escape_string(*it) << "\"";
+    if (std::next(it) != n->m_implements.end()) {
+      o << ' ';
     }
   }
 
@@ -1345,10 +1345,10 @@ void ParseTreeSerializer::conv(const GroupDefNode *n) {
 
   o << "] [";
 
-  for (size_t i = 0; i < n->m_implements.size(); i++) {
-    o << "\"" << escape_string(n->m_implements[i]) << "\"";
-    if (i != n->m_implements.size() - 1) {
-      o << " ";
+  for (auto it = n->m_implements.begin(); it != n->m_implements.end(); ++it) {
+    o << "\"" << escape_string(*it) << "\"";
+    if (std::next(it) != n->m_implements.end()) {
+      o << ' ';
     }
   }
 
@@ -1391,10 +1391,10 @@ void ParseTreeSerializer::conv(const UnionDefNode *n) {
 
   o << "] [";
 
-  for (size_t i = 0; i < n->m_implements.size(); i++) {
-    o << "\"" << escape_string(n->m_implements[i]) << "\"";
-    if (i != n->m_implements.size() - 1) {
-      o << " ";
+  for (auto it = n->m_implements.begin(); it != n->m_implements.end(); ++it) {
+    o << "\"" << escape_string(*it) << "\"";
+    if (std::next(it) != n->m_implements.end()) {
+      o << ' ';
     }
   }
 
@@ -1453,6 +1453,16 @@ void ParseTreeSerializer::conv(const FunctionDefNode *n) {
   next(n->m_body);
   next(n->m_req_in);
   next(n->m_req_out);
+
+  o << "[";
+  for (auto it = n->m_items.begin(); it != n->m_items.end(); ++it) {
+    o << "\"" << escape_string(*it) << "\"";
+    if (std::next(it) != n->m_items.end()) {
+      o << ' ';
+    }
+  }
+  o << "]";
+
   o << ')';
   indent--;
 }

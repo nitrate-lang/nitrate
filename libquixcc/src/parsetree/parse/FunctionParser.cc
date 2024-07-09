@@ -440,12 +440,49 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
       tok = scanner->peek();
     }
 
+    std::set<std::string> implements;
+
+    if (!job.has("-fno-auto-impl", "function")) {
+      implements.insert("auto");
+    }
+
+    if (tok.is<Keyword>(Keyword::Impl)) {
+      scanner->next();
+      tok = scanner->next();
+      if (!tok.is<Punctor>(Punctor::OpenBracket)) {
+        LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_OPEN_BRACKET] << tok
+                   << std::endl;
+        return false;
+      }
+
+      while (true) {
+        tok = scanner->next();
+        if (tok.is<Punctor>(Punctor::CloseBracket)) break;
+
+        if (tok.type != TT::Identifier) {
+          LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_IDENTIFIER] << tok
+                     << std::endl;
+          return false;
+        }
+
+        implements.insert(tok.as<std::string>());
+
+        tok = scanner->peek();
+        if (tok.is<Punctor>(Punctor::Comma)) {
+          scanner->next();
+        }
+      }
+
+      tok = scanner->peek();
+    }
+
     if (!fndecl->m_type)
       fndecl->m_type = std::make_shared<FunctionTypeNode>(
           std::make_shared<VoidTypeNode>(), params, is_variadic, false,
           prop._tsafe, prop._foreign, prop._noexcept);
 
-    node = std::make_shared<FunctionDefNode>(fndecl, fnbody, req_in, req_out);
+    node = std::make_shared<FunctionDefNode>(fndecl, fnbody, req_in, req_out,
+                                             implements);
     return true;
   } else {
     LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_BRACE] << tok << std::endl;

@@ -42,6 +42,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <set>
 
 namespace libquixcc {
 class StructTypeNode : public TypeNode {
@@ -75,7 +76,7 @@ class StructDefNode : public DefNode {
   StructDefNode() { ntype = NodeType::StructDefNode; }
   StructDefNode(const std::string &name,
                 const std::vector<std::shared_ptr<StructFieldNode>> &fields,
-                std::vector<std::string> implements = {})
+                std::set<std::string> implements = {})
       : m_name(name), m_fields(fields), m_implements(implements) {
     ntype = NodeType::StructDefNode;
   }
@@ -90,7 +91,7 @@ class StructDefNode : public DefNode {
   std::vector<std::shared_ptr<StructFieldNode>> m_fields;
   std::vector<std::shared_ptr<StmtNode>> m_methods;
   std::vector<std::shared_ptr<StmtNode>> m_static_methods;
-  std::vector<std::string> m_implements;
+  std::set<std::string> m_implements;
 };
 }  // namespace libquixcc
 

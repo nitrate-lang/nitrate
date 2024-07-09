@@ -71,7 +71,7 @@ struct quixcc_job_t {
   libquixcc::LLVMContext m_inner;
   std::stack<std::string> m_filename;
   std::unordered_set<std::string> m_owned_strings;
-  std::map<std::string, std::string> m_argset;
+  std::vector<std::pair<std::string, std::string>> m_argset;
   std::unordered_map<std::string, quixcc_macro_fn_t> m_macros;
   std::set<std::unique_ptr<void, std::function<void(void *)>>> m_dlhandles;
   libquixcc::QSysCallRegistry m_qsyscalls;
@@ -100,6 +100,14 @@ struct quixcc_job_t {
     m_debug = false;
     m_tainted = false;
     m_running = false;
+  }
+
+  bool has(std::string_view name, std::string_view value = "") const {
+    for (const auto &arg : m_argset) {
+      if (arg.first == name && (value.empty() || arg.second == value))
+        return true;
+    }
+    return false;
   }
 };
 

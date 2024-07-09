@@ -404,6 +404,8 @@ libquixcc::core::Feedback libquixcc::core::feedback({
     {FN_PURE_MIX,
      "Purity constraints are mutually exclusive. To fix the issue, remove the "
      "conflicting purity specifiers"},
+    {FN_DEF_EXPECTED_OPEN_BRACKET, "Expected an open bracket"},
+    {FN_DEF_EXPECTED_IDENTIFIER, "Expected an identifier"},
 
     {PREP_DUPLICATE_IMPORT,
      "Source file \"{}\" contains duplicate import of \"{}\""},

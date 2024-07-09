@@ -98,7 +98,7 @@ bool libquixcc::codegen::write_IR(quixcc_job_t &ctx,
     LOG(DEBUG) << "Finished generating LLVM Bitcode" << std::endl;
   } else {
     LOG(DEBUG) << "Generating LLVM IR" << std::endl;
-    ctx.m_inner.m_module->print(os, nullptr, ctx.m_argset.contains("-g"));
+    ctx.m_inner.m_module->print(os, nullptr, ctx.has("-g"));
     if (!fwrite(output_buffer.c_str(), 1, output_buffer.size(), out)) {
       LOG(ERROR) << "Failed to write LLVM IR to file" << std::endl;
       return false;
@@ -198,24 +198,24 @@ bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx,
   llvm::PassManagerBuilder builder;
   llvm::legacy::PassManager pass;
 
-  if (ctx.m_argset.contains("-O0")) {
+  if (ctx.has("-O0")) {
     builder.OptLevel = 0;
 
     builder.populateModulePassManager(pass);
-  } else if (ctx.m_argset.contains("-Os")) {
+  } else if (ctx.has("-Os")) {
     builder.SizeLevel = 1;
     builder.populateModulePassManager(pass);
-  } else if (ctx.m_argset.contains("-Oz")) {
+  } else if (ctx.has("-Oz")) {
     builder.SizeLevel = 2;
     builder.populateModulePassManager(pass);
   } else {
     builder.SizeLevel = 0;
 
-    if (ctx.m_argset.contains("-O1"))
+    if (ctx.has("-O1"))
       builder.OptLevel = 1;
-    else if (ctx.m_argset.contains("-O2"))
+    else if (ctx.has("-O2"))
       builder.OptLevel = 2;
-    else if (ctx.m_argset.contains("-O3"))
+    else if (ctx.has("-O3"))
       builder.OptLevel = 3;
 
     builder.Inliner = llvm::createFunctionInliningPass(
@@ -244,18 +244,18 @@ bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx,
 
 bool libquixcc::codegen::generate(quixcc_job_t &job,
                                   std::unique_ptr<ir::delta::IRDelta> &ir) {
-  if (job.m_argset.contains("-emit-ir"))
+  if (job.has("-emit-ir"))
     return write_IR(job, ir, job.m_out, false);
 
-  if (job.m_argset.contains("-emit-bc"))
+  if (job.has("-emit-bc"))
     return write_IR(job, ir, job.m_out, true);
 
-  if (job.m_argset.contains("-emit-c11")) return write_c11(job, ir, job.m_out);
+  if (job.has("-emit-c11")) return write_c11(job, ir, job.m_out);
 
-  if (job.m_argset.contains("-S"))
+  if (job.has("-S"))
     return write_llvm(job, ir, job.m_out, llvm::CGFT_AssemblyFile);
 
-  if (job.m_argset.contains("-c"))
+  if (job.has("-c"))
     return write_llvm(job, ir, job.m_out, llvm::CGFT_ObjectFile);
 
   LOG(ERROR) << "Output format was not specified. Expected: [-emit-ir, "
