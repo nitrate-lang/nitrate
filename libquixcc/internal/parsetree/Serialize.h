@@ -69,6 +69,7 @@ class ParseTreeSerializer {
   void conv(const SeqExprNode *);
   void conv(const CallExprNode *);
   void conv(const ListExprNode *);
+  void conv(const AssocExprNode *);
   void conv(const MemberAccessNode *);
   void conv(const IndexNode *);
   void conv(const SliceNode *);
@@ -103,8 +104,8 @@ class ParseTreeSerializer {
   void conv(const UnionTypeNode *);
   void conv(const ArrayTypeNode *);
   void conv(const VectorTypeNode *);
+  void conv(const MapTypeNode *);
   void conv(const ResultTypeNode *);
-  void conv(const GeneratorTypeNode *);
   void conv(const FunctionTypeNode *);
   void conv(const UserTypeNode *);
   void conv(const IntegerNode *);

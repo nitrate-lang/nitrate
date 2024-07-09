@@ -253,6 +253,7 @@ libquixcc::core::Feedback libquixcc::core::feedback({
     {TYPE_OPAQUE_EXPECTED_CLOSE_PAREN,
      "Expected a close parenthesis in the opaque type definition. Syntax: "
      "opaque (name)"},
+    {TYPE_EXPECTED_MAP_ARROW, "Expected '->' after the key type in the map "},
 
     {SUBSYSTEM_MISSING_IDENTIFIER,
      "Expected identifier after the keyword 'subsystem'. To fix the issue, "

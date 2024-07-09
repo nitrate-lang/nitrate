@@ -161,6 +161,9 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
     case libquixcc::NodeType::ListExprNode:
       conv(n->as<ListExprNode>());
       break;
+    case libquixcc::NodeType::AssocExprNode:
+      conv(n->as<AssocExprNode>());
+      break;
     case libquixcc::NodeType::MemberAccessNode:
       conv(n->as<MemberAccessNode>());
       break;
@@ -263,11 +266,11 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
     case libquixcc::NodeType::VectorTypeNode:
       conv(n->as<VectorTypeNode>());
       break;
+    case libquixcc::NodeType::MapTypeNode:
+      conv(n->as<MapTypeNode>());
+      break;
     case libquixcc::NodeType::ResultTypeNode:
       conv(n->as<ResultTypeNode>());
-      break;
-    case libquixcc::NodeType::GeneratorTypeNode:
-      conv(n->as<GeneratorTypeNode>());
       break;
     case libquixcc::NodeType::FunctionTypeNode:
       conv(n->as<FunctionTypeNode>());
@@ -601,6 +604,26 @@ void ParseTreeSerializer::conv(const ListExprNode *n) {
   indent--;
 }
 
+void ParseTreeSerializer::conv(const AssocExprNode *n) {
+  indent++;
+  ind();
+
+  o << "(Assoc [";
+  for (const auto &elem : n->m_elements) {
+    indent++;
+    ind();
+
+    o << "(AssocE";
+    next(elem.first);
+    next(elem.second);
+    o << ')';
+    indent--;
+  }
+
+  o << "])";
+  indent--;
+}
+
 void ParseTreeSerializer::conv(const MemberAccessNode *n) {
   indent++;
   ind();
@@ -910,21 +933,22 @@ void ParseTreeSerializer::conv(const VectorTypeNode *n) {
   indent--;
 }
 
+void ParseTreeSerializer::conv(const MapTypeNode *n) {
+  indent++;
+  ind();
+
+  o << "(Map";
+  next(n->m_key_type);
+  next(n->m_value_type);
+  o << ')';
+  indent--;
+}
+
 void ParseTreeSerializer::conv(const ResultTypeNode *n) {
   indent++;
   ind();
 
   o << "(Result";
-  next(n->m_type);
-  o << ')';
-  indent--;
-}
-
-void ParseTreeSerializer::conv(const GeneratorTypeNode *n) {
-  indent++;
-  ind();
-
-  o << "(Gen";
   next(n->m_type);
   o << ')';
   indent--;

@@ -61,14 +61,14 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
     return false;
   }
 
-  std::shared_ptr<ConstExprNode> value;
+  std::shared_ptr<ExprNode> value;
 
   tok = scanner->next();
   if (tok.is<Punctor>(Punctor::Comma)) {
     node = std::make_shared<UnionFieldNode>(name, type);
     return true;
   } else if (tok.is<Operator>(Operator::Assign)) {
-    if (!parse_const_expr(job, scanner, Token(TT::Punctor, Punctor::Comma),
+    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma)},
                           value)) {
       LOG(ERROR) << core::feedback[UNION_FIELD_INIT_ERR] << name << tok
                  << std::endl;

@@ -52,15 +52,6 @@ class ResultTypeNode : public TypeNode {
 
   std::shared_ptr<TypeNode> m_type;
 };
-
-class GeneratorTypeNode : public TypeNode {
- public:
-  GeneratorTypeNode(std::shared_ptr<TypeNode> type) : m_type(type) {
-    ntype = NodeType::GeneratorTypeNode;
-  }
-
-  std::shared_ptr<TypeNode> m_type;
-};
 }  // namespace libquixcc
 
 #endif  // __QUIXCC_PARSE_NODES_TYPE_WRAPPER_H__

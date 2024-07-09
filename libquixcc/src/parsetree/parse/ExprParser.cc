@@ -291,7 +291,6 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
         switch (tok.as<Punctor>()) {
           case Punctor::OpenParen: {
             if (!stack.empty() && stack.top()->is<MemberAccessNode>()) {
-              // Method call
               auto fcall =
                   parse_function_call(job, stack.top(), scanner, depth);
               if (fcall == nullptr) return false;
@@ -318,7 +317,9 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
             return true;
           }
           case Punctor::OpenBrace: {
-            std::vector<std::shared_ptr<ExprNode>> elements;
+            std::vector<
+                std::pair<std::shared_ptr<ExprNode>, std::shared_ptr<ExprNode>>>
+                elements;
             while (true) {
               auto tok = scanner->peek();
               if (tok == Token(TT::Punctor, Punctor::CloseBrace)) {
@@ -326,15 +327,28 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
                 break;
               }
 
-              std::shared_ptr<ExprNode> element;
+              std::shared_ptr<ExprNode> key, value;
               if (!parse_expr(job, scanner,
-                              {Token(TT::Punctor, Punctor::Comma),
-                               Token(TT::Punctor, Punctor::CloseBrace)},
-                              element, depth + 1)) {
+                              {Token(TT::Punctor, Punctor::Colon)}, key,
+                              depth + 1)) {
                 return false;
               }
 
-              elements.push_back(element);
+              tok = scanner->next();
+              if (!tok.is<Punctor>(Punctor::Colon)) {
+                LOG(ERROR) << "Expected a colon in associative array" << tok
+                           << std::endl;
+                return false;
+              }
+
+              if (!parse_expr(job, scanner,
+                              {Token(TT::Punctor, Punctor::Comma),
+                               Token(TT::Punctor, Punctor::CloseBrace)},
+                              value, depth + 1)) {
+                return false;
+              }
+
+              elements.push_back({key, value});
 
               tok = scanner->peek();
               if (tok.is<Punctor>(Punctor::Comma)) {
@@ -342,7 +356,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
               }
             }
 
-            stack.push(std::make_shared<ListExprNode>(elements));
+            stack.push(std::make_shared<AssocExprNode>(elements));
             continue;
           }
           case Punctor::OpenBracket: {
@@ -366,7 +380,6 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
                 }
 
                 tok = scanner->peek();
-                // Array literal with count
                 if (tok.is<Punctor>(Punctor::Semicolon)) {
                   scanner->next();
 
@@ -568,7 +581,6 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           stack.pop();
 
           throw std::runtime_error("Reinterpret cast not implemented");
-          // stack.push(std::make_shared<ReinterpretCastExprNode>(left, type));
           continue;
         }
 

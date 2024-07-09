@@ -113,6 +113,7 @@ static QResult conv(const BinaryExprNode *n, QState &state);
 static QResult conv(const SeqExprNode *n, QState &state);
 static QResult conv(const CallExprNode *n, QState &state);
 static QResult conv(const ListExprNode *n, QState &state);
+static QResult conv(const AssocExprNode *n, QState &state);
 static QResult conv(const MemberAccessNode *n, QState &state);
 static QResult conv(const IndexNode *n, QState &state);
 static QResult conv(const SliceNode *n, QState &state);
@@ -147,8 +148,8 @@ static QResult conv(const RegionTypeNode *n, QState &state);
 static QResult conv(const UnionTypeNode *n, QState &state);
 static QResult conv(const ArrayTypeNode *n, QState &state);
 static QResult conv(const VectorTypeNode *n, QState &state);
+static QResult conv(const MapTypeNode *n, QState &state);
 static QResult conv(const ResultTypeNode *n, QState &state);
-static QResult conv(const GeneratorTypeNode *n, QState &state);
 static QResult conv(const FunctionTypeNode *n, QState &state);
 static QResult conv(const IntegerNode *n, QState &state);
 static QResult conv(const FloatLiteralNode *n, QState &state);
@@ -857,6 +858,11 @@ static QResult conv(const ListExprNode *n, QState &state) {
 
   /* One-for-one lowering of the list expression */
   return List::create(values);
+}
+
+static QResult conv(const AssocExprNode *n, QState &state) {
+  /// TODO: Implement AssocExprNode
+  throw std::runtime_error("AssocExprNode not implemented");
 }
 
 static QResult conv(const MemberAccessNode *n, QState &state) {
@@ -1598,18 +1604,15 @@ static QResult conv(const VectorTypeNode *n, QState &state) {
   return Vector::create(t[0]->as<Type>());
 }
 
+static QResult conv(const MapTypeNode *n, QState &state) {
+  /// TODO: Implement MapTypeNode
+  throw std::runtime_error("QIR translation: MapTypeNode not implemented");
+}
+
 static QResult conv(const ResultTypeNode *n, QState &state) {
   /// TODO: cleanup
 
   LOG(FATAL) << "ResultTypeNode not implemented" << std::endl;
-
-  return nullptr;
-}
-
-static QResult conv(const GeneratorTypeNode *n, QState &state) {
-  /// TODO: cleanup
-
-  LOG(FATAL) << "GeneratorTypeNode not implemented" << std::endl;
 
   return nullptr;
 }
@@ -2777,6 +2780,10 @@ static QResult conv(const ParseNode *n, QState &state) {
       r = conv(n->as<ListExprNode>(), state);
       break;
 
+    case NodeType::AssocExprNode:
+      r = conv(n->as<AssocExprNode>(), state);
+      break;
+
     case NodeType::MemberAccessNode:
       r = conv(n->as<MemberAccessNode>(), state);
       break;
@@ -2901,12 +2908,12 @@ static QResult conv(const ParseNode *n, QState &state) {
       r = conv(n->as<VectorTypeNode>(), state);
       break;
 
-    case NodeType::ResultTypeNode:
-      r = conv(n->as<ResultTypeNode>(), state);
+    case NodeType::MapTypeNode:
+      r = conv(n->as<MapTypeNode>(), state);
       break;
 
-    case NodeType::GeneratorTypeNode:
-      r = conv(n->as<GeneratorTypeNode>(), state);
+    case NodeType::ResultTypeNode:
+      r = conv(n->as<ResultTypeNode>(), state);
       break;
 
     case NodeType::FunctionTypeNode:

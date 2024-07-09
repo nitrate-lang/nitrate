@@ -72,12 +72,14 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
         goto suffix;
       case Keyword::Fn:
         if (!parse_function(job, scanner, fn)) {
-          LOG(ERROR) << core::feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
+          LOG(ERROR) << core::feedback[TYPE_EXPECTED_FUNCTION] << tok
+                     << std::endl;
           goto error;
         }
 
         if (!fn->is<FunctionDeclNode>()) {
-          LOG(ERROR) << core::feedback[TYPE_EXPECTED_FUNCTION] << tok << std::endl;
+          LOG(ERROR) << core::feedback[TYPE_EXPECTED_FUNCTION] << tok
+                     << std::endl;
           goto error;
         }
 
@@ -120,7 +122,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
       goto suffix;
     }
   } else if (tok.is<Punctor>(Punctor::OpenBracket)) {
-    // Array type or Vector type
+    // Array type or Vector type or map type
     // syntax [type; size]
     if (!parse_type(job, scanner, type)) {
       LOG(ERROR) << core::feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
@@ -133,6 +135,32 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
       goto suffix;
     }
 
+    if (tok.is<Operator>(Operator::Minus)) {
+      /// TODO: Implement map type
+      tok = scanner->next();
+      if (!tok.is<Operator>(Operator::GreaterThan)) {
+        LOG(ERROR) << core::feedback[TYPE_EXPECTED_MAP_ARROW] << tok
+                   << std::endl;
+        goto error;
+      }
+
+      std::shared_ptr<TypeNode> value_type;
+      if (!parse_type(job, scanner, value_type)) {
+        LOG(ERROR) << core::feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
+        goto error;
+      }
+
+      tok = scanner->next();
+      if (!tok.is<Punctor>(Punctor::CloseBracket)) {
+        LOG(ERROR) << core::feedback[TYPE_EXPECTED_CLOSE_BRACKET] << tok
+                   << std::endl;
+        goto error;
+      }
+
+      inner = std::make_shared<MapTypeNode>(type, value_type);
+      goto suffix;
+    }
+
     if (!tok.is<Punctor>(Punctor::Semicolon)) {
       LOG(ERROR) << core::feedback[TYPE_EXPECTED_SEMICOLON] << tok << std::endl;
       goto error;
@@ -141,13 +169,15 @@ bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
     std::shared_ptr<ConstExprNode> size;
     if (!parse_const_expr(job, scanner,
                           Token(TT::Punctor, Punctor::CloseBracket), size)) {
-      LOG(ERROR) << core::feedback[TYPE_EXPECTED_CONST_EXPR] << tok << std::endl;
+      LOG(ERROR) << core::feedback[TYPE_EXPECTED_CONST_EXPR] << tok
+                 << std::endl;
       goto error;
     }
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::CloseBracket)) {
-      LOG(ERROR) << core::feedback[TYPE_EXPECTED_CLOSE_BRACKET] << tok << std::endl;
+      LOG(ERROR) << core::feedback[TYPE_EXPECTED_CLOSE_BRACKET] << tok
+                 << std::endl;
       goto error;
     }
 
@@ -183,10 +213,6 @@ suffix:
       // ? means Result type
       scanner->next();
       inner = std::make_shared<ResultTypeNode>(inner);
-    } else if (tok.is<Operator>(Operator::BitwiseXor)) {
-      // ^ means Generator type
-      scanner->next();
-      inner = std::make_shared<GeneratorTypeNode>(inner);
     } else {
       break;
     }

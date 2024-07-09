@@ -60,14 +60,14 @@ class UnionFieldNode : public ParseNode {
  public:
   UnionFieldNode() { ntype = NodeType::UnionFieldNode; }
   UnionFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
-                 const std::shared_ptr<ConstExprNode> value = nullptr)
+                 const std::shared_ptr<ExprNode> value = nullptr)
       : m_name(name), m_type(type), m_value(value) {
     ntype = NodeType::UnionFieldNode;
   }
 
   std::string m_name;
   std::shared_ptr<TypeNode> m_type;
-  std::shared_ptr<ConstExprNode> m_value;
+  std::shared_ptr<ExprNode> m_value;
 };
 
 class UnionDefNode : public DefNode {

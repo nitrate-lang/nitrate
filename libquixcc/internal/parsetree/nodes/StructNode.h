@@ -60,14 +60,14 @@ class StructFieldNode : public ParseNode {
  public:
   StructFieldNode() { ntype = NodeType::StructFieldNode; }
   StructFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
-                  std::shared_ptr<ConstExprNode> value = nullptr)
+                  std::shared_ptr<ExprNode> value = nullptr)
       : m_name(name), m_type(type), m_value(value) {
     ntype = NodeType::StructFieldNode;
   }
 
   std::string m_name;
   std::shared_ptr<TypeNode> m_type;
-  std::shared_ptr<ConstExprNode> m_value;
+  std::shared_ptr<ExprNode> m_value;
 };
 
 class StructDefNode : public DefNode {

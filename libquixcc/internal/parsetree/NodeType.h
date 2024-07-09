@@ -72,6 +72,7 @@ enum class NodeType : uint8_t {
   SeqExprNode,
   CallExprNode,
   ListExprNode,
+  AssocExprNode,
   MemberAccessNode,
   IndexNode,
   SliceNode,
@@ -106,8 +107,8 @@ enum class NodeType : uint8_t {
   UnionTypeNode,
   ArrayTypeNode,
   VectorTypeNode,
+  MapTypeNode,
   ResultTypeNode,
-  GeneratorTypeNode,
   FunctionTypeNode,
   UserTypeNode,
 
@@ -184,6 +185,7 @@ class BinaryExprNode;
 class SeqExprNode;
 class CallExprNode;
 class ListExprNode;
+class AssocExprNode;
 class MemberAccessNode;
 class IndexNode;
 class SliceNode;
@@ -218,8 +220,8 @@ class RegionTypeNode;
 class UnionTypeNode;
 class ArrayTypeNode;
 class VectorTypeNode;
+class MapTypeNode;
 class ResultTypeNode;
-class GeneratorTypeNode;
 class FunctionTypeNode;
 class UserTypeNode;
 class LiteralNode;

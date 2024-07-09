@@ -82,6 +82,7 @@ class ParseTreePreorder {
   size_t iter(SeqExprNode *node);
   size_t iter(CallExprNode *node);
   size_t iter(ListExprNode *node);
+  size_t iter(AssocExprNode *node);
   size_t iter(MemberAccessNode *node);
   size_t iter(IndexNode *node);
   size_t iter(SliceNode *node);
@@ -116,8 +117,8 @@ class ParseTreePreorder {
   size_t iter(UnionTypeNode *node);
   size_t iter(ArrayTypeNode *node);
   size_t iter(VectorTypeNode *node);
+  size_t iter(MapTypeNode *node);
   size_t iter(ResultTypeNode *node);
-  size_t iter(GeneratorTypeNode *node);
   size_t iter(FunctionTypeNode *node);
   size_t iter(UserTypeNode *node);
   size_t iter(IntegerNode *node);

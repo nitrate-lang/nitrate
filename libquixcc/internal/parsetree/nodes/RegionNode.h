@@ -60,14 +60,14 @@ class RegionFieldNode : public ParseNode {
  public:
   RegionFieldNode() : m_type(nullptr) { ntype = NodeType::RegionFieldNode; }
   RegionFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
-                  std::shared_ptr<ConstExprNode> value = nullptr)
+                  std::shared_ptr<ExprNode> value = nullptr)
       : m_name(name), m_type(type), m_value(value) {
     ntype = NodeType::RegionFieldNode;
   }
 
   std::string m_name;
   std::shared_ptr<TypeNode> m_type;
-  std::shared_ptr<ConstExprNode> m_value;
+  std::shared_ptr<ExprNode> m_value;
 };
 
 class RegionDefNode : public DefNode {

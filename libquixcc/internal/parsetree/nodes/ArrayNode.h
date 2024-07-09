@@ -64,6 +64,18 @@ class VectorTypeNode : public TypeNode {
 
   std::shared_ptr<TypeNode> m_type;
 };
+
+class MapTypeNode : public TypeNode {
+ public:
+  MapTypeNode(std::shared_ptr<TypeNode> key_type,
+              std::shared_ptr<TypeNode> value_type)
+      : m_key_type(key_type), m_value_type(value_type) {
+    ntype = NodeType::MapTypeNode;
+  }
+
+  std::shared_ptr<TypeNode> m_key_type;
+  std::shared_ptr<TypeNode> m_value_type;
+};
 }  // namespace libquixcc
 
 #endif  // __QUIXCC_PARSE_NODES_ARRAY_H__

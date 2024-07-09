@@ -119,8 +119,9 @@ class ParseNode {
       return is<StmtExprNode>() || is<UnaryExprNode>() ||
              is<PostUnaryExprNode>() || is<BinaryExprNode>() ||
              is<SeqExprNode>() || is<CallExprNode>() || is<ListExprNode>() ||
-             is<MemberAccessNode>() || is<IndexNode>() || is<SliceNode>() ||
-             is<FStringNode>() || isof<CastExprNode>() || isof<LiteralNode>();
+             is<AssocExprNode>() || is<MemberAccessNode>() || is<IndexNode>() ||
+             is<SliceNode>() || is<FStringNode>() || isof<CastExprNode>() ||
+             isof<LiteralNode>();
 
     if (std::is_same_v<T, TypeNode>)
       return is<MutTypeNode>() || is<U8TypeNode>() || is<U16TypeNode>() ||
@@ -132,9 +133,9 @@ class ParseNode {
              is<OpaqueTypeNode>() || is<StringTypeNode>() ||
              is<EnumTypeNode>() || is<StructTypeNode>() ||
              is<RegionTypeNode>() || is<UnionTypeNode>() ||
-             is<ArrayTypeNode>() || is<VectorTypeNode>() ||
-             is<ResultTypeNode>() || is<GeneratorTypeNode>() ||
-             is<FunctionTypeNode>() || is<UserTypeNode>();
+             is<ArrayTypeNode>() || is<VectorTypeNode>() || is<MapTypeNode>() ||
+             is<ResultTypeNode>() || is<FunctionTypeNode>() ||
+             is<UserTypeNode>();
 
     if (std::is_same_v<T, StmtNode>)
       return is<ExprStmtNode>() || is<NopStmtNode>() || is<DeclNode>() ||

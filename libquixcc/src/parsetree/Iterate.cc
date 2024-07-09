@@ -89,6 +89,8 @@ size_t ParseTreePreorder::dispatch(ParseNode *n) {
       return iter(n->as<CallExprNode>());
     case libquixcc::NodeType::ListExprNode:
       return iter(n->as<ListExprNode>());
+    case libquixcc::NodeType::AssocExprNode:
+      return iter(n->as<AssocExprNode>());
     case libquixcc::NodeType::MemberAccessNode:
       return iter(n->as<MemberAccessNode>());
     case libquixcc::NodeType::IndexNode:
@@ -157,10 +159,10 @@ size_t ParseTreePreorder::dispatch(ParseNode *n) {
       return iter(n->as<ArrayTypeNode>());
     case libquixcc::NodeType::VectorTypeNode:
       return iter(n->as<VectorTypeNode>());
+    case libquixcc::NodeType::MapTypeNode:
+      return iter(n->as<MapTypeNode>());
     case libquixcc::NodeType::ResultTypeNode:
       return iter(n->as<ResultTypeNode>());
-    case libquixcc::NodeType::GeneratorTypeNode:
-      return iter(n->as<GeneratorTypeNode>());
     case libquixcc::NodeType::FunctionTypeNode:
       return iter(n->as<FunctionTypeNode>());
     case libquixcc::NodeType::UserTypeNode:
@@ -389,6 +391,17 @@ size_t ParseTreePreorder::iter(ListExprNode *node) {
   return count + 1;
 }
 
+size_t ParseTreePreorder::iter(AssocExprNode *node) {
+  size_t count = 0;
+  for (auto &elem : node->m_elements) {
+    m_callback(m_ns, m_scope, node, mk_ptr(&elem.first));
+    count += next(elem.first);
+    m_callback(m_ns, m_scope, node, mk_ptr(&elem.second));
+    count += next(elem.second);
+  }
+  return count + 1;
+}
+
 size_t ParseTreePreorder::iter(MemberAccessNode *node) {
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_expr));
   return next(node->m_expr) + 1;
@@ -563,14 +576,16 @@ size_t ParseTreePreorder::iter(VectorTypeNode *node) {
   return count + 1;
 }
 
-size_t ParseTreePreorder::iter(ResultTypeNode *node) {
+size_t ParseTreePreorder::iter(MapTypeNode *node) {
   size_t count = 0;
-  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_type));
-  count += next(node->m_type);
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_key_type));
+  count += next(node->m_key_type);
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_value_type));
+  count += next(node->m_value_type);
   return count + 1;
 }
 
-size_t ParseTreePreorder::iter(GeneratorTypeNode *node) {
+size_t ParseTreePreorder::iter(ResultTypeNode *node) {
   size_t count = 0;
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_type));
   count += next(node->m_type);

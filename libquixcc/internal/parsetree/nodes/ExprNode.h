@@ -115,6 +115,19 @@ class ListExprNode : public ExprNode {
   std::vector<std::shared_ptr<ExprNode>> m_elements;
 };
 
+class AssocExprNode : public ExprNode {
+ public:
+  AssocExprNode(std::vector<
+                std::pair<std::shared_ptr<ExprNode>, std::shared_ptr<ExprNode>>>
+                    elements)
+      : m_elements(elements) {
+    ntype = NodeType::AssocExprNode;
+  }
+
+  std::vector<std::pair<std::shared_ptr<ExprNode>, std::shared_ptr<ExprNode>>>
+      m_elements;
+};
+
 class MemberAccessNode : public ExprNode {
  public:
   MemberAccessNode(const std::shared_ptr<ExprNode> &expr,
@@ -155,7 +168,8 @@ class SliceNode : public ExprNode {
 
 class CastExprNode : public ExprNode {
  public:
-  CastExprNode(const std::shared_ptr<ExprNode> &expr, std::shared_ptr<TypeNode> type)
+  CastExprNode(const std::shared_ptr<ExprNode> &expr,
+               std::shared_ptr<TypeNode> type)
       : m_expr(expr), m_type(type) {
     ntype = NodeType::CastExprNode;
   }
@@ -166,7 +180,8 @@ class CastExprNode : public ExprNode {
 
 class StaticCastExprNode : public CastExprNode {
  public:
-  StaticCastExprNode(const std::shared_ptr<ExprNode> &expr, std::shared_ptr<TypeNode> type)
+  StaticCastExprNode(const std::shared_ptr<ExprNode> &expr,
+                     std::shared_ptr<TypeNode> type)
       : CastExprNode(expr, type) {
     ntype = NodeType::StaticCastExprNode;
   }
@@ -174,7 +189,8 @@ class StaticCastExprNode : public CastExprNode {
 
 class BitCastExprNode : public CastExprNode {
  public:
-  BitCastExprNode(const std::shared_ptr<ExprNode> &expr, std::shared_ptr<TypeNode> type)
+  BitCastExprNode(const std::shared_ptr<ExprNode> &expr,
+                  std::shared_ptr<TypeNode> type)
       : CastExprNode(expr, type) {
     ntype = NodeType::BitCastExprNode;
   }
@@ -182,7 +198,8 @@ class BitCastExprNode : public CastExprNode {
 
 class SignedUpcastExprNode : public CastExprNode {
  public:
-  SignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, std::shared_ptr<TypeNode> type)
+  SignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr,
+                       std::shared_ptr<TypeNode> type)
       : CastExprNode(expr, type) {
     ntype = NodeType::SignedUpcastExprNode;
   }
@@ -190,7 +207,8 @@ class SignedUpcastExprNode : public CastExprNode {
 
 class UnsignedUpcastExprNode : public CastExprNode {
  public:
-  UnsignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr, std::shared_ptr<TypeNode> type)
+  UnsignedUpcastExprNode(const std::shared_ptr<ExprNode> &expr,
+                         std::shared_ptr<TypeNode> type)
       : CastExprNode(expr, type) {
     ntype = NodeType::UnsignedUpcastExprNode;
   }
@@ -198,7 +216,8 @@ class UnsignedUpcastExprNode : public CastExprNode {
 
 class DowncastExprNode : public CastExprNode {
  public:
-  DowncastExprNode(const std::shared_ptr<ExprNode> &expr, std::shared_ptr<TypeNode> type)
+  DowncastExprNode(const std::shared_ptr<ExprNode> &expr,
+                   std::shared_ptr<TypeNode> type)
       : CastExprNode(expr, type) {
     ntype = NodeType::DowncastExprNode;
   }
