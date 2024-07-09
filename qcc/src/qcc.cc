@@ -67,6 +67,7 @@ struct Options {
   quixcc::OptimizationLevel optimization;
   bool debug;
   bool noprofile;
+  bool minify;
   OperatingMode mode;
 
   Options() {
@@ -74,6 +75,7 @@ struct Options {
     optimization = (quixcc::OptimizationLevel)-1;
     debug = false;
     noprofile = false;
+    minify = false;
     mode = OperatingMode::QUIXCC_TARGET_DEFAULT;
     output = "a.out";
   }
@@ -190,6 +192,7 @@ static void print_help() {
   println("  -emit-prep                Emit the preprocessed source");
   println("  -emit-tokens              Emit the tokenized source");
   println("  -emit-parse               Emit the parse tree");
+  println("  -emit-minify              Minify the output");
   println("  -S                        Compile only; do not assemble or link");
   println("  -c                        Compile and assemble, but do not link");
   println("  -g                        Generate debug information");
@@ -354,6 +357,8 @@ static std::optional<Options> parse_options(
       options.mode = OperatingMode::LEX;
     } else if (*it == "-emit-parse") {
       options.mode = OperatingMode::PARSE_TREE;
+    } else if (*it == "-emit-minify") {
+      options.minify = true;
     } else if (*it == "-S") {
       options.mode = OperatingMode::ASSEMBLY;
     } else if (*it == "-c") {
@@ -446,6 +451,7 @@ int main(int argc, char *argv[]) {
   builder.set_verbosity(options->verbosity);
   builder.set_optimization(options->optimization);
   builder.set_debug(options->debug);
+  if (options->minify) builder.opt("-emit-minify");
 
   try {
     if (!options->target_triple.empty()) builder.target(options->target_triple);

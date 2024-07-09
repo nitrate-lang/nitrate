@@ -57,7 +57,7 @@ class ParseNode {
   virtual ~ParseNode() = default;
 
   virtual size_t dfs_preorder(traversal::ParseTreePreorderCallback state);
-  virtual std::string to_string() const;
+  virtual std::string to_string(bool minified = false) const;
 
   /// @brief Count the number of nodes in the tree.
   /// @return The number of nodes in the tree.

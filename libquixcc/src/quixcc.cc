@@ -721,7 +721,7 @@ static bool compile(quixcc_job_t *job) {
     LOG(DEBUG) << "Finished building Ptree 1" << std::endl;
 
     if (job->m_argset.contains("-emit-parse")) {
-      auto serial = ptree->to_string();
+      auto serial = ptree->to_string(job->m_argset.contains("-emit-minify"));
       if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
         return false;
       fflush(job->m_out);
@@ -867,6 +867,7 @@ static bool verify_build_option(const std::string &option,
       "-emit-tokens",     // lexer output (no preprocessing)
       "-emit-prep",       // preprocessor/Lexer output
       "-emit-parse",      // parse tree output
+      "-emit-minify",     // minified output
       "-emit-ir",         // IR output
       "-emit-quix-ir",    // Quix IR output
       "-emit-delta-ir",   // Delta IR output

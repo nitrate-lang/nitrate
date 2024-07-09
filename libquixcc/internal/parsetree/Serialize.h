@@ -50,6 +50,7 @@ class ParseTreeSerializer {
   std::set<const TypeNode *> visited;
   size_t indent = 0;
   std::ostringstream o;
+  bool minified = false;
 
   void ind();
   void conv(const ExprStmtNode *);
@@ -167,7 +168,7 @@ class ParseTreeSerializer {
  public:
   ParseTreeSerializer() = default;
 
-  std::string serialize(const ParseNode *node);
+  std::string serialize(const ParseNode *node, bool minified = false);
 };
 }  // namespace serialize
 }  // namespace libquixcc

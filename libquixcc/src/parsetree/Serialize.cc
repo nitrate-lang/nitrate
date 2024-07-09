@@ -97,11 +97,14 @@ std::string escape_string(const std::string &input) {
   return output;
 }
 
-std::string ParseNode::to_string() const {
-  return ParseTreeSerializer().serialize(this);
+std::string ParseNode::to_string(bool minified) const {
+  return ParseTreeSerializer().serialize(this, minified);
 }
 
-std::string ParseTreeSerializer::serialize(const ParseNode *node) {
+std::string ParseTreeSerializer::serialize(const ParseNode *node,
+                                           bool minified) {
+  this->minified = minified;
+
   o << "(Program \"v1.0\" \"quix:1.0\"";
   dispatch(node);
   o << ')';
@@ -401,6 +404,8 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
 }
 
 void ParseTreeSerializer::ind() {
+  if (minified) return;
+
   o << '\n' + std::string(indent * INDENT_WIDTH, ' ');
 }
 
