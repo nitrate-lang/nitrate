@@ -32,14 +32,14 @@
 #include <solver/Passes.h>
 #include <solver/Solver.h>
 
-bool libquixcc::solver::passes::ReferenceIntristicSolver(
+bool libquixcc::solver::passes::ReferenceIntrinsicSolver(
     quixcc_job_t &job, libquixcc::solver::passes::qmod ir) {
   (void)job;
   (void)ir;
 
-  /// TODO: Implement ReferenceIntristicSolver
+  /// TODO: Implement ReferenceIntrinsicSolver
 
-  LOG(DEBUG) << "ReferenceIntristicSolver not implemented yet." << std::endl;
+  LOG(DEBUG) << "ReferenceIntrinsicSolver not implemented yet." << std::endl;
 
   return true;
 }

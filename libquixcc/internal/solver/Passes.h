@@ -41,11 +41,11 @@
 namespace libquixcc::solver::passes {
 using qmod = std::unique_ptr<ir::q::QModule> &;
 
-bool StringIntristicSolver(quixcc_job_t &job, qmod ir);
-bool VectorIntristicSolver(quixcc_job_t &job, qmod ir);
-bool HashmapIntristicSolver(quixcc_job_t &job, qmod ir);
-bool NumberIntristicSolver(quixcc_job_t &job, qmod ir);
-bool ReferenceIntristicSolver(quixcc_job_t &job, qmod ir);
+bool StringIntrinsicSolver(quixcc_job_t &job, qmod ir);
+bool VectorIntrinsicSolver(quixcc_job_t &job, qmod ir);
+bool HashmapIntrinsicSolver(quixcc_job_t &job, qmod ir);
+bool NumberIntrinsicSolver(quixcc_job_t &job, qmod ir);
+bool ReferenceIntrinsicSolver(quixcc_job_t &job, qmod ir);
 
 }  // namespace libquixcc::solver::passes
 #endif  // __QUIXCC_OPTIMIZER_PASSES_H__

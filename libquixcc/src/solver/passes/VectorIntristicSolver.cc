@@ -32,14 +32,14 @@
 #include <solver/Passes.h>
 #include <solver/Solver.h>
 
-bool libquixcc::solver::passes::VectorIntristicSolver(
+bool libquixcc::solver::passes::VectorIntrinsicSolver(
     quixcc_job_t &job, libquixcc::solver::passes::qmod ir) {
   (void)job;
   (void)ir;
 
-  /// TODO: Implement VectorIntristicSolver
+  /// TODO: Implement VectorIntrinsicSolver
 
-  LOG(DEBUG) << "VectorIntristicSolver not implemented yet." << std::endl;
+  LOG(DEBUG) << "VectorIntrinsicSolver not implemented yet." << std::endl;
 
   return true;
 }

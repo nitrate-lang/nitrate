@@ -32,14 +32,14 @@
 #include <solver/Passes.h>
 #include <solver/Solver.h>
 
-bool libquixcc::solver::passes::HashmapIntristicSolver(
+bool libquixcc::solver::passes::HashmapIntrinsicSolver(
     quixcc_job_t &job, libquixcc::solver::passes::qmod ir) {
   (void)job;
   (void)ir;
 
-  /// TODO: Implement HashmapIntristicSolver
+  /// TODO: Implement HashmapIntrinsicSolver
 
-  LOG(DEBUG) << "HashmapIntristicSolver not implemented yet." << std::endl;
+  LOG(DEBUG) << "HashmapIntrinsicSolver not implemented yet." << std::endl;
 
   return true;
 }

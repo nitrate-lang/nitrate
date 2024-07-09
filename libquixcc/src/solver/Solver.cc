@@ -95,11 +95,11 @@ std::shared_ptr<SolPassRegistry> SolPassRegistry::GetBuiltinRegistry() {
 
   auto reg = std::make_shared<SolPassRegistry>();
 
-  ADD("stss", "String Type Specialization", StringIntristicSolver);
-  ADD("vtss", "Vector Type Specialization", VectorIntristicSolver);
-  ADD("htss", "Hashmap Type Specialization", HashmapIntristicSolver);
-  ADD("ntss", "Number Type Specialization", NumberIntristicSolver);
-  ADD("rts", "Reference Type Specialization", ReferenceIntristicSolver);
+  ADD("stss", "String Type Specialization", StringIntrinsicSolver);
+  ADD("vtss", "Vector Type Specialization", VectorIntrinsicSolver);
+  ADD("htss", "Hashmap Type Specialization", HashmapIntrinsicSolver);
+  ADD("ntss", "Number Type Specialization", NumberIntrinsicSolver);
+  ADD("rts", "Reference Type Specialization", ReferenceIntrinsicSolver);
 
   return reg;
 }
