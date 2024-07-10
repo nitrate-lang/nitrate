@@ -38,32 +38,32 @@
 
 using namespace libquixcc;
 
-Loc Loc::operator-(uint_fast32_t rhs) const {
-  if (rhs <= col) return Loc(line, col - rhs, file);
+Loc Loc::operator-(Loc::LocPosType rhs) const {
+  if (rhs <= m_col) return Loc(m_line, m_col - rhs, m_file);
 
   Loc new_loc = *this;
 
   while (true) {
-    if (rhs < new_loc.col) {
-      new_loc.col -= rhs;
+    if (rhs < new_loc.m_col) {
+      new_loc.m_col -= rhs;
       break;
     }
 
-    if (new_loc.line == 1) {
-      new_loc.col = 1;
+    if (new_loc.m_line == 1) {
+      new_loc.m_col = 1;
       break;
     }
 
-    rhs -= new_loc.col;
-    new_loc.col = 1;
-    new_loc.line--;
+    rhs -= new_loc.m_col;
+    new_loc.m_col = 1;
+    new_loc.m_line--;
   }
-    
+
   return new_loc;
 }
 
 Token::Token(TT _type, TokVal value, Loc _loc) {
-  type = _type;
+  m_type = _type;
   m_value = value;
   m_loc = _loc;
 }
@@ -71,7 +71,7 @@ Token::Token(TT _type, TokVal value, Loc _loc) {
 std::string libquixcc::Token::serialize_human_readable() const {
   std::stringstream ss;
 
-  switch (type) {
+  switch (m_type) {
     case TT::Eof:
       ss << "Eof";
       break;
@@ -124,7 +124,7 @@ std::string Token::serialize(bool human_readable) const {
   if (human_readable) return serialize_human_readable();
 
   std::stringstream ss;
-  switch (type) {
+  switch (m_type) {
     case TT::Eof:
       break;
     case TT::Unknown:

@@ -67,7 +67,8 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
       tok = scanner->next();
       if (!tok.is<Punctor>(Punctor::Semicolon)) {
-        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok
+                   << std::endl;
         return false;
       }
     }
@@ -127,7 +128,8 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
       tok = scanner->next();
       if (!tok.is<Punctor>(Punctor::Semicolon)) {
-        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok
+                   << std::endl;
         return false;
       }
     }

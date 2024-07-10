@@ -37,7 +37,7 @@
 #include <fstream>
 #include <iostream>
 
-#define ROUNDS 10
+#define ROUNDS 20
 
 #define RESULT_FILE "lexer_benchmark.csv"
 
@@ -79,6 +79,9 @@ bool do_bench_lexer(std::chrono::system_clock::time_point &start,
   while (1) {
     tok = quixcc_next(job);
     if (quixcc_lex_is(&tok, QUIXCC_LEX_EOF)) break;
+    if (quixcc_lex_is(&tok, QUIXCC_LEX_UNK)) {
+      throw std::runtime_error("Lexer error");
+    }
 
     quixcc_tok_release(job, &tok);
   }

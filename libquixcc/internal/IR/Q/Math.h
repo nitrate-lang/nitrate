@@ -227,9 +227,7 @@ class Rotl : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Rotl(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
-    ntype = (int)QType::Rotl;
-  }
+  Rotl(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Rotl; }
 
  public:
   static Rotl *create(Expr *lhs, Expr *rhs);
@@ -245,9 +243,7 @@ class Rotr : public Expr {
   boost::uuids::uuid hash_impl() const override;
   bool verify_impl() const override;
 
-  Rotr(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
-    ntype = (int)QType::Rotr;
-  }
+  Rotr(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Rotr; }
 
  public:
   static Rotr *create(Expr *lhs, Expr *rhs);

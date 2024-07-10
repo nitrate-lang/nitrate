@@ -79,8 +79,7 @@ class MapTypeNode : public TypeNode {
 
 class TupleTypeNode : public TypeNode {
  public:
-  TupleTypeNode(std::vector<std::shared_ptr<TypeNode>> types)
-      : m_types(types) {
+  TupleTypeNode(std::vector<std::shared_ptr<TypeNode>> types) : m_types(types) {
     ntype = NodeType::TupleTypeNode;
   }
 

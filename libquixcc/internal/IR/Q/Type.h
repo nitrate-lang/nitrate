@@ -52,7 +52,9 @@ class Type : public Value {
 
   virtual size_t bitcount() const = 0;
   size_t size() const;
-  virtual size_t align() const { throw std::runtime_error("QIR: align: Not implemented"); }
+  virtual size_t align() const {
+    throw std::runtime_error("QIR: align: Not implemented");
+  }
 
   bool is_ptr() const;
   bool is_integer() const;

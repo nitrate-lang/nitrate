@@ -84,7 +84,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
 
   Token tok;
 
-  if ((tok = src->next()).type == TT::Keyword) {
+  if ((tok = src->next()).type() == TT::Keyword) {
     switch (tok.as<Keyword>()) {
       case Keyword::Void: {
         /** QUIX VOID TYPE
@@ -151,7 +151,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
           goto error_end;
         }
 
-        if ((tok = src->next()).type != TT::Identifier) {
+        if ((tok = src->next()).type() != TT::Identifier) {
           ERRORS(TYPE_OPAQUE_EXPECTED_IDENTIFIER);
           goto error_end;
         }
@@ -174,7 +174,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
     }
 
     __builtin_unreachable();
-  } else if (tok.type == TT::Identifier) {
+  } else if (tok.type() == TT::Identifier) {
     if (primitives.contains(tok.as<string>())) {
       /** QUIX PRIMITIVE TYPE
        *

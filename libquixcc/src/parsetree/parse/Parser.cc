@@ -45,15 +45,15 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
   if (expect_braces) {
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::OpenBrace)) {
-      LOG(ERROR) << core::feedback[PARSER_EXPECTED_LEFT_BRACE] << tok.serialize()
-                 << tok << std::endl;
+      LOG(ERROR) << core::feedback[PARSER_EXPECTED_LEFT_BRACE]
+                 << tok.serialize() << tok << std::endl;
       return false;
     }
   }
 
   group = std::make_shared<BlockNode>();
 
-  while ((tok = scanner->peek()).type != TT::Eof) {
+  while ((tok = scanner->peek()).type() != TT::Eof) {
     if (single_stmt && group->m_stmts.size() > 0) break;
 
     if (expect_braces) {
@@ -69,7 +69,7 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
       continue;
     }
 
-    if (tok.type != TT::Keyword) {
+    if (tok.type() != TT::Keyword) {
       std::shared_ptr<ExprNode> expr;
       if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
                       expr)) {
@@ -84,8 +84,8 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
       tok = scanner->next();
       if (!tok.is<Punctor>(Punctor::Semicolon)) {
-        LOG(ERROR) << core::feedback[PARSER_EXPECTED_SEMICOLON] << tok.serialize()
-                   << tok << std::endl;
+        LOG(ERROR) << core::feedback[PARSER_EXPECTED_SEMICOLON]
+                   << tok.serialize() << tok << std::endl;
         return false;
       }
 
@@ -211,8 +211,8 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
         break;
       }
       default:
-        LOG(ERROR) << core::feedback[PARSER_ILLEGAL_KEYWORD] << tok.serialize() << tok
-                   << std::endl;
+        LOG(ERROR) << core::feedback[PARSER_ILLEGAL_KEYWORD] << tok.serialize()
+                   << tok << std::endl;
         return false;
     }
 

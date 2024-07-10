@@ -67,7 +67,7 @@ bool libquixcc::ir::q::IntrinsicCall::print_impl(
       os << "to_string";
       break;
   }
-  
+
   os << "!(";
   for (size_t i = 0; i < args.size(); i++) {
     if (i != 0) os << ", ";

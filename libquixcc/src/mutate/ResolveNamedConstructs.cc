@@ -69,7 +69,8 @@ static void resolve_user_type_nodes(quixcc_job_t *job,
 
     if (!job->m_inner.m_named_types.contains(user_type->m_name) &&
         _scope.empty()) {
-      LOG(ERROR) << core::feedback[UNRESOLVED_TYPE] << user_type->m_name << std::endl;
+      LOG(ERROR) << core::feedback[UNRESOLVED_TYPE] << user_type->m_name
+                 << std::endl;
       return;
     } else if (!job->m_inner.m_named_types.contains(user_type->m_name)) {
       std::vector<std::string> tmp = _namespace;
@@ -180,7 +181,8 @@ static void resolve_function_decls_to_calls(quixcc_job_t *job,
 
     if (!job->m_inner.m_named_construsts.contains(
             std::make_pair(NodeType::FunctionDeclNode, callee_name))) {
-      LOG(DEBUG) << core::feedback[UNRESOLVED_FUNCTION] << callee_name << std::endl;
+      LOG(DEBUG) << core::feedback[UNRESOLVED_FUNCTION] << callee_name
+                 << std::endl;
       return;
     }
 

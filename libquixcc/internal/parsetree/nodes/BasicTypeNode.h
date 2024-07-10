@@ -46,7 +46,9 @@
 namespace libquixcc {
 class MutTypeNode : public TypeNode {
  public:
-  MutTypeNode(std::shared_ptr<TypeNode>type) : m_type(type) { ntype = NodeType::MutTypeNode; }
+  MutTypeNode(std::shared_ptr<TypeNode> type) : m_type(type) {
+    ntype = NodeType::MutTypeNode;
+  }
 
   std::shared_ptr<TypeNode> m_type;
 };
@@ -128,7 +130,7 @@ class NullTypeNode : public TypeNode {
 
 class PointerTypeNode : public TypeNode {
  public:
-  PointerTypeNode(std::shared_ptr<TypeNode>type) : m_type(type) {
+  PointerTypeNode(std::shared_ptr<TypeNode> type) : m_type(type) {
     ntype = NodeType::PointerTypeNode;
   }
 

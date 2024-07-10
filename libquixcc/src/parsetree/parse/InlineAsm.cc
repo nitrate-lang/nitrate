@@ -48,13 +48,13 @@ static bool asm_parse_param(
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::OpenBrace)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize()
+               << tok << std::endl;
     return false;
   }
 
   while (!(tok = scanner->next()).is<Punctor>(Punctor::CloseBrace)) {
-    if (tok.type != TT::String) {
+    if (tok.type() != TT::String) {
       LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL]
                  << tok.serialize() << tok << std::endl;
       return false;
@@ -64,8 +64,8 @@ static bool asm_parse_param(
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Colon)) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_COLON] << tok.serialize() << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_COLON] << tok.serialize()
+                 << tok << std::endl;
       return false;
     }
 
@@ -74,8 +74,8 @@ static bool asm_parse_param(
                     {Token(TT::Punctor, Punctor::Comma),
                      Token(TT::Punctor, Punctor::CloseBrace)},
                     expr)) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_EXPR] << tok.serialize() << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_EXPR] << tok.serialize()
+                 << tok << std::endl;
       return false;
     }
 
@@ -102,8 +102,8 @@ static bool asm_parse_clobbers(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::OpenBracket)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize()
+               << tok << std::endl;
     return false;
   }
 
@@ -113,7 +113,7 @@ static bool asm_parse_clobbers(quixcc_job_t &job, libquixcc::Scanner *scanner,
       break;
     }
 
-    if (tok.type != TT::String) {
+    if (tok.type() != TT::String) {
       LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL]
                  << tok.serialize() << tok << std::endl;
       return false;
@@ -138,13 +138,13 @@ bool libquixcc::parse_inline_asm(quixcc_job_t &job, libquixcc::Scanner *scanner,
                                  std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::OpenParen)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_PAREN] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_PAREN] << tok.serialize()
+               << tok << std::endl;
     return false;
   }
 
   tok = scanner->next();
-  if (tok.type != TT::String) {
+  if (tok.type() != TT::String) {
     LOG(ERROR) << core::feedback[ASM_EXPECTED_STRING_LITERAL] << tok.serialize()
                << tok << std::endl;
     return false;
@@ -190,22 +190,22 @@ bool libquixcc::parse_inline_asm(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   std::vector<std::string> clobbers;
   if (!asm_parse_clobbers(job, scanner, clobbers)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_CLOBBERS] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_CLOBBERS] << tok.serialize()
+               << tok << std::endl;
     return false;
   }
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::CloseParen)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_RIGHT_PAREN] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_RIGHT_PAREN] << tok.serialize()
+               << tok << std::endl;
     return false;
   }
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::Semicolon)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_SEMICOLON] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_SEMICOLON] << tok.serialize()
+               << tok << std::endl;
     return false;
   }
 

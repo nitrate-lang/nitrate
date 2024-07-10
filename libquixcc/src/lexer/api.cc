@@ -82,12 +82,12 @@ static quix_inline quixcc_tok_t fetch_token(quixcc_job_t *job) {
   quixcc_tok_t ret;
 
   /* Token type */
-  ret.ty = static_cast<quixcc_lex_type_t>(tok.type);
+  ret.ty = static_cast<quixcc_lex_type_t>(tok.type());
 
   /* Source info */
-  ret.loc.column = tok.loc().col;
-  ret.loc.line = tok.loc().line;
-  ret.loc.file = publish_string(job, tok.loc().file.data());
+  ret.loc.column = tok.loc().col();
+  ret.loc.line = tok.loc().line();
+  ret.loc.file = publish_string(job, tok.loc().file());
 
   /* Token value */
   switch (ret.ty) {

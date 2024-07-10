@@ -46,7 +46,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
     has_parens = true;
   }
 
-  if (tok.type != TT::Identifier) {
+  if (tok.type() != TT::Identifier) {
     LOG(ERROR) << core::feedback[FORM_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
@@ -68,7 +68,8 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::CloseParen)) {
-      LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok << std::endl;
+      LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok
+                 << std::endl;
       return false;
     }
   } else {

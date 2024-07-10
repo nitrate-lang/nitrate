@@ -37,9 +37,9 @@
 
 using namespace libquixcc;
 
-static bool parse_decl(quixcc_job_t &job, Token tok,
-                       libquixcc::Scanner *scanner,
-                       std::pair<std::string, std::shared_ptr<TypeNode> > &decl) {
+static bool parse_decl(
+    quixcc_job_t &job, Token tok, libquixcc::Scanner *scanner,
+    std::pair<std::string, std::shared_ptr<TypeNode>> &decl) {
   std::string name = tok.as<std::string>();
 
   tok = scanner->peek();
@@ -66,7 +66,7 @@ bool libquixcc::parse_var(
     std::vector<std::shared_ptr<libquixcc::StmtNode>> &nodes) {
   Token tok = scanner->next();
 
-  std::vector<std::pair<std::string, std::shared_ptr<TypeNode> >> decls;
+  std::vector<std::pair<std::string, std::shared_ptr<TypeNode>>> decls;
   bool multi_decl = false;
   if (tok.is<Punctor>(Punctor::OpenBracket)) {
     multi_decl = true;
@@ -77,7 +77,7 @@ bool libquixcc::parse_var(
     while (true) {
       tok = scanner->next();
 
-      std::pair<std::string, std::shared_ptr<TypeNode> > decl;
+      std::pair<std::string, std::shared_ptr<TypeNode>> decl;
       if (!parse_decl(job, tok, scanner, decl)) return false;
 
       decls.push_back(decl);
@@ -88,19 +88,20 @@ bool libquixcc::parse_var(
       else if (tok.is<Punctor>(Punctor::CloseBracket))
         break;
       else {
-        LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decl.first << tok
-                   << std::endl;
+        LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decl.first
+                   << tok << std::endl;
         return false;
       }
     }
-  } else if (tok.type == TT::Identifier) {
+  } else if (tok.type() == TT::Identifier) {
     // Parse single variable declaration
-    std::pair<std::string, std::shared_ptr<TypeNode> > decl;
+    std::pair<std::string, std::shared_ptr<TypeNode>> decl;
     if (!parse_decl(job, tok, scanner, decl)) return false;
 
     decls.push_back(decl);
   } else {
-    LOG(ERROR) << core::feedback[VAR_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+    LOG(ERROR) << core::feedback[VAR_DECL_MISSING_IDENTIFIER] << tok
+               << std::endl;
     return false;
   }
 
@@ -123,8 +124,8 @@ bool libquixcc::parse_var(
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Semicolon)) {
-      LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decls[0].first << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decls[0].first
+                 << tok << std::endl;
       return false;
     }
 

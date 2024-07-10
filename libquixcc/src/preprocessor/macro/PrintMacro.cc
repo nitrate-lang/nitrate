@@ -60,7 +60,7 @@ bool libquixcc::PrepEngine::ParsePrint(const Token &tok,
   E level = E::INFO;
 
   Token t = tokens[0];
-  if (t.type == TT::Identifier && tokens.size() == 3) {
+  if (t.type() == TT::Identifier && tokens.size() == 3) {
     std::string id = t.as<std::string>();
     std::transform(id.begin(), id.end(), id.begin(), ::tolower);
 
@@ -81,7 +81,7 @@ bool libquixcc::PrepEngine::ParsePrint(const Token &tok,
       return false;
     }
 
-    if (tokens[1].type != TT::Punctor ||
+    if (tokens[1].type() != TT::Punctor ||
         (tokens[1]).as<Punctor>() != Punctor::Comma) {
       LOG(ERROR) << "Expected comma after print level" << std::endl;
       return false;

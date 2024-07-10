@@ -292,7 +292,7 @@ bool PrepEngine::handle_import(const Token &input_tok) {
 
   /*============== PARSE IMPORT DIRECTIVE ================*/
   Token tok = lexer->next();
-  if (tok.type != TT::Identifier) {
+  if (tok.type() != TT::Identifier) {
     LOG(ERROR) << "Expected identifier after import" << tok << std::endl;
     return false;
   }
@@ -306,9 +306,9 @@ bool PrepEngine::handle_import(const Token &input_tok) {
   if (tok.is<Punctor>(Punctor::OpenParen)) {
     lexer->next();
     tok = lexer->next();
-    if (tok.type == TT::Identifier) {
+    if (tok.type() == TT::Identifier) {
       filename = filename + "/" + tok.as<std::string>() + QUIX_HEADER_EXTENSION;
-    } else if (tok.type == TT::Integer) {
+    } else if (tok.type() == TT::Integer) {
       filename = filename + "/" + tok.as<std::string>() + QUIX_HEADER_EXTENSION;
     } else {
       LOG(ERROR) << "Expected identifier or integer literal after import" << tok
@@ -432,7 +432,7 @@ Token PrepEngine::read_token() {
 
     if (m_expansion_enabled) {
       /*============== HANDLE POSSIBLE MACRO EXPANSION ================*/
-      if (tok.type == TT::Identifier) {
+      if (tok.type() == TT::Identifier) {
         /*============== HANDLE STATIC MACRO EXPANSION ================*/
         if (m_statics->contains(tok.as<std::string>())) {
           std::string value;
@@ -445,7 +445,7 @@ Token PrepEngine::read_token() {
           auto lexer = clone();
           lexer->set_source(value, "static");
           Token t;
-          while ((t = lexer->next()).type != TT::Eof) {
+          while ((t = lexer->next()).type() != TT::Eof) {
             m_buffer.push(t);
           }
 
@@ -454,7 +454,7 @@ Token PrepEngine::read_token() {
       }
 
       /*============== HANDLE DIRECT EXPANSION ================*/
-      if (tok.type == TT::MacroSingleLine || tok.type == TT::MacroBlock) {
+      if (tok.type() == TT::MacroSingleLine || tok.type() == TT::MacroBlock) {
         /*============== HANDLE HEADER IMPORT ================*/
         if (tok.as<std::string>().starts_with("import")) {
           if (!handle_import(tok)) {
@@ -475,7 +475,7 @@ Token PrepEngine::read_token() {
     }
 
     /*============== HANDLE END OF N-TH ORDER SCANNER ================*/
-    if (tok.type == TT::Eof) {
+    if (tok.type() == TT::Eof) {
       if (m_stack.size() == 1) {
         goto end;
       }
@@ -493,7 +493,7 @@ Token PrepEngine::read_token() {
 end:
   /*============== VERIFY USE DIRECTIVE IS PRESENT ================*/
   if (m_we_are_root && !job->version) {
-    if (tok.type != TT::MacroSingleLine ||
+    if (tok.type() != TT::MacroSingleLine ||
         !tok.as<std::string>().starts_with("use ")) {
       LOG(ERROR) << "Language version must be specified before any other "
                     "directives or code. Example: `@use \"v1.0\";`"

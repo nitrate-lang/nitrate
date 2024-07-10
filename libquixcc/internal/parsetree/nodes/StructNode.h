@@ -40,9 +40,9 @@
 #include <parsetree/nodes/BasicNodes.h>
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 namespace libquixcc {
 class StructTypeNode : public TypeNode {

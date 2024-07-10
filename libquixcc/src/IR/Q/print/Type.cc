@@ -151,10 +151,9 @@ bool libquixcc::ir::q::IntrinsicType::print_impl(
 }
 
 const std::map<libquixcc::ir::q::QIntrinsicType, std::string_view>
-        libquixcc::ir::q::intrinsic_type_names = {
-        {QIntrinsicType::String, "string"}, 
-        {QIntrinsicType::Null, "null"}};
+    libquixcc::ir::q::intrinsic_type_names = {
+        {QIntrinsicType::String, "string"}, {QIntrinsicType::Null, "null"}};
 
 const std::map<std::string_view, libquixcc::ir::q::QIntrinsicType>
-    libquixcc::ir::q::intrinsic_type_map = {
-        {"string", QIntrinsicType::String}, {"null", QIntrinsicType::Null}};
+    libquixcc::ir::q::intrinsic_type_map = {{"string", QIntrinsicType::String},
+                                            {"null", QIntrinsicType::Null}};

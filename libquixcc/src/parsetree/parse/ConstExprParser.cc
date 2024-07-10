@@ -46,7 +46,7 @@ bool libquixcc::parse_const_expr(
 
   while (true) {
     auto tok = scanner->peek();
-    if (tok.type == TT::Eof) return false;
+    if (tok.type() == TT::Eof) return false;
 
     if (tok == terminator) {
       if (stack.size() != 1) {
@@ -60,7 +60,7 @@ bool libquixcc::parse_const_expr(
 
     scanner->next();
 
-    switch (tok.type) {
+    switch (tok.type()) {
       case TT::Integer:
         stack.push(IntegerNode::create(tok.as<std::string>()));
         continue;

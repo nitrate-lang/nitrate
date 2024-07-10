@@ -65,7 +65,7 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
 
   std::string content = trim(macro.as<std::string>());
 
-  if (macro.type == TT::MacroSingleLine) {
+  if (macro.type() == TT::MacroSingleLine) {
     std::string directive, parameter;
     size_t start = content.find('('), end = 0;
 
@@ -127,7 +127,7 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
           lex->set_source(result_str, job->m_filename.top());
 
           Token t;
-          while ((t = lex->next()).type != TT::Eof) {
+          while ((t = lex->next()).type() != TT::Eof) {
             emit(t);
           }
         }
@@ -156,7 +156,7 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
                 << std::endl;
       return true;
     }
-  } else if (macro.type == TT::MacroBlock) {
+  } else if (macro.type() == TT::MacroBlock) {
     std::string directive;
     std::string body;
 

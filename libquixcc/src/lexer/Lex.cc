@@ -436,10 +436,10 @@ char StreamLexer::getc() {
 
   char c = m_buffer[m_buf_pos++];
   if (c != '\n') {
-    m_loc_curr.col++;
+    m_loc_curr.col()++;
   } else {
-    m_loc_curr.line++;
-    m_loc_curr.col = 1;
+    m_loc_curr.line()++;
+    m_loc_curr.col() = 1;
   }
 
   return c;
@@ -1184,7 +1184,7 @@ const Token &StreamLexer::peek() {
     read_token();
 
     if (ingore_comments) {
-      if (m_tok->type != TT::Comment) return std::move(m_tok.value());
+      if (m_tok->type() != TT::Comment) return std::move(m_tok.value());
     } else {
       return std::move(m_tok.value());
     }
@@ -1228,7 +1228,7 @@ bool StringLexer::QuickLex(const std::string &source_code,
     if (!lex.set_source(source_code, filename)) return false;
 
     Token tok;
-    while ((tok = lex.next()).type != TT::Eof) tokens.push_back(tok);
+    while ((tok = lex.next()).type() != TT::Eof) tokens.push_back(tok);
 
     return true;
   } catch (std::exception &e) {

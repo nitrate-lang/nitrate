@@ -148,7 +148,7 @@ TryCatchFinally *TryCatchFinally::create(
 
 Case *Case::create(Expr *value, Value *body) { MAKE_GC(Case, value, body); }
 
-Switch *Switch::create(Expr *value,  std::vector<Case *> &cases,
+Switch *Switch::create(Expr *value, std::vector<Case *> &cases,
                        Value *defaultcase) {
   MAKE_GC(Switch, value, cases, defaultcase);
 }

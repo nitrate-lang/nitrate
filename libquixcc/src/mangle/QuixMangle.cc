@@ -275,7 +275,7 @@ static q::Type *deserialize_type(std::stringstream &str) {
       }
 
       return q::FType::create(params, ret);
-    } 
+    }
     case 'I': {
       auto name = deserialize_name(str);
       if (!q::intrinsic_type_map.contains(name)) {

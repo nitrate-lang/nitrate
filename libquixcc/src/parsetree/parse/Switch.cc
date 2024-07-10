@@ -50,8 +50,8 @@ bool libquixcc::parse_switch(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   Token tok = scanner->next();
   if (!tok.is<Punctor>(Punctor::OpenBrace)) {
-    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_LEFT_BRACE] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_LEFT_BRACE] << tok.serialize()
+               << tok << std::endl;
     return false;
   }
 
@@ -71,8 +71,8 @@ bool libquixcc::parse_switch(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
       tok = scanner->next();
       if (!tok.is<Punctor>(Punctor::Colon)) {
-        LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok
-                   << std::endl;
+        LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize()
+                   << tok << std::endl;
         return false;
       }
 
@@ -84,8 +84,8 @@ bool libquixcc::parse_switch(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
 
     if (!tok.is<Keyword>(Keyword::Case)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_CASE] << tok.serialize() << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_CASE] << tok.serialize()
+                 << tok << std::endl;
       return false;
     }
     scanner->next();
@@ -98,8 +98,8 @@ bool libquixcc::parse_switch(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Punctor::Colon)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize()
+                 << tok << std::endl;
       return false;
     }
 

@@ -40,7 +40,7 @@ using namespace libquixcc;
 static bool parse_region_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
                                std::shared_ptr<RegionFieldNode> &node) {
   Token tok = scanner->next();
-  if (tok.type != TT::Identifier) {
+  if (tok.type() != TT::Identifier) {
     LOG(ERROR) << core::feedback[REGION_FIELD_MISSING_IDENTIFIER] << tok
                << std::endl;
     return false;
@@ -96,7 +96,7 @@ static bool parse_region_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
 bool libquixcc::parse_region(quixcc_job_t &job, libquixcc::Scanner *scanner,
                              std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
-  if (tok.type != TT::Identifier) {
+  if (tok.type() != TT::Identifier) {
     LOG(ERROR) << core::feedback[REGION_DECL_MISSING_IDENTIFIER] << tok
                << std::endl;
     return false;
@@ -212,7 +212,7 @@ bool libquixcc::parse_region(quixcc_job_t &job, libquixcc::Scanner *scanner,
       tok = scanner->next();
       if (tok.is<Punctor>(Punctor::CloseBracket)) break;
 
-      if (tok.type != TT::Identifier) {
+      if (tok.type() != TT::Identifier) {
         LOG(ERROR) << core::feedback[REGION_DEF_EXPECTED_IDENTIFIER] << tok
                    << std::endl;
         return false;

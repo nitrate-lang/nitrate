@@ -54,7 +54,7 @@ static std::shared_ptr<CallExprNode> parse_function_call(
       break;
     }
 
-    if (tok.type != TT::Identifier) {
+    if (tok.type() != TT::Identifier) {
       goto parse_pos_arg;
     }
 
@@ -115,7 +115,7 @@ static std::shared_ptr<CallExprNode> parse_function_call(
 static bool parse_fstring(quixcc_job_t &job, std::shared_ptr<FStringNode> &node,
                           Scanner *scanner, size_t depth) {
   Token tok = scanner->next();
-  if (tok.type != TT::String) {
+  if (tok.type() != TT::String) {
     LOG(ERROR) << "Expected a string literal template in f-string" << tok
                << std::endl;
     return false;
@@ -221,7 +221,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
 
   while (true) {
     auto tok = scanner->peek();
-    if (tok.type == TT::Eof) return false;
+    if (tok.type() == TT::Eof) return false;
 
     if (terminators.contains(tok)) {
       if (stack.empty()) {
@@ -240,7 +240,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
 
     scanner->next();
 
-    switch (tok.type) {
+    switch (tok.type()) {
       case TT::Integer:
         stack.push(IntegerNode::create(tok.as<std::string>()));
         continue;
@@ -509,7 +509,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           stack.pop();
 
           tok = scanner->next();
-          if (tok.type != TT::Identifier) {
+          if (tok.type() != TT::Identifier) {
             LOG(ERROR) << "Expected an identifier in member access" << tok
                        << std::endl;
             return false;
@@ -604,7 +604,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
       }
       case TT::Identifier: {
         auto ident = tok.as<std::string>();
-        if (scanner->peek().type == TT::Punctor &&
+        if (scanner->peek().type() == TT::Punctor &&
             (scanner->peek()).as<Punctor>() == Punctor::OpenParen) {
           scanner->next();
           auto fcall = parse_function_call(

@@ -244,11 +244,9 @@ bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx,
 
 bool libquixcc::codegen::generate(quixcc_job_t &job,
                                   std::unique_ptr<ir::delta::IRDelta> &ir) {
-  if (job.has("-emit-ir"))
-    return write_IR(job, ir, job.m_out, false);
+  if (job.has("-emit-ir")) return write_IR(job, ir, job.m_out, false);
 
-  if (job.has("-emit-bc"))
-    return write_IR(job, ir, job.m_out, true);
+  if (job.has("-emit-bc")) return write_IR(job, ir, job.m_out, true);
 
   if (job.has("-emit-c11")) return write_c11(job, ir, job.m_out);
 

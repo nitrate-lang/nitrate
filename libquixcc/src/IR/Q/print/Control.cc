@@ -140,14 +140,14 @@ bool libquixcc::ir::q::Switch::print_impl(std::ostream &os,
   for (const auto &c : cases) {
     if (!c->print(os, state)) return false;
   }
-  
+
   if (defaultcase) {
     os << std::string(state.ind, ' ') << "default: ";
     if (!defaultcase->print(os, state)) return false;
 
     os << "\n";
   }
-  
+
   state.ind -= 2;
 
   os << std::string(state.ind, ' ') << "}";

@@ -201,6 +201,21 @@ enum class TT {
   Comment = 12,
 };
 
+/*
+  tEofF = 0,
+  tErro = 1,
+  tName = 2,
+  tKeyW = 3,
+  tOper = 4,
+  tPunc = 5,
+  tIntL = 6,
+  tNumL = 7,
+  tText = 8,
+  tChar = 9,
+  tMacB = 10,
+  tMacr = 11,
+  tNote = 12,*/
+
 class TLCString {
   static thread_local std::map<std::string, std::unique_ptr<char[]>> m_data;
 
@@ -219,16 +234,33 @@ class TLCString {
   }
 };
 
-struct Loc {
-  std::string_view file;
-  uint_fast32_t line;
-  uint_fast32_t col;
+class Loc {
+ public:
+  typedef uint32_t LocPosType;
 
-  Loc() : file(""), line(1), col(1) {}
-  Loc(uint_fast32_t line, uint_fast32_t col, std::string_view file = "")
-      : file(file), line(line), col(col) {}
+  Loc(LocPosType line = 1, LocPosType col = 1, std::string_view file = "")
+      : m_file(file.data()), m_line(line), m_col(col) {}
 
-  Loc operator-(uint_fast32_t rhs) const;
+  Loc(const Loc &loc) = default;
+  Loc(Loc &&loc) = default;
+  Loc &operator=(const Loc &loc) = default;
+
+  inline const char *file() const {
+    if (m_file == nullptr) return "";
+    return m_file;
+  }
+
+  inline LocPosType line() const { return m_line; }
+  inline LocPosType col() const { return m_col; }
+  inline LocPosType &line() { return m_line; }
+  inline LocPosType &col() { return m_col; }
+
+  Loc operator-(LocPosType rhs) const;
+
+ private:
+  const char *m_file;
+  LocPosType m_line;
+  LocPosType m_col;
 };
 
 #if !defined(NDEBUG)
@@ -251,35 +283,52 @@ struct TokVal {
   TokVal(Punctor punctor) : val(static_cast<int>(punctor)) {}
   TokVal(Keyword keyword) : val(static_cast<int>(keyword)) {}
   TokVal(Operator op) : val(static_cast<int>(op)) {}
+
+  TokVal(const TokVal &val) {
+    str = val.str;
+    this->val = val.val;
+  }
+
+  TokVal(TokVal &&val) {
+    str = std::move(val.str);
+    this->val = val.val;
+  }
 };
 #endif
 
 class Token {
-  Loc m_loc;
   TokVal m_value;
+  Loc m_loc;
+  TT m_type;
 
   std::string serialize_human_readable() const;
 
  public:
-  TT type;
+  Token(TT type = TT::Unknown, TokVal value = TokVal(), Loc loc = Loc());
 
-  Token() : type(TT::Unknown) {}
-  Token(TT type, TokVal value, Loc loc = Loc());
+  Token(const Token &tok) = default;
+  Token(Token &&tok) {
+    m_value = std::move(tok.m_value);
+    m_loc = std::move(tok.m_loc);
+    m_type = tok.m_type;
+  }
 
-  inline bool is(TT val) const { return type == val; }
+  Token &operator=(const Token &tok) = default;
+
+  inline bool is(TT val) const { return m_type == val; }
 
   template <typename T, typename V = T>
   bool is(V val) const {
     if constexpr (std::is_same_v<T, std::string>)
-      return type == TT::Identifier && as<std::string>() == val;
+      return m_type == TT::Identifier && as<std::string>() == val;
     else if constexpr (std::is_same_v<T, Keyword>)
-      return type == TT::Keyword && as<Keyword>() == val;
+      return m_type == TT::Keyword && as<Keyword>() == val;
     else if constexpr (std::is_same_v<T, Punctor>)
-      return type == TT::Punctor && as<Punctor>() == val;
+      return m_type == TT::Punctor && as<Punctor>() == val;
     else if constexpr (std::is_same_v<T, Operator>)
-      return type == TT::Operator && as<Operator>() == val;
-    else
-      return false;
+      return m_type == TT::Operator && as<Operator>() == val;
+
+    static_assert(std::is_same_v<T, T>, "Invalid type");
   }
 
   template <typename T>
@@ -295,20 +344,21 @@ class Token {
       return m_value.val.keyword;
     } else if constexpr (std::is_same_v<T, Operator>) {
       return m_value.val.op;
-    } else {
-      throw std::runtime_error("Invalid type");
     }
+
+    static_assert(std::is_same_v<T, T>, "Invalid type");
 #endif
   }
 
   const Loc &loc() const { return m_loc; }
+  inline TT type() const { return m_type; }
 
   std::string serialize(bool human_readable = true) const;
 
   inline bool operator==(const Token &rhs) const {
-    if (type != rhs.type) return false;
+    if (m_type != rhs.m_type) return false;
 
-    switch (type) {
+    switch (m_type) {
       case TT::Identifier:
       case TT::String:
       case TT::Char:
@@ -326,8 +376,8 @@ class Token {
   }
 
   inline bool operator<(const Token &rhs) const {
-    if (type != rhs.type) return type < rhs.type;
-    switch (type) {
+    if (m_type != rhs.m_type) return m_type < rhs.m_type;
+    switch (m_type) {
       case TT::Identifier:
       case TT::String:
       case TT::Char:

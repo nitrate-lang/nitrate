@@ -43,7 +43,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   ExportLangType langType = ExportLangType::Default;
 
-  if (tok.type == TT::String) {
+  if (tok.type() == TT::String) {
     scanner->next();
 
     std::string lang = tok.as<std::string>();
@@ -74,9 +74,9 @@ bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   scanner->next();
-  if (tok.type != TT::Keyword) {
-    LOG(ERROR) << core::feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok
-               << std::endl;
+  if (tok.type() != TT::Keyword) {
+    LOG(ERROR) << core::feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize()
+               << tok << std::endl;
     return false;
   }
 
@@ -97,8 +97,8 @@ bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner,
       if (!parse_function(job, scanner, stmt)) return false;
       break;
     default:
-      LOG(ERROR) << core::feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize()
+                 << tok << std::endl;
       return false;
   }
   if (stmt) stmts.push_back(stmt);

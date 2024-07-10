@@ -41,9 +41,9 @@
 #include <parsetree/nodes/StructNode.h>
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 
 namespace libquixcc {
 class GroupTypeNode : public TypeNode {
