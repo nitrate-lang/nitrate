@@ -58,7 +58,7 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
   dname = t.as<std::string>();
 
   t = lex->next();
-  if (!t.is<Operator>(Operator::Assign)) {
+  if (!t.is<Operator>(OpAssign)) {
     LOG(ERROR) << "Expected '=' in @define directive" << t << std::endl;
     return false;
   }

@@ -67,7 +67,7 @@ static bool parse_group_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
   if (tok.is<Punctor>(Comma)) {
     node = std::make_shared<GroupFieldNode>(name, type);
     return true;
-  } else if (tok.is<Operator>(Operator::Assign)) {
+  } else if (tok.is<Operator>(OpAssign)) {
     if (!parse_expr(job, scanner, {Token(tPunc, Comma)},
                     value)) {
       LOG(ERROR) << core::feedback[GROUP_FIELD_INIT_ERR] << name << tok

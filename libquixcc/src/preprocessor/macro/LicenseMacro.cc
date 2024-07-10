@@ -679,7 +679,7 @@ bool libquixcc::PrepEngine::ParseLicense(const Token &tok,
   emit(Token(tName, identifier));
   emit(Token(tPunc, Colon));
   emit(Token(tName, "string"));
-  emit(Token(tOper, Operator::Assign));
+  emit(Token(tOper, OpAssign));
   emit(Token(tText, lower));
   emit(Token(tPunc, Semicolon));
 

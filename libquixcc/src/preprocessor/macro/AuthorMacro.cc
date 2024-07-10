@@ -66,7 +66,7 @@ bool libquixcc::PrepEngine::ParseAuthor(const Token &tok,
   emit(Token(tName, identifier));
   emit(Token(tPunc, Colon));
   emit(Token(tName, "string"));
-  emit(Token(tOper, Operator::Assign));
+  emit(Token(tOper, OpAssign));
   emit(Token(tText, name));
   emit(Token(tPunc, Semicolon));
 

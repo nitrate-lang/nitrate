@@ -150,7 +150,7 @@ void libquixcc::mutate::MethodToFunc(
     //     << "' has no typename!" << std::endl; return;
     // }
 
-    // auto thisPtr = std::make_shared<UnaryExprNode>(Operator::BitwiseAnd,
+    // auto thisPtr = std::make_shared<UnaryExprNode>(BitwiseAnd,
     // std::make_shared<IdentifierNode>(varname));
 
     // call->m_name = _typename + "::" + method;

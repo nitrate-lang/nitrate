@@ -533,31 +533,31 @@ static QResult conv(const UnaryExprNode *n, QState &state) {
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Operator::Plus:
+    case Plus:
       return e;
-    case Operator::Minus:
+    case Minus:
       return Sub::create(UCast::create(e->infer(), Number::create("0")), e);
-    case Operator::LogicalNot:
+    case LogicalNot:
       return Not::create(e);
-    case Operator::BitwiseNot:
+    case BitwiseNot:
       return BitNot::create(e);
-    case Operator::Increment:
+    case Increment:
       return Assign::create(
           e, Add::create(e, UCast::create(e->infer(), Number::create("1"))));
-    case Operator::Decrement:
+    case Decrement:
       return Assign::create(
           e, Sub::create(e, UCast::create(e->infer(), Number::create("1"))));
-    case Operator::BitwiseAnd:
+    case BitwiseAnd:
       return AddressOf::create(e);
-    case Operator::Multiply:
+    case Multiply:
       return Deref::create(e);
-    case Operator::Sizeof:
+    case Sizeof:
       return Number::create(std::to_string(e->infer()->size()));
-    case Operator::Bitsizeof:
+    case Bitsizeof:
       return Number::create(std::to_string(e->infer()->bitcount()));
-    case Operator::Alignof:
+    case Alignof:
       return Number::create(std::to_string(e->infer()->align()));
-    case Operator::Typeof:
+    case Typeof:
       return String::create(e->infer()->to_string());
     default:
       throw std::runtime_error("QIR UnaryExprNode operator not supported");
@@ -570,9 +570,9 @@ static QResult conv(const PostUnaryExprNode *n, QState &state) {
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Operator::Increment:
+    case Increment:
       return PostInc::create(e);
-    case Operator::Decrement:
+    case Decrement:
       return PostDec::create(e);
     default:
       throw std::runtime_error("QIR PostUnaryExprNode operator not supported");
@@ -691,75 +691,75 @@ static QResult conv(const BinaryExprNode *n, QState &state) {
   auto rhs = conv(n->m_rhs.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Operator::Plus:
+    case Plus:
       return bipromote(&lhs, &rhs), Add::create(lhs, rhs);
-    case Operator::Minus:
+    case Minus:
       return bipromote(&lhs, &rhs), Sub::create(lhs, rhs);
-    case Operator::Multiply:
+    case Multiply:
       return bipromote(&lhs, &rhs), Mul::create(lhs, rhs);
-    case Operator::Divide:
+    case Divide:
       return bipromote(&lhs, &rhs), Div::create(lhs, rhs);
-    case Operator::Modulo:
+    case Modulo:
       return bipromote(&lhs, &rhs), Mod::create(lhs, rhs);
-    case Operator::BitwiseAnd:
+    case BitwiseAnd:
       return bipromote(&lhs, &rhs), BitAnd::create(lhs, rhs);
-    case Operator::BitwiseOr:
+    case BitwiseOr:
       return bipromote(&lhs, &rhs), BitOr::create(lhs, rhs);
-    case Operator::BitwiseXor:
+    case BitwiseXor:
       return bipromote(&lhs, &rhs), BitXor::create(lhs, rhs);
-    case Operator::LeftShift:
+    case LeftShift:
       return bipromote(&lhs, &rhs), Shl::create(lhs, rhs);
-    case Operator::RightShift:
+    case RightShift:
       return bipromote(&lhs, &rhs), Shr::create(lhs, rhs);
-    case Operator::RotateLeft:
+    case RotateLeft:
       return bipromote(&lhs, &rhs), Rotl::create(lhs, rhs);
-    case Operator::RotateRight:
+    case RotateRight:
       return bipromote(&lhs, &rhs), Rotr::create(lhs, rhs);
-    case Operator::LogicalAnd:
+    case LogicalAnd:
       return bipromote(&lhs, &rhs), And::create(lhs, rhs);
-    case Operator::LogicalOr:
+    case LogicalOr:
       return bipromote(&lhs, &rhs), Or::create(lhs, rhs);
-    case Operator::LogicalXor:
+    case LogicalXor:
       return bipromote(&lhs, &rhs), Xor::create(lhs, rhs);
-    case Operator::LessThan:
+    case LessThan:
       return bipromote(&lhs, &rhs), Lt::create(lhs, rhs);
-    case Operator::GreaterThan:
+    case GreaterThan:
       return bipromote(&lhs, &rhs), Gt::create(lhs, rhs);
-    case Operator::LessThanEqual:
+    case LessThanEqual:
       return bipromote(&lhs, &rhs), Le::create(lhs, rhs);
-    case Operator::GreaterThanEqual:
+    case GreaterThanEqual:
       return bipromote(&lhs, &rhs), Ge::create(lhs, rhs);
-    case Operator::Equal:
+    case Equal:
       return bipromote(&lhs, &rhs), Eq::create(lhs, rhs);
-    case Operator::NotEqual:
+    case NotEqual:
       return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
-    case Operator::Assign:
+    case OpAssign:
       return Assign::create(lhs, promote(lhs, rhs));
-    case Operator::PlusAssign:
+    case PlusAssign:
       return Assign::create(lhs, Add::create(lhs, promote(lhs, rhs)));
-    case Operator::MinusAssign:
+    case MinusAssign:
       return Assign::create(lhs, Sub::create(lhs, promote(lhs, rhs)));
-    case Operator::MultiplyAssign:
+    case MultiplyAssign:
       return Assign::create(lhs, Mul::create(lhs, promote(lhs, rhs)));
-    case Operator::DivideAssign:
+    case DivideAssign:
       return Assign::create(lhs, Div::create(lhs, promote(lhs, rhs)));
-    case Operator::ModuloAssign:
+    case ModuloAssign:
       return Assign::create(lhs, Mod::create(lhs, promote(lhs, rhs)));
-    case Operator::BitwiseOrAssign:
+    case BitwiseOrAssign:
       return Assign::create(lhs, BitOr::create(lhs, promote(lhs, rhs)));
-    case Operator::BitwiseAndAssign:
+    case BitwiseAndAssign:
       return Assign::create(lhs, BitAnd::create(lhs, promote(lhs, rhs)));
-    case Operator::BitwiseXorAssign:
+    case BitwiseXorAssign:
       return Assign::create(lhs, BitXor::create(lhs, promote(lhs, rhs)));
-    case Operator::XorAssign:
+    case XorAssign:
       return Assign::create(lhs, Xor::create(lhs, promote(lhs, rhs)));
-    case Operator::OrAssign:
+    case OrAssign:
       return Assign::create(lhs, Or::create(lhs, promote(lhs, rhs)));
-    case Operator::AndAssign:
+    case AndAssign:
       return Assign::create(lhs, And::create(lhs, promote(lhs, rhs)));
-    case Operator::LeftShiftAssign:
+    case LeftShiftAssign:
       return Assign::create(lhs, Shl::create(lhs, promote(lhs, rhs)));
-    case Operator::RightShiftAssign:
+    case RightShiftAssign:
       return Assign::create(lhs, Shr::create(lhs, promote(lhs, rhs)));
 
     default:
@@ -1018,13 +1018,13 @@ static QResult conv(const ConstUnaryExprNode *n, QState &state) {
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Operator::Plus:
+    case Plus:
       return e;
-    case Operator::Minus:
+    case Minus:
       return Sub::create(Number::create("0"), e);
-    case Operator::LogicalNot:
+    case LogicalNot:
       return Not::create(e);
-    case Operator::BitwiseNot:
+    case BitwiseNot:
       return BitNot::create(e);
     default:
       throw std::runtime_error("QIR ConstUnaryExprNode not implemented");
@@ -1037,9 +1037,9 @@ static QResult conv(const ConstPostUnaryExprNode *n, QState &state) {
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Operator::Increment:
+    case Increment:
       return PostInc::create(e);
-    case Operator::Decrement:
+    case Decrement:
       return PostDec::create(e);
     default:
       throw std::runtime_error("QIR ConstPostUnaryExprNode not implemented");
@@ -1053,43 +1053,43 @@ static QResult conv(const ConstBinaryExprNode *n, QState &state) {
   auto rhs = conv(n->m_rhs.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Operator::Plus:
+    case Plus:
       return bipromote(&lhs, &rhs), Add::create(lhs, rhs);
-    case Operator::Minus:
+    case Minus:
       return bipromote(&lhs, &rhs), Sub::create(lhs, rhs);
-    case Operator::Multiply:
+    case Multiply:
       return bipromote(&lhs, &rhs), Mul::create(lhs, rhs);
-    case Operator::Divide:
+    case Divide:
       return bipromote(&lhs, &rhs), Div::create(lhs, rhs);
-    case Operator::Modulo:
+    case Modulo:
       return bipromote(&lhs, &rhs), Mod::create(lhs, rhs);
-    case Operator::BitwiseAnd:
+    case BitwiseAnd:
       return bipromote(&lhs, &rhs), BitAnd::create(lhs, rhs);
-    case Operator::BitwiseOr:
+    case BitwiseOr:
       return bipromote(&lhs, &rhs), BitOr::create(lhs, rhs);
-    case Operator::BitwiseXor:
+    case BitwiseXor:
       return bipromote(&lhs, &rhs), BitXor::create(lhs, rhs);
-    case Operator::LeftShift:
+    case LeftShift:
       return bipromote(&lhs, &rhs), Shl::create(lhs, rhs);
-    case Operator::RightShift:
+    case RightShift:
       return bipromote(&lhs, &rhs), Shr::create(lhs, rhs);
-    case Operator::LogicalAnd:
+    case LogicalAnd:
       return bipromote(&lhs, &rhs), And::create(lhs, rhs);
-    case Operator::LogicalOr:
+    case LogicalOr:
       return bipromote(&lhs, &rhs), Or::create(lhs, rhs);
-    case Operator::LogicalXor:
+    case LogicalXor:
       return Xor::create(lhs, rhs);
-    case Operator::LessThan:
+    case LessThan:
       return bipromote(&lhs, &rhs), Lt::create(lhs, rhs);
-    case Operator::GreaterThan:
+    case GreaterThan:
       return bipromote(&lhs, &rhs), Gt::create(lhs, rhs);
-    case Operator::LessThanEqual:
+    case LessThanEqual:
       return bipromote(&lhs, &rhs), Le::create(lhs, rhs);
-    case Operator::GreaterThanEqual:
+    case GreaterThanEqual:
       return bipromote(&lhs, &rhs), Ge::create(lhs, rhs);
-    case Operator::Equal:
+    case Equal:
       return bipromote(&lhs, &rhs), Eq::create(lhs, rhs);
-    case Operator::NotEqual:
+    case NotEqual:
       return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
 
     default:

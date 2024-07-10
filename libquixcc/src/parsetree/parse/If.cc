@@ -42,12 +42,12 @@ bool libquixcc::parse_if(quixcc_job_t &job, libquixcc::Scanner *scanner,
   std::shared_ptr<ExprNode> cond;
   if (!parse_expr(job, scanner,
                   {Token(tPunc, OpenBrace),
-                   Token(tOper, Operator::Arrow)},
+                   Token(tOper, Arrow)},
                   cond))
     return false;
 
   std::shared_ptr<BlockNode> then_block;
-  if (scanner->peek().is<Operator>(Operator::Arrow)) {
+  if (scanner->peek().is<Operator>(Arrow)) {
     scanner->next();
     if (!parse(job, scanner, then_block, false, true)) return false;
   } else {
@@ -59,7 +59,7 @@ bool libquixcc::parse_if(quixcc_job_t &job, libquixcc::Scanner *scanner,
     scanner->next();
     std::shared_ptr<BlockNode> else_block;
 
-    if (scanner->peek().is<Operator>(Operator::Arrow)) {
+    if (scanner->peek().is<Operator>(Arrow)) {
       scanner->next();
     }
     if (!parse(job, scanner, else_block, false, true)) return false;

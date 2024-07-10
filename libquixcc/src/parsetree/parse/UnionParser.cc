@@ -67,7 +67,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
   if (tok.is<Punctor>(Comma)) {
     node = std::make_shared<UnionFieldNode>(name, type);
     return true;
-  } else if (tok.is<Operator>(Operator::Assign)) {
+  } else if (tok.is<Operator>(OpAssign)) {
     if (!parse_expr(job, scanner, {Token(tPunc, Comma)},
                     value)) {
       LOG(ERROR) << core::feedback[UNION_FIELD_INIT_ERR] << name << tok

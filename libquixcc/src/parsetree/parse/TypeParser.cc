@@ -218,13 +218,13 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
       goto type_suffix;
     }
 
-    if (tok.is<Operator>(Operator::Minus)) {
+    if (tok.is<Operator>(Minus)) {
       /** QUIX MAP TYPE
        *
        * @brief Parse a map type.
        */
 
-      if (!(tok = src->next()).is<Operator>(Operator::GreaterThan)) {
+      if (!(tok = src->next()).is<Operator>(GreaterThan)) {
         ERRORS(TYPE_EXPECTED_MAP_ARROW);
         goto error_end;
       }
@@ -311,7 +311,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
 
     inner = make_shared<TupleTypeNode>(types);
     goto type_suffix;
-  } else if (tok.is<Operator>(Operator::Multiply)) {
+  } else if (tok.is<Operator>(Multiply)) {
     /** QUIX POINTER TYPE
      *
      * @brief Parse a pointer type.
@@ -324,7 +324,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
 
     inner = make_shared<PointerTypeNode>(type);
     goto type_suffix;
-  } else if (tok.is<Operator>(Operator::LogicalNot)) {
+  } else if (tok.is<Operator>(LogicalNot)) {
     /** QUIX MUTABLE TYPE
      *
      * @brief Parse a mutable type.
@@ -349,7 +349,7 @@ type_suffix: {
    */
 
   while (true) {
-    if ((tok = src->peek()).is<Operator>(Operator::Question)) {
+    if ((tok = src->peek()).is<Operator>(Question)) {
       src->next();
       inner = make_shared<ResultTypeNode>(inner);
       continue;

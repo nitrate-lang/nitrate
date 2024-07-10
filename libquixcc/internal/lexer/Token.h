@@ -119,7 +119,7 @@ enum Punctor {
   Semicolon = 10,
 };
 
-enum class Operator {
+enum Operator {
   At = 1,
   Question = 2,
   Arrow = 3,
@@ -142,7 +142,7 @@ enum class Operator {
 
   Increment = 30,
   Decrement = 31,
-  Assign = 32,
+  OpAssign = 32,
   PlusAssign = 33,
   MinusAssign = 34,
   MultiplyAssign = 35,
@@ -207,8 +207,6 @@ class TLCString {
  public:
   /// @brief Create a new Constant C string whose lifetime is that of the
   /// current thread
-  /// @param data Data to copy into the new C string
-  /// @return const char* Pointer to the new C string
   static const char *get(const std::string &data) {
     if (!m_data.contains(data)) {
       m_data[data] = std::make_unique<char[]>(data.size() + 1);
@@ -278,6 +276,12 @@ struct TokVal {
     str = std::move(val.str);
     this->val = val.val;
   }
+
+  TokVal &operator=(const TokVal &val) {
+    str = val.str;
+    this->val = val.val;
+    return *this;
+  }
 };
 #endif
 
@@ -291,14 +295,24 @@ class Token {
  public:
   Token(TT type = tErro, TokVal value = TokVal(), Loc loc = Loc());
 
-  Token(const Token &tok) = default;
+  Token(const Token &tok) {
+    m_value = tok.m_value;
+    m_loc = tok.m_loc;
+    m_type = tok.m_type;
+  }
+
   Token(Token &&tok) {
     m_value = std::move(tok.m_value);
     m_loc = std::move(tok.m_loc);
     m_type = tok.m_type;
   }
 
-  Token &operator=(const Token &tok) = default;
+  Token &operator=(const Token &tok) {
+    m_value = tok.m_value;
+    m_loc = tok.m_loc;
+    m_type = tok.m_type;
+    return *this;
+  }
 
   inline bool is(TT val) const { return m_type == val; }
 
@@ -379,6 +393,8 @@ class Token {
     }
   }
 };
+
+#define LIBQUIXCC_TOKEN_SIZE sizeof(Token)
 };  // namespace libquixcc
 
 #endif  // __QUIXCC_LEX_TOKEN_H__

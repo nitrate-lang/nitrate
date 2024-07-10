@@ -177,47 +177,47 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
   /// TODO: Operator precedence
   /// TODO: Operator associativity
   static std::map<Operator, int> operator_precedence = {
-      {Operator::LessThan, 10},
-      {Operator::GreaterThan, 10},
-      {Operator::Assign, 10},
-      {Operator::At, 10},
-      {Operator::Minus, 20},
-      {Operator::Plus, 20},
-      {Operator::Multiply, 30},
-      {Operator::Divide, 30},
-      {Operator::Modulo, 30},
-      {Operator::BitwiseAnd, 5},
-      {Operator::BitwiseOr, 3},
-      {Operator::BitwiseXor, 4},
-      {Operator::BitwiseNot, 35},
-      {Operator::LogicalNot, 35},
-      {Operator::Question, 1},
-      {Operator::PlusAssign, 10},
-      {Operator::MinusAssign, 10},
-      {Operator::MultiplyAssign, 10},
-      {Operator::DivideAssign, 10},
-      {Operator::ModuloAssign, 10},
-      {Operator::BitwiseOrAssign, 10},
-      {Operator::BitwiseAndAssign, 10},
-      {Operator::BitwiseXorAssign, 10},
-      {Operator::LeftShift, 25},
-      {Operator::RightShift, 25},
-      {Operator::RotateRight, 25},
-      {Operator::RotateLeft, 25},
-      {Operator::Equal, 9},
-      {Operator::NotEqual, 9},
-      {Operator::LogicalAnd, 8},
-      {Operator::LogicalOr, 7},
-      {Operator::LogicalXor, 6},
-      {Operator::LessThanEqual, 9},
-      {Operator::GreaterThanEqual, 9},
-      {Operator::Increment, 40},
-      {Operator::Decrement, 40},
-      {Operator::XorAssign, 10},
-      {Operator::OrAssign, 10},
-      {Operator::AndAssign, 10},
-      {Operator::LeftShiftAssign, 10},
-      {Operator::RightShiftAssign, 10}};
+      {LessThan, 10},
+      {GreaterThan, 10},
+      {OpAssign, 10},
+      {At, 10},
+      {Minus, 20},
+      {Plus, 20},
+      {Multiply, 30},
+      {Divide, 30},
+      {Modulo, 30},
+      {BitwiseAnd, 5},
+      {BitwiseOr, 3},
+      {BitwiseXor, 4},
+      {BitwiseNot, 35},
+      {LogicalNot, 35},
+      {Question, 1},
+      {PlusAssign, 10},
+      {MinusAssign, 10},
+      {MultiplyAssign, 10},
+      {DivideAssign, 10},
+      {ModuloAssign, 10},
+      {BitwiseOrAssign, 10},
+      {BitwiseAndAssign, 10},
+      {BitwiseXorAssign, 10},
+      {LeftShift, 25},
+      {RightShift, 25},
+      {RotateRight, 25},
+      {RotateLeft, 25},
+      {Equal, 9},
+      {NotEqual, 9},
+      {LogicalAnd, 8},
+      {LogicalOr, 7},
+      {LogicalXor, 6},
+      {LessThanEqual, 9},
+      {GreaterThanEqual, 9},
+      {Increment, 40},
+      {Decrement, 40},
+      {XorAssign, 10},
+      {OrAssign, 10},
+      {AndAssign, 10},
+      {LeftShiftAssign, 10},
+      {RightShiftAssign, 10}};
 
   while (true) {
     auto tok = scanner->peek();
@@ -455,16 +455,16 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
             }
 
             tok = scanner->peek();
-            if (tok.is<Operator>(Operator::Increment)) {
+            if (tok.is<Operator>(Increment)) {
               auto p = std::make_shared<PostUnaryExprNode>(
-                  Operator::Increment,
+                  Increment,
                   std::make_shared<IndexNode>(left, index));
               stack.push(p);
               scanner->next();
               continue;
-            } else if (tok.is<Operator>(Operator::Decrement)) {
+            } else if (tok.is<Operator>(Decrement)) {
               auto p = std::make_shared<PostUnaryExprNode>(
-                  Operator::Decrement,
+                  Decrement,
                   std::make_shared<IndexNode>(left, index));
               stack.push(p);
               scanner->next();
@@ -499,7 +499,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
         break;
       case tOper: {
         auto op = tok.as<Operator>();
-        if (op == Operator::Dot) {
+        if (op == Dot) {
           if (stack.size() != 1) {
             LOG(ERROR) << "Expected a single expression" << tok << std::endl;
             return false;
@@ -517,16 +517,16 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
 
           auto ident = tok.as<std::string>();
           tok = scanner->peek();
-          if (tok.is<Operator>(Operator::Increment)) {
+          if (tok.is<Operator>(Increment)) {
             auto p = std::make_shared<PostUnaryExprNode>(
-                Operator::Increment,
+                Increment,
                 std::make_shared<MemberAccessNode>(left, ident));
             stack.push(p);
             scanner->next();
             continue;
-          } else if (tok.is<Operator>(Operator::Decrement)) {
+          } else if (tok.is<Operator>(Decrement)) {
             auto p = std::make_shared<PostUnaryExprNode>(
-                Operator::Decrement,
+                Decrement,
                 std::make_shared<MemberAccessNode>(left, ident));
             stack.push(p);
             scanner->next();
@@ -538,7 +538,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
         }
         std::shared_ptr<ExprNode> expr;
 
-        if (op == Operator::As) {
+        if (op == As) {
           if (stack.size() != 1) {
             LOG(ERROR) << "Expected a single expression" << tok << std::endl;
             return false;
@@ -553,7 +553,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           continue;
         }
 
-        if (op == Operator::BitcastAs) {
+        if (op == BitcastAs) {
           if (stack.size() != 1) {
             LOG(ERROR) << "Expected a single expression" << tok << std::endl;
             return false;
@@ -568,7 +568,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           continue;
         }
 
-        if (op == Operator::ReinterpretAs) {
+        if (op == ReinterpretAs) {
           if (stack.size() != 1) {
             LOG(ERROR) << "Expected a single expression" << tok << std::endl;
             return false;
@@ -613,15 +613,15 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
 
           stack.push(fcall);
           continue;
-        } else if (scanner->peek().is<Operator>(Operator::Increment)) {
+        } else if (scanner->peek().is<Operator>(Increment)) {
           auto p = std::make_shared<PostUnaryExprNode>(
-              Operator::Increment, std::make_shared<IdentifierNode>(ident));
+              Increment, std::make_shared<IdentifierNode>(ident));
           stack.push(p);
           scanner->next();
           continue;
-        } else if (scanner->peek().is<Operator>(Operator::Decrement)) {
+        } else if (scanner->peek().is<Operator>(Decrement)) {
           auto p = std::make_shared<PostUnaryExprNode>(
-              Operator::Decrement, std::make_shared<IdentifierNode>(ident));
+              Decrement, std::make_shared<IdentifierNode>(ident));
           stack.push(p);
           scanner->next();
           continue;

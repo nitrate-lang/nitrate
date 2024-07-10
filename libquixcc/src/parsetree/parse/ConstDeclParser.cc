@@ -115,7 +115,7 @@ bool libquixcc::parse_const(
     for (auto &decl : decls)
       nodes.push_back(
           std::make_shared<ConstDeclNode>(decl.first, decl.second, nullptr));
-  } else if (tok.is<Operator>(Operator::Assign)) {
+  } else if (tok.is<Operator>(OpAssign)) {
     if (multi_decl)
       throw std::runtime_error(
           "Initializer not implemented for multiple declarations");

@@ -32,6 +32,13 @@ if '--release' in sys.argv:
     if os.system('docker run -v {0}:/app --rm -it quixcc-release:latest'.format(cwd)) != 0:
         print("Release build failed.")
         sys.exit(1)
+    if '--strip' in sys.argv:
+        files = ['qpkg', 'qld', 'qcc', 'libquixcc.so']
+        for file in files:
+            if os.system('strip {0}'.format(os.path.join(cwd, file))) != 0:
+                print("Failed to strip {0}".format(file))
+                sys.exit(1)
+        print("Stripped release binaries.")
     print("Release build complete.")
     sys.exit(0)
 

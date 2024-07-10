@@ -23,6 +23,7 @@ RUN echo "cp /app/build/debug/libquixcc/libquixcc.so /app/bin/libquixcc.so" >> /
 RUN echo "cp /app/build/debug/qcc/qcc /app/bin/qcc" >> /opt/build.sh
 RUN echo "cp /app/build/debug/qld/qld /app/bin/qld" >> /opt/build.sh  
 RUN echo "cp /app/build/debug/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
+RUN echo "chmod 777 /app/bin/*" >> /opt/build.sh
 RUN chmod +x /opt/build.sh
 
 WORKDIR /app

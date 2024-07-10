@@ -184,148 +184,144 @@ const std::unordered_map<Keyword, std::string_view> keyword_map_inverse = {
     {Keyword::False, "false"}};
 
 const std::unordered_map<std::string_view, Punctor> punctor_map = {
-    {"(", OpenParen},   {")", CloseParen},
-    {"{", OpenBrace},   {"}", CloseBrace},
-    {"[", OpenBracket}, {"]", CloseBracket},
-    {",", Comma},       {":", Colon},
-    {";", Semicolon}};
+    {"(", OpenParen},  {")", CloseParen},  {"{", OpenBrace},
+    {"}", CloseBrace}, {"[", OpenBracket}, {"]", CloseBracket},
+    {",", Comma},      {":", Colon},       {";", Semicolon}};
 
 const std::unordered_map<Punctor, std::string_view> punctor_map_inverse = {
-    {OpenParen, "("},   {CloseParen, ")"},
-    {OpenBrace, "{"},   {CloseBrace, "}"},
-    {OpenBracket, "["}, {CloseBracket, "]"},
-    {Comma, ","},       {Colon, ":"},
-    {Semicolon, ";"}};
+    {OpenParen, "("},  {CloseParen, ")"},  {OpenBrace, "{"},
+    {CloseBrace, "}"}, {OpenBracket, "["}, {CloseBracket, "]"},
+    {Comma, ","},      {Colon, ":"},       {Semicolon, ";"}};
 
 const std::unordered_map<std::string_view, Operator> operator_map = {
-    {"<", Operator::LessThan},
-    {">", Operator::GreaterThan},
-    {"=", Operator::Assign},
-    {"@", Operator::At},
-    {"=>", Operator::Arrow},
-    {".", Operator::Dot},
-    {"-", Operator::Minus},
-    {"+", Operator::Plus},
-    {"*", Operator::Multiply},
-    {"/", Operator::Divide},
-    {"%", Operator::Modulo},
-    {"&", Operator::BitwiseAnd},
-    {"|", Operator::BitwiseOr},
-    {"^", Operator::BitwiseXor},
-    {"~", Operator::BitwiseNot},
-    {"!", Operator::LogicalNot},
-    {"?", Operator::Question},
-    {"+=", Operator::PlusAssign},
-    {"-=", Operator::MinusAssign},
-    {"*=", Operator::MultiplyAssign},
-    {"/=", Operator::DivideAssign},
-    {"%=", Operator::ModuloAssign},
-    {"|=", Operator::BitwiseOrAssign},
-    {"&=", Operator::BitwiseAndAssign},
-    {"^=", Operator::BitwiseXorAssign},
-    {"<<", Operator::LeftShift},
-    {">>", Operator::RightShift},
-    {">>>", Operator::RotateRight},
-    {"<<<", Operator::RotateLeft},
-    {"==", Operator::Equal},
-    {"!=", Operator::NotEqual},
-    {"as", Operator::As},
-    {"is", Operator::Is},
-    {"in", Operator::In},
-    {"nin", Operator::NotIn},
-    {"sizeof", Operator::Sizeof},
-    {"bitsizeof", Operator::Bitsizeof},
-    {"alignof", Operator::Alignof},
-    {"typeof", Operator::Typeof},
-    {"offsetof", Operator::Offsetof},
-    {"bitcast_as", Operator::BitcastAs},
-    {"reinterpret_as", Operator::ReinterpretAs},
-    {"..", Operator::Range},
-    {"...", Operator::Ellipsis},
-    {"<=>", Operator::Spaceship},
-    {"&&", Operator::LogicalAnd},
-    {"||", Operator::LogicalOr},
-    {"^^", Operator::LogicalXor},
-    {"<=", Operator::LessThanEqual},
-    {">=", Operator::GreaterThanEqual},
-    {"++", Operator::Increment},
-    {"--", Operator::Decrement},
-    {"^^=", Operator::XorAssign},
-    {"||=", Operator::OrAssign},
-    {"&&=", Operator::AndAssign},
-    {"<<=", Operator::LeftShiftAssign},
-    {">>=", Operator::RightShiftAssign}};
+    {"<", LessThan},
+    {">", GreaterThan},
+    {"=", OpAssign},
+    {"@", At},
+    {"=>", Arrow},
+    {".", Dot},
+    {"-", Minus},
+    {"+", Plus},
+    {"*", Multiply},
+    {"/", Divide},
+    {"%", Modulo},
+    {"&", BitwiseAnd},
+    {"|", BitwiseOr},
+    {"^", BitwiseXor},
+    {"~", BitwiseNot},
+    {"!", LogicalNot},
+    {"?", Question},
+    {"+=", PlusAssign},
+    {"-=", MinusAssign},
+    {"*=", MultiplyAssign},
+    {"/=", DivideAssign},
+    {"%=", ModuloAssign},
+    {"|=", BitwiseOrAssign},
+    {"&=", BitwiseAndAssign},
+    {"^=", BitwiseXorAssign},
+    {"<<", LeftShift},
+    {">>", RightShift},
+    {">>>", RotateRight},
+    {"<<<", RotateLeft},
+    {"==", Equal},
+    {"!=", NotEqual},
+    {"as", As},
+    {"is", Is},
+    {"in", In},
+    {"nin", NotIn},
+    {"sizeof", Sizeof},
+    {"bitsizeof", Bitsizeof},
+    {"alignof", Alignof},
+    {"typeof", Typeof},
+    {"offsetof", Offsetof},
+    {"bitcast_as", BitcastAs},
+    {"reinterpret_as", ReinterpretAs},
+    {"..", Range},
+    {"...", Ellipsis},
+    {"<=>", Spaceship},
+    {"&&", LogicalAnd},
+    {"||", LogicalOr},
+    {"^^", LogicalXor},
+    {"<=", LessThanEqual},
+    {">=", GreaterThanEqual},
+    {"++", Increment},
+    {"--", Decrement},
+    {"^^=", XorAssign},
+    {"||=", OrAssign},
+    {"&&=", AndAssign},
+    {"<<=", LeftShiftAssign},
+    {">>=", RightShiftAssign}};
 
 const std::unordered_map<std::string_view, Operator> word_operators = {
-    {"as", Operator::As},
-    {"is", Operator::Is},
-    {"in", Operator::In},
-    {"nin", Operator::NotIn},
-    {"sizeof", Operator::Sizeof},
-    {"bitsizeof", Operator::Bitsizeof},
-    {"alignof", Operator::Alignof},
-    {"typeof", Operator::Typeof},
-    {"offsetof", Operator::Offsetof},
-    {"bitcast_as", Operator::BitcastAs},
-    {"reinterpret_as", Operator::ReinterpretAs},
+    {"as", As},
+    {"is", Is},
+    {"in", In},
+    {"nin", NotIn},
+    {"sizeof", Sizeof},
+    {"bitsizeof", Bitsizeof},
+    {"alignof", Alignof},
+    {"typeof", Typeof},
+    {"offsetof", Offsetof},
+    {"bitcast_as", BitcastAs},
+    {"reinterpret_as", ReinterpretAs},
 };
 
 const std::unordered_map<Operator, std::string_view> operator_map_inverse = {
-    {Operator::LessThan, "<"},
-    {Operator::GreaterThan, ">"},
-    {Operator::Assign, "="},
-    {Operator::At, "@"},
-    {Operator::Arrow, "=>"},
-    {Operator::Dot, "."},
-    {Operator::Minus, "-"},
-    {Operator::Plus, "+"},
-    {Operator::Multiply, "*"},
-    {Operator::Divide, "/"},
-    {Operator::Modulo, "%"},
-    {Operator::BitwiseAnd, "&"},
-    {Operator::BitwiseOr, "|"},
-    {Operator::BitwiseXor, "^"},
-    {Operator::BitwiseNot, "~"},
-    {Operator::LogicalNot, "!"},
-    {Operator::Question, "?"},
-    {Operator::PlusAssign, "+="},
-    {Operator::MinusAssign, "-="},
-    {Operator::MultiplyAssign, "*="},
-    {Operator::DivideAssign, "/="},
-    {Operator::ModuloAssign, "%="},
-    {Operator::BitwiseOrAssign, "|="},
-    {Operator::BitwiseAndAssign, "&="},
-    {Operator::BitwiseXorAssign, "^="},
-    {Operator::LeftShift, "<<"},
-    {Operator::RightShift, ">>"},
-    {Operator::RotateRight, ">>>"},
-    {Operator::RotateLeft, "<<<"},
-    {Operator::Equal, "=="},
-    {Operator::NotEqual, "!="},
-    {Operator::As, "as"},
-    {Operator::Is, "is"},
-    {Operator::In, "in"},
-    {Operator::NotIn, "nin"},
-    {Operator::Sizeof, "sizeof"},
-    {Operator::Bitsizeof, "bitsizeof"},
-    {Operator::Alignof, "alignof"},
-    {Operator::Typeof, "typeof"},
-    {Operator::Offsetof, "offsetof"},
-    {Operator::Range, ".."},
-    {Operator::Ellipsis, "..."},
-    {Operator::Spaceship, "<=>"},
-    {Operator::LogicalAnd, "&&"},
-    {Operator::LogicalOr, "||"},
-    {Operator::LogicalXor, "^^"},
-    {Operator::LessThanEqual, "<="},
-    {Operator::GreaterThanEqual, ">="},
-    {Operator::Increment, "++"},
-    {Operator::Decrement, "--"},
-    {Operator::XorAssign, "^^="},
-    {Operator::OrAssign, "||="},
-    {Operator::AndAssign, "&&="},
-    {Operator::LeftShiftAssign, "<<="},
-    {Operator::RightShiftAssign, ">>="}};
+    {LessThan, "<"},
+    {GreaterThan, ">"},
+    {OpAssign, "="},
+    {At, "@"},
+    {Arrow, "=>"},
+    {Dot, "."},
+    {Minus, "-"},
+    {Plus, "+"},
+    {Multiply, "*"},
+    {Divide, "/"},
+    {Modulo, "%"},
+    {BitwiseAnd, "&"},
+    {BitwiseOr, "|"},
+    {BitwiseXor, "^"},
+    {BitwiseNot, "~"},
+    {LogicalNot, "!"},
+    {Question, "?"},
+    {PlusAssign, "+="},
+    {MinusAssign, "-="},
+    {MultiplyAssign, "*="},
+    {DivideAssign, "/="},
+    {ModuloAssign, "%="},
+    {BitwiseOrAssign, "|="},
+    {BitwiseAndAssign, "&="},
+    {BitwiseXorAssign, "^="},
+    {LeftShift, "<<"},
+    {RightShift, ">>"},
+    {RotateRight, ">>>"},
+    {RotateLeft, "<<<"},
+    {Equal, "=="},
+    {NotEqual, "!="},
+    {As, "as"},
+    {Is, "is"},
+    {In, "in"},
+    {NotIn, "nin"},
+    {Sizeof, "sizeof"},
+    {Bitsizeof, "bitsizeof"},
+    {Alignof, "alignof"},
+    {Typeof, "typeof"},
+    {Offsetof, "offsetof"},
+    {Range, ".."},
+    {Ellipsis, "..."},
+    {Spaceship, "<=>"},
+    {LogicalAnd, "&&"},
+    {LogicalOr, "||"},
+    {LogicalXor, "^^"},
+    {LessThanEqual, "<="},
+    {GreaterThanEqual, ">="},
+    {Increment, "++"},
+    {Decrement, "--"},
+    {XorAssign, "^^="},
+    {OrAssign, "||="},
+    {AndAssign, "&&="},
+    {LeftShiftAssign, "<<="},
+    {RightShiftAssign, ">>="}};
 }  // namespace libquixcc
 
 // Precomputed lookup table for hex char to byte conversion
@@ -486,21 +482,6 @@ static bool validate_identifier(std::string_view id) {
   return state == 0;
 }
 
-static bool canonicalize_identifier(std::string &str) {
-  /* Canonicalize the identifier */
-
-  /* Create a cache */
-  static std::unordered_map<std::string, std::string>
-      g_canonicalize_identifier_cache;
-  if (g_canonicalize_identifier_cache.contains(str))
-    return str = g_canonicalize_identifier_cache[str], true;
-
-  if (!validate_identifier(str)) return false;
-
-  /* Cache the result */
-  return g_canonicalize_identifier_cache[str] = str, true;
-}
-
 enum class NumType {
   Invalid,
   Decimal,
@@ -513,7 +494,7 @@ enum class NumType {
 
 static NumType check_number_literal_type(std::string input) {
   /* Create a cache */
-  static std::unordered_map<std::string, NumType>
+  static thread_local std::unordered_map<std::string, NumType>
       g_check_number_literal_type_cache;
   if (g_check_number_literal_type_cache.contains(input))
     return g_check_number_literal_type_cache[input];
@@ -594,9 +575,9 @@ static std::string canonicalize_float(std::string_view input) {
   return ss.str();
 }
 
-bool canonicalize_number(std::string &number, std::string &norm, NumType type) {
+static bool canonicalize_number(std::string &number, std::string &norm, NumType type) {
   /* Create a cache */
-  static std::unordered_map<std::string, std::string>
+  static thread_local std::unordered_map<std::string, std::string>
       g_canonicalize_number_cache;
   if (g_canonicalize_number_cache.contains(number))
     return norm = g_canonicalize_number_cache[number], true;
@@ -761,16 +742,14 @@ const Token &StreamLexer::read_token() {
 
             if ((c = getc()) == EOF) {
               return reset_state(),
-                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                         .value();
+                     (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
             }
           }
 
           /* Check for f-string */
           if (buf == "f" && c == '"') {
             m_pushback.push_back(c);
-            return (m_tok = Token(tKeyW, Keyword::FString, m_loc - 1))
-                .value();
+            return (m_tok = Token(tKeyW, Keyword::FString, m_loc - 1)).value();
           }
 
           /* We overshot; this must be a punctor ':' */
@@ -784,8 +763,8 @@ const Token &StreamLexer::read_token() {
           /* Determine if it's a keyword or an identifier */
           for (const auto &kw : keyword_map) {
             if (buf == kw.first) {
-              return (m_tok = Token(tKeyW, keyword_map.at(buf),
-                                    m_loc - buf.size()))
+              return (m_tok =
+                          Token(tKeyW, keyword_map.at(buf), m_loc - buf.size()))
                   .value();
             }
           }
@@ -800,15 +779,13 @@ const Token &StreamLexer::read_token() {
           }
 
           /* Check if it's a valid identifier */
-          if (!canonicalize_identifier(buf)) {
+          if (!validate_identifier(buf)) {
             return reset_state(),
-                   (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                       .value();
+                   (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
           }
 
           /* Canonicalize the identifier to the correct format */
-          return (m_tok = Token(tName, buf, m_loc - buf.size()))
-              .value();
+          return (m_tok = Token(tName, buf, m_loc - buf.size())).value();
         }
         case LexState::Integer: {
           while (true) {
@@ -821,8 +798,7 @@ const Token &StreamLexer::read_token() {
 
             if ((c = getc()) == EOF) {
               return reset_state(),
-                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                         .value();
+                     (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
             }
           }
 
@@ -867,15 +843,13 @@ const Token &StreamLexer::read_token() {
             std::cerr << "Tokenization error: Invalid numeric literal: '" << buf
                       << "'" << std::endl;
             return reset_state(),
-                   (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                       .value();
+                   (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
           }
 
           /* Canonicalize the number */
           std::string norm;
           if (canonicalize_number(buf, norm, type)) {
-            return (m_tok = Token(tIntL, norm, m_loc - buf.size()))
-                .value();
+            return (m_tok = Token(tIntL, norm, m_loc - buf.size())).value();
           }
 
           /* Invalid number */
@@ -897,8 +871,7 @@ const Token &StreamLexer::read_token() {
           } else {
             /* Divide operator */
             m_pushback.push_back(c);
-            return (m_tok = Token(tOper, Operator::Divide, m_loc))
-                .value();
+            return (m_tok = Token(tOper, Divide, m_loc)).value();
           }
         }
         case LexState::CommentSingleLine: {
@@ -908,9 +881,14 @@ const Token &StreamLexer::read_token() {
 
             if ((c = getc()) == EOF) {
               return reset_state(),
-                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                         .value();
+                     (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
             }
+          }
+
+          if (ingore_comments) {
+            buf.clear();
+            state = LexState::Start;
+            continue;
           }
 
           return (m_tok = Token(tNote, buf, m_loc - buf.size())).value();
@@ -936,6 +914,12 @@ const Token &StreamLexer::read_token() {
               if (tmp == '/') {
                 level--;
                 if (level == 0) {
+                  if (ingore_comments) {
+                    buf.clear();
+                    state = LexState::Start;
+                    break;
+                  }
+
                   return (m_tok = Token(tNote, buf, m_loc - buf.size()))
                       .value();
                 } else {
@@ -949,13 +933,14 @@ const Token &StreamLexer::read_token() {
               c = getc();
             } else if (c == EOF) {
               return reset_state(),
-                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                         .value();
+                     (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
             } else {
               buf += c;
               c = getc();
             }
           }
+
+          continue;
         }
         case LexState::String: {
           if (c != buf[0]) {
@@ -1051,8 +1036,7 @@ const Token &StreamLexer::read_token() {
           switch (state_parens) {
             case 0: {
               if (c == '\n') {
-                return (m_tok = Token(tMacr, buf,
-                                      m_loc - buf.size() - 1))
+                return (m_tok = Token(tMacr, buf, m_loc - buf.size() - 1))
                     .value();
               } else if (c != '(') {
                 buf += c;
@@ -1062,8 +1046,7 @@ const Token &StreamLexer::read_token() {
                 continue;
               } else {
                 return reset_state(),
-                       (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                           .value();
+                       (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
               }
             }
             default: {
@@ -1073,9 +1056,7 @@ const Token &StreamLexer::read_token() {
                 buf += c, state_parens--;
 
               if (state_parens == 0) {
-                return (m_tok =
-                            Token(tMacr, buf, m_loc - buf.size()))
-                    .value();
+                return (m_tok = Token(tMacr, buf, m_loc - buf.size())).value();
               }
 
               buf += c;
@@ -1092,8 +1073,7 @@ const Token &StreamLexer::read_token() {
             }
 
             if (state_parens == 0) {
-              return (m_tok =
-                          Token(tMacB, buf, m_loc - buf.size() - 1))
+              return (m_tok = Token(tMacB, buf, m_loc - buf.size() - 1))
                   .value();
             }
 
@@ -1101,8 +1081,7 @@ const Token &StreamLexer::read_token() {
 
             if ((c = getc()) == EOF) {
               return reset_state(),
-                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                         .value();
+                     (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
             }
           }
           continue;
@@ -1139,10 +1118,9 @@ const Token &StreamLexer::read_token() {
             if (!operator_map.contains(buf)) {
               m_pushback.push_back(buf.back());
               m_pushback.push_back(c);
-              return (m_tok =
-                          Token(tOper,
-                                operator_map.at(buf.substr(0, buf.size() - 1)),
-                                m_loc - buf.size()))
+              return (m_tok = Token(
+                          tOper, operator_map.at(buf.substr(0, buf.size() - 1)),
+                          m_loc - buf.size()))
                   .value();
             }
 
@@ -1150,13 +1128,11 @@ const Token &StreamLexer::read_token() {
 
             if (buf.size() > 4) { /* Handle infinite error case */
               return reset_state(),
-                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                         .value();
+                     (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
             }
 
             if ((c = getc()) == EOF) {
-              return (m_tok = Token(tErro, buf, m_loc - buf.size()))
-                  .value();
+              return (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
             }
           }
         }

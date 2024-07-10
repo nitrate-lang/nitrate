@@ -53,7 +53,7 @@ bool libquixcc::parse_typedef(quixcc_job_t &job, libquixcc::Scanner *scanner,
   std::string name = tok.as<std::string>();
 
   tok = scanner->next();
-  if (!tok.is<Operator>(Operator::Assign)) {
+  if (!tok.is<Operator>(OpAssign)) {
     LOG(ERROR) << core::feedback[TYPEDEF_EXPECTED_ASSIGN] << tok << std::endl;
     return false;
   }

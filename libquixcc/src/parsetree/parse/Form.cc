@@ -54,7 +54,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
   std::string var = tok.as<std::string>();
 
   tok = scanner->next();
-  if (!tok.is<Operator>(Operator::In)) {
+  if (!tok.is<Operator>(In)) {
     LOG(ERROR) << core::feedback[FORM_EXPECTED_IN] << tok << std::endl;
     return false;
   }
@@ -75,7 +75,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
   } else {
     if (!parse_expr(job, scanner,
                     {Token(tPunc, OpenBrace),
-                     Token(tOper, Operator::Arrow)},
+                     Token(tOper, Arrow)},
                     expr)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
       return false;
@@ -85,7 +85,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
   tok = scanner->peek();
 
   std::shared_ptr<BlockNode> block;
-  if (tok.is<Operator>(Operator::Arrow)) {
+  if (tok.is<Operator>(Arrow)) {
     scanner->next();
     if (!parse(job, scanner, block, false, true)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_BLOCK] << tok << std::endl;

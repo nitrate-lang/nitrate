@@ -53,7 +53,7 @@ static bool parse_enum_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
   node->m_name = tok.as<std::string>();
 
   tok = scanner->peek();
-  if (tok.is<Operator>(Operator::Assign)) {
+  if (tok.is<Operator>(OpAssign)) {
     scanner->next();
     if (!parse_const_expr(job, scanner, Token(tPunc, Comma),
                           node->m_value)) {

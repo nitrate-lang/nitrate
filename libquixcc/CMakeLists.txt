@@ -67,8 +67,6 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   endforeach()
 
   target_link_libraries(quixcc PRIVATE libboost_serialization.a libboost_filesystem.a libcrypto.a libstdc++.a libz.a tinfo)
-
-  add_custom_command(TARGET quixcc POST_BUILD COMMAND ${CMAKE_STRIP} $<TARGET_FILE:quixcc>)
 endif()
 
 

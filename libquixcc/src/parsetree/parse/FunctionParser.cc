@@ -134,7 +134,7 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->peek();
 
-  if (tok.is<Operator>(Operator::Assign)) {
+  if (tok.is<Operator>(OpAssign)) {
     scanner->next();
 
     std::shared_ptr<ExprNode> value;
@@ -284,7 +284,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
       break;
     }
 
-    if (tok.is<Operator>(Operator::Ellipsis)) {
+    if (tok.is<Operator>(Ellipsis)) {
       is_variadic = true;
 
       scanner->next();
@@ -345,7 +345,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
   }
 
-  if (tok.is<Operator>(Operator::Arrow)) {
+  if (tok.is<Operator>(Arrow)) {
     scanner->next();
 
     auto fnbody = std::make_shared<BlockNode>();
@@ -405,10 +405,10 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
             return false;
           }
 
-          expr = std::make_shared<UnaryExprNode>(Operator::LogicalNot, expr);
-          expr = std::make_shared<UnaryExprNode>(Operator::LogicalNot, expr);
+          expr = std::make_shared<UnaryExprNode>(LogicalNot, expr);
+          expr = std::make_shared<UnaryExprNode>(LogicalNot, expr);
 
-          req_in = std::make_shared<BinaryExprNode>(Operator::LogicalAnd,
+          req_in = std::make_shared<BinaryExprNode>(LogicalAnd,
                                                     req_in, expr);
         } else if (tok.is<Keyword>(Keyword::Out)) {
           if (!req_out) {
@@ -427,9 +427,9 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
             return false;
           }
 
-          expr = std::make_shared<UnaryExprNode>(Operator::LogicalNot, expr);
-          expr = std::make_shared<UnaryExprNode>(Operator::LogicalNot, expr);
-          req_out = std::make_shared<BinaryExprNode>(Operator::LogicalAnd,
+          expr = std::make_shared<UnaryExprNode>(LogicalNot, expr);
+          expr = std::make_shared<UnaryExprNode>(LogicalNot, expr);
+          req_out = std::make_shared<BinaryExprNode>(LogicalAnd,
                                                      req_out, expr);
         } else {
           LOG(ERROR) << core::feedback[FN_EXPECTED_IN_OUT] << tok << std::endl;
