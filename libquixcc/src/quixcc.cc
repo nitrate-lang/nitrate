@@ -33,7 +33,6 @@
 
 #include <core/Macro.h>
 #include <core/QuixJob.h>
-#include <execinfo.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
@@ -70,73 +69,21 @@
 #include <thread>
 #include <vector>
 
-#define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
-
-#ifndef LIBQUIX_VERSION
-#warning "LIBQUIX_VERSION not defined; using default value"
-#define LIBQUIX_VERSION "undefined"
-#endif
-
 #define PRUNE_DEBUG_MESSAGES 1
 
 using namespace libquixcc;
 using namespace libquixcc::core;
 
-static std::atomic<bool> g_is_initialized = false;
-std::atomic<uint64_t> g_num_of_contexts = 0;
-std::mutex g_library_lock;
+extern std::atomic<bool> g_is_initialized;
+extern std::atomic<uint64_t> g_num_of_contexts;
+extern std::mutex g_library_lock;
 
 static thread_local jmp_buf g_tls_exception;
 static thread_local bool g_tls_exception_set = false;
 thread_local uint8_t libquixcc::quixcc::g_target_word_size;
 
-static struct {
-  std::mutex m_lock;
-  quixcc_cache_has_t m_has;
-  quixcc_cache_read_t m_read;
-  quixcc_cache_write_t m_write;
-} g_cache_provider{};
-
-static void print_stacktrace();
-static void print_general_fault_message();
-
-[[noreturn]] void quixcc_panic(std::string msg) noexcept {
-  msg = "LIBQUIXCC LIBRARY PANIC: " + msg;
-  // Split msg into lines of `max` characters
-  std::vector<std::string> lines;
-  std::string line;
-  size_t pos = 0, len = 0;
-  const size_t max = 80;
-  while (pos < msg.size()) {
-    len = std::min<size_t>(max - 4, msg.size() - pos);
-    line = msg.substr(pos, len);
-
-    if (line.size() < max - 4) line += std::string(max - 4 - line.size(), ' ');
-    lines.push_back(line);
-    pos += len;
-  }
-
-  std::string sep;
-  for (size_t i = 0; i < max - 2; i++) sep += "━";
-
-  std::cerr << "\x1b[31;1m┏" << sep << "┓\x1b[0m" << std::endl;
-  for (auto &str : lines)
-    std::cerr << "\x1b[31;1m┃\x1b[0m " << str << " \x1b[31;1m┃\x1b[0m"
-              << std::endl;
-  std::cerr << "\x1b[31;1m┗" << sep << "\x1b[31;1m┛\x1b[0m\n" << std::endl;
-
-  print_stacktrace();
-
-  std::cerr << std::endl;
-
-  print_general_fault_message();
-
-  std::cerr << "\nAborting..." << std::endl;
-
-  abort();
-
-  while (true) std::this_thread::yield();
-}
+extern void quixcc_print_stacktrace();
+extern void quixcc_print_general_fault_message();
 
 static void *safe_realloc(void *ptr, size_t size) {
   void *new_ptr = realloc(ptr, size);
@@ -163,38 +110,11 @@ static libquixcc::quixcc::quixcc_uuid_t quixcc_uuid() {
   return id;
 }
 
-LIB_EXPORT bool quixcc_init() {
-  /* We don't need to initialize more than once */
-  if (g_is_initialized) return true;
-
-  static std::mutex g_mutex;
-  std::lock_guard<std::mutex> lock(g_mutex);
-
-#ifdef LLVM_SUUPORT_ALL_TARGETS
-  llvm::InitializeAllTargetInfos();
-  llvm::InitializeAllTargets();
-  llvm::InitializeAllTargetMCs();
-  llvm::InitializeAllAsmParsers();
-  llvm::InitializeAllAsmPrinters();
-
-  /* Check if LLVM is initialized */
-  if (llvm::TargetRegistry::targets().empty()) {
-    std::cerr << "error: LLVM initialization failed" << std::endl;
-    return false;
-  }
-#else
-#warning "Building LIBQUIXCC without support for ANY LLVM targets!!"
-#endif
-
-  g_is_initialized = true;
-  return true;
-}
-
 LIB_EXPORT quixcc_cc_job_t *quixcc_cc_new() {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_cc_new(). "
+        "quixcc_lib_init() is required before calling quixcc_cc_new(). "
         "quitcc_new() "
         "attempted to compensate for this error, but quitcc_init() failed to "
         "initialize.");
@@ -232,10 +152,10 @@ LIB_EXPORT quixcc_cc_job_t *quixcc_cc_new() {
 }
 
 LIB_EXPORT bool quixcc_cc_dispose(quixcc_cc_job_t *job) {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_cc_dispose(). "
+        "quixcc_lib_init() is required before calling quixcc_cc_dispose(). "
         "quixcc_cc_dispose() attempted to compensate for this error, but "
         "quitcc_init() failed to initialize.");
   }
@@ -295,10 +215,10 @@ LIB_EXPORT bool quixcc_cc_dispose(quixcc_cc_job_t *job) {
 
 LIB_EXPORT void quixcc_cc_option(quixcc_cc_job_t *job, const char *opt,
                                  bool enable) {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_cc_option(). "
+        "quixcc_lib_init() is required before calling quixcc_cc_option(). "
         "quixcc_cc_option() attempted to compensate for this error, but "
         "quitcc_init() failed to initialize.");
   }
@@ -340,10 +260,10 @@ LIB_EXPORT void quixcc_cc_option(quixcc_cc_job_t *job, const char *opt,
 
 LIB_EXPORT void quixcc_cc_source(quixcc_cc_job_t *job, FILE *in,
                                  const char *filename) {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_cc_source(). "
+        "quixcc_lib_init() is required before calling quixcc_cc_source(). "
         "quixcc_cc_source() attempted to compensate for this error, but "
         "quitcc_init() failed to initialize.");
   }
@@ -369,10 +289,10 @@ LIB_EXPORT void quixcc_cc_source(quixcc_cc_job_t *job, FILE *in,
 
 LIB_EXPORT bool quixcc_cc_target(quixcc_cc_job_t *job,
                                  const char *_llvm_triple) {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_target(). "
+        "quixcc_lib_init() is required before calling quixcc_target(). "
         "quixcc_target() attempted to compensate for this error, but "
         "quitcc_init() failed to initialize.");
   }
@@ -413,10 +333,11 @@ LIB_EXPORT bool quixcc_cc_target(quixcc_cc_job_t *job,
 }
 
 LIB_EXPORT bool quixcc_cc_cpu(quixcc_cc_job_t *job, const char *cpu) {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_cpu(). quixcc_cpu() "
+        "quixcc_lib_init() is required before calling quixcc_cpu(). "
+        "quixcc_cpu() "
         "attempted to compensate for this error, but quitcc_init() failed to "
         "initialize.");
   }
@@ -440,10 +361,10 @@ LIB_EXPORT bool quixcc_cc_cpu(quixcc_cc_job_t *job, const char *cpu) {
 
 LIB_EXPORT void quixcc_cc_output(quixcc_cc_job_t *job, FILE *out,
                                  FILE **old_out) {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_cc_output(). "
+        "quixcc_lib_init() is required before calling quixcc_cc_output(). "
         "quixcc_cc_output() attempted to compensate for this error, but "
         "quitcc_init() failed to initialize.");
   }
@@ -472,27 +393,6 @@ static std::string get_datetime() {
   tstruct = *localtime(&now);
   strftime(buf, sizeof(buf), "%Y-%m-%d %X", &tstruct);
   return buf;
-}
-
-std::string base64_encode(const std::string &in) {
-  std::string out;
-
-  int val = 0, valb = -6;
-  for (unsigned char c : in) {
-    val = (val << 8) + c;
-    valb += 8;
-    while (valb >= 0) {
-      out.push_back(
-          "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
-              [(val >> valb) & 0x3F]);
-      valb -= 6;
-    }
-  }
-  if (valb > -6)
-    out.push_back(
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
-            [((val << 8) >> (valb + 8)) & 0x3F]);
-  return out;
 }
 
 static bool quixcc_mutate_ptree(quixcc_cc_job_t *job,
@@ -959,136 +859,6 @@ static bool build_argmap(quixcc_cc_job_t *job) {
   return verify_build_option_conflicts(job);
 }
 
-static void print_stacktrace() {
-  // UTF-8 support
-  setlocale(LC_ALL, "");
-
-  std::cerr << "\x1b[31;1m┏━━━━━━┫ INTERNAL COMPILER ERROR ┣━━\x1b[0m\n";
-  std::cerr << "\x1b[31;1m┃\x1b[0m\n";
-
-  void *array[48];
-  size_t size = backtrace(array, 48);
-  char **strings = backtrace_symbols(array, size);
-
-  for (size_t i = 0; i < size && strings[i]; i++)
-    std::cerr << "\x1b[31;1m┣╸╸\x1b[0m \x1b[37;1m" << strings[i] << "\x1b[0m\n";
-
-  free(strings);
-
-  std::cerr << "\x1b[31;1m┃\x1b[0m\n";
-  std::cerr << "\x1b[31;1m┗━━━━━━┫ END STACK TRACE ┣━━\x1b[0m" << std::endl;
-}
-
-static std::string escape_json_string(const std::string &s) {
-  std::string out;
-  for (char c : s) {
-    switch (c) {
-      case '\b':
-        out += "\\b";
-        break;
-      case '\f':
-        out += "\\f";
-        break;
-      case '\n':
-        out += "\\n";
-        break;
-      case '\r':
-        out += "\\r";
-        break;
-      case '\t':
-        out += "\\t";
-        break;
-      case '\\':
-        out += "\\\\";
-        break;
-      case '\"':
-        out += "\\\"";
-        break;
-      default:
-        out += c;
-        break;
-    }
-  }
-  return out;
-}
-
-static std::string geterror_report_string() {
-  std::vector<std::string> trace;
-
-  void *array[48];
-  size_t size = backtrace(array, 48);
-  char **strings = backtrace_symbols(array, size);
-
-  for (size_t i = 0; i < size && strings[i]; i++) trace.push_back(strings[i]);
-
-  free(strings);
-
-  std::string report = "{\"version\":\"1.0\",";
-  report += "\"quixcc_version\":\"" LIBQUIX_VERSION "\",";
-
-#if NDEBUG
-  report += "\"build\":\"release\",";
-#else
-  report += "\"build\":\"debug\",";
-#endif
-
-#if defined(__clang__)
-  report += "\"compiler\":\"clang\",";
-#elif defined(__GNUC__)
-  report += "\"compiler\":\"gnu\",";
-#else
-  report += "\"compiler\":\"unknown\",";
-#endif
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
-    defined(_M_X64) || defined(_M_AMD64)
-  report += "\"arch\":\"x86_64\",";
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-  report += "\"arch\":\"x86\",";
-#elif defined(__aarch64__)
-  report += "\"arch\":\"aarch64\",";
-#elif defined(__arm__)
-  report += "\"arch\":\"arm\",";
-#else
-  report += "\"arch\":\"unknown\",";
-#endif
-
-#if defined(__linux__)
-  report += "\"os\":\"linux\",";
-#elif defined(__APPLE__)
-  report += "\"os\":\"macos\",";
-#elif defined(_WIN32)
-  report += "\"os\":\"windows\",";
-#else
-  report += "\"os\":\"unknown\",";
-#endif
-
-  report += "\"quixcc_run\":\"";
-
-  char buf[(sizeof(void *) * 2) + 2 + 1] = {0};  // 0x[hex word]\0
-  snprintf(buf, sizeof(buf), "%p", (void *)quixcc_cc_run);
-  report += buf;
-
-  report += "\",\"trace\":[";
-  for (size_t i = 0; i < trace.size(); i++) {
-    report += "\"" + escape_json_string(trace[i]) + "\"";
-    if (i + 1 < trace.size()) report += ",";
-  }
-
-  report += "]}";
-
-  return "LIBQUIXCC_CRASHINFO_" + base64_encode(report);
-}
-
-static void print_general_fault_message() {
-  std::cerr << "The compiler (libquixcc backend) encountered a fatal internal "
-               "error.\n";
-  std::cerr << "Please report this error to the QuixCC developers "
-               "at " PROJECT_REPO_URL ".\n\n";
-  std::cerr << "Please include the following report code: \n  "
-            << geterror_report_string() << std::endl;
-}
-
 void quixcc_fault_handler(int sig) {
   /*
       Lock all threads to prevent multiple error messages
@@ -1141,9 +911,9 @@ void quixcc_fault_handler(int sig) {
   }
 
   std::cerr << '\n';
-  print_general_fault_message();
+  quixcc_print_general_fault_message();
   std::cerr << "\n";
-  print_stacktrace();
+  quixcc_print_stacktrace();
   std::cerr << "\n";
 
   LOG(WARN) << "Attemping to recover from `fatal` error by `longjmp()`ing into "
@@ -1253,10 +1023,11 @@ static uint8_t get_target_word_size(quixcc_cc_job_t *job) {
 }
 
 LIB_EXPORT bool quixcc_cc_run(quixcc_cc_job_t *job) {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_run(). quixcc_run() "
+        "quixcc_lib_init() is required before calling quixcc_run(). "
+        "quixcc_run() "
         "attempted to compensate for this error, but quitcc_init() failed to "
         "initialize.");
   }
@@ -1336,10 +1107,10 @@ LIB_EXPORT bool quixcc_cc_run(quixcc_cc_job_t *job) {
 }
 
 LIB_EXPORT const quixcc_status_t *quixcc_cc_status(quixcc_cc_job_t *job) {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_status(). "
+        "quixcc_lib_init() is required before calling quixcc_status(). "
         "quixcc_status() attempted to compensate for this error, but "
         "quitcc_init() failed to initialize.");
   }
@@ -1386,10 +1157,10 @@ LIB_EXPORT const quixcc_status_t *quixcc_cc_status(quixcc_cc_job_t *job) {
 
 LIB_EXPORT char **quixcc_cc_compile(FILE *in, FILE *out,
                                     const char *options[]) {
-  if (!g_is_initialized && !quixcc_init()) {
+  if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic(
         "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_compile(). "
+        "quixcc_lib_init() is required before calling quixcc_compile(). "
         "quixcc_compile() attempted to compensate for this error, but "
         "quitcc_init() failed to initialize.");
   }
@@ -1424,123 +1195,4 @@ LIB_EXPORT char **quixcc_cc_compile(FILE *in, FILE *out,
 
   quixcc_cc_dispose(job);
   return messages;
-}
-
-LIB_EXPORT bool quixcc_bind_provider(quixcc_cache_has_t has,
-                                     quixcc_cache_read_t read,
-                                     quixcc_cache_write_t write) {
-  if (!g_is_initialized && !quixcc_init()) {
-    quixcc_panic(
-        "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_bind_provider(). "
-        "quixcc_bind_provider() attempted to compensate for this error, but "
-        "quitcc_init() failed to initialize.");
-  }
-
-  if (!has || !read || !write) {
-    return false;
-  }
-
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  if (g_cache_provider.m_has || g_cache_provider.m_read ||
-      g_cache_provider.m_write) {
-    return false;
-  }
-
-  g_cache_provider.m_has = has;
-  g_cache_provider.m_read = read;
-  g_cache_provider.m_write = write;
-
-  return true;
-}
-
-LIB_EXPORT void quixcc_unbind_provider() {
-  if (!g_is_initialized && !quixcc_init()) {
-    quixcc_panic(
-        "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_bind_provider(). "
-        "quixcc_bind_provider() attempted to compensate for this error, but "
-        "quitcc_init() failed to initialize.");
-  }
-
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  g_cache_provider.m_has = nullptr;
-  g_cache_provider.m_read = nullptr;
-  g_cache_provider.m_write = nullptr;
-}
-
-LIB_EXPORT ssize_t quixcc_cache_has(const quixcc_cache_key_t *key) {
-  if (!g_is_initialized && !quixcc_init()) {
-    quixcc_panic(
-        "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_bind_provider(). "
-        "quixcc_bind_provider() attempted to compensate for this error, but "
-        "quitcc_init() failed to initialize.");
-  }
-
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  if (!g_cache_provider.m_has) {
-    return -1;
-  }
-
-  return g_cache_provider.m_has(key);
-}
-
-LIB_EXPORT bool quixcc_cache_read(const quixcc_cache_key_t *key, void *data,
-                                  size_t datalen) {
-  if (!g_is_initialized && !quixcc_init()) {
-    quixcc_panic(
-        "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_bind_provider(). "
-        "quixcc_bind_provider() attempted to compensate for this error, but "
-        "quitcc_init() failed to initialize.");
-  }
-
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  if (!g_cache_provider.m_read) {
-    return false;
-  }
-
-  return g_cache_provider.m_read(key, data, datalen);
-}
-
-LIB_EXPORT bool quixcc_cache_write(const quixcc_cache_key_t *key,
-                                   const void *data, size_t datalen) {
-  if (!g_is_initialized && !quixcc_init()) {
-    quixcc_panic(
-        "A libquixcc library contract violation occurred: A successful call to "
-        "quixcc_init() is required before calling quixcc_bind_provider(). "
-        "quixcc_bind_provider() attempted to compensate for this error, but "
-        "quitcc_init() failed to initialize.");
-  }
-
-  std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
-
-  if (!g_cache_provider.m_write) {
-    return false;
-  }
-
-  return g_cache_provider.m_write(key, data, datalen);
-}
-
-LIB_EXPORT bool quixcc_cache_reset() {
-  /* Acquire a lock on the library state */
-  std::lock_guard<std::mutex> lock(g_library_lock);
-
-  /* Ensure that no contexts are active */
-  if (g_num_of_contexts != 0) return false;
-
-  /* We have a guarantee that no contexts are active,
-   * and none will be created, for now. */
-
-  /* Erase cache line and free the memory */
-
-  // Nothing to do here.
-
-  /* We now have an empty cache and can return */
-  return true;
 }

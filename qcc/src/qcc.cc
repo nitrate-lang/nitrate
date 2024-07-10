@@ -243,7 +243,7 @@ static bool init(const std::vector<std::string> &args) {
     return false;
   }
 
-  if (!quixcc_init()) {
+  if (!quixcc_lib_init()) {
     std::cerr << "Failed to initialize QUIXCC" << std::endl;
     return false;
   }

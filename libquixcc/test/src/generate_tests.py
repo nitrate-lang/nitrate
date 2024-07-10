@@ -62,7 +62,7 @@ def generate_test_cases_for_manifest(manifest_file):
         assert_exists(source_file)
 
         content += f"TEST({test_suite_name}, {name}) {{\n"
-        content += f"    ASSERT_TRUE(quixcc_init());\n"
+        content += f"    ASSERT_TRUE(quixcc_lib_init());\n"
         content += f"    const char* source_file = \"{source_file}\";\n"
         content += f"    const char* output_file = \"{output_name}\";\n"
         if build_mode == 'asm-sha1' or build_mode == 'obj-sha1':

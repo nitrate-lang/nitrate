@@ -8,7 +8,7 @@
 #include <fstream>
 #include <quixcc/Quix.hpp>
 
-TEST(libquixcc, library_init) { ASSERT_TRUE(quixcc_init()); }
+TEST(libquixcc, library_init) { ASSERT_TRUE(quixcc_lib_init()); }
 
 TEST(libquixcc, create_build_context) {
   quixcc_cc_job_t *job = quixcc_cc_new();

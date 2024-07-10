@@ -50,8 +50,6 @@
 
 using namespace libquixcc;
 
-extern void quixcc_panic(std::string msg) noexcept;
-
 ///=============================================================================
 /// BEGIN: QUIXCC QSYS REGISTRY
 ///=============================================================================

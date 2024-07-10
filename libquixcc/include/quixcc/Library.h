@@ -60,7 +60,7 @@ extern "C" {
  * @note This function is thread-safe.
  * @note Initialization more than once is a no-op.
  */
-bool quixcc_init();
+bool quixcc_lib_init();
 
 /**
  * @brief Dispose of the QUIX compiler library.
@@ -69,10 +69,14 @@ bool quixcc_init();
  * This function must be called prior to unloading the library.
  * This function will invalidate all jobs and cache entries.
  *
+ * @return true if the library was disposed successfully. If false, the
+ * library is not safe to unload.
  * @note This function is thread-safe.
  * @note Disposal more than once is a no-op.
  */
-void quixcc_deinit();
+bool quixcc_lib_deinit();
+
+void quixcc_panic(const char *msg) __attribute__((noreturn));
 
 /**
  * @brief Reset and free the internal cache memory
@@ -145,15 +149,15 @@ typedef bool (*quixcc_cache_write_t)(const quixcc_cache_key_t *key,
  * @note This function is thread-safe.
  * @note This function will return false if a provider is already bound.
  */
-bool quixcc_bind_provider(quixcc_cache_has_t has, quixcc_cache_read_t read,
-                          quixcc_cache_write_t write);
+bool quixcc_cache_bind(quixcc_cache_has_t has, quixcc_cache_read_t read,
+                       quixcc_cache_write_t write);
 
 /**
  * @brief Unbind the current cache provider from the QUIX compiler library.
  *
  * @note This function is thread-safe.
  */
-void quixcc_unbind_provider();
+void quixcc_cache_unbind();
 
 /**
  * @brief Check if an object is currently cached.

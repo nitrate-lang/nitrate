@@ -76,7 +76,7 @@ qpkg::build::Engine::Engine(const std::string &package_src,
 #endif
   }
 
-  if (!quixcc_init()) {
+  if (!quixcc_lib_init()) {
     LOG(core::ERROR) << "Failed to initialize QuixCC" << std::endl;
     exit(1);
   }

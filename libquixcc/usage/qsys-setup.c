@@ -151,7 +151,7 @@ int main() {
   quixcc_cc_job_t *job;
   int err;
 
-  quixcc_init();
+  quixcc_lib_init();
 
   /*================ Setup ===============*/
   if (!make_job(&job)) {
