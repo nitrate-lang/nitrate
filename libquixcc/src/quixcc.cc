@@ -1510,3 +1510,21 @@ LIB_EXPORT bool quixcc_cache_write(const char *key, size_t keylen,
 
   return g_cache_provider.m_write(key, keylen, data, datalen);
 }
+
+LIB_EXPORT bool quixcc_cache_reset() {
+  /* Acquire a lock on the library state */
+  std::lock_guard<std::mutex> lock(g_library_lock);
+
+  /* Ensure that no contexts are active */
+  if (g_num_of_contexts != 0) return false;
+
+  /* We have a guarantee that no contexts are active,
+   * and none will be created, for now. */
+
+  /* Erase cache line and free the memory */
+
+  // Nothing to do here.
+
+  /* We now have an empty cache and can return */
+  return true;
+}

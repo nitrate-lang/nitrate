@@ -35,7 +35,6 @@
     WARNING: WE ARE NOT ALLOWED TO USE THE LOGGER(lvl) SUBSYSTEM IN THIS FILE
 */
 
-#include <cache.h>
 #include <lexer/Lex.h>
 
 #include <cassert>
