@@ -46,7 +46,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
     has_parens = true;
   }
 
-  if (tok.type() != TT::Identifier) {
+  if (tok.type() != tName) {
     LOG(ERROR) << core::feedback[FORM_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
@@ -61,7 +61,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   std::shared_ptr<ExprNode> expr;
   if (has_parens) {
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::CloseParen)},
+    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::CloseParen)},
                     expr)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
       return false;
@@ -74,8 +74,8 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
   } else {
     if (!parse_expr(job, scanner,
-                    {Token(TT::Punctor, Punctor::OpenBrace),
-                     Token(TT::Operator, Operator::Arrow)},
+                    {Token(tPunc, Punctor::OpenBrace),
+                     Token(tOper, Operator::Arrow)},
                     expr)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
       return false;

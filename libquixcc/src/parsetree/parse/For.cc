@@ -59,7 +59,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       x0 = std::make_shared<StmtGroupNode>(let_node);
     } else {
       std::shared_ptr<ExprNode> x0_tmp;
-      if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
+      if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
                       x0_tmp)) {
         return false;
       }
@@ -73,7 +73,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x1))
+    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)}, x1))
       return false;
 
     tok = scanner->next();
@@ -82,7 +82,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       return false;
     }
 
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::CloseParen)},
+    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::CloseParen)},
                     x2))
       return false;
 
@@ -120,7 +120,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       x0 = std::make_shared<StmtGroupNode>(let_node);
     } else {
       std::shared_ptr<ExprNode> x0_tmp;
-      if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
+      if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
                       x0_tmp)) {
         return false;
       }
@@ -134,7 +134,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, x1))
+    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)}, x1))
       return false;
 
     tok = scanner->next();
@@ -144,8 +144,8 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
 
     if (!parse_expr(job, scanner,
-                    {Token(TT::Punctor, Punctor::OpenBrace),
-                     Token(TT::Operator, Operator::Arrow)},
+                    {Token(tPunc, Punctor::OpenBrace),
+                     Token(tOper, Operator::Arrow)},
                     x2))
       return false;
 

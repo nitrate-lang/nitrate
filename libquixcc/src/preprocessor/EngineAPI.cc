@@ -224,43 +224,43 @@ LIB_EXPORT bool quixcc_engine_emit(quixcc_engine_t *engine, quixcc_tok_t tok) {
 
   switch (tok.ty) {
     case QUIXCC_LEX_EOF:
-      token = Token(TT::Eof, "");
+      token = Token(tEofF, "");
       break;
     case QUIXCC_LEX_IDENT:
-      token = Token(TT::Identifier, GETSTR(tok));
+      token = Token(tName, GETSTR(tok));
       break;
     case QUIXCC_LEX_KW:
-      token = Token(TT::Keyword, (Keyword)tok.val.kw);
+      token = Token(tKeyW, (Keyword)tok.val.kw);
       break;
     case QUIXCC_LEX_OP:
-      token = Token(TT::Operator, (Operator)tok.val.op);
+      token = Token(tOper, (Operator)tok.val.op);
       break;
     case QUIXCC_LEX_PUNCT:
-      token = Token(TT::Punctor, (Punctor)tok.val.punct);
+      token = Token(tPunc, (Punctor)tok.val.punct);
       break;
     case QUIXCC_LEX_INT:
-      token = Token(TT::Integer, GETSTR(tok));
+      token = Token(tIntL, GETSTR(tok));
       break;
     case QUIXCC_LEX_FLOAT:
-      token = Token(TT::Float, GETSTR(tok));
+      token = Token(tNumL, GETSTR(tok));
       break;
     case QUIXCC_LEX_STR:
-      token = Token(TT::String, GETSTR(tok));
+      token = Token(tText, GETSTR(tok));
       break;
     case QUIXCC_LEX_CHAR:
-      token = Token(TT::Char, GETSTR(tok));
+      token = Token(tChar, GETSTR(tok));
       break;
     case QUIXCC_LEX_METABLK:
-      token = Token(TT::MacroBlock, GETSTR(tok));
+      token = Token(tMacB, GETSTR(tok));
       break;
     case QUIXCC_LEX_METASEG:
-      token = Token(TT::MacroSingleLine, GETSTR(tok));
+      token = Token(tMacr, GETSTR(tok));
       break;
     case QUIXCC_LEX_NOTE:
-      token = Token(TT::Comment, GETSTR(tok));
+      token = Token(tNote, GETSTR(tok));
       break;
     case QUIXCC_LEX_UNK:
-      token = Token(TT::Unknown, "");
+      token = Token(tErro, "");
       break;
     default:
       return false;

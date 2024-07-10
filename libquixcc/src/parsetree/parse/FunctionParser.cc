@@ -112,7 +112,7 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
   auto tok = scanner->next();
 
   std::string name;
-  if (tok.type() != TT::Identifier) {
+  if (tok.type() != tName) {
     LOG(ERROR) << core::feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok
                << std::endl;
     return false;
@@ -139,8 +139,8 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     std::shared_ptr<ExprNode> value;
     if (!parse_expr(job, scanner,
-                    {Token(TT::Punctor, Punctor::Comma),
-                     Token(TT::Punctor, Punctor::CloseParen)},
+                    {Token(tPunc, Punctor::Comma),
+                     Token(tPunc, Punctor::CloseParen)},
                     value)) {
       LOG(ERROR) << core::feedback[FN_PARAM_INIT_ERR] << tok << std::endl;
       return false;
@@ -266,7 +266,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   Token tok = scanner->next();
 
-  if (tok.type() == TT::Identifier) {
+  if (tok.type() == tName) {
     fndecl->m_name = tok.as<std::string>();
     tok = scanner->next();
   }
@@ -394,7 +394,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
           }
 
           if (!parse_expr(job, scanner,
-                          {Token(TT::Punctor, Punctor::Semicolon)}, expr)) {
+                          {Token(tPunc, Punctor::Semicolon)}, expr)) {
             return false;
           }
 
@@ -416,7 +416,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
           }
 
           if (!parse_expr(job, scanner,
-                          {Token(TT::Punctor, Punctor::Semicolon)}, expr)) {
+                          {Token(tPunc, Punctor::Semicolon)}, expr)) {
             return false;
           }
 
@@ -459,7 +459,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
         tok = scanner->next();
         if (tok.is<Punctor>(Punctor::CloseBracket)) break;
 
-        if (tok.type() != TT::Identifier) {
+        if (tok.type() != tName) {
           LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_IDENTIFIER] << tok
                      << std::endl;
           return false;

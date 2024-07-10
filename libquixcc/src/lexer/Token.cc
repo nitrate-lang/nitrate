@@ -72,44 +72,44 @@ std::string libquixcc::Token::serialize_human_readable() const {
   std::stringstream ss;
 
   switch (m_type) {
-    case TT::Eof:
+    case tEofF:
       ss << "Eof";
       break;
-    case TT::Unknown:
+    case tErro:
       ss << "Unknown";
       break;
-    case TT::Identifier:
+    case tName:
       ss << "Identifier(" << as<std::string>() << ")";
       break;
-    case TT::Keyword:
+    case tKeyW:
       ss << "Keyword(" << keyword_map_inverse.at(as<Keyword>()).data() << ")";
       break;
-    case TT::Operator:
+    case tOper:
       ss << "Operator(" << operator_map_inverse.at(as<Operator>()).data()
          << ")";
       break;
-    case TT::Punctor:
+    case tPunc:
       ss << "Punctor(" << punctor_map_inverse.at(as<Punctor>()).data() << ")";
       break;
-    case TT::String:
+    case tText:
       ss << "String(\"" << as<std::string>() << "\")";
       break;
-    case TT::Char:
+    case tChar:
       ss << "Char('" << as<std::string>() << "')";
       break;
-    case TT::Integer:
+    case tIntL:
       ss << "Number(" << as<std::string>() << ")";
       break;
-    case TT::Float:
+    case tNumL:
       ss << "Float(" << as<std::string>() << ")";
       break;
-    case TT::Comment:
+    case tNote:
       ss << "Comment(" << as<std::string>() << ")";
       break;
-    case TT::MacroBlock:
+    case tMacB:
       ss << "MacroBlock(" << as<std::string>() << ")";
       break;
-    case TT::MacroSingleLine:
+    case tMacr:
       ss << "MacroSingleLine(" << as<std::string>() << ")";
       break;
     default:
@@ -125,36 +125,36 @@ std::string Token::serialize(bool human_readable) const {
 
   std::stringstream ss;
   switch (m_type) {
-    case TT::Eof:
+    case tEofF:
       break;
-    case TT::Unknown:
-    case TT::Identifier:
-    case TT::Integer:
-    case TT::Float:
+    case tErro:
+    case tName:
+    case tIntL:
+    case tNumL:
       ss << as<std::string>();
       break;
-    case TT::Comment:
+    case tNote:
       ss << "/*" << as<std::string>() << "*/";
       break;
-    case TT::String:
+    case tText:
       ss << "\"" << as<std::string>() << "\"";
       break;
-    case TT::Char:
+    case tChar:
       ss << "'" << as<std::string>() << "'";
       break;
-    case TT::MacroBlock:
+    case tMacB:
       ss << "@(" << as<std::string>() << ")";
       break;
-    case TT::MacroSingleLine:
+    case tMacr:
       ss << "@" << as<std::string>();
       break;
-    case TT::Keyword:
+    case tKeyW:
       ss << keyword_map_inverse.at(as<Keyword>()).data();
       break;
-    case TT::Operator:
+    case tOper:
       ss << operator_map_inverse.at(as<Operator>()).data();
       break;
-    case TT::Punctor:
+    case tPunc:
       ss << punctor_map_inverse.at(as<Punctor>()).data();
       break;
     default:

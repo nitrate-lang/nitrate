@@ -149,7 +149,7 @@ class MockScanner : public Scanner {
   Token m_tok;
 
  public:
-  MockScanner() : m_tok(Token(TT::Eof, "")) {}
+  MockScanner() : m_tok(Token(tEofF, "")) {}
   MockScanner(const std::vector<Token> &tokens) {
     for (const auto &tok : tokens) {
       m_tokens.push_back(tok);
@@ -159,7 +159,7 @@ class MockScanner : public Scanner {
       m_tok = m_tokens.front();
       m_tokens.pop_front();
     } else {
-      m_tok = Token(TT::Eof, "");
+      m_tok = Token(tEofF, "");
     }
   }
   virtual ~MockScanner() = default;
@@ -170,7 +170,7 @@ class MockScanner : public Scanner {
 
   Token next() override {
     if (m_tokens.empty()) {
-      m_tok = Token(TT::Eof, "");
+      m_tok = Token(tEofF, "");
     } else {
       m_tok = m_tokens.front();
       m_tokens.pop_front();

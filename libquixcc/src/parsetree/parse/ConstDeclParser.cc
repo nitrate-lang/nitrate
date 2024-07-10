@@ -91,7 +91,7 @@ bool libquixcc::parse_const(
         return false;
       }
     }
-  } else if (tok.type() == TT::Identifier) {
+  } else if (tok.type() == tName) {
     // Parse single variable declaration
     std::pair<std::string, std::shared_ptr<TypeNode>> decl;
     if (!parse_decl(job, tok, scanner, decl)) return false;
@@ -122,7 +122,7 @@ bool libquixcc::parse_const(
 
     // Parse initializer
     std::shared_ptr<ExprNode> init;
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
+    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
                     init))
       return false;
 

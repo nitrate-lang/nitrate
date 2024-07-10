@@ -87,7 +87,7 @@ bool libquixcc::PrepEngine::ParseReadstdin(const Token &tok,
   size_t maxlen = 0;
 
   Token t = tokens[0];
-  if (t.type() == TT::Identifier && tokens.size() > 1) {
+  if (t.type() == tName && tokens.size() > 1) {
     // check for noecho and/or binary
     // if present, noecho is first
     if (t.as<std::string>() == "noecho") {
@@ -112,7 +112,7 @@ bool libquixcc::PrepEngine::ParseReadstdin(const Token &tok,
     }
   }
 
-  if (t.type() != TT::Integer) {
+  if (t.type() != tIntL) {
     LOG(ERROR) << "Invalid readstdin maxlen" << std::endl;
     return false;
   }
@@ -145,7 +145,7 @@ bool libquixcc::PrepEngine::ParseReadstdin(const Token &tok,
       emit(t);
     }
   } else {
-    emit(Token(TT::String, input));
+    emit(Token(tText, input));
   }
 
   if (noecho) disable_noecho();

@@ -51,7 +51,7 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
   Token t = lex->next();
   lex->enable_expansion();
 
-  if (t.type() != TT::Identifier) {
+  if (t.type() != tName) {
     LOG(ERROR) << "Expected identifier in @define directive" << t << std::endl;
     return false;
   }
@@ -66,7 +66,7 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
   std::vector<Token> tokens;
   while (true) {
     t = lex->next();
-    if (t.type() == TT::Eof) {
+    if (t.type() == tEofF) {
       break;
     }
     tokens.push_back(t);

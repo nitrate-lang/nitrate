@@ -48,7 +48,7 @@ bool libquixcc::parse_return(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   std::shared_ptr<ExprNode> expr;
-  if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, expr))
+  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)}, expr))
     return false;
   node = std::make_shared<ReturnStmtNode>(expr);
 
@@ -78,7 +78,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, libquixcc::Scanner *scanner,
   Token tok;
 
   std::shared_ptr<ExprNode> return_expr;
-  if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma)},
+  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Comma)},
                   return_expr))
     return false;
 
@@ -89,7 +89,7 @@ bool libquixcc::parse_retif(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   std::shared_ptr<ExprNode> condition;
-  if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
+  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
                   condition))
     return false;
 
@@ -119,7 +119,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, libquixcc::Scanner *scanner,
   Token tok;
 
   std::shared_ptr<ExprNode> return_expr;
-  if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma)},
+  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Comma)},
                   return_expr))
     return false;
 
@@ -130,7 +130,7 @@ bool libquixcc::parse_retz(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   std::shared_ptr<ExprNode> condition;
-  if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
+  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
                   condition))
     return false;
 
@@ -160,7 +160,7 @@ bool libquixcc::parse_retv(quixcc_job_t &job, libquixcc::Scanner *scanner,
   Token tok;
 
   std::shared_ptr<ExprNode> cond;
-  if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)}, cond))
+  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)}, cond))
     return false;
 
   tok = scanner->next();

@@ -84,7 +84,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
 
   Token tok;
 
-  if ((tok = src->next()).type() == TT::Keyword) {
+  if ((tok = src->next()).type() == tKeyW) {
     switch (tok.as<Keyword>()) {
       case Keyword::Void: {
         /** QUIX VOID TYPE
@@ -131,7 +131,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
         inner = static_pointer_cast<FunctionDeclNode>(fn)->m_type;
 
         /* Push a semicolon to account for the above usage. */
-        src->push(Token(TT::Punctor, Punctor::Semicolon));
+        src->push(Token(tPunc, Punctor::Semicolon));
 
         goto type_suffix;
       }
@@ -151,7 +151,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
           goto error_end;
         }
 
-        if ((tok = src->next()).type() != TT::Identifier) {
+        if ((tok = src->next()).type() != tName) {
           ERRORS(TYPE_OPAQUE_EXPECTED_IDENTIFIER);
           goto error_end;
         }
@@ -174,7 +174,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
     }
 
     __builtin_unreachable();
-  } else if (tok.type() == TT::Identifier) {
+  } else if (tok.type() == tName) {
     if (primitives.contains(tok.as<string>())) {
       /** QUIX PRIMITIVE TYPE
        *
@@ -253,7 +253,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
       goto error_end;
     }
 
-    if (!parse_const_expr(job, src, Token(TT::Punctor, Punctor::CloseBracket),
+    if (!parse_const_expr(job, src, Token(tPunc, Punctor::CloseBracket),
                           size)) {
       ERRORS(TYPE_EXPECTED_CONST_EXPR);
       goto error_end;

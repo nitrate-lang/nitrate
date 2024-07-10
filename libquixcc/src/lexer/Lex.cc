@@ -708,7 +708,7 @@ const Token &StreamLexer::read_token() {
         m_pushback.pop_front();
       } else {
         if ((c = getc()) == EOF) {
-          return reset_state(), (m_tok = Token(TT::Eof, "", m_loc)).value();
+          return reset_state(), (m_tok = Token(tEofF, "", m_loc)).value();
         }
       }
 
@@ -761,7 +761,7 @@ const Token &StreamLexer::read_token() {
 
             if ((c = getc()) == EOF) {
               return reset_state(),
-                     (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
                          .value();
             }
           }
@@ -769,7 +769,7 @@ const Token &StreamLexer::read_token() {
           /* Check for f-string */
           if (buf == "f" && c == '"') {
             m_pushback.push_back(c);
-            return (m_tok = Token(TT::Keyword, Keyword::FString, m_loc - 1))
+            return (m_tok = Token(tKeyW, Keyword::FString, m_loc - 1))
                 .value();
           }
 
@@ -784,7 +784,7 @@ const Token &StreamLexer::read_token() {
           /* Determine if it's a keyword or an identifier */
           for (const auto &kw : keyword_map) {
             if (buf == kw.first) {
-              return (m_tok = Token(TT::Keyword, keyword_map.at(buf),
+              return (m_tok = Token(tKeyW, keyword_map.at(buf),
                                     m_loc - buf.size()))
                   .value();
             }
@@ -793,7 +793,7 @@ const Token &StreamLexer::read_token() {
           /* Check if it's an operator */
           for (const auto &op : word_operators) {
             if (buf == op.first) {
-              return (m_tok = Token(TT::Operator, word_operators.at(buf),
+              return (m_tok = Token(tOper, word_operators.at(buf),
                                     m_loc - buf.size()))
                   .value();
             }
@@ -802,12 +802,12 @@ const Token &StreamLexer::read_token() {
           /* Check if it's a valid identifier */
           if (!canonicalize_identifier(buf)) {
             return reset_state(),
-                   (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                   (m_tok = Token(tErro, buf, m_loc - buf.size()))
                        .value();
           }
 
           /* Canonicalize the identifier to the correct format */
-          return (m_tok = Token(TT::Identifier, buf, m_loc - buf.size()))
+          return (m_tok = Token(tName, buf, m_loc - buf.size()))
               .value();
         }
         case LexState::Integer: {
@@ -821,7 +821,7 @@ const Token &StreamLexer::read_token() {
 
             if ((c = getc()) == EOF) {
               return reset_state(),
-                     (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
                          .value();
             }
           }
@@ -857,7 +857,7 @@ const Token &StreamLexer::read_token() {
 
           /* Check if it's a floating point number */
           if ((type = check_number_literal_type(buf)) == NumType::Floating) {
-            return (m_tok = Token(TT::Float, canonicalize_float(buf),
+            return (m_tok = Token(tNumL, canonicalize_float(buf),
                                   m_loc - buf.size()))
                 .value();
           }
@@ -867,14 +867,14 @@ const Token &StreamLexer::read_token() {
             std::cerr << "Tokenization error: Invalid numeric literal: '" << buf
                       << "'" << std::endl;
             return reset_state(),
-                   (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                   (m_tok = Token(tErro, buf, m_loc - buf.size()))
                        .value();
           }
 
           /* Canonicalize the number */
           std::string norm;
           if (canonicalize_number(buf, norm, type)) {
-            return (m_tok = Token(TT::Integer, norm, m_loc - buf.size()))
+            return (m_tok = Token(tIntL, norm, m_loc - buf.size()))
                 .value();
           }
 
@@ -883,7 +883,7 @@ const Token &StreamLexer::read_token() {
                        "fit in an integer type: '"
                     << buf << "'" << std::endl;
           return reset_state(),
-                 (m_tok = Token(TT::Unknown, buf, m_loc - buf.size())).value();
+                 (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
         }
         case LexState::CommentStart: {
           if (c == '/') {
@@ -897,7 +897,7 @@ const Token &StreamLexer::read_token() {
           } else {
             /* Divide operator */
             m_pushback.push_back(c);
-            return (m_tok = Token(TT::Operator, Operator::Divide, m_loc))
+            return (m_tok = Token(tOper, Operator::Divide, m_loc))
                 .value();
           }
         }
@@ -908,12 +908,12 @@ const Token &StreamLexer::read_token() {
 
             if ((c = getc()) == EOF) {
               return reset_state(),
-                     (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
                          .value();
             }
           }
 
-          return (m_tok = Token(TT::Comment, buf, m_loc - buf.size())).value();
+          return (m_tok = Token(tNote, buf, m_loc - buf.size())).value();
         }
         case LexState::CommentMultiLine: {
           /* Automota for multi-line comments */
@@ -936,7 +936,7 @@ const Token &StreamLexer::read_token() {
               if (tmp == '/') {
                 level--;
                 if (level == 0) {
-                  return (m_tok = Token(TT::Comment, buf, m_loc - buf.size()))
+                  return (m_tok = Token(tNote, buf, m_loc - buf.size()))
                       .value();
                 } else {
                   buf += "*";
@@ -949,7 +949,7 @@ const Token &StreamLexer::read_token() {
               c = getc();
             } else if (c == EOF) {
               return reset_state(),
-                     (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
                          .value();
             } else {
               buf += c;
@@ -1019,10 +1019,10 @@ const Token &StreamLexer::read_token() {
 
           /* Character or string */
           if (buf.front() == '\'' && buf.size() == 2) {
-            return (m_tok = Token(TT::Char, std::string(1, buf[1]), m_loc - 2))
+            return (m_tok = Token(tChar, std::string(1, buf[1]), m_loc - 2))
                 .value();
           } else {
-            return (m_tok = Token(TT::String, buf.substr(1, buf.size() - 1),
+            return (m_tok = Token(tText, buf.substr(1, buf.size() - 1),
                                   m_loc - buf.size()))
                 .value();
           }
@@ -1051,7 +1051,7 @@ const Token &StreamLexer::read_token() {
           switch (state_parens) {
             case 0: {
               if (c == '\n') {
-                return (m_tok = Token(TT::MacroSingleLine, buf,
+                return (m_tok = Token(tMacr, buf,
                                       m_loc - buf.size() - 1))
                     .value();
               } else if (c != '(') {
@@ -1062,7 +1062,7 @@ const Token &StreamLexer::read_token() {
                 continue;
               } else {
                 return reset_state(),
-                       (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                       (m_tok = Token(tErro, buf, m_loc - buf.size()))
                            .value();
               }
             }
@@ -1074,7 +1074,7 @@ const Token &StreamLexer::read_token() {
 
               if (state_parens == 0) {
                 return (m_tok =
-                            Token(TT::MacroSingleLine, buf, m_loc - buf.size()))
+                            Token(tMacr, buf, m_loc - buf.size()))
                     .value();
               }
 
@@ -1093,7 +1093,7 @@ const Token &StreamLexer::read_token() {
 
             if (state_parens == 0) {
               return (m_tok =
-                          Token(TT::MacroBlock, buf, m_loc - buf.size() - 1))
+                          Token(tMacB, buf, m_loc - buf.size() - 1))
                   .value();
             }
 
@@ -1101,7 +1101,7 @@ const Token &StreamLexer::read_token() {
 
             if ((c = getc()) == EOF) {
               return reset_state(),
-                     (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
                          .value();
             }
           }
@@ -1113,7 +1113,7 @@ const Token &StreamLexer::read_token() {
             for (const char punc : punctors) {
               if (punc == buf[0]) {
                 m_pushback.push_back(c);
-                return (m_tok = Token(TT::Punctor, punctor_map.at(buf),
+                return (m_tok = Token(tPunc, punctor_map.at(buf),
                                       m_loc - buf.size()))
                     .value();
               }
@@ -1140,7 +1140,7 @@ const Token &StreamLexer::read_token() {
               m_pushback.push_back(buf.back());
               m_pushback.push_back(c);
               return (m_tok =
-                          Token(TT::Operator,
+                          Token(tOper,
                                 operator_map.at(buf.substr(0, buf.size() - 1)),
                                 m_loc - buf.size()))
                   .value();
@@ -1150,23 +1150,23 @@ const Token &StreamLexer::read_token() {
 
             if (buf.size() > 4) { /* Handle infinite error case */
               return reset_state(),
-                     (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+                     (m_tok = Token(tErro, buf, m_loc - buf.size()))
                          .value();
             }
 
             if ((c = getc()) == EOF) {
-              return (m_tok = Token(TT::Unknown, buf, m_loc - buf.size()))
+              return (m_tok = Token(tErro, buf, m_loc - buf.size()))
                   .value();
             }
           }
         }
       }
     }
-    m_tok = Token(TT::Eof, "", m_loc);
+    m_tok = Token(tEofF, "", m_loc);
     return m_tok.value();
   } catch (...) {
     reset_state();
-    m_tok = Token(TT::Unknown, buf, m_loc - buf.size());
+    m_tok = Token(tErro, buf, m_loc - buf.size());
 
     return m_tok.value();
   }
@@ -1184,7 +1184,7 @@ const Token &StreamLexer::peek() {
     read_token();
 
     if (ingore_comments) {
-      if (m_tok->type() != TT::Comment) return std::move(m_tok.value());
+      if (m_tok->type() != tNote) return std::move(m_tok.value());
     } else {
       return std::move(m_tok.value());
     }
@@ -1228,7 +1228,7 @@ bool StringLexer::QuickLex(const std::string &source_code,
     if (!lex.set_source(source_code, filename)) return false;
 
     Token tok;
-    while ((tok = lex.next()).type() != TT::Eof) tokens.push_back(tok);
+    while ((tok = lex.next()).type() != tEofF) tokens.push_back(tok);
 
     return true;
   } catch (std::exception &e) {

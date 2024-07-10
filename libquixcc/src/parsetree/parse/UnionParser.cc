@@ -40,7 +40,7 @@ using namespace libquixcc;
 static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
                               std::shared_ptr<UnionFieldNode> &node) {
   Token tok = scanner->next();
-  if (tok.type() != TT::Identifier) {
+  if (tok.type() != tName) {
     LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_IDENTIFIER] << tok
                << std::endl;
     return false;
@@ -68,7 +68,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
     node = std::make_shared<UnionFieldNode>(name, type);
     return true;
   } else if (tok.is<Operator>(Operator::Assign)) {
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma)},
+    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Comma)},
                     value)) {
       LOG(ERROR) << core::feedback[UNION_FIELD_INIT_ERR] << name << tok
                  << std::endl;
@@ -95,7 +95,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
 bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
                             std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
-  if (tok.type() != TT::Identifier) {
+  if (tok.type() != tName) {
     LOG(ERROR) << core::feedback[UNION_DECL_MISSING_IDENTIFIER] << tok
                << std::endl;
     return false;
@@ -210,7 +210,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
       tok = scanner->next();
       if (tok.is<Punctor>(Punctor::CloseBracket)) break;
 
-      if (tok.type() != TT::Identifier) {
+      if (tok.type() != tName) {
         LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_IDENTIFIER] << tok
                    << std::endl;
         return false;

@@ -648,7 +648,7 @@ bool libquixcc::PrepEngine::ParseLicense(const Token &tok,
   lexer->set_source(parameter, "<license-macro>");
 
   Token tok2 = lexer->next();
-  if (tok2.type() != TT::String) {
+  if (tok2.type() != tText) {
     LOG(ERROR) << "Invalid SPDX license identifier: '{}'. All License macros "
                   "must use a valid SPDX license identifier."
                << parameter << tok << std::endl;
@@ -674,14 +674,14 @@ bool libquixcc::PrepEngine::ParseLicense(const Token &tok,
       identifier += '_';
   }
 
-  emit(Token(TT::Keyword, Keyword::Pub));
-  emit(Token(TT::Keyword, Keyword::Let));
-  emit(Token(TT::Identifier, identifier));
-  emit(Token(TT::Punctor, Punctor::Colon));
-  emit(Token(TT::Identifier, "string"));
-  emit(Token(TT::Operator, Operator::Assign));
-  emit(Token(TT::String, lower));
-  emit(Token(TT::Punctor, Punctor::Semicolon));
+  emit(Token(tKeyW, Keyword::Pub));
+  emit(Token(tKeyW, Keyword::Let));
+  emit(Token(tName, identifier));
+  emit(Token(tPunc, Punctor::Colon));
+  emit(Token(tName, "string"));
+  emit(Token(tOper, Operator::Assign));
+  emit(Token(tText, lower));
+  emit(Token(tPunc, Punctor::Semicolon));
 
   return true;
 }

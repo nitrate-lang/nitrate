@@ -53,7 +53,7 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   group = std::make_shared<BlockNode>();
 
-  while ((tok = scanner->peek()).type() != TT::Eof) {
+  while ((tok = scanner->peek()).type() != tEofF) {
     if (single_stmt && group->m_stmts.size() > 0) break;
 
     if (expect_braces) {
@@ -69,9 +69,9 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
       continue;
     }
 
-    if (tok.type() != TT::Keyword) {
+    if (tok.type() != tKeyW) {
       std::shared_ptr<ExprNode> expr;
-      if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Semicolon)},
+      if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
                       expr)) {
         LOG(ERROR) << "Error parsing expression in block statement." << tok
                    << std::endl;

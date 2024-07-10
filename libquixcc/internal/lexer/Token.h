@@ -185,36 +185,21 @@ enum class Operator {
   Bitsizeof = 93,
 };
 
-enum class TT {
-  Eof = 0,
-  Unknown = 1,
-  Identifier = 2,
-  Keyword = 3,
-  Operator = 4,
-  Punctor = 5,
-  Integer = 6,
-  Float = 7,
-  String = 8,
-  Char = 9,
-  MacroBlock = 10,
-  MacroSingleLine = 11,
-  Comment = 12,
-};
-
-/*
-  tEofF = 0,
-  tErro = 1,
-  tName = 2,
-  tKeyW = 3,
-  tOper = 4,
-  tPunc = 5,
-  tIntL = 6,
-  tNumL = 7,
-  tText = 8,
-  tChar = 9,
+enum TT {
+  tEofF = 00,
+  tErro = 01,
+  tName = 02,
+  tKeyW = 03,
+  tOper = 04,
+  tPunc = 05,
+  tIntL = 06,
+  tNumL = 07,
+  tText = 08,
+  tChar = 09,
   tMacB = 10,
   tMacr = 11,
-  tNote = 12,*/
+  tNote = 12,
+};
 
 class TLCString {
   static thread_local std::map<std::string, std::unique_ptr<char[]>> m_data;
@@ -304,7 +289,7 @@ class Token {
   std::string serialize_human_readable() const;
 
  public:
-  Token(TT type = TT::Unknown, TokVal value = TokVal(), Loc loc = Loc());
+  Token(TT type = tErro, TokVal value = TokVal(), Loc loc = Loc());
 
   Token(const Token &tok) = default;
   Token(Token &&tok) {
@@ -320,13 +305,13 @@ class Token {
   template <typename T, typename V = T>
   bool is(V val) const {
     if constexpr (std::is_same_v<T, std::string>)
-      return m_type == TT::Identifier && as<std::string>() == val;
+      return m_type == tName && as<std::string>() == val;
     else if constexpr (std::is_same_v<T, Keyword>)
-      return m_type == TT::Keyword && as<Keyword>() == val;
+      return m_type == tKeyW && as<Keyword>() == val;
     else if constexpr (std::is_same_v<T, Punctor>)
-      return m_type == TT::Punctor && as<Punctor>() == val;
+      return m_type == tPunc && as<Punctor>() == val;
     else if constexpr (std::is_same_v<T, Operator>)
-      return m_type == TT::Operator && as<Operator>() == val;
+      return m_type == tOper && as<Operator>() == val;
 
     static_assert(std::is_same_v<T, T>, "Invalid type");
   }
@@ -359,16 +344,16 @@ class Token {
     if (m_type != rhs.m_type) return false;
 
     switch (m_type) {
-      case TT::Identifier:
-      case TT::String:
-      case TT::Char:
-      case TT::Integer:
+      case tName:
+      case tText:
+      case tChar:
+      case tIntL:
         return as<std::string>() == rhs.as<std::string>();
-      case TT::Keyword:
+      case tKeyW:
         return as<Keyword>() == rhs.as<Keyword>();
-      case TT::Operator:
+      case tOper:
         return as<Operator>() == rhs.as<Operator>();
-      case TT::Punctor:
+      case tPunc:
         return as<Punctor>() == rhs.as<Punctor>();
       default:
         return true;
@@ -378,16 +363,16 @@ class Token {
   inline bool operator<(const Token &rhs) const {
     if (m_type != rhs.m_type) return m_type < rhs.m_type;
     switch (m_type) {
-      case TT::Identifier:
-      case TT::String:
-      case TT::Char:
-      case TT::Integer:
+      case tName:
+      case tText:
+      case tChar:
+      case tIntL:
         return as<std::string>() < rhs.as<std::string>();
-      case TT::Keyword:
+      case tKeyW:
         return as<Keyword>() < rhs.as<Keyword>();
-      case TT::Operator:
+      case tOper:
         return as<Operator>() < rhs.as<Operator>();
-      case TT::Punctor:
+      case tPunc:
         return as<Punctor>() < rhs.as<Punctor>();
       default:
         return false;

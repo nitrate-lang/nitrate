@@ -40,7 +40,7 @@ using namespace libquixcc;
 static bool parse_group_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
                               std::shared_ptr<GroupFieldNode> &node) {
   Token tok = scanner->next();
-  if (tok.type() != TT::Identifier) {
+  if (tok.type() != tName) {
     LOG(ERROR) << core::feedback[GROUP_FIELD_MISSING_IDENTIFIER] << tok
                << std::endl;
     return false;
@@ -68,7 +68,7 @@ static bool parse_group_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
     node = std::make_shared<GroupFieldNode>(name, type);
     return true;
   } else if (tok.is<Operator>(Operator::Assign)) {
-    if (!parse_expr(job, scanner, {Token(TT::Punctor, Punctor::Comma)},
+    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Comma)},
                     value)) {
       LOG(ERROR) << core::feedback[GROUP_FIELD_INIT_ERR] << name << tok
                  << std::endl;
@@ -95,7 +95,7 @@ static bool parse_group_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
 bool libquixcc::parse_group(quixcc_job_t &job, libquixcc::Scanner *scanner,
                             std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
-  if (tok.type() != TT::Identifier) {
+  if (tok.type() != tName) {
     LOG(ERROR) << core::feedback[GROUP_DECL_MISSING_IDENTIFIER] << tok
                << std::endl;
     return false;
@@ -210,7 +210,7 @@ bool libquixcc::parse_group(quixcc_job_t &job, libquixcc::Scanner *scanner,
       tok = scanner->next();
       if (tok.is<Punctor>(Punctor::CloseBracket)) break;
 
-      if (tok.type() != TT::Identifier) {
+      if (tok.type() != tName) {
         LOG(ERROR) << core::feedback[GROUP_DEF_EXPECTED_IDENTIFIER] << tok
                    << std::endl;
         return false;
