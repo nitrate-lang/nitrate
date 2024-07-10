@@ -36,7 +36,7 @@
 #error "This header requires C++"
 #endif
 
-#include <lexer/Lex.h>
+#include <quixcc/lexer/Lex.h>
 
 #include <string_view>
 #include <vector>

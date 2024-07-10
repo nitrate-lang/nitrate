@@ -31,28 +31,28 @@
 
 #define QUIXCC_INTERNAL
 
-#include <IR/Q/QIR.h>
-#include <IR/delta/DeltaIR.h>
-#include <LibMacro.h>
-#include <core/Exception.h>
-#include <core/Logger.h>
+#include <quixcc/IR/Q/QIR.h>
+#include <quixcc/IR/delta/DeltaIR.h>
+#include <core/Macro.h>
+#include <quixcc/core/Exception.h>
+#include <quixcc/core/Logger.h>
 #include <execinfo.h>
-#include <generate/Generate.h>
-#include <lexer/Lex.h>
-#include <libquixcc.h>
-#include <llvm/LLVMWrapper.h>
+#include <quixcc/generate/Generate.h>
+#include <quixcc/lexer/Lex.h>
+#include <core/QuixJob.h>
+#include <quixcc/llvm/LLVMWrapper.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
-#include <mutate/Routine.h>
-#include <optimizer/Optimizer.h>
-#include <parsetree/Parser.h>
-#include <preprocessor/Preprocessor.h>
-#include <preprocessor/QSys.h>
+#include <quixcc/mutate/Routine.h>
+#include <quixcc/optimizer/Optimizer.h>
+#include <quixcc/parsetree/Parser.h>
+#include <quixcc/preprocessor/Preprocessor.h>
+#include <quixcc/preprocessor/QSys.h>
 #include <quixcc/Quix.h>
 #include <setjmp.h>
 #include <signal.h>
-#include <solver/Solver.h>
+#include <quixcc/solver/Solver.h>
 
 #include <atomic>
 #include <boost/uuid/random_generator.hpp>

@@ -36,8 +36,8 @@
 #error "This header requires C++"
 #endif
 
-#include <llvm/LLVMWrapper.h>
-#include <preprocessor/Preprocessor.h>
+#include <quixcc/llvm/LLVMWrapper.h>
+#include <quixcc/preprocessor/Preprocessor.h>
 #include <quixcc/Quix.h>
 
 #include <atomic>

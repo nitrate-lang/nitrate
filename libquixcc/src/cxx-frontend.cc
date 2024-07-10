@@ -31,7 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <LibMacro.h>
+#include <core/Macro.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
 #include <quixcc/EngineAPI.h>
