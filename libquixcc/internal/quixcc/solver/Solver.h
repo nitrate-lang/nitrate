@@ -50,7 +50,7 @@
 
 namespace libquixcc {
 namespace solver {
-typedef bool (*SolPassFunc)(quixcc_job_t &job,
+typedef bool (*SolPassFunc)(quixcc_cc_job_t &job,
                             std::unique_ptr<ir::q::QModule> &ir);
 
 struct SolPassVersion {
@@ -115,7 +115,7 @@ class SolPass {
     return m_postpass_suggests;
   }
 
-  bool operator()(quixcc_job_t &job, std::unique_ptr<ir::q::QModule> &ir) {
+  bool operator()(quixcc_cc_job_t &job, std::unique_ptr<ir::q::QModule> &ir) {
     return m_func(job, ir);
   }
 
@@ -154,7 +154,7 @@ class SolPassManager {
   std::vector<SolPassUUID> &current_phase() { return m_phase; }
   bool verify_phase_order();
   void optimize_phase_order();
-  bool run_passes(quixcc_job_t &job, std::unique_ptr<ir::q::QModule> &ir);
+  bool run_passes(quixcc_cc_job_t &job, std::unique_ptr<ir::q::QModule> &ir);
 };
 
 class SolPassMgrFactory {

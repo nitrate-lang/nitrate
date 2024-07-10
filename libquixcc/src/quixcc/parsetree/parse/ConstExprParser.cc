@@ -40,7 +40,7 @@
 using namespace libquixcc;
 
 bool libquixcc::parse_const_expr(
-    quixcc_job_t &job, libquixcc::Scanner *scanner, Token terminator,
+    quixcc_cc_job_t &job, libquixcc::Scanner *scanner, Token terminator,
     std::shared_ptr<libquixcc::ConstExprNode> &node) {
   std::stack<std::shared_ptr<ConstExprNode>> stack;
 

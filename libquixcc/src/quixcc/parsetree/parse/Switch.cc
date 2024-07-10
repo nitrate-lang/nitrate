@@ -37,11 +37,10 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_switch(quixcc_job_t &job, libquixcc::Scanner *scanner,
+bool libquixcc::parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                              std::shared_ptr<libquixcc::StmtNode> &node) {
   std::shared_ptr<ExprNode> cond;
-  if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace)},
-                  cond)) {
+  if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace)}, cond)) {
     return false;
   }
 
@@ -91,8 +90,7 @@ bool libquixcc::parse_switch(quixcc_job_t &job, libquixcc::Scanner *scanner,
     scanner->next();
 
     std::shared_ptr<ExprNode> case_expr;
-    if (!parse_expr(job, scanner, {Token(tPunc, Colon)},
-                    case_expr)) {
+    if (!parse_expr(job, scanner, {Token(tPunc, Colon)}, case_expr)) {
       return false;
     }
 

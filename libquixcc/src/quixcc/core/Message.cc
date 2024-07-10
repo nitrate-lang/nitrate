@@ -36,7 +36,7 @@
 
 LOGGER_SETUP();  // Define the logger
 
-void libquixcc::LoggerGroup::push_message_to_job(quixcc_job_t &job,
+void libquixcc::LoggerGroup::push_message_to_job(quixcc_cc_job_t &job,
                                                  libquixcc::E type,
                                                  const std::string &message) {
   // Create a new message

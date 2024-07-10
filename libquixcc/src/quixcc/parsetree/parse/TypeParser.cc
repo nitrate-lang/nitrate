@@ -63,7 +63,7 @@ static std::map<std::string, shared<TypeNode>> primitives = {
     {"void", std::make_shared<VoidTypeNode>()},
     {"null", std::make_shared<NullTypeNode>()}};
 
-bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
+bool libquixcc::parse_type(quixcc_cc_job_t &job, Scanner *src,
                            shared<TypeNode> &node) {
   /** QUIX TYPE PARSER
    *
@@ -253,8 +253,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
       goto error_end;
     }
 
-    if (!parse_const_expr(job, src, Token(tPunc, CloseBracket),
-                          size)) {
+    if (!parse_const_expr(job, src, Token(tPunc, CloseBracket), size)) {
       ERRORS(TYPE_EXPECTED_CONST_EXPR);
       goto error_end;
     }

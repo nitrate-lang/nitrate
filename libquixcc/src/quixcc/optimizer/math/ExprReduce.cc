@@ -365,7 +365,7 @@ static void reduce_expr(Expr **expr) {
 }
 
 bool libquixcc::optimizer::passes::ExprReduce(
-    quixcc_job_t &job, std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
+    quixcc_cc_job_t &job, std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
   auto filter_expr = [](const ir::q::Value *val) -> IterOp {
     /* Test if the value is an expression */
     if (dynamic_cast<const ir::q::Expr *>(val) == nullptr) {

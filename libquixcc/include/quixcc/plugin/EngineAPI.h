@@ -32,7 +32,7 @@
 #ifndef __QUIXCC_PREPROCESSOR_ENGINE_API_H__
 #define __QUIXCC_PREPROCESSOR_ENGINE_API_H__
 
-#include <quixcc/Types.h>
+#include <quixcc/types/All.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -51,35 +51,36 @@ extern "C" {
 /// @param impl Implementation of the QSys Call
 /// @return true if successful, false otherwise
 /// @note This function is thread-safe.
-bool quixcc_qsys_add(quixcc_job_t* job, uint32_t num, quixcc_qsys_impl_t impl);
+bool quixcc_qsys_add(quixcc_cc_job_t* job, uint32_t num,
+                     quixcc_qsys_impl_t impl);
 
 /// @brief Remove a QSys Call from the preprocessor engine.
 /// @param engine QUIX Job
 /// @param num The unique number of the QSys Call
 /// @return true if successful, false otherwise
 /// @note This function is thread-safe.
-bool quixcc_qsys_remove(quixcc_job_t* job, uint32_t num);
+bool quixcc_qsys_remove(quixcc_cc_job_t* job, uint32_t num);
 
 /// @brief Check if a QSys Call exists in the preprocessor engine.
 /// @param engine QUIX Job
 /// @param num The unique number of the QSys Call
 /// @return true if the QSys Call exists, false otherwise
 /// @note This function is thread-safe.
-bool quixcc_qsys_exists(quixcc_job_t* job, uint32_t num);
+bool quixcc_qsys_exists(quixcc_cc_job_t* job, uint32_t num);
 
 /// @brief Get a QSys Call from the preprocessor engine.
 /// @param engine QUIX Job
 /// @param num The unique number of the QSys Call
 /// @return The QSys Call implementation, or NULL if it does not exist
 /// @note This function is thread-safe.
-quixcc_qsys_impl_t quixcc_qsys_get(quixcc_job_t* job, uint32_t num);
+quixcc_qsys_impl_t quixcc_qsys_get(quixcc_cc_job_t* job, uint32_t num);
 
 /// @brief List all QSys Calls in the preprocessor engine.
 /// @param engine QUIX Job
 /// @param count The number of QSys Calls
 /// @return An array of QSys Call numbers
 /// @note This function is thread-safe.
-uint32_t* quixcc_qsys_list(quixcc_job_t* job, uint32_t* count);
+uint32_t* quixcc_qsys_list(quixcc_cc_job_t* job, uint32_t* count);
 
 ///=============================================================================
 /// END: QUIXCC QSYS REGISTRY
@@ -93,7 +94,7 @@ uint32_t* quixcc_qsys_list(quixcc_job_t* job, uint32_t* count);
 /// @param engine QUIX Engine
 /// @return The job context (never NULL)
 /// @note This function is thread-safe.
-quixcc_job_t* quixcc_engine_job(quixcc_engine_t* engine);
+quixcc_cc_job_t* quixcc_engine_job(quixcc_engine_t* engine);
 
 /// @brief Set the include path for the engine.
 /// @param engine QUIX Engine

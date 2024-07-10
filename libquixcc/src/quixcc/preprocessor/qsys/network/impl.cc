@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <quixcc/plugin/EngineAPI.h>
 #include <quixcc/preprocessor/QSys.h>
-#include <quixcc/EngineAPI.h>
 
 QSYS_NOT_IMPLEMENTED(qsys_open_network_connection);
 QSYS_NOT_IMPLEMENTED(qsys_close_network_connection);

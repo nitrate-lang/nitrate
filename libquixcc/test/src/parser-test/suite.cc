@@ -34,24 +34,24 @@
 
 bool libquixcc::test::parser_test_suite() {
   for (const auto vec : libquixcc::test::parser_test_vectors) {
-    quixcc_job_t *job = nullptr;
+    quixcc_cc_job_t *job = nullptr;
     std::shared_ptr<libquixcc::BlockNode> node;
 
     auto scanner = std::make_unique<MockScanner>(vec.tokens);
-    job = quixcc_new();
+    job = quixcc_cc_new();
 
     if (!parse(*job, scanner.get(), node, false)) {
-      quixcc_dispose(job);
+      quixcc_cc_dispose(job);
       return false;
     }
 
     auto serial = node->to_string();
     if (vec.ast_serial != node->to_string()) {
-      quixcc_dispose(job);
+      quixcc_cc_dispose(job);
       return false;
     }
 
-    quixcc_dispose(job);
+    quixcc_cc_dispose(job);
   }
   return true;
 }

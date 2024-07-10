@@ -36,8 +36,8 @@
 #error "This header requires C++"
 #endif
 
+#include <quixcc/Library.h>
 #include <quixcc/parsetree/Parser.h>
-#include <quixcc/Quix.h>
 
 #include <functional>
 #include <memory>
@@ -45,26 +45,26 @@
 
 namespace libquixcc {
 namespace mutate {
-void DiscoverNamedConstructs(quixcc_job_t *job,
+void DiscoverNamedConstructs(quixcc_cc_job_t *job,
                              const std::shared_ptr<libquixcc::Ptree> ptree);
-void ExtrapolateEnumFields(quixcc_job_t *job,
+void ExtrapolateEnumFields(quixcc_cc_job_t *job,
                            const std::shared_ptr<libquixcc::Ptree> ptree);
-void ResolveNamedConstructs(quixcc_job_t *job,
+void ResolveNamedConstructs(quixcc_cc_job_t *job,
                             const std::shared_ptr<libquixcc::Ptree> ptree);
-void MethodToFunc(quixcc_job_t *job,
+void MethodToFunc(quixcc_cc_job_t *job,
                   const std::shared_ptr<libquixcc::Ptree> ptree);
-void SubsystemCollapse(quixcc_job_t *job,
+void SubsystemCollapse(quixcc_cc_job_t *job,
                        const std::shared_ptr<libquixcc::Ptree> ptree);
 }  // namespace mutate
 
-typedef std::function<void(quixcc_job_t *job,
+typedef std::function<void(quixcc_cc_job_t *job,
                            std::shared_ptr<libquixcc::Ptree>)>
     PtreeMutateRoutine;
 
 class Mutation {
  public:
   /// @brief Run rountines in the order they were added.
-  void run(quixcc_job_t *job, std::shared_ptr<libquixcc::Ptree> ptree) {
+  void run(quixcc_cc_job_t *job, std::shared_ptr<libquixcc::Ptree> ptree) {
     for (auto routine : m_routines) {
       routine(job, ptree);
     }

@@ -49,7 +49,7 @@
 
 using namespace libquixcc;
 
-PrepEngine::PrepEngine(quixcc_job_t &_job) {
+PrepEngine::PrepEngine(quixcc_cc_job_t &_job) {
   /*============== INITIALIZE PREPROCESSOR ================*/
 
   job = &_job;
@@ -236,7 +236,7 @@ void PrepEngine::set_source(PrepEngine::rstr src, PrepEngine::rstr filename) {
   }
 }
 
-quixcc_job_t *libquixcc::PrepEngine::get_job() const { return job; }
+quixcc_cc_job_t *libquixcc::PrepEngine::get_job() const { return job; }
 
 void PrepEngine::push(Token tok) {
   /*============== PUBLIC INTERFACE FOR PUSHING TOKEN ================*/
@@ -493,8 +493,7 @@ Token PrepEngine::read_token() {
 end:
   /*============== VERIFY USE DIRECTIVE IS PRESENT ================*/
   if (m_we_are_root && !job->version) {
-    if (tok.type() != tMacr ||
-        !tok.as<std::string>().starts_with("use ")) {
+    if (tok.type() != tMacr || !tok.as<std::string>().starts_with("use ")) {
       LOG(ERROR) << "Language version must be specified before any other "
                     "directives or code. Example: `@use \"v1.0\";`"
                  << tok << std::endl;

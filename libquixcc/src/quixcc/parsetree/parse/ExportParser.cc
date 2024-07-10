@@ -37,7 +37,7 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner,
+bool libquixcc::parse_pub(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                           std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->peek();
 

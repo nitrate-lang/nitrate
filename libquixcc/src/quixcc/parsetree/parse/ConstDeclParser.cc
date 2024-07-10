@@ -38,7 +38,7 @@
 using namespace libquixcc;
 
 static bool parse_decl(
-    quixcc_job_t &job, Token tok, libquixcc::Scanner *scanner,
+    quixcc_cc_job_t &job, Token tok, libquixcc::Scanner *scanner,
     std::pair<std::string, std::shared_ptr<TypeNode>> &decl) {
   std::string name = tok.as<std::string>();
 
@@ -63,7 +63,7 @@ static bool parse_decl(
 }
 
 bool libquixcc::parse_const(
-    quixcc_job_t &job, libquixcc::Scanner *scanner,
+    quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     std::vector<std::shared_ptr<libquixcc::StmtNode>> &nodes) {
   Token tok = scanner->next();
 
@@ -122,8 +122,7 @@ bool libquixcc::parse_const(
 
     // Parse initializer
     std::shared_ptr<ExprNode> init;
-    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)},
-                    init))
+    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, init))
       return false;
 
     tok = scanner->next();

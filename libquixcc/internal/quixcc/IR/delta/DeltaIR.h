@@ -195,7 +195,7 @@ class IRDelta : public libquixcc::ir::IRModule<IR::Delta, const RootNode *> {
   void clear_tags() { m_tags.clear(); }
   std::set<std::string> &get_tags() { return m_tags; }
 
-  bool from_qir(quixcc_job_t *job,
+  bool from_qir(quixcc_cc_job_t *job,
                 const std::unique_ptr<libquixcc::ir::q::QModule> &qir);
 };
 }  // namespace delta

@@ -33,7 +33,7 @@
 #include <quixcc/solver/Solver.h>
 
 bool libquixcc::solver::passes::NumberIntrinsicSolver(
-    quixcc_job_t &job, libquixcc::solver::passes::qmod ir) {
+    quixcc_cc_job_t &job, libquixcc::solver::passes::qmod ir) {
   (void)job;
   (void)ir;
 

@@ -36,6 +36,7 @@
 #error "This header requires C++"
 #endif
 
+#include <llvm/IR/Value.h>
 #include <quixcc/IR/delta/Cast.h>
 #include <quixcc/IR/delta/Control.h>
 #include <quixcc/IR/delta/DeltaIR.h>
@@ -45,7 +46,6 @@
 #include <quixcc/IR/delta/Segment.h>
 #include <quixcc/IR/delta/Type.h>
 #include <quixcc/IR/delta/Variable.h>
-#include <llvm/IR/Value.h>
 #include <quixcc/llvm/LLVMWrapper.h>
 
 #include <iostream>

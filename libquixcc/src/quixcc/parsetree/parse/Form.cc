@@ -37,7 +37,7 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
+bool libquixcc::parse_form(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                            std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   bool has_parens = false;
@@ -61,8 +61,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   std::shared_ptr<ExprNode> expr;
   if (has_parens) {
-    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)},
-                    expr)) {
+    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, expr)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
       return false;
     }
@@ -74,9 +73,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
   } else {
     if (!parse_expr(job, scanner,
-                    {Token(tPunc, OpenBrace),
-                     Token(tOper, Arrow)},
-                    expr)) {
+                    {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, expr)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
       return false;
     }

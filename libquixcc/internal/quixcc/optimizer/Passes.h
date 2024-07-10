@@ -40,7 +40,7 @@
 
 namespace libquixcc::optimizer::passes {
 /*================== MATH OPTIMIZATIONS ======================*/
-bool ExprReduce(quixcc_job_t &job, std::unique_ptr<ir::q::QModule> &ir);
+bool ExprReduce(quixcc_cc_job_t &job, std::unique_ptr<ir::q::QModule> &ir);
 
 /*================== MEMORY OPTIMIZATIONS ====================*/
 

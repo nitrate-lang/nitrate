@@ -11,11 +11,11 @@
 TEST(libquixcc, library_init) { ASSERT_TRUE(quixcc_init()); }
 
 TEST(libquixcc, create_build_context) {
-  quixcc_job_t *job = quixcc_new();
+  quixcc_cc_job_t *job = quixcc_cc_new();
 
   ASSERT_TRUE(job != nullptr);
 
-  ASSERT_TRUE(quixcc_dispose(job));
+  ASSERT_TRUE(quixcc_cc_dispose(job));
 }
 
 TEST(libquixcc_lexer, all_tests) {

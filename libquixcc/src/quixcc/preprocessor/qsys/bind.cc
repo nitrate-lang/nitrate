@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <quixcc/plugin/EngineAPI.h>
 #include <quixcc/preprocessor/QSys.h>
-#include <quixcc/EngineAPI.h>
 
 #include <unordered_map>
 
@@ -93,7 +93,7 @@
 #define QSYS_SET_GLOBAL_META_VARIABLE 0x0FF8
 #define QSYS_GET_GLOBAL_META_VARIABLE 0x0FF9
 
-void libquixcc::qsys::bind_qsyscalls(quixcc_job_t *job) {
+void libquixcc::qsys::bind_qsyscalls(quixcc_cc_job_t *job) {
   const std::unordered_map<uint32_t, quixcc_qsys_impl_t> qsyscalls = {
       /*==================== TEXT IO ====================*/
       {QSYS_WRITE_STDOUT, qsys_write_stdout},

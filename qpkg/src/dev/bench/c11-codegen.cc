@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quixcc/Quix.h>
+#include <quixcc/Library.h>
 
 #include <dev/bench/bench.hh>
 #include <chrono>
@@ -63,7 +63,7 @@ bool do_bench_c11(std::chrono::system_clock::time_point &start,
 
   start = std::chrono::system_clock::now();
   const char *options[] = {"-emit-c11", NULL};
-  char **result = quixcc_compile(code, outf, options);
+  char **result = quixcc_cc_compile(code, outf, options);
   if (result != NULL) {
     fclose(outf);
     fclose(code);

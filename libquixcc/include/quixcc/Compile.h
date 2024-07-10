@@ -29,10 +29,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_H__
-#define __QUIXCC_H__
+#ifndef __QUIXCC_COMPILE_H__
+#define __QUIXCC_COMPILE_H__
 
-#include <quixcc/Types.h>
+#include <quixcc/types/All.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -42,27 +42,15 @@ extern "C" {
 #endif
 
 /**
- * @brief Initialize the QUIX compiler library.
- *
- * Initializes the QUIX compiler library and must be called before all
- * other QUIX library functions.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note Initialization more than once is a no-op.
- */
-bool quixcc_init();
-
-/**
  * @brief Create a new compiler job with default settings.
  *
  * @return A pointer to the newly created compiler job.
  *
  * @note The caller is responsible for disposing of the job using
- *       `quixcc_dispose()`.
+ *       `quixcc_cc_dispose()`.
  * @note This function is thread-safe.
  */
-quixcc_job_t *quixcc_new();
+quixcc_cc_job_t *quixcc_cc_new();
 
 /**
  * @brief Dispose a compiler job.
@@ -78,7 +66,7 @@ quixcc_job_t *quixcc_new();
  * @note This function will return false if the job is locked.
  * @note If `!job`, this function is a no-op.
  */
-bool quixcc_dispose(quixcc_job_t *job);
+bool quixcc_cc_dispose(quixcc_cc_job_t *job);
 
 /**
  * @brief Set an option for a compiler job.
@@ -94,7 +82,7 @@ bool quixcc_dispose(quixcc_job_t *job);
  * @note If `!job || !option`, this function is a no-op.
  * @note This function will block until the job is unlocked.
  */
-void quixcc_option(quixcc_job_t *job, const char *option, bool enable);
+void quixcc_cc_option(quixcc_cc_job_t *job, const char *option, bool enable);
 
 /**
  * @brief Set the input stream for a compiler job.
@@ -111,7 +99,7 @@ void quixcc_option(quixcc_job_t *job, const char *option, bool enable);
  *          readable for the ENTIRE duration of the job.
  * @note This function will block until the job is unlocked.
  */
-void quixcc_source(quixcc_job_t *job, FILE *in, const char *filename);
+void quixcc_cc_source(quixcc_cc_job_t *job, FILE *in, const char *filename);
 
 /**
  * @brief Set the LLVM Target Triple for a compiler job.
@@ -130,7 +118,7 @@ void quixcc_source(quixcc_job_t *job, FILE *in, const char *filename);
  * @note This function is thread-safe.
  * @note This function will block until the job is unlocked.
  */
-bool quixcc_target(quixcc_job_t *job, const char *llvm_triple);
+bool quixcc_cc_target(quixcc_cc_job_t *job, const char *llvm_triple);
 
 /**
  * @brief Set the LLVM Target CPU for a compiler job.
@@ -147,7 +135,7 @@ bool quixcc_target(quixcc_job_t *job, const char *llvm_triple);
  *          support.
  * @note This function will block until the job is unlocked.
  */
-bool quixcc_cpu(quixcc_job_t *job, const char *cpu);
+bool quixcc_cc_cpu(quixcc_cc_job_t *job, const char *cpu);
 
 /**
  * @brief Set the output stream for a compiler job.
@@ -165,7 +153,7 @@ bool quixcc_cpu(quixcc_job_t *job, const char *cpu);
  * @note This function is thread-safe.
  * @note This function will block until the job is unlocked.
  */
-void quixcc_output(quixcc_job_t *job, FILE *out, FILE **old_out);
+void quixcc_cc_output(quixcc_cc_job_t *job, FILE *out, FILE **old_out);
 
 /**
  * @brief Run a compiler job.
@@ -178,7 +166,7 @@ void quixcc_output(quixcc_job_t *job, FILE *out, FILE **old_out);
  * @note If `!job`, this function is a no-op.
  * @note This function will block until the job is unlocked.
  */
-bool quixcc_run(quixcc_job_t *job);
+bool quixcc_cc_run(quixcc_cc_job_t *job);
 
 /**
  * @brief Get the result of a compiler job.
@@ -194,7 +182,7 @@ bool quixcc_run(quixcc_job_t *job);
  * @note The result is valid until the job is disposed.
  * @note If `!job`, this function is a no-op.
  */
-const quixcc_status_t *quixcc_status(quixcc_job_t *job);
+const quixcc_status_t *quixcc_cc_status(quixcc_cc_job_t *job);
 
 /**
  * @brief Perform a one-shot compilation.
@@ -224,7 +212,7 @@ const quixcc_status_t *quixcc_status(quixcc_job_t *job);
  *          writable for the ENTIRE duration of the compilation.
  * @note If `!in || !out`, this function is a no-op and returns NULL.
  */
-char **quixcc_compile(FILE *in, FILE *out, const char *options[]);
+char **quixcc_cc_compile(FILE *in, FILE *out, const char *options[]);
 
 ///===================================================================================================
 /// BEGIN: LANGUAGE STUFF
@@ -239,40 +227,40 @@ char **quixcc_compile(FILE *in, FILE *out, const char *options[]);
  * @note This function is thread-safe.
  * @note If `!mangled`, this function is a no-op and returns NULL.
  */
-char *quixcc_demangle(const char *mangled);
+char *quixcc_cc_demangle(const char *mangled);
 
 /// @brief Set the lexer configuration for a compiler job.
 /// @param job The compiler job.
 /// @param config The lexer configuration.
 /// @note This function is thread-safe.
-void quixcc_lexconf(quixcc_job_t *job, quixcc_lexer_config_t config);
+void quixcc_cc_lexconf(quixcc_cc_job_t *job, quixcc_lexer_config_t config);
 
 /// @brief Get the next token from the lexer.
 /// @param job The compiler job.
 /// @return The next token from the lexer.
 /// @warning This function is not thread-safe on the same job context, but is
 /// thread-safe across different job contexts.
-quixcc_tok_t quixcc_next(quixcc_job_t *job);
+quixcc_tok_t quixcc_cc_next(quixcc_cc_job_t *job);
 
 /// @brief Peek at the next token from the lexer.
 /// @param job The compiler job.
 /// @return The next token from the lexer.
 /// @warning This function is not thread-safe on the same job context, but is
 /// thread-safe across different job contexts.
-quixcc_tok_t quixcc_peek(quixcc_job_t *job);
+quixcc_tok_t quixcc_cc_peek(quixcc_cc_job_t *job);
 
 /// @brief Compare two tokens for equality.
 /// @param a The first token.
 /// @param b The second token.
 /// @return true if the tokens are equal, false otherwise.
 /// @note This function is thread-safe.
-bool quixcc_tokeq(const quixcc_tok_t a, const quixcc_tok_t b);
+bool quixcc_cc_tokeq(const quixcc_tok_t a, const quixcc_tok_t b);
 
 /// @brief Check if a token is valid (no error occurred).
 /// @param tok The token to check.
 /// @return true if the token is valid, false otherwise.
 /// @note This function is thread-safe.
-static inline bool quixcc_lex_ok(const quixcc_tok_t *tok) {
+static inline bool quixcc_cc_lex_ok(const quixcc_tok_t *tok) {
   return tok->ty > QUIXCC_LEX_UNK;
 }
 
@@ -281,8 +269,8 @@ static inline bool quixcc_lex_ok(const quixcc_tok_t *tok) {
 /// @param ty The type to check against.
 /// @return true if the token is of the specified type, false otherwise.
 /// @note This function is thread-safe.
-static inline bool quixcc_lex_is(const quixcc_tok_t *tok,
-                                 quixcc_lex_type_t ty) {
+static inline bool quixcc_cc_lex_is(const quixcc_tok_t *tok,
+                                    quixcc_lex_type_t ty) {
   return tok->ty == ty;
 }
 
@@ -292,7 +280,7 @@ static inline bool quixcc_lex_is(const quixcc_tok_t *tok,
 /// @param tok The token to release.
 /// @note This function is not thread-safe on the same job context, but is
 /// thread-safe across different job contexts.
-void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok);
+void quixcc_cc_tok_release(quixcc_cc_job_t *job, quixcc_tok_t *tok);
 
 /// @brief Get raw string representation of a token.
 /// @param job The compiler job.
@@ -300,8 +288,8 @@ void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok);
 /// @param buf The buffer to write the string representation to.
 /// @param len The length of the buffer.
 /// @note This function is thread-safe.
-size_t quixcc_tok_serialize(quixcc_job_t *job, const quixcc_tok_t *tok,
-                            char *buf, size_t len);
+size_t quixcc_cc_tok_serialize(quixcc_cc_job_t *job, const quixcc_tok_t *tok,
+                               char *buf, size_t len);
 
 /// @brief Get the human-readable string representation of a token.
 /// @param job The compiler job.
@@ -310,153 +298,15 @@ size_t quixcc_tok_serialize(quixcc_job_t *job, const quixcc_tok_t *tok,
 /// @param len The length of the buffer.
 /// @return The number of characters written to the buffer.
 /// @note This function is thread-safe.
-size_t quixcc_tok_humanize(quixcc_job_t *job, const quixcc_tok_t *tok,
-                           char *buf, size_t len);
+size_t quixcc_cc_tok_humanize(quixcc_cc_job_t *job, const quixcc_tok_t *tok,
+                              char *buf, size_t len);
 
 ///===================================================================================================
 /// END: LANGUAGE STUFF
-///===================================================================================================
-
-/**
- * @brief Reset and free the internal cache memory
- *
- * @brief This function is thread-safe.
- * @return true if the cache was reset successfully. false otherwise.
- *
- * @note This function requires all jobs to be disposed before calling.
- * @warning Although this will decrease memory usage, it may also
- *          decrease pipeline performance significantly.
- * @note This function will return false if any jobs are still active.
- */
-bool quixcc_cache_reset();
-
-///===================================================================================================
-/// BEGIN: HOST CACHING
-///===================================================================================================
-
-/**
- * @brief Cache check signature
- *
- * @param key The cache key
- * @param len The length of the cache key
- *
- * @return The size of the cached object in bytes, or -1 if the object is not
- *         cached.
- */
-typedef ssize_t (*quixcc_cache_has_t)(const char *, size_t);
-
-/**
- * @brief Cache read signature
- *
- * @param key The cache key
- * @param len The length of the cache key
- * @param buf The buffer to read the cached object into
- * @param len The maximum number of bytes to read
- *
- * @note The data consumer is not required to read the entire object.
- * @note The provider is required to be able to provide the entire object
- *       (if sufficient space is provided) in a single call.
- * @note Data integrity is the responsibility of the cache provider.
- *
- * @return true if the object was read successfully, false otherwise.
- */
-typedef bool (*quixcc_cache_read_t)(const char *, size_t, void *, size_t);
-
-/**
- * @brief Cache write signature
- *
- * @param key The cache key
- * @param len The length of the cache key
- * @param data The data to write to the cache
- * @param len The length of the data to write
- *
- * @note The writer must write the entire object in a single call.
- * @note Data integrity is the responsibility of the cache provider.
- *
- * @return true if the object was written successfully, false otherwise.
- */
-typedef bool (*quixcc_cache_write_t)(const char *, size_t, const void *,
-                                     size_t);
-
-/**
- * @brief Bind a cache provider to the QUIX compiler library.
- *
- * @param has The cache check function.
- * @param read The cache read function.
- * @param write The cache write function.
- *
- * @return true if the provider was bound successfully. false otherwise.
- *
- * @note This function is thread-safe.
- * @note This function will return false if a provider is already bound.
- */
-bool quixcc_bind_provider(quixcc_cache_has_t has, quixcc_cache_read_t read,
-                          quixcc_cache_write_t write);
-
-/**
- * @brief Unbind the current cache provider from the QUIX compiler library.
- *
- * @note This function is thread-safe.
- */
-void quixcc_unbind_provider();
-
-/**
- * @brief Check if an object is currently cached.
- *
- * @param key The cache key.
- * @param keylen The length of the cache key.
- *
- * @return The size of the cached object in bytes, or -1 if the object is not
- *         cached.
- *
- * @note This function is thread-safe.
- * @warning This function does not guarantee that the object will be available
- *          when read. Ensure to protect against race conditions.
- */
-ssize_t quixcc_cache_has(const char *key, size_t keylen);
-
-/**
- * @brief Read a cached object into a buffer.
- *
- * @param key The cache key.
- * @param keylen The length of the cache key.
- * @param data The buffer to read the cached object into.
- * @param datalen The maximum number of bytes to read.
- *
- * @return true if the object was read successfully, false otherwise.
- *
- * @note This function is thread-safe.
- * @note The data consumer is not required to read the entire object.
- * @note The provider is required to be able to provide the entire object
- *       (if sufficient space is provided) in a single call.
- * @note Data integrity is the responsibility of the cache provider.
- */
-bool quixcc_cache_read(const char *key, size_t keylen, void *data,
-                       size_t datalen);
-
-/**
- * @brief Write an object to the cache.
- *
- * @param key The cache key.
- * @param keylen The length of the cache key.
- * @param data The data to write to the cache.
- * @param datalen The length of the data to write.
- *
- * @return true if the object was written successfully, false otherwise.
- *
- * @note This function is thread-safe.
- * @note The writer must write the entire object in a single call.
- * @note Data integrity is the responsibility of the cache provider.
- */
-bool quixcc_cache_write(const char *key, size_t keylen, const void *data,
-                        size_t datalen);
-
-///===================================================================================================
-/// END: HOST CACHING
 ///===================================================================================================
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // __QUIXCC_H__
+#endif  // __QUIXCC_COMPILE_H__

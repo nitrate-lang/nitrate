@@ -31,12 +31,8 @@
 
 #define QUIXCC_INTERNAL
 
-#include <quixcc/core/Logger.h>
-#include <quixcc/generate/CodeGen.h>
-#include <quixcc/generate/Generate.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Verifier.h>
-#include <quixcc/llvm/LLVMWrapper.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
@@ -45,6 +41,10 @@
 #include <llvm/Transforms/IPO.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <quixcc/core/Logger.h>
+#include <quixcc/generate/CodeGen.h>
+#include <quixcc/generate/Generate.h>
+#include <quixcc/llvm/LLVMWrapper.h>
 #include <stdlib.h>
 
 #include <filesystem>
@@ -59,7 +59,7 @@ static std::map<std::string, std::string> acceptable_objgen_flags = {
     {"-O3", "-O3"},     {"-g", "-g"},       {"-v", "-v"},
     {"-flto", "-flto"}, {"-fPIC", "-fPIC"}, {"-fPIE", "-fPIE"}};
 
-bool libquixcc::codegen::write_IR(quixcc_job_t &ctx,
+bool libquixcc::codegen::write_IR(quixcc_cc_job_t &ctx,
                                   std::unique_ptr<ir::delta::IRDelta> &ir,
                                   FILE *out, bool generate_bitcode) {
   std::error_code ec;
@@ -111,7 +111,7 @@ bool libquixcc::codegen::write_IR(quixcc_job_t &ctx,
   return true;
 }
 
-bool libquixcc::codegen::write_c11(quixcc_job_t &ctx,
+bool libquixcc::codegen::write_c11(quixcc_cc_job_t &ctx,
                                    std::unique_ptr<ir::delta::IRDelta> &ir,
                                    FILE *out) {
   LOG(DEBUG) << "Generating C" << std::endl;
@@ -137,7 +137,7 @@ bool libquixcc::codegen::write_c11(quixcc_job_t &ctx,
   return true;
 }
 
-bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx,
+bool libquixcc::codegen::write_llvm(quixcc_cc_job_t &ctx,
                                     std::unique_ptr<ir::delta::IRDelta> &ir,
                                     FILE *out, llvm::CodeGenFileType mode) {
 #if !defined(__linux__) && !defined(__APPLE__) && !defined(__unix__) && \
@@ -242,7 +242,7 @@ bool libquixcc::codegen::write_llvm(quixcc_job_t &ctx,
 #endif
 }
 
-bool libquixcc::codegen::generate(quixcc_job_t &job,
+bool libquixcc::codegen::generate(quixcc_cc_job_t &job,
                                   std::unique_ptr<ir::delta::IRDelta> &ir) {
   if (job.has("-emit-ir")) return write_IR(job, ir, job.m_out, false);
 

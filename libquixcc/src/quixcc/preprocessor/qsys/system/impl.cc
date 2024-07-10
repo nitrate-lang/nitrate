@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <quixcc/plugin/EngineAPI.h>
 #include <quixcc/preprocessor/QSys.h>
-#include <quixcc/EngineAPI.h>
 
 QSYS_NOT_IMPLEMENTED(qsys_get_compiler_version);
 QSYS_NOT_IMPLEMENTED(qsys_get_compiler_flags);

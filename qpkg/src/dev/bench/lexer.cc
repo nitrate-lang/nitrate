@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quixcc/Quix.h>
+#include <quixcc/Library.h>
 
 #include <dev/bench/bench.hh>
 #include <chrono>
@@ -47,7 +47,7 @@ bool do_bench_lexer(std::chrono::system_clock::time_point &start,
   quixcc_tok_t tok;
   char *outbuf = nullptr;
   FILE *outf = nullptr, *code = nullptr;
-  quixcc_job_t *job = nullptr;
+  quixcc_cc_job_t *job = nullptr;
 
   outf = open_memstream(&outbuf, &outlen);
   if (!outf) {
@@ -63,7 +63,7 @@ bool do_bench_lexer(std::chrono::system_clock::time_point &start,
     return false;
   }
 
-  job = quixcc_new();
+  job = quixcc_cc_new();
   if (!job) {
     std::cerr << "do_bench (internal error): Failed to create job."
               << std::endl;
@@ -72,22 +72,22 @@ bool do_bench_lexer(std::chrono::system_clock::time_point &start,
     return false;
   }
 
-  quixcc_output(job, outf, nullptr);
-  quixcc_source(job, code, "bench");
+  quixcc_cc_output(job, outf, nullptr);
+  quixcc_cc_source(job, code, "bench");
 
   start = std::chrono::system_clock::now();
   while (1) {
-    tok = quixcc_next(job);
-    if (quixcc_lex_is(&tok, QUIXCC_LEX_EOF)) break;
-    if (quixcc_lex_is(&tok, QUIXCC_LEX_UNK)) {
+    tok = quixcc_cc_next(job);
+    if (quixcc_cc_lex_is(&tok, QUIXCC_LEX_EOF)) break;
+    if (quixcc_cc_lex_is(&tok, QUIXCC_LEX_UNK)) {
       throw std::runtime_error("Lexer error");
     }
 
-    quixcc_tok_release(job, &tok);
+    quixcc_cc_tok_release(job, &tok);
   }
   end = std::chrono::system_clock::now();
 
-  if (!quixcc_dispose(job)) {
+  if (!quixcc_cc_dispose(job)) {
     std::cerr << "do_bench (internal error): Failed to dispose job."
               << std::endl;
     fclose(outf);

@@ -31,9 +31,9 @@
 
 #define QUIXCC_INTERNAL
 
+#include <quixcc/Library.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/mutate/Routine.h>
-#include <quixcc/Quix.h>
 
 #include <algorithm>
 #include <iostream>
@@ -72,7 +72,7 @@ static std::map<libquixcc::NodeType, libquixcc::Msg> error_message_index = {
 };
 
 void libquixcc::mutate::DiscoverNamedConstructs(
-    quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
+    quixcc_cc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
   std::map<std::pair<NodeType, std::string>,
            std::shared_ptr<libquixcc::ParseNode>>
       named_construct_map;

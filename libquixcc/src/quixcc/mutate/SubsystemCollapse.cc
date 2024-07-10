@@ -172,7 +172,7 @@ static void stmt_collapse(const std::vector<std::string> &_namespace,
 }
 
 void libquixcc::mutate::SubsystemCollapse(
-    quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
+    quixcc_cc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
   std::set<std::string> visited;
 
   ast->dfs_preorder([&visited](const std::vector<std::string> &ns,

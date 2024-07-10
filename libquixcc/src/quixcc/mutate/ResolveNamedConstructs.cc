@@ -31,9 +31,9 @@
 
 #define QUIXCC_INTERNAL
 
+#include <quixcc/Library.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/mutate/Routine.h>
-#include <quixcc/Quix.h>
 
 #include <algorithm>
 #include <iostream>
@@ -48,7 +48,7 @@ static std::string join_ns(const std::vector<std::string> &ns) {
   return tmp;
 }
 
-static void resolve_user_type_nodes(quixcc_job_t *job,
+static void resolve_user_type_nodes(quixcc_cc_job_t *job,
                                     std::shared_ptr<BlockNode> ast) {
   ast->dfs_preorder([job](const std::vector<std::string> &_namespace,
                           const std::vector<std::string> &_scope,
@@ -132,7 +132,7 @@ static void resolve_user_type_nodes(quixcc_job_t *job,
   });
 }
 
-static void resolve_function_decls_to_calls(quixcc_job_t *job,
+static void resolve_function_decls_to_calls(quixcc_cc_job_t *job,
                                             std::shared_ptr<BlockNode> ast) {
   ast->dfs_preorder([job](const std::vector<std::string> &_namespace,
                           const std::vector<std::string> &_scope,
@@ -193,7 +193,7 @@ static void resolve_function_decls_to_calls(quixcc_job_t *job,
   });
 }
 
-void mutate::ResolveNamedConstructs(quixcc_job_t *job,
+void mutate::ResolveNamedConstructs(quixcc_cc_job_t *job,
                                     std::shared_ptr<BlockNode> ast) {
   resolve_user_type_nodes(job, ast);
   resolve_function_decls_to_calls(job, ast);

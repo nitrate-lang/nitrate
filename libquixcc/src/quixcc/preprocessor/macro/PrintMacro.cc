@@ -81,8 +81,7 @@ bool libquixcc::PrepEngine::ParsePrint(const Token &tok,
       return false;
     }
 
-    if (tokens[1].type() != tPunc ||
-        (tokens[1]).as<Punctor>() != Comma) {
+    if (tokens[1].type() != tPunc || (tokens[1]).as<Punctor>() != Comma) {
       LOG(ERROR) << "Expected comma after print level" << std::endl;
       return false;
     }

@@ -31,6 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
+#include <llvm/IR/InlineAsm.h>
 #include <quixcc/IR/delta/Cast.h>
 #include <quixcc/IR/delta/Control.h>
 #include <quixcc/IR/delta/Math.h>
@@ -40,7 +41,6 @@
 #include <quixcc/IR/delta/Variable.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/generate/CodeGen.h>
-#include <llvm/IR/InlineAsm.h>
 #include <quixcc/mangle/Symbol.h>
 
 using namespace libquixcc;

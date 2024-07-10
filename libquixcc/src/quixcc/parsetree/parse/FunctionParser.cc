@@ -48,7 +48,7 @@ struct GetPropState {
   size_t inline_ctr = 0;
 };
 
-static bool fn_get_property(quixcc_job_t &job, libquixcc::Scanner *scanner,
+static bool fn_get_property(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                             GetPropState &state) {
   Token tok = scanner->peek();
 
@@ -103,7 +103,8 @@ static bool fn_get_property(quixcc_job_t &job, libquixcc::Scanner *scanner,
   return false;
 }
 
-static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
+static bool parse_fn_parameter(quixcc_cc_job_t &job,
+                               libquixcc::Scanner *scanner,
                                std::shared_ptr<FunctionParamNode> &param) {
   /*
    <name> : <type> [?] [= <value>]
@@ -139,9 +140,7 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     std::shared_ptr<ExprNode> value;
     if (!parse_expr(job, scanner,
-                    {Token(tPunc, Comma),
-                     Token(tPunc, CloseParen)},
-                    value)) {
+                    {Token(tPunc, Comma), Token(tPunc, CloseParen)}, value)) {
       LOG(ERROR) << core::feedback[FN_PARAM_INIT_ERR] << tok << std::endl;
       return false;
     }
@@ -164,7 +163,7 @@ struct FunctionProperties {
 };
 
 static FunctionProperties read_function_properties(
-    quixcc_job_t &job, libquixcc::Scanner *scanner) {
+    quixcc_cc_job_t &job, libquixcc::Scanner *scanner) {
   GetPropState state;
 
   while (fn_get_property(job, scanner, state));
@@ -258,7 +257,8 @@ static FunctionProperties read_function_properties(
   return props;
 }
 
-bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
+bool libquixcc::parse_function(quixcc_cc_job_t &job,
+                               libquixcc::Scanner *scanner,
                                std::shared_ptr<libquixcc::StmtNode> &node) {
   auto fndecl = std::make_shared<FunctionDeclNode>();
 
@@ -393,8 +393,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
             req_in = BoolLiteralNode::create(true);
           }
 
-          if (!parse_expr(job, scanner,
-                          {Token(tPunc, Semicolon)}, expr)) {
+          if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, expr)) {
             return false;
           }
 
@@ -408,15 +407,13 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
           expr = std::make_shared<UnaryExprNode>(LogicalNot, expr);
           expr = std::make_shared<UnaryExprNode>(LogicalNot, expr);
 
-          req_in = std::make_shared<BinaryExprNode>(LogicalAnd,
-                                                    req_in, expr);
+          req_in = std::make_shared<BinaryExprNode>(LogicalAnd, req_in, expr);
         } else if (tok.is<Keyword>(Keyword::Out)) {
           if (!req_out) {
             req_out = BoolLiteralNode::create(true);
           }
 
-          if (!parse_expr(job, scanner,
-                          {Token(tPunc, Semicolon)}, expr)) {
+          if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, expr)) {
             return false;
           }
 
@@ -429,8 +426,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
           expr = std::make_shared<UnaryExprNode>(LogicalNot, expr);
           expr = std::make_shared<UnaryExprNode>(LogicalNot, expr);
-          req_out = std::make_shared<BinaryExprNode>(LogicalAnd,
-                                                     req_out, expr);
+          req_out = std::make_shared<BinaryExprNode>(LogicalAnd, req_out, expr);
         } else {
           LOG(ERROR) << core::feedback[FN_EXPECTED_IN_OUT] << tok << std::endl;
           return false;

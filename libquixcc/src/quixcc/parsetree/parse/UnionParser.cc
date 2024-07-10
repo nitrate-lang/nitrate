@@ -37,7 +37,7 @@
 
 using namespace libquixcc;
 
-static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
+static bool parse_union_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                               std::shared_ptr<UnionFieldNode> &node) {
   Token tok = scanner->next();
   if (tok.type() != tName) {
@@ -68,8 +68,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
     node = std::make_shared<UnionFieldNode>(name, type);
     return true;
   } else if (tok.is<Operator>(OpAssign)) {
-    if (!parse_expr(job, scanner, {Token(tPunc, Comma)},
-                    value)) {
+    if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, value)) {
       LOG(ERROR) << core::feedback[UNION_FIELD_INIT_ERR] << name << tok
                  << std::endl;
       return false;
@@ -92,7 +91,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
   return true;
 }
 
-bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
+bool libquixcc::parse_union(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                             std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (tok.type() != tName) {

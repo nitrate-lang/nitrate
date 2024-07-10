@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quixcc/Quix.h>
+#include <quixcc/Library.h>
 
 #include <core/Config.hh>
 #include <map>

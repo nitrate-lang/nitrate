@@ -158,7 +158,7 @@ SolPassManager &SolPassManager::clear_passes() {
 }
 
 bool SolPassManager::run_passes(
-    quixcc_job_t &job, std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
+    quixcc_cc_job_t &job, std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
   for (const auto &uuid : m_phase) {
     auto pass = m_registry->get_pass_by_uuid(uuid);
 

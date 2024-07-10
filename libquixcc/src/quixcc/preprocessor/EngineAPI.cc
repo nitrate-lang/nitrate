@@ -31,14 +31,14 @@
 
 #define QUIXCC_INTERNAL
 
+#include <core/Macro.h>
+#include <core/QuixJob.h>
 #include <quixcc/IR/Q/QIR.h>
 #include <quixcc/IR/Q/Variable.h>
-#include <core/Macro.h>
 #include <quixcc/core/Exception.h>
 #include <quixcc/core/Logger.h>
-#include <core/QuixJob.h>
+#include <quixcc/plugin/EngineAPI.h>
 #include <quixcc/preprocessor/Preprocessor.h>
-#include <quixcc/EngineAPI.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -56,7 +56,7 @@ extern void quixcc_panic(std::string msg) noexcept;
 /// BEGIN: QUIXCC QSYS REGISTRY
 ///=============================================================================
 
-LIB_EXPORT bool quixcc_qsys_add(quixcc_job_t *job, uint32_t num,
+LIB_EXPORT bool quixcc_qsys_add(quixcc_cc_job_t *job, uint32_t num,
                                 quixcc_qsys_impl_t impl) {
   if (!job) quixcc_panic("quixcc_qsys_add: job is NULL");
 
@@ -66,21 +66,22 @@ LIB_EXPORT bool quixcc_qsys_add(quixcc_job_t *job, uint32_t num,
   return true;
 }
 
-LIB_EXPORT bool quixcc_qsys_remove(quixcc_job_t *job, uint32_t num) {
+LIB_EXPORT bool quixcc_qsys_remove(quixcc_cc_job_t *job, uint32_t num) {
   if (!job) quixcc_panic("quixcc_qsys_remove: job is NULL");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
   return job->m_qsyscalls.Unregister(num);
 }
 
-LIB_EXPORT bool quixcc_qsys_exists(quixcc_job_t *job, uint32_t num) {
+LIB_EXPORT bool quixcc_qsys_exists(quixcc_cc_job_t *job, uint32_t num) {
   if (!job) quixcc_panic("quixcc_qsys_exists: job is NULL");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
   return job->m_qsyscalls.IsRegistered(num);
 }
 
-LIB_EXPORT quixcc_qsys_impl_t quixcc_qsys_get(quixcc_job_t *job, uint32_t num) {
+LIB_EXPORT quixcc_qsys_impl_t quixcc_qsys_get(quixcc_cc_job_t *job,
+                                              uint32_t num) {
   if (!job) quixcc_panic("quixcc_qsys_get: job is NULL");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
@@ -90,7 +91,7 @@ LIB_EXPORT quixcc_qsys_impl_t quixcc_qsys_get(quixcc_job_t *job, uint32_t num) {
   return impl.value();
 }
 
-LIB_EXPORT uint32_t *quixcc_qsys_list(quixcc_job_t *job, uint32_t *count) {
+LIB_EXPORT uint32_t *quixcc_qsys_list(quixcc_cc_job_t *job, uint32_t *count) {
   if (!job) quixcc_panic("quixcc_qsys_list: job is NULL");
   if (!count) quixcc_panic("quixcc_qsys_list: count is NULL");
 
@@ -117,7 +118,7 @@ LIB_EXPORT uint32_t *quixcc_qsys_list(quixcc_job_t *job, uint32_t *count) {
 /// BEGIN: QUIXCC ENGINE API
 ///=============================================================================
 
-LIB_EXPORT quixcc_job_t *quixcc_engine_job(quixcc_engine_t *engine) {
+LIB_EXPORT quixcc_cc_job_t *quixcc_engine_job(quixcc_engine_t *engine) {
   if (!engine) quixcc_panic("quixcc_engine_job: engine is NULL");
   return reinterpret_cast<libquixcc::PrepEngine *>(engine)->get_job();
 }
@@ -318,7 +319,7 @@ LIB_EXPORT bool quixcc_expr_to_int64(quixcc_expr_t *expr, int64_t *out) {
   }
 }
 
-extern const char *publish_string(quixcc_job_t *job, std::string_view str);
+extern const char *publish_string(quixcc_cc_job_t *job, std::string_view str);
 
 LIB_EXPORT quixcc_tok_t quixcc_tok_new(quixcc_engine_t *engine,
                                        quixcc_lex_type_t ty, const char *str) {

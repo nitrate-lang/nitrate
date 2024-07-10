@@ -31,11 +31,11 @@
 
 #define QUIXCC_INTERNAL
 
+#include <core/SHA160.h>
 #include <quixcc/IR/Q/Function.h>
 #include <quixcc/IR/Q/QIR.h>
 #include <quixcc/IR/Q/Variable.h>
 #include <quixcc/core/Logger.h>
-#include <core/SHA160.h>
 #include <quixcc/lexer/Lex.h>
 #include <quixcc/parsetree/Parser.h>
 #include <quixcc/preprocessor/Preprocessor.h>
@@ -57,18 +57,12 @@ using rstr = const string &;
 using str = string;
 using vec8 = vector<uint8_t>;
 
-static str calculate_key(rstr data) {
+static quixcc_cache_key_t calculate_key(rstr data) {
   core::SHA160 sha;
-  array<uint8_t, 20> hash;
-  str key;
+  quixcc_cache_key_t key;
 
   sha.process(data);
-  sha.finalize(hash);
-
-  key.resize(40);
-  for (size_t i = 0; i < 20; i++) {
-    sprintf(&key[i * 2], "%02x", hash[i]);
-  }
+  sha.finalize(key.key);
 
   return key;
 }
@@ -259,14 +253,14 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
   ///=========================================================================
 
   auto key = calculate_key(metacode);
-  ssize_t objsize = quixcc_cache_has(key.c_str(), key.size());
+  ssize_t objsize = quixcc_cache_has(&key);
 
   if (objsize > 0) {
-    LOG(DEBUG) << "Cache hit on metacode: " << key << endl;
+    LOG(DEBUG) << "Cache hit on metacode" << endl;
 
     /*========== READ SHARED OBJECT FROM CACHE ============*/
     output.resize(objsize);
-    if (!quixcc_cache_read(key.c_str(), key.size(), output.data(), objsize)) {
+    if (!quixcc_cache_read(&key, output.data(), objsize)) {
       LOG(FATAL) << "Failed to read shared object from cache" << endl;
       return false;
     }
@@ -289,7 +283,7 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
       /// BEGIN: COMPILE METACODE TO OBJECT
       ///=========================================================================
 
-      LOG(DEBUG) << "Cache miss on metacode: " << key << endl;
+      LOG(DEBUG) << "Cache miss on metacode" << endl;
 
       size_t rawsz = 0;
       if ((temp = open_memstream(&rawbuf, &rawsz)) == nullptr) {
@@ -298,7 +292,7 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
       }
 
       auto builder =
-          quixcc::CompilerBuilder()
+          ::quixcc::CompilerBuilder()
               .add_code(metacode.c_str(), metacode.size()) /* Add code */
               .set_flag("-fPIC") /* Generate position-independent code */
               .set_output(temp)  /* Output to memory stream */
@@ -397,8 +391,7 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
     }
 
     /* Write shared object to cache */
-    if (!quixcc_cache_write(key.c_str(), key.size(), output.data(),
-                            output.size())) {
+    if (!quixcc_cache_write(&key, output.data(), output.size())) {
       LOG(WARN) << "libquixcc: Failed to write shared object to cache "
                    "provider. (no cache provider?)"
                 << endl;
@@ -500,7 +493,7 @@ bool PrepEngine::load_shared_object(
 bool PrepEngine::load_function_from_shared_object(
     rstr function_name, unique_ptr<void, function<void(void *)>> &handle) {
   void *fn = nullptr;
-  quixcc_macro_fn_t fn_ptr = nullptr;
+  quixcc::quixcc_macro_fn_t fn_ptr = nullptr;
 
   /*==================== FETCH FUNCTION POINTER FROM SHARED OBJECT ===========*/
 
@@ -515,7 +508,7 @@ bool PrepEngine::load_function_from_shared_object(
   }
 
   /*==================== INSERT FUNCTION POINTER INTO CTX ====================*/
-  fn_ptr = reinterpret_cast<quixcc_macro_fn_t>(fn);
+  fn_ptr = reinterpret_cast<quixcc::quixcc_macro_fn_t>(fn);
   job->m_dlhandles.insert(move(handle));
   job->m_macros[function_name] = fn_ptr;
 

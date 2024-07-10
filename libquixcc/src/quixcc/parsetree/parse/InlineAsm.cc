@@ -42,7 +42,7 @@ using namespace libquixcc;
 */
 
 static bool asm_parse_param(
-    quixcc_job_t &job, libquixcc::Scanner *scanner,
+    quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &result) {
   Token tok;
 
@@ -71,9 +71,7 @@ static bool asm_parse_param(
 
     std::shared_ptr<ExprNode> expr;
     if (!parse_expr(job, scanner,
-                    {Token(tPunc, Comma),
-                     Token(tPunc, CloseBrace)},
-                    expr)) {
+                    {Token(tPunc, Comma), Token(tPunc, CloseBrace)}, expr)) {
       LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_EXPR] << tok.serialize()
                  << tok << std::endl;
       return false;
@@ -94,7 +92,8 @@ static bool asm_parse_param(
   return true;
 }
 
-static bool asm_parse_clobbers(quixcc_job_t &job, libquixcc::Scanner *scanner,
+static bool asm_parse_clobbers(quixcc_cc_job_t &job,
+                               libquixcc::Scanner *scanner,
                                std::vector<std::string> &result) {
   // ['a', 'b', 'c']
 
@@ -134,7 +133,8 @@ static bool asm_parse_clobbers(quixcc_job_t &job, libquixcc::Scanner *scanner,
   return true;
 }
 
-bool libquixcc::parse_inline_asm(quixcc_job_t &job, libquixcc::Scanner *scanner,
+bool libquixcc::parse_inline_asm(quixcc_cc_job_t &job,
+                                 libquixcc::Scanner *scanner,
                                  std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (!tok.is<Punctor>(OpenParen)) {

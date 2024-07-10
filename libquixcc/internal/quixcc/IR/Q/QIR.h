@@ -218,7 +218,7 @@ class QModule : public libquixcc::ir::IRModule<IR::Q, RootNode *> {
   }
   virtual ~QModule() = default;
 
-  bool from_ptree(quixcc_job_t *job, std::shared_ptr<ParseNode> ast);
+  bool from_ptree(quixcc_cc_job_t *job, std::shared_ptr<ParseNode> ast);
 
   /*========================== METADATA ==========================*/
   void acknowledge_pass(QPassType pass, const std::string &name);

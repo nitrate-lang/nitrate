@@ -31,9 +31,9 @@
 
 #define QUIXCC_INTERNAL
 
+#include <quixcc/Library.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/mutate/Routine.h>
-#include <quixcc/Quix.h>
 
 #include <algorithm>
 #include <iostream>
@@ -64,7 +64,7 @@ static std::string getname(const TypeNode *n) {
 }
 
 void libquixcc::mutate::MethodToFunc(
-    quixcc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
+    quixcc_cc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
   std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> vars;
 
   ast->dfs_preorder([&](const std::vector<std::string> &_namespace,

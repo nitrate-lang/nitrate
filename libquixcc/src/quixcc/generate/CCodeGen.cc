@@ -31,10 +31,10 @@
 
 #define QUIXCC_INTERNAL
 
+#include <openssl/evp.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/generate/CodeGen.h>
 #include <quixcc/mangle/Symbol.h>
-#include <openssl/evp.h>
 
 #include <iomanip>
 

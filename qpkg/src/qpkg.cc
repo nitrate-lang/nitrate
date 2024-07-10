@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <argparse.h>
-#include <quixcc/Quix.h>
+#include <quixcc/Library.h>
 
 #include <build/EngineBuilder.hh>
 #include <clean/Cleanup.hh>
@@ -920,7 +920,7 @@ int run_dev_mode(
     return qpkg::dev::test::run_tests();
   } else if (parser.is_used("--demangle")) {
     std::string input = parser.get<std::string>("--demangle");
-    char *demangled_name = quixcc_demangle(input.c_str());
+    char *demangled_name = quixcc_cc_demangle(input.c_str());
     if (!demangled_name) {
       std::cerr << "Failed to demangle symbol" << std::endl;
       return 1;

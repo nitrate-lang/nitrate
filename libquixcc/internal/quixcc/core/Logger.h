@@ -36,9 +36,9 @@
 #error "This header requires C++"
 #endif
 
+#include <core/QuixJob.h>
 #include <quixcc/core/Messages.h>
 #include <quixcc/lexer/Token.h>
-#include <core/QuixJob.h>
 
 #include <functional>
 #include <iostream>
@@ -159,9 +159,9 @@ class Logger {
 class LoggerGroup {
   std::unordered_map<E, Logger *> m_loggers;
   Logger *m_hole;
-  quixcc_job_t *m_job;
+  quixcc_cc_job_t *m_job;
 
-  static void push_message_to_job(quixcc_job_t &job, E type,
+  static void push_message_to_job(quixcc_cc_job_t &job, E type,
                                   const std::string &message);
 
   static bool is_color_enabled();
@@ -197,7 +197,7 @@ class LoggerGroup {
     m_job = nullptr;
   }
 
-  inline void setup(quixcc_job_t &job) {
+  inline void setup(quixcc_cc_job_t &job) {
     m_job = &job;
 
     for (auto &logger : m_loggers) {
@@ -255,7 +255,7 @@ extern thread_local LoggerGroup _G_loggerGrp;
 #define LOGGER_SETUP() \
   thread_local libquixcc::LoggerGroup libquixcc::_G_loggerGrp;
 
-static inline void LoggerConfigure(quixcc_job_t &job) {
+static inline void LoggerConfigure(quixcc_cc_job_t &job) {
   _G_loggerGrp.setup(job);
 }
 

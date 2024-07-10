@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <quixcc/plugin/EngineAPI.h>
 #include <quixcc/preprocessor/QSys.h>
-#include <quixcc/EngineAPI.h>
 
 QSYS_NOT_IMPLEMENTED(qsys_compile_and_execute_quix);
 QSYS_NOT_IMPLEMENTED(qsys_get_type_of_item);

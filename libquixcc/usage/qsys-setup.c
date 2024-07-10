@@ -13,14 +13,14 @@
  *
  * Key Takeaways:
  * 1.  The EngineAPI is used to interact with the preprocessor.
- * 2.  The `quixcc_job_t` is the context over which the compilation
+ * 2.  The `quixcc_cc_job_t` is the context over which the compilation
  * job is performed.
- * 3.  The `quixcc_new` function is used to create a new compilation job.
- * 4.  The `quixcc_option` function is used to set compiler options.
+ * 3.  The `quixcc_cc_new` function is used to create a new compilation job.
+ * 4.  The `quixcc_cc_option` function is used to set compiler options.
  * 5.  The `quixcc_qsys_add` function is used to register QSys calls.
- * 6.  The `quixcc_source` function is used to set the input source
+ * 6.  The `quixcc_cc_source` function is used to set the input source
  *     stream.
- * 7.  The `quixcc_output` function is used to set the output stream.
+ * 7.  The `quixcc_cc_output` function is used to set the output stream.
  * 8.  The `quixcc_run` function is used to run the compilation job.
  * 9.  The `quixcc_engine_t` is an API supplied opaque object
  *     enabling interaction with the preprocessor on a call-by-call basis.
@@ -30,8 +30,8 @@
  * 12. Most memory is managed internally by the library.
  **/
 
-#include <quixcc/EngineAPI.h>
-#include <quixcc/Quix.h>
+#include <quixcc/Library.h>
+#include <quixcc/plugin/EngineAPI.h>
 
 #define QSYS_DEFINE(_name, _desc)                                      \
   bool qsys_##_name(quixcc_engine_t *e, uint32_t n, quixcc_expr_t **v, \
@@ -46,14 +46,14 @@ const char source[] =
     "  ret 0;\n"
     "}\n";
 
-static bool make_job(quixcc_job_t **job) {
-  *job = quixcc_new();
+static bool make_job(quixcc_cc_job_t **job) {
+  *job = quixcc_cc_new();
   if (!*job) {
     return false;
   }
 
   /*========= Output object file =========*/
-  quixcc_option(*job, "-c", true);
+  quixcc_cc_option(*job, "-c", true);
   return true;
 }
 
@@ -98,7 +98,7 @@ QSYS_DEFINE(call_inject, "Generate tokens example") {
   return true;
 }
 
-static bool setup_qsys(quixcc_job_t *job) {
+static bool setup_qsys(quixcc_cc_job_t *job) {
   bool ok = true;
 
   /*========= Register QSys Calls =========*/
@@ -109,7 +109,7 @@ static bool setup_qsys(quixcc_job_t *job) {
   return ok;
 }
 
-static bool build_source(quixcc_job_t *job) {
+static bool build_source(quixcc_cc_job_t *job) {
   /*============ Setup streams ============*/
   FILE *sin = fmemopen((void *)source, sizeof(source) - 1, "r");
   if (sin == NULL) {
@@ -123,10 +123,10 @@ static bool build_source(quixcc_job_t *job) {
   }
 
   /*============ Setup input stream ============*/
-  quixcc_source(job, sin, "<stdin>");
+  quixcc_cc_source(job, sin, "<stdin>");
 
   /*============ Setup output stream ============*/
-  quixcc_output(job, sout, NULL);
+  quixcc_cc_output(job, sout, NULL);
 
   /*============ Run the compiler ============*/
   if (!quixcc_run(job)) {
@@ -148,7 +148,7 @@ static bool build_source(quixcc_job_t *job) {
 }
 
 int main() {
-  quixcc_job_t *job;
+  quixcc_cc_job_t *job;
   int err;
 
   quixcc_init();
@@ -173,6 +173,6 @@ int main() {
   err = 0;
 
 cleanup:
-  quixcc_dispose(job);
+  quixcc_cc_dispose(job);
   return err;
 }

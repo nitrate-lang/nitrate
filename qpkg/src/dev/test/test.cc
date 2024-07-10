@@ -50,20 +50,20 @@ int qpkg::dev::test::run_lexer_test(
       return 1;
     }
 
-    quixcc_job_t *job = quixcc_new();
+    quixcc_cc_job_t *job = quixcc_cc_new();
     if (!job) {
       std::cerr << "Failed to create job for test " << tag.first << std::endl;
       fclose(code);
       return 1;
     }
 
-    quixcc_source(job, code, tag.first.data());
-    quixcc_option(job, "-fkeep-comments", true);
+    quixcc_cc_source(job, code, tag.first.data());
+    quixcc_cc_option(job, "-fkeep-comments", true);
 
     bool okay = true;
     std::vector<quixcc_tok_t> toks;
     quixcc_tok_t tok;
-    while ((tok = quixcc_next(job)).ty != QUIXCC_LEX_EOF) {
+    while ((tok = quixcc_cc_next(job)).ty != QUIXCC_LEX_EOF) {
       toks.push_back(tok);
     }
 
@@ -73,7 +73,7 @@ int qpkg::dev::test::run_lexer_test(
       okay = false;
     } else {
       for (size_t i = 0; i < data.second.size(); i++) {
-        if (!quixcc_tokeq(toks[i], data.second[i])) {
+        if (!quixcc_cc_tokeq(toks[i], data.second[i])) {
           okay = false;
           std::cerr << "Mismatched token at index " << i << " for test "
                     << tag.first << std::endl;
@@ -92,7 +92,7 @@ int qpkg::dev::test::run_lexer_test(
     }
 
     fclose(code);
-    quixcc_dispose(job);
+    quixcc_cc_dispose(job);
   }
 
   p.result("Lexer", overall);

@@ -1116,7 +1116,8 @@ static auto conv(const ir::q::Value *n, DState &state) -> DResult {
 }
 
 bool libquixcc::ir::delta::IRDelta::from_qir(
-    quixcc_job_t *job, const std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
+    quixcc_cc_job_t *job,
+    const std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
   LOG(DEBUG) << "Translating QUIX intermediate representation to DeltaIR"
              << std::endl;
 

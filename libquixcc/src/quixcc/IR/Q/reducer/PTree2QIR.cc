@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <openssl/rand.h>
 #include <quixcc/IR/Q/Asm.h>
 #include <quixcc/IR/Q/Call.h>
 #include <quixcc/IR/Q/Cast.h>
@@ -43,7 +44,6 @@
 #include <quixcc/IR/Q/Variable.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/mangle/Symbol.h>
-#include <openssl/rand.h>
 
 #include <any>
 #include <optional>
@@ -3105,7 +3105,7 @@ static QResult conv(const ParseNode *n, QState &state) {
 /// END: CONVERSION FUNCTIONS
 ///============================================================================
 
-bool ir::q::QModule::from_ptree(quixcc_job_t *job,
+bool ir::q::QModule::from_ptree(quixcc_cc_job_t *job,
                                 std::shared_ptr<ParseNode> ast) {
   /// TODO: cleanup
 

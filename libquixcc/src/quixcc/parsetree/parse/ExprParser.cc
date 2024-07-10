@@ -40,7 +40,7 @@
 using namespace libquixcc;
 
 static std::shared_ptr<CallExprNode> parse_function_call(
-    quixcc_job_t &job, std::shared_ptr<ExprNode> callee, Scanner *scanner,
+    quixcc_cc_job_t &job, std::shared_ptr<ExprNode> callee, Scanner *scanner,
     size_t depth) {
   Token tok;
 
@@ -72,9 +72,8 @@ static std::shared_ptr<CallExprNode> parse_function_call(
 
       std::shared_ptr<ExprNode> arg;
       if (!parse_expr(job, scanner,
-                      {Token(tPunc, Comma),
-                       Token(tPunc, CloseParen)},
-                      arg, depth + 1)) {
+                      {Token(tPunc, Comma), Token(tPunc, CloseParen)}, arg,
+                      depth + 1)) {
         return nullptr;
       }
 
@@ -85,9 +84,8 @@ static std::shared_ptr<CallExprNode> parse_function_call(
   parse_pos_arg: {
     std::shared_ptr<ExprNode> arg;
     if (!parse_expr(job, scanner,
-                    {Token(tPunc, Comma),
-                     Token(tPunc, CloseParen)},
-                    arg, depth + 1)) {
+                    {Token(tPunc, Comma), Token(tPunc, CloseParen)}, arg,
+                    depth + 1)) {
       return nullptr;
     }
     args.push_back(arg);
@@ -112,8 +110,9 @@ static std::shared_ptr<CallExprNode> parse_function_call(
   return expr;
 }
 
-static bool parse_fstring(quixcc_job_t &job, std::shared_ptr<FStringNode> &node,
-                          Scanner *scanner, size_t depth) {
+static bool parse_fstring(quixcc_cc_job_t &job,
+                          std::shared_ptr<FStringNode> &node, Scanner *scanner,
+                          size_t depth) {
   Token tok = scanner->next();
   if (tok.type() != tText) {
     LOG(ERROR) << "Expected a string literal template in f-string" << tok
@@ -141,8 +140,7 @@ static bool parse_fstring(quixcc_job_t &job, std::shared_ptr<FStringNode> &node,
       StringLexer subscanner(sub);
 
       std::shared_ptr<ExprNode> expr;
-      if (!parse_expr(job, &subscanner,
-                      {Token(tPunc, CloseBrace)}, expr, 0)) {
+      if (!parse_expr(job, &subscanner, {Token(tPunc, CloseBrace)}, expr, 0)) {
         return false;
       }
 
@@ -169,55 +167,54 @@ static bool parse_fstring(quixcc_job_t &job, std::shared_ptr<FStringNode> &node,
   return true;
 }
 
-bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
+bool libquixcc::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
                            std::set<Token> terminators,
                            std::shared_ptr<ExprNode> &node, size_t depth) {
   std::stack<std::shared_ptr<ExprNode>> stack;
 
   /// TODO: Operator precedence
   /// TODO: Operator associativity
-  static std::map<Operator, int> operator_precedence = {
-      {LessThan, 10},
-      {GreaterThan, 10},
-      {OpAssign, 10},
-      {At, 10},
-      {Minus, 20},
-      {Plus, 20},
-      {Multiply, 30},
-      {Divide, 30},
-      {Modulo, 30},
-      {BitwiseAnd, 5},
-      {BitwiseOr, 3},
-      {BitwiseXor, 4},
-      {BitwiseNot, 35},
-      {LogicalNot, 35},
-      {Question, 1},
-      {PlusAssign, 10},
-      {MinusAssign, 10},
-      {MultiplyAssign, 10},
-      {DivideAssign, 10},
-      {ModuloAssign, 10},
-      {BitwiseOrAssign, 10},
-      {BitwiseAndAssign, 10},
-      {BitwiseXorAssign, 10},
-      {LeftShift, 25},
-      {RightShift, 25},
-      {RotateRight, 25},
-      {RotateLeft, 25},
-      {Equal, 9},
-      {NotEqual, 9},
-      {LogicalAnd, 8},
-      {LogicalOr, 7},
-      {LogicalXor, 6},
-      {LessThanEqual, 9},
-      {GreaterThanEqual, 9},
-      {Increment, 40},
-      {Decrement, 40},
-      {XorAssign, 10},
-      {OrAssign, 10},
-      {AndAssign, 10},
-      {LeftShiftAssign, 10},
-      {RightShiftAssign, 10}};
+  static std::map<Operator, int> operator_precedence = {{LessThan, 10},
+                                                        {GreaterThan, 10},
+                                                        {OpAssign, 10},
+                                                        {At, 10},
+                                                        {Minus, 20},
+                                                        {Plus, 20},
+                                                        {Multiply, 30},
+                                                        {Divide, 30},
+                                                        {Modulo, 30},
+                                                        {BitwiseAnd, 5},
+                                                        {BitwiseOr, 3},
+                                                        {BitwiseXor, 4},
+                                                        {BitwiseNot, 35},
+                                                        {LogicalNot, 35},
+                                                        {Question, 1},
+                                                        {PlusAssign, 10},
+                                                        {MinusAssign, 10},
+                                                        {MultiplyAssign, 10},
+                                                        {DivideAssign, 10},
+                                                        {ModuloAssign, 10},
+                                                        {BitwiseOrAssign, 10},
+                                                        {BitwiseAndAssign, 10},
+                                                        {BitwiseXorAssign, 10},
+                                                        {LeftShift, 25},
+                                                        {RightShift, 25},
+                                                        {RotateRight, 25},
+                                                        {RotateLeft, 25},
+                                                        {Equal, 9},
+                                                        {NotEqual, 9},
+                                                        {LogicalAnd, 8},
+                                                        {LogicalOr, 7},
+                                                        {LogicalXor, 6},
+                                                        {LessThanEqual, 9},
+                                                        {GreaterThanEqual, 9},
+                                                        {Increment, 40},
+                                                        {Decrement, 40},
+                                                        {XorAssign, 10},
+                                                        {OrAssign, 10},
+                                                        {AndAssign, 10},
+                                                        {LeftShiftAssign, 10},
+                                                        {RightShiftAssign, 10}};
 
   while (true) {
     auto tok = scanner->peek();
@@ -328,8 +325,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
               }
 
               std::shared_ptr<ExprNode> key, value;
-              if (!parse_expr(job, scanner,
-                              {Token(tPunc, Colon)}, key,
+              if (!parse_expr(job, scanner, {Token(tPunc, Colon)}, key,
                               depth + 1)) {
                 return false;
               }
@@ -342,8 +338,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
               }
 
               if (!parse_expr(job, scanner,
-                              {Token(tPunc, Comma),
-                               Token(tPunc, CloseBrace)},
+                              {Token(tPunc, Comma), Token(tPunc, CloseBrace)},
                               value, depth + 1)) {
                 return false;
               }
@@ -372,8 +367,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
 
                 std::shared_ptr<ExprNode> element;
                 if (!parse_expr(job, scanner,
-                                {Token(tPunc, Comma),
-                                 Token(tPunc, Semicolon),
+                                {Token(tPunc, Comma), Token(tPunc, Semicolon),
                                  Token(tPunc, CloseBracket)},
                                 element, depth + 1)) {
                   return false;
@@ -384,10 +378,10 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
                   scanner->next();
 
                   std::shared_ptr<ExprNode> count;
-                  if (!parse_expr(job, scanner,
-                                  {Token(tPunc, CloseBracket),
-                                   Token(tPunc, Comma)},
-                                  count, depth + 1)) {
+                  if (!parse_expr(
+                          job, scanner,
+                          {Token(tPunc, CloseBracket), Token(tPunc, Comma)},
+                          count, depth + 1)) {
                     return false;
                   }
 
@@ -424,8 +418,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
 
             std::shared_ptr<ExprNode> index;
             if (!parse_expr(job, scanner,
-                            {Token(tPunc, CloseBracket),
-                             Token(tPunc, Colon)},
+                            {Token(tPunc, CloseBracket), Token(tPunc, Colon)},
                             index, depth + 1)) {
               return false;
             }
@@ -433,8 +426,7 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
             auto tok = scanner->next();
             if (tok.is<Punctor>(Colon)) {
               std::shared_ptr<ExprNode> end;
-              if (!parse_expr(job, scanner,
-                              {Token(tPunc, CloseBracket)}, end,
+              if (!parse_expr(job, scanner, {Token(tPunc, CloseBracket)}, end,
                               depth + 1)) {
                 return false;
               }
@@ -457,15 +449,13 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
             tok = scanner->peek();
             if (tok.is<Operator>(Increment)) {
               auto p = std::make_shared<PostUnaryExprNode>(
-                  Increment,
-                  std::make_shared<IndexNode>(left, index));
+                  Increment, std::make_shared<IndexNode>(left, index));
               stack.push(p);
               scanner->next();
               continue;
             } else if (tok.is<Operator>(Decrement)) {
               auto p = std::make_shared<PostUnaryExprNode>(
-                  Decrement,
-                  std::make_shared<IndexNode>(left, index));
+                  Decrement, std::make_shared<IndexNode>(left, index));
               stack.push(p);
               scanner->next();
               continue;
@@ -519,15 +509,13 @@ bool libquixcc::parse_expr(quixcc_job_t &job, Scanner *scanner,
           tok = scanner->peek();
           if (tok.is<Operator>(Increment)) {
             auto p = std::make_shared<PostUnaryExprNode>(
-                Increment,
-                std::make_shared<MemberAccessNode>(left, ident));
+                Increment, std::make_shared<MemberAccessNode>(left, ident));
             stack.push(p);
             scanner->next();
             continue;
           } else if (tok.is<Operator>(Decrement)) {
             auto p = std::make_shared<PostUnaryExprNode>(
-                Decrement,
-                std::make_shared<MemberAccessNode>(left, ident));
+                Decrement, std::make_shared<MemberAccessNode>(left, ident));
             stack.push(p);
             scanner->next();
             continue;

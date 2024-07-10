@@ -33,7 +33,8 @@
 #include <quixcc/core/Logger.h>
 #include <quixcc/parsetree/Parser.h>
 
-bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner,
+bool libquixcc::parse_subsystem(quixcc_cc_job_t &job,
+                                libquixcc::Scanner *scanner,
                                 std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (tok.type() != tName) {

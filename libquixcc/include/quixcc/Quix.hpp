@@ -36,7 +36,7 @@
 #error "This header requires C++"
 #endif
 
-#include <quixcc/Quix.h>
+#include <quixcc/Library.h>
 
 #include <iostream>
 #include <memory>
@@ -89,7 +89,7 @@ enum class OptimizationLevel {
 };
 
 class Compiler {
-  std::vector<quixcc_job_t *> m_jobs;
+  std::vector<quixcc_cc_job_t *> m_jobs;
   std::set<FILE *> m_to_close;
   std::vector<std::pair<std::string, enum quixcc_msg_level_t>> m_messages;
   bool m_ok;
@@ -99,7 +99,7 @@ class Compiler {
   Compiler &operator=(const Compiler &) = delete;
 
  public:
-  Compiler(std::vector<quixcc_job_t *> jobs, std::set<FILE *> to_close);
+  Compiler(std::vector<quixcc_cc_job_t *> jobs, std::set<FILE *> to_close);
 
   ~Compiler();
 

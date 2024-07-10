@@ -58,9 +58,9 @@ void libquixcc::core::SHA160::process(std::string_view data) {
   }
 }
 
-void libquixcc::core::SHA160::finalize(std::array<uint8_t, 20UL> &sum) {
+void libquixcc::core::SHA160::finalize(uint8_t sum[20]) {
   EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);
-  if (EVP_DigestFinal(ctx, sum.data(), nullptr) != 1) {
+  if (EVP_DigestFinal(ctx, sum, nullptr) != 1) {
     throw std::runtime_error("Failed to finalize SHA-160 context");
   }
 }

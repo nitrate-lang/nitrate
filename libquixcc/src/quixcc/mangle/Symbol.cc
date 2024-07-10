@@ -31,8 +31,8 @@
 
 #define QUIXCC_INTERNAL
 
-#include <quixcc/IR/Q/Variable.h>
 #include <core/Macro.h>
+#include <quixcc/IR/Q/Variable.h>
 #include <quixcc/mangle/Symbol.h>
 
 #include <thread>
@@ -106,7 +106,7 @@ bool libquixcc::Symbol::demangle_tocode(const std::string &mangled,
   return true;
 }
 
-LIB_EXPORT char *quixcc_demangle(const char *mangled) {
+LIB_EXPORT char *quixcc_cc_demangle(const char *mangled) {
   /* no-op */
   if (!mangled) return nullptr;
 

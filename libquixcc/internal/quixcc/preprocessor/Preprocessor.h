@@ -36,9 +36,8 @@
 #error "This header requires C++"
 #endif
 
+#include <quixcc/Library.h>
 #include <quixcc/lexer/Lex.h>
-#include <quixcc/Quix.h>
-#include <quixcc/Types.h>
 #include <stdio.h>
 
 #include <functional>
@@ -79,7 +78,7 @@ class PrepEngine : public libquixcc::Scanner {
   std::set<std::string> m_already_included;
   std::vector<std::string> m_include_files;
   std::stack<Entry> m_stack;
-  quixcc_job_t *job;
+  quixcc_cc_job_t *job;
   std::string m_content;
   std::string include_path;
   std::optional<Token> m_tok;
@@ -117,7 +116,7 @@ class PrepEngine : public libquixcc::Scanner {
       std::unique_ptr<void, std::function<void(void *)>> &handle);
 
  public:
-  PrepEngine(quixcc_job_t &job);
+  PrepEngine(quixcc_cc_job_t &job);
   virtual ~PrepEngine();
 
   /*================== PREPROCESSOR CONFIGURATION ==================*/
@@ -126,7 +125,7 @@ class PrepEngine : public libquixcc::Scanner {
   void set_include_path(rstr path);
   bool set_source(FILE *src, rstr filename) override;
   void set_source(rstr src, rstr filename);
-  quixcc_job_t *get_job() const;
+  quixcc_cc_job_t *get_job() const;
 
   /*================== PREPROCESSOR INTERFACE ==================*/
   Token next() override;

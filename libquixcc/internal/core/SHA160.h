@@ -49,7 +49,7 @@ class SHA160 {
   ~SHA160();
 
   void process(std::string_view data);
-  void finalize(std::array<std::uint8_t, 20> &sum);
+  void finalize(uint8_t sum[20]);
 };
 };  // namespace libquixcc::core
 

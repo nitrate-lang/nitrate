@@ -37,7 +37,7 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
+bool libquixcc::parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                           std::shared_ptr<libquixcc::StmtNode> &node) {
   std::shared_ptr<StmtNode> x0;
   std::shared_ptr<ExprNode> x1, x2;
@@ -59,8 +59,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       x0 = std::make_shared<StmtGroupNode>(let_node);
     } else {
       std::shared_ptr<ExprNode> x0_tmp;
-      if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)},
-                      x0_tmp)) {
+      if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x0_tmp)) {
         return false;
       }
       x0 = std::make_shared<ExprStmtNode>(x0_tmp);
@@ -73,8 +72,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1))
-      return false;
+    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1)) return false;
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Semicolon)) {
@@ -82,9 +80,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       return false;
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)},
-                    x2))
-      return false;
+    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, x2)) return false;
 
     tok = scanner->next();
     if (!tok.is<Punctor>(CloseParen)) {
@@ -120,8 +116,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       x0 = std::make_shared<StmtGroupNode>(let_node);
     } else {
       std::shared_ptr<ExprNode> x0_tmp;
-      if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)},
-                      x0_tmp)) {
+      if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x0_tmp)) {
         return false;
       }
       x0 = std::make_shared<ExprStmtNode>(x0_tmp);
@@ -134,8 +129,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1))
-      return false;
+    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1)) return false;
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Semicolon)) {
@@ -144,9 +138,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
 
     if (!parse_expr(job, scanner,
-                    {Token(tPunc, OpenBrace),
-                     Token(tOper, Arrow)},
-                    x2))
+                    {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, x2))
       return false;
 
     std::shared_ptr<BlockNode> then_block;

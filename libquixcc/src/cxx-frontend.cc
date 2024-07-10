@@ -34,7 +34,7 @@
 #include <core/Macro.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
-#include <quixcc/EngineAPI.h>
+#include <quixcc/plugin/EngineAPI.h>
 #include <sys/mman.h>
 
 #include <filesystem>
@@ -72,7 +72,7 @@ LIB_CXX_EXPORT quixcc::CPU::CPU(const char *cpu) {
   }
 }
 
-LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs,
+LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_cc_job_t *> jobs,
                                           std::set<FILE *> to_close) {
   this->m_jobs = jobs;
   this->m_to_close = to_close;
@@ -80,7 +80,7 @@ LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_job_t *> jobs,
 }
 
 LIB_CXX_EXPORT quixcc::Compiler::~Compiler() {
-  for (auto job : this->m_jobs) quixcc_dispose(job);
+  for (auto job : this->m_jobs) quixcc_cc_dispose(job);
 
   for (auto file : this->m_to_close) fclose(file);
 }
@@ -92,13 +92,13 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads) {
   if (m_jobs.empty()) return *this;
 
   if ((tcount = std::min(max_threads, this->m_jobs.size())) == 1) {
-    quixcc_run(this->m_jobs[0]);
+    quixcc_cc_run(this->m_jobs[0]);
   } else {
     // Allocate jobs into threads
     for (i = 0; i < tcount; i++) {
       threads.push_back(std::thread([this, i, tcount]() {
         for (size_t j = i; j < this->m_jobs.size(); j += tcount)
-          quixcc_run(this->m_jobs[j]);
+          quixcc_cc_run(this->m_jobs[j]);
       }));
     }
 
@@ -108,7 +108,7 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads) {
   m_ok = true;
 
   for (auto job : this->m_jobs) {
-    const quixcc_status_t *status = quixcc_status(job);
+    const quixcc_status_t *status = quixcc_cc_status(job);
     if (!status) throw std::runtime_error("Failed to retrieve job status.");
 
     for (i = 0; i < status->m_count; i++) {
@@ -130,7 +130,7 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal,
   std::lock_guard<std::mutex> lock(mtx);
 
   for (auto job : this->m_jobs) {
-    const quixcc_status_t *status = quixcc_status(job);
+    const quixcc_status_t *status = quixcc_cc_status(job);
     if (!status) throw std::runtime_error("Failed to retrieve job status.");
 
     for (i = 0; i < status->m_count; i++) {
@@ -318,39 +318,39 @@ bool quixcc::CompilerBuilder::verify() {
 LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build() {
   if (!verify()) throw std::runtime_error("Invalid compiler configuration.");
 
-  std::vector<quixcc_job_t *> jobs;
-  quixcc_job_t *job;
+  std::vector<quixcc_cc_job_t *> jobs;
+  quixcc_cc_job_t *job;
 
   if (m_input) m_files.push_back(std::make_pair(m_input, "stdin"));
 
   for (auto &entry : m_files) {
-    if ((job = quixcc_new()) == nullptr)
+    if ((job = quixcc_cc_new()) == nullptr)
       throw std::runtime_error("Failed to create new job.");
 
     switch (m_verbose) {
       case Verbosity::NORMAL:
         break;
       case Verbosity::VERBOSE:
-        quixcc_option(job, "-v", true);
+        quixcc_cc_option(job, "-v", true);
         break;
       case Verbosity::VERY_VERBOSE:
         // job->m_debug = true;
-        quixcc_option(job, "-v", true);
+        quixcc_cc_option(job, "-v", true);
         break;
     }
 
-    for (auto &flag : m_flags) quixcc_option(job, flag.c_str(), true);
+    for (auto &flag : m_flags) quixcc_cc_option(job, flag.c_str(), true);
 
-    quixcc_source(job, entry.first, entry.second.c_str());
+    quixcc_cc_source(job, entry.first, entry.second.c_str());
 
-    if (!quixcc_target(job, m_target.triple().c_str()))
+    if (!quixcc_cc_target(job, m_target.triple().c_str()))
       throw TargetTripleException(
           "Invalid or unsupported LLVM target triple: " + m_target.triple());
 
-    if (!quixcc_cpu(job, m_cpu.cpu().c_str()))
+    if (!quixcc_cc_cpu(job, m_cpu.cpu().c_str()))
       throw CpuException("Invalid or unsupported LLVM CPU: " + m_cpu.cpu());
 
-    quixcc_output(job, m_output, nullptr);
+    quixcc_cc_output(job, m_output, nullptr);
 
     jobs.push_back(job);
   }

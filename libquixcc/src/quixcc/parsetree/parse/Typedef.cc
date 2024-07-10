@@ -37,7 +37,7 @@
 
 using namespace libquixcc;
 
-bool libquixcc::parse_typedef(quixcc_job_t &job, libquixcc::Scanner *scanner,
+bool libquixcc::parse_typedef(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                               std::shared_ptr<libquixcc::StmtNode> &node) {
   /*
   type <name> = <type>;

@@ -32,25 +32,25 @@
 #define QUIXCC_INTERNAL
 
 #include <core/Macro.h>
-#include <quixcc/lexer/Lex.h>
 #include <core/QuixJob.h>
-#include <quixcc/Quix.h>
+#include <quixcc/Library.h>
+#include <quixcc/lexer/Lex.h>
 
 #include <iostream>
 #include <stdexcept>
 
 using namespace libquixcc;
 
-LIB_EXPORT void quixcc_lexconf(quixcc_job_t *job,
+LIB_EXPORT void quixcc_lexconf(quixcc_cc_job_t *job,
                                quixcc_lexer_config_t config) {
   std::lock_guard<std::mutex> lock(job->m_lock);
 }
 
-const char *publish_string(quixcc_job_t *job, std::string_view str) {
+const char *publish_string(quixcc_cc_job_t *job, std::string_view str) {
   return job->m_owned_strings.insert(std::string(str)).first->c_str();
 }
 
-static quix_inline void erase_sid(quixcc_job_t *job, const char *sid) {
+static quix_inline void erase_sid(quixcc_cc_job_t *job, const char *sid) {
   for (auto it = job->m_owned_strings.begin(); it != job->m_owned_strings.end();
        it++) {
     if (strcmp(it->c_str(), sid) == 0) {
@@ -60,7 +60,7 @@ static quix_inline void erase_sid(quixcc_job_t *job, const char *sid) {
   }
 }
 
-static quix_inline bool check_and_init(quixcc_job_t *job) {
+static quix_inline bool check_and_init(quixcc_cc_job_t *job) {
   if (job->m_scanner) return true;
 
   job->m_scanner = std::make_unique<StreamLexer>();
@@ -76,7 +76,7 @@ static quix_inline bool check_and_init(quixcc_job_t *job) {
   return true;
 }
 
-static quix_inline quixcc_tok_t fetch_token(quixcc_job_t *job) {
+static quix_inline quixcc_tok_t fetch_token(quixcc_cc_job_t *job) {
   auto tok = job->m_scanner->peek();
 
   quixcc_tok_t ret;
@@ -134,7 +134,7 @@ static quix_inline quixcc_tok_t fetch_token(quixcc_job_t *job) {
   return ret;
 }
 
-LIB_EXPORT quixcc_tok_t quixcc_next(quixcc_job_t *job) {
+LIB_EXPORT quixcc_tok_t quixcc_cc_next(quixcc_cc_job_t *job) {
   /* Safe code is good code */
   assert(job != nullptr);
 
@@ -153,7 +153,7 @@ LIB_EXPORT quixcc_tok_t quixcc_next(quixcc_job_t *job) {
   return tok;
 }
 
-LIB_EXPORT quixcc_tok_t quixcc_peek(quixcc_job_t *job) {
+LIB_EXPORT quixcc_tok_t quixcc_cc_peek(quixcc_cc_job_t *job) {
   /* Safe code is good code */
   assert(job != nullptr);
 
@@ -168,7 +168,7 @@ LIB_EXPORT quixcc_tok_t quixcc_peek(quixcc_job_t *job) {
   return fetch_token(job);
 }
 
-LIB_EXPORT bool quixcc_tokeq(quixcc_tok_t a, quixcc_tok_t b) {
+LIB_EXPORT bool quixcc_cc_tokeq(quixcc_tok_t a, quixcc_tok_t b) {
   if (a.ty != b.ty) return false;
 
   switch (a.ty) {
@@ -197,7 +197,7 @@ LIB_EXPORT bool quixcc_tokeq(quixcc_tok_t a, quixcc_tok_t b) {
   }
 }
 
-LIB_EXPORT void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok) {
+LIB_EXPORT void quixcc_cc_tok_release(quixcc_cc_job_t *job, quixcc_tok_t *tok) {
   /* Safe code is good code */
   assert(job != nullptr);
   assert(tok != nullptr);
@@ -225,9 +225,9 @@ LIB_EXPORT void quixcc_tok_release(quixcc_job_t *job, quixcc_tok_t *tok) {
   tok->loc.file = NULL;
 }
 
-LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job,
-                                       const quixcc_tok_t *tok, char *buf,
-                                       size_t len) {
+LIB_EXPORT size_t quixcc_cc_tok_serialize(quixcc_cc_job_t *job,
+                                          const quixcc_tok_t *tok, char *buf,
+                                          size_t len) {
   /* Safe code is good code */
   assert(job != nullptr);
   assert(tok != nullptr);
@@ -271,9 +271,9 @@ LIB_EXPORT size_t quixcc_tok_serialize(quixcc_job_t *job,
   }
 }
 
-LIB_EXPORT size_t quixcc_tok_humanize(quixcc_job_t *job,
-                                      const quixcc_tok_t *tok, char *buf,
-                                      size_t len) {
+LIB_EXPORT size_t quixcc_cc_tok_humanize(quixcc_cc_job_t *job,
+                                         const quixcc_tok_t *tok, char *buf,
+                                         size_t len) {
   /* Safe code is good code */
   assert(job != nullptr);
   assert(tok != nullptr);

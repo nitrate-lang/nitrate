@@ -257,7 +257,9 @@ class Ptr : public Type {
 
  public:
   static Ptr *create(Type *type);
-  size_t bitcount() const override { return g_target_word_size * 8; }
+  size_t bitcount() const override {
+    return libquixcc::quixcc::g_target_word_size * 8;
+  }
 
   Type *type;
 };

@@ -33,7 +33,7 @@
 
 #if QPKG_DEV_TOOLS
 
-#include <quixcc/EngineAPI.h>
+#include <quixcc/plugin/EngineAPI.h>
 
 #include <dev/test/test.hh>
 

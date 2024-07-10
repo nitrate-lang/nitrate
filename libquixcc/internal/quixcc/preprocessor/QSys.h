@@ -36,8 +36,8 @@
 #error "This header requires C++"
 #endif
 
-#include <quixcc/EngineAPI.h>
-#include <quixcc/Types.h>
+#include <quixcc/Library.h>
+#include <quixcc/plugin/EngineAPI.h>
 
 namespace libquixcc::qsys {
 
@@ -112,7 +112,7 @@ QSYS_DECL(qsys_get_type_body);
 QSYS_DECL(qsys_set_global_meta_variable);
 QSYS_DECL(qsys_get_global_meta_variable);
 
-void bind_qsyscalls(quixcc_job_t* job);
+void bind_qsyscalls(quixcc_cc_job_t* job);
 }  // namespace libquixcc::qsys
 
 #endif  // __QUIXCC_PREP_QSYS_H__

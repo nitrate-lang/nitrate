@@ -37,19 +37,19 @@
 #endif
 
 #include <quixcc/IR/delta/DeltaIR.h>
-#include <quixcc/Quix.h>
+#include <quixcc/Library.h>
 #include <stdio.h>
 
 namespace libquixcc::codegen {
-bool write_IR(quixcc_job_t &ctx,
+bool write_IR(quixcc_cc_job_t &ctx,
               std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out,
               bool generate_bitcode);
-bool write_c11(quixcc_job_t &ctx,
+bool write_c11(quixcc_cc_job_t &ctx,
                std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out);
-bool write_llvm(quixcc_job_t &ctx,
+bool write_llvm(quixcc_cc_job_t &ctx,
                 std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out,
                 llvm::CodeGenFileType mode);
-bool generate(quixcc_job_t &ctx,
+bool generate(quixcc_cc_job_t &ctx,
               std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir);
 };  // namespace libquixcc::codegen
 

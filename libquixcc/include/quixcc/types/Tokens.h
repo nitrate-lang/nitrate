@@ -29,49 +29,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_TYPES_H__
-#define __QUIXCC_TYPES_H__
-
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#ifndef __QUIXCC_TYPES_TOKENS_H__
+#define __QUIXCC_TYPES__H____QUIXCC_TYPES_TOKENS_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/// @brief Opaque type to a preprocessor engine.
-typedef struct quixcc_engine_t quixcc_engine_t;
-
-/// @brief Opaque type to QUIX IR ExprNode
-typedef struct quixcc_expr_t quixcc_expr_t;
-
-enum quixcc_msg_level_t {
-  QUIXCC_RAW = 0,
-  QUIXCC_DEBUG = 1,
-  QUIXCC_SUCCESS = 2,
-  QUIXCC_INFO = 3,
-  QUIXCC_WARN = 4,
-  QUIXCC_ERROR = 5,
-  QUIXCC_FATAL = 6
-};
-
-struct quixcc_msg_t {
-  uint64_t line;
-  uint64_t column;
-  const char* message;
-  enum quixcc_msg_level_t m_level;
-};
-
-typedef struct quixcc_status_t {
-  struct quixcc_msg_t** m_messages;
-  uint32_t m_count;
-  bool m_success;
-} quixcc_status_t;
-
-/// @brief Opaque compiler job context
-/// @note It is opaque for a reason, treat it with respect.
-typedef struct quixcc_job_t quixcc_job_t;
+#include <stdint.h>
 
 typedef enum {
   QUIXCC_LEX_EOF = 0,
@@ -247,15 +212,8 @@ typedef struct quixcc_tok_t {
 
 #define QUIXCC_TOK_SIZE sizeof(quixcc_tok_t)
 
-typedef enum {
-  QUIXCC_LEXCONF_IGN_COM = 1 << 0,
-} quixcc_lexer_config_t;
-
-typedef bool (*quixcc_qsys_impl_t)(quixcc_engine_t* engine, uint32_t num,
-                                   quixcc_expr_t** expr, uint32_t argc);
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // __QUIXCC_TYPES_H__
+#endif  // __QUIXCC_TYPES_TOKENS_H__

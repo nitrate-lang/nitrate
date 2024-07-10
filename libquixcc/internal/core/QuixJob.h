@@ -36,9 +36,9 @@
 #error "This header requires C++"
 #endif
 
+#include <quixcc/Library.h>
 #include <quixcc/llvm/LLVMWrapper.h>
 #include <quixcc/preprocessor/Preprocessor.h>
-#include <quixcc/Quix.h>
 
 #include <atomic>
 #include <boost/unordered_map.hpp>
@@ -53,10 +53,11 @@
 #include <unordered_set>
 #include <vector>
 
-typedef struct quixcc_options_t {
+namespace libquixcc::quixcc {
+typedef struct quixcc_cc_options_t {
   const char **m_options;
   uint32_t m_count;
-} quixcc_options_t;
+} quixcc_cc_options_t;
 
 typedef struct quixcc_uuid_t {
   uint8_t data[16];
@@ -64,22 +65,31 @@ typedef struct quixcc_uuid_t {
 
 typedef char *(*quixcc_macro_fn_t)(uint32_t argc, const char **argv);
 
-#define JOB_MAGIC 0x32b287410bbef790
+constexpr uint64_t JOB_MAGIC = 0x32b287410bbef790;
 
-struct quixcc_job_t {
+}  // namespace libquixcc::quixcc
+
+namespace libquixcc::quixcc {
+extern thread_local uint8_t g_target_word_size;
+extern std::atomic<uint64_t> g_num_of_contexts;
+extern std::mutex g_library_lock;
+}  // namespace libquixcc::quixcc
+
+struct quixcc_cc_job_t {
   volatile uint64_t m_magic;
   libquixcc::LLVMContext m_inner;
   std::stack<std::string> m_filename;
   std::unordered_set<std::string> m_owned_strings;
   std::vector<std::pair<std::string, std::string>> m_argset;
-  std::unordered_map<std::string, quixcc_macro_fn_t> m_macros;
+  std::unordered_map<std::string, libquixcc::quixcc::quixcc_macro_fn_t>
+      m_macros;
   std::set<std::unique_ptr<void, std::function<void(void *)>>> m_dlhandles;
   libquixcc::QSysCallRegistry m_qsyscalls;
   std::mutex m_lock;
   std::string m_triple;
   std::string m_cpu;
-  quixcc_uuid_t m_id;
-  quixcc_options_t m_options;
+  libquixcc::quixcc::quixcc_uuid_t m_id;
+  libquixcc::quixcc::quixcc_cc_options_t m_options;
   quixcc_status_t m_result;
   std::unique_ptr<libquixcc::Scanner> m_scanner;
   std::optional<std::pair<uint32_t, uint32_t>> version;
@@ -91,8 +101,8 @@ struct quixcc_job_t {
   bool m_tainted;
   bool m_running;
 
-  quixcc_job_t() {
-    m_magic = JOB_MAGIC;
+  quixcc_cc_job_t() {
+    m_magic = libquixcc::quixcc::JOB_MAGIC;
     m_in = nullptr;
     m_out = nullptr;
     m_priority = 0;
@@ -110,9 +120,5 @@ struct quixcc_job_t {
     return false;
   }
 };
-
-extern thread_local uint8_t g_target_word_size;
-extern std::atomic<uint64_t> g_num_of_contexts;
-extern std::mutex g_library_lock;
 
 #endif  // __QUIXCC_CORE_QUIXJOB_H__

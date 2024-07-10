@@ -574,7 +574,8 @@ static std::string canonicalize_float(std::string_view input) {
   return ss.str();
 }
 
-static bool canonicalize_number(std::string &number, std::string &norm, NumType type) {
+static bool canonicalize_number(std::string &number, std::string &norm,
+                                NumType type) {
   /* Create a cache */
   static thread_local std::unordered_map<std::string, std::string>
       g_canonicalize_number_cache;
