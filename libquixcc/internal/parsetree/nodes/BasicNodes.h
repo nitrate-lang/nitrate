@@ -134,8 +134,8 @@ class ParseNode {
              is<EnumTypeNode>() || is<StructTypeNode>() ||
              is<RegionTypeNode>() || is<UnionTypeNode>() ||
              is<ArrayTypeNode>() || is<VectorTypeNode>() || is<MapTypeNode>() ||
-             is<ResultTypeNode>() || is<FunctionTypeNode>() ||
-             is<UserTypeNode>();
+             is<TupleTypeNode>() || is<SetTypeNode>() || is<ResultTypeNode>() ||
+             is<FunctionTypeNode>() || is<UserTypeNode>();
 
     if (std::is_same_v<T, StmtNode>)
       return is<ExprStmtNode>() || is<NopStmtNode>() || is<DeclNode>() ||

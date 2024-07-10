@@ -48,16 +48,3 @@ region UdpPacket {
                   "prior to sending the packet.");
   }
 } impl [auto];
-
-/*
-
-VS C Code:
-
-struct UdpPacket {
-  uint16_t srcport;
-  uint16_t dstport;
-  uint16_t length;
-  uint16_t checksum;
-} __attribute__((packed));
-
-*/

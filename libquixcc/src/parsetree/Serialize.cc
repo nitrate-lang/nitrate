@@ -269,6 +269,12 @@ void serialize::ParseTreeSerializer::dispatch(const ParseNode *n) {
     case libquixcc::NodeType::MapTypeNode:
       conv(n->as<MapTypeNode>());
       break;
+    case libquixcc::NodeType::TupleTypeNode:
+      conv(n->as<TupleTypeNode>());
+      break;
+    case libquixcc::NodeType::SetTypeNode:
+      conv(n->as<SetTypeNode>());
+      break;
     case libquixcc::NodeType::ResultTypeNode:
       conv(n->as<ResultTypeNode>());
       break;
@@ -940,6 +946,30 @@ void ParseTreeSerializer::conv(const MapTypeNode *n) {
   o << "(Map";
   next(n->m_key_type);
   next(n->m_value_type);
+  o << ')';
+  indent--;
+}
+
+void ParseTreeSerializer::conv(const TupleTypeNode *n) {
+  indent++;
+  ind();
+
+  o << "(Tuple [";
+
+  for (const auto &field : n->m_types) {
+    next(field);
+  }
+
+  o << "])";
+  indent--;
+}
+
+void ParseTreeSerializer::conv(const SetTypeNode *n) {
+  indent++;
+  ind();
+
+  o << "(Set";
+  next(n->m_type);
   o << ')';
   indent--;
 }

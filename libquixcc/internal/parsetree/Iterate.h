@@ -118,6 +118,8 @@ class ParseTreePreorder {
   size_t iter(ArrayTypeNode *node);
   size_t iter(VectorTypeNode *node);
   size_t iter(MapTypeNode *node);
+  size_t iter(TupleTypeNode *node);
+  size_t iter(SetTypeNode *node);
   size_t iter(ResultTypeNode *node);
   size_t iter(FunctionTypeNode *node);
   size_t iter(UserTypeNode *node);

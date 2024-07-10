@@ -89,6 +89,8 @@ std::unordered_map<libquixcc::NodeType, std::string_view>
         {NodeType::ArrayTypeNode, "ArrayTypeNode"},
         {NodeType::VectorTypeNode, "VectorTypeNode"},
         {NodeType::MapTypeNode, "MapTypeNode"},
+        {NodeType::TupleTypeNode, "TupleTypeNode"},
+        {NodeType::SetTypeNode, "SetTypeNode"},
         {NodeType::ResultTypeNode, "ResultTypeNode"},
         {NodeType::FunctionTypeNode, "FunctionTypeNode"},
         {NodeType::UserTypeNode, "UserTypeNode"},

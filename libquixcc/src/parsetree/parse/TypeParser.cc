@@ -35,9 +35,17 @@
 #include <core/Logger.h>
 #include <parsetree/Parser.h>
 
-using namespace libquixcc;
+#include <utility>
 
-static std::map<std::string, std::shared_ptr<TypeNode>> primitive_types = {
+using namespace libquixcc;
+using namespace libquixcc::core;
+
+template <typename T>
+using shared = std::shared_ptr<T>;
+
+#define ERRORS(__type) LOG(ERROR) << feedback[__type] << tok << std::endl
+
+static std::map<std::string, shared<TypeNode>> primitives = {
     {"u8", std::make_shared<U8TypeNode>()},
     {"u16", std::make_shared<U16TypeNode>()},
     {"u32", std::make_shared<U32TypeNode>()},
@@ -55,175 +63,307 @@ static std::map<std::string, std::shared_ptr<TypeNode>> primitive_types = {
     {"void", std::make_shared<VoidTypeNode>()},
     {"null", std::make_shared<NullTypeNode>()}};
 
-bool libquixcc::parse_type(quixcc_job_t &job, libquixcc::Scanner *scanner,
-                           std::shared_ptr<TypeNode> &node) {
-  Token tok = scanner->next();
-  std::shared_ptr<TypeNode> type = nullptr, inner = nullptr;
+bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
+                           shared<TypeNode> &node) {
+  /** QUIX TYPE PARSER
+   *
+   * @brief Given a Scanner, parse tokens into a QUIX type node.
+   *
+   * @note No validation is done here. This is just a parser.
+   *
+   * @return true if the type was parsed successfully, false otherwise.
+   */
 
-  if (tok.type == TT::Keyword) {
-    std::shared_ptr<StmtNode> fn;
+  using namespace std;
 
+  shared<TypeNode> type, inner, value_type;
+  shared<StmtNode> fn;
+  shared<ConstExprNode> size;
+  vector<shared<TypeNode>> types;
+  string name;
+
+  Token tok;
+
+  if ((tok = src->next()).type == TT::Keyword) {
     switch (tok.as<Keyword>()) {
-      case Keyword::Void:
-        inner = std::make_shared<VoidTypeNode>();
-        goto suffix;
-      case Keyword::Null:
-        inner = std::make_shared<NullTypeNode>();
-        goto suffix;
-      case Keyword::Fn:
-        if (!parse_function(job, scanner, fn)) {
-          LOG(ERROR) << core::feedback[TYPE_EXPECTED_FUNCTION] << tok
-                     << std::endl;
-          goto error;
+      case Keyword::Void: {
+        /** QUIX VOID TYPE
+         *
+         * @brief Parse a void type.
+         */
+
+        inner = make_shared<VoidTypeNode>();
+        goto type_suffix;
+      }
+
+      case Keyword::Null: {
+        /** QUIX NULL TYPE
+         *
+         * @brief Parse a null type.
+         */
+
+        inner = make_shared<NullTypeNode>();
+        goto type_suffix;
+      }
+
+      case Keyword::Fn: {
+        /** QUIX FUNCTION TYPE
+         *
+         * @brief Parse a function type.
+         *
+         * @note We will reuse the function parser here. We expect
+         *       a function declaration node to be returned. A
+         *       will end with a semicolon. But a function type
+         *       will not end with a semicolon. We push a semicolon
+         *       to account for this.
+         */
+
+        if (!parse_function(job, src, fn)) {
+          ERRORS(TYPE_EXPECTED_FUNCTION);
+          goto error_end;
         }
 
         if (!fn->is<FunctionDeclNode>()) {
-          LOG(ERROR) << core::feedback[TYPE_EXPECTED_FUNCTION] << tok
-                     << std::endl;
-          goto error;
+          ERRORS(TYPE_EXPECTED_FUNCTION);
+          goto error_end;
         }
 
-        inner = std::static_pointer_cast<FunctionDeclNode>(fn)->m_type;
-        scanner->push(Token(TT::Punctor, Punctor::Semicolon));
-        goto suffix;
-      case Keyword::Opaque: {
-        tok = scanner->next();
-        if (!tok.is<Punctor>(Punctor::OpenParen)) {
-          LOG(ERROR) << core::feedback[TYPE_OPAQUE_EXPECTED_PAREN] << tok
-                     << std::endl;
-          goto error;
-        }
-        tok = scanner->next();
-        if (tok.type != TT::Identifier) {
-          LOG(ERROR) << core::feedback[TYPE_OPAQUE_EXPECTED_IDENTIFIER] << tok
-                     << std::endl;
-          goto error;
-        }
-        std::string name = tok.as<std::string>();
-        tok = scanner->next();
-        if (!tok.is<Punctor>(Punctor::CloseParen)) {
-          LOG(ERROR) << core::feedback[TYPE_OPAQUE_EXPECTED_CLOSE_PAREN] << tok
-                     << std::endl;
-          goto error;
-        }
+        inner = static_pointer_cast<FunctionDeclNode>(fn)->m_type;
 
-        inner = std::make_shared<OpaqueTypeNode>(name);
-        goto suffix;
+        /* Push a semicolon to account for the above usage. */
+        src->push(Token(TT::Punctor, Punctor::Semicolon));
+
+        goto type_suffix;
       }
-      default:
-        goto error;
-    }
-  } else if (tok.type == TT::Identifier) {
-    if (primitive_types.contains(tok.as<std::string>())) {
-      inner = primitive_types[tok.as<std::string>()];
-      goto suffix;
-    } else {
-      inner = std::make_shared<UserTypeNode>(tok.as<std::string>());
-      goto suffix;
-    }
-  } else if (tok.is<Punctor>(Punctor::OpenBracket)) {
-    // Array type or Vector type or map type
-    // syntax [type; size]
-    if (!parse_type(job, scanner, type)) {
-      LOG(ERROR) << core::feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
-      goto error;
+
+      case Keyword::Opaque: {
+        /** QUIX OPAQUE TYPE
+         *
+         * @brief Parse an opaque type.
+         *
+         * @note An opaque type is a type that is not defined in the
+         *       current scope. It is a placeholder for a type that
+         *       is distinguisable by its name.
+         */
+
+        if (!(tok = src->next()).is<Punctor>(Punctor::OpenParen)) {
+          ERRORS(TYPE_OPAQUE_EXPECTED_PAREN);
+          goto error_end;
+        }
+
+        if ((tok = src->next()).type != TT::Identifier) {
+          ERRORS(TYPE_OPAQUE_EXPECTED_IDENTIFIER);
+          goto error_end;
+        }
+
+        name = tok.as<string>(); /* Save the name of the opaque type. */
+
+        if (!(tok = src->next()).is<Punctor>(Punctor::CloseParen)) {
+          ERRORS(TYPE_OPAQUE_EXPECTED_CLOSE_PAREN);
+          goto error_end;
+        }
+
+        inner = make_shared<OpaqueTypeNode>(name);
+        goto type_suffix;
+      }
+
+      default: {
+        /*! We should not reach here in legal code. */
+        goto error_end;
+      }
     }
 
-    tok = scanner->next();
-    if (tok.is<Punctor>(Punctor::CloseBracket)) {
-      inner = std::make_shared<VectorTypeNode>(type);
-      goto suffix;
+    __builtin_unreachable();
+  } else if (tok.type == TT::Identifier) {
+    if (primitives.contains(tok.as<string>())) {
+      /** QUIX PRIMITIVE TYPE
+       *
+       * @brief Parse a primitive type.
+       */
+
+      inner = primitives[tok.as<string>()];
+      goto type_suffix;
+    } else {
+      /** QUIX ANY NAMED TYPE
+       *
+       * @brief Parse a named type.
+       *
+       * @note A named type is a type that is referenced by its name.
+       *       It is a placeholder for a type that is defined elsewhere.
+       */
+
+      inner = make_shared<UserTypeNode>(tok.as<string>());
+      goto type_suffix;
+    }
+
+    __builtin_unreachable();
+  } else if (tok.is<Punctor>(Punctor::OpenBracket)) {
+    /** THIS COULD BE A VECTOR, MAP, OR ARRAY TYPE
+     *
+     * @brief Parse a vector, map, or array type.
+     */
+
+    if (!parse_type(job, src, type)) {
+      ERRORS(TYPE_EXPECTED_TYPE);
+      goto error_end;
+    }
+
+    if ((tok = src->next()).is<Punctor>(Punctor::CloseBracket)) {
+      /** QUIX VECTOR TYPE
+       *
+       * @brief Parse a vector type.
+       */
+
+      inner = make_shared<VectorTypeNode>(type);
+      goto type_suffix;
     }
 
     if (tok.is<Operator>(Operator::Minus)) {
-      /// TODO: Implement map type
-      tok = scanner->next();
-      if (!tok.is<Operator>(Operator::GreaterThan)) {
-        LOG(ERROR) << core::feedback[TYPE_EXPECTED_MAP_ARROW] << tok
-                   << std::endl;
-        goto error;
+      /** QUIX MAP TYPE
+       *
+       * @brief Parse a map type.
+       */
+
+      if (!(tok = src->next()).is<Operator>(Operator::GreaterThan)) {
+        ERRORS(TYPE_EXPECTED_MAP_ARROW);
+        goto error_end;
       }
 
-      std::shared_ptr<TypeNode> value_type;
-      if (!parse_type(job, scanner, value_type)) {
-        LOG(ERROR) << core::feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
-        goto error;
+      if (!parse_type(job, src, value_type)) {
+        ERRORS(TYPE_EXPECTED_TYPE);
+        goto error_end;
       }
 
-      tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::CloseBracket)) {
-        LOG(ERROR) << core::feedback[TYPE_EXPECTED_CLOSE_BRACKET] << tok
-                   << std::endl;
-        goto error;
+      if (!(tok = src->next()).is<Punctor>(Punctor::CloseBracket)) {
+        ERRORS(TYPE_EXPECTED_CLOSE_BRACKET);
+        goto error_end;
       }
 
-      inner = std::make_shared<MapTypeNode>(type, value_type);
-      goto suffix;
+      inner = make_shared<MapTypeNode>(type, value_type);
+      goto type_suffix;
     }
+
+    /** QUIX ARRAY TYPE
+     *
+     * @brief Parse an array type.
+     */
 
     if (!tok.is<Punctor>(Punctor::Semicolon)) {
-      LOG(ERROR) << core::feedback[TYPE_EXPECTED_SEMICOLON] << tok << std::endl;
-      goto error;
+      ERRORS(TYPE_EXPECTED_SEMICOLON);
+      goto error_end;
     }
 
-    std::shared_ptr<ConstExprNode> size;
-    if (!parse_const_expr(job, scanner,
-                          Token(TT::Punctor, Punctor::CloseBracket), size)) {
-      LOG(ERROR) << core::feedback[TYPE_EXPECTED_CONST_EXPR] << tok
-                 << std::endl;
-      goto error;
+    if (!parse_const_expr(job, src, Token(TT::Punctor, Punctor::CloseBracket),
+                          size)) {
+      ERRORS(TYPE_EXPECTED_CONST_EXPR);
+      goto error_end;
     }
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::CloseBracket)) {
-      LOG(ERROR) << core::feedback[TYPE_EXPECTED_CLOSE_BRACKET] << tok
-                 << std::endl;
-      goto error;
+    if (!(tok = src->next()).is<Punctor>(Punctor::CloseBracket)) {
+      ERRORS(TYPE_EXPECTED_CLOSE_BRACKET);
+      goto error_end;
     }
 
-    inner = std::make_shared<ArrayTypeNode>(type, size);
-    goto suffix;
+    inner = make_shared<ArrayTypeNode>(type, size);
+    goto type_suffix;
+  } else if (tok.is<Punctor>(Punctor::OpenBrace)) {
+    /** QUIX SET TYPE
+     *
+     * @brief Parse a set type.
+     */
+
+    if (!parse_type(job, src, type)) {
+      ERRORS(TYPE_EXPECTED_TYPE);
+      goto error_end;
+    }
+
+    if (!(tok = src->next()).is<Punctor>(Punctor::CloseBrace)) {
+      ERRORS(TYPE_EXPECTED_CLOSE_BRACE);
+      goto error_end;
+    }
+
+    inner = make_shared<SetTypeNode>(type);
+    goto type_suffix;
+  } else if (tok.is<Punctor>(Punctor::OpenParen)) {
+    /** QUIX TUPLE TYPE
+     *
+     * @brief Parse a tuple type.
+     */
+
+    while (true) {
+      if ((tok = src->peek()).is<Punctor>(Punctor::CloseParen)) {
+        src->next();
+        break;
+      }
+
+      if (!parse_type(job, src, type)) {
+        ERRORS(TYPE_EXPECTED_TYPE);
+        goto error_end;
+      }
+
+      types.push_back(type);
+
+      tok = src->peek();
+      if (tok.is<Punctor>(Punctor::Comma)) {
+        src->next();
+      }
+    }
+
+    inner = make_shared<TupleTypeNode>(types);
+    goto type_suffix;
   } else if (tok.is<Operator>(Operator::Multiply)) {
-    // Pointer type
-    if (!parse_type(job, scanner, type)) {
-      LOG(ERROR) << core::feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
-      goto error;
+    /** QUIX POINTER TYPE
+     *
+     * @brief Parse a pointer type.
+     */
+
+    if (!parse_type(job, src, type)) {
+      ERRORS(TYPE_EXPECTED_TYPE);
+      goto error_end;
     }
 
-    inner = std::make_shared<PointerTypeNode>(type);
-    goto suffix;
+    inner = make_shared<PointerTypeNode>(type);
+    goto type_suffix;
   } else if (tok.is<Operator>(Operator::LogicalNot)) {
-    // ! means mutability
-    if (!parse_type(job, scanner, type)) {
-      LOG(ERROR) << core::feedback[TYPE_EXPECTED_TYPE] << tok << std::endl;
-      goto error;
+    /** QUIX MUTABLE TYPE
+     *
+     * @brief Parse a mutable type.
+     */
+
+    if (!parse_type(job, src, type)) {
+      ERRORS(TYPE_EXPECTED_TYPE);
+      goto error_end;
     }
 
-    inner = std::make_shared<MutTypeNode>(type);
-    goto suffix;
+    inner = make_shared<MutTypeNode>(type);
+    goto type_suffix;
   } else {
-    LOG(ERROR) << core::feedback[EXPECTED_TYPE] << tok << std::endl;
-    goto error;
+    ERRORS(EXPECTED_TYPE);
+    goto error_end;
   }
 
-suffix:
+type_suffix: {
+  /** QUIX TYPE SUFFIXES
+   *
+   * @brief Parse type suffixes (syntax sugar).
+   */
+
   while (true) {
-    tok = scanner->peek();
-    if (tok.is<Operator>(Operator::Question)) {
-      // ? means Result type
-      scanner->next();
-      inner = std::make_shared<ResultTypeNode>(inner);
-    } else {
-      break;
+    if ((tok = src->peek()).is<Operator>(Operator::Question)) {
+      src->next();
+      inner = make_shared<ResultTypeNode>(inner);
+      continue;
     }
+
+    break;
   }
+}
 
   assert(inner != nullptr);
 
   node = inner;
-
   return true;
 
-error:
+error_end:
   return false;
 }

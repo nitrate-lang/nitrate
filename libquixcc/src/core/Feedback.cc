@@ -247,6 +247,8 @@ libquixcc::core::Feedback libquixcc::core::feedback({
      "Expected a close bracket after the constant expression. To fix the "
      "issue, insert a close bracket after the constant expression. Syntax: "
      "[type; size]"},
+    {TYPE_EXPECTED_CLOSE_BRACE,
+     "Expected a close brace after the constant expression."},
     {EXPECTED_TYPE,
      "Failed to parse type. Expected a type name, but none was found. To fix "
      "the issue, insert a type name"},

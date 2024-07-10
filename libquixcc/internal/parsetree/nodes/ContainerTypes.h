@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PARSE_NODES_ARRAY_H__
-#define __QUIXCC_PARSE_NODES_ARRAY_H__
+#ifndef __QUIXCC_PARSE_NODES_CONTAINER_H__
+#define __QUIXCC_PARSE_NODES_CONTAINER_H__
 
 #ifndef __cplusplus
 #error "This header requires C++"
@@ -76,6 +76,25 @@ class MapTypeNode : public TypeNode {
   std::shared_ptr<TypeNode> m_key_type;
   std::shared_ptr<TypeNode> m_value_type;
 };
+
+class TupleTypeNode : public TypeNode {
+ public:
+  TupleTypeNode(std::vector<std::shared_ptr<TypeNode>> types)
+      : m_types(types) {
+    ntype = NodeType::TupleTypeNode;
+  }
+
+  std::vector<std::shared_ptr<TypeNode>> m_types;
+};
+
+class SetTypeNode : public TypeNode {
+ public:
+  SetTypeNode(std::shared_ptr<TypeNode> type) : m_type(type) {
+    ntype = NodeType::SetTypeNode;
+  }
+
+  std::shared_ptr<TypeNode> m_type;
+};
 }  // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_ARRAY_H__
+#endif  // __QUIXCC_PARSE_NODES_CONTAINER_H__

@@ -161,6 +161,10 @@ size_t ParseTreePreorder::dispatch(ParseNode *n) {
       return iter(n->as<VectorTypeNode>());
     case libquixcc::NodeType::MapTypeNode:
       return iter(n->as<MapTypeNode>());
+    case libquixcc::NodeType::TupleTypeNode:
+      return iter(n->as<TupleTypeNode>());
+    case libquixcc::NodeType::SetTypeNode:
+      return iter(n->as<SetTypeNode>());
     case libquixcc::NodeType::ResultTypeNode:
       return iter(n->as<ResultTypeNode>());
     case libquixcc::NodeType::FunctionTypeNode:
@@ -582,6 +586,22 @@ size_t ParseTreePreorder::iter(MapTypeNode *node) {
   count += next(node->m_key_type);
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_value_type));
   count += next(node->m_value_type);
+  return count + 1;
+}
+
+size_t ParseTreePreorder::iter(TupleTypeNode *node) {
+  size_t count = 0;
+  for (auto &field : node->m_types) {
+    m_callback(m_ns, m_scope, node, mk_ptr(&field));
+    count += next(field);
+  }
+  return count + 1;
+}
+
+size_t ParseTreePreorder::iter(SetTypeNode *node) {
+  size_t count = 0;
+  m_callback(m_ns, m_scope, node, mk_ptr(&node->m_type));
+  count += next(node->m_type);
   return count + 1;
 }
 

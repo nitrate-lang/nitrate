@@ -108,6 +108,8 @@ enum class NodeType : uint8_t {
   ArrayTypeNode,
   VectorTypeNode,
   MapTypeNode,
+  TupleTypeNode,
+  SetTypeNode,
   ResultTypeNode,
   FunctionTypeNode,
   UserTypeNode,
@@ -221,6 +223,8 @@ class UnionTypeNode;
 class ArrayTypeNode;
 class VectorTypeNode;
 class MapTypeNode;
+class TupleTypeNode;
+class SetTypeNode;
 class ResultTypeNode;
 class FunctionTypeNode;
 class UserTypeNode;

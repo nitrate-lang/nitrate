@@ -105,6 +105,8 @@ class ParseTreeSerializer {
   void conv(const ArrayTypeNode *);
   void conv(const VectorTypeNode *);
   void conv(const MapTypeNode *);
+  void conv(const TupleTypeNode *);
+  void conv(const SetTypeNode *);
   void conv(const ResultTypeNode *);
   void conv(const FunctionTypeNode *);
   void conv(const UserTypeNode *);

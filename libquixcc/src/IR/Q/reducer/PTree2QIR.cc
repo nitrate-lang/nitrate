@@ -149,6 +149,8 @@ static QResult conv(const UnionTypeNode *n, QState &state);
 static QResult conv(const ArrayTypeNode *n, QState &state);
 static QResult conv(const VectorTypeNode *n, QState &state);
 static QResult conv(const MapTypeNode *n, QState &state);
+static QResult conv(const TupleTypeNode *n, QState &state);
+static QResult conv(const SetTypeNode *n, QState &state);
 static QResult conv(const ResultTypeNode *n, QState &state);
 static QResult conv(const FunctionTypeNode *n, QState &state);
 static QResult conv(const IntegerNode *n, QState &state);
@@ -1609,6 +1611,16 @@ static QResult conv(const MapTypeNode *n, QState &state) {
   throw std::runtime_error("QIR translation: MapTypeNode not implemented");
 }
 
+static QResult conv(const TupleTypeNode *n, QState &state) {
+  /// TODO: Implement TupleTypeNode
+  throw std::runtime_error("QIR translation: TupleTypeNode not implemented");
+}
+
+static QResult conv(const SetTypeNode *n, QState &state) {
+  /// TODO: Implement SetTypeNode
+  throw std::runtime_error("QIR translation: SetTypeNode not implemented");
+}
+
 static QResult conv(const ResultTypeNode *n, QState &state) {
   /// TODO: cleanup
 
@@ -2910,6 +2922,14 @@ static QResult conv(const ParseNode *n, QState &state) {
 
     case NodeType::MapTypeNode:
       r = conv(n->as<MapTypeNode>(), state);
+      break;
+
+    case NodeType::TupleTypeNode:
+      r = conv(n->as<TupleTypeNode>(), state);
+      break;
+
+    case NodeType::SetTypeNode:
+      r = conv(n->as<SetTypeNode>(), state);
       break;
 
     case NodeType::ResultTypeNode:
