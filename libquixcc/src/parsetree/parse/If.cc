@@ -41,7 +41,7 @@ bool libquixcc::parse_if(quixcc_job_t &job, libquixcc::Scanner *scanner,
                          std::shared_ptr<libquixcc::StmtNode> &node) {
   std::shared_ptr<ExprNode> cond;
   if (!parse_expr(job, scanner,
-                  {Token(tPunc, Punctor::OpenBrace),
+                  {Token(tPunc, OpenBrace),
                    Token(tOper, Operator::Arrow)},
                   cond))
     return false;

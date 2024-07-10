@@ -49,7 +49,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
   auto name = tok.as<std::string>();
 
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::Colon)) {
+  if (!tok.is<Punctor>(Colon)) {
     LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_COLON] << tok << std::endl;
     return false;
   }
@@ -64,11 +64,11 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
   std::shared_ptr<ExprNode> value;
 
   tok = scanner->next();
-  if (tok.is<Punctor>(Punctor::Comma)) {
+  if (tok.is<Punctor>(Comma)) {
     node = std::make_shared<UnionFieldNode>(name, type);
     return true;
   } else if (tok.is<Operator>(Operator::Assign)) {
-    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Comma)},
+    if (!parse_expr(job, scanner, {Token(tPunc, Comma)},
                     value)) {
       LOG(ERROR) << core::feedback[UNION_FIELD_INIT_ERR] << name << tok
                  << std::endl;
@@ -81,7 +81,7 @@ static bool parse_union_field(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::Comma)) {
+  if (!tok.is<Punctor>(Comma)) {
     LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_PUNCTOR] << name << tok
                << std::endl;
     return false;
@@ -104,7 +104,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
   std::string name = tok.as<std::string>();
 
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::OpenBrace)) {
+  if (!tok.is<Punctor>(OpenBrace)) {
     LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_OPEN_BRACE] << tok
                << std::endl;
     return false;
@@ -116,12 +116,12 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   while (true) {
     tok = scanner->peek();
-    if (tok.is<Punctor>(Punctor::CloseBrace)) {
+    if (tok.is<Punctor>(CloseBrace)) {
       scanner->next();
       break;
     }
 
-    if (tok.is<Punctor>(Punctor::Semicolon)) {
+    if (tok.is<Punctor>(Semicolon)) {
       scanner->next();
       continue;
     }
@@ -187,7 +187,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   tok = scanner->peek();
-  if (tok.is<Punctor>(Punctor::Semicolon)) {
+  if (tok.is<Punctor>(Semicolon)) {
     scanner->next();
   }
 
@@ -200,7 +200,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
   if (tok.is<Keyword>(Keyword::Impl)) {
     scanner->next();
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::OpenBracket)) {
+    if (!tok.is<Punctor>(OpenBracket)) {
       LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_OPEN_BRACKET] << tok
                  << std::endl;
       return false;
@@ -208,7 +208,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     while (true) {
       tok = scanner->next();
-      if (tok.is<Punctor>(Punctor::CloseBracket)) break;
+      if (tok.is<Punctor>(CloseBracket)) break;
 
       if (tok.type() != tName) {
         LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_IDENTIFIER] << tok
@@ -219,7 +219,7 @@ bool libquixcc::parse_union(quixcc_job_t &job, libquixcc::Scanner *scanner,
       implements.insert(tok.as<std::string>());
 
       tok = scanner->peek();
-      if (tok.is<Punctor>(Punctor::Comma)) {
+      if (tok.is<Punctor>(Comma)) {
         scanner->next();
       }
     }

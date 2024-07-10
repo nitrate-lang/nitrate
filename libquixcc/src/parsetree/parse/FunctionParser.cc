@@ -120,7 +120,7 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   name = tok.as<std::string>();
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::Colon)) {
+  if (!tok.is<Punctor>(Colon)) {
     LOG(ERROR) << core::feedback[FN_PARAM_EXPECTED_COLON] << tok << std::endl;
     return false;
   }
@@ -139,8 +139,8 @@ static bool parse_fn_parameter(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     std::shared_ptr<ExprNode> value;
     if (!parse_expr(job, scanner,
-                    {Token(tPunc, Punctor::Comma),
-                     Token(tPunc, Punctor::CloseParen)},
+                    {Token(tPunc, Comma),
+                     Token(tPunc, CloseParen)},
                     value)) {
       LOG(ERROR) << core::feedback[FN_PARAM_INIT_ERR] << tok << std::endl;
       return false;
@@ -271,7 +271,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     tok = scanner->next();
   }
 
-  if (!tok.is<Punctor>(Punctor::OpenParen)) {
+  if (!tok.is<Punctor>(OpenParen)) {
     LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_PAREN] << tok << std::endl;
     return false;
   }
@@ -279,7 +279,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   while (1) {
     tok = scanner->peek();
-    if (tok.is<Punctor>(Punctor::CloseParen)) {
+    if (tok.is<Punctor>(CloseParen)) {
       scanner->next();
       break;
     }
@@ -289,7 +289,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
       scanner->next();
       tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::CloseParen)) {
+      if (!tok.is<Punctor>(CloseParen)) {
         LOG(ERROR) << core::feedback[FN_EXPECTED_VARARG] << tok << std::endl;
         return false;
       }
@@ -305,7 +305,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     fndecl->m_params.push_back(param);
 
     tok = scanner->peek();
-    if (tok.is<Punctor>(Punctor::Comma)) {
+    if (tok.is<Punctor>(Comma)) {
       scanner->next();
       continue;
     }
@@ -318,7 +318,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
   tok = scanner->peek();
   /// TODO: Implement function properties
 
-  if (tok.is<Punctor>(Punctor::Semicolon)) {
+  if (tok.is<Punctor>(Semicolon)) {
     fndecl->m_type = std::make_shared<FunctionTypeNode>(
         std::make_shared<VoidTypeNode>(), params, is_variadic, false,
         prop._tsafe, prop._foreign, prop._noexcept);
@@ -327,7 +327,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     return true;
   }
 
-  if (tok.is<Punctor>(Punctor::Colon)) {
+  if (tok.is<Punctor>(Colon)) {
     scanner->next();
     std::shared_ptr<TypeNode> type;
 
@@ -338,7 +338,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
         prop._noexcept);
 
     tok = scanner->peek();
-    if (tok.is<Punctor>(Punctor::Semicolon)) {
+    if (tok.is<Punctor>(Semicolon)) {
       scanner->next();
       node = fndecl;
       return true;
@@ -359,7 +359,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
     return true;
-  } else if (tok.is<Punctor>(Punctor::OpenBrace)) {
+  } else if (tok.is<Punctor>(OpenBrace)) {
     auto fnbody = std::make_shared<BlockNode>();
 
     if (!parse(job, scanner, fnbody)) {
@@ -373,7 +373,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
       scanner->next();
 
       tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::OpenBrace)) {
+      if (!tok.is<Punctor>(OpenBrace)) {
         LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_BRACE] << tok
                    << std::endl;
         return false;
@@ -381,7 +381,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
       while (true) {
         tok = scanner->peek();
-        if (tok.is<Punctor>(Punctor::CloseBrace)) {
+        if (tok.is<Punctor>(CloseBrace)) {
           scanner->next();
           break;
         }
@@ -394,12 +394,12 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
           }
 
           if (!parse_expr(job, scanner,
-                          {Token(tPunc, Punctor::Semicolon)}, expr)) {
+                          {Token(tPunc, Semicolon)}, expr)) {
             return false;
           }
 
           tok = scanner->next();
-          if (!tok.is<Punctor>(Punctor::Semicolon)) {
+          if (!tok.is<Punctor>(Semicolon)) {
             LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok
                        << std::endl;
             return false;
@@ -416,12 +416,12 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
           }
 
           if (!parse_expr(job, scanner,
-                          {Token(tPunc, Punctor::Semicolon)}, expr)) {
+                          {Token(tPunc, Semicolon)}, expr)) {
             return false;
           }
 
           tok = scanner->next();
-          if (!tok.is<Punctor>(Punctor::Semicolon)) {
+          if (!tok.is<Punctor>(Semicolon)) {
             LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok
                        << std::endl;
             return false;
@@ -449,7 +449,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
     if (tok.is<Keyword>(Keyword::Impl)) {
       scanner->next();
       tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::OpenBracket)) {
+      if (!tok.is<Punctor>(OpenBracket)) {
         LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_OPEN_BRACKET] << tok
                    << std::endl;
         return false;
@@ -457,7 +457,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
       while (true) {
         tok = scanner->next();
-        if (tok.is<Punctor>(Punctor::CloseBracket)) break;
+        if (tok.is<Punctor>(CloseBracket)) break;
 
         if (tok.type() != tName) {
           LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_IDENTIFIER] << tok
@@ -468,7 +468,7 @@ bool libquixcc::parse_function(quixcc_job_t &job, libquixcc::Scanner *scanner,
         implements.insert(tok.as<std::string>());
 
         tok = scanner->peek();
-        if (tok.is<Punctor>(Punctor::Comma)) {
+        if (tok.is<Punctor>(Comma)) {
           scanner->next();
         }
       }

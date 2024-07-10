@@ -64,11 +64,11 @@ bool libquixcc::PrepEngine::ParseAuthor(const Token &tok,
   emit(Token(tKeyW, Keyword::Pub));
   emit(Token(tKeyW, Keyword::Let));
   emit(Token(tName, identifier));
-  emit(Token(tPunc, Punctor::Colon));
+  emit(Token(tPunc, Colon));
   emit(Token(tName, "string"));
   emit(Token(tOper, Operator::Assign));
   emit(Token(tText, name));
-  emit(Token(tPunc, Punctor::Semicolon));
+  emit(Token(tPunc, Semicolon));
 
   return true;
 }

@@ -303,7 +303,7 @@ bool PrepEngine::handle_import(const Token &input_tok) {
 
   /*============== PARSE LIBRARY VERSION ================*/
   tok = lexer->peek();
-  if (tok.is<Punctor>(Punctor::OpenParen)) {
+  if (tok.is<Punctor>(OpenParen)) {
     lexer->next();
     tok = lexer->next();
     if (tok.type() == tName) {
@@ -317,7 +317,7 @@ bool PrepEngine::handle_import(const Token &input_tok) {
     }
 
     tok = lexer->next();
-    if (!tok.is<Punctor>(Punctor::CloseParen)) {
+    if (!tok.is<Punctor>(CloseParen)) {
       LOG(ERROR) << "Expected closing parenthesis after import" << tok
                  << std::endl;
       return false;
@@ -331,7 +331,7 @@ bool PrepEngine::handle_import(const Token &input_tok) {
 
   /*============== SKIP SEMICOLON ================*/
   tok = lexer->next();
-  if (!tok.is<Punctor>(Punctor::Semicolon)) {
+  if (!tok.is<Punctor>(Semicolon)) {
     LOG(ERROR) << "Expected semicolon after import" << tok << std::endl;
     return false;
   }

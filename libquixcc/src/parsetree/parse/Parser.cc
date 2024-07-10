@@ -44,7 +44,7 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   if (expect_braces) {
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::OpenBrace)) {
+    if (!tok.is<Punctor>(OpenBrace)) {
       LOG(ERROR) << core::feedback[PARSER_EXPECTED_LEFT_BRACE]
                  << tok.serialize() << tok << std::endl;
       return false;
@@ -57,13 +57,13 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
     if (single_stmt && group->m_stmts.size() > 0) break;
 
     if (expect_braces) {
-      if (tok.is<Punctor>(Punctor::CloseBrace)) {
+      if (tok.is<Punctor>(CloseBrace)) {
         scanner->next();
         return true;
       }
     }
 
-    if (tok.is<Punctor>(Punctor::Semicolon)) /* Skip excessive semicolons */
+    if (tok.is<Punctor>(Semicolon)) /* Skip excessive semicolons */
     {
       scanner->next();
       continue;
@@ -71,7 +71,7 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
     if (tok.type() != tKeyW) {
       std::shared_ptr<ExprNode> expr;
-      if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
+      if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)},
                       expr)) {
         LOG(ERROR) << "Error parsing expression in block statement." << tok
                    << std::endl;
@@ -83,7 +83,7 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
                    << std::endl;
 
       tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::Semicolon)) {
+      if (!tok.is<Punctor>(Semicolon)) {
         LOG(ERROR) << core::feedback[PARSER_EXPECTED_SEMICOLON]
                    << tok.serialize() << tok << std::endl;
         return false;
@@ -188,7 +188,7 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
       case Keyword::Unsafe: {
         std::shared_ptr<BlockNode> block;
         Token tok = scanner->peek();
-        if (tok.is<Punctor>(Punctor::OpenBrace)) {
+        if (tok.is<Punctor>(OpenBrace)) {
           if (!parse(job, scanner, block)) return false;
         } else {
           if (!parse(job, scanner, block, false, true)) return false;
@@ -201,7 +201,7 @@ bool libquixcc::parse(quixcc_job_t &job, libquixcc::Scanner *scanner,
       case Keyword::Safe: {
         std::shared_ptr<BlockNode> block;
         Token tok = scanner->peek();
-        if (tok.is<Punctor>(Punctor::OpenBrace)) {
+        if (tok.is<Punctor>(OpenBrace)) {
           if (!parse(job, scanner, block)) return false;
         } else {
           if (!parse(job, scanner, block, false, true)) return false;

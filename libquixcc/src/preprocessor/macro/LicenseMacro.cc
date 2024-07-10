@@ -677,11 +677,11 @@ bool libquixcc::PrepEngine::ParseLicense(const Token &tok,
   emit(Token(tKeyW, Keyword::Pub));
   emit(Token(tKeyW, Keyword::Let));
   emit(Token(tName, identifier));
-  emit(Token(tPunc, Punctor::Colon));
+  emit(Token(tPunc, Colon));
   emit(Token(tName, "string"));
   emit(Token(tOper, Operator::Assign));
   emit(Token(tText, lower));
-  emit(Token(tPunc, Punctor::Semicolon));
+  emit(Token(tPunc, Semicolon));
 
   return true;
 }

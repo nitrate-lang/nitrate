@@ -43,7 +43,7 @@ static bool parse_decl(
   std::string name = tok.as<std::string>();
 
   tok = scanner->peek();
-  if (!tok.is<Punctor>(Punctor::Colon)) {
+  if (!tok.is<Punctor>(Colon)) {
     decl = std::make_pair(name, nullptr);
     return true;
   }
@@ -68,7 +68,7 @@ bool libquixcc::parse_var(
 
   std::vector<std::pair<std::string, std::shared_ptr<TypeNode>>> decls;
   bool multi_decl = false;
-  if (tok.is<Punctor>(Punctor::OpenBracket)) {
+  if (tok.is<Punctor>(OpenBracket)) {
     multi_decl = true;
     /*
     var [x: i8, y: i8];
@@ -83,9 +83,9 @@ bool libquixcc::parse_var(
       decls.push_back(decl);
 
       tok = scanner->next();
-      if (tok.is<Punctor>(Punctor::Comma))
+      if (tok.is<Punctor>(Comma))
         continue;
-      else if (tok.is<Punctor>(Punctor::CloseBracket))
+      else if (tok.is<Punctor>(CloseBracket))
         break;
       else {
         LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decl.first
@@ -106,7 +106,7 @@ bool libquixcc::parse_var(
   }
 
   tok = scanner->next();
-  if (tok.is<Punctor>(Punctor::Semicolon)) {
+  if (tok.is<Punctor>(Semicolon)) {
     // No initializer
     for (auto &decl : decls)
       nodes.push_back(std::make_shared<VarDeclNode>(
@@ -118,12 +118,12 @@ bool libquixcc::parse_var(
 
     // Parse initializer
     std::shared_ptr<ExprNode> init;
-    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
+    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)},
                     init))
       return false;
 
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Semicolon)) {
+    if (!tok.is<Punctor>(Semicolon)) {
       LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decls[0].first
                  << tok << std::endl;
       return false;

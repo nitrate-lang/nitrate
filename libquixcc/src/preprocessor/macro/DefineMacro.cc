@@ -77,7 +77,7 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
     return false;
   }
 
-  if (tokens.back().is<Punctor>(Punctor::Semicolon)) {
+  if (tokens.back().is<Punctor>(Semicolon)) {
     tokens.pop_back();
   }
   std::string dvalue;

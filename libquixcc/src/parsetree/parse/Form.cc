@@ -41,7 +41,7 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
                            std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   bool has_parens = false;
-  if (tok.is<Punctor>(Punctor::OpenParen)) {
+  if (tok.is<Punctor>(OpenParen)) {
     tok = scanner->next();
     has_parens = true;
   }
@@ -61,20 +61,20 @@ bool libquixcc::parse_form(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   std::shared_ptr<ExprNode> expr;
   if (has_parens) {
-    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::CloseParen)},
+    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)},
                     expr)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
       return false;
     }
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::CloseParen)) {
+    if (!tok.is<Punctor>(CloseParen)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok
                  << std::endl;
       return false;
     }
   } else {
     if (!parse_expr(job, scanner,
-                    {Token(tPunc, Punctor::OpenBrace),
+                    {Token(tPunc, OpenBrace),
                      Token(tOper, Operator::Arrow)},
                     expr)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;

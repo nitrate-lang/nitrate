@@ -43,7 +43,7 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
   std::shared_ptr<ExprNode> x1, x2;
 
   Token tok = scanner->peek();
-  if (tok.is<Punctor>(Punctor::OpenParen)) {
+  if (tok.is<Punctor>(OpenParen)) {
     tok = scanner->next();
     tok = scanner->peek();
 
@@ -59,35 +59,35 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       x0 = std::make_shared<StmtGroupNode>(let_node);
     } else {
       std::shared_ptr<ExprNode> x0_tmp;
-      if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
+      if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)},
                       x0_tmp)) {
         return false;
       }
       x0 = std::make_shared<ExprStmtNode>(x0_tmp);
 
       tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::Semicolon)) {
+      if (!tok.is<Punctor>(Semicolon)) {
         LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok
                    << std::endl;
         return false;
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)}, x1))
+    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1))
       return false;
 
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Semicolon)) {
+    if (!tok.is<Punctor>(Semicolon)) {
       LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
       return false;
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::CloseParen)},
+    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)},
                     x2))
       return false;
 
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::CloseParen)) {
+    if (!tok.is<Punctor>(CloseParen)) {
       LOG(ERROR) << core::feedback[FOR_EXPECTED_CLOSING_PARANTHESIS] << tok
                  << std::endl;
       return false;
@@ -120,31 +120,31 @@ bool libquixcc::parse_for(quixcc_job_t &job, libquixcc::Scanner *scanner,
       x0 = std::make_shared<StmtGroupNode>(let_node);
     } else {
       std::shared_ptr<ExprNode> x0_tmp;
-      if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
+      if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)},
                       x0_tmp)) {
         return false;
       }
       x0 = std::make_shared<ExprStmtNode>(x0_tmp);
 
       tok = scanner->next();
-      if (!tok.is<Punctor>(Punctor::Semicolon)) {
+      if (!tok.is<Punctor>(Semicolon)) {
         LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok
                    << std::endl;
         return false;
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)}, x1))
+    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1))
       return false;
 
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::Semicolon)) {
+    if (!tok.is<Punctor>(Semicolon)) {
       LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
       return false;
     }
 
     if (!parse_expr(job, scanner,
-                    {Token(tPunc, Punctor::OpenBrace),
+                    {Token(tPunc, OpenBrace),
                      Token(tOper, Operator::Arrow)},
                     x2))
       return false;

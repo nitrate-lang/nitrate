@@ -66,7 +66,7 @@ bool libquixcc::parse_typedef(quixcc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::Semicolon)) {
+  if (!tok.is<Punctor>(Semicolon)) {
     LOG(ERROR) << core::feedback[TYPEDEF_EXPECTED_SEMICOLON] << tok
                << std::endl;
     return false;

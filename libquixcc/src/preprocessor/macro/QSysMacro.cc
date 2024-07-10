@@ -88,7 +88,7 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
     lexer->set_source(code, "<qsys>");
 
     std::shared_ptr<ExprNode> expr;
-    if (!parse_expr(*job, lexer.get(), {Token(tPunc, Punctor::Semicolon)},
+    if (!parse_expr(*job, lexer.get(), {Token(tPunc, Semicolon)},
                     expr)) {
       LOG(FAILED) << "Failed to parse QSys directive." << tok << std::endl;
       return false;

@@ -42,7 +42,7 @@ bool libquixcc::parse_foreach(quixcc_job_t &job, libquixcc::Scanner *scanner,
   Token tok = scanner->next();
   bool has_parens = false;
 
-  if (tok.is<Punctor>(Punctor::OpenParen)) {
+  if (tok.is<Punctor>(OpenParen)) {
     has_parens = true;
     tok = scanner->next();
   }
@@ -63,20 +63,20 @@ bool libquixcc::parse_foreach(quixcc_job_t &job, libquixcc::Scanner *scanner,
 
   std::shared_ptr<ExprNode> expr;
   if (has_parens) {
-    if (!parse_expr(job, scanner, {Token(tPunc, Punctor::CloseParen)},
+    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)},
                     expr)) {
       LOG(ERROR) << core::feedback[FOREACH_EXPECTED_EXPR] << tok << std::endl;
       return false;
     }
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::CloseParen)) {
+    if (!tok.is<Punctor>(CloseParen)) {
       LOG(ERROR) << core::feedback[FOREACH_EXPECTED_CLOSE_PAREN] << tok
                  << std::endl;
       return false;
     }
   } else {
     if (!parse_expr(job, scanner,
-                    {Token(tPunc, Punctor::OpenBrace),
+                    {Token(tPunc, OpenBrace),
                      Token(tOper, Operator::Arrow)},
                     expr)) {
       LOG(ERROR) << core::feedback[FOREACH_EXPECTED_EXPR] << tok << std::endl;

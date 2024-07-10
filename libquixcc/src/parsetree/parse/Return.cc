@@ -41,20 +41,20 @@ bool libquixcc::parse_return(quixcc_job_t &job, libquixcc::Scanner *scanner,
                              std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->peek();
 
-  if (tok.is<Punctor>(Punctor::Semicolon)) {
+  if (tok.is<Punctor>(Semicolon)) {
     scanner->next();
     node = std::make_shared<ReturnStmtNode>(nullptr);  // void
     return true;
   }
 
   std::shared_ptr<ExprNode> expr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)}, expr))
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, expr))
     return false;
   node = std::make_shared<ReturnStmtNode>(expr);
 
   tok = scanner->next();
 
-  if (!tok.is<Punctor>(Punctor::Semicolon)) {
+  if (!tok.is<Punctor>(Semicolon)) {
     LOG(ERROR) << core::feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
     return false;
   }
@@ -78,23 +78,23 @@ bool libquixcc::parse_retif(quixcc_job_t &job, libquixcc::Scanner *scanner,
   Token tok;
 
   std::shared_ptr<ExprNode> return_expr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Comma)},
+  if (!parse_expr(job, scanner, {Token(tPunc, Comma)},
                   return_expr))
     return false;
 
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::Comma)) {
+  if (!tok.is<Punctor>(Comma)) {
     LOG(ERROR) << core::feedback[RETIF_MISSING_COMMA] << tok << std::endl;
     return false;
   }
 
   std::shared_ptr<ExprNode> condition;
-  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)},
                   condition))
     return false;
 
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::Semicolon)) {
+  if (!tok.is<Punctor>(Semicolon)) {
     LOG(ERROR) << core::feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
     return false;
   }
@@ -119,23 +119,23 @@ bool libquixcc::parse_retz(quixcc_job_t &job, libquixcc::Scanner *scanner,
   Token tok;
 
   std::shared_ptr<ExprNode> return_expr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Comma)},
+  if (!parse_expr(job, scanner, {Token(tPunc, Comma)},
                   return_expr))
     return false;
 
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::Comma)) {
+  if (!tok.is<Punctor>(Comma)) {
     LOG(ERROR) << core::feedback[RETZ_MISSING_COMMA] << tok << std::endl;
     return false;
   }
 
   std::shared_ptr<ExprNode> condition;
-  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)},
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)},
                   condition))
     return false;
 
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::Semicolon)) {
+  if (!tok.is<Punctor>(Semicolon)) {
     LOG(ERROR) << core::feedback[RETZ_MISSING_SEMICOLON] << tok << std::endl;
     return false;
   }
@@ -160,11 +160,11 @@ bool libquixcc::parse_retv(quixcc_job_t &job, libquixcc::Scanner *scanner,
   Token tok;
 
   std::shared_ptr<ExprNode> cond;
-  if (!parse_expr(job, scanner, {Token(tPunc, Punctor::Semicolon)}, cond))
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, cond))
     return false;
 
   tok = scanner->next();
-  if (!tok.is<Punctor>(Punctor::Semicolon)) {
+  if (!tok.is<Punctor>(Semicolon)) {
     LOG(ERROR) << core::feedback[RETV_MISSING_SEMICOLON] << tok << std::endl;
     return false;
   }

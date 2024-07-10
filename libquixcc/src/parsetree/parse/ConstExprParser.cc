@@ -95,13 +95,13 @@ bool libquixcc::parse_const_expr(
         break;
       case tPunc:
         switch (tok.as<Punctor>()) {
-          case Punctor::OpenParen: {
+          case OpenParen: {
             std::shared_ptr<ConstExprNode> expr;
             if (!parse_const_expr(job, scanner, terminator, expr)) return false;
             stack.push(expr);
             continue;
           }
-          case Punctor::CloseParen: {
+          case CloseParen: {
             if (stack.size() != 1) {
               LOG(ERROR) << "Expected a single expression" << tok << std::endl;
               return false;

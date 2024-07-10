@@ -184,18 +184,18 @@ const std::unordered_map<Keyword, std::string_view> keyword_map_inverse = {
     {Keyword::False, "false"}};
 
 const std::unordered_map<std::string_view, Punctor> punctor_map = {
-    {"(", Punctor::OpenParen},   {")", Punctor::CloseParen},
-    {"{", Punctor::OpenBrace},   {"}", Punctor::CloseBrace},
-    {"[", Punctor::OpenBracket}, {"]", Punctor::CloseBracket},
-    {",", Punctor::Comma},       {":", Punctor::Colon},
-    {";", Punctor::Semicolon}};
+    {"(", OpenParen},   {")", CloseParen},
+    {"{", OpenBrace},   {"}", CloseBrace},
+    {"[", OpenBracket}, {"]", CloseBracket},
+    {",", Comma},       {":", Colon},
+    {";", Semicolon}};
 
 const std::unordered_map<Punctor, std::string_view> punctor_map_inverse = {
-    {Punctor::OpenParen, "("},   {Punctor::CloseParen, ")"},
-    {Punctor::OpenBrace, "{"},   {Punctor::CloseBrace, "}"},
-    {Punctor::OpenBracket, "["}, {Punctor::CloseBracket, "]"},
-    {Punctor::Comma, ","},       {Punctor::Colon, ":"},
-    {Punctor::Semicolon, ";"}};
+    {OpenParen, "("},   {CloseParen, ")"},
+    {OpenBrace, "{"},   {CloseBrace, "}"},
+    {OpenBracket, "["}, {CloseBracket, "]"},
+    {Comma, ","},       {Colon, ":"},
+    {Semicolon, ";"}};
 
 const std::unordered_map<std::string_view, Operator> operator_map = {
     {"<", Operator::LessThan},

@@ -131,7 +131,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
         inner = static_pointer_cast<FunctionDeclNode>(fn)->m_type;
 
         /* Push a semicolon to account for the above usage. */
-        src->push(Token(tPunc, Punctor::Semicolon));
+        src->push(Token(tPunc, Semicolon));
 
         goto type_suffix;
       }
@@ -146,7 +146,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
          *       is distinguisable by its name.
          */
 
-        if (!(tok = src->next()).is<Punctor>(Punctor::OpenParen)) {
+        if (!(tok = src->next()).is<Punctor>(OpenParen)) {
           ERRORS(TYPE_OPAQUE_EXPECTED_PAREN);
           goto error_end;
         }
@@ -158,7 +158,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
 
         name = tok.as<string>(); /* Save the name of the opaque type. */
 
-        if (!(tok = src->next()).is<Punctor>(Punctor::CloseParen)) {
+        if (!(tok = src->next()).is<Punctor>(CloseParen)) {
           ERRORS(TYPE_OPAQUE_EXPECTED_CLOSE_PAREN);
           goto error_end;
         }
@@ -197,7 +197,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
     }
 
     __builtin_unreachable();
-  } else if (tok.is<Punctor>(Punctor::OpenBracket)) {
+  } else if (tok.is<Punctor>(OpenBracket)) {
     /** THIS COULD BE A VECTOR, MAP, OR ARRAY TYPE
      *
      * @brief Parse a vector, map, or array type.
@@ -208,7 +208,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
       goto error_end;
     }
 
-    if ((tok = src->next()).is<Punctor>(Punctor::CloseBracket)) {
+    if ((tok = src->next()).is<Punctor>(CloseBracket)) {
       /** QUIX VECTOR TYPE
        *
        * @brief Parse a vector type.
@@ -234,7 +234,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
         goto error_end;
       }
 
-      if (!(tok = src->next()).is<Punctor>(Punctor::CloseBracket)) {
+      if (!(tok = src->next()).is<Punctor>(CloseBracket)) {
         ERRORS(TYPE_EXPECTED_CLOSE_BRACKET);
         goto error_end;
       }
@@ -248,25 +248,25 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
      * @brief Parse an array type.
      */
 
-    if (!tok.is<Punctor>(Punctor::Semicolon)) {
+    if (!tok.is<Punctor>(Semicolon)) {
       ERRORS(TYPE_EXPECTED_SEMICOLON);
       goto error_end;
     }
 
-    if (!parse_const_expr(job, src, Token(tPunc, Punctor::CloseBracket),
+    if (!parse_const_expr(job, src, Token(tPunc, CloseBracket),
                           size)) {
       ERRORS(TYPE_EXPECTED_CONST_EXPR);
       goto error_end;
     }
 
-    if (!(tok = src->next()).is<Punctor>(Punctor::CloseBracket)) {
+    if (!(tok = src->next()).is<Punctor>(CloseBracket)) {
       ERRORS(TYPE_EXPECTED_CLOSE_BRACKET);
       goto error_end;
     }
 
     inner = make_shared<ArrayTypeNode>(type, size);
     goto type_suffix;
-  } else if (tok.is<Punctor>(Punctor::OpenBrace)) {
+  } else if (tok.is<Punctor>(OpenBrace)) {
     /** QUIX SET TYPE
      *
      * @brief Parse a set type.
@@ -277,21 +277,21 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
       goto error_end;
     }
 
-    if (!(tok = src->next()).is<Punctor>(Punctor::CloseBrace)) {
+    if (!(tok = src->next()).is<Punctor>(CloseBrace)) {
       ERRORS(TYPE_EXPECTED_CLOSE_BRACE);
       goto error_end;
     }
 
     inner = make_shared<SetTypeNode>(type);
     goto type_suffix;
-  } else if (tok.is<Punctor>(Punctor::OpenParen)) {
+  } else if (tok.is<Punctor>(OpenParen)) {
     /** QUIX TUPLE TYPE
      *
      * @brief Parse a tuple type.
      */
 
     while (true) {
-      if ((tok = src->peek()).is<Punctor>(Punctor::CloseParen)) {
+      if ((tok = src->peek()).is<Punctor>(CloseParen)) {
         src->next();
         break;
       }
@@ -304,7 +304,7 @@ bool libquixcc::parse_type(quixcc_job_t &job, Scanner *src,
       types.push_back(type);
 
       tok = src->peek();
-      if (tok.is<Punctor>(Punctor::Comma)) {
+      if (tok.is<Punctor>(Comma)) {
         src->next();
       }
     }

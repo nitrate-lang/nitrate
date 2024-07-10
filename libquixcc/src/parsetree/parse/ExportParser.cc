@@ -65,7 +65,7 @@ bool libquixcc::parse_pub(quixcc_job_t &job, libquixcc::Scanner *scanner,
     tok = scanner->peek();
   }
 
-  if (tok.is<Punctor>(Punctor::OpenBrace)) {
+  if (tok.is<Punctor>(OpenBrace)) {
     std::shared_ptr<libquixcc::BlockNode> block;
     if (!parse(job, scanner, block, true)) return false;
 

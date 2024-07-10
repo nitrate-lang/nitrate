@@ -82,10 +82,10 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner,
   tok = scanner->peek();
 
   // check if : item1, item2, item3
-  if (tok.is<Punctor>(Punctor::Colon)) {
+  if (tok.is<Punctor>(Colon)) {
     scanner->next();  // consume colon
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::OpenBracket)) {
+    if (!tok.is<Punctor>(OpenBracket)) {
       LOG(ERROR) << "Expected '[' before subsystem dependencies" << tok
                  << std::endl;
       return false;
@@ -100,7 +100,7 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner,
     deps.insert(tok.as<std::string>());
 
     tok = scanner->peek();
-    while (tok.is<Punctor>(Punctor::Comma)) {
+    while (tok.is<Punctor>(Comma)) {
       scanner->next();  // consume comma
       tok = scanner->next();
       if (tok.type() != tName) {
@@ -113,7 +113,7 @@ bool libquixcc::parse_subsystem(quixcc_job_t &job, libquixcc::Scanner *scanner,
     }
 
     tok = scanner->next();
-    if (!tok.is<Punctor>(Punctor::CloseBracket)) {
+    if (!tok.is<Punctor>(CloseBracket)) {
       LOG(ERROR) << "Expected ']' after subsystem dependencies" << tok
                  << std::endl;
       return false;

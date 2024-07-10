@@ -107,7 +107,7 @@ enum class Keyword {
   False = 144,
 };
 
-enum class Punctor {
+enum Punctor {
   OpenParen = 1,
   CloseParen = 2,
   OpenBrace = 3,
@@ -186,16 +186,16 @@ enum class Operator {
 };
 
 enum TT {
-  tEofF = 00,
-  tErro = 01,
-  tName = 02,
-  tKeyW = 03,
-  tOper = 04,
-  tPunc = 05,
-  tIntL = 06,
-  tNumL = 07,
-  tText = 08,
-  tChar = 09,
+  tEofF = 0,
+  tErro = 1,
+  tName = 2,
+  tKeyW = 3,
+  tOper = 4,
+  tPunc = 5,
+  tIntL = 6,
+  tNumL = 7,
+  tText = 8,
+  tChar = 9,
   tMacB = 10,
   tMacr = 11,
   tNote = 12,
