@@ -35,10 +35,17 @@ if '--release' in sys.argv:
     if '--strip' in sys.argv:
         files = ['qpkg', 'qld', 'qcc', 'libquixcc.so']
         for file in files:
-            if os.system('strip {0}'.format(os.path.join(cwd, file))) != 0:
+            if os.system('strip {0}'.format(os.path.join(cwd, 'bin', file))) != 0:
                 print("Failed to strip {0}".format(file))
                 sys.exit(1)
         print("Stripped release binaries.")
+
+    if '--upx-best' in sys.argv:
+        files = ['qpkg', 'qld', 'qcc']
+        for file in files:
+            if os.system('upx --best {0}'.format(os.path.join(cwd, 'bin', file))) != 0:
+                print("Failed to UPX {0}".format(file))
+                sys.exit(1)
     print("Release build complete.")
     sys.exit(0)
 

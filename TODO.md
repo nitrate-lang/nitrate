@@ -2,11 +2,7 @@
 
 # Write Test vectors!!!
 
-Fix move semantics in StreamLexer Token
-
 # Language Features
-
-- Intelligent lowering/generic instantiation of intrinsic container types to use function-stack-local memory arenas.
 
 - Support static storage duration for local and global variables.
 - Support anonymous function callbacks, lambdas, and closures.
@@ -71,6 +67,7 @@ Fix move semantics in StreamLexer Token
 - **Number Type Specialization Solver (QUIX-NTSS)**
 - **Reference Type Solver (QUIX-RTS)**
 
+- Intelligent lowering/generic instantiation of intrinsic container types to use function-stack-local memory arenas.
 - Transform single threaded code into multi-threaded code
 - Recognize common structural patterns and replace them with optimized equivalents (remove polymorphism, etc.)
 - Move large code segments into dynamic library bundles
