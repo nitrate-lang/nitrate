@@ -29,42 +29,101 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/SHA160.h>
-#include <openssl/evp.h>
+#ifndef __QUIXCC_CORE_ARENA_H__
+#define __QUIXCC_CORE_ARENA_H__
 
-#include <stdexcept>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-libquixcc::core::SHA160::SHA160() {
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-  if (EVP_DigestInit(ctx, EVP_sha3_512()) != 1) {
-    EVP_MD_CTX_free(ctx);
-    throw std::runtime_error("Failed to initialize SHA-160 context");
-  }
+#include <stddef.h>
+#include <stdint.h>
 
-  if ((m_ossl_ctx = reinterpret_cast<void *>(ctx)) == nullptr) {
-    EVP_MD_CTX_free(ctx);
-    throw std::runtime_error("Failed to initialize SHA-160 context");
-  }
+/**
+ * @brief Quixcc general-purpose arena allocator.
+ */
+typedef struct quixcc_arena_t {
+  void *m_base;
+  void *m_offset;
+  size_t m_size;
+} quixcc_arena_t;
+
+/**
+ * @brief Initializes an arena allocator.
+ *
+ * @param arena The arena to initialize.
+ *
+ * @return The initialized arena.
+ *
+ * @note If the arena is currently open, it will be reset and all of its memory
+ * will be LEAKED.
+ * @note This function is thread-safe.
+ */
+quixcc_arena_t *quixcc_arena_open(quixcc_arena_t *arena);
+
+/**
+ * @brief Allocates memory from the arena.
+ *
+ * @param arena The arena to allocate memory from.
+ * @param size The size of the memory to allocate.
+ *
+ * @return A pointer to the allocated memory.
+ *
+ * @note If the arena is not valid the behavior is undefined.
+ * @note The arena is resized automatically when needed.
+ * @note Out-of-memory errors will call `quixcc_panic`.
+ * @note The pointer is never NULL.
+ * @note The returned memory is uninitialized.
+ * @warning DO NOT free the returned memory manually.
+ * @note This function is thread-safe.
+ *
+ * @warning All pointers are owned by the arena and will be freed
+ * when the arena is closed.
+ */
+void *quixcc_arena_alloc(quixcc_arena_t *arena, size_t size);
+
+/**
+ * @brief Returns the total size of the arena.
+ *
+ * @param arena The arena to get the size of.
+ *
+ * @return The total size of the arena.
+ *
+ * @note If the arena is not valid the behavior is undefined.
+ * @note This function is thread-safe.
+ */
+static inline size_t quixcc_arena_capacity(quixcc_arena_t *arena) {
+  return arena->m_size;
 }
 
-libquixcc::core::SHA160::~SHA160() {
-  EVP_MD_CTX_free(reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx));
+/**
+ * @brief Returns the amount of memory used in the arena.
+ *
+ * @param arena The arena to get the used memory of.
+ *
+ * @return The amount of memory used in the arena.
+ *
+ * @note If the arena is not valid the behavior is undefined.
+ * @note This function is thread-safe.
+ */
+static inline size_t quixcc_arena_used(quixcc_arena_t *arena) {
+  return (uintptr_t)arena->m_offset - (uintptr_t)arena->m_base;
 }
 
-void libquixcc::core::SHA160::process(std::string_view data) {
-  EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);
-  if (EVP_DigestUpdate(ctx, data.data(), data.size()) != 1) {
-    throw std::runtime_error("Failed to update SHA-160 context");
-  }
+/**
+ * @brief Closes an arena allocator.
+ *
+ * @param arena The arena to close.
+ *
+ * @note If the arena is already closed, this is a no-op.
+ * @note Calling this function on an invalid arena is undefined behavior.
+ * @note This will free all memory allocated from the arena.
+ * @note This function is thread-safe.
+ */
+void quixcc_arena_close(quixcc_arena_t *arena);
+
+#ifdef __cplusplus
 }
+#endif
 
-void libquixcc::core::SHA160::finalize(uint8_t sum[20]) {
-  uint8_t buf[64];
-
-  EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);
-  if (EVP_DigestFinal(ctx, buf, nullptr) != 1) {
-    throw std::runtime_error("Failed to finalize SHA-160 context");
-  }
-
-  std::copy(buf, buf + 20, sum);
-}
+#endif  // __QUIXCC_CORE_ARENA_H__

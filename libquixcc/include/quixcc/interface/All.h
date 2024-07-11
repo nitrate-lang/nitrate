@@ -29,42 +29,21 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/SHA160.h>
-#include <openssl/evp.h>
+#ifndef __QUIXCC_TYPES_ALL_H__
+#define __QUIXCC_TYPES_ALL_H__
 
-#include <stdexcept>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-libquixcc::core::SHA160::SHA160() {
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-  if (EVP_DigestInit(ctx, EVP_sha3_512()) != 1) {
-    EVP_MD_CTX_free(ctx);
-    throw std::runtime_error("Failed to initialize SHA-160 context");
-  }
+#include <quixcc/interface/DeltaIRNodes.h>
+#include <quixcc/interface/QuixIRNodes.h>
+#include <quixcc/interface/SyntaxTreeNodes.h>
+#include <quixcc/interface/Tokens.h>
+#include <quixcc/interface/Types.h>
 
-  if ((m_ossl_ctx = reinterpret_cast<void *>(ctx)) == nullptr) {
-    EVP_MD_CTX_free(ctx);
-    throw std::runtime_error("Failed to initialize SHA-160 context");
-  }
+#ifdef __cplusplus
 }
+#endif
 
-libquixcc::core::SHA160::~SHA160() {
-  EVP_MD_CTX_free(reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx));
-}
-
-void libquixcc::core::SHA160::process(std::string_view data) {
-  EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);
-  if (EVP_DigestUpdate(ctx, data.data(), data.size()) != 1) {
-    throw std::runtime_error("Failed to update SHA-160 context");
-  }
-}
-
-void libquixcc::core::SHA160::finalize(uint8_t sum[20]) {
-  uint8_t buf[64];
-
-  EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);
-  if (EVP_DigestFinal(ctx, buf, nullptr) != 1) {
-    throw std::runtime_error("Failed to finalize SHA-160 context");
-  }
-
-  std::copy(buf, buf + 20, sum);
-}
+#endif  // __QUIXCC_TYPES_ALL_H__

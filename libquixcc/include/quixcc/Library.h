@@ -42,13 +42,12 @@ extern "C" {
 #endif
 
 #include <quixcc/Compile.h>
+#include <quixcc/interface/All.h>
 #include <quixcc/plugin/All.h>
-#include <quixcc/serialization/All.h>
-#include <quixcc/types/All.h>
 
-///===================================================================================================
+///=============================================================================
 /// BEGIN: LIBRARY RESOURCE MANAGEMENT
-///===================================================================================================
+///=============================================================================
 
 /**
  * @brief Initialize the QUIX compiler library.
@@ -76,7 +75,26 @@ bool quixcc_lib_init();
  */
 bool quixcc_lib_deinit();
 
+/**
+ * @brief Print debug into and abort.
+ *
+ * @param msg The message to print.
+ * @note This function is thread-safe.
+ *
+ * @note This function will print the message to stderr and abort the program.
+ */
 void quixcc_panic(const char *msg) __attribute__((noreturn));
+
+/**
+ * @brief Print debug into and abort.
+ *
+ * @param fmt The format string.
+ * @param ... Printf-style arguments.
+ * @note This function is thread-safe.
+ *
+ * @note This function will print the message to stderr and abort the program.
+ */
+void quixcc_panicf(const char *fmt, ...) __attribute__((noreturn));
 
 /**
  * @brief Reset and free the internal cache memory
@@ -207,9 +225,9 @@ bool quixcc_cache_read(const quixcc_cache_key_t *key, void *payload,
 bool quixcc_cache_write(const quixcc_cache_key_t *key, const void *payload,
                         size_t payload_size);
 
-///===================================================================================================
+///=============================================================================
 /// END: LIBRARY RESOURCE MANAGEMENT
-///===================================================================================================
+///=============================================================================
 
 #ifdef __cplusplus
 }

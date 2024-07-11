@@ -29,42 +29,44 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/SHA160.h>
-#include <openssl/evp.h>
+#include <core/Macro.h>
+#include <qast/Nodes.h>
+#include <quixcc/Library.h>
+#include <quixcc/interface/SyntaxTreeNodes.h>
 
-#include <stdexcept>
-
-libquixcc::core::SHA160::SHA160() {
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-  if (EVP_DigestInit(ctx, EVP_sha3_512()) != 1) {
-    EVP_MD_CTX_free(ctx);
-    throw std::runtime_error("Failed to initialize SHA-160 context");
-  }
-
-  if ((m_ossl_ctx = reinterpret_cast<void *>(ctx)) == nullptr) {
-    EVP_MD_CTX_free(ctx);
-    throw std::runtime_error("Failed to initialize SHA-160 context");
-  }
+LIB_EXPORT quixcc_ast_ntype_t quixcc_ast_typeof(const quixcc_ast_node_t *node) {
+  quixcc_panic("quixcc_ast_typeof() is not implemented");
 }
 
-libquixcc::core::SHA160::~SHA160() {
-  EVP_MD_CTX_free(reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx));
+LIB_EXPORT const char *quixcc_ast_ntype_name(quixcc_ast_ntype_t type) {
+  quixcc_panic("quixcc_ast_ntype_name() is not implemented");
 }
 
-void libquixcc::core::SHA160::process(std::string_view data) {
-  EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);
-  if (EVP_DigestUpdate(ctx, data.data(), data.size()) != 1) {
-    throw std::runtime_error("Failed to update SHA-160 context");
-  }
+LIB_EXPORT uint16_t quixcc_ast_subcount(quixcc_ast_ntype_t type) {
+  quixcc_panic("quixcc_ast_subcount() is not implemented");
 }
 
-void libquixcc::core::SHA160::finalize(uint8_t sum[20]) {
-  uint8_t buf[64];
+LIB_EXPORT quixcc_ast_ftype_t quixcc_ast_field_type(quixcc_ast_node_t *node,
+                                                    uint16_t index) {
+  quixcc_panic("quixcc_ast_field_type() is not implemented");
+}
 
-  EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);
-  if (EVP_DigestFinal(ctx, buf, nullptr) != 1) {
-    throw std::runtime_error("Failed to finalize SHA-160 context");
-  }
+LIB_EXPORT const char *quixcc_ast_field_name(quixcc_ast_node_t *node,
+                                             uint16_t index) {
+  quixcc_panic("quixcc_ast_field_name() is not implemented");
+}
 
-  std::copy(buf, buf + 20, sum);
+LIB_EXPORT uint16_t quixcc_ast_field_index(quixcc_ast_node_t *node,
+                                           const char *name) {
+  quixcc_panic("quixcc_ast_field_index() is not implemented");
+}
+
+LIB_EXPORT quixcc_ast_node_t **quixcc_ast_get_child(quixcc_ast_node_t *node,
+                                                    uint16_t index) {
+  quixcc_panic("quixcc_ast_get_child() is not implemented");
+}
+
+LIB_EXPORT void *quixcc_ast_get(const quixcc_ast_node_t *node, uint16_t index,
+                                quixcc_ast_ftype_t ftype) {
+  quixcc_panic("quixcc_ast_get() is not implemented");
 }

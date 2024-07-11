@@ -32,7 +32,7 @@
 #ifndef __QUIXCC_COMPILE_H__
 #define __QUIXCC_COMPILE_H__
 
-#include <quixcc/types/All.h>
+#include <quixcc/interface/All.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -214,9 +214,9 @@ const quixcc_status_t *quixcc_cc_status(quixcc_cc_job_t *job);
  */
 char **quixcc_cc_compile(FILE *in, FILE *out, const char *options[]);
 
-///===================================================================================================
+///=============================================================================
 /// BEGIN: LANGUAGE STUFF
-///===================================================================================================
+///=============================================================================
 
 /**
  * @brief Demangle a mangled symbol name into a pretty name.
@@ -301,9 +301,9 @@ size_t quixcc_cc_tok_serialize(quixcc_cc_job_t *job, const quixcc_tok_t *tok,
 size_t quixcc_cc_tok_humanize(quixcc_cc_job_t *job, const quixcc_tok_t *tok,
                               char *buf, size_t len);
 
-///===================================================================================================
+///=============================================================================
 /// END: LANGUAGE STUFF
-///===================================================================================================
+///=============================================================================
 
 #ifdef __cplusplus
 }

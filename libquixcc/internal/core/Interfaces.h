@@ -29,21 +29,30 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_TYPES_ALL_H__
-#define __QUIXCC_TYPES_ALL_H__
+#ifndef __QUIXCC_CORE_INTERFACES_H__
+#define __QUIXCC_CORE_INTERFACES_H__
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __cplusplus
+#error "This header requires C++"
 #endif
 
-#include <quixcc/types/DeltaIRNodes.h>
-#include <quixcc/types/QuixIRNodes.h>
-#include <quixcc/types/SyntaxTreeNodes.h>
-#include <quixcc/types/Tokens.h>
-#include <quixcc/types/Types.h>
+#include <iostream>
 
-#ifdef __cplusplus
-}
-#endif
+namespace libquixcc::core {
+class IDumpable {
+ protected:
+  virtual void dump_impl(std::ostream &os, bool isForDebug) const = 0;
 
-#endif  // __QUIXCC_TYPES_ALL_H__
+ public:
+  virtual ~IDumpable() = default;
+
+  void dump(bool isForDebug = false) const { dump_impl(std::cerr, isForDebug); }
+
+  void print(std::ostream &os, bool isForDebug = false) const {
+    dump_impl(os, isForDebug);
+  }
+};
+
+}  // namespace libquixcc::core
+
+#endif  // __QUIXCC_CORE_INTERFACES_H__

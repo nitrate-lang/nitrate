@@ -32,7 +32,7 @@
 #ifndef __QUIXCC_PREPROCESSOR_ENGINE_API_H__
 #define __QUIXCC_PREPROCESSOR_ENGINE_API_H__
 
-#include <quixcc/types/All.h>
+#include <quixcc/interface/All.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

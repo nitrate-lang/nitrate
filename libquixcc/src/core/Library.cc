@@ -39,6 +39,7 @@
 #include <quixcc/Library.h>
 
 #include <atomic>
+#include <cstdarg>
 #include <iostream>
 #include <mutex>
 #include <thread>
@@ -371,7 +372,17 @@ void quixcc_print_general_fault_message() {
             << geterror_report_string() << std::endl;
 }
 
-LIB_EXPORT [[noreturn]] void quixcc_panic(const char *_msg) {
+LIB_EXPORT [[noreturn]] void quixcc_panic(const char *msg) {
+  quixcc_panicf("%s", msg);
+}
+
+LIB_EXPORT [[noreturn]] void quixcc_panicf(const char *_fmt, ...) {
+  char *_msg = nullptr;
+  va_list args;
+  va_start(args, _fmt);
+  vasprintf(&_msg, _fmt, args);
+  va_end(args);
+
   std::string msg = _msg;
 
   msg = "LIBQUIXCC LIBRARY PANIC: " + msg;

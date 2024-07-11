@@ -76,6 +76,35 @@ typedef enum {
 typedef bool (*quixcc_qsys_impl_t)(quixcc_engine_t* engine, uint32_t num,
                                    quixcc_expr_t** expr, uint32_t argc);
 
+typedef enum quixcc_iterm_t {
+  /* Any order is acceptable */
+  QUIXCC_TRAV_ANY = 0,
+
+  /* Depth-first pre-order traversal */
+  QUIXCC_TRAV_DFPRE = 1,
+
+  /* Depth-first post-order traversal */
+  QUIXCC_TRAV_DFPOST = 2,
+
+  /* Breadth-first pre-order traversal */
+  QUIXCC_TRAV_BFPRE = 3,
+
+  /* Breadth-first post-order traversal */
+  QUIXCC_TRAV_BFPOST = 4,
+} quixcc_iterm_t;
+
+typedef struct quixcc_string_t {
+  char* m_data;
+  size_t m_len;
+} quixcc_string_t;
+
+typedef struct quixcc_vec_t {
+  void* m_data;
+  uint32_t m_len;
+  uint32_t m_cap;
+  uint32_t m_elem_size;
+} quixcc_vec_t;
+
 #ifdef __cplusplus
 }
 #endif

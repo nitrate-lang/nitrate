@@ -29,15 +29,82 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_TYPES_SYNTAXTREENODES_H__
-#define __QUIXCC_TYPES_SYNTAXTREENODES_H__
+#include <core/Macro.h>
+#include <errno.h>
+#include <quixcc/Library.h>
+#include <quixcc/core/Arena.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-#ifdef __cplusplus
-extern "C" {
+#define UNIT_FACTOR 4
+
+LIB_EXPORT quixcc_arena_t *quixcc_arena_open(quixcc_arena_t *arena) {
+#if !defined(NDEBUG)
+  if (!arena) {
+    quixcc_panic("quixcc_arena_open: arena is NULL");
+    __builtin_unreachable();
+  }
 #endif
 
-#ifdef __cplusplus
+  arena->m_base = NULL;
+  arena->m_offset = NULL;
+  arena->m_size = 0;
+
+  return arena;
 }
+
+LIB_EXPORT void *quixcc_arena_alloc(quixcc_arena_t *arena, size_t size) {
+  void *ptr, *new_base;
+  size_t new_size;
+
+#if !defined(NDEBUG)
+  if (!arena) {
+    quixcc_panic("quixcc_arena_alloc: arena is NULL");
+    __builtin_unreachable();
+  }
 #endif
 
-#endif  // __QUIXCC_TYPES_SYNTAXTREENODES_H__
+  if (size + (uintptr_t)arena->m_offset >
+      (uintptr_t)arena->m_base + arena->m_size) {
+    new_size = arena->m_size + (size * UNIT_FACTOR);
+
+    new_base = realloc(arena->m_base, new_size);
+    if (!new_base) {
+      if (errno == ENOMEM) {
+        quixcc_panic("quixcc_arena_alloc: out of memory");
+      }
+
+      quixcc_panic("quixcc_arena_alloc: realloc() failed to allocate memory");
+
+      __builtin_unreachable();
+    }
+
+    arena->m_base = new_base;
+    arena->m_offset = (void *)((uintptr_t)arena->m_base + arena->m_size);
+    arena->m_size = new_size;
+  }
+
+  ptr = arena->m_offset;
+  arena->m_offset = (void *)((uintptr_t)arena->m_offset + size);
+
+  return ptr;
+}
+
+LIB_EXPORT void quixcc_arena_close(quixcc_arena_t *arena) {
+#if !defined(NDEBUG)
+  if (!arena) {
+    quixcc_panic("quixcc_arena_close: arena is NULL");
+    __builtin_unreachable();
+  }
+#endif
+
+  if (!arena->m_size) {
+    return;
+  }
+
+  free(arena->m_base);
+
+  arena->m_base = NULL;
+  arena->m_offset = NULL;
+  arena->m_size = 0;
+}
