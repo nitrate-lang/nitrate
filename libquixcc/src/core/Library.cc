@@ -380,7 +380,8 @@ LIB_EXPORT [[noreturn]] void quixcc_panicf(const char *_fmt, ...) {
   char *_msg = nullptr;
   va_list args;
   va_start(args, _fmt);
-  vasprintf(&_msg, _fmt, args);
+  int ret = vasprintf(&_msg, _fmt, args);
+  (void)ret;
   va_end(args);
 
   std::string msg = _msg;

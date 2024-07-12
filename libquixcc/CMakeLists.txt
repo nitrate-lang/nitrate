@@ -35,7 +35,7 @@ string(REPLACE " " ";" LLVM_LIBS "${LLVM_LIBS}")
 string(REPLACE "\n" " " LLVM_LIBS_BASH "${LLVM_LIBS_RAW}")
 
 SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter -Wno-error=mismatched-new-delete -DLLVM_SUUPORT_ALL_TARGETS)
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DLIBQUIX_VERSION=${LIBQUIX_VERSION})
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DLIBQUIX_VERSION=${LIBQUIX_VERSION} -Wno-unused-parameter)
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-unused-parameter -DLIBQUIX_VERSION="undefined")
 
 file(GLOB_RECURSE LIBQUIX_CXX_SOURCES "src/*.cc")

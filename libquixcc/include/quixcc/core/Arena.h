@@ -39,13 +39,13 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
+struct quixcc_arena_impl_t;
+
 /**
  * @brief Quixcc general-purpose arena allocator.
  */
 typedef struct quixcc_arena_t {
-  void *m_base;
-  void *m_offset;
-  size_t m_size;
+  struct quixcc_arena_impl_t *m_impl;
 } quixcc_arena_t;
 
 /**
@@ -60,6 +60,19 @@ typedef struct quixcc_arena_t {
  * @note This function is thread-safe.
  */
 quixcc_arena_t *quixcc_arena_open(quixcc_arena_t *arena);
+
+/**
+ * @brief Copy an arena allocator.
+ *
+ * @param dst The arena to copy to.
+ * @param src The arena to copy from.
+ *
+ * @return The copied arena.
+ *
+ * @warning This is a shallow byte-by-byte copy.
+ */
+quixcc_arena_t *quixcc_arena_copy(quixcc_arena_t *dst,
+                                  const quixcc_arena_t *src);
 
 /**
  * @brief Allocates memory from the arena.
@@ -83,6 +96,28 @@ quixcc_arena_t *quixcc_arena_open(quixcc_arena_t *arena);
 void *quixcc_arena_alloc(quixcc_arena_t *arena, size_t size);
 
 /**
+ * @brief Allocates memory from the arena with a specific alignment.
+ *
+ * @param arena The arena to allocate memory from.
+ * @param size The size of the memory to allocate.
+ * @param align The alignment of the memory to allocate.
+ *
+ * @return A pointer to the allocated memory.
+ *
+ * @note If the arena is not valid the behavior is undefined.
+ * @note The arena is resized automatically when needed.
+ * @note Out-of-memory errors will call `quixcc_panic`.
+ * @note The pointer is never NULL.
+ * @note The returned memory is uninitialized.
+ * @warning DO NOT free the returned memory manually.
+ * @note This function is thread-safe.
+ *
+ * @warning All pointers are owned by the arena and will be freed
+ * when the arena is closed.
+ */
+void *quixcc_arena_alloc_ex(quixcc_arena_t *arena, size_t size, size_t align);
+
+/**
  * @brief Returns the total size of the arena.
  *
  * @param arena The arena to get the size of.
@@ -92,9 +127,7 @@ void *quixcc_arena_alloc(quixcc_arena_t *arena, size_t size);
  * @note If the arena is not valid the behavior is undefined.
  * @note This function is thread-safe.
  */
-static inline size_t quixcc_arena_capacity(quixcc_arena_t *arena) {
-  return arena->m_size;
-}
+size_t quixcc_arena_capacity(quixcc_arena_t *arena);
 
 /**
  * @brief Returns the amount of memory used in the arena.
@@ -106,9 +139,7 @@ static inline size_t quixcc_arena_capacity(quixcc_arena_t *arena) {
  * @note If the arena is not valid the behavior is undefined.
  * @note This function is thread-safe.
  */
-static inline size_t quixcc_arena_used(quixcc_arena_t *arena) {
-  return (uintptr_t)arena->m_offset - (uintptr_t)arena->m_base;
-}
+size_t quixcc_arena_used(quixcc_arena_t *arena);
 
 /**
  * @brief Closes an arena allocator.

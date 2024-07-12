@@ -41,15 +41,17 @@
 namespace libquixcc::core {
 class IDumpable {
  protected:
-  virtual void dump_impl(std::ostream &os, bool isForDebug) const = 0;
+  virtual void print_impl(std::ostream &os, bool isForDebug) const = 0;
 
  public:
   virtual ~IDumpable() = default;
 
-  void dump(bool isForDebug = false) const { dump_impl(std::cerr, isForDebug); }
+  void dump(bool isForDebug = false) const {
+    print_impl(std::cerr, isForDebug);
+  }
 
   void print(std::ostream &os, bool isForDebug = false) const {
-    dump_impl(os, isForDebug);
+    print_impl(os, isForDebug);
   }
 };
 

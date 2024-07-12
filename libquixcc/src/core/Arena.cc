@@ -36,75 +36,187 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define UNIT_FACTOR 4
+#include <cstring>
+#include <iostream>
+#include <vector>
 
-LIB_EXPORT quixcc_arena_t *quixcc_arena_open(quixcc_arena_t *arena) {
-#if !defined(NDEBUG)
-  if (!arena) {
-    quixcc_panic("quixcc_arena_open: arena is NULL");
-    __builtin_unreachable();
+// #define ALLOCATOR_PRINT_VERBOSE 1
+
+#define REGION_SIZE (1024 * 1024)
+
+class quixcc_arena_impl_t {
+  [[noreturn]] void alloc_failed() {
+    if (errno == ENOMEM) {
+      quixcc_panic("quixcc_arena_alloc: out of memory");
+    }
+
+    quixcc_panic("quixcc_arena_alloc: failed to allocate memory");
   }
+
+  struct region_t {
+    void *m_base;
+    void *m_offset;
+    size_t m_size;
+
+    region_t(void *base = nullptr, void *offset = nullptr, size_t size = 0)
+        : m_base(base), m_offset(offset), m_size(size) {}
+  };
+
+  void alloc_region(size_t size) {
+    void *base = malloc(size);
+
+    if (!base) {
+      alloc_failed();
+    }
+
+    m_bases.push_back({base, base, size});
+  }
+
+ public:
+  quixcc_arena_impl_t() = default;
+
+  quixcc_arena_impl_t(const quixcc_arena_impl_t &other) {
+    size_t used = 0;
+
+    for (const auto &region : other.m_bases) {
+      /* Allocate a new memory block */
+      void *base = malloc(region.m_size);
+
+      /* If the allocation failed, panic */
+      if (!base) {
+        alloc_failed();
+      }
+
+      /* Calculate the amount of memory used in the old block */
+      used = (uintptr_t)region.m_offset - (uintptr_t)region.m_base;
+
+      /* Only copy the used memory */
+      std::memcpy(base, region.m_base, used);
+
+      /* Push the new memory block */
+      m_bases.push_back(
+          {base, (void *)((uintptr_t)base + used), region.m_size});
+    }
+  }
+
+  ~quixcc_arena_impl_t() {
+    size_t total = 0;
+
+#if ALLOCATOR_PRINT_VERBOSE
+    std::cerr << "TRACE: quixcc_arena_impl_t::~quixcc_arena_impl_t() -> free([";
 #endif
 
-  arena->m_base = NULL;
-  arena->m_offset = NULL;
-  arena->m_size = 0;
+    for (size_t i = 0; i < m_bases.size(); i++) {
+#if !defined(NDEBUG)
+      memset(m_bases[i].m_base, 'Q', m_bases[i].m_size);
+#endif
 
+      free(m_bases[i].m_base);
+
+      total += m_bases[i].m_size;
+
+#if ALLOCATOR_PRINT_VERBOSE
+      std::cerr << m_bases[i].m_size;
+      if (i + 1 < m_bases.size()) {
+        std::cerr << ", ";
+      }
+#endif
+    }
+
+#if ALLOCATOR_PRINT_VERBOSE
+    std::cerr << "]) -> " << total << " freed total\n";
+#endif
+  }
+
+  void *allocate(size_t size, size_t alignment) {
+    if (size == 0 || alignment == 0) {
+      return nullptr;
+    }
+
+    if (size > REGION_SIZE) {
+      alloc_region(size);
+    }
+
+    { /* Initial region allocation */
+      if (m_bases.empty()) {
+        alloc_region(REGION_SIZE);
+      }
+    }
+
+    for (auto it = m_bases.rbegin(); it != m_bases.rend(); ++it) {
+      /* Calculate boundaries for hypothetical allocation */
+      uintptr_t start = (uintptr_t)it->m_offset +
+                        (alignment - ((uintptr_t)it->m_offset % alignment));
+
+      /* Check if the region has enough space */
+      if ((start + size) <= (uintptr_t)it->m_base + it->m_size) {
+        it->m_offset = (void *)(start + size);
+        return (void *)start;
+      }
+    }
+
+    /* If no region has enough space, allocate a new one */
+    alloc_region(REGION_SIZE);
+
+    /* Calculate the start of the allocation */
+    uintptr_t start =
+        (uintptr_t)m_bases.back().m_offset +
+        (alignment - ((uintptr_t)m_bases.back().m_offset % alignment));
+
+    m_bases.back().m_offset = (void *)(start + size);
+
+    /* Return the first region */
+    return (void *)start;
+  }
+
+  std::vector<region_t> m_bases;
+};
+
+LIB_EXPORT quixcc_arena_t *quixcc_arena_open(quixcc_arena_t *arena) {
+#if ALLOCATOR_PRINT_VERBOSE
+  std::cerr << "TRACE: quixcc_arena_open(" << arena << ")\n";
+#endif
+
+  arena->m_impl = new quixcc_arena_impl_t();
   return arena;
 }
 
-LIB_EXPORT void *quixcc_arena_alloc(quixcc_arena_t *arena, size_t size) {
-  void *ptr, *new_base;
-  size_t new_size;
-
-#if !defined(NDEBUG)
-  if (!arena) {
-    quixcc_panic("quixcc_arena_alloc: arena is NULL");
-    __builtin_unreachable();
-  }
+LIB_EXPORT quixcc_arena_t *quixcc_arena_copy(quixcc_arena_t *dst,
+                                             const quixcc_arena_t *src) {
+#if ALLOCATOR_PRINT_VERBOSE
+  std::cerr << "TRACE: quixcc_arena_copy(" << dst << ", " << src << ")\n";
 #endif
 
-  if (size + (uintptr_t)arena->m_offset >
-      (uintptr_t)arena->m_base + arena->m_size) {
-    new_size = arena->m_size + (size * UNIT_FACTOR);
+  dst->m_impl = new quixcc_arena_impl_t(*src->m_impl);
+  return dst;
+}
 
-    new_base = realloc(arena->m_base, new_size);
-    if (!new_base) {
-      if (errno == ENOMEM) {
-        quixcc_panic("quixcc_arena_alloc: out of memory");
-      }
+LIB_EXPORT void *quixcc_arena_alloc(quixcc_arena_t *arena, size_t size) {
+  void *ptr = arena->m_impl->allocate(size, 1);
 
-      quixcc_panic("quixcc_arena_alloc: realloc() failed to allocate memory");
+#if ALLOCATOR_PRINT_VERBOSE
+  std::cerr << "TRACE: quixcc_arena_alloc(" << size << ")\t-> " << ptr << "\n";
+#endif
 
-      __builtin_unreachable();
-    }
+  return ptr;
+}
 
-    arena->m_base = new_base;
-    arena->m_offset = (void *)((uintptr_t)arena->m_base + arena->m_size);
-    arena->m_size = new_size;
-  }
+LIB_EXPORT void *quixcc_arena_alloc_ex(quixcc_arena_t *arena, size_t size,
+                                       size_t align) {
+  void *ptr = arena->m_impl->allocate(size, align);
 
-  ptr = arena->m_offset;
-  arena->m_offset = (void *)((uintptr_t)arena->m_offset + size);
+#if ALLOCATOR_PRINT_VERBOSE
+  std::cerr << "TRACE: quixcc_arena_alloc_ex(" << size << ", " << align
+            << ")\t-> " << ptr << "\n";
+#endif
 
   return ptr;
 }
 
 LIB_EXPORT void quixcc_arena_close(quixcc_arena_t *arena) {
-#if !defined(NDEBUG)
-  if (!arena) {
-    quixcc_panic("quixcc_arena_close: arena is NULL");
-    __builtin_unreachable();
-  }
+#if ALLOCATOR_PRINT_VERBOSE
+  std::cerr << "TRACE: quixcc_arena_close(" << arena << ")\n";
 #endif
 
-  if (!arena->m_size) {
-    return;
-  }
-
-  free(arena->m_base);
-
-  arena->m_base = NULL;
-  arena->m_offset = NULL;
-  arena->m_size = 0;
+  delete arena->m_impl;
 }
