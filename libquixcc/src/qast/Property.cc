@@ -35,11 +35,15 @@
 #include <quixcc/interface/SyntaxTreeNodes.h>
 
 LIB_EXPORT quixcc_ast_ntype_t quixcc_ast_typeof(const quixcc_ast_node_t *node) {
-  quixcc_panic("quixcc_ast_typeof() is not implemented");
+  if (node == nullptr) {
+    quixcc_panic("Contract violation: quixcc_ast_typeof() called with nullptr");
+  }
+
+  return static_cast<const libquixcc::qast::Node *>(node)->this_typeid();
 }
 
 LIB_EXPORT const char *quixcc_ast_ntype_name(quixcc_ast_ntype_t type) {
-  quixcc_panic("quixcc_ast_ntype_name() is not implemented");
+  return libquixcc::qast::Node::type_name(type);
 }
 
 LIB_EXPORT uint16_t quixcc_ast_subcount(quixcc_ast_ntype_t type) {

@@ -216,6 +216,8 @@ class Node : public quixcc_ast_node_t {
   bool verify(std::ostream &os = std::cerr) const;
   void canonicalize();
   virtual Node *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+
+  static const char *type_name(quixcc_ast_ntype_t type);
 };
 
 class Stmt : public Node {
@@ -271,31 +273,36 @@ class Type : public Node {
   virtual Type *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
 };
 
+typedef std::set<std::string_view, std::less<std::string_view>,
+                 Arena<std::string_view>>
+    DeclTags;
+
 class Decl : public Stmt {
  protected:
-  std::set<std::string_view, std::less<std::string_view>,
-           Arena<std::string_view>>
-      m_tags;
+  DeclTags m_tags;
+  std::string_view m_name;
+  Type *m_type;
 
-  virtual std::optional<std::string_view> get_name_impl() const = 0;
   virtual Type *infer_type_impl() const = 0;
 
  public:
-  Decl() = default;
+  Decl(std::string_view name = "", Type *type = nullptr,
+       std::initializer_list<std::string_view> tags = {})
+      : m_tags(tags), m_name(name), m_type(type) {}
   virtual ~Decl() override = default;
 
-  bool decl_has_name() const;
-  std::string_view get_decl_name() const;
+  std::string_view get_name() const;
+  void set_name(std::string_view name);
 
-  const std::set<std::string_view, std::less<std::string_view>,
-                 Arena<std::string_view>> &
-  get_tags() const;
+  virtual Type *get_type() const;
+  void set_type(Type *type);
+
+  const DeclTags &get_tags() const;
   void add_tag(std::string_view tag);
   void add_tags(std::initializer_list<std::string_view> tags);
   void clear_tags();
   void remove_tag(std::string_view tag);
 
-  bool has_type() const;
   Type *infer_type() const;
 
   virtual Decl *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
@@ -1141,42 +1148,41 @@ class ConstUndef : public LitExpr {
 
 ///=============================================================================
 
+typedef std::pair<const std::string_view, Expr *> CallArg;
+typedef std::map<std::string_view, Expr *, std::less<std::string_view>,
+                 Arena<CallArg>>
+    CallArgs;
+
 class Call : public Expr {
  protected:
   Expr *m_func;
-  std::unordered_map<std::string_view, Expr *,
-                     Arena<std::pair<std::string_view, Expr *>>>
-      m_args;
+  CallArgs m_args;
 
   virtual Type *infer_type_impl() const override final;
   virtual bool is_const_impl() const override final;
   virtual bool is_stochastic_impl() const override final;
 
  public:
-  Call(Expr *func = nullptr,
-       std::unordered_map<std::string_view, Expr *,
-                          Arena<std::pair<std::string_view, Expr *>>>
-           args = {})
-      : m_func(func), m_args(args) {}
+  Call(Expr *func = nullptr, CallArgs args = {}) : m_func(func), m_args(args) {}
   virtual ~Call() override = default;
 
   Expr *get_func() const;
   void set_func(Expr *func);
 
-  const std::unordered_map<std::string_view, Expr *,
-                           Arena<std::pair<std::string_view, Expr *>>> &
-  get_args() const;
+  const CallArgs &get_args() const;
   void add_arg(std::string_view name, Expr *arg);
-  void add_args(std::unordered_map<std::string_view, Expr *> args);
+  void add_args(std::map<std::string_view, Expr *> args);
   void clear_args();
   void remove_arg(std::string_view name);
 
   NODE_IMPL_CORE(Call)
 };
 
+typedef std::vector<Expr *, Arena<Expr *>> ListData;
+
 class List : public Expr {
  protected:
-  std::vector<Expr *, Arena<Expr *>> m_items;
+  ListData m_items;
 
   virtual Type *infer_type_impl() const override final;
   virtual bool is_const_impl() const override final;
@@ -1184,10 +1190,10 @@ class List : public Expr {
 
  public:
   List(std::initializer_list<Expr *> items = {}) : m_items(items) {}
-  List(const std::vector<Expr *, Arena<Expr *>> &items) : m_items(items) {}
+  List(const ListData &items) : m_items(items) {}
   virtual ~List() override = default;
 
-  const std::vector<Expr *, Arena<Expr *>> &get_items() const;
+  const ListData &get_items() const;
   void add_item(Expr *item);
   void add_items(std::initializer_list<Expr *> items);
   void clear_items();
@@ -1292,38 +1298,38 @@ class Slice : public Expr {
   NODE_IMPL_CORE(Slice)
 };
 
+typedef std::vector<Expr *, Arena<Expr *>> FStringArgs;
+
 class FString : public Expr {
  protected:
   std::string_view m_value;
-  std::vector<Expr *, Arena<Expr *>> m_args;
+  FStringArgs m_items;
 
   virtual Type *infer_type_impl() const override final;
   virtual bool is_const_impl() const override final;
   virtual bool is_stochastic_impl() const override final;
 
  public:
-  FString(std::string_view value = "", std::initializer_list<Expr *> args = {})
-      : m_value(value), m_args(args) {}
-  FString(std::string_view value,
-          const std::vector<Expr *, Arena<Expr *>> &args)
-      : m_value(value), m_args(args) {}
+  FString(std::string_view value = "", std::initializer_list<Expr *> items = {})
+      : m_value(value), m_items(items) {}
+  FString(std::string_view value, const FStringArgs &items)
+      : m_value(value), m_items(items) {}
   virtual ~FString() override = default;
 
   std::string_view get_value() const;
   void set_value(std::string_view value);
 
-  const std::vector<Expr *, Arena<Expr *>> &get_args() const;
-  void add_arg(Expr *arg);
-  void add_args(std::initializer_list<Expr *> args);
-  void clear_args();
-  void remove_arg(Expr *arg);
+  const FStringArgs &get_items() const;
+  void add_item(Expr *item);
+  void add_items(std::initializer_list<Expr *> items);
+  void clear_items();
+  void remove_item(Expr *item);
 
   NODE_IMPL_CORE(FString)
 };
 
 class Ident : public Expr {
   std::string_view m_name;
-  Type *m_type;
 
   virtual Type *infer_type_impl() const override final;
   virtual bool is_const_impl() const override final;
@@ -1361,24 +1367,15 @@ class Block : public Stmt {
 
 class ConstDecl : public Decl {
  protected:
-  std::string_view m_name;
-  Type *m_type;
   Expr *m_value;
 
-  virtual std::optional<std::string_view> get_name_impl() const override final;
   virtual Type *infer_type_impl() const override final;
 
  public:
   ConstDecl(std::string_view name = "", Type *type = nullptr,
             Expr *value = nullptr)
-      : m_name(name), m_type(type), m_value(value) {}
+      : Decl(name, type), m_value(value) {}
   virtual ~ConstDecl() override = default;
-
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  Type *get_type() const;
-  void set_type(Type *type);
 
   Expr *get_value() const;
   void set_value(Expr *value);
@@ -1388,24 +1385,15 @@ class ConstDecl : public Decl {
 
 class VarDecl : public Decl {
  protected:
-  std::string_view m_name;
-  Type *m_type;
   Expr *m_value;
 
-  virtual std::optional<std::string_view> get_name_impl() const override final;
   virtual Type *infer_type_impl() const override final;
 
  public:
   VarDecl(std::string_view name = "", Type *type = nullptr,
           Expr *value = nullptr)
-      : m_name(name), m_type(type), m_value(value) {}
+      : Decl(name, type), m_value(value) {}
   virtual ~VarDecl() override = default;
-
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  Type *get_type() const;
-  void set_type(Type *type);
 
   Expr *get_value() const;
   void set_value(Expr *value);
@@ -1415,24 +1403,15 @@ class VarDecl : public Decl {
 
 class LetDecl : public Decl {
  protected:
-  std::string_view m_name;
-  Type *m_type;
   Expr *m_value;
 
-  virtual std::optional<std::string_view> get_name_impl() const override final;
   virtual Type *infer_type_impl() const override final;
 
  public:
   LetDecl(std::string_view name = "", Type *type = nullptr,
           Expr *value = nullptr)
-      : m_name(name), m_type(type), m_value(value) {}
+      : Decl(name, type), m_value(value) {}
   virtual ~LetDecl() override = default;
-
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  Type *get_type() const;
-  void set_type(Type *type);
 
   Expr *get_value() const;
   void set_value(Expr *value);
@@ -1713,44 +1692,26 @@ class SwitchStmt : public FlowStmt {
 
 class TypedefStmt : public Decl {
  protected:
-  std::string_view m_name;
-  Type *m_type;
-
-  virtual std::optional<std::string_view> get_name_impl() const override final;
   virtual Type *infer_type_impl() const override final;
 
  public:
   TypedefStmt(std::string_view name = "", Type *type = nullptr)
-      : m_name(name), m_type(type) {}
+      : Decl(name, type) {}
   virtual ~TypedefStmt() override = default;
-
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  Type *get_type() const;
-  void set_type(Type *type);
 
   NODE_IMPL_CORE(TypedefStmt)
 };
 
 class FnDecl : public Decl {
  protected:
-  std::string_view m_name;
-  FuncTy *m_type;
-
-  virtual std::optional<std::string_view> get_name_impl() const override final;
   virtual Type *infer_type_impl() const override final;
 
  public:
   FnDecl(std::string_view name = "", FuncTy *type = nullptr)
-      : m_name(name), m_type(type) {}
+      : Decl(name, type) {}
   virtual ~FnDecl() override = default;
 
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  FuncTy *get_type() const;
-  void set_type(FuncTy *type);
+  virtual FuncTy *get_type() const override;
 
   NODE_IMPL_CORE(FnDecl)
 };
@@ -1768,9 +1729,6 @@ class FnDef : public FnDecl {
   std::string_view get_name() const;
   void set_name(std::string_view name);
 
-  FuncTy *get_type() const;
-  void set_type(FuncTy *type);
-
   Stmt *get_body() const;
   void set_body(Stmt *body);
 
@@ -1779,24 +1737,15 @@ class FnDef : public FnDecl {
 
 class CompositeField : public Decl {
  protected:
-  std::string_view m_name;
-  Type *m_type;
   Expr *m_value;
 
-  virtual std::optional<std::string_view> get_name_impl() const override final;
   virtual Type *infer_type_impl() const override final;
 
  public:
   CompositeField(std::string_view name = "", Type *type = nullptr,
                  Expr *value = nullptr)
-      : m_name(name), m_type(type), m_value(value) {}
+      : Decl(name, type), m_value(value) {}
   virtual ~CompositeField() override = default;
-
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  Type *get_type() const;
-  void set_type(Type *type);
 
   Expr *get_value() const;
   void set_value(Expr *value);
@@ -1810,36 +1759,29 @@ class StructDef : public Decl {
   std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
   std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
 
-  std::string_view m_name;
-  StructTy *m_type;
+  virtual Type *infer_type_impl() const override final;
 
  public:
   StructDef(std::string_view name = "", StructTy *type = nullptr,
             std::initializer_list<CompositeField *> fields = {},
             std::initializer_list<FnDecl *> methods = {},
             std::initializer_list<FnDecl *> static_methods = {})
-      : m_methods(methods),
+      : Decl(name, type),
+        m_methods(methods),
         m_static_methods(static_methods),
-        m_fields(fields),
-        m_name(name),
-        m_type(type) {}
+        m_fields(fields) {}
   StructDef(
       std::string_view name, StructTy *type,
       const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
       const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
       const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
-      : m_methods(methods),
+      : Decl(name, type),
+        m_methods(methods),
         m_static_methods(static_methods),
-        m_fields(fields),
-        m_name(name),
-        m_type(type) {}
+        m_fields(fields) {}
   virtual ~StructDef() override = default;
 
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  StructTy *get_type() const;
-  void set_type(StructTy *type);
+  virtual StructTy *get_type() const override;
 
   const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
   void add_method(FnDecl *method);
@@ -1861,6 +1803,188 @@ class StructDef : public Decl {
   void remove_field(CompositeField *field);
 
   NODE_IMPL_CORE(StructDef)
+};
+
+class GroupDef : public Decl {
+ protected:
+  std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
+  std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
+  std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+
+  virtual Type *infer_type_impl() const override final;
+
+ public:
+  GroupDef(std::string_view name = "", GroupTy *type = nullptr,
+           std::initializer_list<CompositeField *> fields = {},
+           std::initializer_list<FnDecl *> methods = {},
+           std::initializer_list<FnDecl *> static_methods = {})
+      : Decl(name, type),
+        m_methods(methods),
+        m_static_methods(static_methods),
+        m_fields(fields) {}
+  GroupDef(std::string_view name, GroupTy *type,
+           const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
+           const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
+           const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+      : Decl(name, type),
+        m_methods(methods),
+        m_static_methods(static_methods),
+        m_fields(fields) {}
+  virtual ~GroupDef() override = default;
+
+  virtual GroupTy *get_type() const override;
+
+  const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+  void add_method(FnDecl *method);
+  void add_methods(std::initializer_list<FnDecl *> methods);
+  void clear_methods();
+  void remove_method(FnDecl *method);
+
+  const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+  void add_static_method(FnDecl *method);
+  void add_static_methods(std::initializer_list<FnDecl *> methods);
+  void clear_static_methods();
+  void remove_static_method(FnDecl *method);
+
+  const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields()
+      const;
+  void add_field(CompositeField *field);
+  void add_fields(std::initializer_list<CompositeField *> fields);
+  void clear_fields();
+  void remove_field(CompositeField *field);
+
+  NODE_IMPL_CORE(GroupDef);
+};
+
+class RegionDef : public Decl {
+ protected:
+  std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
+  std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
+  std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+
+  virtual Type *infer_type_impl() const override final;
+
+ public:
+  RegionDef(std::string_view name = "", RegionTy *type = nullptr,
+            std::initializer_list<CompositeField *> fields = {},
+            std::initializer_list<FnDecl *> methods = {},
+            std::initializer_list<FnDecl *> static_methods = {})
+      : Decl(name, type),
+        m_methods(methods),
+        m_static_methods(static_methods),
+        m_fields(fields) {}
+  RegionDef(
+      std::string_view name, RegionTy *type,
+      const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
+      const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
+      const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+      : Decl(name, type),
+        m_methods(methods),
+        m_static_methods(static_methods),
+        m_fields(fields) {}
+  virtual ~RegionDef() override = default;
+
+  virtual RegionTy *get_type() const override;
+
+  const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+  void add_method(FnDecl *method);
+  void add_methods(std::initializer_list<FnDecl *> methods);
+  void clear_methods();
+  void remove_method(FnDecl *method);
+
+  const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+  void add_static_method(FnDecl *method);
+  void add_static_methods(std::initializer_list<FnDecl *> methods);
+  void clear_static_methods();
+  void remove_static_method(FnDecl *method);
+
+  const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields()
+      const;
+  void add_field(CompositeField *field);
+  void add_fields(std::initializer_list<CompositeField *> fields);
+  void clear_fields();
+  void remove_field(CompositeField *field);
+
+  NODE_IMPL_CORE(RegionDef);
+};
+
+class UnionDef : public Decl {
+ protected:
+  std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
+  std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
+  std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+
+  virtual Type *infer_type_impl() const override final;
+
+ public:
+  UnionDef(std::string_view name = "", UnionTy *type = nullptr,
+           std::initializer_list<CompositeField *> fields = {},
+           std::initializer_list<FnDecl *> methods = {},
+           std::initializer_list<FnDecl *> static_methods = {})
+      : Decl(name, type),
+        m_methods(methods),
+        m_static_methods(static_methods),
+        m_fields(fields) {}
+  UnionDef(std::string_view name, UnionTy *type,
+           const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
+           const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
+           const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+      : Decl(name, type),
+        m_methods(methods),
+        m_static_methods(static_methods),
+        m_fields(fields) {}
+  virtual ~UnionDef() override = default;
+
+  virtual UnionTy *get_type() const override;
+
+  const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+  void add_method(FnDecl *method);
+  void add_methods(std::initializer_list<FnDecl *> methods);
+  void clear_methods();
+  void remove_method(FnDecl *method);
+
+  const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+  void add_static_method(FnDecl *method);
+  void add_static_methods(std::initializer_list<FnDecl *> methods);
+  void clear_static_methods();
+  void remove_static_method(FnDecl *method);
+
+  const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields()
+      const;
+  void add_field(CompositeField *field);
+  void add_fields(std::initializer_list<CompositeField *> fields);
+  void clear_fields();
+  void remove_field(CompositeField *field);
+
+  NODE_IMPL_CORE(RegionDef);
+};
+
+typedef std::pair<std::string_view, Type *> EnumItem;
+
+class EnumDef : public Decl {
+ protected:
+  std::vector<EnumItem, Arena<EnumItem>> m_items;
+
+  virtual Type *infer_type_impl() const override final;
+
+ public:
+  EnumDef(std::string_view name = "", EnumTy *type = nullptr,
+          std::initializer_list<EnumItem> items = {})
+      : Decl(name, type), m_items(items) {}
+  EnumDef(std::string_view name, EnumTy *type,
+          const std::vector<EnumItem, Arena<EnumItem>> &items)
+      : Decl(name, type), m_items(items) {}
+  virtual ~EnumDef() override = default;
+
+  virtual EnumTy *get_type() const override;
+
+  const std::vector<EnumItem, Arena<EnumItem>> &get_items() const;
+  void add_item(EnumItem item);
+  void add_items(std::initializer_list<EnumItem> items);
+  void clear_items();
+  void remove_item(EnumItem item);
+
+  NODE_IMPL_CORE(EnumDef)
 };
 
 }  // namespace libquixcc::qast

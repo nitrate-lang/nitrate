@@ -45,7 +45,9 @@
 using namespace libquixcc::qast;
 
 ///=============================================================================
-thread_local libquixcc::qast::ArenaAllocatorImpl libquixcc::qast::g_allocator;
+namespace libquixcc::qast {
+thread_local ArenaAllocatorImpl g_allocator;
+}
 
 ArenaAllocatorImpl::ArenaAllocatorImpl() { quixcc_arena_open(&m_arena); }
 
@@ -61,6 +63,10 @@ void ArenaAllocatorImpl::deallocate(void *ptr) noexcept {}
 
 ///=============================================================================
 
+const char *Node::type_name(quixcc_ast_ntype_t type) {
+  quixcc_panic("Node::type_name() is not implemented");
+}
+
 uint32_t Node::this_sizeof() const {
   quixcc_panic("Node::this_sizeof() is not implemented");
 
@@ -68,7 +74,7 @@ uint32_t Node::this_sizeof() const {
   { typeid(__type).hash_code(), sizeof(__type) }
 
   static const std::unordered_map<size_t, uint32_t> sizes = {
-    //
+      //
   };
 
   assert(sizes.size() == QUIXCC_AST_NODE_COUNT);
@@ -91,7 +97,7 @@ quixcc_ast_ntype_t Node::this_typeid() const {
   return typeid_map.at(typeid(*this).hash_code());
 }
 
-const char *Node::this_nameof() const { return typeid(*this).name(); }
+const char *Node::this_nameof() const { return type_name(this_typeid()); }
 
 size_t Node::children_count(bool recursive) const {
   /// TODO: Implement this function
@@ -468,33 +474,25 @@ bool Type::is_string() const {
 
 ///=============================================================================
 
-bool Decl::decl_has_name() const { return get_name_impl().has_value(); }
-std::string_view Decl::get_decl_name() const { return get_name_impl().value(); }
+std::string_view Decl::get_name() const { return m_name; }
+void Decl::set_name(std::string_view name) { m_name = name; }
 
-const std::set<std::string_view, std::less<std::string_view>,
-               Arena<std::string_view>> &
-Decl::get_tags() const {
-  return m_tags;
-}
+Type *Decl::get_type() const { return m_type; }
+void Decl::set_type(Type *type) { m_type = type; }
+
+const DeclTags &Decl::get_tags() const { return m_tags; }
 void Decl::add_tag(std::string_view tag) { m_tags.insert(tag); }
 void Decl::add_tags(std::initializer_list<std::string_view> tags) {
-  for (auto tag : tags) {
-    add_tag(tag);
-  }
+  m_tags.insert(tags.begin(), tags.end());
 }
 void Decl::clear_tags() { m_tags.clear(); }
-void Decl::remove_tag(std::string_view tag) {
-  std::erase_if(m_tags, [tag](std::string_view t) { return t == tag; });
-}
-
-bool Decl::has_type() const { return infer_type() != nullptr; }
+void Decl::remove_tag(std::string_view tag) { m_tags.erase(tag); }
 
 Type *Decl::infer_type() const { return infer_type_impl(); }
 
 ///=============================================================================
 
 Type *Expr::infer_type() const { return infer_type_impl(); }
-
 bool Expr::is_const() const { return is_const_impl(); }
 bool Expr::is_stochastic() const { return is_stochastic_impl(); }
 
@@ -540,11 +538,7 @@ Type *ConstExpr::infer_type_impl() const { return get_value()->infer_type(); }
 bool ConstExpr::is_const_impl() const { return true; }
 bool ConstExpr::is_stochastic_impl() const { return false; }
 
-Expr *ConstExpr::get_value() const {
-  assert(m_value);
-  return m_value;
-}
-
+Expr *ConstExpr::get_value() const { return m_value; }
 void ConstExpr::set_value(Expr *value) { m_value = value; }
 
 bool ConstExpr::verify_impl(std::ostream &os) const {
@@ -596,7 +590,12 @@ bool PtrTy::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_item->verify(os);
+  if (!m_item->verify(os)) {
+    os << "PtrTy: item type is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void PtrTy::canonicalize_impl() {
@@ -674,7 +673,12 @@ bool VectorTy::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_item->verify(os);
+  if (!m_item->verify(os)) {
+    os << "VectorTy: item type is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void VectorTy::canonicalize_impl() {
@@ -1638,10 +1642,7 @@ bool UnaryExpr::is_stochastic_impl() const {
 UnaryOp UnaryExpr::get_op() const { return m_op; }
 void UnaryExpr::set_op(UnaryOp op) { m_op = op; }
 
-Expr *UnaryExpr::get_rhs() const {
-  assert(m_rhs);
-  return m_rhs;
-}
+Expr *UnaryExpr::get_rhs() const { return m_rhs; }
 void UnaryExpr::set_rhs(Expr *rhs) { m_rhs = rhs; }
 
 bool BinExpr::verify_impl(std::ostream &os) const {
@@ -1723,16 +1724,10 @@ bool BinExpr::is_stochastic_impl() const {
 BinOp BinExpr::get_op() const { return m_op; }
 void BinExpr::set_op(BinOp op) { m_op = op; }
 
-Expr *BinExpr::get_lhs() const {
-  assert(m_lhs);
-  return m_lhs;
-}
+Expr *BinExpr::get_lhs() const { return m_lhs; }
 void BinExpr::set_lhs(Expr *lhs) { m_lhs = lhs; }
 
-Expr *BinExpr::get_rhs() const {
-  assert(m_rhs);
-  return m_rhs;
-}
+Expr *BinExpr::get_rhs() const { return m_rhs; }
 void BinExpr::set_rhs(Expr *rhs) { m_rhs = rhs; }
 
 bool TernaryExpr::verify_impl(std::ostream &os) const {
@@ -1823,22 +1818,13 @@ bool TernaryExpr::is_stochastic_impl() const {
          m_rhs->is_stochastic();
 }
 
-Expr *TernaryExpr::get_cond() const {
-  assert(m_cond);
-  return m_cond;
-}
+Expr *TernaryExpr::get_cond() const { return m_cond; }
 void TernaryExpr::set_cond(Expr *cond) { m_cond = cond; }
 
-Expr *TernaryExpr::get_lhs() const {
-  assert(m_lhs);
-  return m_lhs;
-}
+Expr *TernaryExpr::get_lhs() const { return m_lhs; }
 void TernaryExpr::set_lhs(Expr *lhs) { m_lhs = lhs; }
 
-Expr *TernaryExpr::get_rhs() const {
-  assert(m_rhs);
-  return m_rhs;
-}
+Expr *TernaryExpr::get_rhs() const { return m_rhs; }
 void TernaryExpr::set_rhs(Expr *rhs) { m_rhs = rhs; }
 
 ///=============================================================================
@@ -1961,6 +1947,533 @@ ConstUndef *ConstUndef::clone_impl() const { return ConstUndef::get(); }
 
 ///=============================================================================
 
+bool Call::verify_impl(std::ostream &os) const {
+  if (!m_func) {
+    os << "CallExpr: function is NULL\n";
+    return false;
+  }
+
+  for (const auto &[name, expr] : m_args) {
+    if (!expr) {
+      os << "CallExpr: arg '" << name << "' is NULL\n";
+      return false;
+    }
+
+    if (!expr->verify(os)) {
+      os << "CallExpr: arg '" << name << "' is invalid\n";
+      return false;
+    }
+  }
+
+  return m_func->verify(os);
+}
+
+void Call::canonicalize_impl() {
+  if (m_func) {
+    m_func->canonicalize();
+  }
+
+  for (auto &[name, expr] : m_args) {
+    if (expr) {
+      expr->canonicalize();
+    }
+  }
+}
+
+void Call::print_impl(std::ostream &os, bool debug) const {
+  if (m_func) {
+    m_func->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << "(";
+
+  for (auto it = m_args.begin(); it != m_args.end(); ++it) {
+    os << it->first << ": ";
+    if (it->second) {
+      it->second->print(os, debug);
+    } else {
+      os << "?";
+    }
+    if (std::next(it) != m_args.end()) {
+      os << ", ";
+    }
+  }
+
+  os << ")";
+}
+
+Call *Call::clone_impl() const {
+  Expr *func = m_func ? m_func->clone() : nullptr;
+  CallArgs args;
+
+  for (const auto &[name, expr] : m_args) {
+    Expr *e = expr ? expr->clone() : nullptr;
+    args[name] = e;
+  }
+
+  return Call::get(func, args);
+}
+
+Type *Call::infer_type_impl() const {
+  assert(m_func);
+  return m_func->infer_type()->as<FuncTy>()->get_return_ty();
+}
+
+bool Call::is_const_impl() const {
+  assert(m_func);
+  return m_func->is_const();
+}
+
+bool Call::is_stochastic_impl() const {
+  assert(m_func);
+
+  if (m_func->is_stochastic()) {
+    return true;
+  }
+
+  for (const auto &[name, expr] : m_args) {
+    if (expr->is_stochastic()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+Expr *Call::get_func() const { return m_func; }
+void Call::set_func(Expr *func) { m_func = func; }
+
+const CallArgs &Call::get_args() const { return m_args; }
+void Call::add_arg(std::string_view name, Expr *arg) { m_args[name] = arg; }
+void Call::clear_args() { m_args.clear(); }
+void Call::remove_arg(std::string_view name) { m_args.erase(name); }
+
+bool List::verify_impl(std::ostream &os) const {
+  for (size_t i = 0; i < m_items.size(); i++) {
+    if (!m_items[i]) {
+      os << "List: item " << i << " is NULL\n";
+      return false;
+    }
+
+    if (!m_items[i]->verify(os)) {
+      os << "List: item " << i << " is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void List::canonicalize_impl() {
+  for (auto item : m_items) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+}
+
+void List::print_impl(std::ostream &os, bool debug) const {
+  os << "[";
+
+  for (size_t i = 0; i < m_items.size(); i++) {
+    if (m_items[i]) {
+      m_items[i]->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    if (i + 1 < m_items.size()) {
+      os << ", ";
+    }
+  }
+
+  os << "]";
+}
+
+List *List::clone_impl() const {
+  ListData items;
+  for (auto item : m_items) {
+    if (item) {
+      items.push_back(item->clone());
+    } else {
+      items.push_back(nullptr);
+    }
+  }
+
+  return List::get(items);
+}
+
+Type *List::infer_type_impl() const {
+  quixcc_panic("List::infer_type_impl() is not implemented");
+}
+
+bool List::is_const_impl() const {
+  for (auto item : m_items) {
+    if (!item->is_const()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool List::is_stochastic_impl() const {
+  for (auto item : m_items) {
+    if (item->is_stochastic()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+const ListData &List::get_items() const { return m_items; }
+void List::add_item(Expr *item) { m_items.push_back(item); }
+void List::clear_items() { m_items.clear(); }
+void List::remove_item(Expr *item) {
+  std::erase_if(m_items, [item](auto &field) { return field == item; });
+}
+
+bool Assoc::verify_impl(std::ostream &os) const {
+  if (!m_key) {
+    os << "Assoc: key is NULL\n";
+    return false;
+  }
+
+  if (!m_value) {
+    os << "Assoc: value is NULL\n";
+    return false;
+  }
+
+  if (!m_key->verify(os)) {
+    os << "Assoc: key is invalid\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "Assoc: value is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void Assoc::canonicalize_impl() {
+  if (m_key) {
+    m_key->canonicalize();
+  }
+
+  if (m_value) {
+    m_value->canonicalize();
+  }
+}
+
+void Assoc::print_impl(std::ostream &os, bool debug) const {
+  if (m_key) {
+    m_key->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ": ";
+
+  if (m_value) {
+    m_value->print(os, debug);
+  } else {
+    os << "?";
+  }
+}
+
+Assoc *Assoc::clone_impl() const {
+  Expr *key = m_key ? m_key->clone() : nullptr;
+  Expr *value = m_value ? m_value->clone() : nullptr;
+
+  return Assoc::get(key, value);
+}
+
+Type *Assoc::infer_type_impl() const {
+  quixcc_panic("Assoc::infer_type_impl() is not implemented");
+}
+
+bool Assoc::is_const_impl() const {
+  assert(m_key);
+  assert(m_value);
+  return m_key->is_const() && m_value->is_const();
+}
+
+bool Assoc::is_stochastic_impl() const {
+  assert(m_key);
+  assert(m_value);
+  return m_key->is_stochastic() || m_value->is_stochastic();
+}
+
+Expr *Assoc::get_key() const { return m_key; }
+void Assoc::set_key(Expr *key) { m_key = key; }
+
+Expr *Assoc::get_value() const { return m_value; }
+void Assoc::set_value(Expr *value) { m_value = value; }
+
+bool Field::verify_impl(std::ostream &os) const {
+  if (!m_base) {
+    os << "Field: base is NULL\n";
+    return false;
+  }
+
+  if (m_field.empty()) {
+    os << "Field: field is empty\n";
+    return false;
+  }
+
+  return m_base->verify(os);
+}
+
+void Field::canonicalize_impl() {
+  if (m_base) {
+    m_base->canonicalize();
+  }
+}
+
+void Field::print_impl(std::ostream &os, bool debug) const {
+  if (m_base) {
+    m_base->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << "." << m_field;
+}
+
+Field *Field::clone_impl() const {
+  Expr *base = m_base ? m_base->clone() : nullptr;
+  return Field::get(base, m_field);
+}
+
+Type *Field::infer_type_impl() const {
+  quixcc_panic("Field::infer_type_impl() is not implemented");
+}
+
+bool Field::is_const_impl() const {
+  assert(m_base);
+  return m_base->is_const();
+}
+
+bool Field::is_stochastic_impl() const {
+  assert(m_base);
+  return m_base->is_stochastic();
+}
+
+Expr *Field::get_base() const { return m_base; }
+void Field::set_base(Expr *base) { m_base = base; }
+
+std::string_view Field::get_field() const { return m_field; }
+void Field::set_field(std::string_view field) { m_field = field; }
+
+bool Slice::verify_impl(std::ostream &os) const {
+  if (!m_base) {
+    os << "Slice: base is NULL\n";
+    return false;
+  }
+
+  if (!m_start) {
+    os << "Slice: start is NULL\n";
+    return false;
+  }
+
+  if (!m_end) {
+    os << "Slice: end is NULL\n";
+    return false;
+  }
+
+  return m_base->verify(os) && m_start->verify(os) && m_end->verify(os);
+}
+
+void Slice::canonicalize_impl() {
+  if (m_base) {
+    m_base->canonicalize();
+  }
+
+  if (m_start) {
+    m_start->canonicalize();
+  }
+
+  if (m_end) {
+    m_end->canonicalize();
+  }
+}
+
+void Slice::print_impl(std::ostream &os, bool debug) const {
+  if (m_base) {
+    m_base->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << "[";
+
+  if (m_start) {
+    m_start->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ":";
+
+  if (m_end) {
+    m_end->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << "]";
+}
+
+Slice *Slice::clone_impl() const {
+  Expr *base = m_base ? m_base->clone() : nullptr;
+  Expr *start = m_start ? m_start->clone() : nullptr;
+  Expr *end = m_end ? m_end->clone() : nullptr;
+
+  return Slice::get(base, start, end);
+}
+
+Type *Slice::infer_type_impl() const {
+  quixcc_panic("Slice::infer_type_impl() is not implemented");
+}
+
+bool Slice::is_const_impl() const {
+  assert(m_base);
+  assert(m_start);
+  assert(m_end);
+  return m_base->is_const() && m_start->is_const() && m_end->is_const();
+}
+
+bool Slice::is_stochastic_impl() const {
+  assert(m_base);
+  assert(m_start);
+  assert(m_end);
+  return m_base->is_stochastic() || m_start->is_stochastic() ||
+         m_end->is_stochastic();
+}
+
+Expr *Slice::get_base() const { return m_base; }
+void Slice::set_base(Expr *base) { m_base = base; }
+
+Expr *Slice::get_start() const { return m_start; }
+void Slice::set_start(Expr *start) { m_start = start; }
+
+Expr *Slice::get_end() const { return m_end; }
+void Slice::set_end(Expr *end) { m_end = end; }
+
+bool FString::verify_impl(std::ostream &os) const {
+  for (auto item : m_items) {
+    if (!item) {
+      os << "FString: item is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "FString: item is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void FString::canonicalize_impl() {
+  for (auto item : m_items) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+}
+
+void FString::print_impl(std::ostream &os, bool debug) const {
+  quixcc_panic("FString::print_impl() is not implemented");
+}
+
+FString *FString::clone_impl() const {
+  FStringArgs items;
+  for (auto item : m_items) {
+    if (item) {
+      items.push_back(item->clone());
+    } else {
+      items.push_back(nullptr);
+    }
+  }
+
+  return FString::get(m_value, items);
+}
+
+Type *FString::infer_type_impl() const {
+  quixcc_panic("FString::infer_type_impl() is not implemented");
+}
+
+bool FString::is_const_impl() const {
+  for (auto item : m_items) {
+    if (!item->is_const()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool FString::is_stochastic_impl() const {
+  for (auto item : m_items) {
+    if (item->is_stochastic()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+std::string_view FString::get_value() const { return m_value; }
+void FString::set_value(std::string_view value) { m_value = value; }
+
+const FStringArgs &FString::get_items() const { return m_items; }
+void FString::add_item(Expr *item) { m_items.push_back(item); }
+void FString::clear_items() { m_items.clear(); }
+void FString::remove_item(Expr *item) {
+  std::erase_if(m_items, [item](auto &field) { return field == item; });
+}
+
+bool Ident::verify_impl(std::ostream &os) const {
+  if (m_name.empty()) {
+    os << "Ident: name is empty\n";
+    return false;
+  }
+
+  return true;
+}
+
+void Ident::canonicalize_impl() {}
+
+void Ident::print_impl(std::ostream &os, bool debug) const { os << m_name; }
+
+Ident *Ident::clone_impl() const { return Ident::get(m_name); }
+
+Type *Ident::infer_type_impl() const {
+  quixcc_panic("Ident::infer_type_impl() is not implemented");
+}
+
+bool Ident::is_const_impl() const {
+  quixcc_panic("Ident::is_const_impl() is not implemented");
+}
+
+bool Ident::is_stochastic_impl() const {
+  quixcc_panic("Ident::is_stochastic_impl() is not implemented");
+}
+
+std::string_view Ident::get_name() const { return m_name; }
+void Ident::set_name(std::string_view name) { m_name = name; }
+
+///=============================================================================
+
+///=============================================================================
+
 LIB_EXPORT quixcc_ast_node_t *quixcc_ast_alloc(quixcc_ast_ntype_t type,
                                                quixcc_arena_t *arena) {
   quixcc_panic("quixcc_ast_alloc() is not implemented");
@@ -1976,14 +2489,13 @@ LIB_EXPORT void quixcc_ast_done(quixcc_ast_node_t *node) {
 LIB_EXPORT void quixcc_test_hook() {
   using namespace libquixcc::qast;
 
-  std::vector<FuncParam, Arena<FuncParam>> params = {
-      {"x", I32::get(), ConstInt::get("42")}};
+  Ident *ident = Ident::get("exit");
 
-  FuncTy *ftp = FuncTy::get(VectorTy::get(I32::get()), params);
+  CallArgs args;
 
-  (void)ftp;
+  args["0"] = ConstInt::get("0");
 
-  // ftp->dump();
+  Call *call = Call::get(ident, args);
 
-  // std::cout << "\n";
+  call->dump();
 }
