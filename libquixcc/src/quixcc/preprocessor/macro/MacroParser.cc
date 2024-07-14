@@ -39,13 +39,12 @@
 #include <stdexcept>
 
 static std::string trim(const std::string &str) {
-  return str.substr(str.find_first_not_of(" \t\n\r\f\v"),
-                    str.find_last_not_of(" \t\n\r\f\v") + 1);
+  return str.substr(str.find_first_not_of(" \t\n\r\f\v"), str.find_last_not_of(" \t\n\r\f\v") + 1);
 }
 
 bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
-  typedef bool (libquixcc::PrepEngine::*Routine)(
-      const libquixcc::Token &, const std::string &, const std::string &);
+  typedef bool (libquixcc::PrepEngine::*Routine)(const libquixcc::Token &, const std::string &,
+                                                 const std::string &);
 
   const static std::map<std::string, Routine> routines = {
       {"define", &PrepEngine::ParseDefine},
@@ -73,8 +72,7 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
       /*==================== PARSE MACRO DIRECTIVE ====================*/
       end = content.find(')', start);
       if (end == std::string::npos) {
-        LOG(ERROR) << "Invalid macro directive: {}" << content << macro
-                   << std::endl;
+        LOG(ERROR) << "Invalid macro directive: {}" << content << macro << std::endl;
         return false;
       }
 
@@ -86,8 +84,7 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
        * ====================*/
       if (routines.contains(directive)) {
         if (!(this->*routines.at(directive))(macro, directive, parameter)) {
-          LOG(ERROR) << "Failed to process macro directive: {}" << directive
-                     << macro << std::endl;
+          LOG(ERROR) << "Failed to process macro directive: {}" << directive << macro << std::endl;
         }
         return true;
       }
@@ -135,8 +132,7 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
         return true;
       }
 
-      LOG(ERROR) << "Unknown macro directive: {}" << directive << macro
-                 << std::endl;
+      LOG(ERROR) << "Unknown macro directive: {}" << directive << macro << std::endl;
 
       return false;
     } else {
@@ -144,16 +140,15 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
         if (content.starts_with(routine.first)) {
           if (!(this->*routine.second)(macro, routine.first,
                                        content.substr(routine.first.size()))) {
-            LOG(ERROR) << "Failed to process macro directive: {}"
-                       << routine.first << macro << std::endl;
+            LOG(ERROR) << "Failed to process macro directive: {}" << routine.first << macro
+                       << std::endl;
           }
 
           return true;
         }
       }
 
-      LOG(WARN) << "Ignoring unknown macro directive: {}" << content << macro
-                << std::endl;
+      LOG(WARN) << "Ignoring unknown macro directive: {}" << content << macro << std::endl;
       return true;
     }
   } else if (macro.type() == tMacB) {
@@ -169,13 +164,11 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
     }
 
     if (!routines.contains(directive)) {
-      LOG(ERROR) << "Unknown macro directive: {}" << directive << macro
-                 << std::endl;
+      LOG(ERROR) << "Unknown macro directive: {}" << directive << macro << std::endl;
     }
 
     if (!(this->*routines.at(directive))(macro, directive, body)) {
-      LOG(ERROR) << "Failed to process macro directive: {}" << directive
-                 << macro << std::endl;
+      LOG(ERROR) << "Failed to process macro directive: {}" << directive << macro << std::endl;
     }
 
     return true;

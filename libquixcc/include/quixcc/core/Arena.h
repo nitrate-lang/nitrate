@@ -71,8 +71,7 @@ quixcc_arena_t *quixcc_arena_open(quixcc_arena_t *arena);
  *
  * @warning This is a shallow byte-by-byte copy.
  */
-quixcc_arena_t *quixcc_arena_copy(quixcc_arena_t *dst,
-                                  const quixcc_arena_t *src);
+quixcc_arena_t *quixcc_arena_copy(quixcc_arena_t *dst, const quixcc_arena_t *src);
 
 /**
  * @brief Allocates memory from the arena.
@@ -157,4 +156,4 @@ void quixcc_arena_close(quixcc_arena_t *arena);
 }
 #endif
 
-#endif  // __QUIXCC_CORE_ARENA_H__
+#endif // __QUIXCC_CORE_ARENA_H__

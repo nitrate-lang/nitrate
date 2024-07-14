@@ -41,23 +41,21 @@
 #include <quixcc/IR/Q/Type.h>
 
 namespace libquixcc::ir::q {
-class Ident : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Ident : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Ident(std::string name, Type *type) : name(name), type(type) {
-    ntype = (int)QType::Ident;
-  }
+    Ident(std::string name, Type *type) : name(name), type(type) { ntype = (int)QType::Ident; }
 
- public:
-  static Ident *create(std::string name, Type *type);
-  Type *infer() const override;
+public:
+    static Ident *create(std::string name, Type *type);
+    Type *infer() const override;
 
-  std::string name;
-  Type *type;
-};
-}  // namespace libquixcc::ir::q
+    std::string name;
+    Type *type;
+  };
+} // namespace libquixcc::ir::q
 
-#endif  // __QUIXCC_IR_Q_NODES_IDENTIFIER_H__
+#endif // __QUIXCC_IR_Q_NODES_IDENTIFIER_H__

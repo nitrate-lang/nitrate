@@ -39,22 +39,18 @@
 #include <iostream>
 
 namespace libquixcc::core {
-class IDumpable {
- protected:
-  virtual void print_impl(std::ostream &os, bool isForDebug) const = 0;
+  class IDumpable {
+protected:
+    virtual void print_impl(std::ostream &os, bool isForDebug) const = 0;
 
- public:
-  virtual ~IDumpable() = default;
+public:
+    virtual ~IDumpable() = default;
 
-  void dump(bool isForDebug = false) const {
-    print_impl(std::cerr, isForDebug);
-  }
+    void dump(bool isForDebug = false) const { print_impl(std::cerr, isForDebug); }
 
-  void print(std::ostream &os, bool isForDebug = false) const {
-    print_impl(os, isForDebug);
-  }
-};
+    void print(std::ostream &os, bool isForDebug = false) const { print_impl(os, isForDebug); }
+  };
 
-}  // namespace libquixcc::core
+} // namespace libquixcc::core
 
-#endif  // __QUIXCC_CORE_INTERFACES_H__
+#endif // __QUIXCC_CORE_INTERFACES_H__

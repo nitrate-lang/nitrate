@@ -66,9 +66,8 @@ SolPassRegistry &SolPassRegistry::unregister_pass(const SolPass &info) {
 }
 
 SolPass &SolPassRegistry::get_pass_by_uuid(const SolPassUUID &uuid) {
-  auto it = std::find_if(
-      m_passes.begin(), m_passes.end(),
-      [&uuid](const SolPass &pass) { return pass.uuid() == uuid; });
+  auto it = std::find_if(m_passes.begin(), m_passes.end(),
+                         [&uuid](const SolPass &pass) { return pass.uuid() == uuid; });
 
   if (it != m_passes.end()) {
     return *it;
@@ -78,9 +77,8 @@ SolPass &SolPassRegistry::get_pass_by_uuid(const SolPassUUID &uuid) {
 }
 
 SolPass &SolPassRegistry::get_pass_by_name(std::string_view name) {
-  auto it = std::find_if(
-      m_passes.begin(), m_passes.end(),
-      [&name](const SolPass &pass) { return pass.name() == name; });
+  auto it = std::find_if(m_passes.begin(), m_passes.end(),
+                         [&name](const SolPass &pass) { return pass.name() == name; });
 
   if (it != m_passes.end()) {
     return *it;
@@ -90,7 +88,7 @@ SolPass &SolPassRegistry::get_pass_by_name(std::string_view name) {
 }
 
 std::shared_ptr<SolPassRegistry> SolPassRegistry::GetBuiltinRegistry() {
-#define ADD(_name, _desc, _func) \
+#define ADD(_name, _desc, _func)                                                                   \
   reg->register_pass(SolPass(_name, _desc, passes::_func, "Wesley C. Jones"))
 
   auto reg = std::make_shared<SolPassRegistry>();
@@ -116,8 +114,7 @@ SolPassManager &SolPassManager::prepend_pass(std::string_view name) {
   return *this;
 }
 
-SolPassManager &SolPassManager::add_after(std::string_view name,
-                                          std::string_view after) {
+SolPassManager &SolPassManager::add_after(std::string_view name, std::string_view after) {
   auto pass = m_registry->get_pass_by_name(name);
   auto after_pass = m_registry->get_pass_by_name(after);
   auto after_it = std::find(m_phase.begin(), m_phase.end(), after_pass.uuid());
@@ -129,12 +126,10 @@ SolPassManager &SolPassManager::add_after(std::string_view name,
   return *this;
 }
 
-SolPassManager &SolPassManager::add_before(std::string_view name,
-                                           std::string_view before) {
+SolPassManager &SolPassManager::add_before(std::string_view name, std::string_view before) {
   auto pass = m_registry->get_pass_by_name(name);
   auto before_pass = m_registry->get_pass_by_name(before);
-  auto before_it =
-      std::find(m_phase.begin(), m_phase.end(), before_pass.uuid());
+  auto before_it = std::find(m_phase.begin(), m_phase.end(), before_pass.uuid());
   if (before_it == m_phase.end()) {
     throw std::out_of_range("Before pass not found");
   }
@@ -157,22 +152,20 @@ SolPassManager &SolPassManager::clear_passes() {
   return *this;
 }
 
-bool SolPassManager::run_passes(
-    quixcc_cc_job_t &job, std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
+bool SolPassManager::run_passes(quixcc_cc_job_t &job,
+                                std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
   for (const auto &uuid : m_phase) {
     auto pass = m_registry->get_pass_by_uuid(uuid);
 
     std::string uuid_str = boost::uuids::to_string(uuid);
 
-    LOG(DEBUG) << "Running solver pass: " << pass.name() << " - " << uuid_str
-               << std::endl;
+    LOG(DEBUG) << "Running solver pass: " << pass.name() << " - " << uuid_str << std::endl;
     if (!pass(job, ir)) {
-      LOG(ERROR) << "Failed to apply solver pass: " << pass.name() << " - "
-                 << uuid_str << std::endl;
+      LOG(ERROR) << "Failed to apply solver pass: " << pass.name() << " - " << uuid_str
+                 << std::endl;
       return false;
     }
-    LOG(DEBUG) << "Applied solver pass: " << pass.name() << " - " << uuid_str
-               << std::endl;
+    LOG(DEBUG) << "Applied solver pass: " << pass.name() << " - " << uuid_str << std::endl;
 
     ir->acknowledge_pass(ir::q::QPassType::Solver, pass.name());
   }
@@ -205,8 +198,7 @@ void SolPassManager::optimize_phase_order() {
 }
 
 std::unique_ptr<SolPassManager> SolPassMgrFactory::CreateStandard() {
-  auto mgr =
-      std::make_unique<SolPassManager>(SolPassRegistry::GetBuiltinRegistry());
+  auto mgr = std::make_unique<SolPassManager>(SolPassRegistry::GetBuiltinRegistry());
 
   mgr->append_pass("stss");
   mgr->append_pass("vtss");

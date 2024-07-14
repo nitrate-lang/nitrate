@@ -38,15 +38,15 @@
 using namespace libquixcc;
 
 bool libquixcc::parse(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                      std::shared_ptr<libquixcc::BlockNode> &group,
-                      bool expect_braces, bool single_stmt) {
+                      std::shared_ptr<libquixcc::BlockNode> &group, bool expect_braces,
+                      bool single_stmt) {
   Token tok;
 
   if (expect_braces) {
     tok = scanner->next();
     if (!tok.is<Punctor>(OpenBrace)) {
-      LOG(ERROR) << core::feedback[PARSER_EXPECTED_LEFT_BRACE]
-                 << tok.serialize() << tok << std::endl;
+      LOG(ERROR) << core::feedback[PARSER_EXPECTED_LEFT_BRACE] << tok.serialize() << tok
+                 << std::endl;
       return false;
     }
   }
@@ -54,7 +54,8 @@ bool libquixcc::parse(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
   group = std::make_shared<BlockNode>();
 
   while ((tok = scanner->peek()).type() != tEofF) {
-    if (single_stmt && group->m_stmts.size() > 0) break;
+    if (single_stmt && group->m_stmts.size() > 0)
+      break;
 
     if (expect_braces) {
       if (tok.is<Punctor>(CloseBrace)) {
@@ -72,19 +73,17 @@ bool libquixcc::parse(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     if (tok.type() != tKeyW) {
       std::shared_ptr<ExprNode> expr;
       if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, expr)) {
-        LOG(ERROR) << "Error parsing expression in block statement." << tok
-                   << std::endl;
+        LOG(ERROR) << "Error parsing expression in block statement." << tok << std::endl;
         return false;
       }
 
       if (!expr)
-        LOG(ERROR) << "Null expressions are illegal in ExprStmtNode." << tok
-                   << std::endl;
+        LOG(ERROR) << "Null expressions are illegal in ExprStmtNode." << tok << std::endl;
 
       tok = scanner->next();
       if (!tok.is<Punctor>(Semicolon)) {
-        LOG(ERROR) << core::feedback[PARSER_EXPECTED_SEMICOLON]
-                   << tok.serialize() << tok << std::endl;
+        LOG(ERROR) << core::feedback[PARSER_EXPECTED_SEMICOLON] << tok.serialize() << tok
+                   << std::endl;
         return false;
       }
 
@@ -97,130 +96,160 @@ bool libquixcc::parse(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     std::shared_ptr<StmtNode> node;
 
     switch (tok.as<Keyword>()) {
-      case Keyword::Var: {
-        std::vector<std::shared_ptr<StmtNode>> decls;
-        if (!parse_var(job, scanner, decls)) return false;
-        for (auto &decl : decls) group->m_stmts.push_back(decl);
-        break;
-      }
-      case Keyword::Let: {
-        std::vector<std::shared_ptr<StmtNode>> decls;
-        if (!parse_let(job, scanner, decls)) return false;
-        for (auto &decl : decls) group->m_stmts.push_back(decl);
-        break;
-      }
-      case Keyword::Const: {
-        std::vector<std::shared_ptr<StmtNode>> decls;
-        if (!parse_const(job, scanner, decls)) return false;
-        for (auto &decl : decls) group->m_stmts.push_back(decl);
-        break;
-      }
-      case Keyword::Enum:
-        if (!parse_enum(job, scanner, node)) return false;
-        break;
-      case Keyword::Struct:
-        if (!parse_struct(job, scanner, node)) return false;
-        break;
-      case Keyword::Region:
-        if (!parse_region(job, scanner, node)) return false;
-        break;
-      case Keyword::Group:
-        if (!parse_group(job, scanner, node)) return false;
-        break;
-      case Keyword::Union:
-        if (!parse_union(job, scanner, node)) return false;
-        break;
-      case Keyword::Type:
-        if (!parse_typedef(job, scanner, node)) return false;
-        break;
-      case Keyword::Subsystem:
-        if (!parse_subsystem(job, scanner, node)) return false;
-        break;
-      case Keyword::Fn:
-        if (!parse_function(job, scanner, node)) return false;
-        break;
-      case Keyword::Pub:
-      case Keyword::Import:  // they both declare external functions
-        if (!parse_pub(job, scanner, node)) return false;
-        break;
-      case Keyword::Sec:
-        break;
-      case Keyword::Return:
-        if (!parse_return(job, scanner, node)) return false;
-        break;
-      case Keyword::Retif:
-        if (!parse_retif(job, scanner, node)) return false;
-        break;
-      case Keyword::Retz:
-        if (!parse_retz(job, scanner, node)) return false;
-        break;
-      case Keyword::Retv:
-        if (!parse_retv(job, scanner, node)) return false;
-        break;
-      case Keyword::Break:
-        node = std::make_shared<BreakStmtNode>();
-        break;
-      case Keyword::Continue:
-        node = std::make_shared<ContinueStmtNode>();
-        break;
-      case Keyword::If:
-        if (!parse_if(job, scanner, node)) return false;
-        break;
-      case Keyword::While:
-        if (!parse_while(job, scanner, node)) return false;
-        break;
-      case Keyword::For:
-        if (!parse_for(job, scanner, node)) return false;
-        break;
-      case Keyword::Form:
-        if (!parse_form(job, scanner, node)) return false;
-        break;
-      case Keyword::Foreach:
-        if (!parse_foreach(job, scanner, node)) return false;
-        break;
-      case Keyword::Switch:
-        if (!parse_switch(job, scanner, node)) return false;
-        break;
-      case Keyword::__Asm__:
-        if (!parse_inline_asm(job, scanner, node)) return false;
-        break;
-      case Keyword::Unsafe: {
-        std::shared_ptr<BlockNode> block;
-        Token tok = scanner->peek();
-        if (tok.is<Punctor>(OpenBrace)) {
-          if (!parse(job, scanner, block)) return false;
-        } else {
-          if (!parse(job, scanner, block, false, true)) return false;
-        }
-
-        block->m_unsafe = true;
-        group->m_stmts.push_back(block);
-        break;
-      }
-      case Keyword::Safe: {
-        std::shared_ptr<BlockNode> block;
-        Token tok = scanner->peek();
-        if (tok.is<Punctor>(OpenBrace)) {
-          if (!parse(job, scanner, block)) return false;
-        } else {
-          if (!parse(job, scanner, block, false, true)) return false;
-        }
-        block->m_unsafe = false;
-        group->m_stmts.push_back(block);
-        break;
-      }
-      default:
-        LOG(ERROR) << core::feedback[PARSER_ILLEGAL_KEYWORD] << tok.serialize()
-                   << tok << std::endl;
+    case Keyword::Var: {
+      std::vector<std::shared_ptr<StmtNode>> decls;
+      if (!parse_var(job, scanner, decls))
         return false;
+      for (auto &decl : decls)
+        group->m_stmts.push_back(decl);
+      break;
+    }
+    case Keyword::Let: {
+      std::vector<std::shared_ptr<StmtNode>> decls;
+      if (!parse_let(job, scanner, decls))
+        return false;
+      for (auto &decl : decls)
+        group->m_stmts.push_back(decl);
+      break;
+    }
+    case Keyword::Const: {
+      std::vector<std::shared_ptr<StmtNode>> decls;
+      if (!parse_const(job, scanner, decls))
+        return false;
+      for (auto &decl : decls)
+        group->m_stmts.push_back(decl);
+      break;
+    }
+    case Keyword::Enum:
+      if (!parse_enum(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Struct:
+      if (!parse_struct(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Region:
+      if (!parse_region(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Group:
+      if (!parse_group(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Union:
+      if (!parse_union(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Type:
+      if (!parse_typedef(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Subsystem:
+      if (!parse_subsystem(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Fn:
+      if (!parse_function(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Pub:
+    case Keyword::Import: // they both declare external functions
+      if (!parse_pub(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Sec:
+      break;
+    case Keyword::Return:
+      if (!parse_return(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Retif:
+      if (!parse_retif(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Retz:
+      if (!parse_retz(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Retv:
+      if (!parse_retv(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Break:
+      node = std::make_shared<BreakStmtNode>();
+      break;
+    case Keyword::Continue:
+      node = std::make_shared<ContinueStmtNode>();
+      break;
+    case Keyword::If:
+      if (!parse_if(job, scanner, node))
+        return false;
+      break;
+    case Keyword::While:
+      if (!parse_while(job, scanner, node))
+        return false;
+      break;
+    case Keyword::For:
+      if (!parse_for(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Form:
+      if (!parse_form(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Foreach:
+      if (!parse_foreach(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Switch:
+      if (!parse_switch(job, scanner, node))
+        return false;
+      break;
+    case Keyword::__Asm__:
+      if (!parse_inline_asm(job, scanner, node))
+        return false;
+      break;
+    case Keyword::Unsafe: {
+      std::shared_ptr<BlockNode> block;
+      Token tok = scanner->peek();
+      if (tok.is<Punctor>(OpenBrace)) {
+        if (!parse(job, scanner, block))
+          return false;
+      } else {
+        if (!parse(job, scanner, block, false, true))
+          return false;
+      }
+
+      block->m_unsafe = true;
+      group->m_stmts.push_back(block);
+      break;
+    }
+    case Keyword::Safe: {
+      std::shared_ptr<BlockNode> block;
+      Token tok = scanner->peek();
+      if (tok.is<Punctor>(OpenBrace)) {
+        if (!parse(job, scanner, block))
+          return false;
+      } else {
+        if (!parse(job, scanner, block, false, true))
+          return false;
+      }
+      block->m_unsafe = false;
+      group->m_stmts.push_back(block);
+      break;
+    }
+    default:
+      LOG(ERROR) << core::feedback[PARSER_ILLEGAL_KEYWORD] << tok.serialize() << tok << std::endl;
+      return false;
     }
 
-    if (node) group->m_stmts.push_back(node);
+    if (node)
+      group->m_stmts.push_back(node);
   }
 
   if (expect_braces) {
-    LOG(ERROR) << core::feedback[PARSER_EXPECTED_RIGHT_BRACE] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[PARSER_EXPECTED_RIGHT_BRACE] << tok.serialize() << tok
+               << std::endl;
     return false;
   }
 

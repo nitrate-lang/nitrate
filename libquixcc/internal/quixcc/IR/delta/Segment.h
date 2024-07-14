@@ -41,81 +41,77 @@
 #include <quixcc/IR/delta/Type.h>
 
 namespace libquixcc::ir::delta {
-class Block : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Block : public Value {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Block(std::vector<const Value *> stmts) : stmts(stmts) {
-    ntype = (int)NodeType::Block;
-  }
+    Block(std::vector<const Value *> stmts) : stmts(stmts) { ntype = (int)NodeType::Block; }
 
- public:
-  static const Block *create(std::vector<const Value *> stmts);
+public:
+    static const Block *create(std::vector<const Value *> stmts);
 
-  std::vector<const Value *> stmts;
-};
+    std::vector<const Value *> stmts;
+  };
 
-class Segment : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Segment : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Segment(const Type *ret, bool variadic,
-          const std::vector<std::pair<std::string, const Type *>> &params,
-          const Block *block)
-      : params(params), block(block), ret(ret), variadic(variadic) {
-    ntype = (int)NodeType::Segment;
-  }
+    Segment(const Type *ret, bool variadic,
+            const std::vector<std::pair<std::string, const Type *>> &params, const Block *block)
+        : params(params), block(block), ret(ret), variadic(variadic) {
+      ntype = (int)NodeType::Segment;
+    }
 
- public:
-  static const Segment *create(
-      const Type *ret, bool variadic,
-      const std::vector<std::pair<std::string, const Type *>> &params,
-      const Block *block);
-  const Type *infer() const override;
+public:
+    static const Segment *create(const Type *ret, bool variadic,
+                                 const std::vector<std::pair<std::string, const Type *>> &params,
+                                 const Block *block);
+    const Type *infer() const override;
 
-  const FType *getType() const {
-    std::vector<const Type *> param_types;
-    for (auto &param : params) param_types.push_back(param.second);
-    return FType::create(param_types, ret, variadic);
-  }
+    const FType *getType() const {
+      std::vector<const Type *> param_types;
+      for (auto &param : params)
+        param_types.push_back(param.second);
+      return FType::create(param_types, ret, variadic);
+    }
 
-  std::vector<std::pair<std::string, const Type *>> params;
-  const Block *block;
-  const Type *ret;
-  bool variadic;
-};
+    std::vector<std::pair<std::string, const Type *>> params;
+    const Block *block;
+    const Type *ret;
+    bool variadic;
+  };
 
-class Asm : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Asm : public Value {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Asm(const std::string &asm_str,
-      const std::vector<std::pair<std::string, const Value *>> &inputs,
-      const std::vector<std::pair<std::string, const Value *>> &outputs,
-      const std::vector<std::string> &clobbers)
-      : asm_str(asm_str), inputs(inputs), outputs(outputs), clobbers(clobbers) {
-    ntype = (int)NodeType::Asm;
-  }
+    Asm(const std::string &asm_str,
+        const std::vector<std::pair<std::string, const Value *>> &inputs,
+        const std::vector<std::pair<std::string, const Value *>> &outputs,
+        const std::vector<std::string> &clobbers)
+        : asm_str(asm_str), inputs(inputs), outputs(outputs), clobbers(clobbers) {
+      ntype = (int)NodeType::Asm;
+    }
 
- public:
-  static const Asm *create(
-      const std::string &asm_str,
-      const std::vector<std::pair<std::string, const Value *>> &inputs,
-      const std::vector<std::pair<std::string, const Value *>> &outputs,
-      const std::vector<std::string> &clobbers);
+public:
+    static const Asm *create(const std::string &asm_str,
+                             const std::vector<std::pair<std::string, const Value *>> &inputs,
+                             const std::vector<std::pair<std::string, const Value *>> &outputs,
+                             const std::vector<std::string> &clobbers);
 
-  std::string asm_str;
-  std::vector<std::pair<std::string, const Value *>> inputs;
-  std::vector<std::pair<std::string, const Value *>> outputs;
-  std::vector<std::string> clobbers;
-};
+    std::string asm_str;
+    std::vector<std::pair<std::string, const Value *>> inputs;
+    std::vector<std::pair<std::string, const Value *>> outputs;
+    std::vector<std::string> clobbers;
+  };
 
-}  // namespace libquixcc::ir::delta
+} // namespace libquixcc::ir::delta
 
-#endif  // __QUIXCC_IR_DELTA_NODES_SEGMENT_H__
+#endif // __QUIXCC_IR_DELTA_NODES_SEGMENT_H__

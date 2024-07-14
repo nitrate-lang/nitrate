@@ -49,41 +49,40 @@
 #include <stack>
 
 namespace libquixcc {
-enum class ExportLangType {
-  Default,
-  C,
-  CXX,
-  DLang,
-  None, /* Internal */
-};
+  enum class ExportLangType {
+    Default,
+    C,
+    CXX,
+    DLang,
+    None, /* Internal */
+  };
 
-class LLVMContext {
-  LLVMContext(const LLVMContext &) = delete;
-  LLVMContext &operator=(const LLVMContext &) = delete;
+  class LLVMContext {
+    LLVMContext(const LLVMContext &) = delete;
+    LLVMContext &operator=(const LLVMContext &) = delete;
 
- public:
-  std::unique_ptr<llvm::LLVMContext> m_ctx;
-  std::unique_ptr<llvm::Module> m_module;
-  std::unique_ptr<llvm::IRBuilder<>> m_builder;
-  std::map<std::pair<NodeType, std::string>,
-           std::shared_ptr<libquixcc::ParseNode>>
-      m_named_construsts;
-  std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
-  std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
-  std::string prefix;
-  bool m_pub = true;
-  size_t m_skipbr = 0;
-  ExportLangType m_lang = ExportLangType::Default;
+public:
+    std::unique_ptr<llvm::LLVMContext> m_ctx;
+    std::unique_ptr<llvm::Module> m_module;
+    std::unique_ptr<llvm::IRBuilder<>> m_builder;
+    std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>>
+        m_named_construsts;
+    std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
+    std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
+    std::string prefix;
+    bool m_pub = true;
+    size_t m_skipbr = 0;
+    ExportLangType m_lang = ExportLangType::Default;
 
-  LLVMContext() = default;
+    LLVMContext() = default;
 
-  void setup(const std::string &filename) {
-    m_ctx = std::make_unique<llvm::LLVMContext>();
-    m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
-    m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);
-  }
-};
+    void setup(const std::string &filename) {
+      m_ctx = std::make_unique<llvm::LLVMContext>();
+      m_module = std::make_unique<llvm::Module>(filename, *m_ctx);
+      m_builder = std::make_unique<llvm::IRBuilder<>>(*m_ctx);
+    }
+  };
 
-};  // namespace libquixcc
+}; // namespace libquixcc
 
-#endif  // __QUIXCC_LLVM_CTX_H__
+#endif // __QUIXCC_LLVM_CTX_H__

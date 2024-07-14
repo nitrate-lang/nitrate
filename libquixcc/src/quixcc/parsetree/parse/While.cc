@@ -40,17 +40,18 @@ using namespace libquixcc;
 bool libquixcc::parse_while(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                             std::shared_ptr<libquixcc::StmtNode> &node) {
   std::shared_ptr<ExprNode> cond;
-  if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)},
-                  cond))
+  if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, cond))
     return false;
 
   std::shared_ptr<BlockNode> then_block;
 
   if (scanner->peek().is<Operator>(Arrow)) {
     scanner->next();
-    if (!parse(job, scanner, then_block, false, true)) return false;
+    if (!parse(job, scanner, then_block, false, true))
+      return false;
   } else {
-    if (!parse(job, scanner, then_block, true)) return false;
+    if (!parse(job, scanner, then_block, true))
+      return false;
   }
 
   node = std::make_shared<WhileStmtNode>(cond, then_block);

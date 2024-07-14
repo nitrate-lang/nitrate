@@ -34,27 +34,29 @@
 boost::uuids::uuid libquixcc::ir::q::Local::hash_impl() const {
   auto h = Hasher().gettag().add(name).add(type);
 
-  if (value) h.add(value);
+  if (value)
+    h.add(value);
 
   return h.hash();
 }
 
 bool libquixcc::ir::q::Local::verify_impl() const {
-  if (value) return type->verify() && value->verify();
+  if (value)
+    return type->verify() && value->verify();
 
   return type->verify();
 }
 
 boost::uuids::uuid libquixcc::ir::q::Global::hash_impl() const {
-  auto h =
-      Hasher().gettag().add(name).add(type).add(_volatile).add(_atomic).add(
-          _extern);
-  if (value) h.add(value);
+  auto h = Hasher().gettag().add(name).add(type).add(_volatile).add(_atomic).add(_extern);
+  if (value)
+    h.add(value);
   return h.hash();
 }
 
 bool libquixcc::ir::q::Global::verify_impl() const {
-  if (value) return type->verify() && value->verify();
+  if (value)
+    return type->verify() && value->verify();
   return type->verify();
 }
 
@@ -78,12 +80,14 @@ bool libquixcc::ir::q::Char::verify_impl() const { return true; }
 
 boost::uuids::uuid libquixcc::ir::q::List::hash_impl() const {
   auto h = Hasher().gettag();
-  for (auto &v : values) h.add(v);
+  for (auto &v : values)
+    h.add(v);
   return h.hash();
 }
 
 bool libquixcc::ir::q::List::verify_impl() const {
   for (auto &v : values)
-    if (!v->verify()) return false;
+    if (!v->verify())
+      return false;
   return true;
 }

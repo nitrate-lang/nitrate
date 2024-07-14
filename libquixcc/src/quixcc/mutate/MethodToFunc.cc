@@ -44,34 +44,34 @@ using namespace libquixcc;
 
 static std::string getname(const TypeNode *n) {
   switch (n->ntype) {
-    case NodeType::StructTypeNode:
-      return static_cast<const StructTypeNode *>(n)->m_name;
-    case NodeType::RegionTypeNode:
-      return static_cast<const RegionTypeNode *>(n)->m_name;
-    case NodeType::GroupTypeNode:
-      return static_cast<const GroupTypeNode *>(n)->m_name;
-    case NodeType::UnionTypeNode:
-      return static_cast<const UnionTypeNode *>(n)->m_name;
-    case NodeType::EnumTypeNode:
-      return static_cast<const EnumTypeNode *>(n)->m_name;
-    case NodeType::OpaqueTypeNode:
-      return static_cast<const OpaqueTypeNode *>(n)->m_name;
-    case NodeType::UserTypeNode:
-      return static_cast<const UserTypeNode *>(n)->m_name;
-    default:
-      throw std::runtime_error("getname: Unknown type node.");
+  case NodeType::StructTypeNode:
+    return static_cast<const StructTypeNode *>(n)->m_name;
+  case NodeType::RegionTypeNode:
+    return static_cast<const RegionTypeNode *>(n)->m_name;
+  case NodeType::GroupTypeNode:
+    return static_cast<const GroupTypeNode *>(n)->m_name;
+  case NodeType::UnionTypeNode:
+    return static_cast<const UnionTypeNode *>(n)->m_name;
+  case NodeType::EnumTypeNode:
+    return static_cast<const EnumTypeNode *>(n)->m_name;
+  case NodeType::OpaqueTypeNode:
+    return static_cast<const OpaqueTypeNode *>(n)->m_name;
+  case NodeType::UserTypeNode:
+    return static_cast<const UserTypeNode *>(n)->m_name;
+  default:
+    throw std::runtime_error("getname: Unknown type node.");
   }
 }
 
-void libquixcc::mutate::MethodToFunc(
-    quixcc_cc_job_t *job, std::shared_ptr<libquixcc::BlockNode> ast) {
+void libquixcc::mutate::MethodToFunc(quixcc_cc_job_t *job,
+                                     std::shared_ptr<libquixcc::BlockNode> ast) {
   std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> vars;
 
   ast->dfs_preorder([&](const std::vector<std::string> &_namespace,
-                        const std::vector<std::string> &_scope,
-                        libquixcc::ParseNode *parent,
+                        const std::vector<std::string> &_scope, libquixcc::ParseNode *parent,
                         traversal::TraversePtr node) {
-    if (node.first != traversal::TraversePtrType::Smart) return;
+    if (node.first != traversal::TraversePtrType::Smart)
+      return;
     auto ptr = *std::get<std::shared_ptr<ParseNode> *>(node.second);
 
     if ((ptr)->is<LetDeclNode>()) {

@@ -44,38 +44,32 @@
 #include <vector>
 
 namespace libquixcc {
-namespace mutate {
-void DiscoverNamedConstructs(quixcc_cc_job_t *job,
-                             const std::shared_ptr<libquixcc::Ptree> ptree);
-void ExtrapolateEnumFields(quixcc_cc_job_t *job,
-                           const std::shared_ptr<libquixcc::Ptree> ptree);
-void ResolveNamedConstructs(quixcc_cc_job_t *job,
-                            const std::shared_ptr<libquixcc::Ptree> ptree);
-void MethodToFunc(quixcc_cc_job_t *job,
-                  const std::shared_ptr<libquixcc::Ptree> ptree);
-void SubsystemCollapse(quixcc_cc_job_t *job,
-                       const std::shared_ptr<libquixcc::Ptree> ptree);
-}  // namespace mutate
+  namespace mutate {
+    void DiscoverNamedConstructs(quixcc_cc_job_t *job,
+                                 const std::shared_ptr<libquixcc::Ptree> ptree);
+    void ExtrapolateEnumFields(quixcc_cc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree);
+    void ResolveNamedConstructs(quixcc_cc_job_t *job,
+                                const std::shared_ptr<libquixcc::Ptree> ptree);
+    void MethodToFunc(quixcc_cc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree);
+    void SubsystemCollapse(quixcc_cc_job_t *job, const std::shared_ptr<libquixcc::Ptree> ptree);
+  } // namespace mutate
 
-typedef std::function<void(quixcc_cc_job_t *job,
-                           std::shared_ptr<libquixcc::Ptree>)>
-    PtreeMutateRoutine;
+  typedef std::function<void(quixcc_cc_job_t *job, std::shared_ptr<libquixcc::Ptree>)>
+      PtreeMutateRoutine;
 
-class Mutation {
- public:
-  /// @brief Run rountines in the order they were added.
-  void run(quixcc_cc_job_t *job, std::shared_ptr<libquixcc::Ptree> ptree) {
-    for (auto routine : m_routines) {
-      routine(job, ptree);
+  class Mutation {
+public:
+    /// @brief Run rountines in the order they were added.
+    void run(quixcc_cc_job_t *job, std::shared_ptr<libquixcc::Ptree> ptree) {
+      for (auto routine : m_routines) {
+        routine(job, ptree);
+      }
     }
-  }
 
-  void add_routine(PtreeMutateRoutine routine) {
-    m_routines.push_back(routine);
-  }
+    void add_routine(PtreeMutateRoutine routine) { m_routines.push_back(routine); }
 
-  std::vector<PtreeMutateRoutine> m_routines;
-};
-}  // namespace libquixcc
+    std::vector<PtreeMutateRoutine> m_routines;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_MUTATE_ROUTINES_H__
+#endif // __QUIXCC_MUTATE_ROUTINES_H__

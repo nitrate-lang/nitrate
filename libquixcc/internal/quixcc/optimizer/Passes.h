@@ -39,19 +39,19 @@
 #include <quixcc/optimizer/Optimizer.h>
 
 namespace libquixcc::optimizer::passes {
-/*================== MATH OPTIMIZATIONS ======================*/
-bool ExprReduce(quixcc_cc_job_t &job, std::unique_ptr<ir::q::QModule> &ir);
+  /*================== MATH OPTIMIZATIONS ======================*/
+  bool ExprReduce(quixcc_cc_job_t &job, std::unique_ptr<ir::q::QModule> &ir);
 
-/*================== MEMORY OPTIMIZATIONS ====================*/
+  /*================== MEMORY OPTIMIZATIONS ====================*/
 
-/*================== CODE PATTERN OPTIMIZATIONS ==============*/
+  /*================== CODE PATTERN OPTIMIZATIONS ==============*/
 
-/*================== LOCALITY OPTIMIZATIONS ==================*/
+  /*================== LOCALITY OPTIMIZATIONS ==================*/
 
-/*================== DATAFLOW OPTIMIZATIONS ==================*/
+  /*================== DATAFLOW OPTIMIZATIONS ==================*/
 
-/*================== CONCURRENCY OPTIMIZATIONS ===============*/
+  /*================== CONCURRENCY OPTIMIZATIONS ===============*/
 
-/*=================== ALGORITHM OPTIMIZATIONS ================*/
-}  // namespace libquixcc::optimizer::passes
-#endif  // __QUIXCC_OPTIMIZER_PASSES_H__
+  /*=================== ALGORITHM OPTIMIZATIONS ================*/
+} // namespace libquixcc::optimizer::passes
+#endif // __QUIXCC_OPTIMIZER_PASSES_H__

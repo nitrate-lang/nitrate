@@ -31,63 +31,65 @@
 
 #include <quixcc/IR/Q/Memory.h>
 
-bool libquixcc::ir::q::Assign::print_impl(std::ostream &os,
-                                          libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Assign::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "(";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
   os << "=";
-  if (!rhs->print(os, state)) return false;
+  if (!rhs->print(os, state))
+    return false;
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::PostInc::print_impl(std::ostream &os,
-                                           libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::PostInc::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "(";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
   os << "++)";
   return true;
 }
 
-bool libquixcc::ir::q::PostDec::print_impl(std::ostream &os,
-                                           libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::PostDec::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "(";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
   os << "--)";
   return true;
 }
 
-bool libquixcc::ir::q::AddressOf::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::AddressOf::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "(&";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::Deref::print_impl(std::ostream &os,
-                                         libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Deref::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "(*";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::Member::print_impl(std::ostream &os,
-                                          libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Member::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "(";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
   os << "." << field;
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::Index::print_impl(std::ostream &os,
-                                         libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Index::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "(";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
   os << "[";
-  if (!index->print(os, state)) return false;
+  if (!index->print(os, state))
+    return false;
   os << "]";
   os << ")";
   return true;

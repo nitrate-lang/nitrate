@@ -40,123 +40,120 @@
 #include <quixcc/IR/Q/QIR.h>
 
 namespace libquixcc::ir::q {
-class Assign : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Assign : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Assign(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) {
-    ntype = (int)QType::Assign;
-  }
+    Assign(Expr *lhs, Expr *rhs) : lhs(lhs), rhs(rhs) { ntype = (int)QType::Assign; }
 
- public:
-  static Assign *create(Expr *lhs, Expr *rhs);
-  Type *infer() const override;
+public:
+    static Assign *create(Expr *lhs, Expr *rhs);
+    Type *infer() const override;
 
-  Expr *lhs;
-  Expr *rhs;
-};
+    Expr *lhs;
+    Expr *rhs;
+  };
 
-class PostInc : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class PostInc : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  PostInc(Expr *lhs) : lhs(lhs) { ntype = (int)QType::PostInc; }
+    PostInc(Expr *lhs) : lhs(lhs) { ntype = (int)QType::PostInc; }
 
- public:
-  static PostInc *create(Expr *lhs);
-  Type *infer() const override;
+public:
+    static PostInc *create(Expr *lhs);
+    Type *infer() const override;
 
-  Expr *lhs;
-};
+    Expr *lhs;
+  };
 
-class PostDec : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class PostDec : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  PostDec(Expr *lhs) : lhs(lhs) { ntype = (int)QType::PostDec; }
+    PostDec(Expr *lhs) : lhs(lhs) { ntype = (int)QType::PostDec; }
 
- public:
-  static PostDec *create(Expr *lhs);
-  Type *infer() const override;
+public:
+    static PostDec *create(Expr *lhs);
+    Type *infer() const override;
 
-  Expr *lhs;
-};
+    Expr *lhs;
+  };
 
-class AddressOf : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class AddressOf : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  AddressOf(Expr *lhs) : lhs(lhs) { ntype = (int)QType::AddressOf; }
+    AddressOf(Expr *lhs) : lhs(lhs) { ntype = (int)QType::AddressOf; }
 
- public:
-  static AddressOf *create(Expr *lhs);
-  Type *infer() const override;
+public:
+    static AddressOf *create(Expr *lhs);
+    Type *infer() const override;
 
-  Expr *lhs;
-};
+    Expr *lhs;
+  };
 
-class Deref : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Deref : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Deref(Expr *lhs) : lhs(lhs) { ntype = (int)QType::Deref; }
+    Deref(Expr *lhs) : lhs(lhs) { ntype = (int)QType::Deref; }
 
- public:
-  static Deref *create(Expr *lhs);
-  Type *infer() const override;
+public:
+    static Deref *create(Expr *lhs);
+    Type *infer() const override;
 
-  Expr *lhs;
-};
+    Expr *lhs;
+  };
 
-class Member : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Member : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Member(Value *lhs, size_t field, Type *field_type)
-      : field(field), lhs(lhs), field_type(field_type) {
-    ntype = (int)QType::Member;
-  }
+    Member(Value *lhs, size_t field, Type *field_type)
+        : field(field), lhs(lhs), field_type(field_type) {
+      ntype = (int)QType::Member;
+    }
 
- public:
-  static Member *create(Value *lhs, size_t field, Type *field_type);
-  Type *infer() const override;
+public:
+    static Member *create(Value *lhs, size_t field, Type *field_type);
+    Type *infer() const override;
 
-  size_t field;
-  Value *lhs;
-  Type *field_type;
-};
+    size_t field;
+    Value *lhs;
+    Type *field_type;
+  };
 
-class Index : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Index : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Index(Value *lhs, Expr *index, Type *type)
-      : lhs(lhs), index(index), type(type) {
-    ntype = (int)QType::Index;
-  }
+    Index(Value *lhs, Expr *index, Type *type) : lhs(lhs), index(index), type(type) {
+      ntype = (int)QType::Index;
+    }
 
- public:
-  static Index *create(Value *lhs, Expr *index, Type *type);
-  Type *infer() const override;
+public:
+    static Index *create(Value *lhs, Expr *index, Type *type);
+    Type *infer() const override;
 
-  Value *lhs;
-  Expr *index;
-  Type *type;
-};
-}  // namespace libquixcc::ir::q
+    Value *lhs;
+    Expr *index;
+    Type *type;
+  };
+} // namespace libquixcc::ir::q
 
-#endif  // __QUIXCC_IR_Q_NODES_MEMORY_H__
+#endif // __QUIXCC_IR_Q_NODES_MEMORY_H__

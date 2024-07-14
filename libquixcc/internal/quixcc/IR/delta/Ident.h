@@ -40,23 +40,23 @@
 #include <quixcc/IR/delta/Expr.h>
 
 namespace libquixcc::ir::delta {
-class Ident : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Ident : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Ident(std::string name, const Type *type) : name(name), type(type) {
-    ntype = (int)NodeType::Ident;
-  }
+    Ident(std::string name, const Type *type) : name(name), type(type) {
+      ntype = (int)NodeType::Ident;
+    }
 
- public:
-  static const Ident *create(std::string name, const Type *type);
-  const Type *infer() const override;
+public:
+    static const Ident *create(std::string name, const Type *type);
+    const Type *infer() const override;
 
-  std::string name;
-  const Type *type;
-};
-}  // namespace libquixcc::ir::delta
+    std::string name;
+    const Type *type;
+  };
+} // namespace libquixcc::ir::delta
 
-#endif  // __QUIXCC_IR_DELTA_NODES_IDENTIFIER_H__
+#endif // __QUIXCC_IR_DELTA_NODES_IDENTIFIER_H__

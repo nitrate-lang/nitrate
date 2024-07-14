@@ -41,60 +41,51 @@
 #include <quixcc/IR/Q/Type.h>
 
 namespace libquixcc::ir::q {
-class Block : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Block : public Value {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Block(std::vector<Value *> stmts) : stmts(stmts) {
-    ntype = (int)QType::Block;
-  }
+    Block(std::vector<Value *> stmts) : stmts(stmts) { ntype = (int)QType::Block; }
 
- public:
-  static Block *create(std::vector<Value *> stmts);
+public:
+    static Block *create(std::vector<Value *> stmts);
 
-  std::vector<Value *> stmts;
-};
+    std::vector<Value *> stmts;
+  };
 
-class Segment : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Segment : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Segment(std::vector<std::pair<std::string, Type *>> params, Type *return_type,
-          Block *block, bool is_variadic, bool is_pure, bool is_thread_safe,
-          bool is_no_throw, bool is_no_return, bool is_foriegn)
-      : params(params),
-        return_type(return_type),
-        block(block),
-        is_variadic(is_variadic),
-        is_pure(is_pure),
-        is_thread_safe(is_thread_safe),
-        is_no_throw(is_no_throw),
-        is_no_return(is_no_return),
-        is_foriegn(is_foriegn) {
-    ntype = (int)QType::Segment;
-  }
+    Segment(std::vector<std::pair<std::string, Type *>> params, Type *return_type, Block *block,
+            bool is_variadic, bool is_pure, bool is_thread_safe, bool is_no_throw,
+            bool is_no_return, bool is_foriegn)
+        : params(params), return_type(return_type), block(block), is_variadic(is_variadic),
+          is_pure(is_pure), is_thread_safe(is_thread_safe), is_no_throw(is_no_throw),
+          is_no_return(is_no_return), is_foriegn(is_foriegn) {
+      ntype = (int)QType::Segment;
+    }
 
- public:
-  static Segment *create(std::vector<std::pair<std::string, Type *>> params,
-                         Type *return_type, Block *block, bool is_variadic,
-                         bool is_pure, bool is_thread_safe, bool is_no_throw,
-                         bool is_no_return, bool is_foriegn);
-  Type *infer() const override;
+public:
+    static Segment *create(std::vector<std::pair<std::string, Type *>> params, Type *return_type,
+                           Block *block, bool is_variadic, bool is_pure, bool is_thread_safe,
+                           bool is_no_throw, bool is_no_return, bool is_foriegn);
+    Type *infer() const override;
 
-  std::vector<std::pair<std::string, Type *>> params;
-  Type *return_type;
-  Block *block;
-  bool is_variadic;
-  bool is_pure;
-  bool is_thread_safe;
-  bool is_no_throw;
-  bool is_no_return;
-  bool is_foriegn;
-};
-}  // namespace libquixcc::ir::q
+    std::vector<std::pair<std::string, Type *>> params;
+    Type *return_type;
+    Block *block;
+    bool is_variadic;
+    bool is_pure;
+    bool is_thread_safe;
+    bool is_no_throw;
+    bool is_no_return;
+    bool is_foriegn;
+  };
+} // namespace libquixcc::ir::q
 
-#endif  // __QUIXCC_IR_Q_NODES_FUNCTION_H__
+#endif // __QUIXCC_IR_Q_NODES_FUNCTION_H__

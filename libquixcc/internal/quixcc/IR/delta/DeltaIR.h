@@ -41,165 +41,164 @@
 #include <quixcc/IR/Type.h>
 
 namespace libquixcc {
-namespace ir {
-namespace delta {
-enum class NodeType {
-  Root,
+  namespace ir {
+    namespace delta {
+      enum class NodeType {
+        Root,
 
-  /* Types */
-  I1,
-  I8,
-  I16,
-  I32,
-  I64,
-  I128,
-  I256,
-  U8,
-  U16,
-  U32,
-  U64,
-  U128,
-  U256,
-  F32,
-  F64,
-  Void,
-  Ptr,
-  Packet,
-  Array,
-  FType,
-  PacketDef,
+        /* Types */
+        I1,
+        I8,
+        I16,
+        I32,
+        I64,
+        I128,
+        I256,
+        U8,
+        U16,
+        U32,
+        U64,
+        U128,
+        U256,
+        F32,
+        F64,
+        Void,
+        Ptr,
+        Packet,
+        Array,
+        FType,
+        PacketDef,
 
-  /* Variables & Literals */
-  Local,
-  Global,
-  Number,
-  String,
-  List,
+        /* Variables & Literals */
+        Local,
+        Global,
+        Number,
+        String,
+        List,
 
-  /* Memory */
-  Assign,
-  PostInc,
-  PostDec,
-  AddressOf,
-  Deref,
-  Member,
-  Index,
-  Ident,
+        /* Memory */
+        Assign,
+        PostInc,
+        PostDec,
+        AddressOf,
+        Deref,
+        Member,
+        Index,
+        Ident,
 
-  /* Casting */
-  SCast,
-  UCast,
-  PtrICast,
-  IPtrCast,
-  Bitcast,
+        /* Casting */
+        SCast,
+        UCast,
+        PtrICast,
+        IPtrCast,
+        Bitcast,
 
-  /* Control Flow */
-  IfElse,
-  While,
-  Jmp,
-  Label,
-  Ret,
-  Call,
-  PtrCall,
-  Halt,
-  Break,
-  Continue,
-  Switch,
-  Case,
+        /* Control Flow */
+        IfElse,
+        While,
+        Jmp,
+        Label,
+        Ret,
+        Call,
+        PtrCall,
+        Halt,
+        Break,
+        Continue,
+        Switch,
+        Case,
 
-  /* Blocks */
-  Segment,
-  Block,
-  Asm,
+        /* Blocks */
+        Segment,
+        Block,
+        Asm,
 
-  /* Arithmetic */
-  Add,
-  Sub,
-  Mul,
-  Div,
-  Mod,
-  BitAnd,
-  BitOr,
-  BitXor,
-  BitNot,
-  Shl,
-  Shr,
-  Rotl,
-  Rotr,
+        /* Arithmetic */
+        Add,
+        Sub,
+        Mul,
+        Div,
+        Mod,
+        BitAnd,
+        BitOr,
+        BitXor,
+        BitNot,
+        Shl,
+        Shr,
+        Rotl,
+        Rotr,
 
-  /* Comparison */
-  Eq,
-  Ne,
-  Lt,
-  Gt,
-  Le,
-  Ge,
+        /* Comparison */
+        Eq,
+        Ne,
+        Lt,
+        Gt,
+        Le,
+        Ge,
 
-  /* Logical */
-  And,
-  Or,
-  Not,
-  Xor,
+        /* Logical */
+        And,
+        Or,
+        Not,
+        Xor,
 
-  EnumMax,
-};
+        EnumMax,
+      };
 
-class Value : public libquixcc::ir::Node<Delta> {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override = 0;
-  boost::uuids::uuid hash_impl() const override = 0;
-  bool verify_impl() const override = 0;
+      class Value : public libquixcc::ir::Node<Delta> {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override = 0;
+        boost::uuids::uuid hash_impl() const override = 0;
+        bool verify_impl() const override = 0;
 
- public:
-  Value() = default;
-  virtual ~Value() = default;
-};
+    public:
+        Value() = default;
+        virtual ~Value() = default;
+      };
 
-class RootNode : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+      class RootNode : public Value {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        boost::uuids::uuid hash_impl() const override;
+        bool verify_impl() const override;
 
-  RootNode(std::vector<const Value *> children) : children(children) {
-    ntype = (int)NodeType::Root;
-  }
+        RootNode(std::vector<const Value *> children) : children(children) {
+          ntype = (int)NodeType::Root;
+        }
 
- public:
-  static const RootNode *create(std::vector<const Value *> children = {});
+    public:
+        static const RootNode *create(std::vector<const Value *> children = {});
 
-  std::vector<const Value *> children;
-};
+        std::vector<const Value *> children;
+      };
 
-class IRDelta : public libquixcc::ir::IRModule<IR::Delta, const RootNode *> {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  std::string_view ir_dialect_name_impl() const override;
-  unsigned ir_dialect_version_impl() const override;
-  std::string_view ir_dialect_family_impl() const override;
-  std::string_view ir_dialect_description_impl() const override;
-  bool verify_impl() const override;
+      class IRDelta : public libquixcc::ir::IRModule<IR::Delta, const RootNode *> {
+    protected:
+        bool print_impl(std::ostream &os, PState &state) const override;
+        std::string_view ir_dialect_name_impl() const override;
+        unsigned ir_dialect_version_impl() const override;
+        std::string_view ir_dialect_family_impl() const override;
+        std::string_view ir_dialect_description_impl() const override;
+        bool verify_impl() const override;
 
-  std::set<std::string> m_tags;
+        std::set<std::string> m_tags;
 
- public:
-  IRDelta(const std::string_view &name)
-      : IRModule<IR::Delta, const RootNode *>(name) {}
-  ~IRDelta() = default;
+    public:
+        IRDelta(const std::string_view &name) : IRModule<IR::Delta, const RootNode *>(name) {}
+        ~IRDelta() = default;
 
-  void add_tag(const std::string &tag) { m_tags.insert(tag); }
-  void remove_tag(const std::string &tag) {
-    auto it = m_tags.find(tag);
-    if (it != m_tags.end()) m_tags.erase(it);
-  }
-  void clear_tags() { m_tags.clear(); }
-  std::set<std::string> &get_tags() { return m_tags; }
+        void add_tag(const std::string &tag) { m_tags.insert(tag); }
+        void remove_tag(const std::string &tag) {
+          auto it = m_tags.find(tag);
+          if (it != m_tags.end())
+            m_tags.erase(it);
+        }
+        void clear_tags() { m_tags.clear(); }
+        std::set<std::string> &get_tags() { return m_tags; }
 
-  bool from_qir(quixcc_cc_job_t *job,
-                const std::unique_ptr<libquixcc::ir::q::QModule> &qir);
-};
-}  // namespace delta
-}  // namespace ir
-}  // namespace libquixcc
+        bool from_qir(quixcc_cc_job_t *job, const std::unique_ptr<libquixcc::ir::q::QModule> &qir);
+      };
+    } // namespace delta
+  } // namespace ir
+} // namespace libquixcc
 
-#endif  // __QUIXCC_IR_DELTAIR_H__
+#endif // __QUIXCC_IR_DELTAIR_H__

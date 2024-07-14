@@ -66,9 +66,8 @@ OptPassRegistry &OptPassRegistry::unregister_pass(const OptPass &info) {
 }
 
 OptPass &OptPassRegistry::get_pass_by_uuid(const OptPassUUID &uuid) {
-  auto it = std::find_if(
-      m_passes.begin(), m_passes.end(),
-      [&uuid](const OptPass &pass) { return pass.uuid() == uuid; });
+  auto it = std::find_if(m_passes.begin(), m_passes.end(),
+                         [&uuid](const OptPass &pass) { return pass.uuid() == uuid; });
 
   if (it != m_passes.end()) {
     return *it;
@@ -78,9 +77,8 @@ OptPass &OptPassRegistry::get_pass_by_uuid(const OptPassUUID &uuid) {
 }
 
 OptPass &OptPassRegistry::get_pass_by_name(std::string_view name) {
-  auto it = std::find_if(
-      m_passes.begin(), m_passes.end(),
-      [&name](const OptPass &pass) { return pass.name() == name; });
+  auto it = std::find_if(m_passes.begin(), m_passes.end(),
+                         [&name](const OptPass &pass) { return pass.name() == name; });
 
   if (it != m_passes.end()) {
     return *it;
@@ -90,7 +88,7 @@ OptPass &OptPassRegistry::get_pass_by_name(std::string_view name) {
 }
 
 std::shared_ptr<OptPassRegistry> OptPassRegistry::GetBuiltinRegistry() {
-#define ADD(_name, _desc, _func) \
+#define ADD(_name, _desc, _func)                                                                   \
   reg->register_pass(OptPass(_name, _desc, passes::_func, "Wesley C. Jones"))
 
   auto reg = std::make_shared<OptPassRegistry>();
@@ -112,8 +110,7 @@ OptPassManager &OptPassManager::prepend_pass(std::string_view name) {
   return *this;
 }
 
-OptPassManager &OptPassManager::add_after(std::string_view name,
-                                          std::string_view after) {
+OptPassManager &OptPassManager::add_after(std::string_view name, std::string_view after) {
   auto pass = m_registry->get_pass_by_name(name);
   auto after_pass = m_registry->get_pass_by_name(after);
   auto after_it = std::find(m_phase.begin(), m_phase.end(), after_pass.uuid());
@@ -125,12 +122,10 @@ OptPassManager &OptPassManager::add_after(std::string_view name,
   return *this;
 }
 
-OptPassManager &OptPassManager::add_before(std::string_view name,
-                                           std::string_view before) {
+OptPassManager &OptPassManager::add_before(std::string_view name, std::string_view before) {
   auto pass = m_registry->get_pass_by_name(name);
   auto before_pass = m_registry->get_pass_by_name(before);
-  auto before_it =
-      std::find(m_phase.begin(), m_phase.end(), before_pass.uuid());
+  auto before_it = std::find(m_phase.begin(), m_phase.end(), before_pass.uuid());
   if (before_it == m_phase.end()) {
     throw std::out_of_range("Before pass not found");
   }
@@ -153,22 +148,20 @@ OptPassManager &OptPassManager::clear_passes() {
   return *this;
 }
 
-bool OptPassManager::run_passes(
-    quixcc_cc_job_t &job, std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
+bool OptPassManager::run_passes(quixcc_cc_job_t &job,
+                                std::unique_ptr<libquixcc::ir::q::QModule> &ir) {
   for (const auto &uuid : m_phase) {
     auto pass = m_registry->get_pass_by_uuid(uuid);
 
     std::string uuid_str = boost::uuids::to_string(uuid);
 
-    LOG(DEBUG) << "Running optimizer pass: " << pass.name() << " - " << uuid_str
-               << std::endl;
+    LOG(DEBUG) << "Running optimizer pass: " << pass.name() << " - " << uuid_str << std::endl;
     if (!pass(job, ir)) {
-      LOG(ERROR) << "Failed to apply optimizer pass: " << pass.name() << " - "
-                 << uuid_str << std::endl;
+      LOG(ERROR) << "Failed to apply optimizer pass: " << pass.name() << " - " << uuid_str
+                 << std::endl;
       return false;
     }
-    LOG(DEBUG) << "Applied optimizer pass: " << pass.name() << " - " << uuid_str
-               << std::endl;
+    LOG(DEBUG) << "Applied optimizer pass: " << pass.name() << " - " << uuid_str << std::endl;
 
     ir->acknowledge_pass(ir::q::QPassType::Optimizer, pass.name());
   }
@@ -200,67 +193,66 @@ void OptPassManager::optimize_phase_order() {
   ///       or find someone who can.
 }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create(OptLevel level,
-                                                          OptType type) {
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create(OptLevel level, OptType type) {
   std::unique_ptr<OptPassManager> mgr;
 
   switch (type) {
-    case OptType::General:
-      switch (level) {
-        case OptLevel::O0:
-          mgr = create_gen_0();
-          break;
-        case OptLevel::O1:
-          mgr = create_gen_1();
-          break;
-        case OptLevel::O2:
-          mgr = create_gen_2();
-          break;
-        case OptLevel::O3:
-          mgr = create_gen_3();
-          break;
-        default:
-          throw std::invalid_argument("Invalid optimization level");
-      }
+  case OptType::General:
+    switch (level) {
+    case OptLevel::O0:
+      mgr = create_gen_0();
       break;
-    case OptType::Behavior:
-      switch (level) {
-        case OptLevel::O0:
-          mgr = create_beh_0();
-          break;
-        case OptLevel::O1:
-          mgr = create_beh_1();
-          break;
-        case OptLevel::O2:
-          mgr = create_beh_2();
-          break;
-        case OptLevel::O3:
-          mgr = create_beh_3();
-          break;
-        default:
-          throw std::invalid_argument("Invalid optimization level");
-      }
+    case OptLevel::O1:
+      mgr = create_gen_1();
       break;
-    case OptType::Architecture:
-      switch (level) {
-        case OptLevel::O0:
-          mgr = create_arch_0();
-          break;
-        case OptLevel::O1:
-          mgr = create_arch_1();
-          break;
-        case OptLevel::O2:
-          mgr = create_arch_2();
-          break;
-        case OptLevel::O3:
-          mgr = create_arch_3();
-          break;
-        default:
-          throw std::invalid_argument("Invalid optimization level");
-      }
+    case OptLevel::O2:
+      mgr = create_gen_2();
+      break;
+    case OptLevel::O3:
+      mgr = create_gen_3();
       break;
     default:
-      throw std::invalid_argument("Invalid optimization type");
+      throw std::invalid_argument("Invalid optimization level");
+    }
+    break;
+  case OptType::Behavior:
+    switch (level) {
+    case OptLevel::O0:
+      mgr = create_beh_0();
+      break;
+    case OptLevel::O1:
+      mgr = create_beh_1();
+      break;
+    case OptLevel::O2:
+      mgr = create_beh_2();
+      break;
+    case OptLevel::O3:
+      mgr = create_beh_3();
+      break;
+    default:
+      throw std::invalid_argument("Invalid optimization level");
+    }
+    break;
+  case OptType::Architecture:
+    switch (level) {
+    case OptLevel::O0:
+      mgr = create_arch_0();
+      break;
+    case OptLevel::O1:
+      mgr = create_arch_1();
+      break;
+    case OptLevel::O2:
+      mgr = create_arch_2();
+      break;
+    case OptLevel::O3:
+      mgr = create_arch_3();
+      break;
+    default:
+      throw std::invalid_argument("Invalid optimization level");
+    }
+    break;
+  default:
+    throw std::invalid_argument("Invalid optimization type");
   }
 
   if (!mgr->verify_phase_order()) {
@@ -272,24 +264,15 @@ std::unique_ptr<OptPassManager> OptPassMgrFactory::create(OptLevel level,
   return mgr;
 }
 
-#define PLACEHOLDER                        \
-  return std::make_unique<OptPassManager>( \
-      OptPassRegistry::GetBuiltinRegistry());
+#define PLACEHOLDER return std::make_unique<OptPassManager>(OptPassRegistry::GetBuiltinRegistry());
 
-#define GET_BASE() \
-  std::make_unique<OptPassManager>(OptPassRegistry::GetBuiltinRegistry());
+#define GET_BASE() std::make_unique<OptPassManager>(OptPassRegistry::GetBuiltinRegistry());
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_0() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_0() { PLACEHOLDER; }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_1() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_1() { PLACEHOLDER; }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_2() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_2() { PLACEHOLDER; }
 
 std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_3() {
   auto mgr = GET_BASE();
@@ -299,36 +282,20 @@ std::unique_ptr<OptPassManager> OptPassMgrFactory::create_arch_3() {
   return mgr;
 }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_beh_0() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_beh_0() { PLACEHOLDER; }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_beh_1() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_beh_1() { PLACEHOLDER; }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_beh_2() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_beh_2() { PLACEHOLDER; }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_beh_3() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_beh_3() { PLACEHOLDER; }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_gen_0() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_gen_0() { PLACEHOLDER; }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_gen_1() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_gen_1() { PLACEHOLDER; }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_gen_2() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_gen_2() { PLACEHOLDER; }
 
-std::unique_ptr<OptPassManager> OptPassMgrFactory::create_gen_3() {
-  PLACEHOLDER;
-}
+std::unique_ptr<OptPassManager> OptPassMgrFactory::create_gen_3() { PLACEHOLDER; }
 
 #undef PLACEHOLDER

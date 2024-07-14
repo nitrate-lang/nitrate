@@ -40,11 +40,13 @@
 #include <quixcc/Library.h>
 
 #include <cassert>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <memory>
 #include <optional>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -52,1941 +54,1876 @@
 #include <vector>
 
 namespace libquixcc::qast {
-class ArenaAllocatorImpl {
-  quixcc_arena_t m_arena;
+  class ArenaAllocatorImpl {
+    quixcc_arena_t m_arena;
 
- public:
-  ArenaAllocatorImpl();
-  ~ArenaAllocatorImpl();
+public:
+    ArenaAllocatorImpl();
+    ~ArenaAllocatorImpl();
 
-  void *allocate(std::size_t bytes);
-  void deallocate(void *ptr) noexcept;
-};
+    void *allocate(std::size_t bytes);
+    void deallocate(void *ptr) noexcept;
+  };
 
-extern thread_local ArenaAllocatorImpl g_allocator;
+  extern thread_local ArenaAllocatorImpl g_allocator;
 
-template <class T>
-struct Arena {
-  typedef T value_type;
+  template <class T> struct Arena {
+    typedef T value_type;
 
-  Arena() = default;
+    Arena() = default;
 
-  template <class U>
-  constexpr Arena(const Arena<U> &) noexcept {}
+    template <class U> constexpr Arena(const Arena<U> &) noexcept {}
 
-  [[nodiscard]] T *allocate(std::size_t n) {
-    return static_cast<T *>(g_allocator.allocate(sizeof(T) * n));
-  }
+    [[nodiscard]] T *allocate(std::size_t n) {
+      return static_cast<T *>(g_allocator.allocate(sizeof(T) * n));
+    }
 
-  void deallocate(T *p, std::size_t n) noexcept {
-    (void)n;
-    (void)p;
-  }
-};
+    void deallocate(T *p, std::size_t n) noexcept {
+      (void)n;
+      (void)p;
+    }
+  };
 
-template <class T, class U>
-bool operator==(const Arena<T> &, const Arena<U> &) {
-  return true;
-}
+  template <class T, class U> bool operator==(const Arena<T> &, const Arena<U> &) { return true; }
 
-template <class T, class U>
-bool operator!=(const Arena<T> &, const Arena<U> &) {
-  return false;
-}
+  template <class T, class U> bool operator!=(const Arena<T> &, const Arena<U> &) { return false; }
 
-};  // namespace libquixcc::qast
+  class AstError : public std::runtime_error {
+public:
+    AstError(const std::string &msg) : std::runtime_error("QAST Error: " + msg) {}
+  };
 
-#define NODE_IMPL_CORE(__typename)                                      \
- protected:                                                             \
-  virtual bool verify_impl(std::ostream &os) const override;            \
-                                                                        \
- protected:                                                             \
-  virtual void canonicalize_impl() override;                            \
-                                                                        \
- protected:                                                             \
-  virtual void print_impl(std::ostream &os, bool debug) const override; \
-                                                                        \
- public:                                                                \
-  virtual __typename *clone_impl() const;                               \
-                                                                        \
- public:                                                                \
- public:                                                                \
-  template <typename T = __typename, typename... Args>                  \
-  static __typename *get(Args &&...args) {                              \
-    void *ptr = Arena<__typename>().allocate(1);                        \
-    return new (ptr) __typename(std::forward<Args>(args)...);           \
-  }                                                                     \
-                                                                        \
- public:                                                                \
-  virtual __typename *clone(ArenaAllocatorImpl &arena = g_allocator)    \
-      const override {                                                  \
-    ArenaAllocatorImpl old = g_allocator;                               \
-    g_allocator = arena;                                                \
-    __typename *node = clone_impl();                                    \
-    g_allocator = old;                                                  \
-    return node;                                                        \
+  class AstIllegalOperation : public AstError {
+public:
+    AstIllegalOperation(const std::string &msg) : AstError("QAST Illegal Operation: " + msg) {}
+  };
+
+  class InvariantViolation : public AstError {
+public:
+    InvariantViolation(const std::string &msg) : AstError("QAST Invariant Violation: " + msg) {}
+  };
+
+  class EFac final {
+    EFac() = delete;
+
+public:
+    static AstError error(const std::string &msg) { return AstError(msg); }
+    static AstIllegalOperation illegal(const std::string &msg) { return AstIllegalOperation(msg); }
+    static InvariantViolation never(const std::string &msg) { return InvariantViolation(msg); }
+  };
+}; // namespace libquixcc::qast
+
+#define NODE_IMPL_CORE(__typename)                                                                 \
+  protected:                                                                                       \
+  virtual bool verify_impl(std::ostream &os) const override;                                       \
+                                                                                                   \
+  protected:                                                                                       \
+  virtual void canonicalize_impl() override;                                                       \
+                                                                                                   \
+  protected:                                                                                       \
+  virtual void print_impl(std::ostream &os, bool debug) const override;                            \
+                                                                                                   \
+  public:                                                                                          \
+  virtual __typename *clone_impl() const;                                                          \
+                                                                                                   \
+  public:                                                                                          \
+  public:                                                                                          \
+  template <typename T = __typename, typename... Args> static __typename *get(Args &&...args) {    \
+    void *ptr = Arena<__typename>().allocate(1);                                                   \
+    return new (ptr) __typename(std::forward<Args>(args)...);                                      \
+  }                                                                                                \
+                                                                                                   \
+  public:                                                                                          \
+  virtual __typename *clone(ArenaAllocatorImpl &arena = g_allocator) const override {              \
+    ArenaAllocatorImpl old = g_allocator;                                                          \
+    g_allocator = arena;                                                                           \
+    __typename *node = clone_impl();                                                               \
+    g_allocator = old;                                                                             \
+    return node;                                                                                   \
   }
 
 class quixcc_ast_node_t : public libquixcc::core::IDumpable {
- public:
+  public:
   quixcc_ast_node_t() = default;
   virtual ~quixcc_ast_node_t() = default;
 };
 
 namespace libquixcc::qast {
-enum class UnaryOp {
-  UNKNOWN,
-};
+  enum class UnaryOp {
+    UNKNOWN,
+  };
 
-enum class BinOp {
-  UNKNOWN,
-};
+  enum class BinOp {
+    UNKNOWN,
+  };
 
-class Node : public quixcc_ast_node_t {
- protected:
-  virtual bool verify_impl(std::ostream &os) const = 0;
-  virtual void canonicalize_impl() = 0;
-  virtual void print_impl(std::ostream &os, bool debug) const override = 0;
-  virtual Node *clone_impl() const = 0;
+  class Node : public quixcc_ast_node_t {
+protected:
+    virtual bool verify_impl(std::ostream &os) const = 0;
+    virtual void canonicalize_impl() = 0;
+    virtual void print_impl(std::ostream &os, bool debug) const override = 0;
+    virtual Node *clone_impl() const = 0;
 
- public:
-  Node() = default;
-  virtual ~Node() override = default;
+public:
+    Node() = default;
+    virtual ~Node() override = default;
 
-  uint32_t this_sizeof() const;
-  quixcc_ast_ntype_t this_typeid() const;
-  const char *this_nameof() const;
+    uint32_t this_sizeof() const;
+    quixcc_ast_ntype_t this_typeid() const;
+    const char *this_nameof() const;
 
-  size_t children_count(bool recursive = true) const;
-  bool inherits_from(quixcc_ast_ntype_t type) const;
+    size_t children_count(bool recursive = true) const;
+    bool inherits_from(quixcc_ast_ntype_t type) const;
 
-  bool is_type() const;
-  bool is_stmt() const;
-  bool is_decl() const;
-  bool is_expr() const;
-  bool is_const_expr() const;
+    bool is_type() const;
+    bool is_stmt() const;
+    bool is_decl() const;
+    bool is_expr() const;
+    bool is_const_expr() const;
 
-  template <typename T>
-  const T *as() const {
+    template <typename T> const T *as() const {
 #if !defined(NDEBUG)
-    auto p = dynamic_cast<const T *>(this);
+      auto p = dynamic_cast<const T *>(this);
 
-    if (!p) {
-      const char *this_str = typeid(*this).name();
-      const char *other_str = typeid(T).name();
+      if (!p) {
+        const char *this_str = typeid(*this).name();
+        const char *other_str = typeid(T).name();
 
-      quixcc_panicf(
-          "quixcc_ast_node_t::as(const %s *this): Invalid cast from `%s` to "
-          "`%s`.",
-          this_str, this_str, other_str);
-      __builtin_unreachable();
-    }
-    return p;
+        quixcc_panicf("quixcc_ast_node_t::as(const %s *this): Invalid cast from `%s` to "
+                      "`%s`.",
+                      this_str, this_str, other_str);
+        __builtin_unreachable();
+      }
+      return p;
 #else
-    return reinterpret_cast<const T *>(this);
+      return reinterpret_cast<const T *>(this);
 #endif
-  }
-
-  template <typename T>
-  T *as() {
-#if !defined(NDEBUG)
-    auto p = dynamic_cast<T *>(this);
-
-    if (!p) {
-      const char *this_str = typeid(*this).name();
-      const char *other_str = typeid(T).name();
-
-      quixcc_panicf(
-          "quixcc_ast_node_t::as(%s *this): Invalid cast from `%s` to `%s`.",
-          this_str, this_str, other_str);
-      __builtin_unreachable();
     }
-    return p;
+
+    template <typename T> T *as() {
+#if !defined(NDEBUG)
+      auto p = dynamic_cast<T *>(this);
+
+      if (!p) {
+        const char *this_str = typeid(*this).name();
+        const char *other_str = typeid(T).name();
+
+        quixcc_panicf("quixcc_ast_node_t::as(%s *this): Invalid cast from `%s` to `%s`.", this_str,
+                      this_str, other_str);
+        __builtin_unreachable();
+      }
+      return p;
 #else
-    return reinterpret_cast<T *>(this);
+      return reinterpret_cast<T *>(this);
 #endif
-  }
-
-  template <typename T>
-  bool is() const {
-    return typeid(*this) == typeid(T);
-  }
-
-  bool is(const quixcc_ast_ntype_t type) const;
-  bool verify(std::ostream &os = std::cerr) const;
-  void canonicalize();
-  virtual Node *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-
-  static const char *type_name(quixcc_ast_ntype_t type);
-};
-
-class Stmt : public Node {
- public:
-  Stmt() = default;
-  virtual ~Stmt() override = default;
-
-  virtual Stmt *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
-
-class Type : public Node {
- protected:
-  virtual uint64_t infer_size_bits_impl() const = 0;
-
- public:
-  Type() = default;
-  virtual ~Type() override = default;
-
-  uint64_t infer_size_bits() const;
-  uint64_t infer_size() const;
-
-  bool is_primitive() const;
-  bool is_array() const;
-  bool is_vector() const;
-  bool is_tuple() const;
-  bool is_set() const;
-  bool is_map() const;
-  bool is_pointer() const;
-  bool is_function() const;
-  bool is_composite() const;
-  bool is_union() const;
-  bool is_numeric() const;
-  bool is_integral() const;
-  bool is_floating_point() const;
-  bool is_signed() const;
-  bool is_unsigned() const;
-  bool is_void() const;
-  bool is_bool() const;
-  bool is_mutable() const;
-  bool is_const() const;
-  bool is_volatile() const;
-  bool is_ptr_to(const Type *type) const;
-  bool is_mut_ptr_to(const Type *type) const;
-  bool is_const_ptr_to(const Type *type) const;
-  bool is_ptr_to_mut(const Type *type) const;
-  bool is_ptr_to_const(const Type *type) const;
-  bool is_mut_ptr_to_mut(const Type *type) const;
-  bool is_mut_ptr_to_const(const Type *type) const;
-  bool is_const_ptr_to_mut(const Type *type) const;
-  bool is_const_ptr_to_const(const Type *type) const;
-  bool is_string() const;
-
-  virtual Type *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
-
-typedef std::set<std::string_view, std::less<std::string_view>,
-                 Arena<std::string_view>>
-    DeclTags;
-
-class Decl : public Stmt {
- protected:
-  DeclTags m_tags;
-  std::string_view m_name;
-  Type *m_type;
-
-  virtual Type *infer_type_impl() const = 0;
-
- public:
-  Decl(std::string_view name = "", Type *type = nullptr,
-       std::initializer_list<std::string_view> tags = {})
-      : m_tags(tags), m_name(name), m_type(type) {}
-  virtual ~Decl() override = default;
-
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  virtual Type *get_type() const;
-  void set_type(Type *type);
-
-  const DeclTags &get_tags() const;
-  void add_tag(std::string_view tag);
-  void add_tags(std::initializer_list<std::string_view> tags);
-  void clear_tags();
-  void remove_tag(std::string_view tag);
-
-  Type *infer_type() const;
-
-  virtual Decl *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
-
-class Expr : public Node {
- protected:
-  Type *m_type;
-
-  virtual Type *infer_type_impl() const = 0;
-  virtual bool is_const_impl() const = 0;
-  virtual bool is_stochastic_impl() const = 0;
-
- public:
-  Expr() : m_type(nullptr) {}
-  virtual ~Expr() override = default;
-
-  Type *infer_type() const;
-  bool is_const() const;
-  bool is_stochastic() const;
-  bool is_binexpr() const;
-  bool is_unaryexpr() const;
-  bool is_ternaryexpr() const;
-
-  virtual Expr *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
-
-class ConstExpr : public Expr {
- protected:
-  Expr *m_value;
-
-  template <typename>
-  struct is_std_vector : std::false_type {};
-
-  template <typename T, typename A>
-  struct is_std_vector<std::vector<T, A>> : std::true_type {};
-
-  template <typename T>
-  struct is_std_map : std::false_type {};
-
-  template <typename K, typename V, typename C, typename A>
-  struct is_std_map<std::map<K, V, C, A>> : std::true_type {};
-
-  template <typename T>
-  struct is_std_set : std::false_type {};
-
-  template <typename K, typename C, typename A>
-  struct is_std_set<std::set<K, C, A>> : std::true_type {};
-
-  template <typename>
-  struct is_std_tuple : std::false_type {};
-
-  template <typename... T>
-  struct is_std_tuple<std::tuple<T...>> : std::true_type {};
-
-  template <typename T>
-  T do_eval() const {
-    /// TODO: Implement this.
-    quixcc_panicf("ConstExpr::do_eval<T>(): Not implemented.");
-  }
-
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
-
- public:
-  ConstExpr(Expr *value = nullptr) : m_value(value) {}
-  virtual ~ConstExpr() override = default;
-
-  template <typename T>
-  T eval_as() const {
-    if constexpr (std::is_same_v<T, bool>) {
-      assert(infer_type()->is_bool());
-      return do_eval<bool>();
-    } else if constexpr (std::is_integral_v<T>) {
-      assert(infer_type()->is_integral());
-      return do_eval<T>();
-    } else if constexpr (std::is_floating_point_v<T>) {
-      assert(infer_type()->is_floating_point());
-      return do_eval<T>();
-    } else if constexpr (std::is_same_v<T, std::string_view>) {
-      assert(infer_type()->is_string());
-      return do_eval<std::string_view>();
-    } else if constexpr (is_std_vector<T>::value) {
-#if !defined(NDEBUG)
-      Type *type = infer_type();
-      assert(type->is_vector() || type->is_array());
-#endif
-      return do_eval<T>();
-    } else if constexpr (is_std_map<T>::value) {
-#if !defined(NDEBUG)
-      Type *type = infer_type();
-      assert(type->is_map());
-#endif
-      return do_eval<T>();
-    } else if constexpr (is_std_set<T>::value) {
-#if !defined(NDEBUG)
-      Type *type = infer_type();
-      assert(type->is_set());
-#endif
-      return do_eval<T>();
-    } else if constexpr (is_std_tuple<T>::value) {
-#if !defined(NDEBUG)
-      Type *type = infer_type();
-      assert(type->is_tuple());
-#endif
-      return do_eval<T>();
-    } else {
-      quixcc_panicf("ConstExpr::eval_as<T>(): Invalid type `%s`.",
-                    typeid(T).name());
-      __builtin_unreachable();
     }
-  }
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+    template <typename T> bool is() const { return typeid(*this) == typeid(T); }
+
+    bool is(const quixcc_ast_ntype_t type) const;
+    bool verify(std::ostream &os = std::cerr) const;
+    void canonicalize();
+    virtual Node *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+
+    static const char *type_name(quixcc_ast_ntype_t type);
+  };
+
+  class Stmt : public Node {
+public:
+    Stmt() = default;
+    virtual ~Stmt() override = default;
+
+    virtual Stmt *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
+
+  class Type : public Node {
+protected:
+    virtual uint64_t infer_size_bits_impl() const = 0;
+
+public:
+    Type() = default;
+    virtual ~Type() override = default;
+
+    uint64_t infer_size_bits() const;
+    uint64_t infer_size() const;
+
+    bool is_primitive() const;
+    bool is_array() const;
+    bool is_vector() const;
+    bool is_tuple() const;
+    bool is_set() const;
+    bool is_map() const;
+    bool is_pointer() const;
+    bool is_function() const;
+    bool is_composite() const;
+    bool is_union() const;
+    bool is_numeric() const;
+    bool is_integral() const;
+    bool is_floating_point() const;
+    bool is_signed() const;
+    bool is_unsigned() const;
+    bool is_void() const;
+    bool is_bool() const;
+    bool is_mutable() const;
+    bool is_const() const;
+    bool is_volatile() const;
+    bool is_ptr_to(const Type *type) const;
+    bool is_mut_ptr_to(const Type *type) const;
+    bool is_const_ptr_to(const Type *type) const;
+    bool is_ptr_to_mut(const Type *type) const;
+    bool is_ptr_to_const(const Type *type) const;
+    bool is_mut_ptr_to_mut(const Type *type) const;
+    bool is_mut_ptr_to_const(const Type *type) const;
+    bool is_const_ptr_to_mut(const Type *type) const;
+    bool is_const_ptr_to_const(const Type *type) const;
+    bool is_string() const;
+
+    virtual Type *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
+
+  typedef std::set<std::string_view, std::less<std::string_view>, Arena<std::string_view>> DeclTags;
+
+  class Decl : public Stmt {
+protected:
+    DeclTags m_tags;
+    std::string_view m_name;
+    Type *m_type;
+
+    virtual Type *infer_type_impl() const = 0;
+
+public:
+    Decl(std::string_view name = "", Type *type = nullptr,
+         std::initializer_list<std::string_view> tags = {})
+        : m_tags(tags), m_name(name), m_type(type) {}
+    virtual ~Decl() override = default;
+
+    std::string_view get_name() const;
+    void set_name(std::string_view name);
+
+    virtual Type *get_type() const;
+    void set_type(Type *type);
+
+    const DeclTags &get_tags() const;
+    void add_tag(std::string_view tag);
+    void add_tags(std::initializer_list<std::string_view> tags);
+    void clear_tags();
+    void remove_tag(std::string_view tag);
+
+    Type *infer_type() const;
+
+    virtual Decl *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
+
+  class Expr : public Node {
+protected:
+    Type *m_type;
+
+    virtual Type *infer_type_impl() const = 0;
+    virtual bool is_const_impl() const = 0;
+    virtual bool is_stochastic_impl() const = 0;
 
-  NODE_IMPL_CORE(ConstExpr)
-};
+public:
+    Expr() : m_type(nullptr) {}
+    virtual ~Expr() override = default;
 
-class LitExpr : public ConstExpr {
- public:
-  LitExpr() = default;
-  virtual ~LitExpr() override = default;
+    Type *infer_type() const;
+    bool is_const() const;
+    bool is_stochastic() const;
+    bool is_binexpr() const;
+    bool is_unaryexpr() const;
+    bool is_ternaryexpr() const;
 
-  virtual LitExpr *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
+    virtual Expr *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
 
-class FlowStmt : public Stmt {
- public:
-  FlowStmt() = default;
-  virtual ~FlowStmt() override = default;
+  class ConstExpr : public Expr {
+protected:
+    Expr *m_value;
 
-  virtual FlowStmt *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
+    template <typename> struct is_std_vector : std::false_type {};
 
-class DeclStmt : public Stmt {
- public:
-  DeclStmt() = default;
-  virtual ~DeclStmt() override = default;
+    template <typename T, typename A> struct is_std_vector<std::vector<T, A>> : std::true_type {};
 
-  virtual DeclStmt *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
+    template <typename T> struct is_std_map : std::false_type {};
 
-class TypeBuiltin : public Type {
- public:
-  TypeBuiltin() = default;
-  virtual ~TypeBuiltin() override = default;
+    template <typename K, typename V, typename C, typename A>
+    struct is_std_map<std::map<K, V, C, A>> : std::true_type {};
 
-  virtual TypeBuiltin *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
+    template <typename T> struct is_std_set : std::false_type {};
 
-class TypeComplex : public Type {
- public:
-  TypeComplex() = default;
-  virtual ~TypeComplex() override = default;
+    template <typename K, typename C, typename A>
+    struct is_std_set<std::set<K, C, A>> : std::true_type {};
 
-  virtual TypeComplex *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
+    template <typename> struct is_std_tuple : std::false_type {};
 
-class TypeComposite : public Type {
- public:
-  TypeComposite() = default;
-  virtual ~TypeComposite() override = default;
+    template <typename... T> struct is_std_tuple<std::tuple<T...>> : std::true_type {};
 
-  virtual TypeComposite *clone(
-      ArenaAllocatorImpl &arena = g_allocator) const = 0;
-};
-
-class UnresolvedType : public Type {
-  std::string_view m_name;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  UnresolvedType() = default;
-  virtual ~UnresolvedType() override = default;
-
-  NODE_IMPL_CORE(UnresolvedType)
-};
-
-class U1 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  U1() = default;
-  virtual ~U1() override = default;
-
-  NODE_IMPL_CORE(U1)
-};
-
-class U8 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  U8() = default;
-  virtual ~U8() override = default;
-
-  NODE_IMPL_CORE(U8)
-};
-
-class U16 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  U16() = default;
-  virtual ~U16() override = default;
-
-  NODE_IMPL_CORE(U16)
-};
-
-class U32 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  U32() = default;
-  virtual ~U32() override = default;
-
-  NODE_IMPL_CORE(U32)
-};
-
-class U64 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  U64() = default;
-  virtual ~U64() override = default;
-
-  NODE_IMPL_CORE(U64)
-};
-
-class U128 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  U128() = default;
-  virtual ~U128() override = default;
-
-  NODE_IMPL_CORE(U128)
-};
-
-class I8 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  I8() = default;
-  virtual ~I8() override = default;
-
-  NODE_IMPL_CORE(I8)
-};
-
-class I16 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  I16() = default;
-  virtual ~I16() override = default;
-
-  NODE_IMPL_CORE(I16)
-};
-
-class I32 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  I32() = default;
-  virtual ~I32() override = default;
-
-  NODE_IMPL_CORE(I32)
-};
-
-class I64 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  I64() = default;
-  virtual ~I64() override = default;
-
-  NODE_IMPL_CORE(I64)
-};
-
-class I128 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  I128() = default;
-  virtual ~I128() override = default;
-
-  NODE_IMPL_CORE(I128)
-};
-
-class F32 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  F32() = default;
-  virtual ~F32() override = default;
-
-  NODE_IMPL_CORE(F32)
-};
-
-class F64 : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  F64() = default;
-  virtual ~F64() override = default;
-
-  NODE_IMPL_CORE(F64)
-};
-
-class Void : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  Void() = default;
-  virtual ~Void() override = default;
-
-  NODE_IMPL_CORE(Void)
-};
-
-class StringTy : public TypeBuiltin {
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  StringTy() = default;
-  virtual ~StringTy() override = default;
-
-  NODE_IMPL_CORE(StringTy)
-};
-
-class PtrTy : public TypeComplex {
-  Type *m_item;
-  bool m_is_volatile;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  PtrTy(Type *item = nullptr, bool is_volatile = false)
-      : m_item(item), m_is_volatile(is_volatile) {}
-  virtual ~PtrTy() override = default;
-
-  Type *get_item() const;
-  void set_item(Type *item);
-
-  bool is_volatile() const;
-  void set_volatile(bool is_volatile);
-
-  NODE_IMPL_CORE(PtrTy)
-};
-
-class OpaqueTy : public TypeComplex {
-  std::string_view m_name;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  OpaqueTy(std::string_view name = "") : m_name(name) {}
-  virtual ~OpaqueTy() override = default;
-
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  NODE_IMPL_CORE(OpaqueTy)
-};
-
-class VectorTy : public TypeComposite {
-  Type *m_item;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  VectorTy(Type *item = nullptr) : m_item(item) {}
-  virtual ~VectorTy() override = default;
-
-  Type *get_item() const;
-  void set_item(Type *item);
-
-  NODE_IMPL_CORE(VectorTy)
-};
-
-class SetTy : public TypeComposite {
-  Type *m_item;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  SetTy(Type *item = nullptr) : m_item(item) {}
-  virtual ~SetTy() override = default;
-
-  Type *get_item() const;
-  void set_item(Type *item);
-
-  NODE_IMPL_CORE(SetTy)
-};
-
-class MapTy : public TypeComposite {
-  Type *m_key;
-  Type *m_value;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  MapTy(Type *key = nullptr, Type *value = nullptr)
-      : m_key(key), m_value(value) {}
-  virtual ~MapTy() override = default;
-
-  Type *get_key() const;
-  void set_key(Type *key);
-
-  Type *get_value() const;
-  void set_value(Type *value);
-
-  NODE_IMPL_CORE(MapTy)
-};
-
-class TupleTy : public TypeComposite {
-  std::vector<Type *, Arena<Type *>> m_items;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  TupleTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
-  TupleTy(const std::vector<Type *, Arena<Type *>> &items) : m_items(items) {}
-  virtual ~TupleTy() override = default;
-
-  const std::vector<Type *, Arena<Type *>> &get_items() const;
-  void add_item(Type *item);
-  void add_items(std::initializer_list<Type *> items);
-  void clear_items();
-  void remove_item(Type *item);
-
-  NODE_IMPL_CORE(TupleTy)
-};
-
-class OptionalTy : public TypeComposite {
-  Type *m_item;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  OptionalTy(Type *item = nullptr) : m_item(item) {}
-  virtual ~OptionalTy() override = default;
-
-  Type *get_item() const;
-  void set_item(Type *item);
-
-  NODE_IMPL_CORE(OptionalTy)
-};
-
-class ArrayTy : public TypeComposite {
-  Type *m_item;
-  ConstExpr *m_size;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  ArrayTy(Type *item = nullptr, ConstExpr *size = nullptr)
-      : m_item(item), m_size(size) {}
-  virtual ~ArrayTy() override = default;
-
-  Type *get_item() const;
-  void set_item(Type *item);
-
-  ConstExpr *get_size() const;
-  void set_size(ConstExpr *size);
-
-  NODE_IMPL_CORE(ArrayTy)
-};
-
-class EnumTy : public TypeComplex {
-  std::string_view m_name;
-  Type *m_memtype;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  EnumTy(std::string_view name = "", Type *memtype = nullptr)
-      : m_name(name), m_memtype(memtype) {}
-  virtual ~EnumTy() override = default;
-
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
-
-  Type *get_memtype() const;
-  void set_memtype(Type *memtype);
-
-  NODE_IMPL_CORE(EnumTy)
-};
-
-class MutTy : public TypeComplex {
-  Type *m_item;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  MutTy(Type *item = nullptr) : m_item(item) {}
-  virtual ~MutTy() override = default;
-
-  Type *get_item() const;
-  void set_item(Type *item);
-
-  NODE_IMPL_CORE(MutTy)
-};
-
-typedef std::pair<std::string_view, Type *> StructItem;
-
-class StructTy : public TypeComposite {
-  std::vector<StructItem, Arena<StructItem>> m_items;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  StructTy(std::initializer_list<StructItem> items = {}) : m_items(items) {}
-  StructTy(const std::vector<StructItem, Arena<StructItem>> &items)
-      : m_items(items) {}
-  virtual ~StructTy() override = default;
-
-  const std::vector<StructItem, Arena<StructItem>> &get_items() const;
-  void add_item(std::string_view name, Type *type);
-  void add_items(std::initializer_list<StructItem> items);
-  void clear_items();
-  void remove_item(std::string_view name);
-
-  NODE_IMPL_CORE(StructTy)
-};
-
-class GroupTy : public TypeComposite {
-  std::vector<Type *, Arena<Type *>> m_items;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  GroupTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
-  GroupTy(const std::vector<Type *, Arena<Type *>> &items) : m_items(items) {}
-  virtual ~GroupTy() override = default;
-
-  const std::vector<Type *, Arena<Type *>> &get_items() const;
-  void add_item(Type *item);
-  void add_items(std::initializer_list<Type *> items);
-  void clear_items();
-  void remove_item(Type *item);
-
-  NODE_IMPL_CORE(GroupTy)
-};
-
-class RegionTy : public TypeComposite {
-  std::vector<Type *, Arena<Type *>> m_items;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  RegionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
-  RegionTy(const std::vector<Type *, Arena<Type *>> &items) : m_items(items) {}
-  virtual ~RegionTy() override = default;
-
-  const std::vector<Type *, Arena<Type *>> &get_items() const;
-  void add_item(Type *item);
-  void add_items(std::initializer_list<Type *> items);
-  void clear_items();
-  void remove_item(Type *item);
-
-  NODE_IMPL_CORE(RegionTy)
-};
-
-class UnionTy : public TypeComposite {
-  std::vector<Type *, Arena<Type *>> m_items;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  UnionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
-  UnionTy(const std::vector<Type *, Arena<Type *>> &items) : m_items(items) {}
-  UnionTy() = default;
-  virtual ~UnionTy() override = default;
-
-  const std::vector<Type *, Arena<Type *>> &get_items() const;
-  void add_item(Type *item);
-  void add_items(std::initializer_list<Type *> items);
-  void clear_items();
-  void remove_item(Type *item);
-
-  NODE_IMPL_CORE(UnionTy)
-};
-
-enum class FuncPurity {
-  IMPURE_THREAD_UNSAFE,
-  IMPURE_THREAD_SAFE,
-  PURE,
-  QUASIPURE,
-  RETROPURE,
-};
-
-typedef std::tuple<std::string_view, Type *, Expr *> FuncParam;
-
-class FuncTy : public TypeComplex {
-  std::vector<FuncParam, Arena<FuncParam>> m_params;
-  Type *m_return;
-  FuncPurity m_purity;
-  bool m_variadic;
-  bool m_is_foreign;
-  bool m_crashpoint;
-  bool m_noexcept;
-  bool m_noreturn;
-
-  virtual uint64_t infer_size_bits_impl() const override final;
-
- public:
-  FuncTy()
-      : m_return(nullptr),
-        m_purity(FuncPurity::IMPURE_THREAD_UNSAFE),
-        m_variadic(false),
-        m_is_foreign(false),
-        m_crashpoint(false),
-        m_noexcept(false),
-        m_noreturn(false) {}
-  FuncTy(Type *return_type, std::vector<FuncParam, Arena<FuncParam>> parameters,
-         bool variadic = false,
-         FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
-         bool is_foreign = false, bool crashpoint = false,
-         bool noexcept_ = false, bool noreturn = false)
-      : m_params(parameters),
-        m_return(return_type),
-        m_purity(purity),
-        m_variadic(variadic),
-        m_is_foreign(is_foreign),
-        m_crashpoint(crashpoint),
-        m_noexcept(noexcept_),
-        m_noreturn(noreturn) {
-    assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
-                         purity == FuncPurity::IMPURE_THREAD_SAFE));
-  }
-  FuncTy(Type *return_type, std::vector<Type *, Arena<Type *>> parameters,
-         bool variadic = false,
-         FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE,
-         bool is_foreign = false, bool crashpoint = false,
-         bool noexcept_ = false, bool noreturn = false)
-      : m_return(return_type),
-        m_purity(purity),
-        m_variadic(variadic),
-        m_is_foreign(is_foreign),
-        m_crashpoint(crashpoint),
-        m_noexcept(noexcept_),
-        m_noreturn(noreturn) {
-    assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
-                         purity == FuncPurity::IMPURE_THREAD_SAFE));
-
-    for (size_t i = 0; i < parameters.size(); i++) {
-      m_params.push_back({"_" + std::to_string(i), parameters[i], nullptr});
+    template <typename T> T do_eval() const {
+      /// TODO: Implement this.
+      quixcc_panicf("ConstExpr::do_eval<T>(): Not implemented.");
     }
-  }
-  virtual ~FuncTy() override = default;
 
-  bool is_noreturn() const;
-  void set_noreturn(bool noreturn);
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
+
+public:
+    ConstExpr(Expr *value = nullptr) : m_value(value) {}
+    virtual ~ConstExpr() override = default;
+
+    template <typename T> T eval_as() const {
+      if constexpr (std::is_same_v<T, bool>) {
+        assert(infer_type()->is_bool());
+        return do_eval<bool>();
+      } else if constexpr (std::is_integral_v<T>) {
+        assert(infer_type()->is_integral());
+        return do_eval<T>();
+      } else if constexpr (std::is_floating_point_v<T>) {
+        assert(infer_type()->is_floating_point());
+        return do_eval<T>();
+      } else if constexpr (std::is_same_v<T, std::string_view>) {
+        assert(infer_type()->is_string());
+        return do_eval<std::string_view>();
+      } else if constexpr (is_std_vector<T>::value) {
+#if !defined(NDEBUG)
+        Type *type = infer_type();
+        assert(type->is_vector() || type->is_array());
+#endif
+        return do_eval<T>();
+      } else if constexpr (is_std_map<T>::value) {
+#if !defined(NDEBUG)
+        Type *type = infer_type();
+        assert(type->is_map());
+#endif
+        return do_eval<T>();
+      } else if constexpr (is_std_set<T>::value) {
+#if !defined(NDEBUG)
+        Type *type = infer_type();
+        assert(type->is_set());
+#endif
+        return do_eval<T>();
+      } else if constexpr (is_std_tuple<T>::value) {
+#if !defined(NDEBUG)
+        Type *type = infer_type();
+        assert(type->is_tuple());
+#endif
+        return do_eval<T>();
+      } else {
+        quixcc_panicf("ConstExpr::eval_as<T>(): Invalid type `%s`.", typeid(T).name());
+        __builtin_unreachable();
+      }
+    }
+
+    Expr *get_value() const;
+    void set_value(Expr *value);
+
+    NODE_IMPL_CORE(ConstExpr)
+  };
+
+  class LitExpr : public ConstExpr {
+public:
+    LitExpr() = default;
+    virtual ~LitExpr() override = default;
+
+    virtual LitExpr *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
+
+  class FlowStmt : public Stmt {
+public:
+    FlowStmt() = default;
+    virtual ~FlowStmt() override = default;
+
+    virtual FlowStmt *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
+
+  class DeclStmt : public Stmt {
+public:
+    DeclStmt() = default;
+    virtual ~DeclStmt() override = default;
+
+    virtual DeclStmt *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
+
+  class TypeBuiltin : public Type {
+public:
+    TypeBuiltin() = default;
+    virtual ~TypeBuiltin() override = default;
+
+    virtual TypeBuiltin *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
+
+  class TypeComplex : public Type {
+public:
+    TypeComplex() = default;
+    virtual ~TypeComplex() override = default;
+
+    virtual TypeComplex *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
+
+  class TypeComposite : public Type {
+public:
+    TypeComposite() = default;
+    virtual ~TypeComposite() override = default;
 
-  Type *get_return_ty() const;
-  void set_return_ty(Type *return_ty);
+    virtual TypeComposite *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+  };
 
-  const std::vector<FuncParam, Arena<FuncParam>> &get_params() const;
-  void add_param(std::string_view name, Type *type,
-                 Expr *default_val = nullptr);
-  void add_params(std::initializer_list<FuncParam> params);
-  void clear_params();
-  void remove_param(std::string_view name);
+  class UnresolvedType : public Type {
+    std::string_view m_name;
 
-  FuncPurity get_purity() const;
-  void set_purity(FuncPurity purity);
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  bool is_variadic() const;
-  void set_variadic(bool variadic);
+public:
+    UnresolvedType() = default;
+    virtual ~UnresolvedType() override = default;
 
-  bool is_foreign() const;
-  void set_foreign(bool is_foreign);
+    NODE_IMPL_CORE(UnresolvedType)
+  };
 
-  bool is_crashpoint() const;
-  void set_crashpoint(bool crashpoint);
+  class U1 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  bool is_noexcept() const;
-  void set_noexcept(bool noexcept_);
+public:
+    U1() = default;
+    virtual ~U1() override = default;
 
-  NODE_IMPL_CORE(FuncTy)
-};
+    NODE_IMPL_CORE(U1)
+  };
 
-///=============================================================================
+  class U8 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-class UnaryExpr : public Expr {
- protected:
-  Expr *m_rhs;
-  UnaryOp m_op;
+public:
+    U8() = default;
+    virtual ~U8() override = default;
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+    NODE_IMPL_CORE(U8)
+  };
 
- public:
-  UnaryExpr(UnaryOp op = UnaryOp::UNKNOWN, Expr *rhs = nullptr)
-      : m_rhs(rhs), m_op(op) {}
-  virtual ~UnaryExpr() override = default;
+  class U16 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  Expr *get_rhs() const;
-  void set_rhs(Expr *rhs);
+public:
+    U16() = default;
+    virtual ~U16() override = default;
 
-  UnaryOp get_op() const;
-  void set_op(UnaryOp op);
+    NODE_IMPL_CORE(U16)
+  };
 
-  NODE_IMPL_CORE(UnaryExpr)
-};
+  class U32 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-class BinExpr : public Expr {
- protected:
-  Expr *m_lhs;
-  Expr *m_rhs;
-  BinOp m_op;
+public:
+    U32() = default;
+    virtual ~U32() override = default;
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+    NODE_IMPL_CORE(U32)
+  };
 
- public:
-  BinExpr(Expr *lhs = nullptr, BinOp op = BinOp::UNKNOWN, Expr *rhs = nullptr)
-      : m_lhs(lhs), m_rhs(rhs), m_op(op) {}
-  virtual ~BinExpr() override = default;
+  class U64 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  Expr *get_lhs() const;
-  void set_lhs(Expr *lhs);
+public:
+    U64() = default;
+    virtual ~U64() override = default;
 
-  Expr *get_rhs() const;
-  void set_rhs(Expr *rhs);
+    NODE_IMPL_CORE(U64)
+  };
 
-  BinOp get_op() const;
-  void set_op(BinOp op);
+  class U128 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  NODE_IMPL_CORE(BinExpr)
-};
+public:
+    U128() = default;
+    virtual ~U128() override = default;
 
-class TernaryExpr : public Expr {
- protected:
-  Expr *m_cond;
-  Expr *m_lhs;
-  Expr *m_rhs;
+    NODE_IMPL_CORE(U128)
+  };
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+  class I8 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
- public:
-  TernaryExpr(Expr *cond = nullptr, Expr *lhs = nullptr, Expr *rhs = nullptr)
-      : m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
-  virtual ~TernaryExpr() override = default;
+public:
+    I8() = default;
+    virtual ~I8() override = default;
 
-  Expr *get_cond() const;
-  void set_cond(Expr *cond);
+    NODE_IMPL_CORE(I8)
+  };
 
-  Expr *get_lhs() const;
-  void set_lhs(Expr *lhs);
+  class I16 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  Expr *get_rhs() const;
-  void set_rhs(Expr *rhs);
+public:
+    I16() = default;
+    virtual ~I16() override = default;
 
-  NODE_IMPL_CORE(TernaryExpr)
-};
+    NODE_IMPL_CORE(I16)
+  };
 
-///=============================================================================
+  class I32 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-class ConstInt : public LitExpr {
-  std::string_view m_value;
+public:
+    I32() = default;
+    virtual ~I32() override = default;
 
- public:
-  ConstInt(std::string_view value = "") : m_value(value) {}
-  ConstInt(uint64_t value) : m_value(std::to_string(value)) {}
-  virtual ~ConstInt() override = default;
+    NODE_IMPL_CORE(I32)
+  };
 
-  std::string_view get_value() const;
+  class I64 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  NODE_IMPL_CORE(ConstInt)
-};
+public:
+    I64() = default;
+    virtual ~I64() override = default;
 
-class ConstFloat : public LitExpr {
-  std::string_view m_value;
+    NODE_IMPL_CORE(I64)
+  };
 
- public:
-  ConstFloat(std::string_view value = "") : m_value(value) {}
-  ConstFloat(double value) : m_value(std::to_string(value)) {}
-  virtual ~ConstFloat() override = default;
+  class I128 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  std::string_view get_value() const;
+public:
+    I128() = default;
+    virtual ~I128() override = default;
 
-  NODE_IMPL_CORE(ConstFloat)
-};
+    NODE_IMPL_CORE(I128)
+  };
 
-class ConstBool : public LitExpr {
-  bool m_value;
+  class F32 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
- public:
-  ConstBool(bool value = false) : m_value(value) {}
-  virtual ~ConstBool() override = default;
+public:
+    F32() = default;
+    virtual ~F32() override = default;
 
-  bool get_value() const;
+    NODE_IMPL_CORE(F32)
+  };
 
-  NODE_IMPL_CORE(ConstBool)
-};
+  class F64 : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-class ConstString : public LitExpr {
-  std::string_view m_value;
+public:
+    F64() = default;
+    virtual ~F64() override = default;
 
- public:
-  ConstString(std::string_view value = "") : m_value(value) {}
-  virtual ~ConstString() override = default;
+    NODE_IMPL_CORE(F64)
+  };
 
-  std::string_view get_value() const;
+  class Void : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  NODE_IMPL_CORE(ConstString)
-};
+public:
+    Void() = default;
+    virtual ~Void() override = default;
 
-class ConstChar : public LitExpr {
-  std::string_view m_value;
+    NODE_IMPL_CORE(Void)
+  };
 
- public:
-  ConstChar(std::string_view value = "") : m_value(value) {}
-  virtual ~ConstChar() override = default;
+  class StringTy : public TypeBuiltin {
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  std::string_view get_value() const;
+public:
+    StringTy() = default;
+    virtual ~StringTy() override = default;
 
-  NODE_IMPL_CORE(ConstChar)
-};
+    NODE_IMPL_CORE(StringTy)
+  };
 
-class ConstNull : public LitExpr {
- public:
-  ConstNull() = default;
-  virtual ~ConstNull() override = default;
+  class PtrTy : public TypeComplex {
+    Type *m_item;
+    bool m_is_volatile;
 
-  NODE_IMPL_CORE(ConstNull)
-};
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-class ConstUndef : public LitExpr {
- public:
-  ConstUndef() = default;
-  virtual ~ConstUndef() override = default;
+public:
+    PtrTy(Type *item = nullptr, bool is_volatile = false)
+        : m_item(item), m_is_volatile(is_volatile) {}
+    virtual ~PtrTy() override = default;
 
-  NODE_IMPL_CORE(ConstUndef)
-};
+    Type *get_item() const;
+    void set_item(Type *item);
 
-///=============================================================================
+    bool is_volatile() const;
+    void set_volatile(bool is_volatile);
 
-typedef std::pair<const std::string_view, Expr *> CallArg;
-typedef std::map<std::string_view, Expr *, std::less<std::string_view>,
-                 Arena<CallArg>>
-    CallArgs;
+    NODE_IMPL_CORE(PtrTy)
+  };
 
-class Call : public Expr {
- protected:
-  Expr *m_func;
-  CallArgs m_args;
+  class OpaqueTy : public TypeComplex {
+    std::string_view m_name;
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+    virtual uint64_t infer_size_bits_impl() const override final;
 
- public:
-  Call(Expr *func = nullptr, CallArgs args = {}) : m_func(func), m_args(args) {}
-  virtual ~Call() override = default;
+public:
+    OpaqueTy(std::string_view name = "") : m_name(name) {}
+    virtual ~OpaqueTy() override = default;
 
-  Expr *get_func() const;
-  void set_func(Expr *func);
+    std::string_view get_name() const;
+    void set_name(std::string_view name);
 
-  const CallArgs &get_args() const;
-  void add_arg(std::string_view name, Expr *arg);
-  void add_args(std::map<std::string_view, Expr *> args);
-  void clear_args();
-  void remove_arg(std::string_view name);
+    NODE_IMPL_CORE(OpaqueTy)
+  };
 
-  NODE_IMPL_CORE(Call)
-};
+  class VectorTy : public TypeComposite {
+    Type *m_item;
 
-typedef std::vector<Expr *, Arena<Expr *>> ListData;
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-class List : public Expr {
- protected:
-  ListData m_items;
+public:
+    VectorTy(Type *item = nullptr) : m_item(item) {}
+    virtual ~VectorTy() override = default;
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+    Type *get_item() const;
+    void set_item(Type *item);
 
- public:
-  List(std::initializer_list<Expr *> items = {}) : m_items(items) {}
-  List(const ListData &items) : m_items(items) {}
-  virtual ~List() override = default;
+    NODE_IMPL_CORE(VectorTy)
+  };
 
-  const ListData &get_items() const;
-  void add_item(Expr *item);
-  void add_items(std::initializer_list<Expr *> items);
-  void clear_items();
-  void remove_item(Expr *item);
+  class SetTy : public TypeComposite {
+    Type *m_item;
 
-  NODE_IMPL_CORE(List)
-};
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-class Assoc : public Expr {
- protected:
-  Expr *m_key;
-  Expr *m_value;
+public:
+    SetTy(Type *item = nullptr) : m_item(item) {}
+    virtual ~SetTy() override = default;
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+    Type *get_item() const;
+    void set_item(Type *item);
 
- public:
-  Assoc(Expr *key = nullptr, Expr *value = nullptr)
-      : m_key(key), m_value(value) {}
-  virtual ~Assoc() override = default;
+    NODE_IMPL_CORE(SetTy)
+  };
 
-  Expr *get_key() const;
-  void set_key(Expr *key);
+  class MapTy : public TypeComposite {
+    Type *m_key;
+    Type *m_value;
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  NODE_IMPL_CORE(Assoc)
-};
+public:
+    MapTy(Type *key = nullptr, Type *value = nullptr) : m_key(key), m_value(value) {}
+    virtual ~MapTy() override = default;
 
-class Field : public Expr {
- protected:
-  Expr *m_base;
-  std::string_view m_field;
+    Type *get_key() const;
+    void set_key(Type *key);
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+    Type *get_value() const;
+    void set_value(Type *value);
 
- public:
-  Field(Expr *base = nullptr, std::string_view field = "")
-      : m_base(base), m_field(field) {}
-  virtual ~Field() override = default;
+    NODE_IMPL_CORE(MapTy)
+  };
 
-  Expr *get_base() const;
-  void set_base(Expr *base);
+  class TupleTy : public TypeComposite {
+    std::vector<Type *, Arena<Type *>> m_items;
 
-  std::string_view get_field() const;
-  void set_field(std::string_view field);
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  NODE_IMPL_CORE(Field)
-};
+public:
+    TupleTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
+    TupleTy(const std::vector<Type *, Arena<Type *>> &items) : m_items(items) {}
+    virtual ~TupleTy() override = default;
 
-class Index : public Expr {
- protected:
-  Expr *m_base;
-  Expr *m_index;
+    const std::vector<Type *, Arena<Type *>> &get_items() const;
+    void add_item(Type *item);
+    void add_items(std::initializer_list<Type *> items);
+    void clear_items();
+    void remove_item(Type *item);
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+    NODE_IMPL_CORE(TupleTy)
+  };
 
- public:
-  Index(Expr *base = nullptr, Expr *index = nullptr)
-      : m_base(base), m_index(index) {}
-  virtual ~Index() override = default;
+  class OptionalTy : public TypeComposite {
+    Type *m_item;
 
-  Expr *get_base() const;
-  void set_base(Expr *base);
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  Expr *get_index() const;
-  void set_index(Expr *index);
+public:
+    OptionalTy(Type *item = nullptr) : m_item(item) {}
+    virtual ~OptionalTy() override = default;
 
-  NODE_IMPL_CORE(Index)
-};
+    Type *get_item() const;
+    void set_item(Type *item);
 
-class Slice : public Expr {
- protected:
-  Expr *m_base;
-  Expr *m_start;
-  Expr *m_end;
+    NODE_IMPL_CORE(OptionalTy)
+  };
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+  class ArrayTy : public TypeComposite {
+    Type *m_item;
+    ConstExpr *m_size;
 
- public:
-  Slice(Expr *base = nullptr, Expr *start = nullptr, Expr *end = nullptr)
-      : m_base(base), m_start(start), m_end(end) {}
-  virtual ~Slice() override = default;
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  Expr *get_base() const;
-  void set_base(Expr *base);
+public:
+    ArrayTy(Type *item = nullptr, ConstExpr *size = nullptr) : m_item(item), m_size(size) {}
+    virtual ~ArrayTy() override = default;
 
-  Expr *get_start() const;
-  void set_start(Expr *start);
+    Type *get_item() const;
+    void set_item(Type *item);
 
-  Expr *get_end() const;
-  void set_end(Expr *end);
+    ConstExpr *get_size() const;
+    void set_size(ConstExpr *size);
 
-  NODE_IMPL_CORE(Slice)
-};
+    NODE_IMPL_CORE(ArrayTy)
+  };
 
-typedef std::vector<Expr *, Arena<Expr *>> FStringArgs;
+  class EnumTy : public TypeComplex {
+    std::string_view m_name;
+    Type *m_memtype;
 
-class FString : public Expr {
- protected:
-  std::string_view m_value;
-  FStringArgs m_items;
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+public:
+    EnumTy(std::string_view name = "", Type *memtype = nullptr)
+        : m_name(name), m_memtype(memtype) {}
+    virtual ~EnumTy() override = default;
 
- public:
-  FString(std::string_view value = "", std::initializer_list<Expr *> items = {})
-      : m_value(value), m_items(items) {}
-  FString(std::string_view value, const FStringArgs &items)
-      : m_value(value), m_items(items) {}
-  virtual ~FString() override = default;
+    std::string_view get_name() const;
+    void set_name(std::string_view name);
 
-  std::string_view get_value() const;
-  void set_value(std::string_view value);
+    Type *get_memtype() const;
+    void set_memtype(Type *memtype);
 
-  const FStringArgs &get_items() const;
-  void add_item(Expr *item);
-  void add_items(std::initializer_list<Expr *> items);
-  void clear_items();
-  void remove_item(Expr *item);
+    NODE_IMPL_CORE(EnumTy)
+  };
 
-  NODE_IMPL_CORE(FString)
-};
+  class MutTy : public TypeComplex {
+    Type *m_item;
 
-class Ident : public Expr {
-  std::string_view m_name;
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  virtual Type *infer_type_impl() const override final;
-  virtual bool is_const_impl() const override final;
-  virtual bool is_stochastic_impl() const override final;
+public:
+    MutTy(Type *item = nullptr) : m_item(item) {}
+    virtual ~MutTy() override = default;
 
- public:
-  Ident(std::string_view name = "") : m_name(name) {}
-  virtual ~Ident() override = default;
+    Type *get_item() const;
+    void set_item(Type *item);
 
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
+    NODE_IMPL_CORE(MutTy)
+  };
 
-  NODE_IMPL_CORE(Ident)
-};
+  typedef std::pair<std::string_view, Type *> StructItem;
+  typedef std::vector<StructItem, Arena<StructItem>> StructItems;
 
-///=============================================================================
+  class StructTy : public TypeComposite {
+    StructItems m_items;
 
-class Block : public Stmt {
- protected:
-  std::vector<Stmt *, Arena<Stmt *>> m_stmts;
+    virtual uint64_t infer_size_bits_impl() const override final;
 
- public:
-  Block(std::initializer_list<Stmt *> stmts = {}) : m_stmts(stmts) {}
-  Block(const std::vector<Stmt *, Arena<Stmt *>> &stmts) : m_stmts(stmts) {}
-  virtual ~Block() override = default;
+public:
+    StructTy(std::initializer_list<StructItem> items = {}) : m_items(items) {}
+    StructTy(const StructItems &items) : m_items(items) {}
+    virtual ~StructTy() override = default;
 
-  const std::vector<Stmt *, Arena<Stmt *>> &get_stmts() const;
-  void add_stmt(Stmt *stmt);
-  void add_stmts(std::initializer_list<Stmt *> stmts);
-  void clear_stmts();
-  void remove_stmt(Stmt *stmt);
+    const StructItems &get_items() const;
+    void add_item(std::string_view name, Type *type);
+    void add_items(std::initializer_list<StructItem> items);
+    void clear_items();
+    void remove_item(std::string_view name);
 
-  NODE_IMPL_CORE(Block)
-};
+    NODE_IMPL_CORE(StructTy)
+  };
 
-class ConstDecl : public Decl {
- protected:
-  Expr *m_value;
+  typedef std::vector<Type *, Arena<Type *>> GroupTyItems;
 
-  virtual Type *infer_type_impl() const override final;
+  class GroupTy : public TypeComposite {
+    GroupTyItems m_items;
 
- public:
-  ConstDecl(std::string_view name = "", Type *type = nullptr,
-            Expr *value = nullptr)
-      : Decl(name, type), m_value(value) {}
-  virtual ~ConstDecl() override = default;
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+public:
+    GroupTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
+    GroupTy(const GroupTyItems &items) : m_items(items) {}
+    virtual ~GroupTy() override = default;
 
-  NODE_IMPL_CORE(ConstDecl)
-};
+    const GroupTyItems &get_items() const;
+    void add_item(Type *item);
+    void add_items(std::initializer_list<Type *> items);
+    void clear_items();
+    void remove_item(Type *item);
 
-class VarDecl : public Decl {
- protected:
-  Expr *m_value;
+    NODE_IMPL_CORE(GroupTy)
+  };
 
-  virtual Type *infer_type_impl() const override final;
+  typedef std::vector<Type *, Arena<Type *>> RegionTyItems;
 
- public:
-  VarDecl(std::string_view name = "", Type *type = nullptr,
-          Expr *value = nullptr)
-      : Decl(name, type), m_value(value) {}
-  virtual ~VarDecl() override = default;
+  class RegionTy : public TypeComposite {
+    RegionTyItems m_items;
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  NODE_IMPL_CORE(VarDecl)
-};
+public:
+    RegionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
+    RegionTy(const RegionTyItems &items) : m_items(items) {}
+    virtual ~RegionTy() override = default;
 
-class LetDecl : public Decl {
- protected:
-  Expr *m_value;
+    const RegionTyItems &get_items() const;
+    void add_item(Type *item);
+    void add_items(std::initializer_list<Type *> items);
+    void clear_items();
+    void remove_item(Type *item);
 
-  virtual Type *infer_type_impl() const override final;
+    NODE_IMPL_CORE(RegionTy)
+  };
 
- public:
-  LetDecl(std::string_view name = "", Type *type = nullptr,
-          Expr *value = nullptr)
-      : Decl(name, type), m_value(value) {}
-  virtual ~LetDecl() override = default;
+  typedef std::vector<Type *, Arena<Type *>> UnionTyItems;
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+  class UnionTy : public TypeComposite {
+    UnionTyItems m_items;
 
-  NODE_IMPL_CORE(LetDecl)
-};
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-class InlineAsm : public Stmt {
- protected:
-  std::string_view m_code;
-  std::vector<Expr *, Arena<Expr *>> m_args;
+public:
+    UnionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
+    UnionTy(const UnionTyItems &items) : m_items(items) {}
+    UnionTy() = default;
+    virtual ~UnionTy() override = default;
 
- public:
-  InlineAsm(std::string_view code = "", std::initializer_list<Expr *> args = {})
-      : m_code(code), m_args(args) {}
-  InlineAsm(std::string_view code,
-            const std::vector<Expr *, Arena<Expr *>> &args)
-      : m_code(code), m_args(args) {}
-  virtual ~InlineAsm() override = default;
+    const UnionTyItems &get_items() const;
+    void add_item(Type *item);
+    void add_items(std::initializer_list<Type *> items);
+    void clear_items();
+    void remove_item(Type *item);
 
-  std::string_view get_code() const;
-  void set_code(std::string_view code);
+    NODE_IMPL_CORE(UnionTy)
+  };
 
-  const std::vector<Expr *, Arena<Expr *>> &get_args() const;
-  void add_arg(Expr *arg);
-  void add_args(std::initializer_list<Expr *> args);
-  void clear_args();
-  void remove_arg(Expr *arg);
+  enum class FuncPurity {
+    IMPURE_THREAD_UNSAFE,
+    IMPURE_THREAD_SAFE,
+    PURE,
+    QUASIPURE,
+    RETROPURE,
+  };
 
-  NODE_IMPL_CORE(InlineAsm)
-};
+  typedef std::tuple<std::string_view, Type *, Expr *> FuncParam;
+  typedef std::vector<FuncParam, Arena<FuncParam>> FuncParams;
 
-class IfStmt : public FlowStmt {
- protected:
-  Expr *m_cond;
-  Stmt *m_then;
-  Stmt *m_else;
+  class FuncTy : public TypeComplex {
+    FuncParams m_params;
+    Type *m_return;
+    FuncPurity m_purity;
+    bool m_variadic;
+    bool m_is_foreign;
+    bool m_crashpoint;
+    bool m_noexcept;
+    bool m_noreturn;
 
- public:
-  IfStmt(Expr *cond = nullptr, Stmt *then = nullptr, Stmt *else_ = nullptr)
-      : m_cond(cond), m_then(then), m_else(else_) {}
-  virtual ~IfStmt() override = default;
+    virtual uint64_t infer_size_bits_impl() const override final;
 
-  Expr *get_cond() const;
-  void set_cond(Expr *cond);
+public:
+    FuncTy()
+        : m_return(nullptr), m_purity(FuncPurity::IMPURE_THREAD_UNSAFE), m_variadic(false),
+          m_is_foreign(false), m_crashpoint(false), m_noexcept(false), m_noreturn(false) {}
+    FuncTy(Type *return_type, FuncParams parameters, bool variadic = false,
+           FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE, bool is_foreign = false,
+           bool crashpoint = false, bool noexcept_ = false, bool noreturn = false)
+        : m_params(parameters), m_return(return_type), m_purity(purity), m_variadic(variadic),
+          m_is_foreign(is_foreign), m_crashpoint(crashpoint), m_noexcept(noexcept_),
+          m_noreturn(noreturn) {
+      assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
+                           purity == FuncPurity::IMPURE_THREAD_SAFE));
+    }
+    FuncTy(Type *return_type, std::vector<Type *, Arena<Type *>> parameters, bool variadic = false,
+           FuncPurity purity = FuncPurity::IMPURE_THREAD_UNSAFE, bool is_foreign = false,
+           bool crashpoint = false, bool noexcept_ = false, bool noreturn = false)
+        : m_return(return_type), m_purity(purity), m_variadic(variadic), m_is_foreign(is_foreign),
+          m_crashpoint(crashpoint), m_noexcept(noexcept_), m_noreturn(noreturn) {
+      assert(!noreturn || (purity == FuncPurity::IMPURE_THREAD_UNSAFE ||
+                           purity == FuncPurity::IMPURE_THREAD_SAFE));
 
-  Stmt *get_then() const;
-  void set_then(Stmt *then);
+      for (size_t i = 0; i < parameters.size(); i++) {
+        m_params.push_back({"_" + std::to_string(i), parameters[i], nullptr});
+      }
+    }
+    virtual ~FuncTy() override = default;
 
-  Stmt *get_else() const;
-  void set_else(Stmt *else_);
+    bool is_noreturn() const;
+    void set_noreturn(bool noreturn);
 
-  NODE_IMPL_CORE(IfStmt)
-};
+    Type *get_return_ty() const;
+    void set_return_ty(Type *return_ty);
 
-class WhileStmt : public FlowStmt {
- protected:
-  Expr *m_cond;
-  Stmt *m_body;
+    const FuncParams &get_params() const;
+    void add_param(std::string_view name, Type *type, Expr *default_val = nullptr);
+    void add_params(std::initializer_list<FuncParam> params);
+    void clear_params();
+    void remove_param(std::string_view name);
 
- public:
-  WhileStmt(Expr *cond = nullptr, Stmt *body = nullptr)
-      : m_cond(cond), m_body(body) {}
-  virtual ~WhileStmt() override = default;
+    FuncPurity get_purity() const;
+    void set_purity(FuncPurity purity);
 
-  Expr *get_cond() const;
-  void set_cond(Expr *cond);
+    bool is_variadic() const;
+    void set_variadic(bool variadic);
 
-  Stmt *get_body() const;
-  void set_body(Stmt *body);
+    bool is_foreign() const;
+    void set_foreign(bool is_foreign);
 
-  NODE_IMPL_CORE(WhileStmt)
-};
+    bool is_crashpoint() const;
+    void set_crashpoint(bool crashpoint);
 
-class ForStmt : public FlowStmt {
- protected:
-  Stmt *m_init;
-  Expr *m_cond;
-  Stmt *m_step;
-  Stmt *m_body;
+    bool is_noexcept() const;
+    void set_noexcept(bool noexcept_);
 
- public:
-  ForStmt(Stmt *init = nullptr, Expr *cond = nullptr, Stmt *step = nullptr,
-          Stmt *body = nullptr)
-      : m_init(init), m_cond(cond), m_step(step), m_body(body) {}
-  virtual ~ForStmt() override = default;
+    NODE_IMPL_CORE(FuncTy)
+  };
 
-  Stmt *get_init() const;
-  void set_init(Stmt *init);
+  ///=============================================================================
 
-  Expr *get_cond() const;
-  void set_cond(Expr *cond);
+  class UnaryExpr : public Expr {
+protected:
+    Expr *m_rhs;
+    UnaryOp m_op;
 
-  Stmt *get_step() const;
-  void set_step(Stmt *step);
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
 
-  Stmt *get_body() const;
-  void set_body(Stmt *body);
+public:
+    UnaryExpr(UnaryOp op = UnaryOp::UNKNOWN, Expr *rhs = nullptr) : m_rhs(rhs), m_op(op) {}
+    virtual ~UnaryExpr() override = default;
 
-  NODE_IMPL_CORE(ForStmt)
-};
+    Expr *get_rhs() const;
+    void set_rhs(Expr *rhs);
 
-class FormStmt : public FlowStmt {
- protected:
-  Expr *m_init;
-  Expr *m_generator;
-  Stmt *m_body;
+    UnaryOp get_op() const;
+    void set_op(UnaryOp op);
 
- public:
-  FormStmt(Expr *init = nullptr, Expr *generator = nullptr,
-           Stmt *body = nullptr)
-      : m_init(init), m_generator(generator), m_body(body) {}
-  virtual ~FormStmt() override = default;
+    NODE_IMPL_CORE(UnaryExpr)
+  };
 
-  Expr *get_init() const;
-  void set_init(Expr *init);
+  class BinExpr : public Expr {
+protected:
+    Expr *m_lhs;
+    Expr *m_rhs;
+    BinOp m_op;
 
-  Expr *get_generator() const;
-  void set_generator(Expr *generator);
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
 
-  Stmt *get_body() const;
-  void set_body(Stmt *body);
+public:
+    BinExpr(Expr *lhs = nullptr, BinOp op = BinOp::UNKNOWN, Expr *rhs = nullptr)
+        : m_lhs(lhs), m_rhs(rhs), m_op(op) {}
+    virtual ~BinExpr() override = default;
 
-  NODE_IMPL_CORE(FormStmt)
-};
+    Expr *get_lhs() const;
+    void set_lhs(Expr *lhs);
 
-class ForeachStmt : public FlowStmt {
- protected:
-  std::string_view m_name;
-  Expr *m_iter;
-  Stmt *m_body;
+    Expr *get_rhs() const;
+    void set_rhs(Expr *rhs);
 
- public:
-  ForeachStmt(std::string_view name = "", Expr *iter = nullptr,
-              Stmt *body = nullptr)
-      : m_name(name), m_iter(iter), m_body(body) {}
-  virtual ~ForeachStmt() override = default;
+    BinOp get_op() const;
+    void set_op(BinOp op);
 
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
+    NODE_IMPL_CORE(BinExpr)
+  };
 
-  Expr *get_iter() const;
-  void set_iter(Expr *iter);
+  class TernaryExpr : public Expr {
+protected:
+    Expr *m_cond;
+    Expr *m_lhs;
+    Expr *m_rhs;
 
-  Stmt *get_body() const;
-  void set_body(Stmt *body);
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
 
-  NODE_IMPL_CORE(ForeachStmt)
-};
+public:
+    TernaryExpr(Expr *cond = nullptr, Expr *lhs = nullptr, Expr *rhs = nullptr)
+        : m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
+    virtual ~TernaryExpr() override = default;
 
-class BreakStmt : public FlowStmt {
- public:
-  BreakStmt() = default;
-  virtual ~BreakStmt() override = default;
+    Expr *get_cond() const;
+    void set_cond(Expr *cond);
 
-  NODE_IMPL_CORE(BreakStmt)
-};
+    Expr *get_lhs() const;
+    void set_lhs(Expr *lhs);
 
-class ContinueStmt : public FlowStmt {
- public:
-  ContinueStmt() = default;
-  virtual ~ContinueStmt() override = default;
+    Expr *get_rhs() const;
+    void set_rhs(Expr *rhs);
 
-  NODE_IMPL_CORE(ContinueStmt)
-};
+    NODE_IMPL_CORE(TernaryExpr)
+  };
 
-class ReturnStmt : public FlowStmt {
- protected:
-  Expr *m_value;
+  ///=============================================================================
 
- public:
-  ReturnStmt(Expr *value = nullptr) : m_value(value) {}
-  virtual ~ReturnStmt() override = default;
+  class ConstInt : public LitExpr {
+    std::string_view m_value;
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+public:
+    ConstInt(std::string_view value = "") : m_value(value) {}
+    ConstInt(uint64_t value) : m_value(std::to_string(value)) {}
+    virtual ~ConstInt() override = default;
 
-  NODE_IMPL_CORE(ReturnStmt)
-};
+    std::string_view get_value() const;
 
-class ReturnIfStmt : public FlowStmt {
- protected:
-  Expr *m_cond;
-  Expr *m_value;
+    NODE_IMPL_CORE(ConstInt)
+  };
 
- public:
-  ReturnIfStmt(Expr *cond = nullptr, Expr *value = nullptr)
-      : m_cond(cond), m_value(value) {}
-  virtual ~ReturnIfStmt() override = default;
+  class ConstFloat : public LitExpr {
+    std::string_view m_value;
 
-  Expr *get_cond() const;
-  void set_cond(Expr *cond);
+public:
+    ConstFloat(std::string_view value = "") : m_value(value) {}
+    ConstFloat(double value) : m_value(std::to_string(value)) {}
+    virtual ~ConstFloat() override = default;
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+    std::string_view get_value() const;
 
-  NODE_IMPL_CORE(ReturnIfStmt)
-};
+    NODE_IMPL_CORE(ConstFloat)
+  };
 
-class RetZStmt : public FlowStmt {
- protected:
-  Expr *m_cond;
-  Expr *m_value;
+  class ConstBool : public LitExpr {
+    bool m_value;
 
- public:
-  RetZStmt(Expr *cond = nullptr, Expr *value = nullptr)
-      : m_cond(cond), m_value(value) {}
-  virtual ~RetZStmt() override = default;
+public:
+    ConstBool(bool value = false) : m_value(value) {}
+    virtual ~ConstBool() override = default;
 
-  Expr *get_cond() const;
-  void set_cond(Expr *cond);
+    bool get_value() const;
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+    NODE_IMPL_CORE(ConstBool)
+  };
 
-  NODE_IMPL_CORE(RetZStmt)
-};
+  class ConstString : public LitExpr {
+    std::string_view m_value;
 
-class RetVStmt : public FlowStmt {
- protected:
-  Expr *m_value;
+public:
+    ConstString(std::string_view value = "") : m_value(value) {}
+    virtual ~ConstString() override = default;
 
- public:
-  RetVStmt(Expr *value = nullptr) : m_value(value) {}
-  virtual ~RetVStmt() override = default;
+    std::string_view get_value() const;
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+    NODE_IMPL_CORE(ConstString)
+  };
 
-  NODE_IMPL_CORE(RetVStmt)
-};
+  class ConstChar : public LitExpr {
+    std::string_view m_value;
 
-class CaseStmt : public FlowStmt {
- protected:
-  Expr *m_cond;
-  Stmt *m_body;
+public:
+    ConstChar(std::string_view value = "") : m_value(value) {}
+    virtual ~ConstChar() override = default;
 
- public:
-  CaseStmt(Expr *cond = nullptr, Stmt *body = nullptr)
-      : m_cond(cond), m_body(body) {}
-  virtual ~CaseStmt() override = default;
+    std::string_view get_value() const;
 
-  Expr *get_cond() const;
-  void set_cond(Expr *cond);
+    NODE_IMPL_CORE(ConstChar)
+  };
 
-  Stmt *get_body() const;
-  void set_body(Stmt *body);
+  class ConstNull : public LitExpr {
+public:
+    ConstNull() = default;
+    virtual ~ConstNull() override = default;
 
-  NODE_IMPL_CORE(CaseStmt)
-};
+    NODE_IMPL_CORE(ConstNull)
+  };
 
-class SwitchStmt : public FlowStmt {
- protected:
-  Expr *m_cond;
-  std::vector<CaseStmt *, Arena<CaseStmt *>> m_cases;
+  class ConstUndef : public LitExpr {
+public:
+    ConstUndef() = default;
+    virtual ~ConstUndef() override = default;
 
- public:
-  SwitchStmt(Expr *cond = nullptr, std::initializer_list<CaseStmt *> cases = {})
-      : m_cond(cond), m_cases(cases) {}
-  SwitchStmt(Expr *cond,
-             const std::vector<CaseStmt *, Arena<CaseStmt *>> &cases)
-      : m_cond(cond), m_cases(cases) {}
-  virtual ~SwitchStmt() override = default;
+    NODE_IMPL_CORE(ConstUndef)
+  };
 
-  Expr *get_cond() const;
-  void set_cond(Expr *cond);
+  ///=============================================================================
 
-  const std::vector<CaseStmt *, Arena<CaseStmt *>> &get_cases() const;
-  void add_case(CaseStmt *case_);
-  void add_cases(std::initializer_list<CaseStmt *> cases);
-  void clear_cases();
-  void remove_case(CaseStmt *case_);
+  typedef std::pair<const std::string_view, Expr *> CallArg;
+  typedef std::map<std::string_view, Expr *, std::less<std::string_view>, Arena<CallArg>> CallArgs;
 
-  NODE_IMPL_CORE(SwitchStmt)
-};
+  class Call : public Expr {
+protected:
+    Expr *m_func;
+    CallArgs m_args;
 
-///=============================================================================
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
 
-class TypedefStmt : public Decl {
- protected:
-  virtual Type *infer_type_impl() const override final;
+public:
+    Call(Expr *func = nullptr, CallArgs args = {}) : m_func(func), m_args(args) {}
+    virtual ~Call() override = default;
 
- public:
-  TypedefStmt(std::string_view name = "", Type *type = nullptr)
-      : Decl(name, type) {}
-  virtual ~TypedefStmt() override = default;
+    Expr *get_func() const;
+    void set_func(Expr *func);
 
-  NODE_IMPL_CORE(TypedefStmt)
-};
+    const CallArgs &get_args() const;
+    void add_arg(std::string_view name, Expr *arg);
+    void add_args(std::map<std::string_view, Expr *> args);
+    void clear_args();
+    void remove_arg(std::string_view name);
 
-class FnDecl : public Decl {
- protected:
-  virtual Type *infer_type_impl() const override final;
+    NODE_IMPL_CORE(Call)
+  };
 
- public:
-  FnDecl(std::string_view name = "", FuncTy *type = nullptr)
-      : Decl(name, type) {}
-  virtual ~FnDecl() override = default;
+  typedef std::vector<Expr *, Arena<Expr *>> ListData;
 
-  virtual FuncTy *get_type() const override;
+  class List : public Expr {
+protected:
+    ListData m_items;
 
-  NODE_IMPL_CORE(FnDecl)
-};
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
 
-class FnDef : public FnDecl {
- protected:
-  Stmt *m_body;
+public:
+    List(std::initializer_list<Expr *> items = {}) : m_items(items) {}
+    List(const ListData &items) : m_items(items) {}
+    virtual ~List() override = default;
 
- public:
-  FnDef(std::string_view name = "", FuncTy *type = nullptr,
-        Stmt *body = nullptr)
-      : FnDecl(name, type), m_body(body) {}
-  virtual ~FnDef() override = default;
+    const ListData &get_items() const;
+    void add_item(Expr *item);
+    void add_items(std::initializer_list<Expr *> items);
+    void clear_items();
+    void remove_item(Expr *item);
 
-  std::string_view get_name() const;
-  void set_name(std::string_view name);
+    NODE_IMPL_CORE(List)
+  };
 
-  Stmt *get_body() const;
-  void set_body(Stmt *body);
+  class Assoc : public Expr {
+protected:
+    Expr *m_key;
+    Expr *m_value;
 
-  NODE_IMPL_CORE(FnDef)
-};
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
 
-class CompositeField : public Decl {
- protected:
-  Expr *m_value;
+public:
+    Assoc(Expr *key = nullptr, Expr *value = nullptr) : m_key(key), m_value(value) {}
+    virtual ~Assoc() override = default;
 
-  virtual Type *infer_type_impl() const override final;
+    Expr *get_key() const;
+    void set_key(Expr *key);
 
- public:
-  CompositeField(std::string_view name = "", Type *type = nullptr,
-                 Expr *value = nullptr)
-      : Decl(name, type), m_value(value) {}
-  virtual ~CompositeField() override = default;
+    Expr *get_value() const;
+    void set_value(Expr *value);
 
-  Expr *get_value() const;
-  void set_value(Expr *value);
+    NODE_IMPL_CORE(Assoc)
+  };
 
-  NODE_IMPL_CORE(CompositeField)
-};
+  class Field : public Expr {
+protected:
+    Expr *m_base;
+    std::string_view m_field;
 
-class StructDef : public Decl {
- protected:
-  std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
-  std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
-  std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
 
-  virtual Type *infer_type_impl() const override final;
+public:
+    Field(Expr *base = nullptr, std::string_view field = "") : m_base(base), m_field(field) {}
+    virtual ~Field() override = default;
 
- public:
-  StructDef(std::string_view name = "", StructTy *type = nullptr,
-            std::initializer_list<CompositeField *> fields = {},
-            std::initializer_list<FnDecl *> methods = {},
-            std::initializer_list<FnDecl *> static_methods = {})
-      : Decl(name, type),
-        m_methods(methods),
-        m_static_methods(static_methods),
-        m_fields(fields) {}
-  StructDef(
-      std::string_view name, StructTy *type,
-      const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
-      const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
-      const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
-      : Decl(name, type),
-        m_methods(methods),
-        m_static_methods(static_methods),
-        m_fields(fields) {}
-  virtual ~StructDef() override = default;
-
-  virtual StructTy *get_type() const override;
-
-  const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
-  void add_method(FnDecl *method);
-  void add_methods(std::initializer_list<FnDecl *> methods);
-  void clear_methods();
-  void remove_method(FnDecl *method);
-
-  const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
-  void add_static_method(FnDecl *method);
-  void add_static_methods(std::initializer_list<FnDecl *> methods);
-  void clear_static_methods();
-  void remove_static_method(FnDecl *method);
-
-  const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields()
-      const;
-  void add_field(CompositeField *field);
-  void add_fields(std::initializer_list<CompositeField *> fields);
-  void clear_fields();
-  void remove_field(CompositeField *field);
-
-  NODE_IMPL_CORE(StructDef)
-};
-
-class GroupDef : public Decl {
- protected:
-  std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
-  std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
-  std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
-
-  virtual Type *infer_type_impl() const override final;
-
- public:
-  GroupDef(std::string_view name = "", GroupTy *type = nullptr,
-           std::initializer_list<CompositeField *> fields = {},
-           std::initializer_list<FnDecl *> methods = {},
-           std::initializer_list<FnDecl *> static_methods = {})
-      : Decl(name, type),
-        m_methods(methods),
-        m_static_methods(static_methods),
-        m_fields(fields) {}
-  GroupDef(std::string_view name, GroupTy *type,
-           const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
-           const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
-           const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
-      : Decl(name, type),
-        m_methods(methods),
-        m_static_methods(static_methods),
-        m_fields(fields) {}
-  virtual ~GroupDef() override = default;
-
-  virtual GroupTy *get_type() const override;
-
-  const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
-  void add_method(FnDecl *method);
-  void add_methods(std::initializer_list<FnDecl *> methods);
-  void clear_methods();
-  void remove_method(FnDecl *method);
-
-  const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
-  void add_static_method(FnDecl *method);
-  void add_static_methods(std::initializer_list<FnDecl *> methods);
-  void clear_static_methods();
-  void remove_static_method(FnDecl *method);
-
-  const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields()
-      const;
-  void add_field(CompositeField *field);
-  void add_fields(std::initializer_list<CompositeField *> fields);
-  void clear_fields();
-  void remove_field(CompositeField *field);
-
-  NODE_IMPL_CORE(GroupDef);
-};
-
-class RegionDef : public Decl {
- protected:
-  std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
-  std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
-  std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
-
-  virtual Type *infer_type_impl() const override final;
-
- public:
-  RegionDef(std::string_view name = "", RegionTy *type = nullptr,
-            std::initializer_list<CompositeField *> fields = {},
-            std::initializer_list<FnDecl *> methods = {},
-            std::initializer_list<FnDecl *> static_methods = {})
-      : Decl(name, type),
-        m_methods(methods),
-        m_static_methods(static_methods),
-        m_fields(fields) {}
-  RegionDef(
-      std::string_view name, RegionTy *type,
-      const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
-      const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
-      const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
-      : Decl(name, type),
-        m_methods(methods),
-        m_static_methods(static_methods),
-        m_fields(fields) {}
-  virtual ~RegionDef() override = default;
-
-  virtual RegionTy *get_type() const override;
-
-  const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
-  void add_method(FnDecl *method);
-  void add_methods(std::initializer_list<FnDecl *> methods);
-  void clear_methods();
-  void remove_method(FnDecl *method);
-
-  const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
-  void add_static_method(FnDecl *method);
-  void add_static_methods(std::initializer_list<FnDecl *> methods);
-  void clear_static_methods();
-  void remove_static_method(FnDecl *method);
-
-  const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields()
-      const;
-  void add_field(CompositeField *field);
-  void add_fields(std::initializer_list<CompositeField *> fields);
-  void clear_fields();
-  void remove_field(CompositeField *field);
-
-  NODE_IMPL_CORE(RegionDef);
-};
-
-class UnionDef : public Decl {
- protected:
-  std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
-  std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
-  std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
-
-  virtual Type *infer_type_impl() const override final;
-
- public:
-  UnionDef(std::string_view name = "", UnionTy *type = nullptr,
-           std::initializer_list<CompositeField *> fields = {},
-           std::initializer_list<FnDecl *> methods = {},
-           std::initializer_list<FnDecl *> static_methods = {})
-      : Decl(name, type),
-        m_methods(methods),
-        m_static_methods(static_methods),
-        m_fields(fields) {}
-  UnionDef(std::string_view name, UnionTy *type,
-           const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
-           const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
-           const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
-      : Decl(name, type),
-        m_methods(methods),
-        m_static_methods(static_methods),
-        m_fields(fields) {}
-  virtual ~UnionDef() override = default;
-
-  virtual UnionTy *get_type() const override;
-
-  const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
-  void add_method(FnDecl *method);
-  void add_methods(std::initializer_list<FnDecl *> methods);
-  void clear_methods();
-  void remove_method(FnDecl *method);
-
-  const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
-  void add_static_method(FnDecl *method);
-  void add_static_methods(std::initializer_list<FnDecl *> methods);
-  void clear_static_methods();
-  void remove_static_method(FnDecl *method);
-
-  const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields()
-      const;
-  void add_field(CompositeField *field);
-  void add_fields(std::initializer_list<CompositeField *> fields);
-  void clear_fields();
-  void remove_field(CompositeField *field);
-
-  NODE_IMPL_CORE(RegionDef);
-};
-
-typedef std::pair<std::string_view, Type *> EnumItem;
-
-class EnumDef : public Decl {
- protected:
-  std::vector<EnumItem, Arena<EnumItem>> m_items;
-
-  virtual Type *infer_type_impl() const override final;
-
- public:
-  EnumDef(std::string_view name = "", EnumTy *type = nullptr,
-          std::initializer_list<EnumItem> items = {})
-      : Decl(name, type), m_items(items) {}
-  EnumDef(std::string_view name, EnumTy *type,
-          const std::vector<EnumItem, Arena<EnumItem>> &items)
-      : Decl(name, type), m_items(items) {}
-  virtual ~EnumDef() override = default;
-
-  virtual EnumTy *get_type() const override;
-
-  const std::vector<EnumItem, Arena<EnumItem>> &get_items() const;
-  void add_item(EnumItem item);
-  void add_items(std::initializer_list<EnumItem> items);
-  void clear_items();
-  void remove_item(EnumItem item);
-
-  NODE_IMPL_CORE(EnumDef)
-};
-
-}  // namespace libquixcc::qast
-
-#endif  // __QUIXCC_QAST_NODES_H__
+    Expr *get_base() const;
+    void set_base(Expr *base);
+
+    std::string_view get_field() const;
+    void set_field(std::string_view field);
+
+    NODE_IMPL_CORE(Field)
+  };
+
+  class Index : public Expr {
+protected:
+    Expr *m_base;
+    Expr *m_index;
+
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
+
+public:
+    Index(Expr *base = nullptr, Expr *index = nullptr) : m_base(base), m_index(index) {}
+    virtual ~Index() override = default;
+
+    Expr *get_base() const;
+    void set_base(Expr *base);
+
+    Expr *get_index() const;
+    void set_index(Expr *index);
+
+    NODE_IMPL_CORE(Index)
+  };
+
+  class Slice : public Expr {
+protected:
+    Expr *m_base;
+    Expr *m_start;
+    Expr *m_end;
+
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
+
+public:
+    Slice(Expr *base = nullptr, Expr *start = nullptr, Expr *end = nullptr)
+        : m_base(base), m_start(start), m_end(end) {}
+    virtual ~Slice() override = default;
+
+    Expr *get_base() const;
+    void set_base(Expr *base);
+
+    Expr *get_start() const;
+    void set_start(Expr *start);
+
+    Expr *get_end() const;
+    void set_end(Expr *end);
+
+    NODE_IMPL_CORE(Slice)
+  };
+
+  typedef std::vector<Expr *, Arena<Expr *>> FStringArgs;
+
+  class FString : public Expr {
+protected:
+    std::string_view m_value;
+    FStringArgs m_items;
+
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
+
+public:
+    FString(std::string_view value = "", std::initializer_list<Expr *> items = {})
+        : m_value(value), m_items(items) {}
+    FString(std::string_view value, const FStringArgs &items) : m_value(value), m_items(items) {}
+    virtual ~FString() override = default;
+
+    std::string_view get_value() const;
+    void set_value(std::string_view value);
+
+    const FStringArgs &get_items() const;
+    void add_item(Expr *item);
+    void add_items(std::initializer_list<Expr *> items);
+    void clear_items();
+    void remove_item(Expr *item);
+
+    NODE_IMPL_CORE(FString)
+  };
+
+  class Ident : public Expr {
+    std::string_view m_name;
+
+    virtual Type *infer_type_impl() const override final;
+    virtual bool is_const_impl() const override final;
+    virtual bool is_stochastic_impl() const override final;
+
+public:
+    Ident(std::string_view name = "") : m_name(name) {}
+    virtual ~Ident() override = default;
+
+    std::string_view get_name() const;
+    void set_name(std::string_view name);
+
+    NODE_IMPL_CORE(Ident)
+  };
+
+  ///=============================================================================
+
+  typedef std::vector<Stmt *, Arena<Stmt *>> BlockItems;
+  class Block : public Stmt {
+protected:
+    BlockItems m_items;
+
+public:
+    Block(std::initializer_list<Stmt *> items = {}) : m_items(items) {}
+    Block(const BlockItems &items) : m_items(items) {}
+    virtual ~Block() override = default;
+
+    const BlockItems &get_items() const;
+    void add_item(Stmt *item);
+    void add_items(std::initializer_list<Stmt *> items);
+    void clear_items();
+    void remove_item(Stmt *item);
+
+    NODE_IMPL_CORE(Block)
+  };
+
+  class ConstDecl : public Decl {
+protected:
+    Expr *m_value;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    ConstDecl(std::string_view name = "", Type *type = nullptr, Expr *value = nullptr)
+        : Decl(name, type), m_value(value) {}
+    virtual ~ConstDecl() override = default;
+
+    Expr *get_value() const;
+    void set_value(Expr *value);
+
+    NODE_IMPL_CORE(ConstDecl)
+  };
+
+  class VarDecl : public Decl {
+protected:
+    Expr *m_value;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    VarDecl(std::string_view name = "", Type *type = nullptr, Expr *value = nullptr)
+        : Decl(name, type), m_value(value) {}
+    virtual ~VarDecl() override = default;
+
+    Expr *get_value() const;
+    void set_value(Expr *value);
+
+    NODE_IMPL_CORE(VarDecl)
+  };
+
+  class LetDecl : public Decl {
+protected:
+    Expr *m_value;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    LetDecl(std::string_view name = "", Type *type = nullptr, Expr *value = nullptr)
+        : Decl(name, type), m_value(value) {}
+    virtual ~LetDecl() override = default;
+
+    Expr *get_value() const;
+    void set_value(Expr *value);
+
+    NODE_IMPL_CORE(LetDecl)
+  };
+
+  class InlineAsm : public Stmt {
+protected:
+    std::string_view m_code;
+    std::vector<Expr *, Arena<Expr *>> m_args;
+
+public:
+    InlineAsm(std::string_view code = "", std::initializer_list<Expr *> args = {})
+        : m_code(code), m_args(args) {}
+    InlineAsm(std::string_view code, const std::vector<Expr *, Arena<Expr *>> &args)
+        : m_code(code), m_args(args) {}
+    virtual ~InlineAsm() override = default;
+
+    std::string_view get_code() const;
+    void set_code(std::string_view code);
+
+    const std::vector<Expr *, Arena<Expr *>> &get_args() const;
+    void add_arg(Expr *arg);
+    void add_args(std::initializer_list<Expr *> args);
+    void clear_args();
+    void remove_arg(Expr *arg);
+
+    NODE_IMPL_CORE(InlineAsm)
+  };
+
+  class IfStmt : public FlowStmt {
+protected:
+    Expr *m_cond;
+    Stmt *m_then;
+    Stmt *m_else;
+
+public:
+    IfStmt(Expr *cond = nullptr, Stmt *then = nullptr, Stmt *else_ = nullptr)
+        : m_cond(cond), m_then(then), m_else(else_) {}
+    virtual ~IfStmt() override = default;
+
+    Expr *get_cond() const;
+    void set_cond(Expr *cond);
+
+    Stmt *get_then() const;
+    void set_then(Stmt *then);
+
+    Stmt *get_else() const;
+    void set_else(Stmt *else_);
+
+    NODE_IMPL_CORE(IfStmt)
+  };
+
+  class WhileStmt : public FlowStmt {
+protected:
+    Expr *m_cond;
+    Stmt *m_body;
+
+public:
+    WhileStmt(Expr *cond = nullptr, Stmt *body = nullptr) : m_cond(cond), m_body(body) {}
+    virtual ~WhileStmt() override = default;
+
+    Expr *get_cond() const;
+    void set_cond(Expr *cond);
+
+    Stmt *get_body() const;
+    void set_body(Stmt *body);
+
+    NODE_IMPL_CORE(WhileStmt)
+  };
+
+  class ForStmt : public FlowStmt {
+protected:
+    Stmt *m_init;
+    Expr *m_cond;
+    Stmt *m_step;
+    Stmt *m_body;
+
+public:
+    ForStmt(Stmt *init = nullptr, Expr *cond = nullptr, Stmt *step = nullptr, Stmt *body = nullptr)
+        : m_init(init), m_cond(cond), m_step(step), m_body(body) {}
+    virtual ~ForStmt() override = default;
+
+    Stmt *get_init() const;
+    void set_init(Stmt *init);
+
+    Expr *get_cond() const;
+    void set_cond(Expr *cond);
+
+    Stmt *get_step() const;
+    void set_step(Stmt *step);
+
+    Stmt *get_body() const;
+    void set_body(Stmt *body);
+
+    NODE_IMPL_CORE(ForStmt)
+  };
+
+  class FormStmt : public FlowStmt {
+protected:
+    Expr *m_init;
+    Expr *m_generator;
+    Stmt *m_body;
+
+public:
+    FormStmt(Expr *init = nullptr, Expr *generator = nullptr, Stmt *body = nullptr)
+        : m_init(init), m_generator(generator), m_body(body) {}
+    virtual ~FormStmt() override = default;
+
+    Expr *get_init() const;
+    void set_init(Expr *init);
+
+    Expr *get_generator() const;
+    void set_generator(Expr *generator);
+
+    Stmt *get_body() const;
+    void set_body(Stmt *body);
+
+    NODE_IMPL_CORE(FormStmt)
+  };
+
+  class ForeachStmt : public FlowStmt {
+protected:
+    std::string_view m_name;
+    Expr *m_iter;
+    Stmt *m_body;
+
+public:
+    ForeachStmt(std::string_view name = "", Expr *iter = nullptr, Stmt *body = nullptr)
+        : m_name(name), m_iter(iter), m_body(body) {}
+    virtual ~ForeachStmt() override = default;
+
+    std::string_view get_name() const;
+    void set_name(std::string_view name);
+
+    Expr *get_iter() const;
+    void set_iter(Expr *iter);
+
+    Stmt *get_body() const;
+    void set_body(Stmt *body);
+
+    NODE_IMPL_CORE(ForeachStmt)
+  };
+
+  class BreakStmt : public FlowStmt {
+public:
+    BreakStmt() = default;
+    virtual ~BreakStmt() override = default;
+
+    NODE_IMPL_CORE(BreakStmt)
+  };
+
+  class ContinueStmt : public FlowStmt {
+public:
+    ContinueStmt() = default;
+    virtual ~ContinueStmt() override = default;
+
+    NODE_IMPL_CORE(ContinueStmt)
+  };
+
+  class ReturnStmt : public FlowStmt {
+protected:
+    Expr *m_value;
+
+public:
+    ReturnStmt(Expr *value = nullptr) : m_value(value) {}
+    virtual ~ReturnStmt() override = default;
+
+    Expr *get_value() const;
+    void set_value(Expr *value);
+
+    NODE_IMPL_CORE(ReturnStmt)
+  };
+
+  class ReturnIfStmt : public FlowStmt {
+protected:
+    Expr *m_cond;
+    Expr *m_value;
+
+public:
+    ReturnIfStmt(Expr *cond = nullptr, Expr *value = nullptr) : m_cond(cond), m_value(value) {}
+    virtual ~ReturnIfStmt() override = default;
+
+    Expr *get_cond() const;
+    void set_cond(Expr *cond);
+
+    Expr *get_value() const;
+    void set_value(Expr *value);
+
+    NODE_IMPL_CORE(ReturnIfStmt)
+  };
+
+  class RetZStmt : public FlowStmt {
+protected:
+    Expr *m_cond;
+    Expr *m_value;
+
+public:
+    RetZStmt(Expr *cond = nullptr, Expr *value = nullptr) : m_cond(cond), m_value(value) {}
+    virtual ~RetZStmt() override = default;
+
+    Expr *get_cond() const;
+    void set_cond(Expr *cond);
+
+    Expr *get_value() const;
+    void set_value(Expr *value);
+
+    NODE_IMPL_CORE(RetZStmt)
+  };
+
+  class RetVStmt : public FlowStmt {
+protected:
+    Expr *m_value;
+
+public:
+    RetVStmt(Expr *value = nullptr) : m_value(value) {}
+    virtual ~RetVStmt() override = default;
+
+    Expr *get_value() const;
+    void set_value(Expr *value);
+
+    NODE_IMPL_CORE(RetVStmt)
+  };
+
+  class CaseStmt : public FlowStmt {
+protected:
+    Expr *m_cond;
+    Stmt *m_body;
+
+public:
+    CaseStmt(Expr *cond = nullptr, Stmt *body = nullptr) : m_cond(cond), m_body(body) {}
+    virtual ~CaseStmt() override = default;
+
+    Expr *get_cond() const;
+    void set_cond(Expr *cond);
+
+    Stmt *get_body() const;
+    void set_body(Stmt *body);
+
+    NODE_IMPL_CORE(CaseStmt)
+  };
+
+  class SwitchStmt : public FlowStmt {
+protected:
+    Expr *m_cond;
+    std::vector<CaseStmt *, Arena<CaseStmt *>> m_cases;
+
+public:
+    SwitchStmt(Expr *cond = nullptr, std::initializer_list<CaseStmt *> cases = {})
+        : m_cond(cond), m_cases(cases) {}
+    SwitchStmt(Expr *cond, const std::vector<CaseStmt *, Arena<CaseStmt *>> &cases)
+        : m_cond(cond), m_cases(cases) {}
+    virtual ~SwitchStmt() override = default;
+
+    Expr *get_cond() const;
+    void set_cond(Expr *cond);
+
+    const std::vector<CaseStmt *, Arena<CaseStmt *>> &get_cases() const;
+    void add_case(CaseStmt *case_);
+    void add_cases(std::initializer_list<CaseStmt *> cases);
+    void clear_cases();
+    void remove_case(CaseStmt *case_);
+
+    NODE_IMPL_CORE(SwitchStmt)
+  };
+
+  ///=============================================================================
+
+  class TypedefStmt : public Decl {
+protected:
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    TypedefStmt(std::string_view name = "", Type *type = nullptr) : Decl(name, type) {}
+    virtual ~TypedefStmt() override = default;
+
+    NODE_IMPL_CORE(TypedefStmt)
+  };
+
+  class FnDecl : public Decl {
+protected:
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    FnDecl(std::string_view name = "", FuncTy *type = nullptr) : Decl(name, type) {}
+    virtual ~FnDecl() override = default;
+
+    virtual FuncTy *get_type() const override;
+
+    NODE_IMPL_CORE(FnDecl)
+  };
+
+  class FnDef : public FnDecl {
+protected:
+    Stmt *m_body;
+
+public:
+    FnDef(std::string_view name = "", FuncTy *type = nullptr, Stmt *body = nullptr)
+        : FnDecl(name, type), m_body(body) {}
+    virtual ~FnDef() override = default;
+
+    std::string_view get_name() const;
+    void set_name(std::string_view name);
+
+    Stmt *get_body() const;
+    void set_body(Stmt *body);
+
+    NODE_IMPL_CORE(FnDef)
+  };
+
+  class CompositeField : public Decl {
+protected:
+    Expr *m_value;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    CompositeField(std::string_view name = "", Type *type = nullptr, Expr *value = nullptr)
+        : Decl(name, type), m_value(value) {}
+    virtual ~CompositeField() override = default;
+
+    Expr *get_value() const;
+    void set_value(Expr *value);
+
+    NODE_IMPL_CORE(CompositeField)
+  };
+
+  class StructDef : public Decl {
+protected:
+    std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
+    std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
+    std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    StructDef(std::string_view name = "", StructTy *type = nullptr,
+              std::initializer_list<CompositeField *> fields = {},
+              std::initializer_list<FnDecl *> methods = {},
+              std::initializer_list<FnDecl *> static_methods = {})
+        : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
+    }
+    StructDef(std::string_view name, StructTy *type,
+              const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
+              const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
+              const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+        : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
+    }
+    virtual ~StructDef() override = default;
+
+    virtual StructTy *get_type() const override;
+
+    const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+    void add_method(FnDecl *method);
+    void add_methods(std::initializer_list<FnDecl *> methods);
+    void clear_methods();
+    void remove_method(FnDecl *method);
+
+    const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+    void add_static_method(FnDecl *method);
+    void add_static_methods(std::initializer_list<FnDecl *> methods);
+    void clear_static_methods();
+    void remove_static_method(FnDecl *method);
+
+    const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields() const;
+    void add_field(CompositeField *field);
+    void add_fields(std::initializer_list<CompositeField *> fields);
+    void clear_fields();
+    void remove_field(CompositeField *field);
+
+    NODE_IMPL_CORE(StructDef)
+  };
+
+  class GroupDef : public Decl {
+protected:
+    std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
+    std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
+    std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    GroupDef(std::string_view name = "", GroupTy *type = nullptr,
+             std::initializer_list<CompositeField *> fields = {},
+             std::initializer_list<FnDecl *> methods = {},
+             std::initializer_list<FnDecl *> static_methods = {})
+        : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
+    }
+    GroupDef(std::string_view name, GroupTy *type,
+             const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
+             const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
+             const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+        : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
+    }
+    virtual ~GroupDef() override = default;
+
+    virtual GroupTy *get_type() const override;
+
+    const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+    void add_method(FnDecl *method);
+    void add_methods(std::initializer_list<FnDecl *> methods);
+    void clear_methods();
+    void remove_method(FnDecl *method);
+
+    const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+    void add_static_method(FnDecl *method);
+    void add_static_methods(std::initializer_list<FnDecl *> methods);
+    void clear_static_methods();
+    void remove_static_method(FnDecl *method);
+
+    const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields() const;
+    void add_field(CompositeField *field);
+    void add_fields(std::initializer_list<CompositeField *> fields);
+    void clear_fields();
+    void remove_field(CompositeField *field);
+
+    NODE_IMPL_CORE(GroupDef);
+  };
+
+  class RegionDef : public Decl {
+protected:
+    std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
+    std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
+    std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    RegionDef(std::string_view name = "", RegionTy *type = nullptr,
+              std::initializer_list<CompositeField *> fields = {},
+              std::initializer_list<FnDecl *> methods = {},
+              std::initializer_list<FnDecl *> static_methods = {})
+        : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
+    }
+    RegionDef(std::string_view name, RegionTy *type,
+              const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
+              const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
+              const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+        : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
+    }
+    virtual ~RegionDef() override = default;
+
+    virtual RegionTy *get_type() const override;
+
+    const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+    void add_method(FnDecl *method);
+    void add_methods(std::initializer_list<FnDecl *> methods);
+    void clear_methods();
+    void remove_method(FnDecl *method);
+
+    const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+    void add_static_method(FnDecl *method);
+    void add_static_methods(std::initializer_list<FnDecl *> methods);
+    void clear_static_methods();
+    void remove_static_method(FnDecl *method);
+
+    const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields() const;
+    void add_field(CompositeField *field);
+    void add_fields(std::initializer_list<CompositeField *> fields);
+    void clear_fields();
+    void remove_field(CompositeField *field);
+
+    NODE_IMPL_CORE(RegionDef);
+  };
+
+  class UnionDef : public Decl {
+protected:
+    std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
+    std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
+    std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    UnionDef(std::string_view name = "", UnionTy *type = nullptr,
+             std::initializer_list<CompositeField *> fields = {},
+             std::initializer_list<FnDecl *> methods = {},
+             std::initializer_list<FnDecl *> static_methods = {})
+        : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
+    }
+    UnionDef(std::string_view name, UnionTy *type,
+             const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
+             const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
+             const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+        : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
+    }
+    virtual ~UnionDef() override = default;
+
+    virtual UnionTy *get_type() const override;
+
+    const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+    void add_method(FnDecl *method);
+    void add_methods(std::initializer_list<FnDecl *> methods);
+    void clear_methods();
+    void remove_method(FnDecl *method);
+
+    const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+    void add_static_method(FnDecl *method);
+    void add_static_methods(std::initializer_list<FnDecl *> methods);
+    void clear_static_methods();
+    void remove_static_method(FnDecl *method);
+
+    const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields() const;
+    void add_field(CompositeField *field);
+    void add_fields(std::initializer_list<CompositeField *> fields);
+    void clear_fields();
+    void remove_field(CompositeField *field);
+
+    NODE_IMPL_CORE(RegionDef);
+  };
+
+  typedef std::pair<std::string_view, Type *> EnumItem;
+
+  class EnumDef : public Decl {
+protected:
+    std::vector<EnumItem, Arena<EnumItem>> m_items;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    EnumDef(std::string_view name = "", EnumTy *type = nullptr,
+            std::initializer_list<EnumItem> items = {})
+        : Decl(name, type), m_items(items) {}
+    EnumDef(std::string_view name, EnumTy *type,
+            const std::vector<EnumItem, Arena<EnumItem>> &items)
+        : Decl(name, type), m_items(items) {}
+    virtual ~EnumDef() override = default;
+
+    virtual EnumTy *get_type() const override;
+
+    const std::vector<EnumItem, Arena<EnumItem>> &get_items() const;
+    void add_item(EnumItem item);
+    void add_items(std::initializer_list<EnumItem> items);
+    void clear_items();
+    void remove_item(EnumItem item);
+
+    NODE_IMPL_CORE(EnumDef)
+  };
+
+} // namespace libquixcc::qast
+
+#endif // __QUIXCC_QAST_NODES_H__

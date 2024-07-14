@@ -42,69 +42,67 @@
 #include <quixcc/IR/Q/Variable.h>
 
 namespace libquixcc::ir::q {
-class Call : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Call : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Call(Global *func, std::vector<Expr *> args) : func(func), args(args) {
-    ntype = (int)QType::Call;
-  }
+    Call(Global *func, std::vector<Expr *> args) : func(func), args(args) {
+      ntype = (int)QType::Call;
+    }
 
- public:
-  static Call *create(Global *func, std::vector<Expr *> args);
-  Type *infer() const override;
+public:
+    static Call *create(Global *func, std::vector<Expr *> args);
+    Type *infer() const override;
 
-  Global *func;
-  std::vector<Expr *> args;
-};
+    Global *func;
+    std::vector<Expr *> args;
+  };
 
-class CallIndirect : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class CallIndirect : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  CallIndirect(Segment *exprfunc, std::vector<Expr *> args)
-      : exprfunc(exprfunc), args(args) {
-    ntype = (int)QType::CallIndirect;
-  }
+    CallIndirect(Segment *exprfunc, std::vector<Expr *> args) : exprfunc(exprfunc), args(args) {
+      ntype = (int)QType::CallIndirect;
+    }
 
- public:
-  static CallIndirect *create(Segment *exprfunc, std::vector<Expr *> args);
-  Type *infer() const override;
+public:
+    static CallIndirect *create(Segment *exprfunc, std::vector<Expr *> args);
+    Type *infer() const override;
 
-  Segment *exprfunc;
-  std::vector<Expr *> args;
-};
+    Segment *exprfunc;
+    std::vector<Expr *> args;
+  };
 
-enum class QIntrinsic {
-  Malloc,
-  Free,
+  enum class QIntrinsic {
+    Malloc,
+    Free,
 
-  ToString,
-};
+    ToString,
+  };
 
-class IntrinsicCall : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class IntrinsicCall : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  IntrinsicCall(QIntrinsic name, std::vector<Expr *> args)
-      : name(name), args(args) {
-    ntype = (int)QType::IntrinsicCall;
-  }
+    IntrinsicCall(QIntrinsic name, std::vector<Expr *> args) : name(name), args(args) {
+      ntype = (int)QType::IntrinsicCall;
+    }
 
- public:
-  static IntrinsicCall *create(QIntrinsic name, std::vector<Expr *> args);
-  Type *infer() const override;
+public:
+    static IntrinsicCall *create(QIntrinsic name, std::vector<Expr *> args);
+    Type *infer() const override;
 
-  QIntrinsic name;
-  std::vector<Expr *> args;
-};
+    QIntrinsic name;
+    std::vector<Expr *> args;
+  };
 
-}  // namespace libquixcc::ir::q
+} // namespace libquixcc::ir::q
 
-#endif  // __QUIXCC_IR_Q_NODES_CALL_H__
+#endif // __QUIXCC_IR_Q_NODES_CALL_H__

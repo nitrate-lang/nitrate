@@ -58,4 +58,4 @@
 #include <quixcc/parsetree/nodes/UnionNode.h>
 #include <quixcc/parsetree/nodes/VariableNode.h>
 
-#endif  // __QUIXCC_PARSE_NODES_NODES_H__
+#endif // __QUIXCC_PARSE_NODES_NODES_H__

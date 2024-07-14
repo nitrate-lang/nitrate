@@ -31,50 +31,54 @@
 
 #include <quixcc/IR/Q/Cast.h>
 
-bool libquixcc::ir::q::SCast::print_impl(std::ostream &os,
-                                         PState &state) const {
+bool libquixcc::ir::q::SCast::print_impl(std::ostream &os, PState &state) const {
   os << "scast<";
-  if (!type->print(os, state)) return false;
+  if (!type->print(os, state))
+    return false;
   os << ">(";
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::UCast::print_impl(std::ostream &os,
-                                         PState &state) const {
+bool libquixcc::ir::q::UCast::print_impl(std::ostream &os, PState &state) const {
   os << "ucast<";
-  if (!type->print(os, state)) return false;
+  if (!type->print(os, state))
+    return false;
   os << ">(";
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::PtrICast::print_impl(std::ostream &os,
-                                            PState &state) const {
+bool libquixcc::ir::q::PtrICast::print_impl(std::ostream &os, PState &state) const {
   os << "ptricast(";
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::IPtrCast::print_impl(std::ostream &os,
-                                            PState &state) const {
+bool libquixcc::ir::q::IPtrCast::print_impl(std::ostream &os, PState &state) const {
   os << "iptrcast<";
-  if (!type->print(os, state)) return false;
+  if (!type->print(os, state))
+    return false;
   os << ">(";
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::Bitcast::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::q::Bitcast::print_impl(std::ostream &os, PState &state) const {
   os << "bitcast<";
-  if (!type->print(os, state)) return false;
+  if (!type->print(os, state))
+    return false;
   os << ">(";
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
   os << ")";
   return true;
 }

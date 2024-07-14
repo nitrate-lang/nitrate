@@ -39,30 +39,28 @@
 #include <quixcc/IR/Q/QIR.h>
 
 namespace libquixcc::ir::q {
-class Asm : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Asm : public Value {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Asm(std::string asm_str, std::vector<std::pair<std::string, Value *>> inputs,
-      std::vector<std::pair<std::string, Value *>> outputs,
-      std::vector<std::string> clobbers)
-      : asm_str(asm_str), inputs(inputs), outputs(outputs), clobbers(clobbers) {
-    ntype = (int)QType::Asm;
-  }
+    Asm(std::string asm_str, std::vector<std::pair<std::string, Value *>> inputs,
+        std::vector<std::pair<std::string, Value *>> outputs, std::vector<std::string> clobbers)
+        : asm_str(asm_str), inputs(inputs), outputs(outputs), clobbers(clobbers) {
+      ntype = (int)QType::Asm;
+    }
 
- public:
-  static Asm *create(std::string asm_str,
-                     std::vector<std::pair<std::string, Value *>> inputs,
-                     std::vector<std::pair<std::string, Value *>> outputs,
-                     std::vector<std::string> clobbers);
+public:
+    static Asm *create(std::string asm_str, std::vector<std::pair<std::string, Value *>> inputs,
+                       std::vector<std::pair<std::string, Value *>> outputs,
+                       std::vector<std::string> clobbers);
 
-  std::string asm_str;
-  std::vector<std::pair<std::string, Value *>> inputs;
-  std::vector<std::pair<std::string, Value *>> outputs;
-  std::vector<std::string> clobbers;
-};
-}  // namespace libquixcc::ir::q
+    std::string asm_str;
+    std::vector<std::pair<std::string, Value *>> inputs;
+    std::vector<std::pair<std::string, Value *>> outputs;
+    std::vector<std::string> clobbers;
+  };
+} // namespace libquixcc::ir::q
 
-#endif  // __QUIXCC_IR_Q_NODES_ASM_H__
+#endif // __QUIXCC_IR_Q_NODES_ASM_H__

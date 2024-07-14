@@ -35,14 +35,10 @@
 
 using namespace libquixcc;
 
-std::shared_ptr<BoolLiteralNode> BoolLiteralNode::m_true_instance(
-    new BoolLiteralNode(true));
-std::shared_ptr<BoolLiteralNode> BoolLiteralNode::m_false_instance(
-    new BoolLiteralNode(false));
-std::shared_ptr<NullLiteralNode> NullLiteralNode::m_instance(
-    new NullLiteralNode());
-std::shared_ptr<UndefLiteralNode> UndefLiteralNode::m_instance(
-    new UndefLiteralNode());
+std::shared_ptr<BoolLiteralNode> BoolLiteralNode::m_true_instance(new BoolLiteralNode(true));
+std::shared_ptr<BoolLiteralNode> BoolLiteralNode::m_false_instance(new BoolLiteralNode(false));
+std::shared_ptr<NullLiteralNode> NullLiteralNode::m_instance(new NullLiteralNode());
+std::shared_ptr<UndefLiteralNode> UndefLiteralNode::m_instance(new UndefLiteralNode());
 
 typedef unsigned int uint128_t __attribute__((mode(TI)));
 
@@ -59,7 +55,8 @@ uint128_t stringToUint128(const std::string &str) {
 }
 
 uint8_t get_numbits(std::string s) {
-  if (s == "0" || s == "1") return 1;
+  if (s == "0" || s == "1")
+    return 1;
 
   if (s.find('.') != std::string::npos) {
     float f0;

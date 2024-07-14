@@ -32,8 +32,8 @@
 #include <quixcc/solver/Passes.h>
 #include <quixcc/solver/Solver.h>
 
-bool libquixcc::solver::passes::HashmapIntrinsicSolver(
-    quixcc_cc_job_t &job, libquixcc::solver::passes::qmod ir) {
+bool libquixcc::solver::passes::HashmapIntrinsicSolver(quixcc_cc_job_t &job,
+                                                       libquixcc::solver::passes::qmod ir) {
   (void)job;
   (void)ir;
 

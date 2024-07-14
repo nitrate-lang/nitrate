@@ -40,4 +40,4 @@ extern "C" {
 }
 #endif
 
-#endif  // __QUIXCC_TYPES_QUIXIRNODES_H__
+#endif // __QUIXCC_TYPES_QUIXIRNODES_H__

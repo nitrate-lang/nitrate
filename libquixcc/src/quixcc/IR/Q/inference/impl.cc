@@ -57,8 +57,7 @@ Type *IntrinsicCall::infer() const {
 
   return I32::create();
 
-  throw std::runtime_error(
-      "Codegen failed: Can not perform type inference on IntrinsicCall");
+  throw std::runtime_error("Codegen failed: Can not perform type inference on IntrinsicCall");
 }
 
 Type *SCast::infer() const { return type; }
@@ -67,18 +66,18 @@ Type *UCast::infer() const { return type; }
 
 Type *PtrICast::infer() const {
   switch (Ptr::create(Void::create())->size()) {
-    case 1:
-      return U8::create();
-    case 2:
-      return U16::create();
-    case 4:
-      return U32::create();
-    case 8:
-      return U64::create();
-    case 16:
-      return U128::create();
-    default:
-      throw std::runtime_error("Codegen failed: PtrICast type not supported");
+  case 1:
+    return U8::create();
+  case 2:
+    return U16::create();
+  case 4:
+    return U32::create();
+  case 8:
+    return U64::create();
+  case 16:
+    return U128::create();
+  default:
+    throw std::runtime_error("Codegen failed: PtrICast type not supported");
   }
 }
 
@@ -92,8 +91,8 @@ Type *Segment::infer() const {
     arg_types.push_back(arg.second);
   }
 
-  return FType::create(arg_types, return_type, is_variadic, is_pure,
-                       is_thread_safe, is_foriegn, is_no_throw);
+  return FType::create(arg_types, return_type, is_variadic, is_pure, is_thread_safe, is_foriegn,
+                       is_no_throw);
 }
 
 Type *Ident::infer() const { return type; }
@@ -122,38 +121,51 @@ static Type *do_infer(Type *lhs, Type *rhs) {
       | *           | *           | undefined   |
   */
 
-  if (lhs->is<F64>() || rhs->is<F64>()) return F64::create();
+  if (lhs->is<F64>() || rhs->is<F64>())
+    return F64::create();
 
-  if (lhs->is<F32>() || rhs->is<F32>()) return F32::create();
+  if (lhs->is<F32>() || rhs->is<F32>())
+    return F32::create();
 
-  if (lhs->is<I128>() || rhs->is<I128>()) return I128::create();
+  if (lhs->is<I128>() || rhs->is<I128>())
+    return I128::create();
 
-  if (lhs->is<U128>() || rhs->is<U128>()) return U128::create();
+  if (lhs->is<U128>() || rhs->is<U128>())
+    return U128::create();
 
-  if (lhs->is<I64>() || rhs->is<I64>()) return I64::create();
+  if (lhs->is<I64>() || rhs->is<I64>())
+    return I64::create();
 
-  if (lhs->is<U64>() || rhs->is<U64>()) return U64::create();
+  if (lhs->is<U64>() || rhs->is<U64>())
+    return U64::create();
 
-  if (lhs->is<I32>() || rhs->is<I32>()) return I32::create();
+  if (lhs->is<I32>() || rhs->is<I32>())
+    return I32::create();
 
-  if (lhs->is<U32>() || rhs->is<U32>()) return U32::create();
+  if (lhs->is<U32>() || rhs->is<U32>())
+    return U32::create();
 
-  if (lhs->is<I16>() || rhs->is<I16>()) return I16::create();
+  if (lhs->is<I16>() || rhs->is<I16>())
+    return I16::create();
 
-  if (lhs->is<U16>() || rhs->is<U16>()) return U16::create();
+  if (lhs->is<U16>() || rhs->is<U16>())
+    return U16::create();
 
-  if (lhs->is<I8>() || rhs->is<I8>()) return I8::create();
+  if (lhs->is<I8>() || rhs->is<I8>())
+    return I8::create();
 
-  if (lhs->is<U8>() || rhs->is<U8>()) return U8::create();
+  if (lhs->is<U8>() || rhs->is<U8>())
+    return U8::create();
 
-  if (lhs->is<I1>() || rhs->is<I1>()) return I1::create();
+  if (lhs->is<I1>() || rhs->is<I1>())
+    return I1::create();
 
   if (lhs->is<Ptr>() && rhs->is<Ptr>()) {
-    if (lhs->as<Ptr>()->type->is(rhs->as<Ptr>()->type)) return lhs;
+    if (lhs->as<Ptr>()->type->is(rhs->as<Ptr>()->type))
+      return lhs;
   }
 
-  throw std::runtime_error(
-      "Codegen failed: Binary operation type not supported");
+  throw std::runtime_error("Codegen failed: Binary operation type not supported");
 }
 
 Type *Add::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
@@ -229,53 +241,52 @@ Type *Number::infer() const {
   }
 
   switch (bits) {
-    case 1:
-    case 8:
-    case 16:
-    case 32:
-      return U32::create();
-    case 64:
-      return U64::create();
-    case 128:
-      return U128::create();
-    default:
-      throw std::runtime_error("Codegen failed: Number type not supported");
+  case 1:
+  case 8:
+  case 16:
+  case 32:
+    return U32::create();
+  case 64:
+    return U64::create();
+  case 128:
+    return U128::create();
+  default:
+    throw std::runtime_error("Codegen failed: Number type not supported");
   }
 }
 
 static std::string unqiue_typehash(const std::vector<Type *> &types) {
   auto h = libquixcc::ir::Hasher().gettag();
-  for (auto &type : types) h.add(type);
+  for (auto &type : types)
+    h.add(type);
 
   std::stringstream ss;
   ss << std::hex << std::setfill('0') << std::setw(2);
-  for (auto b : h.hash().data) ss << (int)b;
+  for (auto b : h.hash().data)
+    ss << (int)b;
 
   return ss.str().substr(16);
 }
 
 Type *List::infer() const {
   std::vector<Type *> types;
-  for (auto &elem : values) types.push_back(elem->infer());
+  for (auto &elem : values)
+    types.push_back(elem->infer());
 
   if (types.empty())
-    throw std::runtime_error(
-        "Codegen failed: Can not perform inference on empty list");
+    throw std::runtime_error("Codegen failed: Can not perform inference on empty list");
 
   Type *type = types[0];
 
   for (size_t i = 1; i < types.size(); i++) {
     if (!types[i]->is(type)) {
-      return Region::create("__t" + unqiue_typehash(types) + "_t", types, true,
-                            true);
+      return Region::create("__t" + unqiue_typehash(types) + "_t", types, true, true);
     }
   }
 
   return Array::create(type, values.size());
 }
 
-Type *String::infer() const {
-  return IntrinsicType::create(QIntrinsicType::String);
-}
+Type *String::infer() const { return IntrinsicType::create(QIntrinsicType::String); }
 
 Type *Char::infer() const { return U8::create(); }

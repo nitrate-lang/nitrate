@@ -40,4 +40,4 @@ extern "C" {
 }
 #endif
 
-#endif  // __QUIXCC_TYPES_DELTAIRNODES_H__
+#endif // __QUIXCC_TYPES_DELTAIRNODES_H__

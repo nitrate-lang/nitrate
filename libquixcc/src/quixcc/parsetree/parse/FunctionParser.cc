@@ -103,8 +103,7 @@ static bool fn_get_property(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
   return false;
 }
 
-static bool parse_fn_parameter(quixcc_cc_job_t &job,
-                               libquixcc::Scanner *scanner,
+static bool parse_fn_parameter(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                                std::shared_ptr<FunctionParamNode> &param) {
   /*
    <name> : <type> [?] [= <value>]
@@ -114,8 +113,7 @@ static bool parse_fn_parameter(quixcc_cc_job_t &job,
 
   std::string name;
   if (tok.type() != tName) {
-    LOG(ERROR) << core::feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -139,8 +137,7 @@ static bool parse_fn_parameter(quixcc_cc_job_t &job,
     scanner->next();
 
     std::shared_ptr<ExprNode> value;
-    if (!parse_expr(job, scanner,
-                    {Token(tPunc, Comma), Token(tPunc, CloseParen)}, value)) {
+    if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseParen)}, value)) {
       LOG(ERROR) << core::feedback[FN_PARAM_INIT_ERR] << tok << std::endl;
       return false;
     }
@@ -162,71 +159,61 @@ struct FunctionProperties {
   Purity _purity = Purity::Impure;
 };
 
-static FunctionProperties read_function_properties(
-    quixcc_cc_job_t &job, libquixcc::Scanner *scanner) {
+static FunctionProperties read_function_properties(quixcc_cc_job_t &job,
+                                                   libquixcc::Scanner *scanner) {
   GetPropState state;
 
-  while (fn_get_property(job, scanner, state));
+  while (fn_get_property(job, scanner, state))
+    ;
 
   if (state.noexcept_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_NOEXCEPT_MULTIPLE] << scanner->peek()
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_NOEXCEPT_MULTIPLE] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
 
   if (state.foreign_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_FOREIGN_MULTIPLE] << scanner->peek()
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_FOREIGN_MULTIPLE] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
 
   if (state.impure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_IMPURE_MULTIPLE] << scanner->peek()
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_IMPURE_MULTIPLE] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
 
   if (state.tsafe_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_TSAFE_MULTIPLE] << scanner->peek()
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_TSAFE_MULTIPLE] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
 
   if (state.pure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_PURE_MULTIPLE] << scanner->peek()
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_PURE_MULTIPLE] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
 
   if (state.quasipure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_QUASIPURE_MULTIPLE] << scanner->peek()
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_QUASIPURE_MULTIPLE] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
 
   if (state.retropure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_RETROPURE_MULTIPLE] << scanner->peek()
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_RETROPURE_MULTIPLE] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
 
   if (state.inline_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_INLINE_MULTIPLE] << scanner->peek()
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_INLINE_MULTIPLE] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
 
-  bool partial_pure =
-      state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
+  bool partial_pure = state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
 
   if (partial_pure && state.impure_ctr) {
-    LOG(ERROR) << core::feedback[FN_PURE_IMPURE_MIX] << scanner->peek()
-               << std::endl;
+    LOG(ERROR) << core::feedback[FN_PURE_IMPURE_MIX] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
 
-  if (partial_pure &&
-      (state.pure_ctr + state.quasipure_ctr + state.retropure_ctr) != 1) {
+  if (partial_pure && (state.pure_ctr + state.quasipure_ctr + state.retropure_ctr) != 1) {
     LOG(ERROR) << core::feedback[FN_PURE_MIX] << scanner->peek() << std::endl;
     return FunctionProperties();
   }
@@ -257,8 +244,7 @@ static FunctionProperties read_function_properties(
   return props;
 }
 
-bool libquixcc::parse_function(quixcc_cc_job_t &job,
-                               libquixcc::Scanner *scanner,
+bool libquixcc::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                                std::shared_ptr<libquixcc::StmtNode> &node) {
   auto fndecl = std::make_shared<FunctionDeclNode>();
 
@@ -319,9 +305,9 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job,
   /// TODO: Implement function properties
 
   if (tok.is<Punctor>(Semicolon)) {
-    fndecl->m_type = std::make_shared<FunctionTypeNode>(
-        std::make_shared<VoidTypeNode>(), params, is_variadic, false,
-        prop._tsafe, prop._foreign, prop._noexcept);
+    fndecl->m_type =
+        std::make_shared<FunctionTypeNode>(std::make_shared<VoidTypeNode>(), params, is_variadic,
+                                           false, prop._tsafe, prop._foreign, prop._noexcept);
     scanner->next();
     node = fndecl;
     return true;
@@ -331,11 +317,11 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job,
     scanner->next();
     std::shared_ptr<TypeNode> type;
 
-    if (!parse_type(job, scanner, type)) return false;
+    if (!parse_type(job, scanner, type))
+      return false;
 
-    fndecl->m_type = std::make_shared<FunctionTypeNode>(
-        type, params, is_variadic, false, prop._tsafe, prop._foreign,
-        prop._noexcept);
+    fndecl->m_type = std::make_shared<FunctionTypeNode>(type, params, is_variadic, false,
+                                                        prop._tsafe, prop._foreign, prop._noexcept);
 
     tok = scanner->peek();
     if (tok.is<Punctor>(Semicolon)) {
@@ -350,12 +336,13 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job,
 
     auto fnbody = std::make_shared<BlockNode>();
 
-    if (!parse(job, scanner, fnbody, false, true)) return false;
+    if (!parse(job, scanner, fnbody, false, true))
+      return false;
 
     if (!fndecl->m_type)
-      fndecl->m_type = std::make_shared<FunctionTypeNode>(
-          std::make_shared<VoidTypeNode>(), params, is_variadic, false,
-          prop._tsafe, prop._foreign, prop._noexcept);
+      fndecl->m_type =
+          std::make_shared<FunctionTypeNode>(std::make_shared<VoidTypeNode>(), params, is_variadic,
+                                             false, prop._tsafe, prop._foreign, prop._noexcept);
 
     node = std::make_shared<FunctionDefNode>(fndecl, fnbody);
     return true;
@@ -374,8 +361,7 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job,
 
       tok = scanner->next();
       if (!tok.is<Punctor>(OpenBrace)) {
-        LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_BRACE] << tok
-                   << std::endl;
+        LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_BRACE] << tok << std::endl;
         return false;
       }
 
@@ -399,8 +385,7 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job,
 
           tok = scanner->next();
           if (!tok.is<Punctor>(Semicolon)) {
-            LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok
-                       << std::endl;
+            LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok << std::endl;
             return false;
           }
 
@@ -419,8 +404,7 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job,
 
           tok = scanner->next();
           if (!tok.is<Punctor>(Semicolon)) {
-            LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok
-                       << std::endl;
+            LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok << std::endl;
             return false;
           }
 
@@ -446,18 +430,17 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job,
       scanner->next();
       tok = scanner->next();
       if (!tok.is<Punctor>(OpenBracket)) {
-        LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_OPEN_BRACKET] << tok
-                   << std::endl;
+        LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_OPEN_BRACKET] << tok << std::endl;
         return false;
       }
 
       while (true) {
         tok = scanner->next();
-        if (tok.is<Punctor>(CloseBracket)) break;
+        if (tok.is<Punctor>(CloseBracket))
+          break;
 
         if (tok.type() != tName) {
-          LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_IDENTIFIER] << tok
-                     << std::endl;
+          LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_IDENTIFIER] << tok << std::endl;
           return false;
         }
 
@@ -473,12 +456,11 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job,
     }
 
     if (!fndecl->m_type)
-      fndecl->m_type = std::make_shared<FunctionTypeNode>(
-          std::make_shared<VoidTypeNode>(), params, is_variadic, false,
-          prop._tsafe, prop._foreign, prop._noexcept);
+      fndecl->m_type =
+          std::make_shared<FunctionTypeNode>(std::make_shared<VoidTypeNode>(), params, is_variadic,
+                                             false, prop._tsafe, prop._foreign, prop._noexcept);
 
-    node = std::make_shared<FunctionDefNode>(fndecl, fnbody, req_in, req_out,
-                                             implements);
+    node = std::make_shared<FunctionDefNode>(fndecl, fnbody, req_in, req_out, implements);
     return true;
   } else {
     LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_BRACE] << tok << std::endl;

@@ -38,7 +38,8 @@
 
 static std::string filter(const std::string &input) {
   std::string output;
-  for (char c : input) output += c == ':' ? '_' : c;
+  for (char c : input)
+    output += c == ':' ? '_' : c;
 
   return output;
 }
@@ -46,10 +47,10 @@ static std::string filter(const std::string &input) {
 std::string libquixcc::Symbol::mangle_c(const libquixcc::ir::q::Value *node,
                                         const std::string &prefix) {
   switch ((ir::q::QType)node->ntype) {
-    case ir::q::QType::Global:
-      return filter(static_cast<const ir::q::Global *>(node)->name);
-    default:
-      throw std::runtime_error("Invalid node type");
+  case ir::q::QType::Global:
+    return filter(static_cast<const ir::q::Global *>(node)->name);
+  default:
+    throw std::runtime_error("Invalid node type");
   }
 }
 

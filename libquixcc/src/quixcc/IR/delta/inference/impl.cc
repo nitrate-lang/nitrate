@@ -44,9 +44,7 @@ using namespace libquixcc::ir::delta;
 
 const Type *Call::infer() const { return ftype->ret; }
 
-const Type *PtrCall::infer() const {
-  return callee->as<Expr>()->infer()->as<FType>()->ret;
-}
+const Type *PtrCall::infer() const { return callee->as<Expr>()->infer()->as<FType>()->ret; }
 
 const Type *SCast::infer() const { return type; }
 
@@ -54,18 +52,18 @@ const Type *UCast::infer() const { return type; }
 
 const Type *PtrICast::infer() const {
   switch (Ptr::create(Void::create())->size()) {
-    case 1:
-      return U8::create();
-    case 2:
-      return U16::create();
-    case 4:
-      return U32::create();
-    case 8:
-      return U64::create();
-    case 16:
-      return U128::create();
-    default:
-      throw std::runtime_error("Codegen failed: PtrICast type not supported");
+  case 1:
+    return U8::create();
+  case 2:
+    return U16::create();
+  case 4:
+    return U32::create();
+  case 8:
+    return U64::create();
+  case 16:
+    return U128::create();
+  default:
+    throw std::runtime_error("Codegen failed: PtrICast type not supported");
   }
 }
 
@@ -108,34 +106,46 @@ static const Type *do_infer(const Type *lhs, const Type *rhs) {
       | *           | *           | undefined   |
   */
 
-  if (lhs->is<F64>() || rhs->is<F64>()) return F64::create();
+  if (lhs->is<F64>() || rhs->is<F64>())
+    return F64::create();
 
-  if (lhs->is<F32>() || rhs->is<F32>()) return F32::create();
+  if (lhs->is<F32>() || rhs->is<F32>())
+    return F32::create();
 
-  if (lhs->is<I128>() || rhs->is<I128>()) return I128::create();
+  if (lhs->is<I128>() || rhs->is<I128>())
+    return I128::create();
 
-  if (lhs->is<U128>() || rhs->is<U128>()) return U128::create();
+  if (lhs->is<U128>() || rhs->is<U128>())
+    return U128::create();
 
-  if (lhs->is<I64>() || rhs->is<I64>()) return I64::create();
+  if (lhs->is<I64>() || rhs->is<I64>())
+    return I64::create();
 
-  if (lhs->is<U64>() || rhs->is<U64>()) return U64::create();
+  if (lhs->is<U64>() || rhs->is<U64>())
+    return U64::create();
 
-  if (lhs->is<I32>() || rhs->is<I32>()) return I32::create();
+  if (lhs->is<I32>() || rhs->is<I32>())
+    return I32::create();
 
-  if (lhs->is<U32>() || rhs->is<U32>()) return U32::create();
+  if (lhs->is<U32>() || rhs->is<U32>())
+    return U32::create();
 
-  if (lhs->is<I16>() || rhs->is<I16>()) return I16::create();
+  if (lhs->is<I16>() || rhs->is<I16>())
+    return I16::create();
 
-  if (lhs->is<U16>() || rhs->is<U16>()) return U16::create();
+  if (lhs->is<U16>() || rhs->is<U16>())
+    return U16::create();
 
-  if (lhs->is<I8>() || rhs->is<I8>()) return I8::create();
+  if (lhs->is<I8>() || rhs->is<I8>())
+    return I8::create();
 
-  if (lhs->is<U8>() || rhs->is<U8>()) return U8::create();
+  if (lhs->is<U8>() || rhs->is<U8>())
+    return U8::create();
 
-  if (lhs->is<I1>() || rhs->is<I1>()) return I1::create();
+  if (lhs->is<I1>() || rhs->is<I1>())
+    return I1::create();
 
-  throw std::runtime_error(
-      "Codegen failed: Binary operation type not supported");
+  throw std::runtime_error("Codegen failed: Binary operation type not supported");
 }
 
 const Type *Add::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
@@ -148,17 +158,11 @@ const Type *Div::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
 const Type *Mod::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *BitAnd::infer() const {
-  return do_infer(lhs->infer(), rhs->infer());
-}
+const Type *BitAnd::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *BitOr::infer() const {
-  return do_infer(lhs->infer(), rhs->infer());
-}
+const Type *BitOr::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
-const Type *BitXor::infer() const {
-  return do_infer(lhs->infer(), rhs->infer());
-}
+const Type *BitXor::infer() const { return do_infer(lhs->infer(), rhs->infer()); }
 
 const Type *BitNot::infer() const { return operand->infer(); }
 
@@ -217,27 +221,27 @@ const Type *Number::infer() const {
   }
 
   switch (bits) {
-    case 1:
-    case 8:
-    case 16:
-    case 32:
-      return U32::create();
-    case 64:
-      return U64::create();
-    case 128:
-      return U128::create();
-    default:
-      throw std::runtime_error("Codegen failed: Number type not supported");
+  case 1:
+  case 8:
+  case 16:
+  case 32:
+    return U32::create();
+  case 64:
+    return U64::create();
+  case 128:
+    return U128::create();
+  default:
+    throw std::runtime_error("Codegen failed: Number type not supported");
   }
 }
 
 const Type *List::infer() const {
   std::vector<const Type *> types;
-  for (auto &elem : values) types.push_back(elem->infer());
+  for (auto &elem : values)
+    types.push_back(elem->infer());
 
   if (types.empty())
-    throw std::runtime_error(
-        "Codegen failed: Can not perform inference on empty list");
+    throw std::runtime_error("Codegen failed: Can not perform inference on empty list");
 
   /// TODO: Do this for real
 

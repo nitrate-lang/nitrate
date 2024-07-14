@@ -37,7 +37,7 @@
 #endif
 
 namespace libquixcc::test {
-bool optimizer_test_suite();
+  bool optimizer_test_suite();
 }
 
-#endif  // __QUIXCC_TEST_OPTIMIZERUITE_H__
+#endif // __QUIXCC_TEST_OPTIMIZERUITE_H__

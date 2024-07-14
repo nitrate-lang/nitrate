@@ -46,41 +46,40 @@
 #include <vector>
 
 namespace libquixcc {
-class ConstUnaryExprNode : public ConstExprNode {
- public:
-  ConstUnaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &expr)
-      : m_op(op), m_expr(expr) {
-    ntype = NodeType::ConstUnaryExprNode;
-  }
+  class ConstUnaryExprNode : public ConstExprNode {
+public:
+    ConstUnaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &expr)
+        : m_op(op), m_expr(expr) {
+      ntype = NodeType::ConstUnaryExprNode;
+    }
 
-  Operator m_op;
-  std::shared_ptr<ConstExprNode> m_expr;
-};
+    Operator m_op;
+    std::shared_ptr<ConstExprNode> m_expr;
+  };
 
-class ConstPostUnaryExprNode : public ConstExprNode {
- public:
-  ConstPostUnaryExprNode(Operator op,
-                         const std::shared_ptr<ConstExprNode> &expr)
-      : m_op(op), m_expr(expr) {
-    ntype = NodeType::ConstPostUnaryExprNode;
-  }
+  class ConstPostUnaryExprNode : public ConstExprNode {
+public:
+    ConstPostUnaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &expr)
+        : m_op(op), m_expr(expr) {
+      ntype = NodeType::ConstPostUnaryExprNode;
+    }
 
-  Operator m_op;
-  std::shared_ptr<ConstExprNode> m_expr;
-};
+    Operator m_op;
+    std::shared_ptr<ConstExprNode> m_expr;
+  };
 
-class ConstBinaryExprNode : public ConstExprNode {
- public:
-  ConstBinaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &lhs,
-                      const std::shared_ptr<ConstExprNode> &rhs)
-      : m_op(op), m_lhs(lhs), m_rhs(rhs) {
-    ntype = NodeType::ConstBinaryExprNode;
-  }
+  class ConstBinaryExprNode : public ConstExprNode {
+public:
+    ConstBinaryExprNode(Operator op, const std::shared_ptr<ConstExprNode> &lhs,
+                        const std::shared_ptr<ConstExprNode> &rhs)
+        : m_op(op), m_lhs(lhs), m_rhs(rhs) {
+      ntype = NodeType::ConstBinaryExprNode;
+    }
 
-  Operator m_op;
-  std::shared_ptr<ConstExprNode> m_lhs;
-  std::shared_ptr<ConstExprNode> m_rhs;
-};
-}  // namespace libquixcc
+    Operator m_op;
+    std::shared_ptr<ConstExprNode> m_lhs;
+    std::shared_ptr<ConstExprNode> m_rhs;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_CONST_EXPR_H__
+#endif // __QUIXCC_PARSE_NODES_CONST_EXPR_H__

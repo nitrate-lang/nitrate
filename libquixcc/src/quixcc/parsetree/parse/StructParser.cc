@@ -37,13 +37,11 @@
 
 using namespace libquixcc;
 
-static bool parse_struct_field(quixcc_cc_job_t &job,
-                               libquixcc::Scanner *scanner,
+static bool parse_struct_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                                std::shared_ptr<StructFieldNode> &node) {
   Token tok = scanner->next();
   if (tok.type() != tName) {
-    LOG(ERROR) << core::feedback[STRUCT_FIELD_MISSING_IDENTIFIER] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[STRUCT_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -51,15 +49,13 @@ static bool parse_struct_field(quixcc_cc_job_t &job,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Colon)) {
-    LOG(ERROR) << core::feedback[STRUCT_FIELD_MISSING_COLON] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[STRUCT_FIELD_MISSING_COLON] << tok << std::endl;
     return false;
   }
 
   std::shared_ptr<TypeNode> type;
   if (!parse_type(job, scanner, type)) {
-    LOG(ERROR) << core::feedback[STRUCT_FIELD_TYPE_ERR] << name << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[STRUCT_FIELD_TYPE_ERR] << name << tok << std::endl;
     return false;
   }
 
@@ -71,20 +67,17 @@ static bool parse_struct_field(quixcc_cc_job_t &job,
     return true;
   } else if (tok.is<Operator>(OpAssign)) {
     if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, value)) {
-      LOG(ERROR) << core::feedback[STRUCT_FIELD_INIT_ERR] << name << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[STRUCT_FIELD_INIT_ERR] << name << tok << std::endl;
       return false;
     }
   } else {
-    LOG(ERROR) << core::feedback[STRUCT_FIELD_MISSING_PUNCTOR] << name << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[STRUCT_FIELD_MISSING_PUNCTOR] << name << tok << std::endl;
     return false;
   }
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[STRUCT_FIELD_MISSING_PUNCTOR] << name << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[STRUCT_FIELD_MISSING_PUNCTOR] << name << tok << std::endl;
     return false;
   }
 
@@ -97,8 +90,7 @@ bool libquixcc::parse_struct(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                              std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (tok.type() != tName) {
-    LOG(ERROR) << core::feedback[STRUCT_DECL_MISSING_IDENTIFIER] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[STRUCT_DECL_MISSING_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -106,8 +98,7 @@ bool libquixcc::parse_struct(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(OpenBrace)) {
-    LOG(ERROR) << core::feedback[STRUCT_DEF_EXPECTED_OPEN_BRACE] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[STRUCT_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
     return false;
   }
 
@@ -129,20 +120,17 @@ bool libquixcc::parse_struct(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
     if (tok.is<Keyword>(Keyword::Pub)) {
       /// TODO: Implement visibility semantics
-      LOG(WARN) << "Visibility semantics not implemented yet." << tok
-                << std::endl;
+      LOG(WARN) << "Visibility semantics not implemented yet." << tok << std::endl;
       scanner->next();
       tok = scanner->peek();
     } else if (tok.is<Keyword>(Keyword::Sec)) {
       /// TODO: Implement visibility semantics
-      LOG(WARN) << "Visibility semantics not implemented yet." << tok
-                << std::endl;
+      LOG(WARN) << "Visibility semantics not implemented yet." << tok << std::endl;
       scanner->next();
       tok = scanner->peek();
     } else if (tok.is<Keyword>(Keyword::Pro)) {
       /// TODO: Implement visibility semantics
-      LOG(WARN) << "Visibility semantics not implemented yet." << tok
-                << std::endl;
+      LOG(WARN) << "Visibility semantics not implemented yet." << tok << std::endl;
       scanner->next();
       tok = scanner->peek();
     }
@@ -151,13 +139,11 @@ bool libquixcc::parse_struct(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
       scanner->next();
 
       std::shared_ptr<StmtNode> method;
-      if (!parse_function(job, scanner, method)) return false;
+      if (!parse_function(job, scanner, method))
+        return false;
 
       auto fn_this = std::make_shared<FunctionParamNode>(
-          "this",
-          std::make_shared<PointerTypeNode>(
-              std::make_shared<UserTypeNode>(name)),
-          nullptr);
+          "this", std::make_shared<PointerTypeNode>(std::make_shared<UserTypeNode>(name)), nullptr);
 
       if (method->is<FunctionDeclNode>()) {
         auto fdecl = std::static_pointer_cast<FunctionDeclNode>(method);
@@ -172,18 +158,19 @@ bool libquixcc::parse_struct(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
       scanner->next();
       tok = scanner->next();
       if (!tok.is<Keyword>(Keyword::Fn)) {
-        LOG(ERROR) << core::feedback[STRUCT_DEF_EXPECTED_FN] << tok
-                   << std::endl;
+        LOG(ERROR) << core::feedback[STRUCT_DEF_EXPECTED_FN] << tok << std::endl;
         return false;
       }
 
       std::shared_ptr<StmtNode> method;
-      if (!parse_function(job, scanner, method)) return false;
+      if (!parse_function(job, scanner, method))
+        return false;
 
       static_methods.push_back(method);
     } else {
       std::shared_ptr<StructFieldNode> field;
-      if (!parse_struct_field(job, scanner, field)) return false;
+      if (!parse_struct_field(job, scanner, field))
+        return false;
       fields.push_back(field);
     }
   }
@@ -203,18 +190,17 @@ bool libquixcc::parse_struct(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     scanner->next();
     tok = scanner->next();
     if (!tok.is<Punctor>(OpenBracket)) {
-      LOG(ERROR) << core::feedback[STRUCT_DEF_EXPECTED_OPEN_BRACKET] << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[STRUCT_DEF_EXPECTED_OPEN_BRACKET] << tok << std::endl;
       return false;
     }
 
     while (true) {
       tok = scanner->next();
-      if (tok.is<Punctor>(CloseBracket)) break;
+      if (tok.is<Punctor>(CloseBracket))
+        break;
 
       if (tok.type() != tName) {
-        LOG(ERROR) << core::feedback[STRUCT_DEF_EXPECTED_IDENTIFIER] << tok
-                   << std::endl;
+        LOG(ERROR) << core::feedback[STRUCT_DEF_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;
       }
 

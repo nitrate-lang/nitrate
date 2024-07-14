@@ -31,46 +31,49 @@
 
 #include <quixcc/IR/Q/Call.h>
 
-bool libquixcc::ir::q::Call::print_impl(std::ostream &os,
-                                        libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Call::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << func->name << "(";
   for (size_t i = 0; i < args.size(); i++) {
-    if (i != 0) os << ", ";
+    if (i != 0)
+      os << ", ";
     args[i]->print(os, state);
   }
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::CallIndirect::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
-  if (!exprfunc->print(os, state)) return false;
+bool libquixcc::ir::q::CallIndirect::print_impl(std::ostream &os,
+                                                libquixcc::ir::PState &state) const {
+  if (!exprfunc->print(os, state))
+    return false;
   os << "(";
   for (size_t i = 0; i < args.size(); i++) {
-    if (i != 0) os << ", ";
+    if (i != 0)
+      os << ", ";
     args[i]->print(os, state);
   }
   os << ")";
   return true;
 }
 
-bool libquixcc::ir::q::IntrinsicCall::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::IntrinsicCall::print_impl(std::ostream &os,
+                                                 libquixcc::ir::PState &state) const {
   switch (name) {
-    case QIntrinsic::Malloc:
-      os << "malloc";
-      break;
-    case QIntrinsic::Free:
-      os << "free";
-      break;
-    case QIntrinsic::ToString:
-      os << "to_string";
-      break;
+  case QIntrinsic::Malloc:
+    os << "malloc";
+    break;
+  case QIntrinsic::Free:
+    os << "free";
+    break;
+  case QIntrinsic::ToString:
+    os << "to_string";
+    break;
   }
 
   os << "!(";
   for (size_t i = 0; i < args.size(); i++) {
-    if (i != 0) os << ", ";
+    if (i != 0)
+      os << ", ";
     args[i]->print(os, state);
   }
   os << ")";

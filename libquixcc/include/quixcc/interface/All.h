@@ -46,4 +46,4 @@ extern "C" {
 }
 #endif
 
-#endif  // __QUIXCC_TYPES_ALL_H__
+#endif // __QUIXCC_TYPES_ALL_H__

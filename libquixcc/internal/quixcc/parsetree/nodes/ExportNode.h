@@ -44,17 +44,16 @@
 #include <vector>
 
 namespace libquixcc {
-class ExportNode : public StmtNode {
- public:
-  ExportNode(std::vector<std::shared_ptr<libquixcc::StmtNode>> stmts,
-             ExportLangType lang)
-      : m_stmts(stmts), m_lang_type(lang) {
-    ntype = NodeType::ExportNode;
-  }
+  class ExportNode : public StmtNode {
+public:
+    ExportNode(std::vector<std::shared_ptr<libquixcc::StmtNode>> stmts, ExportLangType lang)
+        : m_stmts(stmts), m_lang_type(lang) {
+      ntype = NodeType::ExportNode;
+    }
 
-  std::vector<std::shared_ptr<libquixcc::StmtNode>> m_stmts;
-  ExportLangType m_lang_type;
-};
-}  // namespace libquixcc
+    std::vector<std::shared_ptr<libquixcc::StmtNode>> m_stmts;
+    ExportLangType m_lang_type;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_EXPORTED_H__
+#endif // __QUIXCC_PARSE_NODES_EXPORTED_H__

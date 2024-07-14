@@ -38,14 +38,7 @@ boost::uuids::uuid libquixcc::ir::delta::Local::hash_impl() const {
 bool libquixcc::ir::delta::Local::verify_impl() const { return type->verify(); }
 
 boost::uuids::uuid libquixcc::ir::delta::Global::hash_impl() const {
-  return Hasher()
-      .gettag()
-      .add(name)
-      .add(type)
-      .add(value)
-      .add(_volatile)
-      .add(_atomic)
-      .hash();
+  return Hasher().gettag().add(name).add(type).add(value).add(_volatile).add(_atomic).hash();
 }
 
 bool libquixcc::ir::delta::Global::verify_impl() const {
@@ -78,7 +71,8 @@ boost::uuids::uuid libquixcc::ir::delta::List::hash_impl() const {
 
 bool libquixcc::ir::delta::List::verify_impl() const {
   for (auto &v : values) {
-    if (!v->verify()) return false;
+    if (!v->verify())
+      return false;
   }
   return true;
 }

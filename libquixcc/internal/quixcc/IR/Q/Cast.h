@@ -41,92 +41,84 @@
 #include <quixcc/IR/Q/Type.h>
 
 namespace libquixcc::ir::q {
-class SCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class SCast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  SCast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::SCast;
-  }
+    SCast(Type *type, Expr *value) : type(type), value(value) { ntype = (int)QType::SCast; }
 
- public:
-  static SCast *create(Type *type, Expr *value);
-  Type *infer() const override;
+public:
+    static SCast *create(Type *type, Expr *value);
+    Type *infer() const override;
 
-  Type *type;
-  Expr *value;
-};
+    Type *type;
+    Expr *value;
+  };
 
-class UCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class UCast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  UCast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::UCast;
-  }
+    UCast(Type *type, Expr *value) : type(type), value(value) { ntype = (int)QType::UCast; }
 
- public:
-  static UCast *create(Type *type, Expr *value);
-  Type *infer() const override;
+public:
+    static UCast *create(Type *type, Expr *value);
+    Type *infer() const override;
 
-  Type *type;
-  Expr *value;
-};
+    Type *type;
+    Expr *value;
+  };
 
-class PtrICast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class PtrICast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  PtrICast(Expr *value) : value(value) { ntype = (int)QType::PtrICast; }
+    PtrICast(Expr *value) : value(value) { ntype = (int)QType::PtrICast; }
 
- public:
-  static PtrICast *create(Expr *value);
-  Type *infer() const override;
+public:
+    static PtrICast *create(Expr *value);
+    Type *infer() const override;
 
-  Expr *value;
-};
+    Expr *value;
+  };
 
-class IPtrCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class IPtrCast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  IPtrCast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::IPtrCast;
-  }
+    IPtrCast(Type *type, Expr *value) : type(type), value(value) { ntype = (int)QType::IPtrCast; }
 
- public:
-  static IPtrCast *create(Type *type, Expr *value);
-  Type *infer() const override;
+public:
+    static IPtrCast *create(Type *type, Expr *value);
+    Type *infer() const override;
 
-  Type *type;
-  Expr *value;
-};
+    Type *type;
+    Expr *value;
+  };
 
-class Bitcast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Bitcast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Bitcast(Type *type, Expr *value) : type(type), value(value) {
-    ntype = (int)QType::Bitcast;
-  }
+    Bitcast(Type *type, Expr *value) : type(type), value(value) { ntype = (int)QType::Bitcast; }
 
- public:
-  static Bitcast *create(Type *type, Expr *value);
-  Type *infer() const override;
+public:
+    static Bitcast *create(Type *type, Expr *value);
+    Type *infer() const override;
 
-  Type *type;
-  Expr *value;
-};
-}  // namespace libquixcc::ir::q
+    Type *type;
+    Expr *value;
+  };
+} // namespace libquixcc::ir::q
 
-#endif  // __QUIXCC_IR_Q_NODES_CAST_H__
+#endif // __QUIXCC_IR_Q_NODES_CAST_H__

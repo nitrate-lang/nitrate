@@ -39,7 +39,8 @@
 using namespace libquixcc;
 
 Loc Loc::operator-(Loc::LocPosType rhs) const {
-  if (rhs <= m_col) return Loc(m_line, m_col - rhs, m_file);
+  if (rhs <= m_col)
+    return Loc(m_line, m_col - rhs, m_file);
 
   Loc new_loc = *this;
 
@@ -72,93 +73,93 @@ std::string libquixcc::Token::serialize_human_readable() const {
   std::stringstream ss;
 
   switch (m_type) {
-    case tEofF:
-      ss << "Eof";
-      break;
-    case tErro:
-      ss << "Unknown";
-      break;
-    case tName:
-      ss << "Identifier(" << as<std::string>() << ")";
-      break;
-    case tKeyW:
-      ss << "Keyword(" << keyword_map_inverse.at(as<Keyword>()).data() << ")";
-      break;
-    case tOper:
-      ss << "Operator(" << operator_map_inverse.at(as<Operator>()).data()
-         << ")";
-      break;
-    case tPunc:
-      ss << "Punctor(" << punctor_map_inverse.at(as<Punctor>()).data() << ")";
-      break;
-    case tText:
-      ss << "String(\"" << as<std::string>() << "\")";
-      break;
-    case tChar:
-      ss << "Char('" << as<std::string>() << "')";
-      break;
-    case tIntL:
-      ss << "Number(" << as<std::string>() << ")";
-      break;
-    case tNumL:
-      ss << "Float(" << as<std::string>() << ")";
-      break;
-    case tNote:
-      ss << "Comment(" << as<std::string>() << ")";
-      break;
-    case tMacB:
-      ss << "MacroBlock(" << as<std::string>() << ")";
-      break;
-    case tMacr:
-      ss << "MacroSingleLine(" << as<std::string>() << ")";
-      break;
-    default:
-      ss << "Unknown(" << as<std::string>() << ")";
-      break;
+  case tEofF:
+    ss << "Eof";
+    break;
+  case tErro:
+    ss << "Unknown";
+    break;
+  case tName:
+    ss << "Identifier(" << as<std::string>() << ")";
+    break;
+  case tKeyW:
+    ss << "Keyword(" << keyword_map_inverse.at(as<Keyword>()).data() << ")";
+    break;
+  case tOper:
+    ss << "Operator(" << operator_map_inverse.at(as<Operator>()).data() << ")";
+    break;
+  case tPunc:
+    ss << "Punctor(" << punctor_map_inverse.at(as<Punctor>()).data() << ")";
+    break;
+  case tText:
+    ss << "String(\"" << as<std::string>() << "\")";
+    break;
+  case tChar:
+    ss << "Char('" << as<std::string>() << "')";
+    break;
+  case tIntL:
+    ss << "Number(" << as<std::string>() << ")";
+    break;
+  case tNumL:
+    ss << "Float(" << as<std::string>() << ")";
+    break;
+  case tNote:
+    ss << "Comment(" << as<std::string>() << ")";
+    break;
+  case tMacB:
+    ss << "MacroBlock(" << as<std::string>() << ")";
+    break;
+  case tMacr:
+    ss << "MacroSingleLine(" << as<std::string>() << ")";
+    break;
+  default:
+    ss << "Unknown(" << as<std::string>() << ")";
+    break;
   }
 
   return ss.str();
 }
 
 std::string Token::serialize(bool human_readable) const {
-  if (human_readable) return serialize_human_readable();
+  if (human_readable)
+    return serialize_human_readable();
 
   std::stringstream ss;
   switch (m_type) {
-    case tEofF:
-      break;
-    case tErro:
-    case tName:
-    case tIntL:
-    case tNumL:
-      ss << as<std::string>();
-      break;
-    case tNote:
-      ss << "/*" << as<std::string>() << "*/";
-      break;
-    case tText:
-      ss << "\"" << as<std::string>() << "\"";
-      break;
-    case tChar:
-      ss << "'" << as<std::string>() << "'";
-      break;
-    case tMacB:
-      ss << "@(" << as<std::string>() << ")";
-      break;
-    case tMacr:
-      ss << "@" << as<std::string>();
-      break;
-    case tKeyW:
-      ss << keyword_map_inverse.at(as<Keyword>()).data();
-      break;
-    case tOper:
-      ss << operator_map_inverse.at(as<Operator>()).data();
-      break;
-    case tPunc:
-      ss << punctor_map_inverse.at(as<Punctor>()).data();
-      break;
-    default:
-      throw std::runtime_error("Invalid type");
+  case tEofF:
+    break;
+  case tErro:
+  case tName:
+  case tIntL:
+  case tNumL:
+    ss << as<std::string>();
+    break;
+  case tNote:
+    ss << "/*" << as<std::string>() << "*/";
+    break;
+  case tText:
+    ss << "\"" << as<std::string>() << "\"";
+    break;
+  case tChar:
+    ss << "'" << as<std::string>() << "'";
+    break;
+  case tMacB:
+    ss << "@(" << as<std::string>() << ")";
+    break;
+  case tMacr:
+    ss << "@" << as<std::string>();
+    break;
+  case tKeyW:
+    ss << keyword_map_inverse.at(as<Keyword>()).data();
+    break;
+  case tOper:
+    ss << operator_map_inverse.at(as<Operator>()).data();
+    break;
+  case tPunc:
+    ss << punctor_map_inverse.at(as<Punctor>()).data();
+    break;
+  default:
+    throw std::runtime_error("Invalid type");
   }
 
   return ss.str();

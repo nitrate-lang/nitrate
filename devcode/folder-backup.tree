@@ -1,9 +1,9 @@
 (Program "v1.0" "quix:1.0"
  (Blk [
   (TypeDef "usize"
-   (U64))
+   (U8))
   (TypeDef "isize"
-   (I64))
+   (I8))
   (FuncDef
    (FuncDecl "main" 0 0 0 0 0
     (I32) [
@@ -106,4 +106,6 @@
          (Id "backup")])] []))
       (Ret
        (ILit "0"
-        (U64)))] 0))] 0))
+        (U64)))] 0)
+     (nil)
+     (nil)["auto"])] 0))

@@ -44,19 +44,19 @@
 #include <vector>
 
 namespace libquixcc {
-class SubsystemNode : public StmtNode {
- public:
-  SubsystemNode() { ntype = NodeType::SubsystemNode; }
-  SubsystemNode(const std::string &name, const std::set<std::string> &deps,
-                const std::shared_ptr<BlockNode> &block)
-      : m_name(name), m_deps(deps), m_block(block) {
-    ntype = NodeType::SubsystemNode;
-  }
+  class SubsystemNode : public StmtNode {
+public:
+    SubsystemNode() { ntype = NodeType::SubsystemNode; }
+    SubsystemNode(const std::string &name, const std::set<std::string> &deps,
+                  const std::shared_ptr<BlockNode> &block)
+        : m_name(name), m_deps(deps), m_block(block) {
+      ntype = NodeType::SubsystemNode;
+    }
 
-  std::string m_name;
-  std::set<std::string> m_deps;
-  std::shared_ptr<libquixcc::BlockNode> m_block;
-};
-}  // namespace libquixcc
+    std::string m_name;
+    std::set<std::string> m_deps;
+    std::shared_ptr<libquixcc::BlockNode> m_block;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_SUBSYSTEM_H__
+#endif // __QUIXCC_PARSE_NODES_SUBSYSTEM_H__

@@ -43,9 +43,7 @@ boost::uuids::uuid libquixcc::ir::delta::While::hash_impl() const {
   return Hasher().gettag().add(cond).add(body).hash();
 }
 
-bool libquixcc::ir::delta::While::verify_impl() const {
-  return cond->verify() && body->verify();
-}
+bool libquixcc::ir::delta::While::verify_impl() const { return cond->verify() && body->verify(); }
 
 boost::uuids::uuid libquixcc::ir::delta::Jmp::hash_impl() const {
   return Hasher().gettag().add(target).hash();
@@ -61,12 +59,14 @@ bool libquixcc::ir::delta::Label::verify_impl() const { return code->verify(); }
 
 boost::uuids::uuid libquixcc::ir::delta::Ret::hash_impl() const {
   auto h = Hasher().gettag();
-  if (value) h.add(value);
+  if (value)
+    h.add(value);
   return h.hash();
 }
 
 bool libquixcc::ir::delta::Ret::verify_impl() const {
-  if (!value) return true;
+  if (!value)
+    return true;
 
   return value->verify();
 }
@@ -82,10 +82,12 @@ boost::uuids::uuid libquixcc::ir::delta::Call::hash_impl() const {
 
 bool libquixcc::ir::delta::Call::verify_impl() const {
   for (auto arg : args) {
-    if (!arg->verify()) return false;
+    if (!arg->verify())
+      return false;
   }
 
-  if (!ftype->verify()) return false;
+  if (!ftype->verify())
+    return false;
 
   return true;
 }
@@ -100,10 +102,12 @@ boost::uuids::uuid libquixcc::ir::delta::PtrCall::hash_impl() const {
 }
 
 bool libquixcc::ir::delta::PtrCall::verify_impl() const {
-  if (!callee->verify()) return false;
+  if (!callee->verify())
+    return false;
 
   for (auto arg : args) {
-    if (!arg->verify()) return false;
+    if (!arg->verify())
+      return false;
   }
 
   return true;
@@ -131,9 +135,7 @@ boost::uuids::uuid libquixcc::ir::delta::Case::hash_impl() const {
   return Hasher().gettag().add(value).add(code).hash();
 }
 
-bool libquixcc::ir::delta::Case::verify_impl() const {
-  return value->verify() && code->verify();
-}
+bool libquixcc::ir::delta::Case::verify_impl() const { return value->verify() && code->verify(); }
 
 boost::uuids::uuid libquixcc::ir::delta::Switch::hash_impl() const {
   auto h = Hasher().gettag().add(cond);
@@ -141,19 +143,23 @@ boost::uuids::uuid libquixcc::ir::delta::Switch::hash_impl() const {
     h.add(c);
   }
 
-  if (def) h.add(def);
+  if (def)
+    h.add(def);
 
   return h.hash();
 }
 
 bool libquixcc::ir::delta::Switch::verify_impl() const {
-  if (!cond->verify()) return false;
+  if (!cond->verify())
+    return false;
 
   for (auto c : cases) {
-    if (!c->verify()) return false;
+    if (!c->verify())
+      return false;
   }
 
-  if (def && !def->verify()) return false;
+  if (def && !def->verify())
+    return false;
 
   return true;
 }

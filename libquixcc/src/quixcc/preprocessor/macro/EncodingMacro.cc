@@ -34,8 +34,7 @@
 #include <quixcc/core/Logger.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 
-bool libquixcc::PrepEngine::ParseEncoding(const Token &tok,
-                                          const std::string &directive,
+bool libquixcc::PrepEngine::ParseEncoding(const Token &tok, const std::string &directive,
                                           const std::string &parameter) {
   (void)job;
   (void)tok;

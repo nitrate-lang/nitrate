@@ -43,8 +43,7 @@ static bool parse_enum_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
   Token tok = scanner->next();
   if (tok.type() != tName) {
-    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_IDENTIFIER] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -56,8 +55,8 @@ static bool parse_enum_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
   if (tok.is<Operator>(OpAssign)) {
     scanner->next();
     if (!parse_const_expr(job, scanner, Token(tPunc, Comma), node->m_value)) {
-      LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_CONST_EXPR]
-                 << node->m_name << tok << std::endl;
+      LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_CONST_EXPR] << node->m_name << tok
+                 << std::endl;
       return false;
     }
 
@@ -70,8 +69,7 @@ static bool parse_enum_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   if (!tok.is<Punctor>(CloseBrace)) {
-    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_SEMICOLON] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_SEMICOLON] << tok << std::endl;
     return false;
   }
 
@@ -92,7 +90,8 @@ bool libquixcc::parse_enum(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
   std::shared_ptr<TypeNode> type = nullptr;
   if (tok.is<Punctor>(Colon)) {
     scanner->next();
-    if (!parse_type(job, scanner, type)) return false;
+    if (!parse_type(job, scanner, type))
+      return false;
   }
 
   tok = scanner->next();
@@ -111,11 +110,11 @@ bool libquixcc::parse_enum(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     }
 
     std::shared_ptr<EnumFieldNode> field;
-    if (!parse_enum_field(job, scanner, field)) return false;
+    if (!parse_enum_field(job, scanner, field))
+      return false;
     fields.push_back(field);
   }
 
-  node = std::make_shared<EnumDefNode>(
-      std::make_shared<EnumTypeNode>(name, type), fields);
+  node = std::make_shared<EnumDefNode>(std::make_shared<EnumTypeNode>(name, type), fields);
   return true;
 }

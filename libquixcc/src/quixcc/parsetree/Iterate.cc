@@ -38,16 +38,13 @@
 using namespace libquixcc;
 using namespace libquixcc::traversal;
 
-template <typename T>
-TraversePtr mk_ptr(std::shared_ptr<T> *ptr) {
+template <typename T> TraversePtr mk_ptr(std::shared_ptr<T> *ptr) {
   return std::make_pair(TraversePtrType::Smart,
                         reinterpret_cast<std::shared_ptr<ParseNode> *>(ptr));
 }
 
-template <typename T>
-TraversePtr mk_ptr(T **ptr) {
-  return std::make_pair(TraversePtrType::Raw,
-                        reinterpret_cast<ParseNode **>(ptr));
+template <typename T> TraversePtr mk_ptr(T **ptr) {
+  return std::make_pair(TraversePtrType::Raw, reinterpret_cast<ParseNode **>(ptr));
 }
 
 size_t ParseNode::dfs_preorder(ParseTreePreorderCallback cb) {
@@ -57,205 +54,205 @@ size_t ParseNode::dfs_preorder(ParseTreePreorderCallback cb) {
 
 size_t ParseTreePreorder::dispatch(ParseNode *n) {
   switch (n->ntype) {
-    case libquixcc::NodeType::ExprStmtNode:
-      return iter(n->as<ExprStmtNode>());
-    case libquixcc::NodeType::StmtExprNode:
-      return iter(n->as<StmtExprNode>());
-    case libquixcc::NodeType::NopStmtNode:
-      return iter(n->as<NopStmtNode>());
-    case libquixcc::NodeType::BlockNode:
-      return iter(n->as<BlockNode>());
-    case libquixcc::NodeType::StmtGroupNode:
-      return iter(n->as<StmtGroupNode>());
-    case libquixcc::NodeType::StaticCastExprNode:
-      return iter(n->as<StaticCastExprNode>());
-    case libquixcc::NodeType::BitCastExprNode:
-      return iter(n->as<BitCastExprNode>());
-    case libquixcc::NodeType::SignedUpcastExprNode:
-      return iter(n->as<SignedUpcastExprNode>());
-    case libquixcc::NodeType::UnsignedUpcastExprNode:
-      return iter(n->as<UnsignedUpcastExprNode>());
-    case libquixcc::NodeType::DowncastExprNode:
-      return iter(n->as<DowncastExprNode>());
-    case libquixcc::NodeType::UnaryExprNode:
-      return iter(n->as<UnaryExprNode>());
-    case libquixcc::NodeType::PostUnaryExprNode:
-      return iter(n->as<PostUnaryExprNode>());
-    case libquixcc::NodeType::BinaryExprNode:
-      return iter(n->as<BinaryExprNode>());
-    case libquixcc::NodeType::SeqExprNode:
-      return iter(n->as<SeqExprNode>());
-    case libquixcc::NodeType::CallExprNode:
-      return iter(n->as<CallExprNode>());
-    case libquixcc::NodeType::ListExprNode:
-      return iter(n->as<ListExprNode>());
-    case libquixcc::NodeType::AssocExprNode:
-      return iter(n->as<AssocExprNode>());
-    case libquixcc::NodeType::MemberAccessNode:
-      return iter(n->as<MemberAccessNode>());
-    case libquixcc::NodeType::IndexNode:
-      return iter(n->as<IndexNode>());
-    case libquixcc::NodeType::SliceNode:
-      return iter(n->as<SliceNode>());
-    case libquixcc::NodeType::FStringNode:
-      return iter(n->as<FStringNode>());
-    case libquixcc::NodeType::ConstUnaryExprNode:
-      return iter(n->as<ConstUnaryExprNode>());
-    case libquixcc::NodeType::ConstPostUnaryExprNode:
-      return iter(n->as<ConstPostUnaryExprNode>());
-    case libquixcc::NodeType::ConstBinaryExprNode:
-      return iter(n->as<ConstBinaryExprNode>());
-    case libquixcc::NodeType::IdentifierNode:
-      return iter(n->as<IdentifierNode>());
-    case libquixcc::NodeType::MutTypeNode:
-      return iter(n->as<MutTypeNode>());
-    case libquixcc::NodeType::U8TypeNode:
-      return iter(n->as<U8TypeNode>());
-    case libquixcc::NodeType::U16TypeNode:
-      return iter(n->as<U16TypeNode>());
-    case libquixcc::NodeType::U32TypeNode:
-      return iter(n->as<U32TypeNode>());
-    case libquixcc::NodeType::U64TypeNode:
-      return iter(n->as<U64TypeNode>());
-    case libquixcc::NodeType::U128TypeNode:
-      return iter(n->as<U128TypeNode>());
-    case libquixcc::NodeType::I8TypeNode:
-      return iter(n->as<I8TypeNode>());
-    case libquixcc::NodeType::I16TypeNode:
-      return iter(n->as<I16TypeNode>());
-    case libquixcc::NodeType::I32TypeNode:
-      return iter(n->as<I32TypeNode>());
-    case libquixcc::NodeType::I64TypeNode:
-      return iter(n->as<I64TypeNode>());
-    case libquixcc::NodeType::I128TypeNode:
-      return iter(n->as<I128TypeNode>());
-    case libquixcc::NodeType::F32TypeNode:
-      return iter(n->as<F32TypeNode>());
-    case libquixcc::NodeType::F64TypeNode:
-      return iter(n->as<F64TypeNode>());
-    case libquixcc::NodeType::BoolTypeNode:
-      return iter(n->as<BoolTypeNode>());
-    case libquixcc::NodeType::VoidTypeNode:
-      return iter(n->as<VoidTypeNode>());
-    case libquixcc::NodeType::NullTypeNode:
-      return iter(n->as<NullTypeNode>());
-    case libquixcc::NodeType::PointerTypeNode:
-      return iter(n->as<PointerTypeNode>());
-    case libquixcc::NodeType::OpaqueTypeNode:
-      return iter(n->as<OpaqueTypeNode>());
-    case libquixcc::NodeType::StringTypeNode:
-      return iter(n->as<StringTypeNode>());
-    case libquixcc::NodeType::EnumTypeNode:
-      return iter(n->as<EnumTypeNode>());
-    case libquixcc::NodeType::StructTypeNode:
-      return iter(n->as<StructTypeNode>());
-    case libquixcc::NodeType::GroupTypeNode:
-      return iter(n->as<GroupTypeNode>());
-    case libquixcc::NodeType::RegionTypeNode:
-      return iter(n->as<RegionTypeNode>());
-    case libquixcc::NodeType::UnionTypeNode:
-      return iter(n->as<UnionTypeNode>());
-    case libquixcc::NodeType::ArrayTypeNode:
-      return iter(n->as<ArrayTypeNode>());
-    case libquixcc::NodeType::VectorTypeNode:
-      return iter(n->as<VectorTypeNode>());
-    case libquixcc::NodeType::MapTypeNode:
-      return iter(n->as<MapTypeNode>());
-    case libquixcc::NodeType::TupleTypeNode:
-      return iter(n->as<TupleTypeNode>());
-    case libquixcc::NodeType::SetTypeNode:
-      return iter(n->as<SetTypeNode>());
-    case libquixcc::NodeType::ResultTypeNode:
-      return iter(n->as<ResultTypeNode>());
-    case libquixcc::NodeType::FunctionTypeNode:
-      return iter(n->as<FunctionTypeNode>());
-    case libquixcc::NodeType::UserTypeNode:
-      return iter(n->as<UserTypeNode>());
-    case libquixcc::NodeType::IntegerNode:
-      return iter(n->as<IntegerNode>());
-    case libquixcc::NodeType::FloatLiteralNode:
-      return iter(n->as<FloatLiteralNode>());
-    case libquixcc::NodeType::StringNode:
-      return iter(n->as<StringNode>());
-    case libquixcc::NodeType::CharNode:
-      return iter(n->as<CharNode>());
-    case libquixcc::NodeType::BoolLiteralNode:
-      return iter(n->as<BoolLiteralNode>());
-    case libquixcc::NodeType::NullLiteralNode:
-      return iter(n->as<NullLiteralNode>());
-    case libquixcc::NodeType::UndefLiteralNode:
-      return iter(n->as<UndefLiteralNode>());
-    case libquixcc::NodeType::TypedefNode:
-      return iter(n->as<TypedefNode>());
-    case libquixcc::NodeType::VarDeclNode:
-      return iter(n->as<VarDeclNode>());
-    case libquixcc::NodeType::LetDeclNode:
-      return iter(n->as<LetDeclNode>());
-    case libquixcc::NodeType::ConstDeclNode:
-      return iter(n->as<ConstDeclNode>());
-    case libquixcc::NodeType::FunctionDeclNode:
-      return iter(n->as<FunctionDeclNode>());
-    case libquixcc::NodeType::StructDefNode:
-      return iter(n->as<StructDefNode>());
-    case libquixcc::NodeType::StructFieldNode:
-      return iter(n->as<StructFieldNode>());
-    case libquixcc::NodeType::RegionDefNode:
-      return iter(n->as<RegionDefNode>());
-    case libquixcc::NodeType::RegionFieldNode:
-      return iter(n->as<RegionFieldNode>());
-    case libquixcc::NodeType::GroupDefNode:
-      return iter(n->as<GroupDefNode>());
-    case libquixcc::NodeType::GroupFieldNode:
-      return iter(n->as<GroupFieldNode>());
-    case libquixcc::NodeType::UnionDefNode:
-      return iter(n->as<UnionDefNode>());
-    case libquixcc::NodeType::UnionFieldNode:
-      return iter(n->as<UnionFieldNode>());
-    case libquixcc::NodeType::EnumDefNode:
-      return iter(n->as<EnumDefNode>());
-    case libquixcc::NodeType::EnumFieldNode:
-      return iter(n->as<EnumFieldNode>());
-    case libquixcc::NodeType::FunctionDefNode:
-      return iter(n->as<FunctionDefNode>());
-    case libquixcc::NodeType::FunctionParamNode:
-      return iter(n->as<FunctionParamNode>());
-    case libquixcc::NodeType::SubsystemNode:
-      return iter(n->as<SubsystemNode>());
-    case libquixcc::NodeType::ExportNode:
-      return iter(n->as<ExportNode>());
-    case libquixcc::NodeType::InlineAsmNode:
-      return iter(n->as<InlineAsmNode>());
-    case libquixcc::NodeType::ReturnStmtNode:
-      return iter(n->as<ReturnStmtNode>());
-    case libquixcc::NodeType::RetifStmtNode:
-      return iter(n->as<RetifStmtNode>());
-    case libquixcc::NodeType::RetzStmtNode:
-      return iter(n->as<RetzStmtNode>());
-    case libquixcc::NodeType::RetvStmtNode:
-      return iter(n->as<RetvStmtNode>());
-    case libquixcc::NodeType::BreakStmtNode:
-      return iter(n->as<BreakStmtNode>());
-    case libquixcc::NodeType::ContinueStmtNode:
-      return iter(n->as<ContinueStmtNode>());
-    case libquixcc::NodeType::IfStmtNode:
-      return iter(n->as<IfStmtNode>());
-    case libquixcc::NodeType::WhileStmtNode:
-      return iter(n->as<WhileStmtNode>());
-    case libquixcc::NodeType::ForStmtNode:
-      return iter(n->as<ForStmtNode>());
-    case libquixcc::NodeType::FormStmtNode:
-      return iter(n->as<FormStmtNode>());
-    case libquixcc::NodeType::ForeachStmtNode:
-      return iter(n->as<ForeachStmtNode>());
-    case libquixcc::NodeType::CaseStmtNode:
-      return iter(n->as<CaseStmtNode>());
-    case libquixcc::NodeType::SwitchStmtNode:
-      return iter(n->as<SwitchStmtNode>());
+  case libquixcc::NodeType::ExprStmtNode:
+    return iter(n->as<ExprStmtNode>());
+  case libquixcc::NodeType::StmtExprNode:
+    return iter(n->as<StmtExprNode>());
+  case libquixcc::NodeType::NopStmtNode:
+    return iter(n->as<NopStmtNode>());
+  case libquixcc::NodeType::BlockNode:
+    return iter(n->as<BlockNode>());
+  case libquixcc::NodeType::StmtGroupNode:
+    return iter(n->as<StmtGroupNode>());
+  case libquixcc::NodeType::StaticCastExprNode:
+    return iter(n->as<StaticCastExprNode>());
+  case libquixcc::NodeType::BitCastExprNode:
+    return iter(n->as<BitCastExprNode>());
+  case libquixcc::NodeType::SignedUpcastExprNode:
+    return iter(n->as<SignedUpcastExprNode>());
+  case libquixcc::NodeType::UnsignedUpcastExprNode:
+    return iter(n->as<UnsignedUpcastExprNode>());
+  case libquixcc::NodeType::DowncastExprNode:
+    return iter(n->as<DowncastExprNode>());
+  case libquixcc::NodeType::UnaryExprNode:
+    return iter(n->as<UnaryExprNode>());
+  case libquixcc::NodeType::PostUnaryExprNode:
+    return iter(n->as<PostUnaryExprNode>());
+  case libquixcc::NodeType::BinaryExprNode:
+    return iter(n->as<BinaryExprNode>());
+  case libquixcc::NodeType::SeqExprNode:
+    return iter(n->as<SeqExprNode>());
+  case libquixcc::NodeType::CallExprNode:
+    return iter(n->as<CallExprNode>());
+  case libquixcc::NodeType::ListExprNode:
+    return iter(n->as<ListExprNode>());
+  case libquixcc::NodeType::AssocExprNode:
+    return iter(n->as<AssocExprNode>());
+  case libquixcc::NodeType::MemberAccessNode:
+    return iter(n->as<MemberAccessNode>());
+  case libquixcc::NodeType::IndexNode:
+    return iter(n->as<IndexNode>());
+  case libquixcc::NodeType::SliceNode:
+    return iter(n->as<SliceNode>());
+  case libquixcc::NodeType::FStringNode:
+    return iter(n->as<FStringNode>());
+  case libquixcc::NodeType::ConstUnaryExprNode:
+    return iter(n->as<ConstUnaryExprNode>());
+  case libquixcc::NodeType::ConstPostUnaryExprNode:
+    return iter(n->as<ConstPostUnaryExprNode>());
+  case libquixcc::NodeType::ConstBinaryExprNode:
+    return iter(n->as<ConstBinaryExprNode>());
+  case libquixcc::NodeType::IdentifierNode:
+    return iter(n->as<IdentifierNode>());
+  case libquixcc::NodeType::MutTypeNode:
+    return iter(n->as<MutTypeNode>());
+  case libquixcc::NodeType::U8TypeNode:
+    return iter(n->as<U8TypeNode>());
+  case libquixcc::NodeType::U16TypeNode:
+    return iter(n->as<U16TypeNode>());
+  case libquixcc::NodeType::U32TypeNode:
+    return iter(n->as<U32TypeNode>());
+  case libquixcc::NodeType::U64TypeNode:
+    return iter(n->as<U64TypeNode>());
+  case libquixcc::NodeType::U128TypeNode:
+    return iter(n->as<U128TypeNode>());
+  case libquixcc::NodeType::I8TypeNode:
+    return iter(n->as<I8TypeNode>());
+  case libquixcc::NodeType::I16TypeNode:
+    return iter(n->as<I16TypeNode>());
+  case libquixcc::NodeType::I32TypeNode:
+    return iter(n->as<I32TypeNode>());
+  case libquixcc::NodeType::I64TypeNode:
+    return iter(n->as<I64TypeNode>());
+  case libquixcc::NodeType::I128TypeNode:
+    return iter(n->as<I128TypeNode>());
+  case libquixcc::NodeType::F32TypeNode:
+    return iter(n->as<F32TypeNode>());
+  case libquixcc::NodeType::F64TypeNode:
+    return iter(n->as<F64TypeNode>());
+  case libquixcc::NodeType::BoolTypeNode:
+    return iter(n->as<BoolTypeNode>());
+  case libquixcc::NodeType::VoidTypeNode:
+    return iter(n->as<VoidTypeNode>());
+  case libquixcc::NodeType::NullTypeNode:
+    return iter(n->as<NullTypeNode>());
+  case libquixcc::NodeType::PointerTypeNode:
+    return iter(n->as<PointerTypeNode>());
+  case libquixcc::NodeType::OpaqueTypeNode:
+    return iter(n->as<OpaqueTypeNode>());
+  case libquixcc::NodeType::StringTypeNode:
+    return iter(n->as<StringTypeNode>());
+  case libquixcc::NodeType::EnumTypeNode:
+    return iter(n->as<EnumTypeNode>());
+  case libquixcc::NodeType::StructTypeNode:
+    return iter(n->as<StructTypeNode>());
+  case libquixcc::NodeType::GroupTypeNode:
+    return iter(n->as<GroupTypeNode>());
+  case libquixcc::NodeType::RegionTypeNode:
+    return iter(n->as<RegionTypeNode>());
+  case libquixcc::NodeType::UnionTypeNode:
+    return iter(n->as<UnionTypeNode>());
+  case libquixcc::NodeType::ArrayTypeNode:
+    return iter(n->as<ArrayTypeNode>());
+  case libquixcc::NodeType::VectorTypeNode:
+    return iter(n->as<VectorTypeNode>());
+  case libquixcc::NodeType::MapTypeNode:
+    return iter(n->as<MapTypeNode>());
+  case libquixcc::NodeType::TupleTypeNode:
+    return iter(n->as<TupleTypeNode>());
+  case libquixcc::NodeType::SetTypeNode:
+    return iter(n->as<SetTypeNode>());
+  case libquixcc::NodeType::ResultTypeNode:
+    return iter(n->as<ResultTypeNode>());
+  case libquixcc::NodeType::FunctionTypeNode:
+    return iter(n->as<FunctionTypeNode>());
+  case libquixcc::NodeType::UserTypeNode:
+    return iter(n->as<UserTypeNode>());
+  case libquixcc::NodeType::IntegerNode:
+    return iter(n->as<IntegerNode>());
+  case libquixcc::NodeType::FloatLiteralNode:
+    return iter(n->as<FloatLiteralNode>());
+  case libquixcc::NodeType::StringNode:
+    return iter(n->as<StringNode>());
+  case libquixcc::NodeType::CharNode:
+    return iter(n->as<CharNode>());
+  case libquixcc::NodeType::BoolLiteralNode:
+    return iter(n->as<BoolLiteralNode>());
+  case libquixcc::NodeType::NullLiteralNode:
+    return iter(n->as<NullLiteralNode>());
+  case libquixcc::NodeType::UndefLiteralNode:
+    return iter(n->as<UndefLiteralNode>());
+  case libquixcc::NodeType::TypedefNode:
+    return iter(n->as<TypedefNode>());
+  case libquixcc::NodeType::VarDeclNode:
+    return iter(n->as<VarDeclNode>());
+  case libquixcc::NodeType::LetDeclNode:
+    return iter(n->as<LetDeclNode>());
+  case libquixcc::NodeType::ConstDeclNode:
+    return iter(n->as<ConstDeclNode>());
+  case libquixcc::NodeType::FunctionDeclNode:
+    return iter(n->as<FunctionDeclNode>());
+  case libquixcc::NodeType::StructDefNode:
+    return iter(n->as<StructDefNode>());
+  case libquixcc::NodeType::StructFieldNode:
+    return iter(n->as<StructFieldNode>());
+  case libquixcc::NodeType::RegionDefNode:
+    return iter(n->as<RegionDefNode>());
+  case libquixcc::NodeType::RegionFieldNode:
+    return iter(n->as<RegionFieldNode>());
+  case libquixcc::NodeType::GroupDefNode:
+    return iter(n->as<GroupDefNode>());
+  case libquixcc::NodeType::GroupFieldNode:
+    return iter(n->as<GroupFieldNode>());
+  case libquixcc::NodeType::UnionDefNode:
+    return iter(n->as<UnionDefNode>());
+  case libquixcc::NodeType::UnionFieldNode:
+    return iter(n->as<UnionFieldNode>());
+  case libquixcc::NodeType::EnumDefNode:
+    return iter(n->as<EnumDefNode>());
+  case libquixcc::NodeType::EnumFieldNode:
+    return iter(n->as<EnumFieldNode>());
+  case libquixcc::NodeType::FunctionDefNode:
+    return iter(n->as<FunctionDefNode>());
+  case libquixcc::NodeType::FunctionParamNode:
+    return iter(n->as<FunctionParamNode>());
+  case libquixcc::NodeType::SubsystemNode:
+    return iter(n->as<SubsystemNode>());
+  case libquixcc::NodeType::ExportNode:
+    return iter(n->as<ExportNode>());
+  case libquixcc::NodeType::InlineAsmNode:
+    return iter(n->as<InlineAsmNode>());
+  case libquixcc::NodeType::ReturnStmtNode:
+    return iter(n->as<ReturnStmtNode>());
+  case libquixcc::NodeType::RetifStmtNode:
+    return iter(n->as<RetifStmtNode>());
+  case libquixcc::NodeType::RetzStmtNode:
+    return iter(n->as<RetzStmtNode>());
+  case libquixcc::NodeType::RetvStmtNode:
+    return iter(n->as<RetvStmtNode>());
+  case libquixcc::NodeType::BreakStmtNode:
+    return iter(n->as<BreakStmtNode>());
+  case libquixcc::NodeType::ContinueStmtNode:
+    return iter(n->as<ContinueStmtNode>());
+  case libquixcc::NodeType::IfStmtNode:
+    return iter(n->as<IfStmtNode>());
+  case libquixcc::NodeType::WhileStmtNode:
+    return iter(n->as<WhileStmtNode>());
+  case libquixcc::NodeType::ForStmtNode:
+    return iter(n->as<ForStmtNode>());
+  case libquixcc::NodeType::FormStmtNode:
+    return iter(n->as<FormStmtNode>());
+  case libquixcc::NodeType::ForeachStmtNode:
+    return iter(n->as<ForeachStmtNode>());
+  case libquixcc::NodeType::CaseStmtNode:
+    return iter(n->as<CaseStmtNode>());
+  case libquixcc::NodeType::SwitchStmtNode:
+    return iter(n->as<SwitchStmtNode>());
 
-    default:
-      LOG(FATAL) << "No conversion function for node type " << (int)n->ntype
-                 << " found." << std::endl;
-      throw core::Exception();
+  default:
+    LOG(FATAL) << "No conversion function for node type " << (int)n->ntype << " found."
+               << std::endl;
+    throw core::Exception();
   }
 }
 
@@ -504,16 +501,18 @@ size_t ParseTreePreorder::iter(OpaqueTypeNode *node) { return 1; }
 size_t ParseTreePreorder::iter(StringTypeNode *node) { return 1; }
 
 size_t ParseTreePreorder::iter(EnumTypeNode *node) {
-  if (!node->m_member_type) return 1;
+  if (!node->m_member_type)
+    return 1;
 
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_member_type));
   return next(node->m_member_type) + 1;
 }
 
 size_t ParseTreePreorder::iter(StructTypeNode *node) {
-  if (m_visited.contains(node)) return 1;
+  if (m_visited.contains(node))
+    return 1;
 
-  m_visited.insert(node);  // Prevent infinite recursion
+  m_visited.insert(node); // Prevent infinite recursion
 
   size_t count = 0;
   for (auto &field : node->m_fields) {
@@ -524,9 +523,10 @@ size_t ParseTreePreorder::iter(StructTypeNode *node) {
 }
 
 size_t ParseTreePreorder::iter(GroupTypeNode *node) {
-  if (m_visited.contains(node)) return 1;
+  if (m_visited.contains(node))
+    return 1;
 
-  m_visited.insert(node);  // Prevent infinite recursion
+  m_visited.insert(node); // Prevent infinite recursion
 
   size_t count = 0;
   for (auto &field : node->m_fields) {
@@ -537,9 +537,10 @@ size_t ParseTreePreorder::iter(GroupTypeNode *node) {
 }
 
 size_t ParseTreePreorder::iter(RegionTypeNode *node) {
-  if (m_visited.contains(node)) return 1;
+  if (m_visited.contains(node))
+    return 1;
 
-  m_visited.insert(node);  // Prevent infinite recursion
+  m_visited.insert(node); // Prevent infinite recursion
 
   size_t count = 0;
   for (auto &field : node->m_fields) {
@@ -550,9 +551,10 @@ size_t ParseTreePreorder::iter(RegionTypeNode *node) {
 }
 
 size_t ParseTreePreorder::iter(UnionTypeNode *node) {
-  if (m_visited.contains(node)) return 1;
+  if (m_visited.contains(node))
+    return 1;
 
-  m_visited.insert(node);  // Prevent infinite recursion
+  m_visited.insert(node); // Prevent infinite recursion
 
   size_t count = 0;
   for (auto &field : node->m_fields) {
@@ -846,7 +848,8 @@ size_t ParseTreePreorder::iter(UnionFieldNode *node) {
 size_t ParseTreePreorder::iter(EnumDefNode *node) {
   bool scoped = !node->m_type->m_name.empty();
 
-  if (scoped) m_scope.push_back(node->m_type->m_name);
+  if (scoped)
+    m_scope.push_back(node->m_type->m_name);
 
   m_callback(m_ns, m_scope, node, mk_ptr(&node->m_type));
   size_t count = next(node->m_type);
@@ -855,7 +858,8 @@ size_t ParseTreePreorder::iter(EnumDefNode *node) {
     count += next(field);
   }
 
-  if (scoped) m_scope.pop_back();
+  if (scoped)
+    m_scope.pop_back();
 
   return count + 1;
 }

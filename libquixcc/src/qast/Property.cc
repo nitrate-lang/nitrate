@@ -50,23 +50,19 @@ LIB_EXPORT uint16_t quixcc_ast_subcount(quixcc_ast_ntype_t type) {
   quixcc_panic("quixcc_ast_subcount() is not implemented");
 }
 
-LIB_EXPORT quixcc_ast_ftype_t quixcc_ast_field_type(quixcc_ast_node_t *node,
-                                                    uint16_t index) {
+LIB_EXPORT quixcc_ast_ftype_t quixcc_ast_field_type(quixcc_ast_node_t *node, uint16_t index) {
   quixcc_panic("quixcc_ast_field_type() is not implemented");
 }
 
-LIB_EXPORT const char *quixcc_ast_field_name(quixcc_ast_node_t *node,
-                                             uint16_t index) {
+LIB_EXPORT const char *quixcc_ast_field_name(quixcc_ast_node_t *node, uint16_t index) {
   quixcc_panic("quixcc_ast_field_name() is not implemented");
 }
 
-LIB_EXPORT uint16_t quixcc_ast_field_index(quixcc_ast_node_t *node,
-                                           const char *name) {
+LIB_EXPORT uint16_t quixcc_ast_field_index(quixcc_ast_node_t *node, const char *name) {
   quixcc_panic("quixcc_ast_field_index() is not implemented");
 }
 
-LIB_EXPORT quixcc_ast_node_t **quixcc_ast_get_child(quixcc_ast_node_t *node,
-                                                    uint16_t index) {
+LIB_EXPORT quixcc_ast_node_t **quixcc_ast_get_child(quixcc_ast_node_t *node, uint16_t index) {
   quixcc_panic("quixcc_ast_get_child() is not implemented");
 }
 

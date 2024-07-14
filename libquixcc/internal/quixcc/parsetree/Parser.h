@@ -43,68 +43,65 @@
 #include <memory>
 
 namespace libquixcc {
-typedef BlockNode Ptree;
+  typedef BlockNode Ptree;
 
-bool parse(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-           std::shared_ptr<BlockNode> &node, bool expect_braces = true,
-           bool single_stmt = false);
-bool parse_pub(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-               std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse(quixcc_cc_job_t &job, libquixcc::Scanner *scanner, std::shared_ptr<BlockNode> &node,
+             bool expect_braces = true, bool single_stmt = false);
+  bool parse_pub(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                 std::shared_ptr<libquixcc::StmtNode> &node);
 
-bool parse_let(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-               std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
-bool parse_const(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+  bool parse_let(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                  std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
-bool parse_var(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-               std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
-bool parse_enum(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_struct(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+  bool parse_const(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                   std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
+  bool parse_var(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                 std::vector<std::shared_ptr<libquixcc::StmtNode>> &node);
+  bool parse_enum(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                   std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_region(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                  std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_group(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                 std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_union(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                 std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_subsystem(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                     std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+  bool parse_struct(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                     std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_const_expr(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                      Token terminator,
-                      std::shared_ptr<libquixcc::ConstExprNode> &node);
-bool parse_expr(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                std::set<Token> terminators,
-                std::shared_ptr<libquixcc::ExprNode> &node, size_t depth = 0);
-bool parse_type(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                std::shared_ptr<TypeNode> &node);
-bool parse_typedef(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+  bool parse_region(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                    std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_group(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                    std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_return(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                  std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_retif(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                 std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_retz(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_retv(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_if(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-              std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_while(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                 std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-               std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_form(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_foreach(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+  bool parse_union(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                    std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_case(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                  std::shared_ptr<libquixcc::StmtNode> &node);
-bool parse_inline_asm(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+  bool parse_subsystem(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                       std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                       std::shared_ptr<libquixcc::StmtNode> &node);
-};  // namespace libquixcc
+  bool parse_const_expr(quixcc_cc_job_t &job, libquixcc::Scanner *scanner, Token terminator,
+                        std::shared_ptr<libquixcc::ConstExprNode> &node);
+  bool parse_expr(quixcc_cc_job_t &job, libquixcc::Scanner *scanner, std::set<Token> terminators,
+                  std::shared_ptr<libquixcc::ExprNode> &node, size_t depth = 0);
+  bool parse_type(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                  std::shared_ptr<TypeNode> &node);
+  bool parse_typedef(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                     std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_return(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                    std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_retif(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                   std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_retz(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                  std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_retv(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                  std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_if(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_while(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                   std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                 std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_form(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                  std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_foreach(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                     std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_case(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                  std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                    std::shared_ptr<libquixcc::StmtNode> &node);
+  bool parse_inline_asm(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                        std::shared_ptr<libquixcc::StmtNode> &node);
+}; // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_H__
+#endif // __QUIXCC_PARSE_H__

@@ -45,120 +45,117 @@
 #include <vector>
 
 namespace quixcc {
-class TargetTripleException : public std::runtime_error {
- public:
-  TargetTripleException(const std::string &msg) : std::runtime_error(msg) {}
-};
+  class TargetTripleException : public std::runtime_error {
+public:
+    TargetTripleException(const std::string &msg) : std::runtime_error(msg) {}
+  };
 
-class CpuException : public std::runtime_error {
- public:
-  CpuException(const std::string &msg) : std::runtime_error(msg) {}
-};
+  class CpuException : public std::runtime_error {
+public:
+    CpuException(const std::string &msg) : std::runtime_error(msg) {}
+  };
 
-class TargetTriple {
-  std::string m_triple;
+  class TargetTriple {
+    std::string m_triple;
 
- public:
-  TargetTriple(const std::string &triple = "") : TargetTriple(triple.c_str()) {}
+public:
+    TargetTriple(const std::string &triple = "") : TargetTriple(triple.c_str()) {}
 
-  TargetTriple(const char *triple);
+    TargetTriple(const char *triple);
 
-  const std::string &triple() const { return m_triple; }
-};
+    const std::string &triple() const { return m_triple; }
+  };
 
-class CPU {
-  std::string m_cpu;
+  class CPU {
+    std::string m_cpu;
 
- public:
-  CPU(const std::string &cpu = "") : CPU(cpu.c_str()) {}
+public:
+    CPU(const std::string &cpu = "") : CPU(cpu.c_str()) {}
 
-  CPU(const char *cpu);
+    CPU(const char *cpu);
 
-  const std::string &cpu() const { return m_cpu; }
-};
+    const std::string &cpu() const { return m_cpu; }
+  };
 
-enum class Verbosity { NORMAL = 0, VERBOSE = 1, VERY_VERBOSE = 2 };
+  enum class Verbosity { NORMAL = 0, VERBOSE = 1, VERY_VERBOSE = 2 };
 
-enum class OptimizationLevel {
-  NONE = 0,
-  SIZE = 10,
-  SPEED_1 = 30,
-  SPEED_2 = 40,
-  SPEED_3 = 50,
-  SPEED_4 = 60,
-};
+  enum class OptimizationLevel {
+    NONE = 0,
+    SIZE = 10,
+    SPEED_1 = 30,
+    SPEED_2 = 40,
+    SPEED_3 = 50,
+    SPEED_4 = 60,
+  };
 
-class Compiler {
-  std::vector<quixcc_cc_job_t *> m_jobs;
-  std::set<FILE *> m_to_close;
-  std::vector<std::pair<std::string, enum quixcc_msg_level_t>> m_messages;
-  bool m_ok;
+  class Compiler {
+    std::vector<quixcc_cc_job_t *> m_jobs;
+    std::set<FILE *> m_to_close;
+    std::vector<std::pair<std::string, enum quixcc_msg_level_t>> m_messages;
+    bool m_ok;
 
-  Compiler(const Compiler &) = delete;
-  Compiler(Compiler &&) = delete;
-  Compiler &operator=(const Compiler &) = delete;
+    Compiler(const Compiler &) = delete;
+    Compiler(Compiler &&) = delete;
+    Compiler &operator=(const Compiler &) = delete;
 
- public:
-  Compiler(std::vector<quixcc_cc_job_t *> jobs, std::set<FILE *> to_close);
+public:
+    Compiler(std::vector<quixcc_cc_job_t *> jobs, std::set<FILE *> to_close);
 
-  ~Compiler();
+    ~Compiler();
 
-  Compiler &run(size_t max_threads = 4);
+    Compiler &run(size_t max_threads = 4);
 
-  const std::vector<std::pair<std::string, enum quixcc_msg_level_t>> &messages()
-      const {
-    return m_messages;
-  }
+    const std::vector<std::pair<std::string, enum quixcc_msg_level_t>> &messages() const {
+      return m_messages;
+    }
 
-  Compiler &puts(std::ostream &normal = std::cout,
-                 std::ostream &error = std::cerr);
+    Compiler &puts(std::ostream &normal = std::cout, std::ostream &error = std::cerr);
 
-  bool ok() const { return m_ok; }
-};
+    bool ok() const { return m_ok; }
+  };
 
-class CompilerBuilder {
-  std::vector<std::pair<FILE *, std::string>> m_files;
-  std::vector<std::string> m_flags;
-  std::set<FILE *> m_to_close;
-  FILE *m_input;
-  FILE *m_output;
-  Verbosity m_verbose;
-  TargetTriple m_target;
-  CPU m_cpu;
-  bool m_disregard;
+  class CompilerBuilder {
+    std::vector<std::pair<FILE *, std::string>> m_files;
+    std::vector<std::string> m_flags;
+    std::set<FILE *> m_to_close;
+    FILE *m_input;
+    FILE *m_output;
+    Verbosity m_verbose;
+    TargetTriple m_target;
+    CPU m_cpu;
+    bool m_disregard;
 
- public:
-  CompilerBuilder();
-  ~CompilerBuilder() = default;
+public:
+    CompilerBuilder();
+    ~CompilerBuilder() = default;
 
-  CompilerBuilder &add_source(const std::string &file);
-  CompilerBuilder &add_code(const char *code, size_t size);
-  CompilerBuilder &add_source(FILE *input);
+    CompilerBuilder &add_source(const std::string &file);
+    CompilerBuilder &add_code(const char *code, size_t size);
+    CompilerBuilder &add_source(FILE *input);
 
-  CompilerBuilder &set_output(const std::string &file);
-  CompilerBuilder &set_output(FILE *output);
+    CompilerBuilder &set_output(const std::string &file);
+    CompilerBuilder &set_output(FILE *output);
 
-  CompilerBuilder &add_include(const std::string &dir);
-  CompilerBuilder &add_library(const std::string &dir);
-  CompilerBuilder &link_library(const std::string &lib);
-  CompilerBuilder &define(const std::string &name, const std::string &value);
-  CompilerBuilder &undefine(const std::string &name);
-  CompilerBuilder &set_flag(const std::string &flag);
-  CompilerBuilder &set_verbosity(Verbosity verbose = Verbosity::NORMAL);
-  CompilerBuilder &set_optimization(
-      OptimizationLevel optimize = OptimizationLevel::SPEED_1);
-  CompilerBuilder &set_debug(bool debug = true);
+    CompilerBuilder &add_include(const std::string &dir);
+    CompilerBuilder &add_library(const std::string &dir);
+    CompilerBuilder &link_library(const std::string &lib);
+    CompilerBuilder &define(const std::string &name, const std::string &value);
+    CompilerBuilder &undefine(const std::string &name);
+    CompilerBuilder &set_flag(const std::string &flag);
+    CompilerBuilder &set_verbosity(Verbosity verbose = Verbosity::NORMAL);
+    CompilerBuilder &set_optimization(OptimizationLevel optimize = OptimizationLevel::SPEED_1);
+    CompilerBuilder &set_debug(bool debug = true);
 
-  CompilerBuilder &opt(const std::string &flag);
-  CompilerBuilder &disregard(bool disregard = true);
+    CompilerBuilder &opt(const std::string &flag);
+    CompilerBuilder &disregard(bool disregard = true);
 
-  CompilerBuilder &target(TargetTriple target);
-  CompilerBuilder &cpu(CPU cpu);
+    CompilerBuilder &target(TargetTriple target);
+    CompilerBuilder &cpu(CPU cpu);
 
-  bool verify();
+    bool verify();
 
-  Compiler build();
-};
-}  // namespace quixcc
+    Compiler build();
+  };
+} // namespace quixcc
 
-#endif  // __QUIXCC_HPP__
+#endif // __QUIXCC_HPP__

@@ -40,31 +40,30 @@
 #include <string>
 
 namespace libquixcc::core {
-class Exception : public std::runtime_error {
- public:
-  Exception(const std::string &msg = "") : std::runtime_error(msg) {}
-};
+  class Exception : public std::runtime_error {
+public:
+    Exception(const std::string &msg = "") : std::runtime_error(msg) {}
+  };
 
-class PreprocessorException : public Exception {
- public:
-  PreprocessorException(const std::string &msg = "") : Exception(msg) {}
-};
+  class PreprocessorException : public Exception {
+public:
+    PreprocessorException(const std::string &msg = "") : Exception(msg) {}
+  };
 
-class ProgrammaticPreprocessorException : public PreprocessorException {
- public:
-  ProgrammaticPreprocessorException(const std::string &msg = "")
-      : PreprocessorException(msg) {}
-};
+  class ProgrammaticPreprocessorException : public PreprocessorException {
+public:
+    ProgrammaticPreprocessorException(const std::string &msg = "") : PreprocessorException(msg) {}
+  };
 
-class ParseException : public Exception {
- public:
-  ParseException(const std::string &msg = "") : Exception(msg) {}
-};
+  class ParseException : public Exception {
+public:
+    ParseException(const std::string &msg = "") : Exception(msg) {}
+  };
 
-class SemanticException : public Exception {
- public:
-  SemanticException(const std::string &msg = "") : Exception(msg) {}
-};
-}  // namespace libquixcc::core
+  class SemanticException : public Exception {
+public:
+    SemanticException(const std::string &msg = "") : Exception(msg) {}
+  };
+} // namespace libquixcc::core
 
-#endif  // __QUIXCC_ERROR_EXCEPTIONS_H__
+#endif // __QUIXCC_ERROR_EXCEPTIONS_H__

@@ -67,8 +67,7 @@ static quixcc_cache_key_t calculate_key(rstr data) {
   return key;
 }
 
-std::optional<std::string> PrepEngine::generate_adapter_entrypoint(
-    PrepEngine::rstr metastatic) {
+std::optional<std::string> PrepEngine::generate_adapter_entrypoint(PrepEngine::rstr metastatic) {
   stringstream ss;
 
   /* Begin Macro Entrypoint */
@@ -112,10 +111,7 @@ std::optional<std::string> PrepEngine::generate_adapter_entrypoint(
       return std::nullopt;
     }
 
-    if (!qmodule->root()
-             ->children.at(0)
-             ->as<ir::q::Global>()
-             ->value->is<ir::q::Segment>()) {
+    if (!qmodule->root()->children.at(0)->as<ir::q::Global>()->value->is<ir::q::Segment>()) {
       LOG(ERROR) << "Metastatic must be a function definition" << endl;
       return std::nullopt;
     }
@@ -137,55 +133,53 @@ std::optional<std::string> PrepEngine::generate_adapter_entrypoint(
   std::string arguments;
   size_t i = 0;
 
-  for (auto it = metafn->params.begin(); it != metafn->params.end();
-       it++, i++) {
+  for (auto it = metafn->params.begin(); it != metafn->params.end(); it++, i++) {
     auto pparam = *it;
     auto p = pparam.second;
 
     switch ((ir::q::QType)p->ntype) {
       using namespace ir::q;
 
-      case QType::I1:  /* 0-1 */
-      case QType::U8:  /* 0-255 */
-      case QType::U16: /* 0-65535 */
-      case QType::I8:  /* -128-127 */
-      case QType::I16: /* -32768-32767 */
-      case QType::I32: /* -2147483648-2147483647 */
-        arguments += "atoi(argv[" + to_string(i) + "])";
+    case QType::I1:  /* 0-1 */
+    case QType::U8:  /* 0-255 */
+    case QType::U16: /* 0-65535 */
+    case QType::I8:  /* -128-127 */
+    case QType::I16: /* -32768-32767 */
+    case QType::I32: /* -2147483648-2147483647 */
+      arguments += "atoi(argv[" + to_string(i) + "])";
+      break;
+    case QType::U32: /* 0-4294967295 */
+    case QType::I64: /* -9223372036854775808-9223372036854775807 */
+      arguments += "atol(argv[" + to_string(i) + "])";
+      break;
+    case QType::U64: /* 0-18446744073709551615 */
+      arguments += "atoll(argv[" + to_string(i) + "])";
+      break;
+    case QType::F32: /* ??? */
+    case QType::F64: /* ??? */
+      arguments += "atof(argv[" + to_string(i) + "])";
+      break;
+    case QType::I128:
+    case QType::U128:
+      LOG(ERROR) << "128-bit integers are not yet supported in macro "
+                    "functions"
+                 << endl;
+      return std::nullopt;
+    case QType::IntrinsicType: {
+      switch (p->as<IntrinsicType>()->name) {
+      case QIntrinsicType::String:
+        arguments += "argv[" + to_string(i) + "]";
         break;
-      case QType::U32: /* 0-4294967295 */
-      case QType::I64: /* -9223372036854775808-9223372036854775807 */
-        arguments += "atol(argv[" + to_string(i) + "])";
-        break;
-      case QType::U64: /* 0-18446744073709551615 */
-        arguments += "atoll(argv[" + to_string(i) + "])";
-        break;
-      case QType::F32: /* ??? */
-      case QType::F64: /* ??? */
-        arguments += "atof(argv[" + to_string(i) + "])";
-        break;
-      case QType::I128:
-      case QType::U128:
-        LOG(ERROR) << "128-bit integers are not yet supported in macro "
-                      "functions"
-                   << endl;
-        return std::nullopt;
-      case QType::IntrinsicType: {
-        switch (p->as<IntrinsicType>()->name) {
-          case QIntrinsicType::String:
-            arguments += "argv[" + to_string(i) + "]";
-            break;
-          default:
-            LOG(ERROR) << "Unsupported intrinsic type in macro function"
-                       << endl;
-            return std::nullopt;
-        }
-        break;
-      }
-
       default:
-        LOG(ERROR) << "Unsupported parameter type in macro function" << endl;
+        LOG(ERROR) << "Unsupported intrinsic type in macro function" << endl;
         return std::nullopt;
+      }
+      break;
+    }
+
+    default:
+      LOG(ERROR) << "Unsupported parameter type in macro function" << endl;
+      return std::nullopt;
     }
 
     if (i < argc - 1) {
@@ -206,8 +200,7 @@ str PrepEngine::build_macro_sourcecode(rstr parameter) {
   stringstream ss;
 
   /* Language version header */
-  ss << "@use \"v" << job->version->first << "." << job->version->second
-     << "\"\n\n";
+  ss << "@use \"v" << job->version->first << "." << job->version->second << "\"\n\n";
 
   /* Include all defined statics */
   ss << "/* Begin Static Definitions */\n";
@@ -291,13 +284,12 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
         return false;
       }
 
-      auto builder =
-          ::quixcc::CompilerBuilder()
-              .add_code(metacode.c_str(), metacode.size()) /* Add code */
-              .set_flag("-fPIC") /* Generate position-independent code */
-              .set_output(temp)  /* Output to memory stream */
-              .set_flag("-c")    /* Compile only */
-              .target("");       /* Default target */
+      auto builder = ::quixcc::CompilerBuilder()
+                         .add_code(metacode.c_str(), metacode.size()) /* Add code */
+                         .set_flag("-fPIC") /* Generate position-independent code */
+                         .set_output(temp)  /* Output to memory stream */
+                         .set_flag("-c")    /* Compile only */
+                         .target("");       /* Default target */
 
       /* Carry over include directories */
       for (const auto &dir : m_include_dirs) {
@@ -343,7 +335,7 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
 
       auto tmpname = absolute(bfs::unique_path().native()).string() + ".o";
 
-      {  /// Write object to temp file
+      { /// Write object to temp file
         ofstream temp_file(tmpname, ios::binary);
         if (!temp_file.is_open()) {
           LOG(FATAL) << "Failed to open temp file for shared object" << endl;
@@ -351,27 +343,25 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
         }
 
         temp_file.write((const char *)output.data(), output.size());
-      }  /// End Write object to temp file
+      } /// End Write object to temp file
 
-      {  /// INVOKE OS COMMAND TO COMPILE OBJECT TO SHARED OBJECT
-        const std::string gcc_cmd =
-            "qld -sharedlib -o " + tmpname + ".so " + tmpname;
+      { /// INVOKE OS COMMAND TO COMPILE OBJECT TO SHARED OBJECT
+        const std::string gcc_cmd = "qld -sharedlib -o " + tmpname + ".so " + tmpname;
         LOG(DEBUG) << "Compiling shared object: " << gcc_cmd << endl;
 
         if (system(gcc_cmd.c_str()) != 0) {
           std::filesystem::remove(tmpname);
-          LOG(FATAL)
-              << "Failed to compile shared object file during macro function "
-                 "synthesis"
-              << endl;
+          LOG(FATAL) << "Failed to compile shared object file during macro function "
+                        "synthesis"
+                     << endl;
           return false;
         }
 
-        std::filesystem::remove(tmpname);  // Remove the input object file
-        tmpname += ".so";  // Update the filename to the output file
-      }  /// End INVOKE OS COMMAND TO COMPILE OBJECT TO SHARED OBJECT
+        std::filesystem::remove(tmpname); // Remove the input object file
+        tmpname += ".so";                 // Update the filename to the output file
+      } /// End INVOKE OS COMMAND TO COMPILE OBJECT TO SHARED OBJECT
 
-      {  /// READ OUTPUT FILE INTO MEMORY
+      { /// READ OUTPUT FILE INTO MEMORY
         ifstream shared_object_file(tmpname, ios::binary);
         if (!shared_object_file.is_open()) {
           LOG(FATAL) << "Failed to open shared object file for reading" << endl;
@@ -387,7 +377,7 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
           LOG(FATAL) << "Failed to read shared object file" << endl;
           return false;
         }
-      }  /// End READ OUTPUT FILE INTO MEMORY
+      } /// End READ OUTPUT FILE INTO MEMORY
     }
 
     /* Write shared object to cache */
@@ -406,8 +396,7 @@ bool PrepEngine::acquire_shared_object(rstr metacode, vec8 &output) {
   } catch (...) {
     fclose(temp);
     free(rawbuf);
-    LOG(FATAL) << "Failed to build compiler for metacode: unknown error"
-               << endl;
+    LOG(FATAL) << "Failed to build compiler for metacode: unknown error" << endl;
     return false;
   }
 
@@ -425,9 +414,7 @@ bool PrepEngine::write_shared_object_to_temp_file(
   }
 
   /*=================== WRITE SHARED OBJECT TO TEMP FILE =====================*/
-  auto tmpname =
-      filesystem::absolute(boost::filesystem::unique_path().native()).string() +
-      ".o";
+  auto tmpname = filesystem::absolute(boost::filesystem::unique_path().native()).string() + ".o";
 
   {
     ofstream temp_file(tmpname, ios::binary);
@@ -436,8 +423,7 @@ bool PrepEngine::write_shared_object_to_temp_file(
       return false;
     }
 
-    temp_file.write(reinterpret_cast<const char *>(shared_object.data()),
-                    shared_object.size());
+    temp_file.write(reinterpret_cast<const char *>(shared_object.data()), shared_object.size());
     temp_file.close();
   }
 
@@ -457,13 +443,12 @@ bool PrepEngine::write_shared_object_to_temp_file(
   tmpname += ".so";
 
   /*==================== CREATE A MANAGED DELETER FOR THE TEMP FILE =========*/
-  tempfile =
-      unique_ptr<str, std::function<void(str *)>>(new str(tmpname), [](str *s) {
-        if (s) {
-          std::filesystem::remove(*s);
-          delete s;
-        }
-      });
+  tempfile = unique_ptr<str, std::function<void(str *)>>(new str(tmpname), [](str *s) {
+    if (s) {
+      std::filesystem::remove(*s);
+      delete s;
+    }
+  });
 
   return true;
 }
@@ -475,7 +460,7 @@ bool PrepEngine::load_shared_object(
 
   /*==================== LOAD SHARED OBJECT INTO MEMORY =====================*/
 
-  dlerror();  // Clear any existing errors
+  dlerror(); // Clear any existing errors
 
   handle_raw = dlopen(filename->c_str(), RTLD_LAZY);
   if (!handle_raw) {

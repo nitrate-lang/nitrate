@@ -196,7 +196,7 @@ typedef enum {
 typedef struct quixcc_lex_loc_t {
   uint32_t line;
   uint32_t column : 24;
-  const char* file;
+  const char *file;
 } __attribute__((packed)) quixcc_lex_loc_t;
 
 typedef struct quixcc_tok_t {
@@ -205,7 +205,7 @@ typedef struct quixcc_tok_t {
     quixcc_lex_op_t op;
     quixcc_lex_punct_t punct;
     quixcc_lex_kw_t kw;
-    const char* data;
+    const char *data;
   } val;
   quixcc_lex_type_t ty : 8;
 } __attribute__((packed)) quixcc_tok_t;
@@ -216,4 +216,4 @@ typedef struct quixcc_tok_t {
 }
 #endif
 
-#endif  // __QUIXCC_TYPES_TOKENS_H__
+#endif // __QUIXCC_TYPES_TOKENS_H__

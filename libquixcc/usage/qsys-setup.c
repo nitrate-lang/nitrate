@@ -33,18 +33,16 @@
 #include <quixcc/Library.h>
 #include <quixcc/plugin/EngineAPI.h>
 
-#define QSYS_DEFINE(_name, _desc)                                      \
-  bool qsys_##_name(quixcc_engine_t *e, uint32_t n, quixcc_expr_t **v, \
-                    uint32_t c)
+#define QSYS_DEFINE(_name, _desc)                                                                  \
+  bool qsys_##_name(quixcc_engine_t *e, uint32_t n, quixcc_expr_t **v, uint32_t c)
 
-const char source[] =
-    "@use \"v1.0\";\n"
-    "\n"
-    "fn main(): i32 {\n"
-    "  @qsys(6969, \"We are gods among men!\");\n"
-    "  @qsys(7000);\n"
-    "  ret 0;\n"
-    "}\n";
+const char source[] = "@use \"v1.0\";\n"
+                      "\n"
+                      "fn main(): i32 {\n"
+                      "  @qsys(6969, \"We are gods among men!\");\n"
+                      "  @qsys(7000);\n"
+                      "  ret 0;\n"
+                      "}\n";
 
 static bool make_job(quixcc_cc_job_t **job) {
   *job = quixcc_cc_new();
@@ -90,8 +88,7 @@ QSYS_DEFINE(call_inject, "Generate tokens example") {
   quixcc_engine_emit(e, quixcc_tok_new_ident(e, "printf"));
   quixcc_engine_emit(e, quixcc_tok_new_punct(e, QUIXCC_PUNCT_OPEN_PAREN));
   quixcc_engine_emit(e,
-                     quixcc_tok_new(e, QUIXCC_LEX_STR,
-                                    "We were **injected** at compile time!\n"));
+                     quixcc_tok_new(e, QUIXCC_LEX_STR, "We were **injected** at compile time!\n"));
   quixcc_engine_emit(e, quixcc_tok_new_punct(e, QUIXCC_PUNCT_CLOSE_PAREN));
   quixcc_engine_emit(e, quixcc_tok_new_punct(e, QUIXCC_PUNCT_SEMICOLON));
 

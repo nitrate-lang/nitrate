@@ -44,14 +44,14 @@
 #include <vector>
 
 namespace libquixcc {
-class ResultTypeNode : public TypeNode {
- public:
-  ResultTypeNode(std::shared_ptr<TypeNode> type) : m_type(type) {
-    ntype = NodeType::ResultTypeNode;
-  }
+  class ResultTypeNode : public TypeNode {
+public:
+    ResultTypeNode(std::shared_ptr<TypeNode> type) : m_type(type) {
+      ntype = NodeType::ResultTypeNode;
+    }
 
-  std::shared_ptr<TypeNode> m_type;
-};
-}  // namespace libquixcc
+    std::shared_ptr<TypeNode> m_type;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_TYPE_WRAPPER_H__
+#endif // __QUIXCC_PARSE_NODES_TYPE_WRAPPER_H__

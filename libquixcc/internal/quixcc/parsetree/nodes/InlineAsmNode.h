@@ -45,27 +45,21 @@
 #include <vector>
 
 namespace libquixcc {
-class InlineAsmNode : public StmtNode {
- public:
-  InlineAsmNode(
-      const std::string &asmcode,
-      const std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>>
-          &outputs,
-      const std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>>
-          &inputs,
-      const std::vector<std::string> &clobbers)
-      : m_asm(asmcode),
-        m_outputs(outputs),
-        m_inputs(inputs),
-        m_clobbers(clobbers) {
-    ntype = NodeType::InlineAsmNode;
-  }
+  class InlineAsmNode : public StmtNode {
+public:
+    InlineAsmNode(const std::string &asmcode,
+                  const std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &outputs,
+                  const std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &inputs,
+                  const std::vector<std::string> &clobbers)
+        : m_asm(asmcode), m_outputs(outputs), m_inputs(inputs), m_clobbers(clobbers) {
+      ntype = NodeType::InlineAsmNode;
+    }
 
-  std::string m_asm;
-  std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_outputs;
-  std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_inputs;
-  std::vector<std::string> m_clobbers;
-};
-}  // namespace libquixcc
+    std::string m_asm;
+    std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_outputs;
+    std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> m_inputs;
+    std::vector<std::string> m_clobbers;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_INLINEASM_H__
+#endif // __QUIXCC_PARSE_NODES_INLINEASM_H__

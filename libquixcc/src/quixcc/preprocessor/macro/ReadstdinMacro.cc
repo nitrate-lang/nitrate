@@ -62,11 +62,9 @@ static void disable_noecho() {
   tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
 
-bool libquixcc::PrepEngine::ParseReadstdin(const Token &tok,
-                                           const std::string &directive,
+bool libquixcc::PrepEngine::ParseReadstdin(const Token &tok, const std::string &directive,
                                            const std::string &parameter) {
-  LOG(WARN) << "This macro is deprecated and will be removed in the future"
-            << tok << std::endl;
+  LOG(WARN) << "This macro is deprecated and will be removed in the future" << tok << std::endl;
 
   (void)directive;
 
@@ -121,9 +119,11 @@ bool libquixcc::PrepEngine::ParseReadstdin(const Token &tok,
 
   (void)binary;
 
-  if (maxlen == 0) return true;
+  if (maxlen == 0)
+    return true;
 
-  if (noecho) enable_noecho();
+  if (noecho)
+    enable_noecho();
 
   std::string input;
   if (binary) {
@@ -148,7 +148,8 @@ bool libquixcc::PrepEngine::ParseReadstdin(const Token &tok,
     emit(Token(tText, input));
   }
 
-  if (noecho) disable_noecho();
+  if (noecho)
+    disable_noecho();
 
   return true;
 }

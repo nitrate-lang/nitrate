@@ -56,5 +56,4 @@ bool libquixcc::test::parser_test_suite() {
   return true;
 }
 
-const std::vector<libquixcc::test::ParserVector>
-    libquixcc::test::parser_test_vectors = {};
+const std::vector<libquixcc::test::ParserVector> libquixcc::test::parser_test_vectors = {};

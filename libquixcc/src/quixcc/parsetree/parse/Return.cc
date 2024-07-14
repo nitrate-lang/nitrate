@@ -43,12 +43,13 @@ bool libquixcc::parse_return(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
   if (tok.is<Punctor>(Semicolon)) {
     scanner->next();
-    node = std::make_shared<ReturnStmtNode>(nullptr);  // void
+    node = std::make_shared<ReturnStmtNode>(nullptr); // void
     return true;
   }
 
   std::shared_ptr<ExprNode> expr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, expr)) return false;
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, expr))
+    return false;
   node = std::make_shared<ReturnStmtNode>(expr);
 
   tok = scanner->next();
@@ -155,7 +156,8 @@ bool libquixcc::parse_retv(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
   Token tok;
 
   std::shared_ptr<ExprNode> cond;
-  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, cond)) return false;
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, cond))
+    return false;
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Semicolon)) {

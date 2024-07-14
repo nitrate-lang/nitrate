@@ -57,14 +57,15 @@ typedef Value *QValue;
 class QResult {
   std::vector<QValue> m_values;
 
- public:
+  public:
   QResult() = default;
   QResult(const QValue &value) { m_values.push_back(value); }
   QResult(const std::vector<QValue> &values) : m_values(values) {}
   QResult(const std::initializer_list<QValue> &values) : m_values(values) {}
 
   operator bool() const {
-    if (m_values.empty()) return false;
+    if (m_values.empty())
+      return false;
 
     return m_values[0] != nullptr;
   }
@@ -359,19 +360,21 @@ static QResult conv(const StaticCastExprNode *n, QState &state) {
   assert(to);
 
   auto from = expr->infer();
-  if (to->is(from)) return expr;
+  if (to->is(from))
+    return expr;
 
   if (to->is_ptr() && from->is_integer())
     return ir::q::IPtrCast::create(to, expr);
-  if (to->is_integer() && from->is_ptr()) return ir::q::PtrICast::create(expr);
+  if (to->is_integer() && from->is_ptr())
+    return ir::q::PtrICast::create(expr);
   if (from->is_signed() || to->is_signed())
     return ir::q::SCast::create(to, expr);
   if (from->is_unsigned() && to->is_unsigned())
     return ir::q::UCast::create(to, expr);
-  if (from->is_float() && to->is_float()) return ir::q::SCast::create(to, expr);
+  if (from->is_float() && to->is_float())
+    return ir::q::SCast::create(to, expr);
 
-  LOG(FATAL) << "error converting from static_cast to primitive casts"
-             << std::endl;
+  LOG(FATAL) << "error converting from static_cast to primitive casts" << std::endl;
   return nullptr;
 }
 
@@ -387,8 +390,7 @@ static QResult conv(const BitCastExprNode *n, QState &state) {
    **/
 
   if (!n->m_expr) { /* If the input expression is null, abort */
-    LOG(ERROR) << "QIR conv: bit-cast expression has no expression"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: bit-cast expression has no expression" << std::endl;
     return nullptr;
   }
 
@@ -499,8 +501,7 @@ static QResult conv(const DowncastExprNode *n, QState &state) {
    **/
 
   if (!n->m_expr) { /* If the input expression is null, abort */
-    LOG(ERROR) << "QIR conv: downcast expression has no expression"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: downcast expression has no expression" << std::endl;
     return nullptr;
   }
 
@@ -513,14 +514,12 @@ static QResult conv(const DowncastExprNode *n, QState &state) {
   auto to = conv(n->m_type.get(), state);
 
   if (!expr) { /* If the output expression is null, abort */
-    LOG(ERROR) << "QIR conv: QIR u-cast (downcast) expression == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: QIR u-cast (downcast) expression == nullptr" << std::endl;
     return nullptr;
   }
 
   if (!to) { /* If the output type is null, abort */
-    LOG(ERROR) << "QIR conv: QIR u-cast (downcast) type == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: QIR u-cast (downcast) type == nullptr" << std::endl;
     return nullptr;
   }
 
@@ -533,34 +532,32 @@ static QResult conv(const UnaryExprNode *n, QState &state) {
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Plus:
-      return e;
-    case Minus:
-      return Sub::create(UCast::create(e->infer(), Number::create("0")), e);
-    case LogicalNot:
-      return Not::create(e);
-    case BitwiseNot:
-      return BitNot::create(e);
-    case Increment:
-      return Assign::create(
-          e, Add::create(e, UCast::create(e->infer(), Number::create("1"))));
-    case Decrement:
-      return Assign::create(
-          e, Sub::create(e, UCast::create(e->infer(), Number::create("1"))));
-    case BitwiseAnd:
-      return AddressOf::create(e);
-    case Multiply:
-      return Deref::create(e);
-    case Sizeof:
-      return Number::create(std::to_string(e->infer()->size()));
-    case Bitsizeof:
-      return Number::create(std::to_string(e->infer()->bitcount()));
-    case Alignof:
-      return Number::create(std::to_string(e->infer()->align()));
-    case Typeof:
-      return String::create(e->infer()->to_string());
-    default:
-      throw std::runtime_error("QIR UnaryExprNode operator not supported");
+  case Plus:
+    return e;
+  case Minus:
+    return Sub::create(UCast::create(e->infer(), Number::create("0")), e);
+  case LogicalNot:
+    return Not::create(e);
+  case BitwiseNot:
+    return BitNot::create(e);
+  case Increment:
+    return Assign::create(e, Add::create(e, UCast::create(e->infer(), Number::create("1"))));
+  case Decrement:
+    return Assign::create(e, Sub::create(e, UCast::create(e->infer(), Number::create("1"))));
+  case BitwiseAnd:
+    return AddressOf::create(e);
+  case Multiply:
+    return Deref::create(e);
+  case Sizeof:
+    return Number::create(std::to_string(e->infer()->size()));
+  case Bitsizeof:
+    return Number::create(std::to_string(e->infer()->bitcount()));
+  case Alignof:
+    return Number::create(std::to_string(e->infer()->align()));
+  case Typeof:
+    return String::create(e->infer()->to_string());
+  default:
+    throw std::runtime_error("QIR UnaryExprNode operator not supported");
   }
 }
 
@@ -570,12 +567,12 @@ static QResult conv(const PostUnaryExprNode *n, QState &state) {
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Increment:
-      return PostInc::create(e);
-    case Decrement:
-      return PostDec::create(e);
-    default:
-      throw std::runtime_error("QIR PostUnaryExprNode operator not supported");
+  case Increment:
+    return PostInc::create(e);
+  case Decrement:
+    return PostDec::create(e);
+  default:
+    throw std::runtime_error("QIR PostUnaryExprNode operator not supported");
   }
 }
 
@@ -584,20 +581,24 @@ static Expr *promote(Type *lht, ir::q::Expr *rhs) {
 
   auto rht = rhs->infer();
 
-  if (lht->is(rht)) return rhs;
+  if (lht->is(rht))
+    return rhs;
 
   /* The Intrinsic solver will handle this */
-  if (lht->is<IntrinsicType>() || rht->is<IntrinsicType>()) return rhs;
+  if (lht->is<IntrinsicType>() || rht->is<IntrinsicType>())
+    return rhs;
 
   if (lht->is_void() || rht->is_void())
     throw std::runtime_error("cannot promote void type");
 
-  if (lht->is_integer() && rht->is_ptr()) return ir::q::PtrICast::create(rhs);
+  if (lht->is_integer() && rht->is_ptr())
+    return ir::q::PtrICast::create(rhs);
 
   if (lht->is_ptr() && rht->is_integer())
     return ir::q::IPtrCast::create(lht, rhs);
 
-  if (lht->is_float() || rht->is_float()) return ir::q::SCast::create(lht, rhs);
+  if (lht->is_float() || rht->is_float())
+    return ir::q::SCast::create(lht, rhs);
 
   if (lht->is<I1>() && !rht->is<I1>())
     return ir::q::Ne::create(rhs, ir::q::Number::create("0"));
@@ -608,7 +609,8 @@ static Expr *promote(Type *lht, ir::q::Expr *rhs) {
   if (lht->is_unsigned() || rht->is_unsigned())
     return ir::q::UCast::create(lht, rhs);
 
-  if (lht->is_ptr() && rht->is_ptr()) return ir::q::Bitcast::create(lht, rhs);
+  if (lht->is_ptr() && rht->is_ptr())
+    return ir::q::Bitcast::create(lht, rhs);
 
   if (lht->is_ptr() && rht->is<Array>()) {
     auto l = lht->as<Ptr>();
@@ -617,8 +619,7 @@ static Expr *promote(Type *lht, ir::q::Expr *rhs) {
     if (!l->type->is(r->type))
       throw std::runtime_error("cannot promote type to pointer");
 
-    return ir::q::AddressOf::create(
-        ir::q::Index::create(rhs, ir::q::Number::create("0"), l->type));
+    return ir::q::AddressOf::create(ir::q::Index::create(rhs, ir::q::Number::create("0"), l->type));
   }
 
   return rhs;
@@ -637,16 +638,20 @@ static void bipromote(ir::q::Expr **lhs, ir::q::Expr **rhs) {
   auto lht = (*lhs)->infer();
   auto rht = (*rhs)->infer();
 
-  if (!lht || !rht) throw std::runtime_error("failed promote types");
+  if (!lht || !rht)
+    throw std::runtime_error("failed promote types");
 
-  if (lht->is_ptr()) *lhs = ir::q::PtrICast::create(*lhs);
+  if (lht->is_ptr())
+    *lhs = ir::q::PtrICast::create(*lhs);
 
-  if (rht->is_ptr()) *rhs = ir::q::PtrICast::create(*rhs);
+  if (rht->is_ptr())
+    *rhs = ir::q::PtrICast::create(*rhs);
 
   lht = (*lhs)->infer();
   rht = (*rhs)->infer();
 
-  if (lht->is(rht)) return;
+  if (lht->is(rht))
+    return;
 
   if (lht->is_void() || rht->is_void())
     throw std::runtime_error("cannot promote void type");
@@ -691,79 +696,79 @@ static QResult conv(const BinaryExprNode *n, QState &state) {
   auto rhs = conv(n->m_rhs.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Plus:
-      return bipromote(&lhs, &rhs), Add::create(lhs, rhs);
-    case Minus:
-      return bipromote(&lhs, &rhs), Sub::create(lhs, rhs);
-    case Multiply:
-      return bipromote(&lhs, &rhs), Mul::create(lhs, rhs);
-    case Divide:
-      return bipromote(&lhs, &rhs), Div::create(lhs, rhs);
-    case Modulo:
-      return bipromote(&lhs, &rhs), Mod::create(lhs, rhs);
-    case BitwiseAnd:
-      return bipromote(&lhs, &rhs), BitAnd::create(lhs, rhs);
-    case BitwiseOr:
-      return bipromote(&lhs, &rhs), BitOr::create(lhs, rhs);
-    case BitwiseXor:
-      return bipromote(&lhs, &rhs), BitXor::create(lhs, rhs);
-    case LeftShift:
-      return bipromote(&lhs, &rhs), Shl::create(lhs, rhs);
-    case RightShift:
-      return bipromote(&lhs, &rhs), Shr::create(lhs, rhs);
-    case RotateLeft:
-      return bipromote(&lhs, &rhs), Rotl::create(lhs, rhs);
-    case RotateRight:
-      return bipromote(&lhs, &rhs), Rotr::create(lhs, rhs);
-    case LogicalAnd:
-      return bipromote(&lhs, &rhs), And::create(lhs, rhs);
-    case LogicalOr:
-      return bipromote(&lhs, &rhs), Or::create(lhs, rhs);
-    case LogicalXor:
-      return bipromote(&lhs, &rhs), Xor::create(lhs, rhs);
-    case LessThan:
-      return bipromote(&lhs, &rhs), Lt::create(lhs, rhs);
-    case GreaterThan:
-      return bipromote(&lhs, &rhs), Gt::create(lhs, rhs);
-    case LessThanEqual:
-      return bipromote(&lhs, &rhs), Le::create(lhs, rhs);
-    case GreaterThanEqual:
-      return bipromote(&lhs, &rhs), Ge::create(lhs, rhs);
-    case Equal:
-      return bipromote(&lhs, &rhs), Eq::create(lhs, rhs);
-    case NotEqual:
-      return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
-    case OpAssign:
-      return Assign::create(lhs, promote(lhs, rhs));
-    case PlusAssign:
-      return Assign::create(lhs, Add::create(lhs, promote(lhs, rhs)));
-    case MinusAssign:
-      return Assign::create(lhs, Sub::create(lhs, promote(lhs, rhs)));
-    case MultiplyAssign:
-      return Assign::create(lhs, Mul::create(lhs, promote(lhs, rhs)));
-    case DivideAssign:
-      return Assign::create(lhs, Div::create(lhs, promote(lhs, rhs)));
-    case ModuloAssign:
-      return Assign::create(lhs, Mod::create(lhs, promote(lhs, rhs)));
-    case BitwiseOrAssign:
-      return Assign::create(lhs, BitOr::create(lhs, promote(lhs, rhs)));
-    case BitwiseAndAssign:
-      return Assign::create(lhs, BitAnd::create(lhs, promote(lhs, rhs)));
-    case BitwiseXorAssign:
-      return Assign::create(lhs, BitXor::create(lhs, promote(lhs, rhs)));
-    case XorAssign:
-      return Assign::create(lhs, Xor::create(lhs, promote(lhs, rhs)));
-    case OrAssign:
-      return Assign::create(lhs, Or::create(lhs, promote(lhs, rhs)));
-    case AndAssign:
-      return Assign::create(lhs, And::create(lhs, promote(lhs, rhs)));
-    case LeftShiftAssign:
-      return Assign::create(lhs, Shl::create(lhs, promote(lhs, rhs)));
-    case RightShiftAssign:
-      return Assign::create(lhs, Shr::create(lhs, promote(lhs, rhs)));
+  case Plus:
+    return bipromote(&lhs, &rhs), Add::create(lhs, rhs);
+  case Minus:
+    return bipromote(&lhs, &rhs), Sub::create(lhs, rhs);
+  case Multiply:
+    return bipromote(&lhs, &rhs), Mul::create(lhs, rhs);
+  case Divide:
+    return bipromote(&lhs, &rhs), Div::create(lhs, rhs);
+  case Modulo:
+    return bipromote(&lhs, &rhs), Mod::create(lhs, rhs);
+  case BitwiseAnd:
+    return bipromote(&lhs, &rhs), BitAnd::create(lhs, rhs);
+  case BitwiseOr:
+    return bipromote(&lhs, &rhs), BitOr::create(lhs, rhs);
+  case BitwiseXor:
+    return bipromote(&lhs, &rhs), BitXor::create(lhs, rhs);
+  case LeftShift:
+    return bipromote(&lhs, &rhs), Shl::create(lhs, rhs);
+  case RightShift:
+    return bipromote(&lhs, &rhs), Shr::create(lhs, rhs);
+  case RotateLeft:
+    return bipromote(&lhs, &rhs), Rotl::create(lhs, rhs);
+  case RotateRight:
+    return bipromote(&lhs, &rhs), Rotr::create(lhs, rhs);
+  case LogicalAnd:
+    return bipromote(&lhs, &rhs), And::create(lhs, rhs);
+  case LogicalOr:
+    return bipromote(&lhs, &rhs), Or::create(lhs, rhs);
+  case LogicalXor:
+    return bipromote(&lhs, &rhs), Xor::create(lhs, rhs);
+  case LessThan:
+    return bipromote(&lhs, &rhs), Lt::create(lhs, rhs);
+  case GreaterThan:
+    return bipromote(&lhs, &rhs), Gt::create(lhs, rhs);
+  case LessThanEqual:
+    return bipromote(&lhs, &rhs), Le::create(lhs, rhs);
+  case GreaterThanEqual:
+    return bipromote(&lhs, &rhs), Ge::create(lhs, rhs);
+  case Equal:
+    return bipromote(&lhs, &rhs), Eq::create(lhs, rhs);
+  case NotEqual:
+    return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
+  case OpAssign:
+    return Assign::create(lhs, promote(lhs, rhs));
+  case PlusAssign:
+    return Assign::create(lhs, Add::create(lhs, promote(lhs, rhs)));
+  case MinusAssign:
+    return Assign::create(lhs, Sub::create(lhs, promote(lhs, rhs)));
+  case MultiplyAssign:
+    return Assign::create(lhs, Mul::create(lhs, promote(lhs, rhs)));
+  case DivideAssign:
+    return Assign::create(lhs, Div::create(lhs, promote(lhs, rhs)));
+  case ModuloAssign:
+    return Assign::create(lhs, Mod::create(lhs, promote(lhs, rhs)));
+  case BitwiseOrAssign:
+    return Assign::create(lhs, BitOr::create(lhs, promote(lhs, rhs)));
+  case BitwiseAndAssign:
+    return Assign::create(lhs, BitAnd::create(lhs, promote(lhs, rhs)));
+  case BitwiseXorAssign:
+    return Assign::create(lhs, BitXor::create(lhs, promote(lhs, rhs)));
+  case XorAssign:
+    return Assign::create(lhs, Xor::create(lhs, promote(lhs, rhs)));
+  case OrAssign:
+    return Assign::create(lhs, Or::create(lhs, promote(lhs, rhs)));
+  case AndAssign:
+    return Assign::create(lhs, And::create(lhs, promote(lhs, rhs)));
+  case LeftShiftAssign:
+    return Assign::create(lhs, Shl::create(lhs, promote(lhs, rhs)));
+  case RightShiftAssign:
+    return Assign::create(lhs, Shr::create(lhs, promote(lhs, rhs)));
 
-    default:
-      throw std::runtime_error("QIR BinaryExprNode operator not supported");
+  default:
+    throw std::runtime_error("QIR BinaryExprNode operator not supported");
   }
 }
 
@@ -816,8 +821,7 @@ static QResult conv(const CallExprNode *n, QState &state) {
   }
 
   while (i < callee->value->as<Segment>()->params.size()) {
-    auto v =
-        conv(n->m_decl->m_params.at(i)->m_value.get(), state)[0]->as<Expr>();
+    auto v = conv(n->m_decl->m_params.at(i)->m_value.get(), state)[0]->as<Expr>();
     if (seg->params[i].second)
       args.push_back(promote(seg->params[i].second, v));
     else
@@ -878,58 +882,58 @@ static QResult conv(const MemberAccessNode *n, QState &state) {
   }
 
   switch ((ir::q::QType)t->ntype) {
-    case ir::q::QType::Region: {
-      auto x = t->as<Region>();
+  case ir::q::QType::Region: {
+    auto x = t->as<Region>();
 
-      if (!state.typedefs.contains(x->name))
-        throw std::runtime_error("QIR translation: MemberAccessNode not found");
-
-      if (state.typedefs[x->name]->is<RegionDefNode>()) {
-        auto def = state.typedefs[x->name]->as<RegionDefNode>();
-        for (size_t i = 0; i < def->m_fields.size(); i++) {
-          if (def->m_fields[i]->m_name == n->m_field) {
-            auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
-            return Member::create(e, i, t);
-          }
-        }
-      } else if (state.typedefs[x->name]->is<GroupDefNode>()) {
-        auto def = state.typedefs[x->name]->as<GroupDefNode>();
-        for (size_t i = 0; i < def->m_fields.size(); i++) {
-          if (def->m_fields[i]->m_name == n->m_field) {
-            auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
-            return Member::create(e, i, t);
-          }
-        }
-      } else {
-        auto def = state.typedefs[x->name]->as<StructDefNode>();
-        for (size_t i = 0; i < def->m_fields.size(); i++) {
-          if (def->m_fields[i]->m_name == n->m_field) {
-            auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
-            return Member::create(e, i, t);
-          }
-        }
-      }
-
+    if (!state.typedefs.contains(x->name))
       throw std::runtime_error("QIR translation: MemberAccessNode not found");
-    }
-    case ir::q::QType::Union: {
-      auto x = t->as<Union>();
 
-      if (!state.typedefs.contains(x->name))
-        throw std::runtime_error("QIR translation: MemberAccessNode not found");
-
-      auto def = state.typedefs[x->name]->as<UnionDefNode>();
+    if (state.typedefs[x->name]->is<RegionDefNode>()) {
+      auto def = state.typedefs[x->name]->as<RegionDefNode>();
       for (size_t i = 0; i < def->m_fields.size(); i++) {
         if (def->m_fields[i]->m_name == n->m_field) {
           auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
           return Member::create(e, i, t);
         }
       }
-
-      throw std::runtime_error("QIR translation: MemberAccessNode not found");
+    } else if (state.typedefs[x->name]->is<GroupDefNode>()) {
+      auto def = state.typedefs[x->name]->as<GroupDefNode>();
+      for (size_t i = 0; i < def->m_fields.size(); i++) {
+        if (def->m_fields[i]->m_name == n->m_field) {
+          auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
+          return Member::create(e, i, t);
+        }
+      }
+    } else {
+      auto def = state.typedefs[x->name]->as<StructDefNode>();
+      for (size_t i = 0; i < def->m_fields.size(); i++) {
+        if (def->m_fields[i]->m_name == n->m_field) {
+          auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
+          return Member::create(e, i, t);
+        }
+      }
     }
-    default:
-      throw std::runtime_error("MemberAccessNode not implemented");
+
+    throw std::runtime_error("QIR translation: MemberAccessNode not found");
+  }
+  case ir::q::QType::Union: {
+    auto x = t->as<Union>();
+
+    if (!state.typedefs.contains(x->name))
+      throw std::runtime_error("QIR translation: MemberAccessNode not found");
+
+    auto def = state.typedefs[x->name]->as<UnionDefNode>();
+    for (size_t i = 0; i < def->m_fields.size(); i++) {
+      if (def->m_fields[i]->m_name == n->m_field) {
+        auto t = conv(def->m_fields[i]->m_type.get(), state)[0]->as<Type>();
+        return Member::create(e, i, t);
+      }
+    }
+
+    throw std::runtime_error("QIR translation: MemberAccessNode not found");
+  }
+  default:
+    throw std::runtime_error("MemberAccessNode not implemented");
   }
 }
 
@@ -940,7 +944,8 @@ static QResult conv(const IndexNode *n, QState &state) {
   auto i = conv(n->m_index.get(), state)[0]->as<Expr>();
   auto t = e->infer()->as<Type>();
 
-  if (t->is_ptr()) return Index::create(e, i, t->as<Ptr>()->type);
+  if (t->is_ptr())
+    return Index::create(e, i, t->as<Ptr>()->type);
 
   return Index::create(e, i, t->as<Array>()->type);
 }
@@ -969,26 +974,26 @@ static QResult conv(const FStringNode *n, QState &state) {
 
   for (char c : n->template_string) {
     switch (fstate) {
-      case init: {
-        if (c == '{') {
-          fstate = check;
-          break;
-        }
-
-        literal += c;
+    case init: {
+      if (c == '{') {
+        fstate = check;
         break;
       }
-      case check: {
-        if (c == '{') {
-          literal += '{';
-          break;
-        }
 
-        literal_parts.push_back(String::create(literal));
-        literal.clear();
-        fstate = init;
+      literal += c;
+      break;
+    }
+    case check: {
+      if (c == '{') {
+        literal += '{';
         break;
       }
+
+      literal_parts.push_back(String::create(literal));
+      literal.clear();
+      fstate = init;
+      break;
+    }
     }
   }
 
@@ -1018,16 +1023,16 @@ static QResult conv(const ConstUnaryExprNode *n, QState &state) {
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Plus:
-      return e;
-    case Minus:
-      return Sub::create(Number::create("0"), e);
-    case LogicalNot:
-      return Not::create(e);
-    case BitwiseNot:
-      return BitNot::create(e);
-    default:
-      throw std::runtime_error("QIR ConstUnaryExprNode not implemented");
+  case Plus:
+    return e;
+  case Minus:
+    return Sub::create(Number::create("0"), e);
+  case LogicalNot:
+    return Not::create(e);
+  case BitwiseNot:
+    return BitNot::create(e);
+  default:
+    throw std::runtime_error("QIR ConstUnaryExprNode not implemented");
   }
 }
 
@@ -1037,12 +1042,12 @@ static QResult conv(const ConstPostUnaryExprNode *n, QState &state) {
   auto e = conv(n->m_expr.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Increment:
-      return PostInc::create(e);
-    case Decrement:
-      return PostDec::create(e);
-    default:
-      throw std::runtime_error("QIR ConstPostUnaryExprNode not implemented");
+  case Increment:
+    return PostInc::create(e);
+  case Decrement:
+    return PostDec::create(e);
+  default:
+    throw std::runtime_error("QIR ConstPostUnaryExprNode not implemented");
   }
 }
 
@@ -1053,47 +1058,47 @@ static QResult conv(const ConstBinaryExprNode *n, QState &state) {
   auto rhs = conv(n->m_rhs.get(), state)[0]->as<Expr>();
 
   switch (n->m_op) {
-    case Plus:
-      return bipromote(&lhs, &rhs), Add::create(lhs, rhs);
-    case Minus:
-      return bipromote(&lhs, &rhs), Sub::create(lhs, rhs);
-    case Multiply:
-      return bipromote(&lhs, &rhs), Mul::create(lhs, rhs);
-    case Divide:
-      return bipromote(&lhs, &rhs), Div::create(lhs, rhs);
-    case Modulo:
-      return bipromote(&lhs, &rhs), Mod::create(lhs, rhs);
-    case BitwiseAnd:
-      return bipromote(&lhs, &rhs), BitAnd::create(lhs, rhs);
-    case BitwiseOr:
-      return bipromote(&lhs, &rhs), BitOr::create(lhs, rhs);
-    case BitwiseXor:
-      return bipromote(&lhs, &rhs), BitXor::create(lhs, rhs);
-    case LeftShift:
-      return bipromote(&lhs, &rhs), Shl::create(lhs, rhs);
-    case RightShift:
-      return bipromote(&lhs, &rhs), Shr::create(lhs, rhs);
-    case LogicalAnd:
-      return bipromote(&lhs, &rhs), And::create(lhs, rhs);
-    case LogicalOr:
-      return bipromote(&lhs, &rhs), Or::create(lhs, rhs);
-    case LogicalXor:
-      return Xor::create(lhs, rhs);
-    case LessThan:
-      return bipromote(&lhs, &rhs), Lt::create(lhs, rhs);
-    case GreaterThan:
-      return bipromote(&lhs, &rhs), Gt::create(lhs, rhs);
-    case LessThanEqual:
-      return bipromote(&lhs, &rhs), Le::create(lhs, rhs);
-    case GreaterThanEqual:
-      return bipromote(&lhs, &rhs), Ge::create(lhs, rhs);
-    case Equal:
-      return bipromote(&lhs, &rhs), Eq::create(lhs, rhs);
-    case NotEqual:
-      return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
+  case Plus:
+    return bipromote(&lhs, &rhs), Add::create(lhs, rhs);
+  case Minus:
+    return bipromote(&lhs, &rhs), Sub::create(lhs, rhs);
+  case Multiply:
+    return bipromote(&lhs, &rhs), Mul::create(lhs, rhs);
+  case Divide:
+    return bipromote(&lhs, &rhs), Div::create(lhs, rhs);
+  case Modulo:
+    return bipromote(&lhs, &rhs), Mod::create(lhs, rhs);
+  case BitwiseAnd:
+    return bipromote(&lhs, &rhs), BitAnd::create(lhs, rhs);
+  case BitwiseOr:
+    return bipromote(&lhs, &rhs), BitOr::create(lhs, rhs);
+  case BitwiseXor:
+    return bipromote(&lhs, &rhs), BitXor::create(lhs, rhs);
+  case LeftShift:
+    return bipromote(&lhs, &rhs), Shl::create(lhs, rhs);
+  case RightShift:
+    return bipromote(&lhs, &rhs), Shr::create(lhs, rhs);
+  case LogicalAnd:
+    return bipromote(&lhs, &rhs), And::create(lhs, rhs);
+  case LogicalOr:
+    return bipromote(&lhs, &rhs), Or::create(lhs, rhs);
+  case LogicalXor:
+    return Xor::create(lhs, rhs);
+  case LessThan:
+    return bipromote(&lhs, &rhs), Lt::create(lhs, rhs);
+  case GreaterThan:
+    return bipromote(&lhs, &rhs), Gt::create(lhs, rhs);
+  case LessThanEqual:
+    return bipromote(&lhs, &rhs), Le::create(lhs, rhs);
+  case GreaterThanEqual:
+    return bipromote(&lhs, &rhs), Ge::create(lhs, rhs);
+  case Equal:
+    return bipromote(&lhs, &rhs), Eq::create(lhs, rhs);
+  case NotEqual:
+    return bipromote(&lhs, &rhs), Ne::create(lhs, rhs);
 
-    default:
-      throw std::runtime_error("QIR ConstBinaryExprNode not implemented");
+  default:
+    throw std::runtime_error("QIR ConstBinaryExprNode not implemented");
   }
 }
 
@@ -1110,8 +1115,7 @@ static QResult conv(const IdentifierNode *n, QState &state) {
   }
 
   if (!state.global_idents.contains(n->m_name)) {
-    throw std::runtime_error("QIR translation: IdentifierNode not found: " +
-                             n->m_name);
+    throw std::runtime_error("QIR translation: IdentifierNode not found: " + n->m_name);
   }
 
   return Ident::create(n->m_name, state.global_idents[n->m_name]);
@@ -1636,9 +1640,8 @@ static QResult conv(const FunctionTypeNode *n, QState &state) {
   for (auto &param : n->m_params)
     params.push_back(conv(param.second.get(), state)[0]->as<Type>());
 
-  return FType::create(
-      params, conv(n->m_return_type.get(), state)[0]->as<Type>(), n->m_variadic,
-      n->m_pure, n->m_thread_safe, n->m_foreign, n->m_noexcept);
+  return FType::create(params, conv(n->m_return_type.get(), state)[0]->as<Type>(), n->m_variadic,
+                       n->m_pure, n->m_thread_safe, n->m_foreign, n->m_noexcept);
 }
 
 static QResult conv(const IntegerNode *n, QState &state) {
@@ -1790,78 +1793,71 @@ static QResult conv(const VarDeclNode *n, QState &state) {
   throw std::runtime_error("QIR translation: VarDeclNode not implemented");
 }
 
-static QResult create_defaults(ir::q::Value *var, TypeNode *type,
-                               QState &state) {
+static QResult create_defaults(ir::q::Value *var, TypeNode *type, QState &state) {
   /// TODO: cleanup
 
   switch (type->ntype) {
-    case NodeType::StructTypeNode: {
-      auto s = type->as<StructTypeNode>();
-      if (!state.typedefs.contains(s->m_name))
-        throw std::runtime_error("QIR translation: structdef not found");
+  case NodeType::StructTypeNode: {
+    auto s = type->as<StructTypeNode>();
+    if (!state.typedefs.contains(s->m_name))
+      throw std::runtime_error("QIR translation: structdef not found");
 
-      std::vector<QValue> res;
-      for (size_t i = 0;
-           i < state.typedefs[s->m_name]->as<StructDefNode>()->m_fields.size();
-           i++) {
-        auto field =
-            state.typedefs[s->m_name]->as<StructDefNode>()->m_fields[i];
-        if (!field->m_value) continue;
+    std::vector<QValue> res;
+    for (size_t i = 0; i < state.typedefs[s->m_name]->as<StructDefNode>()->m_fields.size(); i++) {
+      auto field = state.typedefs[s->m_name]->as<StructDefNode>()->m_fields[i];
+      if (!field->m_value)
+        continue;
 
-        auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
-        auto t = conv(field->m_type.get(), state)[0]->as<Type>();
+      auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
+      auto t = conv(field->m_type.get(), state)[0]->as<Type>();
 
-        res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
-      }
-
-      return res;
+      res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
     }
-    case NodeType::RegionTypeNode: {
-      auto r = type->as<RegionTypeNode>();
-      if (!state.typedefs.contains(r->m_name))
-        throw std::runtime_error("QIR translation: regiondef not found");
 
-      std::vector<QValue> res;
-      for (size_t i = 0;
-           i < state.typedefs[r->m_name]->as<RegionDefNode>()->m_fields.size();
-           i++) {
-        auto field =
-            state.typedefs[r->m_name]->as<RegionDefNode>()->m_fields[i];
-        if (!field->m_value) continue;
+    return res;
+  }
+  case NodeType::RegionTypeNode: {
+    auto r = type->as<RegionTypeNode>();
+    if (!state.typedefs.contains(r->m_name))
+      throw std::runtime_error("QIR translation: regiondef not found");
 
-        auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
-        auto t = conv(field->m_type.get(), state)[0]->as<Type>();
+    std::vector<QValue> res;
+    for (size_t i = 0; i < state.typedefs[r->m_name]->as<RegionDefNode>()->m_fields.size(); i++) {
+      auto field = state.typedefs[r->m_name]->as<RegionDefNode>()->m_fields[i];
+      if (!field->m_value)
+        continue;
 
-        res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
-      }
+      auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
+      auto t = conv(field->m_type.get(), state)[0]->as<Type>();
 
-      return res;
+      res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
     }
-    case NodeType::UnionTypeNode: {
-      /// TODO: think about this one
 
-      auto u = type->as<UnionTypeNode>();
-      if (!state.typedefs.contains(u->m_name))
-        throw std::runtime_error("QIR translation: uniondef not found");
+    return res;
+  }
+  case NodeType::UnionTypeNode: {
+    /// TODO: think about this one
 
-      std::vector<QValue> res;
-      for (size_t i = 0;
-           i < state.typedefs[u->m_name]->as<UnionDefNode>()->m_fields.size();
-           i++) {
-        auto field = state.typedefs[u->m_name]->as<UnionDefNode>()->m_fields[i];
-        if (!field->m_value) continue;
+    auto u = type->as<UnionTypeNode>();
+    if (!state.typedefs.contains(u->m_name))
+      throw std::runtime_error("QIR translation: uniondef not found");
 
-        auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
-        auto t = conv(field->m_type.get(), state)[0]->as<Type>();
+    std::vector<QValue> res;
+    for (size_t i = 0; i < state.typedefs[u->m_name]->as<UnionDefNode>()->m_fields.size(); i++) {
+      auto field = state.typedefs[u->m_name]->as<UnionDefNode>()->m_fields[i];
+      if (!field->m_value)
+        continue;
 
-        res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
-      }
+      auto v = conv(field->m_value.get(), state)[0]->as<Expr>();
+      auto t = conv(field->m_type.get(), state)[0]->as<Type>();
 
-      return res;
+      res.push_back(Assign::create(Member::create(var, i, t), promote(t, v)));
     }
-    default:
-      throw std::runtime_error(
-          "QIR translation: create_defaults not implemented");
+
+    return res;
+  }
+  default:
+    throw std::runtime_error("QIR translation: create_defaults not implemented");
   }
 }
 
@@ -1869,13 +1865,13 @@ static bool is_composite(const TypeNode *n) {
   /// TODO: cleanup
 
   switch (n->ntype) {
-    case NodeType::StructTypeNode:
-    case NodeType::GroupTypeNode:
-    case NodeType::RegionTypeNode:
-    case NodeType::UnionTypeNode:
-      return true;
-    default:
-      return false;
+  case NodeType::StructTypeNode:
+  case NodeType::GroupTypeNode:
+  case NodeType::RegionTypeNode:
+  case NodeType::UnionTypeNode:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -1885,7 +1881,8 @@ static QResult conv(const LetDeclNode *n, QState &state) {
   if (state.inside_segment) {
     Expr *init = nullptr;
 
-    if (n->m_init) init = conv(n->m_init.get(), state)[0]->as<Expr>();
+    if (n->m_init)
+      init = conv(n->m_init.get(), state)[0]->as<Expr>();
 
     Type *type = nullptr;
     if (n->m_type.get())
@@ -1900,30 +1897,27 @@ static QResult conv(const LetDeclNode *n, QState &state) {
     std::vector<QValue> res = {l};
     auto ident = Ident::create(n->m_name, l->type);
 
-    if (l->type == nullptr && n->m_type.get() &&
-        is_composite(n->m_type.get())) {
+    if (l->type == nullptr && n->m_type.get() && is_composite(n->m_type.get())) {
       auto defaults = create_defaults(ident, n->m_type.get(), state);
-      for (auto &d : defaults) res.push_back(d);
+      for (auto &d : defaults)
+        res.push_back(d);
     }
 
     return res;
   }
 
   Expr *expr = nullptr;
-  if (n->m_init) expr = conv(n->m_init.get(), state)[0]->as<Expr>();
+  if (n->m_init)
+    expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
-  auto tmp =
-      Global::create(n->m_name, conv(n->m_type.get(), state)[0]->as<Type>(),
-                     expr, false, false, false);
+  auto tmp = Global::create(n->m_name, conv(n->m_type.get(), state)[0]->as<Type>(), expr, false,
+                            false, false);
 
-  std::string mangled = Symbol::mangle(tmp, "",
-                                       state.lang == ExportLangType::None
-                                           ? ExportLangType::Default
-                                           : state.lang);
+  std::string mangled = Symbol::mangle(
+      tmp, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
 
-  auto g =
-      Global::create(mangled, conv(n->m_type.get(), state)[0]->as<Type>(), expr,
-                     false, false, state.lang != ExportLangType::None);
+  auto g = Global::create(mangled, conv(n->m_type.get(), state)[0]->as<Type>(), expr, false, false,
+                          state.lang != ExportLangType::None);
 
   state.global_idents[n->m_name] = g->type;
   state.global_idents[mangled] = g->type;
@@ -1950,7 +1944,8 @@ static QResult conv(const ConstDeclNode *n, QState &state) {
   }
 
   Expr *expr = nullptr;
-  if (n->m_init) expr = conv(n->m_init.get(), state)[0]->as<Expr>();
+  if (n->m_init)
+    expr = conv(n->m_init.get(), state)[0]->as<Expr>();
 
   Type *type = nullptr;
   if (n->m_type.get())
@@ -1958,14 +1953,11 @@ static QResult conv(const ConstDeclNode *n, QState &state) {
   else
     type = expr->infer();
 
-  auto tmp = Global::create(n->m_name, type, expr, false, false,
-                            state.lang != ExportLangType::None);
-  std::string mangled = Symbol::mangle(tmp, "",
-                                       state.lang == ExportLangType::None
-                                           ? ExportLangType::Default
-                                           : state.lang);
-  auto g = Global::create(mangled, type, expr, false, false,
-                          state.lang != ExportLangType::None);
+  auto tmp =
+      Global::create(n->m_name, type, expr, false, false, state.lang != ExportLangType::None);
+  std::string mangled = Symbol::mangle(
+      tmp, "", state.lang == ExportLangType::None ? ExportLangType::Default : state.lang);
+  auto g = Global::create(mangled, type, expr, false, false, state.lang != ExportLangType::None);
 
   state.global_idents[n->m_name] = g->type;
   state.global_idents[mangled] = g->type;
@@ -1988,10 +1980,9 @@ static QResult conv(const FunctionDeclNode *n, QState &state) {
   }
 
   auto seg = Segment::create(
-      params, conv(n->m_type.get()->m_return_type.get(), state)[0]->as<Type>(),
-      nullptr, n->m_type.get()->m_variadic, n->m_type.get()->m_pure,
-      n->m_type.get()->m_thread_safe, n->m_type.get()->m_noexcept,
-      n->m_type.get()->m_return_type->is<NullTypeNode>(),
+      params, conv(n->m_type.get()->m_return_type.get(), state)[0]->as<Type>(), nullptr,
+      n->m_type.get()->m_variadic, n->m_type.get()->m_pure, n->m_type.get()->m_thread_safe,
+      n->m_type.get()->m_noexcept, n->m_type.get()->m_return_type->is<NullTypeNode>(),
       n->m_type.get()->m_foreign);
 
   Global *g = nullptr;
@@ -2000,16 +1991,15 @@ static QResult conv(const FunctionDeclNode *n, QState &state) {
   g = Global::create(n->m_name, seg->infer(), seg, false, false, true);
 
   if (n->m_name == "main") {
-    g = Global::create(mangled = Symbol::mangle(g, "", ExportLangType::C),
-                       seg->infer(), seg, false, false, true);
+    g = Global::create(mangled = Symbol::mangle(g, "", ExportLangType::C), seg->infer(), seg, false,
+                       false, true);
   } else {
     if (state.lang == ExportLangType::None) {
-      g = Global::create(
-          mangled = Symbol::mangle(g, "", ExportLangType::Default),
-          seg->infer(), seg, false, false, false);
+      g = Global::create(mangled = Symbol::mangle(g, "", ExportLangType::Default), seg->infer(),
+                         seg, false, false, false);
     } else {
-      g = Global::create(mangled = Symbol::mangle(g, "", state.lang),
-                         seg->infer(), seg, false, false, true);
+      g = Global::create(mangled = Symbol::mangle(g, "", state.lang), seg->infer(), seg, false,
+                         false, true);
     }
   }
 
@@ -2042,13 +2032,11 @@ static QResult conv(const StructDefNode *n, QState &state) {
   for (auto static_method : n->m_static_methods) {
     std::shared_ptr<StmtNode> clone;
     if (static_method->is<FunctionDeclNode>()) {
-      clone = std::make_shared<FunctionDeclNode>(
-          *static_method->as<FunctionDeclNode>());
+      clone = std::make_shared<FunctionDeclNode>(*static_method->as<FunctionDeclNode>());
       auto x = std::static_pointer_cast<FunctionDeclNode>(clone);
       x->m_name = n->m_name + "::" + x->m_name;
     } else if (static_method->is<FunctionDefNode>()) {
-      clone = std::make_shared<FunctionDefNode>(
-          *static_method->as<FunctionDefNode>());
+      clone = std::make_shared<FunctionDefNode>(*static_method->as<FunctionDefNode>());
       auto x = std::static_pointer_cast<FunctionDefNode>(clone);
       x->m_decl->m_name = n->m_name + "::" + x->m_decl->m_name;
     }
@@ -2089,13 +2077,11 @@ static QResult conv(const RegionDefNode *n, QState &state) {
   for (auto &static_method : n->m_static_methods) {
     std::shared_ptr<StmtNode> clone;
     if (static_method->is<FunctionDeclNode>()) {
-      clone = std::make_shared<FunctionDeclNode>(
-          *static_method->as<FunctionDeclNode>());
+      clone = std::make_shared<FunctionDeclNode>(*static_method->as<FunctionDeclNode>());
       auto x = std::static_pointer_cast<FunctionDeclNode>(clone);
       x->m_name = n->m_name + "::" + x->m_name;
     } else if (static_method->is<FunctionDefNode>()) {
-      clone = std::make_shared<FunctionDefNode>(
-          *static_method->as<FunctionDefNode>());
+      clone = std::make_shared<FunctionDefNode>(*static_method->as<FunctionDefNode>());
       auto x = std::static_pointer_cast<FunctionDefNode>(clone);
       x->m_decl->m_name = n->m_name + "::" + x->m_decl->m_name;
     }
@@ -2136,13 +2122,11 @@ static QResult conv(const GroupDefNode *n, QState &state) {
   for (auto &static_method : n->m_static_methods) {
     std::shared_ptr<StmtNode> clone;
     if (static_method->is<FunctionDeclNode>()) {
-      clone = std::make_shared<FunctionDeclNode>(
-          *static_method->as<FunctionDeclNode>());
+      clone = std::make_shared<FunctionDeclNode>(*static_method->as<FunctionDeclNode>());
       auto x = std::static_pointer_cast<FunctionDeclNode>(clone);
       x->m_name = n->m_name + "::" + x->m_name;
     } else if (static_method->is<FunctionDefNode>()) {
-      clone = std::make_shared<FunctionDefNode>(
-          *static_method->as<FunctionDefNode>());
+      clone = std::make_shared<FunctionDefNode>(*static_method->as<FunctionDefNode>());
       auto x = std::static_pointer_cast<FunctionDefNode>(clone);
       x->m_decl->m_name = n->m_name + "::" + x->m_decl->m_name;
     }
@@ -2200,8 +2184,7 @@ static QResult conv(const EnumDefNode *n, QState &state) {
       }
     }
 
-    state.enum_values[Symbol::join(n->m_type.get()->m_name, field->m_name)] =
-        last;
+    state.enum_values[Symbol::join(n->m_type.get()->m_name, field->m_name)] = last;
   }
 
   return nullptr;
@@ -2244,20 +2227,19 @@ static QResult conv(const FunctionDefNode *n, QState &state) {
   state.function.pop();
   state.local_idents.pop();
 
-  auto f =
-      Segment::create(dseg->params, dseg->return_type, body, dseg->is_variadic,
-                      dseg->is_pure, dseg->is_thread_safe, dseg->is_no_throw,
-                      dseg->is_no_return, dseg->is_foriegn);
+  auto f = Segment::create(dseg->params, dseg->return_type, body, dseg->is_variadic, dseg->is_pure,
+                           dseg->is_thread_safe, dseg->is_no_throw, dseg->is_no_return,
+                           dseg->is_foriegn);
 
-  return Global::create(glob->name, glob->type, f, glob->_volatile,
-                        glob->_atomic, glob->_extern);
+  return Global::create(glob->name, glob->type, f, glob->_volatile, glob->_atomic, glob->_extern);
 }
 
 static QResult conv(const FunctionParamNode *n, QState &state) {
   /// TODO: cleanup
 
   auto t = conv(n->m_type.get(), state)[0]->as<Type>();
-  if (state.inside_segment) state.local_idents.top()[n->m_name] = t;
+  if (state.inside_segment)
+    state.local_idents.top()[n->m_name] = t;
   return t;
 }
 
@@ -2270,7 +2252,8 @@ static QResult conv(const ExportNode *n, QState &state) {
 
   for (auto &stmt : n->m_stmts) {
     auto res = conv(stmt.get(), state);
-    if (!res) continue;
+    if (!res)
+      continue;
     sub.insert(sub.end(), res.begin(), res.end());
   }
 
@@ -2320,8 +2303,7 @@ static QResult conv(const ReturnStmtNode *n, QState &state) {
 
   if (!state.function.empty()) {
     auto f = state.function.top();
-    auto rettype =
-        conv(f->m_decl->m_type->m_return_type.get(), state)[0]->as<Type>();
+    auto rettype = conv(f->m_decl->m_type->m_return_type.get(), state)[0]->as<Type>();
     return Ret::create(promote(rettype, e[0]->as<Expr>()));
   }
 
@@ -2341,34 +2323,29 @@ static QResult conv(const RetifStmtNode *n, QState &state) {
    **/
 
   if (!n->m_cond) { /* If the cond is null, abort */
-    LOG(ERROR) << "QIR conv: return-if statement condition == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-if statement condition == nullptr" << std::endl;
     return nullptr;
   }
 
   if (!n->m_return) { /* If the return is null, abort */
-    LOG(ERROR) << "QIR conv: return-if statement return == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-if statement return == nullptr" << std::endl;
     return nullptr;
   }
 
   auto cond = conv(n->m_cond.get(), state);
   if (!cond) { /* If the output condition is null, abort */
-    LOG(ERROR) << "QIR conv: return-if statement condition == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-if statement condition == nullptr" << std::endl;
     return nullptr;
   }
 
   auto ret = conv(n->m_return.get(), state);
   if (!ret) { /* If the output return is null, abort */
-    LOG(ERROR) << "QIR conv: return-if statement return == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-if statement return == nullptr" << std::endl;
     return nullptr;
   }
 
   /* One-for-one lowering of the return-if statement node */
-  return IfElse::create(cond[0]->as<Expr>(), Ret::create(ret[0]->as<Expr>()),
-                        Block::create({}));
+  return IfElse::create(cond[0]->as<Expr>(), Ret::create(ret[0]->as<Expr>()), Block::create({}));
 }
 
 static QResult conv(const RetzStmtNode *n, QState &state) {
@@ -2384,21 +2361,18 @@ static QResult conv(const RetzStmtNode *n, QState &state) {
    **/
 
   if (!n->m_cond) { /* If the cond is null, abort */
-    LOG(ERROR) << "QIR conv: return-if-not statement condition == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-if-not statement condition == nullptr" << std::endl;
     return nullptr;
   }
 
   if (!n->m_return) { /* If the return is null, abort */
-    LOG(ERROR) << "QIR conv: return-if-not statement return == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-if-not statement return == nullptr" << std::endl;
     return nullptr;
   }
 
   auto cond = conv(n->m_cond.get(), state);
   if (!cond) { /* If the output condition is null, abort */
-    LOG(ERROR) << "QIR conv: return-if-not statement condition == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-if-not statement condition == nullptr" << std::endl;
     return nullptr;
   }
 
@@ -2406,14 +2380,12 @@ static QResult conv(const RetzStmtNode *n, QState &state) {
 
   auto ret = conv(n->m_return.get(), state);
   if (!ret) { /* If the output return is null, abort */
-    LOG(ERROR) << "QIR conv: return-if-not statement return == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-if-not statement return == nullptr" << std::endl;
     return nullptr;
   }
 
   /* One-for-one lowering of the return-if-not statement node */
-  return IfElse::create(inv_cond, Ret::create(ret[0]->as<Expr>()),
-                        Block::create({}));
+  return IfElse::create(inv_cond, Ret::create(ret[0]->as<Expr>()), Block::create({}));
 }
 
 static QResult conv(const RetvStmtNode *n, QState &state) {
@@ -2428,21 +2400,18 @@ static QResult conv(const RetvStmtNode *n, QState &state) {
    **/
 
   if (!n->m_cond) { /* If the cond is null, abort */
-    LOG(ERROR) << "QIR conv: return-void statement condition == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-void statement condition == nullptr" << std::endl;
     return nullptr;
   }
 
   auto cond = conv(n->m_cond.get(), state);
   if (!cond) { /* If the output condition is null, abort */
-    LOG(ERROR) << "QIR conv: return-void statement condition == nullptr"
-               << std::endl;
+    LOG(ERROR) << "QIR conv: return-void statement condition == nullptr" << std::endl;
     return nullptr;
   }
 
   /* One-for-one lowering of the return-void statement node */
-  return IfElse::create(cond[0]->as<Expr>(), Ret::create(nullptr),
-                        Block::create({}));
+  return IfElse::create(cond[0]->as<Expr>(), Ret::create(nullptr), Block::create({}));
 }
 
 static QResult conv(const BreakStmtNode *n, QState &state) {
@@ -2561,8 +2530,7 @@ static QResult conv(const WhileStmtNode *n, QState &state) {
   }
 
   /* One-for-one lowering of the while loop node */
-  return While::create(UCast::create(I1::create(), cond[0]->as<Expr>()),
-                       stmt[0]->as<Block>());
+  return While::create(UCast::create(I1::create(), cond[0]->as<Expr>()), stmt[0]->as<Block>());
 }
 
 static QResult conv(const ForStmtNode *n, QState &state) {
@@ -2684,13 +2652,13 @@ static QResult conv(const SwitchStmtNode *n, QState &state) {
   if (n->m_default) {
     def = conv(n->m_default.get(), state);
     if (!def) { /* If the output default is null, ignore it */
-      LOG(ERROR) << "QIR conv: switch statement default == nullptr"
-                 << std::endl;
+      LOG(ERROR) << "QIR conv: switch statement default == nullptr" << std::endl;
       return nullptr;
     }
   }
   Value *default_block = nullptr;
-  if (def) default_block = def[0]->as<Block>();
+  if (def)
+    default_block = def[0]->as<Block>();
 
   std::vector<Case *> cases;
   for (const auto &c : n->m_cases) {
@@ -2716,388 +2684,388 @@ static QResult conv(const ParseNode *n, QState &state) {
   QResult r;
 
   switch (n->ntype) {
-    case NodeType::ExprStmtNode:
-      r = conv(n->as<ExprStmtNode>(), state);
-      break;
-
-    case NodeType::StmtExprNode:
-      r = conv(n->as<StmtExprNode>(), state);
-      break;
-
-    case NodeType::NopStmtNode:
-      r = conv(n->as<NopStmtNode>(), state);
-      break;
-
-    case NodeType::BlockNode:
-      r = conv(n->as<BlockNode>(), state);
-      break;
-
-    case NodeType::StmtGroupNode:
-      r = conv(n->as<StmtGroupNode>(), state);
-      break;
-
-    case NodeType::ConstUnaryExprNode:
-      r = conv(n->as<ConstUnaryExprNode>(), state);
-      break;
-
-    case NodeType::ConstPostUnaryExprNode:
-      r = conv(n->as<ConstPostUnaryExprNode>(), state);
-      break;
-
-    case NodeType::ConstBinaryExprNode:
-      r = conv(n->as<ConstBinaryExprNode>(), state);
-      break;
-
-    case NodeType::SeqExprNode:
-      r = conv(n->as<SeqExprNode>(), state);
-      break;
-
-    case NodeType::StaticCastExprNode:
-      r = conv(n->as<StaticCastExprNode>(), state);
-      break;
-
-    case NodeType::BitCastExprNode:
-      r = conv(n->as<BitCastExprNode>(), state);
-      break;
-
-    case NodeType::SignedUpcastExprNode:
-      r = conv(n->as<SignedUpcastExprNode>(), state);
-      break;
-
-    case NodeType::UnsignedUpcastExprNode:
-      r = conv(n->as<UnsignedUpcastExprNode>(), state);
-      break;
-
-    case NodeType::DowncastExprNode:
-      r = conv(n->as<DowncastExprNode>(), state);
-      break;
-
-    case NodeType::UnaryExprNode:
-      r = conv(n->as<UnaryExprNode>(), state);
-      break;
-
-    case NodeType::PostUnaryExprNode:
-      r = conv(n->as<PostUnaryExprNode>(), state);
-      break;
-
-    case NodeType::BinaryExprNode:
-      r = conv(n->as<BinaryExprNode>(), state);
-      break;
-
-    case NodeType::CallExprNode:
-      r = conv(n->as<CallExprNode>(), state);
-      break;
-
-    case NodeType::ListExprNode:
-      r = conv(n->as<ListExprNode>(), state);
-      break;
-
-    case NodeType::AssocExprNode:
-      r = conv(n->as<AssocExprNode>(), state);
-      break;
-
-    case NodeType::MemberAccessNode:
-      r = conv(n->as<MemberAccessNode>(), state);
-      break;
-
-    case NodeType::IndexNode:
-      r = conv(n->as<IndexNode>(), state);
-      break;
-
-    case NodeType::SliceNode:
-      r = conv(n->as<SliceNode>(), state);
-      break;
-
-    case NodeType::FStringNode:
-      r = conv(n->as<FStringNode>(), state);
-      break;
-
-    case NodeType::IdentifierNode:
-      r = conv(n->as<IdentifierNode>(), state);
-      break;
-
-    case NodeType::MutTypeNode:
-      r = conv(n->as<MutTypeNode>(), state);
-      break;
-
-    case NodeType::U8TypeNode:
-      r = conv(n->as<U8TypeNode>(), state);
-      break;
-
-    case NodeType::U16TypeNode:
-      r = conv(n->as<U16TypeNode>(), state);
-      break;
-
-    case NodeType::U32TypeNode:
-      r = conv(n->as<U32TypeNode>(), state);
-      break;
-
-    case NodeType::U64TypeNode:
-      r = conv(n->as<U64TypeNode>(), state);
-      break;
-
-    case NodeType::U128TypeNode:
-      r = conv(n->as<U128TypeNode>(), state);
-      break;
-
-    case NodeType::I8TypeNode:
-      r = conv(n->as<I8TypeNode>(), state);
-      break;
-
-    case NodeType::I16TypeNode:
-      r = conv(n->as<I16TypeNode>(), state);
-      break;
-
-    case NodeType::I32TypeNode:
-      r = conv(n->as<I32TypeNode>(), state);
-      break;
-
-    case NodeType::I64TypeNode:
-      r = conv(n->as<I64TypeNode>(), state);
-      break;
-
-    case NodeType::I128TypeNode:
-      r = conv(n->as<I128TypeNode>(), state);
-      break;
-
-    case NodeType::F32TypeNode:
-      r = conv(n->as<F32TypeNode>(), state);
-      break;
-
-    case NodeType::F64TypeNode:
-      r = conv(n->as<F64TypeNode>(), state);
-      break;
-
-    case NodeType::BoolTypeNode:
-      r = conv(n->as<BoolTypeNode>(), state);
-      break;
-
-    case NodeType::VoidTypeNode:
-      r = conv(n->as<VoidTypeNode>(), state);
-      break;
-
-    case NodeType::NullTypeNode:
-      r = conv(n->as<NullTypeNode>(), state);
-      break;
-
-    case NodeType::PointerTypeNode:
-      r = conv(n->as<PointerTypeNode>(), state);
-      break;
-
-    case NodeType::OpaqueTypeNode:
-      r = conv(n->as<OpaqueTypeNode>(), state);
-      break;
-
-    case NodeType::StringTypeNode:
-      r = conv(n->as<StringTypeNode>(), state);
-      break;
-
-    case NodeType::EnumTypeNode:
-      r = conv(n->as<EnumTypeNode>(), state);
-      break;
-
-    case NodeType::StructTypeNode:
-      r = conv(n->as<StructTypeNode>(), state);
-      break;
-
-    case NodeType::GroupTypeNode:
-      r = conv(n->as<GroupTypeNode>(), state);
-      break;
-
-    case NodeType::RegionTypeNode:
-      r = conv(n->as<RegionTypeNode>(), state);
-      break;
-
-    case NodeType::UnionTypeNode:
-      r = conv(n->as<UnionTypeNode>(), state);
-      break;
-
-    case NodeType::ArrayTypeNode:
-      r = conv(n->as<ArrayTypeNode>(), state);
-      break;
-
-    case NodeType::VectorTypeNode:
-      r = conv(n->as<VectorTypeNode>(), state);
-      break;
-
-    case NodeType::MapTypeNode:
-      r = conv(n->as<MapTypeNode>(), state);
-      break;
-
-    case NodeType::TupleTypeNode:
-      r = conv(n->as<TupleTypeNode>(), state);
-      break;
-
-    case NodeType::SetTypeNode:
-      r = conv(n->as<SetTypeNode>(), state);
-      break;
-
-    case NodeType::ResultTypeNode:
-      r = conv(n->as<ResultTypeNode>(), state);
-      break;
-
-    case NodeType::FunctionTypeNode:
-      r = conv(n->as<FunctionTypeNode>(), state);
-      break;
-
-    case NodeType::IntegerNode:
-      r = conv(n->as<IntegerNode>(), state);
-      break;
-
-    case NodeType::FloatLiteralNode:
-      r = conv(n->as<FloatLiteralNode>(), state);
-      break;
-
-    case NodeType::StringNode:
-      r = conv(n->as<StringNode>(), state);
-      break;
-
-    case NodeType::CharNode:
-      r = conv(n->as<CharNode>(), state);
-      break;
-
-    case NodeType::BoolLiteralNode:
-      r = conv(n->as<BoolLiteralNode>(), state);
-      break;
-
-    case NodeType::NullLiteralNode:
-      r = conv(n->as<NullLiteralNode>(), state);
-      break;
-
-    case NodeType::UndefLiteralNode:
-      r = conv(n->as<UndefLiteralNode>(), state);
-      break;
-
-    case NodeType::TypedefNode:
-      r = conv(n->as<TypedefNode>(), state);
-      break;
-
-    case NodeType::VarDeclNode:
-      r = conv(n->as<VarDeclNode>(), state);
-      break;
-
-    case NodeType::LetDeclNode:
-      r = conv(n->as<LetDeclNode>(), state);
-      break;
-
-    case NodeType::ConstDeclNode:
-      r = conv(n->as<ConstDeclNode>(), state);
-      break;
-
-    case NodeType::FunctionDeclNode:
-      r = conv(n->as<FunctionDeclNode>(), state);
-      break;
-
-    case NodeType::StructDefNode:
-      r = conv(n->as<StructDefNode>(), state);
-      break;
-
-    case NodeType::StructFieldNode:
-      r = conv(n->as<StructFieldNode>(), state);
-      break;
-
-    case NodeType::RegionDefNode:
-      r = conv(n->as<RegionDefNode>(), state);
-      break;
-
-    case NodeType::RegionFieldNode:
-      r = conv(n->as<RegionFieldNode>(), state);
-      break;
-
-    case NodeType::GroupDefNode:
-      r = conv(n->as<GroupDefNode>(), state);
-      break;
-
-    case NodeType::GroupFieldNode:
-      r = conv(n->as<GroupFieldNode>(), state);
-      break;
-
-    case NodeType::UnionDefNode:
-      r = conv(n->as<UnionDefNode>(), state);
-      break;
-
-    case NodeType::UnionFieldNode:
-      r = conv(n->as<UnionFieldNode>(), state);
-      break;
-
-    case NodeType::EnumDefNode:
-      r = conv(n->as<EnumDefNode>(), state);
-      break;
-
-    case NodeType::EnumFieldNode:
-      r = conv(n->as<EnumFieldNode>(), state);
-      break;
-
-    case NodeType::FunctionDefNode:
-      r = conv(n->as<FunctionDefNode>(), state);
-      break;
-
-    case NodeType::FunctionParamNode:
-      r = conv(n->as<FunctionParamNode>(), state);
-      break;
-
-    case NodeType::ExportNode:
-      r = conv(n->as<ExportNode>(), state);
-      break;
-
-    case NodeType::InlineAsmNode:
-      r = conv(n->as<InlineAsmNode>(), state);
-      break;
-
-    case NodeType::ReturnStmtNode:
-      r = conv(n->as<ReturnStmtNode>(), state);
-      break;
-
-    case NodeType::RetifStmtNode:
-      r = conv(n->as<RetifStmtNode>(), state);
-      break;
-
-    case NodeType::RetzStmtNode:
-      r = conv(n->as<RetzStmtNode>(), state);
-      break;
-
-    case NodeType::RetvStmtNode:
-      r = conv(n->as<RetvStmtNode>(), state);
-      break;
-
-    case NodeType::BreakStmtNode:
-      r = conv(n->as<BreakStmtNode>(), state);
-      break;
-
-    case NodeType::ContinueStmtNode:
-      r = conv(n->as<ContinueStmtNode>(), state);
-      break;
-
-    case NodeType::IfStmtNode:
-      r = conv(n->as<IfStmtNode>(), state);
-      break;
-
-    case NodeType::WhileStmtNode:
-      r = conv(n->as<WhileStmtNode>(), state);
-      break;
-
-    case NodeType::ForStmtNode:
-      r = conv(n->as<ForStmtNode>(), state);
-      break;
-
-    case NodeType::FormStmtNode:
-      r = conv(n->as<FormStmtNode>(), state);
-      break;
-
-    case NodeType::ForeachStmtNode:
-      r = conv(n->as<ForeachStmtNode>(), state);
-      break;
-
-    case NodeType::CaseStmtNode:
-      r = conv(n->as<CaseStmtNode>(), state);
-      break;
-
-    case NodeType::SwitchStmtNode:
-      r = conv(n->as<SwitchStmtNode>(), state);
-      break;
-    default:
-      throw std::runtime_error("QIR translation: Unknown node type: " +
-                               std::to_string(static_cast<int>(n->ntype)));
+  case NodeType::ExprStmtNode:
+    r = conv(n->as<ExprStmtNode>(), state);
+    break;
+
+  case NodeType::StmtExprNode:
+    r = conv(n->as<StmtExprNode>(), state);
+    break;
+
+  case NodeType::NopStmtNode:
+    r = conv(n->as<NopStmtNode>(), state);
+    break;
+
+  case NodeType::BlockNode:
+    r = conv(n->as<BlockNode>(), state);
+    break;
+
+  case NodeType::StmtGroupNode:
+    r = conv(n->as<StmtGroupNode>(), state);
+    break;
+
+  case NodeType::ConstUnaryExprNode:
+    r = conv(n->as<ConstUnaryExprNode>(), state);
+    break;
+
+  case NodeType::ConstPostUnaryExprNode:
+    r = conv(n->as<ConstPostUnaryExprNode>(), state);
+    break;
+
+  case NodeType::ConstBinaryExprNode:
+    r = conv(n->as<ConstBinaryExprNode>(), state);
+    break;
+
+  case NodeType::SeqExprNode:
+    r = conv(n->as<SeqExprNode>(), state);
+    break;
+
+  case NodeType::StaticCastExprNode:
+    r = conv(n->as<StaticCastExprNode>(), state);
+    break;
+
+  case NodeType::BitCastExprNode:
+    r = conv(n->as<BitCastExprNode>(), state);
+    break;
+
+  case NodeType::SignedUpcastExprNode:
+    r = conv(n->as<SignedUpcastExprNode>(), state);
+    break;
+
+  case NodeType::UnsignedUpcastExprNode:
+    r = conv(n->as<UnsignedUpcastExprNode>(), state);
+    break;
+
+  case NodeType::DowncastExprNode:
+    r = conv(n->as<DowncastExprNode>(), state);
+    break;
+
+  case NodeType::UnaryExprNode:
+    r = conv(n->as<UnaryExprNode>(), state);
+    break;
+
+  case NodeType::PostUnaryExprNode:
+    r = conv(n->as<PostUnaryExprNode>(), state);
+    break;
+
+  case NodeType::BinaryExprNode:
+    r = conv(n->as<BinaryExprNode>(), state);
+    break;
+
+  case NodeType::CallExprNode:
+    r = conv(n->as<CallExprNode>(), state);
+    break;
+
+  case NodeType::ListExprNode:
+    r = conv(n->as<ListExprNode>(), state);
+    break;
+
+  case NodeType::AssocExprNode:
+    r = conv(n->as<AssocExprNode>(), state);
+    break;
+
+  case NodeType::MemberAccessNode:
+    r = conv(n->as<MemberAccessNode>(), state);
+    break;
+
+  case NodeType::IndexNode:
+    r = conv(n->as<IndexNode>(), state);
+    break;
+
+  case NodeType::SliceNode:
+    r = conv(n->as<SliceNode>(), state);
+    break;
+
+  case NodeType::FStringNode:
+    r = conv(n->as<FStringNode>(), state);
+    break;
+
+  case NodeType::IdentifierNode:
+    r = conv(n->as<IdentifierNode>(), state);
+    break;
+
+  case NodeType::MutTypeNode:
+    r = conv(n->as<MutTypeNode>(), state);
+    break;
+
+  case NodeType::U8TypeNode:
+    r = conv(n->as<U8TypeNode>(), state);
+    break;
+
+  case NodeType::U16TypeNode:
+    r = conv(n->as<U16TypeNode>(), state);
+    break;
+
+  case NodeType::U32TypeNode:
+    r = conv(n->as<U32TypeNode>(), state);
+    break;
+
+  case NodeType::U64TypeNode:
+    r = conv(n->as<U64TypeNode>(), state);
+    break;
+
+  case NodeType::U128TypeNode:
+    r = conv(n->as<U128TypeNode>(), state);
+    break;
+
+  case NodeType::I8TypeNode:
+    r = conv(n->as<I8TypeNode>(), state);
+    break;
+
+  case NodeType::I16TypeNode:
+    r = conv(n->as<I16TypeNode>(), state);
+    break;
+
+  case NodeType::I32TypeNode:
+    r = conv(n->as<I32TypeNode>(), state);
+    break;
+
+  case NodeType::I64TypeNode:
+    r = conv(n->as<I64TypeNode>(), state);
+    break;
+
+  case NodeType::I128TypeNode:
+    r = conv(n->as<I128TypeNode>(), state);
+    break;
+
+  case NodeType::F32TypeNode:
+    r = conv(n->as<F32TypeNode>(), state);
+    break;
+
+  case NodeType::F64TypeNode:
+    r = conv(n->as<F64TypeNode>(), state);
+    break;
+
+  case NodeType::BoolTypeNode:
+    r = conv(n->as<BoolTypeNode>(), state);
+    break;
+
+  case NodeType::VoidTypeNode:
+    r = conv(n->as<VoidTypeNode>(), state);
+    break;
+
+  case NodeType::NullTypeNode:
+    r = conv(n->as<NullTypeNode>(), state);
+    break;
+
+  case NodeType::PointerTypeNode:
+    r = conv(n->as<PointerTypeNode>(), state);
+    break;
+
+  case NodeType::OpaqueTypeNode:
+    r = conv(n->as<OpaqueTypeNode>(), state);
+    break;
+
+  case NodeType::StringTypeNode:
+    r = conv(n->as<StringTypeNode>(), state);
+    break;
+
+  case NodeType::EnumTypeNode:
+    r = conv(n->as<EnumTypeNode>(), state);
+    break;
+
+  case NodeType::StructTypeNode:
+    r = conv(n->as<StructTypeNode>(), state);
+    break;
+
+  case NodeType::GroupTypeNode:
+    r = conv(n->as<GroupTypeNode>(), state);
+    break;
+
+  case NodeType::RegionTypeNode:
+    r = conv(n->as<RegionTypeNode>(), state);
+    break;
+
+  case NodeType::UnionTypeNode:
+    r = conv(n->as<UnionTypeNode>(), state);
+    break;
+
+  case NodeType::ArrayTypeNode:
+    r = conv(n->as<ArrayTypeNode>(), state);
+    break;
+
+  case NodeType::VectorTypeNode:
+    r = conv(n->as<VectorTypeNode>(), state);
+    break;
+
+  case NodeType::MapTypeNode:
+    r = conv(n->as<MapTypeNode>(), state);
+    break;
+
+  case NodeType::TupleTypeNode:
+    r = conv(n->as<TupleTypeNode>(), state);
+    break;
+
+  case NodeType::SetTypeNode:
+    r = conv(n->as<SetTypeNode>(), state);
+    break;
+
+  case NodeType::ResultTypeNode:
+    r = conv(n->as<ResultTypeNode>(), state);
+    break;
+
+  case NodeType::FunctionTypeNode:
+    r = conv(n->as<FunctionTypeNode>(), state);
+    break;
+
+  case NodeType::IntegerNode:
+    r = conv(n->as<IntegerNode>(), state);
+    break;
+
+  case NodeType::FloatLiteralNode:
+    r = conv(n->as<FloatLiteralNode>(), state);
+    break;
+
+  case NodeType::StringNode:
+    r = conv(n->as<StringNode>(), state);
+    break;
+
+  case NodeType::CharNode:
+    r = conv(n->as<CharNode>(), state);
+    break;
+
+  case NodeType::BoolLiteralNode:
+    r = conv(n->as<BoolLiteralNode>(), state);
+    break;
+
+  case NodeType::NullLiteralNode:
+    r = conv(n->as<NullLiteralNode>(), state);
+    break;
+
+  case NodeType::UndefLiteralNode:
+    r = conv(n->as<UndefLiteralNode>(), state);
+    break;
+
+  case NodeType::TypedefNode:
+    r = conv(n->as<TypedefNode>(), state);
+    break;
+
+  case NodeType::VarDeclNode:
+    r = conv(n->as<VarDeclNode>(), state);
+    break;
+
+  case NodeType::LetDeclNode:
+    r = conv(n->as<LetDeclNode>(), state);
+    break;
+
+  case NodeType::ConstDeclNode:
+    r = conv(n->as<ConstDeclNode>(), state);
+    break;
+
+  case NodeType::FunctionDeclNode:
+    r = conv(n->as<FunctionDeclNode>(), state);
+    break;
+
+  case NodeType::StructDefNode:
+    r = conv(n->as<StructDefNode>(), state);
+    break;
+
+  case NodeType::StructFieldNode:
+    r = conv(n->as<StructFieldNode>(), state);
+    break;
+
+  case NodeType::RegionDefNode:
+    r = conv(n->as<RegionDefNode>(), state);
+    break;
+
+  case NodeType::RegionFieldNode:
+    r = conv(n->as<RegionFieldNode>(), state);
+    break;
+
+  case NodeType::GroupDefNode:
+    r = conv(n->as<GroupDefNode>(), state);
+    break;
+
+  case NodeType::GroupFieldNode:
+    r = conv(n->as<GroupFieldNode>(), state);
+    break;
+
+  case NodeType::UnionDefNode:
+    r = conv(n->as<UnionDefNode>(), state);
+    break;
+
+  case NodeType::UnionFieldNode:
+    r = conv(n->as<UnionFieldNode>(), state);
+    break;
+
+  case NodeType::EnumDefNode:
+    r = conv(n->as<EnumDefNode>(), state);
+    break;
+
+  case NodeType::EnumFieldNode:
+    r = conv(n->as<EnumFieldNode>(), state);
+    break;
+
+  case NodeType::FunctionDefNode:
+    r = conv(n->as<FunctionDefNode>(), state);
+    break;
+
+  case NodeType::FunctionParamNode:
+    r = conv(n->as<FunctionParamNode>(), state);
+    break;
+
+  case NodeType::ExportNode:
+    r = conv(n->as<ExportNode>(), state);
+    break;
+
+  case NodeType::InlineAsmNode:
+    r = conv(n->as<InlineAsmNode>(), state);
+    break;
+
+  case NodeType::ReturnStmtNode:
+    r = conv(n->as<ReturnStmtNode>(), state);
+    break;
+
+  case NodeType::RetifStmtNode:
+    r = conv(n->as<RetifStmtNode>(), state);
+    break;
+
+  case NodeType::RetzStmtNode:
+    r = conv(n->as<RetzStmtNode>(), state);
+    break;
+
+  case NodeType::RetvStmtNode:
+    r = conv(n->as<RetvStmtNode>(), state);
+    break;
+
+  case NodeType::BreakStmtNode:
+    r = conv(n->as<BreakStmtNode>(), state);
+    break;
+
+  case NodeType::ContinueStmtNode:
+    r = conv(n->as<ContinueStmtNode>(), state);
+    break;
+
+  case NodeType::IfStmtNode:
+    r = conv(n->as<IfStmtNode>(), state);
+    break;
+
+  case NodeType::WhileStmtNode:
+    r = conv(n->as<WhileStmtNode>(), state);
+    break;
+
+  case NodeType::ForStmtNode:
+    r = conv(n->as<ForStmtNode>(), state);
+    break;
+
+  case NodeType::FormStmtNode:
+    r = conv(n->as<FormStmtNode>(), state);
+    break;
+
+  case NodeType::ForeachStmtNode:
+    r = conv(n->as<ForeachStmtNode>(), state);
+    break;
+
+  case NodeType::CaseStmtNode:
+    r = conv(n->as<CaseStmtNode>(), state);
+    break;
+
+  case NodeType::SwitchStmtNode:
+    r = conv(n->as<SwitchStmtNode>(), state);
+    break;
+  default:
+    throw std::runtime_error("QIR translation: Unknown node type: " +
+                             std::to_string(static_cast<int>(n->ntype)));
   }
 
   return r;
@@ -3105,12 +3073,10 @@ static QResult conv(const ParseNode *n, QState &state) {
 /// END: CONVERSION FUNCTIONS
 ///============================================================================
 
-bool ir::q::QModule::from_ptree(quixcc_cc_job_t *job,
-                                std::shared_ptr<ParseNode> ast) {
+bool ir::q::QModule::from_ptree(quixcc_cc_job_t *job, std::shared_ptr<ParseNode> ast) {
   /// TODO: cleanup
 
-  LOG(DEBUG) << "Converting Ptree to QUIX intermediate representation"
-             << std::endl;
+  LOG(DEBUG) << "Converting Ptree to QUIX intermediate representation" << std::endl;
 
   auto block_node = std::static_pointer_cast<BlockNode>(ast);
 
@@ -3118,7 +3084,8 @@ bool ir::q::QModule::from_ptree(quixcc_cc_job_t *job,
   std::vector<QValue> children;
   for (auto &child : block_node->m_stmts) {
     auto res = conv(child.get(), state);
-    if (!res) continue;
+    if (!res)
+      continue;
 
     for (auto &r : res) {
       children.push_back(r);
@@ -3128,28 +3095,22 @@ bool ir::q::QModule::from_ptree(quixcc_cc_job_t *job,
   m_root = RootNode::create(children);
 
   if (!verify()) {
-    LOG(FATAL) << "Failed to qualify QUIX intermediate representation"
-               << std::endl;
+    LOG(FATAL) << "Failed to qualify QUIX intermediate representation" << std::endl;
     return false;
   }
 
-  LOG(DEBUG)
-      << "Successfully converted Ptree to QUIX intermediate representation"
-      << std::endl;
+  LOG(DEBUG) << "Successfully converted Ptree to QUIX intermediate representation" << std::endl;
 
   return true;
 }
 
-void ir::q::QModule::acknowledge_pass(ir::q::QPassType pass,
-                                      const std::string &name) {
+void ir::q::QModule::acknowledge_pass(ir::q::QPassType pass, const std::string &name) {
   m_passes[pass].push_back(name);
 }
 
-void ir::q::QModule::unacknowledge_pass(ir::q::QPassType pass,
-                                        const std::string &name) {
-  m_passes[pass].erase(
-      std::remove(m_passes[pass].begin(), m_passes[pass].end(), name),
-      m_passes[pass].end());
+void ir::q::QModule::unacknowledge_pass(ir::q::QPassType pass, const std::string &name) {
+  m_passes[pass].erase(std::remove(m_passes[pass].begin(), m_passes[pass].end(), name),
+                       m_passes[pass].end());
 }
 
 void ir::q::QModule::add_tag(const std::string &tag) { m_tags.insert(tag); }

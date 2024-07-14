@@ -37,12 +37,12 @@
 #endif
 
 namespace libquixcc {
-namespace ir {
-enum IR {
-  Q,
-  Delta,
-};
-}
-}  // namespace libquixcc
+  namespace ir {
+    enum IR {
+      Q,
+      Delta,
+    };
+  }
+} // namespace libquixcc
 
-#endif  // __QUIXCC_IR_TYPE_H__
+#endif // __QUIXCC_IR_TYPE_H__

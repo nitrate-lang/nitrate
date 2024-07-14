@@ -41,94 +41,92 @@
 #include <quixcc/IR/delta/Type.h>
 
 namespace libquixcc::ir::delta {
-class SCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class SCast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  SCast(const Type *type, const Expr *value) : type(type), value(value) {
-    ntype = (int)NodeType::SCast;
-  }
+    SCast(const Type *type, const Expr *value) : type(type), value(value) {
+      ntype = (int)NodeType::SCast;
+    }
 
- public:
-  static const SCast *create(const Type *type, const Expr *value);
-  const Type *infer() const override;
+public:
+    static const SCast *create(const Type *type, const Expr *value);
+    const Type *infer() const override;
 
-  const Type *type;
-  const Expr *value;
-};
+    const Type *type;
+    const Expr *value;
+  };
 
-class UCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class UCast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  UCast(const Type *type, const Expr *value) : type(type), value(value) {
-    ntype = (int)NodeType::UCast;
-  }
+    UCast(const Type *type, const Expr *value) : type(type), value(value) {
+      ntype = (int)NodeType::UCast;
+    }
 
- public:
-  static const UCast *create(const Type *type, const Expr *value);
-  const Type *infer() const override;
+public:
+    static const UCast *create(const Type *type, const Expr *value);
+    const Type *infer() const override;
 
-  const Type *type;
-  const Expr *value;
-};
+    const Type *type;
+    const Expr *value;
+  };
 
-class PtrICast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class PtrICast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  PtrICast(const Expr *value) : value(value) {
-    ntype = (int)NodeType::PtrICast;
-  }
+    PtrICast(const Expr *value) : value(value) { ntype = (int)NodeType::PtrICast; }
 
- public:
-  static const PtrICast *create(const Expr *value);
-  const Type *infer() const override;
+public:
+    static const PtrICast *create(const Expr *value);
+    const Type *infer() const override;
 
-  const Expr *value;
-};
+    const Expr *value;
+  };
 
-class IPtrCast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class IPtrCast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  IPtrCast(const Type *type, const Expr *value) : type(type), value(value) {
-    ntype = (int)NodeType::IPtrCast;
-  }
+    IPtrCast(const Type *type, const Expr *value) : type(type), value(value) {
+      ntype = (int)NodeType::IPtrCast;
+    }
 
- public:
-  static const IPtrCast *create(const Type *type, const Expr *value);
-  const Type *infer() const override;
+public:
+    static const IPtrCast *create(const Type *type, const Expr *value);
+    const Type *infer() const override;
 
-  const Type *type;
-  const Expr *value;
-};
+    const Type *type;
+    const Expr *value;
+  };
 
-class Bitcast : public Expr {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class Bitcast : public Expr {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  Bitcast(const Type *type, const Expr *value) : type(type), value(value) {
-    ntype = (int)NodeType::Bitcast;
-  }
+    Bitcast(const Type *type, const Expr *value) : type(type), value(value) {
+      ntype = (int)NodeType::Bitcast;
+    }
 
- public:
-  static const Bitcast *create(const Type *type, const Expr *value);
-  const Type *infer() const override;
+public:
+    static const Bitcast *create(const Type *type, const Expr *value);
+    const Type *infer() const override;
 
-  const Type *type;
-  const Expr *value;
-};
-}  // namespace libquixcc::ir::delta
+    const Type *type;
+    const Expr *value;
+  };
+} // namespace libquixcc::ir::delta
 
-#endif  // __QUIXCC_IR_DELTA_NODES_CAST_H__
+#endif // __QUIXCC_IR_DELTA_NODES_CAST_H__

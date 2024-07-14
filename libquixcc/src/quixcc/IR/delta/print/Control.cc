@@ -31,62 +31,65 @@
 
 #include <quixcc/IR/delta/Control.h>
 
-bool libquixcc::ir::delta::IfElse::print_impl(std::ostream &os,
-                                              PState &state) const {
+bool libquixcc::ir::delta::IfElse::print_impl(std::ostream &os, PState &state) const {
   os << "if (";
-  if (!cond->print(os, state)) return false;
+  if (!cond->print(os, state))
+    return false;
 
   os << ") ";
-  if (!then->print(os, state)) return false;
+  if (!then->print(os, state))
+    return false;
 
   os << " else ";
-  if (!els->print(os, state)) return false;
+  if (!els->print(os, state))
+    return false;
 
   return true;
 }
 
-bool libquixcc::ir::delta::While::print_impl(std::ostream &os,
-                                             PState &state) const {
+bool libquixcc::ir::delta::While::print_impl(std::ostream &os, PState &state) const {
   os << "while (";
-  if (!cond->print(os, state)) return false;
+  if (!cond->print(os, state))
+    return false;
 
   os << ") ";
-  if (!body->print(os, state)) return false;
+  if (!body->print(os, state))
+    return false;
   return true;
 }
 
-bool libquixcc::ir::delta::Jmp::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::Jmp::print_impl(std::ostream &os, PState &state) const {
   os << "jmp " << target;
 
   return true;
 }
 
-bool libquixcc::ir::delta::Label::print_impl(std::ostream &os,
-                                             PState &state) const {
+bool libquixcc::ir::delta::Label::print_impl(std::ostream &os, PState &state) const {
   os << name << " ";
-  if (!code->print(os, state)) return false;
+  if (!code->print(os, state))
+    return false;
   return true;
 }
 
-bool libquixcc::ir::delta::Ret::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::Ret::print_impl(std::ostream &os, PState &state) const {
   os << "ret";
   if (value) {
     os << " ";
-    if (!value->print(os, state)) return false;
+    if (!value->print(os, state))
+      return false;
   }
 
   return true;
 }
 
-bool libquixcc::ir::delta::Call::print_impl(std::ostream &os,
-                                            PState &state) const {
+bool libquixcc::ir::delta::Call::print_impl(std::ostream &os, PState &state) const {
   os << callee << "(";
   for (size_t i = 0; i < args.size(); i++) {
-    if (!args[i]->print(os, state)) return false;
+    if (!args[i]->print(os, state))
+      return false;
 
-    if (i != args.size() - 1) os << ", ";
+    if (i != args.size() - 1)
+      os << ", ";
   }
 
   os << ")";
@@ -94,44 +97,44 @@ bool libquixcc::ir::delta::Call::print_impl(std::ostream &os,
   return true;
 }
 
-bool libquixcc::ir::delta::PtrCall::print_impl(std::ostream &os,
-                                               PState &state) const {
+bool libquixcc::ir::delta::PtrCall::print_impl(std::ostream &os, PState &state) const {
   throw std::runtime_error("PtrCall::print_impl not implemented");
 }
 
-bool libquixcc::ir::delta::Halt::print_impl(std::ostream &os,
-                                            PState &state) const {
+bool libquixcc::ir::delta::Halt::print_impl(std::ostream &os, PState &state) const {
   os << "halt";
   return true;
 }
 
-bool libquixcc::ir::delta::Break::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::Break::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "break";
   return true;
 }
 
-bool libquixcc::ir::delta::Continue::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::Continue::print_impl(std::ostream &os,
+                                                libquixcc::ir::PState &state) const {
   os << "continue";
   return true;
 }
 
-bool libquixcc::ir::delta::Switch::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::Switch::print_impl(std::ostream &os,
+                                              libquixcc::ir::PState &state) const {
   os << "switch (";
-  if (!cond->print(os, state)) return false;
+  if (!cond->print(os, state))
+    return false;
   os << ") {\n";
 
   state.ind += 2;
 
   for (const auto &c : cases) {
-    if (!c->print(os, state)) return false;
+    if (!c->print(os, state))
+      return false;
   }
 
   if (def) {
     os << std::string(state.ind, ' ') << "default: ";
-    if (!def->print(os, state)) return false;
+    if (!def->print(os, state))
+      return false;
 
     os << "\n";
   }
@@ -142,12 +145,13 @@ bool libquixcc::ir::delta::Switch::print_impl(
   return true;
 }
 
-bool libquixcc::ir::delta::Case::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::Case::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << std::string(state.ind, ' ') << "case ";
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
   os << ": ";
-  if (!code->print(os, state)) return false;
+  if (!code->print(os, state))
+    return false;
 
   os << "\n";
   return true;

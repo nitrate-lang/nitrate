@@ -41,22 +41,21 @@ using namespace libquixcc;
     Syntax: __asm__("mov x0, $0", {}, {'$0': x}, ["x0"]);
 */
 
-static bool asm_parse_param(
-    quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-    std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &result) {
+static bool
+asm_parse_param(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> &result) {
   Token tok;
 
   tok = scanner->next();
   if (!tok.is<Punctor>(OpenBrace)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize() << tok << std::endl;
     return false;
   }
 
   while (!(tok = scanner->next()).is<Punctor>(CloseBrace)) {
     if (tok.type() != tText) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL]
-                 << tok.serialize() << tok << std::endl;
+      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok
+                 << std::endl;
       return false;
     }
 
@@ -64,16 +63,13 @@ static bool asm_parse_param(
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Colon)) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_COLON] << tok.serialize()
-                 << tok << std::endl;
+      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_COLON] << tok.serialize() << tok << std::endl;
       return false;
     }
 
     std::shared_ptr<ExprNode> expr;
-    if (!parse_expr(job, scanner,
-                    {Token(tPunc, Comma), Token(tPunc, CloseBrace)}, expr)) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_EXPR] << tok.serialize()
-                 << tok << std::endl;
+    if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseBrace)}, expr)) {
+      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_EXPR] << tok.serialize() << tok << std::endl;
       return false;
     }
 
@@ -83,8 +79,7 @@ static bool asm_parse_param(
     if (tok.is<Punctor>(CloseBrace)) {
       break;
     } else if (!tok.is<Punctor>(Comma)) {
-      LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
       return false;
     }
   }
@@ -92,8 +87,7 @@ static bool asm_parse_param(
   return true;
 }
 
-static bool asm_parse_clobbers(quixcc_cc_job_t &job,
-                               libquixcc::Scanner *scanner,
+static bool asm_parse_clobbers(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                                std::vector<std::string> &result) {
   // ['a', 'b', 'c']
 
@@ -101,8 +95,7 @@ static bool asm_parse_clobbers(quixcc_cc_job_t &job,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(OpenBracket)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize() << tok << std::endl;
     return false;
   }
 
@@ -113,8 +106,8 @@ static bool asm_parse_clobbers(quixcc_cc_job_t &job,
     }
 
     if (tok.type() != tText) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL]
-                 << tok.serialize() << tok << std::endl;
+      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok
+                 << std::endl;
       return false;
     }
 
@@ -124,8 +117,7 @@ static bool asm_parse_clobbers(quixcc_cc_job_t &job,
     if (tok.is<Punctor>(CloseBracket)) {
       break;
     } else if (!tok.is<Punctor>(Comma)) {
-      LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
       return false;
     }
   }
@@ -133,20 +125,18 @@ static bool asm_parse_clobbers(quixcc_cc_job_t &job,
   return true;
 }
 
-bool libquixcc::parse_inline_asm(quixcc_cc_job_t &job,
-                                 libquixcc::Scanner *scanner,
+bool libquixcc::parse_inline_asm(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                                  std::shared_ptr<libquixcc::StmtNode> &node) {
   Token tok = scanner->next();
   if (!tok.is<Punctor>(OpenParen)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_PAREN] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_PAREN] << tok.serialize() << tok << std::endl;
     return false;
   }
 
   tok = scanner->next();
   if (tok.type() != tText) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_STRING_LITERAL] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok
+               << std::endl;
     return false;
   }
 
@@ -154,8 +144,7 @@ bool libquixcc::parse_inline_asm(quixcc_cc_job_t &job,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
     return false;
   }
 
@@ -163,49 +152,42 @@ bool libquixcc::parse_inline_asm(quixcc_cc_job_t &job,
   std::vector<std::pair<std::string, std::shared_ptr<ExprNode>>> inputs;
 
   if (!asm_parse_param(job, scanner, outputs)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_OUTPUTS] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_OUTPUTS] << tok.serialize() << tok << std::endl;
     return false;
   }
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
     return false;
   }
 
   if (!asm_parse_param(job, scanner, inputs)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_INPUTS] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_INPUTS] << tok.serialize() << tok << std::endl;
     return false;
   }
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
     return false;
   }
 
   std::vector<std::string> clobbers;
   if (!asm_parse_clobbers(job, scanner, clobbers)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_CLOBBERS] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_CLOBBERS] << tok.serialize() << tok << std::endl;
     return false;
   }
 
   tok = scanner->next();
   if (!tok.is<Punctor>(CloseParen)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_RIGHT_PAREN] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_RIGHT_PAREN] << tok.serialize() << tok << std::endl;
     return false;
   }
 
   tok = scanner->next();
   if (!tok.is<Punctor>(Semicolon)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_SEMICOLON] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[ASM_EXPECTED_SEMICOLON] << tok.serialize() << tok << std::endl;
     return false;
   }
 

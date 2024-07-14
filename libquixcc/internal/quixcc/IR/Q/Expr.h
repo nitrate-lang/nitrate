@@ -40,15 +40,15 @@
 #include <quixcc/IR/Q/Type.h>
 
 namespace libquixcc::ir::q {
-class Expr : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override = 0;
-  boost::uuids::uuid hash_impl() const override = 0;
-  bool verify_impl() const override = 0;
+  class Expr : public Value {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override = 0;
+    boost::uuids::uuid hash_impl() const override = 0;
+    bool verify_impl() const override = 0;
 
- public:
-  virtual Type *infer() const = 0;
-};
-}  // namespace libquixcc::ir::q
+public:
+    virtual Type *infer() const = 0;
+  };
+} // namespace libquixcc::ir::q
 
-#endif  // __QUIXCC_IR_Q_NODES_EXPR_H__
+#endif // __QUIXCC_IR_Q_NODES_EXPR_H__

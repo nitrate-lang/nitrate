@@ -35,11 +35,10 @@
 
 using namespace libquixcc::ir::q;
 
-bool libquixcc::solver::passes::StringIntrinsicSolver(
-    quixcc_cc_job_t &job, libquixcc::solver::passes::qmod ir) {
+bool libquixcc::solver::passes::StringIntrinsicSolver(quixcc_cc_job_t &job,
+                                                      libquixcc::solver::passes::qmod ir) {
   auto filter = [](const ir::q::Value *val) -> IterOp {
-    if (!(val->is<IntrinsicType>() &&
-          val->as<IntrinsicType>()->name == QIntrinsicType::String)) {
+    if (!(val->is<IntrinsicType>() && val->as<IntrinsicType>()->name == QIntrinsicType::String)) {
       return IterOp::Skip;
     }
 

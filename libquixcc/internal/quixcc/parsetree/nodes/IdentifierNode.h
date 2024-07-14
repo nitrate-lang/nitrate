@@ -44,14 +44,12 @@
 #include <vector>
 
 namespace libquixcc {
-class IdentifierNode : public ExprNode {
- public:
-  IdentifierNode(const std::string &name) : m_name(name) {
-    ntype = NodeType::IdentifierNode;
-  }
+  class IdentifierNode : public ExprNode {
+public:
+    IdentifierNode(const std::string &name) : m_name(name) { ntype = NodeType::IdentifierNode; }
 
-  std::string m_name;
-};
-}  // namespace libquixcc
+    std::string m_name;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_IDENTIFIER_H__
+#endif // __QUIXCC_PARSE_NODES_IDENTIFIER_H__

@@ -44,8 +44,7 @@
 
 LIB_CXX_EXPORT quixcc::TargetTriple::TargetTriple(const char *_triple) {
   if (!_triple)
-    throw TargetTripleException(
-        "Invalid or unsupported LLVM target triple: (null)");
+    throw TargetTripleException("Invalid or unsupported LLVM target triple: (null)");
 
   std::string triple = _triple;
 
@@ -54,21 +53,22 @@ LIB_CXX_EXPORT quixcc::TargetTriple::TargetTriple(const char *_triple) {
   } else {
     std::string err;
     if (!llvm::TargetRegistry::lookupTarget(triple, err))
-      throw TargetTripleException(
-          "Invalid or unsupported LLVM target triple: " + triple);
+      throw TargetTripleException("Invalid or unsupported LLVM target triple: " + triple);
 
     m_triple = triple;
   }
 }
 
 LIB_CXX_EXPORT quixcc::CPU::CPU(const char *cpu) {
-  if (!cpu) throw CpuException("Invalid or unsupported LLVM CPU: (null)");
+  if (!cpu)
+    throw CpuException("Invalid or unsupported LLVM CPU: (null)");
 
   if (cpu[0] == '\0') {
     m_cpu = llvm::sys::getHostCPUName().str();
-    if (m_cpu.empty()) m_cpu = "generic";
+    if (m_cpu.empty())
+      m_cpu = "generic";
   } else {
-    m_cpu = cpu;  // cpu is not validated. idk how
+    m_cpu = cpu; // cpu is not validated. idk how
   }
 }
 
@@ -80,16 +80,19 @@ LIB_CXX_EXPORT quixcc::Compiler::Compiler(std::vector<quixcc_cc_job_t *> jobs,
 }
 
 LIB_CXX_EXPORT quixcc::Compiler::~Compiler() {
-  for (auto job : this->m_jobs) quixcc_cc_dispose(job);
+  for (auto job : this->m_jobs)
+    quixcc_cc_dispose(job);
 
-  for (auto file : this->m_to_close) fclose(file);
+  for (auto file : this->m_to_close)
+    fclose(file);
 }
 
 LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads) {
   size_t i, tcount;
   std::vector<std::thread> threads;
 
-  if (m_jobs.empty()) return *this;
+  if (m_jobs.empty())
+    return *this;
 
   if ((tcount = std::min(max_threads, this->m_jobs.size())) == 1) {
     quixcc_cc_run(this->m_jobs[0]);
@@ -102,36 +105,38 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::run(size_t max_threads) {
       }));
     }
 
-    for (auto &thread : threads) thread.join();
+    for (auto &thread : threads)
+      thread.join();
   }
 
   m_ok = true;
 
   for (auto job : this->m_jobs) {
     const quixcc_status_t *status = quixcc_cc_status(job);
-    if (!status) throw std::runtime_error("Failed to retrieve job status.");
+    if (!status)
+      throw std::runtime_error("Failed to retrieve job status.");
 
     for (i = 0; i < status->m_count; i++) {
       auto feedback = status->m_messages[i];
-      this->m_messages.push_back(
-          std::make_pair(feedback->message, feedback->m_level));
+      this->m_messages.push_back(std::make_pair(feedback->message, feedback->m_level));
     }
 
-    if (!status->m_success) this->m_ok = false;
+    if (!status->m_success)
+      this->m_ok = false;
   }
 
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal,
-                                                        std::ostream &error) {
+LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal, std::ostream &error) {
   size_t i;
   static std::mutex mtx;
   std::lock_guard<std::mutex> lock(mtx);
 
   for (auto job : this->m_jobs) {
     const quixcc_status_t *status = quixcc_cc_status(job);
-    if (!status) throw std::runtime_error("Failed to retrieve job status.");
+    if (!status)
+      throw std::runtime_error("Failed to retrieve job status.");
 
     for (i = 0; i < status->m_count; i++) {
       auto feedback = status->m_messages[i];
@@ -149,13 +154,13 @@ LIB_CXX_EXPORT quixcc::Compiler &quixcc::Compiler::puts(std::ostream &normal,
 
 LIB_CXX_EXPORT quixcc::CompilerBuilder::CompilerBuilder() {
   m_verbose = Verbosity::NORMAL;
-  m_target = "";  // Host target
+  m_target = ""; // Host target
   m_input = m_output = nullptr;
   m_disregard = false;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_source(
-    const std::string &file) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &
+quixcc::CompilerBuilder::add_source(const std::string &file) {
   FILE *input;
   if ((input = fopen(file.c_str(), "r")) == nullptr)
     throw std::runtime_error("Failed to open input file: " + file);
@@ -165,23 +170,23 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_source(
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_code(
-    const char *code, size_t size) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_code(const char *code,
+                                                                          size_t size) {
   m_input = fmemopen((void *)code, size, "r");
-  if (!m_input) throw std::runtime_error("Failed to open input stream.");
+  if (!m_input)
+    throw std::runtime_error("Failed to open input stream.");
 
   m_to_close.insert(m_input);
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_source(
-    FILE *input) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_source(FILE *input) {
   m_input = input;
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_output(
-    const std::string &file) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &
+quixcc::CompilerBuilder::set_output(const std::string &file) {
   if ((m_output = fopen(file.c_str(), "wb")) == nullptr)
     throw std::runtime_error("Failed to open output file: " + file);
 
@@ -189,14 +194,13 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_output(
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_output(
-    FILE *output) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_output(FILE *output) {
   m_output = output;
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_include(
-    const std::string &dir) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &
+quixcc::CompilerBuilder::add_include(const std::string &dir) {
   if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir))
     throw std::runtime_error("failed to access include directory: " + dir);
 
@@ -205,8 +209,8 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_include(
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_library(
-    const std::string &dir) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &
+quixcc::CompilerBuilder::add_library(const std::string &dir) {
   if (!std::filesystem::exists(dir) || !std::filesystem::is_directory(dir))
     throw std::runtime_error("failed to access library directory: " + dir);
 
@@ -215,8 +219,8 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::add_library(
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::link_library(
-    const std::string &lib) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &
+quixcc::CompilerBuilder::link_library(const std::string &lib) {
   if (!std::filesystem::exists(lib) || !std::filesystem::is_directory(lib))
     throw std::runtime_error("failed to access library: " + lib);
 
@@ -225,26 +229,24 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::link_library(
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::define(
-    const std::string &name, const std::string &value) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::define(const std::string &name,
+                                                                        const std::string &value) {
   m_flags.push_back("-D" + name + "=" + value);
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::undefine(
-    const std::string &name) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::undefine(const std::string &name) {
   m_flags.push_back("-U" + name);
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_flag(
-    const std::string &flag) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_flag(const std::string &flag) {
   m_flags.push_back(flag);
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_verbosity(
-    quixcc::Verbosity verbose) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &
+quixcc::CompilerBuilder::set_verbosity(quixcc::Verbosity verbose) {
   m_verbose = verbose;
   return *this;
 }
@@ -252,100 +254,102 @@ LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_verbosity(
 LIB_CXX_EXPORT quixcc::CompilerBuilder &
 quixcc::CompilerBuilder::set_optimization(quixcc::OptimizationLevel optimize) {
   switch (optimize) {
-    case quixcc::OptimizationLevel::NONE:
-      m_flags.push_back("-O0");
-      break;
-    case quixcc::OptimizationLevel::SPEED_1:
-      m_flags.push_back("-O1");
-      break;
-    case quixcc::OptimizationLevel::SPEED_2:
-      m_flags.push_back("-O2");
-      break;
-    case quixcc::OptimizationLevel::SPEED_3:
-      m_flags.push_back("-O3");
-      break;
-    case quixcc::OptimizationLevel::SPEED_4:
-      m_flags.push_back("-O3");
-      m_flags.push_back("-flto");
-      break;
-    case quixcc::OptimizationLevel::SIZE:
-      m_flags.push_back("-Os");
-      break;
+  case quixcc::OptimizationLevel::NONE:
+    m_flags.push_back("-O0");
+    break;
+  case quixcc::OptimizationLevel::SPEED_1:
+    m_flags.push_back("-O1");
+    break;
+  case quixcc::OptimizationLevel::SPEED_2:
+    m_flags.push_back("-O2");
+    break;
+  case quixcc::OptimizationLevel::SPEED_3:
+    m_flags.push_back("-O3");
+    break;
+  case quixcc::OptimizationLevel::SPEED_4:
+    m_flags.push_back("-O3");
+    m_flags.push_back("-flto");
+    break;
+  case quixcc::OptimizationLevel::SIZE:
+    m_flags.push_back("-Os");
+    break;
   }
 
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_debug(
-    bool debug) {
-  if (debug) m_flags.push_back("-g");
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::set_debug(bool debug) {
+  if (debug)
+    m_flags.push_back("-g");
 
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(
-    const std::string &flag) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::opt(const std::string &flag) {
   m_flags.push_back(flag);
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::disregard(
-    bool disregard) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::disregard(bool disregard) {
   m_disregard = disregard;
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::target(
-    quixcc::TargetTriple target) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &
+quixcc::CompilerBuilder::target(quixcc::TargetTriple target) {
   m_target = target;
   return *this;
 }
 
-LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::cpu(
-    quixcc::CPU cpu) {
+LIB_CXX_EXPORT quixcc::CompilerBuilder &quixcc::CompilerBuilder::cpu(quixcc::CPU cpu) {
   m_cpu = cpu;
   return *this;
 }
 
 bool quixcc::CompilerBuilder::verify() {
-  if (m_files.empty() && !m_input) return false;
+  if (m_files.empty() && !m_input)
+    return false;
 
-  if (!m_output) return false;
+  if (!m_output)
+    return false;
 
   return true;
 }
 
 LIB_CXX_EXPORT quixcc::Compiler quixcc::CompilerBuilder::build() {
-  if (!verify()) throw std::runtime_error("Invalid compiler configuration.");
+  if (!verify())
+    throw std::runtime_error("Invalid compiler configuration.");
 
   std::vector<quixcc_cc_job_t *> jobs;
   quixcc_cc_job_t *job;
 
-  if (m_input) m_files.push_back(std::make_pair(m_input, "stdin"));
+  if (m_input)
+    m_files.push_back(std::make_pair(m_input, "stdin"));
 
   for (auto &entry : m_files) {
     if ((job = quixcc_cc_new()) == nullptr)
       throw std::runtime_error("Failed to create new job.");
 
     switch (m_verbose) {
-      case Verbosity::NORMAL:
-        break;
-      case Verbosity::VERBOSE:
-        quixcc_cc_option(job, "-v", true);
-        break;
-      case Verbosity::VERY_VERBOSE:
-        // job->m_debug = true;
-        quixcc_cc_option(job, "-v", true);
-        break;
+    case Verbosity::NORMAL:
+      break;
+    case Verbosity::VERBOSE:
+      quixcc_cc_option(job, "-v", true);
+      break;
+    case Verbosity::VERY_VERBOSE:
+      // job->m_debug = true;
+      quixcc_cc_option(job, "-v", true);
+      break;
     }
 
-    for (auto &flag : m_flags) quixcc_cc_option(job, flag.c_str(), true);
+    for (auto &flag : m_flags)
+      quixcc_cc_option(job, flag.c_str(), true);
 
     quixcc_cc_source(job, entry.first, entry.second.c_str());
 
     if (!quixcc_cc_target(job, m_target.triple().c_str()))
-      throw TargetTripleException(
-          "Invalid or unsupported LLVM target triple: " + m_target.triple());
+      throw TargetTripleException("Invalid or unsupported LLVM target triple: " +
+                                  m_target.triple());
 
     if (!quixcc_cc_cpu(job, m_cpu.cpu().c_str()))
       throw CpuException("Invalid or unsupported LLVM CPU: " + m_cpu.cpu());

@@ -72,7 +72,7 @@ class quixcc_arena_impl_t {
     m_bases.push_back({base, base, size});
   }
 
- public:
+  public:
   quixcc_arena_impl_t() = default;
 
   quixcc_arena_impl_t(const quixcc_arena_impl_t &other) {
@@ -94,8 +94,7 @@ class quixcc_arena_impl_t {
       std::memcpy(base, region.m_base, used);
 
       /* Push the new memory block */
-      m_bases.push_back(
-          {base, (void *)((uintptr_t)base + used), region.m_size});
+      m_bases.push_back({base, (void *)((uintptr_t)base + used), region.m_size});
     }
   }
 
@@ -145,8 +144,8 @@ class quixcc_arena_impl_t {
 
     for (auto it = m_bases.rbegin(); it != m_bases.rend(); ++it) {
       /* Calculate boundaries for hypothetical allocation */
-      uintptr_t start = (uintptr_t)it->m_offset +
-                        (alignment - ((uintptr_t)it->m_offset % alignment));
+      uintptr_t start =
+          (uintptr_t)it->m_offset + (alignment - ((uintptr_t)it->m_offset % alignment));
 
       /* Check if the region has enough space */
       if ((start + size) <= (uintptr_t)it->m_base + it->m_size) {
@@ -159,9 +158,8 @@ class quixcc_arena_impl_t {
     alloc_region(REGION_SIZE);
 
     /* Calculate the start of the allocation */
-    uintptr_t start =
-        (uintptr_t)m_bases.back().m_offset +
-        (alignment - ((uintptr_t)m_bases.back().m_offset % alignment));
+    uintptr_t start = (uintptr_t)m_bases.back().m_offset +
+                      (alignment - ((uintptr_t)m_bases.back().m_offset % alignment));
 
     m_bases.back().m_offset = (void *)(start + size);
 
@@ -181,8 +179,7 @@ LIB_EXPORT quixcc_arena_t *quixcc_arena_open(quixcc_arena_t *arena) {
   return arena;
 }
 
-LIB_EXPORT quixcc_arena_t *quixcc_arena_copy(quixcc_arena_t *dst,
-                                             const quixcc_arena_t *src) {
+LIB_EXPORT quixcc_arena_t *quixcc_arena_copy(quixcc_arena_t *dst, const quixcc_arena_t *src) {
 #if ALLOCATOR_PRINT_VERBOSE
   std::cerr << "TRACE: quixcc_arena_copy(" << dst << ", " << src << ")\n";
 #endif
@@ -201,13 +198,11 @@ LIB_EXPORT void *quixcc_arena_alloc(quixcc_arena_t *arena, size_t size) {
   return ptr;
 }
 
-LIB_EXPORT void *quixcc_arena_alloc_ex(quixcc_arena_t *arena, size_t size,
-                                       size_t align) {
+LIB_EXPORT void *quixcc_arena_alloc_ex(quixcc_arena_t *arena, size_t size, size_t align) {
   void *ptr = arena->m_impl->allocate(size, align);
 
 #if ALLOCATOR_PRINT_VERBOSE
-  std::cerr << "TRACE: quixcc_arena_alloc_ex(" << size << ", " << align
-            << ")\t-> " << ptr << "\n";
+  std::cerr << "TRACE: quixcc_arena_alloc_ex(" << size << ", " << align << ")\t-> " << ptr << "\n";
 #endif
 
   return ptr;

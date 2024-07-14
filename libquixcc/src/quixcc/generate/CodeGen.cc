@@ -119,10 +119,10 @@ llvm::StructType *LLVM14Codegen::gen(const ir::delta::Packet *node) {
     return static_cast<llvm::StructType *>(m_state.types[node->def->name]);
 
   std::vector<llvm::Type *> types;
-  for (auto &field : node->def->fields) types.push_back(gent(field.second));
+  for (auto &field : node->def->fields)
+    types.push_back(gent(field.second));
 
-  auto st =
-      llvm::StructType::create(*m_ctx->m_ctx, types, node->def->name, true);
+  auto st = llvm::StructType::create(*m_ctx->m_ctx, types, node->def->name, true);
   m_state.types[node->def->name] = st;
 
   return st;
@@ -134,15 +134,15 @@ llvm::ArrayType *LLVM14Codegen::gen(const ir::delta::Array *node) {
 
 llvm::FunctionType *LLVM14Codegen::gen(const ir::delta::FType *node) {
   std::vector<llvm::Type *> types;
-  for (auto &param : node->params) types.push_back(gent(param));
+  for (auto &param : node->params)
+    types.push_back(gent(param));
 
   return llvm::FunctionType::get(gent(node->ret), types, node->variadic);
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Local *node) {
   auto type = gent(node->type);
-  llvm::AllocaInst *alloca =
-      m_ctx->m_builder->CreateAlloca(type, nullptr, node->name);
+  llvm::AllocaInst *alloca = m_ctx->m_builder->CreateAlloca(type, nullptr, node->name);
   m_state.locals.top()[node->name] = alloca;
 
   if (node->value) {
@@ -156,7 +156,8 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Local *node) {
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Global *node) {
   bool old_pub = m_state.m_pub;
 
-  if (node->_extern) m_state.m_pub = true;
+  if (node->_extern)
+    m_state.m_pub = true;
 
   llvm::Type *type = gent(node->type);
 
@@ -186,13 +187,12 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Global *node) {
     gvar->setInitializer(static_cast<llvm::Constant *>(gen(node->value)));
   } else {
     if (type->isIntegerTy())
-      gvar->setInitializer(llvm::ConstantInt::get(
-          type, llvm::APInt(type->getPrimitiveSizeInBits(), 0, true)));
+      gvar->setInitializer(
+          llvm::ConstantInt::get(type, llvm::APInt(type->getPrimitiveSizeInBits(), 0, true)));
     else if (type->isFloatTy())
       gvar->setInitializer(llvm::ConstantFP::get(type, 0.0));
     else if (type->isPointerTy())
-      gvar->setInitializer(llvm::ConstantPointerNull::get(
-          static_cast<llvm::PointerType *>(type)));
+      gvar->setInitializer(llvm::ConstantPointerNull::get(static_cast<llvm::PointerType *>(type)));
     else if (type->isArrayTy() || type->isStructTy())
       gvar->setInitializer(llvm::ConstantAggregateZero::get(type));
     else
@@ -209,55 +209,48 @@ llvm::Constant *LLVM14Codegen::gen(const ir::delta::Number *node) {
 
   if (node->value.find(".") != std::string::npos) {
     if (bits <= 32)
-      return llvm::ConstantFP::get(
-          *m_ctx->m_ctx,
-          llvm::APFloat(llvm::APFloat::IEEEsingle(), node->value));
+      return llvm::ConstantFP::get(*m_ctx->m_ctx,
+                                   llvm::APFloat(llvm::APFloat::IEEEsingle(), node->value));
     else
-      return llvm::ConstantFP::get(
-          *m_ctx->m_ctx,
-          llvm::APFloat(llvm::APFloat::IEEEdouble(), node->value));
+      return llvm::ConstantFP::get(*m_ctx->m_ctx,
+                                   llvm::APFloat(llvm::APFloat::IEEEdouble(), node->value));
   }
 
   switch (bits) {
-    case 1:
-    case 8:
-    case 16:
-    case 32:
-      return llvm::ConstantInt::get(*m_ctx->m_ctx,
-                                    llvm::APInt(32, node->value, 10));
-    case 64:
-      return llvm::ConstantInt::get(*m_ctx->m_ctx,
-                                    llvm::APInt(64, node->value, 10));
-    case 128:
-      return llvm::ConstantInt::get(*m_ctx->m_ctx,
-                                    llvm::APInt(128, node->value, 10));
-    default:
-      throw std::runtime_error("Codegen failed: Number type not supported");
+  case 1:
+  case 8:
+  case 16:
+  case 32:
+    return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(32, node->value, 10));
+  case 64:
+    return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(64, node->value, 10));
+  case 128:
+    return llvm::ConstantInt::get(*m_ctx->m_ctx, llvm::APInt(128, node->value, 10));
+  default:
+    throw std::runtime_error("Codegen failed: Number type not supported");
   }
 }
 
 llvm::Constant *LLVM14Codegen::gen(const ir::delta::String *node) {
-  llvm::Constant *zero = llvm::Constant::getNullValue(
-      llvm::IntegerType::getInt32Ty(*m_ctx->m_ctx));
+  llvm::Constant *zero = llvm::Constant::getNullValue(llvm::IntegerType::getInt32Ty(*m_ctx->m_ctx));
   llvm::Constant *indices[] = {zero, zero};
 
-  auto gvar = m_ctx->m_builder->CreateGlobalString(node->value, "", 0,
-                                                   m_ctx->m_module.get());
+  auto gvar = m_ctx->m_builder->CreateGlobalString(node->value, "", 0, m_ctx->m_module.get());
   gvar->setLinkage(llvm::GlobalValue::PrivateLinkage);
 
-  return llvm::ConstantExpr::getGetElementPtr(gvar->getValueType(), gvar,
-                                              indices);
+  return llvm::ConstantExpr::getGetElementPtr(gvar->getValueType(), gvar, indices);
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::List *node) {
   std::vector<llvm::Value *> values;
-  for (auto &elem : node->values) values.push_back(gen(elem));
+  for (auto &elem : node->values)
+    values.push_back(gen(elem));
 
   if (values.empty())
     throw std::runtime_error("Codegen failed: Can not use empty list");
 
-  llvm::Value *arr = m_ctx->m_builder->CreateAlloca(
-      llvm::ArrayType::get(values[0]->getType(), values.size()));
+  llvm::Value *arr =
+      m_ctx->m_builder->CreateAlloca(llvm::ArrayType::get(values[0]->getType(), values.size()));
 
   for (size_t i = 0; i < values.size(); i++) {
     auto ptr = m_ctx->m_builder->CreateGEP(
@@ -268,8 +261,7 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::List *node) {
   }
 
   if (m_state.m_deref)
-    return m_ctx->m_builder->CreateLoad(arr->getType()->getPointerElementType(),
-                                        arr);
+    return m_ctx->m_builder->CreateLoad(arr->getType()->getPointerElementType(), arr);
   else
     return arr;
 }
@@ -281,8 +273,7 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Ident *node) {
 
     if (m_state.locals.top().contains(node->name)) {
       auto v = m_state.locals.top()[node->name];
-      auto t =
-          m_state.locals.top()[node->name]->getType()->getPointerElementType();
+      auto t = m_state.locals.top()[node->name]->getType()->getPointerElementType();
       if (m_state.m_deref)
         return m_ctx->m_builder->CreateLoad(t, v);
       else
@@ -300,12 +291,12 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Ident *node) {
   } else if (m_state.functions.contains(node->name))
     return m_state.functions[node->name];
   else
-    throw std::runtime_error("Codegen failed: Identifier not found: " +
-                             node->name);
+    throw std::runtime_error("Codegen failed: Identifier not found: " + node->name);
 }
 
 llvm::Value *LLVM14Codegen::special_load(const ir::delta::Expr *node) {
-  if (!node->is<Index>()) return gen(node);
+  if (!node->is<Index>())
+    return gen(node);
 
   size_t rank = 0;
   const Value *n = node->as<Index>();
@@ -347,10 +338,8 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::PostInc *node) {
   m_state.m_deref = false;
   auto ptr = special_load(node->var);
 
-  auto v = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(),
-                                        ptr);
-  auto inc = m_ctx->m_builder->CreateAdd(
-      v, llvm::ConstantInt::get(v->getType(), 1, true));
+  auto v = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+  auto inc = m_ctx->m_builder->CreateAdd(v, llvm::ConstantInt::get(v->getType(), 1, true));
   m_ctx->m_builder->CreateStore(inc, ptr);
 
   m_state.m_deref = old;
@@ -362,10 +351,8 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::PostDec *node) {
   m_state.m_deref = false;
   auto ptr = special_load(node->var);
 
-  auto v = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(),
-                                        ptr);
-  auto dec = m_ctx->m_builder->CreateSub(
-      v, llvm::ConstantInt::get(v->getType(), 1, true));
+  auto v = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+  auto dec = m_ctx->m_builder->CreateSub(v, llvm::ConstantInt::get(v->getType(), 1, true));
   m_ctx->m_builder->CreateStore(dec, ptr);
 
   m_state.m_deref = old;
@@ -383,8 +370,7 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::AddressOf *node) {
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Deref *node) {
   auto ptr = gen(node->lhs);
-  return m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(),
-                                      ptr);
+  return m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Member *node) {
@@ -394,22 +380,20 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Member *node) {
   m_state.m_deref = old;
 
   auto t = ptr->getType();
-  while (!t->isStructTy()) t = t->getPointerElementType();
+  while (!t->isStructTy())
+    t = t->getPointerElementType();
 
   while (1) {
-    if (ptr->getType()->isPointerTy() &&
-        ptr->getType()->getPointerElementType()->isStructTy())
+    if (ptr->getType()->isPointerTy() && ptr->getType()->getPointerElementType()->isStructTy())
       break;
 
-    ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(),
-                                       ptr);
+    ptr = m_ctx->m_builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
   }
 
   auto eptr = m_ctx->m_builder->CreateStructGEP(t, ptr, node->field);
 
   if (m_state.m_deref)
-    return m_ctx->m_builder->CreateLoad(
-        eptr->getType()->getPointerElementType(), eptr);
+    return m_ctx->m_builder->CreateLoad(eptr->getType()->getPointerElementType(), eptr);
   else
     return eptr;
 }
@@ -452,8 +436,7 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Index *node) {
   bool is_inarr = m_state.index_rank > 1;
   m_state.index_rank--;
 
-  if (e->getType()->isPointerTy() &&
-      e->getType()->getPointerElementType()->isArrayTy()) {
+  if (e->getType()->isPointerTy() && e->getType()->getPointerElementType()->isArrayTy()) {
     llvm::ConstantInt *mod_n = nullptr;
     uint64_t n = e->getType()->getPointerElementType()->getArrayNumElements();
 
@@ -474,8 +457,7 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Index *node) {
       throw std::runtime_error("Codegen failed: Indexing TYPE not supported");
 
     auto red = bounds_wrap(i, mod_n);
-    v = m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e,
-                                    {zero, red});
+    v = m_ctx->m_builder->CreateGEP(e->getType()->getPointerElementType(), e, {zero, red});
 
     if (!m_state.m_deref) {
       return v;
@@ -506,13 +488,11 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::SCast *node) {
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::UCast *node) {
-  return m_ctx->m_builder->CreateZExtOrTrunc(gen(node->value),
-                                             gent(node->type));
+  return m_ctx->m_builder->CreateZExtOrTrunc(gen(node->value), gent(node->type));
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::PtrICast *node) {
-  return m_ctx->m_builder->CreatePtrToInt(
-      gen(node->value), llvm::Type::getInt64Ty(*m_ctx->m_ctx));
+  return m_ctx->m_builder->CreatePtrToInt(gen(node->value), llvm::Type::getInt64Ty(*m_ctx->m_ctx));
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::IPtrCast *node) {
@@ -528,12 +508,9 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::IfElse *node) {
   bool old2 = m_state.incond;
   m_state.incond = true;
 
-  llvm::BasicBlock *thenBB =
-      llvm::BasicBlock::Create(*m_ctx->m_ctx, "if.then", func);
-  llvm::BasicBlock *elseBB =
-      llvm::BasicBlock::Create(*m_ctx->m_ctx, "if.else", func);
-  llvm::BasicBlock *endBB =
-      llvm::BasicBlock::Create(*m_ctx->m_ctx, "if.end", func);
+  llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "if.then", func);
+  llvm::BasicBlock *elseBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "if.else", func);
+  llvm::BasicBlock *endBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "if.end", func);
 
   auto cond = gen(node->cond);
   m_ctx->m_builder->CreateCondBr(cond, thenBB, elseBB);
@@ -542,12 +519,14 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::IfElse *node) {
   m_state.terminate_early = false;
   m_ctx->m_builder->SetInsertPoint(thenBB);
   gen(node->then);
-  if (!m_state.terminate_early) m_ctx->m_builder->CreateBr(endBB);
+  if (!m_state.terminate_early)
+    m_ctx->m_builder->CreateBr(endBB);
 
   m_state.terminate_early = false;
   m_ctx->m_builder->SetInsertPoint(elseBB);
   gen(node->els);
-  if (!m_state.terminate_early) m_ctx->m_builder->CreateBr(endBB);
+  if (!m_state.terminate_early)
+    m_ctx->m_builder->CreateBr(endBB);
 
   m_ctx->m_builder->SetInsertPoint(endBB);
 
@@ -560,12 +539,9 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::IfElse *node) {
 llvm::Value *LLVM14Codegen::gen(const ir::delta::While *node) {
   auto func = m_ctx->m_builder->GetInsertBlock()->getParent();
 
-  llvm::BasicBlock *condBB =
-      llvm::BasicBlock::Create(*m_ctx->m_ctx, "while.cond", func);
-  llvm::BasicBlock *bodyBB =
-      llvm::BasicBlock::Create(*m_ctx->m_ctx, "while.body", func);
-  llvm::BasicBlock *endBB =
-      llvm::BasicBlock::Create(*m_ctx->m_ctx, "while.end", func);
+  llvm::BasicBlock *condBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "while.cond", func);
+  llvm::BasicBlock *bodyBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "while.body", func);
+  llvm::BasicBlock *endBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "while.end", func);
 
   m_state.breaks.top().push(endBB);
   m_state.continues.top().push(condBB);
@@ -594,20 +570,17 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Jmp *node) {
     throw std::runtime_error("Codegen failed: Can not jump outside of segment");
 
   if (!m_state.labels.top().contains(node->target))
-    throw std::runtime_error("Codegen failed: Label not found: " +
-                             node->target);
+    throw std::runtime_error("Codegen failed: Label not found: " + node->target);
 
   return m_ctx->m_builder->CreateBr(m_state.labels.top()[node->target]);
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Label *node) {
   if (m_state.labels.empty())
-    throw std::runtime_error(
-        "Codegen failed: Can not create label outside of segment");
+    throw std::runtime_error("Codegen failed: Can not create label outside of segment");
 
   if (m_state.labels.top().contains(node->name))
-    throw std::runtime_error("Codegen failed: Label already exists: " +
-                             node->name);
+    throw std::runtime_error("Codegen failed: Label already exists: " + node->name);
 
   auto func = m_ctx->m_builder->GetInsertBlock()->getParent();
   auto bb = llvm::BasicBlock::Create(*m_ctx->m_ctx, node->name, func);
@@ -623,26 +596,25 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Label *node) {
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Ret *node) {
-  if (m_state.incond) m_state.terminate_early = true;
+  if (m_state.incond)
+    m_state.terminate_early = true;
 
   if (node->value)
-    m_ctx->m_builder->CreateStore(gen(node->value),
-                                  m_state.locals.top()["__retval"]);
+    m_ctx->m_builder->CreateStore(gen(node->value), m_state.locals.top()["__retval"]);
 
   return m_ctx->m_builder->CreateBr(m_state.labels.top().at("__ret"));
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Call *node) {
   std::vector<llvm::Value *> args;
-  for (auto &arg : node->args) args.push_back(gen(arg));
+  for (auto &arg : node->args)
+    args.push_back(gen(arg));
 
   llvm::FunctionType *ft = static_cast<llvm::FunctionType *>(gent(node->ftype));
 
-  llvm::Value *callee =
-      m_ctx->m_module->getOrInsertFunction(node->callee, ft).getCallee();
+  llvm::Value *callee = m_ctx->m_module->getOrInsertFunction(node->callee, ft).getCallee();
   if (!callee)
-    throw std::runtime_error("Codegen failed: Function not found: " +
-                             node->callee);
+    throw std::runtime_error("Codegen failed: Function not found: " + node->callee);
 
   return m_ctx->m_builder->CreateCall(ft, callee, args);
 }
@@ -660,12 +632,14 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Halt *node) {
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Break *node) {
-  if (m_state.incond) m_state.terminate_early = true;
+  if (m_state.incond)
+    m_state.terminate_early = true;
   return m_ctx->m_builder->CreateBr(m_state.breaks.top().top());
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Continue *node) {
-  if (m_state.incond) m_state.terminate_early = true;
+  if (m_state.incond)
+    m_state.terminate_early = true;
   return m_ctx->m_builder->CreateBr(m_state.continues.top().top());
 }
 
@@ -679,8 +653,7 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Switch *node) {
   m_state.breaks.top().push(mergeBB);
 
   /*============= CREATE DEFAULT CASE =============*/
-  auto defaultBB =
-      llvm::BasicBlock::Create(*m_ctx->m_ctx, "switch.default", func);
+  auto defaultBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "switch.default", func);
   if (node->def) {
     m_ctx->m_builder->SetInsertPoint(defaultBB);
     gen(node->def);
@@ -692,8 +665,7 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Switch *node) {
   /*============= CREATE SWITCH =============*/
   m_ctx->m_builder->SetInsertPoint(block);
   auto expr = gen(node->cond);
-  auto switch_ =
-      m_ctx->m_builder->CreateSwitch(expr, defaultBB, node->cases.size());
+  auto switch_ = m_ctx->m_builder->CreateSwitch(expr, defaultBB, node->cases.size());
 
   /*============= CREATE CASES =============*/
   for (auto c : node->cases) {
@@ -715,26 +687,27 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Switch *node) {
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Block *node) {
-  for (auto child : node->stmts) gen(child);
+  for (auto child : node->stmts)
+    gen(child);
 
   return nullptr;
 }
 
 llvm::Function *LLVM14Codegen::gen(const ir::delta::Segment *node) {
   std::vector<llvm::Type *> types;
-  for (auto &param : node->params) types.push_back(gent(param.second));
+  for (auto &param : node->params)
+    types.push_back(gent(param.second));
 
-  llvm::FunctionType *ftype =
-      llvm::FunctionType::get(gent(node->ret), types, node->variadic);
+  llvm::FunctionType *ftype = llvm::FunctionType::get(gent(node->ret), types, node->variadic);
   llvm::Function *func;
 
   if (!m_ctx->m_module->getFunction(m_state.name)) {
     if (m_state.m_pub)
-      func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage,
-                                    m_state.name, m_ctx->m_module.get());
+      func = llvm::Function::Create(ftype, llvm::Function::ExternalLinkage, m_state.name,
+                                    m_ctx->m_module.get());
     else
-      func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage,
-                                    m_state.name, m_ctx->m_module.get());
+      func = llvm::Function::Create(ftype, llvm::Function::PrivateLinkage, m_state.name,
+                                    m_ctx->m_module.get());
   } else {
     func = m_ctx->m_module->getFunction(m_state.name);
 
@@ -752,8 +725,7 @@ llvm::Function *LLVM14Codegen::gen(const ir::delta::Segment *node) {
     m_state.breaks.push({});
     m_state.continues.push({});
 
-    llvm::BasicBlock *bb =
-        llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
+    llvm::BasicBlock *bb = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
     m_ctx->m_builder->SetInsertPoint(bb);
 
     for (auto &arg : func->args()) {
@@ -763,17 +735,14 @@ llvm::Function *LLVM14Codegen::gen(const ir::delta::Segment *node) {
     }
 
     if (!node->ret->is<Void>()) {
-      auto retval =
-          m_ctx->m_builder->CreateAlloca(gent(node->ret), nullptr, "__retval");
+      auto retval = m_ctx->m_builder->CreateAlloca(gent(node->ret), nullptr, "__retval");
       m_state.locals.top()["__retval"] = retval;
     }
 
-    llvm::BasicBlock *retBB =
-        llvm::BasicBlock::Create(*m_ctx->m_ctx, "__ret", func);
+    llvm::BasicBlock *retBB = llvm::BasicBlock::Create(*m_ctx->m_ctx, "__ret", func);
     m_ctx->m_builder->SetInsertPoint(retBB);
     if (!node->ret->is<Void>()) {
-      auto retval = m_ctx->m_builder->CreateLoad(
-          gent(node->ret), m_state.locals.top()["__retval"]);
+      auto retval = m_ctx->m_builder->CreateLoad(gent(node->ret), m_state.locals.top()["__retval"]);
       m_ctx->m_builder->CreateRet(retval);
     } else {
       m_ctx->m_builder->CreateRetVoid();
@@ -806,9 +775,9 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Asm *node) {
 
   /// TODO: build out parameters in LLVM inline asm format
 
-  llvm::InlineAsm *asm_ = llvm::InlineAsm::get(
-      llvm::FunctionType::get(llvm::Type::getVoidTy(*m_ctx->m_ctx), false),
-      node->asm_str, constraints, sideeffects, alignstack);
+  llvm::InlineAsm *asm_ =
+      llvm::InlineAsm::get(llvm::FunctionType::get(llvm::Type::getVoidTy(*m_ctx->m_ctx), false),
+                           node->asm_str, constraints, sideeffects, alignstack);
 
   return m_ctx->m_builder->CreateCall(asm_, {});
 }
@@ -857,9 +826,9 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Shr *node) {
   auto l = gen(node->lhs);
   auto r = gen(node->rhs);
 
-  if (node->lhs->infer()->is_signed())  // signed
+  if (node->lhs->infer()->is_signed()) // signed
     return m_ctx->m_builder->CreateAShr(l, r);
-  else  // unsigned
+  else // unsigned
     return m_ctx->m_builder->CreateLShr(l, r);
 }
 
@@ -935,16 +904,15 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::Xor *node) {
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::RootNode *node) {
-  for (auto child : node->children) gen(child);
+  for (auto child : node->children)
+    gen(child);
 
   if (node->children.empty()) {
     llvm::FunctionType *ftype =
         llvm::FunctionType::get(llvm::Type::getVoidTy(*m_ctx->m_ctx), false);
-    llvm::Function *func =
-        llvm::Function::Create(ftype, llvm::Function::InternalLinkage,
-                               "__placeholder__", m_ctx->m_module.get());
-    llvm::BasicBlock *bb =
-        llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
+    llvm::Function *func = llvm::Function::Create(ftype, llvm::Function::InternalLinkage,
+                                                  "__placeholder__", m_ctx->m_module.get());
+    llvm::BasicBlock *bb = llvm::BasicBlock::Create(*m_ctx->m_ctx, "entry", func);
     m_ctx->m_builder->SetInsertPoint(bb);
     m_ctx->m_builder->CreateRetVoid();
 
@@ -956,177 +924,174 @@ llvm::Value *LLVM14Codegen::gen(const ir::delta::RootNode *node) {
 
 llvm::Type *LLVM14Codegen::gent(const ir::delta::Type *n) {
   switch ((delta::NodeType)n->ntype) {
-    case delta::NodeType::I1:
-      return gen(n->as<I1>());
-    case delta::NodeType::I8:
-      return gen(n->as<I8>());
-    case delta::NodeType::I16:
-      return gen(n->as<I16>());
-    case delta::NodeType::I32:
-      return gen(n->as<I32>());
-    case delta::NodeType::I64:
-      return gen(n->as<I64>());
-    case delta::NodeType::I128:
-      return gen(n->as<I128>());
-    case delta::NodeType::U8:
-      return gen(n->as<U8>());
-    case delta::NodeType::U16:
-      return gen(n->as<U16>());
-    case delta::NodeType::U32:
-      return gen(n->as<U32>());
-    case delta::NodeType::U64:
-      return gen(n->as<U64>());
-    case delta::NodeType::U128:
-      return gen(n->as<U128>());
-    case delta::NodeType::F32:
-      return gen(n->as<F32>());
-    case delta::NodeType::F64:
-      return gen(n->as<F64>());
-    case delta::NodeType::Void:
-      return gen(n->as<Void>());
-    case delta::NodeType::Ptr:
-      return gen(n->as<Ptr>());
-    case delta::NodeType::Packet:
-      return gen(n->as<Packet>());
-    case delta::NodeType::Array:
-      return gen(n->as<Array>());
-    case delta::NodeType::FType:
-      return gen(n->as<FType>());
-    default:
-      throw std::runtime_error(
-          "Codegen failed: codegen not implemented for type: " +
-          std::to_string(n->ntype));
+  case delta::NodeType::I1:
+    return gen(n->as<I1>());
+  case delta::NodeType::I8:
+    return gen(n->as<I8>());
+  case delta::NodeType::I16:
+    return gen(n->as<I16>());
+  case delta::NodeType::I32:
+    return gen(n->as<I32>());
+  case delta::NodeType::I64:
+    return gen(n->as<I64>());
+  case delta::NodeType::I128:
+    return gen(n->as<I128>());
+  case delta::NodeType::U8:
+    return gen(n->as<U8>());
+  case delta::NodeType::U16:
+    return gen(n->as<U16>());
+  case delta::NodeType::U32:
+    return gen(n->as<U32>());
+  case delta::NodeType::U64:
+    return gen(n->as<U64>());
+  case delta::NodeType::U128:
+    return gen(n->as<U128>());
+  case delta::NodeType::F32:
+    return gen(n->as<F32>());
+  case delta::NodeType::F64:
+    return gen(n->as<F64>());
+  case delta::NodeType::Void:
+    return gen(n->as<Void>());
+  case delta::NodeType::Ptr:
+    return gen(n->as<Ptr>());
+  case delta::NodeType::Packet:
+    return gen(n->as<Packet>());
+  case delta::NodeType::Array:
+    return gen(n->as<Array>());
+  case delta::NodeType::FType:
+    return gen(n->as<FType>());
+  default:
+    throw std::runtime_error("Codegen failed: codegen not implemented for type: " +
+                             std::to_string(n->ntype));
   }
 }
 
 llvm::Value *LLVM14Codegen::gen(const ir::delta::Value *n) {
   switch ((delta::NodeType)n->ntype) {
-    case delta::NodeType::Local:
-      return gen(n->as<Local>());
-    case delta::NodeType::Global:
-      return gen(n->as<Global>());
-    case delta::NodeType::Number:
-      return gen(n->as<Number>());
-    case delta::NodeType::String:
-      return gen(n->as<String>());
-    case delta::NodeType::List:
-      return gen(n->as<List>());
-    case delta::NodeType::Ident:
-      return gen(n->as<Ident>());
-    case delta::NodeType::Assign:
-      return gen(n->as<Assign>());
-    case delta::NodeType::PostInc:
-      return gen(n->as<PostInc>());
-    case delta::NodeType::PostDec:
-      return gen(n->as<PostDec>());
-    case delta::NodeType::AddressOf:
-      return gen(n->as<AddressOf>());
-    case delta::NodeType::Deref:
-      return gen(n->as<Deref>());
-    case delta::NodeType::Member:
-      return gen(n->as<Member>());
-    case delta::NodeType::Index:
-      return gen(n->as<Index>());
-    case delta::NodeType::SCast:
-      return gen(n->as<SCast>());
-    case delta::NodeType::UCast:
-      return gen(n->as<UCast>());
-    case delta::NodeType::PtrICast:
-      return gen(n->as<PtrICast>());
-    case delta::NodeType::IPtrCast:
-      return gen(n->as<IPtrCast>());
-    case delta::NodeType::Bitcast:
-      return gen(n->as<Bitcast>());
-    case delta::NodeType::IfElse:
-      return gen(n->as<IfElse>());
-    case delta::NodeType::While:
-      return gen(n->as<While>());
-    case delta::NodeType::Jmp:
-      return gen(n->as<Jmp>());
-    case delta::NodeType::Label:
-      return gen(n->as<Label>());
-    case delta::NodeType::Ret:
-      return gen(n->as<Ret>());
-    case delta::NodeType::Call:
-      return gen(n->as<Call>());
-    case delta::NodeType::PtrCall:
-      return gen(n->as<PtrCall>());
-    case delta::NodeType::Halt:
-      return gen(n->as<Halt>());
-    case delta::NodeType::Break:
-      return gen(n->as<Break>());
-    case delta::NodeType::Continue:
-      return gen(n->as<Continue>());
-    case delta::NodeType::Switch:
-      return gen(n->as<Switch>());
-    case delta::NodeType::Block:
-      return gen(n->as<Block>());
-    case delta::NodeType::Segment:
-      return gen(n->as<Segment>());
-    case delta::NodeType::Asm:
-      return gen(n->as<Asm>());
-    case delta::NodeType::Add:
-      return gen(n->as<Add>());
-    case delta::NodeType::Sub:
-      return gen(n->as<Sub>());
-    case delta::NodeType::Mul:
-      return gen(n->as<Mul>());
-    case delta::NodeType::Div:
-      return gen(n->as<Div>());
-    case delta::NodeType::Mod:
-      return gen(n->as<Mod>());
-    case delta::NodeType::BitAnd:
-      return gen(n->as<BitAnd>());
-    case delta::NodeType::BitOr:
-      return gen(n->as<BitOr>());
-    case delta::NodeType::BitXor:
-      return gen(n->as<BitXor>());
-    case delta::NodeType::BitNot:
-      return gen(n->as<BitNot>());
-    case delta::NodeType::Shl:
-      return gen(n->as<Shl>());
-    case delta::NodeType::Shr:
-      return gen(n->as<Shr>());
-    case delta::NodeType::Rotl:
-      return gen(n->as<Rotl>());
-    case delta::NodeType::Rotr:
-      return gen(n->as<Rotr>());
-    case delta::NodeType::Eq:
-      return gen(n->as<Eq>());
-    case delta::NodeType::Ne:
-      return gen(n->as<Ne>());
-    case delta::NodeType::Lt:
-      return gen(n->as<Lt>());
-    case delta::NodeType::Gt:
-      return gen(n->as<Gt>());
-    case delta::NodeType::Le:
-      return gen(n->as<Le>());
-    case delta::NodeType::Ge:
-      return gen(n->as<Ge>());
-    case delta::NodeType::And:
-      return gen(n->as<And>());
-    case delta::NodeType::Or:
-      return gen(n->as<Or>());
-    case delta::NodeType::Not:
-      return gen(n->as<Not>());
-    case delta::NodeType::Xor:
-      return gen(n->as<Xor>());
-    case delta::NodeType::Root:
-      return gen(n->as<RootNode>());
-    case delta::NodeType::Packet:
-    case delta::NodeType::PacketDef:
-    case delta::NodeType::FType:
-      return nullptr;
+  case delta::NodeType::Local:
+    return gen(n->as<Local>());
+  case delta::NodeType::Global:
+    return gen(n->as<Global>());
+  case delta::NodeType::Number:
+    return gen(n->as<Number>());
+  case delta::NodeType::String:
+    return gen(n->as<String>());
+  case delta::NodeType::List:
+    return gen(n->as<List>());
+  case delta::NodeType::Ident:
+    return gen(n->as<Ident>());
+  case delta::NodeType::Assign:
+    return gen(n->as<Assign>());
+  case delta::NodeType::PostInc:
+    return gen(n->as<PostInc>());
+  case delta::NodeType::PostDec:
+    return gen(n->as<PostDec>());
+  case delta::NodeType::AddressOf:
+    return gen(n->as<AddressOf>());
+  case delta::NodeType::Deref:
+    return gen(n->as<Deref>());
+  case delta::NodeType::Member:
+    return gen(n->as<Member>());
+  case delta::NodeType::Index:
+    return gen(n->as<Index>());
+  case delta::NodeType::SCast:
+    return gen(n->as<SCast>());
+  case delta::NodeType::UCast:
+    return gen(n->as<UCast>());
+  case delta::NodeType::PtrICast:
+    return gen(n->as<PtrICast>());
+  case delta::NodeType::IPtrCast:
+    return gen(n->as<IPtrCast>());
+  case delta::NodeType::Bitcast:
+    return gen(n->as<Bitcast>());
+  case delta::NodeType::IfElse:
+    return gen(n->as<IfElse>());
+  case delta::NodeType::While:
+    return gen(n->as<While>());
+  case delta::NodeType::Jmp:
+    return gen(n->as<Jmp>());
+  case delta::NodeType::Label:
+    return gen(n->as<Label>());
+  case delta::NodeType::Ret:
+    return gen(n->as<Ret>());
+  case delta::NodeType::Call:
+    return gen(n->as<Call>());
+  case delta::NodeType::PtrCall:
+    return gen(n->as<PtrCall>());
+  case delta::NodeType::Halt:
+    return gen(n->as<Halt>());
+  case delta::NodeType::Break:
+    return gen(n->as<Break>());
+  case delta::NodeType::Continue:
+    return gen(n->as<Continue>());
+  case delta::NodeType::Switch:
+    return gen(n->as<Switch>());
+  case delta::NodeType::Block:
+    return gen(n->as<Block>());
+  case delta::NodeType::Segment:
+    return gen(n->as<Segment>());
+  case delta::NodeType::Asm:
+    return gen(n->as<Asm>());
+  case delta::NodeType::Add:
+    return gen(n->as<Add>());
+  case delta::NodeType::Sub:
+    return gen(n->as<Sub>());
+  case delta::NodeType::Mul:
+    return gen(n->as<Mul>());
+  case delta::NodeType::Div:
+    return gen(n->as<Div>());
+  case delta::NodeType::Mod:
+    return gen(n->as<Mod>());
+  case delta::NodeType::BitAnd:
+    return gen(n->as<BitAnd>());
+  case delta::NodeType::BitOr:
+    return gen(n->as<BitOr>());
+  case delta::NodeType::BitXor:
+    return gen(n->as<BitXor>());
+  case delta::NodeType::BitNot:
+    return gen(n->as<BitNot>());
+  case delta::NodeType::Shl:
+    return gen(n->as<Shl>());
+  case delta::NodeType::Shr:
+    return gen(n->as<Shr>());
+  case delta::NodeType::Rotl:
+    return gen(n->as<Rotl>());
+  case delta::NodeType::Rotr:
+    return gen(n->as<Rotr>());
+  case delta::NodeType::Eq:
+    return gen(n->as<Eq>());
+  case delta::NodeType::Ne:
+    return gen(n->as<Ne>());
+  case delta::NodeType::Lt:
+    return gen(n->as<Lt>());
+  case delta::NodeType::Gt:
+    return gen(n->as<Gt>());
+  case delta::NodeType::Le:
+    return gen(n->as<Le>());
+  case delta::NodeType::Ge:
+    return gen(n->as<Ge>());
+  case delta::NodeType::And:
+    return gen(n->as<And>());
+  case delta::NodeType::Or:
+    return gen(n->as<Or>());
+  case delta::NodeType::Not:
+    return gen(n->as<Not>());
+  case delta::NodeType::Xor:
+    return gen(n->as<Xor>());
+  case delta::NodeType::Root:
+    return gen(n->as<RootNode>());
+  case delta::NodeType::Packet:
+  case delta::NodeType::PacketDef:
+  case delta::NodeType::FType:
+    return nullptr;
 
-    default:
-      throw std::runtime_error(
-          "Codegen failed: codegen not implemented for value: " +
-          std::to_string(n->ntype));
+  default:
+    throw std::runtime_error("Codegen failed: codegen not implemented for value: " +
+                             std::to_string(n->ntype));
   }
 }
 
-bool LLVM14Codegen::codegen(const std::unique_ptr<ir::delta::IRDelta> &ir,
-                            LLVMContext &ctx) {
+bool LLVM14Codegen::codegen(const std::unique_ptr<ir::delta::IRDelta> &ir, LLVMContext &ctx) {
   LLVM14Codegen codegen(ctx);
 
   return codegen.gen(ir->root()), true; /* Errors -> exceptions */

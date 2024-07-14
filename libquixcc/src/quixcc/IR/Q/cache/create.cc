@@ -49,21 +49,18 @@
 
 using namespace libquixcc::ir::q;
 
-template <typename T>
-using vec = std::vector<T>;
+template <typename T> using vec = std::vector<T>;
 
-template <typename K, typename V>
-using map = std::map<K, V>;
+template <typename K, typename V> using map = std::map<K, V>;
 
-template <typename X, typename Y>
-using pair = std::pair<X, Y>;
+template <typename X, typename Y> using pair = std::pair<X, Y>;
 
 using str = std::string;
 
 class QThreadGarbageCollecter {
   std::vector<Value *> m_ptrs;
 
- public:
+  public:
   QThreadGarbageCollecter() {}
 
   ~QThreadGarbageCollecter() {
@@ -72,10 +69,7 @@ class QThreadGarbageCollecter {
     }
   }
 
-  template <typename T>
-  inline void adopt(Value *ptr) {
-    m_ptrs.push_back(ptr);
-  }
+  template <typename T> inline void adopt(Value *ptr) { m_ptrs.push_back(ptr); }
 };
 
 static I1 *g_i1 = new I1();
@@ -95,16 +89,14 @@ static Void *g_void = new Void();
 
 static thread_local QThreadGarbageCollecter thread_gc;
 
-#define MAKE_GC(T, ...)          \
-  {                              \
-    T *ptr = new T(__VA_ARGS__); \
-    thread_gc.adopt<T>(ptr);     \
-    return ptr;                  \
+#define MAKE_GC(T, ...)                                                                            \
+  {                                                                                                \
+    T *ptr = new T(__VA_ARGS__);                                                                   \
+    thread_gc.adopt<T>(ptr);                                                                       \
+    return ptr;                                                                                    \
   }
 
-RootNode *RootNode::create(vec<Value *> children) {
-  MAKE_GC(RootNode, children);
-}
+RootNode *RootNode::create(vec<Value *> children) { MAKE_GC(RootNode, children); }
 
 SCast *SCast::create(Type *type, Expr *value) { MAKE_GC(SCast, type, value); }
 
@@ -112,17 +104,11 @@ UCast *UCast::create(Type *type, Expr *value) { MAKE_GC(UCast, type, value); }
 
 PtrICast *PtrICast::create(Expr *value) { MAKE_GC(PtrICast, value); }
 
-IPtrCast *IPtrCast::create(Type *type, Expr *value) {
-  MAKE_GC(IPtrCast, type, value);
-}
+IPtrCast *IPtrCast::create(Type *type, Expr *value) { MAKE_GC(IPtrCast, type, value); }
 
-Bitcast *Bitcast::create(Type *type, Expr *value) {
-  MAKE_GC(Bitcast, type, value);
-}
+Bitcast *Bitcast::create(Type *type, Expr *value) { MAKE_GC(Bitcast, type, value); }
 
-IfElse *IfElse::create(Expr *cond, Value *then, Value *els) {
-  MAKE_GC(IfElse, cond, then, els);
-}
+IfElse *IfElse::create(Expr *cond, Value *then, Value *els) { MAKE_GC(IfElse, cond, then, els); }
 
 While *While::create(Expr *cond, Value *body) { MAKE_GC(While, cond, body); }
 
@@ -140,22 +126,18 @@ Ret *Ret::create(Expr *value) { MAKE_GC(Ret, value); }
 
 Throw *Throw::create(Expr *value) { MAKE_GC(Throw, value); }
 
-TryCatchFinally *TryCatchFinally::create(
-    Value *tryblock, vec<pair<Value *, Value *>> catchblocks,
-    Value *finallyblock) {
+TryCatchFinally *TryCatchFinally::create(Value *tryblock, vec<pair<Value *, Value *>> catchblocks,
+                                         Value *finallyblock) {
   MAKE_GC(TryCatchFinally, tryblock, catchblocks, finallyblock);
 }
 
 Case *Case::create(Expr *value, Value *body) { MAKE_GC(Case, value, body); }
 
-Switch *Switch::create(Expr *value, std::vector<Case *> &cases,
-                       Value *defaultcase) {
+Switch *Switch::create(Expr *value, std::vector<Case *> &cases, Value *defaultcase) {
   MAKE_GC(Switch, value, cases, defaultcase);
 }
 
-Call *Call::create(Global *func, vec<Expr *> args) {
-  MAKE_GC(Call, func, args);
-}
+Call *Call::create(Global *func, vec<Expr *> args) { MAKE_GC(Call, func, args); }
 
 CallIndirect *CallIndirect::create(Segment *callee, vec<Expr *> args) {
   MAKE_GC(CallIndirect, callee, args);
@@ -167,19 +149,18 @@ IntrinsicCall *IntrinsicCall::create(QIntrinsic name, vec<Expr *> args) {
 
 Ident *Ident::create(str name, Type *type) { MAKE_GC(Ident, name, type); }
 
-Asm *Asm::create(str asm_str, vec<pair<str, Value *>> inputs,
-                 vec<pair<str, Value *>> outputs, vec<str> clobbers) {
+Asm *Asm::create(str asm_str, vec<pair<str, Value *>> inputs, vec<pair<str, Value *>> outputs,
+                 vec<str> clobbers) {
   MAKE_GC(Asm, asm_str, inputs, outputs, clobbers);
 }
 
 Block *Block::create(vec<Value *> stmts) { MAKE_GC(Block, stmts); }
 
-Segment *Segment::create(vec<pair<str, Type *>> params, Type *return_type,
-                         Block *block, bool is_variadic, bool is_pure,
-                         bool is_thread_safe, bool is_no_throw,
+Segment *Segment::create(vec<pair<str, Type *>> params, Type *return_type, Block *block,
+                         bool is_variadic, bool is_pure, bool is_thread_safe, bool is_no_throw,
                          bool is_no_return, bool is_foriegn) {
-  MAKE_GC(Segment, params, return_type, block, is_variadic, is_pure,
-          is_thread_safe, is_no_throw, is_no_return, is_foriegn);
+  MAKE_GC(Segment, params, return_type, block, is_variadic, is_pure, is_thread_safe, is_no_throw,
+          is_no_return, is_foriegn);
 }
 
 Add *Add::create(Expr *lhs, Expr *rhs) { MAKE_GC(Add, lhs, rhs); }
@@ -262,47 +243,38 @@ Array *Array::create(Type *type, uint64_t size) { MAKE_GC(Array, type, size); }
 
 Vector *Vector::create(Type *type) { MAKE_GC(Vector, type); }
 
-FType *FType::create(vec<Type *> params, Type *ret, bool variadic, bool pure,
-                     bool thread_safe, bool foreign, bool _noexcept) {
+FType *FType::create(vec<Type *> params, Type *ret, bool variadic, bool pure, bool thread_safe,
+                     bool foreign, bool _noexcept) {
   MAKE_GC(FType, params, ret, variadic, pure, thread_safe, foreign, _noexcept);
 }
 
-Region *Region::create(str name, vec<Type *> fields, bool packed,
-                       bool ordered) {
+Region *Region::create(str name, vec<Type *> fields, bool packed, bool ordered) {
   MAKE_GC(Region, name, fields, packed, ordered);
 }
 
-Union *Union::create(str name, vec<Type *> fields) {
-  MAKE_GC(Union, name, fields);
-}
+Union *Union::create(str name, vec<Type *> fields) { MAKE_GC(Union, name, fields); }
 
 Opaque *Opaque::create(str name) { MAKE_GC(Opaque, name); }
 
-IntrinsicType *IntrinsicType::create(QIntrinsicType name) {
-  MAKE_GC(IntrinsicType, name);
-}
+IntrinsicType *IntrinsicType::create(QIntrinsicType name) { MAKE_GC(IntrinsicType, name); }
 
 RegionDef *RegionDef::create(str name, vec<pair<str, Value *>> fields,
                              map<str, Segment *> methods) {
   MAKE_GC(RegionDef, name, fields, methods);
 }
 
-GroupDef *GroupDef::create(str name, vec<pair<str, Value *>> fields,
-                           map<str, Segment *> methods) {
+GroupDef *GroupDef::create(str name, vec<pair<str, Value *>> fields, map<str, Segment *> methods) {
   MAKE_GC(GroupDef, name, fields, methods);
 }
 
-UnionDef *UnionDef::create(str name, map<str, Value *> fields,
-                           map<str, Segment *> methods) {
+UnionDef *UnionDef::create(str name, map<str, Value *> fields, map<str, Segment *> methods) {
   MAKE_GC(UnionDef, name, fields, methods);
 }
 
-Local *Local::create(str name, Type *type, Expr *value) {
-  MAKE_GC(Local, name, type, value);
-}
+Local *Local::create(str name, Type *type, Expr *value) { MAKE_GC(Local, name, type, value); }
 
-Global *Global::create(str name, Type *type, Expr *value, bool _volatile,
-                       bool _atomic, bool _extern) {
+Global *Global::create(str name, Type *type, Expr *value, bool _volatile, bool _atomic,
+                       bool _extern) {
   MAKE_GC(Global, name, type, value, _volatile, _atomic, _extern);
 }
 
@@ -328,6 +300,4 @@ Member *Member::create(Value *lhs, size_t field, Type *field_type) {
   MAKE_GC(Member, lhs, field, field_type);
 }
 
-Index *Index::create(Value *lhs, Expr *index, Type *type) {
-  MAKE_GC(Index, lhs, index, type);
-}
+Index *Index::create(Value *lhs, Expr *index, Type *type) { MAKE_GC(Index, lhs, index, type); }

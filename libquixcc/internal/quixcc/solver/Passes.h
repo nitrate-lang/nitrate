@@ -39,13 +39,13 @@
 #include <quixcc/solver/Solver.h>
 
 namespace libquixcc::solver::passes {
-using qmod = std::unique_ptr<ir::q::QModule> &;
+  using qmod = std::unique_ptr<ir::q::QModule> &;
 
-bool StringIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
-bool VectorIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
-bool HashmapIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
-bool NumberIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
-bool ReferenceIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
+  bool StringIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
+  bool VectorIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
+  bool HashmapIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
+  bool NumberIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
+  bool ReferenceIntrinsicSolver(quixcc_cc_job_t &job, qmod ir);
 
-}  // namespace libquixcc::solver::passes
-#endif  // __QUIXCC_OPTIMIZER_PASSES_H__
+} // namespace libquixcc::solver::passes
+#endif // __QUIXCC_OPTIMIZER_PASSES_H__

@@ -36,14 +36,14 @@ boost::uuids::uuid libquixcc::ir::q::Block::hash_impl() const {
 }
 
 bool libquixcc::ir::q::Block::verify_impl() const {
-  return std::all_of(stmts.begin(), stmts.end(),
-                     [](const Value *stmt) { return stmt->verify(); });
+  return std::all_of(stmts.begin(), stmts.end(), [](const Value *stmt) { return stmt->verify(); });
 }
 
 boost::uuids::uuid libquixcc::ir::q::Segment::hash_impl() const {
   auto h = Hasher().gettag().add(return_type);
 
-  for (const auto &p : params) h.add(p.first).add(p.second);
+  for (const auto &p : params)
+    h.add(p.first).add(p.second);
 
   h.add(is_variadic)
       .add(is_pure)
@@ -52,7 +52,8 @@ boost::uuids::uuid libquixcc::ir::q::Segment::hash_impl() const {
       .add(is_no_return)
       .add(is_foriegn);
 
-  if (block) h.add(block);
+  if (block)
+    h.add(block);
 
   return h.hash();
 }
@@ -64,7 +65,8 @@ bool libquixcc::ir::q::Segment::verify_impl() const {
     return false;
   }
 
-  if (block) return block->verify();
+  if (block)
+    return block->verify();
 
   return true;
 }

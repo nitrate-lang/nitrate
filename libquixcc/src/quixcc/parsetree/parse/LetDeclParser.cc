@@ -37,9 +37,8 @@
 
 using namespace libquixcc;
 
-static bool parse_decl(
-    quixcc_cc_job_t &job, Token tok, libquixcc::Scanner *scanner,
-    std::pair<std::string, std::shared_ptr<TypeNode>> &decl) {
+static bool parse_decl(quixcc_cc_job_t &job, Token tok, libquixcc::Scanner *scanner,
+                       std::pair<std::string, std::shared_ptr<TypeNode>> &decl) {
   std::string name = tok.as<std::string>();
 
   tok = scanner->peek();
@@ -61,9 +60,8 @@ static bool parse_decl(
   return true;
 }
 
-bool libquixcc::parse_let(
-    quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-    std::vector<std::shared_ptr<libquixcc::StmtNode>> &nodes) {
+bool libquixcc::parse_let(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                          std::vector<std::shared_ptr<libquixcc::StmtNode>> &nodes) {
   Token tok = scanner->next();
 
   std::vector<std::pair<std::string, std::shared_ptr<TypeNode>>> decls;
@@ -78,7 +76,8 @@ bool libquixcc::parse_let(
       tok = scanner->next();
 
       std::pair<std::string, std::shared_ptr<TypeNode>> decl;
-      if (!parse_decl(job, tok, scanner, decl)) return false;
+      if (!parse_decl(job, tok, scanner, decl))
+        return false;
 
       decls.push_back(decl);
 
@@ -88,26 +87,24 @@ bool libquixcc::parse_let(
       else if (tok.is<Punctor>(CloseBracket))
         break;
       else {
-        LOG(ERROR) << core::feedback[LET_DECL_MISSING_PUNCTOR] << decl.first
-                   << tok << std::endl;
+        LOG(ERROR) << core::feedback[LET_DECL_MISSING_PUNCTOR] << decl.first << tok << std::endl;
         return false;
       }
     }
   } else if (tok.type() == tName) {
     // Parse single variable declaration
     std::pair<std::string, std::shared_ptr<TypeNode>> decl;
-    if (!parse_decl(job, tok, scanner, decl)) return false;
+    if (!parse_decl(job, tok, scanner, decl))
+      return false;
 
     decls.push_back(decl);
   } else {
-    LOG(ERROR) << core::feedback[LET_DECL_MISSING_IDENTIFIER] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[LET_DECL_MISSING_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
   if (decls.empty()) {
-    LOG(ERROR) << core::feedback[LET_DECL_MISSING_IDENTIFIER] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[LET_DECL_MISSING_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -115,12 +112,10 @@ bool libquixcc::parse_let(
   if (tok.is<Punctor>(Semicolon)) {
     // No initializer
     for (auto &decl : decls)
-      nodes.push_back(
-          std::make_shared<LetDeclNode>(decl.first, decl.second, nullptr));
+      nodes.push_back(std::make_shared<LetDeclNode>(decl.first, decl.second, nullptr));
   } else if (tok.is<Operator>(OpAssign)) {
     if (multi_decl)
-      throw std::runtime_error(
-          "Initializer not implemented for multiple declarations");
+      throw std::runtime_error("Initializer not implemented for multiple declarations");
 
     // Parse initializer
     std::shared_ptr<ExprNode> init;
@@ -129,13 +124,11 @@ bool libquixcc::parse_let(
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Semicolon)) {
-      LOG(ERROR) << core::feedback[LET_DECL_MISSING_PUNCTOR] << decls[0].first
-                 << tok << std::endl;
+      LOG(ERROR) << core::feedback[LET_DECL_MISSING_PUNCTOR] << decls[0].first << tok << std::endl;
       return false;
     }
 
-    nodes.push_back(
-        std::make_shared<LetDeclNode>(decls[0].first, decls[0].second, init));
+    nodes.push_back(std::make_shared<LetDeclNode>(decls[0].first, decls[0].second, init));
   } else {
     LOG(ERROR) << core::feedback[LET_DECL_MISSING_PUNCTOR] << tok << std::endl;
     return false;

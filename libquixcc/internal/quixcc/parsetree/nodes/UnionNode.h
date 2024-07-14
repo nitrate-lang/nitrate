@@ -45,54 +45,54 @@
 #include <vector>
 
 namespace libquixcc {
-class UnionTypeNode : public TypeNode {
- public:
-  UnionTypeNode(std::vector<std::shared_ptr<TypeNode>> fields,
-                const std::string &name)
-      : m_fields(fields), m_name(name) {
-    ntype = NodeType::UnionTypeNode;
-  }
+  class UnionTypeNode : public TypeNode {
+public:
+    UnionTypeNode(std::vector<std::shared_ptr<TypeNode>> fields, const std::string &name)
+        : m_fields(fields), m_name(name) {
+      ntype = NodeType::UnionTypeNode;
+    }
 
-  std::vector<std::shared_ptr<TypeNode>> m_fields;
-  std::string m_name;
-};
+    std::vector<std::shared_ptr<TypeNode>> m_fields;
+    std::string m_name;
+  };
 
-class UnionFieldNode : public ParseNode {
- public:
-  UnionFieldNode() { ntype = NodeType::UnionFieldNode; }
-  UnionFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
-                 const std::shared_ptr<ExprNode> value = nullptr)
-      : m_name(name), m_type(type), m_value(value) {
-    ntype = NodeType::UnionFieldNode;
-  }
+  class UnionFieldNode : public ParseNode {
+public:
+    UnionFieldNode() { ntype = NodeType::UnionFieldNode; }
+    UnionFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
+                   const std::shared_ptr<ExprNode> value = nullptr)
+        : m_name(name), m_type(type), m_value(value) {
+      ntype = NodeType::UnionFieldNode;
+    }
 
-  std::string m_name;
-  std::shared_ptr<TypeNode> m_type;
-  std::shared_ptr<ExprNode> m_value;
-};
+    std::string m_name;
+    std::shared_ptr<TypeNode> m_type;
+    std::shared_ptr<ExprNode> m_value;
+  };
 
-class UnionDefNode : public DefNode {
- public:
-  UnionDefNode() { ntype = NodeType::UnionDefNode; }
-  UnionDefNode(const std::string &name,
-               const std::vector<std::shared_ptr<UnionFieldNode>> &fields,
-               std::set<std::string> implements = {})
-      : m_name(name), m_fields(fields), m_implements(implements) {
-    ntype = NodeType::UnionDefNode;
-  }
+  class UnionDefNode : public DefNode {
+public:
+    UnionDefNode() { ntype = NodeType::UnionDefNode; }
+    UnionDefNode(const std::string &name,
+                 const std::vector<std::shared_ptr<UnionFieldNode>> &fields,
+                 std::set<std::string> implements = {})
+        : m_name(name), m_fields(fields), m_implements(implements) {
+      ntype = NodeType::UnionDefNode;
+    }
 
-  virtual std::shared_ptr<UnionTypeNode> get_type() const {
-    std::vector<std::shared_ptr<TypeNode>> fields;
-    for (auto &field : m_fields) fields.push_back(field->m_type);
-    return std::make_shared<UnionTypeNode>(fields, m_name);
-  }
+    virtual std::shared_ptr<UnionTypeNode> get_type() const {
+      std::vector<std::shared_ptr<TypeNode>> fields;
+      for (auto &field : m_fields)
+        fields.push_back(field->m_type);
+      return std::make_shared<UnionTypeNode>(fields, m_name);
+    }
 
-  std::string m_name;
-  std::vector<std::shared_ptr<UnionFieldNode>> m_fields;
-  std::vector<std::shared_ptr<StmtNode>> m_methods;
-  std::vector<std::shared_ptr<StmtNode>> m_static_methods;
-  std::set<std::string> m_implements;
-};
-}  // namespace libquixcc
+    std::string m_name;
+    std::vector<std::shared_ptr<UnionFieldNode>> m_fields;
+    std::vector<std::shared_ptr<StmtNode>> m_methods;
+    std::vector<std::shared_ptr<StmtNode>> m_static_methods;
+    std::set<std::string> m_implements;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_UNION_H__
+#endif // __QUIXCC_PARSE_NODES_UNION_H__

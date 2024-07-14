@@ -38,13 +38,11 @@
 
 #include <iostream>
 
-bool libquixcc::PrepEngine::ParsePrint(const Token &tok,
-                                       const std::string &directive,
+bool libquixcc::PrepEngine::ParsePrint(const Token &tok, const std::string &directive,
                                        const std::string &parameter) {
   (void)directive;
 
-  LOG(WARN) << "This macro is deprecated and will be removed in the future"
-            << tok << std::endl;
+  LOG(WARN) << "This macro is deprecated and will be removed in the future" << tok << std::endl;
 
   std::vector<libquixcc::Token> tokens;
   if (!libquixcc::StringLexer::QuickLex(parameter, tokens)) {
@@ -87,31 +85,26 @@ bool libquixcc::PrepEngine::ParsePrint(const Token &tok,
     }
 
     switch (level) {
-      case E::DEBUG:
-        LOG(DEBUG) << log::raw << tokens[2].as<std::string>() << tok
-                   << std::endl;
-        break;
-      case E::SUCCESS:
-        LOG(SUCCESS) << log::raw << tokens[2].as<std::string>() << tok
-                     << std::endl;
-        break;
-      case E::INFO:
-        LOG(INFO) << log::raw << tokens[2].as<std::string>() << tok
-                  << std::endl;
-        break;
-      case E::WARN:
-        LOG(WARN) << log::raw << tokens[2].as<std::string>() << tok
-                  << std::endl;
-        break;
-      case E::ERROR:
-        LOG(ERROR) << log::raw << tokens[2].as<std::string>() << tok
-                   << std::endl;
-        throw libquixcc::core::ProgrammaticPreprocessorException();
-      case E::RAW:
-        std::cout << tokens[2].as<std::string>();
-        break;
-      default:
-        break;
+    case E::DEBUG:
+      LOG(DEBUG) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
+      break;
+    case E::SUCCESS:
+      LOG(SUCCESS) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
+      break;
+    case E::INFO:
+      LOG(INFO) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
+      break;
+    case E::WARN:
+      LOG(WARN) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
+      break;
+    case E::ERROR:
+      LOG(ERROR) << log::raw << tokens[2].as<std::string>() << tok << std::endl;
+      throw libquixcc::core::ProgrammaticPreprocessorException();
+    case E::RAW:
+      std::cout << tokens[2].as<std::string>();
+      break;
+    default:
+      break;
     }
   } else {
     LOG(INFO) << log::raw << t.as<std::string>() << tok << std::endl;

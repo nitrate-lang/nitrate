@@ -44,22 +44,21 @@
 #include <vector>
 
 namespace libquixcc {
-class StringTypeNode : public TypeNode {
- public:
-  StringTypeNode() { ntype = NodeType::StringTypeNode; }
-};
+  class StringTypeNode : public TypeNode {
+public:
+    StringTypeNode() { ntype = NodeType::StringTypeNode; }
+  };
 
-class FStringNode : public ExprNode {
- public:
-  FStringNode(std::string _template,
-              std::vector<std::shared_ptr<ExprNode>> _args)
-      : template_string(_template), args(_args) {
-    ntype = NodeType::FStringNode;
-  }
+  class FStringNode : public ExprNode {
+public:
+    FStringNode(std::string _template, std::vector<std::shared_ptr<ExprNode>> _args)
+        : template_string(_template), args(_args) {
+      ntype = NodeType::FStringNode;
+    }
 
-  std::string template_string;
-  std::vector<std::shared_ptr<ExprNode>> args;
-};
-}  // namespace libquixcc
+    std::string template_string;
+    std::vector<std::shared_ptr<ExprNode>> args;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_STRING_H__
+#endif // __QUIXCC_PARSE_NODES_STRING_H__

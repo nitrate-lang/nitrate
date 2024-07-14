@@ -36,9 +36,8 @@
 
 using namespace libquixcc;
 
-static void nop(const std::vector<std::string> &_namespace,
-                const std::vector<std::string> &_scope, ParseNode *parrent,
-                traversal::TraversePtr node) {
+static void nop(const std::vector<std::string> &_namespace, const std::vector<std::string> &_scope,
+                ParseNode *parrent, traversal::TraversePtr node) {
   (void)_namespace;
   (void)_scope;
   (void)parrent;

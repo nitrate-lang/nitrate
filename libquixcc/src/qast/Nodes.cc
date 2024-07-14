@@ -44,9 +44,17 @@
 
 using namespace libquixcc::qast;
 
+#define qassert(expr, ...)                                                                         \
+  (static_cast<bool>(expr)                                                                         \
+       ? void(0)                                                                                   \
+       : quixcc_panicf("Assertion failed: \"%s\";\nCondition: (%s);\nSource "                      \
+                       "File: %s;\nSource Line: "                                                  \
+                       "%d;\nFunction: %s;\n",                                                     \
+                       "" #__VA_ARGS__, #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
+
 ///=============================================================================
 namespace libquixcc::qast {
-thread_local ArenaAllocatorImpl g_allocator;
+  thread_local ArenaAllocatorImpl g_allocator;
 }
 
 ArenaAllocatorImpl::ArenaAllocatorImpl() { quixcc_arena_open(&m_arena); }
@@ -64,35 +72,39 @@ void ArenaAllocatorImpl::deallocate(void *ptr) noexcept {}
 ///=============================================================================
 
 const char *Node::type_name(quixcc_ast_ntype_t type) {
+  /// TODO: Implement this function
   quixcc_panic("Node::type_name() is not implemented");
 }
 
 uint32_t Node::this_sizeof() const {
   quixcc_panic("Node::this_sizeof() is not implemented");
+  /// TODO: Implement this function
 
-#define SIZEOF_ROW(__type) \
+#define SIZEOF_ROW(__type)                                                                         \
   { typeid(__type).hash_code(), sizeof(__type) }
 
   static const std::unordered_map<size_t, uint32_t> sizes = {
       //
   };
 
-  assert(sizes.size() == QUIXCC_AST_NODE_COUNT);
+  qassert(sizes.size() == QUIXCC_AST_NODE_COUNT,
+          "Polymorphic type size lookup table is incomplete");
 
   size_t id = typeid(*this).hash_code();
-  assert(sizes.contains(id));
+  qassert(sizes.contains(id));
 
   return sizes.at(id);
 }
 
 quixcc_ast_ntype_t Node::this_typeid() const {
+  /// TODO: Implement this function
   quixcc_panic("Node::this_typeid() is not implemented");
 
   static const std::unordered_map<size_t, quixcc_ast_ntype_t> typeid_map = {
       //
   };
 
-  assert(typeid_map.size() == QUIXCC_AST_NODE_COUNT);
+  qassert(typeid_map.size() == QUIXCC_AST_NODE_COUNT);
 
   return typeid_map.at(typeid(*this).hash_code());
 }
@@ -136,23 +148,23 @@ bool Type::is_primitive() const {
   }
 
   switch (this_typeid()) {
-    case QUIXCC_AST_NODE_U1_TY:
-    case QUIXCC_AST_NODE_U8_TY:
-    case QUIXCC_AST_NODE_U16_TY:
-    case QUIXCC_AST_NODE_U32_TY:
-    case QUIXCC_AST_NODE_U64_TY:
-    case QUIXCC_AST_NODE_U128_TY:
-    case QUIXCC_AST_NODE_I8_TY:
-    case QUIXCC_AST_NODE_I16_TY:
-    case QUIXCC_AST_NODE_I32_TY:
-    case QUIXCC_AST_NODE_I64_TY:
-    case QUIXCC_AST_NODE_I128_TY:
-    case QUIXCC_AST_NODE_F32_TY:
-    case QUIXCC_AST_NODE_F64_TY:
-    case QUIXCC_AST_NODE_VOID_TY:
-      return true;
-    default:
-      return false;
+  case QUIXCC_AST_NODE_U1_TY:
+  case QUIXCC_AST_NODE_U8_TY:
+  case QUIXCC_AST_NODE_U16_TY:
+  case QUIXCC_AST_NODE_U32_TY:
+  case QUIXCC_AST_NODE_U64_TY:
+  case QUIXCC_AST_NODE_U128_TY:
+  case QUIXCC_AST_NODE_I8_TY:
+  case QUIXCC_AST_NODE_I16_TY:
+  case QUIXCC_AST_NODE_I32_TY:
+  case QUIXCC_AST_NODE_I64_TY:
+  case QUIXCC_AST_NODE_I128_TY:
+  case QUIXCC_AST_NODE_F32_TY:
+  case QUIXCC_AST_NODE_F64_TY:
+  case QUIXCC_AST_NODE_VOID_TY:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -218,18 +230,18 @@ bool Type::is_composite() const {
   }
 
   switch (this_typeid()) {
-    case QUIXCC_AST_NODE_ARRAY_TY:
-    case QUIXCC_AST_NODE_VECTOR_TY:
-    case QUIXCC_AST_NODE_TUPLE_TY:
-    case QUIXCC_AST_NODE_SET_TY:
-    case QUIXCC_AST_NODE_MAP_TY:
-    case QUIXCC_AST_NODE_STRUCT_TY:
-    case QUIXCC_AST_NODE_GROUP_TY:
-    case QUIXCC_AST_NODE_REGION_TY:
-    case QUIXCC_AST_NODE_RESULT_TY:
-      return true;
-    default:
-      return false;
+  case QUIXCC_AST_NODE_ARRAY_TY:
+  case QUIXCC_AST_NODE_VECTOR_TY:
+  case QUIXCC_AST_NODE_TUPLE_TY:
+  case QUIXCC_AST_NODE_SET_TY:
+  case QUIXCC_AST_NODE_MAP_TY:
+  case QUIXCC_AST_NODE_STRUCT_TY:
+  case QUIXCC_AST_NODE_GROUP_TY:
+  case QUIXCC_AST_NODE_REGION_TY:
+  case QUIXCC_AST_NODE_RESULT_TY:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -247,22 +259,22 @@ bool Type::is_numeric() const {
   }
 
   switch (this_typeid()) {
-    case QUIXCC_AST_NODE_U1_TY:
-    case QUIXCC_AST_NODE_U8_TY:
-    case QUIXCC_AST_NODE_U16_TY:
-    case QUIXCC_AST_NODE_U32_TY:
-    case QUIXCC_AST_NODE_U64_TY:
-    case QUIXCC_AST_NODE_U128_TY:
-    case QUIXCC_AST_NODE_I8_TY:
-    case QUIXCC_AST_NODE_I16_TY:
-    case QUIXCC_AST_NODE_I32_TY:
-    case QUIXCC_AST_NODE_I64_TY:
-    case QUIXCC_AST_NODE_I128_TY:
-    case QUIXCC_AST_NODE_F32_TY:
-    case QUIXCC_AST_NODE_F64_TY:
-      return true;
-    default:
-      return false;
+  case QUIXCC_AST_NODE_U1_TY:
+  case QUIXCC_AST_NODE_U8_TY:
+  case QUIXCC_AST_NODE_U16_TY:
+  case QUIXCC_AST_NODE_U32_TY:
+  case QUIXCC_AST_NODE_U64_TY:
+  case QUIXCC_AST_NODE_U128_TY:
+  case QUIXCC_AST_NODE_I8_TY:
+  case QUIXCC_AST_NODE_I16_TY:
+  case QUIXCC_AST_NODE_I32_TY:
+  case QUIXCC_AST_NODE_I64_TY:
+  case QUIXCC_AST_NODE_I128_TY:
+  case QUIXCC_AST_NODE_F32_TY:
+  case QUIXCC_AST_NODE_F64_TY:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -272,20 +284,20 @@ bool Type::is_integral() const {
   }
 
   switch (this_typeid()) {
-    case QUIXCC_AST_NODE_U1_TY:
-    case QUIXCC_AST_NODE_U8_TY:
-    case QUIXCC_AST_NODE_U16_TY:
-    case QUIXCC_AST_NODE_U32_TY:
-    case QUIXCC_AST_NODE_U64_TY:
-    case QUIXCC_AST_NODE_U128_TY:
-    case QUIXCC_AST_NODE_I8_TY:
-    case QUIXCC_AST_NODE_I16_TY:
-    case QUIXCC_AST_NODE_I32_TY:
-    case QUIXCC_AST_NODE_I64_TY:
-    case QUIXCC_AST_NODE_I128_TY:
-      return true;
-    default:
-      return false;
+  case QUIXCC_AST_NODE_U1_TY:
+  case QUIXCC_AST_NODE_U8_TY:
+  case QUIXCC_AST_NODE_U16_TY:
+  case QUIXCC_AST_NODE_U32_TY:
+  case QUIXCC_AST_NODE_U64_TY:
+  case QUIXCC_AST_NODE_U128_TY:
+  case QUIXCC_AST_NODE_I8_TY:
+  case QUIXCC_AST_NODE_I16_TY:
+  case QUIXCC_AST_NODE_I32_TY:
+  case QUIXCC_AST_NODE_I64_TY:
+  case QUIXCC_AST_NODE_I128_TY:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -295,11 +307,11 @@ bool Type::is_floating_point() const {
   }
 
   switch (this_typeid()) {
-    case QUIXCC_AST_NODE_F32_TY:
-    case QUIXCC_AST_NODE_F64_TY:
-      return true;
-    default:
-      return false;
+  case QUIXCC_AST_NODE_F32_TY:
+  case QUIXCC_AST_NODE_F64_TY:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -309,16 +321,16 @@ bool Type::is_signed() const {
   }
 
   switch (this_typeid()) {
-    case QUIXCC_AST_NODE_I8_TY:
-    case QUIXCC_AST_NODE_I16_TY:
-    case QUIXCC_AST_NODE_I32_TY:
-    case QUIXCC_AST_NODE_I64_TY:
-    case QUIXCC_AST_NODE_I128_TY:
-    case QUIXCC_AST_NODE_F32_TY:
-    case QUIXCC_AST_NODE_F64_TY:
-      return true;
-    default:
-      return false;
+  case QUIXCC_AST_NODE_I8_TY:
+  case QUIXCC_AST_NODE_I16_TY:
+  case QUIXCC_AST_NODE_I32_TY:
+  case QUIXCC_AST_NODE_I64_TY:
+  case QUIXCC_AST_NODE_I128_TY:
+  case QUIXCC_AST_NODE_F32_TY:
+  case QUIXCC_AST_NODE_F64_TY:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -328,15 +340,15 @@ bool Type::is_unsigned() const {
   }
 
   switch (this_typeid()) {
-    case QUIXCC_AST_NODE_U1_TY:
-    case QUIXCC_AST_NODE_U8_TY:
-    case QUIXCC_AST_NODE_U16_TY:
-    case QUIXCC_AST_NODE_U32_TY:
-    case QUIXCC_AST_NODE_U64_TY:
-    case QUIXCC_AST_NODE_U128_TY:
-      return true;
-    default:
-      return false;
+  case QUIXCC_AST_NODE_U1_TY:
+  case QUIXCC_AST_NODE_U8_TY:
+  case QUIXCC_AST_NODE_U16_TY:
+  case QUIXCC_AST_NODE_U32_TY:
+  case QUIXCC_AST_NODE_U64_TY:
+  case QUIXCC_AST_NODE_U128_TY:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -356,13 +368,12 @@ bool Type::is_bool() const {
   return this_typeid() == QUIXCC_AST_NODE_U1_TY;
 }
 
-bool Type::is_mutable() const {
-  return this_typeid() == QUIXCC_AST_NODE_MUT_TY;
-}
+bool Type::is_mutable() const { return this_typeid() == QUIXCC_AST_NODE_MUT_TY; }
 
 bool Type::is_const() const { return !is_mutable(); }
 
 bool Type::is_volatile() const {
+  /// TODO: Implement this function
   quixcc_panic("Type::is_volatile() is not implemented");
 }
 
@@ -542,33 +553,35 @@ Expr *ConstExpr::get_value() const { return m_value; }
 void ConstExpr::set_value(Expr *value) { m_value = value; }
 
 bool ConstExpr::verify_impl(std::ostream &os) const {
+  /// TODO: Implement this function
   quixcc_panic("ConstExpr::verify_impl() is not implemented");
 }
 
 void ConstExpr::canonicalize_impl() {
   quixcc_panic("ConstExpr::canonicalize_impl() is not implemented");
+  /// TODO: Implement this function
 }
 
 void ConstExpr::print_impl(std::ostream &os, bool debug) const {
+  /// TODO: Implement this function
   quixcc_panic("ConstExpr::print_impl() is not implemented");
 }
 
 ConstExpr *ConstExpr::clone_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("ConstExpr::clone_impl() is not implemented");
 }
 
 ///=============================================================================
 
-#define TRIVIAL_TYPE_IMPL(__typename, __dumpstr, __bits)                   \
-  bool __typename::verify_impl(std::ostream &os) const { return true; }    \
-  void __typename::canonicalize_impl() {}                                  \
-  void __typename::print_impl(std::ostream &os, bool debug) const {        \
-    os << __dumpstr;                                                       \
-  }                                                                        \
-  __typename *__typename::clone_impl() const { return __typename::get(); } \
+#define TRIVIAL_TYPE_IMPL(__typename, __dumpstr, __bits)                                           \
+  bool __typename::verify_impl(std::ostream &os) const { return true; }                            \
+  void __typename::canonicalize_impl() {}                                                          \
+  void __typename::print_impl(std::ostream &os, bool debug) const { os << __dumpstr; }             \
+  __typename *__typename::clone_impl() const { return __typename::get(); }                         \
   uint64_t __typename::infer_size_bits_impl() const { return __bits; }
 
-TRIVIAL_TYPE_IMPL(U1, "u1", 8)
+TRIVIAL_TYPE_IMPL(U1, "u1", 1)
 TRIVIAL_TYPE_IMPL(U8, "u8", 8)
 TRIVIAL_TYPE_IMPL(U16, "u16", 16)
 TRIVIAL_TYPE_IMPL(U32, "u32", 32)
@@ -637,6 +650,7 @@ PtrTy *PtrTy::clone_impl() const {
 }
 
 uint64_t PtrTy::infer_size_bits_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("PtrTy::infer_size_bits_impl() is not implemented");
 }
 
@@ -655,12 +669,11 @@ bool OpaqueTy::verify_impl(std::ostream &os) const {
 }
 
 void OpaqueTy::canonicalize_impl() {}
-void OpaqueTy::print_impl(std::ostream &os, bool debug) const {
-  os << "opaque<" << m_name << ">";
-}
+void OpaqueTy::print_impl(std::ostream &os, bool debug) const { os << "opaque<" << m_name << ">"; }
 OpaqueTy *OpaqueTy::clone_impl() const { return OpaqueTy::get(m_name); }
 
 uint64_t OpaqueTy::infer_size_bits_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("OpaqueTy::infer_size_bits_impl() is not implemented");
 }
 
@@ -707,6 +720,7 @@ VectorTy *VectorTy::clone_impl() const {
 }
 
 uint64_t VectorTy::infer_size_bits_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("VectorTy::infer_size_bits_impl() is not implemented");
 }
 
@@ -716,7 +730,12 @@ bool SetTy::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_item->verify(os);
+  if (!m_item->verify(os)) {
+    os << "SetTy: item type is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void SetTy::canonicalize_impl() {
@@ -745,6 +764,7 @@ SetTy *SetTy::clone_impl() const {
 }
 
 uint64_t SetTy::infer_size_bits_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("SetTy::infer_size_bits_impl() is not implemented");
 }
 
@@ -759,7 +779,17 @@ bool MapTy::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_key->verify(os) && m_value->verify(os);
+  if (!m_key->verify(os)) {
+    os << "MapTy: key type is invalid\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "MapTy: value type is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void MapTy::canonicalize_impl() {
@@ -797,6 +827,7 @@ MapTy *MapTy::clone_impl() const {
 }
 
 uint64_t MapTy::infer_size_bits_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("MapTy::infer_size_bits_impl() is not implemented");
 }
 
@@ -853,9 +884,7 @@ TupleTy *TupleTy::clone_impl() const {
   return TupleTy::get(items);
 }
 
-uint64_t TupleTy::infer_size_bits_impl() const {
-  quixcc_panic("TupleTy::infer_size_bits_impl() is not implemented");
-}
+uint64_t TupleTy::infer_size_bits_impl() const { return GroupTy::get(m_items)->infer_size_bits(); }
 
 bool OptionalTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
@@ -863,7 +892,12 @@ bool OptionalTy::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_item->verify(os);
+  if (!m_item->verify(os)) {
+    os << "OptionalTy: item type is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void OptionalTy::canonicalize_impl() {
@@ -892,6 +926,7 @@ OptionalTy *OptionalTy::clone_impl() const {
 }
 
 uint64_t OptionalTy::infer_size_bits_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("OptionalTy::infer_size_bits_impl() is not implemented");
 }
 
@@ -906,8 +941,13 @@ bool ArrayTy::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  if (!m_item->verify(os) || !m_size->verify(os)) {
-    os << "ArrayTy: item or size is invalid\n";
+  if (!m_item->verify(os)) {
+    os << "ArrayTy: item type is invalid\n";
+    return false;
+  }
+
+  if (!m_size->verify(os)) {
+    os << "ArrayTy: size is invalid\n";
     return false;
   }
 
@@ -957,8 +997,8 @@ ArrayTy *ArrayTy::clone_impl() const {
 }
 
 uint64_t ArrayTy::infer_size_bits_impl() const {
-  assert(m_item);
-  assert(m_size);
+  qassert(m_item);
+  qassert(m_size);
 
   return m_item->infer_size_bits() * m_size->eval_as<uint64_t>();
 }
@@ -974,7 +1014,12 @@ bool EnumTy::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_memtype->verify(os);
+  if (!m_memtype->verify(os)) {
+    os << "EnumTy: member item type is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void EnumTy::canonicalize_impl() {
@@ -1002,7 +1047,7 @@ EnumTy *EnumTy::clone_impl() const {
 }
 
 uint64_t EnumTy::infer_size_bits_impl() const {
-  assert(m_memtype);
+  qassert(m_memtype);
 
   return m_memtype->infer_size_bits();
 }
@@ -1018,7 +1063,12 @@ bool MutTy::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_item->verify(os);
+  if (!m_item->verify(os)) {
+    os << "MutTy: item type is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void MutTy::canonicalize_impl() {
@@ -1047,7 +1097,7 @@ MutTy *MutTy::clone_impl() const {
 }
 
 uint64_t MutTy::infer_size_bits_impl() const {
-  assert(m_item);
+  qassert(m_item);
 
   return m_item->infer_size_bits();
 }
@@ -1122,16 +1172,13 @@ StructTy *StructTy::clone_impl() const {
 }
 
 uint64_t StructTy::infer_size_bits_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("StructTy::infer_size_bits_impl() is not implemented");
 }
 
-const std::vector<StructItem, Arena<StructItem>> &StructTy::get_items() const {
-  return m_items;
-}
+const std::vector<StructItem, Arena<StructItem>> &StructTy::get_items() const { return m_items; }
 
-void StructTy::add_item(std::string_view name, Type *item) {
-  m_items.push_back({name, item});
-}
+void StructTy::add_item(std::string_view name, Type *item) { m_items.push_back({name, item}); }
 
 void StructTy::add_items(std::initializer_list<StructItem> fields) {
   for (auto [name, item] : fields) {
@@ -1201,12 +1248,11 @@ GroupTy *GroupTy::clone_impl() const {
 }
 
 uint64_t GroupTy::infer_size_bits_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("GroupTy::infer_size_bits_impl() is not implemented");
 }
 
-const std::vector<Type *, Arena<Type *>> &GroupTy::get_items() const {
-  return m_items;
-}
+const std::vector<Type *, Arena<Type *>> &GroupTy::get_items() const { return m_items; }
 
 void GroupTy::add_item(Type *item) { m_items.push_back(item); }
 
@@ -1280,15 +1326,14 @@ RegionTy *RegionTy::clone_impl() const {
 uint64_t RegionTy::infer_size_bits_impl() const {
   size_t size = 0;
   for (auto item : m_items) {
+    qassert(item);
     size += item->infer_size_bits();
   }
 
   return size;
 }
 
-const std::vector<Type *, Arena<Type *>> &RegionTy::get_items() const {
-  return m_items;
-}
+const std::vector<Type *, Arena<Type *>> &RegionTy::get_items() const { return m_items; }
 
 void RegionTy::add_item(Type *item) { m_items.push_back(item); }
 
@@ -1368,9 +1413,7 @@ uint64_t UnionTy::infer_size_bits_impl() const {
   return size;
 }
 
-const std::vector<Type *, Arena<Type *>> &UnionTy::get_items() const {
-  return m_items;
-}
+const std::vector<Type *, Arena<Type *>> &UnionTy::get_items() const { return m_items; }
 
 void UnionTy::add_item(Type *item) { m_items.push_back(item); }
 
@@ -1395,8 +1438,7 @@ bool FuncTy::verify_impl(std::ostream &os) const {
   std::unordered_set<std::string_view> names;
   for (size_t i = 0; i < m_params.size(); i++) {
     if (names.contains(std::get<0>(m_params[i]))) {
-      os << "FuncTy: duplicate param name '" << std::get<0>(m_params[i])
-         << "'\n";
+      os << "FuncTy: duplicate param name '" << std::get<0>(m_params[i]) << "'\n";
       return false;
     }
 
@@ -1496,21 +1538,21 @@ void FuncTy::print_impl(std::ostream &os, bool debug) const {
   }
 
   switch (m_purity) {
-    case FuncPurity::IMPURE_THREAD_UNSAFE:
-      os << "impure ";
-      break;
-    case FuncPurity::IMPURE_THREAD_SAFE:
-      os << "impure tsafe ";
-      break;
-    case FuncPurity::PURE:
-      os << "pure tsafe ";
-      break;
-    case FuncPurity::QUASIPURE:
-      os << "quasipure tsafe ";
-      break;
-    case FuncPurity::RETROPURE:
-      os << "retropure tsafe ";
-      break;
+  case FuncPurity::IMPURE_THREAD_UNSAFE:
+    os << "impure ";
+    break;
+  case FuncPurity::IMPURE_THREAD_SAFE:
+    os << "impure tsafe ";
+    break;
+  case FuncPurity::PURE:
+    os << "pure tsafe ";
+    break;
+  case FuncPurity::QUASIPURE:
+    os << "quasipure tsafe ";
+    break;
+  case FuncPurity::RETROPURE:
+    os << "retropure tsafe ";
+    break;
   }
 
   os << "-> ";
@@ -1535,11 +1577,12 @@ FuncTy *FuncTy::clone_impl() const {
 
   Type *ret = m_return ? m_return->clone() : nullptr;
 
-  return FuncTy::get(ret, params, m_variadic, m_purity, m_is_foreign,
-                     m_crashpoint, m_noexcept, m_noreturn);
+  return FuncTy::get(ret, params, m_variadic, m_purity, m_is_foreign, m_crashpoint, m_noexcept,
+                     m_noreturn);
 }
 
 uint64_t FuncTy::infer_size_bits_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("FuncTy::infer_size_bits_impl() is not implemented");
 }
 
@@ -1547,9 +1590,7 @@ bool FuncTy::is_noreturn() const { return m_noreturn; }
 void FuncTy::set_noreturn(bool noreturn) { m_noreturn = noreturn; }
 Type *FuncTy::get_return_ty() const { return m_return; }
 void FuncTy::set_return_ty(Type *ty) { m_return = ty; }
-const std::vector<FuncParam, Arena<FuncParam>> &FuncTy::get_params() const {
-  return m_params;
-}
+const std::vector<FuncParam, Arena<FuncParam>> &FuncTy::get_params() const { return m_params; }
 void FuncTy::add_param(std::string_view name, Type *ty, Expr *default_val) {
   m_params.push_back({name, ty, default_val});
 }
@@ -1560,8 +1601,7 @@ void FuncTy::add_params(std::initializer_list<FuncParam> params) {
 }
 void FuncTy::clear_params() { m_params.clear(); }
 void FuncTy::remove_param(std::string_view name) {
-  std::erase_if(m_params,
-                [name](auto &param) { return std::get<0>(param) == name; });
+  std::erase_if(m_params, [name](auto &param) { return std::get<0>(param) == name; });
 }
 
 FuncPurity FuncTy::get_purity() const { return m_purity; }
@@ -1592,7 +1632,12 @@ bool UnaryExpr::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_rhs->verify(os);
+  if (!m_rhs->verify(os)) {
+    os << "UnaryExpr: rhs is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void UnaryExpr::canonicalize_impl() {
@@ -1605,9 +1650,9 @@ void UnaryExpr::print_impl(std::ostream &os, bool debug) const {
   os << "(";
 
   switch (m_op) {
-    case UnaryOp::UNKNOWN:
-      os << "unknown";
-      break;
+  case UnaryOp::UNKNOWN:
+    os << "unknown";
+    break;
   }
 
   if (m_rhs) {
@@ -1626,16 +1671,17 @@ UnaryExpr *UnaryExpr::clone_impl() const {
 }
 
 Type *UnaryExpr::infer_type_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("UnaryExpr::infer_type_impl() is not implemented");
 }
 
 bool UnaryExpr::is_const_impl() const {
-  assert(m_rhs);
+  qassert(m_rhs);
   return m_rhs->is_const();
 }
 
 bool UnaryExpr::is_stochastic_impl() const {
-  assert(m_rhs);
+  qassert(m_rhs);
   return m_rhs->is_stochastic();
 }
 
@@ -1661,7 +1707,17 @@ bool BinExpr::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_lhs->verify(os) && m_rhs->verify(os);
+  if (!m_lhs->verify(os)) {
+    os << "BinExpr: lhs is invalid\n";
+    return false;
+  }
+
+  if (!m_rhs->verify(os)) {
+    os << "BinExpr: rhs is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void BinExpr::canonicalize_impl() {
@@ -1684,9 +1740,9 @@ void BinExpr::print_impl(std::ostream &os, bool debug) const {
   }
 
   switch (m_op) {
-    case BinOp::UNKNOWN:
-      os << " unknown ";
-      break;
+  case BinOp::UNKNOWN:
+    os << " unknown ";
+    break;
   }
 
   if (m_rhs) {
@@ -1706,18 +1762,19 @@ BinExpr *BinExpr::clone_impl() const {
 }
 
 Type *BinExpr::infer_type_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("BinExpr::infer_type_impl() is not implemented");
 }
 
 bool BinExpr::is_const_impl() const {
-  assert(m_lhs);
-  assert(m_rhs);
+  qassert(m_lhs);
+  qassert(m_rhs);
   return m_lhs->is_const() && m_rhs->is_const();
 }
 
 bool BinExpr::is_stochastic_impl() const {
-  assert(m_lhs);
-  assert(m_rhs);
+  qassert(m_lhs);
+  qassert(m_rhs);
   return m_lhs->is_stochastic() || m_rhs->is_stochastic();
 }
 
@@ -1746,7 +1803,22 @@ bool TernaryExpr::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_cond->verify(os) && m_lhs->verify(os) && m_rhs->verify(os);
+  if (!m_cond->verify(os)) {
+    os << "TernaryExpr: cond is invalid\n";
+    return false;
+  }
+
+  if (!m_lhs->verify(os)) {
+    os << "TernaryExpr: lhs is invalid\n";
+    return false;
+  }
+
+  if (!m_rhs->verify(os)) {
+    os << "TernaryExpr: rhs is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void TernaryExpr::canonicalize_impl() {
@@ -1800,22 +1872,22 @@ TernaryExpr *TernaryExpr::clone_impl() const {
 }
 
 Type *TernaryExpr::infer_type_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("TernaryExpr::infer_type_impl() is not implemented");
 }
 
 bool TernaryExpr::is_const_impl() const {
-  assert(m_cond);
-  assert(m_lhs);
-  assert(m_rhs);
+  qassert(m_cond);
+  qassert(m_lhs);
+  qassert(m_rhs);
   return m_cond->is_const() && m_lhs->is_const() && m_rhs->is_const();
 }
 
 bool TernaryExpr::is_stochastic_impl() const {
-  assert(m_cond);
-  assert(m_lhs);
-  assert(m_rhs);
-  return m_cond->is_stochastic() || m_lhs->is_stochastic() ||
-         m_rhs->is_stochastic();
+  qassert(m_cond);
+  qassert(m_lhs);
+  qassert(m_rhs);
+  return m_cond->is_stochastic() || m_lhs->is_stochastic() || m_rhs->is_stochastic();
 }
 
 Expr *TernaryExpr::get_cond() const { return m_cond; }
@@ -1830,6 +1902,8 @@ void TernaryExpr::set_rhs(Expr *rhs) { m_rhs = rhs; }
 ///=============================================================================
 
 bool ConstInt::verify_impl(std::ostream &os) const {
+  /// TODO: Implement this function
+
   if (m_value.empty()) {
     os << "ConstInt: value is empty\n";
     return false;
@@ -1841,6 +1915,7 @@ bool ConstInt::verify_impl(std::ostream &os) const {
 }
 
 void ConstInt::canonicalize_impl() {
+  /// TODO: Implement this function
   quixcc_panic("ConstInt::canonicalize_impl() is not implemented");
 }
 
@@ -1851,6 +1926,8 @@ ConstInt *ConstInt::clone_impl() const { return ConstInt::get(m_value); }
 std::string_view ConstInt::get_value() const { return m_value; }
 
 bool ConstFloat::verify_impl(std::ostream &os) const {
+  /// TODO: Implement this function
+
   if (m_value.empty()) {
     os << "ConstFloat: value is empty\n";
     return false;
@@ -1862,12 +1939,11 @@ bool ConstFloat::verify_impl(std::ostream &os) const {
 }
 
 void ConstFloat::canonicalize_impl() {
+  /// TODO: Implement this function
   quixcc_panic("ConstFloat::canonicalize_impl() is not implemented");
 }
 
-void ConstFloat::print_impl(std::ostream &os, bool debug) const {
-  os << m_value;
-}
+void ConstFloat::print_impl(std::ostream &os, bool debug) const { os << m_value; }
 
 ConstFloat *ConstFloat::clone_impl() const { return ConstFloat::get(m_value); }
 
@@ -1886,6 +1962,8 @@ ConstBool *ConstBool::clone_impl() const { return ConstBool::get(m_value); }
 bool ConstBool::get_value() const { return m_value; }
 
 bool ConstChar::verify_impl(std::ostream &os) const {
+  /// TODO: Implement this function
+
   if (m_value.empty()) {
     os << "ConstChar: value is empty\n";
     return false;
@@ -1897,18 +1975,19 @@ bool ConstChar::verify_impl(std::ostream &os) const {
 }
 
 void ConstChar::canonicalize_impl() {
+  /// TODO: Implement this function
   quixcc_panic("ConstChar::canonicalize_impl() is not implemented");
 }
 
-void ConstChar::print_impl(std::ostream &os, bool debug) const {
-  os << "'" << m_value << "'";
-}
+void ConstChar::print_impl(std::ostream &os, bool debug) const { os << "'" << m_value << "'"; }
 
 ConstChar *ConstChar::clone_impl() const { return ConstChar::get(m_value); }
 
 std::string_view ConstChar::get_value() const { return m_value; }
 
 bool ConstString::verify_impl(std::ostream &os) const {
+  /// TODO: Implement this function
+
   if (m_value.empty()) {
     os << "ConstString: value is empty\n";
     return false;
@@ -1920,16 +1999,13 @@ bool ConstString::verify_impl(std::ostream &os) const {
 }
 
 void ConstString::canonicalize_impl() {
+  /// TODO: Implement this function
   quixcc_panic("ConstString::canonicalize_impl() is not implemented");
 }
 
-void ConstString::print_impl(std::ostream &os, bool debug) const {
-  os << "\"" << m_value << "\"";
-}
+void ConstString::print_impl(std::ostream &os, bool debug) const { os << "\"" << m_value << "\""; }
 
-ConstString *ConstString::clone_impl() const {
-  return ConstString::get(m_value);
-}
+ConstString *ConstString::clone_impl() const { return ConstString::get(m_value); }
 
 std::string_view ConstString::get_value() const { return m_value; }
 
@@ -1940,9 +2016,7 @@ ConstNull *ConstNull::clone_impl() const { return ConstNull::get(); }
 
 bool ConstUndef::verify_impl(std::ostream &os) const { return true; }
 void ConstUndef::canonicalize_impl() {}
-void ConstUndef::print_impl(std::ostream &os, bool debug) const {
-  os << "undef";
-}
+void ConstUndef::print_impl(std::ostream &os, bool debug) const { os << "undef"; }
 ConstUndef *ConstUndef::clone_impl() const { return ConstUndef::get(); }
 
 ///=============================================================================
@@ -1965,7 +2039,12 @@ bool Call::verify_impl(std::ostream &os) const {
     }
   }
 
-  return m_func->verify(os);
+  if (!m_func->verify(os)) {
+    os << "CallExpr: function is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void Call::canonicalize_impl() {
@@ -2017,17 +2096,17 @@ Call *Call::clone_impl() const {
 }
 
 Type *Call::infer_type_impl() const {
-  assert(m_func);
+  qassert(m_func);
   return m_func->infer_type()->as<FuncTy>()->get_return_ty();
 }
 
 bool Call::is_const_impl() const {
-  assert(m_func);
+  qassert(m_func);
   return m_func->is_const();
 }
 
 bool Call::is_stochastic_impl() const {
-  assert(m_func);
+  qassert(m_func);
 
   if (m_func->is_stochastic()) {
     return true;
@@ -2106,6 +2185,7 @@ List *List::clone_impl() const {
 }
 
 Type *List::infer_type_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("List::infer_type_impl() is not implemented");
 }
 
@@ -2194,18 +2274,19 @@ Assoc *Assoc::clone_impl() const {
 }
 
 Type *Assoc::infer_type_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("Assoc::infer_type_impl() is not implemented");
 }
 
 bool Assoc::is_const_impl() const {
-  assert(m_key);
-  assert(m_value);
+  qassert(m_key);
+  qassert(m_value);
   return m_key->is_const() && m_value->is_const();
 }
 
 bool Assoc::is_stochastic_impl() const {
-  assert(m_key);
-  assert(m_value);
+  qassert(m_key);
+  qassert(m_value);
   return m_key->is_stochastic() || m_value->is_stochastic();
 }
 
@@ -2226,7 +2307,12 @@ bool Field::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_base->verify(os);
+  if (!m_base->verify(os)) {
+    os << "Field: base is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void Field::canonicalize_impl() {
@@ -2251,16 +2337,17 @@ Field *Field::clone_impl() const {
 }
 
 Type *Field::infer_type_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("Field::infer_type_impl() is not implemented");
 }
 
 bool Field::is_const_impl() const {
-  assert(m_base);
+  qassert(m_base);
   return m_base->is_const();
 }
 
 bool Field::is_stochastic_impl() const {
-  assert(m_base);
+  qassert(m_base);
   return m_base->is_stochastic();
 }
 
@@ -2286,7 +2373,22 @@ bool Slice::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  return m_base->verify(os) && m_start->verify(os) && m_end->verify(os);
+  if (!m_base->verify(os)) {
+    os << "Slice: base is invalid\n";
+    return false;
+  }
+
+  if (!m_start->verify(os)) {
+    os << "Slice: start is invalid\n";
+    return false;
+  }
+
+  if (!m_end->verify(os)) {
+    os << "Slice: end is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void Slice::canonicalize_impl() {
@@ -2338,22 +2440,22 @@ Slice *Slice::clone_impl() const {
 }
 
 Type *Slice::infer_type_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("Slice::infer_type_impl() is not implemented");
 }
 
 bool Slice::is_const_impl() const {
-  assert(m_base);
-  assert(m_start);
-  assert(m_end);
+  qassert(m_base);
+  qassert(m_start);
+  qassert(m_end);
   return m_base->is_const() && m_start->is_const() && m_end->is_const();
 }
 
 bool Slice::is_stochastic_impl() const {
-  assert(m_base);
-  assert(m_start);
-  assert(m_end);
-  return m_base->is_stochastic() || m_start->is_stochastic() ||
-         m_end->is_stochastic();
+  qassert(m_base);
+  qassert(m_start);
+  qassert(m_end);
+  return m_base->is_stochastic() || m_start->is_stochastic() || m_end->is_stochastic();
 }
 
 Expr *Slice::get_base() const { return m_base; }
@@ -2390,6 +2492,7 @@ void FString::canonicalize_impl() {
 }
 
 void FString::print_impl(std::ostream &os, bool debug) const {
+  /// TODO: Implement this function
   quixcc_panic("FString::print_impl() is not implemented");
 }
 
@@ -2407,6 +2510,7 @@ FString *FString::clone_impl() const {
 }
 
 Type *FString::infer_type_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("FString::infer_type_impl() is not implemented");
 }
 
@@ -2456,14 +2560,17 @@ void Ident::print_impl(std::ostream &os, bool debug) const { os << m_name; }
 Ident *Ident::clone_impl() const { return Ident::get(m_name); }
 
 Type *Ident::infer_type_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("Ident::infer_type_impl() is not implemented");
 }
 
 bool Ident::is_const_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("Ident::is_const_impl() is not implemented");
 }
 
 bool Ident::is_stochastic_impl() const {
+  /// TODO: Implement this function
   quixcc_panic("Ident::is_stochastic_impl() is not implemented");
 }
 
@@ -2472,30 +2579,77 @@ void Ident::set_name(std::string_view name) { m_name = name; }
 
 ///=============================================================================
 
+bool Block::verify_impl(std::ostream &os) const {
+  for (auto item : m_items) {
+    if (!item) {
+      os << "Block: item is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "Block: item is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void Block::canonicalize_impl() {
+  for (auto item : m_items) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+}
+
+void Block::print_impl(std::ostream &os, bool debug) const {
+  os << "{\n";
+
+  for (auto item : m_items) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "}";
+}
+
+Block *Block::clone_impl() const {
+  BlockItems items;
+  for (auto item : m_items) {
+    if (item) {
+      items.push_back(item->clone());
+    } else {
+      items.push_back(nullptr);
+    }
+  }
+
+  return Block::get(items);
+}
+
+const BlockItems &Block::get_items() const { return m_items; }
+
+void Block::add_item(Stmt *item) { m_items.push_back(item); }
+void Block::clear_items() { m_items.clear(); }
+void Block::remove_item(Stmt *item) {
+  std::erase_if(m_items, [item](auto &field) { return field == item; });
+}
+
 ///=============================================================================
 
-LIB_EXPORT quixcc_ast_node_t *quixcc_ast_alloc(quixcc_ast_ntype_t type,
-                                               quixcc_arena_t *arena) {
+LIB_EXPORT quixcc_ast_node_t *quixcc_ast_alloc(quixcc_ast_ntype_t type, quixcc_arena_t *arena) {
+  /// TODO: Implement this function
   quixcc_panic("quixcc_ast_alloc() is not implemented");
 }
 
-LIB_EXPORT void quixcc_ast_done(quixcc_ast_node_t *node) {
-  node->~quixcc_ast_node_t();
-}
+LIB_EXPORT void quixcc_ast_done(quixcc_ast_node_t *node) { node->~quixcc_ast_node_t(); }
 
 ///=============================================================================
 ///=============================================================================
 
-LIB_EXPORT void quixcc_test_hook() {
-  using namespace libquixcc::qast;
-
-  Ident *ident = Ident::get("exit");
-
-  CallArgs args;
-
-  args["0"] = ConstInt::get("0");
-
-  Call *call = Call::get(ident, args);
-
-  call->dump();
-}
+LIB_EXPORT void quixcc_test_hook() {}

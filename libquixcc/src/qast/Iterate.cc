@@ -39,8 +39,7 @@ LIB_EXPORT void quixcc_ast_walk(quixcc_ast_node_t *base, quixcc_iterm_t order,
   quixcc_panic("quixcc_ast_walk() is not implemented");
 }
 
-LIB_EXPORT void quixcc_ast_walk_ex(quixcc_ast_node_t *base,
-                                   quixcc_iterm_t order, quixcc_ast_visit_t cb,
-                                   quixcc_ast_pred_t walk_if) {
+LIB_EXPORT void quixcc_ast_walk_ex(quixcc_ast_node_t *base, quixcc_iterm_t order,
+                                   quixcc_ast_visit_t cb, quixcc_ast_pred_t walk_if) {
   quixcc_panic("quixcc_ast_walk_ex() is not implemented");
 }

@@ -37,8 +37,7 @@ boost::uuids::uuid libquixcc::ir::q::Call::hash_impl() const {
 
 bool libquixcc::ir::q::Call::verify_impl() const {
   return func->verify() &&
-         std::all_of(args.begin(), args.end(),
-                     [](const Value *arg) { return arg->verify(); });
+         std::all_of(args.begin(), args.end(), [](const Value *arg) { return arg->verify(); });
 }
 
 boost::uuids::uuid libquixcc::ir::q::CallIndirect::hash_impl() const {
@@ -47,8 +46,7 @@ boost::uuids::uuid libquixcc::ir::q::CallIndirect::hash_impl() const {
 
 bool libquixcc::ir::q::CallIndirect::verify_impl() const {
   return exprfunc->verify() &&
-         std::all_of(args.begin(), args.end(),
-                     [](const Value *arg) { return arg->verify(); });
+         std::all_of(args.begin(), args.end(), [](const Value *arg) { return arg->verify(); });
 }
 
 boost::uuids::uuid libquixcc::ir::q::IntrinsicCall::hash_impl() const {
@@ -56,6 +54,5 @@ boost::uuids::uuid libquixcc::ir::q::IntrinsicCall::hash_impl() const {
 }
 
 bool libquixcc::ir::q::IntrinsicCall::verify_impl() const {
-  return std::all_of(args.begin(), args.end(),
-                     [](const Value *arg) { return arg->verify(); });
+  return std::all_of(args.begin(), args.end(), [](const Value *arg) { return arg->verify(); });
 }

@@ -34,14 +34,12 @@
 #include <quixcc/Library.h>
 #include <quixcc/interface/SyntaxTreeNodes.h>
 
-LIB_EXPORT char *quixcc_ast_repr(quixcc_ast_node_t *node, bool minify,
-                                 size_t indent, quixcc_arena_t *arena,
-                                 size_t *outlen) {
+LIB_EXPORT char *quixcc_ast_repr(quixcc_ast_node_t *node, bool minify, size_t indent,
+                                 quixcc_arena_t *arena, size_t *outlen) {
   quixcc_panic("quixcc_ast_repr() is not implemented");
 }
 
-LIB_EXPORT void quixcc_ast_brepr(quixcc_ast_node_t *node, bool compress,
-                                 quixcc_arena_t *arena, uint8_t **out,
-                                 size_t *outlen) {
+LIB_EXPORT void quixcc_ast_brepr(quixcc_ast_node_t *node, bool compress, quixcc_arena_t *arena,
+                                 uint8_t **out, size_t *outlen) {
   quixcc_panic("quixcc_ast_brepr() is not implemented");
 }

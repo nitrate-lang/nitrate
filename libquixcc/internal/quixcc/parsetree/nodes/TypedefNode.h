@@ -44,16 +44,16 @@
 #include <vector>
 
 namespace libquixcc {
-class TypedefNode : public DeclNode {
- public:
-  TypedefNode(std::shared_ptr<TypeNode> orig, const std::string &name)
-      : m_orig(orig), m_name(name) {
-    ntype = NodeType::TypedefNode;
-  }
+  class TypedefNode : public DeclNode {
+public:
+    TypedefNode(std::shared_ptr<TypeNode> orig, const std::string &name)
+        : m_orig(orig), m_name(name) {
+      ntype = NodeType::TypedefNode;
+    }
 
-  std::shared_ptr<TypeNode> m_orig;
-  std::string m_name;
-};
-}  // namespace libquixcc
+    std::shared_ptr<TypeNode> m_orig;
+    std::string m_name;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_TYPEDEF_H__
+#endif // __QUIXCC_PARSE_NODES_TYPEDEF_H__

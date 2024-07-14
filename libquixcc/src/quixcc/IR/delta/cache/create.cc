@@ -45,21 +45,18 @@ using namespace libquixcc;
 using namespace libquixcc::ir;
 using namespace libquixcc::ir::delta;
 
-template <typename T>
-using vec = std::vector<T>;
+template <typename T> using vec = std::vector<T>;
 
-template <typename K, typename V>
-using map = std::map<K, V>;
+template <typename K, typename V> using map = std::map<K, V>;
 
-template <typename X, typename Y>
-using pair = std::pair<X, Y>;
+template <typename X, typename Y> using pair = std::pair<X, Y>;
 
 using str = std::string;
 
 class DeltaThreadGarbageCollecter {
   vec<Value *> m_ptrs;
 
- public:
+  public:
   DeltaThreadGarbageCollecter() {}
 
   ~DeltaThreadGarbageCollecter() {
@@ -68,10 +65,7 @@ class DeltaThreadGarbageCollecter {
     }
   }
 
-  template <typename T>
-  inline void adopt(Value *ptr) {
-    m_ptrs.push_back(ptr);
-  }
+  template <typename T> inline void adopt(Value *ptr) { m_ptrs.push_back(ptr); }
 };
 
 static I1 *g_i1 = new I1();
@@ -91,11 +85,11 @@ static Void *g_void = new Void();
 
 static thread_local DeltaThreadGarbageCollecter thread_gc;
 
-#define MAKE_GC(T, ...)          \
-  {                              \
-    T *ptr = new T(__VA_ARGS__); \
-    thread_gc.adopt<T>(ptr);     \
-    return ptr;                  \
+#define MAKE_GC(T, ...)                                                                            \
+  {                                                                                                \
+    T *ptr = new T(__VA_ARGS__);                                                                   \
+    thread_gc.adopt<T>(ptr);                                                                       \
+    return ptr;                                                                                    \
   }
 
 const RootNode *delta::RootNode::create(vec<const Value *> children) {
@@ -110,22 +104,17 @@ const delta::UCast *delta::UCast::create(const Type *type, const Expr *value) {
   MAKE_GC(UCast, type, value);
 }
 
-const delta::PtrICast *delta::PtrICast::create(const Expr *value) {
-  MAKE_GC(PtrICast, value);
-}
+const delta::PtrICast *delta::PtrICast::create(const Expr *value) { MAKE_GC(PtrICast, value); }
 
-const delta::IPtrCast *delta::IPtrCast::create(const Type *type,
-                                               const Expr *value) {
+const delta::IPtrCast *delta::IPtrCast::create(const Type *type, const Expr *value) {
   MAKE_GC(IPtrCast, type, value);
 }
 
-const delta::Bitcast *delta::Bitcast::create(const Type *type,
-                                             const Expr *value) {
+const delta::Bitcast *delta::Bitcast::create(const Type *type, const Expr *value) {
   MAKE_GC(Bitcast, type, value);
 }
 
-const delta::IfElse *delta::IfElse::create(const Expr *cond, const Value *then,
-                                           const Value *els) {
+const delta::IfElse *delta::IfElse::create(const Expr *cond, const Value *then, const Value *els) {
   MAKE_GC(IfElse, cond, then, els);
 }
 
@@ -141,13 +130,11 @@ const delta::Label *delta::Label::create(str name, const Value *code) {
 
 const delta::Ret *delta::Ret::create(const Expr *value) { MAKE_GC(Ret, value); }
 
-const delta::Call *delta::Call::create(str callee, vec<const Expr *> args,
-                                       const FType *ftype) {
+const delta::Call *delta::Call::create(str callee, vec<const Expr *> args, const FType *ftype) {
   MAKE_GC(Call, callee, args, ftype);
 }
 
-const delta::PtrCall *delta::PtrCall::create(const Expr *callee,
-                                             vec<const Expr *> args) {
+const delta::PtrCall *delta::PtrCall::create(const Expr *callee, vec<const Expr *> args) {
   MAKE_GC(PtrCall, callee, args);
 }
 
@@ -157,36 +144,24 @@ const delta::Break *delta::Break::create() { MAKE_GC(Break); }
 
 const delta::Continue *delta::Continue::create() { MAKE_GC(Continue); }
 
-const delta::Case *delta::Case::create(const delta::Number *value,
-                                       const delta::Value *code) {
+const delta::Case *delta::Case::create(const delta::Number *value, const delta::Value *code) {
   MAKE_GC(Case, value, code);
 }
 
-const delta::Switch *delta::Switch::create(const delta::Expr *cond,
-                                           vec<const delta::Case *> cases,
+const delta::Switch *delta::Switch::create(const delta::Expr *cond, vec<const delta::Case *> cases,
                                            const delta::Value *def) {
   MAKE_GC(Switch, cond, cases, def);
 }
 
-const delta::Add *delta::Add::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Add, lhs, rhs);
-}
+const delta::Add *delta::Add::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Add, lhs, rhs); }
 
-const delta::Sub *delta::Sub::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Sub, lhs, rhs);
-}
+const delta::Sub *delta::Sub::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Sub, lhs, rhs); }
 
-const delta::Mul *delta::Mul::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Mul, lhs, rhs);
-}
+const delta::Mul *delta::Mul::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Mul, lhs, rhs); }
 
-const delta::Div *delta::Div::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Div, lhs, rhs);
-}
+const delta::Div *delta::Div::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Div, lhs, rhs); }
 
-const delta::Mod *delta::Mod::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Mod, lhs, rhs);
-}
+const delta::Mod *delta::Mod::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Mod, lhs, rhs); }
 
 const delta::BitAnd *delta::BitAnd::create(const Expr *lhs, const Expr *rhs) {
   MAKE_GC(BitAnd, lhs, rhs);
@@ -200,17 +175,11 @@ const delta::BitXor *delta::BitXor::create(const Expr *lhs, const Expr *rhs) {
   MAKE_GC(BitXor, lhs, rhs);
 }
 
-const delta::BitNot *delta::BitNot::create(const Expr *value) {
-  MAKE_GC(BitNot, value);
-}
+const delta::BitNot *delta::BitNot::create(const Expr *value) { MAKE_GC(BitNot, value); }
 
-const delta::Shl *delta::Shl::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Shl, lhs, rhs);
-}
+const delta::Shl *delta::Shl::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Shl, lhs, rhs); }
 
-const delta::Shr *delta::Shr::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Shr, lhs, rhs);
-}
+const delta::Shr *delta::Shr::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Shr, lhs, rhs); }
 
 const delta::Rotl *delta::Rotl::create(const Expr *lhs, const Expr *rhs) {
   MAKE_GC(Rotl, lhs, rhs);
@@ -220,84 +189,54 @@ const delta::Rotr *delta::Rotr::create(const Expr *lhs, const Expr *rhs) {
   MAKE_GC(Rotr, lhs, rhs);
 }
 
-const delta::Eq *delta::Eq::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Eq, lhs, rhs);
-}
+const delta::Eq *delta::Eq::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Eq, lhs, rhs); }
 
-const delta::Ne *delta::Ne::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Ne, lhs, rhs);
-}
+const delta::Ne *delta::Ne::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Ne, lhs, rhs); }
 
-const delta::Lt *delta::Lt::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Lt, lhs, rhs);
-}
+const delta::Lt *delta::Lt::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Lt, lhs, rhs); }
 
-const delta::Gt *delta::Gt::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Gt, lhs, rhs);
-}
+const delta::Gt *delta::Gt::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Gt, lhs, rhs); }
 
-const delta::Le *delta::Le::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Le, lhs, rhs);
-}
+const delta::Le *delta::Le::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Le, lhs, rhs); }
 
-const delta::Ge *delta::Ge::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Ge, lhs, rhs);
-}
+const delta::Ge *delta::Ge::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Ge, lhs, rhs); }
 
-const delta::And *delta::And::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(And, lhs, rhs);
-}
+const delta::And *delta::And::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(And, lhs, rhs); }
 
-const delta::Or *delta::Or::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Or, lhs, rhs);
-}
+const delta::Or *delta::Or::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Or, lhs, rhs); }
 
-const delta::Not *delta::Not::create(const Value *value) {
-  MAKE_GC(Not, value);
-}
+const delta::Not *delta::Not::create(const Value *value) { MAKE_GC(Not, value); }
 
-const delta::Xor *delta::Xor::create(const Expr *lhs, const Expr *rhs) {
-  MAKE_GC(Xor, lhs, rhs);
-}
+const delta::Xor *delta::Xor::create(const Expr *lhs, const Expr *rhs) { MAKE_GC(Xor, lhs, rhs); }
 
-const delta::Assign *delta::Assign::create(const Expr *var, const Expr *value,
-                                           uint64_t rank) {
+const delta::Assign *delta::Assign::create(const Expr *var, const Expr *value, uint64_t rank) {
   MAKE_GC(Assign, var, value, rank);
 }
 
-const delta::PostInc *delta::PostInc::create(const delta::Expr *var) {
-  MAKE_GC(PostInc, var);
-}
+const delta::PostInc *delta::PostInc::create(const delta::Expr *var) { MAKE_GC(PostInc, var); }
 
-const delta::PostDec *delta::PostDec::create(const delta::Expr *var) {
-  MAKE_GC(PostDec, var);
-}
+const delta::PostDec *delta::PostDec::create(const delta::Expr *var) { MAKE_GC(PostDec, var); }
 
 const delta::AddressOf *delta::AddressOf::create(const delta::Expr *lhs) {
   MAKE_GC(AddressOf, lhs);
 }
 
-const delta::Deref *delta::Deref::create(const delta::Expr *lhs) {
-  MAKE_GC(Deref, lhs);
-}
+const delta::Deref *delta::Deref::create(const delta::Expr *lhs) { MAKE_GC(Deref, lhs); }
 
 const delta::Member *delta::Member::create(const delta::Expr *lhs, size_t field,
                                            const delta::Type *field_type) {
   MAKE_GC(Member, lhs, field, field_type);
 }
 
-const delta::Index *delta::Index::create(const Expr *var, const Expr *index,
-                                         const Type *type) {
+const delta::Index *delta::Index::create(const Expr *var, const Expr *index, const Type *type) {
   MAKE_GC(Index, var, index, type);
 }
 
-const delta::Block *delta::Block::create(vec<const Value *> stmts) {
-  MAKE_GC(Block, stmts);
-}
+const delta::Block *delta::Block::create(vec<const Value *> stmts) { MAKE_GC(Block, stmts); }
 
-const delta::Segment *delta::Segment::create(
-    const Type *ret, bool variadic,
-    const vec<std::pair<str, const Type *>> &params, const Block *stmts) {
+const delta::Segment *delta::Segment::create(const Type *ret, bool variadic,
+                                             const vec<std::pair<str, const Type *>> &params,
+                                             const Block *stmts) {
   MAKE_GC(Segment, ret, variadic, params, stmts);
 }
 
@@ -331,12 +270,10 @@ const delta::Void *delta::Void::create() { return g_void; }
 
 const delta::Ptr *delta::Ptr::create(const Type *type) { MAKE_GC(Ptr, type); }
 
-const delta::Packet *delta::Packet::create(const delta::PacketDef *def) {
-  MAKE_GC(Packet, def);
-}
+const delta::Packet *delta::Packet::create(const delta::PacketDef *def) { MAKE_GC(Packet, def); }
 
-const delta::PacketDef *delta::PacketDef::create(
-    vec<std::pair<str, const delta::Type *>> fields, str name) {
+const delta::PacketDef *delta::PacketDef::create(vec<std::pair<str, const delta::Type *>> fields,
+                                                 str name) {
   MAKE_GC(PacketDef, fields, name);
 }
 
@@ -344,41 +281,30 @@ const delta::Array *delta::Array::create(const Type *type, uint64_t size) {
   MAKE_GC(Array, type, size);
 }
 
-const delta::FType *delta::FType::create(vec<const Type *> params,
-                                         const Type *ret, bool variadic) {
+const delta::FType *delta::FType::create(vec<const Type *> params, const Type *ret, bool variadic) {
   MAKE_GC(FType, params, ret, variadic);
 }
 
-const delta::Asm *delta::Asm::create(
-    const str &asm_str, const vec<std::pair<str, const Value *>> &inputs,
-    const vec<std::pair<str, const Value *>> &outputs,
-    const vec<str> &clobbers) {
+const delta::Asm *delta::Asm::create(const str &asm_str,
+                                     const vec<std::pair<str, const Value *>> &inputs,
+                                     const vec<std::pair<str, const Value *>> &outputs,
+                                     const vec<str> &clobbers) {
   MAKE_GC(Asm, asm_str, inputs, outputs, clobbers);
 }
 
-const delta::Local *delta::Local::create(str name, const Type *type,
-                                         const Expr *value) {
+const delta::Local *delta::Local::create(str name, const Type *type, const Expr *value) {
   MAKE_GC(Local, name, type, value);
 }
 
-const delta::Global *delta::Global::create(str name, const Type *type,
-                                           const Expr *value, bool _volatile,
-                                           bool _atomic, bool _extern) {
+const delta::Global *delta::Global::create(str name, const Type *type, const Expr *value,
+                                           bool _volatile, bool _atomic, bool _extern) {
   MAKE_GC(Global, name, type, value, _volatile, _atomic, _extern);
 }
 
-const delta::Number *delta::Number::create(str value) {
-  MAKE_GC(Number, value);
-}
+const delta::Number *delta::Number::create(str value) { MAKE_GC(Number, value); }
 
-const delta::String *delta::String::create(str value) {
-  MAKE_GC(String, value);
-}
+const delta::String *delta::String::create(str value) { MAKE_GC(String, value); }
 
-const delta::List *delta::List::create(vec<const delta::Expr *> values) {
-  MAKE_GC(List, values);
-}
+const delta::List *delta::List::create(vec<const delta::Expr *> values) { MAKE_GC(List, values); }
 
-const delta::Ident *delta::Ident::create(str name, const Type *type) {
-  MAKE_GC(Ident, name, type);
-}
+const delta::Ident *delta::Ident::create(str name, const Type *type) { MAKE_GC(Ident, name, type); }

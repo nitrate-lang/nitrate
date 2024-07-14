@@ -41,16 +41,13 @@
 #include <stdio.h>
 
 namespace libquixcc::codegen {
-bool write_IR(quixcc_cc_job_t &ctx,
-              std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out,
-              bool generate_bitcode);
-bool write_c11(quixcc_cc_job_t &ctx,
-               std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out);
-bool write_llvm(quixcc_cc_job_t &ctx,
-                std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out,
-                llvm::CodeGenFileType mode);
-bool generate(quixcc_cc_job_t &ctx,
-              std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir);
-};  // namespace libquixcc::codegen
+  bool write_IR(quixcc_cc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir, FILE *out,
+                bool generate_bitcode);
+  bool write_c11(quixcc_cc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir,
+                 FILE *out);
+  bool write_llvm(quixcc_cc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir,
+                  FILE *out, llvm::CodeGenFileType mode);
+  bool generate(quixcc_cc_job_t &ctx, std::unique_ptr<libquixcc::ir::delta::IRDelta> &ir);
+}; // namespace libquixcc::codegen
 
-#endif  // __QUIXCC_LLVM_GEN_H__
+#endif // __QUIXCC_LLVM_GEN_H__

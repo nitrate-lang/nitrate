@@ -40,31 +40,21 @@
 using namespace libquixcc;
 using namespace libquixcc::core;
 
-template <typename T>
-using shared = std::shared_ptr<T>;
+template <typename T> using shared = std::shared_ptr<T>;
 
 #define ERRORS(__type) LOG(ERROR) << feedback[__type] << tok << std::endl
 
 static std::map<std::string, shared<TypeNode>> primitives = {
-    {"u8", std::make_shared<U8TypeNode>()},
-    {"u16", std::make_shared<U16TypeNode>()},
-    {"u32", std::make_shared<U32TypeNode>()},
-    {"u64", std::make_shared<U64TypeNode>()},
-    {"u128", std::make_shared<U128TypeNode>()},
-    {"i8", std::make_shared<I8TypeNode>()},
-    {"i16", std::make_shared<I16TypeNode>()},
-    {"i32", std::make_shared<I32TypeNode>()},
-    {"i64", std::make_shared<I64TypeNode>()},
-    {"i128", std::make_shared<I128TypeNode>()},
-    {"f32", std::make_shared<F32TypeNode>()},
-    {"f64", std::make_shared<F64TypeNode>()},
-    {"i1", std::make_shared<BoolTypeNode>()},
-    {"string", std::make_shared<StringTypeNode>()},
-    {"void", std::make_shared<VoidTypeNode>()},
-    {"null", std::make_shared<NullTypeNode>()}};
+    {"u8", std::make_shared<U8TypeNode>()},     {"u16", std::make_shared<U16TypeNode>()},
+    {"u32", std::make_shared<U32TypeNode>()},   {"u64", std::make_shared<U64TypeNode>()},
+    {"u128", std::make_shared<U128TypeNode>()}, {"i8", std::make_shared<I8TypeNode>()},
+    {"i16", std::make_shared<I16TypeNode>()},   {"i32", std::make_shared<I32TypeNode>()},
+    {"i64", std::make_shared<I64TypeNode>()},   {"i128", std::make_shared<I128TypeNode>()},
+    {"f32", std::make_shared<F32TypeNode>()},   {"f64", std::make_shared<F64TypeNode>()},
+    {"i1", std::make_shared<BoolTypeNode>()},   {"string", std::make_shared<StringTypeNode>()},
+    {"void", std::make_shared<VoidTypeNode>()}, {"null", std::make_shared<NullTypeNode>()}};
 
-bool libquixcc::parse_type(quixcc_cc_job_t &job, Scanner *src,
-                           shared<TypeNode> &node) {
+bool libquixcc::parse_type(quixcc_cc_job_t &job, Scanner *src, shared<TypeNode> &node) {
   /** QUIX TYPE PARSER
    *
    * @brief Given a Scanner, parse tokens into a QUIX type node.
@@ -86,91 +76,91 @@ bool libquixcc::parse_type(quixcc_cc_job_t &job, Scanner *src,
 
   if ((tok = src->next()).type() == tKeyW) {
     switch (tok.as<Keyword>()) {
-      case Keyword::Void: {
-        /** QUIX VOID TYPE
-         *
-         * @brief Parse a void type.
-         */
+    case Keyword::Void: {
+      /** QUIX VOID TYPE
+       *
+       * @brief Parse a void type.
+       */
 
-        inner = make_shared<VoidTypeNode>();
-        goto type_suffix;
-      }
+      inner = make_shared<VoidTypeNode>();
+      goto type_suffix;
+    }
 
-      case Keyword::Null: {
-        /** QUIX NULL TYPE
-         *
-         * @brief Parse a null type.
-         */
+    case Keyword::Null: {
+      /** QUIX NULL TYPE
+       *
+       * @brief Parse a null type.
+       */
 
-        inner = make_shared<NullTypeNode>();
-        goto type_suffix;
-      }
+      inner = make_shared<NullTypeNode>();
+      goto type_suffix;
+    }
 
-      case Keyword::Fn: {
-        /** QUIX FUNCTION TYPE
-         *
-         * @brief Parse a function type.
-         *
-         * @note We will reuse the function parser here. We expect
-         *       a function declaration node to be returned. A
-         *       will end with a semicolon. But a function type
-         *       will not end with a semicolon. We push a semicolon
-         *       to account for this.
-         */
+    case Keyword::Fn: {
+      /** QUIX FUNCTION TYPE
+       *
+       * @brief Parse a function type.
+       *
+       * @note We will reuse the function parser here. We expect
+       *       a function declaration node to be returned. A
+       *       will end with a semicolon. But a function type
+       *       will not end with a semicolon. We push a semicolon
+       *       to account for this.
+       */
 
-        if (!parse_function(job, src, fn)) {
-          ERRORS(TYPE_EXPECTED_FUNCTION);
-          goto error_end;
-        }
-
-        if (!fn->is<FunctionDeclNode>()) {
-          ERRORS(TYPE_EXPECTED_FUNCTION);
-          goto error_end;
-        }
-
-        inner = static_pointer_cast<FunctionDeclNode>(fn)->m_type;
-
-        /* Push a semicolon to account for the above usage. */
-        src->push(Token(tPunc, Semicolon));
-
-        goto type_suffix;
-      }
-
-      case Keyword::Opaque: {
-        /** QUIX OPAQUE TYPE
-         *
-         * @brief Parse an opaque type.
-         *
-         * @note An opaque type is a type that is not defined in the
-         *       current scope. It is a placeholder for a type that
-         *       is distinguisable by its name.
-         */
-
-        if (!(tok = src->next()).is<Punctor>(OpenParen)) {
-          ERRORS(TYPE_OPAQUE_EXPECTED_PAREN);
-          goto error_end;
-        }
-
-        if ((tok = src->next()).type() != tName) {
-          ERRORS(TYPE_OPAQUE_EXPECTED_IDENTIFIER);
-          goto error_end;
-        }
-
-        name = tok.as<string>(); /* Save the name of the opaque type. */
-
-        if (!(tok = src->next()).is<Punctor>(CloseParen)) {
-          ERRORS(TYPE_OPAQUE_EXPECTED_CLOSE_PAREN);
-          goto error_end;
-        }
-
-        inner = make_shared<OpaqueTypeNode>(name);
-        goto type_suffix;
-      }
-
-      default: {
-        /*! We should not reach here in legal code. */
+      if (!parse_function(job, src, fn)) {
+        ERRORS(TYPE_EXPECTED_FUNCTION);
         goto error_end;
       }
+
+      if (!fn->is<FunctionDeclNode>()) {
+        ERRORS(TYPE_EXPECTED_FUNCTION);
+        goto error_end;
+      }
+
+      inner = static_pointer_cast<FunctionDeclNode>(fn)->m_type;
+
+      /* Push a semicolon to account for the above usage. */
+      src->push(Token(tPunc, Semicolon));
+
+      goto type_suffix;
+    }
+
+    case Keyword::Opaque: {
+      /** QUIX OPAQUE TYPE
+       *
+       * @brief Parse an opaque type.
+       *
+       * @note An opaque type is a type that is not defined in the
+       *       current scope. It is a placeholder for a type that
+       *       is distinguisable by its name.
+       */
+
+      if (!(tok = src->next()).is<Punctor>(OpenParen)) {
+        ERRORS(TYPE_OPAQUE_EXPECTED_PAREN);
+        goto error_end;
+      }
+
+      if ((tok = src->next()).type() != tName) {
+        ERRORS(TYPE_OPAQUE_EXPECTED_IDENTIFIER);
+        goto error_end;
+      }
+
+      name = tok.as<string>(); /* Save the name of the opaque type. */
+
+      if (!(tok = src->next()).is<Punctor>(CloseParen)) {
+        ERRORS(TYPE_OPAQUE_EXPECTED_CLOSE_PAREN);
+        goto error_end;
+      }
+
+      inner = make_shared<OpaqueTypeNode>(name);
+      goto type_suffix;
+    }
+
+    default: {
+      /*! We should not reach here in legal code. */
+      goto error_end;
+    }
     }
 
     __builtin_unreachable();

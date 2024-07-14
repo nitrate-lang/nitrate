@@ -45,54 +45,54 @@
 #include <vector>
 
 namespace libquixcc {
-class RegionTypeNode : public TypeNode {
- public:
-  RegionTypeNode(std::vector<std::shared_ptr<TypeNode>> fields,
-                 const std::string &name)
-      : m_fields(fields), m_name(name) {
-    ntype = NodeType::RegionTypeNode;
-  }
+  class RegionTypeNode : public TypeNode {
+public:
+    RegionTypeNode(std::vector<std::shared_ptr<TypeNode>> fields, const std::string &name)
+        : m_fields(fields), m_name(name) {
+      ntype = NodeType::RegionTypeNode;
+    }
 
-  std::vector<std::shared_ptr<TypeNode>> m_fields;
-  std::string m_name;
-};
+    std::vector<std::shared_ptr<TypeNode>> m_fields;
+    std::string m_name;
+  };
 
-class RegionFieldNode : public ParseNode {
- public:
-  RegionFieldNode() : m_type(nullptr) { ntype = NodeType::RegionFieldNode; }
-  RegionFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
-                  std::shared_ptr<ExprNode> value = nullptr)
-      : m_name(name), m_type(type), m_value(value) {
-    ntype = NodeType::RegionFieldNode;
-  }
+  class RegionFieldNode : public ParseNode {
+public:
+    RegionFieldNode() : m_type(nullptr) { ntype = NodeType::RegionFieldNode; }
+    RegionFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
+                    std::shared_ptr<ExprNode> value = nullptr)
+        : m_name(name), m_type(type), m_value(value) {
+      ntype = NodeType::RegionFieldNode;
+    }
 
-  std::string m_name;
-  std::shared_ptr<TypeNode> m_type;
-  std::shared_ptr<ExprNode> m_value;
-};
+    std::string m_name;
+    std::shared_ptr<TypeNode> m_type;
+    std::shared_ptr<ExprNode> m_value;
+  };
 
-class RegionDefNode : public DefNode {
- public:
-  RegionDefNode() { ntype = NodeType::RegionDefNode; }
-  RegionDefNode(const std::string &name,
-                const std::vector<std::shared_ptr<RegionFieldNode>> &fields,
-                std::set<std::string> implements = {})
-      : m_name(name), m_fields(fields), m_implements(implements) {
-    ntype = NodeType::RegionDefNode;
-  }
+  class RegionDefNode : public DefNode {
+public:
+    RegionDefNode() { ntype = NodeType::RegionDefNode; }
+    RegionDefNode(const std::string &name,
+                  const std::vector<std::shared_ptr<RegionFieldNode>> &fields,
+                  std::set<std::string> implements = {})
+        : m_name(name), m_fields(fields), m_implements(implements) {
+      ntype = NodeType::RegionDefNode;
+    }
 
-  virtual std::shared_ptr<RegionTypeNode> get_type() const {
-    std::vector<std::shared_ptr<TypeNode>> fields;
-    for (auto &field : m_fields) fields.push_back(field->m_type);
-    return std::make_shared<RegionTypeNode>(fields, m_name);
-  }
+    virtual std::shared_ptr<RegionTypeNode> get_type() const {
+      std::vector<std::shared_ptr<TypeNode>> fields;
+      for (auto &field : m_fields)
+        fields.push_back(field->m_type);
+      return std::make_shared<RegionTypeNode>(fields, m_name);
+    }
 
-  std::string m_name;
-  std::vector<std::shared_ptr<RegionFieldNode>> m_fields;
-  std::vector<std::shared_ptr<StmtNode>> m_methods;
-  std::vector<std::shared_ptr<StmtNode>> m_static_methods;
-  std::set<std::string> m_implements;
-};
-}  // namespace libquixcc
+    std::string m_name;
+    std::vector<std::shared_ptr<RegionFieldNode>> m_fields;
+    std::vector<std::shared_ptr<StmtNode>> m_methods;
+    std::vector<std::shared_ptr<StmtNode>> m_static_methods;
+    std::set<std::string> m_implements;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_REGION_H__
+#endif // __QUIXCC_PARSE_NODES_REGION_H__

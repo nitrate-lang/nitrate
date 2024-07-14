@@ -49,8 +49,7 @@ bool libquixcc::parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
   Token tok = scanner->next();
   if (!tok.is<Punctor>(OpenBrace)) {
-    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_LEFT_BRACE] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_LEFT_BRACE] << tok.serialize() << tok << std::endl;
     return false;
   }
 
@@ -63,15 +62,14 @@ bool libquixcc::parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     if (tok.is<Keyword>(Keyword::Default)) {
       scanner->next();
       if (default_case) {
-        LOG(ERROR) << core::feedback[SWITCH_MULTIPLE_DEFAULT] << tok.serialize()
-                   << tok << std::endl;
+        LOG(ERROR) << core::feedback[SWITCH_MULTIPLE_DEFAULT] << tok.serialize() << tok
+                   << std::endl;
         return false;
       }
 
       tok = scanner->next();
       if (!tok.is<Punctor>(Colon)) {
-        LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize()
-                   << tok << std::endl;
+        LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok << std::endl;
         return false;
       }
 
@@ -83,8 +81,7 @@ bool libquixcc::parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     }
 
     if (!tok.is<Keyword>(Keyword::Case)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_CASE] << tok.serialize()
-                 << tok << std::endl;
+      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_CASE] << tok.serialize() << tok << std::endl;
       return false;
     }
     scanner->next();
@@ -96,8 +93,7 @@ bool libquixcc::parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Colon)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize()
-                 << tok << std::endl;
+      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok << std::endl;
       return false;
     }
 
@@ -111,8 +107,8 @@ bool libquixcc::parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
   tok = scanner->next();
   if (!tok.is<Punctor>(CloseBrace)) {
-    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_RIGHT_BRACE] << tok.serialize()
-               << tok << std::endl;
+    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_RIGHT_BRACE] << tok.serialize() << tok
+               << std::endl;
     return false;
   }
 

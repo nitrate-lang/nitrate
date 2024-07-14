@@ -260,17 +260,14 @@ bool quixcc_cc_tokeq(const quixcc_tok_t a, const quixcc_tok_t b);
 /// @param tok The token to check.
 /// @return true if the token is valid, false otherwise.
 /// @note This function is thread-safe.
-static inline bool quixcc_cc_lex_ok(const quixcc_tok_t *tok) {
-  return tok->ty > QUIXCC_LEX_UNK;
-}
+static inline bool quixcc_cc_lex_ok(const quixcc_tok_t *tok) { return tok->ty > QUIXCC_LEX_UNK; }
 
 /// @brief Check if a token is of a specific type.
 /// @param tok The token to check.
 /// @param ty The type to check against.
 /// @return true if the token is of the specified type, false otherwise.
 /// @note This function is thread-safe.
-static inline bool quixcc_cc_lex_is(const quixcc_tok_t *tok,
-                                    quixcc_lex_type_t ty) {
+static inline bool quixcc_cc_lex_is(const quixcc_tok_t *tok, quixcc_lex_type_t ty) {
   return tok->ty == ty;
 }
 
@@ -288,8 +285,8 @@ void quixcc_cc_tok_release(quixcc_cc_job_t *job, quixcc_tok_t *tok);
 /// @param buf The buffer to write the string representation to.
 /// @param len The length of the buffer.
 /// @note This function is thread-safe.
-size_t quixcc_cc_tok_serialize(quixcc_cc_job_t *job, const quixcc_tok_t *tok,
-                               char *buf, size_t len);
+size_t quixcc_cc_tok_serialize(quixcc_cc_job_t *job, const quixcc_tok_t *tok, char *buf,
+                               size_t len);
 
 /// @brief Get the human-readable string representation of a token.
 /// @param job The compiler job.
@@ -298,8 +295,7 @@ size_t quixcc_cc_tok_serialize(quixcc_cc_job_t *job, const quixcc_tok_t *tok,
 /// @param len The length of the buffer.
 /// @return The number of characters written to the buffer.
 /// @note This function is thread-safe.
-size_t quixcc_cc_tok_humanize(quixcc_cc_job_t *job, const quixcc_tok_t *tok,
-                              char *buf, size_t len);
+size_t quixcc_cc_tok_humanize(quixcc_cc_job_t *job, const quixcc_tok_t *tok, char *buf, size_t len);
 
 ///=============================================================================
 /// END: LANGUAGE STUFF
@@ -309,4 +305,4 @@ size_t quixcc_cc_tok_humanize(quixcc_cc_job_t *job, const quixcc_tok_t *tok,
 }
 #endif
 
-#endif  // __QUIXCC_COMPILE_H__
+#endif // __QUIXCC_COMPILE_H__

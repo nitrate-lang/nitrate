@@ -35,9 +35,7 @@ boost::uuids::uuid libquixcc::ir::q::Assign::hash_impl() const {
   return Hasher().gettag().add(lhs).add(rhs).hash();
 }
 
-bool libquixcc::ir::q::Assign::verify_impl() const {
-  return lhs->verify() && rhs->verify();
-}
+bool libquixcc::ir::q::Assign::verify_impl() const { return lhs->verify() && rhs->verify(); }
 
 boost::uuids::uuid libquixcc::ir::q::PostInc::hash_impl() const {
   return Hasher().gettag().add(lhs).hash();
@@ -67,9 +65,7 @@ boost::uuids::uuid libquixcc::ir::q::Member::hash_impl() const {
   return Hasher().gettag().add(lhs).add(field).add(field_type).hash();
 }
 
-bool libquixcc::ir::q::Member::verify_impl() const {
-  return lhs->verify() && field_type->verify();
-}
+bool libquixcc::ir::q::Member::verify_impl() const { return lhs->verify() && field_type->verify(); }
 
 boost::uuids::uuid libquixcc::ir::q::Index::hash_impl() const {
   return Hasher().gettag().add(lhs).add(index).add(type).hash();

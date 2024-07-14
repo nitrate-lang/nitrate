@@ -31,62 +31,68 @@
 
 #include <quixcc/IR/delta/Memory.h>
 
-bool libquixcc::ir::delta::Assign::print_impl(std::ostream &os,
-                                              PState &state) const {
+bool libquixcc::ir::delta::Assign::print_impl(std::ostream &os, PState &state) const {
   os << "(";
-  if (!var->print(os, state)) return false;
+  if (!var->print(os, state))
+    return false;
 
   os << " ";
 
-  for (uint64_t i = 0; i < rank; i++) os << "*";
+  for (uint64_t i = 0; i < rank; i++)
+    os << "*";
 
   os << "= ";
 
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
 
   os << ")";
 
   return true;
 }
 
-bool libquixcc::ir::delta::PostInc::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::PostInc::print_impl(std::ostream &os,
+                                               libquixcc::ir::PState &state) const {
   os << "(";
-  if (!var->print(os, state)) return false;
+  if (!var->print(os, state))
+    return false;
   os << "++)";
   return true;
 }
 
-bool libquixcc::ir::delta::PostDec::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::PostDec::print_impl(std::ostream &os,
+                                               libquixcc::ir::PState &state) const {
   os << "(";
-  if (!var->print(os, state)) return false;
+  if (!var->print(os, state))
+    return false;
   os << "--)";
   return true;
 }
 
-bool libquixcc::ir::delta::AddressOf::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::AddressOf::print_impl(std::ostream &os,
+                                                 libquixcc::ir::PState &state) const {
   os << "(&";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
   os << ")";
 
   return true;
 }
 
-bool libquixcc::ir::delta::Deref::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::Deref::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "(*";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
   os << ")";
 
   return true;
 }
 
-bool libquixcc::ir::delta::Member::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::Member::print_impl(std::ostream &os,
+                                              libquixcc::ir::PState &state) const {
   os << "(";
-  if (!lhs->print(os, state)) return false;
+  if (!lhs->print(os, state))
+    return false;
 
   os << "." << field;
 
@@ -95,12 +101,13 @@ bool libquixcc::ir::delta::Member::print_impl(
   return true;
 }
 
-bool libquixcc::ir::delta::Index::print_impl(std::ostream &os,
-                                             PState &state) const {
+bool libquixcc::ir::delta::Index::print_impl(std::ostream &os, PState &state) const {
   os << "(";
-  if (!expr->print(os, state)) return false;
+  if (!expr->print(os, state))
+    return false;
   os << "[";
-  if (!index->print(os, state)) return false;
+  if (!index->print(os, state))
+    return false;
   os << "]";
   os << ")";
 

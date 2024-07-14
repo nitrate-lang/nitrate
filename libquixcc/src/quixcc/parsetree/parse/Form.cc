@@ -67,13 +67,11 @@ bool libquixcc::parse_form(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     }
     tok = scanner->next();
     if (!tok.is<Punctor>(CloseParen)) {
-      LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok << std::endl;
       return false;
     }
   } else {
-    if (!parse_expr(job, scanner,
-                    {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, expr)) {
+    if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, expr)) {
       LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
       return false;
     }

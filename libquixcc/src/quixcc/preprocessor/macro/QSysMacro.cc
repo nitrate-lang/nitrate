@@ -94,22 +94,19 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
     }
 
     if (!expr->is<CallExprNode>()) {
-      LOG(FAILED) << "QSys directive must be a meta-function call." << tok
-                  << std::endl;
+      LOG(FAILED) << "QSys directive must be a meta-function call." << tok << std::endl;
       return false;
     }
 
     auto call = expr->as<CallExprNode>();
 
     if (call->m_positional_args.size() == 0) {
-      LOG(ERROR) << "QSys directive must have at least one argument." << tok
-                 << std::endl;
+      LOG(ERROR) << "QSys directive must have at least one argument." << tok << std::endl;
       return false;
     }
 
     if (!call->m_positional_args[0]->is<IntegerNode>()) {
-      LOG(ERROR) << "QSys directive first argument must be an integer." << tok
-                 << std::endl;
+      LOG(ERROR) << "QSys directive first argument must be an integer." << tok << std::endl;
       return false;
     }
 
@@ -119,8 +116,7 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
       auto qir_arg = std::make_unique<ir::q::QModule>(job->m_filename.top());
 
       if (!qir_arg->from_ptree(job, call->m_positional_args[i])) {
-        LOG(ERROR) << "Failed to parse QSys directive argument." << tok
-                   << std::endl;
+        LOG(ERROR) << "Failed to parse QSys directive argument." << tok << std::endl;
 
         return false;
       }
@@ -130,8 +126,7 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
     }
 
     for (auto [name, arg] : call->m_named_args) {
-      LOG(ERROR) << "QSys directive does not support named arguments." << tok
-                 << std::endl;
+      LOG(ERROR) << "QSys directive does not support named arguments." << tok << std::endl;
       return false;
     }
   }

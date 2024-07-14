@@ -36,25 +36,28 @@ boost::uuids::uuid libquixcc::ir::delta::Block::hash_impl() const {
 }
 
 bool libquixcc::ir::delta::Block::verify_impl() const {
-  return std::all_of(stmts.begin(), stmts.end(),
-                     [](const Value *v) { return v->verify(); });
+  return std::all_of(stmts.begin(), stmts.end(), [](const Value *v) { return v->verify(); });
 }
 
 boost::uuids::uuid libquixcc::ir::delta::Segment::hash_impl() const {
   auto h = Hasher().gettag().add(ret).add(variadic);
-  for (auto &p : params) h.add(p.second);
+  for (auto &p : params)
+    h.add(p.second);
 
-  if (block) h.add(block);
+  if (block)
+    h.add(block);
 
   return h.hash();
 }
 
 bool libquixcc::ir::delta::Segment::verify_impl() const {
   for (auto &p : params)
-    if (!p.second->verify()) return false;
+    if (!p.second->verify())
+      return false;
 
   if (block)
-    if (!block->verify()) return false;
+    if (!block->verify())
+      return false;
 
   return ret->verify();
 }
@@ -62,9 +65,12 @@ bool libquixcc::ir::delta::Segment::verify_impl() const {
 boost::uuids::uuid libquixcc::ir::delta::Asm::hash_impl() const {
   auto h = Hasher().gettag().add(asm_str);
 
-  for (auto &p : outputs) h.add(p.first).add(p.second);
-  for (auto &p : inputs) h.add(p.first).add(p.second);
-  for (auto &p : clobbers) h.add(p);
+  for (auto &p : outputs)
+    h.add(p.first).add(p.second);
+  for (auto &p : inputs)
+    h.add(p.first).add(p.second);
+  for (auto &p : clobbers)
+    h.add(p);
 
   return h.hash();
 }
@@ -86,14 +92,16 @@ bool libquixcc::ir::delta::Asm::verify_impl() const {
 boost::uuids::uuid libquixcc::ir::delta::RootNode::hash_impl() const {
   auto h = Hasher().gettag();
 
-  for (auto &s : children) h.add(s);
+  for (auto &s : children)
+    h.add(s);
 
   return h.hash();
 }
 
 bool libquixcc::ir::delta::RootNode::verify_impl() const {
   for (auto &s : children)
-    if (!s->verify()) return false;
+    if (!s->verify())
+      return false;
 
   return true;
 }

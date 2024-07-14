@@ -36,8 +36,7 @@
 
 #include <iostream>
 
-bool libquixcc::PrepEngine::ParseDefine(const Token &tok,
-                                        const std::string &directive,
+bool libquixcc::PrepEngine::ParseDefine(const Token &tok, const std::string &directive,
                                         const std::string &parameter) {
   (void)job;
   (void)tok;

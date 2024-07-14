@@ -40,73 +40,68 @@
 #include <quixcc/IR/Q/QIR.h>
 
 namespace libquixcc::ir::q {
-class RegionDef : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class RegionDef : public Value {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  RegionDef(std::string name,
-            std::vector<std::pair<std::string, Value *>> fields,
-            std::map<std::string, Segment *> methods)
-      : name(name), fields(fields), methods(methods) {
-    ntype = (int)QType::RegionDef;
-  }
+    RegionDef(std::string name, std::vector<std::pair<std::string, Value *>> fields,
+              std::map<std::string, Segment *> methods)
+        : name(name), fields(fields), methods(methods) {
+      ntype = (int)QType::RegionDef;
+    }
 
- public:
-  static RegionDef *create(std::string name,
-                           std::vector<std::pair<std::string, Value *>> fields,
-                           std::map<std::string, Segment *> methods);
+public:
+    static RegionDef *create(std::string name, std::vector<std::pair<std::string, Value *>> fields,
+                             std::map<std::string, Segment *> methods);
 
-  std::string name;
-  std::vector<std::pair<std::string, Value *>> fields;
-  std::map<std::string, Segment *> methods;
-};
+    std::string name;
+    std::vector<std::pair<std::string, Value *>> fields;
+    std::map<std::string, Segment *> methods;
+  };
 
-class GroupDef : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class GroupDef : public Value {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  GroupDef(std::string name,
-           std::vector<std::pair<std::string, Value *>> fields,
-           std::map<std::string, Segment *> methods)
-      : name(name), fields(fields), methods(methods) {
-    ntype = (int)QType::GroupDef;
-  }
+    GroupDef(std::string name, std::vector<std::pair<std::string, Value *>> fields,
+             std::map<std::string, Segment *> methods)
+        : name(name), fields(fields), methods(methods) {
+      ntype = (int)QType::GroupDef;
+    }
 
- public:
-  static GroupDef *create(std::string name,
-                          std::vector<std::pair<std::string, Value *>> fields,
-                          std::map<std::string, Segment *> methods);
+public:
+    static GroupDef *create(std::string name, std::vector<std::pair<std::string, Value *>> fields,
+                            std::map<std::string, Segment *> methods);
 
-  std::string name;
-  std::vector<std::pair<std::string, Value *>> fields;
-  std::map<std::string, Segment *> methods;
-};
+    std::string name;
+    std::vector<std::pair<std::string, Value *>> fields;
+    std::map<std::string, Segment *> methods;
+  };
 
-class UnionDef : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override;
-  boost::uuids::uuid hash_impl() const override;
-  bool verify_impl() const override;
+  class UnionDef : public Value {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override;
+    boost::uuids::uuid hash_impl() const override;
+    bool verify_impl() const override;
 
-  UnionDef(std::string name, std::map<std::string, Value *> fields,
-           std::map<std::string, Segment *> methods)
-      : name(name), fields(fields), methods(methods) {
-    ntype = (int)QType::UnionDef;
-  }
+    UnionDef(std::string name, std::map<std::string, Value *> fields,
+             std::map<std::string, Segment *> methods)
+        : name(name), fields(fields), methods(methods) {
+      ntype = (int)QType::UnionDef;
+    }
 
- public:
-  static UnionDef *create(std::string name,
-                          std::map<std::string, Value *> fields,
-                          std::map<std::string, Segment *> methods);
+public:
+    static UnionDef *create(std::string name, std::map<std::string, Value *> fields,
+                            std::map<std::string, Segment *> methods);
 
-  std::string name;
-  std::map<std::string, Value *> fields;
-  std::map<std::string, Segment *> methods;
-};
-}  // namespace libquixcc::ir::q
+    std::string name;
+    std::map<std::string, Value *> fields;
+    std::map<std::string, Segment *> methods;
+  };
+} // namespace libquixcc::ir::q
 
-#endif  // __QUIXCC_IR_Q_NODES_OOP_H__
+#endif // __QUIXCC_IR_Q_NODES_OOP_H__

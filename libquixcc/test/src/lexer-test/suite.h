@@ -42,14 +42,14 @@
 #include <vector>
 
 namespace libquixcc::test {
-struct LexerVector {
-  std::string_view raw_src;
-  std::vector<Token> tokens;
-};
+  struct LexerVector {
+    std::string_view raw_src;
+    std::vector<Token> tokens;
+  };
 
-extern const std::vector<LexerVector> lexer_test_vectors;
+  extern const std::vector<LexerVector> lexer_test_vectors;
 
-bool lexer_test_suite();
-}  // namespace libquixcc::test
+  bool lexer_test_suite();
+} // namespace libquixcc::test
 
-#endif  // __QUIXCC_TEST_LEXERSUITE_H__
+#endif // __QUIXCC_TEST_LEXERSUITE_H__

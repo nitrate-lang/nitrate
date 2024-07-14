@@ -40,15 +40,15 @@
 #include <quixcc/IR/delta/Type.h>
 
 namespace libquixcc::ir::delta {
-class Expr : public Value {
- protected:
-  bool print_impl(std::ostream &os, PState &state) const override = 0;
-  boost::uuids::uuid hash_impl() const override = 0;
-  bool verify_impl() const override = 0;
+  class Expr : public Value {
+protected:
+    bool print_impl(std::ostream &os, PState &state) const override = 0;
+    boost::uuids::uuid hash_impl() const override = 0;
+    bool verify_impl() const override = 0;
 
- public:
-  virtual const Type *infer() const = 0;
-};
-}  // namespace libquixcc::ir::delta
+public:
+    virtual const Type *infer() const = 0;
+  };
+} // namespace libquixcc::ir::delta
 
-#endif  // __QUIXCC_IR_DELTA_NODES_EXPR_H__
+#endif // __QUIXCC_IR_DELTA_NODES_EXPR_H__

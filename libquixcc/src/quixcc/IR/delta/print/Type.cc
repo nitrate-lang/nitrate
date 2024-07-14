@@ -31,112 +31,100 @@
 
 #include <quixcc/IR/delta/Type.h>
 
-bool libquixcc::ir::delta::I1::print_impl(std::ostream &os,
-                                          PState &state) const {
+bool libquixcc::ir::delta::I1::print_impl(std::ostream &os, PState &state) const {
   return os << "i1", true;
 }
 
-bool libquixcc::ir::delta::I8::print_impl(std::ostream &os,
-                                          PState &state) const {
+bool libquixcc::ir::delta::I8::print_impl(std::ostream &os, PState &state) const {
   return os << "i8", true;
 }
 
-bool libquixcc::ir::delta::I16::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::I16::print_impl(std::ostream &os, PState &state) const {
   return os << "i16", true;
 }
 
-bool libquixcc::ir::delta::I32::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::I32::print_impl(std::ostream &os, PState &state) const {
   return os << "i32", true;
 }
 
-bool libquixcc::ir::delta::I64::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::I64::print_impl(std::ostream &os, PState &state) const {
   return os << "i64", true;
 }
 
-bool libquixcc::ir::delta::I128::print_impl(std::ostream &os,
-                                            PState &state) const {
+bool libquixcc::ir::delta::I128::print_impl(std::ostream &os, PState &state) const {
   return os << "i128", true;
 }
 
-bool libquixcc::ir::delta::U8::print_impl(std::ostream &os,
-                                          PState &state) const {
+bool libquixcc::ir::delta::U8::print_impl(std::ostream &os, PState &state) const {
   return os << "u8", true;
 }
 
-bool libquixcc::ir::delta::U16::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::U16::print_impl(std::ostream &os, PState &state) const {
   return os << "u16", true;
 }
 
-bool libquixcc::ir::delta::U32::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::U32::print_impl(std::ostream &os, PState &state) const {
   return os << "u32", true;
 }
 
-bool libquixcc::ir::delta::U64::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::U64::print_impl(std::ostream &os, PState &state) const {
   return os << "u64", true;
 }
 
-bool libquixcc::ir::delta::U128::print_impl(std::ostream &os,
-                                            PState &state) const {
+bool libquixcc::ir::delta::U128::print_impl(std::ostream &os, PState &state) const {
   return os << "u128", true;
 }
 
-bool libquixcc::ir::delta::F32::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::F32::print_impl(std::ostream &os, PState &state) const {
   return os << "f32", true;
 }
 
-bool libquixcc::ir::delta::F64::print_impl(std::ostream &os,
-                                           PState &state) const {
+bool libquixcc::ir::delta::F64::print_impl(std::ostream &os, PState &state) const {
   return os << "f64", true;
 }
 
-bool libquixcc::ir::delta::Void::print_impl(std::ostream &os,
-                                            PState &state) const {
+bool libquixcc::ir::delta::Void::print_impl(std::ostream &os, PState &state) const {
   return os << "void", true;
 }
 
-bool libquixcc::ir::delta::Ptr::print_impl(std::ostream &os,
-                                           PState &state) const {
-  if (!type->print(os, state)) return false;
+bool libquixcc::ir::delta::Ptr::print_impl(std::ostream &os, PState &state) const {
+  if (!type->print(os, state))
+    return false;
   return os << "*", true;
 }
 
-bool libquixcc::ir::delta::PacketDef::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::PacketDef::print_impl(std::ostream &os,
+                                                 libquixcc::ir::PState &state) const {
   os << "packet " << name << " {";
   for (size_t i = 0; i < fields.size(); i++) {
     os << fields[i].first << ": ";
-    if (!fields[i].second->print(os, state)) return false;
-    if (i + 1 < fields.size()) os << ", ";
+    if (!fields[i].second->print(os, state))
+      return false;
+    if (i + 1 < fields.size())
+      os << ", ";
   }
 
   return os << "}", true;
 }
 
-bool libquixcc::ir::delta::Packet::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::Packet::print_impl(std::ostream &os,
+                                              libquixcc::ir::PState &state) const {
   os << "packet<" << def->name << ">";
   return true;
 }
 
-bool libquixcc::ir::delta::Array::print_impl(std::ostream &os,
-                                             PState &state) const {
+bool libquixcc::ir::delta::Array::print_impl(std::ostream &os, PState &state) const {
   os << "[";
-  if (!type->print(os, state)) return false;
+  if (!type->print(os, state))
+    return false;
   return os << "; " << size << "]", true;
 }
 
-bool libquixcc::ir::delta::FType::print_impl(std::ostream &os,
-                                             PState &state) const {
+bool libquixcc::ir::delta::FType::print_impl(std::ostream &os, PState &state) const {
   os << "[";
   for (size_t i = 0; i < params.size(); i++) {
-    if (!params[i]->print(os, state)) return false;
+    if (!params[i]->print(os, state))
+      return false;
     if (i + 1 < params.size())
       os << ", ";
     else if (variadic)

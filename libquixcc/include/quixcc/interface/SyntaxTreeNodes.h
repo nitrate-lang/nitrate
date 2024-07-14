@@ -236,8 +236,7 @@ uint16_t quixcc_ast_subcount(quixcc_ast_ntype_t type);
  * occur.
  * @note This function is thread-safe.
  */
-quixcc_ast_ftype_t quixcc_ast_field_type(quixcc_ast_node_t *node,
-                                         uint16_t index);
+quixcc_ast_ftype_t quixcc_ast_field_type(quixcc_ast_node_t *node, uint16_t index);
 
 /**
  * @brief Returns the name of a field within a node.
@@ -297,8 +296,7 @@ static inline uint16_t quixcc_ast_subcount_of(const quixcc_ast_node_t *node) {
  * @note This function is thread-safe.
  * @note This function will never return `NULL`.
  */
-quixcc_ast_node_t **quixcc_ast_get_child(quixcc_ast_node_t *node,
-                                         uint16_t index);
+quixcc_ast_node_t **quixcc_ast_get_child(quixcc_ast_node_t *node, uint16_t index);
 
 /**
  * @brief Returns a pointer to a field within a node.
@@ -319,95 +317,92 @@ quixcc_ast_node_t **quixcc_ast_get_child(quixcc_ast_node_t *node,
  * @warning This function is dangerous when used directly. Use the type-safe
  * macros instead.
  */
-void *quixcc_ast_get(const quixcc_ast_node_t *node, uint16_t index,
-                     quixcc_ast_ftype_t ftype);
+void *quixcc_ast_get(const quixcc_ast_node_t *node, uint16_t index, quixcc_ast_ftype_t ftype);
 
-#define QUIXCC_AST_GET_BOOL(__node, __index) \
+#define QUIXCC_AST_GET_BOOL(__node, __index)                                                       \
   (*(bool *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_BOOL))
 
-#define QUIXCC_AST_GET_CHAR(__node, __index) \
+#define QUIXCC_AST_GET_CHAR(__node, __index)                                                       \
   (*(char *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_CHAR))
 
-#define QUIXCC_AST_GET_INT8(__node, __index) \
+#define QUIXCC_AST_GET_INT8(__node, __index)                                                       \
   (*(int8_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_INT8))
 
-#define QUIXCC_AST_GET_INT16(__node, __index) \
+#define QUIXCC_AST_GET_INT16(__node, __index)                                                      \
   (*(int16_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_INT16))
 
-#define QUIXCC_AST_GET_INT32(__node, __index) \
+#define QUIXCC_AST_GET_INT32(__node, __index)                                                      \
   (*(int32_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_INT32))
 
-#define QUIXCC_AST_GET_INT64(__node, __index) \
+#define QUIXCC_AST_GET_INT64(__node, __index)                                                      \
   (*(int64_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_INT64))
 
-#define QUIXCC_AST_GET_UINT8(__node, __index) \
+#define QUIXCC_AST_GET_UINT8(__node, __index)                                                      \
   (*(uint8_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_UINT8))
 
-#define QUIXCC_AST_GET_UINT16(__node, __index) \
+#define QUIXCC_AST_GET_UINT16(__node, __index)                                                     \
   (*(uint16_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_UINT16))
 
-#define QUIXCC_AST_GET_UINT32(__node, __index) \
+#define QUIXCC_AST_GET_UINT32(__node, __index)                                                     \
   (*(uint32_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_UINT32))
 
-#define QUIXCC_AST_GET_UINT64(__node, __index) \
+#define QUIXCC_AST_GET_UINT64(__node, __index)                                                     \
   (*(uint64_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_UINT64))
 
-#define QUIXCC_AST_GET_FLOAT(__node, __index) \
+#define QUIXCC_AST_GET_FLOAT(__node, __index)                                                      \
   (*(float *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_FLOAT))
 
-#define QUIXCC_AST_GET_DOUBLE(__node, __index) \
+#define QUIXCC_AST_GET_DOUBLE(__node, __index)                                                     \
   (*(double *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_DOUBLE))
 
-#define QUIXCC_AST_GET_QSTRING(__node, __index)            \
-  (*(quixcc_string_t *)quixcc_ast_get((__node), (__index), \
-                                      QUIXCC_AST_FIELD_QSTRING))
+#define QUIXCC_AST_GET_QSTRING(__node, __index)                                                    \
+  (*(quixcc_string_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_QSTRING))
 
-#define QUIXCC_AST_GET_QVEC(__node, __index) \
+#define QUIXCC_AST_GET_QVEC(__node, __index)                                                       \
   (*(quixcc_vec_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_QVEC))
 
 ///=============================================================================
 
-#define QUIXCC_AST_REF_BOOL(__node, __index) \
+#define QUIXCC_AST_REF_BOOL(__node, __index)                                                       \
   ((bool *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_BOOL))
 
-#define QUIXCC_AST_REF_CHAR(__node, __index) \
+#define QUIXCC_AST_REF_CHAR(__node, __index)                                                       \
   ((char *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_CHAR))
 
-#define QUIXCC_AST_REF_INT8(__node, __index) \
+#define QUIXCC_AST_REF_INT8(__node, __index)                                                       \
   ((int8_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_INT8))
 
-#define QUIXCC_AST_REF_INT16(__node, __index) \
+#define QUIXCC_AST_REF_INT16(__node, __index)                                                      \
   ((int16_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_INT16))
 
-#define QUIXCC_AST_REF_INT32(__node, __index) \
+#define QUIXCC_AST_REF_INT32(__node, __index)                                                      \
   ((int32_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_INT32))
 
-#define QUIXCC_AST_REF_INT64(__node, __index) \
+#define QUIXCC_AST_REF_INT64(__node, __index)                                                      \
   ((int64_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_INT64))
 
-#define QUIXCC_AST_REF_UINT8(__node, __index) \
+#define QUIXCC_AST_REF_UINT8(__node, __index)                                                      \
   ((uint8_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_UINT8))
 
-#define QUIXCC_AST_REF_UINT16(__node, __index) \
+#define QUIXCC_AST_REF_UINT16(__node, __index)                                                     \
   ((uint16_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_UINT16))
 
-#define QUIXCC_AST_REF_UINT32(__node, __index) \
+#define QUIXCC_AST_REF_UINT32(__node, __index)                                                     \
   ((uint32_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_UINT32))
 
-#define QUIXCC_AST_REF_UINT64(__node, __index) \
+#define QUIXCC_AST_REF_UINT64(__node, __index)                                                     \
   ((uint64_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_UINT64))
 
-#define QUIXCC_AST_REF_FLOAT(__node, __index) \
+#define QUIXCC_AST_REF_FLOAT(__node, __index)                                                      \
   ((float *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_FLOAT))
 
-#define QUIXCC_AST_REF_DOUBLE(__node, __index) \
+#define QUIXCC_AST_REF_DOUBLE(__node, __index)                                                     \
   ((double *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_DOUBLE))
 
-#define QUIXCC_AST_REF_QSTRING(__node, __index)           \
-  ((quixcc_string_t *)quixcc_ast_get((__node), (__index), \
-                                     QUIXCC_AST_FIELD_QSTRING))
+#define QUIXCC_AST_REF_QSTRING(__node, __index)                                                    \
+  ((quixcc_string_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_QSTRING))
 
-#define QUIXCC_AST_REF_QVEC(__node, __index) \
+#define QUIXCC_AST_REF_QVEC(__node, __index)                                                       \
   ((quixcc_vec_t *)quixcc_ast_get((__node), (__index), QUIXCC_AST_FIELD_QVEC))
 
 ///=============================================================================
@@ -453,8 +448,7 @@ typedef quixcc_ast_visit_t quixcc_ast_pred_t;
  * @note A panic will occur if base is NULL.
  * @note A panic will occur if cb is NULL.
  */
-void quixcc_ast_walk(quixcc_ast_node_t *base, quixcc_iterm_t order,
-                     quixcc_ast_visit_t cb);
+void quixcc_ast_walk(quixcc_ast_node_t *base, quixcc_iterm_t order, quixcc_ast_visit_t cb);
 
 /**
  * @brief Iterates over the children of any node.
@@ -470,8 +464,8 @@ void quixcc_ast_walk(quixcc_ast_node_t *base, quixcc_iterm_t order,
  * @note `quixcc_ast_walk_ex` is equivalent to `quixcc_ast_walk` if `walk_if` is
  * `NULL`.
  */
-void quixcc_ast_walk_ex(quixcc_ast_node_t *base, quixcc_iterm_t order,
-                        quixcc_ast_visit_t cb, quixcc_ast_pred_t walk_if);
+void quixcc_ast_walk_ex(quixcc_ast_node_t *base, quixcc_iterm_t order, quixcc_ast_visit_t cb,
+                        quixcc_ast_pred_t walk_if);
 
 ///=============================================================================
 /// END: ABSTRACT SYNTAX TREE ITERATION
@@ -500,8 +494,8 @@ void quixcc_ast_walk_ex(quixcc_ast_node_t *base, quixcc_iterm_t order,
  * @note The output string will end with a null terminator. The NULL terminator
  * is not included in the length.
  */
-char *quixcc_ast_repr(quixcc_ast_node_t *node, bool minify, size_t indent,
-                      quixcc_arena_t *arena, size_t *outlen);
+char *quixcc_ast_repr(quixcc_ast_node_t *node, bool minify, size_t indent, quixcc_arena_t *arena,
+                      size_t *outlen);
 
 /**
  * @brief Serializes an abstract syntax tree node to a binary representation.
@@ -521,8 +515,8 @@ char *quixcc_ast_repr(quixcc_ast_node_t *node, bool minify, size_t indent,
  * @warning The output is not human readable, it is a binary representation,
  * and is not safe to print.
  */
-void quixcc_ast_brepr(quixcc_ast_node_t *node, bool compress,
-                      quixcc_arena_t *arena, uint8_t **out, size_t *outlen);
+void quixcc_ast_brepr(quixcc_ast_node_t *node, bool compress, quixcc_arena_t *arena, uint8_t **out,
+                      size_t *outlen);
 
 /**
  * @brief Deserializes an abstract syntax tree node from either a string or
@@ -563,8 +557,7 @@ bool quixcc_ast_from(const uint8_t *repr, size_t len, quixcc_arena_t *arena,
  * @note This function is thread-safe.
  * @note If the allocation fails, the function will panic.
  */
-quixcc_ast_node_t *quixcc_ast_alloc(quixcc_ast_ntype_t type,
-                                    quixcc_arena_t *arena);
+quixcc_ast_node_t *quixcc_ast_alloc(quixcc_ast_ntype_t type, quixcc_arena_t *arena);
 
 /**
  * @brief Destructs an abstract syntax tree node.
@@ -586,4 +579,4 @@ void quixcc_ast_done(quixcc_ast_node_t *node);
 }
 #endif
 
-#endif  // __QUIXCC_TYPES_SYNTAXTREENODES_H__
+#endif // __QUIXCC_TYPES_SYNTAXTREENODES_H__

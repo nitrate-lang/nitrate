@@ -51,8 +51,7 @@ bool libquixcc::parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
       scanner->next();
       std::vector<std::shared_ptr<libquixcc::StmtNode>> let_node;
       if (!parse_let(job, scanner, let_node)) {
-        LOG(ERROR) << "Failed to parse let statement in for loop" << tok
-                   << std::endl;
+        LOG(ERROR) << "Failed to parse let statement in for loop" << tok << std::endl;
         return false;
       }
 
@@ -66,13 +65,13 @@ bool libquixcc::parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
       tok = scanner->next();
       if (!tok.is<Punctor>(Semicolon)) {
-        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok
-                   << std::endl;
+        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
         return false;
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1)) return false;
+    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1))
+      return false;
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Semicolon)) {
@@ -80,12 +79,12 @@ bool libquixcc::parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
       return false;
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, x2)) return false;
+    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, x2))
+      return false;
 
     tok = scanner->next();
     if (!tok.is<Punctor>(CloseParen)) {
-      LOG(ERROR) << core::feedback[FOR_EXPECTED_CLOSING_PARANTHESIS] << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[FOR_EXPECTED_CLOSING_PARANTHESIS] << tok << std::endl;
       return false;
     }
 
@@ -93,9 +92,11 @@ bool libquixcc::parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
     if (scanner->peek().is<Operator>(Arrow)) {
       tok = scanner->next();
-      if (!parse(job, scanner, then_block, false, true)) return false;
+      if (!parse(job, scanner, then_block, false, true))
+        return false;
     } else {
-      if (!parse(job, scanner, then_block, true)) return false;
+      if (!parse(job, scanner, then_block, true))
+        return false;
     }
 
     node = std::make_shared<ForStmtNode>(x0, x1, x2, then_block);
@@ -108,8 +109,7 @@ bool libquixcc::parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
       scanner->next();
       std::vector<std::shared_ptr<libquixcc::StmtNode>> let_node;
       if (!parse_let(job, scanner, let_node)) {
-        LOG(ERROR) << "Failed to parse let statement in for loop" << tok
-                   << std::endl;
+        LOG(ERROR) << "Failed to parse let statement in for loop" << tok << std::endl;
         return false;
       }
 
@@ -123,13 +123,13 @@ bool libquixcc::parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
       tok = scanner->next();
       if (!tok.is<Punctor>(Semicolon)) {
-        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok
-                   << std::endl;
+        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
         return false;
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1)) return false;
+    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, x1))
+      return false;
 
     tok = scanner->next();
     if (!tok.is<Punctor>(Semicolon)) {
@@ -137,17 +137,18 @@ bool libquixcc::parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
       return false;
     }
 
-    if (!parse_expr(job, scanner,
-                    {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, x2))
+    if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, x2))
       return false;
 
     std::shared_ptr<BlockNode> then_block;
 
     if (scanner->peek().is<Operator>(Arrow)) {
       tok = scanner->next();
-      if (!parse(job, scanner, then_block, false, true)) return false;
+      if (!parse(job, scanner, then_block, false, true))
+        return false;
     } else {
-      if (!parse(job, scanner, then_block, true)) return false;
+      if (!parse(job, scanner, then_block, true))
+        return false;
     }
 
     node = std::make_shared<ForStmtNode>(x0, x1, x2, then_block);

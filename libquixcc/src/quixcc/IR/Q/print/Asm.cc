@@ -31,26 +31,30 @@
 
 #include <quixcc/IR/Q/Asm.h>
 
-bool libquixcc::ir::q::Asm::print_impl(std::ostream &os,
-                                       libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Asm::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "asm(" << asm_str << ", {";
   for (uint64_t i = 0; i < outputs.size(); i++) {
     os << outputs[i].first << ": ";
-    if (!outputs[i].second->print(os, state)) return false;
-    if (i + 1 < outputs.size()) os << ", ";
+    if (!outputs[i].second->print(os, state))
+      return false;
+    if (i + 1 < outputs.size())
+      os << ", ";
   }
 
   os << "}, {";
   for (uint64_t i = 0; i < inputs.size(); i++) {
     os << inputs[i].first << ": ";
-    if (!inputs[i].second->print(os, state)) return false;
-    if (i + 1 < inputs.size()) os << ", ";
+    if (!inputs[i].second->print(os, state))
+      return false;
+    if (i + 1 < inputs.size())
+      os << ", ";
   }
 
   os << "}, [";
   for (uint64_t i = 0; i < clobbers.size(); i++) {
     os << clobbers[i];
-    if (i + 1 < clobbers.size()) os << ", ";
+    if (i + 1 < clobbers.size())
+      os << ", ";
   }
 
   os << "])";

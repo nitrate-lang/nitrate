@@ -31,22 +31,24 @@
 
 #include <quixcc/IR/Q/OO.h>
 
-bool libquixcc::ir::q::RegionDef::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::RegionDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "region " << name << " {\n";
   state.ind += 2;
   for (auto it = fields.begin(); it != fields.end(); ++it) {
     os << std::string(state.ind, ' ') << it->first << ": ";
-    if (!it->second->print(os, state)) return false;
+    if (!it->second->print(os, state))
+      return false;
 
     os << ";\n";
   }
 
-  if (!methods.empty()) os << "\n";
+  if (!methods.empty())
+    os << "\n";
 
   for (auto it = methods.begin(); it != methods.end(); ++it) {
     os << std::string(state.ind, ' ') << it->first << ": ";
-    if (!(*it).second->print(os, state)) return false;
+    if (!(*it).second->print(os, state))
+      return false;
 
     os << ";\n";
   }
@@ -58,22 +60,24 @@ bool libquixcc::ir::q::RegionDef::print_impl(
   return true;
 }
 
-bool libquixcc::ir::q::GroupDef::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::GroupDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "group " << name << " {\n";
   state.ind += 2;
   for (auto it = fields.begin(); it != fields.end(); ++it) {
     os << std::string(state.ind, ' ') << it->first << ": ";
-    if (!it->second->print(os, state)) return false;
+    if (!it->second->print(os, state))
+      return false;
 
     os << ";\n";
   }
 
-  if (!methods.empty()) os << "\n";
+  if (!methods.empty())
+    os << "\n";
 
   for (auto it = methods.begin(); it != methods.end(); ++it) {
     os << std::string(state.ind, ' ') << it->first << ": ";
-    if (!(*it).second->print(os, state)) return false;
+    if (!(*it).second->print(os, state))
+      return false;
 
     os << ";\n";
   }
@@ -85,22 +89,24 @@ bool libquixcc::ir::q::GroupDef::print_impl(
   return true;
 }
 
-bool libquixcc::ir::q::UnionDef::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::UnionDef::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "union " << name << " {\n";
   state.ind += 2;
   for (auto it = fields.begin(); it != fields.end(); ++it) {
     os << std::string(state.ind, ' ') << it->first << ": ";
-    if (!it->second->print(os, state)) return false;
+    if (!it->second->print(os, state))
+      return false;
 
     os << ";\n";
   }
 
-  if (!methods.empty()) os << "\n";
+  if (!methods.empty())
+    os << "\n";
 
   for (auto it = methods.begin(); it != methods.end(); ++it) {
     os << std::string(state.ind, ' ') << it->first << ": ";
-    if (!(*it).second->print(os, state)) return false;
+    if (!(*it).second->print(os, state))
+      return false;
 
     os << ";\n";
   }

@@ -42,8 +42,7 @@ static bool match_format(const std::string &str) {
   return std::regex_match(str, re);
 }
 
-bool libquixcc::PrepEngine::ParseUse(const Token &tok,
-                                     const std::string &directive,
+bool libquixcc::PrepEngine::ParseUse(const Token &tok, const std::string &directive,
                                      const std::string &parameter) {
   (void)tok;
   (void)directive;
@@ -65,8 +64,7 @@ bool libquixcc::PrepEngine::ParseUse(const Token &tok,
   }
 
   if (!match_format(version)) {
-    LOG(ERROR) << "Invalid version format for use directive" << tok
-               << std::endl;
+    LOG(ERROR) << "Invalid version format for use directive" << tok << std::endl;
     return false;
   }
 

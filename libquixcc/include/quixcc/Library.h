@@ -137,8 +137,8 @@ typedef ssize_t (*quixcc_cache_has_t)(const quixcc_cache_key_t *key);
  *
  * @return true if the object was read successfully, false otherwise.
  */
-typedef bool (*quixcc_cache_read_t)(const quixcc_cache_key_t *key,
-                                    void *payload, size_t payload_size);
+typedef bool (*quixcc_cache_read_t)(const quixcc_cache_key_t *key, void *payload,
+                                    size_t payload_size);
 
 /**
  * @brief Cache write signature
@@ -152,8 +152,8 @@ typedef bool (*quixcc_cache_read_t)(const quixcc_cache_key_t *key,
  *
  * @return true if the object was written successfully, false otherwise.
  */
-typedef bool (*quixcc_cache_write_t)(const quixcc_cache_key_t *key,
-                                     const void *payload, size_t payload_size);
+typedef bool (*quixcc_cache_write_t)(const quixcc_cache_key_t *key, const void *payload,
+                                     size_t payload_size);
 
 /**
  * @brief Bind a cache provider to the QUIX compiler library.
@@ -206,8 +206,7 @@ ssize_t quixcc_cache_has(const quixcc_cache_key_t *key);
  *       (if sufficient space is provided) in a single call.
  * @note Data integrity is the responsibility of the cache provider.
  */
-bool quixcc_cache_read(const quixcc_cache_key_t *key, void *payload,
-                       size_t payload_size);
+bool quixcc_cache_read(const quixcc_cache_key_t *key, void *payload, size_t payload_size);
 
 /**
  * @brief Write an object to the cache.
@@ -222,8 +221,7 @@ bool quixcc_cache_read(const quixcc_cache_key_t *key, void *payload,
  * @note The writer must write the entire object in a single call.
  * @note Data integrity is the responsibility of the cache provider.
  */
-bool quixcc_cache_write(const quixcc_cache_key_t *key, const void *payload,
-                        size_t payload_size);
+bool quixcc_cache_write(const quixcc_cache_key_t *key, const void *payload, size_t payload_size);
 
 ///=============================================================================
 /// END: LIBRARY RESOURCE MANAGEMENT
@@ -233,4 +231,4 @@ bool quixcc_cache_write(const quixcc_cache_key_t *key, const void *payload,
 }
 #endif
 
-#endif  // __QUIXCC_LIBRARY_H__
+#endif // __QUIXCC_LIBRARY_H__

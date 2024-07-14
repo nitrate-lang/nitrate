@@ -47,9 +47,7 @@ libquixcc::core::SHA160::SHA160() {
   }
 }
 
-libquixcc::core::SHA160::~SHA160() {
-  EVP_MD_CTX_free(reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx));
-}
+libquixcc::core::SHA160::~SHA160() { EVP_MD_CTX_free(reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx)); }
 
 void libquixcc::core::SHA160::process(std::string_view data) {
   EVP_MD_CTX *ctx = reinterpret_cast<EVP_MD_CTX *>(m_ossl_ctx);

@@ -54,26 +54,26 @@
 #include <vector>
 
 namespace libquixcc::quixcc {
-typedef struct quixcc_cc_options_t {
-  const char **m_options;
-  uint32_t m_count;
-} quixcc_cc_options_t;
+  typedef struct quixcc_cc_options_t {
+    const char **m_options;
+    uint32_t m_count;
+  } quixcc_cc_options_t;
 
-typedef struct quixcc_uuid_t {
-  uint8_t data[16];
-} quixcc_uuid_t;
+  typedef struct quixcc_uuid_t {
+    uint8_t data[16];
+  } quixcc_uuid_t;
 
-typedef char *(*quixcc_macro_fn_t)(uint32_t argc, const char **argv);
+  typedef char *(*quixcc_macro_fn_t)(uint32_t argc, const char **argv);
 
-constexpr uint64_t JOB_MAGIC = 0x32b287410bbef790;
+  constexpr uint64_t JOB_MAGIC = 0x32b287410bbef790;
 
-}  // namespace libquixcc::quixcc
+} // namespace libquixcc::quixcc
 
 namespace libquixcc::quixcc {
-extern thread_local uint8_t g_target_word_size;
-extern std::atomic<uint64_t> g_num_of_contexts;
-extern std::mutex g_library_lock;
-}  // namespace libquixcc::quixcc
+  extern thread_local uint8_t g_target_word_size;
+  extern std::atomic<uint64_t> g_num_of_contexts;
+  extern std::mutex g_library_lock;
+} // namespace libquixcc::quixcc
 
 struct quixcc_cc_job_t {
   volatile uint64_t m_magic;
@@ -81,8 +81,7 @@ struct quixcc_cc_job_t {
   std::stack<std::string> m_filename;
   std::unordered_set<std::string> m_owned_strings;
   std::vector<std::pair<std::string, std::string>> m_argset;
-  std::unordered_map<std::string, libquixcc::quixcc::quixcc_macro_fn_t>
-      m_macros;
+  std::unordered_map<std::string, libquixcc::quixcc::quixcc_macro_fn_t> m_macros;
   std::set<std::unique_ptr<void, std::function<void(void *)>>> m_dlhandles;
   libquixcc::QSysCallRegistry m_qsyscalls;
   std::mutex m_lock;
@@ -121,4 +120,4 @@ struct quixcc_cc_job_t {
   }
 };
 
-#endif  // __QUIXCC_CORE_QUIXJOB_H__
+#endif // __QUIXCC_CORE_QUIXJOB_H__

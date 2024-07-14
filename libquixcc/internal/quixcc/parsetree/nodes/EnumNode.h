@@ -44,43 +44,42 @@
 #include <vector>
 
 namespace libquixcc {
-class EnumTypeNode : public TypeNode {
- public:
-  EnumTypeNode(const std::string &name, std::shared_ptr<TypeNode> member_type)
-      : m_name(name), m_member_type(member_type) {
-    ntype = NodeType::EnumTypeNode;
-  }
+  class EnumTypeNode : public TypeNode {
+public:
+    EnumTypeNode(const std::string &name, std::shared_ptr<TypeNode> member_type)
+        : m_name(name), m_member_type(member_type) {
+      ntype = NodeType::EnumTypeNode;
+    }
 
-  std::string m_name;
-  std::shared_ptr<TypeNode> m_member_type;
-};
+    std::string m_name;
+    std::shared_ptr<TypeNode> m_member_type;
+  };
 
-class EnumFieldNode : public ParseNode {
- public:
-  EnumFieldNode() { ntype = NodeType::EnumFieldNode; }
-  EnumFieldNode(const std::string &name,
-                const std::shared_ptr<ConstExprNode> &value)
-      : m_name(name), m_value(value) {
-    ntype = NodeType::EnumFieldNode;
-  }
+  class EnumFieldNode : public ParseNode {
+public:
+    EnumFieldNode() { ntype = NodeType::EnumFieldNode; }
+    EnumFieldNode(const std::string &name, const std::shared_ptr<ConstExprNode> &value)
+        : m_name(name), m_value(value) {
+      ntype = NodeType::EnumFieldNode;
+    }
 
-  std::string m_name;
-  std::shared_ptr<ConstExprNode> m_value;
-};
+    std::string m_name;
+    std::shared_ptr<ConstExprNode> m_value;
+  };
 
-class EnumDefNode : public DefNode {
- public:
-  EnumDefNode() { ntype = NodeType::EnumDefNode; }
-  EnumDefNode(std::shared_ptr<EnumTypeNode> type,
-              const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {})
-      : m_type(type), m_fields(fields) {
-    ntype = NodeType::EnumDefNode;
-  }
-  virtual std::shared_ptr<TypeNode> get_type() const { return m_type; }
+  class EnumDefNode : public DefNode {
+public:
+    EnumDefNode() { ntype = NodeType::EnumDefNode; }
+    EnumDefNode(std::shared_ptr<EnumTypeNode> type,
+                const std::vector<std::shared_ptr<EnumFieldNode>> &fields = {})
+        : m_type(type), m_fields(fields) {
+      ntype = NodeType::EnumDefNode;
+    }
+    virtual std::shared_ptr<TypeNode> get_type() const { return m_type; }
 
-  std::shared_ptr<EnumTypeNode> m_type;
-  std::vector<std::shared_ptr<EnumFieldNode>> m_fields;
-};
-}  // namespace libquixcc
+    std::shared_ptr<EnumTypeNode> m_type;
+    std::vector<std::shared_ptr<EnumFieldNode>> m_fields;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_ENUM_H__
+#endif // __QUIXCC_PARSE_NODES_ENUM_H__

@@ -48,8 +48,7 @@ bool libquixcc::parse_foreach(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
   }
 
   if (tok.type() != tName) {
-    LOG(ERROR) << core::feedback[FOREACH_EXPECTED_IDENTIFIER] << tok
-               << std::endl;
+    LOG(ERROR) << core::feedback[FOREACH_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
@@ -69,13 +68,11 @@ bool libquixcc::parse_foreach(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
     }
     tok = scanner->next();
     if (!tok.is<Punctor>(CloseParen)) {
-      LOG(ERROR) << core::feedback[FOREACH_EXPECTED_CLOSE_PAREN] << tok
-                 << std::endl;
+      LOG(ERROR) << core::feedback[FOREACH_EXPECTED_CLOSE_PAREN] << tok << std::endl;
       return false;
     }
   } else {
-    if (!parse_expr(job, scanner,
-                    {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, expr)) {
+    if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, expr)) {
       LOG(ERROR) << core::feedback[FOREACH_EXPECTED_EXPR] << tok << std::endl;
       return false;
     }

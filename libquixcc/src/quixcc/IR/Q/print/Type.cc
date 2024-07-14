@@ -92,25 +92,25 @@ bool libquixcc::ir::q::Ptr::print_impl(std::ostream &os, PState &state) const {
   return type->print(os, state);
 }
 
-bool libquixcc::ir::q::Array::print_impl(std::ostream &os,
-                                         PState &state) const {
+bool libquixcc::ir::q::Array::print_impl(std::ostream &os, PState &state) const {
   os << "[";
-  if (!type->print(os, state)) return false;
+  if (!type->print(os, state))
+    return false;
   return os << "; " << size << "]", true;
 }
 
-bool libquixcc::ir::q::Vector::print_impl(std::ostream &os,
-                                          libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Vector::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "[";
-  if (!type->print(os, state)) return false;
+  if (!type->print(os, state))
+    return false;
   return os << "]", true;
 }
 
-bool libquixcc::ir::q::FType::print_impl(std::ostream &os,
-                                         PState &state) const {
+bool libquixcc::ir::q::FType::print_impl(std::ostream &os, PState &state) const {
   os << "[";
   for (size_t i = 0; i < params.size(); i++) {
-    if (!params[i]->print(os, state)) return false;
+    if (!params[i]->print(os, state))
+      return false;
     if (i + 1 < params.size())
       os << ", ";
     else if (m_variadic)
@@ -120,39 +120,36 @@ bool libquixcc::ir::q::FType::print_impl(std::ostream &os,
   return ret->print(os, state);
 }
 
-bool libquixcc::ir::q::Region::print_impl(std::ostream &os,
-                                          libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Region::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "region " << name;
   return true;
 }
 
-bool libquixcc::ir::q::Union::print_impl(std::ostream &os,
-                                         libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Union::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "union " << name;
   return true;
 }
 
-bool libquixcc::ir::q::Opaque::print_impl(std::ostream &os,
-                                          libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Opaque::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "opaque " << name;
   return true;
 }
 
-bool libquixcc::ir::q::IntrinsicType::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::IntrinsicType::print_impl(std::ostream &os,
+                                                 libquixcc::ir::PState &state) const {
   switch (name) {
-    case QIntrinsicType::String:
-      return os << "string!", true;
-    case QIntrinsicType::Null:
-      return os << "null!", true;
-    default:
-      return false;
+  case QIntrinsicType::String:
+    return os << "string!", true;
+  case QIntrinsicType::Null:
+    return os << "null!", true;
+  default:
+    return false;
   }
 }
 
 const std::map<libquixcc::ir::q::QIntrinsicType, std::string_view>
-    libquixcc::ir::q::intrinsic_type_names = {
-        {QIntrinsicType::String, "string"}, {QIntrinsicType::Null, "null"}};
+    libquixcc::ir::q::intrinsic_type_names = {{QIntrinsicType::String, "string"},
+                                              {QIntrinsicType::Null, "null"}};
 
 const std::map<std::string_view, libquixcc::ir::q::QIntrinsicType>
     libquixcc::ir::q::intrinsic_type_map = {{"string", QIntrinsicType::String},

@@ -54,9 +54,9 @@ using namespace libquixcc;
 /// BEGIN: QUIXCC QSYS REGISTRY
 ///=============================================================================
 
-LIB_EXPORT bool quixcc_qsys_add(quixcc_cc_job_t *job, uint32_t num,
-                                quixcc_qsys_impl_t impl) {
-  if (!job) quixcc_panic("quixcc_qsys_add: job is NULL");
+LIB_EXPORT bool quixcc_qsys_add(quixcc_cc_job_t *job, uint32_t num, quixcc_qsys_impl_t impl) {
+  if (!job)
+    quixcc_panic("quixcc_qsys_add: job is NULL");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
   job->m_qsyscalls.Register(num, impl);
@@ -65,33 +65,38 @@ LIB_EXPORT bool quixcc_qsys_add(quixcc_cc_job_t *job, uint32_t num,
 }
 
 LIB_EXPORT bool quixcc_qsys_remove(quixcc_cc_job_t *job, uint32_t num) {
-  if (!job) quixcc_panic("quixcc_qsys_remove: job is NULL");
+  if (!job)
+    quixcc_panic("quixcc_qsys_remove: job is NULL");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
   return job->m_qsyscalls.Unregister(num);
 }
 
 LIB_EXPORT bool quixcc_qsys_exists(quixcc_cc_job_t *job, uint32_t num) {
-  if (!job) quixcc_panic("quixcc_qsys_exists: job is NULL");
+  if (!job)
+    quixcc_panic("quixcc_qsys_exists: job is NULL");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
   return job->m_qsyscalls.IsRegistered(num);
 }
 
-LIB_EXPORT quixcc_qsys_impl_t quixcc_qsys_get(quixcc_cc_job_t *job,
-                                              uint32_t num) {
-  if (!job) quixcc_panic("quixcc_qsys_get: job is NULL");
+LIB_EXPORT quixcc_qsys_impl_t quixcc_qsys_get(quixcc_cc_job_t *job, uint32_t num) {
+  if (!job)
+    quixcc_panic("quixcc_qsys_get: job is NULL");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
   auto impl = job->m_qsyscalls.Get(num);
 
-  if (!impl) return nullptr;
+  if (!impl)
+    return nullptr;
   return impl.value();
 }
 
 LIB_EXPORT uint32_t *quixcc_qsys_list(quixcc_cc_job_t *job, uint32_t *count) {
-  if (!job) quixcc_panic("quixcc_qsys_list: job is NULL");
-  if (!count) quixcc_panic("quixcc_qsys_list: count is NULL");
+  if (!job)
+    quixcc_panic("quixcc_qsys_list: job is NULL");
+  if (!count)
+    quixcc_panic("quixcc_qsys_list: count is NULL");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
 
@@ -99,7 +104,8 @@ LIB_EXPORT uint32_t *quixcc_qsys_list(quixcc_cc_job_t *job, uint32_t *count) {
   *count = list.size();
 
   uint32_t *ret = (uint32_t *)malloc(sizeof(uint32_t) * list.size());
-  if (!ret) quixcc_panic("quixcc_qsys_list: malloc() failed");
+  if (!ret)
+    quixcc_panic("quixcc_qsys_list: malloc() failed");
 
   for (size_t i = 0; i < list.size(); i++) {
     ret[i] = list[i];
@@ -117,13 +123,14 @@ LIB_EXPORT uint32_t *quixcc_qsys_list(quixcc_cc_job_t *job, uint32_t *count) {
 ///=============================================================================
 
 LIB_EXPORT quixcc_cc_job_t *quixcc_engine_job(quixcc_engine_t *engine) {
-  if (!engine) quixcc_panic("quixcc_engine_job: engine is NULL");
+  if (!engine)
+    quixcc_panic("quixcc_engine_job: engine is NULL");
   return reinterpret_cast<libquixcc::PrepEngine *>(engine)->get_job();
 }
 
-LIB_EXPORT bool quixcc_engine_include(quixcc_engine_t *engine,
-                                      const char *_include_path) {
-  if (!engine) quixcc_panic("quixcc_engine_include: engine is NULL");
+LIB_EXPORT bool quixcc_engine_include(quixcc_engine_t *engine, const char *_include_path) {
+  if (!engine)
+    quixcc_panic("quixcc_engine_include: engine is NULL");
   if (!_include_path)
     quixcc_panic("quixcc_engine_include: include_path is NULL");
 
@@ -161,11 +168,12 @@ LIB_EXPORT bool quixcc_engine_include(quixcc_engine_t *engine,
   return true;
 }
 
-LIB_EXPORT bool quixcc_engine_message(quixcc_engine_t *engine,
-                                      quixcc_message_t mode, const char *format,
-                                      ...) {
-  if (!engine) quixcc_panic("quixcc_engine_message: engine is NULL");
-  if (!format) quixcc_panic("quixcc_engine_message: message is NULL");
+LIB_EXPORT bool quixcc_engine_message(quixcc_engine_t *engine, quixcc_message_t mode,
+                                      const char *format, ...) {
+  if (!engine)
+    quixcc_panic("quixcc_engine_message: engine is NULL");
+  if (!format)
+    quixcc_panic("quixcc_engine_message: message is NULL");
 
   auto job = quixcc_engine_job(engine);
 
@@ -186,34 +194,35 @@ LIB_EXPORT bool quixcc_engine_message(quixcc_engine_t *engine,
   free(buffer);
 
   switch (mode) {
-    case QUIXCC_MESSAGE_DEBUG:
-      LOG(DEBUG) << message << std::endl;
-      break;
-    case QUIXCC_MESSAGE_INFO:
-      LOG(INFO) << message << std::endl;
-      break;
-    case QUIXCC_MESSAGE_WARNING:
-      LOG(WARN) << message << std::endl;
-      break;
-    case QUIXCC_MESSAGE_ERROR:
-      LOG(ERROR) << message << std::endl;
-      break;
-    case QUIXCC_MESSAGE_FAILED:
-      LOG(FAILED) << message << std::endl;
-      break;
-    case QUIXCC_MESSAGE_FATAL:
-      LOG(FATAL) << message << std::endl;
-      throw core::Exception();
-      break;
-    default:
-      return false;
+  case QUIXCC_MESSAGE_DEBUG:
+    LOG(DEBUG) << message << std::endl;
+    break;
+  case QUIXCC_MESSAGE_INFO:
+    LOG(INFO) << message << std::endl;
+    break;
+  case QUIXCC_MESSAGE_WARNING:
+    LOG(WARN) << message << std::endl;
+    break;
+  case QUIXCC_MESSAGE_ERROR:
+    LOG(ERROR) << message << std::endl;
+    break;
+  case QUIXCC_MESSAGE_FAILED:
+    LOG(FAILED) << message << std::endl;
+    break;
+  case QUIXCC_MESSAGE_FATAL:
+    LOG(FATAL) << message << std::endl;
+    throw core::Exception();
+    break;
+  default:
+    return false;
   }
 
   return true;
 }
 
 LIB_EXPORT bool quixcc_engine_emit(quixcc_engine_t *engine, quixcc_tok_t tok) {
-  if (!engine) quixcc_panic("quixcc_engine_emit: engine is NULL");
+  if (!engine)
+    quixcc_panic("quixcc_engine_emit: engine is NULL");
 
   Token token;
 
@@ -222,47 +231,47 @@ LIB_EXPORT bool quixcc_engine_emit(quixcc_engine_t *engine, quixcc_tok_t tok) {
 #define GETSTR(x) ((s = x.val.data) ? s : "")
 
   switch (tok.ty) {
-    case QUIXCC_LEX_EOF:
-      token = Token(tEofF, "");
-      break;
-    case QUIXCC_LEX_IDENT:
-      token = Token(tName, GETSTR(tok));
-      break;
-    case QUIXCC_LEX_KW:
-      token = Token(tKeyW, (Keyword)tok.val.kw);
-      break;
-    case QUIXCC_LEX_OP:
-      token = Token(tOper, (Operator)tok.val.op);
-      break;
-    case QUIXCC_LEX_PUNCT:
-      token = Token(tPunc, (Punctor)tok.val.punct);
-      break;
-    case QUIXCC_LEX_INT:
-      token = Token(tIntL, GETSTR(tok));
-      break;
-    case QUIXCC_LEX_FLOAT:
-      token = Token(tNumL, GETSTR(tok));
-      break;
-    case QUIXCC_LEX_STR:
-      token = Token(tText, GETSTR(tok));
-      break;
-    case QUIXCC_LEX_CHAR:
-      token = Token(tChar, GETSTR(tok));
-      break;
-    case QUIXCC_LEX_METABLK:
-      token = Token(tMacB, GETSTR(tok));
-      break;
-    case QUIXCC_LEX_METASEG:
-      token = Token(tMacr, GETSTR(tok));
-      break;
-    case QUIXCC_LEX_NOTE:
-      token = Token(tNote, GETSTR(tok));
-      break;
-    case QUIXCC_LEX_UNK:
-      token = Token(tErro, "");
-      break;
-    default:
-      return false;
+  case QUIXCC_LEX_EOF:
+    token = Token(tEofF, "");
+    break;
+  case QUIXCC_LEX_IDENT:
+    token = Token(tName, GETSTR(tok));
+    break;
+  case QUIXCC_LEX_KW:
+    token = Token(tKeyW, (Keyword)tok.val.kw);
+    break;
+  case QUIXCC_LEX_OP:
+    token = Token(tOper, (Operator)tok.val.op);
+    break;
+  case QUIXCC_LEX_PUNCT:
+    token = Token(tPunc, (Punctor)tok.val.punct);
+    break;
+  case QUIXCC_LEX_INT:
+    token = Token(tIntL, GETSTR(tok));
+    break;
+  case QUIXCC_LEX_FLOAT:
+    token = Token(tNumL, GETSTR(tok));
+    break;
+  case QUIXCC_LEX_STR:
+    token = Token(tText, GETSTR(tok));
+    break;
+  case QUIXCC_LEX_CHAR:
+    token = Token(tChar, GETSTR(tok));
+    break;
+  case QUIXCC_LEX_METABLK:
+    token = Token(tMacB, GETSTR(tok));
+    break;
+  case QUIXCC_LEX_METASEG:
+    token = Token(tMacr, GETSTR(tok));
+    break;
+  case QUIXCC_LEX_NOTE:
+    token = Token(tNote, GETSTR(tok));
+    break;
+  case QUIXCC_LEX_UNK:
+    token = Token(tErro, "");
+    break;
+  default:
+    return false;
   }
 
   reinterpret_cast<libquixcc::PrepEngine *>(engine)->emit(token);
@@ -270,8 +279,10 @@ LIB_EXPORT bool quixcc_engine_emit(quixcc_engine_t *engine, quixcc_tok_t tok) {
 }
 
 LIB_EXPORT const char *quixcc_expr_to_string(quixcc_expr_t *expr, size_t *len) {
-  if (!expr) quixcc_panic("quixcc_expr_to_string: expr is NULL");
-  if (!len) quixcc_panic("quixcc_expr_to_string: len is NULL");
+  if (!expr)
+    quixcc_panic("quixcc_expr_to_string: expr is NULL");
+  if (!len)
+    quixcc_panic("quixcc_expr_to_string: len is NULL");
 
   auto qir = reinterpret_cast<libquixcc::ir::q::QModule *>(expr);
   auto root = qir->root();
@@ -291,8 +302,10 @@ LIB_EXPORT const char *quixcc_expr_to_string(quixcc_expr_t *expr, size_t *len) {
 }
 
 LIB_EXPORT bool quixcc_expr_to_int64(quixcc_expr_t *expr, int64_t *out) {
-  if (!expr) quixcc_panic("quixcc_expr_to_int64: expr is NULL");
-  if (!out) quixcc_panic("quixcc_expr_to_int64: out is NULL");
+  if (!expr)
+    quixcc_panic("quixcc_expr_to_int64: expr is NULL");
+  if (!out)
+    quixcc_panic("quixcc_expr_to_int64: out is NULL");
 
   *out = INT64_MIN;
 
@@ -319,9 +332,10 @@ LIB_EXPORT bool quixcc_expr_to_int64(quixcc_expr_t *expr, int64_t *out) {
 
 extern const char *publish_string(quixcc_cc_job_t *job, std::string_view str);
 
-LIB_EXPORT quixcc_tok_t quixcc_tok_new(quixcc_engine_t *engine,
-                                       quixcc_lex_type_t ty, const char *str) {
-  if (!str) quixcc_panic("quixcc_tok_new: str is NULL");
+LIB_EXPORT quixcc_tok_t quixcc_tok_new(quixcc_engine_t *engine, quixcc_lex_type_t ty,
+                                       const char *str) {
+  if (!str)
+    quixcc_panic("quixcc_tok_new: str is NULL");
 
   const char *sid = str;
   if (engine) {
@@ -338,10 +352,10 @@ LIB_EXPORT quixcc_tok_t quixcc_tok_new(quixcc_engine_t *engine,
   return tok;
 }
 
-LIB_EXPORT quixcc_tok_t quixcc_tok_new_ex(quixcc_engine_t *engine,
-                                          quixcc_lex_type_t ty, const char *str,
-                                          size_t len) {
-  if (!str) quixcc_panic("quixcc_tok_new: str is NULL");
+LIB_EXPORT quixcc_tok_t quixcc_tok_new_ex(quixcc_engine_t *engine, quixcc_lex_type_t ty,
+                                          const char *str, size_t len) {
+  if (!str)
+    quixcc_panic("quixcc_tok_new: str is NULL");
 
   const char *sid = str;
   if (engine) {

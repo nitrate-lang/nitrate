@@ -46,54 +46,54 @@
 #include <vector>
 
 namespace libquixcc {
-class GroupTypeNode : public TypeNode {
- public:
-  GroupTypeNode(std::vector<std::shared_ptr<TypeNode>> fields,
-                const std::string &name)
-      : m_fields(fields), m_name(name) {
-    ntype = NodeType::GroupTypeNode;
-  }
+  class GroupTypeNode : public TypeNode {
+public:
+    GroupTypeNode(std::vector<std::shared_ptr<TypeNode>> fields, const std::string &name)
+        : m_fields(fields), m_name(name) {
+      ntype = NodeType::GroupTypeNode;
+    }
 
-  std::vector<std::shared_ptr<TypeNode>> m_fields;
-  std::string m_name;
-};
+    std::vector<std::shared_ptr<TypeNode>> m_fields;
+    std::string m_name;
+  };
 
-class GroupFieldNode : public ParseNode {
- public:
-  GroupFieldNode() { ntype = NodeType::GroupFieldNode; }
-  GroupFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
-                 std::shared_ptr<ExprNode> value = nullptr)
-      : m_name(name), m_type(type), m_value(value) {
-    ntype = NodeType::GroupFieldNode;
-  }
+  class GroupFieldNode : public ParseNode {
+public:
+    GroupFieldNode() { ntype = NodeType::GroupFieldNode; }
+    GroupFieldNode(const std::string &name, std::shared_ptr<TypeNode> type,
+                   std::shared_ptr<ExprNode> value = nullptr)
+        : m_name(name), m_type(type), m_value(value) {
+      ntype = NodeType::GroupFieldNode;
+    }
 
-  std::string m_name;
-  std::shared_ptr<TypeNode> m_type;
-  std::shared_ptr<ExprNode> m_value;
-};
+    std::string m_name;
+    std::shared_ptr<TypeNode> m_type;
+    std::shared_ptr<ExprNode> m_value;
+  };
 
-class GroupDefNode : public DefNode {
- public:
-  GroupDefNode() { ntype = NodeType::GroupDefNode; }
-  GroupDefNode(const std::string &name,
-               const std::vector<std::shared_ptr<GroupFieldNode>> &fields,
-               std::set<std::string> implements = {})
-      : m_name(name), m_fields(fields), m_implements(implements) {
-    ntype = NodeType::GroupDefNode;
-  }
+  class GroupDefNode : public DefNode {
+public:
+    GroupDefNode() { ntype = NodeType::GroupDefNode; }
+    GroupDefNode(const std::string &name,
+                 const std::vector<std::shared_ptr<GroupFieldNode>> &fields,
+                 std::set<std::string> implements = {})
+        : m_name(name), m_fields(fields), m_implements(implements) {
+      ntype = NodeType::GroupDefNode;
+    }
 
-  virtual std::shared_ptr<GroupTypeNode> get_type() const {
-    std::vector<std::shared_ptr<TypeNode>> types;
-    for (auto &field : m_fields) types.push_back(field->m_type);
-    return std::make_shared<GroupTypeNode>(types, m_name);
-  }
+    virtual std::shared_ptr<GroupTypeNode> get_type() const {
+      std::vector<std::shared_ptr<TypeNode>> types;
+      for (auto &field : m_fields)
+        types.push_back(field->m_type);
+      return std::make_shared<GroupTypeNode>(types, m_name);
+    }
 
-  std::string m_name;
-  std::vector<std::shared_ptr<GroupFieldNode>> m_fields;
-  std::vector<std::shared_ptr<StmtNode>> m_methods;
-  std::vector<std::shared_ptr<StmtNode>> m_static_methods;
-  std::set<std::string> m_implements;
-};
-}  // namespace libquixcc
+    std::string m_name;
+    std::vector<std::shared_ptr<GroupFieldNode>> m_fields;
+    std::vector<std::shared_ptr<StmtNode>> m_methods;
+    std::vector<std::shared_ptr<StmtNode>> m_static_methods;
+    std::set<std::string> m_implements;
+  };
+} // namespace libquixcc
 
-#endif  // __QUIXCC_PARSE_NODES_GROUP_H__
+#endif // __QUIXCC_PARSE_NODES_GROUP_H__

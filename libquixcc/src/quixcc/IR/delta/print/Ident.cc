@@ -31,10 +31,10 @@
 
 #include <quixcc/IR/delta/Ident.h>
 
-bool libquixcc::ir::delta::Ident::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::delta::Ident::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "%" << name << "(";
-  if (!type->print(os, state)) return false;
+  if (!type->print(os, state))
+    return false;
   os << ")";
 
   return true;

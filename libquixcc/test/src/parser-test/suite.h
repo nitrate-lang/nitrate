@@ -42,14 +42,14 @@
 #include <vector>
 
 namespace libquixcc::test {
-struct ParserVector {
-  std::vector<Token> tokens;
-  std::string ast_serial;
-};
+  struct ParserVector {
+    std::vector<Token> tokens;
+    std::string ast_serial;
+  };
 
-extern const std::vector<ParserVector> parser_test_vectors;
+  extern const std::vector<ParserVector> parser_test_vectors;
 
-bool parser_test_suite();
-}  // namespace libquixcc::test
+  bool parser_test_suite();
+} // namespace libquixcc::test
 
-#endif  // __QUIXCC_TEST_PARSERSUITE_H__
+#endif // __QUIXCC_TEST_PARSERSUITE_H__

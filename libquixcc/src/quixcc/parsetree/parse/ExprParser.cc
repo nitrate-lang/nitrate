@@ -39,14 +39,13 @@
 
 using namespace libquixcc;
 
-static std::shared_ptr<CallExprNode> parse_function_call(
-    quixcc_cc_job_t &job, std::shared_ptr<ExprNode> callee, Scanner *scanner,
-    size_t depth) {
+static std::shared_ptr<CallExprNode> parse_function_call(quixcc_cc_job_t &job,
+                                                         std::shared_ptr<ExprNode> callee,
+                                                         Scanner *scanner, size_t depth) {
   Token tok;
 
   std::vector<std::shared_ptr<ExprNode>> args;
-  std::vector<std::pair<std::string, std::shared_ptr<libquixcc::ExprNode>>>
-      named_args;
+  std::vector<std::pair<std::string, std::shared_ptr<libquixcc::ExprNode>>> named_args;
   while (true) {
     tok = scanner->peek();
     if (tok == Token(tPunc, CloseParen)) {
@@ -71,8 +70,7 @@ static std::shared_ptr<CallExprNode> parse_function_call(
       scanner->next();
 
       std::shared_ptr<ExprNode> arg;
-      if (!parse_expr(job, scanner,
-                      {Token(tPunc, Comma), Token(tPunc, CloseParen)}, arg,
+      if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseParen)}, arg,
                       depth + 1)) {
         return nullptr;
       }
@@ -83,8 +81,7 @@ static std::shared_ptr<CallExprNode> parse_function_call(
 
   parse_pos_arg: {
     std::shared_ptr<ExprNode> arg;
-    if (!parse_expr(job, scanner,
-                    {Token(tPunc, Comma), Token(tPunc, CloseParen)}, arg,
+    if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseParen)}, arg,
                     depth + 1)) {
       return nullptr;
     }
@@ -110,13 +107,11 @@ static std::shared_ptr<CallExprNode> parse_function_call(
   return expr;
 }
 
-static bool parse_fstring(quixcc_cc_job_t &job,
-                          std::shared_ptr<FStringNode> &node, Scanner *scanner,
-                          size_t depth) {
+static bool parse_fstring(quixcc_cc_job_t &job, std::shared_ptr<FStringNode> &node,
+                          Scanner *scanner, size_t depth) {
   Token tok = scanner->next();
   if (tok.type() != tText) {
-    LOG(ERROR) << "Expected a string literal template in f-string" << tok
-               << std::endl;
+    LOG(ERROR) << "Expected a string literal template in f-string" << tok << std::endl;
     return false;
   }
 
@@ -167,8 +162,7 @@ static bool parse_fstring(quixcc_cc_job_t &job,
   return true;
 }
 
-bool libquixcc::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
-                           std::set<Token> terminators,
+bool libquixcc::parse_expr(quixcc_cc_job_t &job, Scanner *scanner, std::set<Token> terminators,
                            std::shared_ptr<ExprNode> &node, size_t depth) {
   std::stack<std::shared_ptr<ExprNode>> stack;
 
@@ -218,7 +212,8 @@ bool libquixcc::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
 
   while (true) {
     auto tok = scanner->peek();
-    if (tok.type() == tEofF) return false;
+    if (tok.type() == tEofF)
+      return false;
 
     if (terminators.contains(tok)) {
       if (stack.empty()) {
@@ -238,390 +233,380 @@ bool libquixcc::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
     scanner->next();
 
     switch (tok.type()) {
-      case tIntL:
-        stack.push(IntegerNode::create(tok.as<std::string>()));
+    case tIntL:
+      stack.push(IntegerNode::create(tok.as<std::string>()));
+      continue;
+    case tNumL:
+      stack.push(FloatLiteralNode::create(tok.as<std::string>()));
+      continue;
+    case tText:
+      stack.push(StringNode::create(tok.as<std::string>()));
+      continue;
+    case tChar:
+      stack.push(CharNode::create(tok.as<std::string>()));
+      continue;
+    case tKeyW:
+      switch (tok.as<Keyword>()) {
+      case Keyword::True:
+        stack.push(BoolLiteralNode::create(true));
         continue;
-      case tNumL:
-        stack.push(FloatLiteralNode::create(tok.as<std::string>()));
+      case Keyword::False:
+        stack.push(BoolLiteralNode::create(false));
         continue;
-      case tText:
-        stack.push(StringNode::create(tok.as<std::string>()));
+      case Keyword::Null:
+        stack.push(NullLiteralNode::create());
         continue;
-      case tChar:
-        stack.push(CharNode::create(tok.as<std::string>()));
+      case Keyword::Undef:
+        stack.push(UndefLiteralNode::create());
         continue;
-      case tKeyW:
-        switch (tok.as<Keyword>()) {
-          case Keyword::True:
-            stack.push(BoolLiteralNode::create(true));
-            continue;
-          case Keyword::False:
-            stack.push(BoolLiteralNode::create(false));
-            continue;
-          case Keyword::Null:
-            stack.push(NullLiteralNode::create());
-            continue;
-          case Keyword::Undef:
-            stack.push(UndefLiteralNode::create());
-            continue;
-          case Keyword::Fn: {
-            std::shared_ptr<StmtNode> f;
-            if (!parse_function(job, scanner, f)) return false;
-            auto adapter = std::make_shared<StmtExprNode>(f);
-            stack.push(adapter);
-            continue;
-          }
-          case Keyword::FString: {
-            std::shared_ptr<FStringNode> f;
-            if (!parse_fstring(job, f, scanner, depth)) return false;
-            stack.push(f);
-            continue;
-          }
+      case Keyword::Fn: {
+        std::shared_ptr<StmtNode> f;
+        if (!parse_function(job, scanner, f))
+          return false;
+        auto adapter = std::make_shared<StmtExprNode>(f);
+        stack.push(adapter);
+        continue;
+      }
+      case Keyword::FString: {
+        std::shared_ptr<FStringNode> f;
+        if (!parse_fstring(job, f, scanner, depth))
+          return false;
+        stack.push(f);
+        continue;
+      }
 
-          default:
-            LOG(ERROR) << "Unexpected keyword in non-constant expression '{}'"
-                       << tok.serialize() << tok << std::endl;
+      default:
+        LOG(ERROR) << "Unexpected keyword in non-constant expression '{}'" << tok.serialize() << tok
+                   << std::endl;
+        return false;
+      }
+      break;
+    case tPunc:
+      switch (tok.as<Punctor>()) {
+      case OpenParen: {
+        if (!stack.empty() && stack.top()->is<MemberAccessNode>()) {
+          auto fcall = parse_function_call(job, stack.top(), scanner, depth);
+          if (fcall == nullptr)
             return false;
+
+          stack.pop();
+          stack.push(fcall);
+          continue;
         }
-        break;
-      case tPunc:
-        switch (tok.as<Punctor>()) {
-          case OpenParen: {
-            if (!stack.empty() && stack.top()->is<MemberAccessNode>()) {
-              auto fcall =
-                  parse_function_call(job, stack.top(), scanner, depth);
-              if (fcall == nullptr) return false;
 
-              stack.pop();
-              stack.push(fcall);
-              continue;
-            }
+        std::shared_ptr<ExprNode> expr;
+        if (!parse_expr(job, scanner, terminators, expr, depth + 1))
+          return false;
+        stack.push(expr);
+        continue;
+      }
+      case CloseParen: {
+        if (stack.size() != 1) {
+          LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+          return false;
+        }
 
-            std::shared_ptr<ExprNode> expr;
-            if (!parse_expr(job, scanner, terminators, expr, depth + 1))
-              return false;
-            stack.push(expr);
-            continue;
+        node = stack.top();
+        stack.pop();
+        return true;
+      }
+      case OpenBrace: {
+        std::vector<std::pair<std::shared_ptr<ExprNode>, std::shared_ptr<ExprNode>>> elements;
+        while (true) {
+          auto tok = scanner->peek();
+          if (tok == Token(tPunc, CloseBrace)) {
+            scanner->next();
+            break;
           }
-          case CloseParen: {
-            if (stack.size() != 1) {
-              LOG(ERROR) << "Expected a single expression" << tok << std::endl;
-              return false;
-            }
 
-            node = stack.top();
-            stack.pop();
-            return true;
+          std::shared_ptr<ExprNode> key, value;
+          if (!parse_expr(job, scanner, {Token(tPunc, Colon)}, key, depth + 1)) {
+            return false;
           }
-          case OpenBrace: {
-            std::vector<
-                std::pair<std::shared_ptr<ExprNode>, std::shared_ptr<ExprNode>>>
-                elements;
-            while (true) {
-              auto tok = scanner->peek();
-              if (tok == Token(tPunc, CloseBrace)) {
-                scanner->next();
-                break;
-              }
 
-              std::shared_ptr<ExprNode> key, value;
-              if (!parse_expr(job, scanner, {Token(tPunc, Colon)}, key,
-                              depth + 1)) {
-                return false;
-              }
-
-              tok = scanner->next();
-              if (!tok.is<Punctor>(Colon)) {
-                LOG(ERROR) << "Expected a colon in associative array" << tok
-                           << std::endl;
-                return false;
-              }
-
-              if (!parse_expr(job, scanner,
-                              {Token(tPunc, Comma), Token(tPunc, CloseBrace)},
-                              value, depth + 1)) {
-                return false;
-              }
-
-              elements.push_back({key, value});
-
-              tok = scanner->peek();
-              if (tok.is<Punctor>(Comma)) {
-                scanner->next();
-              }
-            }
-
-            stack.push(std::make_shared<AssocExprNode>(elements));
-            continue;
+          tok = scanner->next();
+          if (!tok.is<Punctor>(Colon)) {
+            LOG(ERROR) << "Expected a colon in associative array" << tok << std::endl;
+            return false;
           }
-          case OpenBracket: {
-            if (stack.empty()) {
-              std::vector<std::shared_ptr<ExprNode>> elements;
-              while (true) {
-                auto tok = scanner->peek();
-                if (tok == Token(tPunc, CloseBracket)) {
-                  scanner->next();
-                  stack.push(std::make_shared<ListExprNode>(elements));
-                  break;
-                }
 
-                std::shared_ptr<ExprNode> element;
-                if (!parse_expr(job, scanner,
-                                {Token(tPunc, Comma), Token(tPunc, Semicolon),
-                                 Token(tPunc, CloseBracket)},
-                                element, depth + 1)) {
-                  return false;
-                }
+          if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseBrace)}, value,
+                          depth + 1)) {
+            return false;
+          }
 
-                tok = scanner->peek();
-                if (tok.is<Punctor>(Semicolon)) {
-                  scanner->next();
+          elements.push_back({key, value});
 
-                  std::shared_ptr<ExprNode> count;
-                  if (!parse_expr(
-                          job, scanner,
-                          {Token(tPunc, CloseBracket), Token(tPunc, Comma)},
-                          count, depth + 1)) {
-                    return false;
-                  }
+          tok = scanner->peek();
+          if (tok.is<Punctor>(Comma)) {
+            scanner->next();
+          }
+        }
 
-                  if (!count->is<IntegerNode>()) {
-                    LOG(ERROR) << "Expected an integer literal as array count"
-                               << tok << std::endl;
-                    return false;
-                  }
-
-                  size_t count_val =
-                      std::atoi(count->as<IntegerNode>()->m_val.c_str());
-                  for (size_t i = 0; i < count_val; i++) {
-                    elements.push_back(element);
-                  }
-                } else if (element) {
-                  elements.push_back(element);
-                }
-
-                if (tok.is<Punctor>(Comma)) {
-                  scanner->next();
-                }
-              }
-
-              continue;
+        stack.push(std::make_shared<AssocExprNode>(elements));
+        continue;
+      }
+      case OpenBracket: {
+        if (stack.empty()) {
+          std::vector<std::shared_ptr<ExprNode>> elements;
+          while (true) {
+            auto tok = scanner->peek();
+            if (tok == Token(tPunc, CloseBracket)) {
+              scanner->next();
+              stack.push(std::make_shared<ListExprNode>(elements));
+              break;
             }
 
-            if (stack.size() != 1) {
-              LOG(ERROR) << "Expected a single expression" << tok << std::endl;
-              return false;
-            }
-
-            auto left = stack.top();
-            stack.pop();
-
-            std::shared_ptr<ExprNode> index;
-            if (!parse_expr(job, scanner,
-                            {Token(tPunc, CloseBracket), Token(tPunc, Colon)},
-                            index, depth + 1)) {
-              return false;
-            }
-
-            auto tok = scanner->next();
-            if (tok.is<Punctor>(Colon)) {
-              std::shared_ptr<ExprNode> end;
-              if (!parse_expr(job, scanner, {Token(tPunc, CloseBracket)}, end,
-                              depth + 1)) {
-                return false;
-              }
-
-              tok = scanner->next();
-              if (!tok.is<Punctor>(CloseBracket)) {
-                LOG(ERROR) << "Expected a closing bracket" << tok << std::endl;
-                return false;
-              }
-
-              stack.push(std::make_shared<SliceNode>(left, index, end));
-              continue;
-            }
-
-            if (!tok.is<Punctor>(CloseBracket)) {
-              LOG(ERROR) << "Expected a closing bracket" << tok << std::endl;
+            std::shared_ptr<ExprNode> element;
+            if (!parse_expr(
+                    job, scanner,
+                    {Token(tPunc, Comma), Token(tPunc, Semicolon), Token(tPunc, CloseBracket)},
+                    element, depth + 1)) {
               return false;
             }
 
             tok = scanner->peek();
-            if (tok.is<Operator>(Increment)) {
-              auto p = std::make_shared<PostUnaryExprNode>(
-                  Increment, std::make_shared<IndexNode>(left, index));
-              stack.push(p);
+            if (tok.is<Punctor>(Semicolon)) {
               scanner->next();
-              continue;
-            } else if (tok.is<Operator>(Decrement)) {
-              auto p = std::make_shared<PostUnaryExprNode>(
-                  Decrement, std::make_shared<IndexNode>(left, index));
-              stack.push(p);
-              scanner->next();
-              continue;
+
+              std::shared_ptr<ExprNode> count;
+              if (!parse_expr(job, scanner, {Token(tPunc, CloseBracket), Token(tPunc, Comma)},
+                              count, depth + 1)) {
+                return false;
+              }
+
+              if (!count->is<IntegerNode>()) {
+                LOG(ERROR) << "Expected an integer literal as array count" << tok << std::endl;
+                return false;
+              }
+
+              size_t count_val = std::atoi(count->as<IntegerNode>()->m_val.c_str());
+              for (size_t i = 0; i < count_val; i++) {
+                elements.push_back(element);
+              }
+            } else if (element) {
+              elements.push_back(element);
             }
 
-            stack.push(std::make_shared<IndexNode>(left, index));
-            continue;
-          }
-          case Comma: {
-            if (stack.size() != 1) {
-              LOG(ERROR) << "Expected a single expression before sequence point"
-                         << tok << std::endl;
-              return false;
+            if (tok.is<Punctor>(Comma)) {
+              scanner->next();
             }
-
-            auto left = stack.top();
-            stack.pop();
-
-            std::shared_ptr<ExprNode> right;
-            if (!parse_expr(job, scanner, terminators, right, depth + 1))
-              return false;
-
-            stack.push(std::make_shared<SeqExprNode>(left, right));
-            continue;
           }
-          default:
-            LOG(ERROR) << "Unexpected token in non-constant expression '{}'"
-                       << tok.serialize() << tok << std::endl;
-            return false;
+
+          continue;
         }
-        break;
-      case tOper: {
-        auto op = tok.as<Operator>();
-        if (op == Dot) {
-          if (stack.size() != 1) {
-            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+
+        if (stack.size() != 1) {
+          LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+          return false;
+        }
+
+        auto left = stack.top();
+        stack.pop();
+
+        std::shared_ptr<ExprNode> index;
+        if (!parse_expr(job, scanner, {Token(tPunc, CloseBracket), Token(tPunc, Colon)}, index,
+                        depth + 1)) {
+          return false;
+        }
+
+        auto tok = scanner->next();
+        if (tok.is<Punctor>(Colon)) {
+          std::shared_ptr<ExprNode> end;
+          if (!parse_expr(job, scanner, {Token(tPunc, CloseBracket)}, end, depth + 1)) {
             return false;
           }
-
-          auto left = stack.top();
-          stack.pop();
 
           tok = scanner->next();
-          if (tok.type() != tName) {
-            LOG(ERROR) << "Expected an identifier in member access" << tok
-                       << std::endl;
+          if (!tok.is<Punctor>(CloseBracket)) {
+            LOG(ERROR) << "Expected a closing bracket" << tok << std::endl;
             return false;
           }
 
-          auto ident = tok.as<std::string>();
-          tok = scanner->peek();
-          if (tok.is<Operator>(Increment)) {
-            auto p = std::make_shared<PostUnaryExprNode>(
-                Increment, std::make_shared<MemberAccessNode>(left, ident));
-            stack.push(p);
-            scanner->next();
-            continue;
-          } else if (tok.is<Operator>(Decrement)) {
-            auto p = std::make_shared<PostUnaryExprNode>(
-                Decrement, std::make_shared<MemberAccessNode>(left, ident));
-            stack.push(p);
-            scanner->next();
-            continue;
-          }
-
-          stack.push(std::make_shared<MemberAccessNode>(left, ident));
-          continue;
-        }
-        std::shared_ptr<ExprNode> expr;
-
-        if (op == As) {
-          if (stack.size() != 1) {
-            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
-            return false;
-          }
-
-          std::shared_ptr<TypeNode> type;
-          if (!parse_type(job, scanner, type)) return false;
-
-          auto left = stack.top();
-          stack.pop();
-          stack.push(std::make_shared<StaticCastExprNode>(left, type));
+          stack.push(std::make_shared<SliceNode>(left, index, end));
           continue;
         }
 
-        if (op == BitcastAs) {
-          if (stack.size() != 1) {
-            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
-            return false;
-          }
-
-          std::shared_ptr<TypeNode> type;
-          if (!parse_type(job, scanner, type)) return false;
-
-          auto left = stack.top();
-          stack.pop();
-          stack.push(std::make_shared<BitCastExprNode>(left, type));
-          continue;
-        }
-
-        if (op == ReinterpretAs) {
-          if (stack.size() != 1) {
-            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
-            return false;
-          }
-
-          std::shared_ptr<TypeNode> type;
-          if (!parse_type(job, scanner, type)) return false;
-
-          auto left = stack.top();
-          stack.pop();
-
-          throw std::runtime_error("Reinterpret cast not implemented");
-          continue;
-        }
-
-        if (!parse_expr(job, scanner, terminators, expr, depth + 1) || !expr)
-          return false;
-
-        if (stack.empty()) {
-          stack.push(std::make_shared<UnaryExprNode>(op, expr));
-          continue;
-        } else if (stack.size() == 1) {
-          auto left = stack.top();
-          stack.pop();
-          stack.push(std::make_shared<BinaryExprNode>(op, left, expr));
-          continue;
-        } else {
-          LOG(ERROR) << "Unexpected token {}" << tok.serialize() << tok
-                     << std::endl;
+        if (!tok.is<Punctor>(CloseBracket)) {
+          LOG(ERROR) << "Expected a closing bracket" << tok << std::endl;
           return false;
         }
-        break;
+
+        tok = scanner->peek();
+        if (tok.is<Operator>(Increment)) {
+          auto p = std::make_shared<PostUnaryExprNode>(Increment,
+                                                       std::make_shared<IndexNode>(left, index));
+          stack.push(p);
+          scanner->next();
+          continue;
+        } else if (tok.is<Operator>(Decrement)) {
+          auto p = std::make_shared<PostUnaryExprNode>(Decrement,
+                                                       std::make_shared<IndexNode>(left, index));
+          stack.push(p);
+          scanner->next();
+          continue;
+        }
+
+        stack.push(std::make_shared<IndexNode>(left, index));
+        continue;
       }
-      case tName: {
-        auto ident = tok.as<std::string>();
-        if (scanner->peek().type() == tPunc &&
-            (scanner->peek()).as<Punctor>() == OpenParen) {
-          scanner->next();
-          auto fcall = parse_function_call(
-              job, std::make_shared<IdentifierNode>(ident), scanner, depth);
-          if (fcall == nullptr) return false;
-
-          stack.push(fcall);
-          continue;
-        } else if (scanner->peek().is<Operator>(Increment)) {
-          auto p = std::make_shared<PostUnaryExprNode>(
-              Increment, std::make_shared<IdentifierNode>(ident));
-          stack.push(p);
-          scanner->next();
-          continue;
-        } else if (scanner->peek().is<Operator>(Decrement)) {
-          auto p = std::make_shared<PostUnaryExprNode>(
-              Decrement, std::make_shared<IdentifierNode>(ident));
-          stack.push(p);
-          scanner->next();
-          continue;
-        } else {
-          stack.push(std::make_shared<IdentifierNode>(ident));
-          continue;
+      case Comma: {
+        if (stack.size() != 1) {
+          LOG(ERROR) << "Expected a single expression before sequence point" << tok << std::endl;
+          return false;
         }
+
+        auto left = stack.top();
+        stack.pop();
+
+        std::shared_ptr<ExprNode> right;
+        if (!parse_expr(job, scanner, terminators, right, depth + 1))
+          return false;
+
+        stack.push(std::make_shared<SeqExprNode>(left, right));
+        continue;
       }
       default:
-        LOG(ERROR) << "Unexpected token {}" << tok.serialize() << tok
+        LOG(ERROR) << "Unexpected token in non-constant expression '{}'" << tok.serialize() << tok
                    << std::endl;
         return false;
+      }
+      break;
+    case tOper: {
+      auto op = tok.as<Operator>();
+      if (op == Dot) {
+        if (stack.size() != 1) {
+          LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+          return false;
+        }
+
+        auto left = stack.top();
+        stack.pop();
+
+        tok = scanner->next();
+        if (tok.type() != tName) {
+          LOG(ERROR) << "Expected an identifier in member access" << tok << std::endl;
+          return false;
+        }
+
+        auto ident = tok.as<std::string>();
+        tok = scanner->peek();
+        if (tok.is<Operator>(Increment)) {
+          auto p = std::make_shared<PostUnaryExprNode>(
+              Increment, std::make_shared<MemberAccessNode>(left, ident));
+          stack.push(p);
+          scanner->next();
+          continue;
+        } else if (tok.is<Operator>(Decrement)) {
+          auto p = std::make_shared<PostUnaryExprNode>(
+              Decrement, std::make_shared<MemberAccessNode>(left, ident));
+          stack.push(p);
+          scanner->next();
+          continue;
+        }
+
+        stack.push(std::make_shared<MemberAccessNode>(left, ident));
+        continue;
+      }
+      std::shared_ptr<ExprNode> expr;
+
+      if (op == As) {
+        if (stack.size() != 1) {
+          LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+          return false;
+        }
+
+        std::shared_ptr<TypeNode> type;
+        if (!parse_type(job, scanner, type))
+          return false;
+
+        auto left = stack.top();
+        stack.pop();
+        stack.push(std::make_shared<StaticCastExprNode>(left, type));
+        continue;
+      }
+
+      if (op == BitcastAs) {
+        if (stack.size() != 1) {
+          LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+          return false;
+        }
+
+        std::shared_ptr<TypeNode> type;
+        if (!parse_type(job, scanner, type))
+          return false;
+
+        auto left = stack.top();
+        stack.pop();
+        stack.push(std::make_shared<BitCastExprNode>(left, type));
+        continue;
+      }
+
+      if (op == ReinterpretAs) {
+        if (stack.size() != 1) {
+          LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+          return false;
+        }
+
+        std::shared_ptr<TypeNode> type;
+        if (!parse_type(job, scanner, type))
+          return false;
+
+        auto left = stack.top();
+        stack.pop();
+
+        throw std::runtime_error("Reinterpret cast not implemented");
+        continue;
+      }
+
+      if (!parse_expr(job, scanner, terminators, expr, depth + 1) || !expr)
+        return false;
+
+      if (stack.empty()) {
+        stack.push(std::make_shared<UnaryExprNode>(op, expr));
+        continue;
+      } else if (stack.size() == 1) {
+        auto left = stack.top();
+        stack.pop();
+        stack.push(std::make_shared<BinaryExprNode>(op, left, expr));
+        continue;
+      } else {
+        LOG(ERROR) << "Unexpected token {}" << tok.serialize() << tok << std::endl;
+        return false;
+      }
+      break;
+    }
+    case tName: {
+      auto ident = tok.as<std::string>();
+      if (scanner->peek().type() == tPunc && (scanner->peek()).as<Punctor>() == OpenParen) {
+        scanner->next();
+        auto fcall =
+            parse_function_call(job, std::make_shared<IdentifierNode>(ident), scanner, depth);
+        if (fcall == nullptr)
+          return false;
+
+        stack.push(fcall);
+        continue;
+      } else if (scanner->peek().is<Operator>(Increment)) {
+        auto p =
+            std::make_shared<PostUnaryExprNode>(Increment, std::make_shared<IdentifierNode>(ident));
+        stack.push(p);
+        scanner->next();
+        continue;
+      } else if (scanner->peek().is<Operator>(Decrement)) {
+        auto p =
+            std::make_shared<PostUnaryExprNode>(Decrement, std::make_shared<IdentifierNode>(ident));
+        stack.push(p);
+        scanner->next();
+        continue;
+      } else {
+        stack.push(std::make_shared<IdentifierNode>(ident));
+        continue;
+      }
+    }
+    default:
+      LOG(ERROR) << "Unexpected token {}" << tok.serialize() << tok << std::endl;
+      return false;
     }
   }
 

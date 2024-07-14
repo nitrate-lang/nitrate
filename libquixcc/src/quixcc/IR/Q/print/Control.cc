@@ -31,119 +31,130 @@
 
 #include <quixcc/IR/Q/Control.h>
 
-bool libquixcc::ir::q::IfElse::print_impl(std::ostream &os,
-                                          libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::IfElse::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "if (";
-  if (!cond->print(os, state)) return false;
+  if (!cond->print(os, state))
+    return false;
   os << ") ";
-  if (!then->print(os, state)) return false;
+  if (!then->print(os, state))
+    return false;
   os << " else ";
-  if (!els->print(os, state)) return false;
+  if (!els->print(os, state))
+    return false;
   return true;
 }
 
-bool libquixcc::ir::q::While::print_impl(std::ostream &os,
-                                         libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::While::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "while (";
-  if (!cond->print(os, state)) return false;
+  if (!cond->print(os, state))
+    return false;
   os << ") ";
-  if (!body->print(os, state)) return false;
+  if (!body->print(os, state))
+    return false;
   return true;
 }
 
-bool libquixcc::ir::q::For::print_impl(std::ostream &os,
-                                       libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::For::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "for (";
-  if (!init->print(os, state)) return false;
+  if (!init->print(os, state))
+    return false;
   os << "; ";
-  if (!cond->print(os, state)) return false;
+  if (!cond->print(os, state))
+    return false;
   os << "; ";
-  if (!step->print(os, state)) return false;
+  if (!step->print(os, state))
+    return false;
   os << ") ";
-  if (!body->print(os, state)) return false;
+  if (!body->print(os, state))
+    return false;
   return true;
 }
 
-bool libquixcc::ir::q::Loop::print_impl(std::ostream &os,
-                                        libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Loop::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "loop ";
-  if (!body->print(os, state)) return false;
+  if (!body->print(os, state))
+    return false;
   return true;
 }
 
-bool libquixcc::ir::q::Break::print_impl(std::ostream &os,
-                                         libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Break::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "break";
   return true;
 }
 
-bool libquixcc::ir::q::Continue::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Continue::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "continue";
   return true;
 }
 
-bool libquixcc::ir::q::Ret::print_impl(std::ostream &os,
-                                       libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Ret::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "ret";
 
   if (value) {
     os << " ";
-    if (!value->print(os, state)) return false;
+    if (!value->print(os, state))
+      return false;
   }
   return true;
 }
 
-bool libquixcc::ir::q::Throw::print_impl(std::ostream &os,
-                                         libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Throw::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "throw ";
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
   return true;
 }
 
-bool libquixcc::ir::q::TryCatchFinally::print_impl(
-    std::ostream &os, libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::TryCatchFinally::print_impl(std::ostream &os,
+                                                   libquixcc::ir::PState &state) const {
   os << "try ";
-  if (!tryblock->print(os, state)) return false;
+  if (!tryblock->print(os, state))
+    return false;
   for (const auto &catchblock : catchblocks) {
     os << "catch (";
-    if (!catchblock.first->print(os, state)) return false;
+    if (!catchblock.first->print(os, state))
+      return false;
     os << ") ";
-    if (!catchblock.second->print(os, state)) return false;
+    if (!catchblock.second->print(os, state))
+      return false;
   }
 
   os << "finally ";
-  if (!finallyblock->print(os, state)) return false;
+  if (!finallyblock->print(os, state))
+    return false;
 
   return true;
 }
 
-bool libquixcc::ir::q::Case::print_impl(std::ostream &os,
-                                        libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Case::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << std::string(state.ind, ' ') << "case ";
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
   os << ": ";
-  if (!body->print(os, state)) return false;
+  if (!body->print(os, state))
+    return false;
 
   os << "\n";
   return true;
 }
 
-bool libquixcc::ir::q::Switch::print_impl(std::ostream &os,
-                                          libquixcc::ir::PState &state) const {
+bool libquixcc::ir::q::Switch::print_impl(std::ostream &os, libquixcc::ir::PState &state) const {
   os << "switch (";
-  if (!value->print(os, state)) return false;
+  if (!value->print(os, state))
+    return false;
   os << ") {\n";
 
   state.ind += 2;
 
   for (const auto &c : cases) {
-    if (!c->print(os, state)) return false;
+    if (!c->print(os, state))
+      return false;
   }
 
   if (defaultcase) {
     os << std::string(state.ind, ' ') << "default: ";
-    if (!defaultcase->print(os, state)) return false;
+    if (!defaultcase->print(os, state))
+      return false;
 
     os << "\n";
   }

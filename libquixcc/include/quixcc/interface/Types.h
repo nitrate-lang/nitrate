@@ -57,12 +57,12 @@ enum quixcc_msg_level_t {
 struct quixcc_msg_t {
   uint64_t line;
   uint64_t column;
-  const char* message;
+  const char *message;
   enum quixcc_msg_level_t m_level;
 };
 
 typedef struct quixcc_status_t {
-  struct quixcc_msg_t** m_messages;
+  struct quixcc_msg_t **m_messages;
   uint32_t m_count;
   bool m_success;
 } quixcc_status_t;
@@ -73,8 +73,8 @@ typedef enum {
   QUIXCC_LEXCONF_IGN_COM = 1 << 0,
 } quixcc_lexer_config_t;
 
-typedef bool (*quixcc_qsys_impl_t)(quixcc_engine_t* engine, uint32_t num,
-                                   quixcc_expr_t** expr, uint32_t argc);
+typedef bool (*quixcc_qsys_impl_t)(quixcc_engine_t *engine, uint32_t num, quixcc_expr_t **expr,
+                                   uint32_t argc);
 
 typedef enum quixcc_iterm_t {
   /* Any order is acceptable */
@@ -94,12 +94,12 @@ typedef enum quixcc_iterm_t {
 } quixcc_iterm_t;
 
 typedef struct quixcc_string_t {
-  char* m_data;
+  char *m_data;
   size_t m_len;
 } quixcc_string_t;
 
 typedef struct quixcc_vec_t {
-  void* m_data;
+  void *m_data;
   uint32_t m_len;
   uint32_t m_cap;
   uint32_t m_elem_size;
@@ -109,4 +109,4 @@ typedef struct quixcc_vec_t {
 }
 #endif
 
-#endif  // __QUIXCC_TYPES_H__
+#endif // __QUIXCC_TYPES_H__

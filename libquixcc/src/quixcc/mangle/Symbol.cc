@@ -41,10 +41,11 @@ const std::string libquixcc::Symbol::quix_abiprefix = "_Q";
 const std::string libquixcc::Symbol::cxx_abiprefix = "_Z";
 const std::string libquixcc::Symbol::c_abiprefix = "";
 
-std::string libquixcc::Symbol::join(const std::string &a,
-                                    const std::string &b) {
-  if (a.empty()) return b;
-  if (b.empty()) return a;
+std::string libquixcc::Symbol::join(const std::string &a, const std::string &b) {
+  if (a.empty())
+    return b;
+  if (b.empty())
+    return a;
   return a + "::" + b;
 }
 
@@ -57,25 +58,23 @@ std::string libquixcc::Symbol::join(const std::vector<std::string> &namespaces,
   return join(result, name);
 }
 
-std::string libquixcc::Symbol::mangle(const ir::q::Value *node,
-                                      const std::string &prefix,
+std::string libquixcc::Symbol::mangle(const ir::q::Value *node, const std::string &prefix,
                                       ExportLangType lang) {
   switch (lang) {
-    case ExportLangType::Default:
-      return mangle_quix(node, prefix);
-    case ExportLangType::C:
-      return mangle_c(node, prefix);
-    case ExportLangType::CXX:
-      return mangle_cxx(node, prefix);
-    case ExportLangType::DLang:
-      throw std::runtime_error("DLang export not yet supported");
-    default:
-      throw std::runtime_error("Invalid export language type");
+  case ExportLangType::Default:
+    return mangle_quix(node, prefix);
+  case ExportLangType::C:
+    return mangle_c(node, prefix);
+  case ExportLangType::CXX:
+    return mangle_cxx(node, prefix);
+  case ExportLangType::DLang:
+    throw std::runtime_error("DLang export not yet supported");
+  default:
+    throw std::runtime_error("Invalid export language type");
   }
 }
 
-libquixcc::ir::q::Value *libquixcc::Symbol::demangle(
-    const std::string &mangled) {
+libquixcc::ir::q::Value *libquixcc::Symbol::demangle(const std::string &mangled) {
   try {
     if (mangled.starts_with(quix_abiprefix)) {
       return demangle_quix(mangled);
@@ -92,10 +91,10 @@ libquixcc::ir::q::Value *libquixcc::Symbol::demangle(
   }
 }
 
-bool libquixcc::Symbol::demangle_tocode(const std::string &mangled,
-                                        std::string &output) {
+bool libquixcc::Symbol::demangle_tocode(const std::string &mangled, std::string &output) {
   auto node = demangle(mangled);
-  if (node == nullptr) return false;
+  if (node == nullptr)
+    return false;
 
   output = node->to_string();
 
@@ -108,10 +107,12 @@ bool libquixcc::Symbol::demangle_tocode(const std::string &mangled,
 
 LIB_EXPORT char *quixcc_cc_demangle(const char *mangled) {
   /* no-op */
-  if (!mangled) return nullptr;
+  if (!mangled)
+    return nullptr;
 
   std::string output;
-  if (!libquixcc::Symbol::demangle_tocode(mangled, output)) return nullptr;
+  if (!libquixcc::Symbol::demangle_tocode(mangled, output))
+    return nullptr;
 
   return strdup(output.c_str());
 }

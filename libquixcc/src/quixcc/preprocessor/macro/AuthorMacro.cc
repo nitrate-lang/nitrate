@@ -35,8 +35,7 @@
 #include <quixcc/lexer/Lex.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 
-bool libquixcc::PrepEngine::ParseAuthor(const Token &tok,
-                                        const std::string &directive,
+bool libquixcc::PrepEngine::ParseAuthor(const Token &tok, const std::string &directive,
                                         const std::string &parameter) {
   (void)tok;
   (void)directive;

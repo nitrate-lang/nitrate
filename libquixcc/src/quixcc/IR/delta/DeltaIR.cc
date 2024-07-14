@@ -38,13 +38,13 @@
 #include <quixcc/IR/delta/Type.h>
 #include <quixcc/IR/delta/Variable.h>
 
-bool libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os,
-                                               PState &state) const {
+bool libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os, PState &state) const {
   if (state.modinfo) {
     os << "use QDelta_1_0;\n";
     os << "; ModuleID = '" << m_name << "'\n";
 
-    if (!m_root) return true;
+    if (!m_root)
+      return true;
 
     os << "; ModuleHash = '";
     m_root->printid(os);
@@ -53,13 +53,15 @@ bool libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os,
     for (auto it = m_tags.begin(); it != m_tags.end(); it++) {
       os << *it;
 
-      if (std::next(it) != m_tags.end()) os << ", ";
+      if (std::next(it) != m_tags.end())
+        os << ", ";
     }
 
     os << "]\n\n";
   }
 
-  if (!m_root->print(os, state)) return false;
+  if (!m_root->print(os, state))
+    return false;
 
   if (state.modinfo) {
     os << "\n; End of module '";
@@ -72,25 +74,19 @@ bool libquixcc::ir::delta::IRDelta::print_impl(std::ostream &os,
 }
 
 bool libquixcc::ir::delta::IRDelta::verify_impl() const {
-  if (!m_root) return false;
+  if (!m_root)
+    return false;
 
   return m_root->verify();
 }
 
-std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_name_impl() const {
-  return "QIR-Delta";
-}
+std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_name_impl() const { return "QIR-Delta"; }
 
-unsigned int libquixcc::ir::delta::IRDelta::ir_dialect_version_impl() const {
-  return 1;
-}
+unsigned int libquixcc::ir::delta::IRDelta::ir_dialect_version_impl() const { return 1; }
 
-std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_family_impl() const {
-  return "DeltaIR";
-}
+std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_family_impl() const { return "DeltaIR"; }
 
-std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_description_impl()
-    const {
+std::string_view libquixcc::ir::delta::IRDelta::ir_dialect_description_impl() const {
   return "Quix Delta Intermediate Representation (QIR-Delta-V1.0) is an "
          "intermediate representation for the Quix language. ... (write "
          "something useful here)";

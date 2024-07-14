@@ -35,17 +35,13 @@ boost::uuids::uuid libquixcc::ir::q::SCast::hash_impl() const {
   return Hasher().gettag().add(type).add(value).hash();
 }
 
-bool libquixcc::ir::q::SCast::verify_impl() const {
-  return type->verify() && value->verify();
-}
+bool libquixcc::ir::q::SCast::verify_impl() const { return type->verify() && value->verify(); }
 
 boost::uuids::uuid libquixcc::ir::q::UCast::hash_impl() const {
   return Hasher().gettag().add(type).add(value).hash();
 }
 
-bool libquixcc::ir::q::UCast::verify_impl() const {
-  return type->verify() && value->verify();
-}
+bool libquixcc::ir::q::UCast::verify_impl() const { return type->verify() && value->verify(); }
 
 boost::uuids::uuid libquixcc::ir::q::PtrICast::hash_impl() const {
   return Hasher().gettag().add(value).hash();
@@ -57,14 +53,10 @@ boost::uuids::uuid libquixcc::ir::q::IPtrCast::hash_impl() const {
   return Hasher().gettag().add(type).add(value).hash();
 }
 
-bool libquixcc::ir::q::IPtrCast::verify_impl() const {
-  return type->verify() && value->verify();
-}
+bool libquixcc::ir::q::IPtrCast::verify_impl() const { return type->verify() && value->verify(); }
 
 boost::uuids::uuid libquixcc::ir::q::Bitcast::hash_impl() const {
   return Hasher().gettag().add(type).add(value).hash();
 }
 
-bool libquixcc::ir::q::Bitcast::verify_impl() const {
-  return type->verify() && value->verify();
-}
+bool libquixcc::ir::q::Bitcast::verify_impl() const { return type->verify() && value->verify(); }

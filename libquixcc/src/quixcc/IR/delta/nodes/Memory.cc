@@ -35,33 +35,25 @@ boost::uuids::uuid libquixcc::ir::delta::Assign::hash_impl() const {
   return Hasher().gettag().add(rank).add(var).add(value).hash();
 }
 
-bool libquixcc::ir::delta::Assign::verify_impl() const {
-  return var->verify() && value->verify();
-}
+bool libquixcc::ir::delta::Assign::verify_impl() const { return var->verify() && value->verify(); }
 
 boost::uuids::uuid libquixcc::ir::delta::PostInc::hash_impl() const {
   return Hasher().gettag().add(var).hash();
 }
 
-bool libquixcc::ir::delta::PostInc::verify_impl() const {
-  return var->verify();
-}
+bool libquixcc::ir::delta::PostInc::verify_impl() const { return var->verify(); }
 
 boost::uuids::uuid libquixcc::ir::delta::PostDec::hash_impl() const {
   return Hasher().gettag().add(var).hash();
 }
 
-bool libquixcc::ir::delta::PostDec::verify_impl() const {
-  return var->verify();
-}
+bool libquixcc::ir::delta::PostDec::verify_impl() const { return var->verify(); }
 
 boost::uuids::uuid libquixcc::ir::delta::AddressOf::hash_impl() const {
   return Hasher().gettag().add(lhs).hash();
 }
 
-bool libquixcc::ir::delta::AddressOf::verify_impl() const {
-  return lhs->verify();
-}
+bool libquixcc::ir::delta::AddressOf::verify_impl() const { return lhs->verify(); }
 
 boost::uuids::uuid libquixcc::ir::delta::Deref::hash_impl() const {
   return Hasher().gettag().add(lhs).hash();
