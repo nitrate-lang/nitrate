@@ -1391,22 +1391,23 @@ public:
     NODE_IMPL_CORE(LetDecl)
   };
 
+  typedef std::vector<Expr *, Arena<Expr *>> InlineAsmArgs;
+
   class InlineAsm : public Stmt {
 protected:
     std::string_view m_code;
-    std::vector<Expr *, Arena<Expr *>> m_args;
+    InlineAsmArgs m_args;
 
 public:
     InlineAsm(std::string_view code = "", std::initializer_list<Expr *> args = {})
         : m_code(code), m_args(args) {}
-    InlineAsm(std::string_view code, const std::vector<Expr *, Arena<Expr *>> &args)
-        : m_code(code), m_args(args) {}
+    InlineAsm(std::string_view code, const InlineAsmArgs &args) : m_code(code), m_args(args) {}
     virtual ~InlineAsm() override = default;
 
     std::string_view get_code() const;
     void set_code(std::string_view code);
 
-    const std::vector<Expr *, Arena<Expr *>> &get_args() const;
+    const InlineAsmArgs &get_args() const;
     void add_arg(Expr *arg);
     void add_args(std::initializer_list<Expr *> args);
     void clear_args();
@@ -1597,14 +1598,14 @@ public:
 
   class RetVStmt : public FlowStmt {
 protected:
-    Expr *m_value;
+    Expr *m_cond;
 
 public:
-    RetVStmt(Expr *value = nullptr) : m_value(value) {}
+    RetVStmt(Expr *cond = nullptr) : m_cond(cond) {}
     virtual ~RetVStmt() override = default;
 
-    Expr *get_value() const;
-    void set_value(Expr *value);
+    Expr *get_cond() const;
+    void set_cond(Expr *cond);
 
     NODE_IMPL_CORE(RetVStmt)
   };
@@ -1627,22 +1628,22 @@ public:
     NODE_IMPL_CORE(CaseStmt)
   };
 
+  typedef std::vector<CaseStmt *, Arena<CaseStmt *>> SwitchCases;
   class SwitchStmt : public FlowStmt {
 protected:
     Expr *m_cond;
-    std::vector<CaseStmt *, Arena<CaseStmt *>> m_cases;
+    SwitchCases m_cases;
 
 public:
     SwitchStmt(Expr *cond = nullptr, std::initializer_list<CaseStmt *> cases = {})
         : m_cond(cond), m_cases(cases) {}
-    SwitchStmt(Expr *cond, const std::vector<CaseStmt *, Arena<CaseStmt *>> &cases)
-        : m_cond(cond), m_cases(cases) {}
+    SwitchStmt(Expr *cond, const SwitchCases &cases) : m_cond(cond), m_cases(cases) {}
     virtual ~SwitchStmt() override = default;
 
     Expr *get_cond() const;
     void set_cond(Expr *cond);
 
-    const std::vector<CaseStmt *, Arena<CaseStmt *>> &get_cases() const;
+    const SwitchCases &get_cases() const;
     void add_case(CaseStmt *case_);
     void add_cases(std::initializer_list<CaseStmt *> cases);
     void clear_cases();
@@ -1712,11 +1713,15 @@ public:
     NODE_IMPL_CORE(CompositeField)
   };
 
+  typedef std::vector<CompositeField *, Arena<CompositeField *>> StructDefFields;
+  typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefMethods;
+  typedef std::vector<FnDecl *, Arena<FnDecl *>> StructDefStaticMethods;
+
   class StructDef : public Decl {
 protected:
-    std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
-    std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
-    std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+    StructDefMethods m_methods;
+    StructDefStaticMethods m_static_methods;
+    StructDefFields m_fields;
 
     virtual Type *infer_type_impl() const override final;
 
@@ -1727,29 +1732,27 @@ public:
               std::initializer_list<FnDecl *> static_methods = {})
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
-    StructDef(std::string_view name, StructTy *type,
-              const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
-              const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
-              const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+    StructDef(std::string_view name, StructTy *type, const StructDefFields &fields,
+              const StructDefMethods &methods, const StructDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     virtual ~StructDef() override = default;
 
     virtual StructTy *get_type() const override;
 
-    const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+    const StructDefMethods &get_methods() const;
     void add_method(FnDecl *method);
     void add_methods(std::initializer_list<FnDecl *> methods);
     void clear_methods();
     void remove_method(FnDecl *method);
 
-    const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+    const StructDefStaticMethods &get_static_methods() const;
     void add_static_method(FnDecl *method);
     void add_static_methods(std::initializer_list<FnDecl *> methods);
     void clear_static_methods();
     void remove_static_method(FnDecl *method);
 
-    const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields() const;
+    const StructDefFields &get_fields() const;
     void add_field(CompositeField *field);
     void add_fields(std::initializer_list<CompositeField *> fields);
     void clear_fields();
@@ -1758,11 +1761,15 @@ public:
     NODE_IMPL_CORE(StructDef)
   };
 
+  typedef std::vector<CompositeField *, Arena<CompositeField *>> GroupDefFields;
+  typedef std::vector<FnDecl *, Arena<FnDecl *>> GroupDefMethods;
+  typedef std::vector<FnDecl *, Arena<FnDecl *>> GroupDefStaticMethods;
+
   class GroupDef : public Decl {
 protected:
-    std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
-    std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
-    std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+    GroupDefMethods m_methods;
+    GroupDefStaticMethods m_static_methods;
+    GroupDefFields m_fields;
 
     virtual Type *infer_type_impl() const override final;
 
@@ -1774,28 +1781,28 @@ public:
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     GroupDef(std::string_view name, GroupTy *type,
-             const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
-             const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
-             const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+             const GroupDefFields &fields,
+             const GroupDefMethods &methods,
+             const GroupDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     virtual ~GroupDef() override = default;
 
     virtual GroupTy *get_type() const override;
 
-    const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+    const GroupDefMethods &get_methods() const;
     void add_method(FnDecl *method);
     void add_methods(std::initializer_list<FnDecl *> methods);
     void clear_methods();
     void remove_method(FnDecl *method);
 
-    const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+    const GroupDefStaticMethods &get_static_methods() const;
     void add_static_method(FnDecl *method);
     void add_static_methods(std::initializer_list<FnDecl *> methods);
     void clear_static_methods();
     void remove_static_method(FnDecl *method);
 
-    const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields() const;
+    const GroupDefFields &get_fields() const;
     void add_field(CompositeField *field);
     void add_fields(std::initializer_list<CompositeField *> fields);
     void clear_fields();
@@ -1804,11 +1811,15 @@ public:
     NODE_IMPL_CORE(GroupDef);
   };
 
+  typedef std::vector<CompositeField *, Arena<CompositeField *>> RegionDefFields;
+  typedef std::vector<FnDecl *, Arena<FnDecl *>> RegionDefMethods;
+  typedef std::vector<FnDecl *, Arena<FnDecl *>> RegionDefStaticMethods;
+
   class RegionDef : public Decl {
 protected:
-    std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
-    std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
-    std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+    RegionDefMethods m_methods;
+    RegionDefStaticMethods m_static_methods;
+    RegionDefFields m_fields;
 
     virtual Type *infer_type_impl() const override final;
 
@@ -1820,28 +1831,28 @@ public:
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     RegionDef(std::string_view name, RegionTy *type,
-              const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
-              const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
-              const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+              const RegionDefFields &fields,
+              const RegionDefMethods &methods,
+              const RegionDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     virtual ~RegionDef() override = default;
 
     virtual RegionTy *get_type() const override;
 
-    const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+    const RegionDefMethods &get_methods() const;
     void add_method(FnDecl *method);
     void add_methods(std::initializer_list<FnDecl *> methods);
     void clear_methods();
     void remove_method(FnDecl *method);
 
-    const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+    const RegionDefStaticMethods &get_static_methods() const;
     void add_static_method(FnDecl *method);
     void add_static_methods(std::initializer_list<FnDecl *> methods);
     void clear_static_methods();
     void remove_static_method(FnDecl *method);
 
-    const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields() const;
+    const RegionDefFields &get_fields() const;
     void add_field(CompositeField *field);
     void add_fields(std::initializer_list<CompositeField *> fields);
     void clear_fields();
@@ -1850,11 +1861,15 @@ public:
     NODE_IMPL_CORE(RegionDef);
   };
 
+  typedef std::vector<CompositeField *, Arena<CompositeField *>> UnionDefFields;
+  typedef std::vector<FnDecl *, Arena<FnDecl *>> UnionDefMethods;
+  typedef std::vector<FnDecl *, Arena<FnDecl *>> UnionDefStaticMethods;
+
   class UnionDef : public Decl {
 protected:
-    std::vector<FnDecl *, Arena<FnDecl *>> m_methods;
-    std::vector<FnDecl *, Arena<FnDecl *>> m_static_methods;
-    std::vector<CompositeField *, Arena<CompositeField *>> m_fields;
+    UnionDefMethods m_methods;
+    UnionDefStaticMethods m_static_methods;
+    UnionDefFields m_fields;
 
     virtual Type *infer_type_impl() const override final;
 
@@ -1866,38 +1881,39 @@ public:
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     UnionDef(std::string_view name, UnionTy *type,
-             const std::vector<CompositeField *, Arena<CompositeField *>> &fields,
-             const std::vector<FnDecl *, Arena<FnDecl *>> &methods,
-             const std::vector<FnDecl *, Arena<FnDecl *>> &static_methods)
+             const UnionDefFields &fields,
+             const UnionDefMethods &methods,
+             const UnionDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     virtual ~UnionDef() override = default;
 
     virtual UnionTy *get_type() const override;
 
-    const std::vector<FnDecl *, Arena<FnDecl *>> &get_methods() const;
+    const UnionDefMethods &get_methods() const;
     void add_method(FnDecl *method);
     void add_methods(std::initializer_list<FnDecl *> methods);
     void clear_methods();
     void remove_method(FnDecl *method);
 
-    const std::vector<FnDecl *, Arena<FnDecl *>> &get_static_methods() const;
+    const UnionDefStaticMethods &get_static_methods() const;
     void add_static_method(FnDecl *method);
     void add_static_methods(std::initializer_list<FnDecl *> methods);
     void clear_static_methods();
     void remove_static_method(FnDecl *method);
 
-    const std::vector<CompositeField *, Arena<CompositeField *>> &get_fields() const;
+    const UnionDefFields &get_fields() const;
     void add_field(CompositeField *field);
     void add_fields(std::initializer_list<CompositeField *> fields);
     void clear_fields();
     void remove_field(CompositeField *field);
 
-    NODE_IMPL_CORE(RegionDef);
+    NODE_IMPL_CORE(UnionDef);
   };
 
   typedef std::pair<std::string_view, Type *> EnumItem;
-
+  typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
+  
   class EnumDef : public Decl {
 protected:
     std::vector<EnumItem, Arena<EnumItem>> m_items;

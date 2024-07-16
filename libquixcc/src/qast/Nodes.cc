@@ -642,11 +642,8 @@ void PtrTy::print_impl(std::ostream &os, bool debug) const {
 }
 
 PtrTy *PtrTy::clone_impl() const {
-  if (m_item) {
-    return PtrTy::get(m_item->clone(), m_is_volatile);
-  }
-
-  return PtrTy::get(nullptr, m_is_volatile);
+  Type *item = m_item ? m_item->clone() : nullptr;
+  return PtrTy::get(item, m_is_volatile);
 }
 
 uint64_t PtrTy::infer_size_bits_impl() const {
@@ -712,11 +709,8 @@ void VectorTy::print_impl(std::ostream &os, bool debug) const {
 }
 
 VectorTy *VectorTy::clone_impl() const {
-  if (m_item) {
-    return VectorTy::get(m_item->clone());
-  }
-
-  return VectorTy::get(nullptr);
+  Type *item = m_item ? m_item->clone() : nullptr;
+  return VectorTy::get(item);
 }
 
 uint64_t VectorTy::infer_size_bits_impl() const {
@@ -756,11 +750,8 @@ void SetTy::print_impl(std::ostream &os, bool debug) const {
 }
 
 SetTy *SetTy::clone_impl() const {
-  if (m_item) {
-    return SetTy::get(m_item->clone());
-  }
-
-  return SetTy::get(nullptr);
+  Type *item = m_item ? m_item->clone() : nullptr;
+  return SetTy::get(item);
 }
 
 uint64_t SetTy::infer_size_bits_impl() const {
@@ -918,11 +909,8 @@ void OptionalTy::print_impl(std::ostream &os, bool debug) const {
 }
 
 OptionalTy *OptionalTy::clone_impl() const {
-  if (m_item) {
-    return OptionalTy::get(m_item->clone());
-  }
-
-  return OptionalTy::get(nullptr);
+  Type *item = m_item ? m_item->clone() : nullptr;
+  return OptionalTy::get(item);
 }
 
 uint64_t OptionalTy::infer_size_bits_impl() const {
@@ -1042,7 +1030,6 @@ void EnumTy::print_impl(std::ostream &os, bool debug) const {
 
 EnumTy *EnumTy::clone_impl() const {
   Type *memtype = m_memtype ? m_memtype->clone() : nullptr;
-
   return EnumTy::get(m_name, memtype);
 }
 
@@ -1089,11 +1076,8 @@ void MutTy::print_impl(std::ostream &os, bool debug) const {
 }
 
 MutTy *MutTy::clone_impl() const {
-  if (m_item) {
-    return MutTy::get(m_item->clone());
-  }
-
-  return MutTy::get(nullptr);
+  Type *item = m_item ? m_item->clone() : nullptr;
+  return MutTy::get(item);
 }
 
 uint64_t MutTy::infer_size_bits_impl() const {
@@ -1663,11 +1647,8 @@ void UnaryExpr::print_impl(std::ostream &os, bool debug) const {
 }
 
 UnaryExpr *UnaryExpr::clone_impl() const {
-  if (m_rhs) {
-    return UnaryExpr::get(m_op, m_rhs->clone());
-  }
-
-  return UnaryExpr::get(m_op, nullptr);
+  Expr *rhs = m_rhs ? m_rhs->clone() : nullptr;
+  return UnaryExpr::get(m_op, rhs);
 }
 
 Type *UnaryExpr::infer_type_impl() const {
@@ -2639,6 +2620,1842 @@ void Block::clear_items() { m_items.clear(); }
 void Block::remove_item(Stmt *item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
+
+bool ConstDecl::verify_impl(std::ostream &os) const {
+  if (!m_value) {
+    os << "ConstDecl: value is NULL\n";
+    return false;
+  }
+
+  if (!m_type) {
+    os << "ConstDecl: type is NULL\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "ConstDecl: value is invalid\n";
+    return false;
+  }
+
+  if (!m_type->verify(os)) {
+    os << "ConstDecl: type is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void ConstDecl::canonicalize_impl() {
+  if (m_value) {
+    m_value->canonicalize();
+  }
+}
+
+void ConstDecl::print_impl(std::ostream &os, bool debug) const {
+  os << "const " << m_name;
+
+  if (m_type) {
+    os << ": ";
+    m_type->print(os, debug);
+  }
+
+  if (m_value) {
+    os << " = ";
+    m_value->print(os, debug);
+  }
+
+  os << ";";
+}
+
+ConstDecl *ConstDecl::clone_impl() const {
+  Expr *value = m_value ? m_value->clone() : nullptr;
+  Type *type = m_type ? m_type->clone() : nullptr;
+  return ConstDecl::get(m_name, type, value);
+}
+
+Type *ConstDecl::infer_type_impl() const { return m_type; }
+
+Expr *ConstDecl::get_value() const { return m_value; }
+void ConstDecl::set_value(Expr *value) { m_value = value; }
+
+bool VarDecl::verify_impl(std::ostream &os) const {
+  if (!m_value) {
+    os << "VarDecl: value is NULL\n";
+    return false;
+  }
+
+  if (!m_type) {
+    os << "VarDecl: type is NULL\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "VarDecl: value is invalid\n";
+    return false;
+  }
+
+  if (!m_type->verify(os)) {
+    os << "VarDecl: type is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void VarDecl::canonicalize_impl() {
+  if (m_value) {
+    m_value->canonicalize();
+  }
+}
+
+void VarDecl::print_impl(std::ostream &os, bool debug) const {
+  os << "var " << m_name;
+
+  if (m_type) {
+    os << ": ";
+    m_type->print(os, debug);
+  }
+
+  if (m_value) {
+    os << " = ";
+    m_value->print(os, debug);
+  }
+
+  os << ";";
+}
+
+VarDecl *VarDecl::clone_impl() const {
+  Expr *value = m_value ? m_value->clone() : nullptr;
+  Type *type = m_type ? m_type->clone() : nullptr;
+  return VarDecl::get(m_name, type, value);
+}
+
+Type *VarDecl::infer_type_impl() const { return m_type; }
+
+Expr *VarDecl::get_value() const { return m_value; }
+void VarDecl::set_value(Expr *value) { m_value = value; }
+
+bool LetDecl::verify_impl(std::ostream &os) const {
+  if (!m_value) {
+    os << "LetDecl: value is NULL\n";
+    return false;
+  }
+
+  if (!m_type) {
+    os << "LetDecl: type is NULL\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "LetDecl: value is invalid\n";
+    return false;
+  }
+
+  if (!m_type->verify(os)) {
+    os << "LetDecl: type is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void LetDecl::canonicalize_impl() {
+  if (m_value) {
+    m_value->canonicalize();
+  }
+}
+
+void LetDecl::print_impl(std::ostream &os, bool debug) const {
+  os << "let " << m_name;
+
+  if (m_type) {
+    os << ": ";
+    m_type->print(os, debug);
+  }
+
+  if (m_value) {
+    os << " = ";
+    m_value->print(os, debug);
+  }
+
+  os << ";";
+}
+
+LetDecl *LetDecl::clone_impl() const {
+  Expr *value = m_value ? m_value->clone() : nullptr;
+  Type *type = m_type ? m_type->clone() : nullptr;
+  return LetDecl::get(m_name, type, value);
+}
+
+Type *LetDecl::infer_type_impl() const { return m_type; }
+
+Expr *LetDecl::get_value() const { return m_value; }
+void LetDecl::set_value(Expr *value) { m_value = value; }
+
+bool InlineAsm::verify_impl(std::ostream &os) const {
+  for (auto item : m_args) {
+    if (!item) {
+      os << "InlineAsm: item is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "InlineAsm: item is invalid\n";
+      return false;
+    }
+  }
+
+  /// TODO: Implement ASM verification logic
+  return true;
+}
+
+void InlineAsm::canonicalize_impl() {
+  for (auto item : m_args) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+
+  /// TODO: Implement ASM canonicalization logic
+}
+
+void InlineAsm::print_impl(std::ostream &os, bool debug) const {
+  os << "asm(\"" << m_code << "\"";
+
+  for (auto item : m_args) {
+    os << ", ";
+    item->print(os, debug);
+  }
+
+  os << ");";
+}
+
+InlineAsm *InlineAsm::clone_impl() const {
+  InlineAsmArgs args;
+  for (auto item : m_args) {
+    if (item) {
+      args.push_back(item->clone());
+    } else {
+      args.push_back(nullptr);
+    }
+  }
+
+  return InlineAsm::get(m_code, args);
+}
+
+std::string_view InlineAsm::get_code() const { return m_code; }
+void InlineAsm::set_code(std::string_view code) { m_code = code; }
+
+const InlineAsmArgs &InlineAsm::get_args() const { return m_args; }
+void InlineAsm::add_arg(Expr *arg) { m_args.push_back(arg); }
+void InlineAsm::clear_args() { m_args.clear(); }
+void InlineAsm::remove_arg(Expr *arg) {
+  std::erase_if(m_args, [arg](auto &field) { return field == arg; });
+}
+
+bool IfStmt::verify_impl(std::ostream &os) const {
+  if (!m_cond) {
+    os << "IfStmt: cond is NULL\n";
+    return false;
+  }
+
+  if (!m_then) {
+    os << "IfStmt: then is NULL\n";
+    return false;
+  }
+
+  if (!m_else) {
+    os << "IfStmt: else is NULL\n";
+    return false;
+  }
+
+  if (!m_cond->verify(os)) {
+    os << "IfStmt: cond is invalid\n";
+    return false;
+  }
+
+  if (!m_then->verify(os)) {
+    os << "IfStmt: then is invalid\n";
+    return false;
+  }
+
+  if (!m_else->verify(os)) {
+    os << "IfStmt: else is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void IfStmt::canonicalize_impl() {
+  if (m_cond) {
+    m_cond->canonicalize();
+  }
+
+  if (m_then) {
+    m_then->canonicalize();
+  }
+
+  if (m_else) {
+    m_else->canonicalize();
+  }
+}
+
+void IfStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "if (";
+  m_cond->print(os, debug);
+  os << ") ";
+
+  if (m_then) {
+    m_then->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << " else ";
+
+  if (m_else) {
+    m_else->print(os, debug);
+  } else {
+    os << "?";
+  }
+}
+
+IfStmt *IfStmt::clone_impl() const {
+  Expr *cond = m_cond ? m_cond->clone() : nullptr;
+  Stmt *then = m_then ? m_then->clone() : nullptr;
+  Stmt *els = m_else ? m_else->clone() : nullptr;
+
+  return IfStmt::get(cond, then, els);
+}
+
+Expr *IfStmt::get_cond() const { return m_cond; }
+void IfStmt::set_cond(Expr *cond) { m_cond = cond; }
+
+Stmt *IfStmt::get_then() const { return m_then; }
+void IfStmt::set_then(Stmt *then) { m_then = then; }
+
+Stmt *IfStmt::get_else() const { return m_else; }
+void IfStmt::set_else(Stmt *els) { m_else = els; }
+
+bool WhileStmt::verify_impl(std::ostream &os) const {
+  if (!m_cond) {
+    os << "WhileStmt: cond is NULL\n";
+    return false;
+  }
+
+  if (!m_body) {
+    os << "WhileStmt: body is NULL\n";
+    return false;
+  }
+
+  if (!m_cond->verify(os)) {
+    os << "WhileStmt: cond is invalid\n";
+    return false;
+  }
+
+  if (!m_body->verify(os)) {
+    os << "WhileStmt: body is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void WhileStmt::canonicalize_impl() {
+  if (m_cond) {
+    m_cond->canonicalize();
+  }
+
+  if (m_body) {
+    m_body->canonicalize();
+  }
+}
+
+void WhileStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "while (";
+  m_cond->print(os, debug);
+  os << ") ";
+
+  if (m_body) {
+    m_body->print(os, debug);
+  } else {
+    os << "?";
+  }
+}
+
+WhileStmt *WhileStmt::clone_impl() const {
+  Expr *cond = m_cond ? m_cond->clone() : nullptr;
+  Stmt *body = m_body ? m_body->clone() : nullptr;
+
+  return WhileStmt::get(cond, body);
+}
+
+Expr *WhileStmt::get_cond() const { return m_cond; }
+void WhileStmt::set_cond(Expr *cond) { m_cond = cond; }
+
+Stmt *WhileStmt::get_body() const { return m_body; }
+void WhileStmt::set_body(Stmt *body) { m_body = body; }
+
+bool ForStmt::verify_impl(std::ostream &os) const {
+  if (!m_init) {
+    os << "ForStmt: init is NULL\n";
+    return false;
+  }
+
+  if (!m_cond) {
+    os << "ForStmt: cond is NULL\n";
+    return false;
+  }
+
+  if (!m_step) {
+    os << "ForStmt: incr is NULL\n";
+    return false;
+  }
+
+  if (!m_body) {
+    os << "ForStmt: body is NULL\n";
+    return false;
+  }
+
+  if (!m_init->verify(os)) {
+    os << "ForStmt: init is invalid\n";
+    return false;
+  }
+
+  if (!m_cond->verify(os)) {
+    os << "ForStmt: cond is invalid\n";
+    return false;
+  }
+
+  if (!m_step->verify(os)) {
+    os << "ForStmt: incr is invalid\n";
+    return false;
+  }
+
+  if (!m_body->verify(os)) {
+    os << "ForStmt: body is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void ForStmt::canonicalize_impl() {
+  if (m_init) {
+    m_init->canonicalize();
+  }
+
+  if (m_cond) {
+    m_cond->canonicalize();
+  }
+
+  if (m_step) {
+    m_step->canonicalize();
+  }
+
+  if (m_body) {
+    m_body->canonicalize();
+  }
+}
+
+void ForStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "for (";
+
+  if (m_init) {
+    m_init->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << "; ";
+
+  if (m_cond) {
+    m_cond->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << "; ";
+
+  if (m_step) {
+    m_step->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ") ";
+
+  if (m_body) {
+    m_body->print(os, debug);
+  } else {
+    os << "?";
+  }
+}
+
+ForStmt *ForStmt::clone_impl() const {
+  Stmt *init = m_init ? m_init->clone() : nullptr;
+  Expr *cond = m_cond ? m_cond->clone() : nullptr;
+  Stmt *step = m_step ? m_step->clone() : nullptr;
+  Stmt *body = m_body ? m_body->clone() : nullptr;
+
+  return ForStmt::get(init, cond, step, body);
+}
+
+Stmt *ForStmt::get_init() const { return m_init; }
+void ForStmt::set_init(Stmt *init) { m_init = init; }
+
+Expr *ForStmt::get_cond() const { return m_cond; }
+void ForStmt::set_cond(Expr *cond) { m_cond = cond; }
+
+Stmt *ForStmt::get_step() const { return m_step; }
+void ForStmt::set_step(Stmt *step) { m_step = step; }
+
+Stmt *ForStmt::get_body() const { return m_body; }
+void ForStmt::set_body(Stmt *body) { m_body = body; }
+
+bool ForeachStmt::verify_impl(std::ostream &os) const {
+  quixcc_panic("ForeachStmt::verify_impl() is not implemented");
+}
+
+void ForeachStmt::canonicalize_impl() {
+  quixcc_panic("ForeachStmt::canonicalize_impl() is not implemented");
+}
+
+void ForeachStmt::print_impl(std::ostream &os, bool debug) const {
+  quixcc_panic("ForeachStmt::print_impl() is not implemented");
+}
+
+ForeachStmt *ForeachStmt::clone_impl() const {
+  quixcc_panic("ForeachStmt::clone_impl() is not implemented");
+}
+
+Expr *ForeachStmt::get_iter() const { return m_iter; }
+void ForeachStmt::set_iter(Expr *iter) { m_iter = iter; }
+
+Stmt *ForeachStmt::get_body() const { return m_body; }
+void ForeachStmt::set_body(Stmt *body) { m_body = body; }
+
+bool BreakStmt::verify_impl(std::ostream &os) const { return true; }
+void BreakStmt::canonicalize_impl() {}
+void BreakStmt::print_impl(std::ostream &os, bool debug) const { os << "break;"; }
+BreakStmt *BreakStmt::clone_impl() const { return BreakStmt::get(); }
+
+bool ContinueStmt::verify_impl(std::ostream &os) const { return true; }
+void ContinueStmt::canonicalize_impl() {}
+void ContinueStmt::print_impl(std::ostream &os, bool debug) const { os << "continue;"; }
+ContinueStmt *ContinueStmt::clone_impl() const { return ContinueStmt::get(); }
+
+bool ReturnStmt::verify_impl(std::ostream &os) const {
+  if (!m_value) {
+    os << "ReturnStmt: value is NULL\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "ReturnStmt: value is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void ReturnStmt::canonicalize_impl() {
+  if (m_value) {
+    m_value->canonicalize();
+  }
+}
+
+void ReturnStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "return ";
+
+  if (m_value) {
+    m_value->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ";";
+}
+
+ReturnStmt *ReturnStmt::clone_impl() const {
+  Expr *value = m_value ? m_value->clone() : nullptr;
+  return ReturnStmt::get(value);
+}
+
+Expr *ReturnStmt::get_value() const { return m_value; }
+void ReturnStmt::set_value(Expr *value) { m_value = value; }
+
+bool ReturnIfStmt::verify_impl(std::ostream &os) const {
+  if (!m_cond) {
+    os << "ReturnIfStmt: cond is NULL\n";
+    return false;
+  }
+
+  if (!m_value) {
+    os << "ReturnIfStmt: value is NULL\n";
+    return false;
+  }
+
+  if (!m_cond->verify(os)) {
+    os << "ReturnIfStmt: cond is invalid\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "ReturnIfStmt: value is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void ReturnIfStmt::canonicalize_impl() {
+  if (m_cond) {
+    m_cond->canonicalize();
+  }
+
+  if (m_value) {
+    m_value->canonicalize();
+  }
+}
+
+void ReturnIfStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "retif (";
+
+  if (m_cond) {
+    m_cond->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ") ";
+
+  if (m_value) {
+    m_value->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ";";
+}
+
+ReturnIfStmt *ReturnIfStmt::clone_impl() const {
+  Expr *cond = m_cond ? m_cond->clone() : nullptr;
+  Expr *value = m_value ? m_value->clone() : nullptr;
+
+  return ReturnIfStmt::get(cond, value);
+}
+
+Expr *ReturnIfStmt::get_cond() const { return m_cond; }
+void ReturnIfStmt::set_cond(Expr *cond) { m_cond = cond; }
+
+Expr *ReturnIfStmt::get_value() const { return m_value; }
+void ReturnIfStmt::set_value(Expr *value) { m_value = value; }
+
+bool RetZStmt::verify_impl(std::ostream &os) const {
+  if (!m_cond) {
+    os << "RetZStmt: cond is NULL\n";
+    return false;
+  }
+
+  if (!m_value) {
+    os << "RetZStmt: value is NULL\n";
+    return false;
+  }
+
+  if (!m_cond->verify(os)) {
+    os << "RetZStmt: cond is invalid\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "RetZStmt: value is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void RetZStmt::canonicalize_impl() {
+  if (m_cond) {
+    m_cond->canonicalize();
+  }
+
+  if (m_value) {
+    m_value->canonicalize();
+  }
+}
+
+void RetZStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "retz (";
+
+  if (m_cond) {
+    m_cond->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ") ";
+
+  if (m_value) {
+    m_value->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ";";
+}
+
+RetZStmt *RetZStmt::clone_impl() const {
+  Expr *cond = m_cond ? m_cond->clone() : nullptr;
+  Expr *value = m_value ? m_value->clone() : nullptr;
+
+  return RetZStmt::get(cond, value);
+}
+
+Expr *RetZStmt::get_cond() const { return m_cond; }
+void RetZStmt::set_cond(Expr *cond) { m_cond = cond; }
+
+Expr *RetZStmt::get_value() const { return m_value; }
+void RetZStmt::set_value(Expr *value) { m_value = value; }
+
+bool RetVStmt::verify_impl(std::ostream &os) const {
+  if (!m_cond) {
+    os << "RetVStmt: cond is NULL\n";
+    return false;
+  }
+
+  return true;
+}
+
+void RetVStmt::canonicalize_impl() {
+  if (m_cond) {
+    m_cond->canonicalize();
+  }
+}
+
+void RetVStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "retv (";
+
+  if (m_cond) {
+    m_cond->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ")";
+}
+
+RetVStmt *RetVStmt::clone_impl() const {
+  Expr *cond = m_cond ? m_cond->clone() : nullptr;
+
+  return RetVStmt::get(cond);
+}
+
+Expr *RetVStmt::get_cond() const { return m_cond; }
+void RetVStmt::set_cond(Expr *cond) { m_cond = cond; }
+
+bool CaseStmt::verify_impl(std::ostream &os) const {
+  if (!m_cond) {
+    os << "CaseStmt: cond is NULL\n";
+    return false;
+  }
+
+  if (!m_body) {
+    os << "CaseStmt: body is NULL\n";
+    return false;
+  }
+
+  if (!m_cond->verify(os)) {
+    os << "CaseStmt: cond is invalid\n";
+    return false;
+  }
+
+  if (!m_body->verify(os)) {
+    os << "CaseStmt: body is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void CaseStmt::canonicalize_impl() {
+  if (m_cond) {
+    m_cond->canonicalize();
+  }
+
+  if (m_body) {
+    m_body->canonicalize();
+  }
+}
+
+void CaseStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "case ";
+
+  if (m_cond) {
+    m_cond->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ":\n";
+
+  if (m_body) {
+    m_body->print(os, debug);
+  } else {
+    os << "?";
+  }
+}
+
+CaseStmt *CaseStmt::clone_impl() const {
+  Expr *cond = m_cond ? m_cond->clone() : nullptr;
+  Stmt *body = m_body ? m_body->clone() : nullptr;
+
+  return CaseStmt::get(cond, body);
+}
+
+Expr *CaseStmt::get_cond() const { return m_cond; }
+void CaseStmt::set_cond(Expr *cond) { m_cond = cond; }
+
+Stmt *CaseStmt::get_body() const { return m_body; }
+void CaseStmt::set_body(Stmt *body) { m_body = body; }
+
+bool SwitchStmt::verify_impl(std::ostream &os) const {
+  if (!m_cond) {
+    os << "SwitchStmt: cond is NULL\n";
+    return false;
+  }
+
+  if (!m_cond->verify(os)) {
+    os << "SwitchStmt: cond is invalid\n";
+    return false;
+  }
+
+  for (auto item : m_cases) {
+    if (!item) {
+      os << "SwitchStmt: case is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "SwitchStmt: case is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void SwitchStmt::canonicalize_impl() {
+  if (m_cond) {
+    m_cond->canonicalize();
+  }
+
+  for (auto item : m_cases) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+}
+
+void SwitchStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "switch (";
+
+  if (m_cond) {
+    m_cond->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ") {\n";
+
+  for (auto item : m_cases) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "}";
+}
+
+SwitchStmt *SwitchStmt::clone_impl() const {
+  Expr *cond = m_cond ? m_cond->clone() : nullptr;
+  SwitchCases cases;
+  for (auto item : m_cases) {
+    if (item) {
+      cases.push_back(item->clone());
+    } else {
+      cases.push_back(nullptr);
+    }
+  }
+
+  return SwitchStmt::get(cond, m_cases);
+}
+
+Expr *SwitchStmt::get_cond() const { return m_cond; }
+void SwitchStmt::set_cond(Expr *cond) { m_cond = cond; }
+
+const SwitchCases &SwitchStmt::get_cases() const { return m_cases; }
+void SwitchStmt::add_case(CaseStmt *item) { m_cases.push_back(item); }
+void SwitchStmt::clear_cases() { m_cases.clear(); }
+void SwitchStmt::remove_case(CaseStmt *item) {
+  std::erase_if(m_cases, [item](auto &field) { return field == item; });
+}
+
+bool TypedefStmt::verify_impl(std::ostream &os) const {
+  if (!m_type) {
+    os << "TypedefStmt: type is NULL\n";
+    return false;
+  }
+
+  if (!m_type->verify(os)) {
+    os << "TypedefStmt: type is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void TypedefStmt::canonicalize_impl() {
+  if (m_type) {
+    m_type->canonicalize();
+  }
+}
+
+void TypedefStmt::print_impl(std::ostream &os, bool debug) const {
+  os << "typedef ";
+
+  if (m_type) {
+    m_type->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << " " << m_name << ";";
+}
+
+TypedefStmt *TypedefStmt::clone_impl() const {
+  Type *type = m_type ? m_type->clone() : nullptr;
+  return TypedefStmt::get(m_name, type);
+}
+
+Type *TypedefStmt::infer_type_impl() const { return m_type; }
+
+bool FnDecl::verify_impl(std::ostream &os) const {
+  if (!m_type) {
+    os << "FnDecl: type is NULL\n";
+    return false;
+  }
+
+  if (!m_type->verify(os)) {
+    os << "FnDecl: type is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void FnDecl::canonicalize_impl() {
+  if (m_type) {
+    m_type->canonicalize();
+  }
+}
+
+void FnDecl::print_impl(std::ostream &os, bool debug) const {
+  /// TODO: Re-implement this function
+  os << "fn " << m_name << "(";
+
+  if (m_type) {
+    m_type->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ")";
+}
+
+FnDecl *FnDecl::clone_impl() const {
+  if (m_type) {
+    return FnDecl::get(m_name, m_type->clone()->as<FuncTy>());
+  } else {
+    return FnDecl::get(m_name, nullptr);
+  }
+}
+
+Type *FnDecl::infer_type_impl() const { return m_type; }
+
+FuncTy *FnDecl::get_type() const {
+  if (!m_type) {
+    return nullptr;
+  }
+
+  return m_type->as<FuncTy>();
+}
+
+bool FnDef::verify_impl(std::ostream &os) const {
+  if (!m_type) {
+    os << "FnDef: type is NULL\n";
+    return false;
+  }
+
+  if (!m_type->verify(os)) {
+    os << "FnDef: type is invalid\n";
+    return false;
+  }
+
+  if (!m_body) {
+    os << "FnDef: body is NULL\n";
+    return false;
+  }
+
+  if (!m_body->verify(os)) {
+    os << "FnDef: body is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void FnDef::canonicalize_impl() {
+  if (m_type) {
+    m_type->canonicalize();
+  }
+
+  if (m_body) {
+    m_body->canonicalize();
+  }
+}
+
+void FnDef::print_impl(std::ostream &os, bool debug) const {
+  os << "fn " << m_name << "(";
+
+  if (m_type) {
+    m_type->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ") ";
+
+  if (m_body) {
+    m_body->print(os, debug);
+  } else {
+    os << "?";
+  }
+}
+
+FnDef *FnDef::clone_impl() const {
+  Stmt *body = m_body ? m_body->clone() : nullptr;
+
+  if (m_type) {
+    return FnDef::get(m_name, m_type->clone()->as<FuncTy>(), body);
+  } else {
+    return FnDef::get(m_name, nullptr, body);
+  }
+}
+
+bool CompositeField::verify_impl(std::ostream &os) const {
+  if (!m_type) {
+    os << "CompositeField: type is NULL\n";
+    return false;
+  }
+
+  if (!m_type->verify(os)) {
+    os << "CompositeField: type is invalid\n";
+    return false;
+  }
+
+  if (!m_value) {
+    os << "CompositeField: value is NULL\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "CompositeField: value is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void CompositeField::canonicalize_impl() {
+  if (m_type) {
+    m_type->canonicalize();
+  }
+
+  if (m_value) {
+    m_value->canonicalize();
+  }
+}
+
+void CompositeField::print_impl(std::ostream &os, bool debug) const {
+  os << m_name;
+
+  if (m_type) {
+    os << ": ";
+    m_type->print(os, debug);
+  }
+
+  if (m_value) {
+    os << " = ";
+    m_value->print(os, debug);
+  }
+}
+
+CompositeField *CompositeField::clone_impl() const {
+  Type *type = m_type ? m_type->clone() : nullptr;
+  Expr *value = m_value ? m_value->clone() : nullptr;
+
+  return CompositeField::get(m_name, type, value);
+}
+
+Type *CompositeField::infer_type_impl() const { return m_type; }
+
+Expr *CompositeField::get_value() const { return m_value; }
+void CompositeField::set_value(Expr *value) { m_value = value; }
+
+bool StructDef::verify_impl(std::ostream &os) const {
+  for (auto item : m_methods) {
+    if (!item) {
+      os << "StructDef: method is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "StructDef: method is invalid\n";
+      return false;
+    }
+  }
+
+  for (auto item : m_static_methods) {
+    if (!item) {
+      os << "StructDef: static method is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "StructDef: static method is invalid\n";
+      return false;
+    }
+  }
+
+  for (auto item : m_fields) {
+    if (!item) {
+      os << "StructDef: field is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "StructDef: field is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void StructDef::canonicalize_impl() {
+  for (auto item : m_methods) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+
+  for (auto item : m_static_methods) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+
+  for (auto item : m_fields) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+}
+
+void StructDef::print_impl(std::ostream &os, bool debug) const {
+  os << "struct " << m_name << " {\n";
+
+  for (auto item : m_fields) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "\n";
+
+  for (auto item : m_methods) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "\n";
+
+  for (auto item : m_static_methods) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "}";
+}
+
+StructDef *StructDef::clone_impl() const {
+  auto type = m_type ? m_type->clone() : nullptr;
+
+  StructDefFields fields;
+  for (auto item : m_fields) {
+    if (item) {
+      fields.push_back(item->clone());
+    } else {
+      fields.push_back(nullptr);
+    }
+  }
+
+  StructDefMethods methods;
+  for (auto item : m_methods) {
+    if (item) {
+      methods.push_back(item->clone());
+    } else {
+      methods.push_back(nullptr);
+    }
+  }
+
+  StructDefStaticMethods static_methods;
+  for (auto item : m_static_methods) {
+    if (item) {
+      static_methods.push_back(item->clone());
+    } else {
+      static_methods.push_back(nullptr);
+    }
+  }
+
+  return StructDef::get(m_name, static_cast<StructTy *>(type), fields, methods, static_methods);
+}
+
+StructTy *StructDef::get_type() const { return static_cast<StructTy *>(m_type); }
+
+const StructDefMethods &StructDef::get_methods() const { return m_methods; }
+void StructDef::add_method(FnDecl *item) { m_methods.push_back(item); }
+void StructDef::add_methods(std::initializer_list<FnDecl *> items) {
+  m_methods.insert(m_methods.end(), items.begin(), items.end());
+}
+void StructDef::clear_methods() { m_methods.clear(); }
+void StructDef::remove_method(FnDecl *item) {
+  std::erase_if(m_methods, [item](auto &field) { return field == item; });
+}
+
+const StructDefStaticMethods &StructDef::get_static_methods() const { return m_static_methods; }
+void StructDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
+void StructDef::add_static_methods(std::initializer_list<FnDecl *> items) {
+  m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
+}
+void StructDef::clear_static_methods() { m_static_methods.clear(); }
+void StructDef::remove_static_method(FnDecl *item) {
+  std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
+}
+
+const StructDefFields &StructDef::get_fields() const { return m_fields; }
+void StructDef::add_field(CompositeField *item) { m_fields.push_back(item); }
+void StructDef::add_fields(std::initializer_list<CompositeField *> items) {
+  m_fields.insert(m_fields.end(), items.begin(), items.end());
+}
+void StructDef::clear_fields() { m_fields.clear(); }
+void StructDef::remove_field(CompositeField *item) {
+  std::erase_if(m_fields, [item](auto &field) { return field == item; });
+}
+
+Type *StructDef::infer_type_impl() const { return m_type; }
+
+bool GroupDef::verify_impl(std::ostream &os) const {
+  for (auto item : m_methods) {
+    if (!item) {
+      os << "GroupDef: method is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "GroupDef: method is invalid\n";
+      return false;
+    }
+  }
+
+  for (auto item : m_static_methods) {
+    if (!item) {
+      os << "GroupDef: static method is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "GroupDef: static method is invalid\n";
+      return false;
+    }
+  }
+
+  for (auto item : m_fields) {
+    if (!item) {
+      os << "GroupDef: field is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "GroupDef: field is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void GroupDef::canonicalize_impl() {
+  for (auto item : m_methods) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+
+  for (auto item : m_static_methods) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+
+  for (auto item : m_fields) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+}
+
+void GroupDef::print_impl(std::ostream &os, bool debug) const {
+  os << "group " << m_name << " {\n";
+
+  for (auto item : m_fields) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "\n";
+
+  for (auto item : m_methods) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "\n";
+
+  for (auto item : m_static_methods) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "}";
+}
+
+GroupDef *GroupDef::clone_impl() const {
+  Type *type = m_type ? m_type->clone() : nullptr;
+
+  GroupDefFields fields;
+  for (auto item : m_fields) {
+    if (item) {
+      fields.push_back(item->clone());
+    } else {
+      fields.push_back(nullptr);
+    }
+  }
+
+  GroupDefMethods methods;
+  for (auto item : m_methods) {
+    if (item) {
+      methods.push_back(item->clone());
+    } else {
+      methods.push_back(nullptr);
+    }
+  }
+
+  GroupDefStaticMethods static_methods;
+  for (auto item : m_static_methods) {
+    if (item) {
+      static_methods.push_back(item->clone());
+    } else {
+      static_methods.push_back(nullptr);
+    }
+  }
+
+  return GroupDef::get(m_name, static_cast<GroupTy *>(type), fields, methods, static_methods);
+}
+
+GroupTy *GroupDef::get_type() const { return static_cast<GroupTy *>(m_type); }
+
+const GroupDefMethods &GroupDef::get_methods() const { return m_methods; }
+void GroupDef::add_method(FnDecl *item) { m_methods.push_back(item); }
+void GroupDef::add_methods(std::initializer_list<FnDecl *> items) {
+  m_methods.insert(m_methods.end(), items.begin(), items.end());
+}
+void GroupDef::clear_methods() { m_methods.clear(); }
+void GroupDef::remove_method(FnDecl *item) {
+  std::erase_if(m_methods, [item](auto &field) { return field == item; });
+}
+
+const GroupDefStaticMethods &GroupDef::get_static_methods() const { return m_static_methods; }
+void GroupDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
+void GroupDef::add_static_methods(std::initializer_list<FnDecl *> items) {
+  m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
+}
+void GroupDef::clear_static_methods() { m_static_methods.clear(); }
+void GroupDef::remove_static_method(FnDecl *item) {
+  std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
+}
+
+const GroupDefFields &GroupDef::get_fields() const { return m_fields; }
+void GroupDef::add_field(CompositeField *item) { m_fields.push_back(item); }
+void GroupDef::add_fields(std::initializer_list<CompositeField *> items) {
+  m_fields.insert(m_fields.end(), items.begin(), items.end());
+}
+void GroupDef::clear_fields() { m_fields.clear(); }
+void GroupDef::remove_field(CompositeField *item) {
+  std::erase_if(m_fields, [item](auto &field) { return field == item; });
+}
+
+Type *GroupDef::infer_type_impl() const { return m_type; }
+
+bool RegionDef::verify_impl(std::ostream &os) const {
+  for (auto item : m_methods) {
+    if (!item) {
+      os << "RegionDef: method is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "RegionDef: method is invalid\n";
+      return false;
+    }
+  }
+
+  for (auto item : m_static_methods) {
+    if (!item) {
+      os << "RegionDef: static method is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "RegionDef: static method is invalid\n";
+      return false;
+    }
+  }
+
+  for (auto item : m_fields) {
+    if (!item) {
+      os << "RegionDef: field is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "RegionDef: field is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void RegionDef::canonicalize_impl() {
+  for (auto item : m_methods) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+
+  for (auto item : m_static_methods) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+
+  for (auto item : m_fields) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+}
+
+void RegionDef::print_impl(std::ostream &os, bool debug) const {
+  os << "region " << m_name << " {\n";
+
+  for (auto item : m_fields) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "\n";
+
+  for (auto item : m_methods) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "\n";
+
+  for (auto item : m_static_methods) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "}";
+}
+
+RegionDef *RegionDef::clone_impl() const {
+  Type *type = m_type ? m_type->clone() : nullptr;
+
+  RegionDefFields fields;
+  for (auto item : m_fields) {
+    if (item) {
+      fields.push_back(item->clone());
+    } else {
+      fields.push_back(nullptr);
+    }
+  }
+
+  RegionDefMethods methods;
+  for (auto item : m_methods) {
+    if (item) {
+      methods.push_back(item->clone());
+    } else {
+      methods.push_back(nullptr);
+    }
+  }
+
+  RegionDefStaticMethods static_methods;
+  for (auto item : m_static_methods) {
+    if (item) {
+      static_methods.push_back(item->clone());
+    } else {
+      static_methods.push_back(nullptr);
+    }
+  }
+
+  return RegionDef::get(m_name, static_cast<RegionTy *>(type), fields, methods, static_methods);
+}
+
+RegionTy *RegionDef::get_type() const { return static_cast<RegionTy *>(m_type); }
+
+const RegionDefMethods &RegionDef::get_methods() const { return m_methods; }
+void RegionDef::add_method(FnDecl *item) { m_methods.push_back(item); }
+void RegionDef::add_methods(std::initializer_list<FnDecl *> items) {
+  m_methods.insert(m_methods.end(), items.begin(), items.end());
+}
+void RegionDef::clear_methods() { m_methods.clear(); }
+void RegionDef::remove_method(FnDecl *item) {
+  std::erase_if(m_methods, [item](auto &field) { return field == item; });
+}
+
+const RegionDefStaticMethods &RegionDef::get_static_methods() const { return m_static_methods; }
+void RegionDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
+void RegionDef::add_static_methods(std::initializer_list<FnDecl *> items) {
+  m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
+}
+void RegionDef::clear_static_methods() { m_static_methods.clear(); }
+void RegionDef::remove_static_method(FnDecl *item) {
+  std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
+}
+
+const RegionDefFields &RegionDef::get_fields() const { return m_fields; }
+void RegionDef::add_field(CompositeField *item) { m_fields.push_back(item); }
+void RegionDef::add_fields(std::initializer_list<CompositeField *> items) {
+  m_fields.insert(m_fields.end(), items.begin(), items.end());
+}
+void RegionDef::clear_fields() { m_fields.clear(); }
+void RegionDef::remove_field(CompositeField *item) {
+  std::erase_if(m_fields, [item](auto &field) { return field == item; });
+}
+
+Type *RegionDef::infer_type_impl() const { return m_type; }
+
+bool UnionDef::verify_impl(std::ostream &os) const {
+  for (auto item : m_methods) {
+    if (!item) {
+      os << "UnionDef: method is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "UnionDef: method is invalid\n";
+      return false;
+    }
+  }
+
+  for (auto item : m_static_methods) {
+    if (!item) {
+      os << "UnionDef: static method is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "UnionDef: static method is invalid\n";
+      return false;
+    }
+  }
+
+  for (auto item : m_fields) {
+    if (!item) {
+      os << "UnionDef: field is NULL\n";
+      return false;
+    }
+
+    if (!item->verify(os)) {
+      os << "UnionDef: field is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void UnionDef::canonicalize_impl() {
+  for (auto item : m_methods) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+
+  for (auto item : m_static_methods) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+
+  for (auto item : m_fields) {
+    if (item) {
+      item->canonicalize();
+    }
+  }
+}
+
+void UnionDef::print_impl(std::ostream &os, bool debug) const {
+  os << "union " << m_name << " {\n";
+
+  for (auto item : m_fields) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "\n";
+
+  for (auto item : m_methods) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "\n";
+
+  for (auto item : m_static_methods) {
+    if (item) {
+      item->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    os << "\n";
+  }
+
+  os << "}";
+}
+
+UnionDef *UnionDef::clone_impl() const {
+  Type *type = m_type ? m_type->clone() : nullptr;
+
+  UnionDefFields fields;
+  for (auto item : m_fields) {
+    if (item) {
+      fields.push_back(item->clone());
+    } else {
+      fields.push_back(nullptr);
+    }
+  }
+
+  UnionDefMethods methods;
+  for (auto item : m_methods) {
+    if (item) {
+      methods.push_back(item->clone());
+    } else {
+      methods.push_back(nullptr);
+    }
+  }
+
+  UnionDefStaticMethods static_methods;
+  for (auto item : m_static_methods) {
+    if (item) {
+      static_methods.push_back(item->clone());
+    } else {
+      static_methods.push_back(nullptr);
+    }
+  }
+
+  return UnionDef::get(m_name, static_cast<UnionTy *>(type), fields, methods, static_methods);
+}
+
+UnionTy *UnionDef::get_type() const { return static_cast<UnionTy *>(m_type); }
+
+const UnionDefMethods &UnionDef::get_methods() const { return m_methods; }
+void UnionDef::add_method(FnDecl *item) { m_methods.push_back(item); }
+void UnionDef::add_methods(std::initializer_list<FnDecl *> items) {
+  m_methods.insert(m_methods.end(), items.begin(), items.end());
+}
+void UnionDef::clear_methods() { m_methods.clear(); }
+void UnionDef::remove_method(FnDecl *item) {
+  std::erase_if(m_methods, [item](auto &field) { return field == item; });
+}
+
+const UnionDefStaticMethods &UnionDef::get_static_methods() const { return m_static_methods; }
+void UnionDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
+void UnionDef::add_static_methods(std::initializer_list<FnDecl *> items) {
+  m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
+}
+void UnionDef::clear_static_methods() { m_static_methods.clear(); }
+void UnionDef::remove_static_method(FnDecl *item) {
+  std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
+}
+
+const UnionDefFields &UnionDef::get_fields() const { return m_fields; }
+void UnionDef::add_field(CompositeField *item) { m_fields.push_back(item); }
+void UnionDef::add_fields(std::initializer_list<CompositeField *> items) {
+  m_fields.insert(m_fields.end(), items.begin(), items.end());
+}
+void UnionDef::clear_fields() { m_fields.clear(); }
+void UnionDef::remove_field(CompositeField *item) {
+  std::erase_if(m_fields, [item](auto &field) { return field == item; });
+}
+
+Type *UnionDef::infer_type_impl() const { return m_type; }
+
+bool EnumDef::verify_impl(std::ostream &os) const {
+  for (auto item : m_items) {
+    if (!item.second) {
+      os << "EnumDef: item is NULL\n";
+      return false;
+    }
+
+    if (!item.second->verify(os)) {
+      os << "EnumDef: item is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+void EnumDef::canonicalize_impl() {
+  for (auto item : m_items) {
+    if (item.second) {
+      item.second->canonicalize();
+    }
+  }
+}
+
+void EnumDef::print_impl(std::ostream &os, bool debug) const {
+  os << "enum " << m_name << " {\n";
+
+  for (auto item : m_items) {
+    os << item.first;
+
+    if (item.second) {
+      os << " = ";
+      item.second->print(os, debug);
+    }
+
+    os << ",\n";
+  }
+
+  os << "}";
+}
+
+EnumTy *EnumDef::get_type() const { return static_cast<EnumTy *>(m_type); }
+
+EnumDef *EnumDef::clone_impl() const {
+  Type *type = m_type ? m_type->clone() : nullptr;
+
+  EnumDefItems items;
+  for (auto item : m_items) {
+    if (item.second) {
+      items.push_back({item.first, item.second->clone()});
+    } else {
+      items.push_back({item.first, nullptr});
+    }
+  }
+
+  return EnumDef::get(m_name, static_cast<EnumTy *>(type), items);
+}
+
+const EnumDefItems &EnumDef::get_items() const { return m_items; }
+void EnumDef::add_item(EnumItem item) { m_items.push_back(item); }
+void EnumDef::add_items(std::initializer_list<EnumItem> items) {
+  m_items.insert(m_items.end(), items.begin(), items.end());
+}
+void EnumDef::clear_items() { m_items.clear(); }
+void EnumDef::remove_item(EnumItem item) {
+  std::erase_if(m_items, [item](auto &field) { return field == item; });
+}
+
+Type *EnumDef::infer_type_impl() const { return m_type; }
 
 ///=============================================================================
 
