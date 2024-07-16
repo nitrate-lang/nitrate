@@ -425,7 +425,7 @@ void *quixcc_ast_get(const quixcc_ast_node_t *node, uint16_t index, quixcc_ast_f
  *
  * @note Thread safety is required.
  */
-typedef int (*quixcc_ast_visit_t)(quixcc_ast_node_t *node, void *ex);
+typedef int (*quixcc_ast_visit_t)(quixcc_ast_node_t **node, void *ex);
 
 /**
  * @brief Callback predicate on the Abstract Syntax Tree.
@@ -560,18 +560,6 @@ bool quixcc_ast_from(const uint8_t *repr, size_t len, quixcc_arena_t *arena,
  * @note If the allocation fails, the function will panic.
  */
 quixcc_ast_node_t *quixcc_ast_alloc(quixcc_ast_ntype_t type, quixcc_arena_t *arena);
-
-/**
- * @brief Destructs an abstract syntax tree node.
- *
- * @param node The abstract syntax tree node.
- *
- * @note This function is thread-safe.
- * @note If the node is `NULL`, it is a no-op.
- * @warning This function does not actually free the memory of the node, it just
- * invokes the virtual destructor.
- */
-void quixcc_ast_done(quixcc_ast_node_t *node);
 
 ///=============================================================================
 /// END: ABSTRACT SYNTAX TREE NODE MEMORY MANAGEMENT

@@ -40,9 +40,17 @@
 #include <iostream>
 #include <vector>
 
-// #define ALLOCATOR_PRINT_VERBOSE 1
+#define ALLOCATOR_PRINT_VERBOSE 1
 
-#define REGION_SIZE (1024 * 1024)
+#define REGION_SIZE (1024 * 16)
+
+static inline uintptr_t ALIGNED(uintptr_t ptr, size_t align) {
+  if (ptr % align) {
+    return ptr + (align - (ptr % align));
+  }
+
+  return ptr;
+}
 
 class quixcc_arena_impl_t {
   [[noreturn]] void alloc_failed() {
@@ -144,8 +152,7 @@ class quixcc_arena_impl_t {
 
     for (auto it = m_bases.rbegin(); it != m_bases.rend(); ++it) {
       /* Calculate boundaries for hypothetical allocation */
-      uintptr_t start =
-          (uintptr_t)it->m_offset + (alignment - ((uintptr_t)it->m_offset % alignment));
+      uintptr_t start = ALIGNED((uintptr_t)it->m_offset, alignment);
 
       /* Check if the region has enough space */
       if ((start + size) <= (uintptr_t)it->m_base + it->m_size) {
@@ -158,8 +165,7 @@ class quixcc_arena_impl_t {
     alloc_region(REGION_SIZE);
 
     /* Calculate the start of the allocation */
-    uintptr_t start = (uintptr_t)m_bases.back().m_offset +
-                      (alignment - ((uintptr_t)m_bases.back().m_offset % alignment));
+    uintptr_t start = ALIGNED((uintptr_t)m_bases.back().m_offset, alignment);
 
     m_bases.back().m_offset = (void *)(start + size);
 
@@ -230,8 +236,12 @@ LIB_EXPORT size_t quixcc_arena_used(quixcc_arena_t *arena) {
 
 LIB_EXPORT void quixcc_arena_close(quixcc_arena_t *arena) {
 #if ALLOCATOR_PRINT_VERBOSE
-  std::cerr << "TRACE: quixcc_arena_close(" << arena << ")\n";
+  if (arena->m_impl) {
+    std::cerr << "TRACE: quixcc_arena_close(" << arena << ")\n";
+  } else {
+    std::cerr << "TRACE: quixcc_arena_close(" << arena << ") -> nop\n";
+  }
 #endif
-
   delete arena->m_impl;
+  arena->m_impl = nullptr;
 }

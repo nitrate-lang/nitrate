@@ -55,6 +55,8 @@
 
 namespace libquixcc::qast {
   class ArenaAllocatorImpl {
+    /// WARNING: This must be the first member; C bindings use quixcc_ast_arena as of type
+    /// `quixcc_arena_t`.
     quixcc_arena_t m_arena;
 
 public:
@@ -64,12 +66,12 @@ public:
     void *allocate(std::size_t bytes);
     void deallocate(void *ptr) noexcept;
 
-    void swap(quixcc_arena_t &arena) {
-      std::swap(m_arena, arena);
-    }
+    void swap(quixcc_arena_t &arena) { std::swap(m_arena, arena); }
+
+    quixcc_arena_t &get() { return m_arena; }
   };
 
-  extern thread_local ArenaAllocatorImpl g_allocator;
+  extern "C" thread_local ArenaAllocatorImpl quixcc_ast_arena;
 
   template <class T> struct Arena {
     typedef T value_type;
@@ -79,7 +81,7 @@ public:
     template <class U> constexpr Arena(const Arena<U> &) noexcept {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(g_allocator.allocate(sizeof(T) * n));
+      return static_cast<T *>(quixcc_ast_arena.allocate(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) noexcept {
@@ -137,18 +139,18 @@ public:
   }                                                                                                \
                                                                                                    \
   public:                                                                                          \
-  virtual __typename *clone(ArenaAllocatorImpl &arena = g_allocator) const override {              \
-    ArenaAllocatorImpl old = g_allocator;                                                          \
-    g_allocator = arena;                                                                           \
+  virtual __typename *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena)                \
+      const override {                                                                             \
+    ArenaAllocatorImpl old = quixcc_ast_arena;                                           \
+    quixcc_ast_arena = arena;                                                            \
     __typename *node = clone_impl();                                                               \
-    g_allocator = old;                                                                             \
+    quixcc_ast_arena = old;                                                              \
     return node;                                                                                   \
   }
 
 class quixcc_ast_node_t : public libquixcc::core::IDumpable {
   public:
   quixcc_ast_node_t() = default;
-  virtual ~quixcc_ast_node_t() = default;
 };
 
 namespace libquixcc::qast {
@@ -169,7 +171,6 @@ protected:
 
 public:
     Node() = default;
-    virtual ~Node() override = default;
 
     uint32_t this_sizeof() const;
     quixcc_ast_ntype_t this_typeid() const;
@@ -226,7 +227,7 @@ public:
     bool is(const quixcc_ast_ntype_t type) const;
     bool verify(std::ostream &os = std::cerr) const;
     void canonicalize();
-    virtual Node *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual Node *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
 
     static const char *type_name(quixcc_ast_ntype_t type);
   };
@@ -234,9 +235,8 @@ public:
   class Stmt : public Node {
 public:
     Stmt() = default;
-    virtual ~Stmt() override = default;
 
-    virtual Stmt *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual Stmt *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   class Type : public Node {
@@ -245,7 +245,6 @@ protected:
 
 public:
     Type() = default;
-    virtual ~Type() override = default;
 
     uint64_t infer_size_bits() const;
     uint64_t infer_size() const;
@@ -281,7 +280,7 @@ public:
     bool is_const_ptr_to_const(const Type *type) const;
     bool is_string() const;
 
-    virtual Type *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual Type *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   typedef std::set<std::string_view, std::less<std::string_view>, Arena<std::string_view>> DeclTags;
@@ -298,7 +297,6 @@ public:
     Decl(std::string_view name = "", Type *type = nullptr,
          std::initializer_list<std::string_view> tags = {})
         : m_tags(tags), m_name(name), m_type(type) {}
-    virtual ~Decl() override = default;
 
     std::string_view get_name() const;
     void set_name(std::string_view name);
@@ -314,7 +312,7 @@ public:
 
     Type *infer_type() const;
 
-    virtual Decl *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual Decl *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   class Expr : public Node {
@@ -327,7 +325,6 @@ protected:
 
 public:
     Expr() : m_type(nullptr) {}
-    virtual ~Expr() override = default;
 
     Type *infer_type() const;
     bool is_const() const;
@@ -336,7 +333,7 @@ public:
     bool is_unaryexpr() const;
     bool is_ternaryexpr() const;
 
-    virtual Expr *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual Expr *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   class ConstExpr : public Expr {
@@ -372,7 +369,6 @@ protected:
 
 public:
     ConstExpr(Expr *value = nullptr) : m_value(value) {}
-    virtual ~ConstExpr() override = default;
 
     template <typename T> T eval_as() const {
       if constexpr (std::is_same_v<T, bool>) {
@@ -426,49 +422,43 @@ public:
   class LitExpr : public ConstExpr {
 public:
     LitExpr() = default;
-    virtual ~LitExpr() override = default;
 
-    virtual LitExpr *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual LitExpr *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   class FlowStmt : public Stmt {
 public:
     FlowStmt() = default;
-    virtual ~FlowStmt() override = default;
 
-    virtual FlowStmt *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual FlowStmt *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   class DeclStmt : public Stmt {
 public:
     DeclStmt() = default;
-    virtual ~DeclStmt() override = default;
 
-    virtual DeclStmt *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual DeclStmt *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   class TypeBuiltin : public Type {
 public:
     TypeBuiltin() = default;
-    virtual ~TypeBuiltin() override = default;
 
-    virtual TypeBuiltin *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual TypeBuiltin *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   class TypeComplex : public Type {
 public:
     TypeComplex() = default;
-    virtual ~TypeComplex() override = default;
 
-    virtual TypeComplex *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual TypeComplex *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   class TypeComposite : public Type {
 public:
     TypeComposite() = default;
-    virtual ~TypeComposite() override = default;
 
-    virtual TypeComposite *clone(ArenaAllocatorImpl &arena = g_allocator) const = 0;
+    virtual TypeComposite *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
   class UnresolvedType : public Type {
@@ -478,7 +468,6 @@ public:
 
 public:
     UnresolvedType(std::string_view name = "") : m_name(name) {}
-    virtual ~UnresolvedType() override = default;
 
     std::string_view get_name() const;
     void set_name(std::string_view name);
@@ -491,7 +480,6 @@ public:
 
 public:
     U1() = default;
-    virtual ~U1() override = default;
 
     NODE_IMPL_CORE(U1)
   };
@@ -501,7 +489,6 @@ public:
 
 public:
     U8() = default;
-    virtual ~U8() override = default;
 
     NODE_IMPL_CORE(U8)
   };
@@ -511,7 +498,6 @@ public:
 
 public:
     U16() = default;
-    virtual ~U16() override = default;
 
     NODE_IMPL_CORE(U16)
   };
@@ -521,7 +507,6 @@ public:
 
 public:
     U32() = default;
-    virtual ~U32() override = default;
 
     NODE_IMPL_CORE(U32)
   };
@@ -531,7 +516,6 @@ public:
 
 public:
     U64() = default;
-    virtual ~U64() override = default;
 
     NODE_IMPL_CORE(U64)
   };
@@ -541,7 +525,6 @@ public:
 
 public:
     U128() = default;
-    virtual ~U128() override = default;
 
     NODE_IMPL_CORE(U128)
   };
@@ -551,7 +534,6 @@ public:
 
 public:
     I8() = default;
-    virtual ~I8() override = default;
 
     NODE_IMPL_CORE(I8)
   };
@@ -561,7 +543,6 @@ public:
 
 public:
     I16() = default;
-    virtual ~I16() override = default;
 
     NODE_IMPL_CORE(I16)
   };
@@ -571,7 +552,6 @@ public:
 
 public:
     I32() = default;
-    virtual ~I32() override = default;
 
     NODE_IMPL_CORE(I32)
   };
@@ -581,7 +561,6 @@ public:
 
 public:
     I64() = default;
-    virtual ~I64() override = default;
 
     NODE_IMPL_CORE(I64)
   };
@@ -591,7 +570,6 @@ public:
 
 public:
     I128() = default;
-    virtual ~I128() override = default;
 
     NODE_IMPL_CORE(I128)
   };
@@ -601,7 +579,6 @@ public:
 
 public:
     F32() = default;
-    virtual ~F32() override = default;
 
     NODE_IMPL_CORE(F32)
   };
@@ -611,7 +588,6 @@ public:
 
 public:
     F64() = default;
-    virtual ~F64() override = default;
 
     NODE_IMPL_CORE(F64)
   };
@@ -621,7 +597,6 @@ public:
 
 public:
     VoidTy() = default;
-    virtual ~VoidTy() override = default;
 
     NODE_IMPL_CORE(VoidTy)
   };
@@ -631,7 +606,6 @@ public:
 
 public:
     StringTy() = default;
-    virtual ~StringTy() override = default;
 
     NODE_IMPL_CORE(StringTy)
   };
@@ -645,7 +619,6 @@ public:
 public:
     PtrTy(Type *item = nullptr, bool is_volatile = false)
         : m_item(item), m_is_volatile(is_volatile) {}
-    virtual ~PtrTy() override = default;
 
     Type *get_item() const;
     void set_item(Type *item);
@@ -663,7 +636,6 @@ public:
 
 public:
     OpaqueTy(std::string_view name = "") : m_name(name) {}
-    virtual ~OpaqueTy() override = default;
 
     std::string_view get_name() const;
     void set_name(std::string_view name);
@@ -678,7 +650,6 @@ public:
 
 public:
     VectorTy(Type *item = nullptr) : m_item(item) {}
-    virtual ~VectorTy() override = default;
 
     Type *get_item() const;
     void set_item(Type *item);
@@ -693,7 +664,6 @@ public:
 
 public:
     SetTy(Type *item = nullptr) : m_item(item) {}
-    virtual ~SetTy() override = default;
 
     Type *get_item() const;
     void set_item(Type *item);
@@ -709,7 +679,6 @@ public:
 
 public:
     MapTy(Type *key = nullptr, Type *value = nullptr) : m_key(key), m_value(value) {}
-    virtual ~MapTy() override = default;
 
     Type *get_key() const;
     void set_key(Type *key);
@@ -729,7 +698,6 @@ public:
 public:
     TupleTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
     TupleTy(const TupleTyItems &items) : m_items(items) {}
-    virtual ~TupleTy() override = default;
 
     const TupleTyItems &get_items() const;
     void add_item(Type *item);
@@ -747,7 +715,6 @@ public:
 
 public:
     OptionalTy(Type *item = nullptr) : m_item(item) {}
-    virtual ~OptionalTy() override = default;
 
     Type *get_item() const;
     void set_item(Type *item);
@@ -763,7 +730,6 @@ public:
 
 public:
     ArrayTy(Type *item = nullptr, ConstExpr *size = nullptr) : m_item(item), m_size(size) {}
-    virtual ~ArrayTy() override = default;
 
     Type *get_item() const;
     void set_item(Type *item);
@@ -783,7 +749,6 @@ public:
 public:
     EnumTy(std::string_view name = "", Type *memtype = nullptr)
         : m_name(name), m_memtype(memtype) {}
-    virtual ~EnumTy() override = default;
 
     std::string_view get_name() const;
     void set_name(std::string_view name);
@@ -801,7 +766,6 @@ public:
 
 public:
     MutTy(Type *item = nullptr) : m_item(item) {}
-    virtual ~MutTy() override = default;
 
     Type *get_item() const;
     void set_item(Type *item);
@@ -820,7 +784,6 @@ public:
 public:
     StructTy(std::initializer_list<StructItem> items = {}) : m_items(items) {}
     StructTy(const StructItems &items) : m_items(items) {}
-    virtual ~StructTy() override = default;
 
     const StructItems &get_items() const;
     void add_item(std::string_view name, Type *type);
@@ -841,7 +804,6 @@ public:
 public:
     GroupTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
     GroupTy(const GroupTyItems &items) : m_items(items) {}
-    virtual ~GroupTy() override = default;
 
     const GroupTyItems &get_items() const;
     void add_item(Type *item);
@@ -862,7 +824,6 @@ public:
 public:
     RegionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
     RegionTy(const RegionTyItems &items) : m_items(items) {}
-    virtual ~RegionTy() override = default;
 
     const RegionTyItems &get_items() const;
     void add_item(Type *item);
@@ -883,7 +844,6 @@ public:
 public:
     UnionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
     UnionTy(const UnionTyItems &items) : m_items(items) {}
-    virtual ~UnionTy() override = default;
 
     const UnionTyItems &get_items() const;
     void add_item(Type *item);
@@ -942,7 +902,6 @@ public:
         m_params.push_back({"_" + std::to_string(i), parameters[i], nullptr});
       }
     }
-    virtual ~FuncTy() override = default;
 
     bool is_noreturn() const;
     void set_noreturn(bool noreturn);
@@ -987,7 +946,6 @@ protected:
 
 public:
     UnaryExpr(UnaryOp op = UnaryOp::UNKNOWN, Expr *rhs = nullptr) : m_rhs(rhs), m_op(op) {}
-    virtual ~UnaryExpr() override = default;
 
     Expr *get_rhs() const;
     void set_rhs(Expr *rhs);
@@ -1011,7 +969,6 @@ protected:
 public:
     BinExpr(Expr *lhs = nullptr, BinOp op = BinOp::UNKNOWN, Expr *rhs = nullptr)
         : m_lhs(lhs), m_rhs(rhs), m_op(op) {}
-    virtual ~BinExpr() override = default;
 
     Expr *get_lhs() const;
     void set_lhs(Expr *lhs);
@@ -1038,7 +995,6 @@ protected:
 public:
     TernaryExpr(Expr *cond = nullptr, Expr *lhs = nullptr, Expr *rhs = nullptr)
         : m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
-    virtual ~TernaryExpr() override = default;
 
     Expr *get_cond() const;
     void set_cond(Expr *cond);
@@ -1060,7 +1016,6 @@ public:
 public:
     ConstInt(std::string_view value = "") : m_value(value) {}
     ConstInt(uint64_t value) : m_value(std::to_string(value)) {}
-    virtual ~ConstInt() override = default;
 
     std::string_view get_value() const;
 
@@ -1073,7 +1028,6 @@ public:
 public:
     ConstFloat(std::string_view value = "") : m_value(value) {}
     ConstFloat(double value) : m_value(std::to_string(value)) {}
-    virtual ~ConstFloat() override = default;
 
     std::string_view get_value() const;
 
@@ -1085,7 +1039,6 @@ public:
 
 public:
     ConstBool(bool value = false) : m_value(value) {}
-    virtual ~ConstBool() override = default;
 
     bool get_value() const;
 
@@ -1097,7 +1050,6 @@ public:
 
 public:
     ConstString(std::string_view value = "") : m_value(value) {}
-    virtual ~ConstString() override = default;
 
     std::string_view get_value() const;
 
@@ -1109,7 +1061,6 @@ public:
 
 public:
     ConstChar(std::string_view value = "") : m_value(value) {}
-    virtual ~ConstChar() override = default;
 
     std::string_view get_value() const;
 
@@ -1119,7 +1070,6 @@ public:
   class ConstNull : public LitExpr {
 public:
     ConstNull() = default;
-    virtual ~ConstNull() override = default;
 
     NODE_IMPL_CORE(ConstNull)
   };
@@ -1127,7 +1077,6 @@ public:
   class ConstUndef : public LitExpr {
 public:
     ConstUndef() = default;
-    virtual ~ConstUndef() override = default;
 
     NODE_IMPL_CORE(ConstUndef)
   };
@@ -1148,7 +1097,6 @@ protected:
 
 public:
     Call(Expr *func = nullptr, CallArgs args = {}) : m_func(func), m_args(args) {}
-    virtual ~Call() override = default;
 
     Expr *get_func() const;
     void set_func(Expr *func);
@@ -1175,7 +1123,6 @@ protected:
 public:
     List(std::initializer_list<Expr *> items = {}) : m_items(items) {}
     List(const ListData &items) : m_items(items) {}
-    virtual ~List() override = default;
 
     const ListData &get_items() const;
     void add_item(Expr *item);
@@ -1197,7 +1144,6 @@ protected:
 
 public:
     Assoc(Expr *key = nullptr, Expr *value = nullptr) : m_key(key), m_value(value) {}
-    virtual ~Assoc() override = default;
 
     Expr *get_key() const;
     void set_key(Expr *key);
@@ -1219,7 +1165,6 @@ protected:
 
 public:
     Field(Expr *base = nullptr, std::string_view field = "") : m_base(base), m_field(field) {}
-    virtual ~Field() override = default;
 
     Expr *get_base() const;
     void set_base(Expr *base);
@@ -1241,7 +1186,6 @@ protected:
 
 public:
     Index(Expr *base = nullptr, Expr *index = nullptr) : m_base(base), m_index(index) {}
-    virtual ~Index() override = default;
 
     Expr *get_base() const;
     void set_base(Expr *base);
@@ -1265,7 +1209,6 @@ protected:
 public:
     Slice(Expr *base = nullptr, Expr *start = nullptr, Expr *end = nullptr)
         : m_base(base), m_start(start), m_end(end) {}
-    virtual ~Slice() override = default;
 
     Expr *get_base() const;
     void set_base(Expr *base);
@@ -1294,7 +1237,6 @@ public:
     FString(std::string_view value = "", std::initializer_list<Expr *> items = {})
         : m_value(value), m_items(items) {}
     FString(std::string_view value, const FStringArgs &items) : m_value(value), m_items(items) {}
-    virtual ~FString() override = default;
 
     std::string_view get_value() const;
     void set_value(std::string_view value);
@@ -1317,7 +1259,6 @@ public:
 
 public:
     Ident(std::string_view name = "") : m_name(name) {}
-    virtual ~Ident() override = default;
 
     std::string_view get_name() const;
     void set_name(std::string_view name);
@@ -1335,7 +1276,6 @@ protected:
 public:
     Block(std::initializer_list<Stmt *> items = {}) : m_items(items) {}
     Block(const BlockItems &items) : m_items(items) {}
-    virtual ~Block() override = default;
 
     const BlockItems &get_items() const;
     void add_item(Stmt *item);
@@ -1355,7 +1295,6 @@ protected:
 public:
     ConstDecl(std::string_view name = "", Type *type = nullptr, Expr *value = nullptr)
         : Decl(name, type), m_value(value) {}
-    virtual ~ConstDecl() override = default;
 
     Expr *get_value() const;
     void set_value(Expr *value);
@@ -1372,7 +1311,6 @@ protected:
 public:
     VarDecl(std::string_view name = "", Type *type = nullptr, Expr *value = nullptr)
         : Decl(name, type), m_value(value) {}
-    virtual ~VarDecl() override = default;
 
     Expr *get_value() const;
     void set_value(Expr *value);
@@ -1389,7 +1327,6 @@ protected:
 public:
     LetDecl(std::string_view name = "", Type *type = nullptr, Expr *value = nullptr)
         : Decl(name, type), m_value(value) {}
-    virtual ~LetDecl() override = default;
 
     Expr *get_value() const;
     void set_value(Expr *value);
@@ -1408,7 +1345,6 @@ public:
     InlineAsm(std::string_view code = "", std::initializer_list<Expr *> args = {})
         : m_code(code), m_args(args) {}
     InlineAsm(std::string_view code, const InlineAsmArgs &args) : m_code(code), m_args(args) {}
-    virtual ~InlineAsm() override = default;
 
     std::string_view get_code() const;
     void set_code(std::string_view code);
@@ -1431,7 +1367,6 @@ protected:
 public:
     IfStmt(Expr *cond = nullptr, Stmt *then = nullptr, Stmt *else_ = nullptr)
         : m_cond(cond), m_then(then), m_else(else_) {}
-    virtual ~IfStmt() override = default;
 
     Expr *get_cond() const;
     void set_cond(Expr *cond);
@@ -1452,7 +1387,6 @@ protected:
 
 public:
     WhileStmt(Expr *cond = nullptr, Stmt *body = nullptr) : m_cond(cond), m_body(body) {}
-    virtual ~WhileStmt() override = default;
 
     Expr *get_cond() const;
     void set_cond(Expr *cond);
@@ -1473,7 +1407,6 @@ protected:
 public:
     ForStmt(Stmt *init = nullptr, Expr *cond = nullptr, Stmt *step = nullptr, Stmt *body = nullptr)
         : m_init(init), m_cond(cond), m_step(step), m_body(body) {}
-    virtual ~ForStmt() override = default;
 
     Stmt *get_init() const;
     void set_init(Stmt *init);
@@ -1499,7 +1432,6 @@ protected:
 public:
     FormStmt(Expr *init = nullptr, Expr *generator = nullptr, Stmt *body = nullptr)
         : m_init(init), m_generator(generator), m_body(body) {}
-    virtual ~FormStmt() override = default;
 
     Expr *get_init() const;
     void set_init(Expr *init);
@@ -1522,7 +1454,6 @@ protected:
 public:
     ForeachStmt(std::string_view name = "", Expr *iter = nullptr, Stmt *body = nullptr)
         : m_name(name), m_iter(iter), m_body(body) {}
-    virtual ~ForeachStmt() override = default;
 
     std::string_view get_name() const;
     void set_name(std::string_view name);
@@ -1539,7 +1470,6 @@ public:
   class BreakStmt : public FlowStmt {
 public:
     BreakStmt() = default;
-    virtual ~BreakStmt() override = default;
 
     NODE_IMPL_CORE(BreakStmt)
   };
@@ -1547,7 +1477,6 @@ public:
   class ContinueStmt : public FlowStmt {
 public:
     ContinueStmt() = default;
-    virtual ~ContinueStmt() override = default;
 
     NODE_IMPL_CORE(ContinueStmt)
   };
@@ -1558,7 +1487,6 @@ protected:
 
 public:
     ReturnStmt(Expr *value = nullptr) : m_value(value) {}
-    virtual ~ReturnStmt() override = default;
 
     Expr *get_value() const;
     void set_value(Expr *value);
@@ -1573,7 +1501,6 @@ protected:
 
 public:
     ReturnIfStmt(Expr *cond = nullptr, Expr *value = nullptr) : m_cond(cond), m_value(value) {}
-    virtual ~ReturnIfStmt() override = default;
 
     Expr *get_cond() const;
     void set_cond(Expr *cond);
@@ -1591,7 +1518,6 @@ protected:
 
 public:
     RetZStmt(Expr *cond = nullptr, Expr *value = nullptr) : m_cond(cond), m_value(value) {}
-    virtual ~RetZStmt() override = default;
 
     Expr *get_cond() const;
     void set_cond(Expr *cond);
@@ -1608,7 +1534,6 @@ protected:
 
 public:
     RetVStmt(Expr *cond = nullptr) : m_cond(cond) {}
-    virtual ~RetVStmt() override = default;
 
     Expr *get_cond() const;
     void set_cond(Expr *cond);
@@ -1623,7 +1548,6 @@ protected:
 
 public:
     CaseStmt(Expr *cond = nullptr, Stmt *body = nullptr) : m_cond(cond), m_body(body) {}
-    virtual ~CaseStmt() override = default;
 
     Expr *get_cond() const;
     void set_cond(Expr *cond);
@@ -1644,7 +1568,6 @@ public:
     SwitchStmt(Expr *cond = nullptr, std::initializer_list<CaseStmt *> cases = {})
         : m_cond(cond), m_cases(cases) {}
     SwitchStmt(Expr *cond, const SwitchCases &cases) : m_cond(cond), m_cases(cases) {}
-    virtual ~SwitchStmt() override = default;
 
     Expr *get_cond() const;
     void set_cond(Expr *cond);
@@ -1666,7 +1589,6 @@ protected:
 
 public:
     TypedefDecl(std::string_view name = "", Type *type = nullptr) : Decl(name, type) {}
-    virtual ~TypedefDecl() override = default;
 
     NODE_IMPL_CORE(TypedefDecl)
   };
@@ -1677,7 +1599,6 @@ protected:
 
 public:
     FnDecl(std::string_view name = "", FuncTy *type = nullptr) : Decl(name, type) {}
-    virtual ~FnDecl() override = default;
 
     virtual FuncTy *get_type() const override;
 
@@ -1691,7 +1612,6 @@ protected:
 public:
     FnDef(std::string_view name = "", FuncTy *type = nullptr, Stmt *body = nullptr)
         : FnDecl(name, type), m_body(body) {}
-    virtual ~FnDef() override = default;
 
     std::string_view get_name() const;
     void set_name(std::string_view name);
@@ -1711,7 +1631,6 @@ protected:
 public:
     CompositeField(std::string_view name = "", Type *type = nullptr, Expr *value = nullptr)
         : Decl(name, type), m_value(value) {}
-    virtual ~CompositeField() override = default;
 
     Expr *get_value() const;
     void set_value(Expr *value);
@@ -1742,7 +1661,6 @@ public:
               const StructDefMethods &methods, const StructDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
-    virtual ~StructDef() override = default;
 
     virtual StructTy *get_type() const override;
 
@@ -1790,7 +1708,6 @@ public:
              const GroupDefMethods &methods, const GroupDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
-    virtual ~GroupDef() override = default;
 
     virtual GroupTy *get_type() const override;
 
@@ -1838,7 +1755,6 @@ public:
               const RegionDefMethods &methods, const RegionDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
-    virtual ~RegionDef() override = default;
 
     virtual RegionTy *get_type() const override;
 
@@ -1886,7 +1802,6 @@ public:
              const UnionDefMethods &methods, const UnionDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
-    virtual ~UnionDef() override = default;
 
     virtual UnionTy *get_type() const override;
 
@@ -1927,7 +1842,6 @@ public:
     EnumDef(std::string_view name, EnumTy *type,
             const std::vector<EnumItem, Arena<EnumItem>> &items)
         : Decl(name, type), m_items(items) {}
-    virtual ~EnumDef() override = default;
 
     virtual EnumTy *get_type() const override;
 
@@ -1953,7 +1867,6 @@ public:
         : Decl(name, nullptr), m_body(body) {}
     SubsystemDecl(std::string_view name, const SubsystemDeclBody &body)
         : Decl(name, nullptr), m_body(body) {}
-    virtual ~SubsystemDecl() override = default;
 
     const SubsystemDeclBody &get_item() const;
     void add_item(Decl *item);
@@ -1975,8 +1888,8 @@ protected:
 public:
     ExportDecl(std::string_view name = "", std::initializer_list<Decl *> body = {})
         : Decl(name, nullptr), m_body(body) {}
-    ExportDecl(std::string_view name, const ExportDeclBody &body) : Decl(name, nullptr), m_body(body) {}
-    virtual ~ExportDecl() override = default;
+    ExportDecl(std::string_view name, const ExportDeclBody &body)
+        : Decl(name, nullptr), m_body(body) {}
 
     const ExportDeclBody &get_item() const;
     void add_item(Decl *item);

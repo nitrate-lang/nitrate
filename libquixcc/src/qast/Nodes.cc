@@ -54,7 +54,7 @@ using namespace libquixcc::qast;
 
 ///=============================================================================
 namespace libquixcc::qast {
-  thread_local ArenaAllocatorImpl g_allocator;
+  thread_local ArenaAllocatorImpl quixcc_ast_arena;
 }
 
 ArenaAllocatorImpl::ArenaAllocatorImpl() { quixcc_arena_open(&m_arena); }
@@ -5045,9 +5045,13 @@ Type *ExportDecl::infer_type_impl() const { return nullptr; }
 ///=============================================================================
 
 LIB_EXPORT quixcc_ast_node_t *quixcc_ast_alloc(quixcc_ast_ntype_t type, quixcc_arena_t *arena) {
+  if (!arena) {
+    arena = &quixcc_ast_arena.get();
+  }
+
   Node *node = nullptr;
 
-  g_allocator.swap(*arena);
+  quixcc_ast_arena.swap(*arena);
 
   switch (type) {
   case QUIXCC_AST_NODE_STMT:
@@ -5297,12 +5301,10 @@ LIB_EXPORT quixcc_ast_node_t *quixcc_ast_alloc(quixcc_ast_ntype_t type, quixcc_a
     break;
   }
 
-  g_allocator.swap(*arena);
+  quixcc_ast_arena.swap(*arena);
 
   return node;
 }
-
-LIB_EXPORT void quixcc_ast_done(quixcc_ast_node_t *node) { node->~quixcc_ast_node_t(); }
 
 ///=============================================================================
 ///=============================================================================
