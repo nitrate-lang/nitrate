@@ -208,6 +208,26 @@ LIB_EXPORT void *quixcc_arena_alloc_ex(quixcc_arena_t *arena, size_t size, size_
   return ptr;
 }
 
+LIB_EXPORT size_t quixcc_arena_capacity(quixcc_arena_t *arena) {
+  size_t total = 0;
+
+  for (const auto &region : arena->m_impl->m_bases) {
+    total += region.m_size;
+  }
+
+  return total;
+}
+
+LIB_EXPORT size_t quixcc_arena_used(quixcc_arena_t *arena) {
+  size_t total = 0;
+
+  for (const auto &region : arena->m_impl->m_bases) {
+    total += (uintptr_t)region.m_offset - (uintptr_t)region.m_base;
+  }
+
+  return total;
+}
+
 LIB_EXPORT void quixcc_arena_close(quixcc_arena_t *arena) {
 #if ALLOCATOR_PRINT_VERBOSE
   std::cerr << "TRACE: quixcc_arena_close(" << arena << ")\n";

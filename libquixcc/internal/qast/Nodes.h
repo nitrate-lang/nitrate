@@ -63,6 +63,10 @@ public:
 
     void *allocate(std::size_t bytes);
     void deallocate(void *ptr) noexcept;
+
+    void swap(quixcc_arena_t &arena) {
+      std::swap(m_arena, arena);
+    }
   };
 
   extern thread_local ArenaAllocatorImpl g_allocator;
@@ -85,7 +89,6 @@ public:
   };
 
   template <class T, class U> bool operator==(const Arena<T> &, const Arena<U> &) { return true; }
-
   template <class T, class U> bool operator!=(const Arena<T> &, const Arena<U> &) { return false; }
 
   class AstError : public std::runtime_error {
@@ -474,8 +477,11 @@ public:
     virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
-    UnresolvedType() = default;
+    UnresolvedType(std::string_view name = "") : m_name(name) {}
     virtual ~UnresolvedType() override = default;
+
+    std::string_view get_name() const;
+    void set_name(std::string_view name);
 
     NODE_IMPL_CORE(UnresolvedType)
   };
@@ -610,14 +616,14 @@ public:
     NODE_IMPL_CORE(F64)
   };
 
-  class Void : public TypeBuiltin {
+  class VoidTy : public TypeBuiltin {
     virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
-    Void() = default;
-    virtual ~Void() override = default;
+    VoidTy() = default;
+    virtual ~VoidTy() override = default;
 
-    NODE_IMPL_CORE(Void)
+    NODE_IMPL_CORE(VoidTy)
   };
 
   class StringTy : public TypeBuiltin {
@@ -714,17 +720,18 @@ public:
     NODE_IMPL_CORE(MapTy)
   };
 
+  typedef std::vector<Type *, Arena<Type *>> TupleTyItems;
   class TupleTy : public TypeComposite {
-    std::vector<Type *, Arena<Type *>> m_items;
+    TupleTyItems m_items;
 
     virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
     TupleTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
-    TupleTy(const std::vector<Type *, Arena<Type *>> &items) : m_items(items) {}
+    TupleTy(const TupleTyItems &items) : m_items(items) {}
     virtual ~TupleTy() override = default;
 
-    const std::vector<Type *, Arena<Type *>> &get_items() const;
+    const TupleTyItems &get_items() const;
     void add_item(Type *item);
     void add_items(std::initializer_list<Type *> items);
     void clear_items();
@@ -876,7 +883,6 @@ public:
 public:
     UnionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
     UnionTy(const UnionTyItems &items) : m_items(items) {}
-    UnionTy() = default;
     virtual ~UnionTy() override = default;
 
     const UnionTyItems &get_items() const;
@@ -1654,15 +1660,15 @@ public:
 
   ///=============================================================================
 
-  class TypedefStmt : public Decl {
+  class TypedefDecl : public Decl {
 protected:
     virtual Type *infer_type_impl() const override final;
 
 public:
-    TypedefStmt(std::string_view name = "", Type *type = nullptr) : Decl(name, type) {}
-    virtual ~TypedefStmt() override = default;
+    TypedefDecl(std::string_view name = "", Type *type = nullptr) : Decl(name, type) {}
+    virtual ~TypedefDecl() override = default;
 
-    NODE_IMPL_CORE(TypedefStmt)
+    NODE_IMPL_CORE(TypedefDecl)
   };
 
   class FnDecl : public Decl {
@@ -1780,10 +1786,8 @@ public:
              std::initializer_list<FnDecl *> static_methods = {})
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
-    GroupDef(std::string_view name, GroupTy *type,
-             const GroupDefFields &fields,
-             const GroupDefMethods &methods,
-             const GroupDefStaticMethods &static_methods)
+    GroupDef(std::string_view name, GroupTy *type, const GroupDefFields &fields,
+             const GroupDefMethods &methods, const GroupDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     virtual ~GroupDef() override = default;
@@ -1830,10 +1834,8 @@ public:
               std::initializer_list<FnDecl *> static_methods = {})
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
-    RegionDef(std::string_view name, RegionTy *type,
-              const RegionDefFields &fields,
-              const RegionDefMethods &methods,
-              const RegionDefStaticMethods &static_methods)
+    RegionDef(std::string_view name, RegionTy *type, const RegionDefFields &fields,
+              const RegionDefMethods &methods, const RegionDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     virtual ~RegionDef() override = default;
@@ -1880,10 +1882,8 @@ public:
              std::initializer_list<FnDecl *> static_methods = {})
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
-    UnionDef(std::string_view name, UnionTy *type,
-             const UnionDefFields &fields,
-             const UnionDefMethods &methods,
-             const UnionDefStaticMethods &static_methods)
+    UnionDef(std::string_view name, UnionTy *type, const UnionDefFields &fields,
+             const UnionDefMethods &methods, const UnionDefStaticMethods &static_methods)
         : Decl(name, type), m_methods(methods), m_static_methods(static_methods), m_fields(fields) {
     }
     virtual ~UnionDef() override = default;
@@ -1913,7 +1913,7 @@ public:
 
   typedef std::pair<std::string_view, Type *> EnumItem;
   typedef std::vector<EnumItem, Arena<EnumItem>> EnumDefItems;
-  
+
   class EnumDef : public Decl {
 protected:
     std::vector<EnumItem, Arena<EnumItem>> m_items;
@@ -1940,6 +1940,52 @@ public:
     NODE_IMPL_CORE(EnumDef)
   };
 
+  typedef std::vector<Decl *, Arena<Decl *>> SubsystemDeclBody;
+
+  class SubsystemDecl : public Decl {
+protected:
+    SubsystemDeclBody m_body;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    SubsystemDecl(std::string_view name = "", std::initializer_list<Decl *> body = {})
+        : Decl(name, nullptr), m_body(body) {}
+    SubsystemDecl(std::string_view name, const SubsystemDeclBody &body)
+        : Decl(name, nullptr), m_body(body) {}
+    virtual ~SubsystemDecl() override = default;
+
+    const SubsystemDeclBody &get_item() const;
+    void add_item(Decl *item);
+    void add_items(std::initializer_list<Decl *> items);
+    void clear_items();
+    void remove_item(Decl *item);
+
+    NODE_IMPL_CORE(SubsystemDecl)
+  };
+
+  typedef std::vector<Decl *, Arena<Decl *>> ExportDeclBody;
+
+  class ExportDecl : public Decl {
+protected:
+    ExportDeclBody m_body;
+
+    virtual Type *infer_type_impl() const override final;
+
+public:
+    ExportDecl(std::string_view name = "", std::initializer_list<Decl *> body = {})
+        : Decl(name, nullptr), m_body(body) {}
+    ExportDecl(std::string_view name, const ExportDeclBody &body) : Decl(name, nullptr), m_body(body) {}
+    virtual ~ExportDecl() override = default;
+
+    const ExportDeclBody &get_item() const;
+    void add_item(Decl *item);
+    void add_items(std::initializer_list<Decl *> items);
+    void clear_items();
+    void remove_item(Decl *item);
+
+    NODE_IMPL_CORE(ExportDecl)
+  };
 } // namespace libquixcc::qast
 
 #endif // __QUIXCC_QAST_NODES_H__

@@ -42,6 +42,14 @@ LIB_EXPORT quixcc_ast_ntype_t quixcc_ast_typeof(const quixcc_ast_node_t *node) {
   return static_cast<const libquixcc::qast::Node *>(node)->this_typeid();
 }
 
+LIB_EXPORT size_t quixcc_ast_sizeof(const quixcc_ast_node_t *node) {
+  if (node == nullptr) {
+    quixcc_panic("Contract violation: quixcc_ast_sizeof() called with nullptr");
+  }
+
+  return static_cast<const libquixcc::qast::Node *>(node)->this_sizeof();
+}
+
 LIB_EXPORT const char *quixcc_ast_ntype_name(quixcc_ast_ntype_t type) {
   return libquixcc::qast::Node::type_name(type);
 }

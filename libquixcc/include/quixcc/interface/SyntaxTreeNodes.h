@@ -64,7 +64,13 @@ typedef enum quixcc_ast_ntype_t {
   QUIXCC_AST_NODE_BINEXPR = 100,
   QUIXCC_AST_NODE_UNEXPR = 101,
   QUIXCC_AST_NODE_TEREXPR = 102,
-
+  QUIXCC_AST_NODE_INT = 400,
+  QUIXCC_AST_NODE_FLOAT = 401,
+  QUIXCC_AST_NODE_STRING = 402,
+  QUIXCC_AST_NODE_CHAR = 403,
+  QUIXCC_AST_NODE_BOOL = 404,
+  QUIXCC_AST_NODE_NULL = 405,
+  QUIXCC_AST_NODE_UNDEF = 406,
   QUIXCC_AST_NODE_CALL = 116,
   QUIXCC_AST_NODE_LIST = 117,
   QUIXCC_AST_NODE_ASSOC = 118,
@@ -106,30 +112,17 @@ typedef enum quixcc_ast_ntype_t {
   QUIXCC_AST_NODE_FN_TY = 329,
   QUIXCC_AST_NODE_UNRES_TY = 330,
 
-  QUIXCC_AST_NODE_INT = 400,
-  QUIXCC_AST_NODE_FLOAT = 401,
-  QUIXCC_AST_NODE_STRING = 402,
-  QUIXCC_AST_NODE_CHAR = 403,
-  QUIXCC_AST_NODE_BOOL = 404,
-  QUIXCC_AST_NODE_NULL = 405,
-  QUIXCC_AST_NODE_UNDEF = 406,
-
   QUIXCC_AST_NODE_TYPEDEF = 500,
   QUIXCC_AST_NODE_FNDECL = 501,
   QUIXCC_AST_NODE_STRUCT = 502,
-  QUIXCC_AST_NODE_STRUCT_FIELD = 503,
   QUIXCC_AST_NODE_REGION = 504,
-  QUIXCC_AST_NODE_REGION_FIELD = 505,
   QUIXCC_AST_NODE_GROUP = 506,
-  QUIXCC_AST_NODE_GROUP_FIELD = 507,
   QUIXCC_AST_NODE_UNION = 508,
-  QUIXCC_AST_NODE_UNION_FIELD = 509,
   QUIXCC_AST_NODE_ENUM = 510,
-  QUIXCC_AST_NODE_ENUM_FIELD = 511,
   QUIXCC_AST_NODE_FN = 512,
-  QUIXCC_AST_NODE_FUNCTION_PARAM = 513,
   QUIXCC_AST_NODE_SUBSYSTEM = 514,
   QUIXCC_AST_NODE_EXPORT = 515,
+  QUIXCC_AST_NODE_COMPOSITE_FIELD = 516,
 
   QUIXCC_AST_NODE_BLOCK = 700,
   QUIXCC_AST_NODE_CONST = 701,
@@ -151,7 +144,7 @@ typedef enum quixcc_ast_ntype_t {
   QUIXCC_AST_NODE_SWITCH = 717,
 } quixcc_ast_ntype_t;
 
-#define QUIXCC_AST_NODE_COUNT 94
+#define QUIXCC_AST_NODE_COUNT 83
 
 typedef enum quixcc_ast_ftype_t {
   QUIXCC_AST_FIELD_BOOL = 0,
@@ -190,6 +183,15 @@ typedef enum quixcc_ast_ftype_t {
  * @note This function will always succeed for valid nodes.
  */
 quixcc_ast_ntype_t quixcc_ast_typeof(const quixcc_ast_node_t *node);
+
+/**
+ * @brief Returns the current size of the node object in memory
+ * 
+ * @param node The node
+ * 
+ * @return The size of the node in memory (only the node itself, not it recursive memory usage)
+ */
+size_t quixcc_ast_sizeof(const quixcc_ast_node_t *node);
 
 /**
  * @brief Translates a type number to a string representation.
