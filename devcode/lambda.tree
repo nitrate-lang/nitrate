@@ -1,0 +1,32 @@
+MacroSingleLine(use "v1.0";)
+MacroBlock(fn(lua) std::core::publish_function(in: [code], out: []): void {
+  res = qlua.qsys(0x78FF1D, code, 'private')
+
+  if res != "OK" then
+    qlua.abort("Failed to publish function")
+  end
+
+  qlua.done()
+})
+Punctor(;)
+Keyword(fn)
+Identifier(main)
+Punctor(()
+Punctor())
+Punctor({)
+Keyword(const)
+Identifier(code)
+Operator(=)
+String("")
+String("(fn hello() {
+    printn('Hello, World!');
+  })")
+String("")
+Punctor(;)
+MacroSingleLine(std::core::publish_function(code))
+Punctor(;)
+Identifier(hello)
+Punctor(()
+Punctor())
+Punctor(;)
+Punctor(})

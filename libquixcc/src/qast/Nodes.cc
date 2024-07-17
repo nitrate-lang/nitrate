@@ -63,7 +63,6 @@ ArenaAllocatorImpl::~ArenaAllocatorImpl() { quixcc_arena_close(&m_arena); }
 
 void *ArenaAllocatorImpl::allocate(std::size_t size) {
   const std::size_t alignment = 16;
-
   return quixcc_arena_alloc_ex(&m_arena, size, alignment);
 }
 
@@ -186,7 +185,6 @@ uint32_t Node::this_sizeof() const {
 }
 
 quixcc_ast_ntype_t Node::this_typeid() const {
-  /// TODO: Implement this function
 #define TYPEID_ROW(__type, __name)                                                                 \
   { typeid(__type).hash_code(), QUIXCC_AST_NODE_##__name }
 
@@ -283,20 +281,132 @@ quixcc_ast_ntype_t Node::this_typeid() const {
 
 const char *Node::this_nameof() const { return type_name(this_typeid()); }
 
-size_t Node::children_count(bool recursive) const {
-  /// TODO: Implement this function
-  quixcc_panic("Node::children_count() is not implemented");
+bool Node::is_type() const {
+  switch (this_typeid()) {
+  case QUIXCC_AST_NODE_TYPE:
+  case QUIXCC_AST_NODE_MUT_TY:
+  case QUIXCC_AST_NODE_U1_TY:
+  case QUIXCC_AST_NODE_U8_TY:
+  case QUIXCC_AST_NODE_U16_TY:
+  case QUIXCC_AST_NODE_U32_TY:
+  case QUIXCC_AST_NODE_U64_TY:
+  case QUIXCC_AST_NODE_U128_TY:
+  case QUIXCC_AST_NODE_I8_TY:
+  case QUIXCC_AST_NODE_I16_TY:
+  case QUIXCC_AST_NODE_I32_TY:
+  case QUIXCC_AST_NODE_I64_TY:
+  case QUIXCC_AST_NODE_I128_TY:
+  case QUIXCC_AST_NODE_F32_TY:
+  case QUIXCC_AST_NODE_F64_TY:
+  case QUIXCC_AST_NODE_VOID_TY:
+  case QUIXCC_AST_NODE_PTR_TY:
+  case QUIXCC_AST_NODE_OPAQUE_TY:
+  case QUIXCC_AST_NODE_STRING_TY:
+  case QUIXCC_AST_NODE_ENUM_TY:
+  case QUIXCC_AST_NODE_STRUCT_TY:
+  case QUIXCC_AST_NODE_GROUP_TY:
+  case QUIXCC_AST_NODE_REGION_TY:
+  case QUIXCC_AST_NODE_UNION_TY:
+  case QUIXCC_AST_NODE_ARRAY_TY:
+  case QUIXCC_AST_NODE_VECTOR_TY:
+  case QUIXCC_AST_NODE_MAP_TY:
+  case QUIXCC_AST_NODE_TUPLE_TY:
+  case QUIXCC_AST_NODE_SET_TY:
+  case QUIXCC_AST_NODE_RESULT_TY:
+  case QUIXCC_AST_NODE_FN_TY:
+  case QUIXCC_AST_NODE_UNRES_TY:
+    return true;
+  default:
+    return false;
+  }
 }
 
-bool Node::inherits_from(quixcc_ast_ntype_t type) const {
-  /// TODO: Implement this function
-  quixcc_panic("Node::inherits_from() is not implemented");
+bool Node::is_stmt() const {
+  switch (this_typeid()) {
+  case QUIXCC_AST_NODE_STMT:
+  case QUIXCC_AST_NODE_TYPEDEF:
+  case QUIXCC_AST_NODE_FNDECL:
+  case QUIXCC_AST_NODE_STRUCT:
+  case QUIXCC_AST_NODE_REGION:
+  case QUIXCC_AST_NODE_GROUP:
+  case QUIXCC_AST_NODE_UNION:
+  case QUIXCC_AST_NODE_ENUM:
+  case QUIXCC_AST_NODE_FN:
+  case QUIXCC_AST_NODE_SUBSYSTEM:
+  case QUIXCC_AST_NODE_EXPORT:
+  case QUIXCC_AST_NODE_COMPOSITE_FIELD:
+  case QUIXCC_AST_NODE_BLOCK:
+  case QUIXCC_AST_NODE_CONST:
+  case QUIXCC_AST_NODE_VAR:
+  case QUIXCC_AST_NODE_LET:
+  case QUIXCC_AST_NODE_INLINE_ASM:
+  case QUIXCC_AST_NODE_RETURN:
+  case QUIXCC_AST_NODE_RETIF:
+  case QUIXCC_AST_NODE_RETZ:
+  case QUIXCC_AST_NODE_RETV:
+  case QUIXCC_AST_NODE_BREAK:
+  case QUIXCC_AST_NODE_CONTINUE:
+  case QUIXCC_AST_NODE_IF:
+  case QUIXCC_AST_NODE_WHILE:
+  case QUIXCC_AST_NODE_FOR:
+  case QUIXCC_AST_NODE_FORM:
+  case QUIXCC_AST_NODE_FOREACH:
+  case QUIXCC_AST_NODE_CASE:
+  case QUIXCC_AST_NODE_SWITCH:
+    return true;
+  default:
+    return false;
+  }
 }
 
-bool Node::is_type() const { return inherits_from(QUIXCC_AST_NODE_TYPE); }
-bool Node::is_stmt() const { return inherits_from(QUIXCC_AST_NODE_STMT); }
-bool Node::is_decl() const { return inherits_from(QUIXCC_AST_NODE_DECL); }
-bool Node::is_expr() const { return inherits_from(QUIXCC_AST_NODE_EXPR); }
+bool Node::is_decl() const {
+  switch (this_typeid()) {
+  case QUIXCC_AST_NODE_TYPEDEF:
+  case QUIXCC_AST_NODE_FNDECL:
+  case QUIXCC_AST_NODE_STRUCT:
+  case QUIXCC_AST_NODE_REGION:
+  case QUIXCC_AST_NODE_GROUP:
+  case QUIXCC_AST_NODE_UNION:
+  case QUIXCC_AST_NODE_ENUM:
+  case QUIXCC_AST_NODE_FN:
+  case QUIXCC_AST_NODE_SUBSYSTEM:
+  case QUIXCC_AST_NODE_EXPORT:
+  case QUIXCC_AST_NODE_COMPOSITE_FIELD:
+  case QUIXCC_AST_NODE_BLOCK:
+    return true;
+  default:
+    return false;
+  }
+}
+
+bool Node::is_expr() const {
+  switch (this_typeid()) {
+  case QUIXCC_AST_NODE_EXPR:
+  case QUIXCC_AST_NODE_CEXPR:
+  case QUIXCC_AST_NODE_BINEXPR:
+  case QUIXCC_AST_NODE_UNEXPR:
+  case QUIXCC_AST_NODE_TEREXPR:
+  case QUIXCC_AST_NODE_INT:
+  case QUIXCC_AST_NODE_FLOAT:
+  case QUIXCC_AST_NODE_STRING:
+  case QUIXCC_AST_NODE_CHAR:
+  case QUIXCC_AST_NODE_BOOL:
+  case QUIXCC_AST_NODE_NULL:
+  case QUIXCC_AST_NODE_UNDEF:
+  case QUIXCC_AST_NODE_CALL:
+  case QUIXCC_AST_NODE_LIST:
+  case QUIXCC_AST_NODE_ASSOC:
+  case QUIXCC_AST_NODE_FIELD:
+  case QUIXCC_AST_NODE_INDEX:
+  case QUIXCC_AST_NODE_SLICE:
+  case QUIXCC_AST_NODE_FSTRING:
+  case QUIXCC_AST_NODE_IDENT:
+    return true;
+  default:
+    return false;
+  }
+}
+
 bool Node::is_const_expr() const { return is_expr() && as<Expr>()->is_const(); }
 bool Node::is(quixcc_ast_ntype_t type) const { return type == this_typeid(); }
 bool Node::verify(std::ostream &os) const { return verify_impl(os); }
@@ -537,10 +647,7 @@ bool Type::is_mutable() const { return this_typeid() == QUIXCC_AST_NODE_MUT_TY; 
 
 bool Type::is_const() const { return !is_mutable(); }
 
-bool Type::is_volatile() const {
-  /// TODO: Implement this function
-  quixcc_panic("Type::is_volatile() is not implemented");
-}
+bool Type::is_volatile() const { return m_volatile; }
 
 bool Type::is_ptr_to(const Type *type) const {
   if (is<MutTy>()) {
@@ -1055,6 +1162,8 @@ TupleTy *TupleTy::clone_impl() const {
 }
 
 uint64_t TupleTy::infer_size_bits_impl() const { return GroupTy::get(m_items)->infer_size_bits(); }
+
+const TupleTyItems &TupleTy::get_items() const { return m_items; }
 
 bool OptionalTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
@@ -2030,8 +2139,8 @@ TernaryExpr *TernaryExpr::clone_impl() const {
 }
 
 Type *TernaryExpr::infer_type_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("TernaryExpr::infer_type_impl() is not implemented");
+  qassert(m_lhs && m_rhs);
+  return m_lhs->infer_type();
 }
 
 bool TernaryExpr::is_const_impl() const {
@@ -2340,8 +2449,12 @@ List *List::clone_impl() const {
 }
 
 Type *List::infer_type_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("List::infer_type_impl() is not implemented");
+  TupleTyItems items;
+  for (auto item : m_items) {
+    items.push_back(item->infer_type());
+  }
+
+  return TupleTy::get(items);
 }
 
 bool List::is_const_impl() const {
@@ -2429,8 +2542,12 @@ Assoc *Assoc::clone_impl() const {
 }
 
 Type *Assoc::infer_type_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("Assoc::infer_type_impl() is not implemented");
+  qassert(m_key && m_value);
+
+  Type *kt = m_key->infer_type();
+  Type *vt = m_value->infer_type();
+
+  return TupleTy::get(TupleTyItems({kt, vt}));
 }
 
 bool Assoc::is_const_impl() const {
@@ -2712,9 +2829,6 @@ Slice *Slice::clone_impl() const {
 }
 
 Type *Slice::infer_type_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("Slice::infer_type_impl() is not implemented");
-
   qassert(m_base);
   qassert(m_start);
   qassert(m_end);
@@ -2830,8 +2944,21 @@ void FString::canonicalize_impl() {
 }
 
 void FString::print_impl(std::ostream &os, bool debug) const {
-  /// TODO: Implement this function
-  quixcc_panic("FString::print_impl() is not implemented");
+  os << "f\"" << m_value << "\"(";
+
+  for (size_t i = 0; i < m_items.size(); i++) {
+    if (m_items[i]) {
+      m_items[i]->print(os, debug);
+    } else {
+      os << "?";
+    }
+
+    if (i + 1 < m_items.size()) {
+      os << ", ";
+    }
+  }
+
+  os << ")";
 }
 
 FString *FString::clone_impl() const {
@@ -3159,7 +3286,6 @@ bool InlineAsm::verify_impl(std::ostream &os) const {
     }
   }
 
-  /// TODO: Implement ASM verification logic
   return true;
 }
 
@@ -3169,8 +3295,6 @@ void InlineAsm::canonicalize_impl() {
       item->canonicalize();
     }
   }
-
-  /// TODO: Implement ASM canonicalization logic
 }
 
 void InlineAsm::print_impl(std::ostream &os, bool debug) const {
@@ -4012,7 +4136,6 @@ void FnDecl::canonicalize_impl() {
 }
 
 void FnDecl::print_impl(std::ostream &os, bool debug) const {
-  /// TODO: Re-implement this function
   os << "fn " << m_name << "(";
 
   if (m_type) {

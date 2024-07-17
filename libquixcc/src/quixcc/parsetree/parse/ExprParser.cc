@@ -261,9 +261,20 @@ bool libquixcc::parse_expr(quixcc_cc_job_t &job, Scanner *scanner, std::set<Toke
         continue;
       case Keyword::Fn: {
         std::shared_ptr<StmtNode> f;
-        if (!parse_function(job, scanner, f))
+        if (!parse_function(job, scanner, f)) {
           return false;
+        }
         auto adapter = std::make_shared<StmtExprNode>(f);
+
+        if (scanner->peek().is<Punctor>(OpenParen)) {
+          scanner->next();
+          auto fcall = parse_function_call(job, adapter, scanner, depth);
+          if (fcall == nullptr)
+            return false;
+
+          stack.push(fcall);
+          continue;
+        }
         stack.push(adapter);
         continue;
       }

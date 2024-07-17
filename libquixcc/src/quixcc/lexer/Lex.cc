@@ -90,8 +90,6 @@ namespace libquixcc {
       {"inline", Keyword::Inline},
       {"unsafe", Keyword::Unsafe},
       {"safe", Keyword::Safe},
-      {"in", Keyword::In},
-      {"out", Keyword::Out},
       {"req", Keyword::Req},
 
       {"if", Keyword::If},
@@ -153,8 +151,6 @@ namespace libquixcc {
       {Keyword::Inline, "inline"},
       {Keyword::Unsafe, "unsafe"},
       {Keyword::Safe, "safe"},
-      {Keyword::In, "in"},
-      {Keyword::Out, "out"},
       {Keyword::Req, "req"},
 
       {Keyword::If, "if"},
@@ -235,6 +231,7 @@ namespace libquixcc {
       {"offsetof", Offsetof},
       {"bitcast_as", BitcastAs},
       {"reinterpret_as", ReinterpretAs},
+      {"out", Out},
       {"..", Range},
       {"...", Ellipsis},
       {"<=>", Spaceship},
@@ -263,6 +260,7 @@ namespace libquixcc {
       {"offsetof", Offsetof},
       {"bitcast_as", BitcastAs},
       {"reinterpret_as", ReinterpretAs},
+      {"out", Out},
   };
 
   const std::unordered_map<Operator, std::string_view> operator_map_inverse = {

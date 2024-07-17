@@ -374,7 +374,7 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *scanner
 
         std::shared_ptr<libquixcc::ExprNode> expr;
         scanner->next();
-        if (tok.is<Keyword>(Keyword::In)) {
+        if (tok.is<Operator>(Operator::In)) {
           if (!req_in) {
             req_in = BoolLiteralNode::create(true);
           }
@@ -393,7 +393,7 @@ bool libquixcc::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *scanner
           expr = std::make_shared<UnaryExprNode>(LogicalNot, expr);
 
           req_in = std::make_shared<BinaryExprNode>(LogicalAnd, req_in, expr);
-        } else if (tok.is<Keyword>(Keyword::Out)) {
+        } else if (tok.is<Operator>(Operator::Out)) {
           if (!req_out) {
             req_out = BoolLiteralNode::create(true);
           }

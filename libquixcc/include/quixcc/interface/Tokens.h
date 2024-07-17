@@ -88,8 +88,6 @@ typedef enum {
   QUIXCC_KW_INLINE = 69,
   QUIXCC_KW_UNSAFE = 70,
   QUIXCC_KW_SAFE = 71,
-  QUIXCC_KW_IN = 72,
-  QUIXCC_KW_OUT = 73,
   QUIXCC_KW_REQ = 74,
 
   QUIXCC_KW_IF = 90,
@@ -191,6 +189,10 @@ typedef enum {
   QUIXCC_OP_RANGE = 88,
   QUIXCC_OP_ELLIPSIS = 89,
   QUIXCC_OP_SPACESHIP = 90,
+  QUIXCC_OP_BITCAST_AS = 91,
+  QUIXCC_OP_REINTERPRET_AS = 92,
+  QUIXCC_OP_BITSIZEOF = 93,
+  QUIXCC_OP_OUT = 94,
 } quixcc_lex_op_t;
 
 typedef struct quixcc_lex_loc_t {

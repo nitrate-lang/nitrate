@@ -77,8 +77,6 @@ namespace libquixcc {
     Inline = 69,
     Unsafe = 70,
     Safe = 71,
-    In = 72,
-    Out = 73,
     Req = 74,
 
     If = 90,
@@ -183,6 +181,7 @@ namespace libquixcc {
     BitcastAs = 91,
     ReinterpretAs = 92,
     Bitsizeof = 93,
+    Out = 94,
   };
 
   enum TT {

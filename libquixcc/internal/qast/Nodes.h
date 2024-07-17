@@ -139,12 +139,11 @@ public:
   }                                                                                                \
                                                                                                    \
   public:                                                                                          \
-  virtual __typename *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena)                \
-      const override {                                                                             \
-    ArenaAllocatorImpl old = quixcc_ast_arena;                                           \
-    quixcc_ast_arena = arena;                                                            \
+  virtual __typename *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const override {         \
+    ArenaAllocatorImpl old = quixcc_ast_arena;                                                     \
+    quixcc_ast_arena = arena;                                                                      \
     __typename *node = clone_impl();                                                               \
-    quixcc_ast_arena = old;                                                              \
+    quixcc_ast_arena = old;                                                                        \
     return node;                                                                                   \
   }
 
@@ -175,9 +174,6 @@ public:
     uint32_t this_sizeof() const;
     quixcc_ast_ntype_t this_typeid() const;
     const char *this_nameof() const;
-
-    size_t children_count(bool recursive = true) const;
-    bool inherits_from(quixcc_ast_ntype_t type) const;
 
     bool is_type() const;
     bool is_stmt() const;
@@ -242,9 +238,10 @@ public:
   class Type : public Node {
 protected:
     virtual uint64_t infer_size_bits_impl() const = 0;
+    bool m_volatile;
 
 public:
-    Type() = default;
+    Type(bool is_volatile = false) : m_volatile(is_volatile) {}
 
     uint64_t infer_size_bits() const;
     uint64_t infer_size() const;
