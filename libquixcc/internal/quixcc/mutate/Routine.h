@@ -37,7 +37,7 @@
 #endif
 
 #include <quixcc/Library.h>
-#include <quixcc/parsetree/Parser.h>
+#include <qast/Parser.h>
 
 #include <functional>
 #include <memory>

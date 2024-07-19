@@ -36,6 +36,7 @@
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
+#include <qast/Parser.h>
 #include <quixcc/IR/Q/QIR.h>
 #include <quixcc/IR/delta/DeltaIR.h>
 #include <quixcc/Library.h>
@@ -44,9 +45,8 @@
 #include <quixcc/generate/Generate.h>
 #include <quixcc/lexer/Lex.h>
 #include <quixcc/llvm/LLVMWrapper.h>
-#include <quixcc/mutate/Routine.h>
+// #include <quixcc/mutate/Routine.h>
 #include <quixcc/optimizer/Optimizer.h>
-#include <quixcc/parsetree/Parser.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 #include <quixcc/preprocessor/QSys.h>
 #include <quixcc/solver/Solver.h>
@@ -77,10 +77,10 @@ using namespace libquixcc::core;
 extern std::atomic<bool> g_is_initialized;
 extern std::atomic<uint64_t> g_num_of_contexts;
 extern std::mutex g_library_lock;
+thread_local uint8_t libquixcc::quixcc::g_target_word_size;
 
 static thread_local jmp_buf g_tls_exception;
 static thread_local bool g_tls_exception_set = false;
-thread_local uint8_t libquixcc::quixcc::g_target_word_size;
 
 extern void quixcc_print_stacktrace();
 extern void quixcc_print_general_fault_message();
@@ -381,13 +381,13 @@ static std::string get_datetime() {
   return buf;
 }
 
-static bool quixcc_mutate_ptree(quixcc_cc_job_t *job, std::shared_ptr<Ptree> ptree) {
-  Mutation mutator;
+static bool quixcc_mutate_ptree(quixcc_cc_job_t *job, qast::Node *ptree) {
+  // Mutation mutator;
   // mutator.add_routine(mutate::MethodToFunc);
-  mutator.add_routine(mutate::DiscoverNamedConstructs);
-  mutator.add_routine(mutate::ResolveNamedConstructs);
-  mutator.add_routine(mutate::SubsystemCollapse);
-  mutator.run(job, ptree);
+  // mutator.add_routine(mutate::DiscoverNamedConstructs);
+  // mutator.add_routine(mutate::ResolveNamedConstructs);
+  // mutator.add_routine(mutate::SubsystemCollapse);
+  // mutator.run(job, ptree);
 
   return true;
 }
@@ -556,7 +556,8 @@ bool preprocessor_config(quixcc_cc_job_t *job, std::unique_ptr<PrepEngine> &prep
 }
 
 static bool compile(quixcc_cc_job_t *job) {
-  auto ptree = std::make_shared<Ptree>();
+  // auto ptree = std::make_shared<Ptree>();
+  qast::Block *ptree = nullptr;
 
   if (job->has("-emit-prep")) {
     LOG(DEBUG) << "Preprocessing only" << std::endl;
@@ -620,7 +621,7 @@ static bool compile(quixcc_cc_job_t *job) {
     ///=========================================
     /// BEGIN: PARSER
     LOG(DEBUG) << "Building Ptree 1" << std::endl;
-    if (!parse(*job, prep.get(), ptree, false))
+    if (!qast::parser::parse(*job, prep.get(), &ptree, false))
       return false;
     LOG(DEBUG) << "Finished building Ptree 1" << std::endl;
 
@@ -647,7 +648,7 @@ static bool compile(quixcc_cc_job_t *job) {
   ///=========================================
   /// BEGIN: OPTIMIZATION PIPELINE
   auto QIR = std::make_unique<ir::q::QModule>(job->m_filename.top());
-  if (!QIR->from_ptree(job, std::move(ptree))) /* This will modify the Ptree */
+  if (!QIR->from_ptree(job, ptree)) /* This will modify the Ptree */
     return false;
 
   if (!job->has("-fno-check")) // -fno-check disables semantic analysis

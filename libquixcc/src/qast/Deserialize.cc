@@ -36,5 +36,6 @@
 
 LIB_EXPORT bool quixcc_ast_from(const uint8_t *repr, size_t len, quixcc_arena_t *arena,
                                 quixcc_ast_node_t **out) {
+  /// TODO: Implement this function
   quixcc_panic("quixcc_ast_from() is not implemented");
 }

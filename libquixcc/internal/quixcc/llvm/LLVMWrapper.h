@@ -42,20 +42,14 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
-#include <quixcc/parsetree/NodeType.h>
+
+#include <qast/Nodes.h>
 
 #include <map>
 #include <memory>
 #include <stack>
 
 namespace libquixcc {
-  enum class ExportLangType {
-    Default,
-    C,
-    CXX,
-    DLang,
-    None, /* Internal */
-  };
 
   class LLVMContext {
     LLVMContext(const LLVMContext &) = delete;
@@ -65,14 +59,14 @@ public:
     std::unique_ptr<llvm::LLVMContext> m_ctx;
     std::unique_ptr<llvm::Module> m_module;
     std::unique_ptr<llvm::IRBuilder<>> m_builder;
-    std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>>
-        m_named_construsts;
-    std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
+    // std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>>
+        // m_named_construsts;
+    // std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
     std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
     std::string prefix;
     bool m_pub = true;
     size_t m_skipbr = 0;
-    ExportLangType m_lang = ExportLangType::Default;
+    qast::ExportLang m_lang = qast::ExportLang::Default;
 
     LLVMContext() = default;
 

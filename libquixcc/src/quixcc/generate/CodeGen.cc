@@ -48,7 +48,55 @@ using namespace libquixcc::codegen;
 using namespace libquixcc::ir;
 using namespace libquixcc::ir::delta;
 
-uint8_t get_numbits(std::string s);
+typedef unsigned int uint128_t __attribute__((mode(TI)));
+
+uint128_t stringToUint128(const std::string &str) {
+  uint128_t result = 0;
+  for (char c : str) {
+    if (c < '0' || c > '9') {
+      throw std::invalid_argument("Invalid character in input string");
+    }
+    result = result * 10 + (c - '0');
+  }
+
+  return result;
+}
+
+uint8_t get_numbits(std::string s) {
+  if (s == "0" || s == "1")
+    return 1;
+
+  if (s.find('.') != std::string::npos) {
+    float f0;
+    try {
+      f0 = std::stof(s);
+    } catch (const std::out_of_range &e) {
+      return 64;
+    }
+    double f1 = std::stod(s);
+    double delta = 0.0000001;
+
+    return std::abs(f0 - f1) < delta ? 64 : 32;
+  }
+
+  uint128_t val = stringToUint128(s);
+
+  uint8_t bits = 0;
+  while (val) {
+    val >>= 1;
+    bits++;
+  }
+
+  if (bits > 64)
+    return 128;
+  else if (bits > 32)
+    return 64;
+  else if (bits > 16)
+    return 32;
+  else if (bits > 8)
+    return 16;
+  return 8;
+}
 
 llvm::Type *LLVM14Codegen::gen(const ir::delta::I1 *node) {
   return llvm::Type::getInt1Ty(*m_ctx->m_ctx);

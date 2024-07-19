@@ -32,12 +32,12 @@
 #define QUIXCC_INTERNAL
 
 #include <core/SHA160.h>
+#include <qast/Parser.h>
 #include <quixcc/IR/Q/Function.h>
 #include <quixcc/IR/Q/QIR.h>
 #include <quixcc/IR/Q/Variable.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/lexer/Lex.h>
-#include <quixcc/parsetree/Parser.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 
 #include <boost/filesystem.hpp>
@@ -82,15 +82,15 @@ std::optional<std::string> PrepEngine::generate_adapter_entrypoint(PrepEngine::r
   std::string mname;
 
   { /* Parse and generate Quix-IR for the metastatic definition */
-    std::shared_ptr<BlockNode> block;
+    qast::Block *block = nullptr;
     auto lexer = clone();
     lexer->set_source(metastatic, "metastatic");
-    if (!parse(*job, lexer.get(), block, false, true) || !block) {
+    if (!qast::parser::parse(*job, lexer.get(), &block, false, true) || !block) {
       LOG(ERROR) << "Failed to parse metastatic" << endl;
       return std::nullopt;
     }
 
-    if (block->m_stmts.size() != 1) {
+    if (block->get_items().size() != 1) {
       LOG(ERROR) << "Metastatic must be a single function definition" << endl;
       return std::nullopt;
     }

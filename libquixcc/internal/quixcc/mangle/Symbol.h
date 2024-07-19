@@ -61,7 +61,7 @@ namespace libquixcc {
 
 public:
     static std::string mangle(const ir::q::Value *node, const std::string &prefix,
-                              ExportLangType lang);
+                              qast::ExportLang lang);
     static std::string join(const std::string &prefix, const std::string &name);
     static std::string join(const std::vector<std::string> &namespaces,
                             const std::string &name = "");

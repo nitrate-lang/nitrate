@@ -1159,3 +1159,16 @@ void QModule::bfs_find_all(QModule::MatchFunc match, std::vector<Value **> &resu
 
   bft_iter(call, predicate, post_order);
 }
+
+void QModule::acknowledge_pass(QPassType pass, const std::string &name) {
+  m_passes[pass].push_back(name);
+}
+
+void QModule::unacknowledge_pass(QPassType pass, const std::string &name) {
+  m_passes[pass].erase(std::remove(m_passes[pass].begin(), m_passes[pass].end(), name),
+                       m_passes[pass].end());
+}
+
+void QModule::add_tag(const std::string &tag) { m_tags.insert(tag); }
+
+void QModule::remove_tag(const std::string &tag) { m_tags.erase(tag); }

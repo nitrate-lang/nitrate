@@ -347,6 +347,14 @@ public:
 #endif
     }
 
+    std::string as_string() const {
+#if !defined(NDEBUG)
+      return std::get<std::string>(m_value);
+#else
+      return m_value.str;
+#endif
+    }
+
     const Loc &loc() const { return m_loc; }
     inline TT type() const { return m_type; }
 

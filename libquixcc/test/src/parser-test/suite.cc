@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <parser-test/suite.h>
-#include <quixcc/parsetree/Parser.h>
+#include <qast/Parser.h>
 
 bool libquixcc::test::parser_test_suite() {
   for (const auto vec : libquixcc::test::parser_test_vectors) {

@@ -79,6 +79,10 @@ typedef enum quixcc_ast_ntype_t {
   QUIXCC_AST_NODE_SLICE = 121,
   QUIXCC_AST_NODE_FSTRING = 122,
   QUIXCC_AST_NODE_IDENT = 123,
+  QUIXCC_AST_NODE_SEQ_POINT = 124,
+  QUIXCC_AST_NODE_POST_UNEXPR = 125,
+  QUIXCC_AST_NODE_STMT_EXPR = 126,
+  QUIXCC_AST_NODE_TYPE_EXPR = 127,
 
   QUIXCC_AST_NODE_MUT_TY = 300,
   QUIXCC_AST_NODE_U1_TY = 301,
@@ -142,9 +146,11 @@ typedef enum quixcc_ast_ntype_t {
   QUIXCC_AST_NODE_FOREACH = 715,
   QUIXCC_AST_NODE_CASE = 716,
   QUIXCC_AST_NODE_SWITCH = 717,
+  QUIXCC_AST_NODE_SLIST = 718,
+  QUIXCC_AST_NODE_EXPR_STMT = 719,
 } quixcc_ast_ntype_t;
 
-#define QUIXCC_AST_NODE_COUNT 83
+#define QUIXCC_AST_NODE_COUNT 89
 
 typedef enum quixcc_ast_ftype_t {
   QUIXCC_AST_FIELD_BOOL = 0,
@@ -186,9 +192,9 @@ quixcc_ast_ntype_t quixcc_ast_typeof(const quixcc_ast_node_t *node);
 
 /**
  * @brief Returns the current size of the node object in memory
- * 
+ *
  * @param node The node
- * 
+ *
  * @return The size of the node in memory (only the node itself, not it recursive memory usage)
  */
 size_t quixcc_ast_sizeof(const quixcc_ast_node_t *node);
@@ -496,8 +502,8 @@ void quixcc_ast_walk_ex(quixcc_ast_node_t *base, quixcc_iterm_t order, quixcc_as
  * @note The output string will end with a null terminator. The NULL terminator
  * is not included in the length.
  */
-char *quixcc_ast_repr(quixcc_ast_node_t *node, bool minify, size_t indent, quixcc_arena_t *arena,
-                      size_t *outlen);
+char *quixcc_ast_repr(const quixcc_ast_node_t *node, bool minify, size_t indent,
+                      quixcc_arena_t *arena, size_t *outlen);
 
 /**
  * @brief Serializes an abstract syntax tree node to a binary representation.
@@ -517,8 +523,8 @@ char *quixcc_ast_repr(quixcc_ast_node_t *node, bool minify, size_t indent, quixc
  * @warning The output is not human readable, it is a binary representation,
  * and is not safe to print.
  */
-void quixcc_ast_brepr(quixcc_ast_node_t *node, bool compress, quixcc_arena_t *arena, uint8_t **out,
-                      size_t *outlen);
+void quixcc_ast_brepr(const quixcc_ast_node_t *node, bool compress, quixcc_arena_t *arena,
+                      uint8_t **out, size_t *outlen);
 
 /**
  * @brief Deserializes an abstract syntax tree node from either a string or

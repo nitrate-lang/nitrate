@@ -31,12 +31,12 @@
 
 #define QUIXCC_INTERNAL
 
+#include <qast/Parser.h>
 #include <quixcc/IR/Q/Expr.h>
 #include <quixcc/IR/Q/QIR.h>
 #include <quixcc/IR/Q/Variable.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/lexer/Lex.h>
-#include <quixcc/parsetree/Parser.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 
 #include <vector>
@@ -87,35 +87,35 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
     auto lexer = clone();
     lexer->set_source(code, "<qsys>");
 
-    std::shared_ptr<ExprNode> expr;
-    if (!parse_expr(*job, lexer.get(), {Token(tPunc, Semicolon)}, expr)) {
+    qast::Expr *expr = nullptr;
+    if (!qast::parser::parse_expr(*job, lexer.get(), {Token(tPunc, Semicolon)}, &expr)) {
       LOG(FAILED) << "Failed to parse QSys directive." << tok << std::endl;
       return false;
     }
 
-    if (!expr->is<CallExprNode>()) {
+    if (!expr->is<qast::Call>()) {
       LOG(FAILED) << "QSys directive must be a meta-function call." << tok << std::endl;
       return false;
     }
 
-    auto call = expr->as<CallExprNode>();
+    auto call = expr->as<qast::Call>();
 
-    if (call->m_positional_args.size() == 0) {
+    if (call->get_args().size() == 0) {
       LOG(ERROR) << "QSys directive must have at least one argument." << tok << std::endl;
       return false;
     }
 
-    if (!call->m_positional_args[0]->is<IntegerNode>()) {
+    if (!call->get_args().at(0)->is<qast::ConstInt>()) {
       LOG(ERROR) << "QSys directive first argument must be an integer." << tok << std::endl;
       return false;
     }
 
-    num = std::stoi(call->m_positional_args[0]->as<IntegerNode>()->m_val);
+    num = std::stoi(call->get_args().at(0)->as<qast::ConstInt>()->get_value().c_str());
 
-    for (size_t i = 1; i < call->m_positional_args.size(); i++) {
+    for (const auto &[key, value] : call->get_args()) {
       auto qir_arg = std::make_unique<ir::q::QModule>(job->m_filename.top());
 
-      if (!qir_arg->from_ptree(job, call->m_positional_args[i])) {
+      if (!qir_arg->from_ptree(job, value->as<qast::Block>())) {
         LOG(ERROR) << "Failed to parse QSys directive argument." << tok << std::endl;
 
         return false;
@@ -123,11 +123,6 @@ bool PrepEngine::ParseQSys(const Token &tok, const std::string &directive,
 
       args_ptrs.push_back(std::move(qir_arg));
       args.push_back((QSysCallRegistry::QSysArg)args_ptrs.back().get());
-    }
-
-    for (auto [name, arg] : call->m_named_args) {
-      LOG(ERROR) << "QSys directive does not support named arguments." << tok << std::endl;
-      return false;
     }
   }
 

@@ -59,15 +59,15 @@ std::string libquixcc::Symbol::join(const std::vector<std::string> &namespaces,
 }
 
 std::string libquixcc::Symbol::mangle(const ir::q::Value *node, const std::string &prefix,
-                                      ExportLangType lang) {
+                                      qast::ExportLang lang) {
   switch (lang) {
-  case ExportLangType::Default:
+  case qast::ExportLang::Default:
     return mangle_quix(node, prefix);
-  case ExportLangType::C:
+  case qast::ExportLang::C:
     return mangle_c(node, prefix);
-  case ExportLangType::CXX:
+  case qast::ExportLang::CXX:
     return mangle_cxx(node, prefix);
-  case ExportLangType::DLang:
+  case qast::ExportLang::DLang:
     throw std::runtime_error("DLang export not yet supported");
   default:
     throw std::runtime_error("Invalid export language type");

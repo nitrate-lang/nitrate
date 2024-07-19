@@ -237,19 +237,22 @@ const Type *Number::infer() const {
 
 const Type *List::infer() const {
   std::vector<const Type *> types;
-  for (auto &elem : values)
+  for (auto &elem : values) {
     types.push_back(elem->infer());
+  }
 
-  if (types.empty())
+  if (types.empty()) {
     throw std::runtime_error("Codegen failed: Can not perform inference on empty list");
+  }
 
   /// TODO: Do this for real
 
   const Type *type = types[0];
 
   for (size_t i = 1; i < types.size(); i++) {
-    if (types[i] != type)
+    if (types[i] != type) {
       throw std::runtime_error("Codegen failed: List type not supported");
+    }
   }
 
   return Array::create(type, values.size());

@@ -533,18 +533,19 @@ static auto conv(const ir::q::Case *n, DState &state) -> DResult {
 }
 
 static auto conv(const ir::q::Switch *n, DState &state) -> DResult {
-  /// TODO: Implement Switch
-
   auto value = conv(n->value, state)[0]->as<Expr>();
-
   auto def = n->defaultcase ? conv(n->defaultcase, state)[0]->as<Block>() : nullptr;
 
   if (value->infer()->is_numeric()) {
     std::vector<const Case *> cases;
-    for (auto c : n->cases)
+    for (auto c : n->cases) {
       cases.push_back(conv(c, state)[0]->as<Case>());
+    }
+
     return Switch::create(value, cases, def);
   } else {
+    /// TODO: Implement Switch
+
     throw std::runtime_error("DeltaIR translation: Switch not implemented for non-numeric types");
   }
 }

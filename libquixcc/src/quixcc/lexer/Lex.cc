@@ -76,7 +76,7 @@ namespace libquixcc {
       {"opaque", Keyword::Opaque},
       {"enum", Keyword::Enum},
       {"fstring", Keyword::FString},
-      {"impl", Keyword::Impl},
+      {"with", Keyword::Impl},
 
       {"fn", Keyword::Fn},
       {"noexcept", Keyword::Noexcept},
@@ -137,7 +137,7 @@ namespace libquixcc {
       {Keyword::Opaque, "opaque"},
       {Keyword::Enum, "enum"},
       {Keyword::FString, "fstring"},
-      {Keyword::Impl, "impl"},
+      {Keyword::Impl, "with"},
 
       {Keyword::Fn, "fn"},
       {Keyword::Noexcept, "noexcept"},

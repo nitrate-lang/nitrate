@@ -63,7 +63,6 @@ void libquixcc::LoggerGroup::push_message_to_job(quixcc_cc_job_t &job, libquixcc
 
   // Throw an exception if the message is an error or fatal
   if (type == E::ERROR) {
-    /// TODO: Don't use error handling as control flow
     job.m_tainted = true;
     throw core::Exception(message);
   } else if (type == E::FAILED || type == E::FATAL) {
