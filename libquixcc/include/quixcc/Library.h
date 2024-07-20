@@ -76,6 +76,17 @@ bool quixcc_lib_init();
 bool quixcc_lib_deinit();
 
 /**
+ * @brief Get the version of the QUIX compiler library.
+ *
+ * @return The version string of the QUIX compiler library.
+ * @warning Don't free the returned string.
+ * @note This function is thread-safe.
+ * @note This function is safe to call irrespective of the library state dictated
+ * by quixcc_lib_init and quixcc_lib_deinit.
+ */
+const char *quixcc_lib_version();
+
+/**
  * @brief Print debug into and abort.
  *
  * @param msg The message to print.

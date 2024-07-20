@@ -2,23 +2,13 @@ cmake_minimum_required(VERSION 3.15)
 project(libquixcc CXX)
 
 #================== CALCULATE BUILD ID ==================
-set(ENV_CONCAT_DATA "")
-get_cmake_property(_variableNames VARIABLES)
-list (SORT _variableNames)
-foreach (_variableName ${_variableNames})
-    string(CONCAT ENV_CONCAT_DATA "${ENV_CONCAT_DATA}${_variableName}=${${_variableName}}:")
-endforeach()
-execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.cc" -exec sha256sum {} \; COMMAND sha256sum
-    OUTPUT_VARIABLE SHA256SUMS OUTPUT_STRIP_TRAILING_WHITESPACE)
-execute_process(COMMAND echo ${ENV_CONCAT_DATA} ${SHA256SUMS} COMMAND sha256sum
+execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -exec sha256sum {} \; COMMAND sha256sum
     OUTPUT_VARIABLE SHA256SUMS OUTPUT_STRIP_TRAILING_WHITESPACE)
 string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(LIBQUIX_VERSION "\"QUIXCC_${SHA256SUMS}\"")
 message(STATUS "LibQuix VersionId: ${LIBQUIX_VERSION}")
-
-#================================================================
 
 #================== CONFIGURE BUILD ==================
 

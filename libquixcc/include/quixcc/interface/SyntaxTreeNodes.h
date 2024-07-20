@@ -195,7 +195,7 @@ quixcc_ast_ntype_t quixcc_ast_typeof(const quixcc_ast_node_t *node);
  *
  * @param node The node
  *
- * @return The size of the node in memory (only the node itself, not it recursive memory usage)
+ * @return The size of the node (polymorphic object) in memory.
  */
 size_t quixcc_ast_sizeof(const quixcc_ast_node_t *node);
 
@@ -212,6 +212,7 @@ size_t quixcc_ast_sizeof(const quixcc_ast_node_t *node);
  * @warning Do not free the returned string.
  * @note The function is pure, i.e. each call with the same argument will
  * return the same pointer to the same string.
+ * @note This function is not portable across compiler versions.
  */
 const char *quixcc_ast_ntype_name(quixcc_ast_ntype_t type);
 
@@ -454,7 +455,7 @@ typedef quixcc_ast_visit_t quixcc_ast_pred_t;
  *
  * @note This function is thread-safe.
  * @note A panic will occur if base is NULL.
- * @note A panic will occur if cb is NULL.
+ * @note If cb is NULL, the function will return immediately.
  */
 void quixcc_ast_walk(quixcc_ast_node_t *base, quixcc_iterm_t order, quixcc_ast_visit_t cb);
 
@@ -468,7 +469,7 @@ void quixcc_ast_walk(quixcc_ast_node_t *base, quixcc_iterm_t order, quixcc_ast_v
  *
  * @note This function is thread-safe.
  * @note A panic will occur if base is NULL.
- * @note A panic will occur if cb is NULL.
+ * @note If cb is NULL, the function will return immediately.
  * @note `quixcc_ast_walk_ex` is equivalent to `quixcc_ast_walk` if `walk_if` is
  * `NULL`.
  */

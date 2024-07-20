@@ -103,6 +103,52 @@ LIB_EXPORT bool quixcc_lib_deinit() {
   g_is_initialized = false;
   return true;
 }
+LIB_EXPORT const char *quixcc_lib_version() {
+  static std::string version_string =
+
+      "[" LIBQUIX_VERSION "] ["
+
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) ||            \
+    defined(_M_AMD64)
+      "x86_64-"
+#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
+      "x86-"
+#elif defined(__aarch64__)
+      "aarch64-"
+#elif defined(__arm__)
+      "arm-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__linux__)
+      "linux-"
+#elif defined(__APPLE__)
+      "macos-"
+#elif defined(_WIN32)
+      "win32-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__clang__)
+      "clang] "
+#elif defined(__GNUC__)
+      "gnu] "
+#else
+      "unknown] "
+#endif
+
+#if NDEBUG
+      "[release]"
+#else
+      "[debug]"
+#endif
+
+      ;
+
+  return version_string.c_str();
+}
 
 LIB_EXPORT bool quixcc_cache_bind(quixcc_cache_has_t has, quixcc_cache_read_t read,
                                   quixcc_cache_write_t write) {

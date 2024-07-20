@@ -115,9 +115,9 @@ class quixcc_arena_impl_t {
   }
 
   ~quixcc_arena_impl_t() {
+#if ALLOCATOR_PRINT_VERBOSE
     size_t total = 0;
 
-#if ALLOCATOR_PRINT_VERBOSE
     std::cerr << "TRACE: quixcc_arena_impl_t::~quixcc_arena_impl_t() -> free([";
 #endif
 
@@ -128,9 +128,9 @@ class quixcc_arena_impl_t {
 
       free(m_bases[i].m_base);
 
+#if ALLOCATOR_PRINT_VERBOSE
       total += m_bases[i].m_size;
 
-#if ALLOCATOR_PRINT_VERBOSE
       std::cerr << m_bases[i].m_size;
       if (i + 1 < m_bases.size()) {
         std::cerr << ", ";

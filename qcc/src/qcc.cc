@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-constexpr const char *VERSION_STR = "qcc version 0.1.0 [2024-03] (Debian 10.0.0-1)";
+std::string VERSION_STR = "qcc version 0.1.0 => (" + std::string(quixcc_lib_version()) + ")";
 constexpr const char *FULL_LICENSE =
     R"(This file is part of QUIX Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones

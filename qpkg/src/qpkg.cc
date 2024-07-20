@@ -54,7 +54,7 @@
 #include <thread>
 #include <vector>
 
-constexpr const char *VERSION_STR = "qpkg version 0.1.0 [2024-03] (generic)";
+std::string VERSION_STR = "qpkg version 0.1.0 => (" + std::string(quixcc_lib_version()) + ")";
 constexpr const char *FULL_LICENSE =
     R"(This file is part of QUIX Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
