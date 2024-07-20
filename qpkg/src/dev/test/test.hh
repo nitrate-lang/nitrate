@@ -52,59 +52,52 @@
 #include <string_view>
 
 namespace qpkg::dev::test {
-class Progress {
-  std::string m_title;
-  bool m_all_okay;
+  class Progress {
+    std::string m_title;
+    bool m_all_okay;
 
- public:
-  Progress(const std::string &title);
+public:
+    Progress(const std::string &title);
 
-  enum class Result {
-    PASS,
-    FAIL,
+    enum class Result {
+      PASS,
+      FAIL,
+    };
+
+    void begin_result();
+    void result(const std::string &msg, Result type);
+    void end_result();
+
+    void begin_detail();
+    void detail(std::string_view test_id, std::string_view name, Result type);
+    void end_detail();
+
+    void done(const std::string &outfile_name = "");
   };
 
-  void begin_result();
-  void result(const std::string &msg, Result type);
-  void end_result();
+  int run_tests();
 
-  void begin_detail();
-  void detail(std::string_view test_id, std::string_view name, Result type);
-  void end_detail();
+  int run_lexer_test(Progress &progress,
+                     std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+  int run_parser_test(Progress &progress,
+                      std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+  int run_quix_ir_test(Progress &progress,
+                       std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+  int run_delta_ir_test(Progress &progress,
+                        std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+  int run_llvm_ir_test(Progress &progress,
+                       std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+  int run_llvm_codegen_test(Progress &progress,
+                            std::map<std::string_view, std::map<std::string_view, bool>> &tests);
+  int run_c11_codegen_test(Progress &progress,
+                           std::map<std::string_view, std::map<std::string_view, bool>> &tests);
 
-  void done(const std::string &outfile_name = "");
-};
+  extern const std::map<std::pair<std::string_view, std::string_view>,
+                        std::pair<std::string_view, std::vector<quixcc_tok_t>>>
+      g_lexer_test_vectors;
 
-int run_tests();
-
-int run_lexer_test(
-    Progress &progress,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
-int run_parser_test(
-    Progress &progress,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
-int run_quix_ir_test(
-    Progress &progress,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
-int run_delta_ir_test(
-    Progress &progress,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
-int run_llvm_ir_test(
-    Progress &progress,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
-int run_llvm_codegen_test(
-    Progress &progress,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
-int run_c11_codegen_test(
-    Progress &progress,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests);
-
-extern const std::map<std::pair<std::string_view, std::string_view>,
-                      std::pair<std::string_view, std::vector<quixcc_tok_t>>>
-    g_lexer_test_vectors;
-
-}  // namespace qpkg::dev::test
+} // namespace qpkg::dev::test
 
 #endif
 
-#endif  // QPKG_DEV_TOOLS
+#endif // QPKG_DEV_TOOLS

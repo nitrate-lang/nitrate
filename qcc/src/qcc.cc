@@ -8,8 +8,7 @@
 #include <thread>
 #include <vector>
 
-constexpr const char *VERSION_STR =
-    "qcc version 0.1.0 [2024-03] (Debian 10.0.0-1)";
+constexpr const char *VERSION_STR = "qcc version 0.1.0 [2024-03] (Debian 10.0.0-1)";
 constexpr const char *FULL_LICENSE =
     R"(This file is part of QUIX Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
@@ -68,6 +67,7 @@ struct Options {
   bool debug;
   bool noprofile;
   bool minify;
+  bool emit_bin;
   OperatingMode mode;
 
   Options() {
@@ -76,86 +76,83 @@ struct Options {
     debug = false;
     noprofile = false;
     minify = false;
+    emit_bin = false;
     mode = OperatingMode::QUIXCC_TARGET_DEFAULT;
     output = "a.out";
   }
 
   bool validate() {
     switch (mode) {
-      case OperatingMode::ERROR:
+    case OperatingMode::ERROR:
+      return false;
+    case OperatingMode::DISP_HELP:
+    case OperatingMode::DISP_VERSION:
+    case OperatingMode::DISP_LICENSE:
+      return true;
+    case OperatingMode::IR:
+    case OperatingMode::IR_BITCODE:
+    case OperatingMode::QUIX_IR:
+    case OperatingMode::DELTA_IR:
+    case OperatingMode::C11:
+    case OperatingMode::LEX:
+    case OperatingMode::PREPROCESSED:
+      if (output.empty()) {
+        std::cerr << "Error: missing output file" << std::endl;
         return false;
-      case OperatingMode::DISP_HELP:
-      case OperatingMode::DISP_VERSION:
-      case OperatingMode::DISP_LICENSE:
-        return true;
-      case OperatingMode::IR:
-      case OperatingMode::IR_BITCODE:
-      case OperatingMode::QUIX_IR:
-      case OperatingMode::DELTA_IR:
-      case OperatingMode::C11:
-      case OperatingMode::LEX:
-      case OperatingMode::PREPROCESSED:
-        if (output.empty()) {
-          std::cerr << "Error: missing output file" << std::endl;
-          return false;
-        }
-        if (sources.empty()) {
-          std::cerr << "Error: missing input files" << std::endl;
-          return false;
-        }
-        return true;
-      case OperatingMode::PARSE_TREE:
-        if (output.empty()) {
-          std::cerr << "Error: missing output file" << std::endl;
-          return false;
-        }
-        if (sources.empty()) {
-          std::cerr << "Error: missing input files" << std::endl;
-          return false;
-        }
-        if (optimization != quixcc::OptimizationLevel::NONE) {
-          std::cerr << "Warning: ignoring optimization flags for parse tree "
-                       "generation"
-                    << std::endl;
-          optimization = quixcc::OptimizationLevel::NONE;
-        }
-        return true;
-      case OperatingMode::ASSEMBLY:
-      case OperatingMode::OBJECT:
-        if (output.empty()) {
-          std::cerr << "Error: missing output file" << std::endl;
-          return false;
-        }
-        if (sources.empty()) {
-          std::cerr << "Error: missing input files" << std::endl;
-          return false;
-        }
-        if (optimization == quixcc::OptimizationLevel::SPEED_4) {
-          std::cerr << "Warning: -O4 optimization is being decreased to -O3 "
-                       "for assembly and object generation"
-                    << std::endl;
-          optimization = quixcc::OptimizationLevel::SPEED_3;
-        }
-        return true;
-      case OperatingMode::EXECUTABLE:
-        if (output.empty()) {
-          std::cerr << "Error: missing output file" << std::endl;
-          return false;
-        }
-        if (sources.empty()) {
-          std::cerr << "Error: missing input files" << std::endl;
-          return false;
-        }
-        return true;
-      default:
+      }
+      if (sources.empty()) {
+        std::cerr << "Error: missing input files" << std::endl;
         return false;
+      }
+      return true;
+    case OperatingMode::PARSE_TREE:
+      if (output.empty()) {
+        std::cerr << "Error: missing output file" << std::endl;
+        return false;
+      }
+      if (sources.empty()) {
+        std::cerr << "Error: missing input files" << std::endl;
+        return false;
+      }
+      if (optimization != quixcc::OptimizationLevel::NONE) {
+        std::cerr << "Warning: ignoring optimization flags for parse tree generation" << std::endl;
+        optimization = quixcc::OptimizationLevel::NONE;
+      }
+      return true;
+    case OperatingMode::ASSEMBLY:
+    case OperatingMode::OBJECT:
+      if (output.empty()) {
+        std::cerr << "Error: missing output file" << std::endl;
+        return false;
+      }
+      if (sources.empty()) {
+        std::cerr << "Error: missing input files" << std::endl;
+        return false;
+      }
+      if (optimization == quixcc::OptimizationLevel::SPEED_4) {
+        std::cerr << "Warning: -O4 optimization is being decreased to -O3 for assembly and object "
+                     "generation"
+                  << std::endl;
+        optimization = quixcc::OptimizationLevel::SPEED_3;
+      }
+      return true;
+    case OperatingMode::EXECUTABLE:
+      if (output.empty()) {
+        std::cerr << "Error: missing output file" << std::endl;
+        return false;
+      }
+      if (sources.empty()) {
+        std::cerr << "Error: missing input files" << std::endl;
+        return false;
+      }
+      return true;
+    default:
+      return false;
     }
   }
 };
 
-static void println(const std::string &msg = "") {
-  std::cout << msg << std::endl;
-}
+static void println(const std::string &msg = "") { std::cout << msg << std::endl; }
 
 static void print_help() {
   println("Usage: " + program_name + " [options] file...\n");
@@ -166,48 +163,33 @@ static void print_help() {
   println("  -o, --output <file>       Output to <file>");
   println("  -I<dir>                   Add <dir> to the include path");
   println("  -L<dir>                   Add <dir> to the library path");
-  println(
-      "  -f<opt>                   Compiler settings. See docs for more info");
+  println("  -f<opt>                   Compiler settings. See docs for more info");
   println("  -l<name>                  Link with library <name>");
-  println(
-      "  -D<name>[=<value>]        Define macro <name> with optional <value>");
+  println("  -D<name>[=<value>]        Define macro <name> with optional <value>");
   println("  -U<name>                  Undefine macro <name>");
   println("  -T, --target <triple>     Specify the LLVM target triple");
   println("  -C, --cpu <cpu>           Specify the LLVM target CPU");
-  println(
-      "  -emit-ir                  Emit the intermediate representation (LLVM "
-      "IR)");
-  println(
-      "  -emit-quix-ir             Emit the intermediate representation (QUIX "
-      "IR)");
-  println(
-      "  -emit-delta-ir            Emit the intermediate representation (Delta "
-      "IR)");
-  println(
-      "  -emit-c11                 Emit the intermediate representation (LLVM "
-      "IR)");
-  println(
-      "  -emit-bc                  Emit the intermediate representation (LLVM "
-      "bitcode)");
-  println("  -emit-prep                Emit the preprocessed source");
-  println("  -emit-tokens              Emit the tokenized source");
+  println("  -emit-tokens              Emit the tokens prior to preprocessing");
+  println("  -emit-prep                Emit the tokens after preprocessing");
   println("  -emit-parse               Emit the parse tree");
+  println("  -emit-quix-ir             Emit the intermediate representation (QUIX IR)");
+  println("  -emit-delta-ir            Emit the intermediate representation (Delta IR)");
+  println("  -emit-ir                  Emit the intermediate representation (LLVM IR)");
+  println("  -emit-c11                 Transcompile to C11 code");
+  println("  -emit-bc                  Emit the intermediate representation (LLVM bitcode)");
   println("  -emit-minify              Minify the output");
-  println("  -S                        Compile only; do not assemble or link");
-  println("  -c                        Compile and assemble, but do not link");
-  println("  -g                        Generate debug information");
+  println("  -emit-bin                 Output as a binary representation");
+  println("  -S                        Generate assembly code");
+  println("  -c                        Generate object code");
+  println("  -g                        Add debug information");
   println("  -O0                       Disable all optimizations");
   println("  -Os                       Optimize for size");
   println("  -O1                       Optimize for speed (level 1); default");
   println("  -O2                       Optimize for speed (level 2)");
   println("  -O3                       Optimize for speed (level 3)");
-  println(
-      "  -O4                       Optimize -O3 and enable link-time "
-      "optimization");
+  println("  -O4                       Optimize -O3 and enable link-time optimization");
   println("  -vv                       Enable verbose output");
-  println(
-      "  -vvv                      Enable very verbose output; includes "
-      "compiler internals");
+  println("  -vvv                      Enable very verbose output; includes compiler internals");
   println();
   println("Examples:");
   println(" Just build a single source and output `a.out`:");
@@ -216,14 +198,11 @@ static void print_help() {
   println(" Build a single source and output to a specific file:");
   println("   " + program_name + " source.q -o myapp");
   println();
-  println(
-      " Build a single source and output to a specific file with debug "
-      "information:");
+  println(" Build a single source and output to a specific file with debug information:");
   println("   " + program_name + " source.q -o myapp -g");
   println();
-  println(
-      " Build a multiple sources with maximum optimizations, link a library, "
-      "and output to a specific file:");
+  println(" Build a multiple sources with maximum optimizations, link a library, and output to a "
+          "specific file:");
   println("   " + program_name + " source1.q source2.q -o myapp -O4 -lcrypto");
   println();
   println("(See license for legal information)");
@@ -251,8 +230,7 @@ static bool init(const std::vector<std::string> &args) {
   return true;
 }
 
-static std::optional<Options> parse_options(
-    const std::vector<std::string> &args) {
+static std::optional<Options> parse_options(const std::vector<std::string> &args) {
   Options options;
 
   if (args.size() == 1) {
@@ -359,6 +337,8 @@ static std::optional<Options> parse_options(
       options.mode = OperatingMode::PARSE_TREE;
     } else if (*it == "-emit-minify") {
       options.minify = true;
+    } else if (*it == "-emit-bin") {
+      options.emit_bin = true;
     } else if (*it == "-S") {
       options.mode = OperatingMode::ASSEMBLY;
     } else if (*it == "-c") {
@@ -395,15 +375,15 @@ static std::optional<Options> parse_options(
 
   // set default optimization level to -O1 if not specified
   switch (options.mode) {
-    case OperatingMode::ASSEMBLY:
-    case OperatingMode::OBJECT:
-    case OperatingMode::EXECUTABLE:
-      if ((int)options.optimization == -1)
-        options.optimization = quixcc::OptimizationLevel::SPEED_1;
-      break;
-    default:
-      if ((int)options.optimization == -1)
-        options.optimization = quixcc::OptimizationLevel::NONE;
+  case OperatingMode::ASSEMBLY:
+  case OperatingMode::OBJECT:
+  case OperatingMode::EXECUTABLE:
+    if ((int)options.optimization == -1)
+      options.optimization = quixcc::OptimizationLevel::SPEED_1;
+    break;
+  default:
+    if ((int)options.optimization == -1)
+      options.optimization = quixcc::OptimizationLevel::NONE;
   }
 
   return options;
@@ -414,49 +394,64 @@ extern "C" void moncontrol(int);
 int main(int argc, char *argv[]) {
   std::vector<std::string> args(argv, argv + argc);
 
-  if (program_name = args[0], !init(args)) return 1;
+  if (program_name = args[0], !init(args))
+    return 1;
 
   std::optional<Options> options;
 
-  if (options = parse_options(args), !options.has_value()) return 2;
-  if (!options->validate()) return 3;
+  if (options = parse_options(args), !options.has_value())
+    return 2;
+  if (!options->validate())
+    return 3;
 
-  if (options->noprofile) moncontrol(0);
+  if (options->noprofile)
+    moncontrol(0);
 
   switch (options->mode) {
-    case OperatingMode::DISP_HELP:
-      print_help();
-      return 0;
-    case OperatingMode::DISP_VERSION:
-      print_version();
-      return 0;
-    case OperatingMode::DISP_LICENSE:
-      print_license();
-      return 0;
-    default:
-      break;
+  case OperatingMode::DISP_HELP:
+    print_help();
+    return 0;
+  case OperatingMode::DISP_VERSION:
+    print_version();
+    return 0;
+  case OperatingMode::DISP_LICENSE:
+    print_license();
+    return 0;
+  default:
+    break;
   }
 
   auto builder = quixcc::CompilerBuilder();
 
-  for (const auto &path : options->sources) builder.add_source(path);
-  for (const auto &path : options->include_paths) builder.add_include(path);
-  for (const auto &path : options->library_paths) builder.add_library(path);
-  for (const auto &lib : options->libraries) builder.link_library(lib);
+  for (const auto &path : options->sources)
+    builder.add_source(path);
+  for (const auto &path : options->include_paths)
+    builder.add_include(path);
+  for (const auto &path : options->library_paths)
+    builder.add_library(path);
+  for (const auto &lib : options->libraries)
+    builder.link_library(lib);
   for (const auto &[name, value] : options->defines)
     builder.define(name, value);
-  for (const auto &name : options->undefines) builder.undefine(name);
-  for (const auto &setting : options->settings) builder.set_flag(setting);
+  for (const auto &name : options->undefines)
+    builder.undefine(name);
+  for (const auto &setting : options->settings)
+    builder.set_flag(setting);
   builder.set_output(options->output);
   builder.set_verbosity(options->verbosity);
   builder.set_optimization(options->optimization);
   builder.set_debug(options->debug);
-  if (options->minify) builder.opt("-emit-minify");
+  if (options->minify)
+    builder.opt("-emit-minify");
+  if (options->emit_bin)
+    builder.opt("-emit-bin");
 
   try {
-    if (!options->target_triple.empty()) builder.target(options->target_triple);
+    if (!options->target_triple.empty())
+      builder.target(options->target_triple);
 
-    if (!options->cpu.empty()) builder.cpu(options->cpu);
+    if (!options->cpu.empty())
+      builder.cpu(options->cpu);
   } catch (const quixcc::TargetTripleException &e) {
     std::cerr << "Error: " << e.what() << std::endl;
     return 5;
@@ -466,48 +461,49 @@ int main(int argc, char *argv[]) {
   }
 
   switch (options->mode) {
-    case OperatingMode::IR:
-      builder.opt("-emit-ir");
-      break;
-    case OperatingMode::QUIX_IR:
-      builder.opt("-emit-quix-ir");
-      break;
-    case OperatingMode::DELTA_IR:
-      builder.opt("-emit-delta-ir");
-      break;
-    case OperatingMode::C11:
-      builder.opt("-emit-c11");
-      break;
-    case OperatingMode::IR_BITCODE:
-      builder.opt("-emit-bc");
-      break;
-    case OperatingMode::PREPROCESSED:
-      builder.opt("-emit-prep");
-      break;
-    case OperatingMode::LEX:
-      builder.opt("-emit-tokens");
-      break;
-    case OperatingMode::PARSE_TREE:
-      builder.opt("-emit-parse");
-      break;
-    case OperatingMode::ASSEMBLY:
-      builder.opt("-S");
-      break;
-    case OperatingMode::OBJECT:
-      builder.opt("-c");
-      break;
-    case OperatingMode::EXECUTABLE:
-      break;
-    case OperatingMode::DOCUMENTATION:
-      throw std::runtime_error("Not implemented");
+  case OperatingMode::IR:
+    builder.opt("-emit-ir");
+    break;
+  case OperatingMode::QUIX_IR:
+    builder.opt("-emit-quix-ir");
+    break;
+  case OperatingMode::DELTA_IR:
+    builder.opt("-emit-delta-ir");
+    break;
+  case OperatingMode::C11:
+    builder.opt("-emit-c11");
+    break;
+  case OperatingMode::IR_BITCODE:
+    builder.opt("-emit-bc");
+    break;
+  case OperatingMode::PREPROCESSED:
+    builder.opt("-emit-prep");
+    break;
+  case OperatingMode::LEX:
+    builder.opt("-emit-tokens");
+    break;
+  case OperatingMode::PARSE_TREE:
+    builder.opt("-emit-parse");
+    break;
+  case OperatingMode::ASSEMBLY:
+    builder.opt("-S");
+    break;
+  case OperatingMode::OBJECT:
+    builder.opt("-c");
+    break;
+  case OperatingMode::EXECUTABLE:
+    break;
+  case OperatingMode::DOCUMENTATION:
+    throw std::runtime_error("Not implemented");
 
-    default:
-      return 4;
+  default:
+    return 4;
   }
 
   auto compiler = builder.build();
 
-  if (compiler.run().puts().ok()) return 0;
+  if (compiler.run().puts().ok())
+    return 0;
 
   return -1;
 }

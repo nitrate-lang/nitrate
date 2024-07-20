@@ -47,8 +47,7 @@ static bool touch(const std::filesystem::path &path) {
 
     return true;
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to create file: " << path << " (" << e.what()
-                     << ")" << std::endl;
+    LOG(core::ERROR) << "Failed to create file: " << path << " (" << e.what() << ")" << std::endl;
     return false;
   }
 }
@@ -106,8 +105,7 @@ void qpkg::init::Package::writeLicense() {
   }
 
   if (!conf::valid_licenses.contains(m_license)) {
-    LOG(core::WARN) << "License is not a recognized SPDX license: " << m_license
-                    << std::endl;
+    LOG(core::WARN) << "License is not a recognized SPDX license: " << m_license << std::endl;
     return;
   }
 
@@ -133,15 +131,15 @@ fn main() {
 
 bool qpkg::init::Package::createPackage() {
   switch (m_type) {
-    case PackageType::PROGRAM:
-      LOG(core::DEBUG) << "Creating program package" << std::endl;
-      break;
-    case PackageType::STATICLIB:
-      LOG(core::DEBUG) << "Creating static library package" << std::endl;
-      break;
-    case PackageType::SHAREDLIB:
-      LOG(core::DEBUG) << "Creating shared library package" << std::endl;
-      break;
+  case PackageType::PROGRAM:
+    LOG(core::DEBUG) << "Creating program package" << std::endl;
+    break;
+  case PackageType::STATICLIB:
+    LOG(core::DEBUG) << "Creating static library package" << std::endl;
+    break;
+  case PackageType::SHAREDLIB:
+    LOG(core::DEBUG) << "Creating shared library package" << std::endl;
+    break;
   }
 
   try {
@@ -154,8 +152,7 @@ bool qpkg::init::Package::createPackage() {
     }
 
     if (!touch(m_output / m_name / "include/.gitkeep") ||
-        !touch(m_output / m_name / "test/.gitkeep") ||
-        !touch(m_output / m_name / "doc/.gitkeep")) {
+        !touch(m_output / m_name / "test/.gitkeep") || !touch(m_output / m_name / "doc/.gitkeep")) {
       LOG(core::ERROR) << "Failed to create package directories" << std::endl;
       return false;
     }
@@ -177,7 +174,8 @@ bool qpkg::init::Package::createPackage() {
     if (!m_email.empty())
       grp.set("emails", std::vector<std::string>({m_email}));
 
-    if (!m_url.empty()) grp.set("url", m_url);
+    if (!m_url.empty())
+      grp.set("url", m_url);
 
     if (!m_license.empty())
       grp.set("licenses", std::vector<std::string>({m_license}));
@@ -188,23 +186,22 @@ bool qpkg::init::Package::createPackage() {
     grp.set("headers", std::vector<std::string>({"include"}));
 
     switch (m_type) {
-      case PackageType::PROGRAM:
-        grp.set("target", "executable");
-        break;
-      case PackageType::STATICLIB:
-        grp.set("target", "staticlib");
-        break;
-      case PackageType::SHAREDLIB:
-        grp.set("target", "sharedlib");
-        break;
+    case PackageType::PROGRAM:
+      grp.set("target", "executable");
+      break;
+    case PackageType::STATICLIB:
+      grp.set("target", "staticlib");
+      break;
+    case PackageType::SHAREDLIB:
+      grp.set("target", "sharedlib");
+      break;
     }
 
     conf::Config config(grp, 0);
 
     std::ofstream config_file((m_output / m_name / "qpkg.yaml").string());
     if (!config_file.is_open()) {
-      LOG(core::ERROR) << "Failed to create package configuration file"
-                       << std::endl;
+      LOG(core::ERROR) << "Failed to create package configuration file" << std::endl;
       return false;
     }
 
@@ -221,21 +218,20 @@ bool qpkg::init::Package::createPackage() {
     }
 
     switch (m_type) {
-      case PackageType::PROGRAM:
-        LOG(core::DEBUG) << "Program package created" << std::endl;
-        break;
-      case PackageType::STATICLIB:
-        LOG(core::DEBUG) << "Static library package created" << std::endl;
-        break;
-      case PackageType::SHAREDLIB:
-        LOG(core::DEBUG) << "Shared library package created" << std::endl;
-        break;
+    case PackageType::PROGRAM:
+      LOG(core::DEBUG) << "Program package created" << std::endl;
+      break;
+    case PackageType::STATICLIB:
+      LOG(core::DEBUG) << "Static library package created" << std::endl;
+      break;
+    case PackageType::SHAREDLIB:
+      LOG(core::DEBUG) << "Shared library package created" << std::endl;
+      break;
     }
 
     return true;
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to create program package: " << e.what()
-                     << std::endl;
+    LOG(core::ERROR) << "Failed to create program package: " << e.what() << std::endl;
     return false;
   }
 }
@@ -271,77 +267,65 @@ bool qpkg::init::Package::create() {
       if (m_force) {
         std::filesystem::remove_all(m_output / m_name);
       } else {
-        LOG(core::ERROR) << "Package already exists: " << m_output / m_name
-                         << std::endl;
+        LOG(core::ERROR) << "Package already exists: " << m_output / m_name << std::endl;
         return false;
       }
     }
 
     if (!std::filesystem::create_directories(m_output / m_name)) {
-      LOG(core::ERROR) << "Failed to create package directory: "
-                       << m_output / m_name << std::endl;
+      LOG(core::ERROR) << "Failed to create package directory: " << m_output / m_name << std::endl;
       return false;
     }
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to check package existence: " << e.what()
-                     << std::endl;
+    LOG(core::ERROR) << "Failed to check package existence: " << e.what() << std::endl;
     return false;
   }
 
   return createPackage();
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::output(
-    const std::string &output) {
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::output(const std::string &output) {
   m_output = output;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::name(
-    const std::string &name) {
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::name(const std::string &name) {
   m_name = name;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::license(
-    const std::string &license) {
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::license(const std::string &license) {
   m_license = license;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::author(
-    const std::string &author) {
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::author(const std::string &author) {
   m_author = author;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::email(
-    const std::string &email) {
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::email(const std::string &email) {
   m_email = email;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::url(
-    const std::string &url) {
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::url(const std::string &url) {
   m_url = url;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::version(
-    const std::string &version) {
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::version(const std::string &version) {
   m_version = version;
   return *this;
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::description(const std::string &description)
-{
+qpkg::init::PackageBuilder &
+qpkg::init::PackageBuilder::description(const std::string &description) {
   m_description = description;
   return *this;
-
 }
 
-qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::type(
-    qpkg::init::PackageType type) {
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::type(qpkg::init::PackageType type) {
   m_type = type;
   return *this;
 }
@@ -357,6 +341,6 @@ qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::force(bool force) {
 }
 
 qpkg::init::Package qpkg::init::PackageBuilder::build() {
-  return qpkg::init::Package(m_output, m_name, m_license, m_author, m_email,
-                             m_url, m_version, m_description, m_type, m_verbose, m_force);
+  return qpkg::init::Package(m_output, m_name, m_license, m_author, m_email, m_url, m_version,
+                             m_description, m_type, m_verbose, m_force);
 }

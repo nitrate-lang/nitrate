@@ -33,8 +33,7 @@ static void hex_char_value(uint8_t c, uint8_t *value, bool *valid) {
 static int parse_key(char *hex_key, uint8_t out[BLAKE3_KEY_LEN]) {
   size_t hex_len = strlen(hex_key);
   if (hex_len != 64) {
-    fprintf(stderr, "Expected a 64-char hexadecimal key, got %zu chars.\n",
-            hex_len);
+    fprintf(stderr, "Expected a 64-char hexadecimal key, got %zu chars.\n", hex_len);
     return 1;
   }
   for (size_t i = 0; i < 64; i++) {
@@ -84,8 +83,7 @@ int main(int argc, char **argv) {
       char *endptr = NULL;
       errno = 0;
       unsigned long long out_len_ll = strtoull(argv[2], &endptr, 10);
-      if (errno != 0 || out_len_ll > SIZE_MAX || endptr == argv[2] ||
-          *endptr != 0) {
+      if (errno != 0 || out_len_ll > SIZE_MAX || endptr == argv[2] || *endptr != 0) {
         fprintf(stderr, "Bad length argument.\n");
         return 1;
       }
@@ -132,17 +130,17 @@ int main(int argc, char **argv) {
     g_cpu_features = feature;
     blake3_hasher hasher;
     switch (mode) {
-      case HASH_MODE:
-        blake3_hasher_init(&hasher);
-        break;
-      case KEYED_HASH_MODE:
-        blake3_hasher_init_keyed(&hasher, key);
-        break;
-      case DERIVE_KEY_MODE:
-        blake3_hasher_init_derive_key(&hasher, context);
-        break;
-      default:
-        abort();
+    case HASH_MODE:
+      blake3_hasher_init(&hasher);
+      break;
+    case KEYED_HASH_MODE:
+      blake3_hasher_init_keyed(&hasher, key);
+      break;
+    case DERIVE_KEY_MODE:
+      blake3_hasher_init_derive_key(&hasher, context);
+      break;
+    default:
+      abort();
     }
 
     blake3_hasher_update(&hasher, buf, buf_len);

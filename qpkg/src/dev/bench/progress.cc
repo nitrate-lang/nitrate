@@ -66,12 +66,10 @@ qpkg::dev::bench::Progress::Progress(const std::string &title) {
   acout |= Style::BOLD | Style::FG_CYAN | Style::BG_DEFAULT;
   acout << "*";
   acout |= Style::RESET;
-  acout << " This may take a while. Status updates will be printed"
-        << std::endl;
+  acout << " This may take a while. Status updates will be printed" << std::endl;
   acout << "  periodically.\n" << std::endl;
 
-  acout << "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        << std::endl;
+  acout << "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
 }
 
 void qpkg::dev::bench::Progress::print(double percent, const std::string &msg) {
@@ -88,13 +86,13 @@ void qpkg::dev::bench::Progress::print(double percent, const std::string &msg) {
   acout << percent_str << "%";
   acout |= Style::RESET;
 
-  if (!msg.empty()) acout << "\t- " << msg;
+  if (!msg.empty())
+    acout << "\t- " << msg;
 
   acout << std::endl;
 }
 
-void qpkg::dev::bench::Progress::update(double percent,
-                                        const std::string &msg) {
+void qpkg::dev::bench::Progress::update(double percent, const std::string &msg) {
   auto now = std::chrono::high_resolution_clock::now();
   if (now - m_last_print < m_print_interval) {
     m_queue.emplace(msg, percent);
@@ -106,7 +104,8 @@ void qpkg::dev::bench::Progress::update(double percent,
     auto [msg, percent] = m_queue.front();
     m_queue.pop();
     if (!msg.empty()) {
-      if (msg == m_last_msg) continue;
+      if (msg == m_last_msg)
+        continue;
       print(percent, msg);
       m_last_msg = msg;
     }
@@ -115,30 +114,29 @@ void qpkg::dev::bench::Progress::update(double percent,
   print(percent, msg);
 }
 
-void qpkg::dev::bench::Progress::begin_result(
-    qpkg::dev::bench::Progress::Result type) {
+void qpkg::dev::bench::Progress::begin_result(qpkg::dev::bench::Progress::Result type) {
   switch (type) {
-    case Result::THROUGHPUT:
-      acout << "\n┏━━━━━┫ ";
-      acout |= Style::BOLD | Style::FG_YELLOW | Style::BG_DEFAULT;
-      acout << "THROUGHPUT PERFORMANCE";
-      acout |= Style::RESET;
-      acout << " ┣━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
-      break;
-    case Result::MEMORY:
-      acout << "\n┏━━━━━┫ ";
-      acout |= Style::BOLD | Style::FG_YELLOW | Style::BG_DEFAULT;
-      acout << "MEMORY USAGE";
-      acout |= Style::RESET;
-      acout << " ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
-      break;
-    case Result::TIME:
-      acout << "\n┏━━━━━┫ ";
-      acout |= Style::BOLD | Style::FG_YELLOW | Style::BG_DEFAULT;
-      acout << "SPEED";
-      acout |= Style::RESET;
-      acout << " ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
-      break;
+  case Result::THROUGHPUT:
+    acout << "\n┏━━━━━┫ ";
+    acout |= Style::BOLD | Style::FG_YELLOW | Style::BG_DEFAULT;
+    acout << "THROUGHPUT PERFORMANCE";
+    acout |= Style::RESET;
+    acout << " ┣━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
+    break;
+  case Result::MEMORY:
+    acout << "\n┏━━━━━┫ ";
+    acout |= Style::BOLD | Style::FG_YELLOW | Style::BG_DEFAULT;
+    acout << "MEMORY USAGE";
+    acout |= Style::RESET;
+    acout << " ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
+    break;
+  case Result::TIME:
+    acout << "\n┏━━━━━┫ ";
+    acout |= Style::BOLD | Style::FG_YELLOW | Style::BG_DEFAULT;
+    acout << "SPEED";
+    acout |= Style::RESET;
+    acout << " ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
+    break;
   }
 }
 
@@ -151,8 +149,7 @@ void qpkg::dev::bench::Progress::result(const std::string &msg) {
 }
 
 void qpkg::dev::bench::Progress::end_result() {
-  acout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        << std::endl;
+  acout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" << std::endl;
 }
 
 void qpkg::dev::bench::Progress::done(const std::string &outfile_name) {
@@ -168,13 +165,14 @@ void qpkg::dev::bench::Progress::done(const std::string &outfile_name) {
         m_last_msg = msg;
       }
     }
-    if (m_queue.empty() && !F_CMP(percent, 1.0)) do_last = true;
+    if (m_queue.empty() && !F_CMP(percent, 1.0))
+      do_last = true;
   }
 
-  if (do_last) print(1.0, "");
+  if (do_last)
+    print(1.0, "");
 
-  acout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-        << std::endl;
+  acout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" << std::endl;
 
   acout |= Style::BOLD | Style::FG_CYAN | Style::BG_DEFAULT;
   acout << "*";

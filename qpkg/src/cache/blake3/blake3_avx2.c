@@ -4,13 +4,9 @@
 
 #define DEGREE 8
 
-INLINE __m256i loadu(const uint8_t src[32]) {
-  return _mm256_loadu_si256((const __m256i *)src);
-}
+INLINE __m256i loadu(const uint8_t src[32]) { return _mm256_loadu_si256((const __m256i *)src); }
 
-INLINE void storeu(__m256i src, uint8_t dest[16]) {
-  _mm256_storeu_si256((__m256i *)dest, src);
-}
+INLINE void storeu(__m256i src, uint8_t dest[16]) { _mm256_storeu_si256((__m256i *)dest, src); }
 
 INLINE __m256i addv(__m256i a, __m256i b) { return _mm256_add_epi32(a, b); }
 
@@ -20,20 +16,19 @@ INLINE __m256i xorv(__m256i a, __m256i b) { return _mm256_xor_si256(a, b); }
 INLINE __m256i set1(uint32_t x) { return _mm256_set1_epi32((int32_t)x); }
 
 INLINE __m256i rot16(__m256i x) {
-  return _mm256_shuffle_epi8(
-      x, _mm256_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2,
-                         13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
+  return _mm256_shuffle_epi8(x,
+                             _mm256_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2,
+                                             13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
 }
 
 INLINE __m256i rot12(__m256i x) {
-  return _mm256_or_si256(_mm256_srli_epi32(x, 12),
-                         _mm256_slli_epi32(x, 32 - 12));
+  return _mm256_or_si256(_mm256_srli_epi32(x, 12), _mm256_slli_epi32(x, 32 - 12));
 }
 
 INLINE __m256i rot8(__m256i x) {
-  return _mm256_shuffle_epi8(
-      x, _mm256_set_epi8(12, 15, 14, 13, 8, 11, 10, 9, 4, 7, 6, 5, 0, 3, 2, 1,
-                         12, 15, 14, 13, 8, 11, 10, 9, 4, 7, 6, 5, 0, 3, 2, 1));
+  return _mm256_shuffle_epi8(x,
+                             _mm256_set_epi8(12, 15, 14, 13, 8, 11, 10, 9, 4, 7, 6, 5, 0, 3, 2, 1,
+                                             12, 15, 14, 13, 8, 11, 10, 9, 4, 7, 6, 5, 0, 3, 2, 1));
 }
 
 INLINE __m256i rot7(__m256i x) {
@@ -190,8 +185,7 @@ INLINE void transpose_vecs(__m256i vecs[DEGREE]) {
   vecs[7] = _mm256_permute2x128_si256(abcd_37, efgh_37, 0x31);
 }
 
-INLINE void transpose_msg_vecs(const uint8_t *const *inputs,
-                               size_t block_offset, __m256i out[16]) {
+INLINE void transpose_msg_vecs(const uint8_t *const *inputs, size_t block_offset, __m256i out[16]) {
   out[0] = loadu(&inputs[0][block_offset + 0 * sizeof(__m256i)]);
   out[1] = loadu(&inputs[1][block_offset + 0 * sizeof(__m256i)]);
   out[2] = loadu(&inputs[2][block_offset + 0 * sizeof(__m256i)]);
@@ -215,33 +209,28 @@ INLINE void transpose_msg_vecs(const uint8_t *const *inputs,
   transpose_vecs(&out[8]);
 }
 
-INLINE void load_counters(uint64_t counter, bool increment_counter,
-                          __m256i *out_lo, __m256i *out_hi) {
+INLINE void load_counters(uint64_t counter, bool increment_counter, __m256i *out_lo,
+                          __m256i *out_hi) {
   const __m256i mask = _mm256_set1_epi32(-(int32_t)increment_counter);
   const __m256i add0 = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
   const __m256i add1 = _mm256_and_si256(mask, add0);
   __m256i l = _mm256_add_epi32(_mm256_set1_epi32((int32_t)counter), add1);
-  __m256i carry =
-      _mm256_cmpgt_epi32(_mm256_xor_si256(add1, _mm256_set1_epi32(0x80000000)),
-                         _mm256_xor_si256(l, _mm256_set1_epi32(0x80000000)));
-  __m256i h =
-      _mm256_sub_epi32(_mm256_set1_epi32((int32_t)(counter >> 32)), carry);
+  __m256i carry = _mm256_cmpgt_epi32(_mm256_xor_si256(add1, _mm256_set1_epi32(0x80000000)),
+                                     _mm256_xor_si256(l, _mm256_set1_epi32(0x80000000)));
+  __m256i h = _mm256_sub_epi32(_mm256_set1_epi32((int32_t)(counter >> 32)), carry);
   *out_lo = l;
   *out_hi = h;
 }
 
-static void blake3_hash8_avx2(const uint8_t *const *inputs, size_t blocks,
-                              const uint32_t key[8], uint64_t counter,
-                              bool increment_counter, uint8_t flags,
-                              uint8_t flags_start, uint8_t flags_end,
-                              uint8_t *out) {
+static void blake3_hash8_avx2(const uint8_t *const *inputs, size_t blocks, const uint32_t key[8],
+                              uint64_t counter, bool increment_counter, uint8_t flags,
+                              uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
   __m256i h_vecs[8] = {
       set1(key[0]), set1(key[1]), set1(key[2]), set1(key[3]),
       set1(key[4]), set1(key[5]), set1(key[6]), set1(key[7]),
   };
   __m256i counter_low_vec, counter_high_vec;
-  load_counters(counter, increment_counter, &counter_low_vec,
-                &counter_high_vec);
+  load_counters(counter, increment_counter, &counter_low_vec, &counter_high_vec);
   uint8_t block_flags = flags | flags_start;
 
   for (size_t block = 0; block < blocks; block++) {
@@ -254,9 +243,8 @@ static void blake3_hash8_avx2(const uint8_t *const *inputs, size_t blocks,
     transpose_msg_vecs(inputs, block * BLAKE3_BLOCK_LEN, msg_vecs);
 
     __m256i v[16] = {
-        h_vecs[0],       h_vecs[1],        h_vecs[2],     h_vecs[3],
-        h_vecs[4],       h_vecs[5],        h_vecs[6],     h_vecs[7],
-        set1(IV[0]),     set1(IV[1]),      set1(IV[2]),   set1(IV[3]),
+        h_vecs[0],       h_vecs[1],        h_vecs[2],     h_vecs[3],       h_vecs[4],   h_vecs[5],
+        h_vecs[6],       h_vecs[7],        set1(IV[0]),   set1(IV[1]),     set1(IV[2]), set1(IV[3]),
         counter_low_vec, counter_high_vec, block_len_vec, block_flags_vec,
     };
     round_fn(v, msg_vecs, 0);
@@ -290,27 +278,21 @@ static void blake3_hash8_avx2(const uint8_t *const *inputs, size_t blocks,
 }
 
 #if !defined(BLAKE3_NO_SSE41)
-void blake3_hash_many_sse41(const uint8_t *const *inputs, size_t num_inputs,
-                            size_t blocks, const uint32_t key[8],
-                            uint64_t counter, bool increment_counter,
-                            uint8_t flags, uint8_t flags_start,
-                            uint8_t flags_end, uint8_t *out);
+void blake3_hash_many_sse41(const uint8_t *const *inputs, size_t num_inputs, size_t blocks,
+                            const uint32_t key[8], uint64_t counter, bool increment_counter,
+                            uint8_t flags, uint8_t flags_start, uint8_t flags_end, uint8_t *out);
 #else
-void blake3_hash_many_portable(const uint8_t *const *inputs, size_t num_inputs,
-                               size_t blocks, const uint32_t key[8],
-                               uint64_t counter, bool increment_counter,
-                               uint8_t flags, uint8_t flags_start,
-                               uint8_t flags_end, uint8_t *out);
+void blake3_hash_many_portable(const uint8_t *const *inputs, size_t num_inputs, size_t blocks,
+                               const uint32_t key[8], uint64_t counter, bool increment_counter,
+                               uint8_t flags, uint8_t flags_start, uint8_t flags_end, uint8_t *out);
 #endif
 
-void blake3_hash_many_avx2(const uint8_t *const *inputs, size_t num_inputs,
-                           size_t blocks, const uint32_t key[8],
-                           uint64_t counter, bool increment_counter,
-                           uint8_t flags, uint8_t flags_start,
-                           uint8_t flags_end, uint8_t *out) {
+void blake3_hash_many_avx2(const uint8_t *const *inputs, size_t num_inputs, size_t blocks,
+                           const uint32_t key[8], uint64_t counter, bool increment_counter,
+                           uint8_t flags, uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
   while (num_inputs >= DEGREE) {
-    blake3_hash8_avx2(inputs, blocks, key, counter, increment_counter, flags,
-                      flags_start, flags_end, out);
+    blake3_hash8_avx2(inputs, blocks, key, counter, increment_counter, flags, flags_start,
+                      flags_end, out);
     if (increment_counter) {
       counter += DEGREE;
     }
@@ -319,11 +301,10 @@ void blake3_hash_many_avx2(const uint8_t *const *inputs, size_t num_inputs,
     out = &out[DEGREE * BLAKE3_OUT_LEN];
   }
 #if !defined(BLAKE3_NO_SSE41)
-  blake3_hash_many_sse41(inputs, num_inputs, blocks, key, counter,
-                         increment_counter, flags, flags_start, flags_end, out);
+  blake3_hash_many_sse41(inputs, num_inputs, blocks, key, counter, increment_counter, flags,
+                         flags_start, flags_end, out);
 #else
-  blake3_hash_many_portable(inputs, num_inputs, blocks, key, counter,
-                            increment_counter, flags, flags_start, flags_end,
-                            out);
+  blake3_hash_many_portable(inputs, num_inputs, blocks, key, counter, increment_counter, flags,
+                            flags_start, flags_end, out);
 #endif
 }

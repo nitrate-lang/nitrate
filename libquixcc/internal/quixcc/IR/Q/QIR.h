@@ -38,7 +38,6 @@
 
 #include <quixcc/IR/IRModule.h>
 #include <quixcc/IR/Type.h>
-#include <qast/parser/AllNodes.h>
 
 #include <string_view>
 #include <unordered_map>
@@ -216,7 +215,7 @@ namespace libquixcc {
         }
         virtual ~QModule() = default;
 
-        bool from_ptree(quixcc_cc_job_t *job, qast::Block * ast);
+        bool from_ptree(quixcc_cc_job_t *job, qast::Block *ast);
 
         /*========================== METADATA ==========================*/
         void acknowledge_pass(QPassType pass, const std::string &name);

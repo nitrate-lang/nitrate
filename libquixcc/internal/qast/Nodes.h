@@ -55,8 +55,8 @@
 #include <vector>
 
 namespace libquixcc::qast {
-  class ArenaAllocatorImpl {
-    /// WARNING: This must be the first member; C bindings use quixcc_ast_arena as of type
+  class ArenaAllocatorImpl { /// WARNING: This must be the first member; C bindings use
+                             /// quixcc_ast_arena as of type
     /// `quixcc_arena_t`.
     quixcc_arena_t m_arena;
 
@@ -283,7 +283,7 @@ public:
     bool is_expr() const;
     bool is_const_expr() const;
 
-    std::string to_string(bool minify = false) const;
+    std::string to_string(bool minify = false, bool binary_repr = false) const;
 
     template <typename T> const T *as() const {
 #if !defined(NDEBUG)
@@ -341,14 +341,10 @@ public:
 
   class Type : public Node {
 protected:
-    virtual uint64_t infer_size_bits_impl() const = 0;
     bool m_volatile;
 
 public:
     Type(bool is_volatile = false) : m_volatile(is_volatile) {}
-
-    uint64_t infer_size_bits() const;
-    uint64_t infer_size() const;
 
     bool is_primitive() const;
     bool is_array() const;
@@ -393,8 +389,6 @@ protected:
     Type *m_type;
     Visibility m_visibility;
 
-    virtual Type *infer_type_impl() const = 0;
-
 public:
     Decl(String name = "", Type *type = nullptr, std::initializer_list<String> tags = {},
          Visibility visibility = Visibility::PRIVATE)
@@ -415,8 +409,6 @@ public:
     Visibility get_visibility() const;
     void set_visibility(Visibility visibility);
 
-    Type *infer_type() const;
-
     virtual Decl *clone(ArenaAllocatorImpl &arena = quixcc_ast_arena) const = 0;
   };
 
@@ -424,16 +416,9 @@ public:
 protected:
     Type *m_type;
 
-    virtual Type *infer_type_impl() const = 0;
-    virtual bool is_const_impl() const = 0;
-    virtual bool is_stochastic_impl() const = 0;
-
 public:
     Expr() : m_type(nullptr) {}
 
-    Type *infer_type() const;
-    bool is_const() const;
-    bool is_stochastic() const;
     bool is_binexpr() const;
     bool is_unaryexpr() const;
     bool is_ternaryexpr() const;
@@ -458,10 +443,6 @@ public:
 protected:
     Stmt *m_stmt;
 
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     StmtExpr(Stmt *stmt = nullptr) : m_stmt(stmt) {}
 
@@ -474,10 +455,6 @@ public:
   class TypeExpr : public Expr {
 protected:
     Type *m_type;
-
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
 
 public:
     TypeExpr(Type *type = nullptr) : m_type(type) {}
@@ -492,78 +469,8 @@ public:
 protected:
     Expr *m_value;
 
-    template <typename> struct is_std_vector : std::false_type {};
-
-    template <typename T, typename A> struct is_std_vector<std::vector<T, A>> : std::true_type {};
-
-    template <typename T> struct is_std_map : std::false_type {};
-
-    template <typename K, typename V, typename C, typename A>
-    struct is_std_map<std::map<K, V, C, A>> : std::true_type {};
-
-    template <typename T> struct is_std_set : std::false_type {};
-
-    template <typename K, typename C, typename A>
-    struct is_std_set<std::set<K, C, A>> : std::true_type {};
-
-    template <typename> struct is_std_tuple : std::false_type {};
-
-    template <typename... T> struct is_std_tuple<std::tuple<T...>> : std::true_type {};
-
-    template <typename T> T do_eval() const {
-      /// TODO: Implement this.
-      quixcc_panicf("ConstExpr::do_eval<T>(): Not implemented.");
-    }
-
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     ConstExpr(Expr *value = nullptr) : m_value(value) {}
-
-    template <typename T> T eval_as() const {
-      if constexpr (std::is_same_v<T, bool>) {
-        assert(infer_type()->is_bool());
-        return do_eval<bool>();
-      } else if constexpr (std::is_integral_v<T>) {
-        assert(infer_type()->is_integral());
-        return do_eval<T>();
-      } else if constexpr (std::is_floating_point_v<T>) {
-        assert(infer_type()->is_floating_point());
-        return do_eval<T>();
-      } else if constexpr (std::is_same_v<T, String>) {
-        assert(infer_type()->is_string());
-        return do_eval<String>();
-      } else if constexpr (is_std_vector<T>::value) {
-#if !defined(NDEBUG)
-        Type *type = infer_type();
-        assert(type->is_vector() || type->is_array());
-#endif
-        return do_eval<T>();
-      } else if constexpr (is_std_map<T>::value) {
-#if !defined(NDEBUG)
-        Type *type = infer_type();
-        assert(type->is_map());
-#endif
-        return do_eval<T>();
-      } else if constexpr (is_std_set<T>::value) {
-#if !defined(NDEBUG)
-        Type *type = infer_type();
-        assert(type->is_set());
-#endif
-        return do_eval<T>();
-      } else if constexpr (is_std_tuple<T>::value) {
-#if !defined(NDEBUG)
-        Type *type = infer_type();
-        assert(type->is_tuple());
-#endif
-        return do_eval<T>();
-      } else {
-        quixcc_panicf("ConstExpr::eval_as<T>(): Invalid type `%s`.", typeid(T).name());
-        __builtin_unreachable();
-      }
-    }
 
     Expr *get_value() const;
     void set_value(Expr *value);
@@ -616,8 +523,6 @@ public:
   class UnresolvedType : public Type {
     String m_name;
 
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     UnresolvedType(String name = "") : m_name(name) {}
 
@@ -628,8 +533,6 @@ public:
   };
 
   class U1 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     U1() = default;
 
@@ -637,8 +540,6 @@ public:
   };
 
   class U8 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     U8() = default;
 
@@ -646,8 +547,6 @@ public:
   };
 
   class U16 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     U16() = default;
 
@@ -655,8 +554,6 @@ public:
   };
 
   class U32 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     U32() = default;
 
@@ -664,8 +561,6 @@ public:
   };
 
   class U64 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     U64() = default;
 
@@ -673,8 +568,6 @@ public:
   };
 
   class U128 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     U128() = default;
 
@@ -682,8 +575,6 @@ public:
   };
 
   class I8 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     I8() = default;
 
@@ -691,8 +582,6 @@ public:
   };
 
   class I16 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     I16() = default;
 
@@ -700,8 +589,6 @@ public:
   };
 
   class I32 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     I32() = default;
 
@@ -709,8 +596,6 @@ public:
   };
 
   class I64 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     I64() = default;
 
@@ -718,8 +603,6 @@ public:
   };
 
   class I128 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     I128() = default;
 
@@ -727,8 +610,6 @@ public:
   };
 
   class F32 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     F32() = default;
 
@@ -736,8 +617,6 @@ public:
   };
 
   class F64 : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     F64() = default;
 
@@ -745,8 +624,6 @@ public:
   };
 
   class VoidTy : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     VoidTy() = default;
 
@@ -754,8 +631,6 @@ public:
   };
 
   class StringTy : public TypeBuiltin {
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     StringTy() = default;
 
@@ -765,8 +640,6 @@ public:
   class PtrTy : public TypeComplex {
     Type *m_item;
     bool m_is_volatile;
-
-    virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
     PtrTy(Type *item = nullptr, bool is_volatile = false)
@@ -784,8 +657,6 @@ public:
   class OpaqueTy : public TypeComplex {
     String m_name;
 
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     OpaqueTy(String name = "") : m_name(name) {}
 
@@ -797,8 +668,6 @@ public:
 
   class VectorTy : public TypeComposite {
     Type *m_item;
-
-    virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
     VectorTy(Type *item = nullptr) : m_item(item) {}
@@ -812,8 +681,6 @@ public:
   class SetTy : public TypeComposite {
     Type *m_item;
 
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     SetTy(Type *item = nullptr) : m_item(item) {}
 
@@ -826,8 +693,6 @@ public:
   class MapTy : public TypeComposite {
     Type *m_key;
     Type *m_value;
-
-    virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
     MapTy(Type *key = nullptr, Type *value = nullptr) : m_key(key), m_value(value) {}
@@ -845,8 +710,6 @@ public:
   class TupleTy : public TypeComposite {
     TupleTyItems m_items;
 
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     TupleTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
     TupleTy(const TupleTyItems &items) : m_items(items) {}
@@ -863,8 +726,6 @@ public:
   class OptionalTy : public TypeComposite {
     Type *m_item;
 
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     OptionalTy(Type *item = nullptr) : m_item(item) {}
 
@@ -877,8 +738,6 @@ public:
   class ArrayTy : public TypeComposite {
     Type *m_item;
     ConstExpr *m_size;
-
-    virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
     ArrayTy(Type *item = nullptr, ConstExpr *size = nullptr) : m_item(item), m_size(size) {}
@@ -896,8 +755,6 @@ public:
     String m_name;
     Type *m_memtype;
 
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     EnumTy(String name = "", Type *memtype = nullptr) : m_name(name), m_memtype(memtype) {}
 
@@ -913,8 +770,6 @@ public:
   class MutTy : public TypeComplex {
     Type *m_item;
 
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     MutTy(Type *item = nullptr) : m_item(item) {}
 
@@ -929,8 +784,6 @@ public:
 
   class StructTy : public TypeComposite {
     StructItems m_items;
-
-    virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
     StructTy(std::initializer_list<StructItem> items = {}) : m_items(items) {}
@@ -950,8 +803,6 @@ public:
   class GroupTy : public TypeComposite {
     GroupTyItems m_items;
 
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     GroupTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
     GroupTy(const GroupTyItems &items) : m_items(items) {}
@@ -970,8 +821,6 @@ public:
   class RegionTy : public TypeComposite {
     RegionTyItems m_items;
 
-    virtual uint64_t infer_size_bits_impl() const override final;
-
 public:
     RegionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
     RegionTy(const RegionTyItems &items) : m_items(items) {}
@@ -989,8 +838,6 @@ public:
 
   class UnionTy : public TypeComposite {
     UnionTyItems m_items;
-
-    virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
     UnionTy(std::initializer_list<Type *> items = {}) : m_items(items) {}
@@ -1025,8 +872,6 @@ public:
     bool m_crashpoint;
     bool m_noexcept;
     bool m_noreturn;
-
-    virtual uint64_t infer_size_bits_impl() const override final;
 
 public:
     FuncTy()
@@ -1091,10 +936,6 @@ protected:
     Expr *m_rhs;
     UnaryOp m_op;
 
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     UnaryExpr(UnaryOp op = UnaryOp::UNKNOWN, Expr *rhs = nullptr) : m_rhs(rhs), m_op(op) {}
 
@@ -1112,10 +953,6 @@ protected:
     Expr *m_lhs;
     Expr *m_rhs;
     BinOp m_op;
-
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
 
 public:
     BinExpr(Expr *lhs = nullptr, BinOp op = BinOp::UNKNOWN, Expr *rhs = nullptr)
@@ -1138,10 +975,6 @@ protected:
     Expr *m_lhs;
     PostUnaryOp m_op;
 
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     PostUnaryExpr(Expr *lhs = nullptr, PostUnaryOp op = PostUnaryOp::UNKNOWN)
         : m_lhs(lhs), m_op(op) {}
@@ -1160,10 +993,6 @@ protected:
     Expr *m_cond;
     Expr *m_lhs;
     Expr *m_rhs;
-
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
 
 public:
     TernaryExpr(Expr *cond = nullptr, Expr *lhs = nullptr, Expr *rhs = nullptr)
@@ -1264,10 +1093,6 @@ protected:
     Expr *m_func;
     CallArgs m_args;
 
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     Call(Expr *func = nullptr, CallArgs args = {}) : m_func(func), m_args(args) {}
 
@@ -1289,10 +1114,6 @@ public:
 protected:
     ListData m_items;
 
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     List(std::initializer_list<Expr *> items = {}) : m_items(items) {}
     List(const ListData &items) : m_items(items) {}
@@ -1311,10 +1132,6 @@ protected:
     Expr *m_key;
     Expr *m_value;
 
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     Assoc(Expr *key = nullptr, Expr *value = nullptr) : m_key(key), m_value(value) {}
 
@@ -1331,10 +1148,6 @@ public:
 protected:
     Expr *m_base;
     String m_field;
-
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
 
 public:
     Field(Expr *base = nullptr, String field = "") : m_base(base), m_field(field) {}
@@ -1353,10 +1166,6 @@ protected:
     Expr *m_base;
     Expr *m_index;
 
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     Index(Expr *base = nullptr, Expr *index = nullptr) : m_base(base), m_index(index) {}
 
@@ -1374,10 +1183,6 @@ protected:
     Expr *m_base;
     Expr *m_start;
     Expr *m_end;
-
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
 
 public:
     Slice(Expr *base = nullptr, Expr *start = nullptr, Expr *end = nullptr)
@@ -1402,10 +1207,6 @@ protected:
     String m_value;
     FStringArgs m_items;
 
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     FString(String value = "", std::initializer_list<Expr *> items = {})
         : m_value(value), m_items(items) {}
@@ -1426,10 +1227,6 @@ public:
   class Ident : public Expr {
     String m_name;
 
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
-
 public:
     Ident(String name = "") : m_name(name) {}
 
@@ -1443,10 +1240,6 @@ public:
   class SeqPoint : public Expr {
 protected:
     SeqPointItems m_items;
-
-    virtual Type *infer_type_impl() const override final;
-    virtual bool is_const_impl() const override final;
-    virtual bool is_stochastic_impl() const override final;
 
 public:
     SeqPoint(std::initializer_list<Expr *> items = {}) : m_items(items) {}
@@ -1507,8 +1300,6 @@ public:
 protected:
     Expr *m_value;
 
-    virtual Type *infer_type_impl() const override final;
-
 public:
     ConstDecl(String name = "", Type *type = nullptr, Expr *value = nullptr)
         : Decl(name, type), m_value(value) {}
@@ -1523,8 +1314,6 @@ public:
 protected:
     Expr *m_value;
 
-    virtual Type *infer_type_impl() const override final;
-
 public:
     VarDecl(String name = "", Type *type = nullptr, Expr *value = nullptr)
         : Decl(name, type), m_value(value) {}
@@ -1538,8 +1327,6 @@ public:
   class LetDecl : public Decl {
 protected:
     Expr *m_value;
-
-    virtual Type *infer_type_impl() const override final;
 
 public:
     LetDecl(String name = "", Type *type = nullptr, Expr *value = nullptr)
@@ -1808,8 +1595,6 @@ public:
 
   class TypedefDecl : public Decl {
 protected:
-    virtual Type *infer_type_impl() const override final;
-
 public:
     TypedefDecl(String name = "", Type *type = nullptr) : Decl(name, type) {}
 
@@ -1818,8 +1603,6 @@ public:
 
   class FnDecl : public Decl {
 protected:
-    virtual Type *infer_type_impl() const override final;
-
 public:
     FnDecl(String name = "", FuncTy *type = nullptr) : Decl(name, type) {}
 
@@ -1856,8 +1639,6 @@ public:
 protected:
     Expr *m_value;
 
-    virtual Type *infer_type_impl() const override final;
-
 public:
     CompositeField(String name = "", Type *type = nullptr, Expr *value = nullptr)
         : Decl(name, type), m_value(value) {}
@@ -1877,8 +1658,6 @@ protected:
     StructDefMethods m_methods;
     StructDefStaticMethods m_static_methods;
     StructDefFields m_fields;
-
-    virtual Type *infer_type_impl() const override final;
 
 public:
     StructDef(String name = "", StructTy *type = nullptr,
@@ -1925,8 +1704,6 @@ protected:
     GroupDefStaticMethods m_static_methods;
     GroupDefFields m_fields;
 
-    virtual Type *infer_type_impl() const override final;
-
 public:
     GroupDef(String name = "", GroupTy *type = nullptr,
              std::initializer_list<CompositeField *> fields = {},
@@ -1971,8 +1748,6 @@ protected:
     RegionDefMethods m_methods;
     RegionDefStaticMethods m_static_methods;
     RegionDefFields m_fields;
-
-    virtual Type *infer_type_impl() const override final;
 
 public:
     RegionDef(String name = "", RegionTy *type = nullptr,
@@ -2019,8 +1794,6 @@ protected:
     UnionDefStaticMethods m_static_methods;
     UnionDefFields m_fields;
 
-    virtual Type *infer_type_impl() const override final;
-
 public:
     UnionDef(String name = "", UnionTy *type = nullptr,
              std::initializer_list<CompositeField *> fields = {},
@@ -2063,8 +1836,6 @@ public:
 protected:
     EnumDefItems m_items;
 
-    virtual Type *infer_type_impl() const override final;
-
 public:
     EnumDef(String name = "", EnumTy *type = nullptr, std::initializer_list<EnumItem> items = {})
         : Decl(name, type), m_items(items) {}
@@ -2086,8 +1857,6 @@ public:
 protected:
     Block *m_body;
 
-    virtual Type *infer_type_impl() const override final;
-
 public:
     SubsystemDecl(String name = "", Block *body = nullptr) : Decl(name, nullptr), m_body(body) {}
 
@@ -2101,8 +1870,6 @@ public:
 protected:
     StmtList *m_body;
     ExportLang m_lang;
-
-    virtual Type *infer_type_impl() const override final;
 
 public:
     ExportDecl(std::initializer_list<Stmt *> body = {}, ExportLang lang = ExportLang::Default)
@@ -2125,6 +1892,6 @@ namespace std {
   std::ostream &operator<<(std::ostream &os, const libquixcc::qast::PostUnaryOp &expr);
   std::ostream &operator<<(std::ostream &os, const libquixcc::qast::BinOp &op);
   std::ostream &operator<<(std::ostream &os, const libquixcc::qast::FuncPurity &purity);
-}
+} // namespace std
 
 #endif // __QUIXCC_QAST_NODES_H__

@@ -60,7 +60,7 @@ public:
     std::unique_ptr<llvm::Module> m_module;
     std::unique_ptr<llvm::IRBuilder<>> m_builder;
     // std::map<std::pair<NodeType, std::string>, std::shared_ptr<libquixcc::ParseNode>>
-        // m_named_construsts;
+    // m_named_construsts;
     // std::map<std::string, std::shared_ptr<libquixcc::ParseNode>> m_named_types;
     std::map<std::string, llvm::GlobalVariable *> m_named_global_vars;
     std::string prefix;

@@ -40,7 +40,13 @@
 #include <iostream>
 #include <vector>
 
+#define ALLOCATOR_PRINT_VERBOSE_CONF 1
+
+#if ALLOCATOR_PRINT_VERBOSE_CONF || !defined(NDEBUG)
 #define ALLOCATOR_PRINT_VERBOSE 1
+#else
+#define ALLOCATOR_PRINT_VERBOSE 0
+#endif
 
 #define REGION_SIZE (1024 * 16)
 
@@ -85,7 +91,7 @@ class quixcc_arena_impl_t {
 
   quixcc_arena_impl_t(const quixcc_arena_impl_t &other) {
     /// TODO: Verify this implementation
-    
+
     size_t used = 0;
 
     for (const auto &region : other.m_bases) {
@@ -223,9 +229,9 @@ LIB_EXPORT size_t quixcc_arena_capacity(quixcc_arena_t *arena) {
     total += region.m_size;
   }
 
-  #if ALLOCATOR_PRINT_VERBOSE
-    std::cerr << "TRACE: quixcc_arena_capacity(" << arena << ")\t-> " << total << "\n";
-  #endif
+#if ALLOCATOR_PRINT_VERBOSE
+  std::cerr << "TRACE: quixcc_arena_capacity(" << arena << ")\t-> " << total << "\n";
+#endif
 
   return total;
 }
@@ -237,9 +243,9 @@ LIB_EXPORT size_t quixcc_arena_used(quixcc_arena_t *arena) {
     total += (uintptr_t)region.m_offset - (uintptr_t)region.m_base;
   }
 
-  #if ALLOCATOR_PRINT_VERBOSE
-    std::cerr << "TRACE: quixcc_arena_used(" << arena << ")\t-> " << total << "\n";
-  #endif
+#if ALLOCATOR_PRINT_VERBOSE
+  std::cerr << "TRACE: quixcc_arena_used(" << arena << ")\t-> " << total << "\n";
+#endif
 
   return total;
 }

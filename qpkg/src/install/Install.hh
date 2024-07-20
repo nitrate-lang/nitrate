@@ -35,8 +35,8 @@
 #include <string>
 
 namespace qpkg::install {
-bool install_from_url(std::string url, const std::string& dest, std::string &package_name,
-                      bool overwrite = false);
-}  // namespace qpkg::install
+  bool install_from_url(std::string url, const std::string &dest, std::string &package_name,
+                        bool overwrite = false);
+} // namespace qpkg::install
 
 #endif /* __QPKG_INSTALL_HH__ */

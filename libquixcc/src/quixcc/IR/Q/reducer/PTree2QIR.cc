@@ -619,7 +619,8 @@ using namespace ir::q;
 //     if (!l->type->is(r->type))
 //       throw std::runtime_error("cannot promote type to pointer");
 
-//     return ir::q::AddressOf::create(ir::q::Index::create(rhs, ir::q::Number::create("0"), l->type));
+//     return ir::q::AddressOf::create(ir::q::Index::create(rhs, ir::q::Number::create("0"),
+//     l->type));
 //   }
 
 //   return rhs;
@@ -1803,7 +1804,8 @@ using namespace ir::q;
 //       throw std::runtime_error("QIR translation: structdef not found");
 
 //     std::vector<QValue> res;
-//     for (size_t i = 0; i < state.typedefs[s->m_name]->as<StructDefNode>()->m_fields.size(); i++) {
+//     for (size_t i = 0; i < state.typedefs[s->m_name]->as<StructDefNode>()->m_fields.size(); i++)
+//     {
 //       auto field = state.typedefs[s->m_name]->as<StructDefNode>()->m_fields[i];
 //       if (!field->m_value)
 //         continue;
@@ -1822,7 +1824,8 @@ using namespace ir::q;
 //       throw std::runtime_error("QIR translation: regiondef not found");
 
 //     std::vector<QValue> res;
-//     for (size_t i = 0; i < state.typedefs[r->m_name]->as<RegionDefNode>()->m_fields.size(); i++) {
+//     for (size_t i = 0; i < state.typedefs[r->m_name]->as<RegionDefNode>()->m_fields.size(); i++)
+//     {
 //       auto field = state.typedefs[r->m_name]->as<RegionDefNode>()->m_fields[i];
 //       if (!field->m_value)
 //         continue;
@@ -1916,7 +1919,8 @@ using namespace ir::q;
 //   std::string mangled = Symbol::mangle(
 //       tmp, "", state.lang == ExportLang::None ? ExportLang::Default : state.lang);
 
-//   auto g = Global::create(mangled, conv(n->m_type.get(), state)[0]->as<Type>(), expr, false, false,
+//   auto g = Global::create(mangled, conv(n->m_type.get(), state)[0]->as<Type>(), expr, false,
+//   false,
 //                           state.lang != ExportLang::None);
 
 //   state.global_idents[n->m_name] = g->type;
@@ -2227,11 +2231,13 @@ using namespace ir::q;
 //   state.function.pop();
 //   state.local_idents.pop();
 
-//   auto f = Segment::create(dseg->params, dseg->return_type, body, dseg->is_variadic, dseg->is_pure,
+//   auto f = Segment::create(dseg->params, dseg->return_type, body, dseg->is_variadic,
+//   dseg->is_pure,
 //                            dseg->is_thread_safe, dseg->is_no_throw, dseg->is_no_return,
 //                            dseg->is_foriegn);
 
-//   return Global::create(glob->name, glob->type, f, glob->_volatile, glob->_atomic, glob->_extern);
+//   return Global::create(glob->name, glob->type, f, glob->_volatile, glob->_atomic,
+//   glob->_extern);
 // }
 
 // static QResult conv(const FunctionParamNode *n, QState &state) {
@@ -3073,9 +3079,7 @@ using namespace ir::q;
 // /// END: CONVERSION FUNCTIONS
 // ///============================================================================
 
-bool ir::q::QModule::from_ptree(quixcc_cc_job_t *job, qast::Block * ast) {
-  return false;
-}
+bool ir::q::QModule::from_ptree(quixcc_cc_job_t *job, qast::Block *ast) { return false; }
 //   /// TODO: cleanup
 
 //   LOG(DEBUG) << "Converting Ptree to QUIX intermediate representation" << std::endl;

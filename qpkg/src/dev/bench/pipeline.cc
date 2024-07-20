@@ -64,27 +64,24 @@ int qpkg::dev::bench::run_benchmark_pipeline() {
     std::vector<double> llvm_codegen;
   } suite_perf;
 
-#define RUN_BENCH(name)                                                       \
-  do {                                                                        \
-    std::chrono::system_clock::time_point start, end;                         \
-    std::vector<double> perf;                                                 \
-    std::cerr << "\rRunning benchmark for " #name "...          ";            \
-    for (size_t i = 0; i < ROUNDS_PER_BENCH; i++) {                           \
-      if (!do_bench_##name(start, end)) {                                     \
-        std::cerr << "\nFailed to run benchmark for " #name "." << std::endl; \
-        return -1;                                                            \
-      }                                                                       \
-      double time_ns =                                                        \
-          std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)   \
-              .count();                                                       \
-      size_t total_kbit =                                                     \
-          qpkg::dev::bench::test_source_code.size() / 1024 * 8;               \
-      double kbit_per_ns = total_kbit / time_ns;                              \
-      perf.push_back(kbit_per_ns * 1e9);                                      \
-    }                                                                         \
-    std::cerr << "\rBenchmark for " #name " completed.        \r";            \
-    suite_perf.name = perf;                                                   \
-                                                                              \
+#define RUN_BENCH(name)                                                                            \
+  do {                                                                                             \
+    std::chrono::system_clock::time_point start, end;                                              \
+    std::vector<double> perf;                                                                      \
+    std::cerr << "\rRunning benchmark for " #name "...          ";                                 \
+    for (size_t i = 0; i < ROUNDS_PER_BENCH; i++) {                                                \
+      if (!do_bench_##name(start, end)) {                                                          \
+        std::cerr << "\nFailed to run benchmark for " #name "." << std::endl;                      \
+        return -1;                                                                                 \
+      }                                                                                            \
+      double time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();  \
+      size_t total_kbit = qpkg::dev::bench::test_source_code.size() / 1024 * 8;                    \
+      double kbit_per_ns = total_kbit / time_ns;                                                   \
+      perf.push_back(kbit_per_ns * 1e9);                                                           \
+    }                                                                                              \
+    std::cerr << "\rBenchmark for " #name " completed.        \r";                                 \
+    suite_perf.name = perf;                                                                        \
+                                                                                                   \
   } while (0)
 
   RUN_BENCH(lexer);
@@ -97,12 +94,12 @@ int qpkg::dev::bench::run_benchmark_pipeline() {
 
   std::cerr << "\r                                              \r";
 
-#define JSON_ARRAY(name)               \
-  writer.Key(#name);                   \
-  writer.StartArray();                 \
-  for (auto &perf : suite_perf.name) { \
-    writer.Double(perf);               \
-  }                                    \
+#define JSON_ARRAY(name)                                                                           \
+  writer.Key(#name);                                                                               \
+  writer.StartArray();                                                                             \
+  for (auto &perf : suite_perf.name) {                                                             \
+    writer.Double(perf);                                                                           \
+  }                                                                                                \
   writer.EndArray()
 
   /* Machine readable output for tooling */

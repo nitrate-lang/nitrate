@@ -39,41 +39,40 @@ static std::string JsonEscapeString(const std::string &str) {
 
   for (char c : str) {
     switch (c) {
-      case '"':
-        ss << "\\\"";
-        break;
-      case '\\':
-        ss << "\\\\";
-        break;
-      case '/':
-        ss << "\\/";
-        break;
-      case '\b':
-        ss << "\\b";
-        break;
-      case '\f':
-        ss << "\\f";
-        break;
-      case '\n':
-        ss << "\\n";
-        break;
-      case '\r':
-        ss << "\\r";
-        break;
-      case '\t':
-        ss << "\\t";
-        break;
-      default:
-        ss << c;
-        break;
+    case '"':
+      ss << "\\\"";
+      break;
+    case '\\':
+      ss << "\\\\";
+      break;
+    case '/':
+      ss << "\\/";
+      break;
+    case '\b':
+      ss << "\\b";
+      break;
+    case '\f':
+      ss << "\\f";
+      break;
+    case '\n':
+      ss << "\\n";
+      break;
+    case '\r':
+      ss << "\\r";
+      break;
+    case '\t':
+      ss << "\\t";
+      break;
+    default:
+      ss << c;
+      break;
     }
   }
 
   return ss.str();
 }
 
-std::string qpkg::conf::ConfigGroup::dump(
-    qpkg::conf::ConfigItemSerializationTarget target) const {
+std::string qpkg::conf::ConfigGroup::dump(qpkg::conf::ConfigItemSerializationTarget target) const {
   std::stringstream ss;
 
   if (target == ConfigItemSerializationTarget::JSON) {
@@ -88,7 +87,8 @@ std::string qpkg::conf::ConfigGroup::dump(
 
         for (auto it2 = v.begin(); it2 != v.end(); ++it2) {
           ss << "\"" << JsonEscapeString(*it2) << "\"";
-          if (std::next(it2) != v.end()) ss << ",";
+          if (std::next(it2) != v.end())
+            ss << ",";
         }
 
         ss << "]";
@@ -100,7 +100,8 @@ std::string qpkg::conf::ConfigGroup::dump(
         ss << (it->second.as<bool>() ? "true" : "false");
       }
 
-      if (std::next(it) != m_items.end()) ss << ",";
+      if (std::next(it) != m_items.end())
+        ss << ",";
     }
 
     ss << "}";
@@ -114,7 +115,8 @@ std::string qpkg::conf::ConfigGroup::dump(
 
         for (auto it2 = v.begin(); it2 != v.end(); ++it2) {
           ss << "\"" << JsonEscapeString(*it2) << "\"";
-          if (std::next(it2) != v.end()) ss << ",";
+          if (std::next(it2) != v.end())
+            ss << ",";
         }
 
         ss << "]";
@@ -126,7 +128,8 @@ std::string qpkg::conf::ConfigGroup::dump(
         ss << (it->second.as<bool>() ? "true" : "false");
       }
 
-      if (std::next(it) != m_items.end()) ss << std::endl;
+      if (std::next(it) != m_items.end())
+        ss << std::endl;
     }
   } else {
     LOG(qpkg::core::FATAL) << "Unsupported serialization target" << std::endl;
@@ -135,8 +138,7 @@ std::string qpkg::conf::ConfigGroup::dump(
   return ss.str();
 }
 
-std::string qpkg::conf::Config::dump(
-    qpkg::conf::ConfigItemSerializationTarget target) const {
+std::string qpkg::conf::Config::dump(qpkg::conf::ConfigItemSerializationTarget target) const {
   std::stringstream ss;
 
   ss << m_root.dump(target);
@@ -144,14 +146,13 @@ std::string qpkg::conf::Config::dump(
   return ss.str();
 }
 
-std::optional<qpkg::conf::Config> qpkg::conf::IParser::parsef(
-    const std::string &path) {
+std::optional<qpkg::conf::Config> qpkg::conf::IParser::parsef(const std::string &path) {
   try {
     std::ifstream file(path);
-    if (!file.is_open()) return std::nullopt;
+    if (!file.is_open())
+      return std::nullopt;
 
-    std::string data((std::istreambuf_iterator<char>(file)),
-                     std::istreambuf_iterator<char>());
+    std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     return parse(data);
   } catch (...) {
     return std::nullopt;

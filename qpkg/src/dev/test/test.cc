@@ -37,11 +37,9 @@
 #include <iostream>
 
 int qpkg::dev::test::run_lexer_test(
-    Progress &p,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
+    Progress &p, std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
   Progress::Result overall = Progress::Result::PASS;
-  std::map<std::pair<std::string_view, std::string_view>, Progress::Result>
-      details;
+  std::map<std::pair<std::string_view, std::string_view>, Progress::Result> details;
 
   for (const auto &[tag, data] : g_lexer_test_vectors) {
     FILE *code = fmemopen((void *)data.first.data(), data.first.size(), "r");
@@ -68,15 +66,14 @@ int qpkg::dev::test::run_lexer_test(
     }
 
     if (toks.size() != data.second.size()) {
-      std::cerr << "Expected " << data.second.size() << " tokens, got "
-                << toks.size() << " for test " << tag.first << std::endl;
+      std::cerr << "Expected " << data.second.size() << " tokens, got " << toks.size()
+                << " for test " << tag.first << std::endl;
       okay = false;
     } else {
       for (size_t i = 0; i < data.second.size(); i++) {
         if (!quixcc_cc_tokeq(toks[i], data.second[i])) {
           okay = false;
-          std::cerr << "Mismatched token at index " << i << " for test "
-                    << tag.first << std::endl;
+          std::cerr << "Mismatched token at index " << i << " for test " << tag.first << std::endl;
           break;
         }
       }
@@ -106,8 +103,7 @@ int qpkg::dev::test::run_lexer_test(
 }
 
 int qpkg::dev::test::run_parser_test(
-    Progress &p,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
+    Progress &p, std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
   (void)tests;
 
   p.result("Parser", Progress::Result::PASS);
@@ -119,8 +115,7 @@ int qpkg::dev::test::run_parser_test(
 }
 
 int qpkg::dev::test::run_quix_ir_test(
-    Progress &p,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
+    Progress &p, std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
   (void)tests;
 
   p.result("Quix IR", Progress::Result::PASS);
@@ -132,8 +127,7 @@ int qpkg::dev::test::run_quix_ir_test(
 }
 
 int qpkg::dev::test::run_delta_ir_test(
-    Progress &p,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
+    Progress &p, std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
   (void)tests;
 
   p.result("Delta IR", Progress::Result::PASS);
@@ -145,8 +139,7 @@ int qpkg::dev::test::run_delta_ir_test(
 }
 
 int qpkg::dev::test::run_llvm_ir_test(
-    Progress &p,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
+    Progress &p, std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
   (void)tests;
 
   p.result("LLVM IR", Progress::Result::PASS);
@@ -158,8 +151,7 @@ int qpkg::dev::test::run_llvm_ir_test(
 }
 
 int qpkg::dev::test::run_llvm_codegen_test(
-    Progress &p,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
+    Progress &p, std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
   (void)tests;
 
   p.result("LLVM Codegen", Progress::Result::PASS);
@@ -171,8 +163,7 @@ int qpkg::dev::test::run_llvm_codegen_test(
 }
 
 int qpkg::dev::test::run_c11_codegen_test(
-    Progress &p,
-    std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
+    Progress &p, std::map<std::string_view, std::map<std::string_view, bool>> &tests) {
   (void)tests;
 
   p.result("C11 Codegen", Progress::Result::PASS);
@@ -222,4 +213,4 @@ int qpkg::dev::test::run_tests() {
   return ret;
 }
 
-#endif  // QPKG_DEV_TOOLS
+#endif // QPKG_DEV_TOOLS

@@ -516,8 +516,8 @@ char *quixcc_ast_repr(const quixcc_ast_node_t *node, bool minify, size_t indent,
  *
  * @note This function is thread-safe.
  * @note If `arena` is `NULL`, the function will provide a malloc()'ed buffer.
- * @note If `out` is not `NULL`, the binary representation will be stored in the
- * variable pointed to by `out`. Otherwise, it will panic.
+ * @note The size of the output buffer will be stored in `outlen`.It must not
+ * be `NULL`.
  * @note The output will not be null-terminated.
  *
  * @warning The output is not human readable, it is a binary representation,

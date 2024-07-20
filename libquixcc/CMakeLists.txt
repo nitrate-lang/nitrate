@@ -18,6 +18,10 @@ string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(LIBQUIX_VERSION "\"QUIXCC_${SHA256SUMS}\"")
 message(STATUS "LibQuix VersionId: ${LIBQUIX_VERSION}")
 
+#================================================================
+
+#================== CONFIGURE BUILD ==================
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -30,16 +34,20 @@ execute_process(COMMAND llvm14-config --link-static --libfiles
 OUTPUT_VARIABLE LLVM_LIBS_RAW
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
+# ============= GET STATIC LIBRARIES AS STRING =============
 string(REPLACE "\n" " " LLVM_LIBS "${LLVM_LIBS_RAW}")
 string(REPLACE " " ";" LLVM_LIBS "${LLVM_LIBS}")
 string(REPLACE "\n" " " LLVM_LIBS_BASH "${LLVM_LIBS_RAW}")
 
+#================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter -Wno-error=mismatched-new-delete -DLLVM_SUUPORT_ALL_TARGETS)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DLIBQUIX_VERSION=${LIBQUIX_VERSION} -Wno-unused-parameter)
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-unused-parameter -DLIBQUIX_VERSION="undefined")
 
+#================== GET SOURCES ==================
 file(GLOB_RECURSE LIBQUIX_CXX_SOURCES "src/*.cc")
 
+#================== CREATE BUILD ==================
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   #================== CREATE DEBUG BUILD ==================
   add_library(quixcc SHARED ${LIBQUIX_CXX_SOURCES})
@@ -52,7 +60,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Linking ${lib}")
   endforeach()
 
-  target_link_libraries(quixcc PRIVATE libboost_serialization.a boost_filesystem libcrypto.a libstdc++.a z tinfo -fsanitize=address -fsanitize=undefined)
+  target_link_libraries(quixcc PRIVATE libboost_serialization.a boost_filesystem libdeflate.a libcrypto.a libstdc++.a z tinfo -fsanitize=address -fsanitize=undefined)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #========= CREATE SHARED LIBRARY RELEASE BUILD ==========
   add_library(quixcc SHARED ${LIBQUIX_CXX_SOURCES})
@@ -66,7 +74,5 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Linking ${lib}")
   endforeach()
 
-  target_link_libraries(quixcc PRIVATE libboost_serialization.a libboost_filesystem.a libcrypto.a libstdc++.a libz.a tinfo)
+  target_link_libraries(quixcc PRIVATE libboost_serialization.a libboost_filesystem.a libdeflate.a libcrypto.a libstdc++.a libz.a tinfo)
 endif()
-
-

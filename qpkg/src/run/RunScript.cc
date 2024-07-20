@@ -39,16 +39,13 @@
 
 #define QPKG_ERROR 10
 
-qpkg::run::RunScript::RunScript(const std::string &scriptfile) {
-  m_scriptfile = scriptfile;
-}
+qpkg::run::RunScript::RunScript(const std::string &scriptfile) { m_scriptfile = scriptfile; }
 
 bool qpkg::run::RunScript::is_okay() const { return true; }
 
 int qpkg::run::RunScript::run(const std::vector<std::string> &args) {
   if (!std::filesystem::exists(m_scriptfile)) {
-    LOG(core::ERROR) << "Script file does not exist: " << m_scriptfile
-                     << std::endl;
+    LOG(core::ERROR) << "Script file does not exist: " << m_scriptfile << std::endl;
     return QPKG_ERROR;
   }
 
@@ -72,10 +69,10 @@ int qpkg::run::RunScript::run(const std::vector<std::string> &args) {
     builder.set_optimization(quixcc::OptimizationLevel::SPEED_4);
     builder.add_source(m_scriptfile);
     builder.opt("-c");
-    if (!builder.build().run(1).puts().ok()) return QPKG_ERROR;
+    if (!builder.build().run(1).puts().ok())
+      return QPKG_ERROR;
 
-    std::string linker_cmd =
-        "qld " + std::string(tempfile) + " -o " + tempfile + ".tmp";
+    std::string linker_cmd = "qld " + std::string(tempfile) + " -o " + tempfile + ".tmp";
     if (system(linker_cmd.c_str()) != 0) {
       LOG(core::ERROR) << "Failed to link the binary" << std::endl;
       return QPKG_ERROR;
@@ -93,8 +90,7 @@ int qpkg::run::RunScript::run(const std::vector<std::string> &args) {
 #endif
 
   } catch (const std::exception &e) {
-    LOG(core::ERROR) << "Failed to compile the script: " << e.what()
-                     << std::endl;
+    LOG(core::ERROR) << "Failed to compile the script: " << e.what() << std::endl;
   }
 
   std::filesystem::remove(tempfile);

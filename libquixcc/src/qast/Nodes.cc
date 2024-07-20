@@ -462,23 +462,25 @@ bool Node::is_expr() const {
   }
 }
 
-bool Node::is_const_expr() const { return is_expr() && as<Expr>()->is_const(); }
 bool Node::is(quixcc_ast_ntype_t type) const { return type == this_typeid(); }
 bool Node::verify(std::ostream &os) const { return verify_impl(os); }
 void Node::canonicalize() { canonicalize_impl(); }
 
-std::string Node::to_string(bool minify) const {
+std::string Node::to_string(bool minify, bool binary_repr) const {
 #define INDENT_STEP 1
   size_t len = 0;
-  char *buf = quixcc_ast_repr(this, minify, INDENT_STEP, &quixcc_ast_arena.get(), &len);
+  uint8_t *outbuf = nullptr;
 
-  return std::string(buf, len);
+  if (binary_repr) {
+    quixcc_ast_brepr(this, minify, &quixcc_ast_arena.get(), &outbuf, &len);
+  } else {
+    outbuf = (uint8_t *)quixcc_ast_repr(this, minify, INDENT_STEP, &quixcc_ast_arena.get(), &len);
+  }
+
+  return std::string((char *)outbuf, len);
 }
 
 ///=============================================================================
-
-uint64_t Type::infer_size_bits() const { return infer_size_bits_impl(); }
-uint64_t Type::infer_size() const { return std::ceil(infer_size_bits() / 8.0); }
 
 bool Type::is_primitive() const {
   if (is<MutTy>()) {
@@ -835,13 +837,7 @@ void Decl::remove_tag(String tag) { m_tags.erase(tag); }
 Visibility Decl::get_visibility() const { return m_visibility; }
 void Decl::set_visibility(Visibility visibility) { m_visibility = visibility; }
 
-Type *Decl::infer_type() const { return infer_type_impl(); }
-
 ///=============================================================================
-
-Type *Expr::infer_type() const { return infer_type_impl(); }
-bool Expr::is_const() const { return is_const_impl(); }
-bool Expr::is_stochastic() const { return is_stochastic_impl(); }
 
 bool Expr::is_binexpr() const {
   if (is<BinExpr>()) {
@@ -952,10 +948,6 @@ StmtExpr *StmtExpr::clone_impl() const {
 Stmt *StmtExpr::get_stmt() const { return m_stmt; }
 void StmtExpr::set_stmt(Stmt *stmt) { m_stmt = stmt; }
 
-Type *StmtExpr::infer_type_impl() const { return VoidTy::get(); }
-bool StmtExpr::is_const_impl() const { return false; }
-bool StmtExpr::is_stochastic_impl() const { return true; }
-
 bool TypeExpr::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "TypeExpr: type is NULL\n";
@@ -992,15 +984,7 @@ TypeExpr *TypeExpr::clone_impl() const {
 Type *TypeExpr::get_type() const { return m_type; }
 void TypeExpr::set_type(Type *type) { m_type = type; }
 
-Type *TypeExpr::infer_type_impl() const { return m_type; }
-bool TypeExpr::is_const_impl() const { return true; }
-bool TypeExpr::is_stochastic_impl() const { return false; }
-
 ///=============================================================================
-
-Type *ConstExpr::infer_type_impl() const { return get_value()->infer_type(); }
-bool ConstExpr::is_const_impl() const { return true; }
-bool ConstExpr::is_stochastic_impl() const { return false; }
 
 Expr *ConstExpr::get_value() const { return m_value; }
 void ConstExpr::set_value(Expr *value) { m_value = value; }
@@ -1038,10 +1022,6 @@ void UnresolvedType::print_impl(std::ostream &os, bool debug) const { os << m_na
 
 UnresolvedType *UnresolvedType::clone_impl() const { return UnresolvedType::get(m_name); }
 
-uint64_t UnresolvedType::infer_size_bits_impl() const {
-  throw std::runtime_error("UnresolvedType::infer_size_bits_impl() is not implemented");
-}
-
 String UnresolvedType::get_name() const { return m_name; }
 void UnresolvedType::set_name(String name) { m_name = name; }
 
@@ -1049,8 +1029,7 @@ void UnresolvedType::set_name(String name) { m_name = name; }
   bool __typename::verify_impl(std::ostream &os) const { return true; }                            \
   void __typename::canonicalize_impl() {}                                                          \
   void __typename::print_impl(std::ostream &os, bool debug) const { os << __dumpstr; }             \
-  __typename *__typename::clone_impl() const { return __typename::get(); }                         \
-  uint64_t __typename::infer_size_bits_impl() const { return __bits; }
+  __typename *__typename::clone_impl() const { return __typename::get(); }
 
 TRIVIAL_TYPE_IMPL(U1, "u1", 1)
 TRIVIAL_TYPE_IMPL(U8, "u8", 8)
@@ -1117,8 +1096,6 @@ PtrTy *PtrTy::clone_impl() const {
   return PtrTy::get(item, m_is_volatile);
 }
 
-uint64_t PtrTy::infer_size_bits_impl() const { return libquixcc::quixcc::g_target_word_size; }
-
 Type *PtrTy::get_item() const { return m_item; }
 void PtrTy::set_item(Type *item) { m_item = item; }
 bool PtrTy::is_volatile() const { return m_is_volatile; }
@@ -1136,10 +1113,6 @@ bool OpaqueTy::verify_impl(std::ostream &os) const {
 void OpaqueTy::canonicalize_impl() {}
 void OpaqueTy::print_impl(std::ostream &os, bool debug) const { os << "opaque<" << m_name << ">"; }
 OpaqueTy *OpaqueTy::clone_impl() const { return OpaqueTy::get(m_name); }
-
-uint64_t OpaqueTy::infer_size_bits_impl() const {
-  throw std::runtime_error("OpaqueTy::infer_size_bits_impl() is not valid");
-}
 
 String OpaqueTy::get_name() const { return m_name; }
 void OpaqueTy::set_name(String name) { m_name = name; }
@@ -1180,10 +1153,6 @@ VectorTy *VectorTy::clone_impl() const {
   return VectorTy::get(item);
 }
 
-uint64_t VectorTy::infer_size_bits_impl() const {
-  throw std::runtime_error("VectorTy::infer_size_bits_impl() is not valid");
-}
-
 Type *VectorTy::get_item() const { return m_item; }
 void VectorTy::set_item(Type *item) { m_item = item; }
 
@@ -1221,10 +1190,6 @@ void SetTy::print_impl(std::ostream &os, bool debug) const {
 SetTy *SetTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return SetTy::get(item);
-}
-
-uint64_t SetTy::infer_size_bits_impl() const {
-  throw std::runtime_error("SetTy::infer_size_bits_impl() is not valid");
 }
 
 Type *SetTy::get_item() const { return m_item; }
@@ -1288,10 +1253,6 @@ MapTy *MapTy::clone_impl() const {
   return MapTy::get(key, value);
 }
 
-uint64_t MapTy::infer_size_bits_impl() const {
-  throw std::runtime_error("MapTy::infer_size_bits_impl() is not valid");
-}
-
 Type *MapTy::get_key() const { return m_key; }
 void MapTy::set_key(Type *key) { m_key = key; }
 
@@ -1351,8 +1312,6 @@ TupleTy *TupleTy::clone_impl() const {
   return TupleTy::get(items);
 }
 
-uint64_t TupleTy::infer_size_bits_impl() const { return GroupTy::get(m_items)->infer_size_bits(); }
-
 TupleTyItems &TupleTy::get_items() { return m_items; }
 
 bool OptionalTy::verify_impl(std::ostream &os) const {
@@ -1391,10 +1350,6 @@ OptionalTy *OptionalTy::clone_impl() const {
   return OptionalTy::get(item);
 }
 
-uint64_t OptionalTy::infer_size_bits_impl() const {
-  throw std::runtime_error("OptionalTy::infer_size_bits_impl() is not valid");
-}
-
 Type *OptionalTy::get_item() const { return m_item; }
 void OptionalTy::set_item(Type *item) { m_item = item; }
 
@@ -1416,11 +1371,6 @@ bool ArrayTy::verify_impl(std::ostream &os) const {
 
   if (!m_size->verify(os)) {
     os << "ArrayTy: size is invalid\n";
-    return false;
-  }
-
-  if (!m_size->infer_type()->is_unsigned()) {
-    os << "ArrayTy: size is not an unsigned integral type\n";
     return false;
   }
 
@@ -1462,13 +1412,6 @@ ArrayTy *ArrayTy::clone_impl() const {
   ConstExpr *size = m_size ? m_size->clone() : nullptr;
 
   return ArrayTy::get(item, size);
-}
-
-uint64_t ArrayTy::infer_size_bits_impl() const {
-  qassert(m_item);
-  qassert(m_size);
-
-  return m_item->infer_size_bits() * m_size->eval_as<uint64_t>();
 }
 
 Type *ArrayTy::get_item() const { return m_item; }
@@ -1513,12 +1456,6 @@ EnumTy *EnumTy::clone_impl() const {
   return EnumTy::get(m_name, memtype);
 }
 
-uint64_t EnumTy::infer_size_bits_impl() const {
-  qassert(m_memtype);
-
-  return m_memtype->infer_size_bits();
-}
-
 String EnumTy::get_name() const { return m_name; }
 void EnumTy::set_name(String name) { m_name = name; }
 Type *EnumTy::get_memtype() const { return m_memtype; }
@@ -1558,12 +1495,6 @@ void MutTy::print_impl(std::ostream &os, bool debug) const {
 MutTy *MutTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return MutTy::get(item);
-}
-
-uint64_t MutTy::infer_size_bits_impl() const {
-  qassert(m_item);
-
-  return m_item->infer_size_bits();
 }
 
 Type *MutTy::get_item() const { return m_item; }
@@ -1633,11 +1564,6 @@ StructTy *StructTy::clone_impl() const {
   }
 
   return StructTy::get(fields);
-}
-
-uint64_t StructTy::infer_size_bits_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("StructTy::infer_size_bits_impl() is not implemented");
 }
 
 std::vector<StructItem, Arena<StructItem>> &StructTy::get_items() { return m_items; }
@@ -1711,11 +1637,6 @@ GroupTy *GroupTy::clone_impl() const {
   return GroupTy::get(fields);
 }
 
-uint64_t GroupTy::infer_size_bits_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("GroupTy::infer_size_bits_impl() is not implemented");
-}
-
 std::vector<Type *, Arena<Type *>> &GroupTy::get_items() { return m_items; }
 
 void GroupTy::add_item(Type *item) { m_items.push_back(item); }
@@ -1787,16 +1708,6 @@ RegionTy *RegionTy::clone_impl() const {
   return RegionTy::get(fields);
 }
 
-uint64_t RegionTy::infer_size_bits_impl() const {
-  size_t size = 0;
-  for (auto item : m_items) {
-    qassert(item);
-    size += item->infer_size_bits();
-  }
-
-  return size;
-}
-
 std::vector<Type *, Arena<Type *>> &RegionTy::get_items() { return m_items; }
 
 void RegionTy::add_item(Type *item) { m_items.push_back(item); }
@@ -1866,15 +1777,6 @@ UnionTy *UnionTy::clone_impl() const {
   }
 
   return UnionTy::get(fields);
-}
-
-uint64_t UnionTy::infer_size_bits_impl() const {
-  size_t size = 0;
-  for (auto item : m_items) {
-    size = std::max(size, item->infer_size_bits());
-  }
-
-  return size;
 }
 
 std::vector<Type *, Arena<Type *>> &UnionTy::get_items() { return m_items; }
@@ -2045,10 +1947,6 @@ FuncTy *FuncTy::clone_impl() const {
                      m_noreturn);
 }
 
-uint64_t FuncTy::infer_size_bits_impl() const {
-  return PtrTy::get(VoidTy::get())->infer_size_bits();
-}
-
 bool FuncTy::is_noreturn() const { return m_noreturn; }
 void FuncTy::set_noreturn(bool noreturn) { m_noreturn = noreturn; }
 Type *FuncTy::get_return_ty() const { return m_return; }
@@ -2133,21 +2031,6 @@ UnaryExpr *UnaryExpr::clone_impl() const {
   return UnaryExpr::get(m_op, rhs);
 }
 
-Type *UnaryExpr::infer_type_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("UnaryExpr::infer_type_impl() is not implemented");
-}
-
-bool UnaryExpr::is_const_impl() const {
-  qassert(m_rhs);
-  return m_rhs->is_const();
-}
-
-bool UnaryExpr::is_stochastic_impl() const {
-  qassert(m_rhs);
-  return m_rhs->is_stochastic();
-}
-
 UnaryOp UnaryExpr::get_op() const { return m_op; }
 void UnaryExpr::set_op(UnaryOp op) { m_op = op; }
 
@@ -2227,23 +2110,6 @@ BinExpr *BinExpr::clone_impl() const {
   return BinExpr::get(lhs, m_op, rhs);
 }
 
-Type *BinExpr::infer_type_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("BinExpr::infer_type_impl() is not implemented");
-}
-
-bool BinExpr::is_const_impl() const {
-  qassert(m_lhs);
-  qassert(m_rhs);
-  return m_lhs->is_const() && m_rhs->is_const();
-}
-
-bool BinExpr::is_stochastic_impl() const {
-  qassert(m_lhs);
-  qassert(m_rhs);
-  return m_lhs->is_stochastic() || m_rhs->is_stochastic();
-}
-
 BinOp BinExpr::get_op() const { return m_op; }
 void BinExpr::set_op(BinOp op) { m_op = op; }
 
@@ -2302,21 +2168,6 @@ void PostUnaryExpr::print_impl(std::ostream &os, bool debug) const {
 PostUnaryExpr *PostUnaryExpr::clone_impl() const {
   Expr *lhs = m_lhs ? m_lhs->clone() : nullptr;
   return PostUnaryExpr::get(lhs, m_op);
-}
-
-Type *PostUnaryExpr::infer_type_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("PostUnaryExpr::infer_type_impl() is not implemented");
-}
-
-bool PostUnaryExpr::is_const_impl() const {
-  qassert(m_lhs);
-  return m_lhs->is_const();
-}
-
-bool PostUnaryExpr::is_stochastic_impl() const {
-  qassert(m_lhs);
-  return m_lhs->is_stochastic();
 }
 
 PostUnaryOp PostUnaryExpr::get_op() const { return m_op; }
@@ -2407,25 +2258,6 @@ TernaryExpr *TernaryExpr::clone_impl() const {
   Expr *rhs = m_rhs ? m_rhs->clone() : nullptr;
 
   return TernaryExpr::get(cond, lhs, rhs);
-}
-
-Type *TernaryExpr::infer_type_impl() const {
-  qassert(m_lhs && m_rhs);
-  return m_lhs->infer_type();
-}
-
-bool TernaryExpr::is_const_impl() const {
-  qassert(m_cond);
-  qassert(m_lhs);
-  qassert(m_rhs);
-  return m_cond->is_const() && m_lhs->is_const() && m_rhs->is_const();
-}
-
-bool TernaryExpr::is_stochastic_impl() const {
-  qassert(m_cond);
-  qassert(m_lhs);
-  qassert(m_rhs);
-  return m_cond->is_stochastic() || m_lhs->is_stochastic() || m_rhs->is_stochastic();
 }
 
 Expr *TernaryExpr::get_cond() const { return m_cond; }
@@ -2630,32 +2462,6 @@ Call *Call::clone_impl() const {
   return Call::get(func, args);
 }
 
-Type *Call::infer_type_impl() const {
-  qassert(m_func);
-  return m_func->infer_type()->as<FuncTy>()->get_return_ty();
-}
-
-bool Call::is_const_impl() const {
-  qassert(m_func);
-  return m_func->is_const();
-}
-
-bool Call::is_stochastic_impl() const {
-  qassert(m_func);
-
-  if (m_func->is_stochastic()) {
-    return true;
-  }
-
-  for (const auto &[name, expr] : m_args) {
-    if (expr->is_stochastic()) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 Expr *Call::get_func() const { return m_func; }
 void Call::set_func(Expr *func) { m_func = func; }
 
@@ -2717,35 +2523,6 @@ List *List::clone_impl() const {
   }
 
   return List::get(items);
-}
-
-Type *List::infer_type_impl() const {
-  TupleTyItems items;
-  for (auto item : m_items) {
-    items.push_back(item->infer_type());
-  }
-
-  return TupleTy::get(items);
-}
-
-bool List::is_const_impl() const {
-  for (auto item : m_items) {
-    if (!item->is_const()) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool List::is_stochastic_impl() const {
-  for (auto item : m_items) {
-    if (item->is_stochastic()) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 ListData &List::get_items() { return m_items; }
@@ -2812,27 +2589,6 @@ Assoc *Assoc::clone_impl() const {
   return Assoc::get(key, value);
 }
 
-Type *Assoc::infer_type_impl() const {
-  qassert(m_key && m_value);
-
-  Type *kt = m_key->infer_type();
-  Type *vt = m_value->infer_type();
-
-  return TupleTy::get(TupleTyItems({kt, vt}));
-}
-
-bool Assoc::is_const_impl() const {
-  qassert(m_key);
-  qassert(m_value);
-  return m_key->is_const() && m_value->is_const();
-}
-
-bool Assoc::is_stochastic_impl() const {
-  qassert(m_key);
-  qassert(m_value);
-  return m_key->is_stochastic() || m_value->is_stochastic();
-}
-
 Expr *Assoc::get_key() const { return m_key; }
 void Assoc::set_key(Expr *key) { m_key = key; }
 
@@ -2877,21 +2633,6 @@ void Field::print_impl(std::ostream &os, bool debug) const {
 Field *Field::clone_impl() const {
   Expr *base = m_base ? m_base->clone() : nullptr;
   return Field::get(base, m_field);
-}
-
-Type *Field::infer_type_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("Field::infer_type_impl() is not implemented");
-}
-
-bool Field::is_const_impl() const {
-  qassert(m_base);
-  return m_base->is_const();
-}
-
-bool Field::is_stochastic_impl() const {
-  qassert(m_base);
-  return m_base->is_stochastic();
 }
 
 Expr *Field::get_base() const { return m_base; }
@@ -2957,58 +2698,6 @@ Index *Index::clone_impl() const {
   Expr *index = m_index ? m_index->clone() : nullptr;
 
   return Index::get(base, index);
-}
-
-Type *Index::infer_type_impl() const {
-  quixcc_panic("Index::infer_type_impl() is not implemented");
-  qassert(m_base);
-
-  Type *bt = m_base->infer_type();
-  qassert(bt != nullptr);
-
-  if (bt->is_array()) {
-    return bt->as<ArrayTy>()->get_item();
-  }
-
-  if (bt->is_pointer()) {
-    return bt->as<PtrTy>()->get_item();
-  }
-
-  if (bt->is_vector()) {
-    return bt->as<VectorTy>()->get_item();
-  }
-
-  if (bt->is_string()) {
-    /// TODO: Decide whether to return I8 or I32. Should strings be native UTF-8?
-    return I32::get();
-  }
-
-  if (bt->is_map()) {
-    return bt->as<MapTy>()->get_value();
-  }
-
-  if (bt->is_tuple()) {
-    qassert(m_index->is_const());
-    qassert(m_index->infer_type()->is_integral());
-
-    TupleTy *tt = bt->as<TupleTy>();
-    uint64_t idx = m_index->as<ConstExpr>()->eval_as<uint64_t>();
-    return tt->get_items().at(idx);
-  }
-
-  throw std::runtime_error("Indexing non-indexable type");
-}
-
-bool Index::is_const_impl() const {
-  qassert(m_base);
-  qassert(m_index);
-  return m_base->is_const() && m_index->is_const();
-}
-
-bool Index::is_stochastic_impl() const {
-  qassert(m_base);
-  qassert(m_index);
-  return m_base->is_stochastic() || m_index->is_stochastic();
 }
 
 Expr *Index::get_base() const { return m_base; }
@@ -3099,88 +2788,6 @@ Slice *Slice::clone_impl() const {
   return Slice::get(base, start, end);
 }
 
-Type *Slice::infer_type_impl() const {
-  qassert(m_base);
-  qassert(m_start);
-  qassert(m_end);
-
-  Type *bt = m_base->infer_type();
-  qassert(bt != nullptr);
-
-  bool bounds_const = m_start->is_const() && m_end->is_const();
-  bool base_size_const = bt->is_array() || bt->is_tuple();
-
-  if (bounds_const) {
-    int64_t start = m_start->as<ConstExpr>()->eval_as<int64_t>();
-    int64_t end = m_end->as<ConstExpr>()->eval_as<int64_t>();
-
-    if ((start < 0 || end < 0) && !base_size_const) {
-      throw std::runtime_error("Negative slice index on compound type of indeterminate size");
-    } else if (start < 0 || end < 0) {
-      size_t base_size = 0;
-
-      if (bt->is_array()) {
-        base_size = bt->as<ArrayTy>()->get_size()->eval_as<size_t>();
-      } else if (bt->is_tuple()) {
-        base_size = bt->as<TupleTy>()->get_items().size();
-      }
-
-      if (start < 0) {
-        start += base_size;
-      }
-
-      if (end < 0) {
-        end += base_size;
-      }
-
-      if (start < 0 || end < 0) {
-        throw std::runtime_error("Negative slice index after resolving negative index");
-      }
-    }
-
-    if (start > end) {
-      throw std::runtime_error("Slice start index is greater than end index");
-    }
-
-    if (bt->is_array()) {
-      return ArrayTy::get(bt->as<ArrayTy>()->get_item(), ConstInt::get(end - start + 1));
-    }
-
-    if (bt->is_tuple()) {
-      TupleTy *tt = bt->as<TupleTy>();
-      TupleTyItems items;
-
-      for (size_t i = start; i <= (size_t)end; i++) {
-        items.push_back(tt->get_items().at(i));
-      }
-
-      return TupleTy::get(items);
-    }
-
-    throw std::runtime_error("Slicing non-sliceable type");
-  } else {
-    if (bt->is_array()) {
-      return VectorTy::get(bt->as<ArrayTy>()->get_item());
-    }
-
-    throw std::runtime_error("Slicing non-sliceable type");
-  }
-}
-
-bool Slice::is_const_impl() const {
-  qassert(m_base);
-  qassert(m_start);
-  qassert(m_end);
-  return m_base->is_const() && m_start->is_const() && m_end->is_const();
-}
-
-bool Slice::is_stochastic_impl() const {
-  qassert(m_base);
-  qassert(m_start);
-  qassert(m_end);
-  return m_base->is_stochastic() || m_start->is_stochastic() || m_end->is_stochastic();
-}
-
 Expr *Slice::get_base() const { return m_base; }
 void Slice::set_base(Expr *base) { m_base = base; }
 
@@ -3245,28 +2852,6 @@ FString *FString::clone_impl() const {
   return FString::get(m_value, items);
 }
 
-Type *FString::infer_type_impl() const { return StringTy::get(); }
-
-bool FString::is_const_impl() const {
-  for (auto item : m_items) {
-    if (!item->is_const()) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool FString::is_stochastic_impl() const {
-  for (auto item : m_items) {
-    if (item->is_stochastic()) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
 String FString::get_value() const { return m_value; }
 void FString::set_value(String value) { m_value = value; }
 
@@ -3291,21 +2876,6 @@ void Ident::canonicalize_impl() {}
 void Ident::print_impl(std::ostream &os, bool debug) const { os << m_name; }
 
 Ident *Ident::clone_impl() const { return Ident::get(m_name); }
-
-Type *Ident::infer_type_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("Ident::infer_type_impl() is not implemented");
-}
-
-bool Ident::is_const_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("Ident::is_const_impl() is not implemented");
-}
-
-bool Ident::is_stochastic_impl() const {
-  /// TODO: Implement this function
-  quixcc_panic("Ident::is_stochastic_impl() is not implemented");
-}
 
 String Ident::get_name() const { return m_name; }
 void Ident::set_name(String name) { m_name = name; }
@@ -3364,31 +2934,6 @@ void SeqPoint::add_item(Expr *item) { m_items.push_back(item); }
 void SeqPoint::clear_items() { m_items.clear(); }
 void SeqPoint::remove_item(Expr *item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
-}
-
-Type *SeqPoint::infer_type_impl() const {
-  qassert(!m_items.empty());
-  return m_items.back()->infer_type();
-}
-
-bool SeqPoint::is_const_impl() const {
-  for (auto item : m_items) {
-    if (!item->is_const()) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-bool SeqPoint::is_stochastic_impl() const {
-  for (auto item : m_items) {
-    if (item->is_stochastic()) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 ///=============================================================================
@@ -3565,8 +3110,6 @@ ConstDecl *ConstDecl::clone_impl() const {
   return ConstDecl::get(m_name, type, value);
 }
 
-Type *ConstDecl::infer_type_impl() const { return m_type; }
-
 Expr *ConstDecl::get_value() const { return m_value; }
 void ConstDecl::set_value(Expr *value) { m_value = value; }
 
@@ -3622,8 +3165,6 @@ VarDecl *VarDecl::clone_impl() const {
   return VarDecl::get(m_name, type, value);
 }
 
-Type *VarDecl::infer_type_impl() const { return m_type; }
-
 Expr *VarDecl::get_value() const { return m_value; }
 void VarDecl::set_value(Expr *value) { m_value = value; }
 
@@ -3678,8 +3219,6 @@ LetDecl *LetDecl::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
   return LetDecl::get(m_name, type, value);
 }
-
-Type *LetDecl::infer_type_impl() const { return m_type; }
 
 Expr *LetDecl::get_value() const { return m_value; }
 void LetDecl::set_value(Expr *value) { m_value = value; }
@@ -4526,8 +4065,6 @@ TypedefDecl *TypedefDecl::clone_impl() const {
   return TypedefDecl::get(m_name, type);
 }
 
-Type *TypedefDecl::infer_type_impl() const { return m_type; }
-
 bool FnDecl::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "FnDecl: type is NULL\n";
@@ -4567,8 +4104,6 @@ FnDecl *FnDecl::clone_impl() const {
     return FnDecl::get(m_name, nullptr);
   }
 }
-
-Type *FnDecl::infer_type_impl() const { return m_type; }
 
 FuncTy *FnDecl::get_type() const {
   if (!m_type) {
@@ -4710,8 +4245,6 @@ CompositeField *CompositeField::clone_impl() const {
 
   return CompositeField::get(m_name, type, value);
 }
-
-Type *CompositeField::infer_type_impl() const { return m_type; }
 
 Expr *CompositeField::get_value() const { return m_value; }
 void CompositeField::set_value(Expr *value) { m_value = value; }
@@ -4881,8 +4414,6 @@ void StructDef::remove_field(CompositeField *item) {
   std::erase_if(m_fields, [item](auto &field) { return field == item; });
 }
 
-Type *StructDef::infer_type_impl() const { return m_type; }
-
 bool GroupDef::verify_impl(std::ostream &os) const {
   for (auto item : m_methods) {
     if (!item) {
@@ -5047,8 +4578,6 @@ void GroupDef::clear_fields() { m_fields.clear(); }
 void GroupDef::remove_field(CompositeField *item) {
   std::erase_if(m_fields, [item](auto &field) { return field == item; });
 }
-
-Type *GroupDef::infer_type_impl() const { return m_type; }
 
 bool RegionDef::verify_impl(std::ostream &os) const {
   for (auto item : m_methods) {
@@ -5215,8 +4744,6 @@ void RegionDef::remove_field(CompositeField *item) {
   std::erase_if(m_fields, [item](auto &field) { return field == item; });
 }
 
-Type *RegionDef::infer_type_impl() const { return m_type; }
-
 bool UnionDef::verify_impl(std::ostream &os) const {
   for (auto item : m_methods) {
     if (!item) {
@@ -5382,8 +4909,6 @@ void UnionDef::remove_field(CompositeField *item) {
   std::erase_if(m_fields, [item](auto &field) { return field == item; });
 }
 
-Type *UnionDef::infer_type_impl() const { return m_type; }
-
 bool EnumDef::verify_impl(std::ostream &os) const {
   for (auto item : m_items) {
     if (!item.second) {
@@ -5452,8 +4977,6 @@ void EnumDef::remove_item(EnumItem item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
-Type *EnumDef::infer_type_impl() const { return m_type; }
-
 bool SubsystemDecl::verify_impl(std::ostream &os) const {
   if (m_type) {
     os << "SubsystemDecl: type must be NULL\n";
@@ -5496,8 +5019,6 @@ SubsystemDecl *SubsystemDecl::clone_impl() const {
 
   return SubsystemDecl::get(m_name, body);
 }
-
-Type *SubsystemDecl::infer_type_impl() const { return nullptr; }
 
 Block *SubsystemDecl::get_body() const { return m_body; }
 void SubsystemDecl::set_body(Block *body) { m_body = body; }
@@ -5543,8 +5064,6 @@ ExportDecl *ExportDecl::clone_impl() const {
   StmtList *body = m_body ? m_body->clone() : nullptr;
   return ExportDecl::get(body, m_lang);
 }
-
-Type *ExportDecl::infer_type_impl() const { return nullptr; }
 
 StmtList *ExportDecl::get_body() const { return m_body; }
 void ExportDecl::set_body(StmtList *body) { m_body = body; }

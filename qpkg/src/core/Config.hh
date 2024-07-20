@@ -36,4 +36,4 @@
 #define QPKG_GLOBAL_PACKAGE_DIR "/usr/local/share/qpkg/packages"
 #define QPKG_GLOBAL_BINARY_DIR "/usr/local/bin"
 
-#endif  // __QPKG_CORE_CONFIG_HH__
+#endif // __QPKG_CORE_CONFIG_HH__

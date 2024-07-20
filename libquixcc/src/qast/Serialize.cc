@@ -31,6 +31,7 @@
 
 #include <core/Macro.h>
 #include <cstring>
+#include <libdeflate.h>
 #include <qast/Nodes.h>
 #include <quixcc/Library.h>
 #include <quixcc/interface/SyntaxTreeNodes.h>
@@ -243,7 +244,12 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     for (const auto &[k, v] : n->as<Call>()->get_args()) {
       indent(ss, state);
 
-      ss << "(Param" << escape_string(k);
+      ss << "(Param";
+      state.indent++;
+      indent(ss, state);
+      ss << escape_string(k);
+      state.indent--;
+
       serialize_recurse(v, ss, state);
       ss << ")";
     }
@@ -479,22 +485,25 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   case QUIXCC_AST_NODE_FN_TY: {
     OBJECT_BEGIN("FType");
     OBJECT_SUB(n->as<FuncTy>()->get_return_ty());
-    state.indent++;
-    indent(ss, state);
     ss << "[";
     for (const auto &param : n->as<FuncTy>()->get_params()) {
       state.indent++;
       indent(ss, state);
 
       ss << "(Param";
+      state.indent++;
+      indent(ss, state);
       ss << escape_string(std::get<0>(param));
+
+      state.indent--;
+
       serialize_recurse(std::get<1>(param), ss, state);
       serialize_recurse(std::get<2>(param), ss, state);
+
       state.indent--;
       ss << ")";
     }
     ss << "]";
-    state.indent--;
     state.indent++;
     indent(ss, state);
     state.indent--;
@@ -571,7 +580,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     break;
   }
   case QUIXCC_AST_NODE_ENUM: {
-    /// TODO: Implement this function
     OBJECT_BEGIN("Enum");
     OBJECT_STR(n->as<EnumDef>()->get_name());
     state.indent++;
@@ -842,11 +850,79 @@ LIB_EXPORT char *quixcc_ast_repr(const quixcc_ast_node_t *_node, bool minify, si
   }
 }
 
+static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t *out_size,
+                        quixcc_arena_t *arena) {
+  struct libdeflate_compressor *ctx{};
+
+  /* Allocate a compressor context; level 8 is a fairly good tradeoff */
+  ctx = libdeflate_alloc_compressor(8);
+
+  /* Compute the largest possible compressed buffer size */
+  *out_size = libdeflate_deflate_compress_bound(ctx, in_size);
+
+  /* Allocate memory for the compressed buffer */
+  *out = (uint8_t *)quixcc_arena_alloc(arena, *out_size);
+
+  if (*out == NULL) {
+    libdeflate_free_compressor(ctx);
+    quixcc_panic("Failed to allocate memory for compressed AST representation");
+  }
+
+  /* Compress the data */
+  *out_size = libdeflate_deflate_compress(ctx, in, in_size, *out, *out_size);
+
+  /* Liberate the compressor context */
+  libdeflate_free_compressor(ctx);
+
+  /* Check for compression failure */
+  if (out_size == 0) {
+    quixcc_panic("Failed to compress AST representation");
+  }
+}
+
 LIB_EXPORT void quixcc_ast_brepr(const quixcc_ast_node_t *node, bool compress,
                                  quixcc_arena_t *arena, uint8_t **out, size_t *outlen) {
-  /// TODO: Implement this function
+  char *repr{};
+  quixcc_arena_t scratch{};
+  bool our_arena{};
 
-  quixcc_panic("quixcc_ast_brepr() is not implemented");
+  /* Open a scratch arena if one is not provided */
+  if (!arena) {
+    quixcc_arena_open(&scratch);
+    arena = &scratch;
+    our_arena = true;
+  }
+
+  /* Validate the output buffer */
+  if (!out || !outlen) {
+    quixcc_panic("Invalid output buffer for AST representation");
+  }
+
+  /* Generate the AST representation as ASCII */
+  if ((repr = quixcc_ast_repr(node, true, 0, arena, outlen)) == NULL) {
+    quixcc_panic("Failed to generate AST representation");
+  }
+
+  /* Compress the AST representation */
+  if (compress) {
+    uint8_t *tmp_out;
+    raw_deflate((const uint8_t *)repr, *outlen, &tmp_out, outlen, arena);
+    repr = (char *)tmp_out;
+  }
+
+  /* Copy the AST representation to the output buffer, if necessary */
+  if (our_arena) {
+    *out = (uint8_t *)malloc(*outlen);
+    if (!*out) {
+      quixcc_panic("Failed to allocate memory for AST representation");
+    }
+
+    memcpy(*out, repr, *outlen);
+    quixcc_arena_close(arena);
+  } else {
+    /* Otherwise, just return the pointer to the arena alloc'ed buffer */
+    *out = (uint8_t *)repr;
+  }
 }
 
 std::ostream &std::operator<<(std::ostream &os, const UnaryOp &op) {

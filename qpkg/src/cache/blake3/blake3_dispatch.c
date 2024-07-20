@@ -58,12 +58,11 @@ static void cpuid(uint32_t out[4], uint32_t id) {
 #if defined(_MSC_VER)
   __cpuid((int *)out, id);
 #elif defined(__i386__) || defined(_M_IX86)
-  __asm__ __volatile__(
-      "movl %%ebx, %1\n"
-      "cpuid\n"
-      "xchgl %1, %%ebx\n"
-      : "=a"(out[0]), "=r"(out[1]), "=c"(out[2]), "=d"(out[3])
-      : "a"(id));
+  __asm__ __volatile__("movl %%ebx, %1\n"
+                       "cpuid\n"
+                       "xchgl %1, %%ebx\n"
+                       : "=a"(out[0]), "=r"(out[1]), "=c"(out[2]), "=d"(out[3])
+                       : "a"(id));
 #else
   __asm__ __volatile__("cpuid\n"
                        : "=a"(out[0]), "=b"(out[1]), "=c"(out[2]), "=d"(out[3])
@@ -75,12 +74,11 @@ static void cpuidex(uint32_t out[4], uint32_t id, uint32_t sid) {
 #if defined(_MSC_VER)
   __cpuidex((int *)out, id, sid);
 #elif defined(__i386__) || defined(_M_IX86)
-  __asm__ __volatile__(
-      "movl %%ebx, %1\n"
-      "cpuid\n"
-      "xchgl %1, %%ebx\n"
-      : "=a"(out[0]), "=r"(out[1]), "=c"(out[2]), "=d"(out[3])
-      : "a"(id), "c"(sid));
+  __asm__ __volatile__("movl %%ebx, %1\n"
+                       "cpuid\n"
+                       "xchgl %1, %%ebx\n"
+                       : "=a"(out[0]), "=r"(out[1]), "=c"(out[2]), "=d"(out[3])
+                       : "a"(id), "c"(sid));
 #else
   __asm__ __volatile__("cpuid\n"
                        : "=a"(out[0]), "=b"(out[1]), "=c"(out[2]), "=d"(out[3])
@@ -129,21 +127,28 @@ static
 #if defined(__amd64__) || defined(_M_X64)
     features |= SSE2;
 #else
-    if (*edx & (1UL << 26)) features |= SSE2;
+    if (*edx & (1UL << 26))
+      features |= SSE2;
 #endif
-    if (*ecx & (1UL << 9)) features |= SSSE3;
-    if (*ecx & (1UL << 19)) features |= SSE41;
+    if (*ecx & (1UL << 9))
+      features |= SSSE3;
+    if (*ecx & (1UL << 19))
+      features |= SSE41;
 
-    if (*ecx & (1UL << 27)) {  // OSXSAVE
+    if (*ecx & (1UL << 27)) { // OSXSAVE
       const uint64_t mask = xgetbv();
-      if ((mask & 6) == 6) {  // SSE and AVX states
-        if (*ecx & (1UL << 28)) features |= AVX;
+      if ((mask & 6) == 6) { // SSE and AVX states
+        if (*ecx & (1UL << 28))
+          features |= AVX;
         if (max_id >= 7) {
           cpuidex(regs, 7, 0);
-          if (*ebx & (1UL << 5)) features |= AVX2;
-          if ((mask & 224) == 224) {  // Opmask, ZMM_Hi256, Hi16_Zmm
-            if (*ebx & (1UL << 31)) features |= AVX512VL;
-            if (*ebx & (1UL << 16)) features |= AVX512F;
+          if (*ebx & (1UL << 5))
+            features |= AVX2;
+          if ((mask & 224) == 224) { // Opmask, ZMM_Hi256, Hi16_Zmm
+            if (*ebx & (1UL << 31))
+              features |= AVX512VL;
+            if (*ebx & (1UL << 16))
+              features |= AVX512F;
           }
         }
       }
@@ -157,10 +162,8 @@ static
   }
 }
 
-void blake3_compress_in_place(uint32_t cv[8],
-                              const uint8_t block[BLAKE3_BLOCK_LEN],
-                              uint8_t block_len, uint64_t counter,
-                              uint8_t flags) {
+void blake3_compress_in_place(uint32_t cv[8], const uint8_t block[BLAKE3_BLOCK_LEN],
+                              uint8_t block_len, uint64_t counter, uint8_t flags) {
 #if defined(IS_X86)
   const enum cpu_feature features = get_cpu_features();
   MAYBE_UNUSED(features);
@@ -186,10 +189,8 @@ void blake3_compress_in_place(uint32_t cv[8],
   blake3_compress_in_place_portable(cv, block, block_len, counter, flags);
 }
 
-void blake3_compress_xof(const uint32_t cv[8],
-                         const uint8_t block[BLAKE3_BLOCK_LEN],
-                         uint8_t block_len, uint64_t counter, uint8_t flags,
-                         uint8_t out[64]) {
+void blake3_compress_xof(const uint32_t cv[8], const uint8_t block[BLAKE3_BLOCK_LEN],
+                         uint8_t block_len, uint64_t counter, uint8_t flags, uint8_t out[64]) {
 #if defined(IS_X86)
   const enum cpu_feature features = get_cpu_features();
   MAYBE_UNUSED(features);
@@ -215,56 +216,50 @@ void blake3_compress_xof(const uint32_t cv[8],
   blake3_compress_xof_portable(cv, block, block_len, counter, flags, out);
 }
 
-void blake3_hash_many(const uint8_t *const *inputs, size_t num_inputs,
-                      size_t blocks, const uint32_t key[8], uint64_t counter,
-                      bool increment_counter, uint8_t flags,
-                      uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
+void blake3_hash_many(const uint8_t *const *inputs, size_t num_inputs, size_t blocks,
+                      const uint32_t key[8], uint64_t counter, bool increment_counter,
+                      uint8_t flags, uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
 #if defined(IS_X86)
   const enum cpu_feature features = get_cpu_features();
   MAYBE_UNUSED(features);
 #if !defined(BLAKE3_NO_AVX512)
   if ((features & (AVX512F | AVX512VL)) == (AVX512F | AVX512VL)) {
-    blake3_hash_many_avx512(inputs, num_inputs, blocks, key, counter,
-                            increment_counter, flags, flags_start, flags_end,
-                            out);
+    blake3_hash_many_avx512(inputs, num_inputs, blocks, key, counter, increment_counter, flags,
+                            flags_start, flags_end, out);
     return;
   }
 #endif
 #if !defined(BLAKE3_NO_AVX2)
   if (features & AVX2) {
-    blake3_hash_many_avx2(inputs, num_inputs, blocks, key, counter,
-                          increment_counter, flags, flags_start, flags_end,
-                          out);
+    blake3_hash_many_avx2(inputs, num_inputs, blocks, key, counter, increment_counter, flags,
+                          flags_start, flags_end, out);
     return;
   }
 #endif
 #if !defined(BLAKE3_NO_SSE41)
   if (features & SSE41) {
-    blake3_hash_many_sse41(inputs, num_inputs, blocks, key, counter,
-                           increment_counter, flags, flags_start, flags_end,
-                           out);
+    blake3_hash_many_sse41(inputs, num_inputs, blocks, key, counter, increment_counter, flags,
+                           flags_start, flags_end, out);
     return;
   }
 #endif
 #if !defined(BLAKE3_NO_SSE2)
   if (features & SSE2) {
-    blake3_hash_many_sse2(inputs, num_inputs, blocks, key, counter,
-                          increment_counter, flags, flags_start, flags_end,
-                          out);
+    blake3_hash_many_sse2(inputs, num_inputs, blocks, key, counter, increment_counter, flags,
+                          flags_start, flags_end, out);
     return;
   }
 #endif
 #endif
 
 #if BLAKE3_USE_NEON == 1
-  blake3_hash_many_neon(inputs, num_inputs, blocks, key, counter,
-                        increment_counter, flags, flags_start, flags_end, out);
+  blake3_hash_many_neon(inputs, num_inputs, blocks, key, counter, increment_counter, flags,
+                        flags_start, flags_end, out);
   return;
 #endif
 
-  blake3_hash_many_portable(inputs, num_inputs, blocks, key, counter,
-                            increment_counter, flags, flags_start, flags_end,
-                            out);
+  blake3_hash_many_portable(inputs, num_inputs, blocks, key, counter, increment_counter, flags,
+                            flags_start, flags_end, out);
 }
 
 // The dynamically detected SIMD degree of the current platform.

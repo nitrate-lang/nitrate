@@ -31,9 +31,9 @@
 
 #include <quixcc/Library.h>
 
-#include <dev/bench/bench.hh>
 #include <chrono>
 #include <cmath>
+#include <dev/bench/bench.hh>
 #include <fstream>
 #include <iostream>
 
@@ -57,16 +57,14 @@ bool do_bench_lexer(std::chrono::system_clock::time_point &start,
   code = fmemopen((void *)qpkg::dev::bench::test_source_code.data(),
                   qpkg::dev::bench::test_source_code.size(), "r");
   if (!code) {
-    std::cerr << "do_bench (internal error): Failed to open code stream."
-              << std::endl;
+    std::cerr << "do_bench (internal error): Failed to open code stream." << std::endl;
     fclose(outf);
     return false;
   }
 
   job = quixcc_cc_new();
   if (!job) {
-    std::cerr << "do_bench (internal error): Failed to create job."
-              << std::endl;
+    std::cerr << "do_bench (internal error): Failed to create job." << std::endl;
     fclose(outf);
     fclose(code);
     return false;
@@ -78,7 +76,8 @@ bool do_bench_lexer(std::chrono::system_clock::time_point &start,
   start = std::chrono::system_clock::now();
   while (1) {
     tok = quixcc_cc_next(job);
-    if (quixcc_cc_lex_is(&tok, QUIXCC_LEX_EOF)) break;
+    if (quixcc_cc_lex_is(&tok, QUIXCC_LEX_EOF))
+      break;
     if (quixcc_cc_lex_is(&tok, QUIXCC_LEX_UNK)) {
       throw std::runtime_error("Lexer error");
     }
@@ -88,8 +87,7 @@ bool do_bench_lexer(std::chrono::system_clock::time_point &start,
   end = std::chrono::system_clock::now();
 
   if (!quixcc_cc_dispose(job)) {
-    std::cerr << "do_bench (internal error): Failed to dispose job."
-              << std::endl;
+    std::cerr << "do_bench (internal error): Failed to dispose job." << std::endl;
     fclose(outf);
     fclose(code);
     free(outbuf);
@@ -130,20 +128,17 @@ int qpkg::dev::bench::run_benchmark_lexer() {
       return -1;
     }
 
-    double time_ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+    double time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     times.push_back(time_ns);
 
     double full_approx = time_ns * ROUNDS;
     double percent = (time_ns * (i + 1)) / full_approx;
 
-    progress.update(percent, "Round " + std::to_string(i + 1) + " of " +
-                                 std::to_string(ROUNDS));
+    progress.update(percent, "Round " + std::to_string(i + 1) + " of " + std::to_string(ROUNDS));
   }
 
   /*================ CALCULATE RESULTS ================*/
-  std::vector<double> throughput;  // Kbit/s
+  std::vector<double> throughput; // Kbit/s
 
   for (size_t i = 0; i < ROUNDS; i++) {
     size_t total_kbit = qpkg::dev::bench::test_source_code.size() / 1024 * 8;
@@ -161,11 +156,13 @@ int qpkg::dev::bench::run_benchmark_lexer() {
   double std_dev = 0;
   double mean = 0;
   for (size_t i = 0; i < throughput.size(); i++) {
-    progress.result("Round " + std::to_string(i + 1) + ":\t" +
-                    std::to_string(throughput[i]) + " Kbit/s");
+    progress.result("Round " + std::to_string(i + 1) + ":\t" + std::to_string(throughput[i]) +
+                    " Kbit/s");
     sum += throughput[i];
-    if (throughput[i] < min) min = throughput[i];
-    if (throughput[i] > max) max = throughput[i];
+    if (throughput[i] < min)
+      min = throughput[i];
+    if (throughput[i] > max)
+      max = throughput[i];
   }
   mean = sum / throughput.size();
 
@@ -175,8 +172,7 @@ int qpkg::dev::bench::run_benchmark_lexer() {
   std_dev = std::sqrt(std_dev / (throughput.size() - 1));
   progress.result("Min:\t" + std::to_string(min) + " Kbit/s");
   progress.result("Max:\t" + std::to_string(max) + " Kbit/s");
-  progress.result("Mean:\t" + std::to_string(mean) +
-                  " Kbit/s");
+  progress.result("Mean:\t" + std::to_string(mean) + " Kbit/s");
   progress.result("Std. Dev.:\t" + std::to_string(std_dev) + " Kbit/s");
   progress.end_result();
 

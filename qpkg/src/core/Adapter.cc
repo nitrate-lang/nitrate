@@ -36,8 +36,7 @@
 #include <mutex>
 #include <sstream>
 
-std::string qpkg::core::FormatAdapter::format(const std::string &msg,
-                                              qpkg::core::Level lvl,
+std::string qpkg::core::FormatAdapter::format(const std::string &msg, qpkg::core::Level lvl,
                                               float weight) {
   struct State {
     float m_progress;
@@ -67,34 +66,33 @@ std::string qpkg::core::FormatAdapter::format(const std::string &msg,
   ss << percent << "%] ";
 
   switch (lvl) {
-    case qpkg::core::Level::DEBUG:
-      ss << msg;
-      break;
-    case qpkg::core::Level::GOOD:
-      ss << "\x1b[32;49m" << msg << "\x1b[0m";
-      break;
-    case qpkg::core::Level::BOLD:
-      ss << "\x1b[32;49;1m" << msg << "\x1b[0m";
-      break;
-    case qpkg::core::Level::INFO:
-      ss << msg;
-      break;
-    case qpkg::core::Level::WARN:
-      ss << "\x1b[36;49m" << msg << "\x1b[0m";
-      break;
-    case qpkg::core::Level::ERROR:
-      ss << "\x1b[31;49;1m" << msg << "\x1b[0m";
-      break;
-    case qpkg::core::Level::FATAL:
-      ss << "\x1b[31;49;1;4m" << msg << "\x1b[0m";
-      break;
+  case qpkg::core::Level::DEBUG:
+    ss << msg;
+    break;
+  case qpkg::core::Level::GOOD:
+    ss << "\x1b[32;49m" << msg << "\x1b[0m";
+    break;
+  case qpkg::core::Level::BOLD:
+    ss << "\x1b[32;49;1m" << msg << "\x1b[0m";
+    break;
+  case qpkg::core::Level::INFO:
+    ss << msg;
+    break;
+  case qpkg::core::Level::WARN:
+    ss << "\x1b[36;49m" << msg << "\x1b[0m";
+    break;
+  case qpkg::core::Level::ERROR:
+    ss << "\x1b[31;49;1m" << msg << "\x1b[0m";
+    break;
+  case qpkg::core::Level::FATAL:
+    ss << "\x1b[31;49;1;4m" << msg << "\x1b[0m";
+    break;
   }
 
   return ss.str();
 }
 
-std::string qpkg::core::FormatAdapter::format_nocolor(const std::string &msg,
-                                                      qpkg::core::Level lvl,
+std::string qpkg::core::FormatAdapter::format_nocolor(const std::string &msg, qpkg::core::Level lvl,
                                                       float weight) {
   struct State {
     float m_progress;
@@ -124,36 +122,36 @@ std::string qpkg::core::FormatAdapter::format_nocolor(const std::string &msg,
   ss << percent << "%] ";
 
   switch (lvl) {
-    case qpkg::core::Level::DEBUG:
-      ss << msg;
-      break;
-    case qpkg::core::Level::GOOD:
-      ss << "[OKAY   " << msg << "]";
-      break;
-    case qpkg::core::Level::BOLD:
-      ss << "[!OKAY  " << msg << "]";
-      break;
-    case qpkg::core::Level::INFO:
-      ss << msg;
-      break;
-    case qpkg::core::Level::WARN:
-      ss << "[WARN   " << msg << "]";
-      break;
-    case qpkg::core::Level::ERROR:
-      ss << "[!ERROR " << msg << "]";
-      break;
-    case qpkg::core::Level::FATAL:
-      ss << "[!PANIC " << msg << "]";
-      break;
+  case qpkg::core::Level::DEBUG:
+    ss << msg;
+    break;
+  case qpkg::core::Level::GOOD:
+    ss << "[OKAY   " << msg << "]";
+    break;
+  case qpkg::core::Level::BOLD:
+    ss << "[!OKAY  " << msg << "]";
+    break;
+  case qpkg::core::Level::INFO:
+    ss << msg;
+    break;
+  case qpkg::core::Level::WARN:
+    ss << "[WARN   " << msg << "]";
+    break;
+  case qpkg::core::Level::ERROR:
+    ss << "[!ERROR " << msg << "]";
+    break;
+  case qpkg::core::Level::FATAL:
+    ss << "[!PANIC " << msg << "]";
+    break;
   }
 
   return ss.str();
 }
 
-void qpkg::core::FormatAdapter::push(const std::string &msg,
-                                     qpkg::core::Level lvl, float weight,
+void qpkg::core::FormatAdapter::push(const std::string &msg, qpkg::core::Level lvl, float weight,
                                      bool use_colors, bool debug) {
-  if (lvl == qpkg::core::Level::DEBUG && !debug) return;
+  if (lvl == qpkg::core::Level::DEBUG && !debug)
+    return;
 
   std::string f;
   if (use_colors)
@@ -163,7 +161,8 @@ void qpkg::core::FormatAdapter::push(const std::string &msg,
 
   /* We must call format because empty messages may update internal state
    * (weight). */
-  if (msg.empty()) return;
+  if (msg.empty())
+    return;
 
   if (lvl == qpkg::core::Level::ERROR || lvl == qpkg::core::Level::FATAL) {
     log_ewrite(f);
@@ -173,8 +172,7 @@ void qpkg::core::FormatAdapter::push(const std::string &msg,
 }
 
 void qpkg::core::FormatAdapter::PluginAndInit(bool debug, bool use_colors) {
-  auto push_f = [use_colors, debug](const std::string &msg,
-                                    qpkg::core::Level lvl, float weight) {
+  auto push_f = [use_colors, debug](const std::string &msg, qpkg::core::Level lvl, float weight) {
     push(msg, lvl, weight, use_colors, debug);
   };
 

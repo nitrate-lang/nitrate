@@ -77,9 +77,7 @@ using namespace argparse;
 bool g_use_colors = true;
 
 void setup_argparse_init(ArgumentParser &parser) {
-  parser.add_argument("package-name")
-      .help("name of package to initialize")
-      .nargs(1);
+  parser.add_argument("package-name").help("name of package to initialize").nargs(1);
 
   parser.add_argument("-o", "--output")
       .help("output directory")
@@ -122,10 +120,7 @@ void setup_argparse_init(ArgumentParser &parser) {
       .default_value(std::string(""))
       .nargs(1);
 
-  parser.add_argument("-u", "--url")
-      .help("URL of package")
-      .default_value(std::string(""))
-      .nargs(1);
+  parser.add_argument("-u", "--url").help("URL of package").default_value(std::string("")).nargs(1);
 
   parser.add_argument("-d", "--description")
       .help("description of package")
@@ -167,23 +162,20 @@ void setup_argparse_build(ArgumentParser &parser) {
 
   auto &optimization_group = parser.add_mutually_exclusive_group();
   optimization_group.add_argument("-O", "--optimize")
-      .help(
-          "request optimization from build pipeline. not all pipelines will "
-          "support this, and it may be ignored")
+      .help("request optimization from build pipeline. not all pipelines will "
+            "support this, and it may be ignored")
       .default_value(false)
       .implicit_value(true);
 
   optimization_group.add_argument("-Os", "--optimize-size")
-      .help(
-          "request size optimization from build pipeline. not all pipelines "
-          "will support this, and it may be ignored")
+      .help("request size optimization from build pipeline. not all pipelines "
+            "will support this, and it may be ignored")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("-g", "--debug")
-      .help(
-          "request that the pipeline generate and preserve debug information. "
-          "not all pipelines will support this, and it may be ignored")
+      .help("request that the pipeline generate and preserve debug information. "
+            "not all pipelines will support this, and it may be ignored")
       .default_value(false)
       .implicit_value(true);
 
@@ -198,23 +190,20 @@ void setup_argparse_build(ArgumentParser &parser) {
       .nargs(1);
 
   parser.add_argument("--supply-chain-insecure")
-      .help(
-          "do not verify OR require dependencies to be validly signed by a "
-          "trusted source")
+      .help("do not verify OR require dependencies to be validly signed by a "
+            "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help(
-          "add a trusted public key fingerprint that may be used to verify "
-          "dependencies (only applies to this build)")
+      .help("add a trusted public key fingerprint that may be used to verify "
+            "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help(
-          "add a file containing trusted public key fingerprints that may be "
-          "used to verify dependencies (only applies to this build)")
+      .help("add a file containing trusted public key fingerprints that may be "
+            "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 }
@@ -229,9 +218,7 @@ void setup_argparse_clean(ArgumentParser &parser) {
 }
 
 void setup_argparse_update(ArgumentParser &parser) {
-  parser.add_argument("package-name")
-      .help("name of package to update")
-      .nargs(1);
+  parser.add_argument("package-name").help("name of package to update").nargs(1);
 
   parser.add_argument("-v", "--verbose")
       .help("print verbose output")
@@ -239,23 +226,20 @@ void setup_argparse_update(ArgumentParser &parser) {
       .implicit_value(true);
 
   parser.add_argument("--supply-chain-insecure")
-      .help(
-          "do not verify OR require dependencies to be validly signed by a "
-          "trusted source")
+      .help("do not verify OR require dependencies to be validly signed by a "
+            "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help(
-          "add a trusted public key fingerprint that may be used to verify "
-          "dependencies (only applies to this build)")
+      .help("add a trusted public key fingerprint that may be used to verify "
+            "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help(
-          "add a file containing trusted public key fingerprints that may be "
-          "used to verify dependencies (only applies to this build)")
+      .help("add a file containing trusted public key fingerprints that may be "
+            "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 }
@@ -284,31 +268,26 @@ void setup_argparse_install(ArgumentParser &parser) {
       .implicit_value(true);
 
   parser.add_argument("--supply-chain-insecure")
-      .help(
-          "do not verify OR require dependencies to be validly signed by a "
-          "trusted source")
+      .help("do not verify OR require dependencies to be validly signed by a "
+            "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help(
-          "add a trusted public key fingerprint that may be used to verify "
-          "dependencies (only applies to this build)")
+      .help("add a trusted public key fingerprint that may be used to verify "
+            "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help(
-          "add a file containing trusted public key fingerprints that may be "
-          "used to verify dependencies (only applies to this build)")
+      .help("add a file containing trusted public key fingerprints that may be "
+            "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 }
 
 void setup_argparse_doc(ArgumentParser &parser) {
-  parser.add_argument("package-src")
-      .help("name of package to document")
-      .nargs(1);
+  parser.add_argument("package-src").help("name of package to document").nargs(1);
 
   parser.add_argument("-f", "--format")
       .help("output format")
@@ -337,9 +316,8 @@ void setup_argparse_doc(ArgumentParser &parser) {
       .nargs(1);
 
   parser.add_argument("-C", "--certify")
-      .help(
-          "digitally sign the documentation with the specified PKCS#12 "
-          "certificate")
+      .help("digitally sign the documentation with the specified PKCS#12 "
+            "certificate")
       .default_value(std::string(""))
       .nargs(1);
 
@@ -349,23 +327,20 @@ void setup_argparse_doc(ArgumentParser &parser) {
       .nargs(1);
 
   parser.add_argument("--supply-chain-insecure")
-      .help(
-          "do not verify OR require dependencies to be validly signed by a "
-          "trusted source")
+      .help("do not verify OR require dependencies to be validly signed by a "
+            "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help(
-          "add a trusted public key fingerprint that may be used to verify "
-          "dependencies (only applies to this build)")
+      .help("add a trusted public key fingerprint that may be used to verify "
+            "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help(
-          "add a file containing trusted public key fingerprints that may be "
-          "used to verify dependencies (only applies to this build)")
+      .help("add a file containing trusted public key fingerprints that may be "
+            "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 }
@@ -379,15 +354,13 @@ void setup_argparse_env(ArgumentParser &parser) {
       .implicit_value(true);
 
   parser.add_argument("--base64")
-      .help(
-          "print the value of the environment variable as a base64 encoded "
-          "string")
+      .help("print the value of the environment variable as a base64 encoded "
+            "string")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--hex")
-      .help(
-          "print the value of the environment variable as a hex encoded string")
+      .help("print the value of the environment variable as a hex encoded string")
       .default_value(false)
       .implicit_value(true);
 
@@ -483,30 +456,26 @@ void setup_argparse_test(ArgumentParser &parser) {
       .nargs(1);
 
   parser.add_argument("--supply-chain-insecure")
-      .help(
-          "do not verify OR require dependencies to be validly signed by a "
-          "trusted source")
+      .help("do not verify OR require dependencies to be validly signed by a "
+            "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help(
-          "add a trusted public key fingerprint that may be used to verify "
-          "dependencies (only applies to this build)")
+      .help("add a trusted public key fingerprint that may be used to verify "
+            "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help(
-          "add a file containing trusted public key fingerprints that may be "
-          "used to verify dependencies (only applies to this build)")
+      .help("add a file containing trusted public key fingerprints that may be "
+            "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("-C", "--certify")
-      .help(
-          "digitally sign the test reports with the specified PKCS#12 "
-          "certificate")
+      .help("digitally sign the test reports with the specified PKCS#12 "
+            "certificate")
       .default_value(std::string(""))
       .nargs(1);
 
@@ -519,8 +488,7 @@ void setup_argparse_test(ArgumentParser &parser) {
 #if QPKG_DEV_TOOLS
 void setup_argparse_dev(
     ArgumentParser &parser,
-    std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
-        &subparsers) {
+    std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) {
   /*================= CONFIG BASIC =================*/
   parser.add_argument("-v", "--verbose")
       .help("print verbose output")
@@ -534,8 +502,8 @@ void setup_argparse_dev(
   auto bench = std::make_unique<ArgumentParser>("bench");
 
   bench->add_argument("-n", "--name")
-      .choices("lexer", "parser", "quix-ir", "delta-ir", "llvm-ir",
-               "llvm-codegen", "c11-codegen", "pipeline")
+      .choices("lexer", "parser", "quix-ir", "delta-ir", "llvm-ir", "llvm-codegen", "c11-codegen",
+               "pipeline")
       .help("name of benchmark to run");
 
   bench->add_argument("--list")
@@ -557,17 +525,14 @@ void setup_argparse_dev(
 #endif
 
 void setup_argparse(
-    ArgumentParser &parser, ArgumentParser &init_parser,
-    ArgumentParser &build_parser, ArgumentParser &clean_parser,
-    ArgumentParser &update_parser, ArgumentParser &install_parser,
-    ArgumentParser &doc_parser, ArgumentParser &env_parser,
-    ArgumentParser &fmt_parser, ArgumentParser &list_parser,
-    ArgumentParser &test_parser
+    ArgumentParser &parser, ArgumentParser &init_parser, ArgumentParser &build_parser,
+    ArgumentParser &clean_parser, ArgumentParser &update_parser, ArgumentParser &install_parser,
+    ArgumentParser &doc_parser, ArgumentParser &env_parser, ArgumentParser &fmt_parser,
+    ArgumentParser &list_parser, ArgumentParser &test_parser
 #if QPKG_DEV_TOOLS
     ,
     ArgumentParser &dev_parser,
-    std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
-        &dev_subparsers
+    std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &dev_subparsers
 #endif
 ) {
   using namespace argparse;
@@ -607,23 +572,21 @@ void setup_argparse(
 }
 
 int run_init_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   using namespace qpkg::init;
 
-  PackageBuilder builder =
-      PackageBuilder()
-          .output(parser.get<std::string>("--output"))
-          .name(parser.get<std::string>("package-name"))
-          .license(parser.get<std::string>("--license"))
-          .author(parser.get<std::string>("--author"))
-          .email(parser.get<std::string>("--email"))
-          .url(parser.get<std::string>("--url"))
-          .version(parser.get<std::string>("--version"))
-          .description(parser.get<std::string>("--description"))
-          .verbose(parser["--verbose"] == true)
-          .force(parser["--force"] == true);
+  PackageBuilder builder = PackageBuilder()
+                               .output(parser.get<std::string>("--output"))
+                               .name(parser.get<std::string>("package-name"))
+                               .license(parser.get<std::string>("--license"))
+                               .author(parser.get<std::string>("--author"))
+                               .email(parser.get<std::string>("--email"))
+                               .url(parser.get<std::string>("--url"))
+                               .version(parser.get<std::string>("--version"))
+                               .description(parser.get<std::string>("--description"))
+                               .verbose(parser["--verbose"] == true)
+                               .force(parser["--force"] == true);
 
   if (parser.get<std::string>("--type") == "program")
     builder.type(PackageType::PROGRAM);
@@ -636,8 +599,7 @@ int run_init_mode(const ArgumentParser &parser) {
 }
 
 int run_build_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   qpkg::build::EngineBuilder builder;
 
@@ -646,17 +608,23 @@ int run_build_mode(const ArgumentParser &parser) {
   if (parser.is_used("--output"))
     builder.set_output(parser.get<std::string>("--output"));
 
-  if (parser["--no-cache"] == true) builder.disable_cache();
+  if (parser["--no-cache"] == true)
+    builder.disable_cache();
 
-  if (parser.is_used("--jobs")) builder.jobs(parser.get<uint32_t>("--jobs"));
+  if (parser.is_used("--jobs"))
+    builder.jobs(parser.get<uint32_t>("--jobs"));
 
-  if (parser["--verbose"] == true) builder.verbose();
+  if (parser["--verbose"] == true)
+    builder.verbose();
 
-  if (parser["--optimize"] == true) builder.optimize();
+  if (parser["--optimize"] == true)
+    builder.optimize();
 
-  if (parser["--optimize-size"] == true) builder.optimize_size();
+  if (parser["--optimize-size"] == true)
+    builder.optimize_size();
 
-  if (parser["--debug"] == true) builder.debug();
+  if (parser["--debug"] == true)
+    builder.debug();
 
   if (parser.is_used("--certify"))
     builder.certify(parser.get<std::string>("--certify"));
@@ -664,7 +632,8 @@ int run_build_mode(const ArgumentParser &parser) {
   if (parser.is_used("--certify-password"))
     builder.certify_password(parser.get<std::string>("--certify-password"));
 
-  if (parser["--supply-chain-insecure"] == true) builder.disable_sigcheck();
+  if (parser["--supply-chain-insecure"] == true)
+    builder.disable_sigcheck();
 
   if (parser.is_used("--trustkey"))
     builder.trustkey(parser.get<std::string>("--trustkey"));
@@ -682,8 +651,7 @@ int run_build_mode(const ArgumentParser &parser) {
 }
 
 int run_clean_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   return qpkg::clean::CleanPackageSource(parser.get<std::string>("package-src"),
                                          parser["--verbose"] == true)
@@ -692,8 +660,7 @@ int run_clean_mode(const ArgumentParser &parser) {
 }
 
 int run_update_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   (void)parser;
   std::cerr << "update not implemented yet" << std::endl;
@@ -701,8 +668,7 @@ int run_update_mode(const ArgumentParser &parser) {
 }
 
 int run_install_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   std::string url = parser.get<std::string>("src");
   std::string dest, package_name;
@@ -727,7 +693,8 @@ int run_install_mode(const ArgumentParser &parser) {
     return -1;
   }
 
-  if (parser["--no-build"] == true) return 0;
+  if (parser["--no-build"] == true)
+    return 0;
 
   qpkg::build::EngineBuilder builder;
   std::filesystem::path dest_path = dest + "/" + package_name;
@@ -768,8 +735,7 @@ int run_install_mode(const ArgumentParser &parser) {
 }
 
 int run_doc_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   (void)parser;
   std::cerr << "doc not implemented yet" << std::endl;
@@ -777,8 +743,7 @@ int run_doc_mode(const ArgumentParser &parser) {
 }
 
 int run_env_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   (void)parser;
   std::cerr << "env not implemented yet" << std::endl;
@@ -786,8 +751,7 @@ int run_env_mode(const ArgumentParser &parser) {
 }
 
 int run_fmt_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   (void)parser;
   std::cerr << "fmt not implemented yet" << std::endl;
@@ -795,8 +759,7 @@ int run_fmt_mode(const ArgumentParser &parser) {
 }
 
 int run_list_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   (void)parser;
   std::cerr << "list not implemented yet" << std::endl;
@@ -812,14 +775,14 @@ int run_run_mode(const std::vector<std::string> &args) {
   }
 
   qpkg::run::RunScript script(args[0]);
-  if (!script.is_okay()) return -1;
+  if (!script.is_okay())
+    return -1;
 
   return script.run(args);
 }
 
 int run_test_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   (void)parser;
   std::cerr << "test not implemented yet" << std::endl;
@@ -829,10 +792,8 @@ int run_test_mode(const ArgumentParser &parser) {
 #if QPKG_DEV_TOOLS
 int run_dev_mode(
     const ArgumentParser &parser,
-    const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
-        &subparsers) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true,
-                                           g_use_colors);
+    const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) {
+  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   if (parser.is_subcommand_used("bench")) {
     enum class Benchmark {
@@ -894,25 +855,25 @@ int run_dev_mode(
     }
 
     switch (bench_type) {
-      case Benchmark::LEXER:
-        return qpkg::dev::bench::run_benchmark_lexer();
-      case Benchmark::PARSER:
-        return qpkg::dev::bench::run_benchmark_parser();
-      case Benchmark::Q_IR:
-        return qpkg::dev::bench::run_benchmark_quix_ir();
-      case Benchmark::DELTA_IR:
-        return qpkg::dev::bench::run_benchmark_delta_ir();
-      case Benchmark::LLVM_IR:
-        return qpkg::dev::bench::run_benchmark_llvm_ir();
-      case Benchmark::LLVM_CODEGEN:
-        return qpkg::dev::bench::run_benchmark_llvm_codegen();
-      case Benchmark::C11_CODEGEN:
-        return qpkg::dev::bench::run_benchmark_c11_codegen();
-      case Benchmark::PIPELINE:
-        return qpkg::dev::bench::run_benchmark_pipeline();
-      default:
-        std::cerr << "Unknown benchmark name: " << bench_name << std::endl;
-        return 1;
+    case Benchmark::LEXER:
+      return qpkg::dev::bench::run_benchmark_lexer();
+    case Benchmark::PARSER:
+      return qpkg::dev::bench::run_benchmark_parser();
+    case Benchmark::Q_IR:
+      return qpkg::dev::bench::run_benchmark_quix_ir();
+    case Benchmark::DELTA_IR:
+      return qpkg::dev::bench::run_benchmark_delta_ir();
+    case Benchmark::LLVM_IR:
+      return qpkg::dev::bench::run_benchmark_llvm_ir();
+    case Benchmark::LLVM_CODEGEN:
+      return qpkg::dev::bench::run_benchmark_llvm_codegen();
+    case Benchmark::C11_CODEGEN:
+      return qpkg::dev::bench::run_benchmark_c11_codegen();
+    case Benchmark::PIPELINE:
+      return qpkg::dev::bench::run_benchmark_pipeline();
+    default:
+      std::cerr << "Unknown benchmark name: " << bench_name << std::endl;
+      return 1;
     }
 
     return 0;
@@ -958,14 +919,12 @@ int qpkg_main(std::vector<std::string> args) {
 #if QPKG_DEV_TOOLS
   ArgumentParser dev_parser("dev");
 
-  std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
-      dev_subparsers;
+  std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> dev_subparsers;
 #endif
 
   ArgumentParser program("qpkg", VERSION_STR);
-  setup_argparse(program, init_parser, build_parser, clean_parser,
-                 update_parser, install_parser, doc_parser, env_parser,
-                 fmt_parser, list_parser, test_parser
+  setup_argparse(program, init_parser, build_parser, clean_parser, update_parser, install_parser,
+                 doc_parser, env_parser, fmt_parser, list_parser, test_parser
 #if QPKG_DEV_TOOLS
                  ,
                  dev_parser, dev_subparsers

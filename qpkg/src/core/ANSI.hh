@@ -41,101 +41,90 @@
 #include <string_view>
 
 namespace qpkg {
-namespace ansi {
-enum class Style {
-  /*==== Text Color ====*/
-  FG_BLACK = 1 << 0,
-  FG_RED = 1 << 1,
-  FG_GREEN = 1 << 2,
-  FG_YELLOW = 1 << 3,
-  FG_BLUE = 1 << 4,
-  FG_PURPLE = 1 << 5,
-  FG_CYAN = 1 << 6,
-  FG_WHITE = 1 << 7,
-  FG_DEFAULT = 1 << 8,
+  namespace ansi {
+    enum class Style {
+      /*==== Text Color ====*/
+      FG_BLACK = 1 << 0,
+      FG_RED = 1 << 1,
+      FG_GREEN = 1 << 2,
+      FG_YELLOW = 1 << 3,
+      FG_BLUE = 1 << 4,
+      FG_PURPLE = 1 << 5,
+      FG_CYAN = 1 << 6,
+      FG_WHITE = 1 << 7,
+      FG_DEFAULT = 1 << 8,
 
-  /*==== Background Color ====*/
-  BG_BLACK = 1 << 9,
-  BG_RED = 1 << 10,
-  BG_GREEN = 1 << 11,
-  BG_YELLOW = 1 << 12,
-  BG_BLUE = 1 << 13,
-  BG_PURPLE = 1 << 14,
-  BG_CYAN = 1 << 15,
-  BG_WHITE = 1 << 16,
-  BG_DEFAULT = 1 << 17,
+      /*==== Background Color ====*/
+      BG_BLACK = 1 << 9,
+      BG_RED = 1 << 10,
+      BG_GREEN = 1 << 11,
+      BG_YELLOW = 1 << 12,
+      BG_BLUE = 1 << 13,
+      BG_PURPLE = 1 << 14,
+      BG_CYAN = 1 << 15,
+      BG_WHITE = 1 << 16,
+      BG_DEFAULT = 1 << 17,
 
-  /*==== Text Attribute ====*/
-  BOLD = 1 << 18,
-  UNDERLINE = 1 << 19,
-  ILTALIC = 1 << 20,
-  STRIKE = 1 << 21,
+      /*==== Text Attribute ====*/
+      BOLD = 1 << 18,
+      UNDERLINE = 1 << 19,
+      ILTALIC = 1 << 20,
+      STRIKE = 1 << 21,
 
-  RESET = FG_DEFAULT | BG_DEFAULT,
+      RESET = FG_DEFAULT | BG_DEFAULT,
 
-  COLOR_MASK = FG_BLACK | FG_RED | FG_GREEN | FG_YELLOW | FG_BLUE | FG_PURPLE |
-               FG_CYAN | FG_WHITE | FG_DEFAULT,
-  ATTRIBUTE_MASK = BOLD | UNDERLINE | ILTALIC | STRIKE,
-  BG_COLOR_MASK = BG_BLACK | BG_RED | BG_GREEN | BG_YELLOW | BG_BLUE |
-                  BG_PURPLE | BG_CYAN | BG_WHITE | BG_DEFAULT
-};
+      COLOR_MASK = FG_BLACK | FG_RED | FG_GREEN | FG_YELLOW | FG_BLUE | FG_PURPLE | FG_CYAN |
+                   FG_WHITE | FG_DEFAULT,
+      ATTRIBUTE_MASK = BOLD | UNDERLINE | ILTALIC | STRIKE,
+      BG_COLOR_MASK = BG_BLACK | BG_RED | BG_GREEN | BG_YELLOW | BG_BLUE | BG_PURPLE | BG_CYAN |
+                      BG_WHITE | BG_DEFAULT
+    };
 
-static inline Style operator|(Style a, Style b) {
-  return static_cast<Style>(static_cast<uint32_t>(a) |
-                            static_cast<uint32_t>(b));
-}
+    static inline Style operator|(Style a, Style b) {
+      return static_cast<Style>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+    }
 
-static inline Style operator&(Style a, Style b) {
-  return static_cast<Style>(static_cast<uint32_t>(a) &
-                            static_cast<uint32_t>(b));
-}
+    static inline Style operator&(Style a, Style b) {
+      return static_cast<Style>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+    }
 
-static inline bool operator==(Style a, uint32_t b) {
-  return static_cast<uint32_t>(a) == b;
-}
+    static inline bool operator==(Style a, uint32_t b) { return static_cast<uint32_t>(a) == b; }
 
-class AnsiCout final {
-  Style style;
+    class AnsiCout final {
+      Style style;
 
- public:
-  AnsiCout();
+  public:
+      AnsiCout();
 
-  AnsiCout &operator<<(const std::string &str);
+      AnsiCout &operator<<(const std::string &str);
 
-  template <class T>
-  AnsiCout &write(const T &msg) {
-    std::stringstream ss;
-    ss << msg;
-    return operator<<(ss.str());
-  }
+      template <class T> AnsiCout &write(const T &msg) {
+        std::stringstream ss;
+        ss << msg;
+        return operator<<(ss.str());
+      }
 
-  AnsiCout newline();
+      AnsiCout newline();
 
-  AnsiCout &set_style(Style style) {
-    this->style = style;
-    return *this;
-  }
-};
+      AnsiCout &set_style(Style style) {
+        this->style = style;
+        return *this;
+      }
+    };
 
-template <class T>
-AnsiCout &operator<<(AnsiCout &out, const T &msg) {
-  return out.write(msg);
-}
+    template <class T> AnsiCout &operator<<(AnsiCout &out, const T &msg) { return out.write(msg); }
 
-static inline void operator<<(AnsiCout &out,
-                              std::ostream &(*var)(std::ostream &)) {
-  if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
-    out.newline();
-  }
-}
+    static inline void operator<<(AnsiCout &out, std::ostream &(*var)(std::ostream &)) {
+      if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
+        out.newline();
+      }
+    }
 
-static inline void operator|=(AnsiCout &out, Style style) {
-  out.set_style(style);
-}
+    static inline void operator|=(AnsiCout &out, Style style) { out.set_style(style); }
 
-extern thread_local AnsiCout acout;
-}  // namespace ansi
+    extern thread_local AnsiCout acout;
+  } // namespace ansi
 
-}  // namespace qpkg
+} // namespace qpkg
 
-#endif  // __QPKG_CORE_ANSI_HH__
+#endif // __QPKG_CORE_ANSI_HH__

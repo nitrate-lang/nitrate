@@ -71,8 +71,7 @@ qpkg::dev::test::Progress::Progress(const std::string &title) {
   acout |= Style::BOLD | Style::FG_CYAN | Style::BG_DEFAULT;
   acout << "*";
   acout |= Style::RESET;
-  acout << " This may take a while. Status updates will be printed"
-        << std::endl;
+  acout << " This may take a while. Status updates will be printed" << std::endl;
   acout << "  periodically.\n" << std::endl;
 }
 
@@ -87,16 +86,16 @@ void qpkg::dev::test::Progress::result(const std::string &msg, Result type) {
 
   acout << "┃ ";
   switch (type) {
-    case Result::PASS:
-      acout |= Style::BOLD | Style::FG_GREEN | Style::BG_DEFAULT;
-      acout << "PASS";
-      acout |= Style::RESET;
-      break;
-    case Result::FAIL:
-      acout |= Style::BOLD | Style::FG_RED | Style::BG_DEFAULT;
-      acout << "FAIL";
-      acout |= Style::RESET;
-      break;
+  case Result::PASS:
+    acout |= Style::BOLD | Style::FG_GREEN | Style::BG_DEFAULT;
+    acout << "PASS";
+    acout |= Style::RESET;
+    break;
+  case Result::FAIL:
+    acout |= Style::BOLD | Style::FG_RED | Style::BG_DEFAULT;
+    acout << "FAIL";
+    acout |= Style::RESET;
+    break;
   }
 
   acout << " " << msg;
@@ -126,32 +125,28 @@ void qpkg::dev::test::Progress::end_result() {
   acout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━\n" << std::endl;
 }
 
-void qpkg::dev::test::Progress::begin_detail() {
-  acout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━┛\n";
-}
+void qpkg::dev::test::Progress::begin_detail() { acout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━┛\n"; }
 
-void qpkg::dev::test::Progress::detail(std::string_view test_id,
-                                       std::string_view name, Result type) {
+void qpkg::dev::test::Progress::detail(std::string_view test_id, std::string_view name,
+                                       Result type) {
   acout << "┃  ";
   switch (type) {
-    case Result::PASS:
-      acout |= Style::BOLD | Style::FG_GREEN | Style::BG_DEFAULT;
-      acout << "PASS";
-      acout |= Style::RESET;
-      break;
-    case Result::FAIL:
-      acout |= Style::BOLD | Style::FG_RED | Style::BG_DEFAULT;
-      acout << "FAIL";
-      acout |= Style::RESET;
-      break;
+  case Result::PASS:
+    acout |= Style::BOLD | Style::FG_GREEN | Style::BG_DEFAULT;
+    acout << "PASS";
+    acout |= Style::RESET;
+    break;
+  case Result::FAIL:
+    acout |= Style::BOLD | Style::FG_RED | Style::BG_DEFAULT;
+    acout << "FAIL";
+    acout |= Style::RESET;
+    break;
   }
 
   acout << " " << test_id << " - " << name << std::endl;
 }
 
-void qpkg::dev::test::Progress::end_detail() {
-  acout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━┓\n";
-}
+void qpkg::dev::test::Progress::end_detail() { acout << "┣━━━━━━━━━━━━━━━━━━━━━━━━━┓\n"; }
 
 void qpkg::dev::test::Progress::done(const std::string &outfile_name) {
   acout |= Style::BOLD | Style::FG_CYAN | Style::BG_DEFAULT;
@@ -175,4 +170,4 @@ void qpkg::dev::test::Progress::done(const std::string &outfile_name) {
   }
 }
 
-#endif  // QPKG_DEV_TOOLS
+#endif // QPKG_DEV_TOOLS

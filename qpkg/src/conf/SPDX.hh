@@ -36,9 +36,9 @@
 #include <string>
 
 namespace qpkg {
-namespace conf {
-extern const std::map<std::string, const char*> valid_licenses;
-}
-}  // namespace qpkg
+  namespace conf {
+    extern const std::map<std::string, const char *> valid_licenses;
+  }
+} // namespace qpkg
 
-#endif  // __QPKG_CONF_SPDX_HH__
+#endif // __QPKG_CONF_SPDX_HH__

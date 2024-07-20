@@ -2,29 +2,18 @@
 
 #include "blake3_impl.h"
 
-#define _mm_shuffle_ps2(a, b, c) \
-  (_mm_castps_si128(             \
-      _mm_shuffle_ps(_mm_castsi128_ps(a), _mm_castsi128_ps(b), (c))))
+#define _mm_shuffle_ps2(a, b, c)                                                                   \
+  (_mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(a), _mm_castsi128_ps(b), (c))))
 
-INLINE __m128i loadu_128(const uint8_t src[16]) {
-  return _mm_loadu_si128((const __m128i *)src);
-}
+INLINE __m128i loadu_128(const uint8_t src[16]) { return _mm_loadu_si128((const __m128i *)src); }
 
-INLINE __m256i loadu_256(const uint8_t src[32]) {
-  return _mm256_loadu_si256((const __m256i *)src);
-}
+INLINE __m256i loadu_256(const uint8_t src[32]) { return _mm256_loadu_si256((const __m256i *)src); }
 
-INLINE __m512i loadu_512(const uint8_t src[64]) {
-  return _mm512_loadu_si512((const __m512i *)src);
-}
+INLINE __m512i loadu_512(const uint8_t src[64]) { return _mm512_loadu_si512((const __m512i *)src); }
 
-INLINE void storeu_128(__m128i src, uint8_t dest[16]) {
-  _mm_storeu_si128((__m128i *)dest, src);
-}
+INLINE void storeu_128(__m128i src, uint8_t dest[16]) { _mm_storeu_si128((__m128i *)dest, src); }
 
-INLINE void storeu_256(__m256i src, uint8_t dest[16]) {
-  _mm256_storeu_si256((__m256i *)dest, src);
-}
+INLINE void storeu_256(__m256i src, uint8_t dest[16]) { _mm256_storeu_si256((__m256i *)dest, src); }
 
 INLINE __m128i add_128(__m128i a, __m128i b) { return _mm_add_epi32(a, b); }
 
@@ -78,8 +67,7 @@ INLINE __m512i rot7_512(__m512i x) { return _mm512_ror_epi32(x, 7); }
  * ----------------------------------------------------------------------------
  */
 
-INLINE void g1(__m128i *row0, __m128i *row1, __m128i *row2, __m128i *row3,
-               __m128i m) {
+INLINE void g1(__m128i *row0, __m128i *row1, __m128i *row2, __m128i *row3, __m128i m) {
   *row0 = add_128(add_128(*row0, m), *row1);
   *row3 = xor_128(*row3, *row0);
   *row3 = rot16_128(*row3);
@@ -88,8 +76,7 @@ INLINE void g1(__m128i *row0, __m128i *row1, __m128i *row2, __m128i *row3,
   *row1 = rot12_128(*row1);
 }
 
-INLINE void g2(__m128i *row0, __m128i *row1, __m128i *row2, __m128i *row3,
-               __m128i m) {
+INLINE void g2(__m128i *row0, __m128i *row1, __m128i *row2, __m128i *row3, __m128i m) {
   *row0 = add_128(add_128(*row0, m), *row1);
   *row3 = xor_128(*row3, *row0);
   *row3 = rot8_128(*row3);
@@ -114,13 +101,12 @@ INLINE void undiagonalize(__m128i *row0, __m128i *row2, __m128i *row3) {
 }
 
 INLINE void compress_pre(__m128i rows[4], const uint32_t cv[8],
-                         const uint8_t block[BLAKE3_BLOCK_LEN],
-                         uint8_t block_len, uint64_t counter, uint8_t flags) {
+                         const uint8_t block[BLAKE3_BLOCK_LEN], uint8_t block_len, uint64_t counter,
+                         uint8_t flags) {
   rows[0] = loadu_128((uint8_t *)&cv[0]);
   rows[1] = loadu_128((uint8_t *)&cv[4]);
   rows[2] = set4(IV[0], IV[1], IV[2], IV[3]);
-  rows[3] = set4(counter_low(counter), counter_high(counter),
-                 (uint32_t)block_len, (uint32_t)flags);
+  rows[3] = set4(counter_low(counter), counter_high(counter), (uint32_t)block_len, (uint32_t)flags);
 
   __m128i m0 = loadu_128(&block[sizeof(__m128i) * 0]);
   __m128i m1 = loadu_128(&block[sizeof(__m128i) * 1]);
@@ -131,16 +117,16 @@ INLINE void compress_pre(__m128i rows[4], const uint32_t cv[8],
 
   // Round 1. The first round permutes the message words from the original
   // input order, into the groups that get mixed in parallel.
-  t0 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(2, 0, 2, 0));  //  6  4  2  0
+  t0 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(2, 0, 2, 0)); //  6  4  2  0
   g1(&rows[0], &rows[1], &rows[2], &rows[3], t0);
-  t1 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(3, 1, 3, 1));  //  7  5  3  1
+  t1 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(3, 1, 3, 1)); //  7  5  3  1
   g2(&rows[0], &rows[1], &rows[2], &rows[3], t1);
   diagonalize(&rows[0], &rows[2], &rows[3]);
-  t2 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(2, 0, 2, 0));  // 14 12 10  8
-  t2 = _mm_shuffle_epi32(t2, _MM_SHUFFLE(2, 1, 0, 3));    // 12 10  8 14
+  t2 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(2, 0, 2, 0)); // 14 12 10  8
+  t2 = _mm_shuffle_epi32(t2, _MM_SHUFFLE(2, 1, 0, 3));   // 12 10  8 14
   g1(&rows[0], &rows[1], &rows[2], &rows[3], t2);
-  t3 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(3, 1, 3, 1));  // 15 13 11  9
-  t3 = _mm_shuffle_epi32(t3, _MM_SHUFFLE(2, 1, 0, 3));    // 13 11  9 15
+  t3 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(3, 1, 3, 1)); // 15 13 11  9
+  t3 = _mm_shuffle_epi32(t3, _MM_SHUFFLE(2, 1, 0, 3));   // 13 11  9 15
   g2(&rows[0], &rows[1], &rows[2], &rows[3], t3);
   undiagonalize(&rows[0], &rows[2], &rows[3]);
   m0 = t0;
@@ -284,10 +270,9 @@ INLINE void compress_pre(__m128i rows[4], const uint32_t cv[8],
   undiagonalize(&rows[0], &rows[2], &rows[3]);
 }
 
-void blake3_compress_xof_avx512(const uint32_t cv[8],
-                                const uint8_t block[BLAKE3_BLOCK_LEN],
-                                uint8_t block_len, uint64_t counter,
-                                uint8_t flags, uint8_t out[64]) {
+void blake3_compress_xof_avx512(const uint32_t cv[8], const uint8_t block[BLAKE3_BLOCK_LEN],
+                                uint8_t block_len, uint64_t counter, uint8_t flags,
+                                uint8_t out[64]) {
   __m128i rows[4];
   compress_pre(rows, cv, block, block_len, counter, flags);
   storeu_128(xor_128(rows[0], rows[2]), &out[0]);
@@ -296,10 +281,8 @@ void blake3_compress_xof_avx512(const uint32_t cv[8],
   storeu_128(xor_128(rows[3], loadu_128((uint8_t *)&cv[4])), &out[48]);
 }
 
-void blake3_compress_in_place_avx512(uint32_t cv[8],
-                                     const uint8_t block[BLAKE3_BLOCK_LEN],
-                                     uint8_t block_len, uint64_t counter,
-                                     uint8_t flags) {
+void blake3_compress_in_place_avx512(uint32_t cv[8], const uint8_t block[BLAKE3_BLOCK_LEN],
+                                     uint8_t block_len, uint64_t counter, uint8_t flags) {
   __m128i rows[4];
   compress_pre(rows, cv, block, block_len, counter, flags);
   storeu_128(xor_128(rows[0], rows[2]), (uint8_t *)&cv[0]);
@@ -449,8 +432,8 @@ INLINE void transpose_vecs_128(__m128i vecs[4]) {
   vecs[3] = abcd_3;
 }
 
-INLINE void transpose_msg_vecs4(const uint8_t *const *inputs,
-                                size_t block_offset, __m128i out[16]) {
+INLINE void transpose_msg_vecs4(const uint8_t *const *inputs, size_t block_offset,
+                                __m128i out[16]) {
   out[0] = loadu_128(&inputs[0][block_offset + 0 * sizeof(__m128i)]);
   out[1] = loadu_128(&inputs[1][block_offset + 0 * sizeof(__m128i)]);
   out[2] = loadu_128(&inputs[2][block_offset + 0 * sizeof(__m128i)]);
@@ -476,30 +459,26 @@ INLINE void transpose_msg_vecs4(const uint8_t *const *inputs,
   transpose_vecs_128(&out[12]);
 }
 
-INLINE void load_counters4(uint64_t counter, bool increment_counter,
-                           __m128i *out_lo, __m128i *out_hi) {
+INLINE void load_counters4(uint64_t counter, bool increment_counter, __m128i *out_lo,
+                           __m128i *out_hi) {
   uint64_t mask = (increment_counter ? ~0 : 0);
   __m256i mask_vec = _mm256_set1_epi64x(mask);
   __m256i deltas = _mm256_setr_epi64x(0, 1, 2, 3);
   deltas = _mm256_and_si256(mask_vec, deltas);
-  __m256i counters =
-      _mm256_add_epi64(_mm256_set1_epi64x((int64_t)counter), deltas);
+  __m256i counters = _mm256_add_epi64(_mm256_set1_epi64x((int64_t)counter), deltas);
   *out_lo = _mm256_cvtepi64_epi32(counters);
   *out_hi = _mm256_cvtepi64_epi32(_mm256_srli_epi64(counters, 32));
 }
 
-static void blake3_hash4_avx512(const uint8_t *const *inputs, size_t blocks,
-                                const uint32_t key[8], uint64_t counter,
-                                bool increment_counter, uint8_t flags,
-                                uint8_t flags_start, uint8_t flags_end,
-                                uint8_t *out) {
+static void blake3_hash4_avx512(const uint8_t *const *inputs, size_t blocks, const uint32_t key[8],
+                                uint64_t counter, bool increment_counter, uint8_t flags,
+                                uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
   __m128i h_vecs[8] = {
       set1_128(key[0]), set1_128(key[1]), set1_128(key[2]), set1_128(key[3]),
       set1_128(key[4]), set1_128(key[5]), set1_128(key[6]), set1_128(key[7]),
   };
   __m128i counter_low_vec, counter_high_vec;
-  load_counters4(counter, increment_counter, &counter_low_vec,
-                 &counter_high_vec);
+  load_counters4(counter, increment_counter, &counter_low_vec, &counter_high_vec);
   uint8_t block_flags = flags | flags_start;
 
   for (size_t block = 0; block < blocks; block++) {
@@ -706,8 +685,8 @@ INLINE void transpose_vecs_256(__m256i vecs[8]) {
   vecs[7] = _mm256_permute2x128_si256(abcd_37, efgh_37, 0x31);
 }
 
-INLINE void transpose_msg_vecs8(const uint8_t *const *inputs,
-                                size_t block_offset, __m256i out[16]) {
+INLINE void transpose_msg_vecs8(const uint8_t *const *inputs, size_t block_offset,
+                                __m256i out[16]) {
   out[0] = loadu_256(&inputs[0][block_offset + 0 * sizeof(__m256i)]);
   out[1] = loadu_256(&inputs[1][block_offset + 0 * sizeof(__m256i)]);
   out[2] = loadu_256(&inputs[2][block_offset + 0 * sizeof(__m256i)]);
@@ -731,30 +710,26 @@ INLINE void transpose_msg_vecs8(const uint8_t *const *inputs,
   transpose_vecs_256(&out[8]);
 }
 
-INLINE void load_counters8(uint64_t counter, bool increment_counter,
-                           __m256i *out_lo, __m256i *out_hi) {
+INLINE void load_counters8(uint64_t counter, bool increment_counter, __m256i *out_lo,
+                           __m256i *out_hi) {
   uint64_t mask = (increment_counter ? ~0 : 0);
   __m512i mask_vec = _mm512_set1_epi64(mask);
   __m512i deltas = _mm512_setr_epi64(0, 1, 2, 3, 4, 5, 6, 7);
   deltas = _mm512_and_si512(mask_vec, deltas);
-  __m512i counters =
-      _mm512_add_epi64(_mm512_set1_epi64((int64_t)counter), deltas);
+  __m512i counters = _mm512_add_epi64(_mm512_set1_epi64((int64_t)counter), deltas);
   *out_lo = _mm512_cvtepi64_epi32(counters);
   *out_hi = _mm512_cvtepi64_epi32(_mm512_srli_epi64(counters, 32));
 }
 
-static void blake3_hash8_avx512(const uint8_t *const *inputs, size_t blocks,
-                                const uint32_t key[8], uint64_t counter,
-                                bool increment_counter, uint8_t flags,
-                                uint8_t flags_start, uint8_t flags_end,
-                                uint8_t *out) {
+static void blake3_hash8_avx512(const uint8_t *const *inputs, size_t blocks, const uint32_t key[8],
+                                uint64_t counter, bool increment_counter, uint8_t flags,
+                                uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
   __m256i h_vecs[8] = {
       set1_256(key[0]), set1_256(key[1]), set1_256(key[2]), set1_256(key[3]),
       set1_256(key[4]), set1_256(key[5]), set1_256(key[6]), set1_256(key[7]),
   };
   __m256i counter_low_vec, counter_high_vec;
-  load_counters8(counter, increment_counter, &counter_low_vec,
-                 &counter_high_vec);
+  load_counters8(counter, increment_counter, &counter_low_vec, &counter_high_vec);
   uint8_t block_flags = flags | flags_start;
 
   for (size_t block = 0; block < blocks; block++) {
@@ -927,16 +902,12 @@ INLINE void round_fn16(__m512i v[16], __m512i m[16], size_t r) {
 // 0b10001000, or lanes a0/a2/b0/b2 in little-endian order
 #define LO_IMM8 0x88
 
-INLINE __m512i unpack_lo_128(__m512i a, __m512i b) {
-  return _mm512_shuffle_i32x4(a, b, LO_IMM8);
-}
+INLINE __m512i unpack_lo_128(__m512i a, __m512i b) { return _mm512_shuffle_i32x4(a, b, LO_IMM8); }
 
 // 0b11011101, or lanes a1/a3/b1/b3 in little-endian order
 #define HI_IMM8 0xdd
 
-INLINE __m512i unpack_hi_128(__m512i a, __m512i b) {
-  return _mm512_shuffle_i32x4(a, b, HI_IMM8);
-}
+INLINE __m512i unpack_hi_128(__m512i a, __m512i b) { return _mm512_shuffle_i32x4(a, b, HI_IMM8); }
 
 INLINE void transpose_vecs_512(__m512i vecs[16]) {
   // Interleave 32-bit lanes. The _0 unpack is lanes
@@ -1020,8 +991,8 @@ INLINE void transpose_vecs_512(__m512i vecs[16]) {
   vecs[15] = unpack_hi_128(abcdefgh_7, ijklmnop_7);
 }
 
-INLINE void transpose_msg_vecs16(const uint8_t *const *inputs,
-                                 size_t block_offset, __m512i out[16]) {
+INLINE void transpose_msg_vecs16(const uint8_t *const *inputs, size_t block_offset,
+                                 __m512i out[16]) {
   out[0] = loadu_512(&inputs[0][block_offset]);
   out[1] = loadu_512(&inputs[1][block_offset]);
   out[2] = loadu_512(&inputs[2][block_offset]);
@@ -1044,41 +1015,35 @@ INLINE void transpose_msg_vecs16(const uint8_t *const *inputs,
   transpose_vecs_512(out);
 }
 
-INLINE void load_counters16(uint64_t counter, bool increment_counter,
-                            __m512i *out_lo, __m512i *out_hi) {
+INLINE void load_counters16(uint64_t counter, bool increment_counter, __m512i *out_lo,
+                            __m512i *out_hi) {
   const __m512i mask = _mm512_set1_epi32(-(int32_t)increment_counter);
-  const __m512i deltas =
-      _mm512_set_epi32(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+  const __m512i deltas = _mm512_set_epi32(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
   const __m512i masked_deltas = _mm512_and_si512(deltas, mask);
-  const __m512i low_words =
-      _mm512_add_epi32(_mm512_set1_epi32((int32_t)counter), masked_deltas);
+  const __m512i low_words = _mm512_add_epi32(_mm512_set1_epi32((int32_t)counter), masked_deltas);
   // The carry bit is 1 if the high bit of the word was 1 before addition and is
   // 0 after.
   // NOTE: It would be a bit more natural to use _mm512_cmp_epu32_mask to
   // compute the carry bits here, and originally we did, but that intrinsic is
   // broken under GCC 5.4. See https://github.com/BLAKE3-team/BLAKE3/issues/271.
-  const __m512i carries = _mm512_srli_epi32(
-      _mm512_andnot_si512(low_words,  // 0 after (gets inverted by andnot)
-                          _mm512_set1_epi32((int32_t)counter)),  // and 1 before
-      31);
-  const __m512i high_words =
-      _mm512_add_epi32(_mm512_set1_epi32((int32_t)(counter >> 32)), carries);
+  const __m512i carries =
+      _mm512_srli_epi32(_mm512_andnot_si512(low_words, // 0 after (gets inverted by andnot)
+                                            _mm512_set1_epi32((int32_t)counter)), // and 1 before
+                        31);
+  const __m512i high_words = _mm512_add_epi32(_mm512_set1_epi32((int32_t)(counter >> 32)), carries);
   *out_lo = low_words;
   *out_hi = high_words;
 }
 
-static void blake3_hash16_avx512(const uint8_t *const *inputs, size_t blocks,
-                                 const uint32_t key[8], uint64_t counter,
-                                 bool increment_counter, uint8_t flags,
-                                 uint8_t flags_start, uint8_t flags_end,
-                                 uint8_t *out) {
+static void blake3_hash16_avx512(const uint8_t *const *inputs, size_t blocks, const uint32_t key[8],
+                                 uint64_t counter, bool increment_counter, uint8_t flags,
+                                 uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
   __m512i h_vecs[8] = {
       set1_512(key[0]), set1_512(key[1]), set1_512(key[2]), set1_512(key[3]),
       set1_512(key[4]), set1_512(key[5]), set1_512(key[6]), set1_512(key[7]),
   };
   __m512i counter_low_vec, counter_high_vec;
-  load_counters16(counter, increment_counter, &counter_low_vec,
-                  &counter_high_vec);
+  load_counters16(counter, increment_counter, &counter_low_vec, &counter_high_vec);
   uint8_t block_flags = flags | flags_start;
 
   for (size_t block = 0; block < blocks; block++) {
@@ -1119,9 +1084,8 @@ static void blake3_hash16_avx512(const uint8_t *const *inputs, size_t blocks,
   // state vectors. Pad the matrix with zeros. After transposition, store the
   // lower half of each vector.
   __m512i padded[16] = {
-      h_vecs[0],   h_vecs[1],   h_vecs[2],   h_vecs[3],
-      h_vecs[4],   h_vecs[5],   h_vecs[6],   h_vecs[7],
-      set1_512(0), set1_512(0), set1_512(0), set1_512(0),
+      h_vecs[0],   h_vecs[1],   h_vecs[2],   h_vecs[3],   h_vecs[4],   h_vecs[5],
+      h_vecs[6],   h_vecs[7],   set1_512(0), set1_512(0), set1_512(0), set1_512(0),
       set1_512(0), set1_512(0), set1_512(0), set1_512(0),
   };
   transpose_vecs_512(padded);
@@ -1165,10 +1129,9 @@ static void blake3_hash16_avx512(const uint8_t *const *inputs, size_t blocks,
  * ----------------------------------------------------------------------------
  */
 
-INLINE void hash_one_avx512(const uint8_t *input, size_t blocks,
-                            const uint32_t key[8], uint64_t counter,
-                            uint8_t flags, uint8_t flags_start,
-                            uint8_t flags_end, uint8_t out[BLAKE3_OUT_LEN]) {
+INLINE void hash_one_avx512(const uint8_t *input, size_t blocks, const uint32_t key[8],
+                            uint64_t counter, uint8_t flags, uint8_t flags_start, uint8_t flags_end,
+                            uint8_t out[BLAKE3_OUT_LEN]) {
   uint32_t cv[8];
   memcpy(cv, key, BLAKE3_KEY_LEN);
   uint8_t block_flags = flags | flags_start;
@@ -1176,8 +1139,7 @@ INLINE void hash_one_avx512(const uint8_t *input, size_t blocks,
     if (blocks == 1) {
       block_flags |= flags_end;
     }
-    blake3_compress_in_place_avx512(cv, input, BLAKE3_BLOCK_LEN, counter,
-                                    block_flags);
+    blake3_compress_in_place_avx512(cv, input, BLAKE3_BLOCK_LEN, counter, block_flags);
     input = &input[BLAKE3_BLOCK_LEN];
     blocks -= 1;
     block_flags = flags;
@@ -1185,14 +1147,12 @@ INLINE void hash_one_avx512(const uint8_t *input, size_t blocks,
   memcpy(out, cv, BLAKE3_OUT_LEN);
 }
 
-void blake3_hash_many_avx512(const uint8_t *const *inputs, size_t num_inputs,
-                             size_t blocks, const uint32_t key[8],
-                             uint64_t counter, bool increment_counter,
-                             uint8_t flags, uint8_t flags_start,
-                             uint8_t flags_end, uint8_t *out) {
+void blake3_hash_many_avx512(const uint8_t *const *inputs, size_t num_inputs, size_t blocks,
+                             const uint32_t key[8], uint64_t counter, bool increment_counter,
+                             uint8_t flags, uint8_t flags_start, uint8_t flags_end, uint8_t *out) {
   while (num_inputs >= 16) {
-    blake3_hash16_avx512(inputs, blocks, key, counter, increment_counter, flags,
-                         flags_start, flags_end, out);
+    blake3_hash16_avx512(inputs, blocks, key, counter, increment_counter, flags, flags_start,
+                         flags_end, out);
     if (increment_counter) {
       counter += 16;
     }
@@ -1201,8 +1161,8 @@ void blake3_hash_many_avx512(const uint8_t *const *inputs, size_t num_inputs,
     out = &out[16 * BLAKE3_OUT_LEN];
   }
   while (num_inputs >= 8) {
-    blake3_hash8_avx512(inputs, blocks, key, counter, increment_counter, flags,
-                        flags_start, flags_end, out);
+    blake3_hash8_avx512(inputs, blocks, key, counter, increment_counter, flags, flags_start,
+                        flags_end, out);
     if (increment_counter) {
       counter += 8;
     }
@@ -1211,8 +1171,8 @@ void blake3_hash_many_avx512(const uint8_t *const *inputs, size_t num_inputs,
     out = &out[8 * BLAKE3_OUT_LEN];
   }
   while (num_inputs >= 4) {
-    blake3_hash4_avx512(inputs, blocks, key, counter, increment_counter, flags,
-                        flags_start, flags_end, out);
+    blake3_hash4_avx512(inputs, blocks, key, counter, increment_counter, flags, flags_start,
+                        flags_end, out);
     if (increment_counter) {
       counter += 4;
     }
@@ -1221,8 +1181,7 @@ void blake3_hash_many_avx512(const uint8_t *const *inputs, size_t num_inputs,
     out = &out[4 * BLAKE3_OUT_LEN];
   }
   while (num_inputs > 0) {
-    hash_one_avx512(inputs[0], blocks, key, counter, flags, flags_start,
-                    flags_end, out);
+    hash_one_avx512(inputs[0], blocks, key, counter, flags, flags_start, flags_end, out);
     if (increment_counter) {
       counter += 1;
     }
