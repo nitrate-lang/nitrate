@@ -65,12 +65,13 @@ static quix_inline bool check_and_init(quixcc_cc_job_t *job) {
   job->m_scanner = std::make_unique<StreamLexer>();
   job->m_scanner->set_source(job->m_in, job->m_filename.top().c_str());
 
-  for (size_t i = 0; i < job->m_options.m_count; i++) {
-    if (strcmp(job->m_options.m_options[i], "-fkeep-comments") == 0) {
+  std::any_of(job->m_options.begin(), job->m_options.end(), [job](const std::string &opt) {
+    if (opt == "-fkeep-comments") {
       job->m_scanner->comments(false);
-      break;
+      return true;
     }
-  }
+    return false;
+  });
 
   return true;
 }

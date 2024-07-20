@@ -104,7 +104,10 @@ bool libquixcc::qast::parser::parse_subsystem(quixcc_cc_job_t &job, libquixcc::S
   if (!parse(job, scanner, &block, true))
     return false;
 
-  *node = SubsystemDecl::get(name, block);
+  SubsystemDecl *sub = SubsystemDecl::get(name, block);
+  sub->add_tags(deps);
+
+  *node = sub;
 
   return true;
 }

@@ -54,11 +54,6 @@
 #include <vector>
 
 namespace libquixcc::quixcc {
-  typedef struct quixcc_cc_options_t {
-    const char **m_options;
-    uint32_t m_count;
-  } quixcc_cc_options_t;
-
   typedef struct quixcc_uuid_t {
     uint8_t data[16];
   } quixcc_uuid_t;
@@ -88,7 +83,7 @@ struct quixcc_cc_job_t {
   std::string m_triple;
   std::string m_cpu;
   libquixcc::quixcc::quixcc_uuid_t m_id;
-  libquixcc::quixcc::quixcc_cc_options_t m_options;
+  std::vector<std::string> m_options;
   quixcc_status_t m_result;
   std::unique_ptr<libquixcc::Scanner> m_scanner;
   std::optional<std::pair<uint32_t, uint32_t>> version;

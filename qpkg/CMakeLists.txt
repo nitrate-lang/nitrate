@@ -16,11 +16,11 @@ target_compile_options(qpkg PRIVATE  -Werror -O3 -g -Wall -Wextra -Wpedantic -Wn
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_options(qpkg PRIVATE  -DQUIX_BUILD_ID=${QUIX_BUILD_ID} -flto)
-    target_link_libraries(qpkg PRIVATE quixcc libyaml-cpp.a blake3 libstdc++.a)
+    target_link_libraries(qpkg PRIVATE quixcc libyaml-cpp.a libboost_filesystem.a blake3 libstdc++.a)
     add_dependencies(qpkg quixcc)
 else()
     target_compile_options(qpkg PRIVATE  -DQUIX_BUILD_ID="undefined")
-    target_link_libraries(qpkg PRIVATE quixcc libyaml-cpp.a blake3 libstdc++.a -fsanitize=address -fsanitize=undefined )
+    target_link_libraries(qpkg PRIVATE quixcc libyaml-cpp.a libboost_filesystem.a blake3 libstdc++.a -fsanitize=address -fsanitize=undefined )
     add_dependencies(qpkg quixcc)
 endif()
 

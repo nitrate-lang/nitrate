@@ -126,6 +126,12 @@ static void indent(ConvStream &ss, ConvState &state) {
   state.indent--;                                                                                  \
   ss << __field;
 
+#define OBJECT_ALI(__field)                                                                        \
+  state.indent++;                                                                                  \
+  indent(ss, state);                                                                               \
+  state.indent--;                                                                                  \
+  ss << "\"" << __field << "\"";
+
 #define OBJECT_ARRAY(__field)                                                                      \
   ss << "[";                                                                                       \
   for (auto it = __field.begin(); it != __field.end(); ++it) {                                     \
@@ -178,7 +184,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   switch (n->this_typeid()) {
   case QUIXCC_AST_NODE_BINEXPR: {
     OBJECT_BEGIN("BExpr");
-    OBJECT_NUM(n->as<BinExpr>()->get_op());
+    OBJECT_ALI(n->as<BinExpr>()->get_op());
     OBJECT_SUB(n->as<BinExpr>()->get_lhs());
     OBJECT_SUB(n->as<BinExpr>()->get_rhs());
     OBJECT_END();
@@ -186,7 +192,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
   case QUIXCC_AST_NODE_UNEXPR: {
     OBJECT_BEGIN("UExpr");
-    OBJECT_NUM(n->as<UnaryExpr>()->get_op());
+    OBJECT_ALI(n->as<UnaryExpr>()->get_op());
     OBJECT_SUB(n->as<UnaryExpr>()->get_rhs());
     OBJECT_END();
     break;
@@ -313,7 +319,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
   case QUIXCC_AST_NODE_POST_UNEXPR: {
     OBJECT_BEGIN("PExpr");
-    OBJECT_NUM(n->as<PostUnaryExpr>()->get_op());
+    OBJECT_ALI(n->as<PostUnaryExpr>()->get_op());
     OBJECT_SUB(n->as<PostUnaryExpr>()->get_lhs());
     OBJECT_END();
     break;
@@ -600,6 +606,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
   case QUIXCC_AST_NODE_FN: {
     OBJECT_BEGIN("Fn");
+    OBJECT_STR(n->as<FnDef>()->get_name());
     OBJECT_SUB(n->as<FnDef>()->get_type());
     OBJECT_SUB(n->as<FnDef>()->get_precond());
     OBJECT_SUB(n->as<FnDef>()->get_postcond());

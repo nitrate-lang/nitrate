@@ -85,14 +85,6 @@ static thread_local bool g_tls_exception_set = false;
 extern void quixcc_print_stacktrace();
 extern void quixcc_print_general_fault_message();
 
-static void *safe_realloc(void *ptr, size_t size) {
-  void *new_ptr = realloc(ptr, size);
-  if (!new_ptr)
-    quixcc_panic("out of memory");
-
-  return new_ptr;
-}
-
 static char *safe_strdup(const char *str) {
   char *new_str = strdup(str);
   if (!new_str)
@@ -102,7 +94,7 @@ static char *safe_strdup(const char *str) {
 
 static libquixcc::quixcc::quixcc_uuid_t quixcc_uuid() {
   boost::uuids::uuid uuid = boost::uuids::random_generator()();
-  static_assert((sizeof(libquixcc::quixcc::quixcc_uuid_t::data) | sizeof(uuid.data)) == 16,
+  static_assert(sizeof(libquixcc::quixcc::quixcc_uuid_t::data) == sizeof(uuid.data),
                 "UUID type size mismatch");
 
   libquixcc::quixcc::quixcc_uuid_t id;
@@ -129,7 +121,6 @@ LIB_EXPORT quixcc_cc_job_t *quixcc_cc_new() {
   job->m_id = quixcc_uuid();
 
   /* Clear structures */
-  memset(&job->m_options, 0, sizeof(libquixcc::quixcc::quixcc_cc_options_t));
   memset(&job->m_result, 0, sizeof(quixcc_status_t));
 
   /* Clear all pointers & values */
@@ -171,15 +162,6 @@ LIB_EXPORT bool quixcc_cc_dispose(quixcc_cc_job_t *job) {
   bool lockable = job->m_lock.try_lock();
   if (!lockable)
     return false;
-
-  /* Free Options array */
-  for (uint32_t i = 0; i < job->m_options.m_count; i++) {
-    free((void *)job->m_options.m_options[i]);
-    job->m_options.m_options[i] = nullptr;
-  }
-  if (job->m_options.m_options)
-    free(job->m_options.m_options);
-  memset(&job->m_options, 0, sizeof(libquixcc::quixcc::quixcc_cc_options_t));
 
   /* Free messages array */
   for (uint32_t i = 0; i < job->m_result.m_count; i++) {
@@ -234,23 +216,11 @@ LIB_EXPORT void quixcc_cc_option(quixcc_cc_job_t *job, const char *opt, bool ena
   std::lock_guard<std::mutex> lock(job->m_lock);
 
   /* Remove the option if it already exists */
-  for (uint32_t i = 0; i < job->m_options.m_count; i++) {
-    const char *option = job->m_options.m_options[i];
-    if (strcmp(option, opt) == 0) {
-      free((void *)option);
-
-      job->m_options.m_options[i] = job->m_options.m_options[job->m_options.m_count - 1];
-      job->m_options.m_options[job->m_options.m_count - 1] = nullptr;
-      job->m_options.m_count--;
-      break;
-    }
-  }
+  std::erase(job->m_options, opt);
 
   if (enable) {
     /* Enable it */
-    job->m_options.m_options = (const char **)safe_realloc(
-        job->m_options.m_options, (job->m_options.m_count + 1) * sizeof(const char *));
-    job->m_options.m_options[job->m_options.m_count++] = safe_strdup(opt);
+    job->m_options.push_back(opt);
   }
 }
 
@@ -398,9 +368,7 @@ static bool quixcc_qualify(quixcc_cc_job_t *job, std::unique_ptr<ir::q::QModule>
 }
 
 static bool get_include_directories(quixcc_cc_job_t *job, std::set<std::string> &dirs) {
-  for (uint32_t i = 0; i < job->m_options.m_count; i++) {
-    std::string option = job->m_options.m_options[i];
-
+  for (const auto &option : job->m_options) {
     if (option.size() < 3)
       continue;
 
@@ -819,9 +787,7 @@ static bool build_argmap(quixcc_cc_job_t *job) {
   const static std::set<char> okay_prefixes = {'f', 'O', 'P', 'I', 'e', 'D', 'W',
                                                'm', 'c', 'S', 'g', 's', 'v'};
 
-  for (uint32_t i = 0; i < job->m_options.m_count; i++) {
-    std::string option = job->m_options.m_options[i];
-
+  for (const auto &option : job->m_options) {
     if (option.size() == 2 && option[0] == '-' && !okay_prefixes.contains(option[1])) {
       LOG(ERROR) << log::raw << "invalid build option: " << option << std::endl;
       return false;
@@ -932,7 +898,9 @@ static bool execute_job(quixcc_cc_job_t *job) {
     LoggerConfigure(*job);
     job->m_inner.setup(job->m_filename.top());
 
-    LOG(DEBUG) << log::raw << "Starting quixcc run @ " << get_datetime() << std::endl;
+    if (job->m_debug) {
+      LOG(DEBUG) << log::raw << "Starting quixcc run @ " << get_datetime() << std::endl;
+    }
 
     if (!build_argmap(job)) {
       LOG(ERROR) << "failed to build argmap" << std::endl;
@@ -954,7 +922,10 @@ static bool execute_job(quixcc_cc_job_t *job) {
       LOG(ERROR) << "Compilation failed" << std::endl;
 
     LOG(DEBUG) << "Compilation successful" << std::endl;
-    LOG(DEBUG) << log::raw << "Finished quixcc run @ " << get_datetime() << std::endl;
+
+    if (job->m_debug) {
+      LOG(DEBUG) << log::raw << "Finished quixcc run @ " << get_datetime() << std::endl;
+    }
 
     job->m_result.m_success = true;
     return true;
@@ -964,7 +935,10 @@ static bool execute_job(quixcc_cc_job_t *job) {
         LOG(ERROR) << "Compilation failed" << std::endl;
 
       LOG(DEBUG) << "Compilation successful" << std::endl;
-      LOG(DEBUG) << log::raw << "Finished quixcc run @ " << get_datetime() << std::endl;
+
+      if (job->m_debug) {
+        LOG(DEBUG) << log::raw << "Finished quixcc run @ " << get_datetime() << std::endl;
+      }
 
       job->m_result.m_success = true;
       return true;
@@ -1043,8 +1017,8 @@ LIB_EXPORT bool quixcc_cc_run(quixcc_cc_job_t *job) {
     /* This is a dirty hack to `catch` segfaults and still be able to return */
 
     bool has_core_dump = false;
-    for (uint32_t i = 0; i < job->m_options.m_count; i++) {
-      if (std::string(job->m_options.m_options[i]) == "-fcoredump") {
+    for (const auto &opt : job->m_options) {
+      if (opt == "-fcoredump") {
         has_core_dump = true;
         break;
       }

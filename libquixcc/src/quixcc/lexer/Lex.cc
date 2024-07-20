@@ -682,7 +682,7 @@ const Token &StreamLexer::read_token() {
     Other,
   };
 
-  static std::string buf;
+  std::string buf;
   buf.clear();
 
   LexState state = LexState::Start;
@@ -1131,10 +1131,6 @@ const Token &StreamLexer::peek() {
   /* If we have a token, return it */
   if (m_tok.has_value())
     return std::move(m_tok.value());
-
-  /* This lock makes the entire Lexer thread-safe */
-  static std::mutex mutex;
-  std::lock_guard<std::mutex> lock(mutex);
 
   while (true) {
     read_token();

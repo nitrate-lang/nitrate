@@ -68,7 +68,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_compile_options(quixcc PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quixcc PRIVATE ${LLVM_LD_FLAGS} -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   
-
+  #========= STATIC LINKING LLVM ==========
   foreach(lib ${LLVM_LIBS})
     target_link_libraries(quixcc PRIVATE ${lib})
     message(STATUS "Linking ${lib}")

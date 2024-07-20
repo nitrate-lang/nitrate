@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <boost/filesystem.hpp>
 #include <iostream>
 #include <quixcc/Quix.hpp>
 #include <run/RunScript.hh>
@@ -55,11 +56,8 @@ int qpkg::run::RunScript::run(const std::vector<std::string> &args) {
    * 3. return the exit code of the subprocess
    **/
 
-  char tempfile[] = "/tmp/qpkg-script-XXXXXX";
-  if (mktemp(tempfile) == nullptr) {
-    LOG(core::ERROR) << "Failed to create temporary file" << std::endl;
-    return QPKG_ERROR;
-  }
+  namespace bfs = boost::filesystem;
+  std::string tempfile = boost::filesystem::absolute(bfs::unique_path().native()).string();
 
   int exit_code = QPKG_ERROR;
   try {
@@ -72,13 +70,13 @@ int qpkg::run::RunScript::run(const std::vector<std::string> &args) {
     if (!builder.build().run(1).puts().ok())
       return QPKG_ERROR;
 
-    std::string linker_cmd = "qld " + std::string(tempfile) + " -o " + tempfile + ".tmp";
+    std::string linker_cmd = "qld " + tempfile + " -o " + tempfile + ".tmp";
     if (system(linker_cmd.c_str()) != 0) {
       LOG(core::ERROR) << "Failed to link the binary" << std::endl;
       return QPKG_ERROR;
     }
 
-    std::string run_cmd = std::string(tempfile) + ".tmp";
+    std::string run_cmd = tempfile + ".tmp";
     for (const auto &arg : args) {
       run_cmd += " " + arg;
     }
@@ -94,6 +92,6 @@ int qpkg::run::RunScript::run(const std::vector<std::string> &args) {
   }
 
   std::filesystem::remove(tempfile);
-  std::filesystem::remove(std::string(tempfile) + ".tmp");
+  std::filesystem::remove(tempfile + ".tmp");
   return exit_code;
 }
