@@ -54,7 +54,6 @@ namespace libquixcc::qast::parser {
   bool parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
   bool parse_subsystem(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
   bool parse_function(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_const_expr(quixcc_cc_job_t &job, Scanner *scanner, Token terminator, ConstExpr **node);
   bool parse_expr(quixcc_cc_job_t &job, Scanner *scanner, std::set<Token> terminators, Expr **node,
                   size_t depth = 0);
   bool parse_type(quixcc_cc_job_t &job, Scanner *scanner, Type **node);

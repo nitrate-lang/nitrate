@@ -340,17 +340,6 @@ libquixcc::core::Feedback libquixcc::core::feedback({
     {FN_EXPECTED_IN_OUT, "Expected 'in' or 'out' after the function name. To fix the issue, insert "
                          "'in' or 'out' after the function name"},
 
-    /*
-    FN_NOEXCEPT_MULTIPLE,
- FN_FOREIGN_MULTIPLE,
- FN_IMPURE_MULTIPLE,
- FN_TSAFE_MULTIPLE,
- FN_PURE_MULTIPLE,
- FN_QUASIPURE_MULTIPLE,
- FN_RETROPURE_MULTIPLE,
- FN_INLINE_MULTIPLE,
- FN_PURE_IMPURE_MIX,
- FN_PURE_MIX,*/
     {FN_NOEXCEPT_MULTIPLE,
      "The 'noexcept' specifier was already specified for this function. To fix "
      "the issue, remove the duplicate 'noexcept' specifier"},
@@ -481,6 +470,10 @@ libquixcc::core::Feedback libquixcc::core::feedback({
     {FORM_EXPECTED_CLOSE_PAREN, "Expected a closing parenthesis after the "
                                 "form block. To fix the issue, insert a "
                                 "closing parenthesis after the form block"},
+    {FORM_EXPECTED_OPEN_PAREN, "Expected an open parenthesis after the "
+                               "keyword 'form'. Syntax: form name in expr { ... };"},
+    {FORM_EXPECTED_COMMA, "Expected a comma after the form name. To fix the issue, insert a "
+                          "comma after the form name"},
 
     {FOREACH_EXPECTED_IDENTIFIER,
      "Expected identifier in foreach declaration. To fix the issue, name your "
@@ -503,6 +496,8 @@ libquixcc::core::Feedback libquixcc::core::feedback({
     {FOREACH_EXPECTED_CLOSE_PAREN, "Expected a closing parenthesis after the "
                                    "foreach block. To fix the issue, insert a "
                                    "closing parenthesis after the foreach block"},
+    {FOREACH_EXPECTED_COMMA, "Expected a comma after the foreach name. To fix the issue, insert a "
+                             "comma after the foreach name"},
 
     {ASM_EXPECTED_LEFT_PAREN, "Expected an open parenthesis after the keyword '__asm__'. Syntax: "
                               "__asm__ ( ... );"},

@@ -62,27 +62,10 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok, const std::string &dir
     return false;
   }
 
-  std::vector<Token> tokens;
-  while (true) {
-    t = lex->next();
-    if (t.type() == tEofF) {
-      break;
-    }
-    tokens.push_back(t);
-  }
-
-  if (tokens.size() == 0) {
-    LOG(ERROR) << "Expected value in @define directive" << t << std::endl;
-    return false;
-  }
-
-  if (tokens.back().is<Punctor>(Semicolon)) {
-    tokens.pop_back();
-  }
-  std::string dvalue;
-  for (const auto &tok : tokens) {
-    dvalue += tok.serialize(false);
-  }
+  lex->disable_expansion();
+  t = lex->next();
+  lex->enable_expansion();
+  std::string dvalue = t.serialize(false);
 
   set_static(dname, dvalue);
 

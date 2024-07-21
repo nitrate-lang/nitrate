@@ -263,6 +263,41 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     OBJECT_END();
     break;
   }
+  case QUIXCC_AST_NODE_TEMPL_CALL: {
+    OBJECT_BEGIN("TCall");
+    OBJECT_SUB(n->as<TemplCall>()->get_func());
+    ss << "[";
+    for (const auto &[k, v] : n->as<TemplCall>()->get_template_args()) {
+      indent(ss, state);
+
+      ss << "(Param";
+      state.indent++;
+      indent(ss, state);
+      ss << escape_string(k);
+      state.indent--;
+
+      serialize_recurse(v, ss, state);
+      ss << ")";
+    }
+    ss << "]";
+    OBJECT_SUB(n->as<TemplCall>()->get_func());
+    ss << "[";
+    for (const auto &[k, v] : n->as<TemplCall>()->get_args()) {
+      indent(ss, state);
+
+      ss << "(Param";
+      state.indent++;
+      indent(ss, state);
+      ss << escape_string(k);
+      state.indent--;
+
+      serialize_recurse(v, ss, state);
+      ss << ")";
+    }
+    ss << "]";
+    OBJECT_END();
+    break;
+  }
   case QUIXCC_AST_NODE_LIST: {
     OBJECT_BEGIN("List");
     OBJECT_ARRAY(n->as<List>()->get_items());
@@ -736,15 +771,19 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
   case QUIXCC_AST_NODE_FORM: {
     OBJECT_BEGIN("Form");
-    OBJECT_SUB(n->as<FormStmt>()->get_init());
-    OBJECT_SUB(n->as<FormStmt>()->get_generator());
+    OBJECT_SUB(n->as<FormStmt>()->get_maxjobs());
+    OBJECT_STR(n->as<FormStmt>()->get_idx_ident());
+    OBJECT_STR(n->as<FormStmt>()->get_val_ident());
+    OBJECT_SUB(n->as<FormStmt>()->get_expr());
     OBJECT_SUB(n->as<FormStmt>()->get_body());
     OBJECT_END();
     break;
   }
   case QUIXCC_AST_NODE_FOREACH: {
     OBJECT_BEGIN("Foreach");
-    OBJECT_SUB(n->as<ForeachStmt>()->get_iter());
+    OBJECT_STR(n->as<ForeachStmt>()->get_idx_ident());
+    OBJECT_STR(n->as<ForeachStmt>()->get_val_ident());
+    OBJECT_SUB(n->as<ForeachStmt>()->get_expr());
     OBJECT_SUB(n->as<ForeachStmt>()->get_body());
     OBJECT_END();
     break;

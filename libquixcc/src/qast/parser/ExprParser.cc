@@ -67,7 +67,7 @@ static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *sc
       break;
     }
 
-    if (tok.type() != tName) {
+    if (!tok.is(tName)) {
       /**
        * @brief
        */
@@ -151,7 +151,7 @@ static bool parse_fstring(quixcc_cc_job_t &job, FString **node, Scanner *scanner
   size_t state = 0, w_beg = 0, w_end = 0;
   Expr *expr = nullptr;
 
-  if (tok.type() != tText) {
+  if (!tok.is(tText)) {
     LOG(ERROR) << "Expected a string literal template in f-string" << tok << std::endl;
     return false;
   }
@@ -538,7 +538,7 @@ bool libquixcc::qast::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
         stack.pop();
 
         tok = scanner->next();
-        if (tok.type() != tName) {
+        if (!tok.is(tName)) {
           LOG(ERROR) << "Expected an identifier in member access" << tok << std::endl;
           return false;
         }

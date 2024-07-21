@@ -95,6 +95,10 @@ struct quixcc_cc_job_t {
   bool m_tainted;
   bool m_running;
 
+  quixcc_cc_job_t &operator=(quixcc_cc_job_t &&) = delete;
+  quixcc_cc_job_t &operator=(const quixcc_cc_job_t &) = delete;
+  quixcc_cc_job_t(const quixcc_cc_job_t &) = delete;
+
   quixcc_cc_job_t() {
     m_magic = libquixcc::quixcc::JOB_MAGIC;
     m_in = nullptr;
@@ -112,6 +116,14 @@ struct quixcc_cc_job_t {
         return true;
     }
     return false;
+  }
+
+  std::string_view get(std::string_view name) const {
+    for (const auto &arg : m_argset) {
+      if (arg.first == name)
+        return arg.second;
+    }
+    return "";
   }
 };
 

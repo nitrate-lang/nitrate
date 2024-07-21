@@ -47,12 +47,25 @@ bool libquixcc::qast::parser::parse_foreach(quixcc_cc_job_t &job, libquixcc::Sca
     tok = scanner->next();
   }
 
-  if (tok.type() != tName) {
+  if (!tok.is(tName)) {
+    LOG(ERROR) << core::feedback[FOREACH_EXPECTED_IDENTIFIER] << tok << std::endl;
+    return false;
+  }
+  std::string idx_ident = tok.as_string();
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(Comma)) {
+    LOG(ERROR) << core::feedback[FOREACH_EXPECTED_COMMA] << tok << std::endl;
+    return false;
+  }
+
+  tok = scanner->next();
+  if (!tok.is(tName)) {
     LOG(ERROR) << core::feedback[FOREACH_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
 
-  std::string var = tok.as_string();
+  std::string val_ident = tok.as_string();
 
   tok = scanner->next();
   if (!tok.is<Operator>(In)) {
@@ -94,10 +107,7 @@ bool libquixcc::qast::parser::parse_foreach(quixcc_cc_job_t &job, libquixcc::Sca
     }
   }
 
-  // node = std::make_shared<ForeachStmtNode>(var, expr, block);
-  // *node = ForeachStmt::get(var, expr, block);
-  throw std::runtime_error("Not implemented");
-  /// TODO: Implement ForeachStmt::get(var, expr, block);
+  *node = ForeachStmt::get(idx_ident, val_ident, expr, block);
 
   return true;
 }

@@ -1108,6 +1108,37 @@ public:
     NODE_IMPL_CORE(Call)
   };
 
+  typedef std::map<String, ConstExpr *, std::less<String>, Arena<std::pair<const String, ConstExpr *>>>
+      TemplateArgs;
+
+  class TemplCall : public Call {
+protected:
+    TemplateArgs m_template_args;
+    Expr *m_func;
+    CallArgs m_args;
+
+public:
+    TemplCall(Expr *func = nullptr, CallArgs args = {}, TemplateArgs template_args = {})
+        : m_template_args(template_args), m_func(func), m_args(args) {}
+
+    Expr *get_func() const;
+    void set_func(Expr *func);
+
+    CallArgs &get_args();
+    void add_arg(String name, Expr *arg);
+    void add_args(std::map<String, Expr *> args);
+    void clear_args();
+    void remove_arg(String name);
+
+    TemplateArgs &get_template_args();
+    void add_template_arg(String name, ConstExpr *arg);
+    void add_template_args(std::map<String, ConstExpr *> args);
+    void clear_template_args();
+    void remove_template_arg(String name);
+
+    NODE_IMPL_CORE(TemplCall)
+  };
+
   typedef std::vector<Expr *, Arena<Expr *>> ListData;
 
   class List : public Expr {
@@ -1429,19 +1460,29 @@ public:
 
   class FormStmt : public FlowStmt {
 protected:
-    Expr *m_init;
-    Expr *m_generator;
+    String m_idx_ident;
+    String m_val_ident;
+    Expr *m_expr;
+    Expr *m_maxjobs;
     Stmt *m_body;
 
 public:
-    FormStmt(Expr *init = nullptr, Expr *generator = nullptr, Stmt *body = nullptr)
-        : m_init(init), m_generator(generator), m_body(body) {}
+    FormStmt(String idx_ident = "", String val_ident = "", Expr *expr = nullptr,
+             Expr *maxjobs = nullptr, Stmt *body = nullptr)
+        : m_idx_ident(idx_ident), m_val_ident(val_ident), m_expr(expr), m_maxjobs(maxjobs),
+          m_body(body) {}
 
-    Expr *get_init() const;
-    void set_init(Expr *init);
+    String get_idx_ident() const;
+    void set_idx_ident(String idx_ident);
 
-    Expr *get_generator() const;
-    void set_generator(Expr *generator);
+    String get_val_ident() const;
+    void set_val_ident(String val_ident);
+
+    Expr *get_expr() const;
+    void set_expr(Expr *expr);
+
+    Expr *get_maxjobs() const;
+    void set_maxjobs(Expr *maxjobs);
 
     Stmt *get_body() const;
     void set_body(Stmt *body);
@@ -1451,19 +1492,24 @@ public:
 
   class ForeachStmt : public FlowStmt {
 protected:
-    String m_name;
-    Expr *m_iter;
+    String m_idx_ident;
+    String m_val_ident;
+    Expr *m_expr;
     Stmt *m_body;
 
 public:
-    ForeachStmt(String name = "", Expr *iter = nullptr, Stmt *body = nullptr)
-        : m_name(name), m_iter(iter), m_body(body) {}
+    ForeachStmt(String idx_ident = "", String val_ident = "", Expr *expr = nullptr,
+                Stmt *body = nullptr)
+        : m_idx_ident(idx_ident), m_val_ident(val_ident), m_expr(expr), m_body(body) {}
 
-    String get_name() const;
-    void set_name(String name);
+    String get_idx_ident() const;
+    void set_idx_ident(String idx_ident);
 
-    Expr *get_iter() const;
-    void set_iter(Expr *iter);
+    String get_val_ident() const;
+    void set_val_ident(String val_ident);
+
+    Expr *get_expr() const;
+    void set_expr(Expr *expr);
 
     Stmt *get_body() const;
     void set_body(Stmt *body);

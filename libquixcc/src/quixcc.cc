@@ -50,6 +50,7 @@
 #include <quixcc/preprocessor/Preprocessor.h>
 #include <quixcc/preprocessor/QSys.h>
 #include <quixcc/solver/Solver.h>
+#include <regex>
 #include <setjmp.h>
 #include <signal.h>
 
@@ -523,8 +524,31 @@ bool preprocessor_config(quixcc_cc_job_t *job, std::unique_ptr<PrepEngine> &prep
   return true;
 }
 
+static uint8_t get_target_word_size(quixcc_cc_job_t *job) {
+  /// TODO: implement target word size
+  return 8;
+}
+
 static bool compile(quixcc_cc_job_t *job) {
-  // auto ptree = std::make_shared<Ptree>();
+  /* Set the target word size */
+  job->m_wordsize = get_target_word_size(job);
+  libquixcc::quixcc::g_target_word_size = job->m_wordsize;
+
+  if (job->has("-std")) {
+    auto ver = job->get("-std");
+
+    uint32_t major = std::stoi(ver.substr(1, ver.find('.')).data());
+    uint32_t minor = std::stoi(ver.substr(ver.find('.') + 1).data());
+
+    if (!quixcc_has_version(major, minor)) {
+      LOG(ERROR) << "Language version [" << major << "." << minor
+                 << "] is not supported by this toolchain" << std::endl;
+      return false;
+    }
+
+    job->version = std::make_pair(major, minor);
+  }
+
   qast::Block *ptree = nullptr;
 
   if (job->has("-emit-prep")) {
@@ -762,9 +786,10 @@ static bool verify_build_option(const std::string &option, const std::string &va
       "-fkeep-comments", // keep comments from scanner
   };
   const static std::vector<std::pair<std::regex, std::regex>> static_regexes = {
-      {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex("[a-zA-Z0-9_ ]*")},
+      {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex(".*")},
       {std::regex("-I.+"), std::regex("")},
       {std::regex("-fno-auto-impl"), std::regex("function|group|struct|region|union")},
+      {std::regex("-std"), std::regex("v[0-9]+\\.[0-9]+")},
   };
 
   if (static_options.contains(option))
@@ -976,11 +1001,6 @@ static bool execute_job(quixcc_cc_job_t *job) {
   return false;
 }
 
-static uint8_t get_target_word_size(quixcc_cc_job_t *job) {
-  //
-  return 8;
-}
-
 LIB_EXPORT bool quixcc_cc_run(quixcc_cc_job_t *job) {
   if (!g_is_initialized && !quixcc_lib_init()) {
     quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
@@ -1023,10 +1043,6 @@ LIB_EXPORT bool quixcc_cc_run(quixcc_cc_job_t *job) {
         break;
       }
     }
-
-    /* Set the target word size */
-    job->m_wordsize = get_target_word_size(job);
-    libquixcc::quixcc::g_target_word_size = job->m_wordsize;
 
     if (!has_core_dump) {
       /* We capture the local environment: (stack pointer, PC, registers, etc.)
@@ -1150,4 +1166,12 @@ LIB_EXPORT char **quixcc_cc_compile(FILE *in, FILE *out, const char *options[]) 
 
   quixcc_cc_dispose(job);
   return messages;
+}
+
+LIB_EXPORT bool quixcc_has_version(uint32_t major, uint32_t minor) {
+  static std::set<std::pair<uint32_t, uint32_t>> supported_version = {
+      {1, 0},
+  };
+
+  return supported_version.contains({major, minor});
 }

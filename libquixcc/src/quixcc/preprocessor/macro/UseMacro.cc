@@ -73,7 +73,7 @@ bool libquixcc::PrepEngine::ParseUse(const Token &tok, const std::string &direct
 
   job->version = std::make_pair(major, minor);
 
-  if (major != 1 || minor != 0) {
+  if (!quixcc_has_version(major, minor)) {
     LOG(ERROR) << "Language version [" << major << "." << minor
                << "] is not supported by this toolchain" << tok << std::endl;
 

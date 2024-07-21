@@ -90,7 +90,7 @@ bool libquixcc::qast::parser::parse_const(quixcc_cc_job_t &job, Scanner *scanner
         return false;
       }
     }
-  } else if (tok.type() == tName) {
+  } else if (tok.is(tName)) {
     // Parse single variable declaration
     std::pair<std::string, Type *> decl;
     if (!parse_decl(job, tok, scanner, decl))

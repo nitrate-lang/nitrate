@@ -152,7 +152,7 @@ bool libquixcc::qast::parser::parse_type(quixcc_cc_job_t &job, Scanner *src, Typ
     }
 
     __builtin_unreachable();
-  } else if (tok.type() == tName) {
+  } else if (tok.is(tName)) {
     if (primitives.contains(tok.as<string>())) {
       /** QUIX PRIMITIVE TYPE
        *
@@ -231,9 +231,13 @@ bool libquixcc::qast::parser::parse_type(quixcc_cc_job_t &job, Scanner *src, Typ
       goto error_end;
     }
 
-    if (!parse_const_expr(job, src, Token(tPunc, CloseBracket), &size)) {
-      ERRORS(TYPE_EXPECTED_CONST_EXPR);
-      goto error_end;
+    {
+      Expr *_size = nullptr;
+      if (!parse_expr(job, src, {Token(tPunc, CloseBracket)}, &_size)) {
+        ERRORS(TYPE_EXPECTED_CONST_EXPR);
+        goto error_end;
+      }
+      size = ConstExpr::get(_size);
     }
 
     if (!(tok = src->next()).is<Punctor>(CloseBracket)) {

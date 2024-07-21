@@ -273,7 +273,7 @@ bool parser::parse_struct(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
         }
 
         /* Ensure it is an identifier */
-        if (tok.type() != tName) {
+        if (!tok.is(tName)) {
           LOG(ERROR) << core::feedback[STRUCT_DEF_EXPECTED_IDENTIFIER] << tok << std::endl;
           return false;
         }

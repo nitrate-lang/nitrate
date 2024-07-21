@@ -75,47 +75,89 @@ const char *Node::type_name(quixcc_ast_ntype_t type) {
   { QUIXCC_AST_NODE_##__name, "QUIXCC_AST_NODE_" #__name }
 
   static const std::unordered_map<quixcc_ast_ntype_t, const char *> names = {
-      NAMEOF_ROW(STMT),       NAMEOF_ROW(TYPE),
-      NAMEOF_ROW(DECL),       NAMEOF_ROW(EXPR),
-      NAMEOF_ROW(CEXPR),      NAMEOF_ROW(UNRES_TY),
-      NAMEOF_ROW(U1_TY),      NAMEOF_ROW(U8_TY),
-      NAMEOF_ROW(U16_TY),     NAMEOF_ROW(U32_TY),
-      NAMEOF_ROW(U64_TY),     NAMEOF_ROW(U128_TY),
-      NAMEOF_ROW(I8_TY),      NAMEOF_ROW(I16_TY),
-      NAMEOF_ROW(I32_TY),     NAMEOF_ROW(I64_TY),
-      NAMEOF_ROW(I128_TY),    NAMEOF_ROW(F32_TY),
-      NAMEOF_ROW(F64_TY),     NAMEOF_ROW(VOID_TY),
-      NAMEOF_ROW(STRING_TY),  NAMEOF_ROW(PTR_TY),
-      NAMEOF_ROW(OPAQUE_TY),  NAMEOF_ROW(VECTOR_TY),
-      NAMEOF_ROW(SET_TY),     NAMEOF_ROW(MAP_TY),
-      NAMEOF_ROW(TUPLE_TY),   NAMEOF_ROW(RESULT_TY),
-      NAMEOF_ROW(ARRAY_TY),   NAMEOF_ROW(ENUM_TY),
-      NAMEOF_ROW(MUT_TY),     NAMEOF_ROW(STRUCT_TY),
-      NAMEOF_ROW(GROUP_TY),   NAMEOF_ROW(REGION_TY),
-      NAMEOF_ROW(UNION_TY),   NAMEOF_ROW(FN_TY),
-      NAMEOF_ROW(UNEXPR),     NAMEOF_ROW(BINEXPR),
-      NAMEOF_ROW(TEREXPR),    NAMEOF_ROW(INT),
-      NAMEOF_ROW(FLOAT),      NAMEOF_ROW(BOOL),
-      NAMEOF_ROW(STRING),     NAMEOF_ROW(CHAR),
-      NAMEOF_ROW(NULL),       NAMEOF_ROW(UNDEF),
-      NAMEOF_ROW(CALL),       NAMEOF_ROW(LIST),
-      NAMEOF_ROW(ASSOC),      NAMEOF_ROW(FIELD),
-      NAMEOF_ROW(INDEX),      NAMEOF_ROW(SLICE),
-      NAMEOF_ROW(FSTRING),    NAMEOF_ROW(IDENT),
-      NAMEOF_ROW(BLOCK),      NAMEOF_ROW(CONST),
-      NAMEOF_ROW(VAR),        NAMEOF_ROW(LET),
-      NAMEOF_ROW(INLINE_ASM), NAMEOF_ROW(IF),
-      NAMEOF_ROW(WHILE),      NAMEOF_ROW(FOR),
-      NAMEOF_ROW(FORM),       NAMEOF_ROW(FOREACH),
-      NAMEOF_ROW(BREAK),      NAMEOF_ROW(CONTINUE),
-      NAMEOF_ROW(RETURN),     NAMEOF_ROW(RETIF),
-      NAMEOF_ROW(RETZ),       NAMEOF_ROW(RETV),
-      NAMEOF_ROW(CASE),       NAMEOF_ROW(SWITCH),
-      NAMEOF_ROW(TYPEDEF),    NAMEOF_ROW(FNDECL),
-      NAMEOF_ROW(FN),         NAMEOF_ROW(COMPOSITE_FIELD),
-      NAMEOF_ROW(STRUCT),     NAMEOF_ROW(GROUP),
-      NAMEOF_ROW(REGION),     NAMEOF_ROW(UNION),
-      NAMEOF_ROW(ENUM),       NAMEOF_ROW(SUBSYSTEM),
+      NAMEOF_ROW(STMT),
+      NAMEOF_ROW(TYPE),
+      NAMEOF_ROW(DECL),
+      NAMEOF_ROW(EXPR),
+      NAMEOF_ROW(CEXPR),
+      NAMEOF_ROW(UNRES_TY),
+      NAMEOF_ROW(U1_TY),
+      NAMEOF_ROW(U8_TY),
+      NAMEOF_ROW(U16_TY),
+      NAMEOF_ROW(U32_TY),
+      NAMEOF_ROW(U64_TY),
+      NAMEOF_ROW(U128_TY),
+      NAMEOF_ROW(I8_TY),
+      NAMEOF_ROW(I16_TY),
+      NAMEOF_ROW(I32_TY),
+      NAMEOF_ROW(I64_TY),
+      NAMEOF_ROW(I128_TY),
+      NAMEOF_ROW(F32_TY),
+      NAMEOF_ROW(F64_TY),
+      NAMEOF_ROW(VOID_TY),
+      NAMEOF_ROW(STRING_TY),
+      NAMEOF_ROW(PTR_TY),
+      NAMEOF_ROW(OPAQUE_TY),
+      NAMEOF_ROW(VECTOR_TY),
+      NAMEOF_ROW(SET_TY),
+      NAMEOF_ROW(MAP_TY),
+      NAMEOF_ROW(TUPLE_TY),
+      NAMEOF_ROW(RESULT_TY),
+      NAMEOF_ROW(ARRAY_TY),
+      NAMEOF_ROW(ENUM_TY),
+      NAMEOF_ROW(MUT_TY),
+      NAMEOF_ROW(STRUCT_TY),
+      NAMEOF_ROW(GROUP_TY),
+      NAMEOF_ROW(REGION_TY),
+      NAMEOF_ROW(UNION_TY),
+      NAMEOF_ROW(FN_TY),
+      NAMEOF_ROW(UNEXPR),
+      NAMEOF_ROW(BINEXPR),
+      NAMEOF_ROW(TEREXPR),
+      NAMEOF_ROW(INT),
+      NAMEOF_ROW(FLOAT),
+      NAMEOF_ROW(BOOL),
+      NAMEOF_ROW(STRING),
+      NAMEOF_ROW(CHAR),
+      NAMEOF_ROW(NULL),
+      NAMEOF_ROW(UNDEF),
+      NAMEOF_ROW(CALL),
+      NAMEOF_ROW(TEMPL_CALL),
+      NAMEOF_ROW(LIST),
+      NAMEOF_ROW(ASSOC),
+      NAMEOF_ROW(FIELD),
+      NAMEOF_ROW(INDEX),
+      NAMEOF_ROW(SLICE),
+      NAMEOF_ROW(FSTRING),
+      NAMEOF_ROW(IDENT),
+      NAMEOF_ROW(BLOCK),
+      NAMEOF_ROW(CONST),
+      NAMEOF_ROW(VAR),
+      NAMEOF_ROW(LET),
+      NAMEOF_ROW(INLINE_ASM),
+      NAMEOF_ROW(IF),
+      NAMEOF_ROW(WHILE),
+      NAMEOF_ROW(FOR),
+      NAMEOF_ROW(FORM),
+      NAMEOF_ROW(FOREACH),
+      NAMEOF_ROW(BREAK),
+      NAMEOF_ROW(CONTINUE),
+      NAMEOF_ROW(RETURN),
+      NAMEOF_ROW(RETIF),
+      NAMEOF_ROW(RETZ),
+      NAMEOF_ROW(RETV),
+      NAMEOF_ROW(CASE),
+      NAMEOF_ROW(SWITCH),
+      NAMEOF_ROW(TYPEDEF),
+      NAMEOF_ROW(FNDECL),
+      NAMEOF_ROW(FN),
+      NAMEOF_ROW(COMPOSITE_FIELD),
+      NAMEOF_ROW(STRUCT),
+      NAMEOF_ROW(GROUP),
+      NAMEOF_ROW(REGION),
+      NAMEOF_ROW(UNION),
+      NAMEOF_ROW(ENUM),
+      NAMEOF_ROW(SUBSYSTEM),
       NAMEOF_ROW(EXPORT),
   };
 
@@ -179,6 +221,7 @@ uint32_t Node::this_sizeof() const {
       SIZEOF_ROW(ConstNull),
       SIZEOF_ROW(ConstUndef),
       SIZEOF_ROW(Call),
+      SIZEOF_ROW(TemplCall),
       SIZEOF_ROW(List),
       SIZEOF_ROW(Assoc),
       SIZEOF_ROW(Field),
@@ -285,6 +328,7 @@ quixcc_ast_ntype_t Node::this_typeid() const {
       TYPEID_ROW(ConstNull, NULL),
       TYPEID_ROW(ConstUndef, UNDEF),
       TYPEID_ROW(Call, CALL),
+      TYPEID_ROW(TemplCall, TEMPL_CALL),
       TYPEID_ROW(List, LIST),
       TYPEID_ROW(Assoc, ASSOC),
       TYPEID_ROW(Field, FIELD),
@@ -449,6 +493,7 @@ bool Node::is_expr() const {
   case QUIXCC_AST_NODE_NULL:
   case QUIXCC_AST_NODE_UNDEF:
   case QUIXCC_AST_NODE_CALL:
+  case QUIXCC_AST_NODE_TEMPL_CALL:
   case QUIXCC_AST_NODE_LIST:
   case QUIXCC_AST_NODE_ASSOC:
   case QUIXCC_AST_NODE_FIELD:
@@ -2010,14 +2055,7 @@ void UnaryExpr::canonicalize_impl() {
 void UnaryExpr::print_impl(std::ostream &os, bool debug) const {
   os << "(";
 
-  switch (m_op) {
-  case UnaryOp::UNKNOWN:
-    os << "unknown";
-    break;
-  default:
-    /// TODO: Implement this function
-    throw std::runtime_error("UnaryExpr::print_impl() is not valid");
-  }
+  os << m_op;
 
   if (m_rhs) {
     m_rhs->print(os, debug);
@@ -2085,14 +2123,7 @@ void BinExpr::print_impl(std::ostream &os, bool debug) const {
     os << "?";
   }
 
-  switch (m_op) {
-  case BinOp::UNKNOWN:
-    os << " unknown ";
-    break;
-  default:
-    /// TODO: Implement this function
-    throw std::runtime_error("BinExpr::print_impl() is not valid");
-  }
+  os << " " << m_op << " ";
 
   if (m_rhs) {
     m_rhs->print(os, debug);
@@ -2153,14 +2184,7 @@ void PostUnaryExpr::print_impl(std::ostream &os, bool debug) const {
     os << "?";
   }
 
-  switch (m_op) {
-  case PostUnaryOp::UNKNOWN:
-    os << " unknown ";
-    break;
-  default:
-    /// TODO: Implement this function
-    throw std::runtime_error("PostUnaryExpr::print_impl() is not valid");
-  }
+  os << m_op;
 
   os << ")";
 }
@@ -2469,6 +2493,98 @@ CallArgs &Call::get_args() { return m_args; }
 void Call::add_arg(String name, Expr *arg) { m_args[name] = arg; }
 void Call::clear_args() { m_args.clear(); }
 void Call::remove_arg(String name) { m_args.erase(name); }
+
+bool TemplCall::verify_impl(std::ostream &os) const {
+  if (!m_func) {
+    os << "TemplCall: function is NULL\n";
+    return false;
+  }
+
+  for (const auto &[name, expr] : m_args) {
+    if (!expr) {
+      os << "TemplCall: arg '" << name << "' is NULL\n";
+      return false;
+    }
+
+    if (!expr->verify(os)) {
+      os << "TemplCall: arg '" << name << "' is invalid\n";
+      return false;
+    }
+  }
+
+  for (const auto &[key, value] : m_template_args) {
+    if (!value) {
+      os << "TemplCall: param is NULL\n";
+      return false;
+    }
+
+    if (!value->verify(os)) {
+      os << "TemplCall: param is invalid\n";
+      return false;
+    }
+  }
+
+  if (!m_func->verify(os)) {
+    os << "TemplCall: function is invalid\n";
+    return false;
+  }
+
+  return true;
+}
+
+void TemplCall::canonicalize_impl() {
+  if (m_func) {
+    m_func->canonicalize();
+  }
+
+  for (auto &[name, expr] : m_args) {
+    if (expr) {
+      expr->canonicalize();
+    }
+  }
+
+  for (auto &[key, value] : m_template_args) {
+    if (value) {
+      value->canonicalize();
+    }
+  }
+}
+
+void TemplCall::print_impl(std::ostream &os, bool debug) const {
+  quixcc_panic("TemplCall::print_impl not implemented");
+}
+
+TemplCall *TemplCall::clone_impl() const {
+  Expr *func = m_func ? m_func->clone() : nullptr;
+  CallArgs args;
+
+  for (const auto &[name, expr] : m_args) {
+    Expr *e = expr ? expr->clone() : nullptr;
+    args[name] = e;
+  }
+
+  TemplateArgs template_args;
+
+  for (const auto &[key, value] : m_template_args) {
+    ConstExpr *v = value ? value->clone() : nullptr;
+    template_args[key] = v;
+  }
+
+  return TemplCall::get(func, args, template_args);
+}
+
+Expr *TemplCall::get_func() const { return m_func; }
+void TemplCall::set_func(Expr *func) { m_func = func; }
+
+CallArgs &TemplCall::get_args() { return m_args; }
+void TemplCall::add_arg(String name, Expr *arg) { m_args[name] = arg; }
+void TemplCall::clear_args() { m_args.clear(); }
+void TemplCall::remove_arg(String name) { m_args.erase(name); }
+
+TemplateArgs &TemplCall::get_template_args() { return m_template_args; }
+void TemplCall::add_template_arg(String name, ConstExpr *arg) { m_template_args[name] = arg; }
+void TemplCall::clear_template_args() { m_template_args.clear(); }
+void TemplCall::remove_template_arg(String name) { m_template_args.erase(name); }
 
 bool List::verify_impl(std::ostream &os) const {
   for (size_t i = 0; i < m_items.size(); i++) {
@@ -3543,13 +3659,13 @@ Block *ForStmt::get_body() const { return m_body; }
 void ForStmt::set_body(Block *body) { m_body = body; }
 
 bool FormStmt::verify_impl(std::ostream &os) const {
-  if (!m_init) {
-    os << "FormStmt: init is NULL\n";
+  if (!m_expr) {
+    os << "FormStmt: expr is NULL\n";
     return false;
   }
 
-  if (!m_generator) {
-    os << "FormStmt: generator is NULL\n";
+  if (!m_maxjobs) {
+    os << "FormStmt: maxjobs is NULL\n";
     return false;
   }
 
@@ -3558,13 +3674,13 @@ bool FormStmt::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  if (!m_init->verify(os)) {
-    os << "FormStmt: init is invalid\n";
+  if (!m_expr->verify(os)) {
+    os << "FormStmt: expr is invalid\n";
     return false;
   }
 
-  if (!m_generator->verify(os)) {
-    os << "FormStmt: generator is invalid\n";
+  if (!m_maxjobs->verify(os)) {
+    os << "FormStmt: maxjobs is invalid\n";
     return false;
   }
 
@@ -3577,12 +3693,12 @@ bool FormStmt::verify_impl(std::ostream &os) const {
 }
 
 void FormStmt::canonicalize_impl() {
-  if (m_init) {
-    m_init->canonicalize();
+  if (m_expr) {
+    m_expr->canonicalize();
   }
 
-  if (m_generator) {
-    m_generator->canonicalize();
+  if (m_maxjobs) {
+    m_maxjobs->canonicalize();
   }
 
   if (m_body) {
@@ -3592,22 +3708,20 @@ void FormStmt::canonicalize_impl() {
 
 void FormStmt::print_impl(std::ostream &os, bool debug) const {
   os << "form (";
+  if (m_maxjobs) {
+    m_maxjobs->print(os, debug);
+  } else {
+    os << "?";
+  }
+  os << ") (" << m_idx_ident << ", " << m_val_ident << " in ";
 
-  if (m_init) {
-    m_init->print(os, debug);
+  if (m_expr) {
+    m_expr->print(os, debug);
   } else {
     os << "?";
   }
 
-  os << " in ";
-
-  if (m_generator) {
-    m_generator->print(os, debug);
-  } else {
-    os << "?";
-  }
-
-  os << ") ";
+  os << ")";
 
   if (m_body) {
     m_body->print(os, debug);
@@ -3617,40 +3731,95 @@ void FormStmt::print_impl(std::ostream &os, bool debug) const {
 }
 
 FormStmt *FormStmt::clone_impl() const {
-  Expr *init = m_init ? m_init->clone() : nullptr;
-  Expr *generator = m_generator ? m_generator->clone() : nullptr;
+  Expr *expr = m_expr ? m_expr->clone() : nullptr;
+  Expr *maxjobs = m_maxjobs ? m_maxjobs->clone() : nullptr;
   Stmt *body = m_body ? m_body->clone() : nullptr;
 
-  return FormStmt::get(init, generator, body);
+  return FormStmt::get(m_idx_ident, m_val_ident, expr, maxjobs, body);
 }
 
-Expr *FormStmt::get_init() const { return m_init; }
-void FormStmt::set_init(Expr *init) { m_init = init; }
+String FormStmt::get_idx_ident() const { return m_idx_ident; }
+void FormStmt::set_idx_ident(String idx_ident) { m_idx_ident = idx_ident; }
 
-Expr *FormStmt::get_generator() const { return m_generator; }
-void FormStmt::set_generator(Expr *generator) { m_generator = generator; }
+String FormStmt::get_val_ident() const { return m_val_ident; }
+void FormStmt::set_val_ident(String val_ident) { m_val_ident = val_ident; }
+
+Expr *FormStmt::get_expr() const { return m_expr; }
+void FormStmt::set_expr(Expr *expr) { m_expr = expr; }
+
+Expr *FormStmt::get_maxjobs() const { return m_maxjobs; }
+void FormStmt::set_maxjobs(Expr *maxjobs) { m_maxjobs = maxjobs; }
 
 Stmt *FormStmt::get_body() const { return m_body; }
 void FormStmt::set_body(Stmt *body) { m_body = body; }
 
 bool ForeachStmt::verify_impl(std::ostream &os) const {
-  quixcc_panic("ForeachStmt::verify_impl() is not implemented");
+  if (!m_expr) {
+    os << "ForeachStmt: expr is NULL\n";
+    return false;
+  }
+
+  if (!m_body) {
+    os << "ForeachStmt: body is NULL\n";
+    return false;
+  }
+
+  if (!m_expr->verify(os)) {
+    os << "ForeachStmt: expr is invalid\n";
+    return false;
+  }
+
+  if (!m_body->verify(os)) {
+    os << "ForeachStmt: body is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
 void ForeachStmt::canonicalize_impl() {
-  quixcc_panic("ForeachStmt::canonicalize_impl() is not implemented");
+  if (m_expr) {
+    m_expr->canonicalize();
+  }
+
+  if (m_body) {
+    m_body->canonicalize();
+  }
 }
 
 void ForeachStmt::print_impl(std::ostream &os, bool debug) const {
-  quixcc_panic("ForeachStmt::print_impl() is not implemented");
+  os << "foreach (" << m_idx_ident << ", " << m_val_ident << " in ";
+
+  if (m_expr) {
+    m_expr->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << ")";
+
+  if (m_body) {
+    m_body->print(os, debug);
+  } else {
+    os << "?";
+  }
 }
 
 ForeachStmt *ForeachStmt::clone_impl() const {
-  quixcc_panic("ForeachStmt::clone_impl() is not implemented");
+  Expr *expr = m_expr ? m_expr->clone() : nullptr;
+  Stmt *body = m_body ? m_body->clone() : nullptr;
+
+  return ForeachStmt::get(m_idx_ident, m_val_ident, expr, body);
 }
 
-Expr *ForeachStmt::get_iter() const { return m_iter; }
-void ForeachStmt::set_iter(Expr *iter) { m_iter = iter; }
+String ForeachStmt::get_idx_ident() const { return m_idx_ident; }
+void ForeachStmt::set_idx_ident(String idx_ident) { m_idx_ident = idx_ident; }
+
+String ForeachStmt::get_val_ident() const { return m_val_ident; }
+void ForeachStmt::set_val_ident(String val_ident) { m_val_ident = val_ident; }
+
+Expr *ForeachStmt::get_expr() const { return m_expr; }
+void ForeachStmt::set_expr(Expr *expr) { m_expr = expr; }
 
 Stmt *ForeachStmt::get_body() const { return m_body; }
 void ForeachStmt::set_body(Stmt *body) { m_body = body; }
@@ -5303,6 +5472,9 @@ LIB_EXPORT quixcc_ast_node_t *quixcc_ast_alloc(quixcc_ast_ntype_t type, quixcc_a
     break;
   case QUIXCC_AST_NODE_CASE:
     node = CaseStmt::get();
+    break;
+  case QUIXCC_AST_NODE_TEMPL_CALL:
+    node = TemplCall::get();
     break;
   case QUIXCC_AST_NODE_SWITCH:
     node = SwitchStmt::get();

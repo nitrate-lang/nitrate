@@ -83,6 +83,7 @@ typedef enum quixcc_ast_ntype_t {
   QUIXCC_AST_NODE_POST_UNEXPR = 125,
   QUIXCC_AST_NODE_STMT_EXPR = 126,
   QUIXCC_AST_NODE_TYPE_EXPR = 127,
+  QUIXCC_AST_NODE_TEMPL_CALL = 128,
 
   QUIXCC_AST_NODE_MUT_TY = 300,
   QUIXCC_AST_NODE_U1_TY = 301,
@@ -150,7 +151,7 @@ typedef enum quixcc_ast_ntype_t {
   QUIXCC_AST_NODE_EXPR_STMT = 719,
 } quixcc_ast_ntype_t;
 
-#define QUIXCC_AST_NODE_COUNT 89
+#define QUIXCC_AST_NODE_COUNT 90
 
 typedef enum quixcc_ast_ftype_t {
   QUIXCC_AST_FIELD_BOOL = 0,

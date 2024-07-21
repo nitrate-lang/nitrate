@@ -70,7 +70,7 @@ bool libquixcc::qast::parser::parse(quixcc_cc_job_t &job, Scanner *scanner, Bloc
       continue;
     }
 
-    if (tok.type() != tKeyW) {
+    if (!tok.is(tKeyW)) {
       Expr *expr = nullptr;
       if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &expr)) {
         LOG(ERROR) << "Error parsing expression in block statement." << tok << std::endl;

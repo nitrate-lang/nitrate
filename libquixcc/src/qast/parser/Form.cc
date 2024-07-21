@@ -40,18 +40,49 @@ using namespace libquixcc::qast::parser;
 bool libquixcc::qast::parser::parse_form(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                                          Stmt **node) {
   Token tok = scanner->next();
-  bool has_parens = false;
-  if (tok.is<Punctor>(OpenParen)) {
-    tok = scanner->next();
-    has_parens = true;
-  }
 
-  if (tok.type() != tName) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_IDENTIFIER] << tok << std::endl;
+  if (!tok.is<Punctor>(OpenParen)) {
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_OPEN_PAREN] << tok << std::endl;
     return false;
   }
 
-  std::string var = tok.as_string();
+  Expr *maxjobs = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, &maxjobs)) {
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
+    return false;
+  }
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(CloseParen)) {
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok << std::endl;
+    return false;
+  }
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(OpenParen)) {
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_OPEN_PAREN] << tok << std::endl;
+    return false;
+  }
+
+  tok = scanner->next();
+  if (!tok.is(tName)) {
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_IDENTIFIER] << tok << std::endl;
+    return false;
+  }
+  std::string idx_ident = tok.as_string();
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(Comma)) {
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_COMMA] << tok << std::endl;
+    return false;
+  }
+
+  tok = scanner->next();
+  if (!tok.is(tName)) {
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_IDENTIFIER] << tok << std::endl;
+    return false;
+  }
+  std::string val_ident = tok.as_string();
 
   tok = scanner->next();
   if (!tok.is<Operator>(In)) {
@@ -60,21 +91,14 @@ bool libquixcc::qast::parser::parse_form(quixcc_cc_job_t &job, libquixcc::Scanne
   }
 
   Expr *expr = nullptr;
-  if (has_parens) {
-    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, &expr)) {
-      LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
-      return false;
-    }
-    tok = scanner->next();
-    if (!tok.is<Punctor>(CloseParen)) {
-      LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok << std::endl;
-      return false;
-    }
-  } else {
-    if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, &expr)) {
-      LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
-      return false;
-    }
+  if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, &expr)) {
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
+    return false;
+  }
+  tok = scanner->next();
+  if (!tok.is<Punctor>(CloseParen)) {
+    LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok << std::endl;
+    return false;
   }
 
   tok = scanner->peek();
@@ -93,9 +117,7 @@ bool libquixcc::qast::parser::parse_form(quixcc_cc_job_t &job, libquixcc::Scanne
     }
   }
 
-  // node = std::make_shared<FormStmtNode>(var, expr, block);
-  throw std::runtime_error("Not implemented");
-  /// TODO: Implement FormStmt::get(var, expr, block);
+  *node = FormStmt::get(idx_ident, val_ident, expr, maxjobs, block);
 
   return true;
 }

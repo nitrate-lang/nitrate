@@ -36,7 +36,7 @@
 bool libquixcc::qast::parser::parse_subsystem(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                                               Stmt **node) {
   Token tok = scanner->next();
-  if (tok.type() != tName) {
+  if (!tok.is(tName)) {
     LOG(ERROR) << core::feedback[SUBSYSTEM_MISSING_IDENTIFIER] << tok << std::endl;
     return false;
   }
@@ -75,7 +75,7 @@ bool libquixcc::qast::parser::parse_subsystem(quixcc_cc_job_t &job, libquixcc::S
     }
     tok = scanner->next();
 
-    if (tok.type() != tName) {
+    if (!tok.is(tName)) {
       LOG(ERROR) << core::feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
       return false;
     }
@@ -85,7 +85,7 @@ bool libquixcc::qast::parser::parse_subsystem(quixcc_cc_job_t &job, libquixcc::S
     while (tok.is<Punctor>(Comma)) {
       scanner->next(); // consume comma
       tok = scanner->next();
-      if (tok.type() != tName) {
+      if (!tok.is(tName)) {
         LOG(ERROR) << core::feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
         return false;
       }

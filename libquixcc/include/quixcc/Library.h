@@ -87,6 +87,17 @@ bool quixcc_lib_deinit();
 const char *quixcc_lib_version();
 
 /**
+ * @brief Check if the QUIX compiler library supports a specific language version.
+ *
+ * @param major The major version number.
+ * @param minor The minor version number.
+ *
+ * @return true if the library supports the version, false otherwise.
+ * @note This function is thread-safe.
+ */
+bool quixcc_has_version(uint32_t major, uint32_t minor);
+
+/**
  * @brief Print debug into and abort.
  *
  * @param msg The message to print.

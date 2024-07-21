@@ -64,6 +64,7 @@ struct Options {
   std::string output;
   quixcc::Verbosity verbosity;
   quixcc::OptimizationLevel optimization;
+  std::string std;
   bool debug;
   bool noprofile;
   bool minify;
@@ -167,6 +168,7 @@ static void print_help() {
   println("  -l<name>                  Link with library <name>");
   println("  -D<name>[=<value>]        Define macro <name> with optional <value>");
   println("  -U<name>                  Undefine macro <name>");
+  println("  -std=<version>             Specify the language standard to use");
   println("  -T, --target <triple>     Specify the LLVM target triple");
   println("  -C, --cpu <cpu>           Specify the LLVM target CPU");
   println("  -emit-tokens              Emit the tokens prior to preprocessing");
@@ -278,6 +280,8 @@ static std::optional<Options> parse_options(const std::vector<std::string> &args
         return std::nullopt;
       }
       options.settings.push_back(*it);
+    } else if (it->starts_with("-std=")) {
+      options.std = it->substr(5);
     } else if (it->starts_with("-l")) {
       auto sub = it->substr(2);
       if (sub.empty()) {
@@ -445,6 +449,8 @@ int main(int argc, char *argv[]) {
     builder.opt("-emit-minify");
   if (options->emit_bin)
     builder.opt("-emit-bin");
+  if (!options->std.empty())
+    builder.opt("-std=" + options->std);
 
   try {
     if (!options->target_triple.empty())

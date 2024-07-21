@@ -42,7 +42,7 @@ using namespace libquixcc::qast::parser;
 static bool parse_enum_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                              EnumDefItems &fields) {
   Token tok = scanner->next();
-  if (tok.type() != tName) {
+  if (!tok.is(tName)) {
     LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
@@ -54,11 +54,14 @@ static bool parse_enum_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
   tok = scanner->peek();
   if (tok.is<Operator>(OpAssign)) {
     scanner->next();
-    if (!parse_const_expr(job, scanner, Token(tPunc, Comma), &item.second)) {
+    Expr *expr = nullptr;
+    if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, &expr)) {
       LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_CONST_EXPR] << item.first << tok
                  << std::endl;
       return false;
     }
+
+    item.second = ConstExpr::get(expr);
 
     tok = scanner->peek();
   }
@@ -81,7 +84,7 @@ static bool parse_enum_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 bool libquixcc::qast::parser::parse_enum(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                                          Stmt **node) {
   Token tok = scanner->next();
-  if (tok.type() != tName) {
+  if (!tok.is(tName)) {
     LOG(ERROR) << core::feedback[ENUM_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }

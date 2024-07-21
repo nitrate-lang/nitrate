@@ -50,7 +50,7 @@ static bool asm_parse_param(quixcc_cc_job_t &job, Scanner *scanner,
   }
 
   while (!(tok = scanner->next()).is<Punctor>(CloseBrace)) {
-    if (tok.type() != tText) {
+    if (!tok.is(tText)) {
       LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok
                  << std::endl;
       return false;
@@ -102,7 +102,7 @@ static bool asm_parse_clobbers(quixcc_cc_job_t &job, libquixcc::Scanner *scanner
       break;
     }
 
-    if (tok.type() != tText) {
+    if (!tok.is(tText)) {
       LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok
                  << std::endl;
       return false;
@@ -131,7 +131,7 @@ bool libquixcc::qast::parser::parse_inline_asm(quixcc_cc_job_t &job, libquixcc::
   }
 
   tok = scanner->next();
-  if (tok.type() != tText) {
+  if (!tok.is(tText)) {
     LOG(ERROR) << core::feedback[ASM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok
                << std::endl;
     return false;

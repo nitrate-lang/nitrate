@@ -7,19 +7,18 @@ subsystem linux::kern::DRM: [linux::kern::drm::util, linux::kern::vbuf_api] {
 
     static fn to_cute(this: VModeResolution, ss: !string) {
       ss << f"{this.width}x{this.height}";
-    } with [override];
+    } with [lang];
 
     static fn from_cute(ss: string): VModeResolution? {
       let w: usize;
       let h: usize;
 
-      if ss.scan("\{usize}x\{usize}", w, h) {
+      if ss.scan("{usize}x{usize}", w, h) {
         ret VModeResolution( width: w, height: h );
       } else {
         ret "Failed to parse VModeResolution";
       }
-    }
-      
+    } with [lang];
   };
 
   group VModeColorDepth {
@@ -28,17 +27,17 @@ subsystem linux::kern::DRM: [linux::kern::drm::util, linux::kern::vbuf_api] {
 
     static fn to_cute(this: VModeColorDepth, ss: !string) {
       ss << f"{this.bpp}bps";
-    } with [override];
+    } with [lang];
 
     static fn from_cute(ss: string): VModeColorDepth? {
       let bpp: u16;
 
-      if ss.scan("\{u16}bps", bpp) {
+      if ss.scan("{u16}bps", bpp) {
         ret VModeColorDepth(depth: bpp, bpp: bpp);
       } else {
         ret "Failed to parse VModeColorDepth";
       }
-    }
+    } with [lang];
   };
 
   group VModeName {
@@ -48,19 +47,19 @@ subsystem linux::kern::DRM: [linux::kern::drm::util, linux::kern::vbuf_api] {
 
     static fn to_cute(this: VModeName, ss: !string) {
       ss << f"[{this.res}:{this.color}]/{this.refresh}Hz";
-    } with [override];
+    } with [lang];
 
     static fn from_cute(ss: string): VModeName? {
       let res: VModeResolution;
       let color: VModeColorDepth;
       let refresh: u16;
 
-      if ss.scan("[\{VModeResolution}:\{VModeColorDepth}]/\{u16}Hz", res, color, refresh) {
+      if ss.scan("[{VModeResolution}:{VModeColorDepth}]/{u16}Hz", res, color, refresh) {
         ret VModeName(res: res, color: color, refresh: refresh);
       } else {
         ret "Failed to parse VModeName";
       }
-    }
+    } with [lang];
   };
 
   group VBufLFB {

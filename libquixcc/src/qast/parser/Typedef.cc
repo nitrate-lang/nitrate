@@ -40,7 +40,7 @@ using namespace libquixcc::qast::parser;
 bool libquixcc::qast::parser::parse_typedef(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
                                             Stmt **node) {
   Token tok = scanner->next();
-  if (tok.type() != tName) {
+  if (!tok.is(tName)) {
     LOG(ERROR) << core::feedback[TYPEDEF_EXPECTED_IDENTIFIER] << tok << std::endl;
     return false;
   }
