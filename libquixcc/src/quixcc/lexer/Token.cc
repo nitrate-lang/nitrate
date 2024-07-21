@@ -135,19 +135,19 @@ std::string Token::serialize(bool human_readable) const {
     ss << as<std::string>();
     break;
   case tNote:
-    ss << "/*" << as<std::string>() << "*/";
+    ss << "/*" <<  Scanner::escape_string(as<std::string>()) << "*/";
     break;
   case tText:
-    ss << "\"" << as<std::string>() << "\"";
+    ss << "\"" << Scanner::escape_string(as<std::string>()) << "\"";
     break;
   case tChar:
-    ss << "'" << as<std::string>() << "'";
+    ss << "'" << Scanner::escape_string(as<std::string>()) << "'";
     break;
   case tMacB:
-    ss << "@(" << as<std::string>() << ")";
+    ss << "@(" <<  Scanner::escape_string(as<std::string>()) << ")";
     break;
   case tMacr:
-    ss << "@" << as<std::string>();
+    ss << "@" <<  Scanner::escape_string(as<std::string>());
     break;
   case tKeyW:
     ss << keyword_map_inverse.at(as<Keyword>()).data();

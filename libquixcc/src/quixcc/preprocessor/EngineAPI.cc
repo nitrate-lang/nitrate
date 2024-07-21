@@ -54,12 +54,12 @@ using namespace libquixcc;
 /// BEGIN: QUIXCC QSYS REGISTRY
 ///=============================================================================
 
-LIB_EXPORT bool quixcc_qsys_add(quixcc_cc_job_t *job, uint32_t num, quixcc_qsys_impl_t impl) {
+LIB_EXPORT bool quixcc_qsys_add(quixcc_cc_job_t *job, uint32_t num, const char *name, quixcc_qsys_impl_t impl) {
   if (!job)
     quixcc_panic("quixcc_qsys_add: job is NULL");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
-  job->m_qsyscalls.Register(num, impl);
+  job->m_qsyscalls.Register(num, name, impl);
 
   return true;
 }
@@ -276,58 +276,6 @@ LIB_EXPORT bool quixcc_engine_emit(quixcc_engine_t *engine, quixcc_tok_t tok) {
 
   reinterpret_cast<libquixcc::PrepEngine *>(engine)->emit(token);
   return true;
-}
-
-LIB_EXPORT const char *quixcc_expr_to_string(quixcc_expr_t *expr, size_t *len) {
-  if (!expr)
-    quixcc_panic("quixcc_expr_to_string: expr is NULL");
-  if (!len)
-    quixcc_panic("quixcc_expr_to_string: len is NULL");
-
-  auto qir = reinterpret_cast<libquixcc::ir::q::QModule *>(expr);
-  auto root = qir->root();
-
-  if (root->children.size() != 1) {
-    return nullptr;
-  }
-
-  if (!qir->root()->children[0]->is<ir::q::String>()) {
-    return nullptr;
-  }
-
-  auto &str = root->children[0]->as<ir::q::String>()->value;
-  *len = str.size();
-
-  return str.c_str();
-}
-
-LIB_EXPORT bool quixcc_expr_to_int64(quixcc_expr_t *expr, int64_t *out) {
-  if (!expr)
-    quixcc_panic("quixcc_expr_to_int64: expr is NULL");
-  if (!out)
-    quixcc_panic("quixcc_expr_to_int64: out is NULL");
-
-  *out = INT64_MIN;
-
-  auto qir = reinterpret_cast<libquixcc::ir::q::QModule *>(expr);
-  auto root = qir->root();
-
-  if (root->children.size() != 1) {
-    return false;
-  }
-
-  if (!qir->root()->children[0]->is<ir::q::Number>()) {
-    return false;
-  }
-
-  auto &intstr = root->children[0]->as<ir::q::Number>()->value;
-
-  try {
-    *out = std::stoll(intstr);
-    return true;
-  } catch (std::exception &e) {
-    return false;
-  }
 }
 
 extern const char *publish_string(quixcc_cc_job_t *job, std::string_view str);

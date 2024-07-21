@@ -36,6 +36,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,10 +49,11 @@ extern "C" {
 /// @brief Add a QSys Call to the preprocessor engine.
 /// @param engine QUIX Job
 /// @param num Unique number for the QSys Call
+/// @param name Unique name for the QSys Call
 /// @param impl Implementation of the QSys Call
 /// @return true if successful, false otherwise
 /// @note This function is thread-safe.
-bool quixcc_qsys_add(quixcc_cc_job_t *job, uint32_t num, quixcc_qsys_impl_t impl);
+bool quixcc_qsys_add(quixcc_cc_job_t *job, uint32_t num, const char *name, quixcc_qsys_impl_t impl);
 
 /// @brief Remove a QSys Call from the preprocessor engine.
 /// @param engine QUIX Job
@@ -124,23 +126,6 @@ bool quixcc_engine_message(quixcc_engine_t *engine, quixcc_message_t mode, const
 
 bool quixcc_engine_emit(quixcc_engine_t *engine, quixcc_tok_t tok);
 
-/// @brief Get string from expression
-/// @param expr QUIX Expression
-/// @param len Output length of the string
-/// @return The string representation of the expression. NULL if failed.
-/// @note The lifetime of the returned string is tied to the expression.
-/// @note The string is NOT guaranteed to be null-terminated.
-/// @warning The string may contain any byte within, including null bytes.
-/// @note This function is thread-safe.
-const char *quixcc_expr_to_string(quixcc_expr_t *expr, size_t *len);
-
-/// @brief Get int64 from expression
-/// @param expr QUIX Expression
-/// @param out Output int64_t
-/// @return true if successful, false otherwise
-/// @note This function is thread-safe.
-bool quixcc_expr_to_int64(quixcc_expr_t *expr, int64_t *out);
-
 /// @brief Create a new token
 /// @param engine QUIX Engine
 /// @param ty Token type
@@ -185,7 +170,7 @@ quixcc_tok_t quixcc_tok_new_punct(quixcc_lex_punct_t punct);
 ///=============================================================================
 /// BEGIN: MACROS
 ///=============================================================================
-#define QSYS_DECL(name) bool name(quixcc_engine_t *, uint32_t, quixcc_expr_t **, uint32_t)
+#define QSYS_DECL(name) bool name(quixcc_engine_t *, uint32_t, const char **, uint32_t)
 
 #define QSYS_ARGASSERT(name, nargs)                                                                \
   if (c != nargs) {                                                                                \
@@ -199,27 +184,15 @@ quixcc_tok_t quixcc_tok_new_punct(quixcc_lex_punct_t punct);
     quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL, "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
     return false;                                                                                  \
   }                                                                                                \
-  size_t _varname##_len = 0;                                                                       \
-  const char *_varname = quixcc_expr_to_string(v[_idx], &_varname##_len);                          \
-  if (_varname == NULL) {                                                                          \
-    quixcc_engine_message(e, QUIXCC_MESSAGE_ERROR,                                                 \
-                          "%s: Failed to convert argument %d to string \"" #_varname "\"",         \
-                          #_qname, _idx);                                                          \
-    return false;                                                                                  \
-  }
+  size_t _varname##_len = strlen(v[_idx]);                                                         \
+  const char *_varname = v[_idx];
 
 #define QSYS_ARG_INT64(_qname, _varname, _idx)                                                     \
   if (c <= _idx) {                                                                                 \
     quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL, "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
     return false;                                                                                  \
   }                                                                                                \
-  int64_t _varname = 0;                                                                            \
-  if (!quixcc_expr_to_int64(v[_idx], &_varname)) {                                                 \
-    quixcc_engine_message(e, QUIXCC_MESSAGE_ERROR,                                                 \
-                          "%s: Failed to convert argument %d to int64_t \"" #_varname "\"",        \
-                          #_qname, _idx);                                                          \
-    return false;                                                                                  \
-  }
+  int64_t _varname = atoll(v[_idx]);
 
 ///=============================================================================
 /// END: MACROS

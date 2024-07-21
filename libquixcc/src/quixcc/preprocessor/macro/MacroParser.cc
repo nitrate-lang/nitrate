@@ -32,11 +32,231 @@
 #define QUIXCC_INTERNAL
 
 #include <core/Macro.h>
+#include <qast/Parser.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 
+extern "C" {
+#include <lua5.4/lauxlib.h>
+#include <lua5.4/lua.h>
+#include <lua5.4/lualib.h>
+}
+
 #include <map>
 #include <stdexcept>
+
+/// TODO: Macro call type checking
+
+using namespace libquixcc;
+
+class LuaEngine {
+  lua_State *L;
+  quixcc_cc_job_t *job;
+  quixcc_engine_t *engine;
+
+  void bind_function(const char *name, lua_CFunction func) {}
+
+  void bind_qsys_api() {
+    lua_newtable(L);
+    lua_newtable(L);
+
+    for (auto call_num : job->m_qsyscalls.GetRegistered()) {
+      auto name = job->m_qsyscalls.GetName(call_num);
+      auto impl = job->m_qsyscalls.Get(call_num).value();
+
+      lua_pushinteger(L, (lua_Integer)(uintptr_t)impl);
+      lua_pushinteger(L, (lua_Integer)engine);
+      lua_pushinteger(L, call_num);
+
+      lua_pushcclosure(
+          L,
+          [](lua_State *L) -> int {
+            quixcc_qsys_impl_t impl;
+            quixcc_engine_t *engine;
+            uint32_t call_num;
+
+            { /* Get closure upvalues */
+              int impl_idx = lua_upvalueindex(1);
+              int engine_idx = lua_upvalueindex(2);
+              int call_num_idx = lua_upvalueindex(3);
+
+              impl = (quixcc_qsys_impl_t)(uintptr_t)luaL_checkinteger(L, impl_idx);
+              engine = (quixcc_engine_t *)(uintptr_t)luaL_checkinteger(L, engine_idx);
+              call_num = luaL_checkinteger(L, call_num_idx);
+            }
+
+            // Detect how many arguments are passed
+            int nargs = lua_gettop(L);
+            std::vector<const char *> args;
+            for (int i = 1; i <= nargs; i++) {
+              args.push_back(lua_tostring(L, i));
+            }
+
+            /* This is why C++ is better than Rust */
+            bool status = impl(engine, call_num, args.data(), args.size());
+
+            /* Push the return value */
+            lua_pushboolean(L, status);
+
+            return 0;
+          },
+          3);
+      lua_setfield(L, -2, name.data());
+    }
+
+    lua_setfield(L, -2, "api");
+    lua_setglobal(L, "quix");
+  }
+
+  public:
+  LuaEngine(quixcc_cc_job_t *job, quixcc_engine_t *engine) : job(job), engine(engine) {
+    assert(job && engine);
+
+    L = luaL_newstate();
+    if (!L) {
+      throw std::runtime_error("LuaEngine: luaL_newstate failed");
+    }
+    luaopen_base(L);   /* opens the basic library */
+    luaopen_table(L);  /* opens the table library */
+    luaopen_string(L); /* opens the string lib. */
+    luaopen_math(L);   /* opens the math lib. */
+
+    bind_qsys_api(); /* add binding for compiler specific API */
+  }
+
+  ~LuaEngine() { lua_close(L); }
+
+  bool run(const char *code, std::string &output) {
+    using namespace libquixcc;
+
+    int error;
+
+    error = luaL_loadstring(L, code) || lua_pcall(L, 0, 0, 0);
+    if (error) {
+      LOG(ERROR) << "Failed to load Lua code: {}" << lua_tostring(L, -1) << std::endl;
+      return false;
+    }
+
+    error = lua_getglobal(L, "m");
+    if (error != LUA_TFUNCTION) {
+      LOG(ERROR) << "Failed to get Lua function: {}" << lua_tostring(L, -1) << std::endl;
+      return false;
+    }
+
+    error = lua_pcall(L, 0, 1, 0);
+    if (error) {
+      LOG(ERROR) << "Failed to run Lua code: {}" << lua_tostring(L, -1) << std::endl;
+      return false;
+    }
+
+    if (lua_isnil(L, -1)) {
+      return true;
+    } else if (lua_isstring(L, -1)) {
+      output = lua_tostring(L, -1);
+    } else if (lua_isnumber(L, -1)) {
+      output = std::to_string(lua_tonumber(L, -1));
+    } else {
+      LOG(ERROR) << "Invalid Lua return value: {}" << lua_tostring(L, -1) << std::endl;
+      return false;
+    }
+
+    std::cerr << "Output: " << output << std::endl;
+
+    return true;
+  }
+};
+
+bool libquixcc::PrepEngine::expand_user_macro(
+    const libquixcc::MacroData &fn_body,
+    const std::vector<std::pair<std::string, std::string>> &user_args) {
+  LuaEngine engine(job, (quixcc_engine_t *)this);
+
+  std::string lua_code = "function m() \n";
+
+  { /* Prepare arguments */
+    std::unordered_map<std::string, std::string> the_args;
+
+    std::set<std::string> params;
+    for (const auto &item : fn_body.args) {
+      params.insert(std::get<0>(item));
+    }
+
+    for (const auto &[key, value] : user_args) {
+      if (key.starts_with("__")) {
+        size_t pos = std::stoul(key.substr(2));
+
+        if (pos >= fn_body.args.size()) {
+          LOG(ERROR) << "Too many arguments for macro: {}" << key << std::endl;
+          return false;
+        }
+
+        the_args[std::get<0>(fn_body.args[pos])] = value;
+      } else {
+        if (!params.contains(key)) {
+          LOG(ERROR) << "Unknown argument: {}" << key << std::endl;
+          return false;
+        }
+
+        if (the_args.contains(key)) {
+          LOG(ERROR) << "Duplicate argument: {}" << key << std::endl;
+          return false;
+        }
+
+        the_args[key] = value;
+      }
+    }
+
+    for (const auto &[name, type, defval] : fn_body.args) {
+      if (!the_args.contains(name)) {
+        if (!defval) {
+          LOG(ERROR) << "Missing required argument: {}" << name << std::endl;
+          return false;
+        }
+
+        the_args[name] = *defval;
+      }
+    }
+
+    for (const auto &[name, value] : the_args) {
+      lua_code += "local " + name + " = " + value + "\n";
+    }
+  }
+
+  { /* Macro Beta-Reduction */
+    /// TODO: Implement beta-reduction
+
+    lua_code += fn_body.luacode;
+
+    // auto prep = clone();
+    // prep->set_source(fn_body.luacode, "macro_body");
+    // Token t;
+    // while (true) {
+    //   t = prep->next();
+    //   lua_code += t.serialize(false) + " ";
+    // }
+  }
+
+  lua_code += "\nend";
+
+  LOG(DEBUG) << "Running Lua: '" << lua_code << "'" << std::endl;
+  std::string output;
+  if (!engine.run(lua_code.c_str(), output)) {
+    return false;
+  }
+
+  if (output.empty()) {
+    return true;
+  }
+
+  auto prep = clone();
+  prep->set_source(output, "macro_expansion");
+  Token t;
+  while ((t = prep->next()).type() != tEofF) {
+    emit(t);
+  }
+
+  return true;
+}
 
 static std::string trim(const std::string &str) {
   return str.substr(str.find_first_not_of(" \t\n\r\f\v"), str.find_last_not_of(" \t\n\r\f\v") + 1);
@@ -49,16 +269,12 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
   const static std::map<std::string, Routine> routines = {
       {"define", &PrepEngine::ParseDefine},
       {"pragma", &PrepEngine::ParsePragma},
-      {"print", &PrepEngine::ParsePrint},
-      {"readstdin", &PrepEngine::ParseReadstdin},
       {"encoding", &PrepEngine::ParseEncoding},
-      {"lang", &PrepEngine::ParseLang},
       {"language", &PrepEngine::ParseLang},
       {"copyright", &PrepEngine::ParseAuthor},
       {"license", &PrepEngine::ParseLicense},
       {"use", &PrepEngine::ParseUse},
       {"description", &PrepEngine::ParseDescription},
-      {"qsys", &PrepEngine::ParseQSys},
       {"fn", &PrepEngine::ParseFn},
   };
 
@@ -70,18 +286,18 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
 
     if (start != std::string::npos) {
       /*==================== PARSE MACRO DIRECTIVE ====================*/
-      end = content.find(')', start);
+      end = content.find_last_of(')');
       if (end == std::string::npos) {
         LOG(ERROR) << "Invalid macro directive: {}" << content << macro << std::endl;
         return false;
       }
 
       directive = trim(content.substr(0, start));
-      if (start + 1 < content.size())
+      if (start + 1 < content.size()) {
         parameter = content.substr(start + 1, end - start - 1);
+      }
 
-      /*==================== EXECUTE BUILTIN MACRO DIRECTIVE
-       * ====================*/
+      /*==================== EXECUTE BUILTIN MACRO DIRECTIVE ====================*/
       if (routines.contains(directive)) {
         if (!(this->*routines.at(directive))(macro, directive, parameter)) {
           LOG(ERROR) << "Failed to process macro directive: {}" << directive << macro << std::endl;
@@ -89,52 +305,47 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
         return true;
       }
 
-      /*==================== EXECUTE USER DEFINED MACRO DIRECTIVE
-       * ====================*/
-      if (job->m_macros.contains(directive)) {
-        auto fn = job->m_macros.at(directive);
-        std::vector<std::string> args_lifetime;
-        std::vector<const char *> args_c;
+      /*==================== EXECUTE USER DEFINED MACRO DIRECTIVE ====================*/
+      if (m_macros->contains(directive)) {
+        const MacroData &fn_body = m_macros->at(directive);
 
         /*==================== PARSE MACRO ARGUMENTS ====================*/
-        size_t pos = 0;
-        while (pos < parameter.size()) {
-          size_t next = parameter.find(',', pos);
-          if (next == std::string::npos) {
-            args_lifetime.push_back(trim(parameter.substr(pos)));
-            break;
-          }
+        auto prep = clone();
+        prep->set_source("m(" + parameter + ");\n", "macro_argument");
 
-          args_lifetime.push_back(trim(parameter.substr(pos, next - pos)));
-          pos = next + 1;
+        qast::Expr *expr = nullptr;
+        if (!qast::parser::parse_expr(*job, prep.get(), {Token(tPunc, Punctor::Semicolon)}, &expr,
+                                      0)) {
+          LOG(ERROR) << "Failed to parse macro arguments: {}" << parameter << std::endl;
+          return false;
         }
 
-        for (auto &arg : args_lifetime) {
-          args_c.push_back(arg.c_str());
+        if (!expr->is<qast::Call>() || !expr->verify(std::cerr)) {
+          LOG(ERROR) << "Invalid macro arguments: {}" << parameter << std::endl;
+          return false;
+        }
+        qast::Call *call = expr->as<qast::Call>();
+
+        std::vector<std::pair<std::string, std::string>> args;
+        for (auto &[name, val] : call->get_args()) {
+          std::stringstream ss;
+          val->print(ss); /* Hopefuly, a temporary solution */
+          args.emplace_back(name, ss.str());
         }
 
-        /*==================== INVOKE DYNAMIC SYMBOL ====================*/
-        char *result = fn(args_c.size(), args_c.data());
-        if (result) {
-          std::string result_str = result;
-          free(result);
-
-          /*========== RECURSIVELY EXPAND MACRO TOKEN OUTPUT ============*/
-          auto lex = clone();
-          lex->set_source(result_str, job->m_filename.top());
-
-          Token t;
-          while ((t = lex->next()).type() != tEofF) {
-            emit(t);
-          }
+        /*====================== CALL MACRO ======================*/
+        if (!expand_user_macro(fn_body, args)) {
+          LOG(ERROR) << "Failed to expand user-defined macro: {}" << directive << macro
+                     << std::endl;
+          return false;
         }
 
         return true;
       }
 
-      LOG(ERROR) << "Unknown macro directive: {}" << directive << macro << std::endl;
+      LOG(WARN) << "Ignoring unknown macro directive: {}" << content << macro << std::endl;
 
-      return false;
+      return true;
     } else {
       for (auto &routine : routines) {
         if (content.starts_with(routine.first)) {
@@ -164,7 +375,8 @@ bool libquixcc::PrepEngine::parse_macro(const libquixcc::Token &macro) {
     }
 
     if (!routines.contains(directive)) {
-      LOG(ERROR) << "Unknown macro directive: {}" << directive << macro << std::endl;
+      LOG(WARN) << "Ignoring unknown macro directive: {}" << content << macro << std::endl;
+      return true;
     }
 
     if (!(this->*routines.at(directive))(macro, directive, body)) {

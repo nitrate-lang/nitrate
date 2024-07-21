@@ -61,6 +61,7 @@ PrepEngine::PrepEngine(quixcc_cc_job_t &_job) {
   /* All n-th order metacode shall have access to the statics */
   if (m_we_are_root) {
     m_statics = std::make_shared<std::map<std::string, std::string>>();
+    m_macros = std::make_shared<MacroMap>();
   }
 }
 
@@ -186,6 +187,7 @@ std::unique_ptr<PrepEngine> PrepEngine::clone() const {
   l->m_include_files = m_include_files;
   l->include_path = include_path;
   l->m_statics = m_statics;
+  l->m_macros = m_macros;
   l->m_we_are_root = false;
 
   return l;
@@ -275,6 +277,11 @@ const Token &PrepEngine::peek() {
   }
 
   return m_tok.value();
+}
+
+size_t libquixcc::PrepEngine::offset() {
+  /*============== PUBLIC INTERFACE FOR GETTING OFFSET ================*/
+  return m_stack.top().scanner->offset();
 }
 
 void PrepEngine::set_static(PrepEngine::rstr name, PrepEngine::rstr value) {
@@ -506,16 +513,16 @@ end:
 ///=============================================================================
 
 struct libquixcc::QSysCallRegistry::Impl {
-  std::map<uint32_t, QSysCall> m_syscalls;
+  std::map<uint32_t, std::pair<QSysCall, std::string>> m_syscalls;
 };
 
 libquixcc::QSysCallRegistry::QSysCallRegistry() { m_impl = new Impl(); }
 
 libquixcc::QSysCallRegistry::~QSysCallRegistry() { delete m_impl; }
 
-void libquixcc::QSysCallRegistry::Register(uint32_t num,
+void libquixcc::QSysCallRegistry::Register(uint32_t num, std::string name,
                                            libquixcc::QSysCallRegistry::QSysCall call) {
-  m_impl->m_syscalls[num] = call;
+  m_impl->m_syscalls[num] = {call, name};
 }
 
 bool libquixcc::QSysCallRegistry::Unregister(uint32_t num) {
@@ -532,8 +539,8 @@ bool libquixcc::QSysCallRegistry::IsRegistered(uint32_t num) const {
 
 std::vector<uint32_t> libquixcc::QSysCallRegistry::GetRegistered() const {
   std::vector<uint32_t> nums;
-  for (auto &pair : m_impl->m_syscalls) {
-    nums.push_back(pair.first);
+  for (auto &[key,val] : m_impl->m_syscalls) {
+    nums.push_back(key);
   }
   return nums;
 }
@@ -541,9 +548,17 @@ std::vector<uint32_t> libquixcc::QSysCallRegistry::GetRegistered() const {
 std::optional<libquixcc::QSysCallRegistry::QSysCall>
 libquixcc::QSysCallRegistry::Get(uint32_t num) const {
   if (m_impl->m_syscalls.contains(num)) {
-    return m_impl->m_syscalls.at(num);
+    return m_impl->m_syscalls.at(num).first;
   }
   return std::nullopt;
+}
+
+std::string_view libquixcc::QSysCallRegistry::GetName(uint32_t num) const
+{
+  if (m_impl->m_syscalls.contains(num)) {
+    return m_impl->m_syscalls.at(num).second;
+  }
+  return "";
 }
 
 bool libquixcc::QSysCallRegistry::Call(quixcc_engine_t *handle, uint32_t num,
@@ -554,5 +569,5 @@ bool libquixcc::QSysCallRegistry::Call(quixcc_engine_t *handle, uint32_t num,
 
   assert(args.size() <= UINT32_MAX);
 
-  return m_impl->m_syscalls.at(num)(handle, num, args.data(), args.size());
+  return m_impl->m_syscalls.at(num).first(handle, num, args.data(), args.size());
 }

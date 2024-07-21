@@ -434,6 +434,8 @@ char StreamLexer::getc() {
     m_loc_curr.col() = 1;
   }
 
+  m_offset++;
+
   return c;
 }
 
@@ -1020,34 +1022,30 @@ const Token &StreamLexer::read_token() {
         Format:
             ... @macro_name(arg1, arg2, arg3, ...) ...
         */
-        switch (state_parens) {
-        case 0: {
+
+        while (true) {
+          if (c == '(') {
+            state_parens++;
+          } else if (c == ')') {
+            state_parens--;
+
+            if (state_parens == 0) {
+              buf += ')';
+              return (m_tok = Token(tMacr, buf, m_loc - buf.size() - 1)).value();
+            }
+          }
+
           if (c == '\n') {
             return (m_tok = Token(tMacr, buf, m_loc - buf.size() - 1)).value();
-          } else if (c != '(') {
-            buf += c;
-            continue;
-          } else if (c == '(') {
-            buf += c, state_parens++;
-            continue;
-          } else {
-            return reset_state(), (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
-          }
-        }
-        default: {
-          if (c == '(')
-            buf += c, state_parens++;
-          else if (c == ')')
-            buf += c, state_parens--;
-
-          if (state_parens == 0) {
-            return (m_tok = Token(tMacr, buf, m_loc - buf.size())).value();
           }
 
           buf += c;
-          continue;
+
+          if ((c = getc()) == EOF) {
+            return reset_state(), (m_tok = Token(tErro, buf, m_loc - buf.size())).value();
+          }
         }
-        }
+        continue;
       }
       case LexState::BlockMacro: {
         while (true) {
@@ -1149,6 +1147,8 @@ Token StreamLexer::next() {
   m_tok = std::nullopt;
   return tok;
 }
+
+size_t libquixcc::StreamLexer::offset() { return m_offset; }
 
 bool StringLexer::set_source(const std::string &source_code, const std::string &filename) {
   /* Copy the source internally */

@@ -42,10 +42,10 @@
 namespace libquixcc::qsys {
 
 #define QSYS_DEFINE(_name, _desc)                                                                  \
-  bool libquixcc::qsys::_name(quixcc_engine_t *e, uint32_t n, quixcc_expr_t **v, uint32_t c)
+  bool libquixcc::qsys::_name(quixcc_engine_t *e, uint32_t n, const char **v, uint32_t c)
 
 #define QSYS_NOT_IMPLEMENTED(name)                                                                 \
-  bool libquixcc::qsys::name(quixcc_engine_t *e, uint32_t n, quixcc_expr_t **v, uint32_t c) {      \
+  bool libquixcc::qsys::name(quixcc_engine_t *e, uint32_t n, const char **v, uint32_t c) {         \
     quixcc_engine_message(e, QUIXCC_MESSAGE_WARNING, "QSys Call \"%s\" is not implemented",        \
                           #name);                                                                  \
     return true;                                                                                   \

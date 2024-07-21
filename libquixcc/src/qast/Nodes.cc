@@ -2480,7 +2480,7 @@ Call *Call::clone_impl() const {
 
   for (const auto &[name, expr] : m_args) {
     Expr *e = expr ? expr->clone() : nullptr;
-    args[name] = e;
+    args.push_back({name, e});
   }
 
   return Call::get(func, args);
@@ -2490,9 +2490,16 @@ Expr *Call::get_func() const { return m_func; }
 void Call::set_func(Expr *func) { m_func = func; }
 
 CallArgs &Call::get_args() { return m_args; }
-void Call::add_arg(String name, Expr *arg) { m_args[name] = arg; }
+void Call::add_arg(CallArg arg) { m_args.push_back(arg); }
+void Call::add_args(std::initializer_list<CallArg> args) {
+  for (auto arg : args) {
+    add_arg(arg);
+  }
+}
 void Call::clear_args() { m_args.clear(); }
-void Call::remove_arg(String name) { m_args.erase(name); }
+void Call::remove_arg(String name) {
+  std::erase_if(m_args, [name](auto &arg) { return arg.first == name; });
+}
 
 bool TemplCall::verify_impl(std::ostream &os) const {
   if (!m_func) {
@@ -2560,7 +2567,7 @@ TemplCall *TemplCall::clone_impl() const {
 
   for (const auto &[name, expr] : m_args) {
     Expr *e = expr ? expr->clone() : nullptr;
-    args[name] = e;
+    args.push_back({name, e});
   }
 
   TemplateArgs template_args;
@@ -2575,11 +2582,6 @@ TemplCall *TemplCall::clone_impl() const {
 
 Expr *TemplCall::get_func() const { return m_func; }
 void TemplCall::set_func(Expr *func) { m_func = func; }
-
-CallArgs &TemplCall::get_args() { return m_args; }
-void TemplCall::add_arg(String name, Expr *arg) { m_args[name] = arg; }
-void TemplCall::clear_args() { m_args.clear(); }
-void TemplCall::remove_arg(String name) { m_args.erase(name); }
 
 TemplateArgs &TemplCall::get_template_args() { return m_template_args; }
 void TemplCall::add_template_arg(String name, ConstExpr *arg) { m_template_args[name] = arg; }

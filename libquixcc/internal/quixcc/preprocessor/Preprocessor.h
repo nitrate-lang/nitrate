@@ -57,11 +57,33 @@ namespace libquixcc {
     }
   } // namespace ir
 
+  enum class MacroParamType {
+    Int,
+    UInt,
+    Text,
+    Bool,
+    Real,
+    Nil,
+    List,
+  };
+
+  struct MacroData {
+    typedef std::tuple<std::string, MacroParamType, std::optional<std::string>> MacroArg;
+
+    std::string luacode;
+    std::vector<MacroArg> args;
+
+    MacroData(const std::string &code = "",
+              const std::vector<MacroArg> &args = {})
+        : luacode(code), args(args) {}
+  };
+
   /// @brief The Preprocessor Engine
   /// @warning Plugins must not interact with this class directly use the C Engine
   /// API instead.
   class PrepEngine : public libquixcc::Scanner {
     using rstr = const std::string &;
+    typedef std::unordered_map<std::string, libquixcc::MacroData> MacroMap;
 
 protected:
     struct Entry {
@@ -85,6 +107,8 @@ protected:
     std::queue<Token> m_pushed;
     std::shared_ptr<std::map<std::string, std::string>> m_statics;
     std::queue<Token> m_buffer;
+    std::shared_ptr<MacroMap> m_macros;
+
     FILE *m_file;
     bool m_we_own_file;
     bool m_we_are_root;
@@ -99,17 +123,7 @@ protected:
     void disable_expansion();
     void enable_expansion();
 
-    std::optional<std::string> generate_adapter_entrypoint(rstr metastatic);
-    std::string build_macro_sourcecode(rstr parameter);
-    bool acquire_shared_object(rstr metacode, std::vector<uint8_t> &shared_object);
-    bool write_shared_object_to_temp_file(
-        rstr metacode, std::unique_ptr<std::string, std::function<void(std::string *)>> &tempfile);
-    bool
-    load_shared_object(std::unique_ptr<std::string, std::function<void(std::string *)>> &filename,
-                       std::unique_ptr<void, std::function<void(void *)>> &handle);
-    bool
-    load_function_from_shared_object(rstr function_name,
-                                     std::unique_ptr<void, std::function<void(void *)>> &handle);
+    bool expand_user_macro(const MacroData &fn_body, const std::vector<std::pair<std::string, std::string>> &args);
 
 public:
     PrepEngine(quixcc_cc_job_t &job);
@@ -126,6 +140,7 @@ public:
     /*================== PREPROCESSOR INTERFACE ==================*/
     Token next() override;
     const Token &peek() override;
+    size_t offset() override;
     void push(Token tok) override;
     void emit(const Token &tok);
     void comments(bool ignore) override { throw std::runtime_error("Not implemented"); }
@@ -142,10 +157,7 @@ public:
     bool ParseLang(const Token &tok, rstr der, rstr param);
     bool ParseLicense(const Token &tok, rstr der, rstr param);
     bool ParsePragma(const Token &tok, rstr der, rstr param);
-    bool ParsePrint(const Token &tok, rstr der, rstr param);
-    bool ParseReadstdin(const Token &tok, rstr der, rstr param);
     bool ParseUse(const Token &tok, rstr der, rstr param);
-    bool ParseQSys(const Token &tok, rstr der, rstr param);
     bool ParseFn(const Token &tok, rstr der, rstr param);
   };
 
@@ -155,18 +167,19 @@ public:
     Impl *m_impl;
 
 public:
-    typedef quixcc_expr_t *QSysArg;
+    typedef const char *QSysArg;
     typedef std::vector<QSysArg> QSysArgs;
     typedef quixcc_qsys_impl_t QSysCall;
 
     QSysCallRegistry();
     ~QSysCallRegistry();
 
-    void Register(uint32_t num, QSysCall call);
+    void Register(uint32_t num, std::string name, QSysCall call);
     bool Unregister(uint32_t num);
     bool IsRegistered(uint32_t num) const;
     std::vector<uint32_t> GetRegistered() const;
     std::optional<QSysCall> Get(uint32_t num) const;
+    std::string_view GetName(uint32_t num) const;
 
     bool Call(quixcc_engine_t *handle, uint32_t num, QSysArgs args);
   };

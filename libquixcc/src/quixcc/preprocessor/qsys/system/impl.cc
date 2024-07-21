@@ -37,5 +37,4 @@ QSYS_NOT_IMPLEMENTED(qsys_get_compiler_flags);
 QSYS_NOT_IMPLEMENTED(qsys_unset_compiler_flag);
 QSYS_NOT_IMPLEMENTED(qsys_set_compiler_flag);
 QSYS_NOT_IMPLEMENTED(qsys_get_compiler_log_file);
-QSYS_NOT_IMPLEMENTED(qsys_execute_os_command);
 QSYS_NOT_IMPLEMENTED(qsys_abort_compilation);

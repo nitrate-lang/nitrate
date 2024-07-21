@@ -73,7 +73,7 @@ typedef enum {
   QUIXCC_LEXCONF_IGN_COM = 1 << 0,
 } quixcc_lexer_config_t;
 
-typedef bool (*quixcc_qsys_impl_t)(quixcc_engine_t *engine, uint32_t num, quixcc_expr_t **expr,
+typedef bool (*quixcc_qsys_impl_t)(quixcc_engine_t *engine, uint32_t num, const char **argv,
                                    uint32_t argc);
 
 typedef enum quixcc_iterm_t {

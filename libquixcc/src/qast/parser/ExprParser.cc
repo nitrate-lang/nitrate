@@ -101,7 +101,7 @@ static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *sc
         return nullptr;
       }
 
-      call_args.insert({ident.as<std::string>(), arg});
+      call_args.push_back({ident.as<std::string>(), arg});
       goto comma;
     }
 
@@ -123,7 +123,7 @@ static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *sc
     /**
      * @brief
      */
-    call_args.insert({"__" + std::to_string(pos_arg_count++), arg});
+    call_args.push_back({"__" + std::to_string(pos_arg_count++), arg});
 
     goto comma;
   }

@@ -71,6 +71,7 @@ public:
     virtual void push(Token tok) = 0;
     virtual bool set_source(FILE *src, const std::string &filename) = 0;
     virtual void comments(bool ignore) = 0;
+    virtual size_t offset() = 0;
   };
 
   class StreamLexer : public Scanner {
@@ -80,6 +81,7 @@ public:
     std::deque<char> m_pushback;
     Loc m_loc_curr;
     Loc m_loc;
+    size_t m_offset = 0;
     size_t m_buf_pos = 0;
     FILE *m_src = nullptr;
     bool added_newline = false;
@@ -95,13 +97,10 @@ public:
     StreamLexer();
     virtual ~StreamLexer() = default;
 
-    /// @brief Set the source file
-    /// @param src C FILE pointer
-    /// @return true if the source file is set successfully
     virtual bool set_source(FILE *src, const std::string &filename) override;
-
     Token next() override;
     const Token &peek() override;
+    size_t offset() override;
 
     void comments(bool ignore) override { ingore_comments = ignore; }
 

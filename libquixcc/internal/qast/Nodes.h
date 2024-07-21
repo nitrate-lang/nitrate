@@ -1085,8 +1085,8 @@ public:
 
   ///=============================================================================
 
-  typedef std::pair<const String, Expr *> CallArg;
-  typedef std::map<String, Expr *, std::less<String>, Arena<CallArg>> CallArgs;
+  typedef std::pair< String, Expr *> CallArg;
+  typedef std::vector<CallArg, Arena<CallArg>> CallArgs;
 
   class Call : public Expr {
 protected:
@@ -1100,15 +1100,16 @@ public:
     void set_func(Expr *func);
 
     CallArgs &get_args();
-    void add_arg(String name, Expr *arg);
-    void add_args(std::map<String, Expr *> args);
+    void add_arg(CallArg arg);
+    void add_args(std::initializer_list<CallArg> args);
     void clear_args();
     void remove_arg(String name);
 
     NODE_IMPL_CORE(Call)
   };
 
-  typedef std::map<String, ConstExpr *, std::less<String>, Arena<std::pair<const String, ConstExpr *>>>
+  typedef std::map<String, ConstExpr *, std::less<String>,
+                   Arena<std::pair<const String, ConstExpr *>>>
       TemplateArgs;
 
   class TemplCall : public Call {
@@ -1123,12 +1124,6 @@ public:
 
     Expr *get_func() const;
     void set_func(Expr *func);
-
-    CallArgs &get_args();
-    void add_arg(String name, Expr *arg);
-    void add_args(std::map<String, Expr *> args);
-    void clear_args();
-    void remove_arg(String name);
 
     TemplateArgs &get_template_args();
     void add_template_arg(String name, ConstExpr *arg);
