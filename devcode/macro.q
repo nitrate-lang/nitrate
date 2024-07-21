@@ -1,12 +1,11 @@
-@(fn write(msg: text) { quix.api.write(msg, 0, 1) })
-
-@(fn printn(line: text) { 
-  quix.api.write(line, 0, 1);
-  quix.api.write("\n", 0, 1);
+@(fn timestamp() {
+  return quix.api.time('false')
 })
 
+fn main() {
+  let compiled_at = @timestamp();
+  let message = 'Hello, Quix!';
 
-@(fn exec(cmd: text) {})
-
-@exec(quix.api.clear_term())
-@printn("Hello, world!")
+  printn('Compiled at: ' + compiled_at);
+  printn(message);
+}

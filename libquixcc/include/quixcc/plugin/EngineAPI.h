@@ -170,19 +170,19 @@ quixcc_tok_t quixcc_tok_new_punct(quixcc_lex_punct_t punct);
 ///=============================================================================
 /// BEGIN: MACROS
 ///=============================================================================
-#define QSYS_DECL(name) bool name(quixcc_engine_t *, uint32_t, const char **, uint32_t)
+#define QSYS_DECL(name) char *name(quixcc_engine_t *, uint32_t, const char **, uint32_t)
 
 #define QSYS_ARGASSERT(name, nargs)                                                                \
   if (c != nargs) {                                                                                \
     quixcc_engine_message(e, QUIXCC_MESSAGE_ERROR,                                                 \
                           "QSys Call \"%s\" expects %d arguments, got %d", #name, nargs, c);       \
-    return false;                                                                                  \
+    return strdup("nil");                                                                          \
   }
 
 #define QSYS_ARG_STRING(_qname, _varname, _idx)                                                    \
   if (c <= _idx) {                                                                                 \
     quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL, "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
-    return false;                                                                                  \
+    return strdup("nil");                                                                          \
   }                                                                                                \
   size_t _varname##_len = strlen(v[_idx]);                                                         \
   const char *_varname = v[_idx];
@@ -190,7 +190,7 @@ quixcc_tok_t quixcc_tok_new_punct(quixcc_lex_punct_t punct);
 #define QSYS_ARG_INT64(_qname, _varname, _idx)                                                     \
   if (c <= _idx) {                                                                                 \
     quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL, "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
-    return false;                                                                                  \
+    return strdup("nil");                                                                          \
   }                                                                                                \
   int64_t _varname = atoll(v[_idx]);
 

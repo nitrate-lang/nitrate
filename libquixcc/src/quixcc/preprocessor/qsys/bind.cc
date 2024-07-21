@@ -52,23 +52,27 @@
 
 /*==================== SYSTEM ====================*/
 #define QSYS_GET_COMPILER_VERSION 0x01F0
-#define QSYS_GET_COMPILER_FLAGS 0x01F1
-#define QSYS_UNSET_COMPILER_FLAG 0x01F2
-#define QSYS_SET_COMPILER_FLAG 0x01F3
-#define QSYS_GET_COMPILER_LOG_FILE 0x01F4
-#define QSYS_ABORT_COMPILATION 0x01F6
+#define QSYS_GET_FLAGS 0x01F1
+#define QSYS_SET_FLAG 0x01F3
+#define QSYS_SET_MIO 0x01F4
 
 /*==================== LANGUAGE ====================*/
 #define QSYS_COMPILE_AND_EXECUTE_QUIX 0x0FF0
-#define QSYS_GET_TYPE_OF_ITEM 0x0FF1
-#define QSYS_UNDEFINE_FUNCTION 0x0FF2
-#define QSYS_UNDEFINE_MACRO 0x0FF3
-#define QSYS_UNDECLARE_ITEM 0x0FF4
-#define QSYS_GET_MACRO_BODY 0x0FF5
-#define QSYS_GET_FUNCTION_BODY 0x0FF6
-#define QSYS_GET_TYPE_BODY 0x0FF7
-#define QSYS_SET_GLOBAL_META_VARIABLE 0x0FF8
-#define QSYS_GET_GLOBAL_META_VARIABLE 0x0FF9
+#define QSYS_GET_TYPE 0x0FF1
+#define QSYS_UNDEFINE 0x0FF2
+#define QSYS_GET_SOURCE 0x0FF5
+#define QSYS_SET 0x0FF8
+#define QSYS_GET 0x0FF9
+#define QSYS_ABORT 0x0FFA
+
+/*==================== UTILITIES ===================*/
+#define QSYS_TIME 0x2000
+#define QSYS_SLEEP 0x2001
+#define QSYS_CRYPTO_RANDOM 0x2002
+#define QSYS_HASH 0x2003
+#define QSYS_INSMOD 0x2004
+#define QSYS_RMMOD 0x2005
+#define QSYS_IOCTL 0x2006
 
 void libquixcc::qsys::bind_qsyscalls(quixcc_cc_job_t *job) {
   const std::vector<std::tuple<uint32_t, quixcc_qsys_impl_t, const char *>> qsyscalls = {
@@ -88,24 +92,27 @@ void libquixcc::qsys::bind_qsyscalls(quixcc_cc_job_t *job) {
       {QSYS_SET_TERMINAL_FONT, qsys_set_terminal_font, "set_term_font"},
 
       /*==================== SYSTEM ====================*/
-      {QSYS_GET_COMPILER_VERSION, qsys_get_compiler_version, ""},
-      {QSYS_GET_COMPILER_FLAGS, qsys_get_compiler_flags, ""},
-      {QSYS_UNSET_COMPILER_FLAG, qsys_unset_compiler_flag, ""},
-      {QSYS_SET_COMPILER_FLAG, qsys_set_compiler_flag, ""},
-      {QSYS_GET_COMPILER_LOG_FILE, qsys_get_compiler_log_file, ""},
-      {QSYS_ABORT_COMPILATION, qsys_abort_compilation, ""},
+      {QSYS_GET_COMPILER_VERSION, qsys_get_compiler_version, "get_version"},
+      {QSYS_GET_FLAGS, qsys_get_flags, "get_flags"},
+      {QSYS_SET_FLAG, qsys_set_flag, "set_flag"},
 
       /*==================== LANGUAGE ====================*/
-      {QSYS_COMPILE_AND_EXECUTE_QUIX, qsys_compile_and_execute_quix, ""},
-      {QSYS_GET_TYPE_OF_ITEM, qsys_get_type_of_item, ""},
-      {QSYS_UNDEFINE_FUNCTION, qsys_undefine_function, ""},
-      {QSYS_UNDEFINE_MACRO, qsys_undefine_macro, ""},
-      {QSYS_UNDECLARE_ITEM, qsys_undeclare_item, ""},
-      {QSYS_GET_MACRO_BODY, qsys_get_macro_body, ""},
-      {QSYS_GET_FUNCTION_BODY, qsys_get_function_body, ""},
-      {QSYS_GET_TYPE_BODY, qsys_get_type_body, ""},
-      {QSYS_SET_GLOBAL_META_VARIABLE, qsys_set_global_meta_variable, ""},
-      {QSYS_GET_GLOBAL_META_VARIABLE, qsys_get_global_meta_variable, ""},
+      {QSYS_COMPILE_AND_EXECUTE_QUIX, qsys_compile_and_execute_quix, "compile"},
+      {QSYS_GET_TYPE, qsys_get_type, "get_type"},
+      {QSYS_UNDEFINE, qsys_undefine, "undefine"},
+      {QSYS_GET_SOURCE, qsys_get_source, "get_source"},
+      {QSYS_SET, qsys_set, "set"},
+      {QSYS_GET, qsys_get, "get"},
+      {QSYS_ABORT, qsys_abort, "abort"},
+
+      /*==================== UTILITIES ===================*/
+      {QSYS_TIME, qsys_time, "time"},
+      {QSYS_SLEEP, qsys_sleep, "sleep"},
+      {QSYS_CRYPTO_RANDOM, qsys_crypto_random, "crypto_random"},
+      {QSYS_HASH, qsys_hash, "hash"},
+      {QSYS_INSMOD, qsys_insmod, "insmod"},
+      {QSYS_RMMOD, qsys_rmmod, "rmmod"},
+      {QSYS_IOCTL, qsys_ioctl, "ioctl"},
   };
 
   for (const auto &[num, impl, name] : qsyscalls) {

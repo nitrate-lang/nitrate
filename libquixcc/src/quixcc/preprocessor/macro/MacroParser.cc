@@ -50,37 +50,36 @@ extern "C" {
 using namespace libquixcc;
 
 class LuaEngine {
-  lua_State *L;
-  quixcc_cc_job_t *job;
-  quixcc_engine_t *engine;
+  lua_State *m_L;
+  quixcc_cc_job_t *m_job;
+  quixcc_engine_t *m_engine;
 
   void bind_function(const char *name, lua_CFunction func) {}
 
   void bind_qsys_api() {
-    lua_newtable(L);
-    lua_newtable(L);
+    lua_newtable(m_L);
+    lua_newtable(m_L);
 
-    for (auto call_num : job->m_qsyscalls.GetRegistered()) {
-      auto name = job->m_qsyscalls.GetName(call_num);
-      auto impl = job->m_qsyscalls.Get(call_num).value();
+    for (auto call_num : m_job->m_qsyscalls.GetRegistered()) {
+      auto name = m_job->m_qsyscalls.GetName(call_num);
 
-      lua_pushinteger(L, (lua_Integer)(uintptr_t)impl);
-      lua_pushinteger(L, (lua_Integer)engine);
-      lua_pushinteger(L, call_num);
+      lua_pushinteger(m_L, (lua_Integer)(uintptr_t)m_job);
+      lua_pushinteger(m_L, (lua_Integer)(uintptr_t)m_engine);
+      lua_pushinteger(m_L, call_num);
 
       lua_pushcclosure(
-          L,
+          m_L,
           [](lua_State *L) -> int {
-            quixcc_qsys_impl_t impl;
+            quixcc_cc_job_t *job;
             quixcc_engine_t *engine;
             uint32_t call_num;
 
             { /* Get closure upvalues */
-              int impl_idx = lua_upvalueindex(1);
+              int job_idx = lua_upvalueindex(1);
               int engine_idx = lua_upvalueindex(2);
               int call_num_idx = lua_upvalueindex(3);
 
-              impl = (quixcc_qsys_impl_t)(uintptr_t)luaL_checkinteger(L, impl_idx);
+              job = (quixcc_cc_job_t *)(uintptr_t)luaL_checkinteger(L, job_idx);
               engine = (quixcc_engine_t *)(uintptr_t)luaL_checkinteger(L, engine_idx);
               call_num = luaL_checkinteger(L, call_num_idx);
             }
@@ -92,75 +91,72 @@ class LuaEngine {
               args.push_back(lua_tostring(L, i));
             }
 
-            /* This is why C++ is better than Rust */
-            bool status = impl(engine, call_num, args.data(), args.size());
+            auto result = job->m_qsyscalls.Call(engine, call_num, args);
 
-            /* Push the return value */
-            lua_pushboolean(L, status);
+            /* Return a single string result */
+            lua_pushstring(L, result.c_str());
 
-            return 0;
+            return 1;
           },
           3);
-      lua_setfield(L, -2, name.data());
+      lua_setfield(m_L, -2, name.data());
     }
 
-    lua_setfield(L, -2, "api");
-    lua_setglobal(L, "quix");
+    lua_setfield(m_L, -2, "api");
+    lua_setglobal(m_L, "quix");
   }
 
   public:
-  LuaEngine(quixcc_cc_job_t *job, quixcc_engine_t *engine) : job(job), engine(engine) {
+  LuaEngine(quixcc_cc_job_t *job, quixcc_engine_t *engine) : m_job(job), m_engine(engine) {
     assert(job && engine);
 
-    L = luaL_newstate();
-    if (!L) {
+    m_L = luaL_newstate();
+    if (!m_L) {
       throw std::runtime_error("LuaEngine: luaL_newstate failed");
     }
-    luaopen_base(L);   /* opens the basic library */
-    luaopen_table(L);  /* opens the table library */
-    luaopen_string(L); /* opens the string lib. */
-    luaopen_math(L);   /* opens the math lib. */
+    luaopen_base(m_L);   /* opens the basic library */
+    luaopen_table(m_L);  /* opens the table library */
+    luaopen_string(m_L); /* opens the string lib. */
+    luaopen_math(m_L);   /* opens the math lib. */
 
     bind_qsys_api(); /* add binding for compiler specific API */
   }
 
-  ~LuaEngine() { lua_close(L); }
+  ~LuaEngine() { lua_close(m_L); }
 
   bool run(const char *code, std::string &output) {
     using namespace libquixcc;
 
     int error;
 
-    error = luaL_loadstring(L, code) || lua_pcall(L, 0, 0, 0);
+    error = luaL_loadstring(m_L, code) || lua_pcall(m_L, 0, 0, 0);
     if (error) {
-      LOG(ERROR) << "Failed to load Lua code: {}" << lua_tostring(L, -1) << std::endl;
+      LOG(ERROR) << "Failed to load Lua code: {}" << lua_tostring(m_L, -1) << std::endl;
       return false;
     }
 
-    error = lua_getglobal(L, "m");
+    error = lua_getglobal(m_L, "m");
     if (error != LUA_TFUNCTION) {
-      LOG(ERROR) << "Failed to get Lua function: {}" << lua_tostring(L, -1) << std::endl;
+      LOG(ERROR) << "Failed to get Lua function: {}" << lua_tostring(m_L, -1) << std::endl;
       return false;
     }
 
-    error = lua_pcall(L, 0, 1, 0);
+    error = lua_pcall(m_L, 0, 1, 0);
     if (error) {
-      LOG(ERROR) << "Failed to run Lua code: {}" << lua_tostring(L, -1) << std::endl;
+      LOG(ERROR) << "Failed to run Lua code: {}" << lua_tostring(m_L, -1) << std::endl;
       return false;
     }
 
-    if (lua_isnil(L, -1)) {
+    if (lua_isnil(m_L, -1)) {
       return true;
-    } else if (lua_isstring(L, -1)) {
-      output = lua_tostring(L, -1);
-    } else if (lua_isnumber(L, -1)) {
-      output = std::to_string(lua_tonumber(L, -1));
+    } else if (lua_isstring(m_L, -1)) {
+      output = lua_tostring(m_L, -1);
+    } else if (lua_isnumber(m_L, -1)) {
+      output = std::to_string(lua_tonumber(m_L, -1));
     } else {
-      LOG(ERROR) << "Invalid Lua return value: {}" << lua_tostring(L, -1) << std::endl;
+      LOG(ERROR) << "Invalid Lua return value: {}" << lua_tostring(m_L, -1) << std::endl;
       return false;
     }
-
-    std::cerr << "Output: " << output << std::endl;
 
     return true;
   }

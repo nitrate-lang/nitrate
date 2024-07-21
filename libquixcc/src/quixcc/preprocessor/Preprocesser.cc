@@ -539,7 +539,7 @@ bool libquixcc::QSysCallRegistry::IsRegistered(uint32_t num) const {
 
 std::vector<uint32_t> libquixcc::QSysCallRegistry::GetRegistered() const {
   std::vector<uint32_t> nums;
-  for (auto &[key,val] : m_impl->m_syscalls) {
+  for (auto &[key, val] : m_impl->m_syscalls) {
     nums.push_back(key);
   }
   return nums;
@@ -553,21 +553,27 @@ libquixcc::QSysCallRegistry::Get(uint32_t num) const {
   return std::nullopt;
 }
 
-std::string_view libquixcc::QSysCallRegistry::GetName(uint32_t num) const
-{
+std::string_view libquixcc::QSysCallRegistry::GetName(uint32_t num) const {
   if (m_impl->m_syscalls.contains(num)) {
     return m_impl->m_syscalls.at(num).second;
   }
   return "";
 }
 
-bool libquixcc::QSysCallRegistry::Call(quixcc_engine_t *handle, uint32_t num,
-                                       libquixcc::QSysCallRegistry::QSysArgs args) {
+std::string libquixcc::QSysCallRegistry::Call(quixcc_engine_t *handle, uint32_t num,
+                                              libquixcc::QSysCallRegistry::QSysArgs args) {
   if (!m_impl->m_syscalls.contains(num)) {
-    return false;
+    return "";
   }
 
   assert(args.size() <= UINT32_MAX);
 
-  return m_impl->m_syscalls.at(num).first(handle, num, args.data(), args.size());
+  char *res = m_impl->m_syscalls.at(num).first(handle, num, args.data(), args.size());
+  if (!res) {
+    throw std::runtime_error("QSys call failed");
+  }
+
+  std::string result(res);
+  free(res);
+  return result;
 }

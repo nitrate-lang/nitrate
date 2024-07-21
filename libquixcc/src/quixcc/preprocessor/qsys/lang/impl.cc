@@ -33,12 +33,9 @@
 #include <quixcc/preprocessor/QSys.h>
 
 QSYS_NOT_IMPLEMENTED(qsys_compile_and_execute_quix);
-QSYS_NOT_IMPLEMENTED(qsys_get_type_of_item);
-QSYS_NOT_IMPLEMENTED(qsys_undefine_function);
-QSYS_NOT_IMPLEMENTED(qsys_undefine_macro);
-QSYS_NOT_IMPLEMENTED(qsys_undeclare_item);
-QSYS_NOT_IMPLEMENTED(qsys_get_macro_body);
-QSYS_NOT_IMPLEMENTED(qsys_get_function_body);
-QSYS_NOT_IMPLEMENTED(qsys_get_type_body);
-QSYS_NOT_IMPLEMENTED(qsys_set_global_meta_variable);
-QSYS_NOT_IMPLEMENTED(qsys_get_global_meta_variable);
+QSYS_NOT_IMPLEMENTED(qsys_get_type);
+QSYS_NOT_IMPLEMENTED(qsys_undefine);
+QSYS_NOT_IMPLEMENTED(qsys_get_source);
+QSYS_NOT_IMPLEMENTED(qsys_set);
+QSYS_NOT_IMPLEMENTED(qsys_get);
+QSYS_NOT_IMPLEMENTED(qsys_abort);

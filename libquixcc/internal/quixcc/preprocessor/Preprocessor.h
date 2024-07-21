@@ -181,7 +181,7 @@ public:
     std::optional<QSysCall> Get(uint32_t num) const;
     std::string_view GetName(uint32_t num) const;
 
-    bool Call(quixcc_engine_t *handle, uint32_t num, QSysArgs args);
+    std::string Call(quixcc_engine_t *handle, uint32_t num, QSysArgs args);
   };
 
 } // namespace libquixcc

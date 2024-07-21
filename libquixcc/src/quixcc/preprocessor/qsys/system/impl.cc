@@ -33,8 +33,5 @@
 #include <quixcc/preprocessor/QSys.h>
 
 QSYS_NOT_IMPLEMENTED(qsys_get_compiler_version);
-QSYS_NOT_IMPLEMENTED(qsys_get_compiler_flags);
-QSYS_NOT_IMPLEMENTED(qsys_unset_compiler_flag);
-QSYS_NOT_IMPLEMENTED(qsys_set_compiler_flag);
-QSYS_NOT_IMPLEMENTED(qsys_get_compiler_log_file);
-QSYS_NOT_IMPLEMENTED(qsys_abort_compilation);
+QSYS_NOT_IMPLEMENTED(qsys_get_flags);
+QSYS_NOT_IMPLEMENTED(qsys_set_flag);

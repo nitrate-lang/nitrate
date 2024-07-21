@@ -29,92 +29,134 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIXCC_PREP_QSYS_H__
-#define __QUIXCC_PREP_QSYS_H__
+#include <quixcc/plugin/EngineAPI.h>
+#include <quixcc/preprocessor/QSys.h>
 
-#ifndef __cplusplus
-#error "This header requires C++"
+#include <iostream>
+
+#ifndef __linux__
+#error "This implementation of QSys is only supported on Linux"
 #endif
 
-#include <quixcc/Library.h>
-#include <quixcc/plugin/EngineAPI.h>
-#include <string.h>
+QSYS_DEFINE(qsys_write_stdout, "Write to the compiler's standard output") {
+  QSYS_ARGASSERT(qsys_write_stdout, 3);
 
-namespace libquixcc::qsys {
+  QSYS_ARG_STRING(qsys_write_stdout, c_msg, 0);
+  QSYS_ARG_INT64(qsys_write_stdout, formatted, 1);
+  QSYS_ARG_INT64(qsys_write_stdout, flush, 2);
 
-#define QSYS_DEFINE(_name, _desc)                                                                  \
-  char *libquixcc::qsys::_name(quixcc_engine_t *e, uint32_t n, const char **v, uint32_t c)
+  std::string msg(c_msg, c_msg_len);
 
-#define QSYS_NOT_IMPLEMENTED(name)                                                                 \
-  char *libquixcc::qsys::name(quixcc_engine_t *e, uint32_t n, const char **v, uint32_t c) {        \
-    quixcc_engine_message(e, QUIXCC_MESSAGE_WARNING, "QSys Call \"%s\" is not implemented",        \
-                          #name);                                                                  \
-    return strdup("");                                                                             \
+  if (!formatted) {
+    std::cout << msg;
+    if (flush) {
+      std::cout.flush();
+    }
+
+    return strdup(std::to_string(msg.size()).c_str());
   }
 
-  /*==================== TEXT IO ====================*/
-  QSYS_DECL(qsys_write_stdout);
-  QSYS_DECL(qsys_write_stderr);
-  QSYS_DECL(qsys_read_stdin);
-  QSYS_DECL(qsys_clear_terminal);
-  QSYS_DECL(qsys_set_terminal_title);
-  QSYS_DECL(qsys_set_terminal_color);
-  QSYS_DECL(qsys_set_cursor_position);
-  QSYS_DECL(qsys_set_cursor_visibility);
-  QSYS_DECL(qsys_set_cursor_blink_rate);
-  QSYS_DECL(qsys_enable_terminal_echo);
-  QSYS_DECL(qsys_bell);
-  QSYS_DECL(qsys_set_terminal_size);
-  QSYS_DECL(qsys_set_terminal_font);
+  /*================ FORMATTED OUTPUT =================*/
+  quixcc_message_t ch;
 
-  /*==================== FILE IO ====================*/
-  QSYS_DECL(qsys_open_file);
-  QSYS_DECL(qsys_close_file);
-  QSYS_DECL(qsys_read_file);
-  QSYS_DECL(qsys_write_file);
-  QSYS_DECL(qsys_seek_file);
-  QSYS_DECL(qsys_tell_file);
-  QSYS_DECL(qsys_flush_file);
-  QSYS_DECL(qsys_delete_file);
-  QSYS_DECL(qsys_rename_file);
-  QSYS_DECL(qsys_create_directory);
-  QSYS_DECL(qsys_delete_directory);
-  QSYS_DECL(qsys_rename_directory);
-  QSYS_DECL(qsys_list_directory);
-  QSYS_DECL(qsys_get_file_attributes);
-  QSYS_DECL(qsys_set_file_attributes);
+  if (msg.starts_with("DEBUG:")) {
+    ch = QUIXCC_MESSAGE_DEBUG;
+    msg = msg.substr(6);
+  } else if (msg.starts_with("INFO:")) {
+    ch = QUIXCC_MESSAGE_INFO;
+    msg = msg.substr(5);
+  } else if (msg.starts_with("WARNING:")) {
+    ch = QUIXCC_MESSAGE_WARNING;
+    msg = msg.substr(8);
+  } else if (msg.starts_with("ERROR:")) {
+    ch = QUIXCC_MESSAGE_ERROR;
+    msg = msg.substr(6);
+  } else if (msg.starts_with("FATAL:")) {
+    ch = QUIXCC_MESSAGE_FATAL;
+    msg = msg.substr(6);
+  } else {
+    ch = QUIXCC_MESSAGE_INFO;
+  }
 
-  /*==================== SYSTEM ====================*/
-  QSYS_DECL(qsys_get_compiler_version);
-  QSYS_DECL(qsys_get_flags);
-  QSYS_DECL(qsys_set_flag);
-  QSYS_DECL(qsys_execute_os_command);
-  QSYS_DECL(qsys_abort);
+  quixcc_engine_message(e, ch, "%s", msg.c_str());
 
-  /*==================== NETWORK ====================*/
-  QSYS_DECL(qsys_open_network_connection);
-  QSYS_DECL(qsys_close_network_connection);
-  QSYS_DECL(qsys_read_network_connection);
-  QSYS_DECL(qsys_write_network_connection);
+  return strdup(std::to_string(msg.size()).c_str());
+}
 
-  /*==================== LANGUAGE ====================*/
-  QSYS_DECL(qsys_compile_and_execute_quix);
-  QSYS_DECL(qsys_get_type);
-  QSYS_DECL(qsys_undefine);
-  QSYS_DECL(qsys_get_source);
-  QSYS_DECL(qsys_set);
-  QSYS_DECL(qsys_get);
+QSYS_DEFINE(qsys_write_stderr, "Write to the compiler's standard error") {
+  QSYS_ARGASSERT(qsys_write_stdout, 3);
 
-  /*==================== UTILITIES ===================*/
-  QSYS_DECL(qsys_time);
-  QSYS_DECL(qsys_sleep);
-  QSYS_DECL(qsys_crypto_random);
-  QSYS_DECL(qsys_hash);
-  QSYS_DECL(qsys_insmod);
-  QSYS_DECL(qsys_rmmod);
-  QSYS_DECL(qsys_ioctl);
+  QSYS_ARG_STRING(qsys_write_stdout, c_msg, 0);
+  QSYS_ARG_INT64(qsys_write_stdout, formatted, 1);
+  QSYS_ARG_INT64(qsys_write_stdout, flush, 2);
 
-  void bind_qsyscalls(quixcc_cc_job_t *job);
-} // namespace libquixcc::qsys
+  std::string msg(c_msg, c_msg_len);
 
-#endif // __QUIXCC_PREP_QSYS_H__
+  if (!formatted) {
+    std::cerr << msg;
+    if (flush) {
+      std::cerr.flush();
+    }
+
+    return strdup(std::to_string(msg.size()).c_str());
+  }
+
+  /*================ FORMATTED OUTPUT =================*/
+  quixcc_message_t ch;
+
+  if (msg.starts_with("DEBUG:")) {
+    ch = QUIXCC_MESSAGE_DEBUG;
+    msg = msg.substr(6);
+  } else if (msg.starts_with("INFO:")) {
+    ch = QUIXCC_MESSAGE_INFO;
+    msg = msg.substr(5);
+  } else if (msg.starts_with("WARNING:")) {
+    ch = QUIXCC_MESSAGE_WARNING;
+    msg = msg.substr(8);
+  } else if (msg.starts_with("ERROR:")) {
+    ch = QUIXCC_MESSAGE_ERROR;
+    msg = msg.substr(6);
+  } else if (msg.starts_with("FATAL:")) {
+    ch = QUIXCC_MESSAGE_FATAL;
+    msg = msg.substr(6);
+  } else {
+    ch = QUIXCC_MESSAGE_INFO;
+  }
+
+  quixcc_engine_message(e, ch, "%s", msg.c_str());
+
+  return strdup(std::to_string(msg.size()).c_str());
+}
+
+QSYS_NOT_IMPLEMENTED(qsys_read_stdin);
+
+QSYS_DEFINE(qsys_clear_terminal, "Clear the terminal screen") {
+  QSYS_ARGASSERT(qsys_clear_terminal, 0);
+
+  std::cout << "\x1b\x5b\x48\x1b\x5b\x32\x4a\x1b\x5b\x33\x4a";
+
+  return strdup("");
+}
+
+QSYS_NOT_IMPLEMENTED(qsys_set_terminal_title);
+QSYS_NOT_IMPLEMENTED(qsys_set_terminal_color);
+QSYS_NOT_IMPLEMENTED(qsys_set_cursor_position);
+QSYS_NOT_IMPLEMENTED(qsys_set_cursor_visibility);
+QSYS_NOT_IMPLEMENTED(qsys_set_cursor_blink_rate);
+QSYS_NOT_IMPLEMENTED(qsys_enable_terminal_echo);
+
+QSYS_DEFINE(qsys_bell, "Use ANSI escape codes to ring the terminal bell") {
+  QSYS_ARGASSERT(qsys_bell, 1);
+  QSYS_ARG_INT64(qsys_bell, count, 0);
+
+  while (count--) {
+    std::cout << "\x07";
+  }
+
+  std::cout.flush();
+
+  return strdup("");
+}
+
+QSYS_NOT_IMPLEMENTED(qsys_set_terminal_size);
+QSYS_NOT_IMPLEMENTED(qsys_set_terminal_font);
