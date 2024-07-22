@@ -128,7 +128,26 @@ QSYS_DEFINE(qsys_write_stderr, "Write to the compiler's standard error") {
   return strdup(std::to_string(msg.size()).c_str());
 }
 
-QSYS_NOT_IMPLEMENTED(qsys_read_stdin);
+QSYS_DEFINE(qsys_read_stdin, "Read bytes from stdin") {
+  QSYS_ARGASSERT(qsys_read_stdin, 2);
+  QSYS_ARG_INT64(qsys_read_stdin, count, 0);
+  QSYS_ARG_INT64(qsys_read_stdin, term_char, 1);
+
+  std::string input;
+  char ch;
+
+  while (count--) {
+    ch = std::cin.get();
+
+    if (std::cin.eof() || ch == term_char) {
+      break;
+    }
+
+    input.push_back(ch);
+  }
+
+  return strdup(input.c_str());
+}
 
 QSYS_DEFINE(qsys_clear_terminal, "Clear the terminal screen") {
   QSYS_ARGASSERT(qsys_clear_terminal, 0);

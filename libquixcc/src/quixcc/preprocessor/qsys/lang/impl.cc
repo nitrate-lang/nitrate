@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <quixcc/core/Exception.h>
 #include <quixcc/plugin/EngineAPI.h>
 #include <quixcc/preprocessor/QSys.h>
 
@@ -36,6 +37,15 @@ QSYS_NOT_IMPLEMENTED(qsys_compile_and_execute_quix);
 QSYS_NOT_IMPLEMENTED(qsys_get_type);
 QSYS_NOT_IMPLEMENTED(qsys_undefine);
 QSYS_NOT_IMPLEMENTED(qsys_get_source);
+
 QSYS_NOT_IMPLEMENTED(qsys_set);
 QSYS_NOT_IMPLEMENTED(qsys_get);
-QSYS_NOT_IMPLEMENTED(qsys_abort);
+
+QSYS_DEFINE(qsys_abort, "Abort the compilation process") {
+  QSYS_ARGASSERT(qsys_abort, 1);
+
+  QSYS_ARG_STRING(qsys_abort, message, 0);
+  (void)message_len;
+
+  throw libquixcc::core::PreprocessorException(message);
+}

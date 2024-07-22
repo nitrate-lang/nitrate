@@ -29,9 +29,38 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/QuixJob.h>
 #include <quixcc/plugin/EngineAPI.h>
 #include <quixcc/preprocessor/QSys.h>
 
-QSYS_NOT_IMPLEMENTED(qsys_get_compiler_version);
-QSYS_NOT_IMPLEMENTED(qsys_get_flags);
-QSYS_NOT_IMPLEMENTED(qsys_set_flag);
+QSYS_DEFINE(qsys_get_compiler_version, "Get the version information of the compiler") {
+  QSYS_ARGASSERT(qsys_get_compiler_version, 0);
+
+  return strdup(quixcc_lib_version());
+}
+
+QSYS_DEFINE(qsys_get_flags, "Get the flags") {
+  QSYS_ARGASSERT(qsys_get_flags, 0);
+
+  quixcc_cc_job_t *job = quixcc_engine_job(e);
+
+  std::string flags = "";
+  for (auto &flag : job->m_options) {
+    flags += flag + "\n";
+  }
+
+  return strdup(flags.c_str());
+}
+
+QSYS_DEFINE(qsys_set_flag, "Set a flag") {
+  QSYS_ARGASSERT(qsys_set_flag, 1);
+  QSYS_ARG_STRING(qsys_set_flag, flag, 0);
+
+  (void)flag_len;
+
+  quixcc_cc_job_t *job = quixcc_engine_job(e);
+
+  quixcc_cc_option(job, flag, true);
+
+  return strdup("");
+}

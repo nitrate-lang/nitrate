@@ -114,11 +114,7 @@ class LuaEngine {
     if (!m_L) {
       throw std::runtime_error("LuaEngine: luaL_newstate failed");
     }
-    // luaopen_base(m_L);   /* opens the basic library */
-    // luaopen_table(m_L);  /* opens the table library */
-    // luaopen_string(m_L); /* opens the string lib. */
-    // luaopen_math(m_L);   /* opens the math lib. */
-    luaL_openlibs(m_L); /* opens all standard libraries */
+    luaL_openlibs(m_L);
 
     bind_qsys_api(); /* add binding for compiler specific API */
   }
@@ -166,7 +162,8 @@ class LuaEngine {
 bool libquixcc::PrepEngine::expand_user_macro(
     const libquixcc::MacroData &fn_body,
     const std::vector<std::pair<std::string, std::string>> &user_args) {
-  LuaEngine engine(job, (quixcc_engine_t *)this);
+  /* Keep the interpreter alive for the compilation unit */
+  static thread_local LuaEngine engine(job, (quixcc_engine_t *)this);
 
   std::string lua_code = "function m() \n";
 
