@@ -1,7 +1,0 @@
-version: 1
-name: "orbit-core"
-description: "Standard library for the Quix programming language"
-licenses: ["MIT"]
-sources: ["."]
-headers: ["."]
-target: "sharedlib"
