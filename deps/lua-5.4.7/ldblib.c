@@ -463,15 +463,15 @@ static const luaL_Reg dblib[] = {
   {"getregistry", db_getregistry},
   {"getmetatable", db_getmetatable},
   {"getupvalue", db_getupvalue},
-  {"upvaluejoin", db_upvaluejoin},
-  {"upvalueid", db_upvalueid},
-  {"setuservalue", db_setuservalue},
-  {"sethook", db_sethook},
-  {"setlocal", db_setlocal},
-  {"setmetatable", db_setmetatable},
-  {"setupvalue", db_setupvalue},
+  // {"upvaluejoin", db_upvaluejoin},
+  // {"upvalueid", db_upvalueid},
+  // {"setuservalue", db_setuservalue},
+  // {"sethook", db_sethook},
+  // {"setlocal", db_setlocal},
+  // {"setmetatable", db_setmetatable},
+  // {"setupvalue", db_setupvalue},
   {"traceback", db_traceback},
-  {"setcstacklimit", db_setcstacklimit},
+  // {"setcstacklimit", db_setcstacklimit},
   {NULL, NULL}
 };
 

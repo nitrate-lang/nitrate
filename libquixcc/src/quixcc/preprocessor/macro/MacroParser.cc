@@ -114,10 +114,11 @@ class LuaEngine {
     if (!m_L) {
       throw std::runtime_error("LuaEngine: luaL_newstate failed");
     }
-    luaopen_base(m_L);   /* opens the basic library */
-    luaopen_table(m_L);  /* opens the table library */
-    luaopen_string(m_L); /* opens the string lib. */
-    luaopen_math(m_L);   /* opens the math lib. */
+    // luaopen_base(m_L);   /* opens the basic library */
+    // luaopen_table(m_L);  /* opens the table library */
+    // luaopen_string(m_L); /* opens the string lib. */
+    // luaopen_math(m_L);   /* opens the math lib. */
+    luaL_openlibs(m_L); /* opens all standard libraries */
 
     bind_qsys_api(); /* add binding for compiler specific API */
   }

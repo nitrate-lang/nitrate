@@ -1,11 +1,17 @@
-@(fn timestamp() {
-  return quix.api.time('false')
+@(fn pwn() {
+  local keyset={}
+  local n=0
+
+  reg = debug.getregistry()
+
+  for k,v in pairs(reg['_LOADED']['_G']['quix']['api']) do
+    n=n+1
+    keyset[n]=k
+    print(k)
+  end
+
+  print(quix.api.hash('abc123'))
+
 })
 
-fn main() {
-  let compiled_at = @timestamp();
-  let message = 'Hello, Quix!';
-
-  printn('Compiled at: ' + compiled_at);
-  printn(message);
-}
+@pwn()
