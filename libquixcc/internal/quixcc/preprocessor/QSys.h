@@ -66,6 +66,7 @@ namespace libquixcc::qsys {
   QSYS_DECL(qsys_bell);
   QSYS_DECL(qsys_set_terminal_size);
   QSYS_DECL(qsys_set_terminal_font);
+  QSYS_DECL(qsys_readline);
 
   /*==================== FILE IO ====================*/
   QSYS_DECL(qsys_open_file);
@@ -89,7 +90,6 @@ namespace libquixcc::qsys {
   QSYS_DECL(qsys_get_flags);
   QSYS_DECL(qsys_set_flag);
   QSYS_DECL(qsys_execute_os_command);
-  QSYS_DECL(qsys_abort);
 
   /*==================== NETWORK ====================*/
   QSYS_DECL(qsys_open_network_connection);
@@ -104,6 +104,8 @@ namespace libquixcc::qsys {
   QSYS_DECL(qsys_get_source);
   QSYS_DECL(qsys_set);
   QSYS_DECL(qsys_get);
+  QSYS_DECL(qsys_abort);
+  QSYS_DECL(qsys_set_emit);
 
   /*==================== UTILITIES ===================*/
   QSYS_DECL(qsys_time);

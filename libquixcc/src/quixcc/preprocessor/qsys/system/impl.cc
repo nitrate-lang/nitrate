@@ -53,14 +53,16 @@ QSYS_DEFINE(qsys_get_flags, "Get the flags") {
 }
 
 QSYS_DEFINE(qsys_set_flag, "Set a flag") {
-  QSYS_ARGASSERT(qsys_set_flag, 1);
+  QSYS_ARGASSERT(qsys_set_flag, 2);
   QSYS_ARG_STRING(qsys_set_flag, flag, 0);
-
-  (void)flag_len;
+  QSYS_ARG_INT64(qsys_set_flag, enabled, 1);
 
   quixcc_cc_job_t *job = quixcc_engine_job(e);
 
-  quixcc_cc_option(job, flag, true);
+  std::erase(job->m_options, flag);
+  if (enabled) {
+    job->m_options.push_back(flag);
+  }
 
   return strdup("");
 }

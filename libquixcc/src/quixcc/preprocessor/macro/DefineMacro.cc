@@ -46,9 +46,9 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok, const std::string &dir
   lex->set_source(parameter, "<define-macro>");
   std::string dname;
 
-  lex->disable_expansion();
+  lex->set_expansion(false);
   Token t = lex->next();
-  lex->enable_expansion();
+  lex->set_expansion(true);
 
   if (t.type() != tName) {
     LOG(ERROR) << "Expected identifier in @define directive" << t << std::endl;
@@ -62,9 +62,9 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok, const std::string &dir
     return false;
   }
 
-  lex->disable_expansion();
+  lex->set_expansion(false);
   t = lex->next();
-  lex->enable_expansion();
+  lex->set_expansion(true);
   std::string dvalue = t.serialize(false);
 
   set_static(dname, dvalue);

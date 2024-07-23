@@ -49,12 +49,12 @@
 #define QSYS_BELL 0x000B
 #define QSYS_SET_TERMINAL_SIZE 0x000C
 #define QSYS_SET_TERMINAL_FONT 0x000D
+#define QSYS_READLINE 0x000E
 
 /*==================== SYSTEM ====================*/
 #define QSYS_GET_COMPILER_VERSION 0x01F0
 #define QSYS_GET_FLAGS 0x01F1
 #define QSYS_SET_FLAG 0x01F3
-#define QSYS_SET_MIO 0x01F4
 
 /*==================== LANGUAGE ====================*/
 #define QSYS_COMPILE_AND_EXECUTE_QUIX 0x0FF0
@@ -64,6 +64,7 @@
 #define QSYS_SET 0x0FF8
 #define QSYS_GET 0x0FF9
 #define QSYS_ABORT 0x0FFA
+#define QSYS_SET_EMIT 0x0FFB
 
 /*==================== UTILITIES ===================*/
 #define QSYS_TIME 0x2000
@@ -90,6 +91,7 @@ void libquixcc::qsys::bind_qsyscalls(quixcc_cc_job_t *job) {
       {QSYS_BELL, qsys_bell, "bell"},
       {QSYS_SET_TERMINAL_SIZE, qsys_set_terminal_size, "set_term_size"},
       {QSYS_SET_TERMINAL_FONT, qsys_set_terminal_font, "set_term_font"},
+      {QSYS_READLINE, qsys_readline, "readline"},
 
       /*==================== SYSTEM ====================*/
       {QSYS_GET_COMPILER_VERSION, qsys_get_compiler_version, "get_version"},
@@ -104,6 +106,7 @@ void libquixcc::qsys::bind_qsyscalls(quixcc_cc_job_t *job) {
       {QSYS_SET, qsys_set, "set"},
       {QSYS_GET, qsys_get, "get"},
       {QSYS_ABORT, qsys_abort, "abort"},
+      {QSYS_SET_EMIT, qsys_set_emit, "set_emit"},
 
       /*==================== UTILITIES ===================*/
       {QSYS_TIME, qsys_time, "time"},

@@ -241,7 +241,7 @@ bool PrepEngine::ParseFn(const Token &tok, const std::string &directive,
   }
 
   if (m_macros->contains(mname)) {
-    LOG(INFO) << "Overloading macro function " << mname << tok << std::endl;
+    LOG(DEBUG) << "Overloading macro function " << mname << tok << std::endl;
   }
 
   std::string luacode = parameter.substr(offset, parameter.size() - offset - 1);
@@ -249,4 +249,32 @@ bool PrepEngine::ParseFn(const Token &tok, const std::string &directive,
   (*m_macros)[mname] = MacroData(luacode, params);
 
   return true;
+}
+
+std::ostream &libquixcc::operator<<(std::ostream &os, libquixcc::MacroParamType type) {
+  switch (type) {
+  case MacroParamType::Int:
+    os << "int";
+    break;
+  case MacroParamType::UInt:
+    os << "uint";
+    break;
+  case MacroParamType::Text:
+    os << "text";
+    break;
+  case MacroParamType::Bool:
+    os << "bool";
+    break;
+  case MacroParamType::Real:
+    os << "real";
+    break;
+  case MacroParamType::Nil:
+    os << "nil";
+    break;
+  case MacroParamType::List:
+    os << "[text]";
+    break;
+  }
+
+  return os;
 }

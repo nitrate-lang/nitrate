@@ -2384,11 +2384,6 @@ ConstChar *ConstChar::clone_impl() const { return ConstChar::get(m_value); }
 String ConstChar::get_value() const { return m_value; }
 
 bool ConstString::verify_impl(std::ostream &os) const {
-  if (m_value.empty()) {
-    os << "ConstString: value is empty\n";
-    return false;
-  }
-
   return true;
 }
 

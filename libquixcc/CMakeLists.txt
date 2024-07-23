@@ -50,7 +50,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Linking ${lib}")
   endforeach()
 
-  target_link_libraries(quixcc PRIVATE libboost_serialization.a boost_filesystem libdeflate.a liblua5.4.a libcrypto.a libstdc++.a z tinfo -fsanitize=address -fsanitize=undefined)
+  target_link_libraries(quixcc PRIVATE libboost_serialization.a boost_filesystem libdeflate.a liblua5.4.a libcrypto.a readline libstdc++.a z tinfo -fsanitize=address -fsanitize=undefined)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #========= CREATE SHARED LIBRARY RELEASE BUILD ==========
   add_library(quixcc SHARED ${LIBQUIX_CXX_SOURCES})
@@ -64,5 +64,5 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     message(STATUS "Linking ${lib}")
   endforeach()
 
-  target_link_libraries(quixcc PRIVATE libboost_serialization.a libboost_filesystem.a libdeflate.a liblua5.4.a libcrypto.a libstdc++.a libz.a tinfo)
+  target_link_libraries(quixcc PRIVATE libboost_serialization.a libboost_filesystem.a libdeflate.a liblua5.4.a libcrypto.a readline libstdc++.a libz.a tinfo)
 endif()

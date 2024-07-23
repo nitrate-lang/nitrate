@@ -63,15 +63,15 @@ class LuaEngine {
     for (auto call_num : m_job->m_qsyscalls.GetRegistered()) {
       auto name = m_job->m_qsyscalls.GetName(call_num);
 
-      lua_pushinteger(m_L, (lua_Integer)(uintptr_t)m_job);
-      lua_pushinteger(m_L, (lua_Integer)(uintptr_t)m_engine);
+      lua_pushinteger(m_L, (lua_Integer)(uintptr_t)&m_job);
+      lua_pushinteger(m_L, (lua_Integer)(uintptr_t)&m_engine);
       lua_pushinteger(m_L, call_num);
 
       lua_pushcclosure(
           m_L,
           [](lua_State *L) -> int {
-            quixcc_cc_job_t *job;
-            quixcc_engine_t *engine;
+            quixcc_cc_job_t **job;
+            quixcc_engine_t **engine;
             uint32_t call_num;
 
             { /* Get closure upvalues */
@@ -79,8 +79,8 @@ class LuaEngine {
               int engine_idx = lua_upvalueindex(2);
               int call_num_idx = lua_upvalueindex(3);
 
-              job = (quixcc_cc_job_t *)(uintptr_t)luaL_checkinteger(L, job_idx);
-              engine = (quixcc_engine_t *)(uintptr_t)luaL_checkinteger(L, engine_idx);
+              job = (quixcc_cc_job_t **)(uintptr_t)luaL_checkinteger(L, job_idx);
+              engine = (quixcc_engine_t **)(uintptr_t)luaL_checkinteger(L, engine_idx);
               call_num = luaL_checkinteger(L, call_num_idx);
             }
 
@@ -88,10 +88,16 @@ class LuaEngine {
             int nargs = lua_gettop(L);
             std::vector<const char *> args;
             for (int i = 1; i <= nargs; i++) {
-              args.push_back(lua_tostring(L, i));
+              if (lua_isstring(L, i) || lua_isnumber(L, i)) {
+                args.push_back(lua_tostring(L, i));
+              } else if (lua_isboolean(L, i)) {
+                args.push_back(lua_toboolean(L, i) ? "1" : "0");
+              } else {
+                return luaL_error(L, "Invalid argument #%d", i);
+              }
             }
 
-            auto result = job->m_qsyscalls.Call(engine, call_num, args);
+            auto result = (*job)->m_qsyscalls.Call(*engine, call_num, args);
 
             /* Return a single string result */
             lua_pushstring(L, result.c_str());
@@ -120,6 +126,11 @@ class LuaEngine {
   }
 
   ~LuaEngine() { lua_close(m_L); }
+
+  void fix_dangling_pointers(quixcc_cc_job_t *job, quixcc_engine_t *engine) {
+    m_job = job;
+    m_engine = engine;
+  }
 
   bool run(const char *code, std::string &output) {
     using namespace libquixcc;
@@ -150,8 +161,11 @@ class LuaEngine {
       output = lua_tostring(m_L, -1);
     } else if (lua_isnumber(m_L, -1)) {
       output = std::to_string(lua_tonumber(m_L, -1));
+    } else if (lua_isboolean(m_L, -1)) {
+      output = lua_toboolean(m_L, -1) ? "true" : "false";
     } else {
-      LOG(ERROR) << "Invalid Lua return value: {}" << lua_tostring(m_L, -1) << std::endl;
+      LOG(ERROR) << "Invalid Lua return value: {}" << lua_typename(m_L, lua_type(m_L, -1))
+                 << std::endl;
       return false;
     }
 
@@ -164,6 +178,9 @@ bool libquixcc::PrepEngine::expand_user_macro(
     const std::vector<std::pair<std::string, std::string>> &user_args) {
   /* Keep the interpreter alive for the compilation unit */
   static thread_local LuaEngine engine(job, (quixcc_engine_t *)this);
+
+  /* Ensure we always have a pointer to the correct contexts */
+  engine.fix_dangling_pointers(job, (quixcc_engine_t *)this);
 
   std::string lua_code = "function m() \n";
 
@@ -216,19 +233,7 @@ bool libquixcc::PrepEngine::expand_user_macro(
     }
   }
 
-  { /* Macro Beta-Reduction */
-    /// TODO: Implement beta-reduction
-
-    lua_code += fn_body.luacode;
-
-    // auto prep = clone();
-    // prep->set_source(fn_body.luacode, "macro_body");
-    // Token t;
-    // while (true) {
-    //   t = prep->next();
-    //   lua_code += t.serialize(false) + " ";
-    // }
-  }
+  lua_code += fn_body.luacode;
 
   lua_code += "\nend";
 

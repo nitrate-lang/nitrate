@@ -44,11 +44,9 @@
 
 QSYS_DEFINE(qsys_time, "Get the timestamp local or UTC") {
   QSYS_ARGASSERT(qsys_time, 1);
-  QSYS_ARG_STRING(qsys_time, is_local, 0);
+  QSYS_ARG_INT64(qsys_time, is_local, 0);
 
-  (void)is_local_len;
-
-  if (strcmp(is_local, "true") == 0) {
+  if (is_local) {
     time_t t = time(0);
     struct tm *now = localtime(&t);
     char buf[80] = {0};

@@ -32,6 +32,7 @@
 #define QUIXCC_INTERNAL
 
 #include <core/Macro.h>
+#include <quixcc/core/Exception.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 
@@ -57,6 +58,7 @@ PrepEngine::PrepEngine(quixcc_cc_job_t &_job) {
   m_we_own_file = false;
   m_we_are_root = true;
   m_expansion_enabled = true;
+  m_emit_enabled = true;
 
   /* All n-th order metacode shall have access to the statics */
   if (m_we_are_root) {
@@ -193,9 +195,8 @@ std::unique_ptr<PrepEngine> PrepEngine::clone() const {
   return l;
 }
 
-void libquixcc::PrepEngine::disable_expansion() { m_expansion_enabled = false; }
-
-void libquixcc::PrepEngine::enable_expansion() { m_expansion_enabled = true; }
+void libquixcc::PrepEngine::set_expansion(bool enabled) { m_expansion_enabled = enabled; }
+void libquixcc::PrepEngine::set_emit(bool enabled) { m_emit_enabled = enabled; }
 
 bool PrepEngine::set_source(FILE *src, const std::string &filename) {
   /*============== SET SOURCE FILE ================*/
@@ -243,6 +244,10 @@ void PrepEngine::set_source(PrepEngine::rstr src, PrepEngine::rstr filename) {
 }
 
 quixcc_cc_job_t *libquixcc::PrepEngine::get_job() const { return job; }
+
+std::shared_ptr<libquixcc::PrepEngine::MacroMap> libquixcc::PrepEngine::get_macros() {
+  return m_macros;
+}
 
 void PrepEngine::push(Token tok) {
   /*============== PUBLIC INTERFACE FOR PUSHING TOKEN ================*/
@@ -391,7 +396,7 @@ bool PrepEngine::handle_import(const Token &input_tok) {
     LOG(ERROR) << "Refusing to enter infinite loop. Try to split your "
                   "dependencies into smaller files."
                << tok << std::endl;
-    __builtin_unreachable();
+    throw core::PreprocessorException("Circular include detected");
   }
 
   /*============== OPEN FILE ================*/
@@ -399,7 +404,7 @@ bool PrepEngine::handle_import(const Token &input_tok) {
   if (!(f = fopen(filepath.c_str(), "r"))) {
     LOG(ERROR) << "Could not open file: \"{}\" in include directories [{}]" << filepath
                << include_path << tok << std::endl;
-    __builtin_unreachable();
+    throw core::PreprocessorException("Could not open file");
   }
 
   /*============== ADD FILE TO ALREADY INCLUDED ================*/
@@ -411,7 +416,7 @@ bool PrepEngine::handle_import(const Token &input_tok) {
 
   if (!m_stack.top().scanner->set_source(f, filepath)) {
     LOG(ERROR) << "Failed to set source for file: " << filepath << tok << std::endl;
-    __builtin_unreachable();
+    throw core::PreprocessorException("Failed to set source for file");
   }
 
   return true;
@@ -438,6 +443,19 @@ Token PrepEngine::read_token() {
     /*============== GET NEXT TOKEN FROM LOWER ORDER SCANNER ================*/
     tok = m_stack.top().scanner->next();
 
+    /*============== HANDLE END OF N-TH ORDER SCANNER ================*/
+    if (tok.is(tEofF)) {
+      if (m_stack.size() == 1) {
+        goto end;
+      }
+
+      fclose(m_stack.top().file);
+      m_include_files.pop_back();
+      m_stack.pop();
+      job->m_filename.pop();
+      continue;
+    }
+
     if (m_expansion_enabled) {
       /*============== HANDLE POSSIBLE MACRO EXPANSION ================*/
       if (tok.is(tName)) {
@@ -446,7 +464,7 @@ Token PrepEngine::read_token() {
           std::string value;
           if (!get_static(tok.as<std::string>(), value)) {
             LOG(ERROR) << "Failed to get static value" << tok << std::endl;
-            __builtin_unreachable();
+            throw core::PreprocessorException("Failed to get static value");
           }
 
           /*============== RECURSIVE EXPANSION ================*/
@@ -467,7 +485,7 @@ Token PrepEngine::read_token() {
         if (tok.as<std::string>().starts_with("import")) {
           if (!handle_import(tok)) {
             LOG(ERROR) << "Failed to process import" << tok << std::endl;
-            __builtin_unreachable();
+            throw core::PreprocessorException("Failed to process import");
           }
           continue;
         }
@@ -475,23 +493,14 @@ Token PrepEngine::read_token() {
         /*============== HANDLE OTHER MACRO EXPANSION ================*/
         if (!parse_macro(tok)) {
           LOG(ERROR) << "Failed to expand macro" << tok << std::endl;
-          __builtin_unreachable();
+          throw core::PreprocessorException("Failed to expand macro");
         }
 
         continue;
       }
     }
 
-    /*============== HANDLE END OF N-TH ORDER SCANNER ================*/
-    if (tok.is(tEofF)) {
-      if (m_stack.size() == 1) {
-        goto end;
-      }
-
-      fclose(m_stack.top().file);
-      m_include_files.pop_back();
-      m_stack.pop();
-      job->m_filename.pop();
+    if (!m_emit_enabled) {
       continue;
     }
 
@@ -507,6 +516,7 @@ end:
                  << tok << std::endl;
     }
   }
+
   return tok;
 }
 

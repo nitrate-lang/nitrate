@@ -67,14 +67,15 @@ namespace libquixcc {
     List,
   };
 
+  std::ostream &operator<<(std::ostream &os, MacroParamType type);
+
   struct MacroData {
     typedef std::tuple<std::string, MacroParamType, std::optional<std::string>> MacroArg;
 
     std::string luacode;
     std::vector<MacroArg> args;
 
-    MacroData(const std::string &code = "",
-              const std::vector<MacroArg> &args = {})
+    MacroData(const std::string &code = "", const std::vector<MacroArg> &args = {})
         : luacode(code), args(args) {}
   };
 
@@ -113,6 +114,7 @@ protected:
     bool m_we_own_file;
     bool m_we_are_root;
     bool m_expansion_enabled;
+    bool m_emit_enabled;
 
     libquixcc::Token read_token();
     bool handle_import(const Token &tok);
@@ -120,10 +122,8 @@ protected:
     bool parse_macro(const libquixcc::Token &macro);
     std::unique_ptr<PrepEngine> clone() const;
 
-    void disable_expansion();
-    void enable_expansion();
-
-    bool expand_user_macro(const MacroData &fn_body, const std::vector<std::pair<std::string, std::string>> &args);
+    bool expand_user_macro(const MacroData &fn_body,
+                           const std::vector<std::pair<std::string, std::string>> &args);
 
 public:
     PrepEngine(quixcc_cc_job_t &job);
@@ -136,6 +136,12 @@ public:
     bool set_source(FILE *src, rstr filename) override;
     void set_source(rstr src, rstr filename);
     quixcc_cc_job_t *get_job() const;
+
+    void set_expansion(bool enabled);
+    void set_emit(bool enabled);
+
+    /*================== NAMING IS HARD ==================*/
+    std::shared_ptr<MacroMap> get_macros();
 
     /*================== PREPROCESSOR INTERFACE ==================*/
     Token next() override;

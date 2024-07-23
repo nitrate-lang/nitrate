@@ -33,6 +33,8 @@
 #include <quixcc/preprocessor/QSys.h>
 
 #include <iostream>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #ifndef __linux__
 #error "This implementation of QSys is only supported on Linux"
@@ -147,6 +149,26 @@ QSYS_DEFINE(qsys_read_stdin, "Read bytes from stdin") {
   }
 
   return strdup(input.c_str());
+}
+
+QSYS_DEFINE(qsys_readline, "Read a line from stdin with configurable prompt") {
+  static bool do_init_history = (using_history(), true);
+  (void)do_init_history;
+
+  QSYS_ARGASSERT(qsys_readline, 1);
+  QSYS_ARG_STRING(qsys_readline, prompt, 0);
+
+  (void)prompt_len;
+
+  char *input = readline(prompt);
+
+  if (!input) {
+    return strdup("");
+  }
+
+  add_history(input);
+
+  return input;
 }
 
 QSYS_DEFINE(qsys_clear_terminal, "Clear the terminal screen") {

@@ -177,6 +177,12 @@ quixcc_tok_t quixcc_tok_new_punct(quixcc_lex_punct_t punct);
     quixcc_engine_message(e, QUIXCC_MESSAGE_ERROR,                                                 \
                           "QSys Call \"%s\" expects %d arguments, got %d", #name, nargs, c);       \
     return strdup("nil");                                                                          \
+  }                                                                                                \
+  for (uint32_t i = 0; i < c; i++) {                                                               \
+    if (!v[i]) {                                                                                   \
+      quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL, "%s: Argument %d IS NULL", #name, i);         \
+      return strdup("nil");                                                                        \
+    }                                                                                              \
   }
 
 #define QSYS_ARG_STRING(_qname, _varname, _idx)                                                    \
@@ -184,12 +190,21 @@ quixcc_tok_t quixcc_tok_new_punct(quixcc_lex_punct_t punct);
     quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL, "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
     return strdup("nil");                                                                          \
   }                                                                                                \
+  if (!v[_idx]) {                                                                                  \
+    quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL, "%s: Argument %d IS NULL", #_qname, _idx);      \
+    return strdup("nil");                                                                          \
+  }                                                                                                \
   size_t _varname##_len = strlen(v[_idx]);                                                         \
-  const char *_varname = v[_idx];
+  const char *_varname = v[_idx];                                                                  \
+  (void)_varname##_len;
 
 #define QSYS_ARG_INT64(_qname, _varname, _idx)                                                     \
   if (c <= _idx) {                                                                                 \
     quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL, "%s: Argument %d OUT OF RANGE", #_qname, _idx); \
+    return strdup("nil");                                                                          \
+  }                                                                                                \
+  if (!v[_idx]) {                                                                                  \
+    quixcc_engine_message(e, QUIXCC_MESSAGE_FATAL, "%s: Argument %d IS NULL", #_qname, _idx);      \
     return strdup("nil");                                                                          \
   }                                                                                                \
   int64_t _varname = atoll(v[_idx]);
