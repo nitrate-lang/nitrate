@@ -63,9 +63,11 @@ bool libquixcc::PrepEngine::ParseDefine(const Token &tok, const std::string &dir
   }
 
   lex->set_expansion(false);
-  t = lex->next();
+  std::string dvalue;
+  while ((t = lex->next()).type() != tEofF) {
+    dvalue += t.serialize(false) + " ";
+  }
   lex->set_expansion(true);
-  std::string dvalue = t.serialize(false);
 
   set_static(dname, dvalue);
 
