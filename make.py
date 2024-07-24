@@ -33,8 +33,7 @@ if '--release' in sys.argv:
         print("Release build failed.")
         sys.exit(1)
     if '--strip' in sys.argv:
-        files = ['qpkg', 'qld', 'qcc', 'libquixcc.so']
-        for file in files:
+        for file in os.listdir(os.path.join(cwd, 'bin')):
             if os.system('strip {0}'.format(os.path.join(cwd, 'bin', file))) != 0:
                 print("Failed to strip {0}".format(file))
                 sys.exit(1)

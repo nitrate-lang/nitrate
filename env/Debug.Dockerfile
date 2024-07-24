@@ -26,10 +26,10 @@ RUN echo "cmake -S /app -B /app/build/debug -DCMAKE_BUILD_TYPE=Debug" >> /opt/bu
 RUN echo "cmake --build /app/build/debug -j`nproc`" >> /opt/build.sh
 RUN echo "mkdir -p /app/bin" >> /opt/build.sh
 RUN echo "rm -rf /app/bin/*" >> /opt/build.sh
-RUN echo "cp /app/build/debug/libquixcc/libquixcc.so /app/bin/libquixcc.so" >> /opt/build.sh
-RUN echo "cp /app/build/debug/qcc/qcc /app/bin/qcc" >> /opt/build.sh
-RUN echo "cp /app/build/debug/qld/qld /app/bin/qld" >> /opt/build.sh  
-RUN echo "cp /app/build/debug/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
+RUN echo "cp /app/build/debug/*/*.so /app/bin/" >> /opt/build.sh
+# RUN echo "cp /app/build/debug/qcc/qcc /app/bin/qcc" >> /opt/build.sh
+# RUN echo "cp /app/build/debug/qld/qld /app/bin/qld" >> /opt/build.sh  
+# RUN echo "cp /app/build/debug/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
 RUN echo "chmod -R 777 /app/bin/" >> /opt/build.sh
 RUN chmod +x /opt/build.sh
 
