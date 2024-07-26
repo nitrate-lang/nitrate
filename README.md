@@ -1,5 +1,7 @@
 # Quix Compiler
 
+Project is in rapid development. It will not compile to anything useful yet.
+
 QUIX is a high-level, statically typed, memory-safe, garbage-collected, high-performance, object-oriented, general-purpose systems programming language designed to be safe, expressive, and performant. QUIX supports runtime reflection, low-level memory access, namespaces, generics, type inference, packed data types, classes, operator overloading, coroutines, default initializers, arbitrary precision math, RAII, automatic memory management, and metaprogramming.
 QUIX is especially well-suited for library development, game development, and systems programming. QUIX is designed to be a modern, safe, and expressive alternative to C++ and Rust.
 
