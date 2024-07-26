@@ -1,10 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
-project(quix-compiler-suite)
+project(quix-compiler-suite CXX)
 
 if (BUILD_TESTING)
 enable_testing()
 endif()
-
 
 # #================== CALCULATE BUILD ID ==================
 # set(ENV_CONCAT_DATA "")

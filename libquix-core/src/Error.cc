@@ -261,9 +261,9 @@ static void panic_render_report(const std::vector<std::string> &lines) {
   std::cerr << "\nAborting..." << std::endl;
 }
 
-LIB_EXPORT [[noreturn]] void qcore_panic_(const char *msg) { qcore_panicf_("%s", msg); }
+LIB_EXPORT void qcore_panic_(const char *msg) { qcore_panicf_("%s", msg); }
 
-LIB_EXPORT [[noreturn]] void qcore_panicf_(const char *_fmt, ...) {
+LIB_EXPORT void qcore_panicf_(const char *_fmt, ...) {
   char *_msg = nullptr;
 
   { /* Parse the format string */

@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define QCORE_NDEBUG
+
 #include <errno.h>
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>
@@ -76,7 +78,7 @@ class qcore_arena_impl_t {
     m_bases.push_back({base, base, size});
   }
 
-  public:
+public:
   qcore_arena_impl_t() = default;
 
   qcore_arena_impl_t(const qcore_arena_impl_t &other) {

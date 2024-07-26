@@ -318,6 +318,7 @@ enum class NumType {
 static thread_local std::unordered_map<qlex::num_buf_t, NumType> num_cache;
 static thread_local std::unordered_map<qlex::num_buf_t, qlex::num_buf_t> can_cache;
 
+#if MEMORY_OVER_SPEED
 class StringRetainer {
   std::unordered_map<uint8_t, std::vector<std::string>> m_strings;
 
@@ -366,6 +367,23 @@ public:
     return m_strings.at(BIN_ID(idx)).at(INDEX_ID(idx));
   }
 };
+#else
+class StringRetainer {
+  std::vector<std::string> m_strings;
+
+public:
+  StringRetainer() = default;
+
+  inline uint32_t retain(std::string_view str) {
+    m_strings.push_back(std::string(str));
+    return m_strings.size() - 1;
+  }
+
+  inline void release(uint32_t idx) { m_strings[idx].clear(); }
+
+  inline std::string_view operator[](uint32_t idx) const { return m_strings[idx]; }
+};
+#endif
 
 class qlex_impl_t final {
   StringRetainer m_holdings;
@@ -708,7 +726,10 @@ static NumType check_number_literal_type(qlex::num_buf_t &input) {
   std::transform(input.begin(), input.end(), input.begin(), ::tolower);
   std::erase(input, '_');
 
-  std::string_view prefix = input.substr(0, 2);
+  std::string prefix;
+  prefix.push_back(input[0]);
+  prefix.push_back(input[1]);
+
   size_t i;
 
   if (prefix == "0x") {
@@ -749,20 +770,25 @@ static NumType check_number_literal_type(qlex::num_buf_t &input) {
   }
 }
 
-static std::string canonicalize_float(std::string_view input) {
+static bool canonicalize_float(std::string_view input, std::string &norm) {
   double mantissa = 0, exponent = 0, x = 0;
   size_t e_pos = 0;
 
   if ((e_pos = input.find('e')) == std::string::npos) return input.data();
 
-  mantissa = std::stod(std::string(input.substr(0, e_pos)));
-  exponent = std::stod(input.substr(e_pos + 1).data());
-
-  x = mantissa * std::pow(10.0, exponent);
+  try {
+    mantissa = std::stod(std::string(input.substr(0, e_pos)));
+    exponent = std::stod(input.substr(e_pos + 1).data());
+    x = mantissa * std::pow(10.0, exponent);
+  } catch (...) {
+    return false;
+  }
 
   std::stringstream ss;
   ss << std::setprecision(FLOATING_POINT_PRECISION) << x;
-  return ss.str();
+  norm = ss.str();
+
+  return true;
 }
 
 static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumType type) {
@@ -1047,8 +1073,14 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
           /* Check if it's a floating point number */
           NumType type;
+
+          std::string norm;
           if ((type = check_number_literal_type(nbuf)) == NumType::Floating) {
-            return qlex_tok_t(qNumL, off(), m_holdings.retain(canonicalize_float(nbuf)));
+            if (canonicalize_float(nbuf, norm)) {
+              return qlex_tok_t(qNumL, off(), m_holdings.retain(std::move(norm)));
+            } else {
+              goto error_0;
+            }
           }
 
           /* Check if it's a valid number */
@@ -1057,15 +1089,11 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           }
 
           /* Canonicalize the number */
-          std::string norm;
           if (canonicalize_number(nbuf, norm, type)) {
             return qlex_tok_t(qIntL, off(), m_holdings.retain(std::move(norm)));
           }
 
           /* Invalid number */
-          // std::cerr << "Tokenization error: Numeric literal is too large to "
-          //              "fit in an integer type: '"
-          //           << nbuf << "'" << std::endl;
           goto error_0;
         }
         case LexState::CommentStart: {
@@ -1160,6 +1188,9 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
                 break;
               case 'x': {
                 char hex[2] = {getc(), getc()};
+                if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) {
+                  goto error_0;
+                }
                 buf += (qlex::hextable[(uint8_t)hex[0]] << 4) | qlex::hextable[(uint8_t)hex[1]];
                 break;
               }
@@ -1175,8 +1206,12 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
               }
               case 'o': {
                 char oct[4] = {getc(), getc(), getc(), 0};
-                buf += std::stoi(oct, nullptr, 8);
-                break;
+                try {
+                  buf += std::stoi(oct, nullptr, 8);
+                  break;
+                } catch (...) {
+                  goto error_0;
+                }
               }
               default:
                 buf += c;

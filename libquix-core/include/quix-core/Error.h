@@ -78,7 +78,7 @@ void qcore_debugf_(const char *fmt, ...);
                       "%d;\nFunction: %s;\n",                                \
                       "" #__VA_ARGS__, #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
 
-#ifdef NDEBUG
+#if defined(NDEBUG) || defined(QCORE_NDEBUG) 
 #define qcore_debugf(fmt, ...)
 #define qcore_debug(msg)
 #else

@@ -4,10 +4,13 @@ WORKDIR /app
 VOLUME /app/
 
 # Install dependencies
+RUN apt clean
 RUN apt update --fix-missing
-RUN apt install -y cmake g++ make llvm-14 upx
+RUN apt install -y cmake make llvm-14 upx
 RUN apt install -y libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev rapidjson-dev libyaml-cpp-dev libdeflate-dev
 RUN apt install -y libreadline-dev
+
+RUN apt install -y clang
 
 # Create symlinks for llvm14
 RUN cd /usr/include && ln -s llvm-14/llvm llvm && ln -s llvm-c-14/llvm-c llvm-c

@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 project(libquix-lexer CXX)
 
+option(MEMORY_OVER_SPEED "Optimize for memory over speed" OFF)
+
 #================== CALCULATE BUILD ID ==================
 execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -exec sha256sum {} \; COMMAND sha256sum
     OUTPUT_VARIABLE SHA256SUMS OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -17,9 +19,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter)
+SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQLEX_ID=${QLEX_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQLEX_ID="undefined")
+
+if (MEMORY_OVER_SPEED)
+  SET(PROJECT_RELEASE_FLAGS ${PROJECT_RELEASE_FLAGS} -DMEMORY_OVER_SPEED=1)
+  SET(PROJECT_DEBUG_FLAGS ${PROJECT_DEBUG_FLAGS} -DMEMORY_OVER_SPEED=1)
+endif()
 
 #================== GET SOURCES ==================
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
@@ -32,6 +39,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_compile_options(quix-lexer PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-lexer PRIVATE quix-core)
   target_link_options(quix-lexer PRIVATE -fsanitize=address -fsanitize=undefined)
+  add_dependencies(quix-lexer quix-core)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE SHAREDLIB RELEASE BUILD ================
   add_library(quix-lexer SHARED ${CXX_SOURCES})
@@ -39,7 +47,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_compile_options(quix-lexer PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-lexer PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   target_link_libraries(quix-lexer PRIVATE quix-core)
+  add_dependencies(quix-lexer quix-core)
 endif()
 
-add_subdirectory(fuzzer)
 add_subdirectory(tests)
+add_subdirectory(fuzzer)
