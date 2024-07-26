@@ -29,14 +29,30 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#define QUIXCC_INTERNAL
 
-#include <array>
-#include <vector>
+#include "LibMacro.h"
+#include "parser/Parse.h"
+#include <quixcc/core/Logger.h>
 
-namespace qparse::conf {
-  std::vector<qparse_setting_t> default_settings = {
+using namespace qparse::parser;
 
-  };
+bool qparse::parser::parse_while(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                          Stmt **node) {
+  Expr *cond = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, &cond))
+    return false;
+
+  Block *then_block = nullptr;
+
+  if (scanner->peek().is<Operator>(Arrow)) {
+    scanner->next();
+    if (!parse(job, scanner, &then_block, false, true)) return false;
+  } else {
+    if (!parse(job, scanner, &then_block, true)) return false;
+  }
+
+  *node = WhileStmt::get(cond, then_block);
+
+  return true;
 }

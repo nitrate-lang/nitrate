@@ -29,14 +29,90 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#define QUIXCC_INTERNAL
 
-#include <array>
-#include <vector>
+#include "LibMacro.h"
+#include "parser/Parse.h"
+#include <quixcc/core/Logger.h>
 
-namespace qparse::conf {
-  std::vector<qparse_setting_t> default_settings = {
+using namespace qparse::parser;
 
-  };
+bool qparse::parser::parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                           Stmt **node) {
+  Expr *cond = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace)}, &cond)) {
+    return false;
+  }
+
+  SwitchCases cases;
+  Block *default_case = nullptr;
+
+  Token tok = scanner->next();
+  if (!tok.is<Punctor>(OpenBrace)) {
+    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_LEFT_BRACE] << tok.serialize() << tok << std::endl;
+    return false;
+  }
+
+  while (true) {
+    tok = scanner->peek();
+    if (tok.is<Punctor>(CloseBrace)) {
+      break;
+    }
+
+    if (tok.is<Keyword>(Keyword::Default)) {
+      scanner->next();
+      if (default_case) {
+        LOG(ERROR) << core::feedback[SWITCH_MULTIPLE_DEFAULT] << tok.serialize() << tok
+                   << std::endl;
+        return false;
+      }
+
+      tok = scanner->next();
+      if (!tok.is<Punctor>(Colon)) {
+        LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok << std::endl;
+        return false;
+      }
+
+      if (!parse(job, scanner, &default_case)) {
+        return false;
+      }
+
+      continue;
+    }
+
+    if (!tok.is<Keyword>(Keyword::Case)) {
+      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_CASE] << tok.serialize() << tok << std::endl;
+      return false;
+    }
+    scanner->next();
+
+    Expr *case_expr = nullptr;
+    if (!parse_expr(job, scanner, {Token(tPunc, Colon)}, &case_expr)) {
+      return false;
+    }
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(Colon)) {
+      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok << std::endl;
+      return false;
+    }
+
+    Block *case_block = nullptr;
+    if (!parse(job, scanner, &case_block)) {
+      return false;
+    }
+
+    cases.push_back(CaseStmt::get(case_expr, case_block));
+  }
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(CloseBrace)) {
+    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_RIGHT_BRACE] << tok.serialize() << tok
+               << std::endl;
+    return false;
+  }
+
+  *node = SwitchStmt::get(cond, cases, default_case);
+
+  return true;
 }

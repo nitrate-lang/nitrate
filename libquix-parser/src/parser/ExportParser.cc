@@ -29,14 +29,79 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#define QUIXCC_INTERNAL
 
-#include <array>
-#include <vector>
+#include "LibMacro.h"
+#include "parser/Parse.h"
+#include <quixcc/core/Logger.h>
 
-namespace qparse::conf {
-  std::vector<qparse_setting_t> default_settings = {
+using namespace qparse::parser;
 
-  };
+bool qparse::parser::parse_pub(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                        Stmt **node) {
+  Token tok = scanner->peek();
+
+  ExportLang langType = ExportLang::Default;
+
+  if (tok.is(tText)) {
+    scanner->next();
+
+    std::string lang = tok.as_string();
+
+    std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
+
+    if (lang == "c")
+      langType = ExportLang::C;
+    else if (lang == "c++" || lang == "cxx")
+      langType = ExportLang::CXX;
+    else if (lang == "d" || lang == "dlang")
+      langType = ExportLang::DLang;
+    else {
+      LOG(ERROR) << core::feedback[PARSER_UNKNOWN_LANGUAGE] << lang << tok << std::endl;
+      return false;
+    }
+
+    tok = scanner->peek();
+  }
+
+  if (tok.is<Punctor>(OpenBrace)) {
+    Block *block = nullptr;
+    if (!parse(job, scanner, &block, true)) return false;
+
+    StmtList *stmts = StmtList::get(block->get_items());
+    *node = ExportDecl::get(stmts, langType);
+    return true;
+  }
+
+  scanner->next();
+  if (!tok.is(tKeyW)) {
+    LOG(ERROR) << core::feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok << std::endl;
+    return false;
+  }
+
+  StmtListItems stmts;
+  Stmt *stmt = nullptr;
+
+  switch (tok.as<Keyword>()) {
+    case Keyword::Var:
+      if (!parse_var(job, scanner, stmts)) return false;
+      break;
+    case Keyword::Let:
+      if (!parse_let(job, scanner, stmts)) return false;
+      break;
+    case Keyword::Subsystem:
+      if (!parse_subsystem(job, scanner, &stmt)) return false;
+      break;
+    case Keyword::Fn:
+      if (!parse_function(job, scanner, &stmt)) return false;
+      break;
+    default:
+      LOG(ERROR) << core::feedback[PARSER_EXPECTED_KEYWORD] << tok.serialize() << tok << std::endl;
+      return false;
+  }
+  if (stmt) stmts.push_back(stmt);
+
+  *node = ExportDecl::get(StmtList::get(stmts), langType);
+
+  return true;
 }

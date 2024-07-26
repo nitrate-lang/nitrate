@@ -29,14 +29,104 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#define QUIXCC_INTERNAL
 
-#include <array>
-#include <vector>
+#include "LibMacro.h"
+#include "parser/Parse.h"
+#include <quixcc/core/Logger.h>
 
-namespace qparse::conf {
-  std::vector<qparse_setting_t> default_settings = {
+using namespace qparse::parser;
 
-  };
+bool qparse::parser::parse_return(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                           Stmt **node) {
+  Token tok = scanner->peek();
+
+  if (tok.is<Punctor>(Semicolon)) {
+    scanner->next();
+    *node = ReturnStmt::get();
+    return true;
+  }
+
+  Expr *expr = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &expr)) return false;
+  *node = ReturnStmt::get(expr);
+
+  tok = scanner->next();
+
+  if (!tok.is<Punctor>(Semicolon)) {
+    LOG(ERROR) << core::feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+bool qparse::parser::parse_retif(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                          Stmt **node) {
+  Token tok;
+
+  Expr *return_expr = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, &return_expr)) return false;
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(Comma)) {
+    LOG(ERROR) << core::feedback[RETIF_MISSING_COMMA] << tok << std::endl;
+    return false;
+  }
+
+  Expr *condition = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &condition)) return false;
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(Semicolon)) {
+    LOG(ERROR) << core::feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
+    return false;
+  }
+  *node = ReturnIfStmt::get(condition, return_expr);
+
+  return true;
+}
+
+bool qparse::parser::parse_retz(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                         Stmt **node) {
+  Token tok;
+
+  Expr *return_expr = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, &return_expr)) return false;
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(Comma)) {
+    LOG(ERROR) << core::feedback[RETZ_MISSING_COMMA] << tok << std::endl;
+    return false;
+  }
+
+  Expr *condition = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &condition)) return false;
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(Semicolon)) {
+    LOG(ERROR) << core::feedback[RETZ_MISSING_SEMICOLON] << tok << std::endl;
+    return false;
+  }
+  *node = RetZStmt::get(condition, return_expr);
+
+  return true;
+}
+
+bool qparse::parser::parse_retv(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                         Stmt **node) {
+  Token tok;
+
+  Expr *cond = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &cond)) return false;
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(Semicolon)) {
+    LOG(ERROR) << core::feedback[RETV_MISSING_SEMICOLON] << tok << std::endl;
+    return false;
+  }
+
+  *node = RetVStmt::get(cond);
+
+  return true;
 }

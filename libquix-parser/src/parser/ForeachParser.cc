@@ -29,14 +29,85 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#define QUIXCC_INTERNAL
 
-#include <array>
-#include <vector>
+#include "LibMacro.h"
+#include "parser/Parse.h"
+#include <quixcc/core/Logger.h>
 
-namespace qparse::conf {
-  std::vector<qparse_setting_t> default_settings = {
+using namespace qparse::parser;
 
-  };
+bool qparse::parser::parse_foreach(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                            Stmt **node) {
+  Token tok = scanner->next();
+  bool has_parens = false;
+
+  if (tok.is<Punctor>(OpenParen)) {
+    has_parens = true;
+    tok = scanner->next();
+  }
+
+  if (!tok.is(tName)) {
+    LOG(ERROR) << core::feedback[FOREACH_EXPECTED_IDENTIFIER] << tok << std::endl;
+    return false;
+  }
+  std::string idx_ident = tok.as_string();
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(Comma)) {
+    LOG(ERROR) << core::feedback[FOREACH_EXPECTED_COMMA] << tok << std::endl;
+    return false;
+  }
+
+  tok = scanner->next();
+  if (!tok.is(tName)) {
+    LOG(ERROR) << core::feedback[FOREACH_EXPECTED_IDENTIFIER] << tok << std::endl;
+    return false;
+  }
+
+  std::string val_ident = tok.as_string();
+
+  tok = scanner->next();
+  if (!tok.is<Operator>(In)) {
+    LOG(ERROR) << core::feedback[FOREACH_EXPECTED_IN] << tok << std::endl;
+    return false;
+  }
+
+  Expr *expr = nullptr;
+  if (has_parens) {
+    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, &expr)) {
+      LOG(ERROR) << core::feedback[FOREACH_EXPECTED_EXPR] << tok << std::endl;
+      return false;
+    }
+    tok = scanner->next();
+    if (!tok.is<Punctor>(CloseParen)) {
+      LOG(ERROR) << core::feedback[FOREACH_EXPECTED_CLOSE_PAREN] << tok << std::endl;
+      return false;
+    }
+  } else {
+    if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, &expr)) {
+      LOG(ERROR) << core::feedback[FOREACH_EXPECTED_EXPR] << tok << std::endl;
+      return false;
+    }
+  }
+
+  tok = scanner->peek();
+
+  Block *block = nullptr;
+  if (tok.is<Operator>(Arrow)) {
+    scanner->next();
+    if (!parse(job, scanner, &block, false, true)) {
+      LOG(ERROR) << core::feedback[FOREACH_EXPECTED_BLOCK] << tok << std::endl;
+      return false;
+    }
+  } else {
+    if (!parse(job, scanner, &block)) {
+      LOG(ERROR) << core::feedback[FOREACH_EXPECTED_BLOCK] << tok << std::endl;
+      return false;
+    }
+  }
+
+  *node = ForeachStmt::get(idx_ident, val_ident, expr, block);
+
+  return true;
 }

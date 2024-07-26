@@ -29,14 +29,95 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#define QUIXCC_INTERNAL
 
-#include <array>
-#include <vector>
+#include "LibMacro.h"
+#include "parser/Parse.h"
+#include <quixcc/core/Logger.h>
 
-namespace qparse::conf {
-  std::vector<qparse_setting_t> default_settings = {
+using namespace libquixcc;
+using namespace qparse;
+using namespace qparse::parser;
 
-  };
+static bool parse_enum_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                             EnumDefItems &fields) {
+  Token tok = scanner->next();
+  if (!tok.is(tName)) {
+    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_IDENTIFIER] << tok << std::endl;
+    return false;
+  }
+
+  EnumItem item;
+
+  item.first = tok.as_string();
+
+  tok = scanner->peek();
+  if (tok.is<Operator>(OpAssign)) {
+    scanner->next();
+    Expr *expr = nullptr;
+    if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, &expr)) {
+      LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_CONST_EXPR] << item.first << tok
+                 << std::endl;
+      return false;
+    }
+
+    item.second = ConstExpr::get(expr);
+
+    tok = scanner->peek();
+  }
+
+  fields.push_back(item);
+
+  if (tok.is<Punctor>(Comma)) {
+    scanner->next();
+    return true;
+  }
+
+  if (!tok.is<Punctor>(CloseBrace)) {
+    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_SEMICOLON] << tok << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+bool qparse::parser::parse_enum(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                         Stmt **node) {
+  Token tok = scanner->next();
+  if (!tok.is(tName)) {
+    LOG(ERROR) << core::feedback[ENUM_EXPECTED_IDENTIFIER] << tok << std::endl;
+    return false;
+  }
+
+  std::string name = tok.as_string();
+
+  tok = scanner->peek();
+  Type *type = nullptr;
+  if (tok.is<Punctor>(Colon)) {
+    scanner->next();
+    if (!parse_type(job, scanner, &type)) return false;
+  }
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(OpenBrace)) {
+    LOG(ERROR) << core::feedback[ENUM_EXPECTED_LEFT_BRACE] << tok << std::endl;
+    return false;
+  }
+
+  EnumDefItems fields;
+
+  while (true) {
+    tok = scanner->peek();
+    if (tok.is<Punctor>(CloseBrace)) {
+      scanner->next();
+      break;
+    }
+
+    if (!parse_enum_field(job, scanner, fields)) {
+      return false;
+    }
+  }
+
+  *node = EnumDef::get(name, static_cast<EnumTy *>(type), fields);
+  return true;
 }

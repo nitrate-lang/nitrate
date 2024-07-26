@@ -32,12 +32,13 @@
 #ifndef __QUIX_PARSER_LIB_H__
 #define __QUIX_PARSER_LIB_H__
 
+#include <quix-parser/Node.h>
+#include <quix-parser/Parser.h>
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <quix-parser/Parser.h>
-#include <stdbool.h>
 
 /**
  * @brief Initialize the library.

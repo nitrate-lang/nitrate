@@ -29,14 +29,83 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#include "LibMacro.h"
+#include "parser/Parse.h"
+#include <quixcc/core/Logger.h>
 
-#include <array>
-#include <vector>
+bool qparse::parser::parse_subsystem(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                              Stmt **node) {
+  Token tok = scanner->next();
+  if (!tok.is(tName)) {
+    LOG(ERROR) << core::feedback[SUBSYSTEM_MISSING_IDENTIFIER] << tok << std::endl;
+    return false;
+  }
 
-namespace qparse::conf {
-  std::vector<qparse_setting_t> default_settings = {
+  std::string name = tok.as_string();
 
-  };
+  if (name.find("::") != std::string::npos) {
+    Stmt *sub = nullptr;
+
+    std::string subname = name.substr(0, name.find("::"));
+
+    scanner->push(Token(tName, name.substr(name.find("::") + 2)));
+
+    if (!parse_subsystem(job, scanner, &sub)) return false;
+
+    Block *block = Block::get();
+    block->add_item(sub);
+
+    *node = SubsystemDecl::get(subname, block);
+
+    return true;
+  }
+
+  std::set<std::string> deps;
+
+  tok = scanner->peek();
+
+  // check if : item1, item2, item3
+  if (tok.is<Punctor>(Colon)) {
+    scanner->next();  // consume colon
+    tok = scanner->next();
+    if (!tok.is<Punctor>(OpenBracket)) {
+      LOG(ERROR) << "Expected '[' before subsystem dependencies" << tok << std::endl;
+      return false;
+    }
+    tok = scanner->next();
+
+    if (!tok.is(tName)) {
+      LOG(ERROR) << core::feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
+      return false;
+    }
+    deps.insert(tok.as_string());
+
+    tok = scanner->peek();
+    while (tok.is<Punctor>(Comma)) {
+      scanner->next();  // consume comma
+      tok = scanner->next();
+      if (!tok.is(tName)) {
+        LOG(ERROR) << core::feedback[SUBSYSTEM_EXPECTED_IDENTIFIER] << tok << std::endl;
+        return false;
+      }
+      deps.insert(tok.as_string());
+      tok = scanner->peek();
+    }
+
+    tok = scanner->next();
+    if (!tok.is<Punctor>(CloseBracket)) {
+      LOG(ERROR) << "Expected ']' after subsystem dependencies" << tok << std::endl;
+      return false;
+    }
+  }
+
+  Block *block = nullptr;
+  if (!parse(job, scanner, &block, true)) return false;
+
+  SubsystemDecl *sub = SubsystemDecl::get(name, block);
+  sub->add_tags(deps);
+
+  *node = sub;
+
+  return true;
 }

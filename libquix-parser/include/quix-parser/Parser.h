@@ -36,6 +36,7 @@
 extern "C" {
 #endif
 
+#include <quix-core/Arena.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Config.h>
 #include <stdbool.h>
@@ -69,24 +70,30 @@ typedef struct qparse_t {
  * @note The parser instance isn't thread safe internally, but the functions
  * provided to operate on the parser instance are thread safe themselves. This means that there is
  * no internal locking in the parser context.
- * 
+ *
  * @note This function is thread safe.
  */
 qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf);
 
 /**
  * @brief Free a parser instance.
- * 
+ *
  * @param parser The parser instance to free (may be NULL).
- * 
+ *
  * @note If `!parser`, this function is a no-op.
- * 
+ *
  * @note This function will not free the lexer or configuration associated with
  * the it. The caller is responsible for freeing the lexer and configuration
  * separately.
  * @note This function is thread safe.
  */
 void qparse_free(qparse_t *parser);
+
+char *qparse_ast_repr(const qparse_node_t *_node, bool minify, size_t indent, qcore_arena_t *arena,
+                      size_t *outlen);
+
+void qparse_ast_brepr(const qparse_node_t *node, bool compress, qcore_arena_t *arena, uint8_t **out,
+                      size_t *outlen);
 
 #ifdef __cplusplus
 }

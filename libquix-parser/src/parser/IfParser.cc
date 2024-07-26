@@ -29,14 +29,49 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#define QUIXCC_INTERNAL
 
-#include <array>
-#include <vector>
+#include "LibMacro.h"
+#include "parser/Parse.h"
+#include <quixcc/core/Logger.h>
 
-namespace qparse::conf {
-  std::vector<qparse_setting_t> default_settings = {
+using namespace qparse::parser;
 
-  };
+bool qparse::parser::parse_if(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                       Stmt **node) {
+  Expr *cond = nullptr;
+  if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, &cond))
+    return false;
+
+  Block *then_block = nullptr;
+  if (scanner->peek().is<Operator>(Arrow)) {
+    scanner->next();
+    if (!parse(job, scanner, &then_block, false, true)) return false;
+  } else {
+    if (!parse(job, scanner, &then_block, true)) return false;
+  }
+
+  Token tok = scanner->peek();
+  if (tok.is<Keyword>(Keyword::Else)) {
+    scanner->next();
+    Block *else_block = nullptr;
+
+    if (scanner->peek().is<Operator>(Arrow)) {
+      scanner->next();
+
+      if (!parse(job, scanner, &else_block, false, true)) {
+        return false;
+      }
+    } else {
+      if (!parse(job, scanner, &else_block, true, false)) {
+        return false;
+      }
+    }
+
+    *node = IfStmt::get(cond, then_block, else_block);
+  } else {
+    *node = IfStmt::get(cond, then_block, nullptr);
+  }
+
+  return true;
 }

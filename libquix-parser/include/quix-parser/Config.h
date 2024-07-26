@@ -111,7 +111,7 @@ qparse_conf_t *qparse_conf_new(bool use_defaults);
  * @warning The caller for ensuring that the configuration object is not used
  * after it has been freed. This includes ensuring that no other threads or instances
  * have references to the configuration object.
- * 
+ *
  * @note It is safe to pass NULL to this function.
  *
  * @note This function is thread-safe.

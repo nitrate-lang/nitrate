@@ -29,14 +29,43 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_PARSER_IMPL__
-#include <quix-parser/Config.h>
+#define QUIXCC_INTERNAL
 
-#include <array>
-#include <vector>
+#include "LibMacro.h"
+#include "parser/Parse.h"
+#include <quixcc/core/Logger.h>
 
-namespace qparse::conf {
-  std::vector<qparse_setting_t> default_settings = {
+using namespace qparse::parser;
 
-  };
+bool qparse::parser::parse_typedef(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
+                                            Stmt **node) {
+  Token tok = scanner->next();
+  if (!tok.is(tName)) {
+    LOG(ERROR) << core::feedback[TYPEDEF_EXPECTED_IDENTIFIER] << tok << std::endl;
+    return false;
+  }
+
+  std::string name = tok.as_string();
+
+  tok = scanner->next();
+  if (!tok.is<Operator>(OpAssign)) {
+    LOG(ERROR) << core::feedback[TYPEDEF_EXPECTED_ASSIGN] << tok << std::endl;
+    return false;
+  }
+
+  Type *type = nullptr;
+  if (!parse_type(job, scanner, &type)) {
+    LOG(ERROR) << core::feedback[TYPEDEF_INVALID_TYPE] << name << tok << std::endl;
+    return false;
+  }
+
+  tok = scanner->next();
+  if (!tok.is<Punctor>(Semicolon)) {
+    LOG(ERROR) << core::feedback[TYPEDEF_EXPECTED_SEMICOLON] << tok << std::endl;
+    return false;
+  }
+
+  *node = TypedefDecl::get(name, type);
+
+  return true;
 }
