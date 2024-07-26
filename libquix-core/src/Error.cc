@@ -41,9 +41,9 @@
 
 #include "LibMacro.h"
 
-#ifndef LIBQUIX_CORE_ID
-#warning "LIBQUIX_CORE_ID must be defined"
-#define LIBQUIX_CORE_ID "?"
+#ifndef QCORE_ID
+#warning "QCORE_ID must be defined"
+#define QCORE_ID "?"
 #endif
 
 #define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
@@ -114,7 +114,7 @@ static std::string panic_create_report() {
   free(strings);
 
   std::string report = "{\"version\":\"1.0\",";
-  report += "\"qcore_version\":\"" LIBQUIX_CORE_ID "\",";
+  report += "\"qcore_version\":\"" QCORE_ID "\",";
 
 #if NDEBUG
   report += "\"build\":\"release\",";
@@ -243,7 +243,7 @@ static void panic_render_report(const std::vector<std::string> &lines) {
   std::cerr << "\x1b[31;1m┃\x1b[0m\n";
   std::cerr << "\x1b[31;1m┗━━━━━━┫ END STACK TRACE ┣━━\x1b[0m\n\n";
 
-  std::cerr << "Lib Version: " LIBQUIX_CORE_ID "\n\n";
+  std::cerr << "Lib Version: " QCORE_ID "\n\n";
   std::cerr << "The libquixcc library has encountered a fatal internal "
                "error.\n\n";
   std::cerr << "\x1b[32;40;1;4mPlease report this error\x1b[0m to the QuixCC "

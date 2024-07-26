@@ -43,7 +43,7 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 
-#include <qast/Nodes.h>
+#include "Nodes.h"
 
 #include <map>
 #include <memory>

@@ -219,6 +219,16 @@ LIB_EXPORT size_t qcore_arena_used(qcore_arena_t *arena) {
   return total;
 }
 
+LIB_EXPORT void qcore_arena_reset(qcore_arena_t *arena) {
+  qcore_assert(arena, "qcore_arena_reset: arena is null");
+
+  for (auto &region : arena->m_impl->m_bases) {
+    region.m_offset = region.m_base;
+  }
+
+  qcore_debugf("TRACE: qcore_arena_reset(%p)\n", arena);
+}
+
 LIB_EXPORT void qcore_arena_close(qcore_arena_t *arena) {
   qcore_assert(arena, "qcore_arena_close: arena is null");
 

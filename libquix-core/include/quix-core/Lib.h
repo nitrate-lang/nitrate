@@ -45,7 +45,9 @@ extern "C" {
  *
  * @return true if the library was initialized successfully.
  * @note This function is thread-safe.
- * @note Initialization more than once is a no-op.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not reinitialize the library, but will
+ * increment the reference count.
  */
 bool qcore_lib_init();
 
@@ -53,7 +55,9 @@ bool qcore_lib_init();
  * @brief Deinitialize the library.
  *
  * @note This function is thread-safe.
- * @note Deinitialization more than once is a no-op.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not deinitialize the library, but when
+ * the reference count reaches zero, the library will be deinitialized.
  */
 void qcore_lib_deinit();
 

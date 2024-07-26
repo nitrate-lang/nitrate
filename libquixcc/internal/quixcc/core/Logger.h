@@ -38,7 +38,7 @@
 
 #include <core/QuixJob.h>
 #include <quixcc/core/Messages.h>
-#include <quixcc/lexer/Token.h>
+#include <qast/Token.h>
 
 #include <functional>
 #include <iostream>

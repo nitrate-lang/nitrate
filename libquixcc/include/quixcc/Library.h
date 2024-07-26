@@ -98,27 +98,6 @@ const char *quixcc_lib_version();
 bool quixcc_has_version(uint32_t major, uint32_t minor);
 
 /**
- * @brief Print debug into and abort.
- *
- * @param msg The message to print.
- * @note This function is thread-safe.
- *
- * @note This function will print the message to stderr and abort the program.
- */
-void quixcc_panic(const char *msg) __attribute__((noreturn));
-
-/**
- * @brief Print debug into and abort.
- *
- * @param fmt The format string.
- * @param ... Printf-style arguments.
- * @note This function is thread-safe.
- *
- * @note This function will print the message to stderr and abort the program.
- */
-void quixcc_panicf(const char *fmt, ...) __attribute__((noreturn));
-
-/**
  * @brief Reset and free the internal cache memory
  *
  * @brief This function is thread-safe.

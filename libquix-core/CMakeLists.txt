@@ -7,8 +7,8 @@ execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -ex
 string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
-set(LIBQUIX_CORE_ID "\"LIBQUIX_CORE_${SHA256SUMS}\"")
-message(STATUS "libquix-core VersionId: ${LIBQUIX_CORE_ID}")
+set(QCORE_ID "\"QCORE_${SHA256SUMS}\"")
+message(STATUS "libquix-core VersionId: ${QCORE_ID}")
 
 #================== CONFIGURE BUILD ==================
 
@@ -18,24 +18,24 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter)
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DLIBQUIX_CORE_ID=${LIBQUIX_CORE_ID})
-SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-unused-parameter -DLIBQUIX_CORE_ID="undefined")
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQCORE_ID=${QCORE_ID})
+SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-unused-parameter -DQCORE_ID="undefined")
 
 #================== GET SOURCES ==================
-file(GLOB_RECURSE LIBCORE_CXX_SOURCES "src/*.cc")
+file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 #================== CREATE BUILD ==================
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
-  add_library(quix-core SHARED ${LIBCORE_CXX_SOURCES})
+  add_library(quix-core SHARED ${CXX_SOURCES})
   target_include_directories(quix-core PUBLIC src include)
   target_compile_options(quix-core PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-core PRIVATE )
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE SHAREDLIB RELEASE BUILD ================
-  add_library(quix-core SHARED ${LIBCORE_CXX_SOURCES})
+  add_library(quix-core SHARED ${CXX_SOURCES})
   target_include_directories(quix-core PUBLIC src include)
   target_compile_options(quix-core PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
-  target_link_options(quix-core PRIVATE ${LLVM_LD_FLAGS} -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
+  target_link_options(quix-core PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   target_link_libraries(quix-core PRIVATE )
 endif()

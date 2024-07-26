@@ -139,6 +139,17 @@ size_t qcore_arena_capacity(qcore_arena_t *arena);
 size_t qcore_arena_used(qcore_arena_t *arena);
 
 /**
+ * @brief Resets an arena allocator.
+ * 
+ * @param arena The arena to reset.
+ * 
+ * @note This function is thread-safe.
+ * @note This will make the existing memory available for reuse within the arena.
+ * @note All memory allocated within the arena is invalid after this call.
+ */
+void qcore_arena_reset(qcore_arena_t *arena);
+
+/**
  * @brief Closes an arena allocator.
  *
  * @param arena The arena to close.

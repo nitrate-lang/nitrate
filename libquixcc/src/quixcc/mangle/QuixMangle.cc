@@ -31,7 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <core/Macro.h>
+#include "LibMacro.h"
 #include <quixcc/IR/Q/Type.h>
 #include <quixcc/IR/Q/Variable.h>
 #include <quixcc/core/Logger.h>

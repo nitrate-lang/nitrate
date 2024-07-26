@@ -31,9 +31,9 @@
 
 #define QUIXCC_INTERNAL
 
-#include <core/Macro.h>
+#include "LibMacro.h"
 #include <quixcc/core/Logger.h>
-#include <quixcc/lexer/Lex.h>
+#include <qast/Lexer.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 
 static std::set<std::string> spdx_licenses = {

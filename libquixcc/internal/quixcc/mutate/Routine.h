@@ -36,7 +36,7 @@
 #error "This header requires C++"
 #endif
 
-#include <qast/Parser.h>
+#include "parser/Parse.h"
 #include <quixcc/Library.h>
 
 #include <functional>

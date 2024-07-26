@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lexer-test/suite.h>
-#include <quixcc/lexer/Lex.h>
+#include <qast/Lexer.h>
 
 bool libquixcc::test::lexer_test_suite() {
   for (const auto vec : libquixcc::test::lexer_test_vectors) {

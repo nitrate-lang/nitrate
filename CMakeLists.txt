@@ -26,6 +26,7 @@ set(QUIX_BUILD_ID "\"QPKG_${SHA256SUMS}\"")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   #================== CREATE DEBUG BUILD ==================
   add_subdirectory(libquix-core)
+  add_subdirectory(libquix-lexer)
   
   # add_subdirectory(libquixcc)
   # add_subdirectory(qcc)
@@ -34,6 +35,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================= CREATE RELEASE BUILD =================
   add_subdirectory(libquix-core)
+  add_subdirectory(libquix-lexer)
 
   # add_subdirectory(libquixcc)
   # add_subdirectory(qcc)

@@ -31,19 +31,19 @@
 
 #define QUIXCC_INTERNAL
 
-#include <core/Macro.h>
+#include "LibMacro.h"
 #include <core/QuixJob.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
-#include <qast/Parser.h>
+#include "parser/Parse.h"
 #include <quixcc/IR/Q/QIR.h>
 #include <quixcc/IR/delta/DeltaIR.h>
 #include <quixcc/Library.h>
 #include <quixcc/core/Exception.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/generate/Generate.h>
-#include <quixcc/lexer/Lex.h>
+#include <qast/Lexer.h>
 #include <quixcc/llvm/LLVMWrapper.h>
 // #include <quixcc/mutate/Routine.h>
 #include <quixcc/optimizer/Optimizer.h>

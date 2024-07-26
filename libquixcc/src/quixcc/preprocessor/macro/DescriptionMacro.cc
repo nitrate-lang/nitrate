@@ -32,7 +32,7 @@
 #define QUIXCC_INTERNAL
 
 #include <quixcc/core/Logger.h>
-#include <quixcc/lexer/Lex.h>
+#include <qast/Lexer.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 
 bool libquixcc::PrepEngine::ParseDescription(const Token &tok, const std::string &directive,

@@ -31,21 +31,37 @@
 
 #include <quix-core/Lib.h>
 
+#include <atomic>
+
 #include "LibMacro.h"
 
-#ifndef LIBQUIX_CORE_ID
-#warning "LIBQUIX_CORE_ID must be defined"
-#define LIBQUIX_CORE_ID "?"
+#ifndef QCORE_ID
+#warning "QCORE_ID must be defined"
+#define QCORE_ID "?"
 #endif
 
-LIB_EXPORT bool qcore_lib_init() { return true; }
+static std::atomic<size_t> qcore_lib_ref_count = 0;
 
-LIB_EXPORT void qcore_lib_deinit() { return; }
+LIB_EXPORT bool qcore_lib_init() {
+  qcore_lib_ref_count++;
+  return true;
+}
+
+LIB_EXPORT void qcore_lib_deinit() {
+  qcore_lib_ref_count--;
+
+  if (qcore_lib_ref_count > 0) {
+    return;
+  }
+
+  // Deinitialize the library here.
+  // Nothing to do for now.
+}
 
 LIB_EXPORT const char* qcore_lib_version() {
   static const char* version_string =
 
-      "[" LIBQUIX_CORE_ID
+      "[" QCORE_ID
       "] ["
 
 #if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \

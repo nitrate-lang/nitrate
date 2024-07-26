@@ -37,7 +37,7 @@
 #endif
 
 #include <quixcc/Library.h>
-#include <quixcc/lexer/Lex.h>
+#include <qast/Lexer.h>
 #include <stdio.h>
 
 #include <functional>

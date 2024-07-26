@@ -32,12 +32,12 @@
 #define QUIXCC_INTERNAL
 
 #include <core/SHA160.h>
-#include <qast/Parser.h>
+#include "parser/Parse.h"
 #include <quixcc/IR/Q/Function.h>
 #include <quixcc/IR/Q/QIR.h>
 #include <quixcc/IR/Q/Variable.h>
 #include <quixcc/core/Logger.h>
-#include <quixcc/lexer/Lex.h>
+#include <qast/Lexer.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 
 #include <boost/filesystem.hpp>

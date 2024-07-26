@@ -31,7 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <core/Macro.h>
+#include "LibMacro.h"
 #include <quixcc/core/Exception.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/preprocessor/Preprocessor.h>

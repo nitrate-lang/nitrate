@@ -31,8 +31,8 @@
 
 #define QUIXCC_INTERNAL
 
-#include <core/Macro.h>
-#include <qast/Parser.h>
+#include "LibMacro.h"
+#include "parser/Parse.h"
 #include <quixcc/core/Logger.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 

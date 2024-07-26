@@ -1,7 +1,8 @@
 BasedOnStyle: Google
 IndentWidth: 2
+UseTab: Never
 ColumnLimit: 100
-AccessModifierOffset: -4
+AccessModifierOffset: -2
 NamespaceIndentation: All
 BreakBeforeBraces: Custom
 BraceWrapping:

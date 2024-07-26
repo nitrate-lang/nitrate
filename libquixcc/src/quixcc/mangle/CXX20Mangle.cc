@@ -31,7 +31,7 @@
 
 #define QUIXCC_INTERNAL
 
-#include <core/Macro.h>
+#include "LibMacro.h"
 #include <quixcc/mangle/Symbol.h>
 
 std::string libquixcc::Symbol::mangle_cxx(const libquixcc::ir::q::Value *node,
