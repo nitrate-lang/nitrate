@@ -213,12 +213,8 @@ typedef struct qlex_tok_t {
       : ty(ty), src_idx(src_idx), v{.key = key} {}
   qlex_tok_t(qlex_ty_t ty, uint32_t src_idx, uint32_t str_idx)
       : ty(ty), src_idx(src_idx), v{.str_idx = str_idx} {}
-  static qlex_tok_t err(uint32_t src_idx) {
-    return qlex_tok_t(qErro, src_idx, 0);
-  }
-  static qlex_tok_t eof(uint32_t src_idx) {
-    return qlex_tok_t(qEofF, src_idx, 0);
-  }
+  static qlex_tok_t err(uint32_t src_idx) { return qlex_tok_t(qErro, src_idx, 0); }
+  static qlex_tok_t eof(uint32_t src_idx) { return qlex_tok_t(qEofF, src_idx, 0); }
 #endif
 } __attribute__((packed)) qlex_tok_t;
 

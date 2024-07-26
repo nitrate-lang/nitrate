@@ -36,9 +36,8 @@ void do_dist(FILE *file) {
   for (const auto &[ty, count] : dist.counts) {
     sorted.push_back({ty, count});
   }
-  std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b) {
-    return a.second > b.second;
-  });
+  std::sort(sorted.begin(), sorted.end(),
+            [](const auto &a, const auto &b) { return a.second > b.second; });
   for (const auto &[ty, count] : sorted) {
     std::cout << "  " << qlex_ty_str(ty) << ": " << count << std::endl;
   }
