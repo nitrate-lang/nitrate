@@ -481,7 +481,9 @@ LIB_EXPORT qlex_t *qlex_new(FILE *file) {
   return lexer;
 }
 
-LIB_EXPORT void qlex_delete(qlex_t *lexer) {
+LIB_EXPORT void qlex_free(qlex_t *lexer) {
+  if (!lexer) return;
+
   lexer->destruct(lexer);
 
   delete lexer;

@@ -28,7 +28,7 @@ void do_dist(FILE *file) {
       ++tok_count;
     }
 
-    qlex_delete(lexer);
+    qlex_free(lexer);
   }
 
   std::cout << "Token distribution:" << std::endl;

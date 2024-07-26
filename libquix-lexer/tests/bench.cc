@@ -53,7 +53,7 @@ void do_benchmark(FILE *file) {
       ++tok_count;
     }
 
-    qlex_delete(lexer);
+    qlex_free(lexer);
   }
   end = std::chrono::high_resolution_clock::now();
 

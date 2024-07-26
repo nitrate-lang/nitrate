@@ -10,7 +10,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
   while (qlex_next(lex).ty != qEofF);
 
-  qlex_delete(lex);
+  qlex_free(lex);
 
   fclose(fp);
   return 0;

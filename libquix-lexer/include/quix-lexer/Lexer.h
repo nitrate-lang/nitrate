@@ -37,6 +37,7 @@ extern "C" {
 #endif
 
 #include <quix-lexer/Token.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 
@@ -66,7 +67,7 @@ typedef struct qlex_t {
  *
  * @param file A seekable file stream.
  *
- * @return New lexer context.
+ * @return New lexer context or NULL if an error occurred.
  * @note This function is thread-safe.
  */
 qlex_t *qlex_new(FILE *file);
@@ -74,10 +75,11 @@ qlex_t *qlex_new(FILE *file);
 /**
  * @brief Destroy a lexer context.
  *
- * @param lexer Lexer context.
+ * @param lexer Lexer context or NULL.
+ * @note It is safe to pass NULL to this function.
  * @note This function is thread-safe.
  */
-void qlex_delete(qlex_t *lexer);
+void qlex_free(qlex_t *lexer);
 
 static inline void qlex_set_flags(qlex_t *lexer, uint32_t flags) { lexer->flags = flags; }
 static inline uint32_t qlex_get_flags(qlex_t *lexer) { return lexer->flags; }

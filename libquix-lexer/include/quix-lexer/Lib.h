@@ -67,9 +67,19 @@ void qlex_lib_deinit();
  * @return The version string of the library.
  * @warning Don't free the returned string.
  * @note This function is thread-safe.
- * @note This function is also safe to call before initialization and after deinitialization.
+ * @note This function is safe to call before initialization and after deinitialization.
  */
-const char *qlex_lib_version();
+const char* qlex_lib_version();
+
+/**
+ * @brief Get the last error message from the current thread.
+ *
+ * @return The last error message from the current thread.
+ * @warning Don't free the returned string.
+ * @note This function is thread-safe.
+ * @note This function is safe to call before initialization and after deinitialization.
+ */
+const char* qlex_strerror();
 
 #ifdef __cplusplus
 }
