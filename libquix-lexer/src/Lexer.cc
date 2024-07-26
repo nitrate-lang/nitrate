@@ -742,10 +742,9 @@ void qlex_impl_t::refill_buffer() {
     }
   }
 
-  /* Must clear to prevent UAF */
+  /* Must clear to prevent leaks */
   num_cache.clear();
   can_cache.clear();
-  qcore_arena_reset(&qlex::g_lexer_arena);
 
   std::swap(my_arena, qlex::g_lexer_arena);
 

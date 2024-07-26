@@ -29,9 +29,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_MACRO_H__
-#define __QUIX_CORE_MACRO_H__
+#define __QUIX_PARSER_IMPL__
+#include <quix-parser/Config.h>
 
-#define LIB_EXPORT extern "C" __attribute__((visibility("default")))
+#include <array>
+#include <vector>
 
-#endif  // __QUIX_CORE_MACRO_H__
+namespace qparse::conf {
+  std::vector<qparse_setting_t> default_settings = {
+      
+  };
+}

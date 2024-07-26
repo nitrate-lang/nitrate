@@ -29,138 +29,59 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#ifndef __QUIX_PARSER_LIB_H__
+#define __QUIX_PARSER_LIB_H__
 
-#include <qast/Lexer.h>
-#include <qast/Token.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include <sstream>
+#include <quix-parser/Parser.h>
+#include <stdbool.h>
 
-using namespace libquixcc;
+/**
+ * @brief Initialize the library.
+ *
+ * @return true if the library was initialized successfully.
+ * @note This function is thread-safe.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not reinitialize the library, but will
+ * increment the reference count.
+ */
+bool qparse_lib_init();
 
-Loc Loc::operator-(Loc::LocPosType rhs) const {
-  if (rhs <= m_col)
-    return Loc(m_line, m_col - rhs, m_file);
+/**
+ * @brief Deinitialize the library.
+ *
+ * @note This function is thread-safe.
+ * @note The library is reference counted, so it is safe to call this function
+ * multiple times. Each time will not deinitialize the library, but when
+ * the reference count reaches zero, the library will be deinitialized.
+ */
+void qparse_lib_deinit();
 
-  Loc new_loc = *this;
+/**
+ * @brief Get the version of the library.
+ *
+ * @return The version string of the library.
+ * @warning Don't free the returned string.
+ * @note This function is thread-safe.
+ * @note This function is safe to call before initialization and after deinitialization.
+ */
+const char* qparse_lib_version();
 
-  while (true) {
-    if (rhs < new_loc.m_col) {
-      new_loc.m_col -= rhs;
-      break;
-    }
+/**
+ * @brief Get the last error message from the current thread.
+ *
+ * @return The last error message from the current thread.
+ * @warning Don't free the returned string.
+ * @note This function is thread-safe.
+ * @note This function is safe to call before initialization and after deinitialization.
+ */
+const char* qparse_strerror();
 
-    if (new_loc.m_line == 1) {
-      new_loc.m_col = 1;
-      break;
-    }
-
-    rhs -= new_loc.m_col;
-    new_loc.m_col = 1;
-    new_loc.m_line--;
-  }
-
-  return new_loc;
+#ifdef __cplusplus
 }
+#endif
 
-Token::Token(TT _type, TokVal value, Loc _loc) {
-  m_type = _type;
-  m_value = value;
-  m_loc = _loc;
-}
-
-std::string libquixcc::Token::serialize_human_readable() const {
-  std::stringstream ss;
-
-  switch (m_type) {
-  case tEofF:
-    ss << "Eof";
-    break;
-  case tErro:
-    ss << "Unknown";
-    break;
-  case tName:
-    ss << "Identifier(" << as<std::string>() << ")";
-    break;
-  case tKeyW:
-    ss << "Keyword(" << keyword_map_inverse.at(as<Keyword>()).data() << ")";
-    break;
-  case tOper:
-    ss << "Operator(" << operator_map_inverse.at(as<Operator>()).data() << ")";
-    break;
-  case tPunc:
-    ss << "Punctor(" << punctor_map_inverse.at(as<Punctor>()).data() << ")";
-    break;
-  case tText:
-    ss << "String(\"" << as<std::string>() << "\")";
-    break;
-  case tChar:
-    ss << "Char('" << as<std::string>() << "')";
-    break;
-  case tIntL:
-    ss << "Number(" << as<std::string>() << ")";
-    break;
-  case tNumL:
-    ss << "Float(" << as<std::string>() << ")";
-    break;
-  case tNote:
-    ss << "Comment(" << as<std::string>() << ")";
-    break;
-  case tMacB:
-    ss << "MacroBlock(" << as<std::string>() << ")";
-    break;
-  case tMacr:
-    ss << "MacroSingleLine(" << as<std::string>() << ")";
-    break;
-  default:
-    ss << "Unknown(" << as<std::string>() << ")";
-    break;
-  }
-
-  return ss.str();
-}
-
-std::string Token::serialize(bool human_readable) const {
-  if (human_readable)
-    return serialize_human_readable();
-
-  std::stringstream ss;
-  switch (m_type) {
-  case tEofF:
-    break;
-  case tErro:
-  case tName:
-  case tIntL:
-  case tNumL:
-    ss << as<std::string>();
-    break;
-  case tNote:
-    ss << "/*" <<  Scanner::escape_string(as<std::string>()) << "*/";
-    break;
-  case tText:
-    ss << "\"" << Scanner::escape_string(as<std::string>()) << "\"";
-    break;
-  case tChar:
-    ss << "'" << Scanner::escape_string(as<std::string>()) << "'";
-    break;
-  case tMacB:
-    ss << "@(" <<  Scanner::escape_string(as<std::string>()) << ")";
-    break;
-  case tMacr:
-    ss << "@" <<  Scanner::escape_string(as<std::string>());
-    break;
-  case tKeyW:
-    ss << keyword_map_inverse.at(as<Keyword>()).data();
-    break;
-  case tOper:
-    ss << operator_map_inverse.at(as<Operator>()).data();
-    break;
-  case tPunc:
-    ss << punctor_map_inverse.at(as<Punctor>()).data();
-    break;
-  default:
-    throw std::runtime_error("Invalid type");
-  }
-
-  return ss.str();
-}
+#endif  // __QUIX_PARSER_LIB_H__

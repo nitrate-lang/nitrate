@@ -29,9 +29,114 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_MACRO_H__
-#define __QUIX_CORE_MACRO_H__
+#include <quix-core/Lib.h>
+#include <quix-lexer/Lib.h>
+#include <quix-parser/Lib.h>
 
-#define LIB_EXPORT extern "C" __attribute__((visibility("default")))
+#include <atomic>
 
-#endif  // __QUIX_CORE_MACRO_H__
+#include "LibMacro.h"
+
+#ifndef QPARSER_ID
+#warning "QPARSER_ID must be defined"
+#define QPARSER_ID "?"
+#endif
+
+static std::atomic<size_t> qparse_lib_ref_count = 0;
+thread_local const char* qparser_err = "";
+
+static bool do_init() {
+  /// TODO: Initialize the library here.
+  return true;
+}
+
+static void do_deinit() {
+  /// TODO: Deinitialize the library here.
+}
+
+LIB_EXPORT bool qparse_lib_init() {
+  if (qparse_lib_ref_count++ > 1) {
+    return true;
+  }
+
+  if (!qcore_lib_init()) {
+    return false;
+  }
+
+  if (!qlex_lib_init()) {
+    return false;
+  }
+
+  return do_init();
+}
+
+LIB_EXPORT void qparse_lib_deinit() {
+  if (--qparse_lib_ref_count > 0) {
+    return;
+  }
+
+  // Deinitialize the library here.
+
+  qlex_lib_deinit();
+  qcore_lib_deinit();
+
+  return do_deinit();
+}
+
+LIB_EXPORT const char* qparse_lib_version() {
+  static const char* version_string =
+
+      "[" QPARSER_ID
+      "] ["
+
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
+    defined(_M_AMD64)
+      "x86_64-"
+#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
+      "x86-"
+#elif defined(__aarch64__)
+      "aarch64-"
+#elif defined(__arm__)
+      "arm-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__linux__)
+      "linux-"
+#elif defined(__APPLE__)
+      "macos-"
+#elif defined(_WIN32)
+      "win32-"
+#else
+      "unknown-"
+#endif
+
+#if defined(__clang__)
+      "clang] "
+#elif defined(__GNUC__)
+      "gnu] "
+#else
+      "unknown] "
+#endif
+
+#if NDEBUG
+      "[release]"
+#else
+      "[debug]"
+#endif
+
+      ;
+
+  return version_string;
+}
+
+LIB_EXPORT const char* qparse_strerror() {
+  /// TODO: Get the last error message from the current thread.
+
+  if (!qparser_err) {
+    qcore_panic("qparse_strerror: qparser_err is NULL. This is a bug.");
+  }
+
+  return qparser_err;
+}

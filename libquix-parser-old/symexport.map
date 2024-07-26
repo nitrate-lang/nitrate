@@ -1,6 +1,6 @@
 {
     global:
-        qparse_*;
+        qast_*;
     local:
         *;
 };

@@ -29,9 +29,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_MACRO_H__
-#define __QUIX_CORE_MACRO_H__
+#ifndef __QUIXCC_MACRO_H__
+#define __QUIXCC_MACRO_H__
 
 #define LIB_EXPORT extern "C" __attribute__((visibility("default")))
 
-#endif  // __QUIX_CORE_MACRO_H__
+#endif // __QUIXCC_MACRO_H__
