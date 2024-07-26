@@ -195,7 +195,7 @@ bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b);
  * @warning The lifetime shall exist for the duration of the lexer context.
  * @warning DO NOT MODIFY THE RETURNED STRING.
  */
-const char *qlex_tstr(qlex_t *lexer, qlex_tok_t *tok);
+const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok);
 
 #ifdef __cplusplus
 }

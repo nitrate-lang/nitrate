@@ -663,7 +663,7 @@ LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
   }
 }
 
-LIB_EXPORT const char *qlex_tstr(qlex_t *lexer, qlex_tok_t *tok) {
+LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok) {
   switch (tok->ty) {
     case qEofF:
     case qErro:
