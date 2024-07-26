@@ -52,6 +52,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <charconv>
 
 #include "LibMacro.h"
 
@@ -756,13 +757,27 @@ static NumType check_number_literal_type(qlex::num_buf_t &input) {
   } else {
     for (i = 0; i < input.size(); i++) {
       if (!(input[i] >= '0' && input[i] <= '9')) {
-        static const auto regexpFloat =
-            std::regex("^([0-9]+(\\.[0-9]+)?)?(e[+-]?([0-9]+(\\.?[0-9]+)?)+)*$");
+        // static const auto regexpFloat =
+        //     std::regex("^([0-9]+(\\.[0-9]+)?)?(e[+-]?([0-9]+(\\.?[0-9]+)?)+)*$");
 
-        if (std::regex_match(input.data(), regexpFloat))
+        // if (std::regex_match(input.data(), regexpFloat)) {
+        //   return num_cache[input] = NumType::Floating;
+        // }
+        try {
+          // std::stod(std::string(input));
+          // stod and check if it succeeds
+
+          double x;
+          auto r = std::from_chars(input.data(), input.data() + input.size(), x);
+
+          if (r.ec == std::errc::invalid_argument || r.ec == std::errc::result_out_of_range) {
+            return num_cache[input] = NumType::Invalid;
+          }
+          
           return num_cache[input] = NumType::Floating;
-
-        return num_cache[input] = NumType::Invalid;
+        } catch (...) {
+          return num_cache[input] = NumType::Invalid;
+        }
       }
     }
 
