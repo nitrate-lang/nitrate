@@ -40,6 +40,7 @@
 #include <boost/bimap.hpp>
 #include <cassert>
 #include <cctype>
+#include <charconv>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -52,7 +53,6 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
-#include <charconv>
 
 #include "LibMacro.h"
 
@@ -609,8 +609,76 @@ LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
     case qNote:
       return "COMMENT";
   }
+}
 
-  __builtin_unreachable();
+LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
+  if (a->ty != b->ty) return false;
+
+  switch (a->ty) {
+    case qEofF:
+    case qErro:
+      return true;
+    case qKeyW:
+      return a->v.key == b->v.key;
+    case qOper:
+      return a->v.op == b->v.op;
+    case qPunc:
+      return a->v.punc == b->v.punc;
+    case qName:
+    case qIntL:
+    case qNumL:
+    case qText:
+    case qChar:
+    case qMacB:
+    case qMacr:
+    case qNote:
+      return lexer->impl->Strings()[a->v.str_idx] == lexer->impl->Strings()[b->v.str_idx];
+  }
+}
+
+LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
+  if (a->ty != b->ty) return a->ty < b->ty;
+
+  switch (a->ty) {
+    case qEofF:
+    case qErro:
+      return false;
+    case qKeyW:
+      return a->v.key < b->v.key;
+    case qOper:
+      return a->v.op < b->v.op;
+    case qPunc:
+      return a->v.punc < b->v.punc;
+    case qName:
+    case qIntL:
+    case qNumL:
+    case qText:
+    case qChar:
+    case qMacB:
+    case qMacr:
+    case qNote:
+      return lexer->impl->Strings()[a->v.str_idx] < lexer->impl->Strings()[b->v.str_idx];
+  }
+}
+
+LIB_EXPORT const char *qlex_tstr(qlex_t *lexer, qlex_tok_t *tok) {
+  switch (tok->ty) {
+    case qEofF:
+    case qErro:
+    case qKeyW:
+    case qOper:
+    case qPunc:
+      return "";
+    case qName:
+    case qIntL:
+    case qNumL:
+    case qText:
+    case qChar:
+    case qMacB:
+    case qMacr:
+    case qNote:
+      return lexer->impl->Strings()[tok->v.str_idx].data();
+  }
 }
 
 ///============================================================================///
@@ -773,7 +841,7 @@ static NumType check_number_literal_type(qlex::num_buf_t &input) {
           if (r.ec == std::errc::invalid_argument || r.ec == std::errc::result_out_of_range) {
             return num_cache[input] = NumType::Invalid;
           }
-          
+
           return num_cache[input] = NumType::Floating;
         } catch (...) {
           return num_cache[input] = NumType::Invalid;

@@ -153,6 +153,48 @@ static inline qlex_tok_t qlex_peek(qlex_t *lexer) { return lexer->peek(lexer); }
  */
 const char *qlex_ty_str(qlex_ty_t ty);
 
+/**
+ * @brief Test if two tokens are equal (not including the location).
+ *
+ * @param lexer Lexer context.
+ * @param a First token.
+ * @param b Second token.
+ *
+ * @return True if the tokens are equal, false otherwise.
+ * @note This function is thread-safe.
+ * @note The lexer context must have been the same used to
+ * generate each of the respective tokens.
+ */
+bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b);
+
+/**
+ * @brief Test if one token is less than another (not including the location).
+ *
+ * @param lexer Lexer context.
+ * @param a First token.
+ * @param b Second token.
+ *
+ * @return True if the first token is less than the second, false otherwise.
+ * @note This function is thread-safe.
+ * @note The lexer context must have been the same used to
+ * generate each of the respective tokens.
+ */
+bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b);
+
+/**
+ * @brief Get the internal string value for a token.
+ *
+ * @param lexer Lexer context.
+ * @param tok Token.
+ *
+ * @return The internal string value for the token or empty string if this operation is applicable
+ * for this token type.
+ * @note This function is thread-safe.
+ * @warning The lifetime shall exist for the duration of the lexer context.
+ * @warning DO NOT MODIFY THE RETURNED STRING.
+ */
+const char *qlex_tstr(qlex_t *lexer, qlex_tok_t *tok);
+
 #ifdef __cplusplus
 }
 #endif
