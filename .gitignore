@@ -60,3 +60,5 @@ s.json
 .qpkg/
 app
 main.c
+libquix-lexer/fuzzer/corpus/*
+fuzz-*.log
