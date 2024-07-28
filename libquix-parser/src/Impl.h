@@ -29,83 +29,81 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
+#ifndef __QUIX_PARSER_IMPL_H__
+#define __QUIX_PARSER_IMPL_H__
 
-#include "LibMacro.h"
-#include "parser/Parse.h"
+#define __QPARSE_IMPL__
 
-bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_next(rd);
-  if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
-  }
+#include <Report.h>
+#include <quix-parser/Config.h>
+#include <quix-parser/Node.h>
 
-  std::string name = tok.as_string();
+#include <optional>
+#include <vector>
 
-  if (name.find("::") != std::string::npos) {
-    Stmt *sub = nullptr;
+struct qparse_impl_t {
+  qparse_impl_t() : root(nullptr) {}
+  ~qparse_impl_t() = default;
 
-    std::string subname = name.substr(0, name.find("::"));
+  qparse_node_t *root;
+  qparse::diag::DiagnosticManager diag;
+};
 
-    qlex_push(rd, qlex_tok_t(rd, qName, name.substr(name.find("::") + 2)));
+class qparse_conf_t {
+  std::vector<qparse_setting_t> m_data;
 
-    if (!parse_subsystem(job, rd, &sub)) return false;
+  bool verify_prechange(qparse_key_t key, qparse_val_t value) const {
+    /// TODO: Implement verification logic for qparse_key_t and qparse_val_t values.
 
-    Block *block = Block::get();
-    block->add_item(sub);
-
-    *node = SubsystemDecl::get(subname, block);
+    (void)key;
+    (void)value;
 
     return true;
   }
 
-  std::set<std::string> deps;
+public:
+  qparse_conf_t() = default;
+  ~qparse_conf_t() = default;
 
-  tok = qlex_peek(rd);
+  bool SetAndVerify(qparse_key_t key, qparse_val_t value) {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qparse_setting_t &setting) { return setting.key == key; });
 
-  // check if : item1, item2, item3
-  if (tok.is<qPuncColn>()) {
-    qlex_next(rd);  // consume colon
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncLBrk>()) {
-      /// TODO: Write the ERROR message
+    if (!verify_prechange(key, value)) {
       return false;
     }
-    tok = qlex_next(rd);
 
-    if (!tok.is(qName)) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
-    deps.insert(tok.as_string());
-
-    tok = qlex_peek(rd);
-    while (tok.is<qPuncComa>()) {
-      qlex_next(rd);  // consume comma
-      tok = qlex_next(rd);
-      if (!tok.is(qName)) {
-        /// TODO: Write the ERROR message
-        return false;
-      }
-      deps.insert(tok.as_string());
-      tok = qlex_peek(rd);
+    if (it != m_data.end()) {
+      m_data.erase(it);
     }
 
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncRBrk>()) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
+    m_data.push_back({key, value});
+
+    return true;
   }
 
-  Block *block = nullptr;
-  if (!parse(job, rd, &block, true)) return false;
+  std::optional<qparse_val_t> Get(qparse_key_t key) const {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qparse_setting_t &setting) { return setting.key == key; });
 
-  SubsystemDecl *sub = SubsystemDecl::get(name, block);
-  sub->add_tags(deps);
+    if (it == m_data.end()) {
+      return std::nullopt;
+    }
 
-  *node = sub;
+    return it->value;
+  }
 
-  return true;
-}
+  const qparse_setting_t *GetAll(size_t &count) const {
+    count = m_data.size();
+    return m_data.data();
+  }
+
+  void ClearNoVerify() {
+    m_data.clear();
+    m_data.shrink_to_fit();
+  }
+
+  bool has(const char *option, const char *value) const;
+};
+
+#endif  // __QUIX_PARSER_IMPL_H__

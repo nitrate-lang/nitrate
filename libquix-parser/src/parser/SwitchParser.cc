@@ -29,86 +29,82 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
 using namespace qparse::parser;
 
-bool qparse::parser::parse_switch(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                           Stmt **node) {
+bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
   Expr *cond = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace)}, &cond)) {
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur)}, &cond)) {
     return false;
   }
 
   SwitchCases cases;
   Block *default_case = nullptr;
 
-  Token tok = scanner->next();
-  if (!tok.is<Punctor>(OpenBrace)) {
-    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_LEFT_BRACE] << tok.serialize() << tok << std::endl;
+  qlex_tok_t tok = qlex_next(rd);
+  if (!tok.is<qPuncLCur>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   while (true) {
-    tok = scanner->peek();
-    if (tok.is<Punctor>(CloseBrace)) {
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncRCur>()) {
       break;
     }
 
-    if (tok.is<Keyword>(Keyword::Default)) {
-      scanner->next();
+    if (tok.is<qKDefault>()) {
+      qlex_next(rd);
       if (default_case) {
-        LOG(ERROR) << core::feedback[SWITCH_MULTIPLE_DEFAULT] << tok.serialize() << tok
-                   << std::endl;
+        /// TODO: Write the ERROR message
         return false;
       }
 
-      tok = scanner->next();
-      if (!tok.is<Punctor>(Colon)) {
-        LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok << std::endl;
+      tok = qlex_next(rd);
+      if (!tok.is<qPuncColn>()) {
+        /// TODO: Write the ERROR message
         return false;
       }
 
-      if (!parse(job, scanner, &default_case)) {
+      if (!parse(job, rd, &default_case)) {
         return false;
       }
 
       continue;
     }
 
-    if (!tok.is<Keyword>(Keyword::Case)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_CASE] << tok.serialize() << tok << std::endl;
+    if (!tok.is<qKCase>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
-    scanner->next();
+    qlex_next(rd);
 
     Expr *case_expr = nullptr;
-    if (!parse_expr(job, scanner, {Token(tPunc, Colon)}, &case_expr)) {
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncColn)}, &case_expr)) {
       return false;
     }
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Colon)) {
-      LOG(ERROR) << core::feedback[SWITCH_EXPECTED_COLON] << tok.serialize() << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncColn>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     Block *case_block = nullptr;
-    if (!parse(job, scanner, &case_block)) {
+    if (!parse(job, rd, &case_block)) {
       return false;
     }
 
     cases.push_back(CaseStmt::get(case_expr, case_block));
   }
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(CloseBrace)) {
-    LOG(ERROR) << core::feedback[SWITCH_EXPECTED_RIGHT_BRACE] << tok.serialize() << tok
-               << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncRCur>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 

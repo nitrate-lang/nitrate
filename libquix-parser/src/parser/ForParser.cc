@@ -29,121 +29,118 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
-using namespace libquixcc;
 using namespace qparse;
 using namespace qparse::parser;
 
-bool qparse::parser::parse_for(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                        Stmt **node) {
+bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
   Stmt *x0 = nullptr;
   Expr *x1 = nullptr, *x2 = nullptr;
 
-  Token tok = scanner->peek();
-  if (tok.is<Punctor>(OpenParen)) {
-    tok = scanner->next();
-    tok = scanner->peek();
+  qlex_tok_t tok = qlex_peek(rd);
+  if (tok.is<qPuncLPar>()) {
+    tok = qlex_next(rd);
+    tok = qlex_peek(rd);
 
-    if (tok.is<Keyword>(Keyword::Let)) {
-      scanner->next();
+    if (tok.is<qKLet>()) {
+      qlex_next(rd);
       StmtListItems let_node;
-      if (!parse_let(job, scanner, let_node)) {
-        LOG(ERROR) << "Failed to parse let statement in for loop" << tok << std::endl;
+      if (!parse_let(job, rd, let_node)) {
+        /// TODO: Write the ERROR message
         return false;
       }
 
       x0 = StmtList::get(let_node);
     } else {
       Expr *x0_tmp = nullptr;
-      if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &x0_tmp)) {
+      if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0_tmp)) {
         return false;
       }
       x0 = ExprStmt::get(x0_tmp);
 
-      tok = scanner->next();
-      if (!tok.is<Punctor>(Semicolon)) {
-        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+      tok = qlex_next(rd);
+      if (!tok.is<qPuncSemi>()) {
+        /// TODO: Write the ERROR message
         return false;
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &x1)) return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) return false;
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Semicolon)) {
-      LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncSemi>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, &x2)) return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &x2)) return false;
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(CloseParen)) {
-      LOG(ERROR) << core::feedback[FOR_EXPECTED_CLOSING_PARANTHESIS] << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncRPar>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     Block *then_block = nullptr;
 
-    if (scanner->peek().is<Operator>(Arrow)) {
-      tok = scanner->next();
-      if (!parse(job, scanner, &then_block, false, true)) return false;
+    if (qlex_peek(rd).is<qOpArrow>()) {
+      tok = qlex_next(rd);
+      if (!parse(job, rd, &then_block, false, true)) return false;
     } else {
-      if (!parse(job, scanner, &then_block, true)) return false;
+      if (!parse(job, rd, &then_block, true)) return false;
     }
 
     *node = ForStmt::get(x0, x1, x2, then_block);
 
     return true;
   } else {
-    tok = scanner->peek();
+    tok = qlex_peek(rd);
 
-    if (tok.is<Keyword>(Keyword::Let)) {
-      scanner->next();
+    if (tok.is<qKLet>()) {
+      qlex_next(rd);
       StmtListItems let_node;
-      if (!parse_let(job, scanner, let_node)) {
-        LOG(ERROR) << "Failed to parse let statement in for loop" << tok << std::endl;
+      if (!parse_let(job, rd, let_node)) {
+        /// TODO: Write the ERROR message
         return false;
       }
 
       x0 = StmtList::get(let_node);
     } else {
       Expr *x0_tmp = nullptr;
-      if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &x0_tmp)) {
+      if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0_tmp)) {
         return false;
       }
       x0 = ExprStmt::get(x0_tmp);
 
-      tok = scanner->next();
-      if (!tok.is<Punctor>(Semicolon)) {
-        LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+      tok = qlex_next(rd);
+      if (!tok.is<qPuncSemi>()) {
+        /// TODO: Write the ERROR message
         return false;
       }
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &x1)) return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) return false;
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Semicolon)) {
-      LOG(ERROR) << core::feedback[FOR_EXPECTED_SEMICOLON] << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncSemi>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
-    if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, &x2))
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &x2))
       return false;
 
     Block *then_block = nullptr;
 
-    if (scanner->peek().is<Operator>(Arrow)) {
-      tok = scanner->next();
-      if (!parse(job, scanner, &then_block, false, true)) return false;
+    if (qlex_peek(rd).is<qOpArrow>()) {
+      tok = qlex_next(rd);
+      if (!parse(job, rd, &then_block, false, true)) return false;
     } else {
-      if (!parse(job, scanner, &then_block, true)) return false;
+      if (!parse(job, rd, &then_block, true)) return false;
     }
 
     *node = ForStmt::get(x0, x1, x2, then_block);

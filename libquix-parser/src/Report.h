@@ -29,83 +29,66 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
+#ifndef __QUIX_PARSER_REPORT_H__
+#define __QUIX_PARSER_REPORT_H__
 
-#include "LibMacro.h"
-#include "parser/Parse.h"
+#include <quix-lexer/Token.h>
 
-bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_next(rd);
-  if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
-  }
+#include <functional>
+#include <memory>
+#include <queue>
+#include <span>
+#include <string_view>
 
-  std::string name = tok.as_string();
+namespace qparse::diag {
+  typedef std::function<void(const char *)> DiagnosticMessageHandler;
 
-  if (name.find("::") != std::string::npos) {
-    Stmt *sub = nullptr;
+  struct FormatOptions {
+    bool use_color;
+    bool use_ansi_modes;
+    bool use_unicode;
 
-    std::string subname = name.substr(0, name.find("::"));
+    FormatOptions() { *this = {}; }
+  };
 
-    qlex_push(rd, qlex_tok_t(rd, qName, name.substr(name.find("::") + 2)));
+  enum class MessageType {
+    Syntax,
+  };
 
-    if (!parse_subsystem(job, rd, &sub)) return false;
+  struct DiagMessage {
+    std::string msg;
+    qlex_loc_t loc;
+    MessageType type;
+  };
 
-    Block *block = Block::get();
-    block->add_item(sub);
+  class IFormatter {
+  public:
+    virtual ~IFormatter() {}
 
-    *node = SubsystemDecl::get(subname, block);
+    virtual void format(const DiagMessage &msg, const FormatOptions &options, std::string &out) = 0;
+  };
 
-    return true;
-  }
+  class ClangLikeFormatter : public IFormatter {
+  public:
+    void format(const DiagMessage &msg, const FormatOptions &options, std::string &out) override;
+  };
 
-  std::set<std::string> deps;
+  class DiagnosticManager {
+    std::vector<DiagMessage> m_msgs;
+    std::shared_ptr<IFormatter> m_formatter;
 
-  tok = qlex_peek(rd);
+  public:
+    DiagnosticManager();
+    ~DiagnosticManager();
 
-  // check if : item1, item2, item3
-  if (tok.is<qPuncColn>()) {
-    qlex_next(rd);  // consume colon
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncLBrk>()) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
-    tok = qlex_next(rd);
+    void push(DiagMessage &&msg);
+    size_t render(DiagnosticMessageHandler handler, const FormatOptions &options) const;
+  };
 
-    if (!tok.is(qName)) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
-    deps.insert(tok.as_string());
+  void install_reference(DiagnosticManager *mgr);
 
-    tok = qlex_peek(rd);
-    while (tok.is<qPuncComa>()) {
-      qlex_next(rd);  // consume comma
-      tok = qlex_next(rd);
-      if (!tok.is(qName)) {
-        /// TODO: Write the ERROR message
-        return false;
-      }
-      deps.insert(tok.as_string());
-      tok = qlex_peek(rd);
-    }
+  void syntax(const qlex_tok_t &tok, std::string_view msg);
 
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncRBrk>()) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
-  }
+};  // namespace qparse::diag
 
-  Block *block = nullptr;
-  if (!parse(job, rd, &block, true)) return false;
-
-  SubsystemDecl *sub = SubsystemDecl::get(name, block);
-  sub->add_tags(deps);
-
-  *node = sub;
-
-  return true;
-}
+#endif  // __QUIX_PARSER_REPORT_H__

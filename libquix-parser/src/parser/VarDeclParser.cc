@@ -29,32 +29,30 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
-using namespace libquixcc;
 using namespace qparse;
 using namespace qparse::parser;
 
-static bool parse_decl(quixcc_cc_job_t &job, Token tok, libquixcc::Scanner *scanner,
+static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
                        std::pair<std::string, Type *> &decl) {
   std::string name = tok.as_string();
 
-  tok = scanner->peek();
-  if (!tok.is<Punctor>(Colon)) {
+  tok = qlex_peek(rd);
+  if (!tok.is<qPuncColn>()) {
     decl = std::make_pair(name, nullptr);
     return true;
   }
 
-  scanner->next();
+  qlex_next(rd);
 
   Type *type = nullptr;
 
-  if (!parse_type(job, scanner, &type)) {
-    LOG(ERROR) << core::feedback[VAR_DECL_TYPE_ERR] << name << tok << std::endl;
+  if (!parse_type(job, rd, &type)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
@@ -62,67 +60,66 @@ static bool parse_decl(quixcc_cc_job_t &job, Token tok, libquixcc::Scanner *scan
   return true;
 }
 
-bool qparse::parser::parse_var(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                        StmtListItems &nodes) {
-  Token tok = scanner->next();
+bool qparse::parser::parse_var(qparse_t &job, qlex_t *rd, StmtListItems &nodes) {
+  qlex_tok_t tok = qlex_next(rd);
 
   std::vector<std::pair<std::string, Type *>> decls;
   bool multi_decl = false;
-  if (tok.is<Punctor>(OpenBracket)) {
+  if (tok.is<qPuncLBrk>()) {
     multi_decl = true;
 
     while (true) {
-      tok = scanner->next();
+      tok = qlex_next(rd);
 
       std::pair<std::string, Type *> decl;
-      if (!parse_decl(job, tok, scanner, decl)) return false;
+      if (!parse_decl(job, tok, rd, decl)) return false;
 
       decls.push_back(decl);
 
-      tok = scanner->next();
-      if (tok.is<Punctor>(Comma))
+      tok = qlex_next(rd);
+      if (tok.is<qPuncComa>())
         continue;
-      else if (tok.is<Punctor>(CloseBracket))
+      else if (tok.is<qPuncRBrk>())
         break;
       else {
-        LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decl.first << tok << std::endl;
+        /// TODO: Write the ERROR message
         return false;
       }
     }
-  } else if (tok.type() == tName) {
+  } else if (tok.ty == qName) {
     std::pair<std::string, Type *> decl;
-    if (!parse_decl(job, tok, scanner, decl)) return false;
+    if (!parse_decl(job, tok, rd, decl)) return false;
 
     decls.push_back(decl);
   } else {
-    LOG(ERROR) << core::feedback[VAR_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+    /// TODO: Write the ERROR message
     return false;
   }
 
   if (decls.empty()) {
-    LOG(ERROR) << core::feedback[VAR_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (tok.is<Punctor>(Semicolon)) {
+  tok = qlex_next(rd);
+  if (tok.is<qPuncSemi>()) {
     for (auto &decl : decls) nodes.push_back(VarDecl::get(decl.first, decl.second, nullptr));
-  } else if (tok.is<Operator>(OpAssign)) {
+  } else if (tok.is<qOpSet>()) {
     if (multi_decl)
       throw std::runtime_error("Initializer not implemented for multiple declarations");
 
     Expr *init = nullptr;
-    if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &init)) return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init)) return false;
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Semicolon)) {
-      LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << decls[0].first << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncSemi>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     nodes.push_back(VarDecl::get(decls[0].first, decls[0].second, init));
   } else {
-    LOG(ERROR) << core::feedback[VAR_DECL_MISSING_PUNCTOR] << tok << std::endl;
+    /// TODO: Write the ERROR message
     return false;
   }
 

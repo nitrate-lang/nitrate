@@ -38,44 +38,70 @@
 #error "This header requires C++"
 #endif
 
+#include <Report.h>
 #include <quix-lexer/Token.h>
 #include <quix-parser/Node.h>
+#include <quix-parser/Parser.h>
+#include <Impl.h>
 
 #include <set>
 
 namespace qparse::parser {
-  class Scanner {};
-  class quixcc_cc_job_t {};
-
-  bool parse(quixcc_cc_job_t &job, Scanner *scanner, Block **node, bool expect_braces = true,
+  bool parse(qparse_t &job, qlex_t *rd, Block **node, bool expect_braces = true,
              bool single_stmt = false);
-  bool parse_pub(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_let(quixcc_cc_job_t &job, Scanner *scanner, StmtListItems &node);
-  bool parse_const(quixcc_cc_job_t &job, Scanner *scanner, StmtListItems &node);
-  bool parse_var(quixcc_cc_job_t &job, Scanner *scanner, StmtListItems &node);
-  bool parse_enum(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_struct(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_region(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_group(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_subsystem(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_function(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_expr(quixcc_cc_job_t &job, Scanner *scanner, std::set<qlex_tok_t> terminators,
-                  Expr **node, size_t depth = 0);
-  bool parse_type(quixcc_cc_job_t &job, Scanner *scanner, Type **node);
-  bool parse_typedef(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_return(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_retif(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_retz(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_retv(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_if(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_while(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_for(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_form(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_foreach(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_case(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_switch(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-  bool parse_inline_asm(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node);
-};  // namespace qparse
+
+  bool parse_pub(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_let(qparse_t &job, qlex_t *rd, StmtListItems &node);
+
+  bool parse_const(qparse_t &job, qlex_t *rd, StmtListItems &node);
+
+  bool parse_var(qparse_t &job, qlex_t *rd, StmtListItems &node);
+
+  bool parse_enum(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_struct(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_region(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_group(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_union(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_function(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> terminators, Expr **node,
+                  size_t depth = 0);
+
+  bool parse_type(qparse_t &job, qlex_t *rd, Type **node);
+
+  bool parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_return(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_retif(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_retz(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_retv(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_if(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_while(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_for(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_form(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_case(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_switch(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node);
+};  // namespace qparse::parser
 
 #endif  // __QUIXCC_PARSE_H__

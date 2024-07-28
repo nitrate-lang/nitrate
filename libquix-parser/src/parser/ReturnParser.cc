@@ -29,57 +29,54 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
 using namespace qparse::parser;
 
-bool qparse::parser::parse_return(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                           Stmt **node) {
-  Token tok = scanner->peek();
+bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_peek(rd);
 
-  if (tok.is<Punctor>(Semicolon)) {
-    scanner->next();
+  if (tok.is<qPuncSemi>()) {
+    qlex_next(rd);
     *node = ReturnStmt::get();
     return true;
   }
 
   Expr *expr = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &expr)) return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) return false;
   *node = ReturnStmt::get(expr);
 
-  tok = scanner->next();
+  tok = qlex_next(rd);
 
-  if (!tok.is<Punctor>(Semicolon)) {
-    LOG(ERROR) << core::feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
+  if (!tok.is<qPuncSemi>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   return true;
 }
 
-bool qparse::parser::parse_retif(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                          Stmt **node) {
-  Token tok;
+bool qparse::parser::parse_retif(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok;
 
   Expr *return_expr = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, &return_expr)) return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &return_expr)) return false;
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[RETIF_MISSING_COMMA] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncComa>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   Expr *condition = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &condition)) return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &condition)) return false;
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Semicolon)) {
-    LOG(ERROR) << core::feedback[RETIF_MISSING_SEMICOLON] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncSemi>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
   *node = ReturnIfStmt::get(condition, return_expr);
@@ -87,25 +84,24 @@ bool qparse::parser::parse_retif(quixcc_cc_job_t &job, libquixcc::Scanner *scann
   return true;
 }
 
-bool qparse::parser::parse_retz(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                         Stmt **node) {
-  Token tok;
+bool qparse::parser::parse_retz(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok;
 
   Expr *return_expr = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, &return_expr)) return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &return_expr)) return false;
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[RETZ_MISSING_COMMA] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncComa>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   Expr *condition = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &condition)) return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &condition)) return false;
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Semicolon)) {
-    LOG(ERROR) << core::feedback[RETZ_MISSING_SEMICOLON] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncSemi>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
   *node = RetZStmt::get(condition, return_expr);
@@ -113,16 +109,15 @@ bool qparse::parser::parse_retz(quixcc_cc_job_t &job, libquixcc::Scanner *scanne
   return true;
 }
 
-bool qparse::parser::parse_retv(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                         Stmt **node) {
-  Token tok;
+bool qparse::parser::parse_retv(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok;
 
   Expr *cond = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &cond)) return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &cond)) return false;
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Semicolon)) {
-    LOG(ERROR) << core::feedback[RETV_MISSING_SEMICOLON] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncSemi>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 

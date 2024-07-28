@@ -29,27 +29,25 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
 using namespace qparse::parser;
 
-bool qparse::parser::parse_while(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                          Stmt **node) {
+bool qparse::parser::parse_while(qparse_t &job, qlex_t *rd, Stmt **node) {
   Expr *cond = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, OpenBrace), Token(tOper, Arrow)}, &cond))
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &cond))
     return false;
 
   Block *then_block = nullptr;
 
-  if (scanner->peek().is<Operator>(Arrow)) {
-    scanner->next();
-    if (!parse(job, scanner, &then_block, false, true)) return false;
+  if (qlex_peek(rd).is<qOpArrow>()) {
+    qlex_next(rd);
+    if (!parse(job, rd, &then_block, false, true)) return false;
   } else {
-    if (!parse(job, scanner, &then_block, true)) return false;
+    if (!parse(job, rd, &then_block, true)) return false;
   }
 
   *node = WhileStmt::get(cond, then_block);

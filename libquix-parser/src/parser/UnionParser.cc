@@ -29,17 +29,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
-using namespace libquixcc;
 using namespace qparse;
 using namespace qparse::parser;
 
-static bool parse_union_field(quixcc_cc_job_t &job, Scanner *scanner, CompositeField **node) {
+static bool parse_union_field(qparse_t &job, qlex_t *rd, CompositeField **node) {
   /**
    * @brief Parse a union struct field
    *
@@ -47,58 +45,58 @@ static bool parse_union_field(quixcc_cc_job_t &job, Scanner *scanner, CompositeF
    */
 
   std::string name;
-  Token tok;
+  qlex_tok_t tok;
   Type *type = nullptr;
   Expr *value = nullptr;
 
   { /*First token is the field name */
-    tok = scanner->next();
-    if (!tok.is(tName)) {
-      LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_IDENTIFIER] << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is(qName)) {
+      /// TODO: Write the ERROR message
       return false;
     }
     name = tok.as_string();
   }
 
   { /* Next token should be a colon */
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Colon)) {
-      LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_COLON] << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncColn>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
   }
 
   { /* Next section should be the field type */
-    if (!parse_type(job, scanner, &type)) {
-      LOG(ERROR) << core::feedback[UNION_FIELD_TYPE_ERR] << name << tok << std::endl;
+    if (!parse_type(job, rd, &type)) {
+      /// TODO: Write the ERROR message
       return false;
     }
   }
 
   /* Check for a default value */
-  tok = scanner->next();
-  if (tok.is<Punctor>(Comma)) {
+  tok = qlex_next(rd);
+  if (tok.is<qPuncComa>()) {
     *node = CompositeField::get(name, type);
     return true;
   }
 
   { /* Optional default value */
-    if (!tok.is<Operator>(OpAssign)) {
-      LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_PUNCTOR] << name << tok << std::endl;
+    if (!tok.is<qOpSet>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     /* Parse the default value */
-    if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, &value)) {
-      LOG(ERROR) << core::feedback[UNION_FIELD_INIT_ERR] << name << tok << std::endl;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &value)) {
+      /// TODO: Write the ERROR message
       return false;
     }
   }
 
   /* Field ends with a comma */
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[UNION_FIELD_MISSING_PUNCTOR] << name << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncComa>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
@@ -106,12 +104,12 @@ static bool parse_union_field(quixcc_cc_job_t &job, Scanner *scanner, CompositeF
   return true;
 }
 
-bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
+bool parser::parse_union(qparse_t &job, qlex_t *rd, Stmt **node) {
   /**
    * @brief Parse a union composite type definition
    */
 
-  Token tok;
+  qlex_tok_t tok;
   std::string name;
   UnionDefFields fields;
   UnionDefMethods methods;
@@ -123,9 +121,9 @@ bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
   CompositeField *field = nullptr;
 
   { /* First token should be the name of the definition */
-    tok = scanner->next();
-    if (!tok.is(tName)) {
-      LOG(ERROR) << core::feedback[UNION_DECL_MISSING_IDENTIFIER] << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is(qName)) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
@@ -133,9 +131,9 @@ bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
   }
 
   { /* Next token should be an open curly bracket */
-    tok = scanner->next();
-    if (!tok.is<Punctor>(OpenBrace)) {
-      LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_OPEN_BRACE] << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncLCur>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
   }
@@ -143,16 +141,16 @@ bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
   /* Parse the fields and methods */
   while (true) {
     { /* Check for the end of the content */
-      tok = scanner->peek();
-      if (tok.is<Punctor>(CloseBrace)) {
-        scanner->next();
+      tok = qlex_peek(rd);
+      if (tok.is<qPuncRCur>()) {
+        qlex_next(rd);
         break;
       }
     }
 
     { /* Ignore free semicolons */
-      if (tok.is<Punctor>(Semicolon)) {
-        scanner->next();
+      if (tok.is<qPuncSemi>()) {
+        qlex_next(rd);
         continue;
       }
     }
@@ -160,27 +158,27 @@ bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
     Visibility vis = Visibility::PRIVATE;
 
     { /* Check for visibility qualifiers */
-      if (tok.is<Keyword>(Keyword::Pub)) {
+      if (tok.is<qKPub>()) {
         vis = Visibility::PUBLIC;
-        scanner->next();
-        tok = scanner->peek();
-      } else if (tok.is<Keyword>(Keyword::Sec)) {
+        qlex_next(rd);
+        tok = qlex_peek(rd);
+      } else if (tok.is<qKSec>()) {
         vis = Visibility::PRIVATE;
-        scanner->next();
-        tok = scanner->peek();
-      } else if (tok.is<Keyword>(Keyword::Pro)) {
+        qlex_next(rd);
+        tok = qlex_peek(rd);
+      } else if (tok.is<qKPro>()) {
         vis = Visibility::PROTECTED;
-        scanner->next();
-        tok = scanner->peek();
+        qlex_next(rd);
+        tok = qlex_peek(rd);
       }
     }
 
     /* Check for a function definition */
-    if (tok.is<Keyword>(Keyword::Fn)) {
-      scanner->next();
+    if (tok.is<qKFn>()) {
+      qlex_next(rd);
 
       /* Parse the function definition */
-      if (!parse_function(job, scanner, &method)) {
+      if (!parse_function(job, rd, &method)) {
         return false;
       }
 
@@ -205,18 +203,18 @@ bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
 
       /* Add the method to the list */
       methods.push_back(static_cast<FnDecl *>(method));
-    } else if (tok.is<Keyword>(Keyword::Static)) {
-      scanner->next();
-      tok = scanner->next();
+    } else if (tok.is<qKStatic>()) {
+      qlex_next(rd);
+      tok = qlex_next(rd);
 
       /* Static fields are not currently supported */
-      if (!tok.is<Keyword>(Keyword::Fn)) {
-        LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_FN] << tok << std::endl;
+      if (!tok.is<qKFn>()) {
+        /// TODO: Write the ERROR message
         return false;
       }
 
       /* Parse the function definition */
-      if (!parse_function(job, scanner, &method)) {
+      if (!parse_function(job, rd, &method)) {
         return false;
       }
 
@@ -227,7 +225,7 @@ bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
       static_methods.push_back(static_cast<FnDecl *>(method));
     } else {
       /* Parse a normal field */
-      if (!parse_union_field(job, scanner, &field)) {
+      if (!parse_union_field(job, rd, &field)) {
         return false;
       }
 
@@ -239,27 +237,27 @@ bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
   }
 
   { /* Ignore optional semicolon */
-    tok = scanner->peek();
-    if (tok.is<Punctor>(Semicolon)) {
-      scanner->next();
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncSemi>()) {
+      qlex_next(rd);
     }
   }
 
   { /* The compiler may automatically generate traits for the definition */
-    tok = scanner->peek();
-    if (!job.has("-fno-auto-impl", "union")) {
+    tok = qlex_peek(rd);
+    if (!job.conf->has("-fno-auto-impl", "union")) {
       implements.insert("auto");
     }
   }
 
   { /* Check for an implementation/trait list */
-    if (tok.is<Keyword>(Keyword::Impl)) {
-      scanner->next();
-      tok = scanner->next();
+    if (tok.is<qKImpl>()) {
+      qlex_next(rd);
+      tok = qlex_next(rd);
 
       { /* The implementation list should be enclosed in square brackets ex: [abc, hello] */
-        if (!tok.is<Punctor>(OpenBracket)) {
-          LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_OPEN_BRACKET] << tok << std::endl;
+        if (!tok.is<qPuncLBrk>()) {
+          /// TODO: Write the ERROR message
           return false;
         }
       }
@@ -267,14 +265,14 @@ bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
       /* Parse an arbitrary number of trait names */
       while (true) {
         /* Check for termination */
-        tok = scanner->next();
-        if (tok.is<Punctor>(CloseBracket)) {
+        tok = qlex_next(rd);
+        if (tok.is<qPuncRBrk>()) {
           break;
         }
 
         /* Ensure it is an identifier */
-        if (!tok.is(tName)) {
-          LOG(ERROR) << core::feedback[UNION_DEF_EXPECTED_IDENTIFIER] << tok << std::endl;
+        if (!tok.is(qName)) {
+          /// TODO: Write the ERROR message
           return false;
         }
 
@@ -282,9 +280,9 @@ bool parser::parse_union(quixcc_cc_job_t &job, Scanner *scanner, Stmt **node) {
         implements.insert(tok.as_string());
 
         /* Check for a comma */
-        tok = scanner->peek();
-        if (tok.is<Punctor>(Comma)) {
-          scanner->next();
+        tok = qlex_peek(rd);
+        if (tok.is<qPuncComa>()) {
+          qlex_next(rd);
         }
       }
     }

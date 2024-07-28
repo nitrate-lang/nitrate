@@ -29,90 +29,88 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
 using namespace qparse::parser;
 
-bool qparse::parser::parse_form(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                         Stmt **node) {
-  Token tok = scanner->next();
+bool qparse::parser::parse_form(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_next(rd);
 
-  if (!tok.is<Punctor>(OpenParen)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_OPEN_PAREN] << tok << std::endl;
+  if (!tok.is<qPuncLPar>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   Expr *maxjobs = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, &maxjobs)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &maxjobs)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(CloseParen)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncRPar>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(OpenParen)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_OPEN_PAREN] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncLPar>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is(tName)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_IDENTIFIER] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is(qName)) {
+    /// TODO: Write the ERROR message
     return false;
   }
   std::string idx_ident = tok.as_string();
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_COMMA] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncComa>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is(tName)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_IDENTIFIER] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is(qName)) {
+    /// TODO: Write the ERROR message
     return false;
   }
   std::string val_ident = tok.as_string();
 
-  tok = scanner->next();
-  if (!tok.is<Operator>(In)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_IN] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qOpIn>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   Expr *expr = nullptr;
-  if (!parse_expr(job, scanner, {Token(tPunc, CloseParen)}, &expr)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_EXPR] << tok << std::endl;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr)) {
+    /// TODO: Write the ERROR message
     return false;
   }
-  tok = scanner->next();
-  if (!tok.is<Punctor>(CloseParen)) {
-    LOG(ERROR) << core::feedback[FORM_EXPECTED_CLOSE_PAREN] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncRPar>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->peek();
+  tok = qlex_peek(rd);
 
   Block *block = nullptr;
-  if (tok.is<Operator>(Arrow)) {
-    scanner->next();
-    if (!parse(job, scanner, &block, false, true)) {
-      LOG(ERROR) << core::feedback[FORM_EXPECTED_BLOCK] << tok << std::endl;
+  if (tok.is<qOpArrow>()) {
+    qlex_next(rd);
+    if (!parse(job, rd, &block, false, true)) {
+      /// TODO: Write the ERROR message
       return false;
     }
   } else {
-    if (!parse(job, scanner, &block)) {
-      LOG(ERROR) << core::feedback[FORM_EXPECTED_BLOCK] << tok << std::endl;
+    if (!parse(job, rd, &block)) {
+      /// TODO: Write the ERROR message
       return false;
     }
   }

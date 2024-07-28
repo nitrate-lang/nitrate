@@ -29,54 +29,52 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
-using namespace libquixcc;
 using namespace qparse;
 using namespace qparse::parser;
 
-static bool asm_parse_param(quixcc_cc_job_t &job, Scanner *scanner,
+static bool asm_parse_param(qparse_t &job, qlex_t *rd,
                             std::vector<std::pair<std::string, Expr *>> &result) {
-  Token tok;
+  qlex_tok_t tok;
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(OpenBrace)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize() << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncLCur>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  while (!(tok = scanner->next()).is<Punctor>(CloseBrace)) {
-    if (!tok.is(tText)) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok
-                 << std::endl;
+  while (!(tok = qlex_next(rd)).is<qPuncRCur>()) {
+    if (!tok.is(qText)) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     std::string name = tok.as_string();
 
-    tok = scanner->next();
-    if (!tok.is<Punctor>(Colon)) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_COLON] << tok.serialize() << tok << std::endl;
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncColn>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     Expr *expr = nullptr;
-    if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseBrace)}, &expr)) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_EXPR] << tok.serialize() << tok << std::endl;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
+                    &expr)) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     result.push_back({name, expr});
 
-    tok = scanner->next();
-    if (tok.is<Punctor>(CloseBrace)) {
+    tok = qlex_next(rd);
+    if (tok.is<qPuncRCur>()) {
       break;
-    } else if (!tok.is<Punctor>(Comma)) {
-      LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
+    } else if (!tok.is<qPuncComa>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
   }
@@ -84,37 +82,35 @@ static bool asm_parse_param(quixcc_cc_job_t &job, Scanner *scanner,
   return true;
 }
 
-static bool asm_parse_clobbers(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                               std::vector<std::string> &result) {
+static bool asm_parse_clobbers(qparse_t &job, qlex_t *rd, std::vector<std::string> &result) {
   // ['a', 'b', 'c']
 
-  Token tok;
+  qlex_tok_t tok;
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(OpenBracket)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_BRACE] << tok.serialize() << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncLBrk>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   while (true) {
-    tok = scanner->next();
-    if (tok.is<Punctor>(CloseBracket)) {
+    tok = qlex_next(rd);
+    if (tok.is<qPuncRBrk>()) {
       break;
     }
 
-    if (!tok.is(tText)) {
-      LOG(ERROR) << core::feedback[ASM_PARAM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok
-                 << std::endl;
+    if (!tok.is(qText)) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     result.push_back(tok.as_string());
 
-    tok = scanner->next();
-    if (tok.is<Punctor>(CloseBracket)) {
+    tok = qlex_next(rd);
+    if (tok.is<qPuncRBrk>()) {
       break;
-    } else if (!tok.is<Punctor>(Comma)) {
-      LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
+    } else if (!tok.is<qPuncComa>()) {
+      /// TODO: Write the ERROR message
       return false;
     }
   }
@@ -122,69 +118,67 @@ static bool asm_parse_clobbers(quixcc_cc_job_t &job, libquixcc::Scanner *scanner
   return true;
 }
 
-bool qparse::parser::parse_inline_asm(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                               Stmt **node) {
-  Token tok = scanner->next();
-  if (!tok.is<Punctor>(OpenParen)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_LEFT_PAREN] << tok.serialize() << tok << std::endl;
+bool qparse::parser::parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_next(rd);
+  if (!tok.is<qPuncLPar>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is(tText)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_STRING_LITERAL] << tok.serialize() << tok
-               << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is(qText)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   std::string asmcode = tok.as_string();
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncComa>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   std::vector<std::pair<std::string, Expr *>> outputs;
   std::vector<std::pair<std::string, Expr *>> inputs;
 
-  if (!asm_parse_param(job, scanner, outputs)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_OUTPUTS] << tok.serialize() << tok << std::endl;
+  if (!asm_parse_param(job, rd, outputs)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncComa>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  if (!asm_parse_param(job, scanner, inputs)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_INPUTS] << tok.serialize() << tok << std::endl;
+  if (!asm_parse_param(job, rd, inputs)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Comma)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_COMMA] << tok.serialize() << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncComa>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   std::vector<std::string> clobbers;
-  if (!asm_parse_clobbers(job, scanner, clobbers)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_CLOBBERS] << tok.serialize() << tok << std::endl;
+  if (!asm_parse_clobbers(job, rd, clobbers)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(CloseParen)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_RIGHT_PAREN] << tok.serialize() << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncRPar>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Semicolon)) {
-    LOG(ERROR) << core::feedback[ASM_EXPECTED_SEMICOLON] << tok.serialize() << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncSemi>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 

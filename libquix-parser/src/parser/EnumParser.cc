@@ -29,21 +29,18 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
-using namespace libquixcc;
 using namespace qparse;
 using namespace qparse::parser;
 
-static bool parse_enum_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                             EnumDefItems &fields) {
-  Token tok = scanner->next();
-  if (!tok.is(tName)) {
-    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_IDENTIFIER] << tok << std::endl;
+static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
+  qlex_tok_t tok = qlex_next(rd);
+  if (!tok.is(qName)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
@@ -51,69 +48,67 @@ static bool parse_enum_field(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
 
   item.first = tok.as_string();
 
-  tok = scanner->peek();
-  if (tok.is<Operator>(OpAssign)) {
-    scanner->next();
+  tok = qlex_peek(rd);
+  if (tok.is<qOpSet>()) {
+    qlex_next(rd);
     Expr *expr = nullptr;
-    if (!parse_expr(job, scanner, {Token(tPunc, Comma)}, &expr)) {
-      LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_CONST_EXPR] << item.first << tok
-                 << std::endl;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &expr)) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     item.second = ConstExpr::get(expr);
 
-    tok = scanner->peek();
+    tok = qlex_peek(rd);
   }
 
   fields.push_back(item);
 
-  if (tok.is<Punctor>(Comma)) {
-    scanner->next();
+  if (tok.is<qPuncComa>()) {
+    qlex_next(rd);
     return true;
   }
 
-  if (!tok.is<Punctor>(CloseBrace)) {
-    LOG(ERROR) << core::feedback[ENUM_FIELD_EXPECTED_SEMICOLON] << tok << std::endl;
+  if (!tok.is<qPuncRCur>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   return true;
 }
 
-bool qparse::parser::parse_enum(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                         Stmt **node) {
-  Token tok = scanner->next();
-  if (!tok.is(tName)) {
-    LOG(ERROR) << core::feedback[ENUM_EXPECTED_IDENTIFIER] << tok << std::endl;
+bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_next(rd);
+  if (!tok.is(qName)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   std::string name = tok.as_string();
 
-  tok = scanner->peek();
+  tok = qlex_peek(rd);
   Type *type = nullptr;
-  if (tok.is<Punctor>(Colon)) {
-    scanner->next();
-    if (!parse_type(job, scanner, &type)) return false;
+  if (tok.is<qPuncColn>()) {
+    qlex_next(rd);
+    if (!parse_type(job, rd, &type)) return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(OpenBrace)) {
-    LOG(ERROR) << core::feedback[ENUM_EXPECTED_LEFT_BRACE] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncLCur>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   EnumDefItems fields;
 
   while (true) {
-    tok = scanner->peek();
-    if (tok.is<Punctor>(CloseBrace)) {
-      scanner->next();
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncRCur>()) {
+      qlex_next(rd);
       break;
     }
 
-    if (!parse_enum_field(job, scanner, fields)) {
+    if (!parse_enum_field(job, rd, fields)) {
       return false;
     }
   }

@@ -29,25 +29,22 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
-
-#include "LibMacro.h"
-#include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
+#define __QUIX_IMPL__
 
 #include <stack>
 
-using namespace libquixcc;
+#include "LibMacro.h"
+#include "parser/Parse.h"
+
 using namespace qparse;
 using namespace qparse::parser;
 
-static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *scanner,
-                                 size_t depth) {
+static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t depth) {
   /**
    * @brief
    */
 
-  Token tok, ident;
+  qlex_tok_t tok, ident;
   CallArgs call_args;
   size_t pos_arg_count = 0;
 
@@ -56,18 +53,18 @@ static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *sc
      * @brief
      */
 
-    tok = scanner->peek();
+    tok = qlex_peek(rd);
 
-    if (tok == Token(tPunc, CloseParen)) {
+    if (tok.is<qPuncRPar>()) {
       /**
        * @brief
        */
 
-      scanner->next();
+      qlex_next(rd);
       break;
     }
 
-    if (!tok.is(tName)) {
+    if (!tok.is(qName)) {
       /**
        * @brief
        */
@@ -77,22 +74,22 @@ static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *sc
 
     { /* Parse named argument */
       ident = tok;
-      scanner->next();
-      tok = scanner->peek();
+      qlex_next(rd);
+      tok = qlex_peek(rd);
 
-      if (!tok.is<Punctor>(Colon)) {
+      if (!tok.is<qPuncColn>()) {
         /**
          * @brief
          */
 
-        scanner->push(ident);
+        qlex_push(rd, ident);
         goto parse_pos_arg;
       }
 
-      scanner->next();
+      qlex_next(rd);
 
       Expr *arg = nullptr;
-      if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseParen)}, &arg,
+      if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)}, &arg,
                       depth + 1)) {
         /**
          * @brief
@@ -101,7 +98,7 @@ static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *sc
         return nullptr;
       }
 
-      call_args.push_back({ident.as<std::string>(), arg});
+      call_args.push_back({ident.as_string(), arg});
       goto comma;
     }
 
@@ -111,7 +108,7 @@ static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *sc
      */
 
     Expr *arg = nullptr;
-    if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseParen)}, &arg,
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)}, &arg,
                     depth + 1)) {
       /**
        * @brief
@@ -129,9 +126,9 @@ static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *sc
   }
 
   comma: {
-    tok = scanner->peek();
-    if (tok.is<Punctor>(Comma)) {
-      scanner->next();
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncComa>()) {
+      qlex_next(rd);
     }
     continue;
   }
@@ -140,19 +137,22 @@ static Call *parse_function_call(quixcc_cc_job_t &job, Expr *callee, Scanner *sc
   return Call::get(callee, call_args);
 }
 
-static bool parse_fstring(quixcc_cc_job_t &job, FString **node, Scanner *scanner, size_t depth) {
+static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t depth) {
+  /// TODO: Implement FStrings again
+  throw std::runtime_error("FStrings are not implemented yet");
+
   /**
    * @brief
    */
 
-  Token tok = scanner->next();
+  qlex_tok_t tok = qlex_next(rd);
   std::string fstr, rectified_template;
   FStringArgs args;
   size_t state = 0, w_beg = 0, w_end = 0;
   Expr *expr = nullptr;
 
-  if (!tok.is(tText)) {
-    LOG(ERROR) << "Expected a string literal template in f-string" << tok << std::endl;
+  if (!tok.is(qText)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
@@ -174,11 +174,11 @@ static bool parse_fstring(quixcc_cc_job_t &job, FString **node, Scanner *scanner
 
       std::string sub = fstr.substr(w_beg, w_end - w_beg) + "\n";
 
-      StringLexer subscanner(sub);
+      // NOT POSS: StringLexer subrd(sub);
 
-      if (!parse_expr(job, &subscanner, {Token(tPunc, CloseBrace)}, &expr, 0)) {
-        return false;
-      }
+      // if (!parse_expr(job, &subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr, 0)) {
+      //   return false;
+      // }
 
       args.push_back(expr);
       rectified_template += "{}";
@@ -194,7 +194,7 @@ static bool parse_fstring(quixcc_cc_job_t &job, FString **node, Scanner *scanner
   }
 
   if (state != 0) {
-    LOG(ERROR) << "Unbalanced braces in f-string" << tok << std::endl;
+    /// TODO: Write the ERROR message
     return false;
   }
 
@@ -203,11 +203,11 @@ static bool parse_fstring(quixcc_cc_job_t &job, FString **node, Scanner *scanner
   return true;
 }
 
-/// TODO: Operator precedence
-/// TODO: Operator associativity
+/// TODO: qlex_op_t precedence
+/// TODO: qlex_op_t associativity
 
-bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
-                                         std::set<Token> terminators, Expr **node, size_t depth) {
+bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> terminators,
+                                Expr **node, size_t depth) {
   /**
    * @brief
    */
@@ -215,9 +215,9 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
   std::stack<Expr *> stack;
 
   while (true) {
-    Token tok = scanner->peek();
+    qlex_tok_t tok = qlex_peek(rd);
 
-    if (tok.is(tEofF)) {
+    if (tok.is(qEofF)) {
       /*  */
       return false;
     }
@@ -233,7 +233,7 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
       }
 
       if (stack.size() != 1) {
-        LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+        /// TODO: Write the ERROR message
         return false;
       }
 
@@ -242,10 +242,10 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
       return true;
     }
 
-    scanner->next();
+    qlex_next(rd);
 
-    switch (tok.type()) {
-      case tIntL: {
+    switch (tok.ty) {
+      case qIntL: {
         /**
          * @brief
          */
@@ -253,7 +253,7 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
         stack.push(ConstInt::get(tok.as_string()));
         continue;
       }
-      case tNumL: {
+      case qNumL: {
         /**
          * @brief
          */
@@ -261,7 +261,7 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
         stack.push(ConstFloat::get(tok.as_string()));
         continue;
       }
-      case tText: {
+      case qText: {
         /**
          * @brief
          */
@@ -269,7 +269,7 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
         stack.push(ConstString::get(tok.as_string()));
         continue;
       }
-      case tChar: {
+      case qChar: {
         /**
          * @brief
          */
@@ -277,34 +277,34 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
         stack.push(ConstChar::get(tok.as_string()));
         continue;
       }
-      case tKeyW: {
-        switch (tok.as<Keyword>()) {
-          case Keyword::True: {
+      case qKeyW: {
+        switch (tok.as<qlex_key_t>()) {
+          case qKTrue: {
             stack.push(ConstBool::get(true));
             continue;
           }
-          case Keyword::False: {
+          case qKFalse: {
             stack.push(ConstBool::get(false));
             continue;
           }
-          case Keyword::Null: {
+          case qKNull: {
             stack.push(ConstNull::get());
             continue;
           }
-          case Keyword::Undef: {
+          case qKUndef: {
             stack.push(ConstUndef::get());
             continue;
           }
-          case Keyword::Fn: {
+          case qKFn: {
             Stmt *f = nullptr;
-            if (!parse_function(job, scanner, &f)) {
+            if (!parse_function(job, rd, &f)) {
               return false;
             }
             StmtExpr *adapter = StmtExpr::get(f);
 
-            if (scanner->peek().is<Punctor>(OpenParen)) {
-              scanner->next();
-              Call *fcall = parse_function_call(job, adapter, scanner, depth);
+            if (qlex_peek(rd).is<qPuncLPar>()) {
+              qlex_next(rd);
+              Call *fcall = parse_function_call(job, adapter, rd, depth);
 
               if (fcall == nullptr) {
                 return false;
@@ -316,9 +316,9 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
             stack.push(adapter);
             continue;
           }
-          case Keyword::FString: {
+          case qKFString: {
             FString *f = nullptr;
-            if (!parse_fstring(job, &f, scanner, depth)) {
+            if (!parse_fstring(job, &f, rd, depth)) {
               return false;
             }
             stack.push(f);
@@ -326,18 +326,17 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
           }
 
           default: {
-            LOG(ERROR) << "Unexpected keyword in non-constant expression '{}'" << tok.serialize()
-                       << tok << std::endl;
+            /// TODO: Write the ERROR message
             return false;
           }
         }
         break;
       }
-      case tPunc: {
-        switch (tok.as<Punctor>()) {
-          case OpenParen: {
+      case qPunc: {
+        switch (tok.as<qlex_punc_t>()) {
+          case qPuncLPar: {
             if (!stack.empty() && stack.top()->is<Field>()) {
-              Call *fcall = parse_function_call(job, stack.top(), scanner, depth);
+              Call *fcall = parse_function_call(job, stack.top(), rd, depth);
 
               if (fcall == nullptr) {
                 return false;
@@ -349,16 +348,16 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
             }
 
             Expr *expr = nullptr;
-            if (!parse_expr(job, scanner, terminators, &expr, depth + 1)) {
+            if (!parse_expr(job, rd, terminators, &expr, depth + 1)) {
               return false;
             }
 
             stack.push(expr);
             continue;
           }
-          case CloseParen: {
+          case qPuncRPar: {
             if (stack.size() != 1) {
-              LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+              /// TODO: Write the ERROR message
               return false;
             }
 
@@ -366,73 +365,74 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
             stack.pop();
             return true;
           }
-          case OpenBrace: {
+          case qPuncLCur: {
             ListData elements;
             while (true) {
-              tok = scanner->peek();
-              if (tok == Token(tPunc, CloseBrace)) {
-                scanner->next();
+              tok = qlex_peek(rd);
+              if (tok.is<qPuncRCur>()) {
+                qlex_next(rd);
                 break;
               }
 
               Expr *key = nullptr, *value = nullptr;
-              if (!parse_expr(job, scanner, {Token(tPunc, Colon)}, &key, depth + 1)) {
+              if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncColn)}, &key, depth + 1)) {
                 return false;
               }
 
-              tok = scanner->next();
-              if (!tok.is<Punctor>(Colon)) {
-                LOG(ERROR) << "Expected a colon in associative array" << tok << std::endl;
+              tok = qlex_next(rd);
+              if (!tok.is<qPuncColn>()) {
+                /// TODO: Write the ERROR message
                 return false;
               }
 
-              if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseBrace)}, &value,
-                              depth + 1)) {
+              if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
+                              &value, depth + 1)) {
                 return false;
               }
 
               elements.push_back(Assoc::get(key, value));
 
-              tok = scanner->peek();
-              if (tok.is<Punctor>(Comma)) {
-                scanner->next();
+              tok = qlex_peek(rd);
+              if (tok.is<qPuncComa>()) {
+                qlex_next(rd);
               }
             }
 
             stack.push(List::get(elements));
             continue;
           }
-          case OpenBracket: {
+          case qPuncLBrk: {
             if (stack.empty()) {
               ListData elements;
               while (true) {
-                tok = scanner->peek();
-                if (tok == Token(tPunc, CloseBracket)) {
-                  scanner->next();
+                tok = qlex_peek(rd);
+                if (tok.is<qPuncRBrk>()) {
+                  qlex_next(rd);
                   stack.push(List::get(elements));
                   break;
                 }
 
                 Expr *element = nullptr;
-                if (!parse_expr(
-                        job, scanner,
-                        {Token(tPunc, Comma), Token(tPunc, Semicolon), Token(tPunc, CloseBracket)},
-                        &element, depth + 1)) {
+                if (!parse_expr(job, rd,
+                                {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
+                                 qlex_tok_t(qPunc, qPuncRBrk)},
+                                &element, depth + 1)) {
                   return false;
                 }
 
-                tok = scanner->peek();
-                if (tok.is<Punctor>(Semicolon)) {
-                  scanner->next();
+                tok = qlex_peek(rd);
+                if (tok.is<qPuncSemi>()) {
+                  qlex_next(rd);
 
                   Expr *count = nullptr;
-                  if (!parse_expr(job, scanner, {Token(tPunc, CloseBracket), Token(tPunc, Comma)},
+                  if (!parse_expr(job, rd,
+                                  {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)},
                                   &count, depth + 1)) {
                     return false;
                   }
 
                   if (!count->is<ConstInt>()) {
-                    LOG(ERROR) << "Expected an integer literal as array count" << tok << std::endl;
+                    /// TODO: Write the ERROR message
                     return false;
                   }
 
@@ -444,8 +444,8 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
                   elements.push_back(element);
                 }
 
-                if (tok.is<Punctor>(Comma)) {
-                  scanner->next();
+                if (tok.is<qPuncComa>()) {
+                  qlex_next(rd);
                 }
               }
 
@@ -453,28 +453,28 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
             }
 
             if (stack.size() != 1) {
-              LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+              /// TODO: Write the ERROR message
               return false;
             }
 
             Expr *index = nullptr, *left = stack.top();
             stack.pop();
 
-            if (!parse_expr(job, scanner, {Token(tPunc, CloseBracket), Token(tPunc, Colon)}, &index,
-                            depth + 1)) {
+            if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncColn)},
+                            &index, depth + 1)) {
               return false;
             }
 
-            tok = scanner->next();
-            if (tok.is<Punctor>(Colon)) {
+            tok = qlex_next(rd);
+            if (tok.is<qPuncColn>()) {
               Expr *end = nullptr;
-              if (!parse_expr(job, scanner, {Token(tPunc, CloseBracket)}, &end, depth + 1)) {
+              if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end, depth + 1)) {
                 return false;
               }
 
-              tok = scanner->next();
-              if (!tok.is<Punctor>(CloseBracket)) {
-                LOG(ERROR) << "Expected a closing bracket" << tok << std::endl;
+              tok = qlex_next(rd);
+              if (!tok.is<qPuncRBrk>()) {
+                /// TODO: Write the ERROR message
                 return false;
               }
 
@@ -482,40 +482,39 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
               continue;
             }
 
-            if (!tok.is<Punctor>(CloseBracket)) {
-              LOG(ERROR) << "Expected a closing bracket" << tok << std::endl;
+            if (!tok.is<qPuncRBrk>()) {
+              /// TODO: Write the ERROR message
               return false;
             }
 
-            tok = scanner->peek();
-            if (tok.is<Operator>(Increment)) {
+            tok = qlex_peek(rd);
+            if (tok.is<qOpInc>()) {
               PostUnaryExpr *p =
                   PostUnaryExpr::get(Index::get(left, index), PostUnaryOp::Increment);
               stack.push(p);
-              scanner->next();
+              qlex_next(rd);
               continue;
-            } else if (tok.is<Operator>(Decrement)) {
+            } else if (tok.is<qOpDec>()) {
               PostUnaryExpr *p =
                   PostUnaryExpr::get(Index::get(left, index), PostUnaryOp::Decrement);
               stack.push(p);
-              scanner->next();
+              qlex_next(rd);
               continue;
             }
 
             stack.push(Index::get(left, index));
             continue;
           }
-          case Comma: {
+          case qPuncComa: {
             if (stack.size() != 1) {
-              LOG(ERROR) << "Expected a single expression before sequence point" << tok
-                         << std::endl;
+              /// TODO: Write the ERROR message
               return false;
             }
 
             Expr *right = nullptr, *left = stack.top();
             stack.pop();
 
-            if (!parse_expr(job, scanner, terminators, &right, depth + 1)) {
+            if (!parse_expr(job, rd, terminators, &right, depth + 1)) {
               return false;
             }
 
@@ -523,40 +522,39 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
             continue;
           }
           default: {
-            LOG(ERROR) << "Unexpected token in non-constant expression '{}'" << tok.serialize()
-                       << tok << std::endl;
+            /// TODO: Write the ERROR message
             return false;
           } break;
         }
       }
-      case tOper: {
-        Operator op = tok.as<Operator>();
-        if (op == Dot) {
+      case qOper: {
+        qlex_op_t op = tok.as<qlex_op_t>();
+        if (op == qOpDot) {
           if (stack.size() != 1) {
-            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+            /// TODO: Write the ERROR message
             return false;
           }
 
           Expr *left = stack.top();
           stack.pop();
 
-          tok = scanner->next();
-          if (!tok.is(tName)) {
-            LOG(ERROR) << "Expected an identifier in member access" << tok << std::endl;
+          tok = qlex_next(rd);
+          if (!tok.is(qName)) {
+            /// TODO: Write the ERROR message
             return false;
           }
 
           std::string ident = tok.as_string();
-          tok = scanner->peek();
-          if (tok.is<Operator>(Increment)) {
+          tok = qlex_peek(rd);
+          if (tok.is<qOpInc>()) {
             PostUnaryExpr *p = PostUnaryExpr::get(Field::get(left, ident), PostUnaryOp::Increment);
             stack.push(p);
-            scanner->next();
+            qlex_next(rd);
             continue;
-          } else if (tok.is<Operator>(Decrement)) {
+          } else if (tok.is<qOpDec>()) {
             PostUnaryExpr *p = PostUnaryExpr::get(Field::get(left, ident), PostUnaryOp::Decrement);
             stack.push(p);
-            scanner->next();
+            qlex_next(rd);
             continue;
           }
 
@@ -565,14 +563,14 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
         }
         Expr *expr = nullptr;
 
-        if (op == As) {
+        if (op == qOpAs) {
           if (stack.size() != 1) {
-            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+            /// TODO: Write the ERROR message
             return false;
           }
 
           Type *type = nullptr;
-          if (!parse_type(job, scanner, &type)) {
+          if (!parse_type(job, rd, &type)) {
             return false;
           }
 
@@ -582,14 +580,14 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
           continue;
         }
 
-        if (op == BitcastAs) {
+        if (op == qOpBitcastAs) {
           if (stack.size() != 1) {
-            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+            /// TODO: Write the ERROR message
             return false;
           }
 
           Type *type = nullptr;
-          if (!parse_type(job, scanner, &type)) {
+          if (!parse_type(job, rd, &type)) {
             return false;
           }
 
@@ -599,14 +597,14 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
           continue;
         }
 
-        if (op == ReinterpretAs) {
+        if (op == qOpReinterpretAs) {
           if (stack.size() != 1) {
-            LOG(ERROR) << "Expected a single expression" << tok << std::endl;
+            /// TODO: Write the ERROR message
             return false;
           }
 
           Type *type = nullptr;
-          if (!parse_type(job, scanner, &type)) {
+          if (!parse_type(job, rd, &type)) {
             return false;
           }
 
@@ -617,7 +615,7 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
           continue;
         }
 
-        if (!parse_expr(job, scanner, terminators, &expr, depth + 1) || !expr) {
+        if (!parse_expr(job, rd, terminators, &expr, depth + 1) || !expr) {
           return false;
         }
 
@@ -630,32 +628,32 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
           stack.push(BinExpr::get(left, (BinOp)op, expr));
           continue;
         } else {
-          LOG(ERROR) << "Unexpected token {}" << tok.serialize() << tok << std::endl;
+          /// TODO: Write the ERROR message
           return false;
         }
         break;
       }
-      case tName: {
+      case qName: {
         std::string ident = tok.as_string();
-        if (scanner->peek().type() == tPunc && (scanner->peek()).as<Punctor>() == OpenParen) {
-          scanner->next();
+        if (qlex_peek(rd).ty == qPunc && (qlex_peek(rd)).as<qlex_punc_t>() == qPuncLPar) {
+          qlex_next(rd);
 
-          Call *fcall = parse_function_call(job, Ident::get(ident), scanner, depth);
+          Call *fcall = parse_function_call(job, Ident::get(ident), rd, depth);
           if (fcall == nullptr) {
             return false;
           }
 
           stack.push(fcall);
           continue;
-        } else if (scanner->peek().is<Operator>(Increment)) {
+        } else if (qlex_peek(rd).is<qOpInc>()) {
           PostUnaryExpr *p = PostUnaryExpr::get(Ident::get(ident), PostUnaryOp::Increment);
           stack.push(p);
-          scanner->next();
+          qlex_next(rd);
           continue;
-        } else if (scanner->peek().is<Operator>(Decrement)) {
+        } else if (qlex_peek(rd).is<qOpDec>()) {
           PostUnaryExpr *p = PostUnaryExpr::get(Ident::get(ident), PostUnaryOp::Decrement);
           stack.push(p);
-          scanner->next();
+          qlex_next(rd);
           continue;
         } else {
           stack.push(Ident::get(ident));
@@ -663,7 +661,7 @@ bool qparse::parser::parse_expr(quixcc_cc_job_t &job, Scanner *scanner,
         }
       }
       default: {
-        LOG(ERROR) << "Unexpected token {}" << tok.serialize() << tok << std::endl;
+        /// TODO: Write the ERROR message
         return false;
       }
     }

@@ -29,39 +29,37 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
 using namespace qparse::parser;
 
-bool qparse::parser::parse_typedef(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                            Stmt **node) {
-  Token tok = scanner->next();
-  if (!tok.is(tName)) {
-    LOG(ERROR) << core::feedback[TYPEDEF_EXPECTED_IDENTIFIER] << tok << std::endl;
+bool qparse::parser::parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_next(rd);
+  if (!tok.is(qName)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   std::string name = tok.as_string();
 
-  tok = scanner->next();
-  if (!tok.is<Operator>(OpAssign)) {
-    LOG(ERROR) << core::feedback[TYPEDEF_EXPECTED_ASSIGN] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qOpSet>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   Type *type = nullptr;
-  if (!parse_type(job, scanner, &type)) {
-    LOG(ERROR) << core::feedback[TYPEDEF_INVALID_TYPE] << name << tok << std::endl;
+  if (!parse_type(job, rd, &type)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Semicolon)) {
-    LOG(ERROR) << core::feedback[TYPEDEF_EXPECTED_SEMICOLON] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncSemi>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 

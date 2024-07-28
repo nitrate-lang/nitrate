@@ -29,83 +29,51 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
+#define __QPARSE_IMPL__
 
-#include "LibMacro.h"
-#include "parser/Parse.h"
+#include <Report.h>
+#include <quix-core/Error.h>
 
-bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
-  qlex_tok_t tok = qlex_next(rd);
-  if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
+#include <sstream>
+
+using namespace qparse::diag;
+
+thread_local DiagnosticManager *g_diag_mgr;
+
+DiagnosticManager::DiagnosticManager() { m_formatter = std::make_shared<ClangLikeFormatter>(); }
+
+DiagnosticManager::~DiagnosticManager() {}
+
+void DiagnosticManager::push(DiagMessage &&msg) { m_msgs.push_back(std::move(msg)); }
+
+size_t DiagnosticManager::render(DiagnosticMessageHandler handler,
+                                 const FormatOptions &options) const {
+  std::string out;
+
+  for (const auto &msg : m_msgs) {
+    m_formatter->format(msg, options, out);
+    handler(out.c_str());
   }
 
-  std::string name = tok.as_string();
+  return m_msgs.size();
+}
 
-  if (name.find("::") != std::string::npos) {
-    Stmt *sub = nullptr;
+void install_reference(DiagnosticManager *mgr) { g_diag_mgr = mgr; }
 
-    std::string subname = name.substr(0, name.find("::"));
+void syntax(const qlex_tok_t &tok, std::string_view msg) {
+  DiagMessage diag;
+  diag.msg = msg;
+  diag.loc = tok.loc;
+  diag.type = MessageType::Syntax;
 
-    qlex_push(rd, qlex_tok_t(rd, qName, name.substr(name.find("::") + 2)));
+  g_diag_mgr->push(std::move(diag));
+}
 
-    if (!parse_subsystem(job, rd, &sub)) return false;
+void ClangLikeFormatter::format(const DiagMessage &msg, const FormatOptions &options,
+                                std::string &out) {
+  std::stringstream ss;
 
-    Block *block = Block::get();
-    block->add_item(sub);
-
-    *node = SubsystemDecl::get(subname, block);
-
-    return true;
-  }
-
-  std::set<std::string> deps;
-
-  tok = qlex_peek(rd);
-
-  // check if : item1, item2, item3
-  if (tok.is<qPuncColn>()) {
-    qlex_next(rd);  // consume colon
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncLBrk>()) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
-    tok = qlex_next(rd);
-
-    if (!tok.is(qName)) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
-    deps.insert(tok.as_string());
-
-    tok = qlex_peek(rd);
-    while (tok.is<qPuncComa>()) {
-      qlex_next(rd);  // consume comma
-      tok = qlex_next(rd);
-      if (!tok.is(qName)) {
-        /// TODO: Write the ERROR message
-        return false;
-      }
-      deps.insert(tok.as_string());
-      tok = qlex_peek(rd);
-    }
-
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncRBrk>()) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
-  }
-
-  Block *block = nullptr;
-  if (!parse(job, rd, &block, true)) return false;
-
-  SubsystemDecl *sub = SubsystemDecl::get(name, block);
-  sub->add_tags(deps);
-
-  *node = sub;
-
-  return true;
+  /// TODO: Implement Clang-like diagnostic formatting
+  ss << "Format not implemented yet.";
+  out = ss.str();
 }

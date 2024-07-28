@@ -29,13 +29,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QUIXCC_INTERNAL
+#define __QUIX_IMPL__
 
 #include "LibMacro.h"
 #include "parser/Parse.h"
-#include <quixcc/core/Logger.h>
 
-using namespace libquixcc;
 using namespace qparse;
 using namespace qparse::parser;
 
@@ -50,54 +48,53 @@ struct GetPropState {
   size_t inline_ctr = 0;
 };
 
-static bool fn_get_property(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                            GetPropState &state) {
-  Token tok = scanner->peek();
+static bool fn_get_property(qparse_t &job, qlex_t *rd, GetPropState &state) {
+  qlex_tok_t tok = qlex_peek(rd);
 
-  if (tok.is<Keyword>(Keyword::Noexcept)) {
-    scanner->next();
+  if (tok.is<qKNoexcept>()) {
+    qlex_next(rd);
     state.noexcept_ctr++;
     return true;
   }
 
-  if (tok.is<Keyword>(Keyword::Foreign)) {
-    scanner->next();
+  if (tok.is<qKForeign>()) {
+    qlex_next(rd);
     state.foreign_ctr++;
     return true;
   }
 
-  if (tok.is<Keyword>(Keyword::Impure)) {
-    scanner->next();
+  if (tok.is<qKImpure>()) {
+    qlex_next(rd);
     state.impure_ctr++;
     return true;
   }
 
-  if (tok.is<Keyword>(Keyword::Tsafe)) {
-    scanner->next();
+  if (tok.is<qKTsafe>()) {
+    qlex_next(rd);
     state.tsafe_ctr++;
     return true;
   }
 
-  if (tok.is<Keyword>(Keyword::Pure)) {
-    scanner->next();
+  if (tok.is<qKPure>()) {
+    qlex_next(rd);
     state.pure_ctr++;
     return true;
   }
 
-  if (tok.is<Keyword>(Keyword::Quasipure)) {
-    scanner->next();
+  if (tok.is<qKQuasipure>()) {
+    qlex_next(rd);
     state.quasipure_ctr++;
     return true;
   }
 
-  if (tok.is<Keyword>(Keyword::Retropure)) {
-    scanner->next();
+  if (tok.is<qKRetropure>()) {
+    qlex_next(rd);
     state.retropure_ctr++;
     return true;
   }
 
-  if (tok.is<Keyword>(Keyword::Inline)) {
-    scanner->next();
+  if (tok.is<qKInline>()) {
+    qlex_next(rd);
     state.inline_ctr++;
     return true;
   }
@@ -105,42 +102,42 @@ static bool fn_get_property(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
   return false;
 }
 
-static bool parse_fn_parameter(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                               FuncParam &param) {
+static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
   /*
    <name> : <type> [?] [= <value>]
   */
 
-  auto tok = scanner->next();
+  auto tok = qlex_next(rd);
 
   std::string name;
-  if (!tok.is(tName)) {
-    LOG(ERROR) << core::feedback[FN_PARAM_EXPECTED_IDENTIFIER] << tok << std::endl;
+  if (!tok.is(qName)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   name = tok.as_string();
-  tok = scanner->next();
-  if (!tok.is<Punctor>(Colon)) {
-    LOG(ERROR) << core::feedback[FN_PARAM_EXPECTED_COLON] << tok << std::endl;
+  tok = qlex_next(rd);
+  if (!tok.is<qPuncColn>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
   Type *type = nullptr;
 
-  if (!parse_type(job, scanner, &type)) {
-    LOG(ERROR) << core::feedback[FN_PARAM_TYPE_ERR] << tok << std::endl;
+  if (!parse_type(job, rd, &type)) {
+    /// TODO: Write the ERROR message
     return false;
   }
 
-  tok = scanner->peek();
+  tok = qlex_peek(rd);
 
-  if (tok.is<Operator>(OpAssign)) {
-    scanner->next();
+  if (tok.is<qOpSet>()) {
+    qlex_next(rd);
 
     Expr *value = nullptr;
-    if (!parse_expr(job, scanner, {Token(tPunc, Comma), Token(tPunc, CloseParen)}, &value)) {
-      LOG(ERROR) << core::feedback[FN_PARAM_INIT_ERR] << tok << std::endl;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
+                    &value)) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
@@ -161,61 +158,60 @@ struct FunctionProperties {
   Purity _purity = Purity::Impure;
 };
 
-static FunctionProperties read_function_properties(quixcc_cc_job_t &job,
-                                                   libquixcc::Scanner *scanner) {
+static FunctionProperties read_function_properties(qparse_t &job, qlex_t *rd) {
   GetPropState state;
 
-  while (fn_get_property(job, scanner, state));
+  while (fn_get_property(job, rd, state));
 
   if (state.noexcept_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_NOEXCEPT_MULTIPLE] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
   if (state.foreign_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_FOREIGN_MULTIPLE] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
   if (state.impure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_IMPURE_MULTIPLE] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
   if (state.tsafe_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_TSAFE_MULTIPLE] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
   if (state.pure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_PURE_MULTIPLE] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
   if (state.quasipure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_QUASIPURE_MULTIPLE] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
   if (state.retropure_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_RETROPURE_MULTIPLE] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
   if (state.inline_ctr > 1) {
-    LOG(ERROR) << core::feedback[FN_INLINE_MULTIPLE] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
   bool partial_pure = state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
 
   if (partial_pure && state.impure_ctr) {
-    LOG(ERROR) << core::feedback[FN_PURE_IMPURE_MIX] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
   if (partial_pure && (state.pure_ctr + state.quasipure_ctr + state.retropure_ctr) != 1) {
-    LOG(ERROR) << core::feedback[FN_PURE_MIX] << scanner->peek() << std::endl;
+    /// TODO: Write the ERROR message
     return FunctionProperties();
   }
 
@@ -245,40 +241,39 @@ static FunctionProperties read_function_properties(quixcc_cc_job_t &job,
   return props;
 }
 
-bool qparse::parser::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *scanner,
-                                             Stmt **node) {
+bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   FnDecl *fndecl = FnDecl::get();
   FuncTy *ftype = FuncTy::get();
 
-  auto prop = read_function_properties(job, scanner);
+  auto prop = read_function_properties(job, rd);
 
-  Token tok = scanner->next();
+  qlex_tok_t tok = qlex_next(rd);
 
-  if (tok.is(tName)) {
+  if (tok.is(qName)) {
     fndecl->set_name(tok.as_string());
-    tok = scanner->next();
+    tok = qlex_next(rd);
   }
 
-  if (!tok.is<Punctor>(OpenParen)) {
-    LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_PAREN] << tok << std::endl;
+  if (!tok.is<qPuncLPar>()) {
+    /// TODO: Write the ERROR message
     return false;
   }
   bool is_variadic = false;
 
   while (1) {
-    tok = scanner->peek();
-    if (tok.is<Punctor>(CloseParen)) {
-      scanner->next();
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncRPar>()) {
+      qlex_next(rd);
       break;
     }
 
-    if (tok.is<Operator>(Ellipsis)) {
+    if (tok.is<qOpEllipsis>()) {
       is_variadic = true;
 
-      scanner->next();
-      tok = scanner->next();
-      if (!tok.is<Punctor>(CloseParen)) {
-        LOG(ERROR) << core::feedback[FN_EXPECTED_VARARG] << tok << std::endl;
+      qlex_next(rd);
+      tok = qlex_next(rd);
+      if (!tok.is<qPuncRPar>()) {
+        /// TODO: Write the ERROR message
         return false;
       }
 
@@ -286,38 +281,38 @@ bool qparse::parser::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *sc
     }
 
     FuncParam param;
-    if (!parse_fn_parameter(job, scanner, param)) {
-      LOG(ERROR) << core::feedback[FN_PARAM_PARSE_ERROR] << tok << std::endl;
+    if (!parse_fn_parameter(job, rd, param)) {
+      /// TODO: Write the ERROR message
       return false;
     }
 
     ftype->add_param(std::get<0>(param), std::get<1>(param), std::get<2>(param));
 
-    tok = scanner->peek();
-    if (tok.is<Punctor>(Comma)) {
-      scanner->next();
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncComa>()) {
+      qlex_next(rd);
       continue;
     }
   }
 
-  tok = scanner->peek();
+  tok = qlex_peek(rd);
   /// TODO: Implement function properties
 
-  if (tok.is<Punctor>(Semicolon)) {
+  if (tok.is<qPuncSemi>()) {
     ftype->set_variadic(is_variadic);
     ftype->set_foreign(prop._foreign);
     ftype->set_noexcept(prop._noexcept);
     fndecl->set_type(ftype);
-    scanner->next();
+    qlex_next(rd);
     *node = fndecl;
     return true;
   }
 
-  if (tok.is<Punctor>(Colon)) {
-    scanner->next();
+  if (tok.is<qPuncColn>()) {
+    qlex_next(rd);
     Type *type = nullptr;
 
-    if (!parse_type(job, scanner, &type)) return false;
+    if (!parse_type(job, rd, &type)) return false;
 
     ftype->set_return_ty(type);
     ftype->set_variadic(is_variadic);
@@ -325,21 +320,21 @@ bool qparse::parser::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *sc
     ftype->set_noexcept(prop._noexcept);
     fndecl->set_type(ftype);
 
-    tok = scanner->peek();
-    if (tok.is<Punctor>(Semicolon)) {
-      scanner->next();
+    tok = qlex_peek(rd);
+    if (tok.is<qPuncSemi>()) {
+      qlex_next(rd);
       *node = fndecl;
       return true;
     }
   }
 
-  if (tok.is<Operator>(Arrow)) {
-    scanner->next();
+  if (tok.is<qOpArrow>()) {
+    qlex_next(rd);
 
     // auto fnbody = std::make_shared<Block>();
     Block *fnbody = nullptr;
 
-    if (!parse(job, scanner, &fnbody, false, true)) return false;
+    if (!parse(job, rd, &fnbody, false, true)) return false;
 
     if (!fndecl->get_type()) {
       ftype->set_return_ty(VoidTy::get());
@@ -353,46 +348,46 @@ bool qparse::parser::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *sc
 
     *node = fndecl;
     return true;
-  } else if (tok.is<Punctor>(OpenBrace)) {
+  } else if (tok.is<qPuncLCur>()) {
     Block *fnbody = nullptr;
 
-    if (!parse(job, scanner, &fnbody)) {
+    if (!parse(job, rd, &fnbody)) {
       return false;
     }
 
-    tok = scanner->peek();
+    tok = qlex_peek(rd);
     Expr *req_in = nullptr, *req_out = nullptr;
-    if (tok.is<Keyword>(Keyword::Req)) {
+    if (tok.is<qKReq>()) {
       /* Parse constraint block */
-      scanner->next();
+      qlex_next(rd);
 
-      tok = scanner->next();
-      if (!tok.is<Punctor>(OpenBrace)) {
-        LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_BRACE] << tok << std::endl;
+      tok = qlex_next(rd);
+      if (!tok.is<qPuncLCur>()) {
+        /// TODO: Write the ERROR message
         return false;
       }
 
       while (true) {
-        tok = scanner->peek();
-        if (tok.is<Punctor>(CloseBrace)) {
-          scanner->next();
+        tok = qlex_peek(rd);
+        if (tok.is<qPuncRCur>()) {
+          qlex_next(rd);
           break;
         }
 
         Expr *expr = nullptr;
-        scanner->next();
-        if (tok.is<Operator>(Operator::In)) {
+        qlex_next(rd);
+        if (tok.is<qOpIn>()) {
           if (!req_in) {
             req_in = ConstBool::get(true);
           }
 
-          if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &expr)) {
+          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
             return false;
           }
 
-          tok = scanner->next();
-          if (!tok.is<Punctor>(Semicolon)) {
-            LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok << std::endl;
+          tok = qlex_next(rd);
+          if (!tok.is<qPuncSemi>()) {
+            /// TODO: Write the ERROR message
             return false;
           }
 
@@ -400,18 +395,18 @@ bool qparse::parser::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *sc
           expr = UnaryExpr::get(UnaryOp::LogicalNot, expr);
 
           req_in = BinExpr::get(req_in, BinOp::LogicalAnd, expr);
-        } else if (tok.is<Operator>(Operator::Out)) {
+        } else if (tok.is<qOpOut>()) {
           if (!req_out) {
             req_out = ConstBool::get(true);
           }
 
-          if (!parse_expr(job, scanner, {Token(tPunc, Semicolon)}, &expr)) {
+          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
             return false;
           }
 
-          tok = scanner->next();
-          if (!tok.is<Punctor>(Semicolon)) {
-            LOG(ERROR) << core::feedback[FN_EXPECTED_SEMICOLON] << tok << std::endl;
+          tok = qlex_next(rd);
+          if (!tok.is<qPuncSemi>()) {
+            /// TODO: Write the ERROR message
             return false;
           }
 
@@ -419,46 +414,46 @@ bool qparse::parser::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *sc
           expr = UnaryExpr::get(UnaryOp::LogicalNot, expr);
           req_out = BinExpr::get(req_out, BinOp::LogicalAnd, expr);
         } else {
-          LOG(ERROR) << core::feedback[FN_EXPECTED_IN_OUT] << tok << std::endl;
+          /// TODO: Write the ERROR message
           return false;
         }
       }
 
-      tok = scanner->peek();
+      tok = qlex_peek(rd);
     }
 
     std::set<std::string> implements;
 
-    if (!job.has("-fno-auto-impl", "function")) {
+    if (!job.conf->has("-fno-auto-impl", "function")) {
       implements.insert("auto");
     }
 
-    if (tok.is<Keyword>(Keyword::Impl)) {
-      scanner->next();
-      tok = scanner->next();
-      if (!tok.is<Punctor>(OpenBracket)) {
-        LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_OPEN_BRACKET] << tok << std::endl;
+    if (tok.is<qKImpl>()) {
+      qlex_next(rd);
+      tok = qlex_next(rd);
+      if (!tok.is<qPuncLBrk>()) {
+        /// TODO: Write the ERROR message
         return false;
       }
 
       while (true) {
-        tok = scanner->next();
-        if (tok.is<Punctor>(CloseBracket)) break;
+        tok = qlex_next(rd);
+        if (tok.is<qPuncRBrk>()) break;
 
-        if (!tok.is(tName)) {
-          LOG(ERROR) << core::feedback[FN_DEF_EXPECTED_IDENTIFIER] << tok << std::endl;
+        if (!tok.is(qName)) {
+          /// TODO: Write the ERROR message
           return false;
         }
 
         implements.insert(tok.as_string());
 
-        tok = scanner->peek();
-        if (tok.is<Punctor>(Comma)) {
-          scanner->next();
+        tok = qlex_peek(rd);
+        if (tok.is<qPuncComa>()) {
+          qlex_next(rd);
         }
       }
 
-      tok = scanner->peek();
+      tok = qlex_peek(rd);
     }
 
     if (!fndecl->get_type()) {
@@ -475,7 +470,7 @@ bool qparse::parser::parse_function(quixcc_cc_job_t &job, libquixcc::Scanner *sc
     *node = fndecl;
     return true;
   } else {
-    LOG(ERROR) << core::feedback[FN_EXPECTED_OPEN_BRACE] << tok << std::endl;
+    /// TODO: Write the ERROR message
     return false;
   }
 }

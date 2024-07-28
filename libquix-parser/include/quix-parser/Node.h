@@ -165,6 +165,7 @@ typedef struct qparse_node_t qparse_node_t;
 #if (defined(__cplusplus) && defined(QPARSE_USE_CPP_API)) || defined(__QPARSE_IMPL__)
 
 #include <quix-core/Arena.h>
+#include <quix-core/Error.h>
 
 #include <cassert>
 #include <iostream>
