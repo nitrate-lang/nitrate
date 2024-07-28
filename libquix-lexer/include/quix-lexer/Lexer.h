@@ -32,14 +32,14 @@
 #ifndef __QUIX_LEXER_LEX_H__
 #define __QUIX_LEXER_LEX_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <quix-lexer/Token.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct qlex_impl_t;
 typedef struct qlex_impl_t qlex_impl_t;

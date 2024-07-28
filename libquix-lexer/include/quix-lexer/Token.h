@@ -184,16 +184,22 @@ typedef enum qlex_key_t {
 } __attribute__((packed)) qlex_key_t;
 
 typedef struct qlex_loc_t {
-  uint32_t idx; /* Index into internal data structure */
+  uint32_t idx : 24;
+
+  qlex_loc_t(uint32_t idx = 0) : idx(idx) {}
 } __attribute__((packed)) qlex_loc_t;
 
+#if defined(__cplusplus) && defined(__QUIX_IMPL__)
+}
+
+#include <type_traits>
 typedef struct qlex_tok_t {
   /* Token type */
   qlex_ty_t ty : 4;
 
   /* Location of the token in the source code. */
   /* The token size will be calculated as needed. */
-  uint32_t src_idx : 24;
+  qlex_loc_t loc;
 
   /* Token data */
   union {
@@ -203,20 +209,67 @@ typedef struct qlex_tok_t {
     uint32_t str_idx;
   } v;
 
-#if defined(__cplusplus) && defined(__QUIX_LEXER_IMPL__)
-  qlex_tok_t() : ty(qEofF), src_idx(0) {}
-  qlex_tok_t(qlex_ty_t ty, uint32_t src_idx, qlex_punc_t punc)
-      : ty(ty), src_idx(src_idx), v{.punc = punc} {}
-  qlex_tok_t(qlex_ty_t ty, uint32_t src_idx, qlex_op_t op)
-      : ty(ty), src_idx(src_idx), v{.op = op} {}
-  qlex_tok_t(qlex_ty_t ty, uint32_t src_idx, qlex_key_t key)
-      : ty(ty), src_idx(src_idx), v{.key = key} {}
-  qlex_tok_t(qlex_ty_t ty, uint32_t src_idx, uint32_t str_idx)
-      : ty(ty), src_idx(src_idx), v{.str_idx = str_idx} {}
+  qlex_tok_t() : ty(qEofF), loc{} {}
+  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, uint32_t src_idx = 0)
+      : ty(ty), loc(src_idx), v{.punc = punc} {}
+  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, uint32_t src_idx = 0)
+      : ty(ty), loc(src_idx), v{.op = op} {}
+  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t src_idx = 0)
+      : ty(ty), loc(src_idx), v{.key = key} {}
+  qlex_tok_t(qlex_ty_t ty, uint32_t str_idx, uint32_t src_idx = 0)
+      : ty(ty), loc(src_idx), v{.str_idx = str_idx} {}
   static qlex_tok_t err(uint32_t src_idx) { return qlex_tok_t(qErro, src_idx, 0); }
   static qlex_tok_t eof(uint32_t src_idx) { return qlex_tok_t(qEofF, src_idx, 0); }
-#endif
+
+  template <typename T>
+  T as() const {
+    if constexpr (std::is_same_v<T, qlex_punc_t>) {
+      return v.punc;
+    } else if constexpr (std::is_same_v<T, qlex_key_t>) {
+      return v.key;
+    } else if constexpr (std::is_same_v<T, qlex_op_t>) {
+      return v.op;
+    }
+
+    static_assert(std::is_same_v<T, T>, "Invalid type");
+  }
+
+  inline bool is(qlex_ty_t val) const { return ty == val; }
+
+  template <auto V>
+  bool is() const {
+    if constexpr (std::is_same_v<decltype(V), qlex_key_t>) {
+      return ty == qKeyW && as<qlex_key_t>() == V;
+    } else if constexpr (std::is_same_v<decltype(V), qlex_punc_t>) {
+      return ty == qPunc && as<qlex_punc_t>() == V;
+    } else if constexpr (std::is_same_v<decltype(V), qlex_op_t>) {
+      return ty == qOper && as<qlex_op_t>() == V;
+    }
+
+    static_assert(std::is_same_v<decltype(V), decltype(V)>, "Invalid type");
+  }
 } __attribute__((packed)) qlex_tok_t;
+extern "C" {
+#else
+typedef struct qlex_tok_t {
+  /* Token type */
+  qlex_ty_t ty : 4;
+
+  /* Location of the token in the source code. */
+  /* The token size will be calculated as needed. */
+  qlex_loc_t loc;
+
+  /* Token data */
+  union {
+    qlex_punc_t punc;
+    qlex_op_t op;
+    qlex_key_t key;
+    uint32_t str_idx;
+  } v;
+} __attribute__((packed)) qlex_tok_t;
+#endif
+
+#define QLEX_TOK_SIZE (sizeof(qlex_tok_t))
 
 #ifdef __cplusplus
 }

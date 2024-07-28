@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_LEXER_IMPL__
+#define __QUIX_IMPL__
 
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>
@@ -1076,7 +1076,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           /* Check for f-string */
           if (ibuf == "f" && c == '"') {
             m_pushback.push_back(c);
-            return qlex_tok_t(qKeyW, off(), qKFString);
+            return qlex_tok_t(qKeyW, qKFString, off());
           }
 
           /* We overshot; this must be a punctor ':' */
@@ -1090,14 +1090,14 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           /* Determine if it's a keyword or an identifier */
           for (const auto &[left, right] : qlex::keywords) {
             if (ibuf == left) {
-              return qlex_tok_t(qKeyW, off(), right);
+              return qlex_tok_t(qKeyW, right, off());
             }
           }
 
           /* Check if it's an operator */
           for (const auto &[left, right] : qlex::word_operators) {
             if (ibuf == left) {
-              return qlex_tok_t(qOper, off(), right);
+              return qlex_tok_t(qOper, right, off());
             }
           }
 
@@ -1107,7 +1107,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           }
 
           /* Return the identifier */
-          return qlex_tok_t(qName, off(), m_holdings.retain(ibuf));
+          return qlex_tok_t(qName, m_holdings.retain(ibuf), off());
         }
         case LexState::Integer: {
           qlex::num_buf_t nbuf;
@@ -1161,7 +1161,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           std::string norm;
           if ((type = check_number_literal_type(nbuf)) == NumType::Floating) {
             if (canonicalize_float(nbuf, norm)) {
-              return qlex_tok_t(qNumL, off(), m_holdings.retain(std::move(norm)));
+              return qlex_tok_t(qNumL, m_holdings.retain(std::move(norm)), off());
             } else {
               goto error_0;
             }
@@ -1174,7 +1174,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
           /* Canonicalize the number */
           if (canonicalize_number(nbuf, norm, type)) {
-            return qlex_tok_t(qIntL, off(), m_holdings.retain(std::move(norm)));
+            return qlex_tok_t(qIntL, m_holdings.retain(std::move(norm)), off());
           }
 
           /* Invalid number */
@@ -1189,7 +1189,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             continue;
           } else { /* Divide operator */
             m_pushback.push_back(c);
-            return qlex_tok_t(qOper, off(), qOpSlash);
+            return qlex_tok_t(qOper, qOpSlash, off());
           }
         }
         case LexState::CommentSingleLine: {
@@ -1198,7 +1198,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             c = getc();
           }
 
-          return qlex_tok_t(qNote, off(), m_holdings.retain(std::move(buf)));
+          return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), off());
         }
         case LexState::CommentMultiLine: {
           size_t level = 1;
@@ -1220,7 +1220,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
               if (tmp == '/') {
                 level--;
                 if (level == 0) {
-                  return qlex_tok_t(qNote, off(), m_holdings.retain(std::move(buf)));
+                  return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), off());
                 } else {
                   buf += "*";
                   buf += tmp;
@@ -1306,9 +1306,9 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
           /* Character or string */
           if (buf.front() == '\'' && buf.size() == 2) {
-            return qlex_tok_t(qChar, off(), m_holdings.retain(std::string(1, buf[1])));
+            return qlex_tok_t(qChar, m_holdings.retain(std::string(1, buf[1])), off());
           } else {
-            return qlex_tok_t(qText, off(), m_holdings.retain(buf.substr(1, buf.size() - 1)));
+            return qlex_tok_t(qText, m_holdings.retain(buf.substr(1, buf.size() - 1)), off());
           }
         }
         case LexState::MacroStart: {
@@ -1341,12 +1341,12 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
               if (state_parens == 0) {
                 buf += ')';
-                return qlex_tok_t(qMacr, off(), m_holdings.retain(std::move(buf)));
+                return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), off());
               }
             }
 
             if (c == '\n') {
-              return qlex_tok_t(qMacr, off(), m_holdings.retain(std::move(buf)));
+              return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), off());
             }
 
             buf += c;
@@ -1364,7 +1364,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             }
 
             if (state_parens == 0) {
-              return qlex_tok_t(qMacB, off(), m_holdings.retain(std::move(buf)));
+              return qlex_tok_t(qMacB, m_holdings.retain(std::move(buf)), off());
             }
 
             buf += c;
@@ -1379,7 +1379,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             for (const auto &[left, right] : qlex::punctuation) {
               if (left == buf) {
                 m_pushback.push_back(c);
-                return qlex_tok_t(qPunc, off(), right);
+                return qlex_tok_t(qPunc, right, off());
               }
             }
           }
@@ -1427,7 +1427,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
           m_pushback.push_back(buf.back());
           m_pushback.push_back(c);
-          return qlex_tok_t(qOper, off(), qlex::operators.left.at(buf.substr(0, buf.size() - 1)));
+          return qlex_tok_t(qOper, qlex::operators.left.at(buf.substr(0, buf.size() - 1)), off());
         }
       }
     }
