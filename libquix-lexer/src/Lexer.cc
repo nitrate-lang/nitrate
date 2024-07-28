@@ -391,6 +391,7 @@ class qlex_impl_t final {
 
   std::array<qlex_tok_t, TOKEN_BUF_SIZE> m_tokens;
   size_t m_tok_pos;
+  std::vector<qlex_tok_t> m_undo;
 
   std::deque<char> m_pushback;
   std::array<char, GETC_BUFFER_SIZE> m_buf;
@@ -435,6 +436,9 @@ public:
   inline const StringRetainer &Strings() const { return m_holdings; }
 
   qlex_tok_t next();
+
+  void undo(qlex_tok_t tok) { m_undo.push_back(tok); }
+  uint32_t save_userstring(std::string_view str) { return m_holdings.retain(str); }
 };
 
 static qlex_tok_t _impl_next(qlex_t *self) {
@@ -459,6 +463,8 @@ static qlex_tok_t _impl_peek(qlex_t *self) {
   return self->cur;
 }
 
+static void _impl_push(qlex_t *self, const qlex_tok_t *tok) { self->impl->undo(*tok); }
+
 static void _impl_collect(qlex_t *self, const qlex_tok_t *tok) {
   (void)self;
   (void)tok;
@@ -474,6 +480,7 @@ LIB_EXPORT qlex_t *qlex_new(FILE *file) {
   lexer->impl = new qlex_impl_t(file);
   lexer->next = _impl_next;
   lexer->peek = _impl_peek;
+  lexer->push = _impl_push;
   lexer->collect = _impl_collect;
   lexer->destruct = _impl_destruct;
   lexer->cur.ty = qErro;
@@ -683,6 +690,12 @@ LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok) {
   }
 }
 
+qlex_tok_t::qlex_tok_t(qlex_t *lexer, qlex_ty_t ty, std::string_view data, uint32_t src_idx) {
+  this->ty = ty;
+  this->loc.idx = src_idx;
+  this->v.str_idx = lexer->impl->save_userstring(data);
+}
+
 ///============================================================================///
 
 char qlex_impl_t::getc() {
@@ -716,6 +729,12 @@ char qlex_impl_t::getc() {
 }
 
 qlex_tok_t qlex_impl_t::next() {
+  if (!m_undo.empty()) {
+    qlex_tok_t tok = m_undo.back();
+    m_undo.pop_back();
+    return tok;
+  }
+
   if (m_tok_pos >= TOKEN_BUF_SIZE) [[unlikely]] {
     refill_buffer();
     m_tok_pos = 0;

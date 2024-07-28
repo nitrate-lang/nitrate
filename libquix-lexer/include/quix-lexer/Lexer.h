@@ -48,6 +48,7 @@ struct qlex_t;
 typedef qlex_tok_t (*qlex_get_fn)(struct qlex_t *self);
 typedef void (*qlex_collect_fn)(struct qlex_t *self, const qlex_tok_t *tok);
 typedef void (*qlex_free_fn)(struct qlex_t *self);
+typedef void (*qlex_push_fn)(struct qlex_t *self, const qlex_tok_t *tok);
 
 #define QLEX_FLAG_NONE 0
 #define QLEX_NO_COMMENTS 0x01
@@ -56,6 +57,7 @@ typedef struct qlex_t {
   qlex_impl_t *impl;
   qlex_get_fn next;
   qlex_get_fn peek;
+  qlex_push_fn push;
   qlex_collect_fn collect;
   qlex_free_fn destruct;
   qlex_tok_t cur;
@@ -144,6 +146,15 @@ static inline qlex_tok_t qlex_next(qlex_t *lexer) { return lexer->next(lexer); }
  * @note Will not consume the token.
  */
 static inline qlex_tok_t qlex_peek(qlex_t *lexer) { return lexer->peek(lexer); }
+
+/**
+ * @brief Push a token back into the lexer.
+ *
+ * @param lexer Lexer context.
+ * @param tok Token to push back.
+ * @note This function is thread-safe.
+ */
+static inline void qlex_push(qlex_t *lexer, qlex_tok_t tok) { lexer->push(lexer, &tok); }
 
 /**
  * @brief Get the string representation of a token type.

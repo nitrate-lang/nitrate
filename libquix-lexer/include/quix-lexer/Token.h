@@ -192,7 +192,12 @@ typedef struct qlex_loc_t {
 #if defined(__cplusplus) && defined(__QUIX_IMPL__)
 }
 
+#include <stdexcept>
+#include <string>
 #include <type_traits>
+
+struct qlex_t;
+
 typedef struct qlex_tok_t {
   /* Token type */
   qlex_ty_t ty : 4;
@@ -218,6 +223,8 @@ typedef struct qlex_tok_t {
       : ty(ty), loc(src_idx), v{.key = key} {}
   qlex_tok_t(qlex_ty_t ty, uint32_t str_idx, uint32_t src_idx = 0)
       : ty(ty), loc(src_idx), v{.str_idx = str_idx} {}
+  qlex_tok_t(struct qlex_t *lexer, qlex_ty_t ty, std::string_view data, uint32_t src_idx = 0);
+
   static qlex_tok_t err(uint32_t src_idx) { return qlex_tok_t(qErro, src_idx, 0); }
   static qlex_tok_t eof(uint32_t src_idx) { return qlex_tok_t(qEofF, src_idx, 0); }
 
@@ -247,6 +254,16 @@ typedef struct qlex_tok_t {
     }
 
     static_assert(std::is_same_v<decltype(V), decltype(V)>, "Invalid type");
+  }
+
+  std::string as_string() const { throw std::runtime_error("Not implemented"); }
+
+  bool operator<(const qlex_tok_t &rhs) const {
+    if (ty != rhs.ty) return ty < rhs.ty;
+    if (loc.idx != rhs.loc.idx) return loc.idx < rhs.loc.idx;
+    if (v.str_idx != rhs.v.str_idx) return v.str_idx < rhs.v.str_idx;
+
+    return false;
   }
 } __attribute__((packed)) qlex_tok_t;
 extern "C" {
