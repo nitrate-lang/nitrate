@@ -60,13 +60,13 @@ namespace libquixcc::quixcc {
 
   constexpr uint64_t JOB_MAGIC = 0x32b287410bbef790;
 
-} // namespace libquixcc::quixcc
+}  // namespace libquixcc::quixcc
 
 namespace libquixcc::quixcc {
   extern thread_local uint8_t g_target_word_size;
   extern std::atomic<uint64_t> g_num_of_contexts;
   extern std::mutex g_library_lock;
-} // namespace libquixcc::quixcc
+}  // namespace libquixcc::quixcc
 
 struct quixcc_cc_job_t {
   volatile uint64_t m_magic;
@@ -108,19 +108,17 @@ struct quixcc_cc_job_t {
 
   bool has(std::string_view name, std::string_view value = "") const {
     for (const auto &arg : m_argset) {
-      if (arg.first == name && (value.empty() || arg.second == value))
-        return true;
+      if (arg.first == name && (value.empty() || arg.second == value)) return true;
     }
     return false;
   }
 
   std::string_view get(std::string_view name) const {
     for (const auto &arg : m_argset) {
-      if (arg.first == name)
-        return arg.second;
+      if (arg.first == name) return arg.second;
     }
     return "";
   }
 };
 
-#endif // __QUIXCC_CORE_QUIXJOB_H__
+#endif  // __QUIXCC_CORE_QUIXJOB_H__

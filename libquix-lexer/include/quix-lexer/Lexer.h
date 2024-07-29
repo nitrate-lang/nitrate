@@ -212,7 +212,8 @@ const char *qlex_opstr(qlex_op_t op);
 const char *qlex_kwstr(qlex_key_t kw);
 const char *qlex_punctstr(qlex_punc_t punct);
 
-void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, uint32_t src_idx, qlex_tok_t *out);
+void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, uint32_t src_idx,
+                      qlex_tok_t *out);
 
 #ifdef __cplusplus
 }

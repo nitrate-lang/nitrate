@@ -58,11 +58,12 @@ static void cpuid(uint32_t out[4], uint32_t id) {
 #if defined(_MSC_VER)
   __cpuid((int *)out, id);
 #elif defined(__i386__) || defined(_M_IX86)
-  __asm__ __volatile__("movl %%ebx, %1\n"
-                       "cpuid\n"
-                       "xchgl %1, %%ebx\n"
-                       : "=a"(out[0]), "=r"(out[1]), "=c"(out[2]), "=d"(out[3])
-                       : "a"(id));
+  __asm__ __volatile__(
+      "movl %%ebx, %1\n"
+      "cpuid\n"
+      "xchgl %1, %%ebx\n"
+      : "=a"(out[0]), "=r"(out[1]), "=c"(out[2]), "=d"(out[3])
+      : "a"(id));
 #else
   __asm__ __volatile__("cpuid\n"
                        : "=a"(out[0]), "=b"(out[1]), "=c"(out[2]), "=d"(out[3])
@@ -74,11 +75,12 @@ static void cpuidex(uint32_t out[4], uint32_t id, uint32_t sid) {
 #if defined(_MSC_VER)
   __cpuidex((int *)out, id, sid);
 #elif defined(__i386__) || defined(_M_IX86)
-  __asm__ __volatile__("movl %%ebx, %1\n"
-                       "cpuid\n"
-                       "xchgl %1, %%ebx\n"
-                       : "=a"(out[0]), "=r"(out[1]), "=c"(out[2]), "=d"(out[3])
-                       : "a"(id), "c"(sid));
+  __asm__ __volatile__(
+      "movl %%ebx, %1\n"
+      "cpuid\n"
+      "xchgl %1, %%ebx\n"
+      : "=a"(out[0]), "=r"(out[1]), "=c"(out[2]), "=d"(out[3])
+      : "a"(id), "c"(sid));
 #else
   __asm__ __volatile__("cpuid\n"
                        : "=a"(out[0]), "=b"(out[1]), "=c"(out[2]), "=d"(out[3])
@@ -127,28 +129,21 @@ static
 #if defined(__amd64__) || defined(_M_X64)
     features |= SSE2;
 #else
-    if (*edx & (1UL << 26))
-      features |= SSE2;
+    if (*edx & (1UL << 26)) features |= SSE2;
 #endif
-    if (*ecx & (1UL << 9))
-      features |= SSSE3;
-    if (*ecx & (1UL << 19))
-      features |= SSE41;
+    if (*ecx & (1UL << 9)) features |= SSSE3;
+    if (*ecx & (1UL << 19)) features |= SSE41;
 
-    if (*ecx & (1UL << 27)) { // OSXSAVE
+    if (*ecx & (1UL << 27)) {  // OSXSAVE
       const uint64_t mask = xgetbv();
-      if ((mask & 6) == 6) { // SSE and AVX states
-        if (*ecx & (1UL << 28))
-          features |= AVX;
+      if ((mask & 6) == 6) {  // SSE and AVX states
+        if (*ecx & (1UL << 28)) features |= AVX;
         if (max_id >= 7) {
           cpuidex(regs, 7, 0);
-          if (*ebx & (1UL << 5))
-            features |= AVX2;
-          if ((mask & 224) == 224) { // Opmask, ZMM_Hi256, Hi16_Zmm
-            if (*ebx & (1UL << 31))
-              features |= AVX512VL;
-            if (*ebx & (1UL << 16))
-              features |= AVX512F;
+          if (*ebx & (1UL << 5)) features |= AVX2;
+          if ((mask & 224) == 224) {  // Opmask, ZMM_Hi256, Hi16_Zmm
+            if (*ebx & (1UL << 31)) features |= AVX512VL;
+            if (*ebx & (1UL << 16)) features |= AVX512F;
           }
         }
       }

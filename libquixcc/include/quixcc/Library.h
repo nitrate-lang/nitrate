@@ -232,4 +232,4 @@ bool quixcc_cache_write(const quixcc_cache_key_t *key, const void *payload, size
 }
 #endif
 
-#endif // __QUIXCC_LIBRARY_H__
+#endif  // __QUIXCC_LIBRARY_H__

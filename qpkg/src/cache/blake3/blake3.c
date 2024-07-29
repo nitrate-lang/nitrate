@@ -213,10 +213,10 @@ INLINE size_t compress_parents_parallel(const uint8_t *child_chaining_values,
   }
 
   blake3_hash_many(parents_array, parents_array_len, 1, key,
-                   0, // Parents always use counter 0.
+                   0,  // Parents always use counter 0.
                    false, flags | PARENT,
-                   0, // Parents have no start flags.
-                   0, // Parents have no end flags.
+                   0,  // Parents have no start flags.
+                   0,  // Parents have no end flags.
                    out);
 
   // If there's an odd child left over, it becomes an output.

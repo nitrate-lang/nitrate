@@ -52,7 +52,7 @@ namespace qpkg {
       DirectoryCache(const DirectoryCache &) = delete;
       DirectoryCache &operator=(const DirectoryCache &) = delete;
 
-  public:
+    public:
       DirectoryCache() = default;
       ~DirectoryCache();
 
@@ -73,7 +73,7 @@ namespace qpkg {
       size_t size() override;
       void sync() override;
     };
-  } // namespace cache
-} // namespace qpkg
+  }  // namespace cache
+}  // namespace qpkg
 
-#endif // __QPKG_CACHE_LOCALCACHE_HH__
+#endif  // __QPKG_CACHE_LOCALCACHE_HH__

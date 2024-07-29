@@ -305,4 +305,4 @@ size_t quixcc_cc_tok_humanize(quixcc_cc_job_t *job, const quixcc_tok_t *tok, cha
 }
 #endif
 
-#endif // __QUIXCC_COMPILE_H__
+#endif  // __QUIXCC_COMPILE_H__

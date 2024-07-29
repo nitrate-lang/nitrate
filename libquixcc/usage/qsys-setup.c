@@ -33,16 +33,17 @@
 #include <quixcc/Library.h>
 #include <quixcc/plugin/EngineAPI.h>
 
-#define QSYS_DEFINE(_name, _desc)                                                                  \
+#define QSYS_DEFINE(_name, _desc) \
   bool qsys_##_name(quixcc_engine_t *e, uint32_t n, quixcc_expr_t **v, uint32_t c)
 
-const char source[] = "@use \"v1.0\";\n"
-                      "\n"
-                      "fn main(): i32 {\n"
-                      "  @qsys(6969, \"We are gods among men!\");\n"
-                      "  @qsys(7000);\n"
-                      "  ret 0;\n"
-                      "}\n";
+const char source[] =
+    "@use \"v1.0\";\n"
+    "\n"
+    "fn main(): i32 {\n"
+    "  @qsys(6969, \"We are gods among men!\");\n"
+    "  @qsys(7000);\n"
+    "  ret 0;\n"
+    "}\n";
 
 static bool make_job(quixcc_cc_job_t **job) {
   *job = quixcc_cc_new();

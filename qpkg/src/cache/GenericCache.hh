@@ -52,14 +52,15 @@ namespace qpkg {
     class CacheHasher {
       blake3_hasher m_ctx;
 
-  public:
+    public:
       CacheHasher();
 
       inline CacheHasher &update(const std::vector<uint8_t> &data) {
         return update(data.data(), data.size());
       }
       CacheHasher &update(const uint8_t *data, size_t size);
-      template <size_t T> CacheHasher &update(const std::array<uint8_t, T> &data) {
+      template <size_t T>
+      CacheHasher &update(const std::array<uint8_t, T> &data) {
         update(data.data(), T);
         return *this;
       }
@@ -85,7 +86,8 @@ namespace qpkg {
         return digest.finalize();
       }
 
-      template <size_t T> static inline CacheKey digest(const std::array<uint8_t, T> &data) {
+      template <size_t T>
+      static inline CacheKey digest(const std::array<uint8_t, T> &data) {
         CacheHasher digest;
         digest.update(data);
         return digest.finalize();
@@ -93,7 +95,7 @@ namespace qpkg {
     };
 
     class ICache {
-  public:
+    public:
       virtual ~ICache() = default;
 
       virtual void acquire_lock() = 0;
@@ -204,11 +206,11 @@ namespace qpkg {
        */
       virtual void sync() = 0;
     };
-  } // namespace cache
-} // namespace qpkg
+  }  // namespace cache
+}  // namespace qpkg
 
 namespace std {
   std::ostream &operator<<(std::ostream &os, const qpkg::cache::CacheKey &key);
 }
 
-#endif // __QPKG_CACHE_GENERICCACHE_HH__
+#endif  // __QPKG_CACHE_GENERICCACHE_HH__

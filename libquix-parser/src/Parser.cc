@@ -276,6 +276,31 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
   return status;
 }
 
+LIB_EXPORT bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1) {
+  qcore_arena_t arena;
+  qparse_node_t *node;
+
+  if (!parser || !out) {
+    return false;
+  }
+
+  qcore_arena_open(&arena);
+
+  if (!qparse_do(parser, &arena, &node)) {
+    qcore_arena_close(&arena);
+    return false;
+  }
+
+  size_t len = 0;
+  char *repr = qparse_ast_repr(node, false, 2, &arena, &len);
+
+  fwrite(repr, 1, len, out);
+
+  qcore_arena_close(&arena);
+
+  return true;
+}
+
 LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
   if (!parser || !base) {
     return false;

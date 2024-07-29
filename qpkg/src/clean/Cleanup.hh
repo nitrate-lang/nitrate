@@ -41,6 +41,6 @@ namespace qpkg {
   namespace clean {
     bool CleanPackageSource(const std::string &package_src, bool verbose = false);
   }
-} // namespace qpkg
+}  // namespace qpkg
 
-#endif // __QPKG_CLEAN_CLEANUP_HH__
+#endif  // __QPKG_CLEAN_CLEANUP_HH__

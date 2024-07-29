@@ -31,7 +31,6 @@
 
 #define QUIXCC_INTERNAL
 
-#include "LibMacro.h"
 #include <execinfo.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
@@ -43,6 +42,8 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
+
+#include "LibMacro.h"
 
 #define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
 
@@ -64,8 +65,7 @@ static struct {
 
 LIB_EXPORT bool quixcc_lib_init() {
   /* We don't need to initialize more than once */
-  if (g_is_initialized)
-    return true;
+  if (g_is_initialized) return true;
 
   static std::mutex g_mutex;
   std::lock_guard<std::mutex> lock(g_mutex);
@@ -92,8 +92,7 @@ LIB_EXPORT bool quixcc_lib_init() {
 
 LIB_EXPORT bool quixcc_lib_deinit() {
   /* We don't need to deinitialize more than once */
-  if (!g_is_initialized)
-    return true;
+  if (!g_is_initialized) return true;
 
   static std::mutex g_mutex;
   std::lock_guard<std::mutex> lock(g_mutex);
@@ -106,9 +105,10 @@ LIB_EXPORT bool quixcc_lib_deinit() {
 LIB_EXPORT const char *quixcc_lib_version() {
   static std::string version_string =
 
-      "[" LIBQUIX_VERSION "] ["
+      "[" LIBQUIX_VERSION
+      "] ["
 
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) ||            \
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
     defined(_M_AMD64)
       "x86_64-"
 #elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
@@ -153,10 +153,11 @@ LIB_EXPORT const char *quixcc_lib_version() {
 LIB_EXPORT bool quixcc_cache_bind(quixcc_cache_has_t has, quixcc_cache_read_t read,
                                   quixcc_cache_write_t write) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
-                 "quixcc_cache_bind() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
+        "quixcc_cache_bind() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   if (!has || !read || !write) {
@@ -178,10 +179,11 @@ LIB_EXPORT bool quixcc_cache_bind(quixcc_cache_has_t has, quixcc_cache_read_t re
 
 LIB_EXPORT void quixcc_cache_unbind() {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
-                 "quixcc_cache_bind() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
+        "quixcc_cache_bind() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
@@ -193,10 +195,11 @@ LIB_EXPORT void quixcc_cache_unbind() {
 
 LIB_EXPORT ssize_t quixcc_cache_has(const quixcc_cache_key_t *key) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
-                 "quixcc_cache_bind() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
+        "quixcc_cache_bind() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
@@ -210,10 +213,11 @@ LIB_EXPORT ssize_t quixcc_cache_has(const quixcc_cache_key_t *key) {
 
 LIB_EXPORT bool quixcc_cache_read(const quixcc_cache_key_t *key, void *data, size_t datalen) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
-                 "quixcc_cache_bind() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
+        "quixcc_cache_bind() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
@@ -228,10 +232,11 @@ LIB_EXPORT bool quixcc_cache_read(const quixcc_cache_key_t *key, void *data, siz
 LIB_EXPORT bool quixcc_cache_write(const quixcc_cache_key_t *key, const void *data,
                                    size_t datalen) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
-                 "quixcc_cache_bind() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cache_bind(). "
+        "quixcc_cache_bind() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
@@ -248,8 +253,7 @@ LIB_EXPORT bool quixcc_cache_reset() {
   std::lock_guard<std::mutex> lock(g_library_lock);
 
   /* Ensure that no contexts are active */
-  if (g_num_of_contexts != 0)
-    return false;
+  if (g_num_of_contexts != 0) return false;
 
   /* We have a guarantee that no contexts are active,
    * and none will be created, for now. */
@@ -286,30 +290,30 @@ static std::string escape_json_string(const std::string &s) {
   std::string out;
   for (char c : s) {
     switch (c) {
-    case '\b':
-      out += "\\b";
-      break;
-    case '\f':
-      out += "\\f";
-      break;
-    case '\n':
-      out += "\\n";
-      break;
-    case '\r':
-      out += "\\r";
-      break;
-    case '\t':
-      out += "\\t";
-      break;
-    case '\\':
-      out += "\\\\";
-      break;
-    case '\"':
-      out += "\\\"";
-      break;
-    default:
-      out += c;
-      break;
+      case '\b':
+        out += "\\b";
+        break;
+      case '\f':
+        out += "\\f";
+        break;
+      case '\n':
+        out += "\\n";
+        break;
+      case '\r':
+        out += "\\r";
+        break;
+      case '\t':
+        out += "\\t";
+        break;
+      case '\\':
+        out += "\\\\";
+        break;
+      case '\"':
+        out += "\\\"";
+        break;
+      default:
+        out += c;
+        break;
     }
   }
   return out;
@@ -322,8 +326,7 @@ static std::string geterror_report_string() {
   size_t size = backtrace(array, 48);
   char **strings = backtrace_symbols(array, size);
 
-  for (size_t i = 0; i < size && strings[i]; i++)
-    trace.push_back(strings[i]);
+  for (size_t i = 0; i < size && strings[i]; i++) trace.push_back(strings[i]);
 
   free(strings);
 
@@ -344,7 +347,7 @@ static std::string geterror_report_string() {
   report += "\"compiler\":\"unknown\",";
 #endif
 
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) ||            \
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
     defined(_M_AMD64)
   report += "\"arch\":\"x86_64\",";
 #elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
@@ -369,15 +372,14 @@ static std::string geterror_report_string() {
 
   report += "\"quixcc_run\":\"";
 
-  char buf[(sizeof(void *) * 2) + 2 + 1] = {0}; // 0x[hex word]\0
+  char buf[(sizeof(void *) * 2) + 2 + 1] = {0};  // 0x[hex word]\0
   snprintf(buf, sizeof(buf), "%p", (void *)quixcc_cc_run);
   report += buf;
 
   report += "\",\"trace\":[";
   for (size_t i = 0; i < trace.size(); i++) {
     report += "\"" + escape_json_string(trace[i]) + "\"";
-    if (i + 1 < trace.size())
-      report += ",";
+    if (i + 1 < trace.size()) report += ",";
   }
 
   report += "]}";
@@ -428,7 +430,7 @@ LIB_EXPORT [[noreturn]] void quixcc_panicf(const char *_fmt, ...) {
   std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
                "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n\n";
 
-  { // Create the message
+  {  // Create the message
     va_list args;
     va_start(args, _fmt);
     int ret = vasprintf(&_msg, _fmt, args);
@@ -441,35 +443,35 @@ LIB_EXPORT [[noreturn]] void quixcc_panicf(const char *_fmt, ...) {
   std::vector<std::string> lines;
   const size_t max = 80;
 
-  { // Split the message into lines
+  {  // Split the message into lines
     std::string buf;
 
     for (size_t i = 0; i < msg.size(); i++) {
       switch (msg[i]) {
-      case '\n': {
-        size_t pad = max - buf.size() - 4;
-        if (pad > 0) {
-          buf += std::string(pad, ' ');
-        }
-        lines.push_back(buf);
-        buf.clear();
-        break;
-      }
-      default: {
-        if (buf.size() + 4 < max) {
-          buf += msg[i];
-        } else {
+        case '\n': {
           size_t pad = max - buf.size() - 4;
           if (pad > 0) {
             buf += std::string(pad, ' ');
           }
           lines.push_back(buf);
           buf.clear();
-          buf += msg[i];
+          break;
         }
+        default: {
+          if (buf.size() + 4 < max) {
+            buf += msg[i];
+          } else {
+            size_t pad = max - buf.size() - 4;
+            if (pad > 0) {
+              buf += std::string(pad, ' ');
+            }
+            lines.push_back(buf);
+            buf.clear();
+            buf += msg[i];
+          }
 
-        break;
-      }
+          break;
+        }
       }
     }
 
@@ -483,8 +485,7 @@ LIB_EXPORT [[noreturn]] void quixcc_panicf(const char *_fmt, ...) {
   }
 
   std::string sep;
-  for (size_t i = 0; i < max - 2; i++)
-    sep += "━";
+  for (size_t i = 0; i < max - 2; i++) sep += "━";
 
   std::cerr << "\x1b[31;1m┏" << sep << "┓\x1b[0m" << std::endl;
   for (auto &str : lines)
@@ -505,6 +506,5 @@ LIB_EXPORT [[noreturn]] void quixcc_panicf(const char *_fmt, ...) {
   std::cerr << "\nAborting..." << std::endl;
   abort();
 
-  while (true)
-    std::this_thread::yield();
+  while (true) std::this_thread::yield();
 }

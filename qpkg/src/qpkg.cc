@@ -162,20 +162,23 @@ void setup_argparse_build(ArgumentParser &parser) {
 
   auto &optimization_group = parser.add_mutually_exclusive_group();
   optimization_group.add_argument("-O", "--optimize")
-      .help("request optimization from build pipeline. not all pipelines will "
-            "support this, and it may be ignored")
+      .help(
+          "request optimization from build pipeline. not all pipelines will "
+          "support this, and it may be ignored")
       .default_value(false)
       .implicit_value(true);
 
   optimization_group.add_argument("-Os", "--optimize-size")
-      .help("request size optimization from build pipeline. not all pipelines "
-            "will support this, and it may be ignored")
+      .help(
+          "request size optimization from build pipeline. not all pipelines "
+          "will support this, and it may be ignored")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("-g", "--debug")
-      .help("request that the pipeline generate and preserve debug information. "
-            "not all pipelines will support this, and it may be ignored")
+      .help(
+          "request that the pipeline generate and preserve debug information. "
+          "not all pipelines will support this, and it may be ignored")
       .default_value(false)
       .implicit_value(true);
 
@@ -190,20 +193,23 @@ void setup_argparse_build(ArgumentParser &parser) {
       .nargs(1);
 
   parser.add_argument("--supply-chain-insecure")
-      .help("do not verify OR require dependencies to be validly signed by a "
-            "trusted source")
+      .help(
+          "do not verify OR require dependencies to be validly signed by a "
+          "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help("add a trusted public key fingerprint that may be used to verify "
-            "dependencies (only applies to this build)")
+      .help(
+          "add a trusted public key fingerprint that may be used to verify "
+          "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help("add a file containing trusted public key fingerprints that may be "
-            "used to verify dependencies (only applies to this build)")
+      .help(
+          "add a file containing trusted public key fingerprints that may be "
+          "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 }
@@ -226,20 +232,23 @@ void setup_argparse_update(ArgumentParser &parser) {
       .implicit_value(true);
 
   parser.add_argument("--supply-chain-insecure")
-      .help("do not verify OR require dependencies to be validly signed by a "
-            "trusted source")
+      .help(
+          "do not verify OR require dependencies to be validly signed by a "
+          "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help("add a trusted public key fingerprint that may be used to verify "
-            "dependencies (only applies to this build)")
+      .help(
+          "add a trusted public key fingerprint that may be used to verify "
+          "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help("add a file containing trusted public key fingerprints that may be "
-            "used to verify dependencies (only applies to this build)")
+      .help(
+          "add a file containing trusted public key fingerprints that may be "
+          "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 }
@@ -268,20 +277,23 @@ void setup_argparse_install(ArgumentParser &parser) {
       .implicit_value(true);
 
   parser.add_argument("--supply-chain-insecure")
-      .help("do not verify OR require dependencies to be validly signed by a "
-            "trusted source")
+      .help(
+          "do not verify OR require dependencies to be validly signed by a "
+          "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help("add a trusted public key fingerprint that may be used to verify "
-            "dependencies (only applies to this build)")
+      .help(
+          "add a trusted public key fingerprint that may be used to verify "
+          "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help("add a file containing trusted public key fingerprints that may be "
-            "used to verify dependencies (only applies to this build)")
+      .help(
+          "add a file containing trusted public key fingerprints that may be "
+          "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 }
@@ -316,8 +328,9 @@ void setup_argparse_doc(ArgumentParser &parser) {
       .nargs(1);
 
   parser.add_argument("-C", "--certify")
-      .help("digitally sign the documentation with the specified PKCS#12 "
-            "certificate")
+      .help(
+          "digitally sign the documentation with the specified PKCS#12 "
+          "certificate")
       .default_value(std::string(""))
       .nargs(1);
 
@@ -327,20 +340,23 @@ void setup_argparse_doc(ArgumentParser &parser) {
       .nargs(1);
 
   parser.add_argument("--supply-chain-insecure")
-      .help("do not verify OR require dependencies to be validly signed by a "
-            "trusted source")
+      .help(
+          "do not verify OR require dependencies to be validly signed by a "
+          "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help("add a trusted public key fingerprint that may be used to verify "
-            "dependencies (only applies to this build)")
+      .help(
+          "add a trusted public key fingerprint that may be used to verify "
+          "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help("add a file containing trusted public key fingerprints that may be "
-            "used to verify dependencies (only applies to this build)")
+      .help(
+          "add a file containing trusted public key fingerprints that may be "
+          "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 }
@@ -354,8 +370,9 @@ void setup_argparse_env(ArgumentParser &parser) {
       .implicit_value(true);
 
   parser.add_argument("--base64")
-      .help("print the value of the environment variable as a base64 encoded "
-            "string")
+      .help(
+          "print the value of the environment variable as a base64 encoded "
+          "string")
       .default_value(false)
       .implicit_value(true);
 
@@ -456,26 +473,30 @@ void setup_argparse_test(ArgumentParser &parser) {
       .nargs(1);
 
   parser.add_argument("--supply-chain-insecure")
-      .help("do not verify OR require dependencies to be validly signed by a "
-            "trusted source")
+      .help(
+          "do not verify OR require dependencies to be validly signed by a "
+          "trusted source")
       .default_value(false)
       .implicit_value(true);
 
   parser.add_argument("--trustkey")
-      .help("add a trusted public key fingerprint that may be used to verify "
-            "dependencies (only applies to this build)")
+      .help(
+          "add a trusted public key fingerprint that may be used to verify "
+          "dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("--trustkeys")
-      .help("add a file containing trusted public key fingerprints that may be "
-            "used to verify dependencies (only applies to this build)")
+      .help(
+          "add a file containing trusted public key fingerprints that may be "
+          "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
 
   parser.add_argument("-C", "--certify")
-      .help("digitally sign the test reports with the specified PKCS#12 "
-            "certificate")
+      .help(
+          "digitally sign the test reports with the specified PKCS#12 "
+          "certificate")
       .default_value(std::string(""))
       .nargs(1);
 
@@ -605,41 +626,30 @@ int run_build_mode(const ArgumentParser &parser) {
 
   builder.set_package_src(parser.get<std::string>("package-src"));
 
-  if (parser.is_used("--output"))
-    builder.set_output(parser.get<std::string>("--output"));
+  if (parser.is_used("--output")) builder.set_output(parser.get<std::string>("--output"));
 
-  if (parser["--no-cache"] == true)
-    builder.disable_cache();
+  if (parser["--no-cache"] == true) builder.disable_cache();
 
-  if (parser.is_used("--jobs"))
-    builder.jobs(parser.get<uint32_t>("--jobs"));
+  if (parser.is_used("--jobs")) builder.jobs(parser.get<uint32_t>("--jobs"));
 
-  if (parser["--verbose"] == true)
-    builder.verbose();
+  if (parser["--verbose"] == true) builder.verbose();
 
-  if (parser["--optimize"] == true)
-    builder.optimize();
+  if (parser["--optimize"] == true) builder.optimize();
 
-  if (parser["--optimize-size"] == true)
-    builder.optimize_size();
+  if (parser["--optimize-size"] == true) builder.optimize_size();
 
-  if (parser["--debug"] == true)
-    builder.debug();
+  if (parser["--debug"] == true) builder.debug();
 
-  if (parser.is_used("--certify"))
-    builder.certify(parser.get<std::string>("--certify"));
+  if (parser.is_used("--certify")) builder.certify(parser.get<std::string>("--certify"));
 
   if (parser.is_used("--certify-password"))
     builder.certify_password(parser.get<std::string>("--certify-password"));
 
-  if (parser["--supply-chain-insecure"] == true)
-    builder.disable_sigcheck();
+  if (parser["--supply-chain-insecure"] == true) builder.disable_sigcheck();
 
-  if (parser.is_used("--trustkey"))
-    builder.trustkey(parser.get<std::string>("--trustkey"));
+  if (parser.is_used("--trustkey")) builder.trustkey(parser.get<std::string>("--trustkey"));
 
-  if (parser.is_used("--trustkeys"))
-    builder.trustkeys(parser.get<std::string>("--trustkeys"));
+  if (parser.is_used("--trustkeys")) builder.trustkeys(parser.get<std::string>("--trustkeys"));
 
   auto engine = builder.build();
   if (!engine) {
@@ -693,8 +703,7 @@ int run_install_mode(const ArgumentParser &parser) {
     return -1;
   }
 
-  if (parser["--no-build"] == true)
-    return 0;
+  if (parser["--no-build"] == true) return 0;
 
   qpkg::build::EngineBuilder builder;
   std::filesystem::path dest_path = dest + "/" + package_name;
@@ -775,8 +784,7 @@ int run_run_mode(const std::vector<std::string> &args) {
   }
 
   qpkg::run::RunScript script(args[0]);
-  if (!script.is_okay())
-    return -1;
+  if (!script.is_okay()) return -1;
 
   return script.run(args);
 }
@@ -855,25 +863,25 @@ int run_dev_mode(
     }
 
     switch (bench_type) {
-    case Benchmark::LEXER:
-      return qpkg::dev::bench::run_benchmark_lexer();
-    case Benchmark::PARSER:
-      return qpkg::dev::bench::run_benchmark_parser();
-    case Benchmark::Q_IR:
-      return qpkg::dev::bench::run_benchmark_quix_ir();
-    case Benchmark::DELTA_IR:
-      return qpkg::dev::bench::run_benchmark_delta_ir();
-    case Benchmark::LLVM_IR:
-      return qpkg::dev::bench::run_benchmark_llvm_ir();
-    case Benchmark::LLVM_CODEGEN:
-      return qpkg::dev::bench::run_benchmark_llvm_codegen();
-    case Benchmark::C11_CODEGEN:
-      return qpkg::dev::bench::run_benchmark_c11_codegen();
-    case Benchmark::PIPELINE:
-      return qpkg::dev::bench::run_benchmark_pipeline();
-    default:
-      std::cerr << "Unknown benchmark name: " << bench_name << std::endl;
-      return 1;
+      case Benchmark::LEXER:
+        return qpkg::dev::bench::run_benchmark_lexer();
+      case Benchmark::PARSER:
+        return qpkg::dev::bench::run_benchmark_parser();
+      case Benchmark::Q_IR:
+        return qpkg::dev::bench::run_benchmark_quix_ir();
+      case Benchmark::DELTA_IR:
+        return qpkg::dev::bench::run_benchmark_delta_ir();
+      case Benchmark::LLVM_IR:
+        return qpkg::dev::bench::run_benchmark_llvm_ir();
+      case Benchmark::LLVM_CODEGEN:
+        return qpkg::dev::bench::run_benchmark_llvm_codegen();
+      case Benchmark::C11_CODEGEN:
+        return qpkg::dev::bench::run_benchmark_c11_codegen();
+      case Benchmark::PIPELINE:
+        return qpkg::dev::bench::run_benchmark_pipeline();
+      default:
+        std::cerr << "Unknown benchmark name: " << bench_name << std::endl;
+        return 1;
     }
 
     return 0;

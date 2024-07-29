@@ -63,13 +63,11 @@ static std::optional<qpkg::conf::Config> get_config(const std::filesystem::path 
 static bool recursve_subpackages(const std::filesystem::path &base, bool verbose) {
   auto c = get_config(base);
 
-  if (!c)
-    return false;
+  if (!c) return false;
 
   auto packages = (*c)["packages"].as<std::vector<std::string>>();
 
-  for (const auto &p : packages)
-    qpkg::clean::CleanPackageSource(base / p, verbose);
+  for (const auto &p : packages) qpkg::clean::CleanPackageSource(base / p, verbose);
 
   return true;
 }
@@ -112,8 +110,7 @@ bool qpkg::clean::CleanPackageSource(const std::string &package_src, bool verbos
   std::filesystem::path qpkg_dir = package_src_path / ".qpkg";
 
   if (std::filesystem::exists(qpkg_dir)) {
-    if (verbose)
-      LOG(core::INFO) << "Removing .qpkg directory: " << qpkg_dir << std::endl;
+    if (verbose) LOG(core::INFO) << "Removing .qpkg directory: " << qpkg_dir << std::endl;
 
     std::filesystem::remove_all(qpkg_dir);
   }
@@ -121,12 +118,11 @@ bool qpkg::clean::CleanPackageSource(const std::string &package_src, bool verbos
   auto conf = get_config(package_src_path);
   std::string name = (*conf)["name"].as<std::string>(), tmp;
 
-#define RMFILE(_file)                                                                              \
-  tmp = _file;                                                                                     \
-  if (std::filesystem::is_regular_file(package_src_path / tmp)) {                                  \
-    if (verbose)                                                                                   \
-      LOG(core::INFO) << "Removing file: " << package_src_path / tmp << std::endl;                 \
-    std::filesystem::remove(package_src_path / tmp);                                               \
+#define RMFILE(_file)                                                                         \
+  tmp = _file;                                                                                \
+  if (std::filesystem::is_regular_file(package_src_path / tmp)) {                             \
+    if (verbose) LOG(core::INFO) << "Removing file: " << package_src_path / tmp << std::endl; \
+    std::filesystem::remove(package_src_path / tmp);                                          \
   }
 
   RMFILE(name);
@@ -141,8 +137,7 @@ bool qpkg::clean::CleanPackageSource(const std::string &package_src, bool verbos
 
   recursve_subpackages(package_src_path, verbose);
 
-  if (verbose)
-    LOG(core::INFO) << "Package " << package_src << " cleaned" << std::endl;
+  if (verbose) LOG(core::INFO) << "Package " << package_src << " cleaned" << std::endl;
 
   return true;
 }

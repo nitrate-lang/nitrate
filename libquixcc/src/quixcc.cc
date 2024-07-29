@@ -31,26 +31,26 @@
 
 #define QUIXCC_INTERNAL
 
-#include "LibMacro.h"
 #include <core/QuixJob.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/TargetSelect.h>
-#include "parser/Parse.h"
+#include <qast/Lexer.h>
 #include <quixcc/IR/Q/QIR.h>
 #include <quixcc/IR/delta/DeltaIR.h>
 #include <quixcc/Library.h>
 #include <quixcc/core/Exception.h>
 #include <quixcc/core/Logger.h>
 #include <quixcc/generate/Generate.h>
-#include <qast/Lexer.h>
 #include <quixcc/llvm/LLVMWrapper.h>
+
+#include "LibMacro.h"
+#include "parser/Parse.h"
 // #include <quixcc/mutate/Routine.h>
 #include <quixcc/optimizer/Optimizer.h>
 #include <quixcc/preprocessor/Preprocessor.h>
 #include <quixcc/preprocessor/QSys.h>
 #include <quixcc/solver/Solver.h>
-#include <regex>
 #include <setjmp.h>
 #include <signal.h>
 
@@ -88,8 +88,7 @@ extern void quixcc_print_general_fault_message();
 
 static char *safe_strdup(const char *str) {
   char *new_str = strdup(str);
-  if (!new_str)
-    quixcc_panic("out of memory");
+  if (!new_str) quixcc_panic("out of memory");
   return new_str;
 }
 
@@ -106,11 +105,12 @@ static libquixcc::quixcc::quixcc_uuid_t quixcc_uuid() {
 
 LIB_EXPORT quixcc_cc_job_t *quixcc_cc_new() {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cc_new(). "
-                 "quitcc_new() "
-                 "attempted to compensate for this error, but quitcc_init() failed to "
-                 "initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cc_new(). "
+        "quitcc_new() "
+        "attempted to compensate for this error, but quitcc_init() failed to "
+        "initialize.");
   }
 
   /* Acquire a lock on the library state. This is for MT-safe cache management
@@ -145,24 +145,24 @@ LIB_EXPORT quixcc_cc_job_t *quixcc_cc_new() {
 
 LIB_EXPORT bool quixcc_cc_dispose(quixcc_cc_job_t *job) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cc_dispose(). "
-                 "quixcc_cc_dispose() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cc_dispose(). "
+        "quixcc_cc_dispose() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   /* no-op */
-  if (!job)
-    return false;
+  if (!job) return false;
 
   /* User may have passed an invalid job pointer */
   if (job->m_magic != libquixcc::quixcc::JOB_MAGIC) /* We can't handle this, so panic */
-    quixcc_panic("A libquixcc library contract violation occurred: An invalid job "
-                 "pointer was passed to quixcc_cc_dispose().");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: An invalid job "
+        "pointer was passed to quixcc_cc_dispose().");
 
   bool lockable = job->m_lock.try_lock();
-  if (!lockable)
-    return false;
+  if (!lockable) return false;
 
   /* Free messages array */
   for (uint32_t i = 0; i < job->m_result.m_count; i++) {
@@ -175,8 +175,7 @@ LIB_EXPORT bool quixcc_cc_dispose(quixcc_cc_job_t *job) {
     free(msg);
   }
 
-  if (job->m_result.m_messages)
-    free(job->m_result.m_messages);
+  if (job->m_result.m_messages) free(job->m_result.m_messages);
   memset(&job->m_result, 0, sizeof(quixcc_status_t));
 
   /* Clear all pointers & values */
@@ -190,7 +189,7 @@ LIB_EXPORT bool quixcc_cc_dispose(quixcc_cc_job_t *job) {
 
   job->m_lock.unlock();
 
-  delete job; // Destruct C++ object members implicitly
+  delete job;  // Destruct C++ object members implicitly
 
   g_num_of_contexts--;
 
@@ -199,20 +198,21 @@ LIB_EXPORT bool quixcc_cc_dispose(quixcc_cc_job_t *job) {
 
 LIB_EXPORT void quixcc_cc_option(quixcc_cc_job_t *job, const char *opt, bool enable) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cc_option(). "
-                 "quixcc_cc_option() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cc_option(). "
+        "quixcc_cc_option() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   /* no-op */
-  if (!job || !opt)
-    return;
+  if (!job || !opt) return;
 
   /* User may have passed an invalid job pointer */
   if (job->m_magic != libquixcc::quixcc::JOB_MAGIC) /* We can't handle this, so panic */
-    quixcc_panic("A libquixcc library contract violation occurred: An invalid job "
-                 "pointer was passed to quixcc_cc_option().");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: An invalid job "
+        "pointer was passed to quixcc_cc_option().");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
 
@@ -227,26 +227,26 @@ LIB_EXPORT void quixcc_cc_option(quixcc_cc_job_t *job, const char *opt, bool ena
 
 LIB_EXPORT void quixcc_cc_source(quixcc_cc_job_t *job, FILE *in, const char *filename) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cc_source(). "
-                 "quixcc_cc_source() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cc_source(). "
+        "quixcc_cc_source() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   /* no-op */
-  if (!job || !in || !filename)
-    return;
+  if (!job || !in || !filename) return;
 
   /* User may have passed an invalid job pointer */
   if (job->m_magic != libquixcc::quixcc::JOB_MAGIC) /* We can't handle this, so panic */
-    quixcc_panic("A libquixcc library contract violation occurred: An invalid job "
-                 "pointer was passed to quixcc_cc_source().");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: An invalid job "
+        "pointer was passed to quixcc_cc_source().");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
 
   /* Its the callers responsibility to make sure this is a valid file */
-  if (fseek(in, 0, SEEK_SET) != 0)
-    abort();
+  if (fseek(in, 0, SEEK_SET) != 0) abort();
 
   job->m_in = in;
   job->m_filename.push(filename);
@@ -254,20 +254,21 @@ LIB_EXPORT void quixcc_cc_source(quixcc_cc_job_t *job, FILE *in, const char *fil
 
 LIB_EXPORT bool quixcc_cc_target(quixcc_cc_job_t *job, const char *_llvm_triple) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_target(). "
-                 "quixcc_target() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_target(). "
+        "quixcc_target() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   /* no-op */
-  if (!job || !_llvm_triple)
-    return false;
+  if (!job || !_llvm_triple) return false;
 
   /* User may have passed an invalid job pointer */
   if (job->m_magic != libquixcc::quixcc::JOB_MAGIC) /* We can't handle this, so panic */
-    quixcc_panic("A libquixcc library contract violation occurred: An invalid job "
-                 "pointer was passed to quixcc_target().");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: An invalid job "
+        "pointer was passed to quixcc_target().");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
 
@@ -295,21 +296,22 @@ LIB_EXPORT bool quixcc_cc_target(quixcc_cc_job_t *job, const char *_llvm_triple)
 
 LIB_EXPORT bool quixcc_cc_cpu(quixcc_cc_job_t *job, const char *cpu) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cpu(). "
-                 "quixcc_cpu() "
-                 "attempted to compensate for this error, but quitcc_init() failed to "
-                 "initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cpu(). "
+        "quixcc_cpu() "
+        "attempted to compensate for this error, but quitcc_init() failed to "
+        "initialize.");
   }
 
   /* no-op */
-  if (!job || !cpu)
-    return false;
+  if (!job || !cpu) return false;
 
   /* User may have passed an invalid job pointer */
   if (job->m_magic != libquixcc::quixcc::JOB_MAGIC) /* We can't handle this, so panic */
-    quixcc_panic("A libquixcc library contract violation occurred: An invalid job "
-                 "pointer was passed to quixcc_cpu().");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: An invalid job "
+        "pointer was passed to quixcc_cpu().");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
 
@@ -320,25 +322,25 @@ LIB_EXPORT bool quixcc_cc_cpu(quixcc_cc_job_t *job, const char *cpu) {
 
 LIB_EXPORT void quixcc_cc_output(quixcc_cc_job_t *job, FILE *out, FILE **old_out) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_cc_output(). "
-                 "quixcc_cc_output() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_cc_output(). "
+        "quixcc_cc_output() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   /* no-op */
-  if (!job || !out)
-    return;
+  if (!job || !out) return;
 
   /* User may have passed an invalid job pointer */
   if (job->m_magic != libquixcc::quixcc::JOB_MAGIC) /* We can't handle this, so panic */
-    quixcc_panic("A libquixcc library contract violation occurred: An invalid job "
-                 "pointer was passed to quixcc_cc_output().");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: An invalid job "
+        "pointer was passed to quixcc_cc_output().");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
 
-  if (old_out)
-    *old_out = job->m_out;
+  if (old_out) *old_out = job->m_out;
 
   job->m_out = out;
 }
@@ -370,8 +372,7 @@ static bool quixcc_qualify(quixcc_cc_job_t *job, std::unique_ptr<ir::q::QModule>
 
 static bool get_include_directories(quixcc_cc_job_t *job, std::set<std::string> &dirs) {
   for (const auto &option : job->m_options) {
-    if (option.size() < 3)
-      continue;
+    if (option.size() < 3) continue;
 
     if (option.starts_with("-I")) {
       dirs.insert(option.substr(2));
@@ -389,24 +390,21 @@ static bool verify_user_constant_string(const std::string &s) {
     char c = s[i];
 
     switch (state) {
-    case 0:
-      if (c == '\\')
-        state = 1;
-      if (c == '"')
-        return false;
-      if (!std::isprint(c))
-        return false;
-      break;
-    case 1:
-      if (c == '"')
-        state = 0;
-      else if (c == '\\')
-        state = 0;
-      else if (c == 'n' || c == 'r' || c == 't' || c == '0' || c == 'x')
-        state = 0;
-      else
-        return false;
-      break;
+      case 0:
+        if (c == '\\') state = 1;
+        if (c == '"') return false;
+        if (!std::isprint(c)) return false;
+        break;
+      case 1:
+        if (c == '"')
+          state = 0;
+        else if (c == '\\')
+          state = 0;
+        else if (c == 'n' || c == 'r' || c == 't' || c == '0' || c == 'x')
+          state = 0;
+        else
+          return false;
+        break;
     }
   }
 
@@ -414,8 +412,7 @@ static bool verify_user_constant_string(const std::string &s) {
 }
 
 static bool verify_user_constant(const std::string &key, const std::string &value) {
-  if (key.empty())
-    return false;
+  if (key.empty()) return false;
 
   bool key_valid = std::isalpha(key[0]) || key[0] == '_';
 
@@ -426,14 +423,11 @@ static bool verify_user_constant(const std::string &key, const std::string &valu
     }
   }
 
-  if (!key_valid)
-    return false;
+  if (!key_valid) return false;
 
-  if (value.empty())
-    return true;
+  if (value.empty()) return true;
 
-  if (value == "true" || value == "false")
-    return true;
+  if (value == "true" || value == "false") return true;
 
   bool is_int = true;
   for (char c : value) {
@@ -443,8 +437,7 @@ static bool verify_user_constant(const std::string &key, const std::string &valu
     }
   }
 
-  if (is_int)
-    return true;
+  if (is_int) return true;
 
   return verify_user_constant_string(value);
 }
@@ -500,21 +493,18 @@ bool preprocessor_config(quixcc_cc_job_t *job, std::unique_ptr<PrepEngine> &prep
     LOG(ERROR) << "failed to get include directories" << std::endl;
     return false;
   }
-  for (auto &dir : dirs)
-    prep->addpath(dir);
+  for (auto &dir : dirs) prep->addpath(dir);
   if (!get_compile_time_user_constants(job, constants)) {
     LOG(ERROR) << "failed to get compile time user constants" << std::endl;
     return false;
   }
-  for (auto &constant : constants)
-    prep->set_static(constant.first, constant.second);
+  for (auto &constant : constants) prep->set_static(constant.first, constant.second);
 
   if (!get_env_constants(job, constants)) {
     LOG(ERROR) << "failed to get environment constants" << std::endl;
     return false;
   }
-  for (auto &constant : constants)
-    prep->set_static(constant.first, constant.second);
+  for (auto &constant : constants) prep->set_static(constant.first, constant.second);
 
   if (!prep->set_source(job->m_in, job->m_filename.top())) {
     LOG(ERROR) << "failed to set source" << std::endl;
@@ -554,8 +544,7 @@ static bool compile(quixcc_cc_job_t *job) {
   if (job->has("-emit-prep")) {
     LOG(DEBUG) << "Preprocessing only" << std::endl;
     std::unique_ptr<PrepEngine> prep = std::make_unique<PrepEngine>(*job);
-    if (!preprocessor_config(job, prep))
-      return false;
+    if (!preprocessor_config(job, prep)) return false;
     if (job->has("-fkeep-comments")) {
       prep->comments(false);
     }
@@ -601,8 +590,7 @@ static bool compile(quixcc_cc_job_t *job) {
     /// BEGIN: PREPROCESSOR/LEXER
     auto prep = std::make_unique<PrepEngine>(*job);
     LOG(DEBUG) << "Preprocessing source" << std::endl;
-    if (!preprocessor_config(job, prep))
-      return false;
+    if (!preprocessor_config(job, prep)) return false;
     if (job->has("-fkeep-comments")) {
       prep->comments(false);
     }
@@ -613,14 +601,12 @@ static bool compile(quixcc_cc_job_t *job) {
     ///=========================================
     /// BEGIN: PARSER
     LOG(DEBUG) << "Building Ptree 1" << std::endl;
-    if (!qast::parser::parse(*job, prep.get(), &ptree, false))
-      return false;
+    if (!qast::parser::parse(*job, prep.get(), &ptree, false)) return false;
     LOG(DEBUG) << "Finished building Ptree 1" << std::endl;
 
     if (job->has("-emit-parse")) {
       auto serial = ptree->to_string(job->has("-emit-minify"), job->has("-emit-bin"));
-      if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
-        return false;
+      if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size()) return false;
       fflush(job->m_out);
 
       LOG(DEBUG) << "Parse only" << std::endl;
@@ -632,8 +618,7 @@ static bool compile(quixcc_cc_job_t *job) {
 
   ///=========================================
   /// BEGIN: INTERMEDIATE PROCESSING
-  if (!quixcc_mutate_ptree(job, ptree) || job->m_tainted)
-    return false;
+  if (!quixcc_mutate_ptree(job, ptree) || job->m_tainted) return false;
   /// END:   INTERMEDIATE PROCESSING
   ///=========================================
 
@@ -643,7 +628,7 @@ static bool compile(quixcc_cc_job_t *job) {
   if (!QIR->from_ptree(job, ptree)) /* This will modify the Ptree */
     return false;
 
-  if (!job->has("-fno-check")) // -fno-check disables semantic analysis
+  if (!job->has("-fno-check"))  // -fno-check disables semantic analysis
   {
     ///=========================================
     /// BEGIN: SEMANTIC ANALYSIS
@@ -719,8 +704,7 @@ static bool compile(quixcc_cc_job_t *job) {
 
   if (job->has("-emit-quix-ir")) {
     auto serial = QIR->to_string();
-    if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
-      return false;
+    if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size()) return false;
     fflush(job->m_out);
 
     LOG(DEBUG) << "Quix IR only" << std::endl;
@@ -728,13 +712,11 @@ static bool compile(quixcc_cc_job_t *job) {
   }
 
   auto DIR = std::make_unique<ir::delta::IRDelta>(job->m_filename.top());
-  if (!DIR->from_qir(job, QIR))
-    return false;
+  if (!DIR->from_qir(job, QIR)) return false;
 
   if (job->has("-emit-delta-ir")) {
     auto serial = DIR->to_string();
-    if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size())
-      return false;
+    if (fwrite(serial.c_str(), 1, serial.size(), job->m_out) != serial.size()) return false;
     fflush(job->m_out);
 
     LOG(DEBUG) << "Delta IR only" << std::endl;
@@ -760,30 +742,30 @@ static bool compile(quixcc_cc_job_t *job) {
 
 static bool verify_build_option(const std::string &option, const std::string &value) {
   const static std::set<std::string> static_options = {
-      "-S",              // assembly output
-      "-emit-tokens",    // lexer output (no preprocessing)
-      "-emit-prep",      // preprocessor/Lexer output
-      "-emit-parse",     // parse tree output
-      "-emit-quix-ir",   // Quix IR output
-      "-emit-delta-ir",  // Delta IR output
-      "-emit-ir",        // IR output
-      "-emit-c11",       // C11 output
-      "-emit-bc",        // bitcode output
-      "-emit-minify",    // minified output
-      "-emit-bin",       // binary representation
-      "-c",              // compile only
-      "-O0",             // optimization levels
-      "-O1",             // optimization levels
-      "-O2",             // optimization levels
-      "-O3",             // optimization levels
-      "-Os",             // optimization levels
-      "-g",              // debug information
-      "-flto",           // link time optimization
-      "-fPIC",           // position independent code
-      "-fPIE",           // position independent executable
-      "-v",              // verbose
-      "-fcoredump",      // dump core on crash
-      "-fkeep-comments", // keep comments from scanner
+      "-S",               // assembly output
+      "-emit-tokens",     // lexer output (no preprocessing)
+      "-emit-prep",       // preprocessor/Lexer output
+      "-emit-parse",      // parse tree output
+      "-emit-quix-ir",    // Quix IR output
+      "-emit-delta-ir",   // Delta IR output
+      "-emit-ir",         // IR output
+      "-emit-c11",        // C11 output
+      "-emit-bc",         // bitcode output
+      "-emit-minify",     // minified output
+      "-emit-bin",        // binary representation
+      "-c",               // compile only
+      "-O0",              // optimization levels
+      "-O1",              // optimization levels
+      "-O2",              // optimization levels
+      "-O3",              // optimization levels
+      "-Os",              // optimization levels
+      "-g",               // debug information
+      "-flto",            // link time optimization
+      "-fPIC",            // position independent code
+      "-fPIE",            // position independent executable
+      "-v",               // verbose
+      "-fcoredump",       // dump core on crash
+      "-fkeep-comments",  // keep comments from scanner
   };
   const static std::vector<std::pair<std::regex, std::regex>> static_regexes = {
       {std::regex("-D[a-zA-Z_][a-zA-Z0-9_]*"), std::regex(".*")},
@@ -792,12 +774,10 @@ static bool verify_build_option(const std::string &option, const std::string &va
       {std::regex("-std"), std::regex("v[0-9]+\\.[0-9]+")},
   };
 
-  if (static_options.contains(option))
-    return true;
+  if (static_options.contains(option)) return true;
 
   for (auto &regex : static_regexes) {
-    if (std::regex_match(option, regex.first) && std::regex_match(value, regex.second))
-      return true;
+    if (std::regex_match(option, regex.first) && std::regex_match(value, regex.second)) return true;
   }
 
   return false;
@@ -822,16 +802,14 @@ static bool build_argmap(quixcc_cc_job_t *job) {
     std::string key = option.substr(0, pos);
     std::string value;
 
-    if (pos != std::string::npos)
-      value = option.substr(pos + 1);
+    if (pos != std::string::npos) value = option.substr(pos + 1);
 
     if (!verify_build_option(key, value)) {
       LOG(ERROR) << log::raw << "invalid build option: " << key << std::endl;
       return false;
     }
 
-    if (key == "-v" && value.empty())
-      job->m_debug = true;
+    if (key == "-v" && value.empty()) job->m_debug = true;
 
     job->m_argset.push_back({key, value});
 
@@ -859,35 +837,35 @@ void quixcc_fault_handler(int sig) {
   signal(SIGABRT, SIG_IGN);
 
   switch (sig) {
-  case SIGINT:
-    std::cerr << "SIGINT: libquixcc was interrupted. compilation aborted." << std::endl;
-    break;
-  case SIGILL:
-    std::cerr << "SIGILL: libquixcc tried to execute an illegal instruction. "
-                 "compilation aborted."
-              << std::endl;
-    break;
-  case SIGFPE:
-    std::cerr << "SIGFPE: libquixcc tried to execute an illegal floating "
-                 "point operation. compilation aborted."
-              << std::endl;
-    break;
-  case SIGSEGV:
-    std::cerr << "SIGSEGV: libquixcc tried to access an invalid memory location "
-                 "leading to a segmentation fault. compilation aborted."
-              << std::endl;
-    break;
-  case SIGTERM:
-    std::cerr << "SIGTERM: libquixcc was terminated. compilation aborted." << std::endl;
-    break;
-  case SIGABRT:
-    std::cerr << "SIGABRT: libquixcc encountered an internal error. "
-                 "compilation aborted."
-              << std::endl;
-    break;
-  default:
-    std::cerr << "libquixcc encountered an unexpected signal. compilation aborted." << std::endl;
-    break;
+    case SIGINT:
+      std::cerr << "SIGINT: libquixcc was interrupted. compilation aborted." << std::endl;
+      break;
+    case SIGILL:
+      std::cerr << "SIGILL: libquixcc tried to execute an illegal instruction. "
+                   "compilation aborted."
+                << std::endl;
+      break;
+    case SIGFPE:
+      std::cerr << "SIGFPE: libquixcc tried to execute an illegal floating "
+                   "point operation. compilation aborted."
+                << std::endl;
+      break;
+    case SIGSEGV:
+      std::cerr << "SIGSEGV: libquixcc tried to access an invalid memory location "
+                   "leading to a segmentation fault. compilation aborted."
+                << std::endl;
+      break;
+    case SIGTERM:
+      std::cerr << "SIGTERM: libquixcc was terminated. compilation aborted." << std::endl;
+      break;
+    case SIGABRT:
+      std::cerr << "SIGABRT: libquixcc encountered an internal error. "
+                   "compilation aborted."
+                << std::endl;
+      break;
+    default:
+      std::cerr << "libquixcc encountered an unexpected signal. compilation aborted." << std::endl;
+      break;
   }
 
   std::cerr << '\n';
@@ -916,8 +894,7 @@ void quixcc_fault_handler(int sig) {
 }
 
 static bool execute_job(quixcc_cc_job_t *job) {
-  if (!job->m_in || !job->m_out || job->m_filename.empty())
-    return false;
+  if (!job->m_in || !job->m_out || job->m_filename.empty()) return false;
 
   try {
     LoggerConfigure(*job);
@@ -943,8 +920,7 @@ static bool execute_job(quixcc_cc_job_t *job) {
   }
 
   if (job->has("-fcoredump")) {
-    if (!compile(job))
-      LOG(ERROR) << "Compilation failed" << std::endl;
+    if (!compile(job)) LOG(ERROR) << "Compilation failed" << std::endl;
 
     LOG(DEBUG) << "Compilation successful" << std::endl;
 
@@ -956,8 +932,7 @@ static bool execute_job(quixcc_cc_job_t *job) {
     return true;
   } else {
     try {
-      if (!compile(job))
-        LOG(ERROR) << "Compilation failed" << std::endl;
+      if (!compile(job)) LOG(ERROR) << "Compilation failed" << std::endl;
 
       LOG(DEBUG) << "Compilation successful" << std::endl;
 
@@ -1003,21 +978,22 @@ static bool execute_job(quixcc_cc_job_t *job) {
 
 LIB_EXPORT bool quixcc_cc_run(quixcc_cc_job_t *job) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_run(). "
-                 "quixcc_run() "
-                 "attempted to compensate for this error, but quitcc_init() failed to "
-                 "initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_run(). "
+        "quixcc_run() "
+        "attempted to compensate for this error, but quitcc_init() failed to "
+        "initialize.");
   }
 
   /* no-op */
-  if (!job)
-    return false;
+  if (!job) return false;
 
   /* User may have passed an invalid job pointer */
   if (job->m_magic != libquixcc::quixcc::JOB_MAGIC) /* We can't handle this, so panic */
-    quixcc_panic("A libquixcc library contract violation occurred: An invalid job "
-                 "pointer was passed to quixcc_run().");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: An invalid job "
+        "pointer was passed to quixcc_run().");
 
   std::lock_guard<std::mutex> lock(job->m_lock);
   static std::mutex siglock;
@@ -1081,24 +1057,24 @@ LIB_EXPORT bool quixcc_cc_run(quixcc_cc_job_t *job) {
 
 LIB_EXPORT const quixcc_status_t *quixcc_cc_status(quixcc_cc_job_t *job) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_status(). "
-                 "quixcc_status() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_status(). "
+        "quixcc_status() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   /* no-op */
-  if (!job)
-    return nullptr;
+  if (!job) return nullptr;
 
   /* User may have passed an invalid job pointer */
   if (job->m_magic != libquixcc::quixcc::JOB_MAGIC) /* We can't handle this, so panic */
-    quixcc_panic("A libquixcc library contract violation occurred: An invalid job "
-                 "pointer was passed to quixcc_status().");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: An invalid job "
+        "pointer was passed to quixcc_status().");
 
   bool lockable = job->m_lock.try_lock();
-  if (!lockable)
-    return nullptr;
+  if (!lockable) return nullptr;
 
   quixcc_status_t *result = &job->m_result;
 
@@ -1112,8 +1088,7 @@ LIB_EXPORT const quixcc_status_t *quixcc_cc_status(quixcc_cc_job_t *job) {
       continue;
     }
 
-    if (msg->message)
-      free((void *)msg->message);
+    if (msg->message) free((void *)msg->message);
     msg->message = nullptr;
     free(msg);
 
@@ -1130,15 +1105,15 @@ LIB_EXPORT const quixcc_status_t *quixcc_cc_status(quixcc_cc_job_t *job) {
 
 LIB_EXPORT char **quixcc_cc_compile(FILE *in, FILE *out, const char *options[]) {
   if (!g_is_initialized && !quixcc_lib_init()) {
-    quixcc_panic("A libquixcc library contract violation occurred: A successful call to "
-                 "quixcc_lib_init() is required before calling quixcc_compile(). "
-                 "quixcc_compile() attempted to compensate for this error, but "
-                 "quitcc_init() failed to initialize.");
+    quixcc_panic(
+        "A libquixcc library contract violation occurred: A successful call to "
+        "quixcc_lib_init() is required before calling quixcc_compile(). "
+        "quixcc_compile() attempted to compensate for this error, but "
+        "quitcc_init() failed to initialize.");
   }
 
   /* no-op */
-  if (!in || !out)
-    return nullptr;
+  if (!in || !out) return nullptr;
 
   quixcc_cc_job_t *job = quixcc_cc_new();
 
@@ -1148,14 +1123,13 @@ LIB_EXPORT char **quixcc_cc_compile(FILE *in, FILE *out, const char *options[]) 
 
   /* Set options */
   if (options) {
-    for (uint32_t i = 0; options[i]; i++)
-      quixcc_cc_option(job, options[i], true);
+    for (uint32_t i = 0; options[i]; i++) quixcc_cc_option(job, options[i], true);
   }
 
   /* Run the job */
   if (quixcc_cc_run(job)) {
     quixcc_cc_dispose(job);
-    return nullptr; // success
+    return nullptr;  // success
   }
 
   /* Copy messages */

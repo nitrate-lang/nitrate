@@ -5,12 +5,19 @@
 #include <stdio.h>
 #include <string.h>
 
-int example_parser(const char *path) {
+int main(int argc, char**argv) {
   FILE *source = NULL;
   qlex_t *lexer = NULL;
   qparse_conf_t *conf = NULL;
   qparse_t *parser = NULL;
   int ret = 0;
+
+  if (argc < 2) {
+    printf("Usage: %s <path>\n", argv[0]);
+    return -1;
+  }
+
+  const char *path = argv[1];
 
   if (!qparse_lib_init()) {
     printf("Error: %s\n", qparse_strerror());

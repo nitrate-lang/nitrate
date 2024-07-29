@@ -46,19 +46,19 @@
 
 namespace quixcc {
   class TargetTripleException : public std::runtime_error {
-public:
+  public:
     TargetTripleException(const std::string &msg) : std::runtime_error(msg) {}
   };
 
   class CpuException : public std::runtime_error {
-public:
+  public:
     CpuException(const std::string &msg) : std::runtime_error(msg) {}
   };
 
   class TargetTriple {
     std::string m_triple;
 
-public:
+  public:
     TargetTriple(const std::string &triple = "") : TargetTriple(triple.c_str()) {}
 
     TargetTriple(const char *triple);
@@ -69,7 +69,7 @@ public:
   class CPU {
     std::string m_cpu;
 
-public:
+  public:
     CPU(const std::string &cpu = "") : CPU(cpu.c_str()) {}
 
     CPU(const char *cpu);
@@ -98,7 +98,7 @@ public:
     Compiler(Compiler &&) = delete;
     Compiler &operator=(const Compiler &) = delete;
 
-public:
+  public:
     Compiler(std::vector<quixcc_cc_job_t *> jobs, std::set<FILE *> to_close);
 
     ~Compiler();
@@ -125,7 +125,7 @@ public:
     CPU m_cpu;
     bool m_disregard;
 
-public:
+  public:
     CompilerBuilder();
     ~CompilerBuilder() = default;
 
@@ -156,6 +156,6 @@ public:
 
     Compiler build();
   };
-} // namespace quixcc
+}  // namespace quixcc
 
-#endif // __QUIXCC_HPP__
+#endif  // __QUIXCC_HPP__

@@ -33,8 +33,8 @@
 #include <core/Logger.hh>
 #include <fstream>
 
-qpkg::build::EngineBuilder &
-qpkg::build::EngineBuilder::set_package_src(const std::string &directory) {
+qpkg::build::EngineBuilder &qpkg::build::EngineBuilder::set_package_src(
+    const std::string &directory) {
   m_package_src = directory;
   return *this;
 }
@@ -79,8 +79,8 @@ qpkg::build::EngineBuilder &qpkg::build::EngineBuilder::certify(const std::strin
   return *this;
 }
 
-qpkg::build::EngineBuilder &
-qpkg::build::EngineBuilder::certify_password(const std::string &password) {
+qpkg::build::EngineBuilder &qpkg::build::EngineBuilder::certify_password(
+    const std::string &password) {
   m_certify.second = password;
   return *this;
 }
@@ -101,12 +101,10 @@ qpkg::build::EngineBuilder &qpkg::build::EngineBuilder::trustkeys(const std::str
 }
 
 static bool validate_trustkey(const std::string &key) {
-  if (key.size() != 66 || key[0] != '0' || key[1] != 'x')
-    return false;
+  if (key.size() != 66 || key[0] != '0' || key[1] != 'x') return false;
 
   for (size_t i = 2; i < key.size(); i++) {
-    if (!std::isxdigit(key[i]))
-      return false;
+    if (!std::isxdigit(key[i])) return false;
   }
 
   return true;
@@ -116,19 +114,16 @@ static bool validate_and_extract_trustkeyfile(const std::string &keyfile,
                                               std::set<std::string> &trustkeys) {
   try {
     std::ifstream file(keyfile);
-    if (!file.is_open())
-      return false;
+    if (!file.is_open()) return false;
 
     std::string line;
     while (std::getline(file, line)) {
       line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
 
       line = line.substr(0, line.find_first_of('#'));
-      if (line.empty())
-        continue;
+      if (line.empty()) continue;
 
-      if (!validate_trustkey(line))
-        return false;
+      if (!validate_trustkey(line)) return false;
 
       trustkeys.insert(line);
     }

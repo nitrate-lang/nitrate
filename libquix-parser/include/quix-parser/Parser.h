@@ -140,6 +140,23 @@ void qparse_ast_brepr(const qparse_node_t *node, bool compress, qcore_arena_t *a
 bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t **out);
 
 /**
+ * @brief Parse QUIX code into a parse tree and dump it to a file.
+ * 
+ * @param parser The parser instance to use for parsing.
+ * @param out The file to dump the parse tree to.
+ * @param x0 Unused.
+ * @param x1 Unused.
+ * 
+ * @return Returns true if no non-fatal parsing errors occurred, false otherwise. A value of true,
+ * however, does not guarantee that the parse tree is valid.
+ * 
+ * @note If `!parser` or `!out`, false is returned.
+ * 
+ * @note This function is thread safe.
+ */
+bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1);
+
+/**
  * @brief Check if the parse tree is valid.
  *
  * @param parser The parser instance to use for parsing.

@@ -52,10 +52,15 @@ namespace qpkg {
       bool m_debug;
       bool m_disable_sigcheck;
 
-  public:
+    public:
       EngineBuilder()
-          : m_jobs(0), m_disable_cache(false), m_verbose(false), m_optimize(false),
-            m_optimize_size(false), m_debug(false), m_disable_sigcheck(false) {}
+          : m_jobs(0),
+            m_disable_cache(false),
+            m_verbose(false),
+            m_optimize(false),
+            m_optimize_size(false),
+            m_debug(false),
+            m_disable_sigcheck(false) {}
 
       EngineBuilder &set_package_src(const std::string &directory);
       EngineBuilder &set_output(const std::string &output);
@@ -73,7 +78,7 @@ namespace qpkg {
 
       std::optional<Engine> build();
     };
-  } // namespace build
-} // namespace qpkg
+  }  // namespace build
+}  // namespace qpkg
 
-#endif // __QPKG_BUILD_ENGINE_BUILDER_HH__
+#endif  // __QPKG_BUILD_ENGINE_BUILDER_HH__

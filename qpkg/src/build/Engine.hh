@@ -85,14 +85,14 @@ namespace qpkg {
                              const std::filesystem::path &file) const;
       bool link_objects(const std::vector<std::filesystem::path> &objects) const;
 
-  public:
+    public:
       Engine(const std::string &package_src, const std::string &output, int jobs,
              std::unique_ptr<cache::ICache> cache, BuildSecurityConfig security,
              Optimization optimization, bool debug, bool verbose);
 
       bool run();
     };
-  } // namespace build
-} // namespace qpkg
+  }  // namespace build
+}  // namespace qpkg
 
-#endif // __QPKG_BUILD_ENGINE_HH__
+#endif  // __QPKG_BUILD_ENGINE_HH__

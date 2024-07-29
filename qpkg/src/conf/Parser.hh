@@ -44,7 +44,7 @@
 namespace qpkg {
   namespace conf {
     class IParser {
-  public:
+    public:
       virtual ~IParser() = default;
 
       /**
@@ -67,7 +67,7 @@ namespace qpkg {
     };
 
     class YamlConfigParser : public IParser {
-  public:
+    public:
       /**
        * @brief Parse QPKG package configuration content
        *
@@ -77,7 +77,7 @@ namespace qpkg {
        */
       std::optional<Config> parse(const std::string &content) override;
     };
-  } // namespace conf
-} // namespace qpkg
+  }  // namespace conf
+}  // namespace qpkg
 
-#endif // __QPKG_CONF_PARSER_HH__
+#endif  // __QPKG_CONF_PARSER_HH__

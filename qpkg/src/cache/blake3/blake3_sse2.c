@@ -4,7 +4,7 @@
 
 #define DEGREE 4
 
-#define _mm_shuffle_ps2(a, b, c)                                                                   \
+#define _mm_shuffle_ps2(a, b, c) \
   (_mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(a), _mm_castsi128_ps(b), (c))))
 
 INLINE __m128i loadu(const uint8_t src[16]) { return _mm_loadu_si128((const __m128i *)src); }
@@ -88,16 +88,16 @@ INLINE void compress_pre(__m128i rows[4], const uint32_t cv[8],
 
   // Round 1. The first round permutes the message words from the original
   // input order, into the groups that get mixed in parallel.
-  t0 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(2, 0, 2, 0)); //  6  4  2  0
+  t0 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(2, 0, 2, 0));  //  6  4  2  0
   g1(&rows[0], &rows[1], &rows[2], &rows[3], t0);
-  t1 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(3, 1, 3, 1)); //  7  5  3  1
+  t1 = _mm_shuffle_ps2(m0, m1, _MM_SHUFFLE(3, 1, 3, 1));  //  7  5  3  1
   g2(&rows[0], &rows[1], &rows[2], &rows[3], t1);
   diagonalize(&rows[0], &rows[2], &rows[3]);
-  t2 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(2, 0, 2, 0)); // 14 12 10  8
-  t2 = _mm_shuffle_epi32(t2, _MM_SHUFFLE(2, 1, 0, 3));   // 12 10  8 14
+  t2 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(2, 0, 2, 0));  // 14 12 10  8
+  t2 = _mm_shuffle_epi32(t2, _MM_SHUFFLE(2, 1, 0, 3));    // 12 10  8 14
   g1(&rows[0], &rows[1], &rows[2], &rows[3], t2);
-  t3 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(3, 1, 3, 1)); // 15 13 11  9
-  t3 = _mm_shuffle_epi32(t3, _MM_SHUFFLE(2, 1, 0, 3));   // 13 11  9 15
+  t3 = _mm_shuffle_ps2(m2, m3, _MM_SHUFFLE(3, 1, 3, 1));  // 15 13 11  9
+  t3 = _mm_shuffle_epi32(t3, _MM_SHUFFLE(2, 1, 0, 3));    // 13 11  9 15
   g2(&rows[0], &rows[1], &rows[2], &rows[3], t3);
   undiagonalize(&rows[0], &rows[2], &rows[3]);
   m0 = t0;

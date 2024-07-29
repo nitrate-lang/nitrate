@@ -90,53 +90,53 @@ struct Options {
     }
 
     switch (mode) {
-    case OperatingMode::ERROR:
-      return false;
-    case OperatingMode::DISP_HELP:
-    case OperatingMode::DISP_VERSION:
-    case OperatingMode::DISP_LICENSE:
-      return true;
-    case OperatingMode::DYNAMIC_EXECUTABLE:
-    case OperatingMode::STATIC_EXECUTABLE:
-    case OperatingMode::SHARED_LIBRARY:
-      if (pack &&
-          (mode != OperatingMode::DYNAMIC_EXECUTABLE && mode != OperatingMode::STATIC_EXECUTABLE)) {
-        std::cerr << "Error: packing is only supported for executables" << std::endl;
+      case OperatingMode::ERROR:
         return false;
-      }
-      if (output.empty()) {
-        std::cerr << "Error: missing output file" << std::endl;
+      case OperatingMode::DISP_HELP:
+      case OperatingMode::DISP_VERSION:
+      case OperatingMode::DISP_LICENSE:
+        return true;
+      case OperatingMode::DYNAMIC_EXECUTABLE:
+      case OperatingMode::STATIC_EXECUTABLE:
+      case OperatingMode::SHARED_LIBRARY:
+        if (pack && (mode != OperatingMode::DYNAMIC_EXECUTABLE &&
+                     mode != OperatingMode::STATIC_EXECUTABLE)) {
+          std::cerr << "Error: packing is only supported for executables" << std::endl;
+          return false;
+        }
+        if (output.empty()) {
+          std::cerr << "Error: missing output file" << std::endl;
+          return false;
+        }
+        if (objects.empty()) {
+          std::cerr << "Error: missing input files" << std::endl;
+          return false;
+        }
+        return true;
+      case OperatingMode::STATIC_LIBRARY:
+        if (pack) {
+          std::cerr << "Error: packing is not supported for static libraries" << std::endl;
+          return false;
+        }
+        if (output.empty()) {
+          std::cerr << "Error: missing output file" << std::endl;
+          return false;
+        }
+        if (!output.ends_with(".a")) {
+          std::cerr << "Error: output file must have .a extension" << std::endl;
+          return false;
+        }
+        if (objects.empty()) {
+          std::cerr << "Error: missing input files" << std::endl;
+          return false;
+        }
+        if (strip) {
+          std::cerr << "Error: cannot strip symbols from a static library" << std::endl;
+          return false;
+        }
+        return true;
+      default:
         return false;
-      }
-      if (objects.empty()) {
-        std::cerr << "Error: missing input files" << std::endl;
-        return false;
-      }
-      return true;
-    case OperatingMode::STATIC_LIBRARY:
-      if (pack) {
-        std::cerr << "Error: packing is not supported for static libraries" << std::endl;
-        return false;
-      }
-      if (output.empty()) {
-        std::cerr << "Error: missing output file" << std::endl;
-        return false;
-      }
-      if (!output.ends_with(".a")) {
-        std::cerr << "Error: output file must have .a extension" << std::endl;
-        return false;
-      }
-      if (objects.empty()) {
-        std::cerr << "Error: missing input files" << std::endl;
-        return false;
-      }
-      if (strip) {
-        std::cerr << "Error: cannot strip symbols from a static library" << std::endl;
-        return false;
-      }
-      return true;
-    default:
-      return false;
     }
   }
 };
@@ -257,8 +257,7 @@ static std::optional<Options> parse_options(const std::vector<std::string> &args
     // strip file extension from first object file
     auto obj = options.objects[0];
     auto pos = obj.find_last_of('.');
-    if (pos != std::string::npos)
-      obj = obj.substr(0, pos);
+    if (pos != std::string::npos) obj = obj.substr(0, pos);
 
     options.output = "lib" + obj + ".a";
   } else if (options.mode == OperatingMode::SHARED_LIBRARY && options.output.empty() &&
@@ -266,8 +265,7 @@ static std::optional<Options> parse_options(const std::vector<std::string> &args
     // strip file extension from first object file
     auto obj = options.objects[0];
     auto pos = obj.find_last_of('.');
-    if (pos != std::string::npos)
-      obj = obj.substr(0, pos);
+    if (pos != std::string::npos) obj = obj.substr(0, pos);
 
     options.output = "lib" + obj + ".so";
   } else if (options.output.empty()) {
@@ -282,79 +280,66 @@ int main(int argc, char *argv[]) {
 
   program_name = args[0];
 
-  if (args.size() > 1 && args[1] == "--")
-    return 0;
+  if (args.size() > 1 && args[1] == "--") return 0;
 
   std::optional<Options> options;
 
-  if (options = parse_options(args), !options.has_value())
-    return 2;
+  if (options = parse_options(args), !options.has_value()) return 2;
 
-  if (!options->validate())
-    return 3;
+  if (!options->validate()) return 3;
 
   switch (options->mode) {
-  case OperatingMode::DISP_HELP:
-    print_help();
-    return 0;
-  case OperatingMode::DISP_VERSION:
-    print_version();
-    return 0;
-  case OperatingMode::DISP_LICENSE:
-    print_license();
-    return 0;
-  case OperatingMode::STATIC_LIBRARY: {
-    std::string cmd = "ar rcs " + options->output;
+    case OperatingMode::DISP_HELP:
+      print_help();
+      return 0;
+    case OperatingMode::DISP_VERSION:
+      print_version();
+      return 0;
+    case OperatingMode::DISP_LICENSE:
+      print_license();
+      return 0;
+    case OperatingMode::STATIC_LIBRARY: {
+      std::string cmd = "ar rcs " + options->output;
 
-    for (const auto &obj : options->objects)
-      cmd += " " + obj;
+      for (const auto &obj : options->objects) cmd += " " + obj;
 
-    return std::system(cmd.c_str());
-  }
-  default:
-    break;
+      return std::system(cmd.c_str());
+    }
+    default:
+      break;
   }
 
   std::string cmd = "cc -o " + options->output;
 
-  for (const auto &obj : options->objects)
-    cmd += " '" + obj + "'";
+  for (const auto &obj : options->objects) cmd += " '" + obj + "'";
 
-  for (const auto &lib : options->libraries)
-    cmd += " -l" + lib;
+  for (const auto &lib : options->libraries) cmd += " -l" + lib;
 
-  for (const auto &path : options->library_paths)
-    cmd += " -L" + path;
+  for (const auto &path : options->library_paths) cmd += " -L" + path;
 
-  if (options->optimization == OptimizationLevel::LTO)
-    cmd += " -flto";
+  if (options->optimization == OptimizationLevel::LTO) cmd += " -flto";
 
-  if (options->verbose)
-    cmd += " -v";
+  if (options->verbose) cmd += " -v";
 
-  if (options->strip)
-    cmd += " -s";
+  if (options->strip) cmd += " -s";
 
-  for (const auto &opt : options->platform_options)
-    cmd += " " + opt;
+  for (const auto &opt : options->platform_options) cmd += " " + opt;
 
   switch (options->mode) {
-  case OperatingMode::STATIC_EXECUTABLE:
-    cmd += " -static";
-    break;
-  case OperatingMode::SHARED_LIBRARY:
-    cmd += " -shared";
-    break;
-  default:
-    break;
+    case OperatingMode::STATIC_EXECUTABLE:
+      cmd += " -static";
+      break;
+    case OperatingMode::SHARED_LIBRARY:
+      cmd += " -shared";
+      break;
+    default:
+      break;
   }
 
   int s;
-  if ((s = std::system(cmd.c_str())) != 0)
-    return s;
+  if ((s = std::system(cmd.c_str())) != 0) return s;
 
-  if (options->pack)
-    return std::system(("upx " + options->output).c_str());
+  if (options->pack) return std::system(("upx " + options->output).c_str());
 
   return 0;
 }

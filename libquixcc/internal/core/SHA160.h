@@ -44,13 +44,13 @@ namespace libquixcc::core {
   class SHA160 {
     void *m_ossl_ctx;
 
-public:
+  public:
     SHA160();
     ~SHA160();
 
     void process(std::string_view data);
     void finalize(uint8_t sum[20]);
   };
-}; // namespace libquixcc::core
+};  // namespace libquixcc::core
 
-#endif // __QUIXCC_CORE_SHA_160__
+#endif  // __QUIXCC_CORE_SHA_160__

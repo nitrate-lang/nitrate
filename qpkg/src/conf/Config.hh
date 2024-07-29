@@ -49,7 +49,7 @@ namespace qpkg {
     };
 
     class ConfigSerializerException : public std::runtime_error {
-  public:
+    public:
       ConfigSerializerException(const std::string &message) : std::runtime_error(message) {}
     };
 
@@ -60,9 +60,15 @@ namespace qpkg {
       ConfigValue(std::variant<std::vector<std::string>, std::string, int64_t, bool> value)
           : m_value(value) {}
 
-      template <typename T> T as() const { return std::get<T>(m_value); }
+      template <typename T>
+      T as() const {
+        return std::get<T>(m_value);
+      }
 
-      template <typename T> bool is() const { return std::holds_alternative<T>(m_value); }
+      template <typename T>
+      bool is() const {
+        return std::holds_alternative<T>(m_value);
+      }
 
       bool operator==(const ConfigValue &value) const { return m_value == value.m_value; }
     };
@@ -80,20 +86,23 @@ namespace qpkg {
        * @note If the target is not supported, the function throws
        * ConfigSerializerException.
        */
-      std::string
-      dump(ConfigItemSerializationTarget target = ConfigItemSerializationTarget::JSON) const;
+      std::string dump(
+          ConfigItemSerializationTarget target = ConfigItemSerializationTarget::JSON) const;
 
       inline const ConfigValue &operator[](const std::string &key) const { return m_items.at(key); }
 
-      template <typename T> void set(const std::string &key, T value) {
+      template <typename T>
+      void set(const std::string &key, T value) {
         m_items[key] = ConfigValue(value);
       }
 
-      template <typename T> bool has(const std::string &key) const {
+      template <typename T>
+      bool has(const std::string &key) const {
         return m_items.contains(key) && m_items.at(key).is<T>();
       }
 
-      template <typename T> bool is(const std::string &key, T value) const {
+      template <typename T>
+      bool is(const std::string &key, T value) const {
         return has<T>(key) && m_items.at(key).as<T>() == value;
       }
 
@@ -115,8 +124,8 @@ namespace qpkg {
        * @note If the target is not supported, the function throws
        * ConfigSerializerException.
        */
-      std::string
-      dump(ConfigItemSerializationTarget target = ConfigItemSerializationTarget::JSON) const;
+      std::string dump(
+          ConfigItemSerializationTarget target = ConfigItemSerializationTarget::JSON) const;
 
       bool operator==(const Config &cfg) const {
         return m_version == cfg.m_version && m_root == cfg.m_root;
@@ -126,12 +135,11 @@ namespace qpkg {
 
       inline std::set<std::string> keys() const {
         std::set<std::string> keys;
-        for (const auto &item : m_root.m_items)
-          keys.insert(item.first);
+        for (const auto &item : m_root.m_items) keys.insert(item.first);
         return keys;
       }
     };
-  } // namespace conf
-} // namespace qpkg
+  }  // namespace conf
+}  // namespace qpkg
 
-#endif // __QPKG_CONF_CONFIG_HH__
+#endif  // __QPKG_CONF_CONFIG_HH__

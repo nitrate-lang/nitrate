@@ -68,8 +68,7 @@ qpkg::build::Engine::Engine(const std::string &package_src, const std::string &o
 #ifdef __linux__
     m_jobs = sysconf(_SC_NPROCESSORS_ONLN);
 
-    if (m_jobs < 1)
-      m_jobs = 1;
+    if (m_jobs < 1) m_jobs = 1;
 #else
     m_jobs = 1;
 #endif
@@ -81,8 +80,8 @@ qpkg::build::Engine::Engine(const std::string &package_src, const std::string &o
   }
 }
 
-std::optional<qpkg::conf::Config>
-qpkg::build::Engine::load_config(const std::filesystem::path &base) {
+std::optional<qpkg::conf::Config> qpkg::build::Engine::load_config(
+    const std::filesystem::path &base) {
   if (std::filesystem::exists(base / "qpkg.yaml"))
     return conf::YamlConfigParser().parsef(base / "qpkg.yaml");
   else {
@@ -111,8 +110,7 @@ std::vector<std::string> qpkg::build::Engine::get_source_files(const std::filesy
 
 static qpkg::cache::CacheKey compute_cachekey(const std::filesystem::path &file) {
   std::ifstream in(file, std::ios::binary);
-  if (!in)
-    throw std::runtime_error("Failed to open file");
+  if (!in) throw std::runtime_error("Failed to open file");
 
   uint8_t buffer[4096];
   qpkg::cache::CacheHasher hasher;
@@ -159,15 +157,15 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::path &base,
   builder.set_debug(m_debug);
   builder.set_verbosity(m_verbose ? quixcc::Verbosity::VERY_VERBOSE : quixcc::Verbosity::NORMAL);
   switch (m_optimization) {
-  case Optimization::OPTIMIZE_DEFAULT:
-    builder.set_optimization(quixcc::OptimizationLevel::SPEED_2);
-    break;
-  case Optimization::OPTIMIZE_SPEED:
-    builder.set_optimization(quixcc::OptimizationLevel::SPEED_4);
-    break;
-  case Optimization::OPTIMIZE_SIZE:
-    builder.set_optimization(quixcc::OptimizationLevel::SIZE);
-    break;
+    case Optimization::OPTIMIZE_DEFAULT:
+      builder.set_optimization(quixcc::OptimizationLevel::SPEED_2);
+      break;
+    case Optimization::OPTIMIZE_SPEED:
+      builder.set_optimization(quixcc::OptimizationLevel::SPEED_4);
+      break;
+    case Optimization::OPTIMIZE_SIZE:
+      builder.set_optimization(quixcc::OptimizationLevel::SIZE);
+      break;
   }
 
   for (const auto &header : m_config["headers"].as<std::vector<std::string>>())
@@ -176,8 +174,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::path &base,
   builder.add_include(base.string());
   builder.add_source(file.string());
   builder.opt("-c");
-  for (const auto &flag : m_config["cflags"].as<std::vector<std::string>>())
-    builder.opt(flag);
+  for (const auto &flag : m_config["cflags"].as<std::vector<std::string>>()) builder.opt(flag);
 
   if (m_build_type == BuildType::SHAREDLIB)
     builder.opt("-fPIC");
@@ -187,8 +184,7 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::path &base,
   builder.target(m_config["triple"].as<std::string>());
   builder.cpu(m_config["cpu"].as<std::string>());
 
-  if (!builder.build().run(1).puts().ok())
-    return false;
+  if (!builder.build().run(1).puts().ok()) return false;
 
   if (m_cache) {
     m_cache->acquire_lock();
@@ -202,35 +198,30 @@ bool qpkg::build::Engine::build_source_file(const std::filesystem::path &base,
 bool qpkg::build::Engine::link_objects(const std::vector<std::filesystem::path> &objects) const {
   std::string cmd = "qld";
 
-  for (const auto &flag : m_config["lflags"].as<std::vector<std::string>>())
-    cmd += " " + flag;
+  for (const auto &flag : m_config["lflags"].as<std::vector<std::string>>()) cmd += " " + flag;
 
   cmd += " -o '" + m_output + "'";
 
   switch (m_build_type) {
-  case BuildType::SHAREDLIB:
-    cmd += " -sharedlib";
-    break;
-  case BuildType::STATICLIB:
-    cmd += " -staticlib";
-    break;
-  case BuildType::EXECUTABLE:
-    break;
+    case BuildType::SHAREDLIB:
+      cmd += " -sharedlib";
+      break;
+    case BuildType::STATICLIB:
+      cmd += " -staticlib";
+      break;
+    case BuildType::EXECUTABLE:
+      break;
   }
 
-  for (const auto &file : objects)
-    cmd += " '" + file.string() + "'";
+  for (const auto &file : objects) cmd += " '" + file.string() + "'";
 
-  if (m_debug)
-    cmd += " -g";
+  if (m_debug) cmd += " -g";
 
-  if (m_verbose)
-    cmd += " -vv";
+  if (m_verbose) cmd += " -vv";
 
   LOG(core::DEBUG) << "Invoking linker: " << cmd << std::endl;
 
-  if (system(cmd.c_str()) != 0)
-    return false;
+  if (system(cmd.c_str()) != 0) return false;
 
   return true;
 }
@@ -266,8 +257,7 @@ bool qpkg::build::Engine::run_threads(const std::filesystem::path &base,
         }));
   }
 
-  for (auto &thread : threads)
-    thread.join();
+  for (auto &thread : threads) thread.join();
 
   return !tainted;
 }
@@ -281,10 +271,8 @@ bool qpkg::build::Engine::build_package(const std::filesystem::path &base,
     std::filesystem::path pkg_path = std::filesystem::absolute(base / pkg);
 
     std::vector<std::string> args = {"qpkg", "build", pkg_path.string()};
-    if (m_verbose)
-      args.push_back("-v");
-    if (!m_cache)
-      args.push_back("-N");
+    if (m_verbose) args.push_back("-v");
+    if (!m_cache) args.push_back("-N");
 
     if (qpkg_main(args) != 0) {
       return false;
@@ -307,15 +295,15 @@ bool qpkg::build::Engine::build_package(const std::filesystem::path &base,
 
     if (m_config["nolink"].as<bool>() == false) {
       switch (m_build_type) {
-      case BuildType::SHAREDLIB:
-        log.bold("Linking QUIX shared library lib" + m_package_name + ".so");
-        break;
-      case BuildType::STATICLIB:
-        log.bold("Linking QUIX static library lib" + m_package_name + ".a");
-        break;
-      case BuildType::EXECUTABLE:
-        log.bold("Linking QUIX executable " + m_package_name);
-        break;
+        case BuildType::SHAREDLIB:
+          log.bold("Linking QUIX shared library lib" + m_package_name + ".so");
+          break;
+        case BuildType::STATICLIB:
+          log.bold("Linking QUIX static library lib" + m_package_name + ".a");
+          break;
+        case BuildType::EXECUTABLE:
+          log.bold("Linking QUIX executable " + m_package_name);
+          break;
       }
 
       if (!link_objects(objects)) {
@@ -356,8 +344,7 @@ bool qpkg::build::Engine::run() {
 
   std::filesystem::path build_dir = base / ".qpkg" / "build";
 
-  if (!std::filesystem::exists(build_dir))
-    std::filesystem::create_directories(build_dir);
+  if (!std::filesystem::exists(build_dir)) std::filesystem::create_directories(build_dir);
 
   if (m_config["target"].as<std::string>() == "sharedlib")
     m_build_type = BuildType::SHAREDLIB;
@@ -372,18 +359,18 @@ bool qpkg::build::Engine::run() {
 
   if (m_output.empty()) {
     switch (m_build_type) {
-    case BuildType::SHAREDLIB:
-      m_output = base / ("lib" + m_config["name"].as<std::string>() + ".so");
-      std::filesystem::remove(m_output);
-      break;
-    case BuildType::STATICLIB:
-      m_output = base / ("lib" + m_config["name"].as<std::string>() + ".a");
-      std::filesystem::remove(m_output);
-      break;
-    case BuildType::EXECUTABLE:
-      m_output = base / m_config["name"].as<std::string>();
-      std::filesystem::remove(m_output);
-      break;
+      case BuildType::SHAREDLIB:
+        m_output = base / ("lib" + m_config["name"].as<std::string>() + ".so");
+        std::filesystem::remove(m_output);
+        break;
+      case BuildType::STATICLIB:
+        m_output = base / ("lib" + m_config["name"].as<std::string>() + ".a");
+        std::filesystem::remove(m_output);
+        break;
+      case BuildType::EXECUTABLE:
+        m_output = base / m_config["name"].as<std::string>();
+        std::filesystem::remove(m_output);
+        break;
     }
   }
 

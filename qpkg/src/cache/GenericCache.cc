@@ -51,8 +51,7 @@ static std::string base64_encode(const std::string &in) {
     out.push_back("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"[((val << 8) >>
                                                                                       (valb + 8)) &
                                                                                      0x3F]);
-  while (out.size() % 4)
-    out.push_back('=');
+  while (out.size() % 4) out.push_back('=');
   return out;
 }
 
@@ -60,14 +59,13 @@ std::string qpkg::cache::keyToString(const qpkg::cache::CacheKey &key, qpkg::cac
   std::stringstream ss;
 
   switch (format) {
-  case Format::HEX:
-    for (const auto &byte : key)
-      ss << std::hex << std::setfill('0') << std::setw(2) << (int)byte;
-    return ss.str();
-  case Format::BASE64:
-    return base64_encode(std::string(key.begin(), key.end()));
-  default:
-    LOG(core::FATAL) << "Invalid format" << std::endl;
+    case Format::HEX:
+      for (const auto &byte : key) ss << std::hex << std::setfill('0') << std::setw(2) << (int)byte;
+      return ss.str();
+    case Format::BASE64:
+      return base64_encode(std::string(key.begin(), key.end()));
+    default:
+      LOG(core::FATAL) << "Invalid format" << std::endl;
   }
 
   return "";

@@ -37,8 +37,7 @@
 constexpr char CACHE_INDEX_HEADER[] = "QPKG_CACHE_V1";
 
 qpkg::cache::DirectoryCache::~DirectoryCache() {
-  if (!m_cacheDir.empty())
-    this->sync();
+  if (!m_cacheDir.empty()) this->sync();
 }
 
 void qpkg::cache::DirectoryCache::acquire_lock() { m_mutex.lock(); }
@@ -131,11 +130,9 @@ bool qpkg::cache::DirectoryCache::discover() {
 bool qpkg::cache::DirectoryCache::setup(const std::string &location, bool init) {
   m_cacheDir = std::filesystem::path(location) / ".qpkg" / "cache";
 
-  if (std::filesystem::exists(m_cacheDir))
-    return this->discover();
+  if (std::filesystem::exists(m_cacheDir)) return this->discover();
 
-  if (init)
-    return this->init();
+  if (init) return this->init();
 
   return false;
 }
@@ -182,8 +179,8 @@ std::string qpkg::cache::DirectoryCache::loadf(const CacheKey &key) {
   return m_cacheMap[key].first;
 }
 
-std::chrono::_V2::system_clock::time_point
-qpkg::cache::DirectoryCache::timestamp(const qpkg::cache::CacheKey &key) {
+std::chrono::_V2::system_clock::time_point qpkg::cache::DirectoryCache::timestamp(
+    const qpkg::cache::CacheKey &key) {
   if (!m_cacheMap.contains(key)) {
     LOG(core::FATAL) << "Key not found in cache" << std::endl;
   }

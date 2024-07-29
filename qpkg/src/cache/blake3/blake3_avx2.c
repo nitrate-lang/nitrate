@@ -16,9 +16,9 @@ INLINE __m256i xorv(__m256i a, __m256i b) { return _mm256_xor_si256(a, b); }
 INLINE __m256i set1(uint32_t x) { return _mm256_set1_epi32((int32_t)x); }
 
 INLINE __m256i rot16(__m256i x) {
-  return _mm256_shuffle_epi8(x,
-                             _mm256_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2,
-                                             13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
+  return _mm256_shuffle_epi8(
+      x, _mm256_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2, 13, 12, 15, 14, 9, 8,
+                         11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
 }
 
 INLINE __m256i rot12(__m256i x) {
@@ -26,9 +26,9 @@ INLINE __m256i rot12(__m256i x) {
 }
 
 INLINE __m256i rot8(__m256i x) {
-  return _mm256_shuffle_epi8(x,
-                             _mm256_set_epi8(12, 15, 14, 13, 8, 11, 10, 9, 4, 7, 6, 5, 0, 3, 2, 1,
-                                             12, 15, 14, 13, 8, 11, 10, 9, 4, 7, 6, 5, 0, 3, 2, 1));
+  return _mm256_shuffle_epi8(
+      x, _mm256_set_epi8(12, 15, 14, 13, 8, 11, 10, 9, 4, 7, 6, 5, 0, 3, 2, 1, 12, 15, 14, 13, 8,
+                         11, 10, 9, 4, 7, 6, 5, 0, 3, 2, 1));
 }
 
 INLINE __m256i rot7(__m256i x) {
