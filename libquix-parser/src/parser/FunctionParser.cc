@@ -391,10 +391,10 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
             return false;
           }
 
-          expr = UnaryExpr::get(UnaryOp::LogicalNot, expr);
-          expr = UnaryExpr::get(UnaryOp::LogicalNot, expr);
+          expr = UnaryExpr::get(qOpLogicNot, expr);
+          expr = UnaryExpr::get(qOpLogicNot, expr);
 
-          req_in = BinExpr::get(req_in, BinOp::LogicalAnd, expr);
+          req_in = BinExpr::get(req_in, qOpLogicAnd, expr);
         } else if (tok.is<qOpOut>()) {
           if (!req_out) {
             req_out = ConstBool::get(true);
@@ -410,9 +410,9 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
             return false;
           }
 
-          expr = UnaryExpr::get(UnaryOp::LogicalNot, expr);
-          expr = UnaryExpr::get(UnaryOp::LogicalNot, expr);
-          req_out = BinExpr::get(req_out, BinOp::LogicalAnd, expr);
+          expr = UnaryExpr::get(qOpLogicNot, expr);
+          expr = UnaryExpr::get(qOpLogicNot, expr);
+          req_out = BinExpr::get(req_out, qOpLogicAnd, expr);
         } else {
           /// TODO: Write the ERROR message
           return false;

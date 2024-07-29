@@ -44,6 +44,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstring>
+#include <queue>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -391,7 +392,7 @@ class qlex_impl_t final {
 
   std::array<qlex_tok_t, TOKEN_BUF_SIZE> m_tokens;
   size_t m_tok_pos;
-  std::vector<qlex_tok_t> m_undo;
+  std::queue<qlex_tok_t> m_undo;
 
   std::deque<char> m_pushback;
   std::array<char, GETC_BUFFER_SIZE> m_buf;
@@ -437,7 +438,7 @@ public:
 
   qlex_tok_t next();
 
-  void undo(qlex_tok_t tok) { m_undo.push_back(tok); }
+  void undo(qlex_tok_t tok) { m_undo.push(tok); }
   uint32_t save_userstring(std::string_view str) { return m_holdings.retain(str); }
 };
 
@@ -463,7 +464,12 @@ static qlex_tok_t _impl_peek(qlex_t *self) {
   return self->cur;
 }
 
-static void _impl_push(qlex_t *self, const qlex_tok_t *tok) { self->impl->undo(*tok); }
+static void _impl_push(qlex_t *self, const qlex_tok_t *tok) {
+  self->impl->undo(*tok);
+  self->impl->undo(self->cur);
+
+  self->cur.ty = qErro;
+}
 
 static void _impl_collect(qlex_t *self, const qlex_tok_t *tok) {
   (void)self;
@@ -739,8 +745,8 @@ char qlex_impl_t::getc() {
 
 qlex_tok_t qlex_impl_t::next() {
   if (!m_undo.empty()) {
-    qlex_tok_t tok = m_undo.back();
-    m_undo.pop_back();
+    qlex_tok_t tok = m_undo.front();
+    m_undo.pop();
     return tok;
   }
 

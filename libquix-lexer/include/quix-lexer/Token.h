@@ -39,35 +39,36 @@ extern "C" {
 #include <stdint.h>
 
 typedef enum qlex_ty_t {
-  qEofF, /* End of file */
-  qErro, /* Error, invalid token */
-  qKeyW, /* Keyword */
-  qOper, /* Operator */
-  qPunc, /* Punctuation */
-  qName, /* Identifier */
-  qIntL, /* Integer literal */
-  qNumL, /* Floating-point literal */
-  qText, /* String literal */
-  qChar, /* Character literal */
-  qMacB, /* Macro block */
-  qMacr, /* Macro call */
-  qNote, /* Comment */
+  qEofF = 1, /* End of file */
+  qErro,     /* Error, invalid token */
+  qKeyW,     /* Keyword */
+  qOper,     /* Operator */
+  qPunc,     /* Punctuation */
+  qName,     /* Identifier */
+  qIntL,     /* Integer literal */
+  qNumL,     /* Floating-point literal */
+  qText,     /* String literal */
+  qChar,     /* Character literal */
+  qMacB,     /* Macro block */
+  qMacr,     /* Macro call */
+  qNote,     /* Comment */
 } __attribute__((packed)) qlex_ty_t;
 
 typedef enum qlex_punc_t {
-  qPuncLPar, /* Left parenthesis */
-  qPuncRPar, /* Right parenthesis */
-  qPuncLBrk, /* Left bracket */
-  qPuncRBrk, /* Right bracket */
-  qPuncLCur, /* Left curly brace */
-  qPuncRCur, /* Right curly brace */
-  qPuncComa, /* Comma */
-  qPuncColn, /* Colon */
-  qPuncSemi, /* Semicolon */
+  qPuncLPar = 1, /* Left parenthesis */
+  qPuncRPar,     /* Right parenthesis */
+  qPuncLBrk,     /* Left bracket */
+  qPuncRBrk,     /* Right bracket */
+  qPuncLCur,     /* Left curly brace */
+  qPuncRCur,     /* Right curly brace */
+  qPuncComa,     /* Comma */
+  qPuncColn,     /* Colon */
+  qPuncSemi,     /* Semicolon */
 } __attribute__((packed)) qlex_punc_t;
 
 typedef enum qlex_op_t {
-  qOpTernary,       /* '?:': Ternary operator */
+  qOpUnknown = 0,   /* Unknown operator */
+  qOpTernary = 1,   /* '?:': Ternary operator */
   qOpArrow,         /* '=>': Arrow operator */
   qOpDot,           /* '.': Dot operator */
   qOpPlus,          /* '+': Addition operator */
@@ -245,6 +246,8 @@ typedef struct qlex_tok_t {
 
   inline bool is(qlex_ty_t val) const { return ty == val; }
 
+  bool operator==(const qlex_tok_t &rhs) = delete;
+
   template <auto V>
   bool is() const {
     if constexpr (std::is_same_v<decltype(V), qlex_key_t>) {
@@ -262,10 +265,21 @@ typedef struct qlex_tok_t {
 
   bool operator<(const qlex_tok_t &rhs) const {
     if (ty != rhs.ty) return ty < rhs.ty;
-    if (loc.idx != rhs.loc.idx) return loc.idx < rhs.loc.idx;
-    if (v.str_idx != rhs.v.str_idx) return v.str_idx < rhs.v.str_idx;
-
-    return false;
+    switch (ty) {
+      case qPunc:
+        return v.punc < rhs.v.punc;
+      case qOper:
+        return v.op < rhs.v.op;
+      case qKeyW:
+        return v.key < rhs.v.key;
+      case qIntL:
+      case qNumL:
+      case qText:
+      case qChar:
+        return v.str_idx < rhs.v.str_idx;
+      default:
+        return false;
+    }
   }
 } __attribute__((packed)) qlex_tok_t;
 extern "C" {

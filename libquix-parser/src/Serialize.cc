@@ -819,10 +819,14 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_STMT:
     case QAST_NODE_TYPE:
     case QAST_NODE_DECL:
-    case QAST_NODE_EXPR:
-    case QAST_NODE_CEXPR: {
-      qcore_panic("Invalid node type for serialization");
+    case QAST_NODE_EXPR: {
+      qcore_panicf("Invalid node type for serialization: %s", n->this_nameof());
     }
+    case QAST_NODE_CEXPR:
+      OBJECT_BEGIN("CExpr");
+      OBJECT_SUB(n->as<ConstExpr>()->get_value());
+      OBJECT_END();
+      break;
   }
 }
 
@@ -974,17 +978,7 @@ LIB_EXPORT void qparse_ast_brepr(const Node *node, bool compress, qcore_arena_t 
   }
 }
 
-std::ostream &std::operator<<(std::ostream &os, const UnaryOp &op) {
-  os << qlex_opstr((qlex_op_t)op);
-  return os;
-}
-
-std::ostream &std::operator<<(std::ostream &os, const PostUnaryOp &expr) {
-  os << qlex_opstr((qlex_op_t)expr);
-  return os;
-}
-
-std::ostream &std::operator<<(std::ostream &os, const BinOp &op) {
+std::ostream &std::operator<<(std::ostream &os, const qlex_op_t &op) {
   os << qlex_opstr((qlex_op_t)op);
   return os;
 }

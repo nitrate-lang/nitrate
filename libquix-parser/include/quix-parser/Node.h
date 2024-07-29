@@ -166,6 +166,7 @@ typedef struct qparse_node_t qparse_node_t;
 
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>
+#include <quix-lexer/Token.h>
 
 #include <cassert>
 #include <iostream>
@@ -291,93 +292,6 @@ public:
 };
 
 namespace qparse {
-  enum class UnaryOp {
-    UNKNOWN,
-
-    Plus = 10,
-    Minus = 11,
-    Multiply = 12,
-
-    BitwiseAnd = 20,
-    BitwiseNot = 23,
-
-    Increment = 30,
-    Decrement = 31,
-
-    LogicalNot = 50,
-
-    Sizeof = 84,
-    Alignof = 85,
-    Typeof = 86,
-    Offsetof = 87,
-    Bitsizeof = 93,
-  };
-
-  enum class PostUnaryOp {
-    UNKNOWN,
-
-    Increment = 30,
-    Decrement = 31,
-  };
-
-  enum class BinOp {
-    UNKNOWN,
-
-    Plus = 10,
-    Minus = 11,
-    Multiply = 12,
-    Divide = 13,
-    Modulo = 14,
-
-    BitwiseAnd = 20,
-    BitwiseOr = 21,
-    BitwiseXor = 22,
-    BitwiseNot = 23,
-    LeftShift = 24,
-    RightShift = 25,
-    RotateRight = 26,
-    RotateLeft = 27,
-
-    Increment = 30,
-    Decrement = 31,
-    OpAssign = 32,
-    PlusAssign = 33,
-    MinusAssign = 34,
-    MultiplyAssign = 35,
-    DivideAssign = 36,
-    ModuloAssign = 37,
-    BitwiseOrAssign = 38,
-    BitwiseAndAssign = 39,
-    BitwiseXorAssign = 40,
-    XorAssign = 41,
-    OrAssign = 42,
-    AndAssign = 43,
-    LeftShiftAssign = 44,
-    RightShiftAssign = 45,
-
-    LogicalNot = 50,
-    LogicalAnd = 51,
-    LogicalOr = 52,
-    LogicalXor = 53,
-
-    LessThan = 60,
-    GreaterThan = 61,
-    LessThanEqual = 62,
-    GreaterThanEqual = 63,
-    Equal = 64,
-    NotEqual = 65,
-
-    As = 80,
-    Is = 81,
-    In = 82,
-    NotIn = 83,
-    Ellipsis = 89,
-    Spaceship = 90,
-    BitcastAs = 91,
-    ReinterpretAs = 92,
-    Bitsizeof = 93,
-  };
-
   enum class Visibility {
     PUBLIC,
     PRIVATE,
@@ -1096,16 +1010,16 @@ namespace qparse {
   class UnaryExpr : public Expr {
   protected:
     Expr *m_rhs;
-    UnaryOp m_op;
+    qlex_op_t m_op;
 
   public:
-    UnaryExpr(UnaryOp op = UnaryOp::UNKNOWN, Expr *rhs = nullptr) : m_rhs(rhs), m_op(op) {}
+    UnaryExpr(qlex_op_t op = qOpUnknown, Expr *rhs = nullptr) : m_rhs(rhs), m_op(op) {}
 
     Expr *get_rhs() const;
     void set_rhs(Expr *rhs);
 
-    UnaryOp get_op() const;
-    void set_op(UnaryOp op);
+    qlex_op_t get_op() const;
+    void set_op(qlex_op_t op);
 
     NODE_IMPL_CORE(UnaryExpr)
   };
@@ -1114,10 +1028,10 @@ namespace qparse {
   protected:
     Expr *m_lhs;
     Expr *m_rhs;
-    BinOp m_op;
+    qlex_op_t m_op;
 
   public:
-    BinExpr(Expr *lhs = nullptr, BinOp op = BinOp::UNKNOWN, Expr *rhs = nullptr)
+    BinExpr(Expr *lhs = nullptr, qlex_op_t op = qOpUnknown, Expr *rhs = nullptr)
         : m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *get_lhs() const;
@@ -1126,8 +1040,8 @@ namespace qparse {
     Expr *get_rhs() const;
     void set_rhs(Expr *rhs);
 
-    BinOp get_op() const;
-    void set_op(BinOp op);
+    qlex_op_t get_op() const;
+    void set_op(qlex_op_t op);
 
     NODE_IMPL_CORE(BinExpr)
   };
@@ -1135,17 +1049,16 @@ namespace qparse {
   class PostUnaryExpr : public Expr {
   protected:
     Expr *m_lhs;
-    PostUnaryOp m_op;
+    qlex_op_t m_op;
 
   public:
-    PostUnaryExpr(Expr *lhs = nullptr, PostUnaryOp op = PostUnaryOp::UNKNOWN)
-        : m_lhs(lhs), m_op(op) {}
+    PostUnaryExpr(Expr *lhs = nullptr, qlex_op_t op = qOpUnknown) : m_lhs(lhs), m_op(op) {}
 
     Expr *get_lhs() const;
     void set_lhs(Expr *lhs);
 
-    PostUnaryOp get_op() const;
-    void set_op(PostUnaryOp op);
+    qlex_op_t get_op() const;
+    void set_op(qlex_op_t op);
 
     NODE_IMPL_CORE(PostUnaryExpr)
   };
@@ -2112,9 +2025,9 @@ namespace qparse {
 }  // namespace qparse
 
 namespace std {
-  std::ostream &operator<<(std::ostream &os, const qparse::UnaryOp &op);
-  std::ostream &operator<<(std::ostream &os, const qparse::PostUnaryOp &expr);
-  std::ostream &operator<<(std::ostream &os, const qparse::BinOp &op);
+  std::ostream &operator<<(std::ostream &os, const qlex_op_t &op);
+  std::ostream &operator<<(std::ostream &os, const qlex_op_t &expr);
+  std::ostream &operator<<(std::ostream &os, const qlex_op_t &op);
   std::ostream &operator<<(std::ostream &os, const qparse::FuncPurity &purity);
 }  // namespace std
 

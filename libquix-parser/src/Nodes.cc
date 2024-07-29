@@ -77,90 +77,51 @@ const char *Node::type_name(qparse_ty_t type) {
   { QAST_NODE_##__name, "QAST_NODE_" #__name }
 
   static const std::unordered_map<qparse_ty_t, const char *> names = {
-      NAMEOF_ROW(STMT),
-      NAMEOF_ROW(TYPE),
-      NAMEOF_ROW(DECL),
-      NAMEOF_ROW(EXPR),
-      NAMEOF_ROW(CEXPR),
-      NAMEOF_ROW(UNRES_TY),
-      NAMEOF_ROW(U1_TY),
-      NAMEOF_ROW(U8_TY),
-      NAMEOF_ROW(U16_TY),
-      NAMEOF_ROW(U32_TY),
-      NAMEOF_ROW(U64_TY),
-      NAMEOF_ROW(U128_TY),
-      NAMEOF_ROW(I8_TY),
-      NAMEOF_ROW(I16_TY),
-      NAMEOF_ROW(I32_TY),
-      NAMEOF_ROW(I64_TY),
-      NAMEOF_ROW(I128_TY),
-      NAMEOF_ROW(F32_TY),
-      NAMEOF_ROW(F64_TY),
-      NAMEOF_ROW(VOID_TY),
-      NAMEOF_ROW(STRING_TY),
-      NAMEOF_ROW(PTR_TY),
-      NAMEOF_ROW(OPAQUE_TY),
-      NAMEOF_ROW(VECTOR_TY),
-      NAMEOF_ROW(SET_TY),
-      NAMEOF_ROW(MAP_TY),
-      NAMEOF_ROW(TUPLE_TY),
-      NAMEOF_ROW(RESULT_TY),
-      NAMEOF_ROW(ARRAY_TY),
-      NAMEOF_ROW(ENUM_TY),
-      NAMEOF_ROW(MUT_TY),
-      NAMEOF_ROW(STRUCT_TY),
-      NAMEOF_ROW(GROUP_TY),
-      NAMEOF_ROW(REGION_TY),
-      NAMEOF_ROW(UNION_TY),
-      NAMEOF_ROW(FN_TY),
-      NAMEOF_ROW(UNEXPR),
-      NAMEOF_ROW(BINEXPR),
-      NAMEOF_ROW(TEREXPR),
-      NAMEOF_ROW(INT),
-      NAMEOF_ROW(FLOAT),
-      NAMEOF_ROW(BOOL),
-      NAMEOF_ROW(STRING),
-      NAMEOF_ROW(CHAR),
-      NAMEOF_ROW(NULL),
-      NAMEOF_ROW(UNDEF),
-      NAMEOF_ROW(CALL),
-      NAMEOF_ROW(TEMPL_CALL),
-      NAMEOF_ROW(LIST),
-      NAMEOF_ROW(ASSOC),
-      NAMEOF_ROW(FIELD),
-      NAMEOF_ROW(INDEX),
-      NAMEOF_ROW(SLICE),
-      NAMEOF_ROW(FSTRING),
-      NAMEOF_ROW(IDENT),
-      NAMEOF_ROW(BLOCK),
-      NAMEOF_ROW(CONST),
-      NAMEOF_ROW(VAR),
-      NAMEOF_ROW(LET),
-      NAMEOF_ROW(INLINE_ASM),
-      NAMEOF_ROW(IF),
-      NAMEOF_ROW(WHILE),
-      NAMEOF_ROW(FOR),
-      NAMEOF_ROW(FORM),
-      NAMEOF_ROW(FOREACH),
-      NAMEOF_ROW(BREAK),
-      NAMEOF_ROW(CONTINUE),
-      NAMEOF_ROW(RETURN),
-      NAMEOF_ROW(RETIF),
-      NAMEOF_ROW(RETZ),
-      NAMEOF_ROW(RETV),
-      NAMEOF_ROW(CASE),
-      NAMEOF_ROW(SWITCH),
-      NAMEOF_ROW(TYPEDEF),
-      NAMEOF_ROW(FNDECL),
-      NAMEOF_ROW(FN),
-      NAMEOF_ROW(COMPOSITE_FIELD),
-      NAMEOF_ROW(STRUCT),
-      NAMEOF_ROW(GROUP),
-      NAMEOF_ROW(REGION),
-      NAMEOF_ROW(UNION),
-      NAMEOF_ROW(ENUM),
-      NAMEOF_ROW(SUBSYSTEM),
-      NAMEOF_ROW(EXPORT),
+      NAMEOF_ROW(STMT),        NAMEOF_ROW(TYPE),
+      NAMEOF_ROW(DECL),        NAMEOF_ROW(EXPR),
+      NAMEOF_ROW(CEXPR),       NAMEOF_ROW(UNRES_TY),
+      NAMEOF_ROW(U1_TY),       NAMEOF_ROW(U8_TY),
+      NAMEOF_ROW(U16_TY),      NAMEOF_ROW(U32_TY),
+      NAMEOF_ROW(U64_TY),      NAMEOF_ROW(U128_TY),
+      NAMEOF_ROW(I8_TY),       NAMEOF_ROW(I16_TY),
+      NAMEOF_ROW(I32_TY),      NAMEOF_ROW(I64_TY),
+      NAMEOF_ROW(I128_TY),     NAMEOF_ROW(F32_TY),
+      NAMEOF_ROW(F64_TY),      NAMEOF_ROW(VOID_TY),
+      NAMEOF_ROW(STRING_TY),   NAMEOF_ROW(PTR_TY),
+      NAMEOF_ROW(OPAQUE_TY),   NAMEOF_ROW(VECTOR_TY),
+      NAMEOF_ROW(SET_TY),      NAMEOF_ROW(MAP_TY),
+      NAMEOF_ROW(TUPLE_TY),    NAMEOF_ROW(RESULT_TY),
+      NAMEOF_ROW(ARRAY_TY),    NAMEOF_ROW(ENUM_TY),
+      NAMEOF_ROW(MUT_TY),      NAMEOF_ROW(STRUCT_TY),
+      NAMEOF_ROW(GROUP_TY),    NAMEOF_ROW(REGION_TY),
+      NAMEOF_ROW(UNION_TY),    NAMEOF_ROW(FN_TY),
+      NAMEOF_ROW(UNEXPR),      NAMEOF_ROW(BINEXPR),
+      NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(TEREXPR),
+      NAMEOF_ROW(INT),         NAMEOF_ROW(FLOAT),
+      NAMEOF_ROW(BOOL),        NAMEOF_ROW(STRING),
+      NAMEOF_ROW(CHAR),        NAMEOF_ROW(NULL),
+      NAMEOF_ROW(UNDEF),       NAMEOF_ROW(CALL),
+      NAMEOF_ROW(TEMPL_CALL),  NAMEOF_ROW(LIST),
+      NAMEOF_ROW(ASSOC),       NAMEOF_ROW(FIELD),
+      NAMEOF_ROW(INDEX),       NAMEOF_ROW(SLICE),
+      NAMEOF_ROW(FSTRING),     NAMEOF_ROW(IDENT),
+      NAMEOF_ROW(SEQ_POINT),   NAMEOF_ROW(STMT_EXPR),
+      NAMEOF_ROW(TYPE_EXPR),   NAMEOF_ROW(BLOCK),
+      NAMEOF_ROW(SLIST),       NAMEOF_ROW(CONST),
+      NAMEOF_ROW(VAR),         NAMEOF_ROW(LET),
+      NAMEOF_ROW(INLINE_ASM),  NAMEOF_ROW(IF),
+      NAMEOF_ROW(WHILE),       NAMEOF_ROW(FOR),
+      NAMEOF_ROW(FORM),        NAMEOF_ROW(FOREACH),
+      NAMEOF_ROW(BREAK),       NAMEOF_ROW(CONTINUE),
+      NAMEOF_ROW(RETURN),      NAMEOF_ROW(RETIF),
+      NAMEOF_ROW(RETZ),        NAMEOF_ROW(RETV),
+      NAMEOF_ROW(CASE),        NAMEOF_ROW(SWITCH),
+      NAMEOF_ROW(TYPEDEF),     NAMEOF_ROW(FNDECL),
+      NAMEOF_ROW(FN),          NAMEOF_ROW(COMPOSITE_FIELD),
+      NAMEOF_ROW(STRUCT),      NAMEOF_ROW(GROUP),
+      NAMEOF_ROW(REGION),      NAMEOF_ROW(UNION),
+      NAMEOF_ROW(ENUM),        NAMEOF_ROW(SUBSYSTEM),
+      NAMEOF_ROW(EXPORT),      NAMEOF_ROW(EXPR_STMT),
   };
 
   qassert(names.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
@@ -231,7 +192,6 @@ uint32_t Node::this_sizeof() const {
       SIZEOF_ROW(FString),
       SIZEOF_ROW(Ident),
       SIZEOF_ROW(SeqPoint),
-      SIZEOF_ROW(PostUnaryExpr),
       SIZEOF_ROW(StmtExpr),
       SIZEOF_ROW(TypeExpr),
       SIZEOF_ROW(Block),
@@ -337,7 +297,6 @@ qparse_ty_t Node::this_typeid() const {
       TYPEID_ROW(FString, FSTRING),
       TYPEID_ROW(Ident, IDENT),
       TYPEID_ROW(SeqPoint, SEQ_POINT),
-      TYPEID_ROW(PostUnaryExpr, POST_UNEXPR),
       TYPEID_ROW(StmtExpr, STMT_EXPR),
       TYPEID_ROW(TypeExpr, TYPE_EXPR),
       TYPEID_ROW(Block, BLOCK),
@@ -2048,7 +2007,7 @@ bool UnaryExpr::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  if (m_op == UnaryOp::UNKNOWN) {
+  if (m_op == 0) {
     os << "UnaryExpr: unknown operator\n";
     return false;
   }
@@ -2084,8 +2043,8 @@ UnaryExpr *UnaryExpr::clone_impl() const {
   return UnaryExpr::get(m_op, rhs);
 }
 
-UnaryOp UnaryExpr::get_op() const { return m_op; }
-void UnaryExpr::set_op(UnaryOp op) { m_op = op; }
+qlex_op_t UnaryExpr::get_op() const { return m_op; }
+void UnaryExpr::set_op(qlex_op_t op) { m_op = op; }
 
 Expr *UnaryExpr::get_rhs() const { return m_rhs; }
 void UnaryExpr::set_rhs(Expr *rhs) { m_rhs = rhs; }
@@ -2101,7 +2060,7 @@ bool BinExpr::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  if (m_op == BinOp::UNKNOWN) {
+  if (m_op == 0) {
     os << "BinExpr: unknown operator\n";
     return false;
   }
@@ -2156,8 +2115,8 @@ BinExpr *BinExpr::clone_impl() const {
   return BinExpr::get(lhs, m_op, rhs);
 }
 
-BinOp BinExpr::get_op() const { return m_op; }
-void BinExpr::set_op(BinOp op) { m_op = op; }
+qlex_op_t BinExpr::get_op() const { return m_op; }
+void BinExpr::set_op(qlex_op_t op) { m_op = op; }
 
 Expr *BinExpr::get_lhs() const { return m_lhs; }
 void BinExpr::set_lhs(Expr *lhs) { m_lhs = lhs; }
@@ -2171,7 +2130,7 @@ bool PostUnaryExpr::verify_impl(std::ostream &os) const {
     return false;
   }
 
-  if (m_op == PostUnaryOp::UNKNOWN) {
+  if (m_op == 0) {
     os << "PostUnaryExpr: unknown operator\n";
     return false;
   }
@@ -2209,8 +2168,8 @@ PostUnaryExpr *PostUnaryExpr::clone_impl() const {
   return PostUnaryExpr::get(lhs, m_op);
 }
 
-PostUnaryOp PostUnaryExpr::get_op() const { return m_op; }
-void PostUnaryExpr::set_op(PostUnaryOp op) { m_op = op; }
+qlex_op_t PostUnaryExpr::get_op() const { return m_op; }
+void PostUnaryExpr::set_op(qlex_op_t op) { m_op = op; }
 
 Expr *PostUnaryExpr::get_lhs() const { return m_lhs; }
 void PostUnaryExpr::set_lhs(Expr *lhs) { m_lhs = lhs; }
@@ -5586,6 +5545,3 @@ LIB_EXPORT qparse_node_t *qparse_ast_alloc(qparse_ty_t type, qcore_arena_t *aren
 }
 
 ///=============================================================================
-///=============================================================================
-
-LIB_EXPORT void qparse_test_hook() {}

@@ -82,9 +82,12 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
         return false;
       }
 
-      if (!expr)  /// TODO: Write the ERROR message
+      if (!expr) {
+        /// TODO: Write the ERROR message
+        return false;
+      }
 
-        tok = qlex_next(rd);
+      tok = qlex_next(rd);
       if (!tok.is<qPuncSemi>()) {
         /// TODO: Write the ERROR message
         return false;
@@ -237,6 +240,8 @@ LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf) {
   parser->impl = new qparse_impl_t();
   parser->lexer = lexer;
   parser->conf = conf;
+
+  qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
 
   return parser;
 }

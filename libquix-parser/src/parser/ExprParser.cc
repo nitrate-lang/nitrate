@@ -489,14 +489,12 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
 
             tok = qlex_peek(rd);
             if (tok.is<qOpInc>()) {
-              PostUnaryExpr *p =
-                  PostUnaryExpr::get(Index::get(left, index), PostUnaryOp::Increment);
+              PostUnaryExpr *p = PostUnaryExpr::get(Index::get(left, index), qOpInc);
               stack.push(p);
               qlex_next(rd);
               continue;
             } else if (tok.is<qOpDec>()) {
-              PostUnaryExpr *p =
-                  PostUnaryExpr::get(Index::get(left, index), PostUnaryOp::Decrement);
+              PostUnaryExpr *p = PostUnaryExpr::get(Index::get(left, index), qOpDec);
               stack.push(p);
               qlex_next(rd);
               continue;
@@ -547,12 +545,12 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           std::string ident = tok.as_string(rd);
           tok = qlex_peek(rd);
           if (tok.is<qOpInc>()) {
-            PostUnaryExpr *p = PostUnaryExpr::get(Field::get(left, ident), PostUnaryOp::Increment);
+            PostUnaryExpr *p = PostUnaryExpr::get(Field::get(left, ident), qOpInc);
             stack.push(p);
             qlex_next(rd);
             continue;
           } else if (tok.is<qOpDec>()) {
-            PostUnaryExpr *p = PostUnaryExpr::get(Field::get(left, ident), PostUnaryOp::Decrement);
+            PostUnaryExpr *p = PostUnaryExpr::get(Field::get(left, ident), qOpDec);
             stack.push(p);
             qlex_next(rd);
             continue;
@@ -576,7 +574,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
 
           Expr *left = stack.top();
           stack.pop();
-          stack.push(BinExpr::get(left, BinOp::As, TypeExpr::get(type)));
+          stack.push(BinExpr::get(left, qOpAs, TypeExpr::get(type)));
           continue;
         }
 
@@ -593,7 +591,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
 
           Expr *left = stack.top();
           stack.pop();
-          stack.push(BinExpr::get(left, BinOp::BitcastAs, TypeExpr::get(type)));
+          stack.push(BinExpr::get(left, qOpBitcastAs, TypeExpr::get(type)));
           continue;
         }
 
@@ -611,7 +609,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           Expr *left = stack.top();
           stack.pop();
 
-          stack.push(BinExpr::get(left, BinOp::ReinterpretAs, TypeExpr::get(type)));
+          stack.push(BinExpr::get(left, qOpReinterpretAs, TypeExpr::get(type)));
           continue;
         }
 
@@ -620,12 +618,12 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
         }
 
         if (stack.empty()) {
-          stack.push(UnaryExpr::get((UnaryOp)op, expr));
+          stack.push(UnaryExpr::get((qlex_op_t)op, expr));
           continue;
         } else if (stack.size() == 1) {
           Expr *left = stack.top();
           stack.pop();
-          stack.push(BinExpr::get(left, (BinOp)op, expr));
+          stack.push(BinExpr::get(left, (qlex_op_t)op, expr));
           continue;
         } else {
           /// TODO: Write the ERROR message
@@ -646,12 +644,12 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           stack.push(fcall);
           continue;
         } else if (qlex_peek(rd).is<qOpInc>()) {
-          PostUnaryExpr *p = PostUnaryExpr::get(Ident::get(ident), PostUnaryOp::Increment);
+          PostUnaryExpr *p = PostUnaryExpr::get(Ident::get(ident), qOpInc);
           stack.push(p);
           qlex_next(rd);
           continue;
         } else if (qlex_peek(rd).is<qOpDec>()) {
-          PostUnaryExpr *p = PostUnaryExpr::get(Ident::get(ident), PostUnaryOp::Decrement);
+          PostUnaryExpr *p = PostUnaryExpr::get(Ident::get(ident), qOpDec);
           stack.push(p);
           qlex_next(rd);
           continue;
