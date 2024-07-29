@@ -53,7 +53,7 @@ static bool asm_parse_param(qparse_t &job, qlex_t *rd,
       return false;
     }
 
-    std::string name = tok.as_string();
+    std::string name = tok.as_string(rd);
 
     tok = qlex_next(rd);
     if (!tok.is<qPuncColn>()) {
@@ -62,8 +62,7 @@ static bool asm_parse_param(qparse_t &job, qlex_t *rd,
     }
 
     Expr *expr = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
-                    &expr)) {
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)}, &expr)) {
       /// TODO: Write the ERROR message
       return false;
     }
@@ -104,7 +103,7 @@ static bool asm_parse_clobbers(qparse_t &job, qlex_t *rd, std::vector<std::strin
       return false;
     }
 
-    result.push_back(tok.as_string());
+    result.push_back(tok.as_string(rd));
 
     tok = qlex_next(rd);
     if (tok.is<qPuncRBrk>()) {
@@ -131,7 +130,7 @@ bool qparse::parser::parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node) {
     return false;
   }
 
-  std::string asmcode = tok.as_string();
+  std::string asmcode = tok.as_string(rd);
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncComa>()) {

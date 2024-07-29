@@ -46,7 +46,7 @@ static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
 
   EnumItem item;
 
-  item.first = tok.as_string();
+  item.first = tok.as_string(rd);
 
   tok = qlex_peek(rd);
   if (tok.is<qOpSet>()) {
@@ -84,7 +84,7 @@ bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
     return false;
   }
 
-  std::string name = tok.as_string();
+  std::string name = tok.as_string(rd);
 
   tok = qlex_peek(rd);
   Type *type = nullptr;

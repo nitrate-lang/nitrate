@@ -55,7 +55,7 @@ static bool parse_group_field(qparse_t &job, qlex_t *rd, CompositeField **node) 
       /// TODO: Write the ERROR message
       return false;
     }
-    name = tok.as_string();
+    name = tok.as_string(rd);
   }
 
   { /* Next token should be a colon */
@@ -127,7 +127,7 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
       return false;
     }
 
-    name = tok.as_string();
+    name = tok.as_string(rd);
   }
 
   { /* Next token should be an open curly bracket */
@@ -277,7 +277,7 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
         }
 
         /* Add the trait to the list; Duplicate traits are ignored */
-        implements.insert(tok.as_string());
+        implements.insert(tok.as_string(rd));
 
         /* Check for a comma */
         tok = qlex_peek(rd);

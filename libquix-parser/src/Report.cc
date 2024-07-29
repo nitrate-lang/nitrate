@@ -58,7 +58,7 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler,
   return m_msgs.size();
 }
 
-void install_reference(DiagnosticManager *mgr) { g_diag_mgr = mgr; }
+void qparse::diag::install_reference(qparse::diag::DiagnosticManager *mgr) { g_diag_mgr = mgr; }
 
 void syntax(const qlex_tok_t &tok, std::string_view msg) {
   DiagMessage diag;

@@ -38,11 +38,11 @@
 #error "This header requires C++"
 #endif
 
+#include <Impl.h>
 #include <Report.h>
 #include <quix-lexer/Token.h>
 #include <quix-parser/Node.h>
 #include <quix-parser/Parser.h>
-#include <Impl.h>
 
 #include <set>
 

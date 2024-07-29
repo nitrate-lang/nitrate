@@ -98,7 +98,7 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t
         return nullptr;
       }
 
-      call_args.push_back({ident.as_string(), arg});
+      call_args.push_back({ident.as_string(rd), arg});
       goto comma;
     }
 
@@ -156,7 +156,7 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
     return false;
   }
 
-  fstr = tok.as_string();
+  fstr = tok.as_string(rd);
 
   for (size_t i = 0; i < fstr.size(); i++) {
     /**
@@ -250,7 +250,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
          * @brief
          */
 
-        stack.push(ConstInt::get(tok.as_string()));
+        stack.push(ConstInt::get(tok.as_string(rd)));
         continue;
       }
       case qNumL: {
@@ -258,7 +258,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
          * @brief
          */
 
-        stack.push(ConstFloat::get(tok.as_string()));
+        stack.push(ConstFloat::get(tok.as_string(rd)));
         continue;
       }
       case qText: {
@@ -266,7 +266,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
          * @brief
          */
 
-        stack.push(ConstString::get(tok.as_string()));
+        stack.push(ConstString::get(tok.as_string(rd)));
         continue;
       }
       case qChar: {
@@ -274,7 +274,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
          * @brief
          */
 
-        stack.push(ConstChar::get(tok.as_string()));
+        stack.push(ConstChar::get(tok.as_string(rd)));
         continue;
       }
       case qKeyW: {
@@ -544,7 +544,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
             return false;
           }
 
-          std::string ident = tok.as_string();
+          std::string ident = tok.as_string(rd);
           tok = qlex_peek(rd);
           if (tok.is<qOpInc>()) {
             PostUnaryExpr *p = PostUnaryExpr::get(Field::get(left, ident), PostUnaryOp::Increment);
@@ -634,7 +634,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
         break;
       }
       case qName: {
-        std::string ident = tok.as_string();
+        std::string ident = tok.as_string(rd);
         if (qlex_peek(rd).ty == qPunc && (qlex_peek(rd)).as<qlex_punc_t>() == qPuncLPar) {
           qlex_next(rd);
 

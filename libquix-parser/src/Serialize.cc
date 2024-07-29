@@ -974,20 +974,20 @@ LIB_EXPORT void qparse_ast_brepr(const Node *node, bool compress, qcore_arena_t 
   }
 }
 
-// std::ostream &std::operator<<(std::ostream &os, const UnaryOp &op) {
-//   os << libquixcc::operator_map_inverse.at((libquixcc::Operator)op);
-//   return os;
-// }
+std::ostream &std::operator<<(std::ostream &os, const UnaryOp &op) {
+  os << qlex_opstr((qlex_op_t)op);
+  return os;
+}
 
-// std::ostream &std::operator<<(std::ostream &os, const PostUnaryOp &expr) {
-//   os << libquixcc::operator_map_inverse.at((libquixcc::Operator)expr);
-//   return os;
-// }
+std::ostream &std::operator<<(std::ostream &os, const PostUnaryOp &expr) {
+  os << qlex_opstr((qlex_op_t)expr);
+  return os;
+}
 
-// std::ostream &std::operator<<(std::ostream &os, const BinOp &op) {
-//   os << libquixcc::operator_map_inverse.at((libquixcc::Operator)op);
-//   return os;
-// }
+std::ostream &std::operator<<(std::ostream &os, const BinOp &op) {
+  os << qlex_opstr((qlex_op_t)op);
+  return os;
+}
 
 std::ostream &std::operator<<(std::ostream &os, const FuncPurity &purity) {
   switch (purity) {

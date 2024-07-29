@@ -183,12 +183,6 @@ typedef enum qlex_key_t {
   qKFalse,      /* 'false' */
 } __attribute__((packed)) qlex_key_t;
 
-typedef struct qlex_loc_t {
-  uint32_t idx : 24;
-
-  qlex_loc_t(uint32_t idx = 0) : idx(idx) {}
-} __attribute__((packed)) qlex_loc_t;
-
 #if defined(__cplusplus) && defined(__QUIX_IMPL__)
 }
 
@@ -197,6 +191,15 @@ typedef struct qlex_loc_t {
 #include <type_traits>
 
 struct qlex_t;
+struct qlex_tok_t;
+
+typedef struct qlex_loc_t {
+  uint32_t idx : 24;
+
+  qlex_loc_t(uint32_t idx = 0) : idx(idx) {}
+} __attribute__((packed)) qlex_loc_t;
+
+extern "C" const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok);
 
 typedef struct qlex_tok_t {
   /* Token type */
@@ -223,7 +226,6 @@ typedef struct qlex_tok_t {
       : ty(ty), loc(src_idx), v{.key = key} {}
   qlex_tok_t(qlex_ty_t ty, uint32_t str_idx, uint32_t src_idx = 0)
       : ty(ty), loc(src_idx), v{.str_idx = str_idx} {}
-  qlex_tok_t(struct qlex_t *lexer, qlex_ty_t ty, std::string_view data, uint32_t src_idx = 0);
 
   static qlex_tok_t err(uint32_t src_idx) { return qlex_tok_t(qErro, src_idx, 0); }
   static qlex_tok_t eof(uint32_t src_idx) { return qlex_tok_t(qEofF, src_idx, 0); }
@@ -256,7 +258,7 @@ typedef struct qlex_tok_t {
     static_assert(std::is_same_v<decltype(V), decltype(V)>, "Invalid type");
   }
 
-  std::string as_string() const { throw std::runtime_error("Not implemented"); }
+  inline std::string as_string(qlex_t *lexer) { return qlex_str(lexer, this); }
 
   bool operator<(const qlex_tok_t &rhs) const {
     if (ty != rhs.ty) return ty < rhs.ty;
@@ -268,6 +270,11 @@ typedef struct qlex_tok_t {
 } __attribute__((packed)) qlex_tok_t;
 extern "C" {
 #else
+
+typedef struct qlex_loc_t {
+  uint32_t idx : 24;
+} __attribute__((packed)) qlex_loc_t;
+
 typedef struct qlex_tok_t {
   /* Token type */
   qlex_ty_t ty : 4;

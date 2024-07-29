@@ -115,7 +115,7 @@ static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
     return false;
   }
 
-  name = tok.as_string();
+  name = tok.as_string(rd);
   tok = qlex_next(rd);
   if (!tok.is<qPuncColn>()) {
     /// TODO: Write the ERROR message
@@ -250,7 +250,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
 
   if (tok.is(qName)) {
-    fndecl->set_name(tok.as_string());
+    fndecl->set_name(tok.as_string(rd));
     tok = qlex_next(rd);
   }
 
@@ -445,7 +445,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
           return false;
         }
 
-        implements.insert(tok.as_string());
+        implements.insert(tok.as_string(rd));
 
         tok = qlex_peek(rd);
         if (tok.is<qPuncComa>()) {

@@ -260,11 +260,15 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
     return false;
   }
 
+  qparse::qparse_ast_arena.swap(*arena);
+
   qparse::diag::install_reference(&parser->impl->diag);
+  bool status = qparse::parser::parse(*parser, parser->lexer, (qparse::Block **)out, false, false);
+  qparse::diag::install_reference(nullptr);
 
-  /// TODO: Join to existing parser code
+  qparse::qparse_ast_arena.swap(*arena);
 
-  return qparse::parser::parse(*parser, parser->lexer, (qparse::Block **)&parser->impl->root);
+  return status;
 }
 
 LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
@@ -276,12 +280,8 @@ LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
     qcore_panic("qpase_check: invariant violation: parser->impl is NULL");
   }
 
-  if (!parser->impl->root) {
-    qcore_panic("qpase_check: invariant violation: parser->impl->root is NULL");
-  }
-
   /* Safety is overrated */
-  return static_cast<qparse::Node *>(parser->impl->root)->verify();
+  return static_cast<const qparse::Node *>(base)->verify();
 }
 
 LIB_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb, uintptr_t data) {

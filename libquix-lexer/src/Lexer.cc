@@ -690,10 +690,19 @@ LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok) {
   }
 }
 
-qlex_tok_t::qlex_tok_t(qlex_t *lexer, qlex_ty_t ty, std::string_view data, uint32_t src_idx) {
-  this->ty = ty;
-  this->loc.idx = src_idx;
-  this->v.str_idx = lexer->impl->save_userstring(data);
+LIB_EXPORT const char *qlex_opstr(qlex_op_t op) { return qlex::operators.right.at(op).data(); }
+
+LIB_EXPORT const char *qlex_kwstr(qlex_key_t kw) { return qlex::keywords.right.at(kw).data(); }
+
+LIB_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
+  return qlex::punctuation.right.at(punct).data();
+}
+
+LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, uint32_t src_idx,
+                                 qlex_tok_t *out) {
+  out->ty = ty;
+  out->loc.idx = src_idx;
+  out->v.str_idx = lexer->impl->save_userstring(str);
 }
 
 ///============================================================================///

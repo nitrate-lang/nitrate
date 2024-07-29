@@ -41,14 +41,16 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
     return false;
   }
 
-  std::string name = tok.as_string();
+  std::string name = tok.as_string(rd);
 
   if (name.find("::") != std::string::npos) {
     Stmt *sub = nullptr;
 
     std::string subname = name.substr(0, name.find("::"));
 
-    qlex_push(rd, qlex_tok_t(rd, qName, name.substr(name.find("::") + 2)));
+    qlex_tok_t newtok;
+    qlex_tok_fromstr(rd, qName, name.substr(name.find("::") + 2).c_str(), 0, &newtok);
+    qlex_push(rd, newtok);
 
     if (!parse_subsystem(job, rd, &sub)) return false;
 
@@ -78,7 +80,7 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
       /// TODO: Write the ERROR message
       return false;
     }
-    deps.insert(tok.as_string());
+    deps.insert(tok.as_string(rd));
 
     tok = qlex_peek(rd);
     while (tok.is<qPuncComa>()) {
@@ -88,7 +90,7 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
         /// TODO: Write the ERROR message
         return false;
       }
-      deps.insert(tok.as_string());
+      deps.insert(tok.as_string(rd));
       tok = qlex_peek(rd);
     }
 

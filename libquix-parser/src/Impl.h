@@ -42,10 +42,9 @@
 #include <vector>
 
 struct qparse_impl_t {
-  qparse_impl_t() : root(nullptr) {}
+  qparse_impl_t() {}
   ~qparse_impl_t() = default;
 
-  qparse_node_t *root;
   qparse::diag::DiagnosticManager diag;
 };
 

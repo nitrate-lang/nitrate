@@ -43,7 +43,7 @@ bool qparse::parser::parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node) {
     return false;
   }
 
-  std::string name = tok.as_string();
+  std::string name = tok.as_string(rd);
 
   tok = qlex_next(rd);
   if (!tok.is<qOpSet>()) {

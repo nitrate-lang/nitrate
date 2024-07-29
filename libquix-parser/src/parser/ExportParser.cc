@@ -44,7 +44,7 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (tok.is(qText)) {
     qlex_next(rd);
 
-    std::string lang = tok.as_string();
+    std::string lang = tok.as_string(rd);
 
     std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
 

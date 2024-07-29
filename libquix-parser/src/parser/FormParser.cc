@@ -67,7 +67,7 @@ bool qparse::parser::parse_form(qparse_t &job, qlex_t *rd, Stmt **node) {
     /// TODO: Write the ERROR message
     return false;
   }
-  std::string idx_ident = tok.as_string();
+  std::string idx_ident = tok.as_string(rd);
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncComa>()) {
@@ -80,7 +80,7 @@ bool qparse::parser::parse_form(qparse_t &job, qlex_t *rd, Stmt **node) {
     /// TODO: Write the ERROR message
     return false;
   }
-  std::string val_ident = tok.as_string();
+  std::string val_ident = tok.as_string(rd);
 
   tok = qlex_next(rd);
   if (!tok.is<qOpIn>()) {

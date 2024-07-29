@@ -32,6 +32,7 @@
 #ifndef __QUIX_PARSER_LIB_H__
 #define __QUIX_PARSER_LIB_H__
 
+#include <quix-parser/Config.h>
 #include <quix-parser/Node.h>
 #include <quix-parser/Parser.h>
 #include <stdbool.h>

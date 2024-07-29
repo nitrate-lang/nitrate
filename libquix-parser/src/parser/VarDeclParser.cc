@@ -39,7 +39,7 @@ using namespace qparse::parser;
 
 static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
                        std::pair<std::string, Type *> &decl) {
-  std::string name = tok.as_string();
+  std::string name = tok.as_string(rd);
 
   tok = qlex_peek(rd);
   if (!tok.is<qPuncColn>()) {

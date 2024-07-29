@@ -130,7 +130,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
           goto error_end;
         }
 
-        name = tok.as_string(); /* Save the name of the opaque type. */
+        name = tok.as_string(rd); /* Save the name of the opaque type. */
 
         if (!(tok = qlex_next(rd)).is<qPuncRPar>()) {
           /// TODO: Write error message
@@ -149,13 +149,13 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
 
     __builtin_unreachable();
   } else if (tok.is(qName)) {
-    if (primitives.contains(tok.as_string())) {
+    if (primitives.contains(tok.as_string(rd))) {
       /** QUIX PRIMITIVE TYPE
        *
        * @brief Parse a primitive type.
        */
 
-      inner = primitives[tok.as_string()];
+      inner = primitives[tok.as_string(rd)];
       goto type_suffix;
     } else {
       /** QUIX ANY NAMED TYPE
@@ -166,7 +166,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
        *       It is a placeholder for a type that is defined elsewhere.
        */
 
-      inner = UnresolvedType::get(tok.as_string());
+      inner = UnresolvedType::get(tok.as_string(rd));
       goto type_suffix;
     }
 
