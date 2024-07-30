@@ -118,8 +118,6 @@ LIB_EXPORT const char* qlex_lib_version() {
 }
 
 LIB_EXPORT const char* qlex_strerror() {
-  /// TODO: Implement error handling.
-
   if (!qlex_err) {
     qcore_panic("qlex_strerror: qlex_err is NULL");
   }

@@ -82,8 +82,6 @@ public:
   qcore_arena_impl_t() = default;
 
   qcore_arena_impl_t(const qcore_arena_impl_t &other) {
-    /// TODO: Verify this implementation
-
     size_t used = 0;
 
     for (const auto &region : other.m_bases) {
