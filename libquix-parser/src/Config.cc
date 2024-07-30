@@ -46,7 +46,10 @@ namespace qparse::conf {
 
 static std::string_view qkey_to_string(qparse_key_t key) {
   switch (key) {
-      /// TODO: Implement lookup table for qparse_key_t values.
+    case QPK_UNKNOWN:
+      return "QPK_UNKNOWN";
+    case QPK_NO_AUTO_IMPL:
+      return "-fno-auto-impl";
     default:
       qcore_panic("qkey_to_string: Unhandled qparse_key_t value.");
   }
@@ -54,7 +57,18 @@ static std::string_view qkey_to_string(qparse_key_t key) {
 
 static std::string_view qval_to_string(qparse_val_t val) {
   switch (val) {
-    /// TODO: Implement lookup table for qparse_val_t values.
+    case QPV_UNKNOWN:
+      return "QPV_UNKNOWN";
+    case QPV_FUNCTION:
+      return "function";
+    case QPV_GROUP:
+      return "group";
+    case QPV_REGION:
+      return "region";
+    case QPV_STRUCT:
+      return "struct";
+    case QPV_UNION:
+      return "union";
     default:
       qcore_panic("qval_to_string: Unhandled qparse_val_t value.");
   }
@@ -136,7 +150,13 @@ LIB_EXPORT void qparse_conf_dump(qparse_conf_t *conf, FILE *stream, const char *
 }
 
 bool qparse_conf_t::has(const char *option, const char *value) const {
-  /// TODO: Implement logic to check if the configuration has a specific option.
+  for (const auto &dat : m_data) {
+    if (qkey_to_string(dat.key) == option) {
+      if (dat.value == 0 || qval_to_string(dat.value) == value) {
+        return true;
+      }
+    }
+  }
 
   return false;
 }

@@ -65,16 +65,12 @@ static void increase_stack_size() {
 }
 
 static bool do_init() {
-  /// TODO: Initialize the library here.
-
   increase_stack_size();
-  
+
   return true;
 }
 
-static void do_deinit() {
-  /// TODO: Deinitialize the library here.
-}
+static void do_deinit() {}
 
 LIB_EXPORT bool qparse_lib_init() {
   if (qparse_lib_ref_count++ > 1) {

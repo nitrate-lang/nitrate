@@ -43,9 +43,19 @@ extern "C" {
 #include <quix-lexer/Lexer.h>
 #include <stdbool.h>
 
-typedef enum qparse_key_t { KEY } qparse_key_t;
+typedef enum qparse_key_t {
+  QPK_UNKNOWN = 0,
+  QPK_NO_AUTO_IMPL,
+} qparse_key_t;
 
-typedef enum qparse_val_t { VAL } qparse_val_t;
+typedef enum qparse_val_t {
+  QPV_UNKNOWN = 0,
+  QPV_FUNCTION,
+  QPV_GROUP,
+  QPV_REGION,
+  QPV_STRUCT,
+  QPV_UNION,
+} qparse_val_t;
 
 ///==========================================================================///
 
