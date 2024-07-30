@@ -55,4 +55,4 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
 endif()
 
 add_subdirectory(tests)
-# add_subdirectory(fuzzer)
+add_subdirectory(fuzzer)

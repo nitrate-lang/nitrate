@@ -113,6 +113,6 @@ bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
   }
 
-  *node = EnumDef::get(name, static_cast<EnumTy *>(type), fields);
+  *node = EnumDef::get(name, EnumTy::get(name, type), fields);
   return true;
 }

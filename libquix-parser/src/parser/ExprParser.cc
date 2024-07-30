@@ -36,6 +36,8 @@
 #include "LibMacro.h"
 #include "parser/Parse.h"
 
+#define MAX_EXPR_DEPTH (10000)
+
 using namespace qparse;
 using namespace qparse::parser;
 
@@ -139,7 +141,8 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t
 
 static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t depth) {
   /// TODO: Implement FStrings again
-  throw std::runtime_error("FStrings are not implemented yet");
+  // throw std::runtime_error("FStrings are not implemented yet");
+  return false;
 
   /**
    * @brief
@@ -211,6 +214,10 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
   /**
    * @brief
    */
+
+  if (depth > MAX_EXPR_DEPTH) {
+    return false;
+  }
 
   std::stack<Expr *> stack;
 
@@ -427,7 +434,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
                   Expr *count = nullptr;
                   if (!parse_expr(job, rd,
                                   {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)},
-                                  &count, depth + 1)) {
+                                  &count, depth + 1) || !count) {
                     return false;
                   }
 

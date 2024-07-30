@@ -18,10 +18,8 @@ void do_parse(qparse_t *parser) {
     return;
   }
 
-  printf("Parsed successfully\n");
-
   size_t outlen;
-  char *serial = qparse_ast_repr(node, true, 0, &arena, &outlen);
+  char *serial = qparse_ast_repr(node, false, 2, &arena, &outlen);
 
   fwrite(serial, 1, outlen, stdout);
   qcore_arena_close(&arena);
@@ -94,9 +92,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  while (true) {
-    example_parser(argv[1]);
-  }
+  example_parser(argv[1]);
 
   return 0;
 }
