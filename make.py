@@ -6,7 +6,7 @@ import sys
 cwd = os.getcwd()
 
 
-if not os.path.exists(os.path.join(cwd, 'libquixcc')):
+if not os.path.exists(os.path.join(cwd, 'libquix-parser')):
     print("Please run this script from the root of the repository.")
     sys.exit(1)
 
