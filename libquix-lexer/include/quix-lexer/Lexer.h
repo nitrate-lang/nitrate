@@ -153,6 +153,10 @@ static inline qlex_tok_t qlex_peek(qlex_t *lexer) { return lexer->peek(lexer); }
  * @param lexer Lexer context.
  * @param tok Token to push back.
  * @note This function is thread-safe.
+ * @note Consumes the current stored token. The next call to peek or next will return the pushed
+ * token.
+ * @note Tokens pushed back to the lexer will be stored in a queue. They will be accessed in FIFO
+ * order with precedence over tokens from the input stream, irrespective of internal buffering.
  */
 static inline void qlex_push(qlex_t *lexer, qlex_tok_t tok) { lexer->push(lexer, &tok); }
 

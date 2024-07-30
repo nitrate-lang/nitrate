@@ -466,8 +466,6 @@ static qlex_tok_t _impl_peek(qlex_t *self) {
 
 static void _impl_push(qlex_t *self, const qlex_tok_t *tok) {
   self->impl->undo(*tok);
-  self->impl->undo(self->cur);
-
   self->cur.ty = qErro;
 }
 
@@ -1155,6 +1153,12 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
               if (!(std::isxdigit(c) || c == '_' || c == '-' || c == '.' || c == 'x' || c == 'b' ||
                     c == 'd' || c == 'o' || c == 'e' || c == '.')) {
                 break;
+              }
+
+              if (c == '_') {
+                do {
+                  c = getc();
+                } while (std::isspace(c) || c == '_' || c == '\\');
               }
 
               nbuf += c;
