@@ -656,6 +656,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_BEGIN("Subsystem");
       OBJECT_STR(n->as<SubsystemDecl>()->get_name());
       OBJECT_TAGS(n->as<SubsystemDecl>()->get_tags());
+      OBJECT_TAGS(n->as<SubsystemDecl>()->get_deps());
       OBJECT_SUB(n->as<SubsystemDecl>()->get_body());
       OBJECT_END();
       break;

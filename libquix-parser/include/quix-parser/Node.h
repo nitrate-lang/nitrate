@@ -1990,15 +1990,25 @@ namespace qparse {
     NODE_IMPL_CORE(EnumDef)
   };
 
+  typedef std::set<String, std::less<String>, Arena<String>> SubsystemDeps;
+
   class SubsystemDecl : public Decl {
   protected:
     Block *m_body;
+   SubsystemDeps m_deps;
 
   public:
-    SubsystemDecl(String name = "", Block *body = nullptr) : Decl(name, nullptr), m_body(body) {}
+    SubsystemDecl(String name = "", Block *body = nullptr, SubsystemDeps deps = {})
+        : Decl(name, nullptr), m_body(body), m_deps(deps) {}
 
     Block *get_body() const;
     void set_body(Block *body);
+
+    const SubsystemDeps &get_deps() const;
+    void add_dep(String dep);
+    void add_deps(const SubsystemDeps& deps);
+    void clear_deps();
+    void remove_dep(String dep);
 
     NODE_IMPL_CORE(SubsystemDecl)
   };

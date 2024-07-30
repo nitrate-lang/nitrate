@@ -5205,11 +5205,19 @@ void SubsystemDecl::print_impl(std::ostream &os, bool debug) const {
 SubsystemDecl *SubsystemDecl::clone_impl() const {
   Block *body = m_body ? m_body->clone() : nullptr;
 
-  return SubsystemDecl::get(m_name, body);
+  return SubsystemDecl::get(m_name, body, m_deps);
 }
 
 Block *SubsystemDecl::get_body() const { return m_body; }
 void SubsystemDecl::set_body(Block *body) { m_body = body; }
+
+const SubsystemDeps &SubsystemDecl::get_deps() const { return m_deps; }
+void SubsystemDecl::add_dep(qparse::String dep) { m_deps.insert(dep); }
+void qparse::SubsystemDecl::add_deps(const qparse::SubsystemDeps &deps) {
+  m_deps.insert(deps.begin(), deps.end());
+}
+void SubsystemDecl::clear_deps() { m_deps.clear(); }
+void SubsystemDecl::remove_dep(String dep) { m_deps.erase(dep); }
 
 bool ExportDecl::verify_impl(std::ostream &os) const {
   if (m_type) {

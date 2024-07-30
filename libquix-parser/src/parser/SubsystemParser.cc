@@ -62,50 +62,78 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
     return true;
   }
 
-  std::set<std::string> deps;
+  SubsystemDeps deps;
 
   tok = qlex_peek(rd);
-
-  // check if : item1, item2, item3
   if (tok.is<qPuncColn>()) {
-    qlex_next(rd);  // consume colon
+    qlex_next(rd);
+
     tok = qlex_next(rd);
     if (!tok.is<qPuncLBrk>()) {
       /// TODO: Write the ERROR message
       return false;
     }
-    tok = qlex_next(rd);
 
-    if (!tok.is(qName)) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
-    deps.insert(tok.as_string(rd));
-
-    tok = qlex_peek(rd);
-    while (tok.is<qPuncComa>()) {
-      qlex_next(rd);  // consume comma
+    while (true) {
       tok = qlex_next(rd);
+
+      if (tok.is<qPuncRBrk>()) {
+        break;
+      }
+
       if (!tok.is(qName)) {
         /// TODO: Write the ERROR message
         return false;
       }
-      deps.insert(tok.as_string(rd));
-      tok = qlex_peek(rd);
-    }
 
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncRBrk>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      deps.insert(tok.as_string(rd));
+
+      tok = qlex_peek(rd);
+      if (tok.is<qPuncComa>()) {
+        qlex_next(rd);
+      }
     }
   }
 
   Block *block = nullptr;
-  if (!parse(job, rd, &block, true)) return false;
+  if (!parse(job, rd, &block, true)) {
+    /// TODO: Write the ERROR message
+    return false;
+  }
+
+  std::set<std::string> implements;
+  tok = qlex_peek(rd);
+  if (tok.is<qKImpl>()) {
+    qlex_next(rd);
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncLBrk>()) {
+      /// TODO: Write the ERROR message
+      return false;
+    }
+
+    while (true) {
+      tok = qlex_next(rd);
+      if (tok.is<qPuncRBrk>()) break;
+
+      if (!tok.is(qName)) {
+        /// TODO: Write the ERROR message
+        return false;
+      }
+
+      implements.insert(tok.as_string(rd));
+
+      tok = qlex_peek(rd);
+      if (tok.is<qPuncComa>()) {
+        qlex_next(rd);
+      }
+    }
+
+    tok = qlex_peek(rd);
+  }
 
   SubsystemDecl *sub = SubsystemDecl::get(name, block);
-  sub->add_tags(deps);
+  sub->add_deps(deps);
+  sub->add_tags(implements);
 
   *node = sub;
 
