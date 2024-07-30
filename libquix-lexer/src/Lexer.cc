@@ -892,7 +892,10 @@ static bool canonicalize_float(std::string_view input, std::string &norm) {
   double mantissa = 0, exponent = 0, x = 0;
   size_t e_pos = 0;
 
-  if ((e_pos = input.find('e')) == std::string::npos) return input.data();
+  if ((e_pos = input.find('e')) == std::string::npos) {
+    norm = input.data();
+    return true;
+  }
 
   try {
     mantissa = std::stod(std::string(input.substr(0, e_pos)));
