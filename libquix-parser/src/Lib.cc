@@ -33,6 +33,7 @@
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-parser/Parser.h>
+#include <sys/resource.h>
 
 #include <atomic>
 
@@ -46,8 +47,28 @@
 static std::atomic<size_t> qparse_lib_ref_count = 0;
 thread_local const char* qparser_err = "";
 
+static void increase_stack_size() {
+  const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
+  struct rlimit rl;
+  int result;
+
+  result = getrlimit(RLIMIT_STACK, &rl);
+  if (result == 0) {
+    if (rl.rlim_cur < kStackSize) {
+      rl.rlim_cur = kStackSize;
+      result = setrlimit(RLIMIT_STACK, &rl);
+      if (result != 0) {
+        qcore_panicf("setrlimit returned result = %d\n", result);
+      }
+    }
+  }
+}
+
 static bool do_init() {
   /// TODO: Initialize the library here.
+
+  increase_stack_size();
+  
   return true;
 }
 
