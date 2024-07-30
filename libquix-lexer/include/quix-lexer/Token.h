@@ -200,7 +200,7 @@ typedef struct qlex_loc_t {
   qlex_loc_t(uint32_t idx = 0) : idx(idx) {}
 } __attribute__((packed)) qlex_loc_t;
 
-extern "C" const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok);
+extern "C" const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok, size_t *len);
 
 typedef struct qlex_tok_t {
   /* Token type */
@@ -261,7 +261,12 @@ typedef struct qlex_tok_t {
     static_assert(std::is_same_v<decltype(V), decltype(V)>, "Invalid type");
   }
 
-  inline std::string as_string(qlex_t *lexer) { return qlex_str(lexer, this); }
+  inline std::string as_string(qlex_t *lexer) {
+    size_t len;
+    const char *s = qlex_str(lexer, this, &len);
+
+    return std::string(s, len);
+  }
 
   bool operator<(const qlex_tok_t &rhs) const {
     if (ty != rhs.ty) return ty < rhs.ty;

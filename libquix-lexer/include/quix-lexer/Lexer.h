@@ -203,14 +203,17 @@ bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b);
  *
  * @param lexer Lexer context.
  * @param tok Token.
+ * @param len Pointer to store the length of the string.
  *
  * @return The internal string value for the token or empty string if this operation is applicable
  * for this token type.
  * @note This function is thread-safe.
  * @warning The lifetime shall exist for the duration of the lexer context.
  * @warning DO NOT MODIFY THE RETURNED STRING.
+ * @warning The returned string is NULL-terminated, however, it may contain any bytes within the
+ * data including NULL bytes.
  */
-const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok);
+const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len);
 
 const char *qlex_opstr(qlex_op_t op);
 const char *qlex_kwstr(qlex_key_t kw);

@@ -377,7 +377,7 @@ public:
   StringRetainer() = default;
 
   inline uint32_t retain(std::string_view str) {
-    m_strings.push_back(std::string(str));
+    m_strings.push_back(std::string(str.data(), str.size()));
     return m_strings.size() - 1;
   }
 
@@ -674,13 +674,14 @@ LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
   }
 }
 
-LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok) {
+LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
   switch (tok->ty) {
     case qEofF:
     case qErro:
     case qKeyW:
     case qOper:
     case qPunc:
+      *len = 0;
       return "";
     case qName:
     case qIntL:
@@ -690,6 +691,7 @@ LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok) {
     case qMacB:
     case qMacr:
     case qNote:
+      *len = lexer->impl->Strings()[tok->v.str_idx].size();
       return lexer->impl->Strings()[tok->v.str_idx].data();
   }
 }
@@ -1320,13 +1322,51 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
                 break;
               }
               case 'u': {
-                char hex[4] = {getc(), getc(), getc(), getc()};
-                uint32_t codepoint = 0;
-                codepoint |= qlex::hextable[(uint8_t)hex[0]] << 12;
-                codepoint |= qlex::hextable[(uint8_t)hex[1]] << 8;
-                codepoint |= qlex::hextable[(uint8_t)hex[2]] << 4;
-                codepoint |= qlex::hextable[(uint8_t)hex[3]];
-                buf += codepoint;
+                c = getc();
+                if (c != '{') {
+                  goto error_0;
+                }
+
+                std::string hex;
+
+                while (true) {
+                  c = getc();
+                  if (c == '}') {
+                    break;
+                  }
+
+                  if (!std::isxdigit(c)) {
+                    goto error_0;
+                  }
+
+                  hex += c;
+                }
+
+                uint32_t codepoint;
+                try {
+                  codepoint = std::stoi(hex, nullptr, 16);
+                } catch (...) {
+                  goto error_0;
+                }
+
+                if (codepoint < 0x80) {
+                  buf += (char)codepoint;
+                } else if (codepoint < 0x800) {
+                  buf += (char)(0xC0 | (codepoint >> 6));
+                  buf += (char)(0x80 | (codepoint & 0x3F));
+                } else if (codepoint < 0x10000) {
+                  buf += (char)(0xE0 | (codepoint >> 12));
+                  buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
+                  buf += (char)(0x80 | (codepoint & 0x3F));
+                } else if (codepoint < 0x110000) {
+                  buf += (char)(0xF0 | (codepoint >> 18));
+                  buf += (char)(0x80 | ((codepoint >> 12) & 0x3F));
+                  buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
+                  buf += (char)(0x80 | (codepoint & 0x3F));
+                } else {
+                  goto error_0;
+                }
+
                 break;
               }
               case 'o': {
@@ -1338,18 +1378,74 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
                   goto error_0;
                 }
               }
+              case 'b': {
+                c = getc();
+                if (c != '{') {
+                  goto error_0;
+                }
+
+                std::string bin;
+
+                while (true) {
+                  c = getc();
+                  if (c == '}') {
+                    break;
+                  }
+
+                  if ((c != '0' && c != '1') || bin.size() >= 64) {
+                    goto error_0;
+                  }
+
+                  bin += c;
+                }
+
+                uint64_t codepoint = 0;
+                for (size_t i = 0; i < bin.size(); i++) {
+                  codepoint = (codepoint << 1) | (bin[i] - '0');
+                }
+
+                if (codepoint > 0xFFFFFFFF) {
+                  buf += (char)(codepoint >> 56);
+                  buf += (char)(codepoint >> 48);
+                  buf += (char)(codepoint >> 40);
+                  buf += (char)(codepoint >> 32);
+                  buf += (char)(codepoint >> 24);
+                  buf += (char)(codepoint >> 16);
+                  buf += (char)(codepoint >> 8);
+                  buf += (char)(codepoint);
+                } else if (codepoint > 0xFFFF) {
+                  buf += (char)(codepoint >> 24);
+                  buf += (char)(codepoint >> 16);
+                  buf += (char)(codepoint >> 8);
+                  buf += (char)(codepoint);
+                } else if (codepoint > 0xFF) {
+                  buf += (char)(codepoint >> 8);
+                  buf += (char)(codepoint);
+                } else {
+                  buf += (char)(codepoint);
+                }
+              }
               default:
                 buf += c;
                 break;
             }
             continue;
-          }
-
-          /* Character or string */
-          if (buf.front() == '\'' && buf.size() == 2) {
-            return qlex_tok_t(qChar, m_holdings.retain(std::string(1, buf[1])), off());
           } else {
-            return qlex_tok_t(qText, m_holdings.retain(buf.substr(1, buf.size() - 1)), off());
+            do {
+              c = getc();
+            } while (std::isspace(c) || c == '\\');
+
+            if (c == buf[0]) {
+              continue;
+            } else {
+              m_pushback.push_back(c);
+              /* Character or string */
+              if (buf.front() == '\'' && buf.size() == 2) {
+                return qlex_tok_t(qChar, m_holdings.retain(std::string(1, buf[1])), off());
+              } else {
+                return qlex_tok_t(qText, m_holdings.retain(buf.substr(1, buf.size() - 1)), off());
+              }
+            }
           }
         }
         case LexState::MacroStart: {

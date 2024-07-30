@@ -8,6 +8,8 @@
 #include <vector>
 
 static void print_token(qlex_t *lexer, qlex_tok_t tok) {
+  size_t len;
+
   switch (tok.ty) {
     case qEofF:
       std::cout << "EOF()";
@@ -25,28 +27,28 @@ static void print_token(qlex_t *lexer, qlex_tok_t tok) {
       std::cout << "PUNC(" << qlex_punctstr(tok.v.punc) << ")";
       break;
     case qName:
-      std::cout << "NAME(" << qlex_str(lexer, &tok) << ")";
+      std::cout << "NAME(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qIntL:
-      std::cout << "INTL(" << qlex_str(lexer, &tok) << ")";
+      std::cout << "INTL(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qNumL:
-      std::cout << "NUML(" << qlex_str(lexer, &tok) << ")";
+      std::cout << "NUML(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qText:
-      std::cout << "TEXT(" << qlex_str(lexer, &tok) << ")";
+      std::cout << "TEXT(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qChar:
-      std::cout << "CHAR(" << qlex_str(lexer, &tok) << ")";
+      std::cout << "CHAR(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qMacB:
-      std::cout << "MACB(" << qlex_str(lexer, &tok) << ")";
+      std::cout << "MACB(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qMacr:
-      std::cout << "MACR(" << qlex_str(lexer, &tok) << ")";
+      std::cout << "MACR(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qNote:
-      std::cout << "NOTE(" << qlex_str(lexer, &tok) << ")";
+      std::cout << "NOTE(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
   }
 
