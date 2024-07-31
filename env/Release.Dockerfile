@@ -32,7 +32,7 @@ RUN echo "rm -rf /app/bin/*" >> /opt/build.sh
 RUN echo "cp /app/build/release/*/*.so /app/bin/" >> /opt/build.sh
 # RUN echo "cp /app/build/release/qcc/qcc /app/bin/qcc" >> /opt/build.sh
 # RUN echo "cp /app/build/release/qld/qld /app/bin/qld" >> /opt/build.sh  
-# RUN echo "cp /app/build/release/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
+RUN echo "cp /app/build/release/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
 RUN echo "chmod -R 777 /app/bin/" >> /opt/build.sh
 RUN chmod +x /opt/build.sh
 

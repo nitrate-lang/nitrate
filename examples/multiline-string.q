@@ -7,5 +7,3 @@ subsystem std::history : [UnitedStatesHistory] {
                         " Posterity, do ordain and establish this Constit" \
                         "ution for the United States of America.";
 } impl [immutable];
-
-fn main() => assert("📜" == "\b{11110000100111111001001110011100}");
