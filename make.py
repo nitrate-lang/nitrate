@@ -6,7 +6,7 @@ import sys
 cwd = os.getcwd()
 
 
-if not os.path.exists(os.path.join(cwd, 'libquixcc')):
+if not os.path.exists(os.path.join(cwd, 'libquix-parser')):
     print("Please run this script from the root of the repository.")
     sys.exit(1)
 
@@ -33,12 +33,18 @@ if '--release' in sys.argv:
         print("Release build failed.")
         sys.exit(1)
     if '--strip' in sys.argv:
-        files = ['qpkg', 'qld', 'qcc', 'libquixcc.so']
-        for file in files:
-            if os.system('strip {0}'.format(os.path.join(cwd, file))) != 0:
+        for file in os.listdir(os.path.join(cwd, 'bin')):
+            if os.system('strip {0}'.format(os.path.join(cwd, 'bin', file))) != 0:
                 print("Failed to strip {0}".format(file))
                 sys.exit(1)
         print("Stripped release binaries.")
+
+    if '--upx-best' in sys.argv:
+        files = ['qpkg', 'qld', 'qcc']
+        for file in files:
+            if os.system('upx --best {0}'.format(os.path.join(cwd, 'bin', file))) != 0:
+                print("Failed to UPX {0}".format(file))
+                sys.exit(1)
     print("Release build complete.")
     sys.exit(0)
 

@@ -1,29 +1,51 @@
 # Quix Compiler
 
+*Project is in rapid development. It will not compile to anything useful yet.*
+
 QUIX is a high-level, statically typed, memory-safe, garbage-collected, high-performance, object-oriented, general-purpose systems programming language designed to be safe, expressive, and performant. QUIX supports runtime reflection, low-level memory access, namespaces, generics, type inference, packed data types, classes, operator overloading, coroutines, default initializers, arbitrary precision math, RAII, automatic memory management, and metaprogramming.
 QUIX is especially well-suited for library development, game development, and systems programming. QUIX is designed to be a modern, safe, and expressive alternative to C++ and Rust.
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Usage](#usage)
+- [Technical Detail](#technical-detail)
+- - [General Architecture](#general-architecture)
+- - [Preprocessor Engine Architecture](#preprocessor-engine-architecture)
+- - [Optimizer Engine Architecture](#optimizer-engine-architecture)
+- - [Diagnostic Engine Architecture](#diagnostic-engine-architecture)
 - [Building](#building)
+- [Usage](#usage)
 - [Contributing](#contributing)
 - [License](#license)
 
-## Introduction
+## Technical Detail
 
-Quix offers a clean and intuitive syntax, making it suitable for a wide range of applications. It comes with a standard library that simplifies common programming tasks.
+### General Architecture
+
+---
+
+The QUIX Compiler has a reasonably standard architecture, with a complex preprocessor that is essentially an LUA interpreter, an optimizer, and the LLVM backend. Two custom IRs are used in this compiler's middle end to facilitate the correct and comprehendible translation of the high-level language into native binary code. The compiler is written entirely in "modern" C++ and is designed to be fast, efficient, easy to maintain, and extend.
+
+![QUIX](https://github.com/user-attachments/assets/f814a347-fb0a-485c-bb7a-8d8a7706ee22)
+
+### Preprocessor Engine Architecture
+
+---
+
+Some programming languages like Rust have extremely complex macro systems that can feel more like writing theoretical computer science papers than writing helpful code. QUIX has the most potent macro systems of any programming language. QUIX accomplishes this by just embedding a complete LUA interpreter into the preprocessor. You can write `metastatic` functions that may take in arguments and return values that will be recursively preprocessed until there are no more macros to expand. This recursion enables the creation of extraordinarily powerful custom constructs that are *readable*, *understandable*, and *compiler-time performant*. The LUA interpreter context exists for the entire duration of the preprocessor, which is effectively the entire compilation unit, meaning the state is preserved between macros. How hard would it be if you wanted to write a macro in Rust that would do a SHA-3 cryptographic hash at compile time? In QUIX, simply use LUA to implement the standard algorithm as you would in regular programs and then call your macro like `@sha3_256("You data to hash")` which may occur anywhere in your code (as it applies before parsing). QUIX just made elegant macros a solved problem. Also, macros are loosely (optionally) type-checked on input and output, which catches wierd issues early.
+
+![QUIX](https://github.com/user-attachments/assets/754f8c82-bcbe-4a30-98dc-10312979b784)
+
+### Optimizer Engine Architecture
+
+TODO: write this section
+
+### Diagnostic Engine Architecture
+
+TODO: write this section
 
 ## Usage
 
-To compile and run Quix programs, follow these steps:
-
-1. **Install Dependencies**: Ensure you have all necessary dependencies installed on your system.
-2. **Clone the Repository**: Clone the Quix compiler repository from GitHub.
-3. **Build the Compiler**: Build the Quix compiler using the provided build instructions.
-4. **Compile Your Program**: Use the Quix compiler to compile your Quix source code.
-5. **Execute Your Program**: Run the compiled executable to execute your Quix program.
+TODO: write this section
 
 ## Building
 
@@ -51,21 +73,9 @@ To build the Quix compiler from source, follow these steps:
 
 ## Contributing
 
-This is my hobby project. I work on it in my free time. Until this project is more mature, if ever, I will not be accepting contributions. If you have any questions or suggestions, feel free to open an issue on GitHub. I may take an extremely long time to respond.
-
-<!-- 
-Contributions to the Quix compiler are welcome! If you'd like to contribute, please follow these guidelines:
-
-- Fork the repository on GitHub.
-- Make your changes in a new branch.
-- Test your changes thoroughly.
-- Submit a pull request with a clear description of your changes. -->
+TODO: write this section
 
 ## License
 
 The Quix compiler is free software released under the GNU Lesser General Public License 2.1 (LGPL 2.1). See the `LICENSE` file for more information.
 
----
-
-**Author**: Wesley Jones  
-**Date**: 2024-04-09

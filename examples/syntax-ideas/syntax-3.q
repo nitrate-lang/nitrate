@@ -1,7 +1,5 @@
 use "v1.0";
 
-/// TODO: build a simple 2d platformer game
-
 @copyright "Wesley Jones";
 @license "CC BY-NC-SA 4.0";
 @description "A simple 2d platformer game";

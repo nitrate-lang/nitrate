@@ -1,1 +1,0 @@
-type OpaqueDatabaseHandle = opaque(myType);
