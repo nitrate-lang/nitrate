@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/libquix-core/include",
+                "${workspaceFolder}/libquix-lexer/include",
+                "${workspaceFolder}/libquix-parser/include",
+                "${workspaceFolder}/qpkg/src"
+            ],
+            "defines": [],
+            "cStandard": "c23",
+            "cppStandard": "c++20",
+            "intelliSenseMode": "linux-clang-x64"
+        }
+    ],
+    "version": 4
+}
