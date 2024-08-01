@@ -12,10 +12,13 @@ confinement: devmode
 
 parts:
   qpkg:
-    plugin: autotools
-    autotools-configure-parameters: ["--prefix=/usr"]
-    source: https://github.com/Kracken256/quix.git
-    build-packages: []
+    plugin: cmake
+    cmake-parameters:
+      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DSTRIP_OUTPUT=ON
+    source: .
+    build-packages: 
+      - libboost-all-dev
+      - libdeflate-dev
 apps:
   qpkg:
     command: usr/bin/qpkg

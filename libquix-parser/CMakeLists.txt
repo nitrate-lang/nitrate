@@ -42,6 +42,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_link_libraries(quix-parser PRIVATE quix-lexer libdeflate.a)
   target_link_options(quix-parser PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-parser quix-lexer)
+
+  add_subdirectory(tests)
+  add_subdirectory(fuzzer)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE SHAREDLIB RELEASE BUILD ================
   add_library(quix-parser SHARED ${CXX_SOURCES})
@@ -53,6 +56,3 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_link_libraries(quix-parser PRIVATE quix-lexer libdeflate.a)
   add_dependencies(quix-parser quix-lexer)
 endif()
-
-add_subdirectory(tests)
-add_subdirectory(fuzzer)

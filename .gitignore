@@ -63,3 +63,4 @@ main.c
 libquix-lexer/fuzzer/corpus/*
 fuzz-*.log
 libquix-parser/fuzzer/corpus/*
+*.snap

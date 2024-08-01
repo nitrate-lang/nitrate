@@ -5,15 +5,28 @@ import sys
 
 cwd = os.getcwd()
 
-
 if not os.path.exists(os.path.join(cwd, 'libquix-parser')):
     print("Please run this script from the root of the repository.")
+    sys.exit(1)
+
+# Check if snapcraft is installed
+if os.system('snapcraft --version') != 0:
+    print("Snapcraft is not installed.")
     sys.exit(1)
 
 # Check if Docker is installed
 if os.system('docker --version') != 0:
     print("Docker is not installed.")
     sys.exit(1)
+
+# Check if SNAP Build mode is enabled
+if '--snap' in sys.argv:
+    print("Building Snap package...")
+    if os.system('snapcraft') != 0:
+        print("Snap build failed.")
+        sys.exit(1)
+    print("Snap build complete.")
+    sys.exit(0)
 
 print("Building Docker containers...")
 

@@ -40,6 +40,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_link_libraries(quix-lexer PRIVATE quix-core)
   target_link_options(quix-lexer PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-lexer quix-core)
+
+  add_subdirectory(tests)
+  add_subdirectory(fuzzer)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE SHAREDLIB RELEASE BUILD ================
   add_library(quix-lexer SHARED ${CXX_SOURCES})
@@ -50,5 +53,3 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   add_dependencies(quix-lexer quix-core)
 endif()
 
-add_subdirectory(tests)
-add_subdirectory(fuzzer)

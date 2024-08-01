@@ -622,6 +622,8 @@ LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
     case qNote:
       return "COMMENT";
   }
+
+  __builtin_unreachable();
 }
 
 LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
@@ -647,6 +649,8 @@ LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
     case qNote:
       return lexer->impl->Strings()[a->v.str_idx] == lexer->impl->Strings()[b->v.str_idx];
   }
+
+  __builtin_unreachable();
 }
 
 LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
@@ -672,6 +676,8 @@ LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
     case qNote:
       return lexer->impl->Strings()[a->v.str_idx] < lexer->impl->Strings()[b->v.str_idx];
   }
+  
+  __builtin_unreachable();
 }
 
 LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
@@ -694,6 +700,8 @@ LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
       *len = lexer->impl->Strings()[tok->v.str_idx].size();
       return lexer->impl->Strings()[tok->v.str_idx].data();
   }
+  
+  __builtin_unreachable();
 }
 
 LIB_EXPORT const char *qlex_opstr(qlex_op_t op) { return qlex::operators.right.at(op).data(); }
@@ -1424,6 +1432,8 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
                 } else {
                   buf += (char)(codepoint);
                 }
+
+                break;
               }
               default:
                 buf += c;
