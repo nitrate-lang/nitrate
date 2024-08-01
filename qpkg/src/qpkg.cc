@@ -30,6 +30,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <argparse.h>
+#include <quix-core/Lib.h>
+#include <quix-lexer/Lib.h>
+#include <quix-parser/Lib.h>
 
 // #include <build/EngineBuilder.hh>
 #include <clean/Cleanup.hh>
@@ -40,6 +43,7 @@
 // #include <dev/bench/bench.hh>
 // #include <dev/test/test.hh>
 #endif
+// #include <run/RunScript.hh>
 
 #include <filesystem>
 #include <functional>
@@ -48,7 +52,6 @@
 #include <iostream>
 #include <map>
 #include <optional>
-// #include <run/RunScript.hh>
 #include <string>
 #include <thread>
 #include <vector>
@@ -60,12 +63,27 @@ static char *quixcc_cc_demangle(const char *mangled_name) {
   return nullptr;
 }
 
-static const char *quixcc_lib_version() {
-  /// TODO: implement
-  return "0.1.0";
+static std::string qpkg_deps_version_string() {
+#define QPKG_STABLE false /* TODO: Automate setting of 'is stable build' flag */
+
+  std::stringstream ss;
+
+  std::array<std::string_view, 3> QPKG_DEPS = {
+      qcore_lib_version(), qlex_lib_version(), qparse_lib_version()
+
+  };
+
+  ss << "{\"ver\":\"" << QPKG_ID << "\",\"stable\":" << (QPKG_STABLE ? "true" : "false")
+     << ",\"using\":[";
+  for (size_t i = 0; i < QPKG_DEPS.size(); i++) {
+    ss << "\"" << QPKG_DEPS[i] << "\"";
+    if (i < QPKG_DEPS.size() - 1) ss << ",";
+  }
+  ss << "]}";
+
+  return ss.str();
 }
 
-std::string VERSION_STR = "qpkg version 0.1.0 => (" + std::string(quixcc_lib_version()) + ")";
 constexpr const char *FULL_LICENSE =
     R"(This file is part of QUIX Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
@@ -1015,7 +1033,7 @@ int qpkg_main(std::vector<std::string> args) {
   std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> dev_subparsers;
 #endif
 
-  ArgumentParser program("qpkg", VERSION_STR);
+  ArgumentParser program("qpkg", qpkg_deps_version_string());
   setup_argparse(program, init_parser, build_parser, clean_parser, update_parser, install_parser,
                  doc_parser, env_parser, fmt_parser, list_parser, test_parser
 #if QPKG_DEV_TOOLS
@@ -1080,5 +1098,26 @@ int main(int argc, char *argv[]) {
 
   std::vector<std::string> args(argv, argv + argc);
 
-  return qpkg_main(args);
+  if (!qcore_lib_init()) {
+    std::cerr << "Failed to initialize QUIX-CORE library" << std::endl;
+    return -1;
+  }
+
+  if (!qlex_lib_init()) {
+    std::cerr << "Failed to initialize QUIX-LEX library" << std::endl;
+    return -1;
+  }
+
+  if (!qparse_lib_init()) {
+    std::cerr << "Failed to initialize QUIX-PARSE library" << std::endl;
+    return -1;
+  }
+
+  int ret = qpkg_main(args);
+
+  qparse_lib_deinit();
+  qlex_lib_deinit();
+  qcore_lib_deinit();
+
+  return ret;
 }
