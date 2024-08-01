@@ -56,6 +56,11 @@
 #include <thread>
 #include <vector>
 
+#ifndef QPKG_ID
+#warning "QPKG_ID not defined"
+#define QPKG_ID "?"
+#endif
+
 static char *quixcc_cc_demangle(const char *mangled_name) {
   /// TODO: implement
   (void)mangled_name;
@@ -113,7 +118,7 @@ void setup_argparse_init(ArgumentParser &parser) {
       .default_value(std::string("."))
       .nargs(1);
 
-  parser.add_argument("-v", "--verbose")
+  parser.add_argument("-V", "--verbose")
       .help("print verbose output")
       .default_value(false)
       .implicit_value(true);
@@ -129,7 +134,7 @@ void setup_argparse_init(ArgumentParser &parser) {
       .default_value(std::string("program"))
       .nargs(1);
 
-  parser.add_argument("-V", "--version")
+  parser.add_argument("-r", "--version")
       .help("version of package")
       .default_value(std::string("1.0.0"))
       .nargs(1);
@@ -184,7 +189,7 @@ void setup_argparse_build(ArgumentParser &parser) {
       .nargs(1)
       .scan<'u', uint32_t>();
 
-  parser.add_argument("-v", "--verbose")
+  parser.add_argument("-V", "--verbose")
       .help("print verbose output")
       .default_value(false)
       .implicit_value(true);
@@ -246,16 +251,14 @@ void setup_argparse_build(ArgumentParser &parser) {
 void setup_argparse_clean(ArgumentParser &parser) {
   parser.add_argument("package-src").help("path to package source").nargs(1);
 
-  parser.add_argument("-v", "--verbose")
+  parser.add_argument("-V", "--verbose")
       .help("print verbose output")
       .default_value(false)
       .implicit_value(true);
 }
 
 void setup_argparse_update(ArgumentParser &parser) {
-  parser.add_argument("package-name").help("name of package to update").nargs(1);
-
-  parser.add_argument("-v", "--verbose")
+  parser.add_argument("-V", "--verbose")
       .help("print verbose output")
       .default_value(false)
       .implicit_value(true);
@@ -280,12 +283,14 @@ void setup_argparse_update(ArgumentParser &parser) {
           "used to verify dependencies (only applies to this build)")
       .default_value(std::string(""))
       .nargs(1);
+
+  parser.add_argument("package-name").help("name of package to update").required().remaining();
 }
 
 void setup_argparse_install(ArgumentParser &parser) {
   parser.add_argument("src").help("source of package to install").nargs(1);
 
-  parser.add_argument("-v", "--verbose")
+  parser.add_argument("-V", "--verbose")
       .help("print verbose output")
       .default_value(false)
       .implicit_value(true);
@@ -330,18 +335,42 @@ void setup_argparse_install(ArgumentParser &parser) {
 void setup_argparse_doc(ArgumentParser &parser) {
   parser.add_argument("package-src").help("name of package to document").nargs(1);
 
-  parser.add_argument("-f", "--format")
-      .help("output format")
-      .choices("HTML", "TXT", "PDF")
-      .default_value(std::string("HTML"))
-      .nargs(1);
+  parser.add_argument("--html")
+      .help("generate HTML report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--plain")
+      .help("generate plain text report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--pdf")
+      .help("generate PDF report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--json")
+      .help("generate JSON report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--xml")
+      .help("generate XML report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--reactjs")
+      .help("generate ReactJS report")
+      .default_value(false)
+      .implicit_value(true);
 
   parser.add_argument("-o", "--output")
       .help("output directory")
       .default_value(std::string("."))
       .nargs(1);
 
-  parser.add_argument("-v", "--verbose")
+  parser.add_argument("-V", "--verbose")
       .help("print verbose output")
       .default_value(false)
       .implicit_value(true);
@@ -353,7 +382,7 @@ void setup_argparse_doc(ArgumentParser &parser) {
 
   parser.add_argument("-d", "--depth")
       .help("maximum depth of dependency tree to document")
-      .default_value(1)
+      .default_value((size_t)1)
       .nargs(1);
 
   parser.add_argument("-C", "--certify")
@@ -390,56 +419,10 @@ void setup_argparse_doc(ArgumentParser &parser) {
       .nargs(1);
 }
 
-void setup_argparse_env(ArgumentParser &parser) {
-  parser.add_argument("key").help("environment variable to query").nargs(1);
-
-  parser.add_argument("-noout", "--no-output")
-      .help("do not print the value of the environment variable")
-      .default_value(false)
-      .implicit_value(true);
-
-  parser.add_argument("--base64")
-      .help(
-          "print the value of the environment variable as a base64 encoded "
-          "string")
-      .default_value(false)
-      .implicit_value(true);
-
-  parser.add_argument("--hex")
-      .help("print the value of the environment variable as a hex encoded string")
-      .default_value(false)
-      .implicit_value(true);
-
-  parser.add_argument("--json")
-      .help("print the key-value pair as a JSON object")
-      .default_value(false)
-      .implicit_value(true);
-
-  parser.add_argument("--yaml")
-      .help("print the key-value pair as a YAML object")
-      .default_value(false)
-      .implicit_value(true);
-
-  parser.add_argument("--toml")
-      .help("print the key-value pair as a TOML object")
-      .default_value(false)
-      .implicit_value(true);
-
-  parser.add_argument("--xml")
-      .help("print the key-value pair as an XML object")
-      .default_value(false)
-      .implicit_value(true);
-
-  parser.add_argument("--csv")
-      .help("print the key-value pair as a CSV object")
-      .default_value(false)
-      .implicit_value(true);
-}
-
-void setup_argparse_fmt(ArgumentParser &parser) {
+void setup_argparse_format(ArgumentParser &parser) {
   parser.add_argument("package-src").help("path to package source").nargs(1);
 
-  parser.add_argument("-v", "--verbose")
+  parser.add_argument("-V", "--verbose")
       .help("print verbose output")
       .default_value(false)
       .implicit_value(true);
@@ -456,8 +439,18 @@ void setup_argparse_fmt(ArgumentParser &parser) {
 }
 
 void setup_argparse_list(ArgumentParser &parser) {
+  parser.add_argument("-V", "--verbose")
+      .help("print verbose output")
+      .default_value(false)
+      .implicit_value(true);
+
   parser.add_argument("-p", "--packages")
       .help("list all packages installed")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("-x", "--executables")
+      .help("list all executables installed")
       .default_value(false)
       .implicit_value(true);
 }
@@ -465,7 +458,7 @@ void setup_argparse_list(ArgumentParser &parser) {
 void setup_argparse_test(ArgumentParser &parser) {
   parser.add_argument("package-name").help("name of package to test").nargs(1);
 
-  parser.add_argument("-v", "--verbose")
+  parser.add_argument("-V", "--verbose")
       .help("print verbose output")
       .default_value(false)
       .implicit_value(true);
@@ -475,11 +468,35 @@ void setup_argparse_test(ArgumentParser &parser) {
       .default_value(std::string("."))
       .nargs(1);
 
-  parser.add_argument("-f", "--format")
-      .help("output format for reports")
-      .choices("HTML", "TXT", "PDF", "LOG", "JSON", "XML", "CSV")
-      .default_value(std::string("HTML"))
-      .nargs(1);
+  parser.add_argument("--html")
+      .help("generate HTML report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--plain")
+      .help("generate plain text report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--pdf")
+      .help("generate PDF report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--json")
+      .help("generate JSON report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--xml")
+      .help("generate XML report")
+      .default_value(false)
+      .implicit_value(true);
+
+  parser.add_argument("--reactjs")
+      .help("generate ReactJS report")
+      .default_value(false)
+      .implicit_value(true);
 
   parser.add_argument("-c, --coverage")
       .help("generate code coverage report")
@@ -498,7 +515,7 @@ void setup_argparse_test(ArgumentParser &parser) {
 
   parser.add_argument("-d", "--depth")
       .help("maximum depth of dependency tree to test")
-      .default_value(1)
+      .default_value((size_t)1)
       .nargs(1);
 
   parser.add_argument("--supply-chain-insecure")
@@ -540,7 +557,7 @@ void setup_argparse_dev(
     ArgumentParser &parser,
     std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) {
   /*================= CONFIG BASIC =================*/
-  parser.add_argument("-v", "--verbose")
+  parser.add_argument("-V", "--verbose")
       .help("print verbose output")
       .default_value(false)
       .implicit_value(true);
@@ -577,8 +594,8 @@ void setup_argparse_dev(
 void setup_argparse(
     ArgumentParser &parser, ArgumentParser &init_parser, ArgumentParser &build_parser,
     ArgumentParser &clean_parser, ArgumentParser &update_parser, ArgumentParser &install_parser,
-    ArgumentParser &doc_parser, ArgumentParser &env_parser, ArgumentParser &fmt_parser,
-    ArgumentParser &list_parser, ArgumentParser &test_parser
+    ArgumentParser &doc_parser, ArgumentParser &format_parser, ArgumentParser &list_parser,
+    ArgumentParser &test_parser
 #if QPKG_DEV_TOOLS
     ,
     ArgumentParser &dev_parser,
@@ -593,8 +610,7 @@ void setup_argparse(
   setup_argparse_update(update_parser);
   setup_argparse_install(install_parser);
   setup_argparse_doc(doc_parser);
-  setup_argparse_env(env_parser);
-  setup_argparse_fmt(fmt_parser);
+  setup_argparse_format(format_parser);
   setup_argparse_list(list_parser);
   setup_argparse_test(test_parser);
 #if QPKG_DEV_TOOLS
@@ -607,8 +623,7 @@ void setup_argparse(
   parser.add_subparser(update_parser);
   parser.add_subparser(install_parser);
   parser.add_subparser(doc_parser);
-  parser.add_subparser(env_parser);
-  parser.add_subparser(fmt_parser);
+  parser.add_subparser(format_parser);
   parser.add_subparser(list_parser);
   parser.add_subparser(test_parser);
 #if QPKG_DEV_TOOLS
@@ -783,26 +798,72 @@ int run_install_mode(const ArgumentParser &parser) {
 }
 
 int run_doc_mode(const ArgumentParser &parser) {
+  enum class OFormat { Html, Plain, Pdf, Json, Xml, ReactJS } oformat;
+
   qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
-  (void)parser;
-  std::cerr << "doc not implemented yet" << std::endl;
-  return 1;
+  bool html = parser["--html"] == true;
+  bool plain = parser["--plain"] == true;
+  bool pdf = parser["--pdf"] == true;
+  bool json = parser["--json"] == true;
+  bool xml = parser["--xml"] == true;
+  bool reactjs = parser["--reactjs"] == true;
+
+  std::string output = parser.get<std::string>("--output");
+  bool verbose = parser["--verbose"] == true;
+  bool recursive = parser["--recursive"] == true;
+  size_t depth = parser.get<size_t>("--depth");
+  std::string package_src = parser.get<std::string>("package-src");
+
+  if ((html + plain + pdf + json + xml + reactjs) != 1) {
+    std::cerr << "Exactly one output format must be specified" << std::endl;
+    return -1;
+  }
+
+  (void)output;
+  (void)verbose;
+  (void)recursive;
+  (void)depth;
+  (void)package_src;
+
+  if (html) oformat = OFormat::Html;
+  if (plain) oformat = OFormat::Plain;
+  if (pdf) oformat = OFormat::Pdf;
+  if (json) oformat = OFormat::Json;
+  if (xml) oformat = OFormat::Xml;
+  if (reactjs) oformat = OFormat::ReactJS;
+
+  switch (oformat) {
+    case OFormat::Html:
+      std::cerr << "HTML not implemented yet" << std::endl;
+      return 1;
+    case OFormat::Plain:
+      std::cerr << "Plain not implemented yet" << std::endl;
+      return 1;
+    case OFormat::Pdf:
+      std::cerr << "PDF not implemented yet" << std::endl;
+      return 1;
+    case OFormat::Json:
+      std::cerr << "JSON not implemented yet" << std::endl;
+      return 1;
+    case OFormat::Xml:
+      std::cerr << "XML not implemented yet" << std::endl;
+      return 1;
+    case OFormat::ReactJS:
+      std::cerr << "ReactJS not implemented yet" << std::endl;
+      return 1;
+
+    default:
+      std::cerr << "Unknown output format" << std::endl;
+      return -1;
+  }
 }
 
-int run_env_mode(const ArgumentParser &parser) {
+int run_format_mode(const ArgumentParser &parser) {
   qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
 
   (void)parser;
-  std::cerr << "env not implemented yet" << std::endl;
-  return 1;
-}
-
-int run_fmt_mode(const ArgumentParser &parser) {
-  qpkg::core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
-
-  (void)parser;
-  std::cerr << "fmt not implemented yet" << std::endl;
+  std::cerr << "format not implemented yet" << std::endl;
   return 1;
 }
 
@@ -1023,8 +1084,7 @@ int qpkg_main(std::vector<std::string> args) {
   ArgumentParser update_parser("update");
   ArgumentParser install_parser("install");
   ArgumentParser doc_parser("doc");
-  ArgumentParser env_parser("env");
-  ArgumentParser fmt_parser("fmt");
+  ArgumentParser format_parser("format");
   ArgumentParser list_parser("list");
   ArgumentParser test_parser("test");
 #if QPKG_DEV_TOOLS
@@ -1035,7 +1095,7 @@ int qpkg_main(std::vector<std::string> args) {
 
   ArgumentParser program("qpkg", qpkg_deps_version_string());
   setup_argparse(program, init_parser, build_parser, clean_parser, update_parser, install_parser,
-                 doc_parser, env_parser, fmt_parser, list_parser, test_parser
+                 doc_parser, format_parser, list_parser, test_parser
 #if QPKG_DEV_TOOLS
                  ,
                  dev_parser, dev_subparsers
@@ -1067,10 +1127,8 @@ int qpkg_main(std::vector<std::string> args) {
     return run_install_mode(install_parser);
   else if (program.is_subcommand_used("doc"))
     return run_doc_mode(doc_parser);
-  else if (program.is_subcommand_used("env"))
-    return run_env_mode(env_parser);
-  else if (program.is_subcommand_used("fmt"))
-    return run_fmt_mode(fmt_parser);
+  else if (program.is_subcommand_used("format"))
+    return run_format_mode(format_parser);
   else if (program.is_subcommand_used("list"))
     return run_list_mode(list_parser);
   else if (program.is_subcommand_used("test"))

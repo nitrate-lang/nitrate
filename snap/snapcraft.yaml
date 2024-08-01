@@ -20,9 +20,12 @@ parts:
       - libboost-all-dev
       - libdeflate-dev
       - libyaml-cpp-dev
+      - libhpdf-dev
     stage-packages:
       - libdeflate0
       - libyaml-cpp0.7
+      - libhpdf-2.3.0
+      - git
       
 apps:
   qpkg:
