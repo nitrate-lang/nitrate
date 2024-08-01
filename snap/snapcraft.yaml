@@ -19,6 +19,11 @@ parts:
     build-packages: 
       - libboost-all-dev
       - libdeflate-dev
+      - libyaml-cpp-dev
+    stage-packages:
+      - libdeflate0
+      - libyaml-cpp0.7
+      
 apps:
   qpkg:
     command: usr/bin/qpkg
