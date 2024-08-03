@@ -138,7 +138,10 @@ namespace qparse::diag {
 
     {  // Format the message
       char *c_msg = nullptr;
-      vasprintf(&c_msg, fmt.data(), args);
+      int r = vasprintf(&c_msg, fmt.data(), args);
+      if (r < 0) {
+        qcore_panic("Failed to format diagnostic message");
+      }
       msg = c_msg;
       free(c_msg);
     }
