@@ -83,7 +83,7 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t
         /**
          * @brief
          */
-        
+
         qlex_push(rd, ident);
         qlex_push(rd, tok);
         goto parse_pos_arg;
@@ -435,7 +435,8 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
                   Expr *count = nullptr;
                   if (!parse_expr(job, rd,
                                   {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)},
-                                  &count, depth + 1) || !count) {
+                                  &count, depth + 1) ||
+                      !count) {
                     return false;
                   }
 

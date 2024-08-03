@@ -1995,7 +1995,7 @@ namespace qparse {
   class SubsystemDecl : public Decl {
   protected:
     Block *m_body;
-   SubsystemDeps m_deps;
+    SubsystemDeps m_deps;
 
   public:
     SubsystemDecl(String name = "", Block *body = nullptr, SubsystemDeps deps = {})
@@ -2006,7 +2006,7 @@ namespace qparse {
 
     const SubsystemDeps &get_deps() const;
     void add_dep(String dep);
-    void add_deps(const SubsystemDeps& deps);
+    void add_deps(const SubsystemDeps &deps);
     void clear_deps();
     void remove_dep(String dep);
 

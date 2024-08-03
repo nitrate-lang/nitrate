@@ -93,8 +93,6 @@ LIB_EXPORT void qparse_lib_deinit() {
     return;
   }
 
-  // Deinitialize the library here.
-
   qlex_lib_deinit();
   qcore_lib_deinit();
 
@@ -150,8 +148,6 @@ LIB_EXPORT const char* qparse_lib_version() {
 }
 
 LIB_EXPORT const char* qparse_strerror() {
-  /// TODO: Get the last error message from the current thread.
-
   if (!qparser_err) {
     qcore_panic("qparse_strerror: qparser_err is NULL. This is a bug.");
   }

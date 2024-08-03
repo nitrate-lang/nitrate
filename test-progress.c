@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <string.h>
 
+void dump_callback(const char *msg, size_t len, uintptr_t userdata) {
+  printf("%.*s\n", (int)len, msg);
+}
+
 void do_parse(qparse_t *parser) {
   qcore_arena_t arena;
   qcore_arena_open(&arena);
@@ -15,6 +19,8 @@ void do_parse(qparse_t *parser) {
   if (!ok) {
     printf("Error: %s\n", qparse_strerror());
     qcore_arena_close(&arena);
+
+    qparse_dumps(parser, false, dump_callback, 0);
     return;
   }
 
@@ -48,7 +54,7 @@ int example_parser(const char *path) {
     goto cleanup;
   }
 
-  if ((lexer = qlex_new(source)) == NULL) {
+  if ((lexer = qlex_new(source, path)) == NULL) {
     printf("Error: %s\n", qlex_strerror());
 
     /* Handle lexer creation error */

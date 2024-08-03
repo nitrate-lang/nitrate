@@ -13,7 +13,6 @@ set(QPARSER_ID "\"QPARSER_${SHA256SUMS}\"")
 message(STATUS "libquix-parser VersionId: ${QPARSER_ID}")
 
 #================== CONFIGURE BUILD ==================
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)

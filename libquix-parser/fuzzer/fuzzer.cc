@@ -7,13 +7,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   if (Size == 0) {
     return 0;
   }
-  
+
   FILE *fp = fmemopen((void *)Data, Size, "r");
   if (fp == NULL) {
     throw std::runtime_error("fmemopen failed");
   }
 
-  qlex_t *lex = qlex_new(fp);
+  qlex_t *lex = qlex_new(fp, nullptr);
   if (!lex) {
     fclose(fp);
     throw std::runtime_error("qlex_new failed");

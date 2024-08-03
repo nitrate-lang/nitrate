@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int main(int argc, char**argv) {
+int main(int argc, char **argv) {
   FILE *source = NULL;
   qlex_t *lexer = NULL;
   qparse_conf_t *conf = NULL;
@@ -35,7 +35,7 @@ int main(int argc, char**argv) {
     goto cleanup;
   }
 
-  if ((lexer = qlex_new(source)) == NULL) {
+  if ((lexer = qlex_new(source, nullptr)) == NULL) {
     printf("Error: %s\n", qlex_strerror());
 
     /* Handle lexer creation error */

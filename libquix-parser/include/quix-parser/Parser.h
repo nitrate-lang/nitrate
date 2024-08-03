@@ -32,15 +32,15 @@
 #ifndef __QUIX_PARSER_PARSER_H__
 #define __QUIX_PARSER_PARSER_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <quix-core/Arena.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Config.h>
 #include <quix-parser/Node.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct qparse_impl_t;
 typedef struct qparse_impl_t qparse_impl_t;
@@ -49,28 +49,22 @@ typedef struct qparse_t {
   qparse_impl_t *impl; /* Parser implementation struct */
   qlex_t *lexer;       /* Polymporphic lexer */
   qparse_conf_t *conf; /* Parser configuration */
+  bool failed;         /* Whether the parser failed (ie syntax errors) */
 } qparse_t;
 
 /**
  * @brief Create a new parser instance from non-owning references to a lexer and
  * parser configuration.
  *
- * @param lexer The lexer to use for parsing.
- * @param conf The parser configuration to use for parsing.
+ * @param lexer Lexer stream object.
+ * @param conf Parser configuration object.
  *
- * @return A new parser instance.
+ * @return A new parser instance or NULL if an error occurred.
  *
  * @note If `!lexer` or `!conf`, NULL is returned.
- *
- * @note The parser instance is owned by the caller and must be freed with
- * `qparse_free`.
- *
- * @note The lexer and configuration are not owned by the parser and must be
- * freed separately after the parser is freed.
- *
- * @note The parser instance isn't thread safe internally, but the functions
- * provided to operate on the parser instance are thread safe themselves. This means that there is
- * no internal locking in the parser context.
+ * @note The returned object must be freed with `qparse_free`.
+ * @note The lexer object and configuration object are not owned by the returned parser object.
+ * @note The returned instance does not contain internal locks.
  *
  * @note This function is thread safe.
  */
@@ -141,17 +135,17 @@ bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t **out);
 
 /**
  * @brief Parse QUIX code into a parse tree and dump it to a file.
- * 
+ *
  * @param parser The parser instance to use for parsing.
  * @param out The file to dump the parse tree to.
  * @param x0 Unused.
  * @param x1 Unused.
- * 
+ *
  * @return Returns true if no non-fatal parsing errors occurred, false otherwise. A value of true,
  * however, does not guarantee that the parse tree is valid.
- * 
+ *
  * @note If `!parser` or `!out`, false is returned.
- * 
+ *
  * @note This function is thread safe.
  */
 bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1);

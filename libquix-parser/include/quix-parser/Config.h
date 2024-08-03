@@ -36,12 +36,12 @@
 #include <initializer_list>
 #endif
 
+#include <quix-lexer/Lexer.h>
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <quix-lexer/Lexer.h>
-#include <stdbool.h>
 
 typedef enum qparse_key_t {
   QPK_UNKNOWN = 0,

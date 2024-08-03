@@ -33,7 +33,9 @@
 #define __QUIX_PARSER_REPORT_H__
 
 #include <quix-lexer/Token.h>
+#include <quix-parser/Parser.h>
 
+#include <cstdarg>
 #include <functional>
 #include <memory>
 #include <queue>
@@ -41,54 +43,69 @@
 #include <string_view>
 
 namespace qparse::diag {
-  typedef std::function<void(const char *)> DiagnosticMessageHandler;
-
-  struct FormatOptions {
-    bool use_color;
-    bool use_ansi_modes;
-    bool use_unicode;
-
-    FormatOptions() { *this = {}; }
+  class SyntaxError : public std::runtime_error {
+  public:
+    SyntaxError() : std::runtime_error("") {}
   };
 
   enum class MessageType {
     Syntax,
   };
 
+  enum ControlFlow {
+    cont, /* Continue parsing */
+    stop, /* Stop parsing (throw an error) */
+  };
+
+  enum class FormatStyle {
+    Clang16Color,   /* Clang-like 16 color diagnostic format */
+    ClangPlain,     /* Clang-like plain text diagnostic format */
+    ClangTrueColor, /* Clang-like RGB TrueColor diagnostic format */
+    Default = Clang16Color,
+  };
+
+  typedef std::function<void(const char *)> DiagnosticMessageHandler;
+
   struct DiagMessage {
     std::string msg;
-    qlex_loc_t loc;
+    qlex_tok_t tok;
     MessageType type;
   };
 
-  class IFormatter {
-  public:
-    virtual ~IFormatter() {}
-
-    virtual void format(const DiagMessage &msg, const FormatOptions &options, std::string &out) = 0;
-  };
-
-  class ClangLikeFormatter : public IFormatter {
-  public:
-    void format(const DiagMessage &msg, const FormatOptions &options, std::string &out) override;
-  };
-
   class DiagnosticManager {
+    qparse_t *m_parser;
     std::vector<DiagMessage> m_msgs;
-    std::shared_ptr<IFormatter> m_formatter;
+
+    std::string mint_clang16_message(const DiagMessage &msg)const;
+    std::string mint_plain_message(const DiagMessage &msg)const;
+    std::string mint_clang_truecolor_message(const DiagMessage &msg)const;
 
   public:
-    DiagnosticManager();
-    ~DiagnosticManager();
-
     void push(DiagMessage &&msg);
-    size_t render(DiagnosticMessageHandler handler, const FormatOptions &options) const;
+    size_t render(DiagnosticMessageHandler handler, FormatStyle style) const;
+
+    void set_ctx(qparse_t *parser) { m_parser = parser; }
   };
 
-  void install_reference(DiagnosticManager *mgr);
+  /* Set reference to the current parser */
+  void install_reference(qparse_t *parser);
 
-  void syntax(const qlex_tok_t &tok, std::string_view msg);
+  /**
+   * @brief Report a syntax error
+   */
+  template <ControlFlow flow>
+  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...) {
+    extern void syntax_impl(const qlex_tok_t &tok, std::string_view fmt, va_list args);
 
+    va_list args;
+    va_start(args, fmt);
+    syntax_impl(tok, fmt, args);
+    va_end(args);
+
+    if constexpr (flow == stop) {
+      throw SyntaxError();
+    }
+  }
 };  // namespace qparse::diag
 
 #endif  // __QUIX_PARSER_REPORT_H__

@@ -259,6 +259,8 @@ class QDocGen {
     HPDF_Font font = GetFont("Poppins-SemiBold");
 
     DrawTextCentered(page, font, 18, 760, "Exports");
+
+    /// TODO:
   }
 
   void render_requirements_section() {
@@ -269,6 +271,8 @@ class QDocGen {
     HPDF_Font font = GetFont("Poppins-SemiBold");
 
     DrawTextCentered(page, font, 18, 760, "Requirements");
+
+    /// TODO:
   }
 
   void render_developers_notes_section() {
@@ -279,6 +283,8 @@ class QDocGen {
     HPDF_Font font = GetFont("Poppins-SemiBold");
 
     DrawTextCentered(page, font, 18, 760, "Developer Notes");
+
+    /// TODO:
   }
 
   void render_copyright_section() {
@@ -289,6 +295,8 @@ class QDocGen {
     HPDF_Font font = GetFont("Poppins-SemiBold");
 
     DrawTextCentered(page, font, 18, 760, "Copyright");
+
+    /// TODO:
   }
 
 public:

@@ -44,190 +44,195 @@
 #include "LibMacro.h"
 
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect_braces,
                            bool single_stmt) {
-  qlex_tok_t tok;
+  try {
+    qlex_tok_t tok;
 
-  if (expect_braces) {
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncLCur>()) {
-      /// TODO: Write the ERROR message
-      return false;
-    }
-  }
-
-  *group = Block::get();
-
-  while ((tok = qlex_peek(rd)).ty != qEofF) {
-    if (single_stmt && (*group)->get_items().size() > 0) break;
+    *group = Block::get();
 
     if (expect_braces) {
-      if (tok.is<qPuncRCur>()) {
-        qlex_next(rd);
-        return true;
-      }
-    }
-
-    if (tok.is<qPuncSemi>()) /* Skip excessive semicolons */
-    {
-      qlex_next(rd);
-      continue;
-    }
-
-    if (!tok.is(qKeyW)) {
-      Expr *expr = nullptr;
-      if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
-        /// TODO: Write the ERROR message
-        return false;
-      }
-
-      if (!expr) {
-        /// TODO: Write the ERROR message
-        return false;
-      }
-
       tok = qlex_next(rd);
-      if (!tok.is<qPuncSemi>()) {
-        /// TODO: Write the ERROR message
-        return false;
+      if (!tok.is<qPuncLCur>()) {
+        syntax<cont>(tok, "Expected '{'");
       }
-
-      (*group)->add_item(ExprStmt::get(expr));
-      continue;
     }
 
-    qlex_next(rd);
+    while ((tok = qlex_peek(rd)).ty != qEofF) {
+      if (single_stmt && (*group)->get_items().size() > 0) break;
 
-    Stmt *node = nullptr;
+      if (expect_braces) {
+        if (tok.is<qPuncRCur>()) {
+          qlex_next(rd);
+          return true;
+        }
+      }
 
-    switch (tok.as<qlex_key_t>()) {
-      case qKVar: {
-        StmtListItems decls;
-        if (!parse_var(job, rd, decls)) return false;
-        for (auto &decl : decls) (*group)->add_item(decl);
-        break;
+      if (tok.is<qPuncSemi>()) /* Skip excessive semicolons */
+      {
+        qlex_next(rd);
+        continue;
       }
-      case qKLet: {
-        StmtListItems decls;
-        if (!parse_let(job, rd, decls)) return false;
-        for (auto &decl : decls) (*group)->add_item(decl);
-        break;
-      }
-      case qKConst: {
-        StmtListItems decls;
-        if (!parse_const(job, rd, decls)) return false;
-        for (auto &decl : decls) (*group)->add_item(decl);
-        break;
-      }
-      case qKEnum:
-        if (!parse_enum(job, rd, &node)) return false;
-        break;
-      case qKStruct:
-        if (!parse_struct(job, rd, &node)) return false;
-        break;
-      case qKRegion:
-        if (!parse_region(job, rd, &node)) return false;
-        break;
-      case qKGroup:
-        if (!parse_group(job, rd, &node)) return false;
-        break;
-      case qKUnion:
-        if (!parse_union(job, rd, &node)) return false;
-        break;
-      case qKType:
-        if (!parse_typedef(job, rd, &node)) return false;
-        break;
-      case qKSubsystem:
-        if (!parse_subsystem(job, rd, &node)) return false;
-        break;
-      case qKFn:
-        if (!parse_function(job, rd, &node)) return false;
-        break;
-      case qKPub:
-      case qKImport:  // they both declare external functions
-        if (!parse_pub(job, rd, &node)) return false;
-        break;
-      case qKSec:
-        break;
-      case qKReturn:
-        if (!parse_return(job, rd, &node)) return false;
-        break;
-      case qKRetif:
-        if (!parse_retif(job, rd, &node)) return false;
-        break;
-      case qKRetz:
-        if (!parse_retz(job, rd, &node)) return false;
-        break;
-      case qKRetv:
-        if (!parse_retv(job, rd, &node)) return false;
-        break;
-      case qKBreak:
-        node = BreakStmt::get();
-        break;
-      case qKContinue:
-        node = ContinueStmt::get();
-        break;
-      case qKIf:
-        if (!parse_if(job, rd, &node)) return false;
-        break;
-      case qKWhile:
-        if (!parse_while(job, rd, &node)) return false;
-        break;
-      case qKFor:
-        if (!parse_for(job, rd, &node)) return false;
-        break;
-      case qKForm:
-        if (!parse_form(job, rd, &node)) return false;
-        break;
-      case qKForeach:
-        if (!parse_foreach(job, rd, &node)) return false;
-        break;
-      case qKSwitch:
-        if (!parse_switch(job, rd, &node)) return false;
-        break;
-      case qK__Asm__:
-        if (!parse_inline_asm(job, rd, &node)) return false;
-        break;
-      case qKUnsafe: {
-        Block *block = nullptr;
-        qlex_tok_t tok = qlex_peek(rd);
-        if (tok.is<qPuncLCur>()) {
-          if (!parse(job, rd, &block)) return false;
-        } else {
-          if (!parse(job, rd, &block, false, true)) return false;
+
+      if (!tok.is(qKeyW)) {
+        if (tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncRPar>()) {
+          syntax<cont>(tok, "Unexpected closing brace");
+          return false;
         }
 
-        block->set_unsafe(true);
-        (*group)->add_item(block);
-        break;
-      }
-      case qKSafe: {
-        Block *block = nullptr;
-        qlex_tok_t tok = qlex_peek(rd);
-        if (tok.is<qPuncLCur>()) {
-          if (!parse(job, rd, &block)) return false;
-        } else {
-          if (!parse(job, rd, &block, false, true)) return false;
+        Expr *expr = nullptr;
+        if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
+          syntax<stop>(tok, "Expected expression");
         }
-        block->set_unsafe(false);
-        (*group)->add_item(block);
-        break;
+
+        if (!expr) {
+          syntax<cont>(tok, "Expected valid expression");
+        }
+
+        tok = qlex_next(rd);
+        if (!tok.is<qPuncSemi>()) {
+          syntax<cont>(tok, "Expected ';'");
+        }
+
+        (*group)->add_item(ExprStmt::get(expr));
+        continue;
       }
-      default:
-        /// TODO: Write the ERROR message
-        return false;
+
+      qlex_next(rd);
+
+      Stmt *node = nullptr;
+
+      switch (tok.as<qlex_key_t>()) {
+        case qKVar: {
+          StmtListItems decls;
+          if (!parse_var(job, rd, decls)) return false;
+          for (auto &decl : decls) (*group)->add_item(decl);
+          break;
+        }
+        case qKLet: {
+          StmtListItems decls;
+          if (!parse_let(job, rd, decls)) return false;
+          for (auto &decl : decls) (*group)->add_item(decl);
+          break;
+        }
+        case qKConst: {
+          StmtListItems decls;
+          if (!parse_const(job, rd, decls)) return false;
+          for (auto &decl : decls) (*group)->add_item(decl);
+          break;
+        }
+        case qKEnum:
+          if (!parse_enum(job, rd, &node)) return false;
+          break;
+        case qKStruct:
+          if (!parse_struct(job, rd, &node)) return false;
+          break;
+        case qKRegion:
+          if (!parse_region(job, rd, &node)) return false;
+          break;
+        case qKGroup:
+          if (!parse_group(job, rd, &node)) return false;
+          break;
+        case qKUnion:
+          if (!parse_union(job, rd, &node)) return false;
+          break;
+        case qKType:
+          if (!parse_typedef(job, rd, &node)) return false;
+          break;
+        case qKSubsystem:
+          if (!parse_subsystem(job, rd, &node)) return false;
+          break;
+        case qKFn:
+          if (!parse_function(job, rd, &node)) return false;
+          break;
+        case qKPub:
+        case qKImport:  // they both declare external functions
+          if (!parse_pub(job, rd, &node)) return false;
+          break;
+        case qKSec:
+          break;
+        case qKReturn:
+          if (!parse_return(job, rd, &node)) return false;
+          break;
+        case qKRetif:
+          if (!parse_retif(job, rd, &node)) return false;
+          break;
+        case qKRetz:
+          if (!parse_retz(job, rd, &node)) return false;
+          break;
+        case qKRetv:
+          if (!parse_retv(job, rd, &node)) return false;
+          break;
+        case qKBreak:
+          node = BreakStmt::get();
+          break;
+        case qKContinue:
+          node = ContinueStmt::get();
+          break;
+        case qKIf:
+          if (!parse_if(job, rd, &node)) return false;
+          break;
+        case qKWhile:
+          if (!parse_while(job, rd, &node)) return false;
+          break;
+        case qKFor:
+          if (!parse_for(job, rd, &node)) return false;
+          break;
+        case qKForm:
+          if (!parse_form(job, rd, &node)) return false;
+          break;
+        case qKForeach:
+          if (!parse_foreach(job, rd, &node)) return false;
+          break;
+        case qKSwitch:
+          if (!parse_switch(job, rd, &node)) return false;
+          break;
+        case qK__Asm__:
+          if (!parse_inline_asm(job, rd, &node)) return false;
+          break;
+        case qKUnsafe: {
+          Block *block = nullptr;
+          tok = qlex_peek(rd);
+          if (tok.is<qPuncLCur>()) {
+            if (!parse(job, rd, &block)) return false;
+          } else {
+            if (!parse(job, rd, &block, false, true)) return false;
+          }
+
+          block->set_unsafe(true);
+          (*group)->add_item(block);
+          break;
+        }
+        case qKSafe: {
+          Block *block = nullptr;
+          tok = qlex_peek(rd);
+          if (tok.is<qPuncLCur>()) {
+            if (!parse(job, rd, &block)) return false;
+          } else {
+            if (!parse(job, rd, &block, false, true)) return false;
+          }
+          block->set_unsafe(false);
+          (*group)->add_item(block);
+          break;
+        }
+        default:
+          syntax<cont>(tok, "Unexpected keyword");
+          break;
+      }
+
+      if (node) (*group)->add_item(node);
     }
 
-    if (node) (*group)->add_item(node);
-  }
+    if (expect_braces) {
+      syntax<cont>(tok, "Expected '}'");
+    }
 
-  if (expect_braces) {
-    /// TODO: Write the ERROR message
+    return true;
+  } catch (SyntaxError &e) {
     return false;
   }
-
-  return true;
 }
 
 LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf) {
@@ -240,6 +245,7 @@ LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf) {
   parser->impl = new qparse_impl_t();
   parser->lexer = lexer;
   parser->conf = conf;
+  parser->failed = false;
 
   qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
 
@@ -265,15 +271,19 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
     return false;
   }
 
+  *out = nullptr;
+
+  parser->impl->diag.set_ctx(parser);
+
   qparse::qparse_ast_arena.swap(*arena);
 
-  qparse::diag::install_reference(&parser->impl->diag);
+  qparse::diag::install_reference(parser);
   bool status = qparse::parser::parse(*parser, parser->lexer, (qparse::Block **)out, false, false);
   qparse::diag::install_reference(nullptr);
 
   qparse::qparse_ast_arena.swap(*arena);
 
-  return status;
+  return status && !parser->failed;
 }
 
 LIB_EXPORT bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1) {
@@ -306,6 +316,10 @@ LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
     return false;
   }
 
+  if (parser->failed) {
+    return false;
+  }
+
   if (!parser->impl) {
     qcore_panic("qpase_check: invariant violation: parser->impl is NULL");
   }
@@ -319,13 +333,7 @@ LIB_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb, 
     return;
   }
 
-  qparse::diag::FormatOptions opts;
-
-  opts.use_ansi_modes = !no_ansi;
-  opts.use_color = !no_ansi;
-  opts.use_unicode = !no_ansi;
-
   auto adapter = [&](const char *msg) { cb(msg, std::strlen(msg), data); };
 
-  parser->impl->diag.render(adapter, opts);
+  parser->impl->diag.render(adapter, qparse::diag::FormatStyle::Clang16Color);
 }

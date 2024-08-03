@@ -31,49 +31,124 @@
 
 #define __QPARSE_IMPL__
 
+#include <Impl.h>
 #include <Report.h>
 #include <quix-core/Error.h>
+#include <quix-parser/Parser.h>
 
 #include <sstream>
 
 using namespace qparse::diag;
 
-thread_local DiagnosticManager *g_diag_mgr;
+thread_local qparse_t *g_parser_inst;
 
-DiagnosticManager::DiagnosticManager() { m_formatter = std::make_shared<ClangLikeFormatter>(); }
+/*
+/app/libquix-parser/src/parser/InlineAsmParser.cc:120:73: warning: unused parameter 'node'
+[-Wunused-parameter] bool qparse::parser::parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node) {
+                                                                        ^
+*/
 
-DiagnosticManager::~DiagnosticManager() {}
+///============================================================================///
+
+std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
+  std::stringstream ss;
+  ss << qlex_filename(m_parser->lexer) << ":";
+  ss << qlex_line(m_parser->lexer, msg.tok.loc) << ":";
+  ss << qlex_col(m_parser->lexer, msg.tok.loc) << ": ";
+  ss << "error: " << msg.msg << " [SyntaxError]\n";
+
+  uint32_t offset;
+  char *snippet = qlex_snippet(m_parser->lexer, msg.tok, &offset);
+  if (!snippet) {
+    return ss.str();
+  }
+
+  ss << snippet << "\n";
+  for (uint32_t i = 0; i < offset; i++) {
+    ss << " ";
+  }
+  ss << "^\n";
+  free(snippet);
+
+  return ss.str();
+}
+
+std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
+  std::stringstream ss;
+  ss << "\x1b[37;1m" << qlex_filename(m_parser->lexer) << ":";
+  ss << qlex_line(m_parser->lexer, msg.tok.loc) << ":";
+  ss << qlex_col(m_parser->lexer, msg.tok.loc) << ":\x1b[0m ";
+  ss << "\x1b[31;1merror:\x1b[0m \x1b[37;1m" << msg.msg << " [SyntaxError]\x1b[0m\n";
+
+  uint32_t offset;
+  char *snippet = qlex_snippet(m_parser->lexer, msg.tok, &offset);
+  if (!snippet) {
+    return ss.str();
+  }
+
+  ss << snippet << "\n";
+  for (uint32_t i = 0; i < offset; i++) {
+    ss << " ";
+  }
+  ss << "\x1b[32;1m^\x1b[0m\n";
+  free(snippet);
+
+  return ss.str();
+}
+
+std::string DiagnosticManager::mint_clang_truecolor_message(const DiagMessage &msg) const {
+  return mint_clang16_message(msg); /* For now this will do okay */
+}
+
+///============================================================================///
+
+using namespace qparse::diag;
 
 void DiagnosticManager::push(DiagMessage &&msg) { m_msgs.push_back(std::move(msg)); }
 
-size_t DiagnosticManager::render(DiagnosticMessageHandler handler,
-                                 const FormatOptions &options) const {
-  std::string out;
-
-  for (const auto &msg : m_msgs) {
-    m_formatter->format(msg, options, out);
-    handler(out.c_str());
+size_t DiagnosticManager::render(DiagnosticMessageHandler handler, FormatStyle style) const {
+  switch (style) {
+    case FormatStyle::ClangPlain:
+      for (const auto &msg : m_msgs) {
+        handler(mint_plain_message(msg).c_str());
+      }
+      break;
+    case FormatStyle::Clang16Color:
+      for (const auto &msg : m_msgs) {
+        handler(mint_clang16_message(msg).c_str());
+      }
+      break;
+    case FormatStyle::ClangTrueColor:
+      for (const auto &msg : m_msgs) {
+        handler(mint_clang_truecolor_message(msg).c_str());
+      }
+      break;
+    default:
+      qcore_panicf("Unsupported diagnostic format style: %d", static_cast<int>(style));
   }
 
   return m_msgs.size();
 }
 
-void qparse::diag::install_reference(qparse::diag::DiagnosticManager *mgr) { g_diag_mgr = mgr; }
+namespace qparse::diag {
+  void install_reference(qparse_t *parser) { g_parser_inst = parser; }
 
-void syntax(const qlex_tok_t &tok, std::string_view msg) {
-  DiagMessage diag;
-  diag.msg = msg;
-  diag.loc = tok.loc;
-  diag.type = MessageType::Syntax;
+  void syntax_impl(const qlex_tok_t &tok, std::string_view fmt, va_list args) {
+    std::string msg;
 
-  g_diag_mgr->push(std::move(diag));
-}
+    {  // Format the message
+      char *c_msg = nullptr;
+      vasprintf(&c_msg, fmt.data(), args);
+      msg = c_msg;
+      free(c_msg);
+    }
 
-void ClangLikeFormatter::format(const DiagMessage &msg, const FormatOptions &options,
-                                std::string &out) {
-  std::stringstream ss;
+    DiagMessage diag;
+    diag.msg = msg;
+    diag.tok = tok;
+    diag.type = MessageType::Syntax;
 
-  /// TODO: Implement Clang-like diagnostic formatting
-  ss << "Format not implemented yet.";
-  out = ss.str();
-}
+    g_parser_inst->impl->diag.push(std::move(diag));
+    g_parser_inst->failed = true;
+  }
+}  // namespace qparse::diag

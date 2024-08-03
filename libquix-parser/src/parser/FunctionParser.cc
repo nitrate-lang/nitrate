@@ -36,6 +36,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 struct GetPropState {
   size_t noexcept_ctr = 0;
@@ -103,42 +104,37 @@ static bool fn_get_property(qparse_t &job, qlex_t *rd, GetPropState &state) {
 }
 
 static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
-  /*
-   <name> : <type> [?] [= <value>]
-  */
-
   auto tok = qlex_next(rd);
 
   std::string name;
   if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax<cont>(tok, "Expected a parameter name before ':'");
   }
 
   name = tok.as_string(rd);
   tok = qlex_next(rd);
   if (!tok.is<qPuncColn>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax<cont>(tok, "Expected ':' after parameter name");
   }
 
   Type *type = nullptr;
 
   if (!parse_type(job, rd, &type)) {
-    /// TODO: Write the ERROR message
-    return false;
+    qlex_next(rd);
+    syntax<stop>(tok, "Expected a type after ':'");
   }
 
   tok = qlex_peek(rd);
 
   if (tok.is<qOpSet>()) {
     qlex_next(rd);
+    tok = qlex_peek(rd);
 
     Expr *value = nullptr;
     if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
-                    &value)) {
-      /// TODO: Write the ERROR message
-      return false;
+                    &value) ||
+        !value) {
+      syntax<cont>(tok, "Expected an expression after '='");
     }
 
     param = {name, type, value};
@@ -312,7 +308,9 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     qlex_next(rd);
     Type *type = nullptr;
 
-    if (!parse_type(job, rd, &type)) return false;
+    if (!parse_type(job, rd, &type)) {
+      return false;
+    }
 
     ftype->set_return_ty(type);
     ftype->set_variadic(is_variadic);
