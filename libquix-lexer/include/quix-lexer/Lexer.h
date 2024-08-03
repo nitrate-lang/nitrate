@@ -62,6 +62,7 @@ typedef struct qlex_t {
   qlex_free_fn destruct;
   qlex_tok_t cur;
   uint32_t flags;
+  const char *filename;
 } qlex_t;
 
 /**
@@ -72,7 +73,7 @@ typedef struct qlex_t {
  * @return New lexer context or NULL if an error occurred.
  * @note This function is thread-safe.
  */
-qlex_t *qlex_new(FILE *file);
+qlex_t *qlex_new(FILE *file, const char *filename);
 
 /**
  * @brief Destroy a lexer context.
@@ -159,6 +160,11 @@ static inline qlex_tok_t qlex_peek(qlex_t *lexer) { return lexer->peek(lexer); }
  * order with precedence over tokens from the input stream, irrespective of internal buffering.
  */
 static inline void qlex_push(qlex_t *lexer, qlex_tok_t tok) { lexer->push(lexer, &tok); }
+
+const char *qlex_filename(qlex_t *lexer);
+uint32_t qlex_line(qlex_t *lexer, qlex_loc_t loc);
+uint32_t qlex_col(qlex_t *lexer, qlex_loc_t loc);
+char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, uint32_t *offset);
 
 /**
  * @brief Get the string representation of a token type.

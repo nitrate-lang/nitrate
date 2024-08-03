@@ -387,12 +387,19 @@ public:
 };
 #endif
 
+struct clever_me_t {
+  uint32_t rc_fmt : 1; /* Holds the row-column format? */
+  uint32_t col : 10;   /* Column number (max 1024) */
+  uint32_t row : 21;   /* Row number (max 2097152) */
+} __attribute__((packed)) bits;
+
 class qlex_impl_t final {
   StringRetainer m_holdings;
 
   std::array<qlex_tok_t, TOKEN_BUF_SIZE> m_tokens;
   size_t m_tok_pos;
   std::queue<qlex_tok_t> m_undo;
+  std::unordered_map<uint32_t, uint32_t> m_val_to_off;
 
   std::deque<char> m_pushback;
   std::array<char, GETC_BUFFER_SIZE> m_buf;
@@ -413,9 +420,23 @@ class qlex_impl_t final {
 
   char getc();
 
-  inline uint32_t off() const { return m_offset; }
-  inline uint32_t row() const { return m_row; }
-  inline uint32_t col() const { return m_col; }
+  inline uint32_t off() {
+    clever_me_t bits;
+
+    static_assert(sizeof(bits) == sizeof(uint32_t));
+
+    if (m_row > 2097152 || m_col > 1024) {
+      return 0;
+    } else {
+      bits.rc_fmt = 1;
+      bits.col = m_col;
+      bits.row = m_row;
+
+      uint32_t val = std::bit_cast<uint32_t>(bits);
+      m_val_to_off[val] = m_offset;
+      return val;
+    }
+  }
 
 public:
   qlex_impl_t(FILE *file)
@@ -440,6 +461,16 @@ public:
 
   void undo(qlex_tok_t tok) { m_undo.push(tok); }
   uint32_t save_userstring(std::string_view str) { return m_holdings.retain(str); }
+
+  std::optional<uint32_t> loc2offset(qlex_loc_t loc) {
+    if (!m_val_to_off.contains(loc.idx)) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    return m_val_to_off[loc.idx];
+  }
+
+  FILE *file() { return m_file; }
 };
 
 static qlex_tok_t _impl_next(qlex_t *self) {
@@ -479,7 +510,11 @@ static void _impl_destruct(qlex_t *self) {
   self->impl = nullptr;
 }
 
-LIB_EXPORT qlex_t *qlex_new(FILE *file) {
+LIB_EXPORT qlex_t *qlex_new(FILE *file, const char *filename) {
+  if (!filename) {
+    filename = "<unknown>";
+  }
+
   qlex_t *lexer = new qlex_t;
   lexer->impl = new qlex_impl_t(file);
   lexer->next = _impl_next;
@@ -489,6 +524,8 @@ LIB_EXPORT qlex_t *qlex_new(FILE *file) {
   lexer->destruct = _impl_destruct;
   lexer->cur.ty = qErro;
   lexer->flags = QLEX_FLAG_NONE;
+  lexer->filename = filename;
+
   return lexer;
 }
 
@@ -676,7 +713,7 @@ LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
     case qNote:
       return lexer->impl->Strings()[a->v.str_idx] < lexer->impl->Strings()[b->v.str_idx];
   }
-  
+
   __builtin_unreachable();
 }
 
@@ -700,7 +737,7 @@ LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
       *len = lexer->impl->Strings()[tok->v.str_idx].size();
       return lexer->impl->Strings()[tok->v.str_idx].data();
   }
-  
+
   __builtin_unreachable();
 }
 
@@ -717,6 +754,85 @@ LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, u
   out->ty = ty;
   out->loc.idx = src_idx;
   out->v.str_idx = lexer->impl->save_userstring(str);
+}
+
+LIB_EXPORT const char *qlex_filename(qlex_t *lexer) { return lexer->filename; }
+
+LIB_EXPORT uint32_t qlex_line(qlex_t *lexer, qlex_loc_t loc) {
+  (void)lexer;
+
+  auto st = std::bit_cast<clever_me_t>(loc.idx);
+  return st.rc_fmt ? st.row : UINT32_MAX;
+}
+
+LIB_EXPORT uint32_t qlex_col(qlex_t *lexer, qlex_loc_t loc) {
+  (void)lexer;
+
+  auto st = std::bit_cast<clever_me_t>(loc.idx);
+  return st.rc_fmt ? st.col : UINT32_MAX;
+}
+
+LIB_EXPORT char *qlex_snippet(qlex_t *lexer, qlex_tok_t tok, uint32_t *offset) {
+  /// WARNING: This function probably has a overflow, underflow, or memory corruption bug.
+  /// TODO: Verify the correctness of this function.
+
+#define SNIPPET_SIZE 100
+
+  uint32_t tok_beg_offset;
+  char snippet_buf[SNIPPET_SIZE];
+  uint32_t tok_size = qlex_tok_size(lexer, &tok);
+  size_t curpos, seek_base_pos, read;
+
+  { /* Convert the location to an offset into the source */
+    auto src_offset_opt = lexer->impl->loc2offset(tok.loc);
+    if (!src_offset_opt) {
+      return nullptr; /* Return early if translation failed */
+    }
+
+    tok_beg_offset = *src_offset_opt - tok_size - 1;
+  }
+
+  { /* Calculate offsets and seek to the correct position */
+    curpos = ftell(lexer->impl->file());
+    seek_base_pos = tok_beg_offset < SNIPPET_SIZE / 2 ? 0 : tok_beg_offset - SNIPPET_SIZE / 2;
+
+    if (fseek(lexer->impl->file(), seek_base_pos, SEEK_SET) != 0) {
+      fseek(lexer->impl->file(), curpos, SEEK_SET);
+      return nullptr;
+    }
+  }
+
+  { /* Read the snippet and calculate token offset */
+    read = fread(snippet_buf, 1, SNIPPET_SIZE, lexer->impl->file());
+
+    if (tok_beg_offset < SNIPPET_SIZE / 2) {
+      *offset = tok_beg_offset;
+    } else {
+      *offset = SNIPPET_SIZE / 2;
+    }
+  }
+
+  // Extract the line that contains the token
+  uint32_t lstart = 0;
+
+  for (size_t i = 0; i < read; i++) {
+    if (snippet_buf[i] == '\n') {
+      lstart = i + 1;
+    }
+
+    if (i == *offset) { /* Danger ?? */
+      uint32_t count = (i - lstart) + tok_size;
+      char *output = (char *)malloc(count + 1);
+      memcpy(output, snippet_buf + lstart, count);
+      output[count] = '\0';
+      *offset -= lstart;
+      fseek(lexer->impl->file(), curpos, SEEK_SET);
+      return output;
+    }
+  }
+
+  fseek(lexer->impl->file(), curpos, SEEK_SET);
+  return nullptr;
 }
 
 ///============================================================================///
@@ -778,6 +894,10 @@ void qlex_impl_t::refill_buffer() {
     if (m_tokens[i].ty == qEofF) [[unlikely]] {
       qlex_tok_t eof{};
       eof.ty = qEofF;
+
+      if (i > 0) {
+        eof.loc.idx = m_tokens[i - 1].loc.idx;
+      }
 
       std::fill(m_tokens.begin() + i, m_tokens.end(), eof);
       break;

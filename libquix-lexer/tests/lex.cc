@@ -56,7 +56,7 @@ static void print_token(qlex_t *lexer, qlex_tok_t tok) {
 }
 
 void do_lex(FILE *file) {
-  qlex_t *lexer = qlex_new(file);
+  qlex_t *lexer = qlex_new(file, nullptr);
 
   qlex_tok_t tok;
 

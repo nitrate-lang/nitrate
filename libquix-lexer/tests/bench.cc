@@ -46,7 +46,7 @@ void do_benchmark(FILE *file) {
 
   start = std::chrono::high_resolution_clock::now();
   {
-    qlex_t *lexer = qlex_new(file);
+    qlex_t *lexer = qlex_new(file, nullptr);
 
     qlex_tok_t tok;
     while ((tok = qlex_next(lexer)).ty != qEofF) {
