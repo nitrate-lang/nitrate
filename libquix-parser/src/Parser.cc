@@ -56,7 +56,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
     if (expect_braces) {
       tok = qlex_next(rd);
       if (!tok.is<qPuncLCur>()) {
-        syntax<cont>(tok, "Expected '{'");
+        syntax(tok, "Expected '{'");
       }
     }
 
@@ -78,22 +78,23 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
 
       if (!tok.is(qKeyW)) {
         if (tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncRPar>()) {
-          syntax<cont>(tok, "Unexpected closing brace");
+          syntax(tok, "Unexpected closing brace");
           return false;
         }
 
         Expr *expr = nullptr;
         if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
-          syntax<stop>(tok, "Expected expression");
+          syntax(tok, "Expected expression");
+          return false;
         }
 
         if (!expr) {
-          syntax<cont>(tok, "Expected valid expression");
+          syntax(tok, "Expected valid expression");
         }
 
         tok = qlex_next(rd);
         if (!tok.is<qPuncSemi>()) {
-          syntax<cont>(tok, "Expected ';'");
+          syntax(tok, "Expected ';'");
         }
 
         (*group)->add_item(ExprStmt::get(expr));
@@ -218,7 +219,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           break;
         }
         default:
-          syntax<cont>(tok, "Unexpected keyword");
+          syntax(tok, "Unexpected keyword");
           break;
       }
 
@@ -226,7 +227,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
     }
 
     if (expect_braces) {
-      syntax<cont>(tok, "Expected '}'");
+      syntax(tok, "Expected '}'");
     }
 
     return true;

@@ -36,6 +36,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
   Stmt *x0 = nullptr;
@@ -50,38 +51,39 @@ bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
       qlex_next(rd);
       StmtListItems let_node;
       if (!parse_let(job, rd, let_node)) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Failed to parse let statement in for loop");
       }
 
       x0 = StmtList::get(let_node);
     } else {
       Expr *x0_tmp = nullptr;
       if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0_tmp)) {
-        return false;
+        syntax(tok, "Failed to parse for loop initializer");
       }
       x0 = ExprStmt::get(x0_tmp);
 
       tok = qlex_next(rd);
       if (!tok.is<qPuncSemi>()) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Expected ';' after for loop initializer");
       }
     }
 
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x1)) {
+      syntax(tok, "Failed to parse for loop condition");
+    }
 
     tok = qlex_next(rd);
     if (!tok.is<qPuncSemi>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected ';' after for loop condition");
     }
 
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &x2)) return false;
-
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &x2)) {
+      syntax(tok, "Failed to parse for loop increment");
+      return false;
+    }
     tok = qlex_next(rd);
     if (!tok.is<qPuncRPar>()) {
-      /// TODO: Write the ERROR message
+      syntax(tok, "Expected ')' after for loop increment");
       return false;
     }
 
@@ -89,9 +91,13 @@ bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     if (qlex_peek(rd).is<qOpArrow>()) {
       tok = qlex_next(rd);
-      if (!parse(job, rd, &then_block, false, true)) return false;
+      if (!parse(job, rd, &then_block, false, true)) {
+        syntax(tok, "Expected single statement after '=>' in for loop");
+      }
     } else {
-      if (!parse(job, rd, &then_block, true)) return false;
+      if (!parse(job, rd, &then_block, true)) {
+        syntax(tok, "Failed to parse block in for loop");
+      }
     }
 
     *node = ForStmt::get(x0, x1, x2, then_block);
@@ -104,8 +110,7 @@ bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
       qlex_next(rd);
       StmtListItems let_node;
       if (!parse_let(job, rd, let_node)) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Failed to parse let statement in for loop");
       }
 
       x0 = StmtList::get(let_node);
@@ -118,8 +123,7 @@ bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
 
       tok = qlex_next(rd);
       if (!tok.is<qPuncSemi>()) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Expected ';' after for loop initializer");
       }
     }
 
@@ -127,8 +131,7 @@ bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     tok = qlex_next(rd);
     if (!tok.is<qPuncSemi>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected ';' after for loop condition");
     }
 
     if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &x2))

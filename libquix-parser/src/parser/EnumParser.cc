@@ -36,11 +36,12 @@
 
 using namespace qparse;
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Enum field must be named by an identifier");
     return false;
   }
 
@@ -52,8 +53,8 @@ static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
   if (tok.is<qOpSet>()) {
     qlex_next(rd);
     Expr *expr = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &expr)) {
-      /// TODO: Write the ERROR message
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)}, &expr) || !expr) {
+      syntax(tok, "Expected an expression after '='");
       return false;
     }
 
@@ -70,7 +71,7 @@ static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
   }
 
   if (!tok.is<qPuncRCur>()) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Expected a comma or a closing curly brace");
     return false;
   }
 
@@ -80,7 +81,7 @@ static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
 bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Enum definition must be named by an identifier");
     return false;
   }
 
@@ -95,7 +96,7 @@ bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncLCur>()) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Expected a '{' to start the enum definition");
     return false;
   }
 

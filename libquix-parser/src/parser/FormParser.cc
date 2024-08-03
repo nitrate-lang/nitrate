@@ -35,68 +35,59 @@
 #include "parser/Parse.h"
 
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 bool qparse::parser::parse_form(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
 
   if (!tok.is<qPuncLPar>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected '(' in form statement");
   }
 
   Expr *maxjobs = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &maxjobs)) {
-    /// TODO: Write the ERROR message
-    return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &maxjobs) || !maxjobs) {
+    syntax(tok, "Failed to parse parallelism expression in form statement");
   }
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncRPar>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected ')' in form statement");
   }
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncLPar>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected '(' in form statement");
   }
 
   tok = qlex_next(rd);
   if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected identifier as index variable in form statement");
   }
   std::string idx_ident = tok.as_string(rd);
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncComa>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected ',' after index variable in form statement");
   }
 
   tok = qlex_next(rd);
   if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected identifier as value variable in form statement");
   }
   std::string val_ident = tok.as_string(rd);
 
   tok = qlex_next(rd);
   if (!tok.is<qOpIn>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected 'in' after value variable in form statement");
   }
 
   Expr *expr = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr)) {
-    /// TODO: Write the ERROR message
-    return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr) || !expr) {
+    syntax(tok, "Failed to parse expression in form statement");
   }
   tok = qlex_next(rd);
   if (!tok.is<qPuncRPar>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected ')' in form statement");
   }
 
   tok = qlex_peek(rd);
@@ -105,13 +96,11 @@ bool qparse::parser::parse_form(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (tok.is<qOpArrow>()) {
     qlex_next(rd);
     if (!parse(job, rd, &block, false, true)) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Failed to parse single statement in form statement");
     }
   } else {
     if (!parse(job, rd, &block)) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Failed to parse block in form statement");
     }
   }
 

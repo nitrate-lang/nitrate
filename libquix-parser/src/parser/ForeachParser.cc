@@ -35,6 +35,7 @@
 #include "parser/Parse.h"
 
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
@@ -46,46 +47,39 @@ bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected identifier as index variable in foreach statement");
   }
   std::string idx_ident = tok.as_string(rd);
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncComa>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected ',' after index variable in foreach statement");
   }
 
   tok = qlex_next(rd);
   if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected identifier as value variable in foreach statement");
   }
 
   std::string val_ident = tok.as_string(rd);
 
   tok = qlex_next(rd);
   if (!tok.is<qOpIn>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected 'in' after value variable in foreach statement");
   }
 
   Expr *expr = nullptr;
   if (has_parens) {
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr)) {
-      /// TODO: Write the ERROR message
-      return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRPar)}, &expr) || !expr) {
+      syntax(tok, "Expected expression after '(' in foreach statement");
     }
     tok = qlex_next(rd);
     if (!tok.is<qPuncRPar>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected ')' after expression in foreach statement");
     }
   } else {
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &expr)) {
-      /// TODO: Write the ERROR message
-      return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &expr) || !expr) {
+      syntax(tok, "Expected expression after 'in' in foreach statement");
     }
   }
 
@@ -95,13 +89,11 @@ bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (tok.is<qOpArrow>()) {
     qlex_next(rd);
     if (!parse(job, rd, &block, false, true)) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected block or statement list after '=>' in foreach statement");
     }
   } else {
     if (!parse(job, rd, &block)) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected block or statement list after '=>' in foreach statement");
     }
   }
 

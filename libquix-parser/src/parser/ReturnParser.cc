@@ -35,6 +35,7 @@
 #include "parser/Parse.h"
 
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_peek(rd);
@@ -46,14 +47,16 @@ bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   Expr *expr = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
+    syntax(tok, "Expected an expression in the return statement.");
+  }
+
   *node = ReturnStmt::get(expr);
 
   tok = qlex_next(rd);
 
   if (!tok.is<qPuncSemi>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected a semicolon after the return statement.");
   }
 
   return true;
@@ -62,22 +65,24 @@ bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
 bool qparse::parser::parse_retif(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok;
 
-  Expr *return_expr = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &return_expr)) return false;
+  Expr *condition = nullptr;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &condition)) {
+    syntax(tok, "Expected a condition in the return-if statement.");
+  }
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncComa>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected a comma after the return-if expression.");
   }
 
-  Expr *condition = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &condition)) return false;
+  Expr *return_expr = nullptr;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &return_expr)) {
+    syntax(tok, "Expected a return expression after the comma.");
+  }
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncSemi>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected a semicolon after the return-if expression.");
   }
   *node = ReturnIfStmt::get(condition, return_expr);
 
@@ -87,22 +92,24 @@ bool qparse::parser::parse_retif(qparse_t &job, qlex_t *rd, Stmt **node) {
 bool qparse::parser::parse_retz(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok;
 
-  Expr *return_expr = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &return_expr)) return false;
+  Expr *condition = nullptr;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &condition) || !condition) {
+    syntax(tok, "Expected a condition in the return-zero statement.");
+  }
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncComa>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected a comma after the return-zero expression.");
   }
 
-  Expr *condition = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &condition)) return false;
+  Expr *return_expr = nullptr;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &return_expr) || !return_expr) {
+    syntax(tok, "Expected a return expression after the comma.");
+  }
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncSemi>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected a semicolon after the return-zero expression.");
   }
   *node = RetZStmt::get(condition, return_expr);
 
@@ -113,12 +120,13 @@ bool qparse::parser::parse_retv(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok;
 
   Expr *cond = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &cond)) return false;
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &cond) || !cond) {
+    syntax(tok, "Expected a condition in the return-void statement.");
+  }
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncSemi>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected a semicolon after the return-void expression.");
   }
 
   *node = RetVStmt::get(cond);

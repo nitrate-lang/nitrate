@@ -36,9 +36,15 @@
 
 using namespace qparse;
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
                        std::pair<std::string, Type *> &decl) {
+  if (!tok.is(qName)) {
+    syntax(tok, "Expected a name in var declaration");
+    return false;
+  }
+
   std::string name = tok.as_string(rd);
 
   tok = qlex_peek(rd);
@@ -68,59 +74,67 @@ bool qparse::parser::parse_var(qparse_t &job, qlex_t *rd, StmtListItems &nodes) 
   if (tok.is<qPuncLBrk>()) {
     multi_decl = true;
 
-    while (true) {
-      tok = qlex_next(rd);
+    while ((tok = qlex_peek(rd)).ty != qEofF) {
+      if (tok.is<qPuncRBrk>()) {
+        qlex_next(rd);
+        break;
+      }
 
       std::pair<std::string, Type *> decl;
-      if (!parse_decl(job, tok, rd, decl)) return false;
+      if (!parse_decl(job, qlex_next(rd), rd, decl)) {
+        return false;
+      }
 
       decls.push_back(decl);
 
-      tok = qlex_next(rd);
-      if (tok.is<qPuncComa>())
-        continue;
-      else if (tok.is<qPuncRBrk>())
-        break;
-      else {
-        /// TODO: Write the ERROR message
-        return false;
+      tok = qlex_peek(rd);
+      if (tok.is<qPuncComa>()) {
+        qlex_next(rd);
       }
     }
-  } else if (tok.ty == qName) {
+  } else if (tok.is(qName)) {
     std::pair<std::string, Type *> decl;
-    if (!parse_decl(job, tok, rd, decl)) return false;
+    if (!parse_decl(job, tok, rd, decl)) {
+      return false;
+    }
 
     decls.push_back(decl);
   } else {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Expected a name or '[' in var declaration");
     return false;
   }
 
   if (decls.empty()) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Empty list of var declarations");
     return false;
   }
 
   tok = qlex_next(rd);
   if (tok.is<qPuncSemi>()) {
-    for (auto &decl : decls) nodes.push_back(VarDecl::get(decl.first, decl.second, nullptr));
+    for (auto &decl : decls) {
+      VarDecl *var_decl = VarDecl::get(decl.first, decl.second, nullptr);
+      nodes.push_back(var_decl);
+    }
   } else if (tok.is<qOpSet>()) {
-    if (multi_decl)
+    if (multi_decl) {
+      /// TODO: Implement
       throw std::runtime_error("Initializer not implemented for multiple declarations");
+    }
 
     Expr *init = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init)) return false;
-
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncSemi>()) {
-      /// TODO: Write the ERROR message
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init)) {
       return false;
     }
 
-    nodes.push_back(VarDecl::get(decls[0].first, decls[0].second, init));
+    tok = qlex_next(rd);
+    if (!tok.is<qPuncSemi>()) {
+      syntax(tok, "Expected a ';' after the initializer in var declaration");
+    }
+
+    VarDecl *var_decl = VarDecl::get(decls[0].first, decls[0].second, init);
+    nodes.push_back(var_decl);
   } else {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected a ';' or '=' after the var declaration");
   }
 
   return true;

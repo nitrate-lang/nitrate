@@ -151,4 +151,11 @@ namespace qparse::diag {
     g_parser_inst->impl->diag.push(std::move(diag));
     g_parser_inst->failed = true;
   }
+
+  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    syntax_impl(tok, fmt, args);
+    va_end(args);
+  }
 }  // namespace qparse::diag

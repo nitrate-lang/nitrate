@@ -538,40 +538,35 @@ LIB_EXPORT void qlex_free(qlex_t *lexer) {
 }
 
 LIB_EXPORT uint32_t qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
-  uint32_t ret;
-
   switch (tok->ty) {
     case qEofF:
     case qErro:
-      ret = 0;
-      break;
+      return 0;
     case qKeyW:
-      ret = qlex::keywords.right.at(tok->v.key).size();
-      break;
+      return qlex::keywords.right.at(tok->v.key).size();
     case qOper:
-      ret = qlex::operators.right.at(tok->v.op).size();
-      break;
+      return qlex::operators.right.at(tok->v.op).size();
     case qPunc:
-      ret = qlex::punctuation.right.at(tok->v.punc).size();
-      break;
+      return qlex::punctuation.right.at(tok->v.punc).size();
     case qName:
-    case qIntL:
-    case qNumL:
+      return lexer->impl->Strings()[tok->v.str_idx].size();
+    case qIntL: /* Fuck: this is incorrect */
+      return lexer->impl->Strings()[tok->v.str_idx].size();
+    case qNumL: /* Fuck: this is incorrect */
+      return lexer->impl->Strings()[tok->v.str_idx].size();
     case qText:
+      return lexer->impl->Strings()[tok->v.str_idx].size() + 2;
     case qChar:
+      return lexer->impl->Strings()[tok->v.str_idx].size() + 2;
     case qMacB:
+      return lexer->impl->Strings()[tok->v.str_idx].size() + 3;
     case qMacr:
-    case qNote: {
-      try {
-        ret = lexer->impl->Strings()[tok->v.str_idx].size();
-      } catch (...) {
-        ret = 0;
-      }
-      break;
-    }
+      return lexer->impl->Strings()[tok->v.str_idx].size() + 1;
+    case qNote: /* Fuck: this is incorrect */
+      return lexer->impl->Strings()[tok->v.str_idx].size();
   }
 
-  return ret;
+  __builtin_unreachable();
 }
 
 LIB_EXPORT uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf, uint32_t size) {
@@ -818,9 +813,7 @@ LIB_EXPORT char *qlex_snippet(qlex_t *lexer, qlex_tok_t tok, uint32_t *offset) {
   for (size_t i = 0; i < read; i++) {
     if (snippet_buf[i] == '\n') {
       lstart = i + 1;
-    }
-
-    if (i == *offset) { /* Danger ?? */
+    } else if (i == *offset) { /* Danger ?? */
       uint32_t count = (i - lstart) + tok_size;
       char *output = (char *)malloc(count + 1);
       memcpy(output, snippet_buf + lstart, count);

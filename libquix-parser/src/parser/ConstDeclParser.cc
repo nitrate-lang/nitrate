@@ -40,6 +40,11 @@ using namespace qparse::diag;
 namespace qparse::parser {
   static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
                          std::pair<std::string, Type *> &decl) {
+    if (!tok.is(qName)) {
+      syntax(tok, "Expected a name in constant declaration");
+      return false;
+    }
+
     std::string name = tok.as_string(rd);
 
     tok = qlex_peek(rd);
@@ -52,7 +57,7 @@ namespace qparse::parser {
 
     Type *type = nullptr;
     if (!parse_type(job, rd, &type)) {
-      syntax<cont>(tok, "Expected a type after ':' in constant declaration");
+      syntax(tok, "Expected a type after ':' in constant declaration");
     }
 
     decl = std::make_pair(name, type);
@@ -94,27 +99,27 @@ bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, StmtListItems &nodes
 
     decls.push_back(decl);
   } else {
-    syntax<cont>(tok, "Expected a name or '{' in constant declaration");
+    syntax(tok, "Expected a name or '[' in constant declaration");
     return false;
   }
 
   if (decls.empty()) {
-    syntax<cont>(tok, "Empty list of constant declarations");
+    syntax(tok, "Empty list of constant declarations");
     return false;
   }
 
   tok = qlex_next(rd);
   if (tok.is<qPuncSemi>()) {
-    // No initializer
     for (auto &decl : decls) {
       ConstDecl *const_decl = ConstDecl::get(decl.first, decl.second, nullptr);
       nodes.push_back(const_decl);
     }
   } else if (tok.is<qOpSet>()) {
-    if (multi_decl)
+    if (multi_decl) {
+      /// TODO: Implement
       throw std::runtime_error("Initializer not implemented for multiple declarations");
+    }
 
-    // Parse initializer
     Expr *init = nullptr;
     if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init)) {
       return false;
@@ -122,13 +127,13 @@ bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, StmtListItems &nodes
 
     tok = qlex_next(rd);
     if (!tok.is<qPuncSemi>()) {
-      syntax<cont>(tok, "Expected a ';' after the initializer in constant declaration");
+      syntax(tok, "Expected a ';' after the initializer in constant declaration");
     }
 
     ConstDecl *const_decl = ConstDecl::get(decls[0].first, decls[0].second, init);
     nodes.push_back(const_decl);
   } else {
-    syntax<cont>(tok, "Expected a ';' or '=' after the constant declaration");
+    syntax(tok, "Expected a ';' or '=' after the constant declaration");
   }
 
   return true;

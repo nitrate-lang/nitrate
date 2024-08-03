@@ -35,31 +35,29 @@
 #include "parser/Parse.h"
 
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 bool qparse::parser::parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected name in typedef declaration");
   }
 
   std::string name = tok.as_string(rd);
 
   tok = qlex_next(rd);
   if (!tok.is<qOpSet>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected '=' in typedef declaration");
   }
 
   Type *type = nullptr;
   if (!parse_type(job, rd, &type)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Failed to parse type in typedef declaration");
   }
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncSemi>()) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Expected ';' in typedef declaration");
     return false;
   }
 

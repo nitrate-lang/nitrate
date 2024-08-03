@@ -76,9 +76,9 @@ namespace qparse::diag {
     qparse_t *m_parser;
     std::vector<DiagMessage> m_msgs;
 
-    std::string mint_clang16_message(const DiagMessage &msg)const;
-    std::string mint_plain_message(const DiagMessage &msg)const;
-    std::string mint_clang_truecolor_message(const DiagMessage &msg)const;
+    std::string mint_clang16_message(const DiagMessage &msg) const;
+    std::string mint_plain_message(const DiagMessage &msg) const;
+    std::string mint_clang_truecolor_message(const DiagMessage &msg) const;
 
   public:
     void push(DiagMessage &&msg);
@@ -93,19 +93,7 @@ namespace qparse::diag {
   /**
    * @brief Report a syntax error
    */
-  template <ControlFlow flow>
-  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...) {
-    extern void syntax_impl(const qlex_tok_t &tok, std::string_view fmt, va_list args);
-
-    va_list args;
-    va_start(args, fmt);
-    syntax_impl(tok, fmt, args);
-    va_end(args);
-
-    if constexpr (flow == stop) {
-      throw SyntaxError();
-    }
-  }
+  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...);
 };  // namespace qparse::diag
 
 #endif  // __QUIX_PARSER_REPORT_H__

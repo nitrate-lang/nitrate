@@ -108,20 +108,21 @@ static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
 
   std::string name;
   if (!tok.is(qName)) {
-    syntax<cont>(tok, "Expected a parameter name before ':'");
+    syntax(tok, "Expected a parameter name before ':'");
   }
 
   name = tok.as_string(rd);
   tok = qlex_next(rd);
   if (!tok.is<qPuncColn>()) {
-    syntax<cont>(tok, "Expected ':' after parameter name");
+    syntax(tok, "Expected ':' after parameter name");
   }
 
   Type *type = nullptr;
 
   if (!parse_type(job, rd, &type)) {
     qlex_next(rd);
-    syntax<stop>(tok, "Expected a type after ':'");
+    syntax(tok, "Expected a type after ':'");
+    return false;
   }
 
   tok = qlex_peek(rd);
@@ -134,7 +135,7 @@ static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
     if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)},
                     &value) ||
         !value) {
-      syntax<cont>(tok, "Expected an expression after '='");
+      syntax(tok, "Expected an expression after '='");
     }
 
     param = {name, type, value};
