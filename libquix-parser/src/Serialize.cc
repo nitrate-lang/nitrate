@@ -681,6 +681,12 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
+    case QAST_NODE_VOLSTMT: {
+      OBJECT_BEGIN("VStmt");
+      OBJECT_SUB(n->as<VolStmt>()->get_stmt());
+      OBJECT_END();
+      break;
+    }
     case QAST_NODE_CONST: {
       OBJECT_BEGIN("Const");
       OBJECT_STR(n->as<ConstDecl>()->get_name());

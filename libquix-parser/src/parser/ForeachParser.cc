@@ -78,7 +78,8 @@ bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
       syntax(tok, "Expected ')' after expression in foreach statement");
     }
   } else {
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &expr) || !expr) {
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &expr) ||
+        !expr) {
       syntax(tok, "Expected expression after 'in' in foreach statement");
     }
   }

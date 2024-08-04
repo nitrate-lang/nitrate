@@ -53,7 +53,8 @@ static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
   if (tok.is<qOpSet>()) {
     qlex_next(rd);
     Expr *expr = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)}, &expr) || !expr) {
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)}, &expr) ||
+        !expr) {
       syntax(tok, "Expected an expression after '='");
       return false;
     }

@@ -108,63 +108,95 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
       switch (tok.as<qlex_key_t>()) {
         case qKVar: {
           StmtListItems decls;
-          if (!parse_var(job, rd, decls)) return false;
+          if (!parse_var(job, rd, decls)) {
+            return false;
+          }
           for (auto &decl : decls) (*group)->add_item(decl);
           break;
         }
         case qKLet: {
           StmtListItems decls;
-          if (!parse_let(job, rd, decls)) return false;
+          if (!parse_let(job, rd, decls)) {
+            return false;
+          }
           for (auto &decl : decls) (*group)->add_item(decl);
           break;
         }
         case qKConst: {
           StmtListItems decls;
-          if (!parse_const(job, rd, decls)) return false;
+          if (!parse_const(job, rd, decls)) {
+            return false;
+          }
           for (auto &decl : decls) (*group)->add_item(decl);
           break;
         }
         case qKEnum:
-          if (!parse_enum(job, rd, &node)) return false;
+          if (!parse_enum(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKStruct:
-          if (!parse_struct(job, rd, &node)) return false;
+          if (!parse_struct(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKRegion:
-          if (!parse_region(job, rd, &node)) return false;
+          if (!parse_region(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKGroup:
-          if (!parse_group(job, rd, &node)) return false;
+          if (!parse_group(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKUnion:
-          if (!parse_union(job, rd, &node)) return false;
+          if (!parse_union(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKType:
-          if (!parse_typedef(job, rd, &node)) return false;
+          if (!parse_typedef(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKSubsystem:
-          if (!parse_subsystem(job, rd, &node)) return false;
+          if (!parse_subsystem(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKFn:
-          if (!parse_function(job, rd, &node)) return false;
+          if (!parse_function(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKPub:
         case qKImport:  // they both declare external functions
-          if (!parse_pub(job, rd, &node)) return false;
+          if (!parse_pub(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKSec:
           break;
         case qKReturn:
-          if (!parse_return(job, rd, &node)) return false;
+          if (!parse_return(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKRetif:
-          if (!parse_retif(job, rd, &node)) return false;
+          if (!parse_retif(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKRetz:
-          if (!parse_retz(job, rd, &node)) return false;
+          if (!parse_retz(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKRetv:
-          if (!parse_retv(job, rd, &node)) return false;
+          if (!parse_retv(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKBreak:
           node = BreakStmt::get();
@@ -173,33 +205,51 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           node = ContinueStmt::get();
           break;
         case qKIf:
-          if (!parse_if(job, rd, &node)) return false;
+          if (!parse_if(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKWhile:
-          if (!parse_while(job, rd, &node)) return false;
+          if (!parse_while(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKFor:
-          if (!parse_for(job, rd, &node)) return false;
+          if (!parse_for(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKForm:
-          if (!parse_form(job, rd, &node)) return false;
+          if (!parse_form(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKForeach:
-          if (!parse_foreach(job, rd, &node)) return false;
+          if (!parse_foreach(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKSwitch:
-          if (!parse_switch(job, rd, &node)) return false;
+          if (!parse_switch(job, rd, &node)) {
+            return false;
+          }
           break;
         case qK__Asm__:
-          if (!parse_inline_asm(job, rd, &node)) return false;
+          if (!parse_inline_asm(job, rd, &node)) {
+            return false;
+          }
           break;
         case qKUnsafe: {
           Block *block = nullptr;
           tok = qlex_peek(rd);
           if (tok.is<qPuncLCur>()) {
-            if (!parse(job, rd, &block)) return false;
+            if (!parse(job, rd, &block)) {
+              return false;
+            }
           } else {
-            if (!parse(job, rd, &block, false, true)) return false;
+            if (!parse(job, rd, &block, false, true)) {
+              return false;
+            }
           }
 
           block->set_unsafe(true);
@@ -210,12 +260,32 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           Block *block = nullptr;
           tok = qlex_peek(rd);
           if (tok.is<qPuncLCur>()) {
-            if (!parse(job, rd, &block)) return false;
+            if (!parse(job, rd, &block)) {
+              return false;
+            }
           } else {
-            if (!parse(job, rd, &block, false, true)) return false;
+            if (!parse(job, rd, &block, false, true)) {
+              return false;
+            }
           }
           block->set_unsafe(false);
           (*group)->add_item(block);
+          break;
+        }
+        case qKVolatile: {
+          Block *block = nullptr;
+          tok = qlex_peek(rd);
+          if (tok.is<qPuncLCur>()) {
+            if (!parse(job, rd, &block)) {
+              return false;
+            }
+          } else {
+            if (!parse(job, rd, &block, false, true)) {
+              return false;
+            }
+          }
+
+          (*group)->add_item(VolStmt::get(block));
           break;
         }
         default:

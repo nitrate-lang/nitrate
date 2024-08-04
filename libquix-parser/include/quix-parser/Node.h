@@ -135,9 +135,10 @@ typedef enum qparse_ty_t {
   QAST_NODE_SWITCH = 717,
   QAST_NODE_SLIST = 718,
   QAST_NODE_EXPR_STMT = 719,
+  QAST_NODE_VOLSTMT = 720,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 90
+#define QAST_NODE_COUNT 91
 
 typedef enum qparse_ast_ftype_t {
   QAST_FIELD_BOOL = 0,
@@ -1377,6 +1378,19 @@ namespace qparse {
     void set_unsafe(bool unsafe);
 
     NODE_IMPL_CORE(Block)
+  };
+
+  class VolStmt : public Stmt {
+  protected:
+    Stmt *m_stmt;
+
+  public:
+    VolStmt(Stmt *stmt = nullptr) : m_stmt(stmt) {}
+
+    Stmt *get_stmt() const;
+    void set_stmt(Stmt *stmt);
+
+    NODE_IMPL_CORE(VolStmt)
   };
 
   typedef std::vector<Stmt *, Arena<Stmt *>> StmtListItems;
