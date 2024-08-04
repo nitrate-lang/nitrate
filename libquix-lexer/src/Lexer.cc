@@ -113,6 +113,7 @@ namespace qlex {
           {"inline", qKInline},
           {"unsafe", qKUnsafe},
           {"safe", qKSafe},
+          {"volatile", qKVolatile},
           {"req", qKReq},
           {"if", qKIf},
           {"else", qKElse},

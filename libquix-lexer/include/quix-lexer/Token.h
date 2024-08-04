@@ -159,6 +159,7 @@ typedef enum qlex_key_t {
   qKInline,     /* 'inline' */
   qKUnsafe,     /* 'unsafe' */
   qKSafe,       /* 'safe' */
+  qKVolatile,   /* 'volatile' */
   qKReq,        /* 'req' */
   qKIf,         /* 'if' */
   qKElse,       /* 'else' */
