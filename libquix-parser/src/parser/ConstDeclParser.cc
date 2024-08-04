@@ -121,8 +121,8 @@ bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, StmtListItems &nodes
     }
 
     Expr *init = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init)) {
-      return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
+      syntax(tok, "Expected an expression after '=' in constant declaration");
     }
 
     tok = qlex_next(rd);

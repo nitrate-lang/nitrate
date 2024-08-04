@@ -52,6 +52,11 @@ struct GetPropState {
 static bool fn_get_property(qparse_t &job, qlex_t *rd, GetPropState &state) {
   qlex_tok_t tok = qlex_peek(rd);
 
+  if (tok.is(qEofF)) {
+    syntax(tok, "Expected a function property but found EOF");
+    return false;
+  }
+
   if (tok.is<qKNoexcept>()) {
     qlex_next(rd);
     state.noexcept_ctr++;
@@ -122,7 +127,6 @@ static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
   if (!parse_type(job, rd, &type)) {
     qlex_next(rd);
     syntax(tok, "Expected a type after ':'");
-    return false;
   }
 
   tok = qlex_peek(rd);
@@ -158,57 +162,59 @@ struct FunctionProperties {
 static FunctionProperties read_function_properties(qparse_t &job, qlex_t *rd) {
   GetPropState state;
 
+  qlex_tok_t tok = qlex_peek(rd);
+
   while (fn_get_property(job, rd, state));
 
   if (state.noexcept_ctr > 1) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Multiple 'noexcept' specifiers");
     return FunctionProperties();
   }
 
   if (state.foreign_ctr > 1) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Multiple 'foreign' specifiers");
     return FunctionProperties();
   }
 
   if (state.impure_ctr > 1) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Multiple 'impure' specifiers");
     return FunctionProperties();
   }
 
   if (state.tsafe_ctr > 1) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Multiple 'tsafe' specifiers");
     return FunctionProperties();
   }
 
   if (state.pure_ctr > 1) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Multiple 'pure' specifiers");
     return FunctionProperties();
   }
 
   if (state.quasipure_ctr > 1) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Multiple 'quasipure' specifiers");
     return FunctionProperties();
   }
 
   if (state.retropure_ctr > 1) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Multiple 'retropure' specifiers");
     return FunctionProperties();
   }
 
   if (state.inline_ctr > 1) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Multiple 'inline' specifiers");
     return FunctionProperties();
   }
 
   bool partial_pure = state.pure_ctr || state.quasipure_ctr || state.retropure_ctr;
 
   if (partial_pure && state.impure_ctr) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Cannot mix 'pure', 'quasipure', 'retropure' with 'impure'");
     return FunctionProperties();
   }
 
   if (partial_pure && (state.pure_ctr + state.quasipure_ctr + state.retropure_ctr) != 1) {
-    /// TODO: Write the ERROR message
+    syntax(tok, "Multiple purity specifiers; Illegal combination");
     return FunctionProperties();
   }
 
@@ -252,13 +258,17 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   if (!tok.is<qPuncLPar>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected '(' after function name");
   }
   bool is_variadic = false;
 
   while (1) {
     tok = qlex_peek(rd);
+    if (tok.is(qEofF)) {
+      syntax(tok, "Unexpected EOF in function signature");
+      return false;
+    }
+
     if (tok.is<qPuncRPar>()) {
       qlex_next(rd);
       break;
@@ -270,8 +280,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       qlex_next(rd);
       tok = qlex_next(rd);
       if (!tok.is<qPuncRPar>()) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Expected ')' after '...'");
       }
 
       break;
@@ -279,8 +288,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     FuncParam param;
     if (!parse_fn_parameter(job, rd, param)) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected a parameter");
     }
 
     ftype->add_param(std::get<0>(param), std::get<1>(param), std::get<2>(param));
@@ -305,15 +313,16 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     return true;
   }
 
+  Type *ret_type = nullptr;
+
   if (tok.is<qPuncColn>()) {
     qlex_next(rd);
-    Type *type = nullptr;
 
-    if (!parse_type(job, rd, &type)) {
-      return false;
+    if (!parse_type(job, rd, &ret_type)) {
+      syntax(tok, "Expected a return type after ':'");
     }
 
-    ftype->set_return_ty(type);
+    ftype->set_return_ty(ret_type);
     ftype->set_variadic(is_variadic);
     ftype->set_foreign(prop._foreign);
     ftype->set_noexcept(prop._noexcept);
@@ -330,10 +339,12 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (tok.is<qOpArrow>()) {
     qlex_next(rd);
 
-    // auto fnbody = std::make_shared<Block>();
     Block *fnbody = nullptr;
 
-    if (!parse(job, rd, &fnbody, false, true)) return false;
+    if (!parse(job, rd, &fnbody, false, true)) {
+      syntax(tok, "Expected a block after '=>'");
+      return false;
+    }
 
     if (!fndecl->get_type()) {
       ftype->set_return_ty(VoidTy::get());
@@ -351,7 +362,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     Block *fnbody = nullptr;
 
     if (!parse(job, rd, &fnbody)) {
-      return false;
+      syntax(tok, "Expected a block after '{'");
     }
 
     tok = qlex_peek(rd);
@@ -362,12 +373,16 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
       tok = qlex_next(rd);
       if (!tok.is<qPuncLCur>()) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Expected '{' after 'req'");
       }
 
       while (true) {
         tok = qlex_peek(rd);
+        if (tok.is(qEofF)) {
+          syntax(tok, "Unexpected EOF in 'req' block");
+          break;
+        }
+
         if (tok.is<qPuncRCur>()) {
           qlex_next(rd);
           break;
@@ -380,14 +395,13 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
             req_in = ConstBool::get(true);
           }
 
-          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
-            return false;
+          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
+            syntax(tok, "Expected an expression after 'in'");
           }
 
           tok = qlex_next(rd);
           if (!tok.is<qPuncSemi>()) {
-            /// TODO: Write the ERROR message
-            return false;
+            syntax(tok, "Expected ';' after expression");
           }
 
           expr = UnaryExpr::get(qOpLogicNot, expr);
@@ -399,22 +413,20 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
             req_out = ConstBool::get(true);
           }
 
-          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr)) {
-            return false;
+          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
+            syntax(tok, "Expected an expression after 'out'");
           }
 
           tok = qlex_next(rd);
           if (!tok.is<qPuncSemi>()) {
-            /// TODO: Write the ERROR message
-            return false;
+            syntax(tok, "Expected ';' after expression");
           }
 
           expr = UnaryExpr::get(qOpLogicNot, expr);
           expr = UnaryExpr::get(qOpLogicNot, expr);
           req_out = BinExpr::get(req_out, qOpLogicAnd, expr);
         } else {
-          /// TODO: Write the ERROR message
-          return false;
+          syntax(tok, "Expected 'in' or 'out' after 'req'");
         }
       }
 
@@ -431,17 +443,20 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       qlex_next(rd);
       tok = qlex_next(rd);
       if (!tok.is<qPuncLBrk>()) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Expected '[' after 'impl'");
       }
 
       while (true) {
         tok = qlex_next(rd);
+        if (tok.is(qEofF)) {
+          syntax(tok, "Unexpected EOF in 'impl' block");
+          break;
+        }
+
         if (tok.is<qPuncRBrk>()) break;
 
         if (!tok.is(qName)) {
-          /// TODO: Write the ERROR message
-          return false;
+          syntax(tok, "Expected a trait name after 'impl'");
         }
 
         implements.insert(tok.as_string(rd));
@@ -468,8 +483,11 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     *node = fndecl;
     return true;
+  } else if (ret_type) {
+    syntax(tok, "Expected '{', '=>', or ';' in function declaration");
+    return true;
   } else {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected ':', '{', '=>', or ';' in function declaration");
+    return true;
   }
 }

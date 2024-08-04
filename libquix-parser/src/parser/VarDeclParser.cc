@@ -58,8 +58,7 @@ static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
   Type *type = nullptr;
 
   if (!parse_type(job, rd, &type)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Failed to parse type in declaration");
   }
 
   decl = std::make_pair(name, type);
@@ -122,8 +121,8 @@ bool qparse::parser::parse_var(qparse_t &job, qlex_t *rd, StmtListItems &nodes) 
     }
 
     Expr *init = nullptr;
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init)) {
-      return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
+      syntax(tok, "Failed to parse initializer in var declaration");
     }
 
     tok = qlex_next(rd);

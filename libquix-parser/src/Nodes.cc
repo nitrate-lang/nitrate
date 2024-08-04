@@ -4216,6 +4216,9 @@ void SwitchStmt::remove_case(CaseStmt *item) {
   std::erase_if(m_cases, [item](auto &field) { return field == item; });
 }
 
+Stmt *SwitchStmt::get_default() const { return m_default; }
+void SwitchStmt::set_default(Stmt *item) { m_default = item; }
+
 bool TypedefDecl::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "TypedefDecl: type is NULL\n";

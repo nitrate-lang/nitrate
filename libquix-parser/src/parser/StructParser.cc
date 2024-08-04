@@ -36,6 +36,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 static bool parse_struct_field(qparse_t &job, qlex_t *rd, CompositeField **node) {
   /**
@@ -52,8 +53,7 @@ static bool parse_struct_field(qparse_t &job, qlex_t *rd, CompositeField **node)
   { /*First token is the field name */
     tok = qlex_next(rd);
     if (!tok.is(qName)) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected field name in struct definition");
     }
     name = tok.as_string(rd);
   }
@@ -61,15 +61,13 @@ static bool parse_struct_field(qparse_t &job, qlex_t *rd, CompositeField **node)
   { /* Next token should be a colon */
     tok = qlex_next(rd);
     if (!tok.is<qPuncColn>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected colon after field name in struct definition");
     }
   }
 
   { /* Next section should be the field type */
     if (!parse_type(job, rd, &type)) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected field type in struct definition");
     }
   }
 
@@ -82,22 +80,15 @@ static bool parse_struct_field(qparse_t &job, qlex_t *rd, CompositeField **node)
 
   { /* Optional default value */
     if (!tok.is<qOpSet>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected '=' or ',' after field type in struct definition");
     }
 
     /* Parse the default value */
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa)}, &value)) {
-      /// TODO: Write the ERROR message
-      return false;
+    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
+                    &value) ||
+        !value) {
+      syntax(tok, "Expected default value after '=' in struct definition");
     }
-  }
-
-  /* Field ends with a comma */
-  tok = qlex_next(rd);
-  if (!tok.is<qPuncComa>()) {
-    /// TODO: Write the ERROR message
-    return false;
   }
 
   *node = CompositeField::get(name, type, value);
@@ -122,19 +113,17 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   { /* First token should be the name of the definition */
     tok = qlex_next(rd);
-    if (!tok.is(qName)) {
-      /// TODO: Write the ERROR message
-      return false;
+    if (tok.is(qName)) {
+      name = tok.as_string(rd);
+    } else {
+      syntax(tok, "Expected struct name in struct definition");
     }
-
-    name = tok.as_string(rd);
   }
 
   { /* Next token should be an open curly bracket */
     tok = qlex_next(rd);
     if (!tok.is<qPuncLCur>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected '{' after struct name in struct definition");
     }
   }
 
@@ -142,6 +131,10 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   while (true) {
     { /* Check for the end of the content */
       tok = qlex_peek(rd);
+      if (tok.is(qEofF)) {
+        syntax(tok, "Unexpected end of file in struct definition");
+        return false;
+      }
       if (tok.is<qPuncRCur>()) {
         qlex_next(rd);
         break;
@@ -179,7 +172,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
 
       /* Parse the function definition */
       if (!parse_function(job, rd, &method)) {
-        return false;
+        syntax(tok, "Expected function definition in struct definition");
       }
 
       /* Assign the visibility to the method */
@@ -209,13 +202,12 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
 
       /* Static fields are not currently supported */
       if (!tok.is<qKFn>()) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Expected function definition after 'static' in struct definition");
       }
 
       /* Parse the function definition */
       if (!parse_function(job, rd, &method)) {
-        return false;
+        syntax(tok, "Expected function definition in struct definition");
       }
 
       /* Assign the visibility to the method */
@@ -226,7 +218,12 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
     } else {
       /* Parse a normal field */
       if (!parse_struct_field(job, rd, &field)) {
-        return false;
+        syntax(tok, "Expected field definition in struct definition");
+      }
+
+      tok = qlex_peek(rd);
+      if (tok.is<qPuncComa>()) {
+        qlex_next(rd);
       }
 
       /* Assign the visibility to the field */
@@ -257,8 +254,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
 
       { /* The implementation list should be enclosed in square brackets ex: [abc, hello] */
         if (!tok.is<qPuncLBrk>()) {
-          /// TODO: Write the ERROR message
-          return false;
+          syntax(tok, "Expected '[' after 'impl' in struct definition");
         }
       }
 
@@ -266,14 +262,18 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       while (true) {
         /* Check for termination */
         tok = qlex_next(rd);
+        if (tok.is(qEofF)) {
+          syntax(tok, "Unexpected end of file in struct definition");
+          return false;
+        }
+
         if (tok.is<qPuncRBrk>()) {
           break;
         }
 
         /* Ensure it is an identifier */
         if (!tok.is(qName)) {
-          /// TODO: Write the ERROR message
-          return false;
+          syntax(tok, "Expected trait name in struct definition");
         }
 
         /* Add the trait to the list; Duplicate traits are ignored */

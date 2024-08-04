@@ -34,11 +34,13 @@
 #include "LibMacro.h"
 #include "parser/Parse.h"
 
+using namespace qparse::parser;
+using namespace qparse::diag;
+
 bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qName)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected subsystem name");
   }
 
   std::string name = tok.as_string(rd);
@@ -70,20 +72,22 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     tok = qlex_next(rd);
     if (!tok.is<qPuncLBrk>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected '[' after subsystem dependencies");
     }
 
     while (true) {
       tok = qlex_next(rd);
+      if (tok.is(qEofF)) {
+        syntax(tok, "Unexpected end of file in subsystem dependencies");
+        break;
+      }
 
       if (tok.is<qPuncRBrk>()) {
         break;
       }
 
       if (!tok.is(qName)) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Expected dependency name");
       }
 
       deps.insert(tok.as_string(rd));
@@ -97,8 +101,7 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   Block *block = nullptr;
   if (!parse(job, rd, &block, true)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(qlex_peek(rd), "Expected block in subsystem definition");
   }
 
   std::set<std::string> implements;
@@ -107,17 +110,20 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
     qlex_next(rd);
     tok = qlex_next(rd);
     if (!tok.is<qPuncLBrk>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected '[' after 'impl' keyword");
     }
 
     while (true) {
       tok = qlex_next(rd);
+      if (tok.is(qEofF)) {
+        syntax(tok, "Unexpected end of file in 'impl' list");
+        break;
+      }
+
       if (tok.is<qPuncRBrk>()) break;
 
       if (!tok.is(qName)) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Expected tag name in 'impl' list");
       }
 
       implements.insert(tok.as_string(rd));

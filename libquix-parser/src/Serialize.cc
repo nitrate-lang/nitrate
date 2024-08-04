@@ -578,14 +578,12 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     }
     case QAST_NODE_STRUCT: {
       OBJECT_BEGIN("Struct");
-      ss << "[";
-      for (const auto &[k, v] : n->as<StructTy>()->get_items()) {
-        indent(ss, state);
-        ss << "(Field" << escape_string(k);
-        serialize_recurse(v, ss, state);
-        ss << ")";
-      }
-      ss << "]";
+      OBJECT_STR(n->as<StructDef>()->get_name());
+      OBJECT_ARRAY(n->as<StructDef>()->get_fields());
+      OBJECT_ARRAY(n->as<StructDef>()->get_methods());
+      OBJECT_ARRAY(n->as<StructDef>()->get_static_methods());
+      OBJECT_TAGS(n->as<StructDef>()->get_tags());
+      OBJECT_NUM((int)n->as<StructDef>()->get_visibility());
       OBJECT_END();
       break;
     }
@@ -802,6 +800,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_BEGIN("Switch");
       OBJECT_SUB(n->as<SwitchStmt>()->get_cond());
       OBJECT_ARRAY(n->as<SwitchStmt>()->get_cases());
+      OBJECT_SUB(n->as<SwitchStmt>()->get_default());
       OBJECT_END();
       break;
     }

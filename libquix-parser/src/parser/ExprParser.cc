@@ -40,6 +40,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t depth) {
   /**
@@ -93,10 +94,9 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t
 
       Expr *arg = nullptr;
       if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)}, &arg,
-                      depth + 1)) {
-        /**
-         * @brief
-         */
+                      depth + 1) ||
+          !arg) {
+        syntax(tok, "Expected an expression in named function call argument");
 
         return nullptr;
       }
@@ -106,23 +106,15 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t
     }
 
   parse_pos_arg: {
-    /**
-     * @brief
-     */
-
     Expr *arg = nullptr;
     if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRPar)}, &arg,
-                    depth + 1)) {
-      /**
-       * @brief
-       */
+                    depth + 1) ||
+        !arg) {
+      syntax(tok, "Expected an expression in positional function call argument");
 
       return nullptr;
     }
 
-    /**
-     * @brief
-     */
     call_args.push_back({"__" + std::to_string(pos_arg_count++), arg});
 
     goto comma;
@@ -141,12 +133,9 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t
 }
 
 static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t depth) {
-  /// TODO: Implement FStrings again
-  // throw std::runtime_error("FStrings are not implemented yet");
-  return false;
-
   /**
-   * @brief
+   * @brief Parse an F-string expression
+   * @return true if it is okay to proceed, false otherwise
    */
 
   qlex_tok_t tok = qlex_next(rd);
@@ -156,17 +145,12 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
   Expr *expr = nullptr;
 
   if (!tok.is(qText)) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected a string literal in F-string expression");
   }
 
   fstr = tok.as_string(rd);
 
   for (size_t i = 0; i < fstr.size(); i++) {
-    /**
-     * @brief
-     */
-
     char c = fstr[i];
 
     if (c == '{' && state == 0) {
@@ -178,11 +162,16 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
 
       std::string sub = fstr.substr(w_beg, w_end - w_beg) + "\n";
 
-      // NOT POSS: StringLexer subrd(sub);
+      qlex_t *subrd = qlex_direct(sub.c_str(), sub.size(), "fstring");
+      qlex_tok_t subtok = qlex_peek(subrd);
 
-      // if (!parse_expr(job, &subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr, 0)) {
-      //   return false;
-      // }
+      if (!parse_expr(job, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr, 0) || !expr) {
+        syntax(subtok, "Expected an expression in F-string parameter");
+        qlex_free(subrd);
+        return false;
+      }
+
+      qlex_free(subrd);
 
       args.push_back(expr);
       rectified_template += "{}";
@@ -198,8 +187,7 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
   }
 
   if (state != 0) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "F-string expression is not properly closed with '}'");
   }
 
   *node = FString::get(rectified_template, args);
@@ -217,6 +205,9 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
    */
 
   if (depth > MAX_EXPR_DEPTH) {
+    syntax(qlex_peek(rd),
+           "Expression depth exceeded; Expressions can not be nested more than %d times",
+           MAX_EXPR_DEPTH);
     return false;
   }
 
@@ -226,7 +217,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
     qlex_tok_t tok = qlex_peek(rd);
 
     if (tok.is(qEofF)) {
-      /*  */
+      syntax(tok, "Unexpected end of file while parsing expression");
       return false;
     }
 
@@ -241,7 +232,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
       }
 
       if (stack.size() != 1) {
-        /// TODO: Write the ERROR message
+        syntax(tok, "Expected a single expression on the stack");
         return false;
       }
 
@@ -306,6 +297,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           case qKFn: {
             Stmt *f = nullptr;
             if (!parse_function(job, rd, &f)) {
+              syntax(tok, "Expected a function definition in expression");
               return false;
             }
             StmtExpr *adapter = StmtExpr::get(f);
@@ -315,6 +307,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
               Call *fcall = parse_function_call(job, adapter, rd, depth);
 
               if (fcall == nullptr) {
+                syntax(tok, "Expected a function call after function definition expression");
                 return false;
               }
 
@@ -327,6 +320,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           case qKFString: {
             FString *f = nullptr;
             if (!parse_fstring(job, &f, rd, depth)) {
+              syntax(tok, "Expected an F-string in expression");
               return false;
             }
             stack.push(f);
@@ -334,7 +328,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           }
 
           default: {
-            /// TODO: Write the ERROR message
+            syntax(tok, "Unexpected keyword in expression");
             return false;
           }
         }
@@ -347,6 +341,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
               Call *fcall = parse_function_call(job, stack.top(), rd, depth);
 
               if (fcall == nullptr) {
+                syntax(tok, "Expected a function call in expression");
                 return false;
               }
 
@@ -356,7 +351,8 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
             }
 
             Expr *expr = nullptr;
-            if (!parse_expr(job, rd, terminators, &expr, depth + 1)) {
+            if (!parse_expr(job, rd, terminators, &expr, depth + 1) || !expr) {
+              syntax(tok, "Expected an expression in parentheses");
               return false;
             }
 
@@ -365,7 +361,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           }
           case qPuncRPar: {
             if (stack.size() != 1) {
-              /// TODO: Write the ERROR message
+              syntax(tok, "Expected a single expression on the stack");
               return false;
             }
 
@@ -383,18 +379,21 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
               }
 
               Expr *key = nullptr, *value = nullptr;
-              if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncColn)}, &key, depth + 1)) {
+              if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncColn)}, &key, depth + 1) || !key) {
+                syntax(tok, "Expected a key in list element");
                 return false;
               }
 
               tok = qlex_next(rd);
               if (!tok.is<qPuncColn>()) {
-                /// TODO: Write the ERROR message
+                syntax(tok, "Expected ':' in list element");
                 return false;
               }
 
               if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
-                              &value, depth + 1)) {
+                              &value, depth + 1) ||
+                  !value) {
+                syntax(tok, "Expected a value in list element");
                 return false;
               }
 
@@ -424,7 +423,9 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
                 if (!parse_expr(job, rd,
                                 {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
                                  qlex_tok_t(qPunc, qPuncRBrk)},
-                                &element, depth + 1)) {
+                                &element, depth + 1) ||
+                    !element) {
+                  syntax(tok, "Expected an element in list");
                   return false;
                 }
 
@@ -437,11 +438,12 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
                                   {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncComa)},
                                   &count, depth + 1) ||
                       !count) {
+                    syntax(tok, "Expected a count in list element");
                     return false;
                   }
 
                   if (!count->is<ConstInt>()) {
-                    /// TODO: Write the ERROR message
+                    syntax(tok, "Expected a constant integer in list element");
                     return false;
                   }
 
@@ -449,6 +451,8 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
                   for (size_t i = 0; i < count_val; i++) {
                     elements.push_back(element);
                   }
+
+                  tok = qlex_peek(rd);
                 } else if (element) {
                   elements.push_back(element);
                 }
@@ -462,7 +466,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
             }
 
             if (stack.size() != 1) {
-              /// TODO: Write the ERROR message
+              syntax(tok, "Expected a single expression on the stack");
               return false;
             }
 
@@ -470,20 +474,23 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
             stack.pop();
 
             if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncColn)},
-                            &index, depth + 1)) {
+                            &index, depth + 1) ||
+                !index) {
+              syntax(tok, "Expected an index in list");
               return false;
             }
 
             tok = qlex_next(rd);
             if (tok.is<qPuncColn>()) {
               Expr *end = nullptr;
-              if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end, depth + 1)) {
+              if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end, depth + 1) || !end) {
+                syntax(tok, "Expected an end index in list");
                 return false;
               }
 
               tok = qlex_next(rd);
               if (!tok.is<qPuncRBrk>()) {
-                /// TODO: Write the ERROR message
+                syntax(tok, "Expected ']' to close the list index");
                 return false;
               }
 
@@ -492,7 +499,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
             }
 
             if (!tok.is<qPuncRBrk>()) {
-              /// TODO: Write the ERROR message
+              syntax(tok, "Expected ']' to close the list index");
               return false;
             }
 
@@ -514,14 +521,15 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           }
           case qPuncComa: {
             if (stack.size() != 1) {
-              /// TODO: Write the ERROR message
+              syntax(tok, "Expected a single expression on the stack");
               return false;
             }
 
             Expr *right = nullptr, *left = stack.top();
             stack.pop();
 
-            if (!parse_expr(job, rd, terminators, &right, depth + 1)) {
+            if (!parse_expr(job, rd, terminators, &right, depth + 1) || !right) {
+              syntax(tok, "Expected an expression after ','");
               return false;
             }
 
@@ -529,7 +537,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
             continue;
           }
           default: {
-            /// TODO: Write the ERROR message
+            syntax(tok, "Unexpected punctuation in expression");
             return false;
           } break;
         }
@@ -538,7 +546,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
         qlex_op_t op = tok.as<qlex_op_t>();
         if (op == qOpDot) {
           if (stack.size() != 1) {
-            /// TODO: Write the ERROR message
+            syntax(tok, "Expected a single expression on the stack");
             return false;
           }
 
@@ -547,7 +555,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
 
           tok = qlex_next(rd);
           if (!tok.is(qName)) {
-            /// TODO: Write the ERROR message
+            syntax(tok, "Expected an identifier after '.'");
             return false;
           }
 
@@ -572,12 +580,13 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
 
         if (op == qOpAs) {
           if (stack.size() != 1) {
-            /// TODO: Write the ERROR message
+            syntax(tok, "Expected a single expression on the stack");
             return false;
           }
 
           Type *type = nullptr;
           if (!parse_type(job, rd, &type)) {
+            syntax(tok, "Failed to parse type in 'as' expression");
             return false;
           }
 
@@ -589,12 +598,13 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
 
         if (op == qOpBitcastAs) {
           if (stack.size() != 1) {
-            /// TODO: Write the ERROR message
+            syntax(tok, "Expected a single expression on the stack");
             return false;
           }
 
           Type *type = nullptr;
           if (!parse_type(job, rd, &type)) {
+            syntax(tok, "Failed to parse type in 'bitcast as' expression");
             return false;
           }
 
@@ -606,12 +616,13 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
 
         if (op == qOpReinterpretAs) {
           if (stack.size() != 1) {
-            /// TODO: Write the ERROR message
+            syntax(tok, "Expected a single expression on the stack");
             return false;
           }
 
           Type *type = nullptr;
           if (!parse_type(job, rd, &type)) {
+            syntax(tok, "Failed to parse type in 'reinterpret as' expression");
             return false;
           }
 
@@ -623,6 +634,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
         }
 
         if (!parse_expr(job, rd, terminators, &expr, depth + 1) || !expr) {
+          syntax(tok, "Failed to parse expression in binary operation");
           return false;
         }
 
@@ -635,7 +647,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           stack.push(BinExpr::get(left, (qlex_op_t)op, expr));
           continue;
         } else {
-          /// TODO: Write the ERROR message
+          syntax(tok, "Unexpected operator in expression");
           return false;
         }
         break;
@@ -647,6 +659,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
 
           Call *fcall = parse_function_call(job, Ident::get(ident), rd, depth);
           if (fcall == nullptr) {
+            syntax(tok, "Expected a function call in expression");
             return false;
           }
 
@@ -668,11 +681,12 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
         }
       }
       default: {
-        /// TODO: Write the ERROR message
+        syntax(tok, "Unexpected token in expression");
         return false;
       }
     }
   }
 
+  syntax(qlex_peek(rd), "Unexpected end of expression");
   return false;
 }

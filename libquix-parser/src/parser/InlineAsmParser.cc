@@ -36,6 +36,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 static bool asm_parse_param(qparse_t &job, qlex_t *rd,
                             std::vector<std::pair<std::string, Expr *>> &result) {
@@ -118,6 +119,9 @@ static bool asm_parse_clobbers(qparse_t &job, qlex_t *rd, std::vector<std::strin
 }
 
 bool qparse::parser::parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node) {
+  syntax(qlex_peek(rd), "Inline assembly statement parsing not implemented");
+  return false;
+
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is<qPuncLPar>()) {
     /// TODO: Write the ERROR message

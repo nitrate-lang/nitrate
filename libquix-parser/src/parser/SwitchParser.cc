@@ -35,11 +35,12 @@
 #include "parser/Parse.h"
 
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
   Expr *cond = nullptr;
   if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur)}, &cond)) {
-    return false;
+    syntax(qlex_peek(rd), "Expected switch condition");
   }
 
   SwitchCases cases;
@@ -47,8 +48,7 @@ bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is<qPuncLCur>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected '{' after switch condition");
   }
 
   while (true) {
@@ -60,43 +60,39 @@ bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
     if (tok.is<qKDefault>()) {
       qlex_next(rd);
       if (default_case) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Multiple default cases in switch statement");
       }
 
       tok = qlex_next(rd);
       if (!tok.is<qPuncColn>()) {
-        /// TODO: Write the ERROR message
-        return false;
+        syntax(tok, "Expected ':' after 'default' keyword");
       }
 
       if (!parse(job, rd, &default_case)) {
-        return false;
+        syntax(tok, "Expected block after 'default' keyword");
       }
 
       continue;
     }
 
     if (!tok.is<qKCase>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected 'case' or 'default' keyword in switch statement");
     }
     qlex_next(rd);
 
     Expr *case_expr = nullptr;
     if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncColn)}, &case_expr)) {
-      return false;
+      syntax(qlex_peek(rd), "Expected case expression");
     }
 
     tok = qlex_next(rd);
     if (!tok.is<qPuncColn>()) {
-      /// TODO: Write the ERROR message
-      return false;
+      syntax(tok, "Expected ':' after case expression");
     }
 
     Block *case_block = nullptr;
     if (!parse(job, rd, &case_block)) {
-      return false;
+      syntax(tok, "Expected block after case expression");
     }
 
     cases.push_back(CaseStmt::get(case_expr, case_block));
@@ -104,8 +100,7 @@ bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   tok = qlex_next(rd);
   if (!tok.is<qPuncRCur>()) {
-    /// TODO: Write the ERROR message
-    return false;
+    syntax(tok, "Expected '}' after switch statement");
   }
 
   *node = SwitchStmt::get(cond, cases, default_case);

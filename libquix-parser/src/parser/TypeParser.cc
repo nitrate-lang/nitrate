@@ -38,6 +38,7 @@
 
 using namespace qparse;
 using namespace qparse::parser;
+using namespace qparse::diag;
 
 // Lifetime integrity requires the primitives to be thread-local because the Node Arena allocator is
 // thread-local.
@@ -54,7 +55,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
    *
    * @note No validation is done here. This is just a parser.
    *
-   * @return true if the type was parsed successfully, false otherwise.
+   * @return true if it is okay to proceed, false otherwise.
    */
 
   using namespace std;
@@ -67,6 +68,8 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   string name;
 
   qlex_tok_t tok;
+
+  *node = nullptr;
 
   if ((tok = qlex_next(rd)).ty == qKeyW) {
     switch (tok.as<qlex_key_t>()) {
@@ -93,12 +96,12 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
          */
 
         if (!parse_function(job, rd, &fn)) {
-          /// TODO: Write error message
+          syntax(tok, "Malformed function type");
           goto error_end;
         }
 
         if (!fn->is<FnDecl>()) {
-          /// TODO: Write error message
+          syntax(tok, "Expected a function declaration but got something else");
           goto error_end;
         }
 
@@ -121,19 +124,19 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
          */
 
         if (!(tok = qlex_next(rd)).is<qPuncLPar>()) {
-          /// TODO: Write error message
+          syntax(tok, "Expected '(' after 'opaque'");
           goto error_end;
         }
 
         if ((tok = qlex_next(rd)).ty != qName) {
-          /// TODO: Write error message
+          syntax(tok, "Expected a name after 'opaque('");
           goto error_end;
         }
 
         name = tok.as_string(rd); /* Save the name of the opaque type. */
 
         if (!(tok = qlex_next(rd)).is<qPuncRPar>()) {
-          /// TODO: Write error message
+          syntax(tok, "Expected ')' after 'opaque(name'");
           goto error_end;
         }
 
@@ -178,7 +181,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
      */
 
     if (!parse_type(job, rd, &type)) {
-      /// TODO: Write error message
+      syntax(tok, "Expected a type after '['");
       goto error_end;
     }
 
@@ -199,17 +202,17 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
        */
 
       if (!(tok = qlex_next(rd)).is<qOpGT>()) {
-        /// TODO: Write error message
+        syntax(tok, "Expected '>' after '-' in map type");
         goto error_end;
       }
 
       if (!parse_type(job, rd, &value_type)) {
-        /// TODO: Write error message
+        syntax(tok, "Expected value type after '>' in map type");
         goto error_end;
       }
 
       if (!(tok = qlex_next(rd)).is<qPuncRBrk>()) {
-        /// TODO: Write error message
+        syntax(tok, "Expected ']' after map type");
         goto error_end;
       }
 
@@ -223,21 +226,21 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
      */
 
     if (!tok.is<qPuncSemi>()) {
-      /// TODO: Write error message
+      syntax(tok, "Expected ';' separator in array type before size");
       goto error_end;
     }
 
     {
       Expr *_size = nullptr;
       if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &_size)) {
-        /// TODO: Write error message
+        syntax(tok, "Expected array size after ';'");
         goto error_end;
       }
       size = ConstExpr::get(_size);
     }
 
     if (!(tok = qlex_next(rd)).is<qPuncRBrk>()) {
-      /// TODO: Write error message
+      syntax(tok, "Expected ']' after array size");
       goto error_end;
     }
 
@@ -250,12 +253,12 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
      */
 
     if (!parse_type(job, rd, &type)) {
-      /// TODO: Write error message
+      syntax(tok, "Expected a type after '{'");
       goto error_end;
     }
 
     if (!(tok = qlex_next(rd)).is<qPuncRCur>()) {
-      /// TODO: Write error message
+      syntax(tok, "Expected '}' after set type");
       goto error_end;
     }
 
@@ -274,7 +277,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       }
 
       if (!parse_type(job, rd, &type)) {
-        /// TODO: Write error message
+        syntax(tok, "Expected a type in tuple type");
         goto error_end;
       }
 
@@ -295,7 +298,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
      */
 
     if (!parse_type(job, rd, &type)) {
-      /// TODO: Write error message
+      syntax(tok, "Expected a type after '*'");
       goto error_end;
     }
 
@@ -308,14 +311,14 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
      */
 
     if (!parse_type(job, rd, &type)) {
-      /// TODO: Write error message
+      syntax(tok, "Expected a type after '!' mutable type");
       goto error_end;
     }
 
     inner = MutTy::get(type);
     goto type_suffix;
   } else {
-    /// TODO: Write error message
+    syntax(tok, "Expected a type");
     goto error_end;
   }
 
