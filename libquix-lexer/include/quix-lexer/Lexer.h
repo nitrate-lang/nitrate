@@ -69,11 +69,25 @@ typedef struct qlex_t {
  * @brief Create a new lexer context.
  *
  * @param file A seekable file stream.
+ * @param filename Name of the file or NULL for default.
  *
  * @return New lexer context or NULL if an error occurred.
  * @note This function is thread-safe.
  */
 qlex_t *qlex_new(FILE *file, const char *filename);
+
+/**
+ * @brief Create a new lexer context from a string.
+ *
+ * @param src Source code.
+ * @param len Length of the source code.
+ * @param filename Name of the file or NULL for default.
+ *
+ * @return New lexer context or NULL if an error occurred.
+ * @note This function is thread-safe.
+ * @warning The source code pointer must be valid for the duration of the lexer context.
+ */
+qlex_t *qlex_direct(const char *src, size_t len, const char *filename);
 
 /**
  * @brief Destroy a lexer context.

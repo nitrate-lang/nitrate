@@ -140,7 +140,7 @@ namespace qlex {
 
   static const boost::bimap<std::string_view, qlex_op_t> operators =
       make_bimap<std::string_view, qlex_op_t>({
-          {"?:", qOpTernary},
+          {"?", qOpTernary},
           {"=>", qOpArrow},
           {".", qOpDot},
           {"+", qOpPlus},
@@ -409,6 +409,8 @@ class qlex_impl_t final {
   uint32_t m_offset;
   FILE *m_file;
 
+  bool m_is_owned;
+
   class GetCControlFlow {
   public:
     GetCControlFlow() = default;
@@ -439,7 +441,7 @@ class qlex_impl_t final {
   }
 
 public:
-  qlex_impl_t(FILE *file)
+  qlex_impl_t(FILE *file, bool is_owned)
       : m_holdings(),
         m_tokens(),
         m_tok_pos(TOKEN_BUF_SIZE + 1),
@@ -448,9 +450,16 @@ public:
         m_row(1),
         m_col(1),
         m_offset(0),
-        m_file(file) {
+        m_file(file),
+        m_is_owned(is_owned) {
     if (fseek(file, 0, SEEK_SET) != 0) {
       qcore_panic("qlex_impl_t::LexerState: failed to seek to start of file");
+    }
+  }
+
+  ~qlex_impl_t() {
+    if (m_is_owned) {
+      fclose(m_file);
     }
   }
 
@@ -516,7 +525,31 @@ LIB_EXPORT qlex_t *qlex_new(FILE *file, const char *filename) {
   }
 
   qlex_t *lexer = new qlex_t;
-  lexer->impl = new qlex_impl_t(file);
+  lexer->impl = new qlex_impl_t(file, false);
+  lexer->next = _impl_next;
+  lexer->peek = _impl_peek;
+  lexer->push = _impl_push;
+  lexer->collect = _impl_collect;
+  lexer->destruct = _impl_destruct;
+  lexer->cur.ty = qErro;
+  lexer->flags = QLEX_FLAG_NONE;
+  lexer->filename = filename;
+
+  return lexer;
+}
+
+LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename) {
+  if (!filename) {
+    filename = "<unknown>";
+  }
+
+  FILE *file = fmemopen((void *)src, len, "r");
+  if (!file) {
+    return nullptr;
+  }
+
+  qlex_t *lexer = new qlex_t;
+  lexer->impl = new qlex_impl_t(file, true);
   lexer->next = _impl_next;
   lexer->peek = _impl_peek;
   lexer->push = _impl_push;
