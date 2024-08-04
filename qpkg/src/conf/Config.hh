@@ -89,7 +89,7 @@ namespace qpkg {
       std::string dump(
           ConfigItemSerializationTarget target = ConfigItemSerializationTarget::JSON) const;
 
-      inline const ConfigValue &operator[](const std::string &key) const { return m_items.at(key); }
+      inline ConfigValue operator[](const std::string &key) const { return m_items.at(key); }
 
       template <typename T>
       void set(const std::string &key, T value) {
@@ -131,7 +131,7 @@ namespace qpkg {
         return m_version == cfg.m_version && m_root == cfg.m_root;
       }
 
-      inline const ConfigValue &operator[](const std::string &key) const { return m_root[key]; }
+      inline ConfigValue operator[](const std::string &key) const { return m_root[key]; }
 
       inline std::set<std::string> keys() const {
         std::set<std::string> keys;

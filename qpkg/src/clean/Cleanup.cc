@@ -116,7 +116,12 @@ bool qpkg::clean::CleanPackageSource(const std::string &package_src, bool verbos
   }
 
   auto conf = get_config(package_src_path);
-  std::string name = (*conf)["name"].as<std::string>(), tmp;
+  if (!conf) {
+    LOG(core::ERROR) << "Failed to get configuration" << std::endl;
+    return false;
+  }
+
+  std::string name = conf.value()["name"].as<std::string>(), tmp;
 
 #define RMFILE(_file)                                                                         \
   tmp = _file;                                                                                \
