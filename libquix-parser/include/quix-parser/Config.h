@@ -46,6 +46,9 @@ extern "C" {
 typedef enum qparse_key_t {
   QPK_UNKNOWN = 0,
   QPK_NO_AUTO_IMPL,
+  QPK_VERBOSE,
+  QPK_CRASHGUARD,
+  QPV_FASTERROR,
 } qparse_key_t;
 
 typedef enum qparse_val_t {
@@ -55,6 +58,10 @@ typedef enum qparse_val_t {
   QPV_REGION,
   QPV_STRUCT,
   QPV_UNION,
+  QPV_TRUE,
+  QPV_FALSE,
+  QPV_ON = QPV_TRUE,
+  QPV_OFF = QPV_FALSE,
 } qparse_val_t;
 
 ///==========================================================================///
@@ -153,13 +160,10 @@ bool qparse_conf_setopt(qparse_conf_t *conf, qparse_key_t key, qparse_val_t valu
  * @param conf A pointer to the configuration object to query.
  * @param key The configuration option to query.
  * @param value A pointer to a variable to store the value of the configuration
- * option.
+ * option or NULL.
  *
- * @return True if the configuration option was found and the value was stored
- * in the `value` parameter OR false if the configuration option was not found.
- *
- * @note If value is NULL, the function will return true if the configuration
- * option is found, and false if the configuration option is not found.
+ * @return True if the configuration option was found, false if the configuration
+ * option was not found.
  *
  * @note This function is thread-safe.
  */

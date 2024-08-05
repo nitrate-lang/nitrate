@@ -102,7 +102,7 @@ public:
     m_data.shrink_to_fit();
   }
 
-  bool has(const char *option, const char *value) const;
+  bool has(qparse_key_t option, qparse_val_t value) const;
 };
 
 #endif  // __QUIX_PARSER_IMPL_H__

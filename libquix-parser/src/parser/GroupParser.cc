@@ -242,7 +242,7 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   { /* The compiler may automatically generate traits for the definition */
     tok = qlex_peek(rd);
-    if (!job.conf->has("-fno-auto-impl", "group")) {
+    if (!job.conf->has(QPK_NO_AUTO_IMPL, QPV_GROUP)) {
       implements.insert("auto");
     }
   }

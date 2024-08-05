@@ -37,6 +37,8 @@
 
 namespace qparse::conf {
   std::vector<qparse_setting_t> default_settings = {
-
+      {QPK_VERBOSE, QPV_FALSE},
+      {QPK_CRASHGUARD, QPV_ON},
+      {QPV_FASTERROR, QPV_OFF},
   };
 }

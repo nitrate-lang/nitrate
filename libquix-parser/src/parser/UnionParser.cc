@@ -242,7 +242,7 @@ bool parser::parse_union(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   { /* The compiler may automatically generate traits for the definition */
     tok = qlex_peek(rd);
-    if (!job.conf->has("-fno-auto-impl", "union")) {
+    if (!job.conf->has(QPK_NO_AUTO_IMPL, QPV_UNION)) {
       implements.insert("auto");
     }
   }

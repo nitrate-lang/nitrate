@@ -34,6 +34,7 @@
 #include <quix-parser/Config.h>
 
 #include <array>
+#include <boost/bimap.hpp>
 #include <optional>
 #include <string>
 #include <vector>
@@ -44,43 +45,48 @@ namespace qparse::conf {
   extern std::vector<qparse_setting_t> default_settings;
 }
 
-static std::string_view qkey_to_string(qparse_key_t key) {
-  switch (key) {
-    case QPK_UNKNOWN:
-      return "QPK_UNKNOWN";
-    case QPK_NO_AUTO_IMPL:
-      return "-fno-auto-impl";
-    default:
-      qcore_panic("qkey_to_string: Unhandled qparse_key_t value.");
-  }
+template <typename L, typename R>
+boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+  return boost::bimap<L, R>(list.begin(), list.end());
 }
 
-static std::string_view qval_to_string(qparse_val_t val) {
-  switch (val) {
-    case QPV_UNKNOWN:
-      return "QPV_UNKNOWN";
-    case QPV_FUNCTION:
-      return "function";
-    case QPV_GROUP:
-      return "group";
-    case QPV_REGION:
-      return "region";
-    case QPV_STRUCT:
-      return "struct";
-    case QPV_UNION:
-      return "union";
-    default:
-      qcore_panic("qval_to_string: Unhandled qparse_val_t value.");
-  }
-}
+static const boost::bimap<qparse_key_t, std::string_view> options_bimap =
+    make_bimap<qparse_key_t, std::string_view>({
+        {QPK_UNKNOWN, "QPK_UNKNOWN"},
+        {QPK_NO_AUTO_IMPL, "-fno-auto-impl"},
+        {QPK_VERBOSE, "-fverbose"},
+        {QPK_CRASHGUARD, "-fcrashguard"},
+        {QPV_FASTERROR, "-ffasterror"},
+    });
+
+static const boost::bimap<qparse_val_t, std::string_view> values_bimap =
+    make_bimap<qparse_val_t, std::string_view>({
+        {QPV_UNKNOWN, "QPV_UNKNOWN"},
+        {QPV_FUNCTION, "function"},
+        {QPV_GROUP, "group"},
+        {QPV_REGION, "region"},
+        {QPV_STRUCT, "struct"},
+        {QPV_UNION, "union"},
+        {QPV_TRUE, "true"},
+        {QPV_FALSE, "false"},
+    });
 
 std::ostream &operator<<(std::ostream &os, const qparse_key_t &key) {
-  os << qkey_to_string(key);
+  if (options_bimap.left.find(key) != options_bimap.left.end()) {
+    os << options_bimap.left.at(key);
+  } else {
+    qcore_panic("operator<<: Unhandled qparse_key_t value.");
+  }
   return os;
 }
 
 std::ostream &operator<<(std::ostream &os, const qparse_val_t &val) {
-  os << qval_to_string(val);
+  if (values_bimap.left.find(val) != values_bimap.left.end()) {
+    os << values_bimap.left.at(val);
+  } else {
+    qcore_panic("operator<<: Unhandled qparse_val_t value.");
+  }
+
   return os;
 }
 
@@ -144,17 +150,23 @@ LIB_EXPORT void qparse_conf_dump(qparse_conf_t *conf, FILE *stream, const char *
   settings = qparse_conf_getopts(conf, &count);
 
   for (size_t i = 0; i < count; ++i) {
-    fprintf(stream, "%s%s%s%s", qkey_to_string(settings[i].key).data(), field_delim,
-            qval_to_string(settings[i].value).data(), line_delim);
+    if (options_bimap.left.find(settings[i].key) == options_bimap.left.end()) {
+      qcore_panic("qparse_conf_dump: Unhandled qparse_key_t value.");
+    }
+
+    if (values_bimap.left.find(settings[i].value) == values_bimap.left.end()) {
+      qcore_panic("qparse_conf_dump: Unhandled qparse_val_t value.");
+    }
+
+    fprintf(stream, "%s%s%s%s", options_bimap.left.at(settings[i].key).data(), field_delim,
+            values_bimap.left.at(settings[i].value).data(), line_delim);
   }
 }
 
-bool qparse_conf_t::has(const char *option, const char *value) const {
+bool qparse_conf_t::has(qparse_key_t option, qparse_val_t value) const {
   for (const auto &dat : m_data) {
-    if (qkey_to_string(dat.key) == option) {
-      if (dat.value == 0 || qval_to_string(dat.value) == value) {
-        return true;
-      }
+    if (dat.key == option && dat.value == value) {
+      return true;
     }
   }
 

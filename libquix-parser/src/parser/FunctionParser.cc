@@ -435,7 +435,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     std::set<std::string> implements;
 
-    if (!job.conf->has("-fno-auto-impl", "function")) {
+    if (!job.conf->has(QPK_NO_AUTO_IMPL, QPV_FUNCTION)) {
       implements.insert("auto");
     }
 

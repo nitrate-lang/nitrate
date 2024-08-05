@@ -50,6 +50,7 @@ namespace qparse::diag {
 
   enum class MessageType {
     Syntax,
+    FatalError,
   };
 
   enum ControlFlow {

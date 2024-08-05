@@ -42,20 +42,37 @@ using namespace qparse::diag;
 
 thread_local qparse_t *g_parser_inst;
 
-/*
-/app/libquix-parser/src/parser/InlineAsmParser.cc:120:73: warning: unused parameter 'node'
-[-Wunused-parameter] bool qparse::parser::parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node) {
-                                                                        ^
-*/
-
 ///============================================================================///
 
 std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
   std::stringstream ss;
   ss << qlex_filename(m_parser->lexer) << ":";
-  ss << qlex_line(m_parser->lexer, msg.tok.loc) << ":";
-  ss << qlex_col(m_parser->lexer, msg.tok.loc) << ": ";
-  ss << "error: " << msg.msg << " [SyntaxError]\n";
+  uint32_t line = qlex_line(m_parser->lexer, msg.tok.loc);
+  uint32_t col = qlex_col(m_parser->lexer, msg.tok.loc);
+
+  if (line != UINT32_MAX) {
+    ss << line << ":";
+  } else {
+    ss << "?:";
+  }
+
+  if (col != UINT32_MAX) {
+    ss << col << ": ";
+  } else {
+    ss << "?: ";
+  }
+  ss << "error: " << msg.msg << " [";
+
+  switch (msg.type) {
+    case MessageType::Syntax:
+      ss << "SyntaxError";
+      break;
+    case MessageType::FatalError:
+      ss << "FatalError";
+      break;
+  }
+
+  ss << "]\n";
 
   uint32_t offset;
   char *snippet = qlex_snippet(m_parser->lexer, msg.tok, &offset);
@@ -76,9 +93,33 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
 std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
   std::stringstream ss;
   ss << "\x1b[37;1m" << qlex_filename(m_parser->lexer) << ":";
-  ss << qlex_line(m_parser->lexer, msg.tok.loc) << ":";
-  ss << qlex_col(m_parser->lexer, msg.tok.loc) << ":\x1b[0m ";
-  ss << "\x1b[31;1merror:\x1b[0m \x1b[37;1m" << msg.msg << " [SyntaxError]\x1b[0m\n";
+  uint32_t line = qlex_line(m_parser->lexer, msg.tok.loc);
+  uint32_t col = qlex_col(m_parser->lexer, msg.tok.loc);
+
+  if (line != UINT32_MAX) {
+    ss << line << ":";
+  } else {
+    ss << "?:";
+  }
+
+  if (col != UINT32_MAX) {
+    ss << col << ":\x1b[0m ";
+  } else {
+    ss << "?:\x1b[0m ";
+  }
+
+  ss << "\x1b[31;1merror:\x1b[0m \x1b[37;1m" << msg.msg << " [";
+
+  switch (msg.type) {
+    case MessageType::Syntax:
+      ss << "SyntaxError";
+      break;
+    case MessageType::FatalError:
+      ss << "FatalError";
+      break;
+  }
+
+  ss << "]\x1b[0m\n";
 
   uint32_t offset;
   char *snippet = qlex_snippet(m_parser->lexer, msg.tok, &offset);
@@ -153,6 +194,10 @@ namespace qparse::diag {
 
     g_parser_inst->impl->diag.push(std::move(diag));
     g_parser_inst->failed = true;
+
+    if (g_parser_inst->conf->has(QPV_FASTERROR, QPV_ON)) {
+      throw SyntaxError();
+    }
   }
 
   void syntax(const qlex_tok_t &tok, std::string_view fmt, ...) {
