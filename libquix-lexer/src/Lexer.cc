@@ -802,9 +802,6 @@ LIB_EXPORT uint32_t qlex_col(qlex_t *lexer, qlex_loc_t loc) {
 }
 
 LIB_EXPORT char *qlex_snippet(qlex_t *lexer, qlex_tok_t tok, uint32_t *offset) {
-  /// WARNING: This function probably has a overflow, underflow, or memory corruption bug.
-  /// TODO: Verify the correctness of this function.
-
 #define SNIPPET_SIZE 100
 
   uint32_t tok_beg_offset;

@@ -36,7 +36,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
   qcore_arena_t arena;
   qcore_arena_open(&arena);
-  qparse_node_t *node;
+  qparse_node_t *node = nullptr;
 
   qparse_do(parse, &arena, &node);
 

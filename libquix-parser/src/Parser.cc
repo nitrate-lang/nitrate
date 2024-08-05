@@ -446,7 +446,7 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
 
 LIB_EXPORT bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1) {
   qcore_arena_t arena;
-  qparse_node_t *node;
+  qparse_node_t *node = nullptr;
 
   if (!parser || !out) {
     return false;

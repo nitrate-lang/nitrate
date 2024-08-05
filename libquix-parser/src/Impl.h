@@ -52,8 +52,6 @@ class qparse_conf_t {
   std::vector<qparse_setting_t> m_data;
 
   bool verify_prechange(qparse_key_t key, qparse_val_t value) const {
-    /// TODO: Implement verification logic for qparse_key_t and qparse_val_t values.
-
     (void)key;
     (void)value;
 

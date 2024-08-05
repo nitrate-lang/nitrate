@@ -52,8 +52,6 @@ class qxir_conf_t {
   std::vector<qxir_setting_t> m_data;
 
   bool verify_prechange(qxir_key_t key, qxir_val_t value) const {
-    /// TODO: Implement verification logic for qxir_key_t and qxir_val_t values.
-
     (void)key;
     (void)value;
 

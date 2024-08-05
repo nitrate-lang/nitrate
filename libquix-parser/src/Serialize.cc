@@ -964,7 +964,7 @@ LIB_EXPORT void qparse_ast_brepr(const Node *node, bool compress, qcore_arena_t 
 
   /* Compress the AST representation */
   if (compress) {
-    uint8_t *tmp_out;
+    uint8_t *tmp_out = nullptr;
     raw_deflate((const uint8_t *)repr, *outlen, &tmp_out, outlen, arena);
     repr = (char *)tmp_out;
   }
