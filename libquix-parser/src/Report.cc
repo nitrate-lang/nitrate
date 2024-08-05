@@ -32,7 +32,7 @@
 #define __QPARSE_IMPL__
 
 #include <Impl.h>
-#include <Report.h>
+#include <ParseReport.h>
 #include <quix-core/Error.h>
 #include <quix-parser/Parser.h>
 

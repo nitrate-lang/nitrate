@@ -9,8 +9,8 @@ execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -ex
 string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
-set(QPARSER_ID "\"QPARSER_${SHA256SUMS}\"")
-message(STATUS "libquix-parser VersionId: ${QPARSER_ID}")
+set(QPARSE_ID "\"QPARSE_${SHA256SUMS}\"")
+message(STATUS "libquix-parser VersionId: ${QPARSE_ID}")
 
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
@@ -19,8 +19,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQPARSER_ID=${QPARSER_ID})
-SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQPARSER_ID="undefined")
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQPARSE_ID=${QPARSE_ID})
+SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQPARSE_ID="undefined")
 
 if (MEMORY_OVER_SPEED)
   SET(PROJECT_RELEASE_FLAGS ${PROJECT_RELEASE_FLAGS} -DMEMORY_OVER_SPEED=1)
@@ -38,9 +38,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
   target_compile_options(quix-parser PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-parser PRIVATE quix-lexer libdeflate.a)
+  target_link_libraries(quix-parser PRIVATE quix-core quix-lexer libdeflate.a)
   target_link_options(quix-parser PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
-  add_dependencies(quix-parser quix-lexer)
+  add_dependencies(quix-parser quix-core quix-lexer)
 
   add_subdirectory(tests)
   add_subdirectory(fuzzer)
@@ -52,6 +52,6 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
   target_compile_options(quix-parser PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-parser PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-parser PRIVATE quix-lexer libdeflate.a)
-  add_dependencies(quix-parser quix-lexer)
+  target_link_libraries(quix-parser PRIVATE quix-core quix-lexer libdeflate.a)
+  add_dependencies(quix-parser quix-core quix-lexer)
 endif()

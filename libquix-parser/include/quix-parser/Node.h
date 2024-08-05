@@ -257,7 +257,7 @@ namespace qparse {
   };
 };  // namespace qparse
 
-#define NODE_IMPL_CORE(__typename)                                                         \
+#define PNODE_IMPL_CORE(__typename)                                                         \
 protected:                                                                                 \
   virtual bool verify_impl(std::ostream &os) const override;                               \
                                                                                            \
@@ -498,7 +498,7 @@ namespace qparse {
     Expr *get_expr() const;
     void set_expr(Expr *expr);
 
-    NODE_IMPL_CORE(ExprStmt)
+    PNODE_IMPL_CORE(ExprStmt)
   };
 
   class StmtExpr : public Expr {
@@ -511,7 +511,7 @@ namespace qparse {
     Stmt *get_stmt() const;
     void set_stmt(Stmt *stmt);
 
-    NODE_IMPL_CORE(StmtExpr)
+    PNODE_IMPL_CORE(StmtExpr)
   };
 
   class TypeExpr : public Expr {
@@ -524,7 +524,7 @@ namespace qparse {
     Type *get_type() const;
     void set_type(Type *type);
 
-    NODE_IMPL_CORE(TypeExpr)
+    PNODE_IMPL_CORE(TypeExpr)
   };
 
   class ConstExpr : public Expr {
@@ -537,7 +537,7 @@ namespace qparse {
     Expr *get_value() const;
     void set_value(Expr *value);
 
-    NODE_IMPL_CORE(ConstExpr)
+    PNODE_IMPL_CORE(ConstExpr)
   };
 
   class LitExpr : public ConstExpr {
@@ -591,112 +591,112 @@ namespace qparse {
     String get_name() const;
     void set_name(String name);
 
-    NODE_IMPL_CORE(UnresolvedType)
+    PNODE_IMPL_CORE(UnresolvedType)
   };
 
   class U1 : public TypeBuiltin {
   public:
     U1() = default;
 
-    NODE_IMPL_CORE(U1)
+    PNODE_IMPL_CORE(U1)
   };
 
   class U8 : public TypeBuiltin {
   public:
     U8() = default;
 
-    NODE_IMPL_CORE(U8)
+    PNODE_IMPL_CORE(U8)
   };
 
   class U16 : public TypeBuiltin {
   public:
     U16() = default;
 
-    NODE_IMPL_CORE(U16)
+    PNODE_IMPL_CORE(U16)
   };
 
   class U32 : public TypeBuiltin {
   public:
     U32() = default;
 
-    NODE_IMPL_CORE(U32)
+    PNODE_IMPL_CORE(U32)
   };
 
   class U64 : public TypeBuiltin {
   public:
     U64() = default;
 
-    NODE_IMPL_CORE(U64)
+    PNODE_IMPL_CORE(U64)
   };
 
   class U128 : public TypeBuiltin {
   public:
     U128() = default;
 
-    NODE_IMPL_CORE(U128)
+    PNODE_IMPL_CORE(U128)
   };
 
   class I8 : public TypeBuiltin {
   public:
     I8() = default;
 
-    NODE_IMPL_CORE(I8)
+    PNODE_IMPL_CORE(I8)
   };
 
   class I16 : public TypeBuiltin {
   public:
     I16() = default;
 
-    NODE_IMPL_CORE(I16)
+    PNODE_IMPL_CORE(I16)
   };
 
   class I32 : public TypeBuiltin {
   public:
     I32() = default;
 
-    NODE_IMPL_CORE(I32)
+    PNODE_IMPL_CORE(I32)
   };
 
   class I64 : public TypeBuiltin {
   public:
     I64() = default;
 
-    NODE_IMPL_CORE(I64)
+    PNODE_IMPL_CORE(I64)
   };
 
   class I128 : public TypeBuiltin {
   public:
     I128() = default;
 
-    NODE_IMPL_CORE(I128)
+    PNODE_IMPL_CORE(I128)
   };
 
   class F32 : public TypeBuiltin {
   public:
     F32() = default;
 
-    NODE_IMPL_CORE(F32)
+    PNODE_IMPL_CORE(F32)
   };
 
   class F64 : public TypeBuiltin {
   public:
     F64() = default;
 
-    NODE_IMPL_CORE(F64)
+    PNODE_IMPL_CORE(F64)
   };
 
   class VoidTy : public TypeBuiltin {
   public:
     VoidTy() = default;
 
-    NODE_IMPL_CORE(VoidTy)
+    PNODE_IMPL_CORE(VoidTy)
   };
 
   class StringTy : public TypeBuiltin {
   public:
     StringTy() = default;
 
-    NODE_IMPL_CORE(StringTy)
+    PNODE_IMPL_CORE(StringTy)
   };
 
   class PtrTy : public TypeComplex {
@@ -713,7 +713,7 @@ namespace qparse {
     bool is_volatile() const;
     void set_volatile(bool is_volatile);
 
-    NODE_IMPL_CORE(PtrTy)
+    PNODE_IMPL_CORE(PtrTy)
   };
 
   class OpaqueTy : public TypeComplex {
@@ -725,7 +725,7 @@ namespace qparse {
     String get_name() const;
     void set_name(String name);
 
-    NODE_IMPL_CORE(OpaqueTy)
+    PNODE_IMPL_CORE(OpaqueTy)
   };
 
   class VectorTy : public TypeComposite {
@@ -737,7 +737,7 @@ namespace qparse {
     Type *get_item() const;
     void set_item(Type *item);
 
-    NODE_IMPL_CORE(VectorTy)
+    PNODE_IMPL_CORE(VectorTy)
   };
 
   class SetTy : public TypeComposite {
@@ -749,7 +749,7 @@ namespace qparse {
     Type *get_item() const;
     void set_item(Type *item);
 
-    NODE_IMPL_CORE(SetTy)
+    PNODE_IMPL_CORE(SetTy)
   };
 
   class MapTy : public TypeComposite {
@@ -765,7 +765,7 @@ namespace qparse {
     Type *get_value() const;
     void set_value(Type *value);
 
-    NODE_IMPL_CORE(MapTy)
+    PNODE_IMPL_CORE(MapTy)
   };
 
   typedef std::vector<Type *, Arena<Type *>> TupleTyItems;
@@ -782,7 +782,7 @@ namespace qparse {
     void clear_items();
     void remove_item(Type *item);
 
-    NODE_IMPL_CORE(TupleTy)
+    PNODE_IMPL_CORE(TupleTy)
   };
 
   class OptionalTy : public TypeComposite {
@@ -794,7 +794,7 @@ namespace qparse {
     Type *get_item() const;
     void set_item(Type *item);
 
-    NODE_IMPL_CORE(OptionalTy)
+    PNODE_IMPL_CORE(OptionalTy)
   };
 
   class ArrayTy : public TypeComposite {
@@ -810,7 +810,7 @@ namespace qparse {
     ConstExpr *get_size() const;
     void set_size(ConstExpr *size);
 
-    NODE_IMPL_CORE(ArrayTy)
+    PNODE_IMPL_CORE(ArrayTy)
   };
 
   class EnumTy : public TypeComplex {
@@ -826,7 +826,7 @@ namespace qparse {
     Type *get_memtype() const;
     void set_memtype(Type *memtype);
 
-    NODE_IMPL_CORE(EnumTy)
+    PNODE_IMPL_CORE(EnumTy)
   };
 
   class MutTy : public TypeComplex {
@@ -838,7 +838,7 @@ namespace qparse {
     Type *get_item() const;
     void set_item(Type *item);
 
-    NODE_IMPL_CORE(MutTy)
+    PNODE_IMPL_CORE(MutTy)
   };
 
   typedef std::pair<String, Type *> StructItem;
@@ -857,7 +857,7 @@ namespace qparse {
     void clear_items();
     void remove_item(String name);
 
-    NODE_IMPL_CORE(StructTy)
+    PNODE_IMPL_CORE(StructTy)
   };
 
   typedef std::vector<Type *, Arena<Type *>> GroupTyItems;
@@ -875,7 +875,7 @@ namespace qparse {
     void clear_items();
     void remove_item(Type *item);
 
-    NODE_IMPL_CORE(GroupTy)
+    PNODE_IMPL_CORE(GroupTy)
   };
 
   typedef std::vector<Type *, Arena<Type *>> RegionTyItems;
@@ -893,7 +893,7 @@ namespace qparse {
     void clear_items();
     void remove_item(Type *item);
 
-    NODE_IMPL_CORE(RegionTy)
+    PNODE_IMPL_CORE(RegionTy)
   };
 
   typedef std::vector<Type *, Arena<Type *>> UnionTyItems;
@@ -911,7 +911,7 @@ namespace qparse {
     void clear_items();
     void remove_item(Type *item);
 
-    NODE_IMPL_CORE(UnionTy)
+    PNODE_IMPL_CORE(UnionTy)
   };
 
   enum class FuncPurity {
@@ -1003,7 +1003,7 @@ namespace qparse {
     bool is_noexcept() const;
     void set_noexcept(bool noexcept_);
 
-    NODE_IMPL_CORE(FuncTy)
+    PNODE_IMPL_CORE(FuncTy)
   };
 
   ///=============================================================================
@@ -1022,7 +1022,7 @@ namespace qparse {
     qlex_op_t get_op() const;
     void set_op(qlex_op_t op);
 
-    NODE_IMPL_CORE(UnaryExpr)
+    PNODE_IMPL_CORE(UnaryExpr)
   };
 
   class BinExpr : public Expr {
@@ -1044,7 +1044,7 @@ namespace qparse {
     qlex_op_t get_op() const;
     void set_op(qlex_op_t op);
 
-    NODE_IMPL_CORE(BinExpr)
+    PNODE_IMPL_CORE(BinExpr)
   };
 
   class PostUnaryExpr : public Expr {
@@ -1061,7 +1061,7 @@ namespace qparse {
     qlex_op_t get_op() const;
     void set_op(qlex_op_t op);
 
-    NODE_IMPL_CORE(PostUnaryExpr)
+    PNODE_IMPL_CORE(PostUnaryExpr)
   };
 
   class TernaryExpr : public Expr {
@@ -1083,7 +1083,7 @@ namespace qparse {
     Expr *get_rhs() const;
     void set_rhs(Expr *rhs);
 
-    NODE_IMPL_CORE(TernaryExpr)
+    PNODE_IMPL_CORE(TernaryExpr)
   };
 
   ///=============================================================================
@@ -1097,7 +1097,7 @@ namespace qparse {
 
     String get_value() const;
 
-    NODE_IMPL_CORE(ConstInt)
+    PNODE_IMPL_CORE(ConstInt)
   };
 
   class ConstFloat : public LitExpr {
@@ -1109,7 +1109,7 @@ namespace qparse {
 
     String get_value() const;
 
-    NODE_IMPL_CORE(ConstFloat)
+    PNODE_IMPL_CORE(ConstFloat)
   };
 
   class ConstBool : public LitExpr {
@@ -1120,7 +1120,7 @@ namespace qparse {
 
     bool get_value() const;
 
-    NODE_IMPL_CORE(ConstBool)
+    PNODE_IMPL_CORE(ConstBool)
   };
 
   class ConstString : public LitExpr {
@@ -1131,7 +1131,7 @@ namespace qparse {
 
     String get_value() const;
 
-    NODE_IMPL_CORE(ConstString)
+    PNODE_IMPL_CORE(ConstString)
   };
 
   class ConstChar : public LitExpr {
@@ -1142,21 +1142,21 @@ namespace qparse {
 
     String get_value() const;
 
-    NODE_IMPL_CORE(ConstChar)
+    PNODE_IMPL_CORE(ConstChar)
   };
 
   class ConstNull : public LitExpr {
   public:
     ConstNull() = default;
 
-    NODE_IMPL_CORE(ConstNull)
+    PNODE_IMPL_CORE(ConstNull)
   };
 
   class ConstUndef : public LitExpr {
   public:
     ConstUndef() = default;
 
-    NODE_IMPL_CORE(ConstUndef)
+    PNODE_IMPL_CORE(ConstUndef)
   };
 
   ///=============================================================================
@@ -1181,7 +1181,7 @@ namespace qparse {
     void clear_args();
     void remove_arg(String name);
 
-    NODE_IMPL_CORE(Call)
+    PNODE_IMPL_CORE(Call)
   };
 
   typedef std::map<String, ConstExpr *, std::less<String>,
@@ -1207,7 +1207,7 @@ namespace qparse {
     void clear_template_args();
     void remove_template_arg(String name);
 
-    NODE_IMPL_CORE(TemplCall)
+    PNODE_IMPL_CORE(TemplCall)
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> ListData;
@@ -1226,7 +1226,7 @@ namespace qparse {
     void clear_items();
     void remove_item(Expr *item);
 
-    NODE_IMPL_CORE(List)
+    PNODE_IMPL_CORE(List)
   };
 
   class Assoc : public Expr {
@@ -1243,7 +1243,7 @@ namespace qparse {
     Expr *get_value() const;
     void set_value(Expr *value);
 
-    NODE_IMPL_CORE(Assoc)
+    PNODE_IMPL_CORE(Assoc)
   };
 
   class Field : public Expr {
@@ -1260,7 +1260,7 @@ namespace qparse {
     String get_field() const;
     void set_field(String field);
 
-    NODE_IMPL_CORE(Field)
+    PNODE_IMPL_CORE(Field)
   };
 
   class Index : public Expr {
@@ -1277,7 +1277,7 @@ namespace qparse {
     Expr *get_index() const;
     void set_index(Expr *index);
 
-    NODE_IMPL_CORE(Index)
+    PNODE_IMPL_CORE(Index)
   };
 
   class Slice : public Expr {
@@ -1299,7 +1299,7 @@ namespace qparse {
     Expr *get_end() const;
     void set_end(Expr *end);
 
-    NODE_IMPL_CORE(Slice)
+    PNODE_IMPL_CORE(Slice)
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> FStringArgs;
@@ -1323,7 +1323,7 @@ namespace qparse {
     void clear_items();
     void remove_item(Expr *item);
 
-    NODE_IMPL_CORE(FString)
+    PNODE_IMPL_CORE(FString)
   };
 
   class Ident : public Expr {
@@ -1335,7 +1335,7 @@ namespace qparse {
     String get_name() const;
     void set_name(String name);
 
-    NODE_IMPL_CORE(Ident)
+    PNODE_IMPL_CORE(Ident)
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> SeqPointItems;
@@ -1353,7 +1353,7 @@ namespace qparse {
     void clear_items();
     void remove_item(Expr *item);
 
-    NODE_IMPL_CORE(SeqPoint)
+    PNODE_IMPL_CORE(SeqPoint)
   };
 
   ///=============================================================================
@@ -1377,7 +1377,7 @@ namespace qparse {
     bool is_unsafe() const;
     void set_unsafe(bool unsafe);
 
-    NODE_IMPL_CORE(Block)
+    PNODE_IMPL_CORE(Block)
   };
 
   class VolStmt : public Stmt {
@@ -1390,7 +1390,7 @@ namespace qparse {
     Stmt *get_stmt() const;
     void set_stmt(Stmt *stmt);
 
-    NODE_IMPL_CORE(VolStmt)
+    PNODE_IMPL_CORE(VolStmt)
   };
 
   typedef std::vector<Stmt *, Arena<Stmt *>> StmtListItems;
@@ -1408,7 +1408,7 @@ namespace qparse {
     void clear_items();
     void remove_item(Stmt *item);
 
-    NODE_IMPL_CORE(StmtList)
+    PNODE_IMPL_CORE(StmtList)
   };
 
   class ConstDecl : public Decl {
@@ -1422,7 +1422,7 @@ namespace qparse {
     Expr *get_value() const;
     void set_value(Expr *value);
 
-    NODE_IMPL_CORE(ConstDecl)
+    PNODE_IMPL_CORE(ConstDecl)
   };
 
   class VarDecl : public Decl {
@@ -1436,7 +1436,7 @@ namespace qparse {
     Expr *get_value() const;
     void set_value(Expr *value);
 
-    NODE_IMPL_CORE(VarDecl)
+    PNODE_IMPL_CORE(VarDecl)
   };
 
   class LetDecl : public Decl {
@@ -1450,7 +1450,7 @@ namespace qparse {
     Expr *get_value() const;
     void set_value(Expr *value);
 
-    NODE_IMPL_CORE(LetDecl)
+    PNODE_IMPL_CORE(LetDecl)
   };
 
   typedef std::vector<Expr *, Arena<Expr *>> InlineAsmArgs;
@@ -1474,7 +1474,7 @@ namespace qparse {
     void clear_args();
     void remove_arg(Expr *arg);
 
-    NODE_IMPL_CORE(InlineAsm)
+    PNODE_IMPL_CORE(InlineAsm)
   };
 
   class IfStmt : public FlowStmt {
@@ -1496,7 +1496,7 @@ namespace qparse {
     Stmt *get_else() const;
     void set_else(Stmt *else_);
 
-    NODE_IMPL_CORE(IfStmt)
+    PNODE_IMPL_CORE(IfStmt)
   };
 
   class WhileStmt : public FlowStmt {
@@ -1513,7 +1513,7 @@ namespace qparse {
     Stmt *get_body() const;
     void set_body(Stmt *body);
 
-    NODE_IMPL_CORE(WhileStmt)
+    PNODE_IMPL_CORE(WhileStmt)
   };
 
   class ForStmt : public FlowStmt {
@@ -1539,7 +1539,7 @@ namespace qparse {
     Block *get_body() const;
     void set_body(Block *body);
 
-    NODE_IMPL_CORE(ForStmt)
+    PNODE_IMPL_CORE(ForStmt)
   };
 
   class FormStmt : public FlowStmt {
@@ -1574,7 +1574,7 @@ namespace qparse {
     Stmt *get_body() const;
     void set_body(Stmt *body);
 
-    NODE_IMPL_CORE(FormStmt)
+    PNODE_IMPL_CORE(FormStmt)
   };
 
   class ForeachStmt : public FlowStmt {
@@ -1601,21 +1601,21 @@ namespace qparse {
     Stmt *get_body() const;
     void set_body(Stmt *body);
 
-    NODE_IMPL_CORE(ForeachStmt)
+    PNODE_IMPL_CORE(ForeachStmt)
   };
 
   class BreakStmt : public FlowStmt {
   public:
     BreakStmt() = default;
 
-    NODE_IMPL_CORE(BreakStmt)
+    PNODE_IMPL_CORE(BreakStmt)
   };
 
   class ContinueStmt : public FlowStmt {
   public:
     ContinueStmt() = default;
 
-    NODE_IMPL_CORE(ContinueStmt)
+    PNODE_IMPL_CORE(ContinueStmt)
   };
 
   class ReturnStmt : public FlowStmt {
@@ -1628,7 +1628,7 @@ namespace qparse {
     Expr *get_value() const;
     void set_value(Expr *value);
 
-    NODE_IMPL_CORE(ReturnStmt)
+    PNODE_IMPL_CORE(ReturnStmt)
   };
 
   class ReturnIfStmt : public FlowStmt {
@@ -1645,7 +1645,7 @@ namespace qparse {
     Expr *get_value() const;
     void set_value(Expr *value);
 
-    NODE_IMPL_CORE(ReturnIfStmt)
+    PNODE_IMPL_CORE(ReturnIfStmt)
   };
 
   class RetZStmt : public FlowStmt {
@@ -1662,7 +1662,7 @@ namespace qparse {
     Expr *get_value() const;
     void set_value(Expr *value);
 
-    NODE_IMPL_CORE(RetZStmt)
+    PNODE_IMPL_CORE(RetZStmt)
   };
 
   class RetVStmt : public FlowStmt {
@@ -1675,7 +1675,7 @@ namespace qparse {
     Expr *get_cond() const;
     void set_cond(Expr *cond);
 
-    NODE_IMPL_CORE(RetVStmt)
+    PNODE_IMPL_CORE(RetVStmt)
   };
 
   class CaseStmt : public FlowStmt {
@@ -1692,7 +1692,7 @@ namespace qparse {
     Stmt *get_body() const;
     void set_body(Stmt *body);
 
-    NODE_IMPL_CORE(CaseStmt)
+    PNODE_IMPL_CORE(CaseStmt)
   };
 
   typedef std::vector<CaseStmt *, Arena<CaseStmt *>> SwitchCases;
@@ -1721,7 +1721,7 @@ namespace qparse {
     Stmt *get_default() const;
     void set_default(Stmt *default_);
 
-    NODE_IMPL_CORE(SwitchStmt)
+    PNODE_IMPL_CORE(SwitchStmt)
   };
 
   ///=============================================================================
@@ -1731,7 +1731,7 @@ namespace qparse {
   public:
     TypedefDecl(String name = "", Type *type = nullptr) : Decl(name, type) {}
 
-    NODE_IMPL_CORE(TypedefDecl)
+    PNODE_IMPL_CORE(TypedefDecl)
   };
 
   class FnDecl : public Decl {
@@ -1741,7 +1741,7 @@ namespace qparse {
 
     virtual FuncTy *get_type() const override;
 
-    NODE_IMPL_CORE(FnDecl)
+    PNODE_IMPL_CORE(FnDecl)
   };
 
   class FnDef : public FnDecl {
@@ -1767,7 +1767,7 @@ namespace qparse {
     Expr *get_postcond() const;
     void set_postcond(Expr *postcond);
 
-    NODE_IMPL_CORE(FnDef)
+    PNODE_IMPL_CORE(FnDef)
   };
 
   class CompositeField : public Decl {
@@ -1781,7 +1781,7 @@ namespace qparse {
     Expr *get_value() const;
     void set_value(Expr *value);
 
-    NODE_IMPL_CORE(CompositeField)
+    PNODE_IMPL_CORE(CompositeField)
   };
 
   typedef std::vector<CompositeField *, Arena<CompositeField *>> StructDefFields;
@@ -1830,7 +1830,7 @@ namespace qparse {
     void clear_fields();
     void remove_field(CompositeField *field);
 
-    NODE_IMPL_CORE(StructDef)
+    PNODE_IMPL_CORE(StructDef)
   };
 
   typedef std::vector<CompositeField *, Arena<CompositeField *>> GroupDefFields;
@@ -1879,7 +1879,7 @@ namespace qparse {
     void clear_fields();
     void remove_field(CompositeField *field);
 
-    NODE_IMPL_CORE(GroupDef);
+    PNODE_IMPL_CORE(GroupDef);
   };
 
   typedef std::vector<CompositeField *, Arena<CompositeField *>> RegionDefFields;
@@ -1928,7 +1928,7 @@ namespace qparse {
     void clear_fields();
     void remove_field(CompositeField *field);
 
-    NODE_IMPL_CORE(RegionDef);
+    PNODE_IMPL_CORE(RegionDef);
   };
 
   typedef std::vector<CompositeField *, Arena<CompositeField *>> UnionDefFields;
@@ -1977,7 +1977,7 @@ namespace qparse {
     void clear_fields();
     void remove_field(CompositeField *field);
 
-    NODE_IMPL_CORE(UnionDef);
+    PNODE_IMPL_CORE(UnionDef);
   };
 
   typedef std::pair<String, ConstExpr *> EnumItem;
@@ -2001,7 +2001,7 @@ namespace qparse {
     void clear_items();
     void remove_item(EnumItem item);
 
-    NODE_IMPL_CORE(EnumDef)
+    PNODE_IMPL_CORE(EnumDef)
   };
 
   typedef std::set<String, std::less<String>, Arena<String>> SubsystemDeps;
@@ -2024,7 +2024,7 @@ namespace qparse {
     void clear_deps();
     void remove_dep(String dep);
 
-    NODE_IMPL_CORE(SubsystemDecl)
+    PNODE_IMPL_CORE(SubsystemDecl)
   };
 
   class ExportDecl : public Decl {
@@ -2044,7 +2044,7 @@ namespace qparse {
     ExportLang get_lang() const;
     void set_lang(ExportLang lang);
 
-    NODE_IMPL_CORE(ExportDecl)
+    PNODE_IMPL_CORE(ExportDecl)
   };
 }  // namespace qparse
 

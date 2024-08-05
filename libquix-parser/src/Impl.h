@@ -34,7 +34,7 @@
 
 #define __QPARSE_IMPL__
 
-#include <Report.h>
+#include <ParseReport.h>
 #include <quix-parser/Config.h>
 #include <quix-parser/Node.h>
 

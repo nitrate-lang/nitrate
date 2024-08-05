@@ -39,9 +39,9 @@
 
 #include "LibMacro.h"
 
-#ifndef QPARSER_ID
-#warning "QPARSER_ID must be defined"
-#define QPARSER_ID "?"
+#ifndef QPARSE_ID
+#warning "QPARSE_ID must be defined"
+#define QPARSE_ID "?"
 #endif
 
 static std::atomic<size_t> qparse_lib_ref_count = 0;
@@ -102,7 +102,7 @@ LIB_EXPORT void qparse_lib_deinit() {
 LIB_EXPORT const char* qparse_lib_version() {
   static const char* version_string =
 
-      "[" QPARSER_ID
+      "[" QPARSE_ID
       "] ["
 
 #if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \
