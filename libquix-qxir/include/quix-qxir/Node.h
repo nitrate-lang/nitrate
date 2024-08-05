@@ -32,6 +32,8 @@
 #ifndef __QUIX_QXIR_NODE_H__
 #define __QUIX_QXIR_NODE_H__
 
+#include <quix-lexer/Token.h>
+
 /**
  * @brief Quixcc abstract syntax tree node.
  */

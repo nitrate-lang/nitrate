@@ -46,7 +46,8 @@ thread_local qxir_t *g_qxir_inst;
 
 std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
   /// TODO: Implement plain text diagnostic message formatting
-
+  
+  (void)msg;
   throw std::runtime_error("Not implemented");
 
   // std::stringstream ss;
@@ -97,6 +98,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
 std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
   /// TODO: Implement plain text diagnostic message formatting
 
+  (void)msg;
   throw std::runtime_error("Not implemented");
 
   // std::stringstream ss;

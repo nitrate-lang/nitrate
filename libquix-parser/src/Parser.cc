@@ -385,7 +385,7 @@ static void install_sigguard(qparse_t *parser) {
   }
 }
 
-static void uninstall_sigguard(qparse_t *parser) {
+static void uninstall_sigguard() {
   std::lock_guard<std::mutex> lock(sigguard_lock);
 
   if (--sigguard_refcount > 0) {
@@ -410,7 +410,7 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
 
   try {
     /*=============== Swap in their arena ===============*/
-    qparse::qparse_ast_arena.swap(*arena);
+    qparse::qparse_arena.swap(*arena);
 
     /*== Install thread-local references to the parser ==*/
     qparse::diag::install_reference(parser);
@@ -428,13 +428,13 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
 
     /*==== Clean up signal handling for the parser ====*/
     parser_ctx = nullptr;
-    uninstall_sigguard(parser);
+    uninstall_sigguard();
 
     /*== Uninstall thread-local references to the parser ==*/
     qparse::diag::install_reference(nullptr);
 
     /*=============== Swap out their arena ===============*/
-    qparse::qparse_ast_arena.swap(*arena);
+    qparse::qparse_arena.swap(*arena);
 
     /*==================== Return status ====================*/
     return status && !parser->failed;
@@ -445,6 +445,9 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
 }
 
 LIB_EXPORT bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1) {
+  (void)x0;
+  (void)x1;
+
   qcore_arena_t arena;
   qparse_node_t *node = nullptr;
 
@@ -460,7 +463,7 @@ LIB_EXPORT bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1)
   }
 
   size_t len = 0;
-  char *repr = qparse_ast_repr(node, false, 2, &arena, &len);
+  char *repr = qparse_repr(node, false, 2, &arena, &len);
 
   fwrite(repr, 1, len, out);
 
@@ -493,5 +496,9 @@ LIB_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb, 
 
   auto adapter = [&](const char *msg) { cb(msg, std::strlen(msg), data); };
 
-  parser->impl->diag.render(adapter, qparse::diag::FormatStyle::Clang16Color);
+  if (no_ansi) {
+    parser->impl->diag.render(adapter, qparse::diag::FormatStyle::ClangPlain);
+  } else {
+    parser->impl->diag.render(adapter, qparse::diag::FormatStyle::Clang16Color);
+  }
 }

@@ -140,7 +140,7 @@ typedef enum qparse_ty_t {
 
 #define QAST_NODE_COUNT 91
 
-typedef enum qparse_ast_ftype_t {
+typedef enum qparse_ftype_t {
   QAST_FIELD_BOOL = 0,
   QAST_FIELD_CHAR = 1,
   QAST_FIELD_INT8 = 2,
@@ -155,7 +155,7 @@ typedef enum qparse_ast_ftype_t {
   QAST_FIELD_DOUBLE = 11,
   QAST_FIELD_QSTRING = 12,
   QAST_FIELD_QVEC = 13
-} qparse_ast_ftype_t;
+} qparse_ftype_t;
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -187,7 +187,7 @@ typedef struct qparse_node_t qparse_node_t;
 namespace qparse {
   class ArenaAllocatorImpl {
     /// WARNING: This must be the first member; C bindings use
-    /// qparse_ast_arena as of type `qcore_arena_t`.
+    /// qparse_arena as of type `qcore_arena_t`.
     qcore_arena_t m_arena;
 
   public:
@@ -202,7 +202,7 @@ namespace qparse {
     qcore_arena_t &get() { return m_arena; }
   };
 
-  extern "C" thread_local ArenaAllocatorImpl qparse_ast_arena;
+  extern "C" thread_local ArenaAllocatorImpl qparse_arena;
 
   template <class T>
   struct Arena {
@@ -214,7 +214,7 @@ namespace qparse {
     constexpr Arena(const Arena<U> &) noexcept {}
 
     [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(qparse_ast_arena.allocate(sizeof(T) * n));
+      return static_cast<T *>(qparse_arena.allocate(sizeof(T) * n));
     }
 
     void deallocate(T *p, std::size_t n) noexcept {
@@ -279,11 +279,11 @@ public:                                                                         
   }                                                                                        \
                                                                                            \
 public:                                                                                    \
-  virtual __typename *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const override { \
-    ArenaAllocatorImpl old = qparse_ast_arena;                                             \
-    qparse_ast_arena = arena;                                                              \
+  virtual __typename *clone(ArenaAllocatorImpl &arena = qparse_arena) const override { \
+    ArenaAllocatorImpl old = qparse_arena;                                             \
+    qparse_arena = arena;                                                              \
     __typename *node = clone_impl();                                                       \
-    qparse_ast_arena = old;                                                                \
+    qparse_arena = old;                                                                \
     return node;                                                                           \
   }
 
@@ -385,7 +385,7 @@ namespace qparse {
     bool is(const qparse_ty_t type) const;
     bool verify(std::ostream &os = std::cerr) const;
     void canonicalize();
-    virtual Node *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual Node *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
 
     static const char *type_name(qparse_ty_t type);
 
@@ -398,7 +398,7 @@ namespace qparse {
   public:
     Stmt() = default;
 
-    virtual Stmt *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual Stmt *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   class Type : public Node {
@@ -439,7 +439,7 @@ namespace qparse {
     bool is_const_ptr_to_const(const Type *type) const;
     bool is_string() const;
 
-    virtual Type *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual Type *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   typedef std::set<String, std::less<String>, Arena<String>> DeclTags;
@@ -471,7 +471,7 @@ namespace qparse {
     Visibility get_visibility() const;
     void set_visibility(Visibility visibility);
 
-    virtual Decl *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual Decl *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   class Expr : public Node {
@@ -485,7 +485,7 @@ namespace qparse {
     bool is_unaryexpr() const;
     bool is_ternaryexpr() const;
 
-    virtual Expr *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual Expr *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   class ExprStmt : public Stmt {
@@ -544,42 +544,42 @@ namespace qparse {
   public:
     LitExpr() = default;
 
-    virtual LitExpr *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual LitExpr *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   class FlowStmt : public Stmt {
   public:
     FlowStmt() = default;
 
-    virtual FlowStmt *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual FlowStmt *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   class DeclStmt : public Stmt {
   public:
     DeclStmt() = default;
 
-    virtual DeclStmt *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual DeclStmt *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   class TypeBuiltin : public Type {
   public:
     TypeBuiltin() = default;
 
-    virtual TypeBuiltin *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual TypeBuiltin *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   class TypeComplex : public Type {
   public:
     TypeComplex() = default;
 
-    virtual TypeComplex *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual TypeComplex *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   class TypeComposite : public Type {
   public:
     TypeComposite() = default;
 
-    virtual TypeComposite *clone(ArenaAllocatorImpl &arena = qparse_ast_arena) const = 0;
+    virtual TypeComposite *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
   class UnresolvedType : public Type {

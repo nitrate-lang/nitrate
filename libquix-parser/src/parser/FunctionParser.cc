@@ -49,7 +49,7 @@ struct GetPropState {
   size_t inline_ctr = 0;
 };
 
-static bool fn_get_property(qparse_t &job, qlex_t *rd, GetPropState &state) {
+static bool fn_get_property(qlex_t *rd, GetPropState &state) {
   qlex_tok_t tok = qlex_peek(rd);
 
   if (tok.is(qEofF)) {
@@ -159,12 +159,12 @@ struct FunctionProperties {
   Purity _purity = Purity::Impure;
 };
 
-static FunctionProperties read_function_properties(qparse_t &job, qlex_t *rd) {
+static FunctionProperties read_function_properties(qlex_t *rd) {
   GetPropState state;
 
   qlex_tok_t tok = qlex_peek(rd);
 
-  while (fn_get_property(job, rd, state));
+  while (fn_get_property(rd, state));
 
   if (state.noexcept_ctr > 1) {
     syntax(tok, "Multiple 'noexcept' specifiers");
@@ -248,7 +248,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   FnDecl *fndecl = FnDecl::get();
   FuncTy *ftype = FuncTy::get();
 
-  auto prop = read_function_properties(job, rd);
+  auto prop = read_function_properties(rd);
 
   qlex_tok_t tok = qlex_next(rd);
 

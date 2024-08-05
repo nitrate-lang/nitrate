@@ -31,7 +31,7 @@ void do_parse(qparse_t *parser) {
   }
 
   size_t outlen;
-  char *serial = qparse_ast_repr(node, false, 2, &arena, &outlen);
+  char *serial = qparse_repr(node, false, 2, &arena, &outlen);
 
   fwrite(serial, 1, outlen, stdout);
   qcore_arena_close(&arena);

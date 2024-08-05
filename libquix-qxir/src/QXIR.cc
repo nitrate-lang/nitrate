@@ -123,7 +123,7 @@ static void install_sigguard(qxir_t *qxir) {
   }
 }
 
-static void uninstall_sigguard(qxir_t *qxir) {
+static void uninstall_sigguard() {
   std::lock_guard<std::mutex> lock(sigguard_lock);
 
   if (--sigguard_refcount > 0) {
@@ -167,7 +167,7 @@ LIB_EXPORT bool qxir_do(qxir_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
 
     /*==== Clean up signal handling for the qxir ====*/
     qxir_ctx = nullptr;
-    uninstall_sigguard(qxir);
+    uninstall_sigguard();
 
     /*== Uninstall thread-local references to the qxir ==*/
     qxir::diag::install_reference(nullptr);
@@ -184,6 +184,9 @@ LIB_EXPORT bool qxir_do(qxir_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
 }
 
 LIB_EXPORT bool qxir_and_dump(qxir_t *qxir, FILE *out, void *x0, void *x1) {
+  (void)x0;
+  (void)x1;
+
   qcore_arena_t arena;
   qxir_node_t *node;
 
@@ -232,5 +235,9 @@ LIB_EXPORT void qxir_dumps(qxir_t *qxir, bool no_ansi, qxir_dump_cb cb, uintptr_
 
   auto adapter = [&](const char *msg) { cb(msg, std::strlen(msg), data); };
 
-  qxir->impl->diag.render(adapter, qxir::diag::FormatStyle::Clang16Color);
+  if (no_ansi) {
+    qxir->impl->diag.render(adapter, qxir::diag::FormatStyle::ClangPlain);
+  } else {
+    qxir->impl->diag.render(adapter, qxir::diag::FormatStyle::Clang16Color);
+  }
 }

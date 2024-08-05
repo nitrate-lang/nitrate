@@ -97,7 +97,7 @@ void qparse_free(qparse_t *parser);
  *
  * @note This function is thread safe.
  */
-char *qparse_ast_repr(const qparse_node_t *_node, bool minify, size_t indent, qcore_arena_t *arena,
+char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent, qcore_arena_t *arena,
                       size_t *outlen);
 
 /**
@@ -111,7 +111,7 @@ char *qparse_ast_repr(const qparse_node_t *_node, bool minify, size_t indent, qc
  *
  * @note This function is thread safe.
  */
-void qparse_ast_brepr(const qparse_node_t *node, bool compress, qcore_arena_t *arena, uint8_t **out,
+void qparse_brepr(const qparse_node_t *node, bool compress, qcore_arena_t *arena, uint8_t **out,
                       size_t *outlen);
 
 /**

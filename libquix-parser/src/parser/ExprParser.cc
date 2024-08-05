@@ -165,7 +165,7 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
       qlex_t *subrd = qlex_direct(sub.c_str(), sub.size(), "fstring");
       qlex_tok_t subtok = qlex_peek(subrd);
 
-      if (!parse_expr(job, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr, 0) || !expr) {
+      if (!parse_expr(job, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr, depth + 1) || !expr) {
         syntax(subtok, "Expected an expression in F-string parameter");
         qlex_free(subrd);
         return false;

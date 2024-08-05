@@ -39,6 +39,10 @@ using namespace qparse::parser;
 using namespace qparse::diag;
 
 bool qparse::parser::parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node) {
+  (void)job;
+  (void)rd;
+  (void)node;
+  
   syntax(qlex_peek(rd), "Inline assembly statement parsing not implemented");
   return false;
 }

@@ -836,9 +836,9 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
 }
 
-static char *qparse_ast_repr_arena(const Node *_node, bool minify, size_t indent,
+static char *qparse_repr_arena(const Node *_node, bool minify, size_t indent,
                                    qcore_arena_t *arena, size_t *outlen) {
-  qparse_ast_arena.swap(*arena);
+  qparse_arena.swap(*arena);
 
   /* Create a string stream based on the arena */
   ConvStream ss;
@@ -858,21 +858,21 @@ static char *qparse_ast_repr_arena(const Node *_node, bool minify, size_t indent
   std::basic_string<char, std::char_traits<char>, Arena<char>> str = ss.str();
   *outlen = str.size();
 
-  qparse_ast_arena.swap(*arena);
+  qparse_arena.swap(*arena);
 
   char *unsafe_bypass = static_cast<char *>(str.data());
 
   return unsafe_bypass;
 }
 
-static char *qparse_ast_repr_malloc(const Node *_node, bool minify, size_t indent, size_t *outlen) {
+static char *qparse_repr_malloc(const Node *_node, bool minify, size_t indent, size_t *outlen) {
   qcore_arena_t scratch;
   char *out = nullptr, *out_tmp = nullptr;
 
   qcore_arena_open(&scratch);
 
   try {
-    out = qparse_ast_repr_arena(_node, minify, indent, &scratch, outlen);
+    out = qparse_repr_arena(_node, minify, indent, &scratch, outlen);
 
     if (out) {
       out_tmp = static_cast<char *>(malloc(*outlen));
@@ -893,7 +893,7 @@ static char *qparse_ast_repr_malloc(const Node *_node, bool minify, size_t inden
   return out;
 }
 
-LIB_EXPORT char *qparse_ast_repr(const Node *_node, bool minify, size_t indent,
+LIB_EXPORT char *qparse_repr(const Node *_node, bool minify, size_t indent,
                                  qcore_arena_t *arena, size_t *outlen) {
   size_t outlen_v = 0;
 
@@ -903,9 +903,9 @@ LIB_EXPORT char *qparse_ast_repr(const Node *_node, bool minify, size_t indent,
   }
 
   if (arena) {
-    return qparse_ast_repr_arena(_node, minify, indent, arena, outlen);
+    return qparse_repr_arena(_node, minify, indent, arena, outlen);
   } else {
-    return qparse_ast_repr_malloc(_node, minify, indent, outlen);
+    return qparse_repr_malloc(_node, minify, indent, outlen);
   }
 }
 
@@ -939,7 +939,7 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
   }
 }
 
-LIB_EXPORT void qparse_ast_brepr(const Node *node, bool compress, qcore_arena_t *arena,
+LIB_EXPORT void qparse_brepr(const Node *node, bool compress, qcore_arena_t *arena,
                                  uint8_t **out, size_t *outlen) {
   char *repr{};
   qcore_arena_t scratch{};
@@ -958,7 +958,7 @@ LIB_EXPORT void qparse_ast_brepr(const Node *node, bool compress, qcore_arena_t 
   }
 
   /* Generate the AST representation as ASCII */
-  if ((repr = qparse_ast_repr(node, true, 0, arena, outlen)) == NULL) {
+  if ((repr = qparse_repr(node, true, 0, arena, outlen)) == NULL) {
     qcore_panic("Failed to generate AST representation");
   }
 

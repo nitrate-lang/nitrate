@@ -56,7 +56,7 @@ using namespace qparse;
 
 ///=============================================================================
 namespace qparse {
-  thread_local ArenaAllocatorImpl qparse_ast_arena;
+  thread_local ArenaAllocatorImpl qparse_arena;
 }
 
 ArenaAllocatorImpl::ArenaAllocatorImpl() { qcore_arena_open(&m_arena); }
@@ -525,9 +525,9 @@ std::string Node::to_string(bool minify, bool binary_repr) const {
   uint8_t *outbuf = nullptr;
 
   if (binary_repr) {
-    qparse_ast_brepr(this, minify, &qparse_ast_arena.get(), &outbuf, &len);
+    qparse_brepr(this, minify, &qparse_arena.get(), &outbuf, &len);
   } else {
-    outbuf = (uint8_t *)qparse_ast_repr(this, minify, INDENT_STEP, &qparse_ast_arena.get(), &len);
+    outbuf = (uint8_t *)qparse_repr(this, minify, INDENT_STEP, &qparse_arena.get(), &len);
   }
 
   return std::string((char *)outbuf, len);
@@ -5358,24 +5358,24 @@ void ExportDecl::set_lang(ExportLang lang) { m_lang = lang; }
 
 ///=============================================================================
 
-LIB_EXPORT qparse_node_t *qparse_ast_alloc(qparse_ty_t type, qcore_arena_t *arena) {
+LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
   if (!arena) {
-    arena = &qparse_ast_arena.get();
+    arena = &qparse_arena.get();
   }
 
   Node *node = nullptr;
 
-  qparse_ast_arena.swap(*arena);
+  qparse_arena.swap(*arena);
 
   switch (type) {
     case QAST_NODE_STMT:
-      qcore_panic("qparse_ast_alloc(): QAST_NODE_STMT is not valid here");
+      qcore_panic("qparse_alloc(): QAST_NODE_STMT is not valid here");
     case QAST_NODE_TYPE:
-      qcore_panic("qparse_ast_alloc(): QAST_NODE_TYPE is not valid here");
+      qcore_panic("qparse_alloc(): QAST_NODE_TYPE is not valid here");
     case QAST_NODE_DECL:
-      qcore_panic("qparse_ast_alloc(): QAST_NODE_DECL is not valid here");
+      qcore_panic("qparse_alloc(): QAST_NODE_DECL is not valid here");
     case QAST_NODE_EXPR:
-      qcore_panic("qparse_ast_alloc(): QAST_NODE_EXPR is not valid here");
+      qcore_panic("qparse_alloc(): QAST_NODE_EXPR is not valid here");
     case QAST_NODE_CEXPR:
       node = ConstExpr::get();
       break;
@@ -5639,7 +5639,7 @@ LIB_EXPORT qparse_node_t *qparse_ast_alloc(qparse_ty_t type, qcore_arena_t *aren
       break;
   }
 
-  qparse_ast_arena.swap(*arena);
+  qparse_arena.swap(*arena);
 
   return node;
 }
