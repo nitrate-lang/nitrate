@@ -56,13 +56,13 @@ namespace qpkg {
       static void push(const std::string &msg, Level lvl, float weight, bool use_colors,
                        bool debug);
 
-  public:
+    public:
       /// @brief Initialize the adapter
       /// @warning Must be called before any other Logger method
       static void PluginAndInit(bool debug, bool use_colors);
     };
 
-  } // namespace core
-} // namespace qpkg
+  }  // namespace core
+}  // namespace qpkg
 
-#endif // __QPKG_CORE_ADAPTER_HH__
+#endif  // __QPKG_CORE_ADAPTER_HH__

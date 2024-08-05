@@ -47,8 +47,7 @@ qpkg::core::ThreadLogger &qpkg::core::ThreadLogger::get(qpkg::core::Level level,
                                                         qpkg::core::LoggerFlushCallback flush) {
   static thread_local std::map<Level, std::unique_ptr<ThreadLogger>> m_instances;
 
-  if (!m_instances.count(level))
-    m_instances[level] = std::make_unique<ThreadLogger>(level, flush);
+  if (!m_instances.count(level)) m_instances[level] = std::make_unique<ThreadLogger>(level, flush);
 
   m_instances[level]->m_stream.str("");
   return *m_instances[level];
@@ -163,22 +162,22 @@ qpkg::core::Process &qpkg::core::Process::fatal(const std::string &msg, float we
 qpkg::core::LoggerStream qpkg::core::Process::stream(qpkg::core::Level lvl, float weight) {
   m_phase = Phase::RUNNING;
   switch (lvl) {
-  case Level::DEBUG:
-    return GlobalCollector::get().debug().stream(weight);
-  case Level::GOOD:
-    return GlobalCollector::get().good().stream(weight);
-  case Level::BOLD:
-    return GlobalCollector::get().bold().stream(weight);
-  case Level::INFO:
-    return GlobalCollector::get().info().stream(weight);
-  case Level::WARN:
-    return GlobalCollector::get().warn().stream(weight);
-  case Level::ERROR:
-    return GlobalCollector::get().error().stream(weight);
-  case Level::FATAL:
-    return GlobalCollector::get().fatal().stream(weight);
-  default:
-    __builtin_unreachable();
+    case Level::DEBUG:
+      return GlobalCollector::get().debug().stream(weight);
+    case Level::GOOD:
+      return GlobalCollector::get().good().stream(weight);
+    case Level::BOLD:
+      return GlobalCollector::get().bold().stream(weight);
+    case Level::INFO:
+      return GlobalCollector::get().info().stream(weight);
+    case Level::WARN:
+      return GlobalCollector::get().warn().stream(weight);
+    case Level::ERROR:
+      return GlobalCollector::get().error().stream(weight);
+    case Level::FATAL:
+      return GlobalCollector::get().fatal().stream(weight);
+    default:
+      __builtin_unreachable();
   }
 }
 
@@ -190,21 +189,21 @@ void qpkg::core::Process::operator+=(float weight) { info("", weight); }
 
 qpkg::core::LoggerStream qpkg::core::LOG(qpkg::core::Level lvl) {
   switch (lvl) {
-  case Level::DEBUG:
-    return GlobalCollector::get().debug().stream(0);
-  case Level::GOOD:
-    return GlobalCollector::get().good().stream(0);
-  case Level::BOLD:
-    return GlobalCollector::get().bold().stream(0);
-  case Level::INFO:
-    return GlobalCollector::get().info().stream(0);
-  case Level::WARN:
-    return GlobalCollector::get().warn().stream(0);
-  case Level::ERROR:
-    return GlobalCollector::get().error().stream(0);
-  case Level::FATAL:
-    return GlobalCollector::get().fatal().stream(0);
-  default:
-    __builtin_unreachable();
+    case Level::DEBUG:
+      return GlobalCollector::get().debug().stream(0);
+    case Level::GOOD:
+      return GlobalCollector::get().good().stream(0);
+    case Level::BOLD:
+      return GlobalCollector::get().bold().stream(0);
+    case Level::INFO:
+      return GlobalCollector::get().info().stream(0);
+    case Level::WARN:
+      return GlobalCollector::get().warn().stream(0);
+    case Level::ERROR:
+      return GlobalCollector::get().error().stream(0);
+    case Level::FATAL:
+      return GlobalCollector::get().fatal().stream(0);
+    default:
+      __builtin_unreachable();
   }
 }

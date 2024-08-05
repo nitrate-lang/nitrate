@@ -257,7 +257,7 @@ namespace qparse {
   };
 };  // namespace qparse
 
-#define PNODE_IMPL_CORE(__typename)                                                         \
+#define PNODE_IMPL_CORE(__typename)                                                        \
 protected:                                                                                 \
   virtual bool verify_impl(std::ostream &os) const override;                               \
                                                                                            \

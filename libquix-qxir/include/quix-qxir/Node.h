@@ -167,7 +167,6 @@ typedef struct qxir_node_t qxir_node_t;
 
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>
-#include <quix-lexer/Token.h>
 
 #include <cassert>
 #include <iostream>
@@ -257,34 +256,34 @@ namespace qxir {
   };
 };  // namespace qxir
 
-#define QNODE_IMPL_CORE(__typename)                                                       \
-protected:                                                                               \
-  virtual bool verify_impl(std::ostream &os) const override;                             \
-                                                                                         \
-protected:                                                                               \
-  virtual void canonicalize_impl() override;                                             \
-                                                                                         \
-protected:                                                                               \
-  virtual void print_impl(std::ostream &os, bool debug) const override;                  \
-                                                                                         \
-public:                                                                                  \
-  virtual __typename *clone_impl() const override;                                       \
-                                                                                         \
-public:                                                                                  \
-public:                                                                                  \
-  template <typename T = __typename, typename... Args>                                   \
-  static __typename *get(Args &&...args) {                                               \
-    void *ptr = Arena<__typename>().allocate(1);                                         \
-    return new (ptr) __typename(std::forward<Args>(args)...);                            \
-  }                                                                                      \
-                                                                                         \
-public:                                                                                  \
+#define QNODE_IMPL_CORE(__typename)                                                  \
+protected:                                                                           \
+  virtual bool verify_impl(std::ostream &os) const override;                         \
+                                                                                     \
+protected:                                                                           \
+  virtual void canonicalize_impl() override;                                         \
+                                                                                     \
+protected:                                                                           \
+  virtual void print_impl(std::ostream &os, bool debug) const override;              \
+                                                                                     \
+public:                                                                              \
+  virtual __typename *clone_impl() const override;                                   \
+                                                                                     \
+public:                                                                              \
+public:                                                                              \
+  template <typename T = __typename, typename... Args>                               \
+  static __typename *get(Args &&...args) {                                           \
+    void *ptr = Arena<__typename>().allocate(1);                                     \
+    return new (ptr) __typename(std::forward<Args>(args)...);                        \
+  }                                                                                  \
+                                                                                     \
+public:                                                                              \
   virtual __typename *clone(ArenaAllocatorImpl &arena = qxir_arena) const override { \
     ArenaAllocatorImpl old = qxir_arena;                                             \
     qxir_arena = arena;                                                              \
-    __typename *node = clone_impl();                                                     \
+    __typename *node = clone_impl();                                                 \
     qxir_arena = old;                                                                \
-    return node;                                                                         \
+    return node;                                                                     \
   }
 
 class qxir_node_t {

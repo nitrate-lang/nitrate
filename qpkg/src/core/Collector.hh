@@ -47,18 +47,19 @@ namespace qpkg {
       std::ostringstream &m_stream;
       std::function<void(const std::string &)> m_flush;
 
-  public:
+    public:
       LoggerStream(std::ostringstream &stream, std::function<void(const std::string &)> flush);
       LoggerStream &operator<<(std::ostream &(*f)(std::ostream &));
 
-      template <class T> LoggerStream &operator<<(const T &msg) {
+      template <class T>
+      LoggerStream &operator<<(const T &msg) {
         m_stream << msg;
         return *this;
       }
     };
 
     class IFrontLogger {
-  public:
+    public:
       virtual IFrontLogger &push(const std::string &msg, float weight) = 0;
       virtual LoggerStream stream(float weight) = 0;
     };
@@ -68,7 +69,7 @@ namespace qpkg {
       LoggerFlushCallback m_flush;
       Level m_level;
 
-  public:
+    public:
       ThreadLogger(Level level, LoggerFlushCallback flush);
       virtual ~ThreadLogger() = default;
 
@@ -85,7 +86,7 @@ namespace qpkg {
       GlobalCollector(const GlobalCollector &) = delete;
       GlobalCollector &operator=(const GlobalCollector &) = delete;
 
-  public:
+    public:
       static GlobalCollector &get();
       void setWriter(LoggerFlushCallback new_flush);
       void push(const std::string &msg, Level lvl, float weight);
@@ -100,49 +101,49 @@ namespace qpkg {
     };
 
     class Debug {
-  public:
+    public:
       static void push(const std::string &msg, float weight = 0) {
         GlobalCollector::get().debug().push(msg, weight);
       }
     };
 
     class Good {
-  public:
+    public:
       static void push(const std::string &msg, float weight = 0) {
         GlobalCollector::get().good().push(msg, weight);
       }
     };
 
     class Bold {
-  public:
+    public:
       static void push(const std::string &msg, float weight = 0) {
         GlobalCollector::get().bold().push(msg, weight);
       }
     };
 
     class Info {
-  public:
+    public:
       static void push(const std::string &msg, float weight = 0) {
         GlobalCollector::get().info().push(msg, weight);
       }
     };
 
     class Warn {
-  public:
+    public:
       static void push(const std::string &msg, float weight = 0) {
         GlobalCollector::get().warn().push(msg, weight);
       }
     };
 
     class Error {
-  public:
+    public:
       static void push(const std::string &msg, float weight = 0) {
         GlobalCollector::get().error().push(msg, weight);
       }
     };
 
     class Fatal {
-  public:
+    public:
       static void push(const std::string &msg, float weight = 0) {
         GlobalCollector::get().fatal().push(msg, weight);
       }
@@ -160,7 +161,7 @@ namespace qpkg {
 
       Process(const std::string &name);
 
-  public:
+    public:
       static Process create(const std::string &name);
 
       Process &debug(const std::string &msg, float weight = 0);
@@ -178,7 +179,7 @@ namespace qpkg {
     };
 
     LoggerStream LOG(Level lvl);
-  } // namespace core
-} // namespace qpkg
+  }  // namespace core
+}  // namespace qpkg
 
-#endif // __QPKG_CORE_COLLECTOR_HH__
+#endif  // __QPKG_CORE_COLLECTOR_HH__

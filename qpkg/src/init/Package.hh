@@ -67,13 +67,21 @@ namespace qpkg {
       void writeLicense();
       void writeMain();
 
-  public:
+    public:
       Package(std::filesystem::path output, std::string name, std::string license,
               std::string author, std::string email, std::string url, std::string version,
               std::string description, PackageType type, bool verbose, bool force)
-          : m_output(output), m_name(name), m_license(license), m_author(author), m_email(email),
-            m_url(url), m_version(version), m_description(description), m_type(type),
-            m_verbose(verbose), m_force(force) {
+          : m_output(output),
+            m_name(name),
+            m_license(license),
+            m_author(author),
+            m_email(email),
+            m_url(url),
+            m_version(version),
+            m_description(description),
+            m_type(type),
+            m_verbose(verbose),
+            m_force(force) {
         (void)m_verbose;
       }
 
@@ -93,7 +101,7 @@ namespace qpkg {
       bool m_verbose;
       bool m_force;
 
-  public:
+    public:
       PackageBuilder() : m_verbose(false), m_force(false) {}
 
       PackageBuilder &output(const std::string &output);
@@ -110,7 +118,7 @@ namespace qpkg {
 
       Package build();
     };
-  } // namespace init
-} // namespace qpkg
+  }  // namespace init
+}  // namespace qpkg
 
-#endif // __QPKG_INIT_PACKAGE_HH__
+#endif  // __QPKG_INIT_PACKAGE_HH__

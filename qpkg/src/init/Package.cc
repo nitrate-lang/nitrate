@@ -131,15 +131,15 @@ fn main() {
 
 bool qpkg::init::Package::createPackage() {
   switch (m_type) {
-  case PackageType::PROGRAM:
-    LOG(core::DEBUG) << "Creating program package" << std::endl;
-    break;
-  case PackageType::STATICLIB:
-    LOG(core::DEBUG) << "Creating static library package" << std::endl;
-    break;
-  case PackageType::SHAREDLIB:
-    LOG(core::DEBUG) << "Creating shared library package" << std::endl;
-    break;
+    case PackageType::PROGRAM:
+      LOG(core::DEBUG) << "Creating program package" << std::endl;
+      break;
+    case PackageType::STATICLIB:
+      LOG(core::DEBUG) << "Creating static library package" << std::endl;
+      break;
+    case PackageType::SHAREDLIB:
+      LOG(core::DEBUG) << "Creating shared library package" << std::endl;
+      break;
   }
 
   try {
@@ -168,14 +168,11 @@ bool qpkg::init::Package::createPackage() {
     grp.set("name", m_name);
     grp.set("description", m_description);
 
-    if (!m_author.empty())
-      grp.set("authors", std::vector<std::string>({m_author}));
+    if (!m_author.empty()) grp.set("authors", std::vector<std::string>({m_author}));
 
-    if (!m_email.empty())
-      grp.set("emails", std::vector<std::string>({m_email}));
+    if (!m_email.empty()) grp.set("emails", std::vector<std::string>({m_email}));
 
-    if (!m_url.empty())
-      grp.set("url", m_url);
+    if (!m_url.empty()) grp.set("url", m_url);
 
     if (!m_license.empty())
       grp.set("licenses", std::vector<std::string>({m_license}));
@@ -186,15 +183,15 @@ bool qpkg::init::Package::createPackage() {
     grp.set("headers", std::vector<std::string>({"include"}));
 
     switch (m_type) {
-    case PackageType::PROGRAM:
-      grp.set("target", "executable");
-      break;
-    case PackageType::STATICLIB:
-      grp.set("target", "staticlib");
-      break;
-    case PackageType::SHAREDLIB:
-      grp.set("target", "sharedlib");
-      break;
+      case PackageType::PROGRAM:
+        grp.set("target", "executable");
+        break;
+      case PackageType::STATICLIB:
+        grp.set("target", "staticlib");
+        break;
+      case PackageType::SHAREDLIB:
+        grp.set("target", "sharedlib");
+        break;
     }
 
     conf::Config config(grp, 0);
@@ -218,15 +215,15 @@ bool qpkg::init::Package::createPackage() {
     }
 
     switch (m_type) {
-    case PackageType::PROGRAM:
-      LOG(core::DEBUG) << "Program package created" << std::endl;
-      break;
-    case PackageType::STATICLIB:
-      LOG(core::DEBUG) << "Static library package created" << std::endl;
-      break;
-    case PackageType::SHAREDLIB:
-      LOG(core::DEBUG) << "Shared library package created" << std::endl;
-      break;
+      case PackageType::PROGRAM:
+        LOG(core::DEBUG) << "Program package created" << std::endl;
+        break;
+      case PackageType::STATICLIB:
+        LOG(core::DEBUG) << "Static library package created" << std::endl;
+        break;
+      case PackageType::SHAREDLIB:
+        LOG(core::DEBUG) << "Shared library package created" << std::endl;
+        break;
     }
 
     return true;
@@ -319,8 +316,8 @@ qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::version(const std::strin
   return *this;
 }
 
-qpkg::init::PackageBuilder &
-qpkg::init::PackageBuilder::description(const std::string &description) {
+qpkg::init::PackageBuilder &qpkg::init::PackageBuilder::description(
+    const std::string &description) {
   m_description = description;
   return *this;
 }

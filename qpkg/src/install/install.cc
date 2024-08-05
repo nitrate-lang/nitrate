@@ -45,8 +45,9 @@ bool download_git_repo(const std::string &url, const std::string &dest) {
   setenv("QPKG_GIT_INJECT_URL", url.c_str(), 1);
   setenv("QPKG_GIT_INJECT_DEST", dest.c_str(), 1);
 
-  bool e = system("git clone --recurse-submodules --quiet $QPKG_GIT_INJECT_URL "
-                  "$QPKG_GIT_INJECT_DEST") == 0;
+  bool e = system(
+               "git clone --recurse-submodules --quiet $QPKG_GIT_INJECT_URL "
+               "$QPKG_GIT_INJECT_DEST") == 0;
   if (e) {
     std::cerr << "Successfully downloaded package" << std::endl;
   } else {
@@ -60,7 +61,7 @@ bool qpkg::install::install_from_url(std::string url, const std::string &dest,
   enum class FetchType {
     GIT,
     UNKNOWN,
-  } fetch_type = FetchType::GIT; // Assume git for now
+  } fetch_type = FetchType::GIT;  // Assume git for now
 
   /*=========== PROCESS URL ===========*/
   if (url.ends_with("/")) {
@@ -99,16 +100,16 @@ bool qpkg::install::install_from_url(std::string url, const std::string &dest,
   /*=========== FETCH PACKAGE ===========*/
 
   switch (fetch_type) {
-  case FetchType::GIT:
-    if (!download_git_repo(url, package_path.string())) {
-      std::cerr << "Failed to fetch package: " << package_name << std::endl;
-      return false;
-    }
-    return true;
+    case FetchType::GIT:
+      if (!download_git_repo(url, package_path.string())) {
+        std::cerr << "Failed to fetch package: " << package_name << std::endl;
+        return false;
+      }
+      return true;
 
-  default:
-    std::cerr << "Unable to fetch package: " << package_name << std::endl;
-    std::cerr << "Unknown repository type" << std::endl;
-    return false;
+    default:
+      std::cerr << "Unable to fetch package: " << package_name << std::endl;
+      std::cerr << "Unknown repository type" << std::endl;
+      return false;
   }
 }

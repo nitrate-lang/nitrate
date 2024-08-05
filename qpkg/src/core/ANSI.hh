@@ -93,12 +93,13 @@ namespace qpkg {
     class AnsiCout final {
       Style style;
 
-  public:
+    public:
       AnsiCout();
 
       AnsiCout &operator<<(const std::string &str);
 
-      template <class T> AnsiCout &write(const T &msg) {
+      template <class T>
+      AnsiCout &write(const T &msg) {
         std::stringstream ss;
         ss << msg;
         return operator<<(ss.str());
@@ -112,7 +113,10 @@ namespace qpkg {
       }
     };
 
-    template <class T> AnsiCout &operator<<(AnsiCout &out, const T &msg) { return out.write(msg); }
+    template <class T>
+    AnsiCout &operator<<(AnsiCout &out, const T &msg) {
+      return out.write(msg);
+    }
 
     static inline void operator<<(AnsiCout &out, std::ostream &(*var)(std::ostream &)) {
       if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
@@ -123,8 +127,8 @@ namespace qpkg {
     static inline void operator|=(AnsiCout &out, Style style) { out.set_style(style); }
 
     extern thread_local AnsiCout acout;
-  } // namespace ansi
+  }  // namespace ansi
 
-} // namespace qpkg
+}  // namespace qpkg
 
-#endif // __QPKG_CORE_ANSI_HH__
+#endif  // __QPKG_CORE_ANSI_HH__

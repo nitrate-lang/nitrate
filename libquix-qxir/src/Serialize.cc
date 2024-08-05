@@ -836,8 +836,8 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
 }
 
-static char *qxir_repr_arena(const Node *_node, bool minify, size_t indent,
-                                 qcore_arena_t *arena, size_t *outlen) {
+static char *qxir_repr_arena(const Node *_node, bool minify, size_t indent, qcore_arena_t *arena,
+                             size_t *outlen) {
   qxir_arena.swap(*arena);
 
   /* Create a string stream based on the arena */
@@ -894,7 +894,7 @@ static char *qxir_repr_malloc(const Node *_node, bool minify, size_t indent, siz
 }
 
 LIB_EXPORT char *qxir_repr(const Node *_node, bool minify, size_t indent, qcore_arena_t *arena,
-                               size_t *outlen) {
+                           size_t *outlen) {
   size_t outlen_v = 0;
 
   /* Eliminate internal edge cases */
@@ -940,7 +940,7 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
 }
 
 LIB_EXPORT void qxir_brepr(const Node *node, bool compress, qcore_arena_t *arena, uint8_t **out,
-                               size_t *outlen) {
+                           size_t *outlen) {
   char *repr{};
   qcore_arena_t scratch{};
   bool our_arena{};

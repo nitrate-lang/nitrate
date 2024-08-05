@@ -36,7 +36,6 @@
 #include <initializer_list>
 #endif
 
-#include <quix-lexer/Lexer.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

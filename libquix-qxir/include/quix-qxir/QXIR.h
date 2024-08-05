@@ -53,8 +53,8 @@ typedef struct qxir_t {
 } qxir_t;
 
 /**
- * @brief Create a new qxir instance from non-owning references to a lexer and
- * qxir configuration.
+ * @brief Create a new qxir instance from non-owning references to a root node and qxir
+ * configuration.
  *
  * @param root The root node of the parse tree.
  * @param conf QXIR configuration object.
@@ -77,8 +77,8 @@ qxir_t *qxir_new(qparse_node_t *root, qxir_conf_t *conf);
  *
  * @note If `!qxir`, this function is a no-op.
  *
- * @note This function will not free the lexer or configuration associated with
- * the it. The caller is responsible for freeing the lexer and configuration
+ * @note This function will not free the root node or configuration associated with
+ * the it. The caller is responsible for freeing the root node and configuration
  * separately.
  * @note This function is thread safe.
  */
