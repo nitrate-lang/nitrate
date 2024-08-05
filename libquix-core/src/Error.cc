@@ -32,7 +32,6 @@
 #include <execinfo.h>
 #include <quix-core/Error.h>
 
-#include <cstdarg>
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -264,17 +263,21 @@ static void panic_render_report(const std::vector<std::string> &lines) {
 LIB_EXPORT void qcore_panic_(const char *msg) { qcore_panicf_("%s", msg); }
 
 LIB_EXPORT void qcore_panicf_(const char *_fmt, ...) {
-  char *_msg = nullptr;
+  va_list args;
+  va_start(args, _fmt);
+  qcore_vpanicf_(_fmt, args);
+  va_end(args);  // Unreachable, but whatever
+} // Unreachable, but whatever
+
+LIB_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
+  char *msg = nullptr;
 
   { /* Parse the format string */
-    va_list args;
-    va_start(args, _fmt);
-    int ret = vasprintf(&_msg, _fmt, args);
+    int ret = vasprintf(&msg, fmt, args);
     (void)ret;
-    va_end(args);
   }
 
-  panic_render_report(panic_split_message(_msg));
+  panic_render_report(panic_split_message(msg));
 
   abort();
 }
@@ -284,6 +287,10 @@ LIB_EXPORT void qcore_debug_(const char *msg) { return qcore_debugf_("%s", msg);
 LIB_EXPORT void qcore_debugf_(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
+  qcore_vdebugf_(fmt, args);
   va_end(args);
+}
+
+LIB_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) { 
+  vfprintf(stderr, fmt, args);
 }

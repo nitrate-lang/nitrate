@@ -38,6 +38,7 @@ extern "C" {
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 /**
  * @brief Print debug into and abort.
@@ -59,10 +60,11 @@ void qcore_panic_(const char *msg) __attribute__((noreturn));
  * @note This function will print the message to stderr and abort the program.
  */
 void qcore_panicf_(const char *fmt, ...) __attribute__((noreturn));
+void qcore_vpanicf_(const char *fmt, va_list args) __attribute__((noreturn));
 
 void qcore_debug_(const char *msg);
-
 void qcore_debugf_(const char *fmt, ...);
+void qcore_vdebugf_(const char *fmt, va_list args);
 
 #define qcore_panicf(fmt, ...)                                                                     \
   qcore_panicf_(fmt "\nSource File: %s\nSource Line: %d\nFunction: %s\n", ##__VA_ARGS__, __FILE__, \
