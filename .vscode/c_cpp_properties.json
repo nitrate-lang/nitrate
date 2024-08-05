@@ -7,6 +7,9 @@
                 "${workspaceFolder}/libquix-core/include",
                 "${workspaceFolder}/libquix-lexer/include",
                 "${workspaceFolder}/libquix-parser/include",
+                "${workspaceFolder}/libquix-parser/src",
+                "${workspaceFolder}/libquix-qxir/include",
+                "${workspaceFolder}/libquix-qxir/src",
                 "${workspaceFolder}/qpkg/src"
             ],
             "defines": [],

@@ -23,18 +23,19 @@ target_compile_options(qpkg PRIVATE -Werror -O3 -g -Wall -Wextra -Wpedantic -Wno
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_options(qpkg PRIVATE  -DQPKG_ID=${QPKG_ID} -flto)
-    target_link_libraries(qpkg PRIVATE yaml-cpp boost_filesystem quix-parser quix-lexer quix-core)
+    target_link_libraries(qpkg PRIVATE yaml-cpp boost_filesystem quix-qxir quix-parser quix-lexer quix-core)
     target_link_options(qpkg PRIVATE -flto)
-    add_dependencies(qpkg quix-parser quix-lexer quix-core)
+    add_dependencies(qpkg quix-parser quix-lexer quix-core quix-qxir)
 else()
     target_compile_options(qpkg PRIVATE  -DQPKG_ID="undefined")
-    target_link_libraries(qpkg PRIVATE yaml-cpp boost_filesystem quix-parser quix-lexer quix-core -fsanitize=address -fsanitize=undefined )
-    add_dependencies(qpkg quix-parser quix-lexer quix-core)
+    target_link_libraries(qpkg PRIVATE yaml-cpp boost_filesystem quix-qxir quix-parser quix-lexer quix-core -fsanitize=address -fsanitize=undefined )
+    add_dependencies(qpkg quix-parser quix-lexer quix-core quix-qxir)
 endif()
 
 target_include_directories(qpkg PRIVATE ${CMAKE_SOURCE_DIR}/libquix-core/include
                                         ${CMAKE_SOURCE_DIR}/libquix-lexer/include
                                         ${CMAKE_SOURCE_DIR}/libquix-parser/include
+                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
 )
 
 if (BUILD_TESTING)

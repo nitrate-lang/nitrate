@@ -33,6 +33,7 @@
 #include <quix-core/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
+#include <quix-qxir/Lib.h>
 
 // #include <build/EngineBuilder.hh>
 #include <clean/Cleanup.hh>
@@ -73,8 +74,8 @@ static std::string qpkg_deps_version_string() {
 
   std::stringstream ss;
 
-  std::array<std::string_view, 3> QPKG_DEPS = {
-      qcore_lib_version(), qlex_lib_version(), qparse_lib_version()
+  std::array<std::string_view, 4> QPKG_DEPS = {
+      qcore_lib_version(), qlex_lib_version(), qparse_lib_version(), qxir_lib_version()
 
   };
 

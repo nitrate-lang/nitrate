@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.15)
+project(libquix-qxir-tests CXX)
+
+file(GLOB_RECURSE PROGRAMS "*.cc")
+
+foreach(PROGRAM ${PROGRAMS})
+  get_filename_component(PROGRAM_NAME ${PROGRAM} NAME_WE)
+  add_executable(${PROGRAM_NAME} ${PROGRAM})
+  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(${PROGRAM_NAME} PRIVATE -fsanitize=address -fsanitize=undefined)
+    target_link_options(${PROGRAM_NAME} PRIVATE -fsanitize=address -fsanitize=undefined)
+  endif()
+  target_link_libraries(${PROGRAM_NAME} quix-qxir quix-lexer)
+  target_include_directories(${PROGRAM_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
+  add_dependencies(${PROGRAM_NAME} quix-qxir quix-lexer)
+endforeach()
