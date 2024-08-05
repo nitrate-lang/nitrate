@@ -9,6 +9,12 @@ void dump_callback(const char *msg, size_t len, uintptr_t userdata) {
   printf("%.*s\n", (int)len, msg);
 }
 
+void setup_config(qparse_conf_t *conf) {
+  qparse_conf_setopt(conf, QPK_VERBOSE, QPV_TRUE);
+  qparse_conf_setopt(conf, QPK_CRASHGUARD, QPV_ON);
+  qparse_conf_setopt(conf, QPV_FASTERROR, QPV_ON);
+}
+
 void do_parse(qparse_t *parser) {
   qcore_arena_t arena;
   qcore_arena_open(&arena);
@@ -70,6 +76,8 @@ int example_parser(const char *path) {
     goto cleanup;
   }
 
+  setup_config(conf);
+
   if ((parser = qparse_new(lexer, conf)) == NULL) {
     printf("Error: %s\n", qparse_strerror());
 
@@ -98,7 +106,5 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  example_parser(argv[1]);
-
-  return 0;
+  return example_parser(argv[1]);
 }
