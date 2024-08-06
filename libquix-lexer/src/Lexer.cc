@@ -539,6 +539,18 @@ LIB_EXPORT qlex_t *qlex_new(FILE *file, const char *filename) {
   return lexer;
 }
 
+LIB_EXPORT qlex_t *qlex_istream__libextra(qlex_cxx_std_istream_t istream, const char *filename) {
+  if (!filename) {
+    filename = "<unknown>";
+  }
+
+  std::stringstream *ss = std::bit_cast<std::stringstream *>(istream);
+  qcore_panicf("qlex_istream__libextra: not implemented; istream = %p, filename = %s", ss,
+               filename);
+
+  /// TODO: Implement this function
+}
+
 LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename) {
   if (!filename) {
     filename = "<unknown>";

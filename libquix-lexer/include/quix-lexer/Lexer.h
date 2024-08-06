@@ -76,6 +76,12 @@ typedef struct qlex_t {
  */
 qlex_t *qlex_new(FILE *file, const char *filename);
 
+typedef uintptr_t qlex_cxx_std_istream_t;
+qlex_t *qlex_istream__libextra(qlex_cxx_std_istream_t istream, const char *filename);
+
+#define __qlex_istream(istream, filename) \
+  qlex_istream__libextra(std::bit_cast<qlex_cxx_std_istream_t>(&istream), filename)
+
 /**
  * @brief Create a new lexer context from a string.
  *
