@@ -267,7 +267,7 @@ LIB_EXPORT void qcore_panicf_(const char *_fmt, ...) {
   va_start(args, _fmt);
   qcore_vpanicf_(_fmt, args);
   va_end(args);  // Unreachable, but whatever
-} // Unreachable, but whatever
+}  // Unreachable, but whatever
 
 LIB_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
   char *msg = nullptr;
@@ -291,6 +291,4 @@ LIB_EXPORT void qcore_debugf_(const char *fmt, ...) {
   va_end(args);
 }
 
-LIB_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) { 
-  vfprintf(stderr, fmt, args);
-}
+LIB_EXPORT void qcore_vdebugf_(const char *fmt, va_list args) { vfprintf(stderr, fmt, args); }

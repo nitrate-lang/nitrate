@@ -36,9 +36,9 @@
 extern "C" {
 #endif
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdarg.h>
 
 /**
  * @brief Print debug into and abort.
