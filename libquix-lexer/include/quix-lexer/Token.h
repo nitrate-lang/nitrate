@@ -185,6 +185,8 @@ typedef enum qlex_key_t {
   qKFalse,      /* 'false' */
 } __attribute__((packed)) qlex_key_t;
 
+typedef uint32_t qlex_size;
+
 #if defined(__cplusplus) && defined(__QUIX_IMPL__)
 }
 
@@ -198,7 +200,7 @@ struct qlex_tok_t;
 typedef struct qlex_loc_t {
   uint32_t idx : 24;
 
-  qlex_loc_t(uint32_t idx = 0) : idx(idx) {}
+  qlex_loc_t(qlex_size idx = 0) : idx(idx) {}
 } __attribute__((packed)) qlex_loc_t;
 
 extern "C" const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok, size_t *len);
@@ -216,21 +218,21 @@ typedef struct qlex_tok_t {
     qlex_punc_t punc;
     qlex_op_t op;
     qlex_key_t key;
-    uint32_t str_idx;
+    qlex_size str_idx;
   } v;
 
   qlex_tok_t() : ty(qEofF), loc{} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, uint32_t src_idx = 0)
+  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, qlex_size src_idx = 0)
       : ty(ty), loc(src_idx), v{.punc = punc} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, uint32_t src_idx = 0)
+  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, qlex_size src_idx = 0)
       : ty(ty), loc(src_idx), v{.op = op} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, uint32_t src_idx = 0)
+  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, qlex_size src_idx = 0)
       : ty(ty), loc(src_idx), v{.key = key} {}
-  qlex_tok_t(qlex_ty_t ty, uint32_t str_idx, uint32_t src_idx = 0)
+  qlex_tok_t(qlex_ty_t ty, qlex_size str_idx, qlex_size src_idx = 0)
       : ty(ty), loc(src_idx), v{.str_idx = str_idx} {}
 
-  static qlex_tok_t err(uint32_t src_idx) { return qlex_tok_t(qErro, src_idx, 0); }
-  static qlex_tok_t eof(uint32_t src_idx) { return qlex_tok_t(qEofF, src_idx, 0); }
+  static qlex_tok_t err(qlex_size src_idx) { return qlex_tok_t(qErro, src_idx, 0); }
+  static qlex_tok_t eof(qlex_size src_idx) { return qlex_tok_t(qEofF, src_idx, 0); }
 
   template <typename T>
   T as() const {
@@ -308,7 +310,7 @@ typedef struct qlex_tok_t {
     qlex_punc_t punc;
     qlex_op_t op;
     qlex_key_t key;
-    uint32_t str_idx;
+    qlex_size str_idx;
   } v;
 } __attribute__((packed)) qlex_tok_t;
 #endif

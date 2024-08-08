@@ -53,6 +53,8 @@ typedef void (*qlex_push_fn)(struct qlex_t *self, const qlex_tok_t *tok);
 #define QLEX_FLAG_NONE 0
 #define QLEX_NO_COMMENTS 0x01
 
+typedef uint32_t qlex_flags_t;
+
 typedef struct qlex_t {
   qlex_impl_t *impl;
   qlex_get_fn next;
@@ -61,7 +63,7 @@ typedef struct qlex_t {
   qlex_collect_fn collect;
   qlex_free_fn destruct;
   qlex_tok_t cur;
-  uint32_t flags;
+  qlex_flags_t flags;
   const char *filename;
 } qlex_t;
 
@@ -104,8 +106,8 @@ qlex_t *qlex_direct(const char *src, size_t len, const char *filename);
  */
 void qlex_free(qlex_t *lexer);
 
-static inline void qlex_set_flags(qlex_t *lexer, uint32_t flags) { lexer->flags = flags; }
-static inline uint32_t qlex_get_flags(qlex_t *lexer) { return lexer->flags; }
+static inline void qlex_set_flags(qlex_t *lexer, qlex_flags_t flags) { lexer->flags = flags; }
+static inline qlex_flags_t qlex_get_flags(qlex_t *lexer) { return lexer->flags; }
 
 /**
  * @brief Calculate the size of a token.
@@ -116,7 +118,7 @@ static inline uint32_t qlex_get_flags(qlex_t *lexer) { return lexer->flags; }
  * @return Size of the token in bytes. Returns 0 if the token is invalid.
  * @note This function is thread-safe.
  */
-uint32_t qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok);
+qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok);
 
 /**
  * @brief Write a token to a buffer.
@@ -130,7 +132,7 @@ uint32_t qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok);
  * @note This function is thread-safe.
  * @warning Buffer WILL NOT be null-terminated.
  */
-uint32_t qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf, uint32_t size);
+qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf, qlex_size size);
 
 /**
  * @brief Send a signal to the lexer that the resources for the token will never be needed by the
@@ -182,9 +184,9 @@ static inline qlex_tok_t qlex_peek(qlex_t *lexer) { return lexer->peek(lexer); }
 static inline void qlex_push(qlex_t *lexer, qlex_tok_t tok) { lexer->push(lexer, &tok); }
 
 const char *qlex_filename(qlex_t *lexer);
-uint32_t qlex_line(qlex_t *lexer, qlex_loc_t loc);
-uint32_t qlex_col(qlex_t *lexer, qlex_loc_t loc);
-char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, uint32_t *offset);
+qlex_size qlex_line(qlex_t *lexer, qlex_loc_t loc);
+qlex_size qlex_col(qlex_t *lexer, qlex_loc_t loc);
+char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, qlex_size *offset);
 
 /**
  * @brief Get the string representation of a token type.
@@ -245,7 +247,7 @@ const char *qlex_opstr(qlex_op_t op);
 const char *qlex_kwstr(qlex_key_t kw);
 const char *qlex_punctstr(qlex_punc_t punct);
 
-void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, uint32_t src_idx,
+void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_size src_idx,
                       qlex_tok_t *out);
 
 #ifdef __cplusplus
