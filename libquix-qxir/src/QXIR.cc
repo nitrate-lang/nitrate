@@ -161,6 +161,7 @@ LIB_EXPORT bool qxir_do(qxir_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
     if (setjmp(sigguard_env) == 0) {
       /// TODO: Implement qxir conv logic.
       // status = qxir::qxir(*qxir, (qxir::Block **)out, false, false);
+      syntax(qlex_tok_t(qEofF, 0), "qxir_do: qxir not implemented");
     } else {
       qxir->failed = true;
     }
@@ -225,7 +226,9 @@ LIB_EXPORT bool qxir_check(qxir_t *qxir, const qxir_node_t *base) {
   }
 
   /* Safety is overrated */
-  return static_cast<const qxir::Node *>(base)->verify();
+  // return static_cast<const qxir::Expr *>(base)->verify();
+  /// TODO:
+  qcore_panic("qxir_check: qxir not implemented");
 }
 
 LIB_EXPORT void qxir_dumps(qxir_t *qxir, bool no_ansi, qxir_dump_cb cb, uintptr_t data) {
