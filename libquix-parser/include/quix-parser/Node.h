@@ -32,6 +32,8 @@
 #ifndef __QUIX_PARSER_NODE_H__
 #define __QUIX_PARSER_NODE_H__
 
+#include <quix-lexer/Token.h>
+
 /**
  * @brief Quixcc abstract syntax tree node.
  */
@@ -140,24 +142,10 @@ typedef enum qparse_ty_t {
 
 #define QAST_NODE_COUNT 91
 
-typedef enum qparse_ftype_t {
-  QAST_FIELD_BOOL = 0,
-  QAST_FIELD_CHAR = 1,
-  QAST_FIELD_INT8 = 2,
-  QAST_FIELD_INT16 = 3,
-  QAST_FIELD_INT32 = 4,
-  QAST_FIELD_INT64 = 5,
-  QAST_FIELD_UINT8 = 6,
-  QAST_FIELD_UINT16 = 7,
-  QAST_FIELD_UINT32 = 8,
-  QAST_FIELD_UINT64 = 9,
-  QAST_FIELD_FLOAT = 10,
-  QAST_FIELD_DOUBLE = 11,
-  QAST_FIELD_QSTRING = 12,
-  QAST_FIELD_QVEC = 13
-} qparse_ftype_t;
-
 typedef struct qparse_node_t qparse_node_t;
+
+qlex_loc_t qparse_startpos(qparse_node_t *node);
+qlex_loc_t qparse_endpos(qparse_node_t *node);
 
 ///=============================================================================
 /// END: ABSTRACT SYNTAX TREE DATA TYPES
@@ -257,34 +245,34 @@ namespace qparse {
   };
 };  // namespace qparse
 
-#define PNODE_IMPL_CORE(__typename)                                                        \
-protected:                                                                                 \
-  virtual bool verify_impl(std::ostream &os) const override;                               \
-                                                                                           \
-protected:                                                                                 \
-  virtual void canonicalize_impl() override;                                               \
-                                                                                           \
-protected:                                                                                 \
-  virtual void print_impl(std::ostream &os, bool debug) const override;                    \
-                                                                                           \
-public:                                                                                    \
-  virtual __typename *clone_impl() const override;                                         \
-                                                                                           \
-public:                                                                                    \
-public:                                                                                    \
-  template <typename T = __typename, typename... Args>                                     \
-  static __typename *get(Args &&...args) {                                                 \
-    void *ptr = Arena<__typename>().allocate(1);                                           \
-    return new (ptr) __typename(std::forward<Args>(args)...);                              \
-  }                                                                                        \
-                                                                                           \
-public:                                                                                    \
+#define PNODE_IMPL_CORE(__typename)                                                    \
+protected:                                                                             \
+  virtual bool verify_impl(std::ostream &os) const override;                           \
+                                                                                       \
+protected:                                                                             \
+  virtual void canonicalize_impl() override;                                           \
+                                                                                       \
+protected:                                                                             \
+  virtual void print_impl(std::ostream &os, bool debug) const override;                \
+                                                                                       \
+public:                                                                                \
+  virtual __typename *clone_impl() const override;                                     \
+                                                                                       \
+public:                                                                                \
+public:                                                                                \
+  template <typename T = __typename, typename... Args>                                 \
+  static __typename *get(Args &&...args) {                                             \
+    void *ptr = Arena<__typename>().allocate(1);                                       \
+    return new (ptr) __typename(std::forward<Args>(args)...);                          \
+  }                                                                                    \
+                                                                                       \
+public:                                                                                \
   virtual __typename *clone(ArenaAllocatorImpl &arena = qparse_arena) const override { \
     ArenaAllocatorImpl old = qparse_arena;                                             \
     qparse_arena = arena;                                                              \
-    __typename *node = clone_impl();                                                       \
+    __typename *node = clone_impl();                                                   \
     qparse_arena = old;                                                                \
-    return node;                                                                           \
+    return node;                                                                       \
   }
 
 class qparse_node_t {
@@ -321,6 +309,8 @@ namespace qparse {
     virtual void canonicalize_impl() = 0;
     virtual void print_impl(std::ostream &os, bool debug) const = 0;
     virtual Node *clone_impl() const = 0;
+
+    qlex_loc_t m_pos_start{}, m_pos_end{};
 
   public:
     Node() = default;
@@ -388,10 +378,13 @@ namespace qparse {
     virtual Node *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
 
     static const char *type_name(qparse_ty_t type);
-
     void dump(bool isForDebug = false) const { print_impl(std::cerr, isForDebug); }
-
     void print(std::ostream &os, bool isForDebug = false) const { print_impl(os, isForDebug); }
+
+    void set_start_pos(qlex_loc_t pos) { m_pos_start = pos; }
+    void set_end_pos(qlex_loc_t pos) { m_pos_end = pos; }
+    qlex_loc_t get_start_pos() const { return m_pos_start; }
+    qlex_loc_t get_end_pos() const { return m_pos_end; }
   };
 
   class Stmt : public Node {

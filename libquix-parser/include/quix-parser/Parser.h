@@ -98,7 +98,7 @@ void qparse_free(qparse_t *parser);
  * @note This function is thread safe.
  */
 char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent, qcore_arena_t *arena,
-                      size_t *outlen);
+                  size_t *outlen);
 
 /**
  * @brief Serialize a parse tree to a binary representation.
@@ -112,7 +112,7 @@ char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent, qcore_
  * @note This function is thread safe.
  */
 void qparse_brepr(const qparse_node_t *node, bool compress, qcore_arena_t *arena, uint8_t **out,
-                      size_t *outlen);
+                  size_t *outlen);
 
 /**
  * @brief Parse QUIX code into a parse tree.

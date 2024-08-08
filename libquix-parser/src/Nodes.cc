@@ -46,14 +46,6 @@
 
 using namespace qparse;
 
-#define qassert(expr, ...)                                                   \
-  (static_cast<bool>(expr)                                                   \
-       ? void(0)                                                             \
-       : qcore_panicf("Assertion failed: \"%s\";\nCondition: (%s);\nSource " \
-                      "File: %s;\nSource Line: "                             \
-                      "%d;\nFunction: %s;\n",                                \
-                      "" #__VA_ARGS__, #expr, __FILE__, __LINE__, __PRETTY_FUNCTION__))
-
 ///=============================================================================
 namespace qparse {
   thread_local ArenaAllocatorImpl qparse_arena;
@@ -170,8 +162,8 @@ const char *Node::type_name(qparse_ty_t type) {
       NAMEOF_ROW(EXPR_STMT),
   };
 
-  qassert(names.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
-  qassert(names.contains(type));
+  qcore_assert(names.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
+  qcore_assert(names.contains(type));
 
   return names.at(type);
 }
@@ -274,10 +266,10 @@ uint32_t Node::this_sizeof() const {
       SIZEOF_ROW(ExprStmt),
   };
 
-  qassert(sizes.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
+  qcore_assert(sizes.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
 
   size_t id = typeid(*this).hash_code();
-  qassert(sizes.contains(id));
+  qcore_assert(sizes.contains(id));
 
   return sizes.at(id);
 }
@@ -380,7 +372,7 @@ qparse_ty_t Node::this_typeid() const {
       TYPEID_ROW(ExprStmt, EXPR_STMT),
   };
 
-  qassert(typeid_map.size() == QAST_NODE_COUNT);
+  qcore_assert(typeid_map.size() == QAST_NODE_COUNT);
 
   return typeid_map.at(typeid(*this).hash_code());
 }
