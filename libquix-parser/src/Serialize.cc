@@ -227,7 +227,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     }
     case QAST_NODE_CHAR: {
       OBJECT_BEGIN("Char");
-      OBJECT_STR(n->as<ConstChar>()->get_value());
+      OBJECT_NUM((uint32_t)n->as<ConstChar>()->get_value());
       OBJECT_END();
       break;
     }
@@ -893,8 +893,8 @@ static char *qparse_repr_malloc(const Node *_node, bool minify, size_t indent, s
   return out;
 }
 
-LIB_EXPORT char *qparse_repr(const Node *_node, bool minify, size_t indent, qcore_arena_t *arena,
-                             size_t *outlen) {
+LIB_EXPORT char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent,
+                             qcore_arena_t *arena, size_t *outlen) {
   size_t outlen_v = 0;
 
   /* Eliminate internal edge cases */
@@ -903,9 +903,9 @@ LIB_EXPORT char *qparse_repr(const Node *_node, bool minify, size_t indent, qcor
   }
 
   if (arena) {
-    return qparse_repr_arena(_node, minify, indent, arena, outlen);
+    return qparse_repr_arena(static_cast<const Node *>(_node), minify, indent, arena, outlen);
   } else {
-    return qparse_repr_malloc(_node, minify, indent, outlen);
+    return qparse_repr_malloc(static_cast<const Node *>(_node), minify, indent, outlen);
   }
 }
 
@@ -939,7 +939,7 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
   }
 }
 
-LIB_EXPORT void qparse_brepr(const Node *node, bool compress, qcore_arena_t *arena, uint8_t **out,
+LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress, qcore_arena_t *arena, uint8_t **out,
                              size_t *outlen) {
   char *repr{};
   qcore_arena_t scratch{};
@@ -958,7 +958,7 @@ LIB_EXPORT void qparse_brepr(const Node *node, bool compress, qcore_arena_t *are
   }
 
   /* Generate the AST representation as ASCII */
-  if ((repr = qparse_repr(node, true, 0, arena, outlen)) == NULL) {
+  if ((repr = qparse_repr(static_cast<const Node *>(_node), true, 0, arena, outlen)) == NULL) {
     qcore_panic("Failed to generate AST representation");
   }
 

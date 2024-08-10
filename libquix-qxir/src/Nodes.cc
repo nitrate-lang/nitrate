@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QPARSE_IMPL__
+#define __QXIR_IMPL__
 
 #include <quix-core/Error.h>
 #include <quix-qxir/Node.h>
@@ -184,6 +184,53 @@ const char *Expr::thisTypeName() const noexcept {
   return names.at(type);
 }
 
-bool Expr::isType() const noexcept { qcore_panic("Expr::isType() is not implemented"); }
+bool Expr::isType() const noexcept {
+  switch (thisTypeId()) {
+    case QIR_NODE_U1_TY:
+    case QIR_NODE_U8_TY:
+    case QIR_NODE_U16_TY:
+    case QIR_NODE_U32_TY:
+    case QIR_NODE_U64_TY:
+    case QIR_NODE_U128_TY:
+    case QIR_NODE_I8_TY:
+    case QIR_NODE_I16_TY:
+    case QIR_NODE_I32_TY:
+    case QIR_NODE_I64_TY:
+    case QIR_NODE_I128_TY:
+    case QIR_NODE_F16_TY:
+    case QIR_NODE_F32_TY:
+    case QIR_NODE_F64_TY:
+    case QIR_NODE_F128_TY:
+    case QIR_NODE_VOID_TY:
+    case QIR_NODE_PTR_TY:
+    case QIR_NODE_OPAQUE_TY:
+    case QIR_NODE_STRING_TY:
+    case QIR_NODE_STRUCT_TY:
+    case QIR_NODE_UNION_TY:
+    case QIR_NODE_ARRAY_TY:
+    case QIR_NODE_LIST_TY:
+    case QIR_NODE_INTRIN_TY:
+    case QIR_NODE_FN_TY:
+      return true;
+    default:
+      return false;
+  }
+}
+
+qxir::Type *qxir::Expr::getType() noexcept { return getModule()->getType(m_type_idx); }
 
 bool Expr::is(qxir_ty_t type) const noexcept { return type == thisTypeId(); }
+
+void qxir::Expr::dump(std::ostream &os, bool isForDebug) const {
+  (void)isForDebug;
+  (void)os;
+  /// TODO:
+  throw std::runtime_error("qxir::Expr::dump() not implemented");
+}
+
+boost::uuids::uuid qxir::Expr::hash() noexcept {
+  /// TODO:
+  qcore_panic("qxir::Expr::hash() not implemented");
+}
+
+qxir::Module *qxir::Expr::getModule() noexcept { return ::getModule(m_module_idx); }

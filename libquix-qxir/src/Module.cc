@@ -29,93 +29,51 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_IMPL_H__
-#define __QUIX_QXIR_IMPL_H__
+#define __QXIR_IMPL__
 
-#define __QPARSE_IMPL__
-
-#include <QXIRReport.h>
-#include <quix-qxir/Config.h>
 #include <quix-qxir/Node.h>
 
-#include <optional>
-#include <vector>
-#include <string_view>
-#include <unordered_set>
-#include <string>
+static std::vector<std::optional<std::unique_ptr<qxir::Module>>> qxir_modules;
+static std::mutex qxir_modules_mutex;
 
-struct qxir_impl_t {
-  std::unordered_set<std::string> strings;
+qxir::Module::Module(ModuleId id) { m_id = id; }
 
-  qxir_impl_t() {}
-  ~qxir_impl_t() = default;
+qxir::Module::~Module() {
+  if (m_arena) {
+    qcore_arena_close(&m_arena.value());
+  }
 
-  qxir::diag::DiagnosticManager diag;
+  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+  qxir_modules[m_id].reset();
+}
 
-  std::string_view push_string(std::string_view sv) {
-    for (const auto &str : strings) {
-      if (str == sv) {
-        return str;
-      }
+std::unique_ptr<qxir::Module> qxir::createModule() noexcept {
+  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+
+  ModuleId mid;
+
+  for (mid = 0; mid < qxir_modules.size(); mid++) {
+    if (!qxir_modules[mid].has_value()) {
+      break;
     }
-
-    return strings.insert(std::string(sv)).first->c_str();
-  }
-};
-
-class qxir_conf_t {
-  std::vector<qxir_setting_t> m_data;
-
-  bool verify_prechange(qxir_key_t key, qxir_val_t value) const {
-    (void)key;
-    (void)value;
-
-    return true;
   }
 
-public:
-  qxir_conf_t() = default;
-  ~qxir_conf_t() = default;
-
-  bool SetAndVerify(qxir_key_t key, qxir_val_t value) {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
-
-    if (!verify_prechange(key, value)) {
-      return false;
-    }
-
-    if (it != m_data.end()) {
-      m_data.erase(it);
-    }
-
-    m_data.push_back({key, value});
-
-    return true;
+  if (mid >= MAX_MODULE_INSTANCES) {
+    return nullptr;
   }
 
-  std::optional<qxir_val_t> Get(qxir_key_t key) const {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
-
-    if (it == m_data.end()) {
-      return std::nullopt;
-    }
-
-    return it->value;
+  if (mid == qxir_modules.size()) {
+    qxir_modules.push_back(std::make_unique<Module>(mid));
+  } else {
+    qxir_modules[mid] = std::make_unique<Module>(mid);
   }
 
-  const qxir_setting_t *GetAll(size_t &count) const {
-    count = m_data.size();
-    return m_data.data();
-  }
+  return std::move(qxir_modules[mid].value());
+}
 
-  void ClearNoVerify() {
-    m_data.clear();
-    m_data.shrink_to_fit();
-  }
+qxir::Module *qxir::getModule(qxir::ModuleId mid) noexcept {
+  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
-  bool has(qxir_key_t option, qxir_val_t value) const;
-};
-
-#endif  // __QUIX_QXIR_IMPL_H__
+  qcore_assert(mid < qxir_modules.size() && qxir_modules.at(mid).has_value(), "Module not found");
+  return qxir_modules.at(mid)->get();
+}

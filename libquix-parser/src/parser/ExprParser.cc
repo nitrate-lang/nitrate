@@ -272,8 +272,19 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
         /**
          * @brief
          */
+        auto str = tok.as_string(rd);
+        if (str.size() > 4) {
+          syntax(tok, "Invalid character literal");
+          return false;
+        }
+        str.resize(4, '\0');
 
-        stack.push(ConstChar::get(tok.as_string(rd)));
+        char32_t v = 0;
+        for (size_t i = 0; i < 4; i++) {
+          v = (v << 8) | str[i];
+        }
+
+        stack.push(ConstChar::get(v));
         continue;
       }
       case qKeyW: {

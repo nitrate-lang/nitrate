@@ -29,93 +29,65 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_IMPL_H__
-#define __QUIX_QXIR_IMPL_H__
+#ifndef __QUIX_QXIR_MODULE_H__
+#define __QUIX_QXIR_MODULE_H__
 
-#define __QPARSE_IMPL__
+#include <quix-core/Arena.h>
 
-#include <QXIRReport.h>
-#include <quix-qxir/Config.h>
-#include <quix-qxir/Node.h>
+#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
 
+#include <cstdint>
+#include <limits>
+#include <memory>
 #include <optional>
 #include <vector>
-#include <string_view>
-#include <unordered_set>
-#include <string>
 
-struct qxir_impl_t {
-  std::unordered_set<std::string> strings;
+namespace qxir {
+  typedef uint16_t ModuleId;
 
-  qxir_impl_t() {}
-  ~qxir_impl_t() = default;
+  struct TypeID {
+    uint64_t m_id : 40;
 
-  qxir::diag::DiagnosticManager diag;
+    TypeID(uint64_t id) : m_id(id) {}
+  } __attribute__((packed));
 
-  std::string_view push_string(std::string_view sv) {
-    for (const auto &str : strings) {
-      if (str == sv) {
-        return str;
-      }
+  class Type;
+
+  class TypeManager {
+    std::vector<Type *> m_types;
+
+  public:
+    TypeManager() = default;
+
+    TypeID add(Type *type) noexcept {
+      m_types.push_back(type);
+      return TypeID(m_types.size() - 1);
     }
 
-    return strings.insert(std::string(sv)).first->c_str();
-  }
-};
+    Type *get(TypeID tid) noexcept { return m_types.at(tid.m_id); }
+  };
 
-class qxir_conf_t {
-  std::vector<qxir_setting_t> m_data;
+  class Module {
+    ModuleId m_id;
+    TypeManager m_type_mgr;
+    std::optional<qcore_arena_t> m_arena;
 
-  bool verify_prechange(qxir_key_t key, qxir_val_t value) const {
-    (void)key;
-    (void)value;
+  public:
+    Module(ModuleId id);
+    ~Module();
 
-    return true;
-  }
+    ModuleId getId() noexcept { return m_id; }
 
-public:
-  qxir_conf_t() = default;
-  ~qxir_conf_t() = default;
+    Type *getType(TypeID tid) noexcept { return m_type_mgr.get(tid); }
+  };
 
-  bool SetAndVerify(qxir_key_t key, qxir_val_t value) {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
+  std::unique_ptr<Module> createModule() noexcept;
+  Module *getModule(ModuleId mid) noexcept;
 
-    if (!verify_prechange(key, value)) {
-      return false;
-    }
+  constexpr size_t MAX_MODULE_INSTANCES = std::numeric_limits<ModuleId>::max();
 
-    if (it != m_data.end()) {
-      m_data.erase(it);
-    }
+}  // namespace qxir
 
-    m_data.push_back({key, value});
+#endif
 
-    return true;
-  }
-
-  std::optional<qxir_val_t> Get(qxir_key_t key) const {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
-
-    if (it == m_data.end()) {
-      return std::nullopt;
-    }
-
-    return it->value;
-  }
-
-  const qxir_setting_t *GetAll(size_t &count) const {
-    count = m_data.size();
-    return m_data.data();
-  }
-
-  void ClearNoVerify() {
-    m_data.clear();
-    m_data.shrink_to_fit();
-  }
-
-  bool has(qxir_key_t option, qxir_val_t value) const;
-};
-
-#endif  // __QUIX_QXIR_IMPL_H__
+#endif  // __QUIX_QXIR_MODULE_H__

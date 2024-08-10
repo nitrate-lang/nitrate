@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QPARSE_IMPL__
+#define __QXIR_IMPL__
 
 #include <libdeflate.h>
 #include <quix-core/Error.h>

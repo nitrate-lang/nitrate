@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Debug" type="CLionExternalRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--debug" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="quix" TARGET_NAME="QPKG" CONFIG_NAME="QPKG" RUN_PATH="make.py">
+    <method v="2" />
+  </configuration>
+</component>

@@ -581,6 +581,17 @@ void setup_argparse_dev(
 
   subparsers["bench"] = std::move(bench);
 
+  /*================= QPARSE SUBPARSER =================*/
+  auto parse = std::make_unique<ArgumentParser>("parse");
+
+  parse->add_argument("source").help("source file to parse").nargs(1);
+  parse->add_argument("-o", "--output")
+      .help("output file for parse tree")
+      .default_value(std::string(""))
+      .nargs(1);
+
+  subparsers["parse"] = std::move(parse);
+
   /*================= TEST SUBPARSER =================*/
   auto test = std::make_unique<ArgumentParser>("test");
 

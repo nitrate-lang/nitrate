@@ -108,10 +108,12 @@ typedef struct qxir_node_t qxir_node_t;
 /// END: ABSTRACT SYNTAX TREE DATA TYPES
 ///=============================================================================
 
-#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__) || 1
+#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
 
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>
+#include <quix-qxir/Module.h>
+#include <quix-lexer/Token.h>
 
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
@@ -186,34 +188,11 @@ public:
 };
 
 namespace qxir {
-  enum class ExportLang {};
-
-  // class String : public std::basic_string<char, std::char_traits<char>, Arena<char>> {
-  // public:
-  //   String() = default;
-  //   String(const char *str) : std::basic_string<char, std::char_traits<char>, Arena<char>>(str)
-  //   {} String(const std::string &str)
-  //       : std::basic_string<char, std::char_traits<char>, Arena<char>>(str.c_str(), str.size())
-  //       {}
-  // };
-
-  typedef uint16_t ModuleId;
-
-  class Module {
-    ModuleId m_id;
-
-  public:
-    Module() = default;
-
-    ModuleId getId() noexcept { return m_id; }
-  };
-
-  class Type;
   class Expr : public qxir_node_t {
 #ifdef __QXIR_NODE_REFLECT_IMPL__
   public:
 #endif
-    uint64_t m_type_idx : 40;    /* Typecode of this expression. */
+    TypeID m_type_idx;           /* Typecode of this expression. */
     ModuleId m_module_idx : 16;  /* The module context index. */
     uint64_t m_constexpr : 1;    /* Is this expression a constant expression? */
     uint64_t m_minimal : 1;      /* Is this expression already in simplified form? */
@@ -221,8 +200,18 @@ namespace qxir {
     uint64_t m_higher_order : 1; /* Is higher-order construct? */
     uint64_t m_padding : 4;
 
+    qlex_loc_t m_start_loc, m_end_loc;
+
   public:
-    Expr() : m_type_idx(0), m_constexpr(0), m_minimal(0), m_volatile(0), m_higher_order(0) {}
+    Expr()
+        : m_type_idx(0),
+          m_constexpr(0),
+          m_minimal(0),
+          m_volatile(0),
+          m_higher_order(0),
+          m_padding(0) {
+      (void)m_padding;
+    }
 
     uint32_t thisSizeOf() const noexcept;
     qxir_ty_t thisTypeId() const noexcept;
@@ -233,6 +222,15 @@ namespace qxir {
     inline bool isReduced() const noexcept { return m_minimal; }
     inline bool isVolatile() const noexcept { return m_volatile; }
     inline bool isHigherOrder() const noexcept { return m_higher_order; }
+    inline void setConst(bool is_const) noexcept { m_constexpr = is_const; }
+    inline void setReduced(bool is_reduced) noexcept { m_minimal = is_reduced; }
+    inline void setVolatile(bool is_volatile) noexcept { m_volatile = is_volatile; }
+    inline void setHigherOrder(bool is_higher_order) noexcept { m_higher_order = is_higher_order; }
+
+    qlex_loc_t getStartLoc() const noexcept { return m_start_loc; }
+    qlex_loc_t getEndLoc() const noexcept { return m_end_loc; }
+    void setStartLoc(qlex_loc_t loc) noexcept { m_start_loc = loc; }
+    void setEndLoc(qlex_loc_t loc) noexcept { m_end_loc = loc; }
 
     Type *getType() noexcept;
 
@@ -245,23 +243,23 @@ namespace qxir {
      */
     template <typename T>
     const T *as() const noexcept {
-#if !defined(NDEBUG)
-      auto p = dynamic_cast<const T *>(this);
+      // #if !defined(NDEBUG)
+      //       auto p = dynamic_cast<const T *>(this);
 
-      if (!p) {
-        const char *this_str = typeid(*this).name();
-        const char *other_str = typeid(T).name();
+      //       if (!p) {
+      //         const char *this_str = typeid(*this).name();
+      //         const char *other_str = typeid(T).name();
 
-        qcore_panicf(
-            "qxir_node_t::as(const %s *this): Invalid cast from `%s` to "
-            "`%s`.",
-            this_str, this_str, other_str);
-        __builtin_unreachable();
-      }
-      return p;
-#else
+      //         qcore_panicf(
+      //             "qxir_node_t::as(const %s *this): Invalid cast from `%s` to "
+      //             "`%s`.",
+      //             this_str, this_str, other_str);
+      //         __builtin_unreachable();
+      //       }
+      //       return p;
+      // #else
       return reinterpret_cast<const T *>(this);
-#endif
+      // #endif
     }
 
     /**
@@ -273,22 +271,26 @@ namespace qxir {
      */
     template <typename T>
     T *as() noexcept {
-#if !defined(NDEBUG)
-      auto p = dynamic_cast<T *>(this);
+      // #if !defined(NDEBUG)
+      //       auto p = dynamic_cast<T *>(this);
 
-      if (!p) {
-        const char *this_str = typeid(*this).name();
-        const char *other_str = typeid(T).name();
+      //       if (!p) {
+      //         const char *this_str = typeid(*this).name();
+      //         const char *other_str = typeid(T).name();
 
-        qcore_panicf("qxir_node_t::as(%s *this): Invalid cast from `%s` to `%s`.", this_str,
-                     this_str, other_str);
-        __builtin_unreachable();
-      }
-      return p;
-#else
+      //         qcore_panicf("qxir_node_t::as(%s *this): Invalid cast from `%s` to `%s`.",
+      //         this_str,
+      //                      this_str, other_str);
+      //         __builtin_unreachable();
+      //       }
+      //       return p;
+      // #else
       return reinterpret_cast<T *>(this);
-#endif
+      // #endif
     }
+
+    Expr *asExpr() noexcept { return this; }
+    Type *asType() noexcept { return as<Type>(); }
 
     /**
      * @brief Type check.
@@ -316,7 +318,7 @@ namespace qxir {
      * @param os The output stream.
      * @param isForDebug Whether to print the node for debugging.
      */
-    void dump(std::ostream &os, bool isForDebug = false) const noexcept;
+    void dump(std::ostream &os, bool isForDebug = false) const;
 
     /**
      * @brief Compute the hash of the node.
@@ -324,14 +326,8 @@ namespace qxir {
      */
     boost::uuids::uuid hash() noexcept;
 
-    /**
-     * @brief Compute the hash of the node.
-     * @return boost::uuids::uuid The hash.
-     */
-    boost::uuids::uuid hash() const noexcept;
-
     Module *getModule() noexcept;
-  } __attribute__((packed));
+  } __attribute__((packed)) __attribute__((aligned(8)));
 
 #define EXPR_SIZE sizeof(Expr)
 
@@ -348,7 +344,39 @@ namespace qxir {
   /// BEGIN: EXPRESSIONS CATEGORIES
   ///=============================================================================
 
-  enum class Op { TODO };
+  enum class Op {
+    Plus,          /* '+': Addition operator */
+    Minus,         /* '-': Subtraction operator */
+    Times,         /* '*': Multiplication operator */
+    Slash,         /* '/': Division operator */
+    Percent,       /* '%': Modulus operator */
+    BitAnd,        /* '&': Bitwise AND operator */
+    BitOr,         /* '|': Bitwise OR operator */
+    BitXor,        /* '^': Bitwise XOR operator */
+    BitNot,        /* '~': Bitwise NOT operator */
+    LogicAnd,      /* '&&': Logical AND operator */
+    LogicOr,       /* '||': Logical OR operator */
+    LogicNot,      /* '!': Logical NOT operator */
+    LShift,        /* '<<': Left shift operator */
+    RShift,        /* '>>': Right shift operator */
+    ROTR,          /* '>>>': Rotate right operator */
+    ROTL,          /* '<<<': Rotate left operator */
+    Inc,           /* '++': Increment operator */
+    Dec,           /* '--': Decrement operator */
+    Set,           /* '=': Assignment operator */
+    LT,            /* '<': Less than operator */
+    GT,            /* '>': Greater than operator */
+    LE,            /* '<=': Less than or equal to operator */
+    GE,            /* '>=': Greater than or equal to operator */
+    Eq,            /* '==': Equal to operator */
+    NE,            /* '!=': Not equal to operator */
+    Alignof,       /* 'alignof': Alignment of operator */
+    Typeof,        /* 'typeof': Type of operator */
+    Offsetof,      /* 'offsetof': Offset of operator */
+    BitcastAs,     /* 'bitcast_as': Bitcast operator */
+    CastAs,        /* 'cast_as': Common operator */
+    Bitsizeof,     /* 'bitsizeof': Bit size of operator */
+  };
 
   class BinExpr final : public Expr {
     Expr *m_lhs;
@@ -539,13 +567,13 @@ namespace qxir {
 
   class ArrayTy final : public Type {
     Type *m_element;
-    uint64_t m_size;
+    Expr *m_size;
 
   public:
-    ArrayTy(Type *element, uint64_t size) : m_element(element), m_size(size) {}
+    ArrayTy(Type *element, Expr *size) : m_element(element), m_size(size) {}
 
     Type *getElement() noexcept { return m_element; }
-    uint64_t getCount() { return m_size; }
+    Expr *getCount() { return m_size; }
   };
 
   class ListTy final : public Type {
@@ -884,11 +912,11 @@ namespace qxir {
     std::string_view m_val_ident;
     Expr *m_maxjobs;
     Expr *m_expr;
-    Expr *m_body;
+    Seq *m_body;
 
   public:
     Form(std::string_view idx_ident, std::string_view val_ident, Expr *maxjobs, Expr *expr,
-         Expr *body)
+         Seq *body)
         : m_idx_ident(idx_ident),
           m_val_ident(val_ident),
           m_maxjobs(maxjobs),
@@ -911,8 +939,8 @@ namespace qxir {
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
 
-    Expr *getBody() noexcept { return m_body; }
-    Expr *setBody(Expr *body) noexcept { return m_body = body; }
+    Seq *getBody() noexcept { return m_body; }
+    Seq *setBody(Seq *body) noexcept { return m_body = body; }
   };
 
   class Foreach final : public Expr {
@@ -1009,7 +1037,7 @@ namespace qxir {
   /// END: EXPRESSIONS
   ///=============================================================================
 
-#define TYPE_SIZE sizeof(StructTy)
+#define TYPE_SIZE sizeof(Expr)
 
   template <typename T>
   constexpr T *getType() {
@@ -1052,6 +1080,13 @@ namespace qxir {
                     "qxir::getType<T>(): Can not construct immuntable of this type.");
     }
   }
+
+  template <typename T, typename... Args>
+  static T *create(Args &&...args) {
+    void *ptr = Arena<T>().allocate(1);
+    return new (ptr) T(std::forward<Args>(args)...);
+  }
+
 }  // namespace qxir
 
 #endif

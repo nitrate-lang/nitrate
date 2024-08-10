@@ -19,6 +19,11 @@ if os.system('docker --version') != 0:
     print("Docker is not installed.")
     sys.exit(1)
 
+if '--clean-all' in sys.argv:
+    os.system('rm -rf bin build')
+    print("Cleaned all.")
+    sys.exit(0)
+
 # Check if SNAP Build mode is enabled
 if '--snap' in sys.argv:
     print("Building Snap package...")

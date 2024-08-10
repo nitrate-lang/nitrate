@@ -51,7 +51,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
   target_compile_options(quix-parser PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
-  target_link_options(quix-parser PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
+  target_link_options(quix-parser PRIVATE -flto)
   target_link_libraries(quix-parser PRIVATE quix-core quix-lexer libdeflate.a)
   add_dependencies(quix-parser quix-core quix-lexer)
 endif()

@@ -770,6 +770,7 @@ namespace qparse {
     TupleTy(const TupleTyItems &items) : m_items(items) {}
 
     TupleTyItems &get_items();
+    const TupleTyItems &get_items() const;
     void add_item(Type *item);
     void add_items(std::initializer_list<Type *> items);
     void clear_items();
@@ -845,6 +846,7 @@ namespace qparse {
     StructTy(const StructItems &items) : m_items(items) {}
 
     StructItems &get_items();
+    const StructItems &get_items() const;
     void add_item(String name, Type *type);
     void add_items(std::initializer_list<StructItem> items);
     void clear_items();
@@ -863,6 +865,7 @@ namespace qparse {
     GroupTy(const GroupTyItems &items) : m_items(items) {}
 
     GroupTyItems &get_items();
+    const GroupTyItems &get_items() const;
     void add_item(Type *item);
     void add_items(std::initializer_list<Type *> items);
     void clear_items();
@@ -881,6 +884,7 @@ namespace qparse {
     RegionTy(const RegionTyItems &items) : m_items(items) {}
 
     RegionTyItems &get_items();
+    const RegionTyItems &get_items() const;
     void add_item(Type *item);
     void add_items(std::initializer_list<Type *> items);
     void clear_items();
@@ -899,6 +903,7 @@ namespace qparse {
     UnionTy(const UnionTyItems &items) : m_items(items) {}
 
     UnionTyItems &get_items();
+    const UnionTyItems &get_items() const;
     void add_item(Type *item);
     void add_items(std::initializer_list<Type *> items);
     void clear_items();
@@ -1128,12 +1133,12 @@ namespace qparse {
   };
 
   class ConstChar : public LitExpr {
-    String m_value;
+    char32_t m_value;
 
   public:
-    ConstChar(String value = "") : m_value(value) {}
+    ConstChar(char32_t value = 0) : m_value(value) {}
 
-    String get_value() const;
+    char32_t get_value() const;
 
     PNODE_IMPL_CORE(ConstChar)
   };
@@ -1214,6 +1219,7 @@ namespace qparse {
     List(const ListData &items) : m_items(items) {}
 
     ListData &get_items();
+    const ListData &get_items() const;
     void add_item(Expr *item);
     void add_items(std::initializer_list<Expr *> items);
     void clear_items();
@@ -1311,6 +1317,7 @@ namespace qparse {
     void set_value(String value);
 
     FStringArgs &get_items();
+    const FStringArgs &get_items() const;
     void add_item(Expr *item);
     void add_items(std::initializer_list<Expr *> items);
     void clear_items();
@@ -1341,6 +1348,7 @@ namespace qparse {
     SeqPoint(const SeqPointItems &items) : m_items(items) {}
 
     SeqPointItems &get_items();
+    const SeqPointItems &get_items() const;
     void add_item(Expr *item);
     void add_items(std::initializer_list<Expr *> items);
     void clear_items();
@@ -1362,6 +1370,7 @@ namespace qparse {
     Block(const BlockItems &items) : m_items(items), m_unsafe(false) {}
 
     BlockItems &get_items();
+    const BlockItems &get_items() const;
     void add_item(Stmt *item);
     void add_items(std::initializer_list<Stmt *> items);
     void clear_items();
@@ -1396,6 +1405,7 @@ namespace qparse {
     StmtList(const StmtListItems &items) : m_items(items) {}
 
     StmtListItems &get_items();
+    const StmtListItems &get_items() const;
     void add_item(Stmt *item);
     void add_items(std::initializer_list<Stmt *> items);
     void clear_items();
@@ -1706,6 +1716,7 @@ namespace qparse {
     void set_cond(Expr *cond);
 
     SwitchCases &get_cases();
+    const SwitchCases &get_cases() const;
     void add_case(CaseStmt *case_);
     void add_cases(std::initializer_list<CaseStmt *> cases);
     void clear_cases();
@@ -1989,6 +2000,7 @@ namespace qparse {
     virtual EnumTy *get_type() const override;
 
     const EnumDefItems &get_items();
+    const EnumDefItems &get_items() const;
     void add_item(EnumItem item);
     void add_items(std::initializer_list<EnumItem> items);
     void clear_items();

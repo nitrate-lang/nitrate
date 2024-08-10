@@ -1,6 +1,0 @@
-{
-    global:
-        qxir_*;
-    local:
-        *;
-};
