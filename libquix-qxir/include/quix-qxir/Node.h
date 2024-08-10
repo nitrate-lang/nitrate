@@ -112,8 +112,8 @@ typedef struct qxir_node_t qxir_node_t;
 
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/Module.h>
 #include <quix-lexer/Token.h>
+#include <quix-qxir/Module.h>
 
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
@@ -185,6 +185,7 @@ namespace qxir {
 class qxir_node_t {
 public:
   qxir_node_t() = default;
+  virtual ~qxir_node_t() = default;
 };
 
 namespace qxir {
@@ -243,23 +244,8 @@ namespace qxir {
      */
     template <typename T>
     const T *as() const noexcept {
-      // #if !defined(NDEBUG)
-      //       auto p = dynamic_cast<const T *>(this);
-
-      //       if (!p) {
-      //         const char *this_str = typeid(*this).name();
-      //         const char *other_str = typeid(T).name();
-
-      //         qcore_panicf(
-      //             "qxir_node_t::as(const %s *this): Invalid cast from `%s` to "
-      //             "`%s`.",
-      //             this_str, this_str, other_str);
-      //         __builtin_unreachable();
-      //       }
-      //       return p;
-      // #else
-      return reinterpret_cast<const T *>(this);
-      // #endif
+      // return reinterpret_cast<const T *>(this);
+      return dynamic_cast<const T *>(this);
     }
 
     /**
@@ -271,22 +257,8 @@ namespace qxir {
      */
     template <typename T>
     T *as() noexcept {
-      // #if !defined(NDEBUG)
-      //       auto p = dynamic_cast<T *>(this);
-
-      //       if (!p) {
-      //         const char *this_str = typeid(*this).name();
-      //         const char *other_str = typeid(T).name();
-
-      //         qcore_panicf("qxir_node_t::as(%s *this): Invalid cast from `%s` to `%s`.",
-      //         this_str,
-      //                      this_str, other_str);
-      //         __builtin_unreachable();
-      //       }
-      //       return p;
-      // #else
-      return reinterpret_cast<T *>(this);
-      // #endif
+      // return reinterpret_cast<T *>(this);
+      return dynamic_cast<T *>(this);
     }
 
     Expr *asExpr() noexcept { return this; }
@@ -345,38 +317,40 @@ namespace qxir {
   ///=============================================================================
 
   enum class Op {
-    Plus,          /* '+': Addition operator */
-    Minus,         /* '-': Subtraction operator */
-    Times,         /* '*': Multiplication operator */
-    Slash,         /* '/': Division operator */
-    Percent,       /* '%': Modulus operator */
-    BitAnd,        /* '&': Bitwise AND operator */
-    BitOr,         /* '|': Bitwise OR operator */
-    BitXor,        /* '^': Bitwise XOR operator */
-    BitNot,        /* '~': Bitwise NOT operator */
-    LogicAnd,      /* '&&': Logical AND operator */
-    LogicOr,       /* '||': Logical OR operator */
-    LogicNot,      /* '!': Logical NOT operator */
-    LShift,        /* '<<': Left shift operator */
-    RShift,        /* '>>': Right shift operator */
-    ROTR,          /* '>>>': Rotate right operator */
-    ROTL,          /* '<<<': Rotate left operator */
-    Inc,           /* '++': Increment operator */
-    Dec,           /* '--': Decrement operator */
-    Set,           /* '=': Assignment operator */
-    LT,            /* '<': Less than operator */
-    GT,            /* '>': Greater than operator */
-    LE,            /* '<=': Less than or equal to operator */
-    GE,            /* '>=': Greater than or equal to operator */
-    Eq,            /* '==': Equal to operator */
-    NE,            /* '!=': Not equal to operator */
-    Alignof,       /* 'alignof': Alignment of operator */
-    Typeof,        /* 'typeof': Type of operator */
-    Offsetof,      /* 'offsetof': Offset of operator */
-    BitcastAs,     /* 'bitcast_as': Bitcast operator */
-    CastAs,        /* 'cast_as': Common operator */
-    Bitsizeof,     /* 'bitsizeof': Bit size of operator */
+    Plus,      /* '+': Addition operator */
+    Minus,     /* '-': Subtraction operator */
+    Times,     /* '*': Multiplication operator */
+    Slash,     /* '/': Division operator */
+    Percent,   /* '%': Modulus operator */
+    BitAnd,    /* '&': Bitwise AND operator */
+    BitOr,     /* '|': Bitwise OR operator */
+    BitXor,    /* '^': Bitwise XOR operator */
+    BitNot,    /* '~': Bitwise NOT operator */
+    LogicAnd,  /* '&&': Logical AND operator */
+    LogicOr,   /* '||': Logical OR operator */
+    LogicNot,  /* '!': Logical NOT operator */
+    LShift,    /* '<<': Left shift operator */
+    RShift,    /* '>>': Right shift operator */
+    ROTR,      /* '>>>': Rotate right operator */
+    ROTL,      /* '<<<': Rotate left operator */
+    Inc,       /* '++': Increment operator */
+    Dec,       /* '--': Decrement operator */
+    Set,       /* '=': Assignment operator */
+    LT,        /* '<': Less than operator */
+    GT,        /* '>': Greater than operator */
+    LE,        /* '<=': Less than or equal to operator */
+    GE,        /* '>=': Greater than or equal to operator */
+    Eq,        /* '==': Equal to operator */
+    NE,        /* '!=': Not equal to operator */
+    Alignof,   /* 'alignof': Alignment of operator */
+    Typeof,    /* 'typeof': Type of operator */
+    Offsetof,  /* 'offsetof': Offset of operator */
+    BitcastAs, /* 'bitcast_as': Bitcast operator */
+    CastAs,    /* 'cast_as': Common operator */
+    Bitsizeof, /* 'bitsizeof': Bit size of operator */
   };
+
+  std::ostream &operator<<(std::ostream &os, Op op);
 
   class BinExpr final : public Expr {
     Expr *m_lhs;
@@ -1002,7 +976,7 @@ namespace qxir {
     void addCase(Case *c) noexcept { m_cases.push_back(c); }
   };
 
-  typedef std::vector<Expr, Arena<Expr>> Params;
+  typedef std::vector<Expr *, Arena<Expr *>> Params;
 
   class Fn final : public Expr {
     std::string_view m_name;
@@ -1019,7 +993,7 @@ namespace qxir {
     const Params &getParams() const noexcept { return m_params; }
     Params &getParams() noexcept { return m_params; }
     void setParams(const Params &params) noexcept { m_params = params; }
-    void addParam(Expr param) noexcept { m_params.push_back(param); }
+    void addParam(Expr *param) noexcept { m_params.push_back(param); }
 
     Seq *getBody() noexcept { return m_body; }
     Seq *setBody(Seq *body) noexcept { return m_body = body; }
@@ -1044,37 +1018,37 @@ namespace qxir {
     /// TODO: Optimize this.
 
     if constexpr (std::is_same_v<T, U1Ty>) {
-      return Arena<U1Ty>().allocate(1);
+      return new (Arena<U1Ty>().allocate(1)) U1Ty();
     } else if constexpr (std::is_same_v<T, U8Ty>) {
-      return Arena<U8Ty>().allocate(1);
+      return new (Arena<U8Ty>().allocate(1)) U8Ty();
     } else if constexpr (std::is_same_v<T, U16Ty>) {
-      return Arena<U16Ty>().allocate(1);
+      return new (Arena<U16Ty>().allocate(1)) U16Ty();
     } else if constexpr (std::is_same_v<T, U32Ty>) {
-      return Arena<U32Ty>().allocate(1);
+      return new (Arena<U32Ty>().allocate(1)) U32Ty();
     } else if constexpr (std::is_same_v<T, U64Ty>) {
-      return Arena<U64Ty>().allocate(1);
+      return new (Arena<U64Ty>().allocate(1)) U64Ty();
     } else if constexpr (std::is_same_v<T, U128Ty>) {
-      return Arena<U128Ty>().allocate(1);
+      return new (Arena<U128Ty>().allocate(1)) U128Ty();
     } else if constexpr (std::is_same_v<T, I8Ty>) {
-      return Arena<I8Ty>().allocate(1);
+      return new (Arena<I8Ty>().allocate(1)) I8Ty();
     } else if constexpr (std::is_same_v<T, I16Ty>) {
-      return Arena<I16Ty>().allocate(1);
+      return new (Arena<I16Ty>().allocate(1)) I16Ty();
     } else if constexpr (std::is_same_v<T, I32Ty>) {
-      return Arena<I32Ty>().allocate(1);
+      return new (Arena<I32Ty>().allocate(1)) I32Ty();
     } else if constexpr (std::is_same_v<T, I64Ty>) {
-      return Arena<I64Ty>().allocate(1);
+      return new (Arena<I64Ty>().allocate(1)) I64Ty();
     } else if constexpr (std::is_same_v<T, I128Ty>) {
-      return Arena<I128Ty>().allocate(1);
+      return new (Arena<I128Ty>().allocate(1)) I128Ty();
     } else if constexpr (std::is_same_v<T, F16Ty>) {
-      return Arena<F16Ty>().allocate(1);
+      return new (Arena<F16Ty>().allocate(1)) F16Ty();
     } else if constexpr (std::is_same_v<T, F32Ty>) {
-      return Arena<F32Ty>().allocate(1);
+      return new (Arena<F32Ty>().allocate(1)) F32Ty();
     } else if constexpr (std::is_same_v<T, F64Ty>) {
-      return Arena<F64Ty>().allocate(1);
+      return new (Arena<F64Ty>().allocate(1)) F64Ty();
     } else if constexpr (std::is_same_v<T, F128Ty>) {
-      return Arena<F128Ty>().allocate(1);
+      return new (Arena<F128Ty>().allocate(1)) F128Ty();
     } else if constexpr (std::is_same_v<T, VoidTy>) {
-      return Arena<VoidTy>().allocate(1);
+      return new (Arena<VoidTy>().allocate(1)) VoidTy();
     } else {
       static_assert(!std::is_same_v<T, T>,
                     "qxir::getType<T>(): Can not construct immuntable of this type.");

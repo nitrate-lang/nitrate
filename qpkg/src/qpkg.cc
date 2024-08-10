@@ -592,6 +592,21 @@ void setup_argparse_dev(
 
   subparsers["parse"] = std::move(parse);
 
+  /*================= QXIR SUBPARSER =================*/
+  auto qxir = std::make_unique<ArgumentParser>("qxir");
+
+  qxir->add_argument("source").help("source file to lower into QXIR").nargs(1);
+  qxir->add_argument("-o", "--output")
+      .help("output file for qxir tree")
+      .default_value(std::string(""))
+      .nargs(1);
+  qxir->add_argument("-O", "--opts")
+      .help("optimizations to apply to QXIR")
+      .default_value(std::string(""))
+      .nargs(1);
+
+  subparsers["qxir"] = std::move(qxir);
+
   /*================= TEST SUBPARSER =================*/
   auto test = std::make_unique<ArgumentParser>("test");
 
@@ -599,6 +614,8 @@ void setup_argparse_dev(
 
   parser.add_subparser(*subparsers["bench"]);
   parser.add_subparser(*subparsers["test"]);
+  parser.add_subparser(*subparsers["parse"]);
+  parser.add_subparser(*subparsers["qxir"]);
 }
 
 #endif
@@ -1063,6 +1080,240 @@ int run_dev_mode(
     return 0;
   } else if (parser.is_subcommand_used("test")) {
     return qpkg::dev::test::run_tests();
+  } else if (parser.is_subcommand_used("parse")) {
+    auto &parse_parser = *subparsers.at("parse");
+
+    std::string source = parse_parser.get<std::string>("source");
+    std::string output = parse_parser.get<std::string>("--output");
+
+    FILE *fp = fopen(source.c_str(), "r");
+    if (!fp) {
+      std::cerr << "Failed to open source file" << std::endl;
+      return 1;
+    }
+
+    qlex_t *lexer = qlex_new(fp, source.c_str());
+    if (!lexer) {
+      fclose(fp);
+      std::cerr << "Failed to create lexer" << std::endl;
+      return 1;
+    }
+
+    qparse_conf_t *pconf = qparse_conf_new(true);
+    if (!pconf) {
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to create parser configuration" << std::endl;
+      return 1;
+    }
+
+    qparse_t *ctx = qparse_new(lexer, pconf);
+    if (!ctx) {
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to create parser context" << std::endl;
+      return 1;
+    }
+
+    qcore_arena_t arena;
+    qcore_arena_open(&arena);
+    qparse_node_t *root = nullptr;
+    if (!qparse_do(ctx, &arena, &root)) {
+      auto cb = [](const char *msg, size_t size, uintptr_t data) {
+        (void)size;
+        (void)data;
+        std::cerr << msg << std::endl;
+      };
+
+      qparse_dumps(ctx, false, cb, 0);
+      qcore_arena_close(&arena);
+      qparse_free(ctx);
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to parse source" << std::endl;
+      return 1;
+    }
+
+    size_t out_len = 0;
+    char *out_str = qparse_repr(root, false, 2, &arena, &out_len);
+    if (!out_str) {
+      qcore_arena_close(&arena);
+      qparse_free(ctx);
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to generate parse tree" << std::endl;
+      return 1;
+    }
+
+    FILE *out_fp = nullptr;
+    if (!output.empty()) {
+      out_fp = fopen(output.c_str(), "w");
+      if (!out_fp) {
+        qcore_arena_close(&arena);
+        qparse_free(ctx);
+        qparse_conf_free(pconf);
+        qlex_free(lexer);
+        fclose(fp);
+        std::cerr << "Failed to open output file" << std::endl;
+        return 1;
+      }
+    } else {
+      out_fp = stdout;
+    }
+
+    fwrite(out_str, 1, out_len, out_fp);
+
+    if (!output.empty()) fclose(out_fp);
+
+    qcore_arena_close(&arena);
+    qparse_free(ctx);
+    qparse_conf_free(pconf);
+    qlex_free(lexer);
+    fclose(fp);
+
+    return 0;
+  } else if (parser.is_subcommand_used("qxir")) {
+    auto &qxir_parser = *subparsers.at("qxir");
+
+    std::string source = qxir_parser.get<std::string>("source");
+    std::string output = qxir_parser.get<std::string>("--output");
+    std::string opts = qxir_parser.get<std::string>("--opts");
+
+    FILE *fp = fopen(source.c_str(), "r");
+    if (!fp) {
+      std::cerr << "Failed to open source file" << std::endl;
+      return 1;
+    }
+
+    qlex_t *lexer = qlex_new(fp, source.c_str());
+    if (!lexer) {
+      fclose(fp);
+      std::cerr << "Failed to create lexer" << std::endl;
+      return 1;
+    }
+
+    qparse_conf_t *pconf = qparse_conf_new(true);
+    if (!pconf) {
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to create parser configuration" << std::endl;
+      return 1;
+    }
+
+    qparse_t *ctx = qparse_new(lexer, pconf);
+    if (!ctx) {
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to create parser context" << std::endl;
+      return 1;
+    }
+
+    qcore_arena_t arena;
+    qcore_arena_open(&arena);
+    qparse_node_t *root = nullptr;
+    if (!qparse_do(ctx, &arena, &root)) {
+      auto cb = [](const char *msg, size_t size, uintptr_t data) {
+        (void)size;
+        (void)data;
+        std::cerr << msg << std::endl;
+      };
+
+      qparse_dumps(ctx, false, cb, 0);
+      qcore_arena_close(&arena);
+      qparse_free(ctx);
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to parse source" << std::endl;
+      return 1;
+    }
+
+    qxir_conf_t *conf = qxir_conf_new(true);
+    if (!conf) {
+      qcore_arena_close(&arena);
+      qparse_free(ctx);
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to create QXIR configuration" << std::endl;
+      return 1;
+    }
+
+    qxir_t *qxir = qxir_new(root, conf);
+    if (!qxir) {
+      qxir_conf_free(conf);
+      qcore_arena_close(&arena);
+      qparse_free(ctx);
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to create QXIR context" << std::endl;
+      return 1;
+    }
+
+    qxir_node_t *qxir_root = nullptr;
+    if (!qxir_do(qxir, &arena, &qxir_root)) {
+      qxir_free(qxir);
+      qxir_conf_free(conf);
+      qcore_arena_close(&arena);
+      qparse_free(ctx);
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to lower source to QXIR" << std::endl;
+      return 1;
+    }
+
+    size_t out_len = 0;
+    char *out_str = qxir_repr(qxir_root, false, 2, &arena, &out_len);
+    if (!out_str) {
+      qxir_free(qxir);
+      qxir_conf_free(conf);
+      qcore_arena_close(&arena);
+      qparse_free(ctx);
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to generate QXIR tree" << std::endl;
+      return 1;
+    }
+
+    FILE *out_fp = nullptr;
+    if (!output.empty()) {
+      out_fp = fopen(output.c_str(), "w");
+      if (!out_fp) {
+        qxir_free(qxir);
+        qxir_conf_free(conf);
+        qcore_arena_close(&arena);
+        qparse_free(ctx);
+        qparse_conf_free(pconf);
+        qlex_free(lexer);
+        fclose(fp);
+        std::cerr << "Failed to open output file" << std::endl;
+        return 1;
+      }
+    } else {
+      out_fp = stdout;
+    }
+
+    fwrite(out_str, 1, out_len, out_fp);
+
+    if (!output.empty()) fclose(out_fp);
+
+    qxir_free(qxir);
+    qxir_conf_free(conf);
+    qcore_arena_close(&arena);
+    qparse_free(ctx);
+    qparse_conf_free(pconf);
+    qlex_free(lexer);
+    fclose(fp);
+
+    std::cout << "opts: " << opts << std::endl;
+    return 0;
   } else if (parser.is_used("--demangle")) {
     std::string input = parser.get<std::string>("--demangle");
     char *demangled_name = quixcc_cc_demangle(input.c_str());
