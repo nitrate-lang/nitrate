@@ -1,0 +1,17 @@
+-std=c++20
+-Wall
+-Wextra
+-I
+./libquix-core/include
+-I
+./libquix-lexer/include
+-I
+./libquix-parser/include
+-I
+./libquix-parser/src
+-I
+./libquix-qxir/include
+-I
+./libquix-qxir/src
+-I
+./qpkg/src

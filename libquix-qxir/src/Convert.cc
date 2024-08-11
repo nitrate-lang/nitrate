@@ -460,6 +460,7 @@ qxir::Expr *qconv_lower_unexpr(qxir::Expr *rhs, qlex_op_t op) {
     case qOpBitNot: {
       return STD_UNOP(BitNot);
     }
+
     case qOpLogicNot: {
       return STD_UNOP(LogicNot);
     }
@@ -470,15 +471,18 @@ qxir::Expr *qconv_lower_unexpr(qxir::Expr *rhs, qlex_op_t op) {
       return STD_UNOP(Dec);
     }
     case qOpSizeof: {
-      /// TODO:
-      throw QError();
+      auto bits = qxir::create<qxir::UnExpr>(rhs, qxir::Op::Bitsizeof);
+      auto ceilfn = qxir::create<qxir::Ident>("__min");
+      auto arg = qxir::create<qxir::BinExpr>(bits, qxir::create<qxir::Int>(8), qxir::Op::Slash);
+      auto bytes = qxir::create<qxir::Call>(ceilfn, qxir::CallArgs({arg}));
+      return bytes;
     }
     case qOpAlignof: {
       return STD_UNOP(Alignof);
     }
     case qOpTypeof: {
-      /// TODO:
-      throw QError();
+      auto fn = qxir::create<qxir::Ident>("__typeof");
+      return qxir::create<qxir::Call>(fn, qxir::CallArgs({rhs}));
     }
     case qOpOffsetof: {
       return STD_UNOP(Offsetof);
@@ -510,27 +514,43 @@ qxir::Expr *qconv_lower_post_unexpr(qxir::Expr *lhs, qlex_op_t op) {
 
 namespace qxir {
   static qxir::Expr *qconv_cexpr(const qparse::ConstExpr *n) {
-    /// TODO: cexpr
+    auto c = qconv(n->get_value());
+    c->setConst(true);
 
-    throw QError();
+    return c;
   }
 
   static qxir::Expr *qconv_binexpr(const qparse::BinExpr *n) {
-    /// TODO: binexpr
+    /**
+     * @brief Convert a binary expression to a qxir expression.
+     * @details Recursively convert the left and right hand sides of the
+     *         binary expression, then convert the operator to a qxir
+     *         compatible operator.
+     */
 
-    throw QError();
+    return qconv_lower_binexpr(qconv(n->get_lhs()), qconv(n->get_rhs()), n->get_op());
   }
 
   static qxir::Expr *qconv_unexpr(const qparse::UnaryExpr *n) {
-    /// TODO: unexpr
+    /**
+     * @brief Convert a unary expression to a qxir expression.
+     * @details Recursively convert the left hand side of the unary
+     *         expression, then convert the operator to a qxir compatible
+     *         operator.
+     */
 
-    throw QError();
+    return qconv_lower_unexpr(qconv(n->get_rhs()), n->get_op());
   }
 
   static qxir::Expr *qconv_post_unexpr(const qparse::PostUnaryExpr *n) {
-    /// TODO: post_unexpr
+    /**
+     * @brief Convert a post-unary expression to a qxir expression.
+     * @details Recursively convert the left hand side of the post-unary
+     *         expression, then convert the operator to a qxir compatible
+     *         operator.
+     */
 
-    throw QError();
+    return qconv_lower_post_unexpr(qconv(n->get_lhs()), n->get_op());
   }
 
   static qxir::Expr *qconv_terexpr(const qparse::TernaryExpr *n) {
@@ -540,27 +560,39 @@ namespace qxir {
   }
 
   static qxir::Expr *qconv_int(const qparse::ConstInt *n) {
-    /// TODO: int
+    /**
+     * @brief Convert an integer constant to a qxir number.
+     * @details This is a 1-to-1 conversion of the integer constant.
+     */
 
-    throw QError();
+    return create<Int>(memorize(n->get_value()));
   }
 
   static qxir::Expr *qconv_float(const qparse::ConstFloat *n) {
-    /// TODO: float
+    /**
+     * @brief Convert a floating point constant to a qxir number.
+     * @details This is a 1-to-1 conversion of the floating point constant.
+     */
 
-    throw QError();
+    return create<Float>(memorize(n->get_value()));
   }
 
   static qxir::Expr *qconv_string(const qparse::ConstString *n) {
-    /// TODO: string
+    /**
+     * @brief Convert a string constant to a qxir string.
+     * @details This is a 1-to-1 conversion of the string constant.
+     */
 
-    throw QError();
+    return create<String>(memorize(n->get_value()));
   }
 
   static qxir::Expr *qconv_char(const qparse::ConstChar *n) {
-    /// TODO: char
+    /**
+     * @brief Convert a character constant to a qxir number.
+     * @details Convert the char32 codepoint to a qxir number literal.
+     */
 
-    throw QError();
+    return create<Int>(n->get_value());
   }
 
   static qxir::Expr *qconv_bool(const qparse::ConstBool *n) {
@@ -641,21 +673,36 @@ namespace qxir {
   }
 
   static qxir::Expr *qconv_seq_point(const qparse::SeqPoint *n) {
-    /// TODO: seq_point
+    /**
+     * @brief Convert a sequence point to a qxir expression.
+     * @details This is a 1-to-1 conversion of the sequence point.
+     */
 
-    throw QError();
+    SeqItems items;
+
+    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+      items.push_back(qconv(*it));
+    }
+
+    return create<Seq>(std::move(items));
   }
 
   static qxir::Expr *qconv_stmt_expr(const qparse::StmtExpr *n) {
-    /// TODO: stmt_expr
+    /**
+     * @brief Unwrap a statement inside an expression into a qxir expression.
+     * @details This is a 1-to-1 conversion of the statement expression.
+     */
 
-    throw QError();
+    return qconv(n->get_stmt());
   }
 
   static qxir::Expr *qconv_type_expr(const qparse::TypeExpr *n) {
-    /// TODO: type_expr
+    /*
+     * @brief Convert a type expression to a qxir expression.
+     * @details This is a 1-to-1 conversion of the type expression.
+     */
 
-    throw QError();
+    return qconv(n->get_type());
   }
 
   static qxir::Expr *qconv_templ_call(const qparse::TemplCall *n) {
@@ -803,15 +850,21 @@ namespace qxir {
   }
 
   static qxir::Expr *qconv_opaque_ty(const qparse::OpaqueTy *n) {
-    /// TODO: opaque_ty
+    /**
+     * @brief Convert an opaque type to a qxir opaque type.
+     * @details This is a 1-to-1 conversion of the opaque type.
+     */
 
-    throw QError();
+    return create<OpaqueTy>(memorize(n->get_name()));
   }
 
   static qxir::Expr *qconv_string_ty(const qparse::StringTy *n) {
-    /// TODO: string_ty
+    /**
+     * @brief Convert a string type to a qxir string type.
+     * @details This is a 1-to-1 conversion of the string type intrinsic.
+     */
 
-    throw QError();
+    return create<StringTy>();
   }
 
   static qxir::Expr *qconv_enum_ty(const qparse::EnumTy *n) {
@@ -959,9 +1012,19 @@ namespace qxir {
   }
 
   static qxir::Expr *qconv_block(const qparse::Block *n) {
-    /// TODO: block
+    /**
+     * @brief Convert a scope block into an expression sequence.
+     * @details A QXIR sequence is a list of expressions (a sequence point).
+     *          This is equivalent to a scope block.
+     */
 
-    throw QError();
+    SeqItems items;
+
+    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+      items.push_back(qconv(*it));
+    }
+
+    return create<Seq>(std::move(items));
   }
 
   static qxir::Expr *qconv_const(const qparse::ConstDecl *n) {
@@ -989,27 +1052,76 @@ namespace qxir {
   }
 
   static qxir::Expr *qconv_return(const qparse::ReturnStmt *n) {
-    /// TODO: return
+    /**
+     * @brief Convert a return statement to a qxir expression.
+     * @details This is a 1-to-1 conversion of the return statement.
+     */
 
-    throw QError();
+    auto val = qconv(n->get_value());
+    if (!val) {
+      val = create<qxir::VoidTy>();
+    }
+
+    return create<Ret>(val);
   }
 
   static qxir::Expr *qconv_retif(const qparse::ReturnIfStmt *n) {
-    /// TODO: retif
+    /**
+     * @brief Convert a return statement to a qxir expression.
+     * @details Lower into an 'if (cond) {return val}' expression.
+     */
 
-    throw QError();
+    auto cond = qconv(n->get_cond());
+    if (!cond) {
+      /// TODO: Err msg
+      throw QError();
+    }
+
+    auto val = qconv(n->get_value());
+    if (!val) {
+      /// TODO: Err msg
+      throw QError();
+    }
+
+    return create<If>(cond, create<Ret>(val), create<qxir::VoidTy>());
   }
 
   static qxir::Expr *qconv_retz(const qparse::RetZStmt *n) {
-    /// TODO: retz
+    /**
+     * @brief Convert a return statement to a qxir expression.
+     * @details Lower into an 'if (!cond) {return val}' expression.
+     */
 
-    throw QError();
+    auto cond = qconv(n->get_cond());
+    if (!cond) {
+      /// TODO: Err msg
+      throw QError();
+    }
+
+    auto inv_cond = create<UnExpr>(cond, Op::LogicNot);
+
+    auto val = qconv(n->get_value());
+    if (!val) {
+      /// TODO: Err msg
+      throw QError();
+    }
+
+    return create<If>(inv_cond, create<Ret>(val), create<qxir::VoidTy>());
   }
 
   static qxir::Expr *qconv_retv(const qparse::RetVStmt *n) {
-    /// TODO: retv
+    /**
+     * @brief Convert a return statement to a qxir expression.
+     * @details Lower into an 'if (cond) {return void}' expression.
+     */
 
-    throw QError();
+    auto cond = qconv(n->get_cond());
+    if (!cond) {
+      /// TODO: Err msg
+      throw QError();
+    }
+
+    return create<If>(cond, create<Ret>(create<qxir::VoidTy>()), create<qxir::VoidTy>());
   }
 
   static qxir::Expr *qconv_break(const qparse::BreakStmt *n) {
@@ -1073,9 +1185,12 @@ namespace qxir {
   }
 
   static qxir::Expr *qconv_expr_stmt(const qparse::ExprStmt *n) {
-    /// TODO: expr_stmt
+    /**
+     * @brief Convert an expression inside a statement to a qxir expression.
+     * @details This is a 1-to-1 conversion of the expression statement.
+     */
 
-    throw QError();
+    return qconv(n->get_expr());
   }
 
   static qxir::Expr *qconv_volstmt(const qparse::VolStmt *n) {

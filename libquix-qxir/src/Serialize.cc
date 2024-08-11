@@ -173,6 +173,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     case QIR_NODE_UNEXPR: {
       ss << "(";
       ss << n->as<UnExpr>()->getOp();
+      ss << " ";
       serialize_recurse(n->as<UnExpr>()->getExpr(), ss, state);
       ss << ")";
       break;
@@ -265,7 +266,6 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QIR_NODE_INDEX: {
-      ss << "{?}";
       serialize_recurse(n->as<Index>()->getExpr(), ss, state);
       ss << "[";
       serialize_recurse(n->as<Index>()->getIndex(), ss, state);
@@ -298,7 +298,6 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QIR_NODE_IF: {
-      ss << "{?}";
       ss << "if (";
       serialize_recurse(n->as<If>()->getCond(), ss, state);
       ss << ") then ";
@@ -380,11 +379,6 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       }
       ss << ") ";
       serialize_recurse(n->as<Fn>()->getBody(), ss, state);
-      break;
-    }
-    case QIR_NODE_ASM: {
-      /// TODO:
-      ss << "{?}";
       break;
     }
     case QIR_NODE_U1_TY: {
@@ -533,6 +527,9 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       ss << "): ";
       serialize_recurse(n->as<FnTy>()->getReturn(), ss, state);
       break;
+    }
+    default: {
+      qcore_panicf("Unknown node type: %d", n->thisTypeId());
     }
   }
   (void)escape_string;
