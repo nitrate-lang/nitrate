@@ -29,15 +29,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <execinfo.h>
 #include <quix-core/Cache.h>
 #include <quix-core/Error.h>
 
-#include <atomic>
-#include <cstdarg>
-#include <iostream>
 #include <mutex>
-#include <thread>
 
 #include "LibMacro.h"
 

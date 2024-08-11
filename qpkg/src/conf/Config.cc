@@ -32,7 +32,6 @@
 #include <conf/Parser.hh>
 #include <core/Logger.hh>
 #include <fstream>
-#include <sstream>
 
 static std::string JsonEscapeString(const std::string &str) {
   std::stringstream ss;

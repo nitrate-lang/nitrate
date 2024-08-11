@@ -38,22 +38,12 @@
 
 #include <array>
 #include <boost/bimap.hpp>
-#include <cassert>
 #include <cctype>
 #include <charconv>
 #include <cmath>
 #include <cstdio>
-#include <cstring>
-#include <functional>
 #include <iomanip>
-#include <iostream>
-#include <mutex>
 #include <queue>
-#include <regex>
-#include <stdexcept>
-#include <string_view>
-#include <unordered_map>
-#include <vector>
 
 #include "LibMacro.h"
 
@@ -615,7 +605,8 @@ LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
   __builtin_unreachable();
 }
 
-LIB_EXPORT qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf, qlex_size size) {
+LIB_EXPORT qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf,
+                                    qlex_size size) {
   size_t ret;
 
   switch (tok->ty) {

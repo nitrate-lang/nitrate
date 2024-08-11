@@ -5,7 +5,6 @@
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <string_view>
 
 class Lexer {
   qlex_t *m_ctx;

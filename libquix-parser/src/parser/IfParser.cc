@@ -31,7 +31,6 @@
 
 #define __QUIX_IMPL__
 
-#include "LibMacro.h"
 #include "parser/Parse.h"
 
 using namespace qparse::parser;

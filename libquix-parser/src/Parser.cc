@@ -40,11 +40,8 @@
 #include <setjmp.h>
 #include <signal.h>
 
-#include <array>
 #include <atomic>
 #include <cstring>
-#include <mutex>
-#include <set>
 
 #include "LibMacro.h"
 

@@ -32,7 +32,6 @@
 #include <quix-core/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-qxir/Lib.h>
-#include <quix-qxir/QXIR.h>
 #include <sys/resource.h>
 
 #include <atomic>

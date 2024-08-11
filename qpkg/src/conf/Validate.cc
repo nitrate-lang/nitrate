@@ -32,7 +32,6 @@
 #include <conf/SPDX.hh>
 #include <conf/Validate.hh>
 #include <core/Logger.hh>
-#include <filesystem>
 
 enum class KeyName {
   NAME,

@@ -33,7 +33,6 @@
 
 #include <utility>
 
-#include "LibMacro.h"
 #include "parser/Parse.h"
 
 using namespace qparse;

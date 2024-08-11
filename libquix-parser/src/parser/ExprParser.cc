@@ -33,7 +33,6 @@
 
 #include <stack>
 
-#include "LibMacro.h"
 #include "parser/Parse.h"
 
 #define MAX_EXPR_DEPTH (10000)

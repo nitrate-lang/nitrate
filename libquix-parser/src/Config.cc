@@ -33,11 +33,7 @@
 #include <quix-core/Error.h>
 #include <quix-parser/Config.h>
 
-#include <array>
 #include <boost/bimap.hpp>
-#include <optional>
-#include <string>
-#include <vector>
 
 #include "LibMacro.h"
 

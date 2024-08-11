@@ -32,9 +32,6 @@
 #include <core/Adapter.hh>
 #include <core/Collector.hh>
 #include <core/Writer.hh>
-#include <iostream>
-#include <mutex>
-#include <sstream>
 
 std::string qpkg::core::FormatAdapter::format(const std::string &msg, qpkg::core::Level lvl,
                                               float weight) {

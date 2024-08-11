@@ -33,16 +33,8 @@
 
 #include <quix-core/Error.h>
 #include <quix-qxir/Node.h>
-#include <quix-qxir/QXIR.h>
 
-#include <cmath>
 #include <cstring>
-#include <sstream>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
-#include "LibMacro.h"
 
 using namespace qxir;
 

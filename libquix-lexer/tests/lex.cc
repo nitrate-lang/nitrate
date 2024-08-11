@@ -3,8 +3,6 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
-#include <string_view>
-#include <unordered_map>
 #include <vector>
 
 static void print_token(qlex_t *lexer, qlex_tok_t tok) {

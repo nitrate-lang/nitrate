@@ -33,7 +33,6 @@
 #include <conf/Parser.hh>
 #include <conf/Validate.hh>
 #include <core/Logger.hh>
-#include <filesystem>
 
 static std::optional<qpkg::conf::Config> get_config(const std::filesystem::path &base) {
   if (std::filesystem::exists(base / "qpkg.yaml")) {

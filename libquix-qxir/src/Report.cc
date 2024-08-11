@@ -36,7 +36,6 @@
 #include <quix-core/Error.h>
 #include <quix-qxir/QXIR.h>
 
-#include <sstream>
 
 using namespace qxir::diag;
 
