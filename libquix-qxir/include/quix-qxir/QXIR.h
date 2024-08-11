@@ -36,6 +36,7 @@
 #include <quix-parser/Node.h>
 #include <quix-qxir/Config.h>
 #include <quix-qxir/Node.h>
+#include <quix-lexer/Lexer.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -49,6 +50,7 @@ typedef struct qxir_t {
   qxir_impl_t *impl;   /* QXIR implementation struct */
   qxir_conf_t *conf;   /* QXIR configuration */
   qparse_node_t *root; /* The root node of the parse tree */
+  qlex_t *lexer;       /* The lexer used to parse the code */
   bool failed;         /* Whether the qxir failed (ie syntax errors) */
 } qxir_t;
 
@@ -57,18 +59,19 @@ typedef struct qxir_t {
  * configuration.
  *
  * @param root The root node of the parse tree.
+ * @param lexer The lexer used to parse the code.
  * @param conf QXIR configuration object.
  *
  * @return A new qxir instance or NULL if an error occurred.
  *
- * @note If `!root` or `!conf`, NULL is returned.
+ * @note If `!root || !lexer || !conf`, NULL is returned.
  * @note The returned object must be freed with `qxir_free`.
- * @note The root object and configuration object are not owned by the returned qxir object.
+ * @note The root object, lexer, and configuration object are not owned by the returned qxir object.
  * @note The returned instance does not contain internal locks.
  *
  * @note This function is thread safe.
  */
-qxir_t *qxir_new(qparse_node_t *root, qxir_conf_t *conf);
+qxir_t *qxir_new(qparse_node_t *root, qlex_t *lexer, qxir_conf_t *conf);
 
 /**
  * @brief Free a qxir instance.

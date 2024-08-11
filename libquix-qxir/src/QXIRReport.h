@@ -49,7 +49,7 @@ namespace qxir::diag {
   };
 
   enum class MessageType {
-    Syntax,
+    BadTree,
     FatalError,
   };
 
@@ -69,7 +69,7 @@ namespace qxir::diag {
 
   struct DiagMessage {
     std::string msg;
-    qlex_tok_t tok;
+    qlex_loc_t start, end;
     MessageType type;
   };
 
@@ -94,7 +94,7 @@ namespace qxir::diag {
   /**
    * @brief Report a syntax error
    */
-  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...);
+  void badtree(const qparse::Node *node, std::string_view fmt, ...);
 };  // namespace qxir::diag
 
 #endif  // __QUIX_QXIR_REPORT_H__

@@ -34,8 +34,10 @@
 #include <QXIRImpl.h>
 #include <QXIRReport.h>
 #include <quix-core/Error.h>
+#include <quix-lexer/Lib.h>
 #include <quix-qxir/QXIR.h>
 
+#include <sstream>
 
 using namespace qxir::diag;
 
@@ -44,15 +46,17 @@ thread_local qxir_t *g_qxir_inst;
 ///============================================================================///
 
 std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
-  /// TODO: Implement plain text diagnostic message formatting
-
-  (void)msg;
-  throw std::runtime_error("DiagnosticManager::mint_plain_message(): Not implemented");
+  /// TODO: Implement this
+  std::stringstream ss;
+  ss << msg.msg;
+  return ss.str();
 
   // std::stringstream ss;
   // ss << qlex_filename(m_qxir->lexer) << ":";
-  // qlex_size line = qlex_line(m_qxir->lexer, msg.tok.loc);
-  // qlex_size col = qlex_col(m_qxir->lexer, msg.tok.loc);
+  // std::vector<std::pair<qlex_size, qlex_size>> range = {
+  //   {qlex_line(m_qxir->lexer, msg.start), qlex_col(m_qxir->lexer, msg.start)},
+  //   {qlex_line(m_qxir->lexer, msg.end),   qlex_col(m_qxir->lexer, msg.end)},
+  // };
 
   // if (line != UINT32_MAX) {
   //   ss << line << ":";
@@ -68,8 +72,8 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   // ss << "error: " << msg.msg << " [";
 
   // switch (msg.type) {
-  //   case MessageType::Syntax:
-  //     ss << "SyntaxError";
+  //   case MessageType::BadTree:
+  //     ss << "BadTree";
   //     break;
   //   case MessageType::FatalError:
   //     ss << "FatalError";
@@ -95,10 +99,10 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
 }
 
 std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
-  /// TODO: Implement plain text diagnostic message formatting
-
-  (void)msg;
-  throw std::runtime_error("DiagnosticManager::mint_clang16_message(): Not implemented");
+  /// TODO: Implement this
+  std::stringstream ss;
+  ss << msg.msg;
+  return ss.str();
 
   // std::stringstream ss;
   // ss << "\x1b[37;1m" << qlex_filename(m_qxir->lexer) << ":";
@@ -120,8 +124,8 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
   // ss << "\x1b[31;1merror:\x1b[0m \x1b[37;1m" << msg.msg << " [";
 
   // switch (msg.type) {
-  //   case MessageType::Syntax:
-  //     ss << "SyntaxError";
+  //   case MessageType::BadTree:
+  //     ss << "BadTree";
   //     break;
   //   case MessageType::FatalError:
   //     ss << "FatalError";
@@ -183,7 +187,7 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, FormatStyle s
 namespace qxir::diag {
   void install_reference(qxir_t *qxir) { g_qxir_inst = qxir; }
 
-  void syntax_impl(const qlex_tok_t &tok, std::string_view fmt, va_list args) {
+  void badtree_impl(qlex_loc_t start, qlex_loc_t end, std::string_view fmt, va_list args) {
     std::string msg;
 
     {  // Format the message
@@ -198,8 +202,9 @@ namespace qxir::diag {
 
     DiagMessage diag;
     diag.msg = msg;
-    diag.tok = tok;
-    diag.type = MessageType::Syntax;
+    diag.start = start;
+    diag.end = end;
+    diag.type = MessageType::BadTree;
 
     g_qxir_inst->impl->diag.push(std::move(diag));
     g_qxir_inst->failed = true;
@@ -209,10 +214,14 @@ namespace qxir::diag {
     }
   }
 
-  void syntax(const qlex_tok_t &tok, std::string_view fmt, ...) {
+  void badtree(const qparse::Node *node, std::string_view fmt, ...) {
+    if (!node) {
+      qcore_panic("badtree: node is NULL");
+    }
+
     va_list args;
     va_start(args, fmt);
-    syntax_impl(tok, fmt, args);
+    badtree_impl(node->get_start_pos(), node->get_end_pos(), fmt, args);
     va_end(args);
   }
 }  // namespace qxir::diag

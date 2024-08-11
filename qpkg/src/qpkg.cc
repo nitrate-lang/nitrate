@@ -1243,7 +1243,7 @@ int run_dev_mode(
       return 1;
     }
 
-    qxir_t *qxir = qxir_new(root, conf);
+    qxir_t *qxir = qxir_new(root, lexer, conf);
     if (!qxir) {
       qxir_conf_free(conf);
       qcore_arena_close(&arena);

@@ -498,7 +498,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     case QIR_NODE_ARRAY_TY: {
       ss << "[";
       serialize_recurse(n->as<ArrayTy>()->getElement(), ss, state);
-      ss << ":";
+      ss << "; ";
       serialize_recurse(n->as<ArrayTy>()->getCount(), ss, state);
       ss << "]";
       break;
