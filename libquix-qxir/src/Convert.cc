@@ -50,35 +50,43 @@
 using namespace qxir::diag;
 
 LIB_EXPORT qxir_t *qxir_new(qparse_node_t *root, qlex_t *lexer, qxir_conf_t *conf) {
-  if (!root || !lexer || !conf) {
+  try {
+    if (!root || !lexer || !conf) {
+      return nullptr;
+    }
+
+    qxir_t *qxir = new qxir_t();
+
+    qxir->impl = new qxir_impl_t();
+    qxir->conf = conf;
+    qxir->root = root;
+    qxir->lexer = lexer;
+    qxir->failed = false;
+    qxir->impl->diag.set_ctx(qxir);
+
+    return qxir;
+  } catch (...) {
     return nullptr;
   }
-
-  qxir_t *qxir = new qxir_t();
-
-  qxir->impl = new qxir_impl_t();
-  qxir->conf = conf;
-  qxir->root = root;
-  qxir->lexer = lexer;
-  qxir->failed = false;
-  qxir->impl->diag.set_ctx(qxir);
-
-  return qxir;
 }
 
 LIB_EXPORT void qxir_free(qxir_t *qxir) {
-  if (!qxir) {
+  try {
+    if (!qxir) {
+      return;
+    }
+
+    delete qxir->impl;
+
+    qxir->impl = nullptr;
+    qxir->conf = nullptr;
+    qxir->root = nullptr;
+    qxir->lexer = nullptr;
+
+    delete qxir;
+  } catch (...) {
     return;
   }
-
-  delete qxir->impl;
-
-  qxir->impl = nullptr;
-  qxir->conf = nullptr;
-  qxir->root = nullptr;
-  qxir->lexer = nullptr;
-
-  delete qxir;
 }
 
 static std::atomic<size_t> sigguard_refcount;
@@ -152,12 +160,12 @@ public:
 static qxir::Expr *qconv(const qparse::Node *node);
 
 LIB_EXPORT bool qxir_do(qxir_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
-  if (!qxir || !arena || !out) {
-    return false;
-  }
-  *out = nullptr;
-
   try {
+    if (!qxir || !arena || !out) {
+      return false;
+    }
+    *out = nullptr;
+
     /*=============== Swap in their arena ===============*/
     qxir::qxir_arena.swap(*arena);
 
@@ -193,69 +201,81 @@ LIB_EXPORT bool qxir_do(qxir_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
 
     /*==================== Return status ====================*/
     return status && !qxir->failed;
-  } catch (...) {
-    /*== This will be caught iff QQK_CRASHGUARD is QQV_ON ==*/
-    abort();
+
+  } catch (...) { /*== This will be caught iff QQK_CRASHGUARD is QQV_ON ==*/
+    abort();      /* iff QQK_CRASHGUARD is off we abort(). */
   }
 }
 
 LIB_EXPORT bool qxir_and_dump(qxir_t *qxir, FILE *out, void *x0, void *x1) {
-  (void)x0;
-  (void)x1;
+  try {
+    (void)x0;
+    (void)x1;
 
-  qcore_arena_t arena;
-  qxir_node_t *root;
+    qcore_arena_t arena;
+    qxir_node_t *root;
 
-  if (!qxir || !out) {
-    return false;
-  }
+    if (!qxir || !out) {
+      return false;
+    }
 
-  qcore_arena_open(&arena);
+    qcore_arena_open(&arena);
 
-  if (!qxir_do(qxir, &arena, &root)) {
+    if (!qxir_do(qxir, &arena, &root)) {
+      qcore_arena_close(&arena);
+      return false;
+    }
+
+    size_t len = 0;
+    char *repr = qxir_repr(root, false, 2, &arena, &len);
+
+    fwrite(repr, 1, len, out);
+
     qcore_arena_close(&arena);
+
+    return true;
+  } catch (...) {
     return false;
   }
-
-  size_t len = 0;
-  char *repr = qxir_repr(root, false, 2, &arena, &len);
-
-  fwrite(repr, 1, len, out);
-
-  qcore_arena_close(&arena);
-
-  return true;
 }
 
 LIB_EXPORT bool qxir_check(qxir_t *qxir, const qxir_node_t *base) {
-  if (!qxir || !base) {
+  try {
+    if (!qxir || !base) {
+      return false;
+    }
+
+    if (qxir->failed) {
+      return false;
+    }
+
+    if (!qxir->impl) {
+      qcore_panic("qpase_check: invariant violation: qxir->impl is NULL");
+    }
+
+    /* Safety is overrated */
+    /// TODO:
+    qcore_panic("qxir_check: qxir not implemented");
+  } catch (...) {
     return false;
   }
-
-  if (qxir->failed) {
-    return false;
-  }
-
-  if (!qxir->impl) {
-    qcore_panic("qpase_check: invariant violation: qxir->impl is NULL");
-  }
-
-  /* Safety is overrated */
-  /// TODO:
-  qcore_panic("qxir_check: qxir not implemented");
 }
 
 LIB_EXPORT void qxir_dumps(qxir_t *qxir, bool no_ansi, qxir_dump_cb cb, uintptr_t data) {
-  if (!qxir || !cb) {
+  try {
+    if (!qxir || !cb) {
+      return;
+    }
+
+    auto adapter = [&](const char *msg) { cb(msg, std::strlen(msg), data); };
+
+    if (no_ansi) {
+      qxir->impl->diag.render(adapter, qxir::diag::FormatStyle::ClangPlain);
+    } else {
+      qxir->impl->diag.render(adapter, qxir::diag::FormatStyle::Clang16Color);
+    }
+  } catch (...) {
     return;
-  }
-
-  auto adapter = [&](const char *msg) { cb(msg, std::strlen(msg), data); };
-
-  if (no_ansi) {
-    qxir->impl->diag.render(adapter, qxir::diag::FormatStyle::ClangPlain);
-  } else {
-    qxir->impl->diag.render(adapter, qxir::diag::FormatStyle::Clang16Color);
   }
 }
 
@@ -843,6 +863,8 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the U1 type.
      */
 
+    (void)n;
+
     return create<U1Ty>();
   }
 
@@ -851,6 +873,8 @@ namespace qxir {
      * @brief Convert a U8 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the U8 type.
      */
+
+    (void)n;
 
     return create<U8Ty>();
   }
@@ -861,6 +885,8 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the U16 type.
      */
 
+    (void)n;
+
     return create<U16Ty>();
   }
 
@@ -869,6 +895,8 @@ namespace qxir {
      * @brief Convert a U32 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the U32 type.
      */
+
+    (void)n;
 
     return create<U32Ty>();
   }
@@ -879,6 +907,8 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the U64 type.
      */
 
+    (void)n;
+
     return create<U64Ty>();
   }
 
@@ -887,6 +917,8 @@ namespace qxir {
      * @brief Convert a U128 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the U128 type.
      */
+
+    (void)n;
 
     return create<U128Ty>();
   }
@@ -897,6 +929,8 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the I8 type.
      */
 
+    (void)n;
+
     return create<I8Ty>();
   }
 
@@ -905,6 +939,8 @@ namespace qxir {
      * @brief Convert a I16 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the I16 type.
      */
+
+    (void)n;
 
     return create<I16Ty>();
   }
@@ -915,6 +951,8 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the I32 type.
      */
 
+    (void)n;
+
     return create<I32Ty>();
   }
 
@@ -923,6 +961,8 @@ namespace qxir {
      * @brief Convert a I64 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the I64 type.
      */
+
+    (void)n;
 
     return create<I64Ty>();
   }
@@ -933,6 +973,8 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the I128 type.
      */
 
+    (void)n;
+
     return create<I128Ty>();
   }
 
@@ -941,6 +983,8 @@ namespace qxir {
      * @brief Convert a F32 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the F32 type.
      */
+
+    (void)n;
 
     return create<F32Ty>();
   }
@@ -951,6 +995,8 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the F64 type.
      */
 
+    (void)n;
+
     return create<F64Ty>();
   }
 
@@ -959,6 +1005,8 @@ namespace qxir {
      * @brief Convert a Void type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the Void type.
      */
+
+    (void)n;
 
     return create<VoidTy>();
   }
@@ -992,6 +1040,8 @@ namespace qxir {
      * @brief Convert a string type to a qxir string type.
      * @details This is a 1-to-1 conversion of the string type intrinsic.
      */
+
+    (void)n;
 
     return create<StringTy>();
   }

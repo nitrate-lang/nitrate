@@ -84,69 +84,7 @@ uint32_t Expr::thisSizeOf() const noexcept {
   return sizes.at(id);
 }
 
-qxir_ty_t Expr::thisTypeId() const noexcept {
-#define TYPEID_ROW(__type, __name) \
-  { typeid(__type).hash_code(), QIR_NODE_##__name }
-
-  static const std::unordered_map<size_t, qxir_ty_t> typeid_map = {
-      TYPEID_ROW(BinExpr, BINEXPR),
-      TYPEID_ROW(UnExpr, UNEXPR),
-      TYPEID_ROW(PostUnExpr, POST_UNEXPR),
-      TYPEID_ROW(Int, INT),
-      TYPEID_ROW(Float, FLOAT),
-      TYPEID_ROW(String, STRING),
-      TYPEID_ROW(List, LIST),
-      TYPEID_ROW(Alloc, ALLOC),
-      TYPEID_ROW(Dealloc, DEALLOC),
-      TYPEID_ROW(Call, CALL),
-      TYPEID_ROW(Seq, SEQ),
-      TYPEID_ROW(Async, ASYNC),
-      TYPEID_ROW(Index, INDEX),
-      TYPEID_ROW(Ident, IDENT),
-      TYPEID_ROW(Global, GLOBAL),
-      TYPEID_ROW(Ret, RET),
-      TYPEID_ROW(Brk, BRK),
-      TYPEID_ROW(Cont, CONT),
-      TYPEID_ROW(If, IF),
-      TYPEID_ROW(While, WHILE),
-      TYPEID_ROW(For, FOR),
-      TYPEID_ROW(Form, FORM),
-      TYPEID_ROW(Foreach, FOREACH),
-      TYPEID_ROW(Case, CASE),
-      TYPEID_ROW(Switch, SWITCH),
-      TYPEID_ROW(Fn, FN),
-      TYPEID_ROW(Asm, ASM),
-      TYPEID_ROW(U1Ty, U1_TY),
-      TYPEID_ROW(U8Ty, U8_TY),
-      TYPEID_ROW(U16Ty, U16_TY),
-      TYPEID_ROW(U32Ty, U32_TY),
-      TYPEID_ROW(U64Ty, U64_TY),
-      TYPEID_ROW(U128Ty, U128_TY),
-      TYPEID_ROW(I8Ty, I8_TY),
-      TYPEID_ROW(I16Ty, I16_TY),
-      TYPEID_ROW(I32Ty, I32_TY),
-      TYPEID_ROW(I64Ty, I64_TY),
-      TYPEID_ROW(I128Ty, I128_TY),
-      TYPEID_ROW(F16Ty, F16_TY),
-      TYPEID_ROW(F32Ty, F32_TY),
-      TYPEID_ROW(F64Ty, F64_TY),
-      TYPEID_ROW(F128Ty, F128_TY),
-      TYPEID_ROW(VoidTy, VOID_TY),
-      TYPEID_ROW(PtrTy, PTR_TY),
-      TYPEID_ROW(OpaqueTy, OPAQUE_TY),
-      TYPEID_ROW(StringTy, STRING_TY),
-      TYPEID_ROW(StructTy, STRUCT_TY),
-      TYPEID_ROW(UnionTy, UNION_TY),
-      TYPEID_ROW(ArrayTy, ARRAY_TY),
-      TYPEID_ROW(ListTy, LIST_TY),
-      TYPEID_ROW(IntrinTy, INTRIN_TY),
-      TYPEID_ROW(FnTy, FN_TY),
-  };
-
-  qcore_assert(typeid_map.size() == QIR_NODE_COUNT);
-
-  return typeid_map.at(typeid(*this).hash_code());
-}
+qxir_ty_t Expr::thisTypeId() const noexcept { return m_node_type; }
 
 const char *Expr::thisTypeName() const noexcept {
 #define NAMEOF_ROW(__name) \

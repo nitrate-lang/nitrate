@@ -206,11 +206,12 @@ void qxir_conf_clear(qxir_conf_t *conf);
  * @param stream A pointer to the stream to dump the configuration options to.
  * @param field_delim The delimiter to use between the field and the value.
  * @param line_delim The delimiter to use between each configuration option.
- * @note This function is thread-safe.
+ * 
+ * @return The number of bytes written to the stream on success OR 0 on failure.
  *
  * @note This function is thread-safe.
  */
-void qxir_conf_dump(qxir_conf_t *conf, FILE *stream, const char *field_delim,
+size_t qxir_conf_dump(qxir_conf_t *conf, FILE *stream, const char *field_delim,
                     const char *line_delim);
 
 #ifdef __cplusplus

@@ -98,6 +98,8 @@ typedef enum qxir_ty_t {
   QIR_NODE_LIST_TY,
   QIR_NODE_INTRIN_TY,
   QIR_NODE_FN_TY,
+
+  QIR_NODE_BAD,
 } qxir_ty_t;
 
 #define QIR_NODE_COUNT 52
@@ -185,7 +187,6 @@ namespace qxir {
 class qxir_node_t {
 public:
   qxir_node_t() = default;
-  virtual ~qxir_node_t() = default;
 };
 
 namespace qxir {
@@ -193,26 +194,17 @@ namespace qxir {
 #ifdef __QXIR_NODE_REFLECT_IMPL__
   public:
 #endif
-    TypeID m_type_idx;           /* Typecode of this expression. */
-    ModuleId m_module_idx : 16;  /* The module context index. */
-    uint64_t m_constexpr : 1;    /* Is this expression a constant expression? */
-    uint64_t m_minimal : 1;      /* Is this expression already in simplified form? */
-    uint64_t m_volatile : 1;     /* Is this expression volatile? */
-    uint64_t m_higher_order : 1; /* Is higher-order construct? */
-    uint64_t m_padding : 4;
+    qxir_ty_t m_node_type : 6;  /* Typecode of this node. */
+    TypeID m_type_idx;          /* Typecode of this expression. */
+    ModuleId m_module_idx : 16; /* The module context index. */
+    uint64_t m_constexpr : 1;   /* Is this expression a constant expression? */
+    uint64_t m_volatile : 1;    /* Is this expression volatile? */
 
     qlex_loc_t m_start_loc, m_end_loc;
 
   public:
-    Expr()
-        : m_type_idx(0),
-          m_constexpr(0),
-          m_minimal(0),
-          m_volatile(0),
-          m_higher_order(0),
-          m_padding(0) {
-      (void)m_padding;
-    }
+    Expr(qxir_ty_t ty = QIR_NODE_BAD)
+        : m_node_type(ty), m_type_idx(0), m_module_idx(0), m_constexpr(0), m_volatile(0) {}
 
     uint32_t thisSizeOf() const noexcept;
     qxir_ty_t thisTypeId() const noexcept;
@@ -220,13 +212,9 @@ namespace qxir {
 
     bool isType() const noexcept;
     inline bool isConst() const noexcept { return m_constexpr; }
-    inline bool isReduced() const noexcept { return m_minimal; }
     inline bool isVolatile() const noexcept { return m_volatile; }
-    inline bool isHigherOrder() const noexcept { return m_higher_order; }
     inline void setConst(bool is_const) noexcept { m_constexpr = is_const; }
-    inline void setReduced(bool is_reduced) noexcept { m_minimal = is_reduced; }
     inline void setVolatile(bool is_volatile) noexcept { m_volatile = is_volatile; }
-    inline void setHigherOrder(bool is_higher_order) noexcept { m_higher_order = is_higher_order; }
 
     qlex_loc_t getStartLoc() const noexcept { return m_start_loc; }
     qlex_loc_t getEndLoc() const noexcept { return m_end_loc; }
@@ -244,8 +232,7 @@ namespace qxir {
      */
     template <typename T>
     const T *as() const noexcept {
-      // return reinterpret_cast<const T *>(this);
-      return dynamic_cast<const T *>(this);
+      return reinterpret_cast<const T *>(this);
     }
 
     /**
@@ -257,8 +244,7 @@ namespace qxir {
      */
     template <typename T>
     T *as() noexcept {
-      // return reinterpret_cast<T *>(this);
-      return dynamic_cast<T *>(this);
+      return reinterpret_cast<T *>(this);
     }
 
     Expr *asExpr() noexcept { return this; }
@@ -305,7 +291,7 @@ namespace qxir {
 
   class Type : public Expr {
   public:
-    Type() = default;
+    Type(qxir_ty_t ty) : Expr(ty) {}
 
     bool isSizeKnown() const noexcept;
     size_t getSizeBits();
@@ -358,7 +344,8 @@ namespace qxir {
     Op m_op;
 
   public:
-    BinExpr(Expr *lhs, Expr *rhs, Op op) : m_lhs(lhs), m_rhs(rhs), m_op(op) {}
+    BinExpr(Expr *lhs, Expr *rhs, Op op)
+        : Expr(QIR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *getLHS() noexcept { return m_lhs; }
     Expr *getRHS() noexcept { return m_rhs; }
@@ -374,7 +361,7 @@ namespace qxir {
     Op m_op;
 
   public:
-    UnExpr(Expr *expr, Op op) : m_expr(expr), m_op(op) {}
+    UnExpr(Expr *expr, Op op) : Expr(QIR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -388,7 +375,7 @@ namespace qxir {
     Op m_op;
 
   public:
-    PostUnExpr(Expr *expr, Op op) : m_expr(expr), m_op(op) {}
+    PostUnExpr(Expr *expr, Op op) : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -407,82 +394,82 @@ namespace qxir {
 
   class U1Ty final : public Type {
   public:
-    U1Ty() = default;
+    U1Ty() : Type(QIR_NODE_U1_TY) {}
   };
 
   class U8Ty final : public Type {
   public:
-    U8Ty() = default;
+    U8Ty() : Type(QIR_NODE_U8_TY) {}
   };
 
   class U16Ty final : public Type {
   public:
-    U16Ty() = default;
+    U16Ty() : Type(QIR_NODE_U16_TY) {}
   };
 
   class U32Ty final : public Type {
   public:
-    U32Ty() = default;
+    U32Ty() : Type(QIR_NODE_U32_TY) {}
   };
 
   class U64Ty final : public Type {
   public:
-    U64Ty() = default;
+    U64Ty() : Type(QIR_NODE_U64_TY) {}
   };
 
   class U128Ty final : public Type {
   public:
-    U128Ty() = default;
+    U128Ty() : Type(QIR_NODE_U128_TY) {}
   };
 
   class I8Ty final : public Type {
   public:
-    I8Ty() = default;
+    I8Ty() : Type(QIR_NODE_I8_TY) {}
   };
 
   class I16Ty final : public Type {
   public:
-    I16Ty() = default;
+    I16Ty() : Type(QIR_NODE_I16_TY){};
   };
 
   class I32Ty final : public Type {
   public:
-    I32Ty() = default;
+    I32Ty() : Type(QIR_NODE_I32_TY) {}
   };
 
   class I64Ty final : public Type {
   public:
-    I64Ty() = default;
+    I64Ty() : Type(QIR_NODE_I64_TY) {}
   };
 
   class I128Ty final : public Type {
   public:
-    I128Ty() = default;
+    I128Ty() : Type(QIR_NODE_I128_TY) {}
   };
 
   class F16Ty final : public Type {
   public:
-    F16Ty() = default;
+    F16Ty() : Type(QIR_NODE_F16_TY) {}
   };
 
   class F32Ty final : public Type {
   public:
-    F32Ty() = default;
+    F32Ty() : Type(QIR_NODE_F32_TY) {}
   };
 
   class F64Ty final : public Type {
   public:
-    F64Ty() = default;
+    F64Ty() : Type(QIR_NODE_F64_TY) {}
   };
 
   class F128Ty final : public Type {
   public:
-    F128Ty() = default;
+    F128Ty() : Type(QIR_NODE_F128_TY) {}
   };
 
   class VoidTy final : public Type {
   public:
-    VoidTy() = default;
+    VoidTy() : Type(QIR_NODE_VOID_TY) {}
   };
 
   /// ===========================================================================
@@ -497,7 +484,7 @@ namespace qxir {
     Type *m_pointee;
 
   public:
-    PtrTy(Type *pointee) : m_pointee(pointee) {}
+    PtrTy(Type *pointee) : Type(QIR_NODE_PTR_TY), m_pointee(pointee) {}
 
     Type *getPointee() noexcept { return m_pointee; }
   };
@@ -506,14 +493,14 @@ namespace qxir {
     std::string_view m_name;
 
   public:
-    OpaqueTy(std::string_view name) : m_name(name) {}
+    OpaqueTy(std::string_view name) : Type(QIR_NODE_OPAQUE_TY), m_name(name) {}
 
     std::string_view getName() noexcept { return m_name; }
   };
 
   class StringTy final : public Type {
   public:
-    StringTy() = default;
+    StringTy() : Type(QIR_NODE_STRING_TY) {}
   };
 
   typedef std::vector<Type *, Arena<Type *>> StructFields;
@@ -522,7 +509,7 @@ namespace qxir {
     StructFields m_fields;
 
   public:
-    StructTy(const StructFields &fields) : m_fields(fields) {}
+    StructTy(const StructFields &fields) : Type(QIR_NODE_STRUCT_TY), m_fields(fields) {}
 
     const StructFields &getFields() noexcept { return m_fields; }
   };
@@ -534,7 +521,7 @@ namespace qxir {
     UnionFields m_fields;
 
   public:
-    UnionTy(const UnionFields &fields) : m_fields(fields) {}
+    UnionTy(const UnionFields &fields) : Type(QIR_NODE_UNION_TY), m_fields(fields) {}
 
     const UnionFields &getFields() noexcept { return m_fields; }
   };
@@ -544,7 +531,8 @@ namespace qxir {
     Expr *m_size;
 
   public:
-    ArrayTy(Type *element, Expr *size) : m_element(element), m_size(size) {}
+    ArrayTy(Type *element, Expr *size)
+        : Type(QIR_NODE_ARRAY_TY), m_element(element), m_size(size) {}
 
     Type *getElement() noexcept { return m_element; }
     Expr *getCount() { return m_size; }
@@ -554,7 +542,7 @@ namespace qxir {
     Type *m_element;
 
   public:
-    ListTy(Type *element) : m_element(element) {}
+    ListTy(Type *element) : Type(QIR_NODE_LIST_TY), m_element(element) {}
 
     Type *getElement() noexcept { return m_element; }
   };
@@ -563,7 +551,7 @@ namespace qxir {
     std::string_view m_name;
 
   public:
-    IntrinTy(std::string_view name) : m_name(name) {}
+    IntrinTy(std::string_view name) : Type(QIR_NODE_INTRIN_TY), m_name(name) {}
 
     std::string_view getName() noexcept { return m_name; }
   };
@@ -582,7 +570,7 @@ namespace qxir {
 
   public:
     FnTy(const FnParams &params, Type *ret, const FnAttrs &attrs)
-        : m_params(params), m_attrs(attrs), m_return(ret) {}
+        : Type(QIR_NODE_FN_TY), m_params(params), m_attrs(attrs), m_return(ret) {}
 
     const FnParams &getParams() noexcept { return m_params; }
     Type *getReturn() noexcept { return m_return; }
@@ -606,8 +594,8 @@ namespace qxir {
     static constexpr uint64_t FLAG_BIT = 1ULL << 63;
 
   public:
-    Int(uint64_t u64) : m_data{.m_u64 = u64 | FLAG_BIT} {}
-    Int(std::string_view str) : m_data{.m_str = str.data()} {
+    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} {}
+    Int(std::string_view str) : Expr(QIR_NODE_INT), m_data{.m_str = str.data()} {
       qcore_assert((m_data.m_u64 & FLAG_BIT) == 0,
                    "Optimized code assumed an invariant that does not hold on this architecture.");
     }
@@ -643,8 +631,8 @@ namespace qxir {
     static_assert(sizeof(double) == 8);
 
   public:
-    Float(double f64) : m_data{f64} {}
-    Float(std::string_view str) : m_data{str.data()} {}
+    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} {}
+    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} {}
 
     bool isNativeRepresentation() const noexcept { return std::holds_alternative<double>(m_data); }
 
@@ -671,7 +659,7 @@ namespace qxir {
     std::string_view m_data;
 
   public:
-    String(std::string_view data) : m_data(data) {}
+    String(std::string_view data) : Expr(QIR_NODE_STRING), m_data(data) {}
 
     std::string_view getValue() noexcept { return m_data; }
     std::string_view setValue(std::string_view data) noexcept { return m_data = data; }
@@ -683,7 +671,7 @@ namespace qxir {
     ListItems m_items;
 
   public:
-    List(const ListItems &items) : m_items(items) {}
+    List(const ListItems &items) : Expr(QIR_NODE_LIST), m_items(items) {}
 
     const ListItems &getItems() const noexcept { return m_items; }
     ListItems &getItems() noexcept { return m_items; }
@@ -703,7 +691,7 @@ namespace qxir {
     Type *m_type;
 
   public:
-    Alloc(Type *type) : m_type(type) {}
+    Alloc(Type *type) : Expr(QIR_NODE_ALLOC), m_type(type) {}
 
     Type *getType() noexcept { return m_type; }
     Type *setType(Type *type) noexcept { return m_type = type; }
@@ -715,7 +703,7 @@ namespace qxir {
     Expr *m_expr;
 
   public:
-    Dealloc(Expr *expr) : m_expr(expr) {}
+    Dealloc(Expr *expr) : Expr(QIR_NODE_DEALLOC), m_expr(expr) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -728,7 +716,7 @@ namespace qxir {
     CallArgs m_args;
 
   public:
-    Call(Expr *fn, const CallArgs &args) : m_fn(fn), m_args(args) {}
+    Call(Expr *fn, const CallArgs &args) : Expr(QIR_NODE_CALL), m_fn(fn), m_args(args) {}
 
     Expr *getFn() noexcept { return m_fn; }
     Expr *setFn(Expr *fn) noexcept { return m_fn = fn; }
@@ -746,7 +734,7 @@ namespace qxir {
     SeqItems m_items;
 
   public:
-    Seq(const SeqItems &items) : m_items(items) {}
+    Seq(const SeqItems &items) : Expr(QIR_NODE_SEQ), m_items(items) {}
 
     const SeqItems &getItems() const noexcept { return m_items; }
     SeqItems &getItems() noexcept { return m_items; }
@@ -760,7 +748,7 @@ namespace qxir {
     AsyncItems m_items;
 
   public:
-    Async(const AsyncItems &items) : m_items(items) {}
+    Async(const AsyncItems &items) : Expr(QIR_NODE_ASYNC), m_items(items) {}
 
     const AsyncItems &getItems() const noexcept { return m_items; }
     AsyncItems &getItems() noexcept { return m_items; }
@@ -773,7 +761,7 @@ namespace qxir {
     Expr *m_index;
 
   public:
-    Index(Expr *expr, Expr *index) : m_expr(expr), m_index(index) {}
+    Index(Expr *expr, Expr *index) : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -786,7 +774,7 @@ namespace qxir {
     std::string_view m_name;
 
   public:
-    Ident(std::string_view name) : m_name(name) {}
+    Ident(std::string_view name) : Expr(QIR_NODE_IDENT), m_name(name) {}
 
     std::string_view getName() noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
@@ -797,7 +785,8 @@ namespace qxir {
     Expr *m_value;
 
   public:
-    Global(std::string_view name, Expr *value) : m_name(name), m_value(value) {}
+    Global(std::string_view name, Expr *value)
+        : Expr(QIR_NODE_GLOBAL), m_name(name), m_value(value) {}
 
     std::string_view getName() noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
@@ -810,7 +799,7 @@ namespace qxir {
     Expr *m_expr;
 
   public:
-    Ret(Expr *expr) : m_expr(expr) {}
+    Ret(Expr *expr) : Expr(QIR_NODE_RET), m_expr(expr) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -818,12 +807,12 @@ namespace qxir {
 
   class Brk final : public Expr {
   public:
-    Brk() {}
+    Brk() : Expr(QIR_NODE_BRK) {}
   };
 
   class Cont final : public Expr {
   public:
-    Cont() {}
+    Cont() : Expr(QIR_NODE_CONT) {}
   };
 
   class If final : public Expr {
@@ -832,7 +821,8 @@ namespace qxir {
     Expr *m_else;
 
   public:
-    If(Expr *cond, Expr *then, Expr *else_) : m_cond(cond), m_then(then), m_else(else_) {}
+    If(Expr *cond, Expr *then, Expr *else_)
+        : Expr(QIR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -849,7 +839,7 @@ namespace qxir {
     Expr *m_body;
 
   public:
-    While(Expr *cond, Expr *body) : m_cond(cond), m_body(body) {}
+    While(Expr *cond, Expr *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -866,7 +856,7 @@ namespace qxir {
 
   public:
     For(Expr *init, Expr *cond, Expr *step, Expr *body)
-        : m_init(init), m_cond(cond), m_step(step), m_body(body) {}
+        : Expr(QIR_NODE_FOR), m_init(init), m_cond(cond), m_step(step), m_body(body) {}
 
     Expr *getInit() noexcept { return m_init; }
     Expr *setInit(Expr *init) noexcept { return m_init = init; }
@@ -891,7 +881,8 @@ namespace qxir {
   public:
     Form(std::string_view idx_ident, std::string_view val_ident, Expr *maxjobs, Expr *expr,
          Seq *body)
-        : m_idx_ident(idx_ident),
+        : Expr(QIR_NODE_FORM),
+          m_idx_ident(idx_ident),
           m_val_ident(val_ident),
           m_maxjobs(maxjobs),
           m_expr(expr),
@@ -925,7 +916,11 @@ namespace qxir {
 
   public:
     Foreach(std::string_view idx_ident, std::string_view val_ident, Expr *expr, Seq *body)
-        : m_idx_ident(idx_ident), m_val_ident(val_ident), m_expr(expr), m_body(body) {}
+        : Expr(QIR_NODE_FOREACH),
+          m_idx_ident(idx_ident),
+          m_val_ident(val_ident),
+          m_expr(expr),
+          m_body(body) {}
 
     std::string_view getIdxIdent() noexcept { return m_idx_ident; }
     std::string_view setIdxIdent(std::string_view idx_ident) noexcept {
@@ -949,7 +944,7 @@ namespace qxir {
     Expr *m_body;
 
   public:
-    Case(Expr *cond, Expr *body) : m_cond(cond), m_body(body) {}
+    Case(Expr *cond, Expr *body) : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -965,7 +960,8 @@ namespace qxir {
     SwitchCases m_cases;
 
   public:
-    Switch(Expr *cond, const SwitchCases &cases) : m_cond(cond), m_cases(cases) {}
+    Switch(Expr *cond, const SwitchCases &cases)
+        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_cases(cases) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -985,7 +981,7 @@ namespace qxir {
 
   public:
     Fn(std::string_view name, const Params &params, Seq *body)
-        : m_name(name), m_params(params), m_body(body) {}
+        : Expr(QIR_NODE_FN), m_name(name), m_params(params), m_body(body) {}
 
     std::string_view getName() noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
@@ -1001,8 +997,8 @@ namespace qxir {
 
   class Asm final : public Expr {
   public:
-    Asm() {
-      /// TODO:
+    Asm() : Expr(QIR_NODE_ASM) {
+      /// TODO: Implement this.
       qcore_panic("Not implemented yet.");
     }
   };
