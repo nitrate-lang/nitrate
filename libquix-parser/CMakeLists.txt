@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
+SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQPARSE_ID=${QPARSE_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQPARSE_ID="undefined")
 
@@ -32,8 +32,8 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 #================== CREATE BUILD ==================
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  #================== CREATE SHAREDLIB DEBUG BUILD ==================
-  add_library(quix-parser SHARED ${CXX_SOURCES})
+  #================== CREATE STATICLIB DEBUG BUILD ==================
+  add_library(quix-parser STATIC ${CXX_SOURCES})
   target_include_directories(quix-parser PUBLIC src include
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
@@ -45,8 +45,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_subdirectory(tests)
   add_subdirectory(fuzzer)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-  #================== CREATE SHAREDLIB RELEASE BUILD ================
-  add_library(quix-parser SHARED ${CXX_SOURCES})
+  #================== CREATE STATICLIB RELEASE BUILD ================
+  add_library(quix-parser STATIC ${CXX_SOURCES})
   target_include_directories(quix-parser PUBLIC src include 
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include)

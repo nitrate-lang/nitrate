@@ -32,8 +32,8 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 #================== CREATE BUILD ==================
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  #================== CREATE SHAREDLIB DEBUG BUILD ==================
-  add_library(quix-qxir SHARED ${CXX_SOURCES})
+  #================== CREATE STATICLIB DEBUG BUILD ==================
+  add_library(quix-qxir STATIC ${CXX_SOURCES})
   target_include_directories(quix-qxir PUBLIC src include
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
@@ -46,8 +46,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_subdirectory(tests)
   add_subdirectory(fuzzer)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-  #================== CREATE SHAREDLIB RELEASE BUILD ================
-  add_library(quix-qxir SHARED ${CXX_SOURCES})
+  #================== CREATE STATICLIB RELEASE BUILD ================
+  add_library(quix-qxir STATIC ${CXX_SOURCES})
   target_include_directories(quix-qxir PUBLIC src include 
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include

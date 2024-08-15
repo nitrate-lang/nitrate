@@ -1011,7 +1011,7 @@ namespace qxir {
 
   template <typename T>
   constexpr T *getType() {
-    /// TODO: Optimize this.
+    /// TODO: Optimize this via deduplication.
 
     if constexpr (std::is_same_v<T, U1Ty>) {
       return new (Arena<U1Ty>().allocate(1)) U1Ty();
