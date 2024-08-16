@@ -2138,3 +2138,340 @@ static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
 
   return out;
 }
+
+///=============================================================================
+
+static qxir_node_t *qxir_clone_impl(qxir_t *src, qxir_t *dst, const qxir_node_t *_node) {
+#define clone(X) static_cast<Expr *>(qxir_clone_impl(src, dst, X))
+
+  using namespace qxir;
+
+  Expr *in;
+  Expr *out;
+
+  if (!_node) {
+    return nullptr;
+  }
+
+  in = static_cast<Expr *>(const_cast<qxir_node_t *>(_node));
+  out = nullptr;
+
+  switch (in->getKind()) {
+    case QIR_NODE_BINEXPR: {
+      BinExpr *n = static_cast<BinExpr *>(in);
+      out = create<BinExpr>(clone(n->getLHS()), clone(n->getRHS()), n->getOp());
+      break;
+    }
+    case QIR_NODE_UNEXPR: {
+      UnExpr *n = static_cast<UnExpr *>(in);
+      out = create<UnExpr>(clone(n->getExpr()), n->getOp());
+      break;
+    }
+    case QIR_NODE_POST_UNEXPR: {
+      PostUnExpr *n = static_cast<PostUnExpr *>(in);
+      out = create<PostUnExpr>(clone(n->getExpr()), n->getOp());
+      break;
+    }
+    case QIR_NODE_INT: {
+      Int *n = static_cast<Int *>(in);
+      if (n->isNativeRepresentation()) {
+        out = create<Int>(n->getNativeRepresentation());
+      } else {
+        out = create<Int>(memorize(n->getStringRepresentation()));
+      }
+      break;
+    }
+    case QIR_NODE_FLOAT: {
+      Float *n = static_cast<Float *>(in);
+      if (n->isNativeRepresentation()) {
+        out = create<Float>(n->getNativeRepresentation());
+      } else {
+        out = create<Float>(memorize(n->getStringRepresentation()));
+      }
+      break;
+    }
+    case QIR_NODE_STRING: {
+      out = create<String>(memorize(static_cast<String *>(in)->getValue()));
+      break;
+    }
+    case QIR_NODE_LIST: {
+      ListItems items;
+      for (auto item : static_cast<List *>(in)->getItems()) {
+        items.push_back(clone(item));
+      }
+      out = create<List>(std::move(items));
+      break;
+    }
+    case QIR_NODE_ALLOC: {
+      out = create<Alloc>(clone(static_cast<Alloc *>(in)->getAllocType())->asType());
+      break;
+    }
+    case QIR_NODE_CALL: {
+      Call *n = static_cast<Call *>(in);
+      CallArgs args;
+      for (auto arg : n->getArgs()) {
+        args.push_back(clone(arg));
+      }
+      out = create<Call>(clone(n->getFn()), std::move(args));
+      break;
+    }
+    case QIR_NODE_SEQ: {
+      SeqItems items;
+      for (auto item : static_cast<Seq *>(in)->getItems()) {
+        items.push_back(clone(item));
+      }
+      out = create<Seq>(std::move(items));
+      break;
+    }
+    case QIR_NODE_ASYNC: {
+      AsyncItems items;
+      for (auto item : static_cast<Async *>(in)->getItems()) {
+        items.push_back(clone(item));
+      }
+      out = create<Async>(std::move(items));
+      break;
+    }
+    case QIR_NODE_INDEX: {
+      Index *n = static_cast<Index *>(in);
+      out = create<Index>(clone(n->getExpr()), clone(n->getIndex()));
+      break;
+    }
+    case QIR_NODE_IDENT: {
+      out = create<Ident>(memorize(static_cast<Ident *>(in)->getName()));
+      break;
+    }
+    case QIR_NODE_GLOBAL: {
+      Global *n = static_cast<Global *>(in);
+      out = create<Global>(memorize(n->getName()), clone(n->getValue()));
+      break;
+    }
+    case QIR_NODE_RET: {
+      out = create<Ret>(clone(static_cast<Ret *>(in)->getExpr()));
+      break;
+    }
+    case QIR_NODE_BRK: {
+      out = create<Brk>();
+      break;
+    }
+    case QIR_NODE_CONT: {
+      out = create<Cont>();
+      break;
+    }
+    case QIR_NODE_IF: {
+      If *n = static_cast<If *>(in);
+      out = create<If>(clone(n->getCond()), clone(n->getThen()), clone(n->getElse()));
+      break;
+    }
+    case QIR_NODE_WHILE: {
+      While *n = static_cast<While *>(in);
+      out = create<While>(clone(n->getCond()), clone(n->getBody()));
+      break;
+    }
+    case QIR_NODE_FOR: {
+      For *n = static_cast<For *>(in);
+      out = create<For>(clone(n->getInit()), clone(n->getCond()), clone(n->getStep()),
+                        clone(n->getBody()));
+      break;
+    }
+    case QIR_NODE_FORM: {
+      Form *n = static_cast<Form *>(in);
+      out =
+          create<Form>(memorize(n->getIdxIdent()), memorize(n->getValIdent()),
+                       clone(n->getMaxJobs()), clone(n->getExpr()), clone(n->getBody())->as<Seq>());
+      break;
+    }
+    case QIR_NODE_FOREACH: {
+      Foreach *n = static_cast<Foreach *>(in);
+      out = create<Foreach>(memorize(n->getIdxIdent()), memorize(n->getValIdent()),
+                            clone(n->getExpr()), clone(n->getBody())->as<Seq>());
+      break;
+    }
+    case QIR_NODE_CASE: {
+      Case *n = static_cast<Case *>(in);
+      out = create<Case>(clone(n->getCond()), clone(n->getBody()));
+      break;
+    }
+    case QIR_NODE_SWITCH: {
+      Switch *n = static_cast<Switch *>(in);
+      SwitchCases cases;
+      for (auto item : n->getCases()) {
+        cases.push_back(clone(item)->as<Case>());
+      }
+      out = create<Switch>(clone(n->getCond()), std::move(cases), clone(n->getDefault()));
+      break;
+    }
+    case QIR_NODE_FN: {
+      Fn *n = static_cast<Fn *>(in);
+      Params params;
+      for (auto param : n->getParams()) {
+        params.push_back(clone(param));
+      }
+
+      out = create<Fn>(memorize(n->getName()), std::move(params), clone(n->getBody())->as<Seq>());
+      break;
+    }
+    case QIR_NODE_ASM: {
+      qcore_panic("qxir_clone: qxir_asm not implemented");
+      break;
+    }
+    case QIR_NODE_U1_TY: {
+      out = create<U1Ty>();
+      break;
+    }
+    case QIR_NODE_U8_TY: {
+      out = create<U8Ty>();
+      break;
+    }
+    case QIR_NODE_U16_TY: {
+      out = create<U16Ty>();
+      break;
+    }
+    case QIR_NODE_U32_TY: {
+      out = create<U32Ty>();
+      break;
+    }
+    case QIR_NODE_U64_TY: {
+      out = create<U64Ty>();
+      break;
+    }
+    case QIR_NODE_U128_TY: {
+      out = create<U128Ty>();
+      break;
+    }
+    case QIR_NODE_I8_TY: {
+      out = create<I8Ty>();
+      break;
+    }
+    case QIR_NODE_I16_TY: {
+      out = create<I16Ty>();
+      break;
+    }
+    case QIR_NODE_I32_TY: {
+      out = create<I32Ty>();
+      break;
+    }
+    case QIR_NODE_I64_TY: {
+      out = create<I64Ty>();
+      break;
+    }
+    case QIR_NODE_I128_TY: {
+      out = create<I128Ty>();
+      break;
+    }
+    case QIR_NODE_F16_TY: {
+      out = create<F16Ty>();
+      break;
+    }
+    case QIR_NODE_F32_TY: {
+      out = create<F32Ty>();
+      break;
+    }
+    case QIR_NODE_F64_TY: {
+      out = create<F64Ty>();
+      break;
+    }
+    case QIR_NODE_F128_TY: {
+      out = create<F128Ty>();
+      break;
+    }
+    case QIR_NODE_VOID_TY: {
+      out = create<VoidTy>();
+      break;
+    }
+    case QIR_NODE_PTR_TY: {
+      PtrTy *n = static_cast<PtrTy *>(in);
+      out = create<PtrTy>(clone(n->getPointee())->asType());
+      break;
+    }
+    case QIR_NODE_OPAQUE_TY: {
+      OpaqueTy *n = static_cast<OpaqueTy *>(in);
+      out = create<OpaqueTy>(memorize(n->getName()));
+      break;
+    }
+    case QIR_NODE_STRING_TY: {
+      out = create<StringTy>();
+      break;
+    }
+    case QIR_NODE_STRUCT_TY: {
+      StructFields fields;
+      for (auto field : static_cast<StructTy *>(in)->getFields()) {
+        fields.push_back(clone(field)->asType());
+      }
+      out = create<StructTy>(std::move(fields));
+      break;
+    }
+    case QIR_NODE_UNION_TY: {
+      UnionFields fields;
+      for (auto field : static_cast<UnionTy *>(in)->getFields()) {
+        fields.push_back(clone(field)->asType());
+      }
+      out = create<UnionTy>(std::move(fields));
+      break;
+    }
+    case QIR_NODE_ARRAY_TY: {
+      ArrayTy *n = static_cast<ArrayTy *>(in);
+      out = create<ArrayTy>(clone(n->getElement())->asType(), clone(n->getCount()));
+      break;
+    }
+    case QIR_NODE_LIST_TY: {
+      ListTy *n = static_cast<ListTy *>(in);
+      out = create<ListTy>(clone(n->getElement())->asType());
+      break;
+    }
+    case QIR_NODE_INTRIN_TY: {
+      out = create<IntrinTy>(memorize(static_cast<IntrinTy *>(in)->getName()));
+      break;
+    }
+    case QIR_NODE_FN_TY: {
+      FnTy *n = static_cast<FnTy *>(in);
+      FnParams params;
+      for (auto param : n->getParams()) {
+        params.push_back(clone(param)->asType());
+      }
+      out = create<FnTy>(std::move(params), clone(n->getReturn())->asType(), n->getAttrs());
+      break;
+    }
+    case QIR_NODE_TMP: {
+      Tmp *n = static_cast<Tmp *>(in);
+      out = create<Tmp>(n->getTmpType(), n->getData());
+      break;
+    }
+    case QIR_NODE_BAD: {
+      out = create<Expr>(QIR_NODE_BAD);
+      break;
+    }
+  }
+
+  qcore_assert(out != nullptr, "qxir_clone: failed to clone node");
+
+  out->setStartLoc(in->getStartLoc());
+  out->setEndLoc(in->getEndLoc());
+  out->setConst(in->isConst());
+  out->setVolatile(in->isVolatile());
+
+  return static_cast<qxir_node_t *>(out);
+}
+
+LIB_EXPORT qxir_node_t *qxir_clone(qxir_t *src, qxir_t *dst, qcore_arena_t *alloc,
+                                   const qxir_node_t *node) {
+  qxir_node_t *out;
+
+  if (!node) {
+    return nullptr;
+  }
+
+  qcore_assert(src != nullptr && dst != nullptr, "qxir_clone: src or dst is nullptr");
+  qcore_assert(alloc != nullptr, "qxir_clone: alloc is nullptr");
+
+  try {
+    qxir::qxir_arena.swap(*alloc);
+    std::swap(m, dst);
+    out = qxir_clone_impl(src, dst, node);
+    std::swap(m, dst);
+    qxir::qxir_arena.swap(*alloc);
+
+    return static_cast<qxir_node_t *>(out);
+  } catch (...) {
+    qcore_panic("qxir_clone: failed to clone node");
+  }
+}

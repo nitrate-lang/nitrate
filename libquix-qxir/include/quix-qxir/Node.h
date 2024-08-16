@@ -32,12 +32,19 @@
 #ifndef __QUIX_QXIR_NODE_H__
 #define __QUIX_QXIR_NODE_H__
 
+#include <quix-core/Arena.h>
 #include <quix-lexer/Token.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Quixcc abstract syntax tree node.
  */
 typedef struct qxir_node_t qxir_node_t;
+
+typedef struct qxir_t qxir_t;
 
 /**
  * @brief Quixcc abstract syntax tree node type.
@@ -104,7 +111,27 @@ typedef enum qxir_ty_t {
 
 #define QIR_NODE_COUNT 52
 
-typedef struct qxir_node_t qxir_node_t;
+/**
+ * @brief Clone a QXIR node optionally into a different context.
+ *
+ * @param src The source context.
+ * @param dst The destination context.
+ * @param alloc The allocator to use for the clone.
+ * @param node The node to clone.
+ *
+ * @return qxir_node_t* The cloned node.
+ *
+ * @note The destination context may be the same as the source context.
+ * @note The source and destination contexts must be valid.
+ * @note If the node is NULL, the function will return NULL even if
+ *       other parameters are invalid.
+ * @note This clone is a deep copy (recursively clones children).
+ */
+qxir_node_t *qxir_clone(qxir_t *src, qxir_t *dst, qcore_arena_t *alloc, const qxir_node_t *node);
+
+#ifdef __cplusplus
+}
+#endif
 
 ///=============================================================================
 /// END: ABSTRACT SYNTAX TREE DATA TYPES
@@ -150,7 +177,7 @@ namespace qxir {
     void *allocate(std::size_t bytes);
     void deallocate(void *ptr) noexcept;
 
-    void swap(qcore_arena_t &arena) { std::swap(m_arena, arena); }
+    void swap(qcore_arena_t &arena) noexcept { std::swap(m_arena, arena); }
 
     qcore_arena_t &get() { return m_arena; }
   };
@@ -209,6 +236,9 @@ namespace qxir {
     uint64_t m_volatile : 1;    /* Is this expression volatile? */
 
     qlex_loc_t m_start_loc, m_end_loc;
+
+    Expr(const Expr &) = delete;
+    Expr &operator=(const Expr &) = delete;
 
   public:
     Expr(qxir_ty_t ty = QIR_NODE_BAD)
@@ -772,8 +802,8 @@ namespace qxir {
   public:
     Alloc(Type *type) : Expr(QIR_NODE_ALLOC), m_type(type) {}
 
-    Type *getType() noexcept { return m_type; }
-    Type *setType(Type *type) noexcept { return m_type = type; }
+    Type *getAllocType() noexcept { return m_type; }
+    Type *setAllocType(Type *type) noexcept { return m_type = type; }
 
     size_t getSizeBytes() noexcept { return m_type->getSizeBytes(); }
   };
@@ -1136,11 +1166,12 @@ namespace qxir {
     std::any m_data;
 
   public:
-    Tmp(TmpType type = TmpType::BAD, std::any &&data = {})
-        : Expr(QIR_NODE_TMP), m_type(type), m_data(std::move(data)) {}
+    Tmp(TmpType type = TmpType::BAD, const std::any &data = {})
+        : Expr(QIR_NODE_TMP), m_type(type), m_data(data) {}
 
     TmpType getTmpType() noexcept { return m_type; }
     std::any &getData() noexcept { return m_data; }
+    const std::any &getData() const noexcept { return m_data; }
   };
 
   typedef std::tuple<std::string_view, Expr *> LetTmpNodeCradle;
