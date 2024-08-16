@@ -52,6 +52,8 @@ if '--release' in sys.argv:
         sys.exit(1)
     if '--strip' in sys.argv:
         for file in os.listdir(os.path.join(cwd, 'bin')):
+            if file.endswith('.a'):
+                continue
             if os.system('strip {0}'.format(os.path.join(cwd, 'bin', file))) != 0:
                 print("Failed to strip {0}".format(file))
                 sys.exit(1)
