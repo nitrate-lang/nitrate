@@ -184,9 +184,7 @@ namespace qlex {
           {"offsetof", qOpOffsetof},
           {"..", qOpRange},
           {"...", qOpEllipsis},
-          {"<=>", qOpSpaceship},
           {"bitcast_as", qOpBitcastAs},
-          {"reinterpret_as", qOpReinterpretAs},
           {"bitsizeof", qOpBitsizeof},
           {"out", qOpOut},
       });
@@ -201,7 +199,6 @@ namespace qlex {
           {"typeof", qOpTypeof},
           {"offsetof", qOpOffsetof},
           {"bitcast_as", qOpBitcastAs},
-          {"reinterpret_as", qOpReinterpretAs},
           {"bitsizeof", qOpBitsizeof},
           {"out", qOpOut},
       });

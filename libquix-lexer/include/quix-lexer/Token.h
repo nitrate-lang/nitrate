@@ -121,9 +121,7 @@ typedef enum qlex_op_t {
   qOpOffsetof,      /* 'offsetof': Offset of operator */
   qOpRange,         /* '..': Range operator */
   qOpEllipsis,      /* '...': Ellipsis operator */
-  qOpSpaceship,     /* '<=>': Spaceship operator */
   qOpBitcastAs,     /* 'bitcast_as': Bitcast operator */
-  qOpReinterpretAs, /* 'reinterpret_as': Reinterpret operator */
   qOpBitsizeof,     /* 'bitsizeof': Bit size of operator */
   qOpOut,           /* 'out': Output operator */
 } __attribute__((packed)) qlex_op_t;
