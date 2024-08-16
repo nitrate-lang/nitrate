@@ -870,7 +870,9 @@ LIB_EXPORT void Decl::set_type(Type *type) { m_type = type; }
 
 LIB_EXPORT DeclTags &Decl::get_tags() { return m_tags; }
 LIB_EXPORT void Decl::add_tag(String tag) { m_tags.insert(tag); }
-LIB_EXPORT void Decl::add_tags(std::set<std::string> tags) { m_tags.insert(tags.begin(), tags.end()); }
+LIB_EXPORT void Decl::add_tags(std::set<std::string> tags) {
+  m_tags.insert(tags.begin(), tags.end());
+}
 LIB_EXPORT void Decl::clear_tags() { m_tags.clear(); }
 LIB_EXPORT void Decl::remove_tag(String tag) { m_tags.erase(tag); }
 
@@ -1066,7 +1068,9 @@ LIB_EXPORT void UnresolvedType::print_impl(std::ostream &os, bool debug) const {
   os << m_name;
 }
 
-LIB_EXPORT UnresolvedType *UnresolvedType::clone_impl() const { return UnresolvedType::get(m_name); }
+LIB_EXPORT UnresolvedType *UnresolvedType::clone_impl() const {
+  return UnresolvedType::get(m_name);
+}
 
 LIB_EXPORT String UnresolvedType::get_name() const { return m_name; }
 LIB_EXPORT void UnresolvedType::set_name(String name) { m_name = name; }
@@ -1083,23 +1087,16 @@ LIB_EXPORT void UnresolvedType::set_name(String name) { m_name = name; }
   }                                                                 \
   __typename *__typename::clone_impl() const { return __typename::get(); }
 
-LIB_EXPORT TRIVIAL_TYPE_IMPL(U1, "u1", 1)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(U8, "u8", 8)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(U16, "u16", 16)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(U32, "u32", 32)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(U64, "u64", 64)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(U128, "u128", 128)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(I8, "i8", 8)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(I16, "i16", 16)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(I32, "i32", 32)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(I64, "i64", 64)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(I128, "i128", 128)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(F32, "f32", 32)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(F64, "f64", 64)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(VoidTy, "void", 0)
-LIB_EXPORT TRIVIAL_TYPE_IMPL(StringTy, "string", 8)
+LIB_EXPORT TRIVIAL_TYPE_IMPL(U1, "u1", 1) LIB_EXPORT TRIVIAL_TYPE_IMPL(U8, "u8", 8) LIB_EXPORT
+    TRIVIAL_TYPE_IMPL(U16, "u16", 16) LIB_EXPORT TRIVIAL_TYPE_IMPL(U32, "u32", 32) LIB_EXPORT
+    TRIVIAL_TYPE_IMPL(U64, "u64", 64) LIB_EXPORT TRIVIAL_TYPE_IMPL(U128, "u128", 128) LIB_EXPORT
+    TRIVIAL_TYPE_IMPL(I8, "i8", 8) LIB_EXPORT TRIVIAL_TYPE_IMPL(I16, "i16", 16) LIB_EXPORT
+    TRIVIAL_TYPE_IMPL(I32, "i32", 32) LIB_EXPORT TRIVIAL_TYPE_IMPL(I64, "i64", 64) LIB_EXPORT
+    TRIVIAL_TYPE_IMPL(I128, "i128", 128) LIB_EXPORT TRIVIAL_TYPE_IMPL(F32, "f32", 32) LIB_EXPORT
+    TRIVIAL_TYPE_IMPL(F64, "f64", 64) LIB_EXPORT TRIVIAL_TYPE_IMPL(VoidTy, "void", 0) LIB_EXPORT
+    TRIVIAL_TYPE_IMPL(StringTy, "string", 8)
 
-LIB_EXPORT bool PtrTy::verify_impl(std::ostream &os) const {
+        LIB_EXPORT bool PtrTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "PtrTy: item type is NULL\n";
     return false;
@@ -1623,7 +1620,9 @@ LIB_EXPORT StructTy *StructTy::clone_impl() const {
 }
 
 LIB_EXPORT std::vector<StructItem, Arena<StructItem>> &StructTy::get_items() { return m_items; }
-LIB_EXPORT const std::vector<StructItem, Arena<StructItem>> &StructTy::get_items() const { return m_items; }
+LIB_EXPORT const std::vector<StructItem, Arena<StructItem>> &StructTy::get_items() const {
+  return m_items;
+}
 
 LIB_EXPORT void StructTy::add_item(String name, Type *item) { m_items.push_back({name, item}); }
 
@@ -2627,7 +2626,9 @@ LIB_EXPORT Expr *TemplCall::get_func() const { return m_func; }
 LIB_EXPORT void TemplCall::set_func(Expr *func) { m_func = func; }
 
 LIB_EXPORT TemplateArgs &TemplCall::get_template_args() { return m_template_args; }
-LIB_EXPORT void TemplCall::add_template_arg(String name, ConstExpr *arg) { m_template_args[name] = arg; }
+LIB_EXPORT void TemplCall::add_template_arg(String name, ConstExpr *arg) {
+  m_template_args[name] = arg;
+}
 LIB_EXPORT void TemplCall::clear_template_args() { m_template_args.clear(); }
 LIB_EXPORT void TemplCall::remove_template_arg(String name) { m_template_args.erase(name); }
 
@@ -5351,7 +5352,7 @@ LIB_EXPORT ExportDecl *ExportDecl::clone_impl() const {
 LIB_EXPORT StmtList *ExportDecl::get_body() const { return m_body; }
 LIB_EXPORT void ExportDecl::set_body(StmtList *body) { m_body = body; }
 
-LIB_EXPORT ExportLang ExportDecl::get_lang() const { return m_lang; } 
+LIB_EXPORT ExportLang ExportDecl::get_lang() const { return m_lang; }
 LIB_EXPORT void ExportDecl::set_lang(ExportLang lang) { m_lang = lang; }
 
 ///=============================================================================

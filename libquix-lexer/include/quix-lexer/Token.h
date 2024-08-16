@@ -67,63 +67,63 @@ typedef enum qlex_punc_t {
 } __attribute__((packed)) qlex_punc_t;
 
 typedef enum qlex_op_t {
-  qOpUnknown = 0,   /* Unknown operator */
-  qOpTernary = 1,   /* '?:': Ternary operator */
-  qOpArrow,         /* '=>': Arrow operator */
-  qOpDot,           /* '.': Dot operator */
-  qOpPlus,          /* '+': Addition operator */
-  qOpMinus,         /* '-': Subtraction operator */
-  qOpTimes,         /* '*': Multiplication operator */
-  qOpSlash,         /* '/': Division operator */
-  qOpPercent,       /* '%': Modulus operator */
-  qOpBitAnd,        /* '&': Bitwise AND operator */
-  qOpBitOr,         /* '|': Bitwise OR operator */
-  qOpBitXor,        /* '^': Bitwise XOR operator */
-  qOpBitNot,        /* '~': Bitwise NOT operator */
-  qOpLogicAnd,      /* '&&': Logical AND operator */
-  qOpLogicOr,       /* '||': Logical OR operator */
-  qOpLogicXor,      /* '^^': Logical XOR operator */
-  qOpLogicNot,      /* '!': Logical NOT operator */
-  qOpLShift,        /* '<<': Left shift operator */
-  qOpRShift,        /* '>>': Right shift operator */
-  qOpROTR,          /* '>>>': Rotate right operator */
-  qOpROTL,          /* '<<<': Rotate left operator */
-  qOpInc,           /* '++': Increment operator */
-  qOpDec,           /* '--': Decrement operator */
-  qOpSet,           /* '=': Assignment operator */
-  qOpPlusSet,       /* '+=': Addition assignment operator */
-  qOpMinusSet,      /* '-=': Subtraction assignment operator */
-  qOpTimesSet,      /* '*=': Multiplication assignment operator */
-  qOpSlashSet,      /* '/=': Division assignment operator */
-  qOpPercentSet,    /* '%=': Modulus assignment operator */
-  qOpBitAndSet,     /* '&=': Bitwise AND assignment operator */
-  qOpBitOrSet,      /* '|=': Bitwise OR assignment operator */
-  qOpBitXorSet,     /* '^=': Bitwise XOR assignment operator */
-  qOpLogicAndSet,   /* '&&=': Logical AND assignment operator */
-  qOpLogicOrSet,    /* '||=': Logical OR assignment operator */
-  qOpLogicXorSet,   /* '^^=': Logical XOR assignment operator */
-  qOpLShiftSet,     /* '<<=': Left shift assignment operator */
-  qOpRShiftSet,     /* '>>=': Right shift assignment operator */
-  qOpROTRSet,       /* '>>>=': Rotate right assignment operator */
-  qOpROTLSet,       /* '<<<=': Rotate left assignment operator */
-  qOpLT,            /* '<': Less than operator */
-  qOpGT,            /* '>': Greater than operator */
-  qOpLE,            /* '<=': Less than or equal to operator */
-  qOpGE,            /* '>=': Greater than or equal to operator */
-  qOpEq,            /* '==': Equal to operator */
-  qOpNE,            /* '!=': Not equal to operator */
-  qOpAs,            /* 'as': Type cast operator */
-  qOpIs,            /* 'is': Generic check operator */
-  qOpIn,            /* 'in': Generic membership operator */
-  qOpSizeof,        /* 'sizeof': Size of operator */
-  qOpAlignof,       /* 'alignof': Alignment of operator */
-  qOpTypeof,        /* 'typeof': Type of operator */
-  qOpOffsetof,      /* 'offsetof': Offset of operator */
-  qOpRange,         /* '..': Range operator */
-  qOpEllipsis,      /* '...': Ellipsis operator */
-  qOpBitcastAs,     /* 'bitcast_as': Bitcast operator */
-  qOpBitsizeof,     /* 'bitsizeof': Bit size of operator */
-  qOpOut,           /* 'out': Output operator */
+  qOpUnknown = 0, /* Unknown operator */
+  qOpTernary = 1, /* '?:': Ternary operator */
+  qOpArrow,       /* '=>': Arrow operator */
+  qOpDot,         /* '.': Dot operator */
+  qOpPlus,        /* '+': Addition operator */
+  qOpMinus,       /* '-': Subtraction operator */
+  qOpTimes,       /* '*': Multiplication operator */
+  qOpSlash,       /* '/': Division operator */
+  qOpPercent,     /* '%': Modulus operator */
+  qOpBitAnd,      /* '&': Bitwise AND operator */
+  qOpBitOr,       /* '|': Bitwise OR operator */
+  qOpBitXor,      /* '^': Bitwise XOR operator */
+  qOpBitNot,      /* '~': Bitwise NOT operator */
+  qOpLogicAnd,    /* '&&': Logical AND operator */
+  qOpLogicOr,     /* '||': Logical OR operator */
+  qOpLogicXor,    /* '^^': Logical XOR operator */
+  qOpLogicNot,    /* '!': Logical NOT operator */
+  qOpLShift,      /* '<<': Left shift operator */
+  qOpRShift,      /* '>>': Right shift operator */
+  qOpROTR,        /* '>>>': Rotate right operator */
+  qOpROTL,        /* '<<<': Rotate left operator */
+  qOpInc,         /* '++': Increment operator */
+  qOpDec,         /* '--': Decrement operator */
+  qOpSet,         /* '=': Assignment operator */
+  qOpPlusSet,     /* '+=': Addition assignment operator */
+  qOpMinusSet,    /* '-=': Subtraction assignment operator */
+  qOpTimesSet,    /* '*=': Multiplication assignment operator */
+  qOpSlashSet,    /* '/=': Division assignment operator */
+  qOpPercentSet,  /* '%=': Modulus assignment operator */
+  qOpBitAndSet,   /* '&=': Bitwise AND assignment operator */
+  qOpBitOrSet,    /* '|=': Bitwise OR assignment operator */
+  qOpBitXorSet,   /* '^=': Bitwise XOR assignment operator */
+  qOpLogicAndSet, /* '&&=': Logical AND assignment operator */
+  qOpLogicOrSet,  /* '||=': Logical OR assignment operator */
+  qOpLogicXorSet, /* '^^=': Logical XOR assignment operator */
+  qOpLShiftSet,   /* '<<=': Left shift assignment operator */
+  qOpRShiftSet,   /* '>>=': Right shift assignment operator */
+  qOpROTRSet,     /* '>>>=': Rotate right assignment operator */
+  qOpROTLSet,     /* '<<<=': Rotate left assignment operator */
+  qOpLT,          /* '<': Less than operator */
+  qOpGT,          /* '>': Greater than operator */
+  qOpLE,          /* '<=': Less than or equal to operator */
+  qOpGE,          /* '>=': Greater than or equal to operator */
+  qOpEq,          /* '==': Equal to operator */
+  qOpNE,          /* '!=': Not equal to operator */
+  qOpAs,          /* 'as': Type cast operator */
+  qOpIs,          /* 'is': Generic check operator */
+  qOpIn,          /* 'in': Generic membership operator */
+  qOpSizeof,      /* 'sizeof': Size of operator */
+  qOpAlignof,     /* 'alignof': Alignment of operator */
+  qOpTypeof,      /* 'typeof': Type of operator */
+  qOpOffsetof,    /* 'offsetof': Offset of operator */
+  qOpRange,       /* '..': Range operator */
+  qOpEllipsis,    /* '...': Ellipsis operator */
+  qOpBitcastAs,   /* 'bitcast_as': Bitcast operator */
+  qOpBitsizeof,   /* 'bitsizeof': Bit size of operator */
+  qOpOut,         /* 'out': Output operator */
 } __attribute__((packed)) qlex_op_t;
 
 typedef enum qlex_key_t {
