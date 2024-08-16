@@ -624,25 +624,6 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           continue;
         }
 
-        if (op == qOpReinterpretAs) {
-          if (stack.size() != 1) {
-            syntax(tok, "Expected a single expression on the stack");
-            return false;
-          }
-
-          Type *type = nullptr;
-          if (!parse_type(job, rd, &type)) {
-            syntax(tok, "Failed to parse type in 'reinterpret as' expression");
-            return false;
-          }
-
-          Expr *left = stack.top();
-          stack.pop();
-
-          stack.push(BinExpr::get(left, qOpReinterpretAs, TypeExpr::get(type)));
-          continue;
-        }
-
         if (!parse_expr(job, rd, terminators, &expr, depth + 1) || !expr) {
           syntax(tok, "Failed to parse expression in binary operation");
           return false;

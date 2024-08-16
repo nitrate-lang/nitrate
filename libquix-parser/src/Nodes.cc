@@ -2529,6 +2529,7 @@ LIB_EXPORT Expr *Call::get_func() const { return m_func; }
 LIB_EXPORT void Call::set_func(Expr *func) { m_func = func; }
 
 LIB_EXPORT CallArgs &Call::get_args() { return m_args; }
+LIB_EXPORT const qparse::CallArgs &qparse::Call::get_args() const { return m_args; }
 LIB_EXPORT void Call::add_arg(CallArg arg) { m_args.push_back(arg); }
 LIB_EXPORT void Call::add_args(std::initializer_list<CallArg> args) {
   for (auto arg : args) {

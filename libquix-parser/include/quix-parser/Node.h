@@ -1174,6 +1174,7 @@ namespace qparse {
     void set_func(Expr *func);
 
     CallArgs &get_args();
+    const CallArgs &get_args() const;
     void add_arg(CallArg arg);
     void add_args(std::initializer_list<CallArg> args);
     void clear_args();
