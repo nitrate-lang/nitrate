@@ -33,10 +33,10 @@
 #define __QUIX_QXIR_QXIR_H__
 
 #include <quix-core/Arena.h>
+#include <quix-lexer/Lexer.h>
 #include <quix-parser/Node.h>
 #include <quix-qxir/Config.h>
 #include <quix-qxir/Node.h>
-#include <quix-lexer/Lexer.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

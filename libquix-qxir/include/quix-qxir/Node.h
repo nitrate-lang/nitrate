@@ -53,7 +53,6 @@ typedef enum qxir_ty_t {
   QIR_NODE_LIST,
 
   QIR_NODE_ALLOC,
-  QIR_NODE_DEALLOC,
   QIR_NODE_CALL,
   QIR_NODE_SEQ,
   QIR_NODE_ASYNC,
@@ -99,6 +98,7 @@ typedef enum qxir_ty_t {
   QIR_NODE_INTRIN_TY,
   QIR_NODE_FN_TY,
 
+  QIR_NODE_TMP, /* Temp node; must be resolved with more information */
   QIR_NODE_BAD,
 } qxir_ty_t;
 
@@ -110,6 +110,7 @@ typedef struct qxir_node_t qxir_node_t;
 /// END: ABSTRACT SYNTAX TREE DATA TYPES
 ///=============================================================================
 
+#define __QXIR_IMPL__
 #if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
 
 #include <quix-core/Arena.h>
@@ -117,6 +118,7 @@ typedef struct qxir_node_t qxir_node_t;
 #include <quix-lexer/Token.h>
 #include <quix-qxir/Module.h>
 
+#include <any>
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
 #include <cmath>
@@ -190,10 +192,16 @@ public:
 };
 
 namespace qxir {
-  class Expr : public qxir_node_t {
+
 #ifdef __QXIR_NODE_REFLECT_IMPL__
-  public:
+#define QCLASS_REFLECT() public:
+#else
+#define QCLASS_REFLECT() private:
 #endif
+
+  class Expr : public qxir_node_t {
+    QCLASS_REFLECT()
+
     qxir_ty_t m_node_type : 6;  /* Typecode of this node. */
     TypeID m_type_idx;          /* Typecode of this expression. */
     ModuleId m_module_idx : 16; /* The module context index. */
@@ -285,7 +293,7 @@ namespace qxir {
     boost::uuids::uuid hash() noexcept;
 
     Module *getModule() noexcept;
-  } __attribute__((packed)) __attribute__((aligned(8)));
+  } __attribute__((packed)) __attribute__((aligned(16)));
 
 #define EXPR_SIZE sizeof(Expr)
 
@@ -339,6 +347,8 @@ namespace qxir {
   std::ostream &operator<<(std::ostream &os, Op op);
 
   class BinExpr final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_lhs;
     Expr *m_rhs;
     Op m_op;
@@ -357,6 +367,8 @@ namespace qxir {
   };
 
   class UnExpr final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_expr;
     Op m_op;
 
@@ -371,6 +383,8 @@ namespace qxir {
   };
 
   class PostUnExpr final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_expr;
     Op m_op;
 
@@ -393,81 +407,113 @@ namespace qxir {
   /// ===========================================================================
 
   class U1Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     U1Ty() : Type(QIR_NODE_U1_TY) {}
   };
 
   class U8Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     U8Ty() : Type(QIR_NODE_U8_TY) {}
   };
 
   class U16Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     U16Ty() : Type(QIR_NODE_U16_TY) {}
   };
 
   class U32Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     U32Ty() : Type(QIR_NODE_U32_TY) {}
   };
 
   class U64Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     U64Ty() : Type(QIR_NODE_U64_TY) {}
   };
 
   class U128Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     U128Ty() : Type(QIR_NODE_U128_TY) {}
   };
 
   class I8Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     I8Ty() : Type(QIR_NODE_I8_TY) {}
   };
 
   class I16Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
-    I16Ty() : Type(QIR_NODE_I16_TY){};
+    I16Ty() : Type(QIR_NODE_I16_TY) {};
   };
 
   class I32Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     I32Ty() : Type(QIR_NODE_I32_TY) {}
   };
 
   class I64Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     I64Ty() : Type(QIR_NODE_I64_TY) {}
   };
 
   class I128Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     I128Ty() : Type(QIR_NODE_I128_TY) {}
   };
 
   class F16Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     F16Ty() : Type(QIR_NODE_F16_TY) {}
   };
 
   class F32Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     F32Ty() : Type(QIR_NODE_F32_TY) {}
   };
 
   class F64Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     F64Ty() : Type(QIR_NODE_F64_TY) {}
   };
 
   class F128Ty final : public Type {
+    QCLASS_REFLECT()
+
   public:
     F128Ty() : Type(QIR_NODE_F128_TY) {}
   };
 
   class VoidTy final : public Type {
+    QCLASS_REFLECT()
+
   public:
     VoidTy() : Type(QIR_NODE_VOID_TY) {}
   };
@@ -481,6 +527,8 @@ namespace qxir {
   /// ===========================================================================
 
   class PtrTy final : public Type {
+    QCLASS_REFLECT()
+
     Type *m_pointee;
 
   public:
@@ -490,6 +538,8 @@ namespace qxir {
   };
 
   class OpaqueTy final : public Type {
+    QCLASS_REFLECT()
+
     std::string_view m_name;
 
   public:
@@ -499,6 +549,8 @@ namespace qxir {
   };
 
   class StringTy final : public Type {
+    QCLASS_REFLECT()
+
   public:
     StringTy() : Type(QIR_NODE_STRING_TY) {}
   };
@@ -506,6 +558,8 @@ namespace qxir {
   typedef std::vector<Type *, Arena<Type *>> StructFields;
 
   class StructTy final : public Type {
+    QCLASS_REFLECT()
+
     StructFields m_fields;
 
   public:
@@ -514,10 +568,11 @@ namespace qxir {
     const StructFields &getFields() noexcept { return m_fields; }
   };
 
-  typedef std::unordered_set<Type *, std::hash<Type *>, std::equal_to<Type *>, Arena<Type *>>
-      UnionFields;
+  typedef std::vector<Type *, Arena<Type *>> UnionFields;
 
   class UnionTy final : public Type {
+    QCLASS_REFLECT()
+
     UnionFields m_fields;
 
   public:
@@ -527,6 +582,8 @@ namespace qxir {
   };
 
   class ArrayTy final : public Type {
+    QCLASS_REFLECT()
+
     Type *m_element;
     Expr *m_size;
 
@@ -539,6 +596,8 @@ namespace qxir {
   };
 
   class ListTy final : public Type {
+    QCLASS_REFLECT()
+
     Type *m_element;
 
   public:
@@ -548,6 +607,8 @@ namespace qxir {
   };
 
   class IntrinTy final : public Type {
+    QCLASS_REFLECT()
+
     std::string_view m_name;
 
   public:
@@ -564,6 +625,8 @@ namespace qxir {
   typedef std::unordered_set<FnTag, std::hash<FnTag>, std::equal_to<FnTag>, Arena<FnTag>> FnAttrs;
 
   class FnTy final : public Type {
+    QCLASS_REFLECT()
+
     FnParams m_params;
     FnAttrs m_attrs;
     Type *m_return;
@@ -586,6 +649,8 @@ namespace qxir {
   ///=============================================================================
 
   class Int final : public Expr {
+    QCLASS_REFLECT()
+
     union {
       uint64_t m_u64;    /* bit 63 is 1 always; interpret as if it is 0. */
       const char *m_str; /* bit 63 is always 0, due to addressing on x86_64. */
@@ -626,6 +691,8 @@ namespace qxir {
   };
 
   class Float final : public Expr {
+    QCLASS_REFLECT()
+
     std::variant<double, const char *> m_data;
 
     static_assert(sizeof(double) == 8);
@@ -656,6 +723,8 @@ namespace qxir {
   };
 
   class String final : public Expr {
+    QCLASS_REFLECT()
+
     std::string_view m_data;
 
   public:
@@ -668,6 +737,8 @@ namespace qxir {
   typedef std::vector<Expr *, Arena<Expr *>> ListItems;
 
   class List final : public Expr {
+    QCLASS_REFLECT()
+
     ListItems m_items;
 
   public:
@@ -688,6 +759,8 @@ namespace qxir {
   ///=============================================================================
 
   class Alloc : public Expr {
+    QCLASS_REFLECT()
+
     Type *m_type;
 
   public:
@@ -699,19 +772,11 @@ namespace qxir {
     size_t getSizeBytes() noexcept { return m_type->getSizeBytes(); }
   };
 
-  class Dealloc : public Expr {
-    Expr *m_expr;
-
-  public:
-    Dealloc(Expr *expr) : Expr(QIR_NODE_DEALLOC), m_expr(expr) {}
-
-    Expr *getExpr() noexcept { return m_expr; }
-    Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
-  };
-
   typedef std::vector<Expr *, Arena<Expr *>> CallArgs;
 
   class Call final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_fn;
     CallArgs m_args;
 
@@ -731,6 +796,8 @@ namespace qxir {
   typedef std::vector<Expr *, Arena<Expr *>> SeqItems;
 
   class Seq final : public Expr {
+    QCLASS_REFLECT()
+
     SeqItems m_items;
 
   public:
@@ -745,6 +812,8 @@ namespace qxir {
   typedef std::vector<Expr *, Arena<Expr *>> AsyncItems;
 
   class Async final : public Expr {
+    QCLASS_REFLECT()
+
     AsyncItems m_items;
 
   public:
@@ -757,6 +826,8 @@ namespace qxir {
   };
 
   class Index final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_expr;
     Expr *m_index;
 
@@ -771,6 +842,8 @@ namespace qxir {
   };
 
   class Ident final : public Expr {
+    QCLASS_REFLECT()
+
     std::string_view m_name;
 
   public:
@@ -781,6 +854,8 @@ namespace qxir {
   };
 
   class Global final : public Expr {
+    QCLASS_REFLECT()
+
     std::string_view m_name;
     Expr *m_value;
 
@@ -796,6 +871,8 @@ namespace qxir {
   };
 
   class Ret final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_expr;
 
   public:
@@ -806,16 +883,22 @@ namespace qxir {
   };
 
   class Brk final : public Expr {
+    QCLASS_REFLECT()
+
   public:
     Brk() : Expr(QIR_NODE_BRK) {}
   };
 
   class Cont final : public Expr {
+    QCLASS_REFLECT()
+
   public:
     Cont() : Expr(QIR_NODE_CONT) {}
   };
 
   class If final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_cond;
     Expr *m_then;
     Expr *m_else;
@@ -835,6 +918,8 @@ namespace qxir {
   };
 
   class While final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_cond;
     Expr *m_body;
 
@@ -849,6 +934,8 @@ namespace qxir {
   };
 
   class For final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_init;
     Expr *m_cond;
     Expr *m_step;
@@ -872,6 +959,8 @@ namespace qxir {
   };
 
   class Form final : public Expr {
+    QCLASS_REFLECT()
+
     std::string_view m_idx_ident;
     std::string_view m_val_ident;
     Expr *m_maxjobs;
@@ -909,6 +998,8 @@ namespace qxir {
   };
 
   class Foreach final : public Expr {
+    QCLASS_REFLECT()
+
     std::string_view m_idx_ident;
     std::string_view m_val_ident;
     Expr *m_expr;
@@ -940,6 +1031,8 @@ namespace qxir {
   };
 
   class Case final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_cond;
     Expr *m_body;
 
@@ -956,15 +1049,21 @@ namespace qxir {
   typedef std::vector<Case *, Arena<Case *>> SwitchCases;
 
   class Switch final : public Expr {
+    QCLASS_REFLECT()
+
     Expr *m_cond;
+    Expr *m_default;
     SwitchCases m_cases;
 
   public:
-    Switch(Expr *cond, const SwitchCases &cases)
-        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_cases(cases) {}
+    Switch(Expr *cond, const SwitchCases &cases, Expr *default_)
+        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_default(default_), m_cases(cases) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
+
+    Expr *getDefault() noexcept { return m_default; }
+    Expr *setDefault(Expr *default_) noexcept { return m_default = default_; }
 
     const SwitchCases &getCases() const noexcept { return m_cases; }
     SwitchCases &getCases() noexcept { return m_cases; }
@@ -975,6 +1074,8 @@ namespace qxir {
   typedef std::vector<Expr *, Arena<Expr *>> Params;
 
   class Fn final : public Expr {
+    QCLASS_REFLECT()
+
     std::string_view m_name;
     Params m_params;
     Seq *m_body;
@@ -996,6 +1097,8 @@ namespace qxir {
   };
 
   class Asm final : public Expr {
+    QCLASS_REFLECT()
+
   public:
     Asm() : Expr(QIR_NODE_ASM) {
       /// TODO: Implement this.
@@ -1006,6 +1109,41 @@ namespace qxir {
   ///=============================================================================
   /// END: EXPRESSIONS
   ///=============================================================================
+
+  enum class TmpType {
+    NULL_LITERAL,
+    UNDEF_LITERAL,
+    CALL,
+    ENUM,
+    LET,
+    VAR,
+    CONST,
+    FIELD,
+
+    BAD,
+  };
+
+  class Tmp final : public Expr {
+    QCLASS_REFLECT()
+
+    TmpType m_type;
+    std::any m_data;
+
+  public:
+    Tmp(TmpType type = TmpType::BAD, std::any &&data = {})
+        : Expr(QIR_NODE_TMP), m_type(type), m_data(std::move(data)) {}
+
+    TmpType getTmpType() noexcept { return m_type; }
+    std::any &getData() noexcept { return m_data; }
+  };
+
+  typedef std::tuple<std::string_view, Expr *> LetTmpNodeCradle;
+
+  typedef std::tuple<Expr *, std::vector<std::pair<std::string_view, Expr *>,
+                                         Arena<std::pair<std::string_view, Expr *>>>>
+      CallArgsTmpNodeCradle;
+
+  typedef std::tuple<Expr *, std::string_view> FieldTmpNodeCradle;
 
 #define TYPE_SIZE sizeof(Expr)
 
@@ -1057,6 +1195,48 @@ namespace qxir {
     return new (ptr) T(std::forward<Args>(args)...);
   }
 
+  enum IterMode {
+    dfs_pre,
+    dfs_post,
+    bfs_pre,
+    bfs_post,
+  };
+
+  enum IterParallel {
+    sync,
+    async,
+  };
+
+  enum class IterOp {
+    Proceed,
+    Abort,
+    SkipChildren,
+  };
+
+  typedef std::function<IterOp(Expr *p, Expr *c)> IterCallback;
+  typedef std::function<bool(Expr **a, Expr **b)> ChildSelect;
+
+  namespace detail {
+    void dfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel);
+    void dfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel);
+    void bfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel);
+    void bfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel);
+  }  // namespace detail
+
+  template <IterMode mode, IterParallel mp = sync>
+  void iterate(Expr *base, IterCallback cb, ChildSelect cs = nullptr) {
+    if constexpr (mode == dfs_pre) {
+      return detail::dfs_pre_impl(base, cb, cs, mp == async);
+    } else if constexpr (mode == dfs_post) {
+      return detail::dfs_post_impl(base, cb, cs, mp == async);
+    } else if constexpr (mode == bfs_pre) {
+      return detail::bfs_pre_impl(base, cb, cs, mp == async);
+    } else if constexpr (mode == bfs_post) {
+      return detail::bfs_post_impl(base, cb, cs, mp == async);
+    } else {
+      static_assert(mode != mode, "Invalid iteration mode.");
+    }
+  }
 }  // namespace qxir
 
 #endif

@@ -49,6 +49,10 @@
 
 using namespace qxir::diag;
 
+struct ConvState {
+  bool inside_function = false;
+};
+
 LIB_EXPORT qxir_t *qxir_new(qparse_node_t *root, qlex_t *lexer, qxir_conf_t *conf) {
   try {
     if (!root || !lexer || !conf) {
@@ -157,7 +161,7 @@ public:
   QError() = default;
 };
 
-static qxir::Expr *qconv(const qparse::Node *node);
+static qxir::Expr *qconv(ConvState &s, const qparse::Node *node);
 
 LIB_EXPORT bool qxir_do(qxir_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
   try {
@@ -169,10 +173,10 @@ LIB_EXPORT bool qxir_do(qxir_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
     /*=============== Swap in their arena ===============*/
     qxir::qxir_arena.swap(*arena);
 
-    /*== Install thread-local references to the qxir ==*/
+    /*== Install thread-local references to the context struct ==*/
     qxir::diag::install_reference(qxir);
 
-    /*==== Facilitate signal handling for the qxir ====*/
+    /*==== Facilitate signal handling for the converter ====*/
     install_sigguard(qxir);
     qxir_ctx = qxir;
 
@@ -180,7 +184,8 @@ LIB_EXPORT bool qxir_do(qxir_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
     if (setjmp(sigguard_env) == 0) {
       try {
         m = qxir;
-        *out = qconv(static_cast<const qparse::Node *>(qxir->root));
+        ConvState s;
+        *out = qconv(s, static_cast<const qparse::Node *>(qxir->root));
         status = true;
       } catch (QError &e) {
         qxir->failed = true;
@@ -189,11 +194,11 @@ LIB_EXPORT bool qxir_do(qxir_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
       qxir->failed = true;
     }
 
-    /*==== Clean up signal handling for the qxir ====*/
+    /*==== Clean up signal handling for the converter ====*/
     qxir_ctx = nullptr;
     uninstall_sigguard();
 
-    /*== Uninstall thread-local references to the qxir ==*/
+    /*== Uninstall thread-local references to the context struct ==*/
     qxir::diag::install_reference(nullptr);
 
     /*=============== Swap out their arena ===============*/
@@ -279,13 +284,14 @@ LIB_EXPORT void qxir_dumps(qxir_t *qxir, bool no_ansi, qxir_dump_cb cb, uintptr_
   }
 }
 
-static std::string_view memorize(std::string_view sv) { return m->impl->push_string(sv); }
+///=============================================================================
 
+static std::string_view memorize(std::string_view sv) { return m->impl->push_string(sv); }
 static std::string_view memorize(qparse::String sv) {
   return memorize(std::string_view(sv.data(), sv.size()));
 }
 
-qxir::Expr *qconv_lower_binexpr(qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) {
+qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) {
 #define STD_BINOP(op) qxir::create<qxir::BinExpr>(lhs, rhs, qxir::Op::op)
 #define ASSIGN_BINOP(op)                                                                \
   qxir::create<qxir::BinExpr>(lhs, qxir::create<qxir::BinExpr>(lhs, rhs, qxir::Op::op), \
@@ -441,20 +447,8 @@ qxir::Expr *qconv_lower_binexpr(qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) 
       /// TODO:
       throw QError();
     }
-    case qOpEllipsis: {
-      /// TODO:
-      throw QError();
-    }
-    case qOpSpaceship: {
-      /// TODO:
-      throw QError();
-    }
     case qOpBitcastAs: {
       return STD_BINOP(BitcastAs);
-    }
-    case qOpReinterpretAs: {
-      /// TODO:
-      throw QError();
     }
     default: {
       throw QError();
@@ -462,7 +456,7 @@ qxir::Expr *qconv_lower_binexpr(qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) 
   }
 }
 
-qxir::Expr *qconv_lower_unexpr(qxir::Expr *rhs, qlex_op_t op) {
+qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
 #define STD_UNOP(op) qxir::create<qxir::UnExpr>(rhs, qxir::Op::op)
 
   switch (op) {
@@ -520,7 +514,7 @@ qxir::Expr *qconv_lower_unexpr(qxir::Expr *rhs, qlex_op_t op) {
   }
 }
 
-qxir::Expr *qconv_lower_post_unexpr(qxir::Expr *lhs, qlex_op_t op) {
+qxir::Expr *qconv_lower_post_unexpr(ConvState &s, qxir::Expr *lhs, qlex_op_t op) {
 #define STD_POST_OP(op) qxir::create<qxir::PostUnExpr>(lhs, qxir::Op::op)
 
   switch (op) {
@@ -537,8 +531,8 @@ qxir::Expr *qconv_lower_post_unexpr(qxir::Expr *lhs, qlex_op_t op) {
 }
 
 namespace qxir {
-  static Expr *qconv_cexpr(const qparse::ConstExpr *n) {
-    auto c = qconv(n->get_value());
+  static Expr *qconv_cexpr(ConvState &s, const qparse::ConstExpr *n) {
+    auto c = qconv(s, n->get_value());
     if (!c) {
       badtree(n, "qparse::ConstExpr::get_value() == nullptr");
       throw QError();
@@ -549,7 +543,7 @@ namespace qxir {
     return c;
   }
 
-  static Expr *qconv_binexpr(const qparse::BinExpr *n) {
+  static Expr *qconv_binexpr(ConvState &s, const qparse::BinExpr *n) {
     /**
      * @brief Convert a binary expression to a qxir expression.
      * @details Recursively convert the left and right hand sides of the
@@ -557,23 +551,23 @@ namespace qxir {
      *         compatible operator.
      */
 
-    auto lhs = qconv(n->get_lhs());
+    auto lhs = qconv(s, n->get_lhs());
     if (!lhs) {
       badtree(n, "qparse::BinExpr::get_lhs() == nullptr");
       throw QError();
     }
 
-    auto rhs = qconv(n->get_rhs());
+    auto rhs = qconv(s, n->get_rhs());
 
     if (!rhs) {
       badtree(n, "qparse::BinExpr::get_rhs() == nullptr");
       throw QError();
     }
 
-    return qconv_lower_binexpr(lhs, rhs, n->get_op());
+    return qconv_lower_binexpr(s, lhs, rhs, n->get_op());
   }
 
-  static Expr *qconv_unexpr(const qparse::UnaryExpr *n) {
+  static Expr *qconv_unexpr(ConvState &s, const qparse::UnaryExpr *n) {
     /**
      * @brief Convert a unary expression to a qxir expression.
      * @details Recursively convert the left hand side of the unary
@@ -581,16 +575,16 @@ namespace qxir {
      *         operator.
      */
 
-    auto rhs = qconv(n->get_rhs());
+    auto rhs = qconv(s, n->get_rhs());
     if (!rhs) {
       badtree(n, "qparse::UnaryExpr::get_rhs() == nullptr");
       throw QError();
     }
 
-    return qconv_lower_unexpr(rhs, n->get_op());
+    return qconv_lower_unexpr(s, rhs, n->get_op());
   }
 
-  static Expr *qconv_post_unexpr(const qparse::PostUnaryExpr *n) {
+  static Expr *qconv_post_unexpr(ConvState &s, const qparse::PostUnaryExpr *n) {
     /**
      * @brief Convert a post-unary expression to a qxir expression.
      * @details Recursively convert the left hand side of the post-unary
@@ -598,35 +592,35 @@ namespace qxir {
      *         operator.
      */
 
-    auto lhs = qconv(n->get_lhs());
+    auto lhs = qconv(s, n->get_lhs());
     if (!lhs) {
       badtree(n, "qparse::PostUnaryExpr::get_lhs() == nullptr");
       throw QError();
     }
 
-    return qconv_lower_post_unexpr(lhs, n->get_op());
+    return qconv_lower_post_unexpr(s, lhs, n->get_op());
   }
 
-  static Expr *qconv_terexpr(const qparse::TernaryExpr *n) {
+  static Expr *qconv_terexpr(ConvState &s, const qparse::TernaryExpr *n) {
     /**
      * @brief Convert a ternary expression to a if-else expression.
      * @details Recursively convert the condition, then the true and false
      *        branches of the ternary expression.
      */
 
-    auto cond = qconv(n->get_cond());
+    auto cond = qconv(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::TernaryExpr::get_cond() == nullptr");
       throw QError();
     }
 
-    auto t = qconv(n->get_lhs());
+    auto t = qconv(s, n->get_lhs());
     if (!t) {
       badtree(n, "qparse::TernaryExpr::get_lhs() == nullptr");
       throw QError();
     }
 
-    auto f = qconv(n->get_rhs());
+    auto f = qconv(s, n->get_rhs());
     if (!f) {
       badtree(n, "qparse::TernaryExpr::get_rhs() == nullptr");
       throw QError();
@@ -635,7 +629,7 @@ namespace qxir {
     return create<If>(cond, t, f);
   }
 
-  static Expr *qconv_int(const qparse::ConstInt *n) {
+  static Expr *qconv_int(ConvState &s, const qparse::ConstInt *n) {
     /**
      * @brief Convert an integer constant to a qxir number.
      * @details This is a 1-to-1 conversion of the integer constant.
@@ -644,7 +638,7 @@ namespace qxir {
     return create<Int>(memorize(n->get_value()));
   }
 
-  static Expr *qconv_float(const qparse::ConstFloat *n) {
+  static Expr *qconv_float(ConvState &s, const qparse::ConstFloat *n) {
     /**
      * @brief Convert a floating point constant to a qxir number.
      * @details This is a 1-to-1 conversion of the floating point constant.
@@ -653,7 +647,7 @@ namespace qxir {
     return create<Float>(memorize(n->get_value()));
   }
 
-  static Expr *qconv_string(const qparse::ConstString *n) {
+  static Expr *qconv_string(ConvState &s, const qparse::ConstString *n) {
     /**
      * @brief Convert a string constant to a qxir string.
      * @details This is a 1-to-1 conversion of the string constant.
@@ -662,7 +656,7 @@ namespace qxir {
     return create<String>(memorize(n->get_value()));
   }
 
-  static Expr *qconv_char(const qparse::ConstChar *n) {
+  static Expr *qconv_char(ConvState &s, const qparse::ConstChar *n) {
     /**
      * @brief Convert a character constant to a qxir number.
      * @details Convert the char32 codepoint to a qxir number literal.
@@ -671,7 +665,7 @@ namespace qxir {
     return create<Int>(n->get_value());
   }
 
-  static Expr *qconv_bool(const qparse::ConstBool *n) {
+  static Expr *qconv_bool(ConvState &s, const qparse::ConstBool *n) {
     /**
      * @brief Convert a boolean constant to a qxir number.
      * @details QXIIR does not have boolean types, so we convert
@@ -685,25 +679,55 @@ namespace qxir {
     }
   }
 
-  static Expr *qconv_null(const qparse::ConstNull *n) {
-    /// TODO: null
+  static Expr *qconv_null(ConvState &s, const qparse::ConstNull *n) {
+    /**
+     * @brief Convert a null literal to a qxir null literal tmp.
+     * @details This is a 1-to-1 conversion of the null literal.
+     */
 
-    throw QError();
+    return create<Tmp>(TmpType::NULL_LITERAL);
   }
 
-  static Expr *qconv_undef(const qparse::ConstUndef *n) {
-    /// TODO: undef
+  static Expr *qconv_undef(ConvState &s, const qparse::ConstUndef *n) {
+    /**
+     * @brief Convert an undefined literal to a qxir undefined literal tmp.
+     * @details This is a 1-to-1 conversion of the undefined literal.
+     */
 
-    throw QError();
+    return create<Tmp>(TmpType::UNDEF_LITERAL);
   }
 
-  static Expr *qconv_call(const qparse::Call *n) {
-    /// TODO: call
+  static Expr *qconv_call(ConvState &s, const qparse::Call *n) {
+    /**
+     * @brief Convert a function call to a qxir call.
+     * @details Recursively convert the function base and the arguments
+     *         of the function call. We currently do not have enough information
+     *         to handle the expansion of named / optional arguments. Therefore,
+     *         we wrap the data present and we will attempt to lower the construct
+     *         later.
+     */
 
-    throw QError();
+    auto base = qconv(s, n->get_func());
+    if (!base) {
+      badtree(n, "qparse::Call::get_func() == nullptr");
+      throw QError();
+    }
+
+    CallArgsTmpNodeCradle datapack;
+    for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
+      auto arg = qconv(s, it->second);
+      if (!arg) {
+        badtree(n, "qparse::Call::get_args() vector contains nullptr");
+        throw QError();
+      }
+
+      std::get<1>(datapack).push_back({memorize(it->first), arg});
+    }
+
+    return create<Tmp>(TmpType::CALL, std::move(datapack));
   }
 
-  static Expr *qconv_list(const qparse::List *n) {
+  static Expr *qconv_list(ConvState &s, const qparse::List *n) {
     /**
      * @brief Convert a list of expressions to a qxir list.
      * @details This is a 1-to-1 conversion of the list of expressions.
@@ -712,7 +736,7 @@ namespace qxir {
     ListItems items;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(*it);
+      auto item = qconv(s, *it);
       if (!item) {
         badtree(n, "qparse::List::get_items() vector contains nullptr");
         throw QError();
@@ -724,19 +748,19 @@ namespace qxir {
     return create<List>(std::move(items));
   }
 
-  static Expr *qconv_assoc(const qparse::Assoc *n) {
+  static Expr *qconv_assoc(ConvState &s, const qparse::Assoc *n) {
     /**
      * @brief Convert an associative list to a qxir list.
      * @details This is a 1-to-1 conversion of the associative list.
      */
 
-    auto key = qconv(n->get_key());
+    auto key = qconv(s, n->get_key());
     if (!key) {
       badtree(n, "qparse::Assoc::get_key() == nullptr");
       throw QError();
     }
 
-    auto value = qconv(n->get_value());
+    auto value = qconv(s, n->get_value());
     if (!value) {
       badtree(n, "qparse::Assoc::get_value() == nullptr");
       throw QError();
@@ -745,26 +769,40 @@ namespace qxir {
     return create<List>(ListItems({key, value}));
   }
 
-  static Expr *qconv_field(const qparse::Field *n) {
-    /// TODO: field
+  static Expr *qconv_field(ConvState &s, const qparse::Field *n) {
+    /**
+     * @brief Convert a field access to a qxir expression.
+     * @details Store the base and field name in a temporary node cradle
+     *          for later lowering.
+     */
 
-    throw QError();
+    auto base = qconv(s, n->get_base());
+    if (!base) {
+      badtree(n, "qparse::Field::get_base() == nullptr");
+      throw QError();
+    }
+
+    FieldTmpNodeCradle datapack;
+    std::get<0>(datapack) = base;
+    std::get<1>(datapack) = memorize(n->get_field());
+
+    return create<Tmp>(TmpType::FIELD, std::move(datapack));
   }
 
-  static Expr *qconv_index(const qparse::Index *n) {
+  static Expr *qconv_index(ConvState &s, const qparse::Index *n) {
     /**
      * @brief Convert an index expression to a qxir expression.
      * @details Recursively convert the base and index of the index
      *         expression.
      */
 
-    auto base = qconv(n->get_base());
+    auto base = qconv(s, n->get_base());
     if (!base) {
       badtree(n, "qparse::Index::get_base() == nullptr");
       throw QError();
     }
 
-    auto index = qconv(n->get_index());
+    auto index = qconv(s, n->get_index());
     if (!index) {
       badtree(n, "qparse::Index::get_index() == nullptr");
       throw QError();
@@ -773,19 +811,19 @@ namespace qxir {
     return create<Index>(base, index);
   }
 
-  static Expr *qconv_slice(const qparse::Slice *n) {
+  static Expr *qconv_slice(ConvState &s, const qparse::Slice *n) {
     /// TODO: slice
 
     throw QError();
   }
 
-  static Expr *qconv_fstring(const qparse::FString *n) {
+  static Expr *qconv_fstring(ConvState &s, const qparse::FString *n) {
     /// TODO: fstring
 
     throw QError();
   }
 
-  static Expr *qconv_ident(const qparse::Ident *n) {
+  static Expr *qconv_ident(ConvState &s, const qparse::Ident *n) {
     /**
      * @brief Convert an identifier to a qxir expression.
      * @details This is a 1-to-1 conversion of the identifier.
@@ -794,7 +832,7 @@ namespace qxir {
     return create<Ident>(memorize(n->get_name()));
   }
 
-  static Expr *qconv_seq_point(const qparse::SeqPoint *n) {
+  static Expr *qconv_seq_point(ConvState &s, const qparse::SeqPoint *n) {
     /**
      * @brief Convert a sequence point to a qxir expression.
      * @details This is a 1-to-1 conversion of the sequence point.
@@ -803,7 +841,7 @@ namespace qxir {
     SeqItems items;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(*it);
+      auto item = qconv(s, *it);
       if (!item) {
         badtree(n, "qparse::SeqPoint::get_items() vector contains nullptr");
         throw QError();
@@ -815,13 +853,13 @@ namespace qxir {
     return create<Seq>(std::move(items));
   }
 
-  static Expr *qconv_stmt_expr(const qparse::StmtExpr *n) {
+  static Expr *qconv_stmt_expr(ConvState &s, const qparse::StmtExpr *n) {
     /**
      * @brief Unwrap a statement inside an expression into a qxir expression.
      * @details This is a 1-to-1 conversion of the statement expression.
      */
 
-    auto stmt = qconv(n->get_stmt());
+    auto stmt = qconv(s, n->get_stmt());
     if (!stmt) {
       badtree(n, "qparse::StmtExpr::get_stmt() == nullptr");
       throw QError();
@@ -830,13 +868,13 @@ namespace qxir {
     return stmt;
   }
 
-  static Expr *qconv_type_expr(const qparse::TypeExpr *n) {
+  static Expr *qconv_type_expr(ConvState &s, const qparse::TypeExpr *n) {
     /*
      * @brief Convert a type expression to a qxir expression.
      * @details This is a 1-to-1 conversion of the type expression.
      */
 
-    auto type = qconv(n->get_type());
+    auto type = qconv(s, n->get_type());
     if (!type) {
       badtree(n, "qparse::TypeExpr::get_type() == nullptr");
       throw QError();
@@ -845,19 +883,19 @@ namespace qxir {
     return type;
   }
 
-  static Expr *qconv_templ_call(const qparse::TemplCall *n) {
+  static Expr *qconv_templ_call(ConvState &s, const qparse::TemplCall *n) {
     /// TODO: templ_call
 
     throw QError();
   }
 
-  static Expr *qconv_mut_ty(const qparse::MutTy *n) {
+  static Expr *qconv_mut_ty(ConvState &s, const qparse::MutTy *n) {
     /// TODO: mut_ty
 
     throw QError();
   }
 
-  static Expr *qconv_u1_ty(const qparse::U1 *n) {
+  static Expr *qconv_u1_ty(ConvState &s, const qparse::U1 *n) {
     /**
      * @brief Convert a U1 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the U1 type.
@@ -868,7 +906,7 @@ namespace qxir {
     return create<U1Ty>();
   }
 
-  static Expr *qconv_u8_ty(const qparse::U8 *n) {
+  static Expr *qconv_u8_ty(ConvState &s, const qparse::U8 *n) {
     /**
      * @brief Convert a U8 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the U8 type.
@@ -879,7 +917,7 @@ namespace qxir {
     return create<U8Ty>();
   }
 
-  static Expr *qconv_u16_ty(const qparse::U16 *n) {
+  static Expr *qconv_u16_ty(ConvState &s, const qparse::U16 *n) {
     /**
      * @brief Convert a U16 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the U16 type.
@@ -890,7 +928,7 @@ namespace qxir {
     return create<U16Ty>();
   }
 
-  static Expr *qconv_u32_ty(const qparse::U32 *n) {
+  static Expr *qconv_u32_ty(ConvState &s, const qparse::U32 *n) {
     /**
      * @brief Convert a U32 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the U32 type.
@@ -901,7 +939,7 @@ namespace qxir {
     return create<U32Ty>();
   }
 
-  static Expr *qconv_u64_ty(const qparse::U64 *n) {
+  static Expr *qconv_u64_ty(ConvState &s, const qparse::U64 *n) {
     /**
      * @brief Convert a U64 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the U64 type.
@@ -912,7 +950,7 @@ namespace qxir {
     return create<U64Ty>();
   }
 
-  static Expr *qconv_u128_ty(const qparse::U128 *n) {
+  static Expr *qconv_u128_ty(ConvState &s, const qparse::U128 *n) {
     /**
      * @brief Convert a U128 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the U128 type.
@@ -923,7 +961,7 @@ namespace qxir {
     return create<U128Ty>();
   }
 
-  static Expr *qconv_i8_ty(const qparse::I8 *n) {
+  static Expr *qconv_i8_ty(ConvState &s, const qparse::I8 *n) {
     /**
      * @brief Convert a I8 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the I8 type.
@@ -934,7 +972,7 @@ namespace qxir {
     return create<I8Ty>();
   }
 
-  static Expr *qconv_i16_ty(const qparse::I16 *n) {
+  static Expr *qconv_i16_ty(ConvState &s, const qparse::I16 *n) {
     /**
      * @brief Convert a I16 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the I16 type.
@@ -945,7 +983,7 @@ namespace qxir {
     return create<I16Ty>();
   }
 
-  static Expr *qconv_i32_ty(const qparse::I32 *n) {
+  static Expr *qconv_i32_ty(ConvState &s, const qparse::I32 *n) {
     /**
      * @brief Convert a I32 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the I32 type.
@@ -956,7 +994,7 @@ namespace qxir {
     return create<I32Ty>();
   }
 
-  static Expr *qconv_i64_ty(const qparse::I64 *n) {
+  static Expr *qconv_i64_ty(ConvState &s, const qparse::I64 *n) {
     /**
      * @brief Convert a I64 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the I64 type.
@@ -967,7 +1005,7 @@ namespace qxir {
     return create<I64Ty>();
   }
 
-  static Expr *qconv_i128_ty(const qparse::I128 *n) {
+  static Expr *qconv_i128_ty(ConvState &s, const qparse::I128 *n) {
     /**
      * @brief Convert a I128 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the I128 type.
@@ -978,7 +1016,7 @@ namespace qxir {
     return create<I128Ty>();
   }
 
-  static Expr *qconv_f32_ty(const qparse::F32 *n) {
+  static Expr *qconv_f32_ty(ConvState &s, const qparse::F32 *n) {
     /**
      * @brief Convert a F32 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the F32 type.
@@ -989,7 +1027,7 @@ namespace qxir {
     return create<F32Ty>();
   }
 
-  static Expr *qconv_f64_ty(const qparse::F64 *n) {
+  static Expr *qconv_f64_ty(ConvState &s, const qparse::F64 *n) {
     /**
      * @brief Convert a F64 type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the F64 type.
@@ -1000,7 +1038,7 @@ namespace qxir {
     return create<F64Ty>();
   }
 
-  static Expr *qconv_void_ty(const qparse::VoidTy *n) {
+  static Expr *qconv_void_ty(ConvState &s, const qparse::VoidTy *n) {
     /**
      * @brief Convert a Void type to a qxir expression type.
      * @details This is a 1-to-1 conversion of the Void type.
@@ -1011,13 +1049,13 @@ namespace qxir {
     return create<VoidTy>();
   }
 
-  static Expr *qconv_ptr_ty(const qparse::PtrTy *n) {
+  static Expr *qconv_ptr_ty(ConvState &s, const qparse::PtrTy *n) {
     /**
      * @brief Convert a pointer type to a qxir pointer type.
      * @details This is a 1-to-1 conversion of the pointer type.
      */
 
-    auto pointee = qconv(n->get_item());
+    auto pointee = qconv(s, n->get_item());
     if (!pointee) {
       badtree(n, "qparse::PtrTy::get_item() == nullptr");
       throw QError();
@@ -1026,7 +1064,7 @@ namespace qxir {
     return create<PtrTy>(pointee->asType());
   }
 
-  static Expr *qconv_opaque_ty(const qparse::OpaqueTy *n) {
+  static Expr *qconv_opaque_ty(ConvState &s, const qparse::OpaqueTy *n) {
     /**
      * @brief Convert an opaque type to a qxir opaque type.
      * @details This is a 1-to-1 conversion of the opaque type.
@@ -1035,7 +1073,7 @@ namespace qxir {
     return create<OpaqueTy>(memorize(n->get_name()));
   }
 
-  static Expr *qconv_string_ty(const qparse::StringTy *n) {
+  static Expr *qconv_string_ty(ConvState &s, const qparse::StringTy *n) {
     /**
      * @brief Convert a string type to a qxir string type.
      * @details This is a 1-to-1 conversion of the string type intrinsic.
@@ -1046,49 +1084,58 @@ namespace qxir {
     return create<StringTy>();
   }
 
-  static Expr *qconv_enum_ty(const qparse::EnumTy *n) {
-    /// TODO: enum_ty
+  static Expr *qconv_enum_ty(ConvState &s, const qparse::EnumTy *n) {
+    /**
+     * @brief Convert an enum type to a qxir enum type.
+     * @details If the enum type has a member type, we convert it to a qxir
+     *        type. Otherwise, we wrap it for later conversion.
+     */
 
-    throw QError();
+    auto memtype = qconv(s, n->get_memtype());
+    if (memtype) {
+      return memtype;
+    }
+
+    return create<Tmp>(TmpType::ENUM, memorize(n->get_name()));
   }
 
-  static Expr *qconv_struct_ty(const qparse::StructTy *n) {
+  static Expr *qconv_struct_ty(ConvState &s, const qparse::StructTy *n) {
     /// TODO: struct_ty
 
     throw QError();
   }
 
-  static Expr *qconv_group_ty(const qparse::GroupTy *n) {
+  static Expr *qconv_group_ty(ConvState &s, const qparse::GroupTy *n) {
     /// TODO: group_ty
 
     throw QError();
   }
 
-  static Expr *qconv_region_ty(const qparse::RegionTy *n) {
+  static Expr *qconv_region_ty(ConvState &s, const qparse::RegionTy *n) {
     /// TODO: region_ty
 
     throw QError();
   }
 
-  static Expr *qconv_union_ty(const qparse::UnionTy *n) {
+  static Expr *qconv_union_ty(ConvState &s, const qparse::UnionTy *n) {
     /// TODO: union_ty
 
     throw QError();
   }
 
-  static Expr *qconv_array_ty(const qparse::ArrayTy *n) {
+  static Expr *qconv_array_ty(ConvState &s, const qparse::ArrayTy *n) {
     /**
      * @brief Convert an array type to a qxir array type.
      * @details This is a 1-to-1 conversion of the array type.
      */
 
-    auto item = qconv(n->get_item());
+    auto item = qconv(s, n->get_item());
     if (!item) {
       badtree(n, "qparse::ArrayTy::get_item() == nullptr");
       throw QError();
     }
 
-    auto count = qconv(n->get_size());
+    auto count = qconv(s, n->get_size());
     if (!count) {
       badtree(n, "qparse::ArrayTy::get_size() == nullptr");
       throw QError();
@@ -1097,13 +1144,13 @@ namespace qxir {
     return create<ArrayTy>(item->asType(), count);
   }
 
-  static Expr *qconv_vector_ty(const qparse::VectorTy *n) {
+  static Expr *qconv_vector_ty(ConvState &s, const qparse::VectorTy *n) {
     /**
      * @brief Convert a vector type to a qxir vector type.
      * @details This is a 1-to-1 conversion of the vector type.
      */
 
-    auto item = qconv(n->get_item());
+    auto item = qconv(s, n->get_item());
     if (!item) {
       badtree(n, "qparse::VectorTy::get_item() == nullptr");
       throw QError();
@@ -1112,109 +1159,123 @@ namespace qxir {
     return create<ListTy>(item->asType());
   }
 
-  static Expr *qconv_map_ty(const qparse::MapTy *n) {
+  static Expr *qconv_map_ty(ConvState &s, const qparse::MapTy *n) {
     /// TODO: map_ty
 
     throw QError();
   }
 
-  static Expr *qconv_tuple_ty(const qparse::TupleTy *n) {
-    /// TODO: tuple_ty
+  static Expr *qconv_tuple_ty(ConvState &s, const qparse::TupleTy *n) {
+    /**
+     * @brief Convert a tuple type to a qxir struct type.
+     * @details This is a 1-to-1 conversion of the tuple type.
+     */
 
-    throw QError();
+    StructFields fields;
+    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+      auto item = qconv(s, *it)->asType();
+      if (!item) {
+        badtree(n, "qparse::TupleTy::get_items() vector contains nullptr");
+        throw QError();
+      }
+
+      fields.push_back(item);
+    }
+
+    return create<StructTy>(std::move(fields));
   }
 
-  static Expr *qconv_set_ty(const qparse::SetTy *n) {
+  static Expr *qconv_set_ty(ConvState &s, const qparse::SetTy *n) {
     /// TODO: set_ty
 
     throw QError();
   }
 
-  static Expr *qconv_result_ty(const qparse::OptionalTy *n) {
+  static Expr *qconv_result_ty(ConvState &s, const qparse::OptionalTy *n) {
     /// TODO: result_ty
 
     throw QError();
   }
 
-  static Expr *qconv_fn_ty(const qparse::FuncTy *n) {
+  static Expr *qconv_fn_ty(ConvState &s, const qparse::FuncTy *n) {
     /// TODO: fn_ty
 
     throw QError();
   }
 
-  static Expr *qconv_unres_ty(const qparse::UnresolvedType *n) {
+  static Expr *qconv_unres_ty(ConvState &s, const qparse::UnresolvedType *n) {
     /// TODO: unres_ty
 
     throw QError();
   }
 
-  static Expr *qconv_typedef(const qparse::TypedefDecl *n) {
+  static Expr *qconv_typedef(ConvState &s, const qparse::TypedefDecl *n) {
     /// TODO: typedef
 
     throw QError();
   }
 
-  static Expr *qconv_fndecl(const qparse::FnDecl *n) {
+  static Expr *qconv_fndecl(ConvState &s, const qparse::FnDecl *n) {
     /// TODO: fndecl
 
     throw QError();
   }
 
-  static Expr *qconv_struct(const qparse::StructDef *n) {
+  static Expr *qconv_struct(ConvState &s, const qparse::StructDef *n) {
     /// TODO: struct
 
     throw QError();
   }
 
-  static Expr *qconv_region(const qparse::RegionDef *n) {
+  static Expr *qconv_region(ConvState &s, const qparse::RegionDef *n) {
     /// TODO: region
 
     throw QError();
   }
 
-  static Expr *qconv_group(const qparse::GroupDef *n) {
+  static Expr *qconv_group(ConvState &s, const qparse::GroupDef *n) {
     /// TODO: group
 
     throw QError();
   }
 
-  static Expr *qconv_union(const qparse::UnionDef *n) {
+  static Expr *qconv_union(ConvState &s, const qparse::UnionDef *n) {
     /// TODO: union
 
     throw QError();
   }
 
-  static Expr *qconv_enum(const qparse::EnumDef *n) {
+  static Expr *qconv_enum(ConvState &s, const qparse::EnumDef *n) {
     /// TODO: enum
 
     throw QError();
   }
 
-  static Expr *qconv_fn(const qparse::FnDef *n) {
+  static Expr *qconv_fn(ConvState &s, const qparse::FnDef *n) {
     /// TODO: fn
 
     throw QError();
   }
 
-  static Expr *qconv_subsystem(const qparse::SubsystemDecl *n) {
+  static Expr *qconv_subsystem(ConvState &s, const qparse::SubsystemDecl *n) {
     /// TODO: subsystem
 
     throw QError();
   }
 
-  static Expr *qconv_export(const qparse::ExportDecl *n) {
+  static Expr *qconv_export(ConvState &s, const qparse::ExportDecl *n) {
     /// TODO: export
 
     throw QError();
   }
 
-  static Expr *qconv_composite_field(const qparse::CompositeField *n) {
+  static Expr *qconv_composite_field(ConvState &s, const qparse::CompositeField *n) {
     /// TODO: composite_field
 
     throw QError();
   }
 
-  static Expr *qconv_block(const qparse::Block *n) {
+  static Expr *qconv_block(ConvState &s, const qparse::Block *n) {
     /**
      * @brief Convert a scope block into an expression sequence.
      * @details A QXIR sequence is a list of expressions (a sequence point).
@@ -1224,7 +1285,7 @@ namespace qxir {
     SeqItems items;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(*it);
+      auto item = qconv(s, *it);
       if (!item) {
         badtree(n, "qparse::Block::get_items() vector contains nullptr");
         throw QError();
@@ -1236,35 +1297,129 @@ namespace qxir {
     return create<Seq>(std::move(items));
   }
 
-  static Expr *qconv_const(const qparse::ConstDecl *n) {
-    /// TODO: const
+  static Expr *qconv_const(ConvState &s, const qparse::ConstDecl *n) {
+    /// TODO: Write explanation
 
-    throw QError();
+    if (!n->get_value()) {
+      badtree(n, "parse::ConstDecl::get_value() == nullptr");
+      throw QError();
+    }
+
+    auto val = qconv(s, n->get_value());
+    if (!val) {
+      badtree(n, "qparse::ConstDecl::get_value() == nullptr");
+      throw QError();
+    }
+
+    Type *type = nullptr;
+    if (n->get_type()) {
+      type = qconv(s, n->get_type())->asType();
+      if (!type) {
+        badtree(n, "qparse::ConstDecl::get_type() == nullptr");
+        throw QError();
+      }
+
+      val = create<BinExpr>(val, type, Op::CastAs);
+    }
+
+    auto g = create<Global>(memorize(n->get_name()), val);
+    g->setConst(true);
+    return g;
   }
 
-  static Expr *qconv_var(const qparse::VarDecl *n) {
+  static Expr *qconv_var(ConvState &s, const qparse::VarDecl *n) {
     /// TODO: var
 
     throw QError();
   }
 
-  static Expr *qconv_let(const qparse::LetDecl *n) {
-    /// TODO: let
+  static Expr *qconv_let(ConvState &s, const qparse::LetDecl *n) {
+    /// TODO: Write explanation
 
-    throw QError();
+    if (!n->get_type() && !n->get_value()) {
+      badtree(n,
+              "qparse::LetDecl::get_type() == nullptr && qparse::LetDecl::get_value() == nullptr");
+      throw QError();
+    }
+
+    if (s.inside_function) {
+      if (!n->get_type()) {
+        auto val = qconv(s, n->get_value());
+        if (!val) {
+          badtree(n, "qparse::LetDecl::get_value() == nullptr");
+          throw QError();
+        }
+
+        LetTmpNodeCradle datapack;
+        std::get<0>(datapack) = memorize(n->get_name());
+        std::get<1>(datapack) = val;
+
+        return create<Tmp>(TmpType::LET, std::move(datapack));
+      } else {
+        auto type = qconv(s, n->get_type());
+        if (!type) {
+          badtree(n, "qparse::LetDecl::get_type() == nullptr");
+          throw QError();
+        }
+
+        auto alloc = create<Alloc>(type->asType());
+
+        if (n->get_value()) {
+          auto val = qconv(s, n->get_value());
+          if (!val) {
+            badtree(n, "qparse::LetDecl::get_value() == nullptr");
+            throw QError();
+          }
+
+          auto assign = create<BinExpr>(alloc, val, Op::Set);
+
+          return create<Seq>(SeqItems({alloc, assign}));
+        } else {
+          return alloc;
+        }
+      }
+    } else {
+      Type *type = nullptr;
+      if (n->get_type()) {
+        type = qconv(s, n->get_type())->asType();
+        if (!type) {
+          badtree(n, "qparse::LetDecl::get_type() == nullptr");
+          throw QError();
+        }
+      }
+
+      Expr *val = nullptr;
+      if (n->get_value()) {
+        val = qconv(s, n->get_value());
+        if (!val) {
+          badtree(n, "qparse::LetDecl::get_value() == nullptr");
+          throw QError();
+        }
+      }
+
+      if (type && val) {
+        val = create<BinExpr>(val, type, Op::CastAs);
+      }
+
+      if (!val) {
+        val = create<VoidTy>();
+      }
+
+      return create<Global>(memorize(n->get_name()), val);
+    }
   }
 
-  static Expr *qconv_inline_asm(const qparse::InlineAsm *n) {
+  static Expr *qconv_inline_asm(ConvState &s, const qparse::InlineAsm *n) {
     qcore_panic("inline_asm not implemented");
   }
 
-  static Expr *qconv_return(const qparse::ReturnStmt *n) {
+  static Expr *qconv_return(ConvState &s, const qparse::ReturnStmt *n) {
     /**
      * @brief Convert a return statement to a qxir expression.
      * @details This is a 1-to-1 conversion of the return statement.
      */
 
-    auto val = qconv(n->get_value());
+    auto val = qconv(s, n->get_value());
     if (!val) {
       val = create<VoidTy>();
     }
@@ -1272,19 +1427,19 @@ namespace qxir {
     return create<Ret>(val);
   }
 
-  static Expr *qconv_retif(const qparse::ReturnIfStmt *n) {
+  static Expr *qconv_retif(ConvState &s, const qparse::ReturnIfStmt *n) {
     /**
      * @brief Convert a return statement to a qxir expression.
      * @details Lower into an 'if (cond) {return val}' expression.
      */
 
-    auto cond = qconv(n->get_cond());
+    auto cond = qconv(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::ReturnIfStmt::get_cond() == nullptr");
       throw QError();
     }
 
-    auto val = qconv(n->get_value());
+    auto val = qconv(s, n->get_value());
     if (!val) {
       badtree(n, "qparse::ReturnIfStmt::get_value() == nullptr");
       throw QError();
@@ -1293,13 +1448,13 @@ namespace qxir {
     return create<If>(cond, create<Ret>(val), create<VoidTy>());
   }
 
-  static Expr *qconv_retz(const qparse::RetZStmt *n) {
+  static Expr *qconv_retz(ConvState &s, const qparse::RetZStmt *n) {
     /**
      * @brief Convert a return statement to a qxir expression.
      * @details Lower into an 'if (!cond) {return val}' expression.
      */
 
-    auto cond = qconv(n->get_cond());
+    auto cond = qconv(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::RetZStmt::get_cond() == nullptr");
       throw QError();
@@ -1307,7 +1462,7 @@ namespace qxir {
 
     auto inv_cond = create<UnExpr>(cond, Op::LogicNot);
 
-    auto val = qconv(n->get_value());
+    auto val = qconv(s, n->get_value());
     if (!val) {
       badtree(n, "qparse::RetZStmt::get_value() == nullptr");
       throw QError();
@@ -1316,13 +1471,13 @@ namespace qxir {
     return create<If>(inv_cond, create<Ret>(val), create<VoidTy>());
   }
 
-  static Expr *qconv_retv(const qparse::RetVStmt *n) {
+  static Expr *qconv_retv(ConvState &s, const qparse::RetVStmt *n) {
     /**
      * @brief Convert a return statement to a qxir expression.
      * @details Lower into an 'if (cond) {return void}' expression.
      */
 
-    auto cond = qconv(n->get_cond());
+    auto cond = qconv(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::RetVStmt::get_cond() == nullptr");
       throw QError();
@@ -1331,7 +1486,7 @@ namespace qxir {
     return create<If>(cond, create<Ret>(create<VoidTy>()), create<VoidTy>());
   }
 
-  static Expr *qconv_break(const qparse::BreakStmt *n) {
+  static Expr *qconv_break(ConvState &s, const qparse::BreakStmt *n) {
     /**
      * @brief Convert a break statement to a qxir expression.
      * @details This is a 1-to-1 conversion of the break statement.
@@ -1340,7 +1495,7 @@ namespace qxir {
     return create<Brk>();
   }
 
-  static Expr *qconv_continue(const qparse::ContinueStmt *n) {
+  static Expr *qconv_continue(ConvState &s, const qparse::ContinueStmt *n) {
     /**
      * @brief Convert a continue statement to a qxir expression.
      * @details This is a 1-to-1 conversion of the continue statement.
@@ -1349,16 +1504,16 @@ namespace qxir {
     return create<Cont>();
   }
 
-  static Expr *qconv_if(const qparse::IfStmt *n) {
+  static Expr *qconv_if(ConvState &s, const qparse::IfStmt *n) {
     /**
      * @brief Convert an if statement to a qxir expression.
      * @details The else branch is optional, and if it is missing, it is
      *        replaced with a void expression.
      */
 
-    auto cond = qconv(n->get_cond());
-    auto then = qconv(n->get_then());
-    auto els = qconv(n->get_else());
+    auto cond = qconv(s, n->get_cond());
+    auto then = qconv(s, n->get_then());
+    auto els = qconv(s, n->get_else());
 
     if (!cond) {
       badtree(n, "qparse::IfStmt::get_cond() == nullptr");
@@ -1377,15 +1532,15 @@ namespace qxir {
     return create<If>(cond, then, els);
   }
 
-  static Expr *qconv_while(const qparse::WhileStmt *n) {
+  static Expr *qconv_while(ConvState &s, const qparse::WhileStmt *n) {
     /**
      * @brief Convert a while loop to a qxir expression.
      * @details If any of the sub-expressions are missing, they are replaced
      *         with a default value of 1.
      */
 
-    auto cond = qconv(n->get_cond());
-    auto body = qconv(n->get_body());
+    auto cond = qconv(s, n->get_cond());
+    auto body = qconv(s, n->get_body());
 
     if (!cond) {
       cond = create<Int>(1);
@@ -1398,17 +1553,17 @@ namespace qxir {
     return create<While>(cond, body);
   }
 
-  static Expr *qconv_for(const qparse::ForStmt *n) {
+  static Expr *qconv_for(ConvState &s, const qparse::ForStmt *n) {
     /**
      * @brief Convert a for loop to a qxir expression.
      * @details If any of the sub-expressions are missing, they are replaced
      *         with a default value of 1.
      */
 
-    auto init = qconv(n->get_init());
-    auto cond = qconv(n->get_cond());
-    auto step = qconv(n->get_step());
-    auto body = qconv(n->get_body());
+    auto init = qconv(s, n->get_init());
+    auto cond = qconv(s, n->get_cond());
+    auto step = qconv(s, n->get_step());
+    auto body = qconv(s, n->get_body());
 
     if (!init) {
       init = create<Int>(1);
@@ -1429,31 +1584,120 @@ namespace qxir {
     return create<For>(init, cond, step, body);
   }
 
-  static Expr *qconv_form(const qparse::FormStmt *n) {
-    /// TODO: form
+  static Expr *qconv_form(ConvState &s, const qparse::FormStmt *n) {
+    /**
+     * @brief Convert a form loop to a qxir expression.
+     * @details This is a 1-to-1 conversion of the form loop.
+     */
 
-    throw QError();
+    auto maxjobs = qconv(s, n->get_maxjobs());
+    if (!maxjobs) {
+      badtree(n, "qparse::FormStmt::get_maxjobs() == nullptr");
+      throw QError();
+    }
+
+    auto idx_name = memorize(n->get_idx_ident());
+    auto val_name = memorize(n->get_val_ident());
+
+    auto iter = qconv(s, n->get_expr());
+    if (!iter) {
+      badtree(n, "qparse::FormStmt::get_expr() == nullptr");
+      throw QError();
+    }
+
+    auto body = qconv(s, n->get_body());
+    if (!body) {
+      badtree(n, "qparse::FormStmt::get_body() == nullptr");
+      throw QError();
+    }
+
+    return create<Form>(idx_name, val_name, maxjobs, iter, create<Seq>(SeqItems({body})));
   }
 
-  static Expr *qconv_foreach(const qparse::ForeachStmt *n) {
-    /// TODO: foreach
+  static Expr *qconv_foreach(ConvState &s, const qparse::ForeachStmt *n) {
+    /**
+     * @brief Convert a foreach loop to a qxir expression.
+     * @details This is a 1-to-1 conversion of the foreach loop.
+     */
 
-    throw QError();
+    auto idx_name = memorize(n->get_idx_ident());
+    auto val_name = memorize(n->get_val_ident());
+
+    auto iter = qconv(s, n->get_expr());
+    if (!iter) {
+      badtree(n, "qparse::ForeachStmt::get_expr() == nullptr");
+      throw QError();
+    }
+
+    auto body = qconv(s, n->get_body());
+    if (!body) {
+      badtree(n, "qparse::ForeachStmt::get_body() == nullptr");
+      throw QError();
+    }
+
+    return create<Foreach>(idx_name, val_name, iter, create<Seq>(SeqItems({body})));
   }
 
-  static Expr *qconv_case(const qparse::CaseStmt *n) {
-    /// TODO: case
+  static Expr *qconv_case(ConvState &s, const qparse::CaseStmt *n) {
+    /**
+     * @brief Convert a case statement to a qxir expression.
+     * @details This is a 1-to-1 conversion of the case statement.
+     */
 
-    throw QError();
+    auto cond = qconv(s, n->get_cond());
+    if (!cond) {
+      badtree(n, "qparse::CaseStmt::get_cond() == nullptr");
+      throw QError();
+    }
+
+    auto body = qconv(s, n->get_body());
+    if (!body) {
+      badtree(n, "qparse::CaseStmt::get_body() == nullptr");
+      throw QError();
+    }
+
+    return create<Case>(cond, body);
   }
 
-  static Expr *qconv_switch(const qparse::SwitchStmt *n) {
-    /// TODO: switch
+  static Expr *qconv_switch(ConvState &s, const qparse::SwitchStmt *n) {
+    /**
+     * @brief Convert a switch statement to a qxir expression.
+     * @details If the default case is missing, it is replaced with a void
+     *        expression.
+     */
 
-    throw QError();
+    auto cond = qconv(s, n->get_cond());
+    if (!cond) {
+      badtree(n, "qparse::SwitchStmt::get_cond() == nullptr");
+      throw QError();
+    }
+
+    SwitchCases cases;
+    for (auto it = n->get_cases().begin(); it != n->get_cases().end(); ++it) {
+      auto item = qconv(s, *it);
+      if (!item) {
+        badtree(n, "qparse::SwitchStmt::get_cases() vector contains nullptr");
+        throw QError();
+      }
+
+      cases.push_back(item->as<Case>());
+    }
+
+    Expr *def = nullptr;
+    if (n->get_default()) {
+      def = qconv(s, n->get_default());
+      if (!def) {
+        badtree(n, "qparse::SwitchStmt::get_default() == nullptr");
+        throw QError();
+      }
+    } else {
+      def = create<VoidTy>();
+    }
+
+    return create<Switch>(cond, std::move(cases), def);
   }
 
-  static Expr *qconv_slist(const qparse::StmtList *n) {
+  static Expr *qconv_slist(ConvState &s, const qparse::StmtList *n) {
     /**
      * @brief Convert a statement list to a qxir expression.
      * @details This is a 1-to-1 conversion of the statement list.
@@ -1462,7 +1706,7 @@ namespace qxir {
     SeqItems items;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(*it);
+      auto item = qconv(s, *it);
       if (!item) {
         badtree(n, "qparse::StmtList::get_items() vector contains nullptr");
         throw QError();
@@ -1474,29 +1718,29 @@ namespace qxir {
     return create<Seq>(std::move(items));
   }
 
-  static Expr *qconv_expr_stmt(const qparse::ExprStmt *n) {
+  static Expr *qconv_expr_stmt(ConvState &s, const qparse::ExprStmt *n) {
     /**
      * @brief Convert an expression inside a statement to a qxir expression.
      * @details This is a 1-to-1 conversion of the expression statement.
      */
 
-    return qconv(n->get_expr());
+    return qconv(s, n->get_expr());
   }
 
-  static Expr *qconv_volstmt(const qparse::VolStmt *n) {
+  static Expr *qconv_volstmt(ConvState &s, const qparse::VolStmt *n) {
     /**
      * @brief Convert a volatile statement to a qxir volatile expression.
      * @details This is a 1-to-1 conversion of the volatile statement.
      */
 
-    auto expr = qconv(n->get_stmt());
+    auto expr = qconv(s, n->get_stmt());
     expr->setVolatile(true);
 
     return expr;
   }
 }  // namespace qxir
 
-static qxir::Expr *qconv(const qparse::Node *n) {
+static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
   using namespace qxir;
 
   if (!n) {
@@ -1507,351 +1751,351 @@ static qxir::Expr *qconv(const qparse::Node *n) {
 
   switch (n->this_typeid()) {
     case QAST_NODE_CEXPR:
-      out = qconv_cexpr(n->as<qparse::ConstExpr>());
+      out = qconv_cexpr(s, n->as<qparse::ConstExpr>());
       break;
 
     case QAST_NODE_BINEXPR:
-      out = qconv_binexpr(n->as<qparse::BinExpr>());
+      out = qconv_binexpr(s, n->as<qparse::BinExpr>());
       break;
 
     case QAST_NODE_UNEXPR:
-      out = qconv_unexpr(n->as<qparse::UnaryExpr>());
+      out = qconv_unexpr(s, n->as<qparse::UnaryExpr>());
       break;
 
     case QAST_NODE_TEREXPR:
-      out = qconv_terexpr(n->as<qparse::TernaryExpr>());
+      out = qconv_terexpr(s, n->as<qparse::TernaryExpr>());
       break;
 
     case QAST_NODE_INT:
-      out = qconv_int(n->as<qparse::ConstInt>());
+      out = qconv_int(s, n->as<qparse::ConstInt>());
       break;
 
     case QAST_NODE_FLOAT:
-      out = qconv_float(n->as<qparse::ConstFloat>());
+      out = qconv_float(s, n->as<qparse::ConstFloat>());
       break;
 
     case QAST_NODE_STRING:
-      out = qconv_string(n->as<qparse::ConstString>());
+      out = qconv_string(s, n->as<qparse::ConstString>());
       break;
 
     case QAST_NODE_CHAR:
-      out = qconv_char(n->as<qparse::ConstChar>());
+      out = qconv_char(s, n->as<qparse::ConstChar>());
       break;
 
     case QAST_NODE_BOOL:
-      out = qconv_bool(n->as<qparse::ConstBool>());
+      out = qconv_bool(s, n->as<qparse::ConstBool>());
       break;
 
     case QAST_NODE_NULL:
-      out = qconv_null(n->as<qparse::ConstNull>());
+      out = qconv_null(s, n->as<qparse::ConstNull>());
       break;
 
     case QAST_NODE_UNDEF:
-      out = qconv_undef(n->as<qparse::ConstUndef>());
+      out = qconv_undef(s, n->as<qparse::ConstUndef>());
       break;
 
     case QAST_NODE_CALL:
-      out = qconv_call(n->as<qparse::Call>());
+      out = qconv_call(s, n->as<qparse::Call>());
       break;
 
     case QAST_NODE_LIST:
-      out = qconv_list(n->as<qparse::List>());
+      out = qconv_list(s, n->as<qparse::List>());
       break;
 
     case QAST_NODE_ASSOC:
-      out = qconv_assoc(n->as<qparse::Assoc>());
+      out = qconv_assoc(s, n->as<qparse::Assoc>());
       break;
 
     case QAST_NODE_FIELD:
-      out = qconv_field(n->as<qparse::Field>());
+      out = qconv_field(s, n->as<qparse::Field>());
       break;
 
     case QAST_NODE_INDEX:
-      out = qconv_index(n->as<qparse::Index>());
+      out = qconv_index(s, n->as<qparse::Index>());
       break;
 
     case QAST_NODE_SLICE:
-      out = qconv_slice(n->as<qparse::Slice>());
+      out = qconv_slice(s, n->as<qparse::Slice>());
       break;
 
     case QAST_NODE_FSTRING:
-      out = qconv_fstring(n->as<qparse::FString>());
+      out = qconv_fstring(s, n->as<qparse::FString>());
       break;
 
     case QAST_NODE_IDENT:
-      out = qconv_ident(n->as<qparse::Ident>());
+      out = qconv_ident(s, n->as<qparse::Ident>());
       break;
 
     case QAST_NODE_SEQ_POINT:
-      out = qconv_seq_point(n->as<qparse::SeqPoint>());
+      out = qconv_seq_point(s, n->as<qparse::SeqPoint>());
       break;
 
     case QAST_NODE_POST_UNEXPR:
-      out = qconv_post_unexpr(n->as<qparse::PostUnaryExpr>());
+      out = qconv_post_unexpr(s, n->as<qparse::PostUnaryExpr>());
       break;
 
     case QAST_NODE_STMT_EXPR:
-      out = qconv_stmt_expr(n->as<qparse::StmtExpr>());
+      out = qconv_stmt_expr(s, n->as<qparse::StmtExpr>());
       break;
 
     case QAST_NODE_TYPE_EXPR:
-      out = qconv_type_expr(n->as<qparse::TypeExpr>());
+      out = qconv_type_expr(s, n->as<qparse::TypeExpr>());
       break;
 
     case QAST_NODE_TEMPL_CALL:
-      out = qconv_templ_call(n->as<qparse::TemplCall>());
+      out = qconv_templ_call(s, n->as<qparse::TemplCall>());
       break;
 
     case QAST_NODE_MUT_TY:
-      out = qconv_mut_ty(n->as<qparse::MutTy>());
+      out = qconv_mut_ty(s, n->as<qparse::MutTy>());
       break;
 
     case QAST_NODE_U1_TY:
-      out = qconv_u1_ty(n->as<qparse::U1>());
+      out = qconv_u1_ty(s, n->as<qparse::U1>());
       break;
 
     case QAST_NODE_U8_TY:
-      out = qconv_u8_ty(n->as<qparse::U8>());
+      out = qconv_u8_ty(s, n->as<qparse::U8>());
       break;
 
     case QAST_NODE_U16_TY:
-      out = qconv_u16_ty(n->as<qparse::U16>());
+      out = qconv_u16_ty(s, n->as<qparse::U16>());
       break;
 
     case QAST_NODE_U32_TY:
-      out = qconv_u32_ty(n->as<qparse::U32>());
+      out = qconv_u32_ty(s, n->as<qparse::U32>());
       break;
 
     case QAST_NODE_U64_TY:
-      out = qconv_u64_ty(n->as<qparse::U64>());
+      out = qconv_u64_ty(s, n->as<qparse::U64>());
       break;
 
     case QAST_NODE_U128_TY:
-      out = qconv_u128_ty(n->as<qparse::U128>());
+      out = qconv_u128_ty(s, n->as<qparse::U128>());
       break;
 
     case QAST_NODE_I8_TY:
-      out = qconv_i8_ty(n->as<qparse::I8>());
+      out = qconv_i8_ty(s, n->as<qparse::I8>());
       break;
 
     case QAST_NODE_I16_TY:
-      out = qconv_i16_ty(n->as<qparse::I16>());
+      out = qconv_i16_ty(s, n->as<qparse::I16>());
       break;
 
     case QAST_NODE_I32_TY:
-      out = qconv_i32_ty(n->as<qparse::I32>());
+      out = qconv_i32_ty(s, n->as<qparse::I32>());
       break;
 
     case QAST_NODE_I64_TY:
-      out = qconv_i64_ty(n->as<qparse::I64>());
+      out = qconv_i64_ty(s, n->as<qparse::I64>());
       break;
 
     case QAST_NODE_I128_TY:
-      out = qconv_i128_ty(n->as<qparse::I128>());
+      out = qconv_i128_ty(s, n->as<qparse::I128>());
       break;
 
     case QAST_NODE_F32_TY:
-      out = qconv_f32_ty(n->as<qparse::F32>());
+      out = qconv_f32_ty(s, n->as<qparse::F32>());
       break;
 
     case QAST_NODE_F64_TY:
-      out = qconv_f64_ty(n->as<qparse::F64>());
+      out = qconv_f64_ty(s, n->as<qparse::F64>());
       break;
 
     case QAST_NODE_VOID_TY:
-      out = qconv_void_ty(n->as<qparse::VoidTy>());
+      out = qconv_void_ty(s, n->as<qparse::VoidTy>());
       break;
 
     case QAST_NODE_PTR_TY:
-      out = qconv_ptr_ty(n->as<qparse::PtrTy>());
+      out = qconv_ptr_ty(s, n->as<qparse::PtrTy>());
       break;
 
     case QAST_NODE_OPAQUE_TY:
-      out = qconv_opaque_ty(n->as<qparse::OpaqueTy>());
+      out = qconv_opaque_ty(s, n->as<qparse::OpaqueTy>());
       break;
 
     case QAST_NODE_STRING_TY:
-      out = qconv_string_ty(n->as<qparse::StringTy>());
+      out = qconv_string_ty(s, n->as<qparse::StringTy>());
       break;
 
     case QAST_NODE_ENUM_TY:
-      out = qconv_enum_ty(n->as<qparse::EnumTy>());
+      out = qconv_enum_ty(s, n->as<qparse::EnumTy>());
       break;
 
     case QAST_NODE_STRUCT_TY:
-      out = qconv_struct_ty(n->as<qparse::StructTy>());
+      out = qconv_struct_ty(s, n->as<qparse::StructTy>());
       break;
 
     case QAST_NODE_GROUP_TY:
-      out = qconv_group_ty(n->as<qparse::GroupTy>());
+      out = qconv_group_ty(s, n->as<qparse::GroupTy>());
       break;
 
     case QAST_NODE_REGION_TY:
-      out = qconv_region_ty(n->as<qparse::RegionTy>());
+      out = qconv_region_ty(s, n->as<qparse::RegionTy>());
       break;
 
     case QAST_NODE_UNION_TY:
-      out = qconv_union_ty(n->as<qparse::UnionTy>());
+      out = qconv_union_ty(s, n->as<qparse::UnionTy>());
       break;
 
     case QAST_NODE_ARRAY_TY:
-      out = qconv_array_ty(n->as<qparse::ArrayTy>());
+      out = qconv_array_ty(s, n->as<qparse::ArrayTy>());
       break;
 
     case QAST_NODE_VECTOR_TY:
-      out = qconv_vector_ty(n->as<qparse::VectorTy>());
+      out = qconv_vector_ty(s, n->as<qparse::VectorTy>());
       break;
 
     case QAST_NODE_MAP_TY:
-      out = qconv_map_ty(n->as<qparse::MapTy>());
+      out = qconv_map_ty(s, n->as<qparse::MapTy>());
       break;
 
     case QAST_NODE_TUPLE_TY:
-      out = qconv_tuple_ty(n->as<qparse::TupleTy>());
+      out = qconv_tuple_ty(s, n->as<qparse::TupleTy>());
       break;
 
     case QAST_NODE_SET_TY:
-      out = qconv_set_ty(n->as<qparse::SetTy>());
+      out = qconv_set_ty(s, n->as<qparse::SetTy>());
       break;
 
     case QAST_NODE_RESULT_TY:
-      out = qconv_result_ty(n->as<qparse::OptionalTy>());
+      out = qconv_result_ty(s, n->as<qparse::OptionalTy>());
       break;
 
     case QAST_NODE_FN_TY:
-      out = qconv_fn_ty(n->as<qparse::FuncTy>());
+      out = qconv_fn_ty(s, n->as<qparse::FuncTy>());
       break;
 
     case QAST_NODE_UNRES_TY:
-      out = qconv_unres_ty(n->as<qparse::UnresolvedType>());
+      out = qconv_unres_ty(s, n->as<qparse::UnresolvedType>());
       break;
 
     case QAST_NODE_TYPEDEF:
-      out = qconv_typedef(n->as<qparse::TypedefDecl>());
+      out = qconv_typedef(s, n->as<qparse::TypedefDecl>());
       break;
 
     case QAST_NODE_FNDECL:
-      out = qconv_fndecl(n->as<qparse::FnDecl>());
+      out = qconv_fndecl(s, n->as<qparse::FnDecl>());
       break;
 
     case QAST_NODE_STRUCT:
-      out = qconv_struct(n->as<qparse::StructDef>());
+      out = qconv_struct(s, n->as<qparse::StructDef>());
       break;
 
     case QAST_NODE_REGION:
-      out = qconv_region(n->as<qparse::RegionDef>());
+      out = qconv_region(s, n->as<qparse::RegionDef>());
       break;
 
     case QAST_NODE_GROUP:
-      out = qconv_group(n->as<qparse::GroupDef>());
+      out = qconv_group(s, n->as<qparse::GroupDef>());
       break;
 
     case QAST_NODE_UNION:
-      out = qconv_union(n->as<qparse::UnionDef>());
+      out = qconv_union(s, n->as<qparse::UnionDef>());
       break;
 
     case QAST_NODE_ENUM:
-      out = qconv_enum(n->as<qparse::EnumDef>());
+      out = qconv_enum(s, n->as<qparse::EnumDef>());
       break;
 
     case QAST_NODE_FN:
-      out = qconv_fn(n->as<qparse::FnDef>());
+      out = qconv_fn(s, n->as<qparse::FnDef>());
       break;
 
     case QAST_NODE_SUBSYSTEM:
-      out = qconv_subsystem(n->as<qparse::SubsystemDecl>());
+      out = qconv_subsystem(s, n->as<qparse::SubsystemDecl>());
       break;
 
     case QAST_NODE_EXPORT:
-      out = qconv_export(n->as<qparse::ExportDecl>());
+      out = qconv_export(s, n->as<qparse::ExportDecl>());
       break;
 
     case QAST_NODE_COMPOSITE_FIELD:
-      out = qconv_composite_field(n->as<qparse::CompositeField>());
+      out = qconv_composite_field(s, n->as<qparse::CompositeField>());
       break;
 
     case QAST_NODE_BLOCK:
-      out = qconv_block(n->as<qparse::Block>());
+      out = qconv_block(s, n->as<qparse::Block>());
       break;
 
     case QAST_NODE_CONST:
-      out = qconv_const(n->as<qparse::ConstDecl>());
+      out = qconv_const(s, n->as<qparse::ConstDecl>());
       break;
 
     case QAST_NODE_VAR:
-      out = qconv_var(n->as<qparse::VarDecl>());
+      out = qconv_var(s, n->as<qparse::VarDecl>());
       break;
 
     case QAST_NODE_LET:
-      out = qconv_let(n->as<qparse::LetDecl>());
+      out = qconv_let(s, n->as<qparse::LetDecl>());
       break;
 
     case QAST_NODE_INLINE_ASM:
-      out = qconv_inline_asm(n->as<qparse::InlineAsm>());
+      out = qconv_inline_asm(s, n->as<qparse::InlineAsm>());
       break;
 
     case QAST_NODE_RETURN:
-      out = qconv_return(n->as<qparse::ReturnStmt>());
+      out = qconv_return(s, n->as<qparse::ReturnStmt>());
       break;
 
     case QAST_NODE_RETIF:
-      out = qconv_retif(n->as<qparse::ReturnIfStmt>());
+      out = qconv_retif(s, n->as<qparse::ReturnIfStmt>());
       break;
 
     case QAST_NODE_RETZ:
-      out = qconv_retz(n->as<qparse::RetZStmt>());
+      out = qconv_retz(s, n->as<qparse::RetZStmt>());
       break;
 
     case QAST_NODE_RETV:
-      out = qconv_retv(n->as<qparse::RetVStmt>());
+      out = qconv_retv(s, n->as<qparse::RetVStmt>());
       break;
 
     case QAST_NODE_BREAK:
-      out = qconv_break(n->as<qparse::BreakStmt>());
+      out = qconv_break(s, n->as<qparse::BreakStmt>());
       break;
 
     case QAST_NODE_CONTINUE:
-      out = qconv_continue(n->as<qparse::ContinueStmt>());
+      out = qconv_continue(s, n->as<qparse::ContinueStmt>());
       break;
 
     case QAST_NODE_IF:
-      out = qconv_if(n->as<qparse::IfStmt>());
+      out = qconv_if(s, n->as<qparse::IfStmt>());
       break;
 
     case QAST_NODE_WHILE:
-      out = qconv_while(n->as<qparse::WhileStmt>());
+      out = qconv_while(s, n->as<qparse::WhileStmt>());
       break;
 
     case QAST_NODE_FOR:
-      out = qconv_for(n->as<qparse::ForStmt>());
+      out = qconv_for(s, n->as<qparse::ForStmt>());
       break;
 
     case QAST_NODE_FORM:
-      out = qconv_form(n->as<qparse::FormStmt>());
+      out = qconv_form(s, n->as<qparse::FormStmt>());
       break;
 
     case QAST_NODE_FOREACH:
-      out = qconv_foreach(n->as<qparse::ForeachStmt>());
+      out = qconv_foreach(s, n->as<qparse::ForeachStmt>());
       break;
 
     case QAST_NODE_CASE:
-      out = qconv_case(n->as<qparse::CaseStmt>());
+      out = qconv_case(s, n->as<qparse::CaseStmt>());
       break;
 
     case QAST_NODE_SWITCH:
-      out = qconv_switch(n->as<qparse::SwitchStmt>());
+      out = qconv_switch(s, n->as<qparse::SwitchStmt>());
       break;
 
     case QAST_NODE_SLIST:
-      out = qconv_slist(n->as<qparse::StmtList>());
+      out = qconv_slist(s, n->as<qparse::StmtList>());
       break;
 
     case QAST_NODE_EXPR_STMT:
-      out = qconv_expr_stmt(n->as<qparse::ExprStmt>());
+      out = qconv_expr_stmt(s, n->as<qparse::ExprStmt>());
       break;
 
     case QAST_NODE_VOLSTMT:
-      out = qconv_volstmt(n->as<qparse::VolStmt>());
+      out = qconv_volstmt(s, n->as<qparse::VolStmt>());
       break;
 
     default: {

@@ -39,10 +39,10 @@
 #include <quix-qxir/Node.h>
 
 #include <optional>
-#include <vector>
+#include <string>
 #include <string_view>
 #include <unordered_set>
-#include <string>
+#include <vector>
 
 struct qxir_impl_t {
   std::unordered_set<std::string> strings;

@@ -159,6 +159,13 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     return;
   }
 
+  if (n->isConst()) {
+    ss << "const ";
+  }
+  if (n->isVolatile()) {
+    ss << "volatile ";
+  }
+
   switch (n->thisTypeId()) {
     case QIR_NODE_BINEXPR: {
       ss << "(";
@@ -212,11 +219,6 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     case QIR_NODE_ALLOC: {
       ss << "alloc ";
       serialize_recurse(n->as<Alloc>()->getType(), ss, state);
-      break;
-    }
-    case QIR_NODE_DEALLOC: {
-      ss << "dealloc ";
-      serialize_recurse(n->as<Dealloc>()->getExpr(), ss, state);
       break;
     }
     case QIR_NODE_CALL: {
@@ -280,8 +282,6 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       ss << "global " << n->as<Global>()->getName();
       ss << " = ";
       serialize_recurse(n->as<Global>()->getValue(), ss, state);
-      ss << " as ";
-      serialize_recurse(n->as<Global>()->getType(), ss, state);
       break;
     }
     case QIR_NODE_RET: {
@@ -359,10 +359,10 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
            ++it) {
         serialize_recurse(*it, ss, state);
         ss << ",";
-        if (std::next(it) != n->as<Switch>()->getCases().end()) {
-          indent(ss, state);
-        }
+        indent(ss, state);
       }
+      ss << "default: ";
+      serialize_recurse(n->as<Switch>()->getDefault(), ss, state);
       state.indent--;
       indent(ss, state);
       ss << "}";
@@ -528,11 +528,16 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       serialize_recurse(n->as<FnTy>()->getReturn(), ss, state);
       break;
     }
+    case QIR_NODE_TMP: {
+      ss << "qnode<";
+      ss << static_cast<uint64_t>(n->as<Tmp>()->getTmpType());
+      ss << ">(" << n->as<Tmp>()->getData().type().name() << ")";
+      break;
+    }
     default: {
       qcore_panicf("Unknown node type: %d", n->thisTypeId());
     }
   }
-  (void)escape_string;
 }
 
 static char *qxir_repr_arena(const Expr *_node, bool minify, size_t indent, qcore_arena_t *arena,
@@ -614,14 +619,17 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
 
   /* Allocate a compressor context; level 8 is a fairly good tradeoff */
   ctx = libdeflate_alloc_compressor(8);
+  if (!ctx) {
+    qcore_panic("Failed to allocate: libdeflate_compressor content. out-of-memory");
+  }
 
   /* Compute the largest possible compressed buffer size */
   *out_size = libdeflate_deflate_compress_bound(ctx, in_size);
 
   /* Allocate memory for the compressed buffer */
-  *out = (uint8_t *)qcore_arena_alloc(arena, *out_size);
+  *out = static_cast<uint8_t *>(qcore_arena_alloc(arena, *out_size));
 
-  if (*out == NULL) {
+  if (!*out) {
     libdeflate_free_compressor(ctx);
     qcore_panic("Failed to allocate memory for compressed AST representation");
   }

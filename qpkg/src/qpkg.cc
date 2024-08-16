@@ -1311,8 +1311,6 @@ int run_dev_mode(
     qparse_conf_free(pconf);
     qlex_free(lexer);
     fclose(fp);
-
-    std::cout << "opts: " << opts << std::endl;
     return 0;
   } else if (parser.is_used("--demangle")) {
     std::string input = parser.get<std::string>("--demangle");
