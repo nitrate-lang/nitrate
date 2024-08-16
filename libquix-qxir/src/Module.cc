@@ -31,14 +31,15 @@
 
 #define __QXIR_IMPL__
 
+#include <LibMacro.h>
 #include <quix-qxir/Node.h>
 
 static std::vector<std::optional<std::unique_ptr<qxir::Module>>> qxir_modules;
 static std::mutex qxir_modules_mutex;
 
-qxir::Module::Module(ModuleId id) { m_id = id; }
+CPP_EXPORT qxir::Module::Module(ModuleId id) { m_id = id; }
 
-qxir::Module::~Module() {
+CPP_EXPORT qxir::Module::~Module() {
   if (m_arena) {
     qcore_arena_close(&m_arena.value());
   }
@@ -47,7 +48,7 @@ qxir::Module::~Module() {
   qxir_modules[m_id].reset();
 }
 
-std::unique_ptr<qxir::Module> qxir::createModule() noexcept {
+CPP_EXPORT std::unique_ptr<qxir::Module> qxir::createModule() noexcept {
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
   ModuleId mid;
@@ -71,7 +72,7 @@ std::unique_ptr<qxir::Module> qxir::createModule() noexcept {
   return std::move(qxir_modules[mid].value());
 }
 
-qxir::Module *qxir::getModule(qxir::ModuleId mid) noexcept {
+CPP_EXPORT qxir::Module *qxir::getModule(qxir::ModuleId mid) noexcept {
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
   qcore_assert(mid < qxir_modules.size() && qxir_modules.at(mid).has_value(), "Module not found");

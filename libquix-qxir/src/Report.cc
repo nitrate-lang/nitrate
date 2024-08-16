@@ -31,6 +31,7 @@
 
 #define __QPARSE_IMPL__
 
+#include <LibMacro.h>
 #include <QXIRImpl.h>
 #include <QXIRReport.h>
 #include <quix-core/Error.h>
@@ -214,7 +215,7 @@ namespace qxir::diag {
     }
   }
 
-  void badtree(const qparse::Node *node, std::string_view fmt, ...) {
+  CPP_EXPORT void badtree(const qparse::Node *node, std::string_view fmt, ...) {
     if (!node) {
       qcore_panic("badtree: node is NULL");
     }

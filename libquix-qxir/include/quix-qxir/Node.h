@@ -215,7 +215,7 @@ namespace qxir {
         : m_node_type(ty), m_type_idx(0), m_module_idx(0), m_constexpr(0), m_volatile(0) {}
 
     uint32_t thisSizeOf() const noexcept;
-    qxir_ty_t thisTypeId() const noexcept;
+    qxir_ty_t getKind() const noexcept;
     const char *thisTypeName() const noexcept;
 
     bool isType() const noexcept;
@@ -291,6 +291,12 @@ namespace qxir {
      * @return boost::uuids::uuid The hash.
      */
     boost::uuids::uuid hash() noexcept;
+
+    /**
+     * @brief Get a unique identifier for the node.
+     * @return std::string The unique identifier.
+     */
+    std::string getUniqueId() noexcept;
 
     Module *getModule() noexcept;
   } __attribute__((packed)) __attribute__((aligned(16)));
@@ -1202,8 +1208,8 @@ namespace qxir {
     bfs_post,
   };
 
-  enum IterParallel {
-    sync,
+  enum class IterMP {
+    none,
     async,
   };
 
@@ -1223,16 +1229,16 @@ namespace qxir {
     void bfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel);
   }  // namespace detail
 
-  template <IterMode mode, IterParallel mp = sync>
+  template <IterMode mode, IterMP mp = IterMP::none>
   void iterate(Expr *base, IterCallback cb, ChildSelect cs = nullptr) {
     if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl(base, cb, cs, mp == async);
+      return detail::dfs_pre_impl(base, cb, cs, mp == IterMP::async);
     } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl(base, cb, cs, mp == async);
+      return detail::dfs_post_impl(base, cb, cs, mp == IterMP::async);
     } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl(base, cb, cs, mp == async);
+      return detail::bfs_pre_impl(base, cb, cs, mp == IterMP::async);
     } else if constexpr (mode == bfs_post) {
-      return detail::bfs_post_impl(base, cb, cs, mp == async);
+      return detail::bfs_post_impl(base, cb, cs, mp == IterMP::async);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }

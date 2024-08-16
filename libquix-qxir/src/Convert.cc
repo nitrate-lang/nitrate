@@ -244,6 +244,32 @@ LIB_EXPORT bool qxir_and_dump(qxir_t *qxir, FILE *out, void *x0, void *x1) {
   }
 }
 
+LIB_EXPORT void qxir_testplug(void *node) {
+  using namespace qxir;
+  Expr *n = static_cast<Expr *>(node);
+
+  iterate<dfs_pre, IterMP::none>(n, [&](Expr *p, Expr *c) {
+    static std::mutex m;
+    std::lock_guard<std::mutex> lock(m);
+
+    if (p) {
+      std::cout << "Parent: " << p->thisTypeName() << " Id: " << p->getUniqueId();
+    } else {
+      std::cout << "Parent: nullptr Id: nullptr";
+    }
+
+    if (c) {
+      std::cout << " Child: " << c->thisTypeName() << " Id: " << c->getUniqueId();
+    } else {
+      std::cout << " Child: nullptr Id: nullptr";
+    }
+
+    std::cout << std::endl;
+
+    return IterOp::Proceed;
+  });
+}
+
 LIB_EXPORT bool qxir_check(qxir_t *qxir, const qxir_node_t *base) {
   try {
     if (!qxir || !base) {

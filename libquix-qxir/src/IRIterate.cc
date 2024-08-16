@@ -37,8 +37,11 @@
  * crash, so it should be easy to detect.
  */
 
+/* TODO: Optimize the heck out of this code */
+
 #define __QXIR_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
+#include <LibMacro.h>
 #include <quix-qxir/Node.h>
 
 #include <algorithm>
@@ -51,7 +54,7 @@ namespace qxir::detail {
   std::vector<Expr **> get_children_sorted(Expr *base, ChildSelect cs) {
     std::vector<Expr **> children;
 
-    switch (base->thisTypeId()) {
+    switch (base->getKind()) {
       case QIR_NODE_BINEXPR: {
         children.push_back(&base->as<BinExpr>()->m_lhs);
         children.push_back(&base->as<BinExpr>()->m_rhs);
@@ -286,7 +289,7 @@ namespace qxir::detail {
     IterAbort() = default;
   };
 
-  void dfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void dfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
     qcore_assert(base != nullptr && cb != nullptr, "dfs_pre_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
@@ -294,6 +297,8 @@ namespace qxir::detail {
     }
 
     typedef std::function<void(Expr *, const IterCallback &, const ChildSelect &)> IterFn;
+
+    cb(nullptr, base);
 
     const IterFn syncfn = [&syncfn](Expr *n, const IterCallback &cb, const ChildSelect &cs) {
       for (Expr **child : get_children_sorted(n, cs)) {
@@ -344,17 +349,70 @@ namespace qxir::detail {
     }
   }
 
-  void dfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
-    /// TODO: Implement
-    (void)base;
-    (void)cb;
-    (void)cs;
-    (void)parallel;
+  CPP_EXPORT void dfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
+    qcore_assert(base != nullptr && cb != nullptr, "dfs_post_impl: base and cb must not be null");
 
-    qcore_panic("dfs_post_impl not implemented");
+    if (!cs) { /* Iterate in the order the children are stored in the classes */
+      cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+    }
+
+    typedef std::function<void(Expr *, const IterCallback &, const ChildSelect &)> IterFn;
+
+    const IterFn syncfn = [&syncfn](Expr *n, const IterCallback &cb, const ChildSelect &cs) {
+      for (Expr **child : get_children_sorted(n, cs)) {
+        syncfn(*child, cb, cs);
+        switch (cb(n, *child)) {
+          case IterOp::Proceed:
+            break;
+          case IterOp::Abort:
+            throw IterAbort();
+          case IterOp::SkipChildren:
+            qcore_panic("dfs_post_impl: SkipChildren not supported");
+            break;
+        }
+      }
+    };
+
+    const IterFn asyncfn = [&asyncfn](Expr *n, IterCallback cb, ChildSelect cs) {
+      std::vector<Expr **> children = get_children_sorted(n, cs);
+
+      std::list<std::future<void>> futures;
+      for (Expr **child : children) {
+        futures.push_back(std::async(std::launch::async, [&asyncfn, cb, child, cs]() {
+          asyncfn(*child, cb, cs);
+          switch (cb(*child, *child)) {
+            case IterOp::Proceed:
+              break;
+            case IterOp::Abort:
+              /// WARNING: This will be non-deterministic
+              throw IterAbort();
+            case IterOp::SkipChildren:
+              qcore_panic("dfs_post_impl: SkipChildren not supported");
+              break;
+          }
+        }));
+      }
+
+      for (std::future<void> &f : futures) {
+        f.get();
+      }
+    };
+
+    try {
+      if (parallel) {
+        asyncfn(base, cb, cs);
+      } else {
+        syncfn(base, cb, cs);
+      }
+
+      cb(nullptr, base);
+
+    } catch (IterAbort &) {
+      return;
+    }
   }
 
-  void bfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void bfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
     /// TODO: Implement
     (void)base;
     (void)cb;
@@ -364,7 +422,7 @@ namespace qxir::detail {
     qcore_panic("bfs_pre_impl not implemented");
   }
 
-  void bfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void bfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
     /// TODO: Implement
     (void)base;
     (void)cb;

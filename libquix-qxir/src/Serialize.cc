@@ -166,7 +166,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     ss << "volatile ";
   }
 
-  switch (n->thisTypeId()) {
+  switch (n->getKind()) {
     case QIR_NODE_BINEXPR: {
       ss << "(";
       serialize_recurse(n->as<BinExpr>()->getLHS(), ss, state);
@@ -535,7 +535,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       break;
     }
     default: {
-      qcore_panicf("Unknown node type: %d", n->thisTypeId());
+      qcore_panicf("Unknown node type: %d", n->getKind());
     }
   }
 }
