@@ -36,10 +36,16 @@
 
 #if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
 
+extern "C" {
+typedef struct qxir_node_t qxir_node_t;
+}
+
 #include <cstdint>
 #include <limits>
 #include <memory>
 #include <optional>
+#include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace qxir {
@@ -67,18 +73,55 @@ namespace qxir {
     Type *get(TypeID tid) noexcept { return m_types.at(tid.m_id); }
   };
 
-  class Module {
+  class Module final {
     ModuleId m_id;
     TypeManager m_type_mgr;
     std::optional<qcore_arena_t> m_arena;
+    std::unordered_set<std::string> m_passes_applied;
+    qxir_node_t *m_root;
 
   public:
     Module(ModuleId id);
     ~Module();
 
-    ModuleId getId() noexcept { return m_id; }
+    /**
+     * @brief Get the module ID.
+     * @return ModuleId
+     */
+    ModuleId getModuleId() noexcept { return m_id; }
 
-    Type *getType(TypeID tid) noexcept { return m_type_mgr.get(tid); }
+    /**
+     * @brief Lookup a type by its type ID.
+     * @param tid Type ID
+     * @return Type* or nullptr if not found
+     */
+    Type *lookupType(TypeID tid) noexcept { return m_type_mgr.get(tid); }
+
+    /**
+     * @brief Save a type to the module's type manager.
+     * @param tid Type ID
+     * @param type Type
+     */
+    void mapType(TypeID tid, Type *type) noexcept { m_type_mgr.add(type); }
+
+    /**
+     * @brief Set the root node of the module.
+     * @param root Root node
+     */
+    void setRoot(qxir_node_t *root) noexcept { m_root = root; }
+
+    /**
+     * @brief Get the root node of the module.
+     * @return qxir_node_t*
+     */
+    qxir_node_t *getRoot() noexcept { return m_root; }
+
+    /**
+     * @brief Make it known that a pass has been applied to the module.
+     * @param label Pass label
+     */
+    void applyPassLabel(const std::string &label) noexcept { m_passes_applied.insert(label); }
+    bool hasPassBeenRun(const std::string &label) noexcept { return m_passes_applied.count(label); }
   };
 
   std::unique_ptr<Module> createModule() noexcept;

@@ -29,63 +29,81 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_LIB_H__
-#define __QUIX_QXIR_LIB_H__
+#include <quix-core/Error.h>
 
-#include <quix-qxir/Config.h>
-#include <quix-qxir/Inference.h>
+#define __QXIR_IMPL__
 #include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
-#include <quix-qxir/QXIR.h>
-#include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <passes/PassGroup.hh>
 
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool qxir_lib_init();
+std::unordered_map<qxir::passes::PassGroupName, std::shared_ptr<qxir::passes::PassGroup>>
+    qxir::passes::PassGroup::m_groups;
 
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void qxir_lib_deinit();
+const std::weak_ptr<qxir::passes::PassGroup> qxir::passes::PassGroup::create(
+    const qxir::passes::PassGroupName &name, const std::vector<qxir::passes::PassName> &passes,
+    const PassGroupDependencies &dependencies) {
+  if (m_groups.contains(name)) {
+    return m_groups[name];
+  }
 
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_lib_version();
-
-/**
- * @brief Get the last error message from the current thread.
- *
- * @return The last error message from the current thread.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_strerror();
-
-#ifdef __cplusplus
+  return m_groups[name] = std::shared_ptr<PassGroup>(new PassGroup(name, passes, dependencies));
 }
-#endif
 
-#endif  // __QUIX_QXIR_LIB_H__
+const std::weak_ptr<qxir::passes::PassGroup> qxir::passes::PassGroup::get(
+    qxir::passes::PassGroupName name) {
+  if (!m_groups.contains(name)) {
+    return std::weak_ptr<PassGroup>();
+  }
+
+  return m_groups[name];
+}
+
+bool qxir::passes::PassGroup::hasPass(const qxir::passes::PassName &name) const {
+  return std::find(m_passes.begin(), m_passes.end(), name) != m_passes.end();
+}
+
+bool qxir::passes::PassGroup::hasDependency(const qxir::passes::PassGroupName &name) const {
+  return std::find_if(m_dependencies.begin(), m_dependencies.end(), [&name](const auto &dep) {
+           return dep.first == name;
+         }) != m_dependencies.end();
+}
+
+qxir::passes::PassGroupResult qxir::passes::PassGroup::transform(qxir::Module &module) const {
+  PassGroupResult result;
+
+  for (const auto &dep : m_dependencies) {
+    auto depRef = PassGroup::get(dep.first).lock();
+    if (!depRef) {
+      qcore_panicf("Expected pass group %s to exist. But a weak_ptr reference was unacquireable.",
+                   dep.first.c_str());
+    }
+
+    if (dep.second == DependencyFrequency::Once && module.hasPassBeenRun(dep.first)) {
+      continue;
+    }
+
+    auto res = depRef->transform(module);
+    result += res;
+
+    if (!res) {
+      return result;
+    }
+  }
+
+  for (const auto &pass : m_passes) {
+    auto passRef = Pass::get(pass).lock();
+    if (!passRef) {
+      qcore_panicf("Expected pass %s to exist. But a weak_ptr reference was unacquireable.",
+                   pass.c_str());
+    }
+
+    auto res = passRef->transform(module);
+    result |= res;
+
+    if (!res) {
+      break;
+    }
+  }
+
+  return result;
+}

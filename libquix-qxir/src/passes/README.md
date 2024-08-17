@@ -1,3 +1,9 @@
+# Overview
+
+Dependency graph of the module pass system. Arrows indicate system dependencies. 
+
+![Photo](https://github.com/user-attachments/assets/e7a2840d-b54a-4e12-a3c2-50ef847ec52d)
+
 # QXIR Required Analysis Passes
 
 | Pass Identifier | Pass Name                                    | Summary                                                                 | Implementation Notes                                        |
@@ -16,4 +22,5 @@
 | `ns-flatten`    | Namespace flattening                         | Flattens all namespaces within the module.                              | Standalone (g3) deps [`g0`, `g1`, `g2`]                     |
 | `fnflatten`     | Function flattening                          | Flattens all nested functions within the module.                        | Standalone (g4) deps [`g0`, `g1`, `g2`, `g3`]               |
 | `tyinfer`       | Type inference                               | Applies type annotations to all constructs within the module.           | Standalone (g5) deps [`g0`, `g1`, `g2`]                     |
-| `nm-premangle`  | Name Pre-mangling                            | Adds some metadata to named names within the module.                    | Standalone (g5) deps [`g0`, `g1`, `g2`, `g5`]               |
+| `nm-premangle`  | Name Pre-mangling                            | Adds some metadata to named constructs within the module.               | Standalone (g6) deps [`g0`, `g1`, `g2`, `g5`]               |
+

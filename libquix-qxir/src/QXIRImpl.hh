@@ -29,63 +29,93 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_LIB_H__
-#define __QUIX_QXIR_LIB_H__
+#ifndef __QUIX_QXIR_IMPL_H__
+#define __QUIX_QXIR_IMPL_H__
+
+#define __QPARSE_IMPL__
 
 #include <quix-qxir/Config.h>
-#include <quix-qxir/Inference.h>
-#include <quix-qxir/Module.h>
 #include <quix-qxir/Node.h>
-#include <quix-qxir/QXIR.h>
-#include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <QXIRReport.hh>
+#include <optional>
+#include <string>
+#include <string_view>
+#include <unordered_set>
+#include <vector>
 
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool qxir_lib_init();
+struct qxir_impl_t {
+  std::unordered_set<std::string> strings;
 
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void qxir_lib_deinit();
+  qxir_impl_t() {}
+  ~qxir_impl_t() = default;
 
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_lib_version();
+  qxir::diag::DiagnosticManager diag;
 
-/**
- * @brief Get the last error message from the current thread.
- *
- * @return The last error message from the current thread.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_strerror();
+  std::string_view push_string(std::string_view sv) {
+    for (const auto &str : strings) {
+      if (str == sv) {
+        return str;
+      }
+    }
 
-#ifdef __cplusplus
-}
-#endif
+    return strings.insert(std::string(sv)).first->c_str();
+  }
+};
 
-#endif  // __QUIX_QXIR_LIB_H__
+class qxir_conf_t {
+  std::vector<qxir_setting_t> m_data;
+
+  bool verify_prechange(qxir_key_t key, qxir_val_t value) const {
+    (void)key;
+    (void)value;
+
+    return true;
+  }
+
+public:
+  qxir_conf_t() = default;
+  ~qxir_conf_t() = default;
+
+  bool SetAndVerify(qxir_key_t key, qxir_val_t value) {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qxir_setting_t &setting) { return setting.key == key; });
+
+    if (!verify_prechange(key, value)) {
+      return false;
+    }
+
+    if (it != m_data.end()) {
+      m_data.erase(it);
+    }
+
+    m_data.push_back({key, value});
+
+    return true;
+  }
+
+  std::optional<qxir_val_t> Get(qxir_key_t key) const {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qxir_setting_t &setting) { return setting.key == key; });
+
+    if (it == m_data.end()) {
+      return std::nullopt;
+    }
+
+    return it->value;
+  }
+
+  const qxir_setting_t *GetAll(size_t &count) const {
+    count = m_data.size();
+    return m_data.data();
+  }
+
+  void ClearNoVerify() {
+    m_data.clear();
+    m_data.shrink_to_fit();
+  }
+
+  bool has(qxir_key_t option, qxir_val_t value) const;
+};
+
+#endif  // __QUIX_QXIR_IMPL_H__

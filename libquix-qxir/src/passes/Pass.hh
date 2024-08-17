@@ -29,63 +29,51 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_LIB_H__
-#define __QUIX_QXIR_LIB_H__
+#ifndef __QUIX_QXIR_PASSES_PASS_H__
+#define __QUIX_QXIR_PASSES_PASS_H__
 
-#include <quix-qxir/Config.h>
-#include <quix-qxir/Inference.h>
-#include <quix-qxir/Module.h>
 #include <quix-qxir/Node.h>
-#include <quix-qxir/QXIR.h>
-#include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <memory>
+#include <set>
+#include <string>
+#include <unordered_map>
 
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool qxir_lib_init();
-
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void qxir_lib_deinit();
-
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_lib_version();
-
-/**
- * @brief Get the last error message from the current thread.
- *
- * @return The last error message from the current thread.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_strerror();
-
-#ifdef __cplusplus
+namespace qxir {
+  class Module;
 }
-#endif
 
-#endif  // __QUIX_QXIR_LIB_H__
+namespace qxir::passes {
+  typedef std::string PassName;
+
+  class PassResult final {
+    bool m_success = false;
+
+  public:
+    PassResult() = default;
+
+    bool operator!() const { return !m_success; }
+  };
+
+  typedef PassResult (*PassFunc)(Module &module);
+
+  class Pass final {
+    PassName m_name;
+    PassFunc m_func;
+
+    static std::unordered_map<PassName, std::shared_ptr<Pass>> m_passes;
+
+    Pass(PassName name, PassFunc func) : m_name(std::move(name)), m_func(func) {}
+
+  public:
+    static const std::weak_ptr<Pass> create(PassName name, std::set<PassName> deps, PassFunc func);
+    static const std::weak_ptr<Pass> get(PassName name);
+
+    const PassName &getName() const { return m_name; }
+    PassFunc getFunc() const { return m_func; }
+
+    PassResult transform(Module &module) const;
+  };
+}  // namespace qxir::passes
+
+#endif  // __QUIX_QXIR_PASSES_PASS_H__

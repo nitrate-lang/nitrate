@@ -137,7 +137,6 @@ qxir_node_t *qxir_clone(qxir_t *src, qxir_t *dst, qcore_arena_t *alloc, const qx
 /// END: ABSTRACT SYNTAX TREE DATA TYPES
 ///=============================================================================
 
-#define __QXIR_IMPL__
 #if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
 
 #include <quix-core/Arena.h>

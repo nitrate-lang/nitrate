@@ -29,10 +29,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <QXIRImpl.h>
 #include <quix-core/Error.h>
 #include <quix-qxir/Config.h>
 
+#include <QXIRImpl.hh>
 #include <boost/bimap.hpp>
 
 #include "LibMacro.h"

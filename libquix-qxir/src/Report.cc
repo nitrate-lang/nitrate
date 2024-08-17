@@ -32,12 +32,12 @@
 #define __QPARSE_IMPL__
 
 #include <LibMacro.h>
-#include <QXIRImpl.h>
-#include <QXIRReport.h>
 #include <quix-core/Error.h>
 #include <quix-lexer/Lib.h>
 #include <quix-qxir/QXIR.h>
 
+#include <QXIRImpl.hh>
+#include <QXIRReport.hh>
 #include <sstream>
 
 using namespace qxir::diag;

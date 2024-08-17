@@ -29,63 +29,65 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_LIB_H__
-#define __QUIX_QXIR_LIB_H__
+#ifndef __QUIX_QXIR_PASSES_PASSGROUP_H__
+#define __QUIX_QXIR_PASSES_PASSGROUP_H__
 
-#include <quix-qxir/Config.h>
-#include <quix-qxir/Inference.h>
-#include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
-#include <quix-qxir/QXIR.h>
-#include <stdbool.h>
+#include <memory>
+#include <passes/Pass.hh>
+#include <unordered_map>
+#include <vector>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace qxir::passes {
+  typedef std::string PassGroupName;
 
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool qxir_lib_init();
+  class PassGroupResult final {
+    std::vector<PassResult> m_results;
 
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void qxir_lib_deinit();
+  public:
+    PassGroupResult() = default;
 
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_lib_version();
+    void operator|=(const PassResult& result) { m_results.push_back(result); }
+    void operator+=(const PassGroupResult& result) {
+      m_results.insert(m_results.end(), result.m_results.begin(), result.m_results.end());
+    }
 
-/**
- * @brief Get the last error message from the current thread.
- *
- * @return The last error message from the current thread.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_strerror();
+    bool operator!() const {
+      return std::find_if(m_results.begin(), m_results.end(),
+                          [](const PassResult& result) { return !result; }) != m_results.end();
+    }
+  };
 
-#ifdef __cplusplus
-}
-#endif
+  enum class DependencyFrequency { Always, Once };
 
-#endif  // __QUIX_QXIR_LIB_H__
+  typedef std::vector<std::pair<PassGroupName, DependencyFrequency>> PassGroupDependencies;
+
+  class PassGroup final {
+    PassGroupName m_name;
+    std::vector<PassName> m_passes;
+    PassGroupDependencies m_dependencies;
+
+    static std::unordered_map<PassGroupName, std::shared_ptr<PassGroup>> m_groups;
+
+    PassGroup(PassGroupName name, std::vector<PassName> passes, PassGroupDependencies dependencies)
+        : m_name(std::move(name)),
+          m_passes(std::move(passes)),
+          m_dependencies(std::move(dependencies)) {}
+
+  public:
+    static const std::weak_ptr<PassGroup> create(const PassGroupName& name,
+                                                 const std::vector<PassName>& passes,
+                                                 const PassGroupDependencies& dependencies);
+
+    static const std::weak_ptr<PassGroup> get(PassGroupName name);
+
+    const PassGroupName& getName() const { return m_name; }
+    const std::vector<PassName>& getPasses() const { return m_passes; }
+    const PassGroupDependencies& getDependencies() const { return m_dependencies; }
+    bool hasPass(const PassName& name) const;
+    bool hasDependency(const PassGroupName& name) const;
+
+    PassGroupResult transform(Module& module) const;
+  };
+}  // namespace qxir::passes
+
+#endif  // __QUIX_QXIR_PASSES_PASSGROUP_H__

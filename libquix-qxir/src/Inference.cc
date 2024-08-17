@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QXIR_IMPL__
 #include <LibMacro.h>
 #include <quix-qxir/Inference.h>
 #include <quix-qxir/Node.h>

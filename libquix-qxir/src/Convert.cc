@@ -33,8 +33,6 @@
 #define QPARSE_USE_CPP_API
 #define QXIR_USE_CPP_API
 
-#include <QXIRImpl.h>
-#include <QXIRReport.h>
 #include <quix-core/Error.h>
 #include <quix-parser/Parser.h>
 #include <quix-qxir/Node.h>
@@ -42,6 +40,8 @@
 #include <setjmp.h>
 #include <signal.h>
 
+#include <QXIRImpl.hh>
+#include <QXIRReport.hh>
 #include <atomic>
 #include <cstring>
 

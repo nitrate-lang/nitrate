@@ -32,9 +32,11 @@
 #ifndef __QUIX_QXIR_INFERENCE_H__
 #define __QUIX_QXIR_INFERENCE_H__
 
+#include <quix-core/Arena.h>
 #include <quix-qxir/Node.h>
 #include <quix-qxir/QXIR.h>
-#include <quix-core/Arena.h>
+
+#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +48,7 @@ extern "C" {
  * @param ctx QXIR context.
  * @param node Node to perform type inference on.
  * @param arena Arena to allocate memory from.
- * 
+ *
  * @return Type of the node or NULL if inference failed.
  *
  * @note This function may modify the node in place.
@@ -56,6 +58,8 @@ qxir_node_t *qxir_infer(qxir_t *ctx, qxir_node_t *node, qcore_arena_t *arena);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif  // __QUIX_QXIR_INFERENCE_H__

@@ -154,7 +154,9 @@ CPP_EXPORT bool Expr::isType() const noexcept {
   }
 }
 
-CPP_EXPORT qxir::Type *qxir::Expr::getType() noexcept { return getModule()->getType(m_type_idx); }
+CPP_EXPORT qxir::Type *qxir::Expr::getType() noexcept {
+  return getModule()->lookupType(m_type_idx);
+}
 
 CPP_EXPORT bool Expr::is(qxir_ty_t type) const noexcept { return type == getKind(); }
 

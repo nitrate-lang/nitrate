@@ -29,93 +29,70 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_IMPL_H__
-#define __QUIX_QXIR_IMPL_H__
+#ifndef __QUIX_QXIR_REPORT_H__
+#define __QUIX_QXIR_REPORT_H__
 
-#define __QPARSE_IMPL__
+#include <quix-lexer/Token.h>
+#include <quix-qxir/QXIR.h>
 
-#include <QXIRReport.h>
-#include <quix-qxir/Config.h>
-#include <quix-qxir/Node.h>
-
-#include <optional>
-#include <string>
+#include <cstdarg>
+#include <functional>
+#include <stdexcept>
 #include <string_view>
-#include <unordered_set>
-#include <vector>
 
-struct qxir_impl_t {
-  std::unordered_set<std::string> strings;
+namespace qxir::diag {
+  class SyntaxError : public std::runtime_error {
+  public:
+    SyntaxError() : std::runtime_error("") {}
+  };
 
-  qxir_impl_t() {}
-  ~qxir_impl_t() = default;
+  enum class MessageType {
+    BadTree,
+    FatalError,
+  };
 
-  qxir::diag::DiagnosticManager diag;
+  enum ControlFlow {
+    cont, /* Continue parsing */
+    stop, /* Stop parsing (throw an error) */
+  };
 
-  std::string_view push_string(std::string_view sv) {
-    for (const auto &str : strings) {
-      if (str == sv) {
-        return str;
-      }
-    }
+  enum class FormatStyle {
+    Clang16Color,   /* Clang-like 16 color diagnostic format */
+    ClangPlain,     /* Clang-like plain text diagnostic format */
+    ClangTrueColor, /* Clang-like RGB TrueColor diagnostic format */
+    Default = Clang16Color,
+  };
 
-    return strings.insert(std::string(sv)).first->c_str();
-  }
-};
+  typedef std::function<void(const char *)> DiagnosticMessageHandler;
 
-class qxir_conf_t {
-  std::vector<qxir_setting_t> m_data;
+  struct DiagMessage {
+    std::string msg;
+    qlex_loc_t start, end;
+    MessageType type;
+  };
 
-  bool verify_prechange(qxir_key_t key, qxir_val_t value) const {
-    (void)key;
-    (void)value;
+  class DiagnosticManager {
+    qxir_t *m_qxir;
+    std::vector<DiagMessage> m_msgs;
 
-    return true;
-  }
+    std::string mint_clang16_message(const DiagMessage &msg) const;
+    std::string mint_plain_message(const DiagMessage &msg) const;
+    std::string mint_clang_truecolor_message(const DiagMessage &msg) const;
 
-public:
-  qxir_conf_t() = default;
-  ~qxir_conf_t() = default;
+  public:
+    void push(DiagMessage &&msg);
+    size_t render(DiagnosticMessageHandler handler, FormatStyle style) const;
 
-  bool SetAndVerify(qxir_key_t key, qxir_val_t value) {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
+    void set_ctx(qxir_t *qxir) { m_qxir = qxir; }
+  };
 
-    if (!verify_prechange(key, value)) {
-      return false;
-    }
+  /* Set reference to the current qxir */
+  void install_reference(qxir_t *qxir);
 
-    if (it != m_data.end()) {
-      m_data.erase(it);
-    }
+  /**
+   * @brief Report a syntax error
+   */
+  void badtree(const qparse::Node *node, std::string_view fmt, ...);
+};  // namespace qxir::diag
 
-    m_data.push_back({key, value});
-
-    return true;
-  }
-
-  std::optional<qxir_val_t> Get(qxir_key_t key) const {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
-
-    if (it == m_data.end()) {
-      return std::nullopt;
-    }
-
-    return it->value;
-  }
-
-  const qxir_setting_t *GetAll(size_t &count) const {
-    count = m_data.size();
-    return m_data.data();
-  }
-
-  void ClearNoVerify() {
-    m_data.clear();
-    m_data.shrink_to_fit();
-  }
-
-  bool has(qxir_key_t option, qxir_val_t value) const;
-};
-
-#endif  // __QUIX_QXIR_IMPL_H__
+#endif  // __QUIX_QXIR_REPORT_H__
