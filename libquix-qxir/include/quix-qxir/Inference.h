@@ -29,22 +29,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <LibMacro.h>
-#include <quix-qxir/Inference.h>
+#ifndef __QUIX_QXIR_INFERENCE_H__
+#define __QUIX_QXIR_INFERENCE_H__
+
 #include <quix-qxir/Node.h>
+#include <quix-qxir/QXIR.h>
+#include <quix-core/Arena.h>
 
-using namespace qxir;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-LIB_EXPORT qxir_node_t *qxir_infer(qxir_t *ctx, qxir_node_t *_node, qcore_arena_t *arena) {
-  /// TODO: Implement type inference
+/**
+ * @brief Performs type inference on a QXIR node.
+ *
+ * @param ctx QXIR context.
+ * @param node Node to perform type inference on.
+ * @param arena Arena to allocate memory from.
+ * 
+ * @return Type of the node or NULL if inference failed.
+ *
+ * @note This function may modify the node in place.
+ * @note This function is thread-safe.
+ */
+qxir_node_t *qxir_infer(qxir_t *ctx, qxir_node_t *node, qcore_arena_t *arena);
 
-  Expr *E = static_cast<Expr *>(_node);
-
-  if (E->isType()) { /* Types are expressions too; The type is their identity. */
-    return qxir_clone(ctx, ctx, arena, E);
-  }
-
-  qcore_implement("qxir_infer");
-
-  return nullptr;
+#ifdef __cplusplus
 }
+#endif
+
+#endif  // __QUIX_QXIR_INFERENCE_H__
