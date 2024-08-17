@@ -36,21 +36,35 @@
 
 #include <passes/PassGroup.hh>
 
-std::unordered_map<qxir::passes::PassGroupName, std::shared_ptr<qxir::passes::PassGroup>>
-    qxir::passes::PassGroup::m_groups;
+using namespace qxir::passes;
 
-const std::weak_ptr<qxir::passes::PassGroup> qxir::passes::PassGroup::create(
-    const qxir::passes::PassGroupName &name, const std::vector<qxir::passes::PassName> &passes,
-    const PassGroupDependencies &dependencies) {
+void PassGroupResult::print(std::ostream &out) const {
+  for (const auto &result : m_results) {
+    result.print(out);
+    out << std::endl;
+  }
+}
+
+std::unordered_map<PassGroupName, std::shared_ptr<PassGroup>> PassGroup::m_groups;
+
+const std::weak_ptr<PassGroup> PassGroup::create(const PassGroupName &name,
+                                                 const std::vector<PassName> &passes,
+                                                 const PassGroupDependencies &dependencies) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
   if (m_groups.contains(name)) {
-    return m_groups[name];
+    auto group = m_groups[name];
+    group->m_passes = passes;
+    group->m_dependencies = dependencies;
+    return group;
   }
 
   return m_groups[name] = std::shared_ptr<PassGroup>(new PassGroup(name, passes, dependencies));
 }
 
-const std::weak_ptr<qxir::passes::PassGroup> qxir::passes::PassGroup::get(
-    qxir::passes::PassGroupName name) {
+const std::weak_ptr<PassGroup> PassGroup::get(PassGroupName name) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
   if (!m_groups.contains(name)) {
     return std::weak_ptr<PassGroup>();
   }
@@ -58,17 +72,38 @@ const std::weak_ptr<qxir::passes::PassGroup> qxir::passes::PassGroup::get(
   return m_groups[name];
 }
 
-bool qxir::passes::PassGroup::hasPass(const qxir::passes::PassName &name) const {
+PassGroupName PassGroup::getName() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_name;
+}
+
+std::vector<PassName> PassGroup::getPasses() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_passes;
+}
+
+PassGroupDependencies PassGroup::getDependencies() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_dependencies;
+}
+
+bool PassGroup::hasPass(const PassName &name) const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
   return std::find(m_passes.begin(), m_passes.end(), name) != m_passes.end();
 }
 
-bool qxir::passes::PassGroup::hasDependency(const qxir::passes::PassGroupName &name) const {
+bool PassGroup::hasDependency(const PassGroupName &name) const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
   return std::find_if(m_dependencies.begin(), m_dependencies.end(), [&name](const auto &dep) {
            return dep.first == name;
          }) != m_dependencies.end();
 }
 
-qxir::passes::PassGroupResult qxir::passes::PassGroup::transform(qxir::Module &module) const {
+PassGroupResult PassGroup::transform(qxir::Module &module) const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
   PassGroupResult result;
 
   for (const auto &dep : m_dependencies) {

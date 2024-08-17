@@ -33,20 +33,30 @@
 
 #include <passes/Pass.hh>
 
-std::unordered_map<qxir::passes::PassName, std::shared_ptr<qxir::passes::Pass>>
-    qxir::passes::Pass::m_passes;
+using namespace qxir::passes;
 
-const std::weak_ptr<qxir::passes::Pass> qxir::passes::Pass::create(
-    qxir::passes::PassName name, std::set<qxir::passes::PassName> deps,
-    qxir::passes::PassFunc func) {
-  if (m_passes.count(name) > 0) {
-    return m_passes[name];
+void PassResult::print(std::ostream &out) const {
+  out << "Pass " << m_name << " " << (m_success ? "succeeded" : "failed");
+}
+
+std::mutex Pass::m_mutex;
+std::unordered_map<PassName, std::shared_ptr<Pass>> Pass::m_passes;
+
+const std::weak_ptr<Pass> Pass::create(PassName name, PassFunc func) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
+  if (m_passes.contains(name)) {
+    auto pass = m_passes[name];
+    pass->m_func = func;
+    return pass;
   }
 
   return m_passes[name] = std::shared_ptr<Pass>(new Pass(name, func));
 }
 
-const std::weak_ptr<qxir::passes::Pass> qxir::passes::Pass::get(qxir::passes::PassName name) {
+const std::weak_ptr<Pass> Pass::get(PassName name) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
   if (m_passes.count(name) == 0) {
     return std::weak_ptr<Pass>();
   }
@@ -54,6 +64,17 @@ const std::weak_ptr<qxir::passes::Pass> qxir::passes::Pass::get(qxir::passes::Pa
   return m_passes[name];
 }
 
-qxir::passes::PassResult qxir::passes::Pass::transform(qxir::Module &module) const {
+PassName Pass::getName() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_name;
+}
+
+PassFunc Pass::getFunc() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_func;
+}
+
+PassResult Pass::transform(qxir::Module &module) const {
+  std::lock_guard<std::mutex> lock(m_mutex);
   return m_func(module);
 }

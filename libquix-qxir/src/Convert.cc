@@ -39,6 +39,7 @@
 #include <quix-qxir/QXIR.h>
 #include <setjmp.h>
 #include <signal.h>
+#include <passes/PassManager.hh>
 
 #include <QXIRImpl.hh>
 #include <QXIRReport.hh>

@@ -33,6 +33,8 @@
 #define __QUIX_QXIR_PASSES_PASSGROUP_H__
 
 #include <memory>
+#include <mutex>
+#include <ostream>
 #include <passes/Pass.hh>
 #include <unordered_map>
 #include <vector>
@@ -55,6 +57,8 @@ namespace qxir::passes {
       return std::find_if(m_results.begin(), m_results.end(),
                           [](const PassResult& result) { return !result; }) != m_results.end();
     }
+
+    void print(std::ostream& out) const;
   };
 
   enum class DependencyFrequency { Always, Once };
@@ -66,6 +70,7 @@ namespace qxir::passes {
     std::vector<PassName> m_passes;
     PassGroupDependencies m_dependencies;
 
+    static std::mutex m_mutex;
     static std::unordered_map<PassGroupName, std::shared_ptr<PassGroup>> m_groups;
 
     PassGroup(PassGroupName name, std::vector<PassName> passes, PassGroupDependencies dependencies)
@@ -80,9 +85,9 @@ namespace qxir::passes {
 
     static const std::weak_ptr<PassGroup> get(PassGroupName name);
 
-    const PassGroupName& getName() const { return m_name; }
-    const std::vector<PassName>& getPasses() const { return m_passes; }
-    const PassGroupDependencies& getDependencies() const { return m_dependencies; }
+    PassGroupName getName() const;
+    std::vector<PassName> getPasses() const;
+    PassGroupDependencies getDependencies() const;
     bool hasPass(const PassName& name) const;
     bool hasDependency(const PassGroupName& name) const;
 
