@@ -179,7 +179,7 @@ namespace qxir::detail {
       }
       case QIR_NODE_ASM: {
         /// TODO:
-        qcore_panic("QIR_NODE_ASM not implemented");
+        qcore_implement("QIR_NODE_ASM get_children_sorted");
         break;
       }
       case QIR_NODE_U1_TY: {
@@ -419,7 +419,7 @@ namespace qxir::detail {
     (void)cs;
     (void)parallel;
 
-    qcore_panic("bfs_pre_impl not implemented");
+    qcore_implement("bfs_pre_impl");
   }
 
   CPP_EXPORT void bfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
@@ -429,7 +429,7 @@ namespace qxir::detail {
     (void)cs;
     (void)parallel;
 
-    qcore_panic("bfs_post_impl not implemented");
+    qcore_implement("bfs_post_impl");
   }
 
 }  // namespace qxir::detail

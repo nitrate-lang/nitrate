@@ -286,7 +286,7 @@ LIB_EXPORT bool qxir_check(qxir_t *qxir, const qxir_node_t *base) {
 
     /* Safety is overrated */
     /// TODO:
-    qcore_panic("qxir_check: qxir not implemented");
+    qcore_implement("qxir_check");
   } catch (...) {
     return false;
   }
@@ -1436,7 +1436,7 @@ namespace qxir {
   }
 
   static Expr *qconv_inline_asm(ConvState &s, const qparse::InlineAsm *n) {
-    qcore_panic("inline_asm not implemented");
+    qcore_implement("qconv_inline_asm");
   }
 
   static Expr *qconv_return(ConvState &s, const qparse::ReturnStmt *n) {
@@ -2311,7 +2311,7 @@ static qxir_node_t *qxir_clone_impl(qxir_t *src, qxir_t *dst, const qxir_node_t 
       break;
     }
     case QIR_NODE_ASM: {
-      qcore_panic("qxir_clone: qxir_asm not implemented");
+      qcore_implement("QIR_NODE_ASM cloning");
       break;
     }
     case QIR_NODE_U1_TY: {

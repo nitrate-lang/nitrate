@@ -285,7 +285,7 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_ASM: {
-        qcore_panic("Not implemented");
+        qcore_implement("QIR_NODE_ASM node hashing");
         break;
       }
       case QIR_NODE_U1_TY: {
