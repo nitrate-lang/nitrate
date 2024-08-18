@@ -30,51 +30,21 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define __QXIR_IMPL__
-
-#include <LibMacro.h>
+#include <core/LibMacro.h>
+#include <quix-qxir/Inference.h>
 #include <quix-qxir/Node.h>
 
-static std::vector<std::optional<std::unique_ptr<qxir::Module>>> qxir_modules;
-static std::mutex qxir_modules_mutex;
+using namespace qxir;
 
-CPP_EXPORT qxir::Module::Module(ModuleId id) { m_id = id; }
+LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
+  /// TODO: Implement type inference
+  qcore_implement("qxir_infer");
 
-CPP_EXPORT qxir::Module::~Module() {
-  if (m_arena) {
-    qcore_arena_close(&m_arena.value());
-  }
+  // Expr *E = static_cast<Expr *>(_node);
 
-  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
-  qxir_modules[m_id].reset();
-}
+  // if (E->isType()) { /* Types are expressions too; The type is their identity. */
+  //   return qxir_clone(ctx, ctx, arena, E);
+  // }
 
-CPP_EXPORT std::unique_ptr<qxir::Module> qxir::createModule() noexcept {
-  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
-
-  ModuleId mid;
-
-  for (mid = 0; mid < qxir_modules.size(); mid++) {
-    if (!qxir_modules[mid].has_value()) {
-      break;
-    }
-  }
-
-  if (mid >= MAX_MODULE_INSTANCES) {
-    return nullptr;
-  }
-
-  if (mid == qxir_modules.size()) {
-    qxir_modules.push_back(std::make_unique<Module>(mid));
-  } else {
-    qxir_modules[mid] = std::make_unique<Module>(mid);
-  }
-
-  return std::move(qxir_modules[mid].value());
-}
-
-CPP_EXPORT qxir::Module *qxir::getModule(qxir::ModuleId mid) noexcept {
-  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
-
-  qcore_assert(mid < qxir_modules.size() && qxir_modules.at(mid).has_value(), "Module not found");
-  return qxir_modules.at(mid)->get();
+  // return nullptr;
 }

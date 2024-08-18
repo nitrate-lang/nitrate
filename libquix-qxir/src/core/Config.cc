@@ -29,13 +29,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-qxir/Config.h>
 
-#include <QXIRImpl.hh>
 #include <boost/bimap.hpp>
-
-#include "LibMacro.h"
+#include <core/Config.hh>
 
 namespace qxir::conf {
   extern std::vector<qxir_setting_t> default_settings;
@@ -133,13 +132,28 @@ LIB_EXPORT bool qxir_conf_getopt(qxir_conf_t *conf, qxir_key_t key, qxir_val_t *
   }
 }
 
-LIB_EXPORT const qxir_setting_t *qxir_conf_getopts(qxir_conf_t *conf, size_t *count) {
+LIB_EXPORT qxir_setting_t *qxir_conf_getopts(qxir_conf_t *conf, size_t *count) {
   try {
     if (!count) {
       qcore_panic("qxir_conf_getopts: Contract violation: 'count' parameter cannot be NULL.");
     }
 
-    return conf->GetAll(*count);
+    const qxir_setting_t *ptr = conf->GetAll(*count);
+
+    if (!ptr) {
+      return nullptr;
+    }
+
+    size_t size = *count * sizeof(qxir_setting_t);
+
+    qxir_setting_t *copy = static_cast<qxir_setting_t *>(malloc(size));
+    if (!copy) {
+      return nullptr;
+    }
+
+    memcpy(copy, ptr, size);
+
+    return copy;
   } catch (...) {
     return nullptr;
   }
@@ -156,10 +170,16 @@ LIB_EXPORT void qxir_conf_clear(qxir_conf_t *conf) {
 LIB_EXPORT size_t qxir_conf_dump(qxir_conf_t *conf, FILE *stream, const char *field_delim,
                                  const char *line_delim) {
   try {
-    if (!field_delim || !line_delim) {
-      qcore_panic(
-          "qxir_conf_dump: Contract violation: 'field_delim' and 'line_delim' parameters cannot be "
-          "NULL.");
+    if (!stream) {
+      qcore_panic("qxir_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
+    }
+
+    if (!field_delim) {
+      field_delim = "=";
+    }
+
+    if (!line_delim) {
+      line_delim = "\n";
     }
 
     const qxir_setting_t *settings = nullptr;

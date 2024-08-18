@@ -101,7 +101,7 @@ bool PassGroup::hasDependency(const PassGroupName &name) const {
          }) != m_dependencies.end();
 }
 
-PassGroupResult PassGroup::transform(qxir::Module &module) const {
+PassGroupResult PassGroup::transform(qmodule_t *module) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   PassGroupResult result;
@@ -113,7 +113,7 @@ PassGroupResult PassGroup::transform(qxir::Module &module) const {
                    dep.first.c_str());
     }
 
-    if (dep.second == DependencyFrequency::Once && module.hasPassBeenRun(dep.first)) {
+    if (dep.second == DependencyFrequency::Once && module->hasPassBeenRun(dep.first)) {
       continue;
     }
 

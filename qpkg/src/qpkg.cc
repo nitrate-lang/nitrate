@@ -991,7 +991,7 @@ namespace qpkg::dev::test {
   }
 }  // namespace qpkg::dev::test
 
-extern "C" void qxir_testplug(void *root);
+extern "C" void qmodule_testplug(void *root);
 
 int run_dev_mode(
     const ArgumentParser &parser,
@@ -1245,7 +1245,7 @@ int run_dev_mode(
       return 1;
     }
 
-    qxir_t *qxir = qxir_new(root, lexer, conf);
+    qmodule_t *qxir = qxir_new(root, lexer, conf);
     if (!qxir) {
       qxir_conf_free(conf);
       qcore_arena_close(&arena);
@@ -1270,7 +1270,7 @@ int run_dev_mode(
       return 1;
     }
 
-    qxir_testplug(qxir_root);
+    qmodule_testplug(qxir_root);
 
     size_t out_len = 0;
     char *out_str = qxir_repr(qxir_root, false, 2, &arena, &out_len);

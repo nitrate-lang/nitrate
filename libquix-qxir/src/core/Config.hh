@@ -29,23 +29,68 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QXIR_IMPL__
-#include <LibMacro.h>
-#include <quix-qxir/Inference.h>
-#include <quix-qxir/Node.h>
+#ifndef __QUIX_QXIR_CORE_CONFIG_H__
+#define __QUIX_QXIR_CORE_CONFIG_H__
 
-using namespace qxir;
+#include <quix-qxir/Config.h>
 
-LIB_EXPORT qxir_node_t *qxir_infer(qxir_t *ctx, qxir_node_t *_node, qcore_arena_t *arena) {
-  /// TODO: Implement type inference
+#include <algorithm>
+#include <optional>
+#include <vector>
 
-  Expr *E = static_cast<Expr *>(_node);
+class qxir_conf_t {
+  std::vector<qxir_setting_t> m_data;
 
-  if (E->isType()) { /* Types are expressions too; The type is their identity. */
-    return qxir_clone(ctx, ctx, arena, E);
+  bool verify_prechange(qxir_key_t key, qxir_val_t value) const {
+    (void)key;
+    (void)value;
+
+    return true;
   }
 
-  qcore_implement("qxir_infer");
+public:
+  qxir_conf_t() = default;
+  ~qxir_conf_t() = default;
 
-  return nullptr;
-}
+  bool SetAndVerify(qxir_key_t key, qxir_val_t value) {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qxir_setting_t &setting) { return setting.key == key; });
+
+    if (!verify_prechange(key, value)) {
+      return false;
+    }
+
+    if (it != m_data.end()) {
+      m_data.erase(it);
+    }
+
+    m_data.push_back({key, value});
+
+    return true;
+  }
+
+  std::optional<qxir_val_t> Get(qxir_key_t key) const {
+    auto it = std::find_if(m_data.begin(), m_data.end(),
+                           [key](const qxir_setting_t &setting) { return setting.key == key; });
+
+    if (it == m_data.end()) {
+      return std::nullopt;
+    }
+
+    return it->value;
+  }
+
+  const qxir_setting_t *GetAll(size_t &count) const {
+    count = m_data.size();
+    return m_data.data();
+  }
+
+  void ClearNoVerify() {
+    m_data.clear();
+    m_data.shrink_to_fit();
+  }
+
+  bool has(qxir_key_t option, qxir_val_t value) const;
+};
+
+#endif  // __QUIX_QXIR_CORE_CONFIG_H__

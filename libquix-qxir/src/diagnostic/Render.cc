@@ -29,20 +29,20 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QPARSE_IMPL__
+#define __QXIR_IMPL__
+#define QPARSE_USE_CPP_API
 
-#include <LibMacro.h>
+#include <core/LibMacro.h>
 #include <quix-core/Error.h>
-#include <quix-lexer/Lib.h>
-#include <quix-qxir/QXIR.h>
+#include <quix-qxir/Module.h>
 
-#include <QXIRImpl.hh>
-#include <QXIRReport.hh>
+#include <core/Config.hh>
+#include <diagnostic/Report.hh>
 #include <sstream>
 
 using namespace qxir::diag;
 
-thread_local qxir_t *g_qxir_inst;
+thread_local qmodule_t *g_qxir_inst;
 
 ///============================================================================///
 
@@ -186,7 +186,7 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, FormatStyle s
 }
 
 namespace qxir::diag {
-  void install_reference(qxir_t *qxir) { g_qxir_inst = qxir; }
+  void install_reference(qmodule_t *qxir) { g_qxir_inst = qxir; }
 
   void badtree_impl(qlex_loc_t start, qlex_loc_t end, std::string_view fmt, va_list args) {
     std::string msg;
@@ -207,7 +207,7 @@ namespace qxir::diag {
     diag.end = end;
     diag.type = MessageType::BadTree;
 
-    g_qxir_inst->impl->diag.push(std::move(diag));
+    g_qxir_inst->diag.push(std::move(diag));
     g_qxir_inst->failed = true;
 
     if (g_qxir_inst->conf->has(QQV_FASTERROR, QQV_ON)) {
@@ -215,7 +215,7 @@ namespace qxir::diag {
     }
   }
 
-  CPP_EXPORT void badtree(const qparse::Node *node, std::string_view fmt, ...) {
+  void badtree(const qparse::Node *node, std::string_view fmt, ...) {
     if (!node) {
       qcore_panic("badtree: node is NULL");
     }
@@ -226,3 +226,14 @@ namespace qxir::diag {
     va_end(args);
   }
 }  // namespace qxir::diag
+
+LIB_EXPORT size_t qxir_diag_read(qmodule_t *qxir, qxir_audit_ticket_t ticket,
+                                 qxir_diag_format_t format, qxir_report_cb cb, uintptr_t data) {
+  /// TODO:
+  qcore_implement(__func__);
+}
+
+LIB_EXPORT size_t qxir_diag_clear(qmodule_t *qxir, qxir_audit_ticket_t ticket) {
+  /// TODO:
+  qcore_implement(__func__);
+}

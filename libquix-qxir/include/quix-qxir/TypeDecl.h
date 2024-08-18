@@ -29,93 +29,104 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_IMPL_H__
-#define __QUIX_QXIR_IMPL_H__
+#ifndef __QUIX_QXIR_TYPE_DECL_H__
+#define __QUIX_QXIR_TYPE_DECL_H__
 
-#define __QPARSE_IMPL__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include <quix-qxir/Config.h>
-#include <quix-qxir/Node.h>
+/**
+ * @brief Quixcc abstract syntax tree node.
+ */
+typedef struct qxir_node_t qxir_node_t;
 
-#include <QXIRReport.hh>
-#include <optional>
-#include <string>
-#include <string_view>
-#include <unordered_set>
-#include <vector>
+/**
+ * @brief Quixcc QXIR module.
+ */
+typedef struct qmodule_t qmodule_t;
 
-struct qxir_impl_t {
-  std::unordered_set<std::string> strings;
+/**
+ * @brief Quixcc abstract syntax tree node type.
+ */
+typedef enum qxir_ty_t {
+  QIR_NODE_BINEXPR,
+  QIR_NODE_UNEXPR,
+  QIR_NODE_POST_UNEXPR,
 
-  qxir_impl_t() {}
-  ~qxir_impl_t() = default;
+  QIR_NODE_INT,
+  QIR_NODE_FLOAT,
+  QIR_NODE_STRING,
+  QIR_NODE_LIST,
 
-  qxir::diag::DiagnosticManager diag;
+  QIR_NODE_ALLOC,
+  QIR_NODE_CALL,
+  QIR_NODE_SEQ,
+  QIR_NODE_ASYNC,
+  QIR_NODE_INDEX,
+  QIR_NODE_IDENT,
+  QIR_NODE_GLOBAL,
+  QIR_NODE_RET,
+  QIR_NODE_BRK,
+  QIR_NODE_CONT,
+  QIR_NODE_IF,
+  QIR_NODE_WHILE,
+  QIR_NODE_FOR,
+  QIR_NODE_FORM,
+  QIR_NODE_FOREACH,
+  QIR_NODE_CASE,
+  QIR_NODE_SWITCH,
+  QIR_NODE_FN,
+  QIR_NODE_ASM,
 
-  std::string_view push_string(std::string_view sv) {
-    for (const auto &str : strings) {
-      if (str == sv) {
-        return str;
-      }
-    }
+  QIR_NODE_U1_TY,
+  QIR_NODE_U8_TY,
+  QIR_NODE_U16_TY,
+  QIR_NODE_U32_TY,
+  QIR_NODE_U64_TY,
+  QIR_NODE_U128_TY,
+  QIR_NODE_I8_TY,
+  QIR_NODE_I16_TY,
+  QIR_NODE_I32_TY,
+  QIR_NODE_I64_TY,
+  QIR_NODE_I128_TY,
+  QIR_NODE_F16_TY,
+  QIR_NODE_F32_TY,
+  QIR_NODE_F64_TY,
+  QIR_NODE_F128_TY,
+  QIR_NODE_VOID_TY,
+  QIR_NODE_PTR_TY,
+  QIR_NODE_OPAQUE_TY,
+  QIR_NODE_STRING_TY,
+  QIR_NODE_STRUCT_TY,
+  QIR_NODE_UNION_TY,
+  QIR_NODE_ARRAY_TY,
+  QIR_NODE_LIST_TY,
+  QIR_NODE_INTRIN_TY,
+  QIR_NODE_FN_TY,
 
-    return strings.insert(std::string(sv)).first->c_str();
-  }
-};
+  QIR_NODE_TMP, /* Temp node; must be resolved with more information */
+  QIR_NODE_BAD,
+} qxir_ty_t;
 
-class qxir_conf_t {
-  std::vector<qxir_setting_t> m_data;
+typedef struct qxir_conf_t qxir_conf_t;
 
-  bool verify_prechange(qxir_key_t key, qxir_val_t value) const {
-    (void)key;
-    (void)value;
+typedef enum qxir_key_t {
+  QQK_UNKNOWN = 0,
+  QQK_CRASHGUARD,
+  QQV_FASTERROR,
+} qxir_key_t;
 
-    return true;
-  }
+typedef enum qxir_val_t {
+  QQV_UNKNOWN = 0,
+  QQV_TRUE,
+  QQV_FALSE,
+  QQV_ON = QQV_TRUE,
+  QQV_OFF = QQV_FALSE,
+} qxir_val_t;
 
-public:
-  qxir_conf_t() = default;
-  ~qxir_conf_t() = default;
+#ifdef __cplusplus
+}
+#endif
 
-  bool SetAndVerify(qxir_key_t key, qxir_val_t value) {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
-
-    if (!verify_prechange(key, value)) {
-      return false;
-    }
-
-    if (it != m_data.end()) {
-      m_data.erase(it);
-    }
-
-    m_data.push_back({key, value});
-
-    return true;
-  }
-
-  std::optional<qxir_val_t> Get(qxir_key_t key) const {
-    auto it = std::find_if(m_data.begin(), m_data.end(),
-                           [key](const qxir_setting_t &setting) { return setting.key == key; });
-
-    if (it == m_data.end()) {
-      return std::nullopt;
-    }
-
-    return it->value;
-  }
-
-  const qxir_setting_t *GetAll(size_t &count) const {
-    count = m_data.size();
-    return m_data.data();
-  }
-
-  void ClearNoVerify() {
-    m_data.clear();
-    m_data.shrink_to_fit();
-  }
-
-  bool has(qxir_key_t option, qxir_val_t value) const;
-};
-
-#endif  // __QUIX_QXIR_IMPL_H__
+#endif  // __QUIX_QXIR_TYPE_DECL_H__

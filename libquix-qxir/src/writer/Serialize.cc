@@ -39,7 +39,7 @@
 #include <cstring>
 #include <sstream>
 
-#include "LibMacro.h"
+#include "core/LibMacro.h"
 
 using namespace qxir;
 
@@ -597,8 +597,11 @@ static char *qxir_repr_malloc(const Expr *_node, bool minify, size_t indent, siz
   return out;
 }
 
-LIB_EXPORT char *qxir_repr(const Expr *_node, bool minify, size_t indent, qcore_arena_t *arena,
-                           size_t *outlen) {
+char *qxir_repr(const Expr *_node, bool minify, size_t indent, qcore_arena_t *arena,
+                size_t *outlen) {
+  /// TODO:
+  qcore_implement(__func__);
+
   size_t outlen_v = 0;
 
   /* Eliminate internal edge cases */
@@ -646,8 +649,11 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
   }
 }
 
-LIB_EXPORT void qxir_brepr(const Expr *node, bool compress, qcore_arena_t *arena, uint8_t **out,
-                           size_t *outlen) {
+void qxir_brepr(const Expr *node, bool compress, qcore_arena_t *arena, uint8_t **out,
+                size_t *outlen) {
+  /// TODO:
+  qcore_implement(__func__);
+
   char *repr{};
   qcore_arena_t scratch{};
   bool our_arena{};
@@ -689,4 +695,10 @@ LIB_EXPORT void qxir_brepr(const Expr *node, bool compress, qcore_arena_t *arena
     /* Otherwise, just return the pointer to the arena alloc'ed buffer */
     *out = (uint8_t *)repr;
   }
+}
+
+LIB_EXPORT bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t *outlen,
+                           uint8_t argcnt, ...) {
+  /// TODO:
+  qcore_implement(__func__);
 }

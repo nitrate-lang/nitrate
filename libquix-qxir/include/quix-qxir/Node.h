@@ -32,102 +32,27 @@
 #ifndef __QUIX_QXIR_NODE_H__
 #define __QUIX_QXIR_NODE_H__
 
-#include <quix-core/Arena.h>
-#include <quix-lexer/Token.h>
+#include <quix-qxir/TypeDecl.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * @brief Quixcc abstract syntax tree node.
- */
-typedef struct qxir_node_t qxir_node_t;
-
-typedef struct qxir_t qxir_t;
-
-/**
- * @brief Quixcc abstract syntax tree node type.
- */
-typedef enum qxir_ty_t {
-  QIR_NODE_BINEXPR,
-  QIR_NODE_UNEXPR,
-  QIR_NODE_POST_UNEXPR,
-
-  QIR_NODE_INT,
-  QIR_NODE_FLOAT,
-  QIR_NODE_STRING,
-  QIR_NODE_LIST,
-
-  QIR_NODE_ALLOC,
-  QIR_NODE_CALL,
-  QIR_NODE_SEQ,
-  QIR_NODE_ASYNC,
-  QIR_NODE_INDEX,
-  QIR_NODE_IDENT,
-  QIR_NODE_GLOBAL,
-  QIR_NODE_RET,
-  QIR_NODE_BRK,
-  QIR_NODE_CONT,
-  QIR_NODE_IF,
-  QIR_NODE_WHILE,
-  QIR_NODE_FOR,
-  QIR_NODE_FORM,
-  QIR_NODE_FOREACH,
-  QIR_NODE_CASE,
-  QIR_NODE_SWITCH,
-  QIR_NODE_FN,
-  QIR_NODE_ASM,
-
-  QIR_NODE_U1_TY,
-  QIR_NODE_U8_TY,
-  QIR_NODE_U16_TY,
-  QIR_NODE_U32_TY,
-  QIR_NODE_U64_TY,
-  QIR_NODE_U128_TY,
-  QIR_NODE_I8_TY,
-  QIR_NODE_I16_TY,
-  QIR_NODE_I32_TY,
-  QIR_NODE_I64_TY,
-  QIR_NODE_I128_TY,
-  QIR_NODE_F16_TY,
-  QIR_NODE_F32_TY,
-  QIR_NODE_F64_TY,
-  QIR_NODE_F128_TY,
-  QIR_NODE_VOID_TY,
-  QIR_NODE_PTR_TY,
-  QIR_NODE_OPAQUE_TY,
-  QIR_NODE_STRING_TY,
-  QIR_NODE_STRUCT_TY,
-  QIR_NODE_UNION_TY,
-  QIR_NODE_ARRAY_TY,
-  QIR_NODE_LIST_TY,
-  QIR_NODE_INTRIN_TY,
-  QIR_NODE_FN_TY,
-
-  QIR_NODE_TMP, /* Temp node; must be resolved with more information */
-  QIR_NODE_BAD,
-} qxir_ty_t;
-
 #define QIR_NODE_COUNT 52
 
 /**
- * @brief Clone a QXIR node optionally into a different context.
+ * @brief Clone a QXIR node. Optionally into a different module.
  *
- * @param src The source context.
- * @param dst The destination context.
- * @param alloc The allocator to use for the clone.
+ * @param dst The destination module context or NULL to clone into the same context.
  * @param node The node to clone.
  *
  * @return qxir_node_t* The cloned node.
  *
- * @note The destination context may be the same as the source context.
- * @note The source and destination contexts must be valid.
- * @note If the node is NULL, the function will return NULL even if
- *       other parameters are invalid.
- * @note This clone is a deep copy (recursively clones children).
+ * @note If `dst` NULL, the function will clone into the same module.
+ * @note If `node` NULL, the function will return NULL.
+ * @note This clone is a deep copy.
  */
-qxir_node_t *qxir_clone(qxir_t *src, qxir_t *dst, qcore_arena_t *alloc, const qxir_node_t *node);
+qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 
 #ifdef __cplusplus
 }
@@ -143,6 +68,7 @@ qxir_node_t *qxir_clone(qxir_t *src, qxir_t *dst, qcore_arena_t *alloc, const qx
 #include <quix-core/Error.h>
 #include <quix-lexer/Token.h>
 #include <quix-qxir/Module.h>
+#include <quix-qxir/TypeDecl.h>
 
 #include <any>
 #include <boost/uuid/uuid.hpp>
@@ -228,11 +154,11 @@ namespace qxir {
   class Expr : public qxir_node_t {
     QCLASS_REFLECT()
 
-    qxir_ty_t m_node_type : 6;  /* Typecode of this node. */
-    TypeID m_type_idx;          /* Typecode of this expression. */
-    ModuleId m_module_idx : 16; /* The module context index. */
-    uint64_t m_constexpr : 1;   /* Is this expression a constant expression? */
-    uint64_t m_volatile : 1;    /* Is this expression volatile? */
+    qxir_ty_t m_node_type : 6;        /* Typecode of this node. */
+    qxir::TypeID m_type_idx;          /* Typecode of this expression. */
+    qxir::ModuleId m_module_idx : 16; /* The module context index. */
+    uint64_t m_constexpr : 1;         /* Is this expression a constant expression? */
+    uint64_t m_volatile : 1;          /* Is this expression volatile? */
 
     qlex_loc_t m_start_loc, m_end_loc;
 
@@ -327,7 +253,7 @@ namespace qxir {
      */
     std::string getUniqueId() noexcept;
 
-    Module *getModule() noexcept;
+    qmodule_t *getModule() const noexcept;
   } __attribute__((packed)) __attribute__((aligned(16)));
 
 #define EXPR_SIZE sizeof(Expr)

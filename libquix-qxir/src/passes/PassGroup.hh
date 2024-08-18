@@ -91,7 +91,7 @@ namespace qxir::passes {
     bool hasPass(const PassName& name) const;
     bool hasDependency(const PassGroupName& name) const;
 
-    PassGroupResult transform(Module& module) const;
+    PassGroupResult transform(qmodule_t* module) const;
   };
 }  // namespace qxir::passes
 

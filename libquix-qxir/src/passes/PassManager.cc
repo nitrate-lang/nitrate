@@ -39,7 +39,7 @@
 using namespace qxir::passes;
 
 static void seed_passes() {
-  PassFunc placeholder = [](qxir::Module& module) -> PassResult {
+  PassFunc placeholder = [](qmodule_t* module) -> PassResult {
     /// TODO: Write passes
     qcore_implement("placeholder");
   };
@@ -122,7 +122,7 @@ std::unique_ptr<StdTransform> StdTransform::create() {
   return ptr;
 }
 
-bool StdTransform::transform(qxir::Module& module, std::ostream& out) {
+bool StdTransform::transform(qmodule_t* module, std::ostream& out) {
   auto ref = m_root.lock();
   if (!ref) {
     return false;

@@ -32,11 +32,11 @@
 #define __QXIR_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
-#include <LibMacro.h>
+#include <core/LibMacro.h>
 #include <openssl/evp.h>
 #include <quix-core/Error.h>
+#include <quix-qxir/Module.h>
 #include <quix-qxir/Node.h>
-#include <quix-qxir/QXIR.h>
 
 #include <boost/uuid/name_generator.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -163,15 +163,18 @@ CPP_EXPORT bool Expr::is(qxir_ty_t type) const noexcept { return type == getKind
 CPP_EXPORT void qxir::Expr::dump(std::ostream &os, bool isForDebug) const {
   (void)isForDebug;
 
-  size_t outlen;
-  char *repr = qxir_repr(this, false, 2, nullptr, &outlen);
-  if (!repr) {
+  char *cstr = nullptr;
+  size_t len = 0;
+
+  FILE *fmembuf = open_memstream(&cstr, &len);
+  if (!qxir_write(this->getModule(), QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
     qcore_panic("Failed to dump expression");
   }
+  fflush(fmembuf);
 
-  os << repr;
+  os.write(cstr, len);
 
-  free(repr);
+  fclose(fmembuf);
 }
 
 CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
@@ -403,4 +406,4 @@ CPP_EXPORT std::string qxir::Expr::getUniqueId() noexcept {
   return boost::uuids::to_string(hash());
 }
 
-CPP_EXPORT qxir::Module *qxir::Expr::getModule() noexcept { return ::getModule(m_module_idx); }
+CPP_EXPORT qmodule_t *qxir::Expr::getModule() const noexcept { return ::getModule(m_module_idx); }

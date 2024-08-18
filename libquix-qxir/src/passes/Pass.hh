@@ -58,7 +58,7 @@ namespace qxir::passes {
     void print(std::ostream &out) const;
   };
 
-  typedef PassResult (*PassFunc)(Module &module);
+  typedef PassResult (*PassFunc)(qmodule_t *module);
 
   class Pass final {
     PassName m_name;
@@ -77,7 +77,7 @@ namespace qxir::passes {
     PassName getName() const;
     PassFunc getFunc() const;
 
-    PassResult transform(Module &module) const;
+    PassResult transform(qmodule_t *module) const;
   };
 }  // namespace qxir::passes
 

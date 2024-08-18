@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
   FILE *source = NULL;
   qlex_t *lexer = NULL;
   qxir_conf_t *conf = NULL;
-  qxir_t *qxir = NULL;
+  qmodule_t *qxir = NULL;
   int ret = 0;
 
   if (argc < 2) {

@@ -1,6 +1,6 @@
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Parser.h>
-#include <quix-qxir/QXIR.h>
+#include <quix-qxir/IR.h>
 
 #include <iostream>
 #include <memory>
@@ -98,7 +98,7 @@ public:
 };
 
 class QXIR {
-  qxir_t *m_ctx;
+  qmodule_t *m_ctx;
   qcore_arena_t m_arena;
   std::shared_ptr<QXIRConf> m_conf;
 
@@ -114,7 +114,7 @@ public:
     qcore_arena_close(&m_arena);
   }
 
-  qxir_t &get() { return *m_ctx; }
+  qmodule_t &get() { return *m_ctx; }
 
   std::optional<qxir_node_t *> go() {
     qxir_node_t *node = nullptr;

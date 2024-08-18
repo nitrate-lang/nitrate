@@ -44,7 +44,7 @@ namespace qxir::passes {
   public:
     static std::unique_ptr<StdTransform> create();
 
-    bool transform(Module& module, std::ostream& out);
+    bool transform(qmodule_t* module, std::ostream& out);
   };
 }  // namespace qxir::passes
 

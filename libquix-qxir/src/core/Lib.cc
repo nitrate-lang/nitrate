@@ -36,7 +36,7 @@
 
 #include <atomic>
 
-#include "LibMacro.h"
+#include "core/LibMacro.h"
 
 #ifndef QXIR_ID
 #warning "QXIR_ID must be defined"

@@ -29,15 +29,73 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_QXIR_IMPL__
-#include <quix-qxir/Config.h>
+#ifndef __QUIX_QXIR_REPORT_H__
+#define __QUIX_QXIR_REPORT_H__
 
-#include <array>
-#include <vector>
+#define QPARSE_USE_CPP_API
 
-namespace qxir::conf {
-  std::vector<qxir_setting_t> default_settings = {
-      {QQK_CRASHGUARD, QQV_ON},
-      {QQV_FASTERROR, QQV_OFF},
+#include <quix-lexer/Token.h>
+#include <quix-parser/Node.h>
+#include <quix-qxir/IR.h>
+
+#include <cstdarg>
+#include <functional>
+#include <stdexcept>
+#include <string_view>
+
+namespace qxir::diag {
+  class SyntaxError : public std::runtime_error {
+  public:
+    SyntaxError() : std::runtime_error("") {}
   };
-}
+
+  enum class MessageType {
+    BadTree,
+    FatalError,
+  };
+
+  enum ControlFlow {
+    cont, /* Continue parsing */
+    stop, /* Stop parsing (throw an error) */
+  };
+
+  enum class FormatStyle {
+    Clang16Color,   /* Clang-like 16 color diagnostic format */
+    ClangPlain,     /* Clang-like plain text diagnostic format */
+    ClangTrueColor, /* Clang-like RGB TrueColor diagnostic format */
+    Default = Clang16Color,
+  };
+
+  typedef std::function<void(const char *)> DiagnosticMessageHandler;
+
+  struct DiagMessage {
+    std::string msg;
+    qlex_loc_t start, end;
+    MessageType type;
+  };
+
+  class DiagnosticManager {
+    qmodule_t *m_qxir;
+    std::vector<DiagMessage> m_msgs;
+
+    std::string mint_clang16_message(const DiagMessage &msg) const;
+    std::string mint_plain_message(const DiagMessage &msg) const;
+    std::string mint_clang_truecolor_message(const DiagMessage &msg) const;
+
+  public:
+    void push(DiagMessage &&msg);
+    size_t render(DiagnosticMessageHandler handler, FormatStyle style) const;
+
+    void set_ctx(qmodule_t *qxir) { m_qxir = qxir; }
+  };
+
+  /* Set reference to the current qxir */
+  void install_reference(qmodule_t *qxir);
+
+  /**
+   * @brief Report a syntax error
+   */
+  void badtree(const qparse::Node *node, std::string_view fmt, ...);
+};  // namespace qxir::diag
+
+#endif  // __QUIX_QXIR_REPORT_H__

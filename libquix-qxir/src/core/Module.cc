@@ -29,63 +29,98 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_LIB_H__
-#define __QUIX_QXIR_LIB_H__
+#define __QXIR_IMPL__
 
-#include <quix-qxir/Config.h>
-#include <quix-qxir/IR.h>
-#include <quix-qxir/Inference.h>
+#include <core/LibMacro.h>
 #include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
-#include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+static std::vector<std::optional<std::unique_ptr<qmodule_t>>> qxir_modules;
+static std::mutex qxir_modules_mutex;
 
-/**
- * @brief Initialize the library.
- *
- * @return true if the library was initialized successfully.
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not reinitialize the library, but will
- * increment the reference count.
- */
-bool qxir_lib_init();
+qmodule_t::qmodule_t(qxir::ModuleId id) { m_id = id; }
 
-/**
- * @brief Deinitialize the library.
- *
- * @note This function is thread-safe.
- * @note The library is reference counted, so it is safe to call this function
- * multiple times. Each time will not deinitialize the library, but when
- * the reference count reaches zero, the library will be deinitialized.
- */
-void qxir_lib_deinit();
+qmodule_t::~qmodule_t() {
+  if (m_arena) {
+    qcore_arena_close(&m_arena.value());
+  }
 
-/**
- * @brief Get the version of the library.
- *
- * @return The version string of the library.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_lib_version();
-
-/**
- * @brief Get the last error message from the current thread.
- *
- * @return The last error message from the current thread.
- * @warning Don't free the returned string.
- * @note This function is thread-safe.
- * @note This function is safe to call before initialization and after deinitialization.
- */
-const char* qxir_strerror();
-
-#ifdef __cplusplus
+  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+  qxir_modules[m_id].reset();
 }
-#endif
 
-#endif  // __QUIX_QXIR_LIB_H__
+std::unique_ptr<qmodule_t> qxir::createModule() noexcept {
+  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+
+  ModuleId mid;
+
+  for (mid = 0; mid < qxir_modules.size(); mid++) {
+    if (!qxir_modules[mid].has_value()) {
+      break;
+    }
+  }
+
+  if (mid >= MAX_MODULE_INSTANCES) {
+    return nullptr;
+  }
+
+  if (mid == qxir_modules.size()) {
+    qxir_modules.push_back(std::make_unique<qmodule_t>(mid));
+  } else {
+    qxir_modules[mid] = std::make_unique<qmodule_t>(mid);
+  }
+
+  return std::move(qxir_modules[mid].value());
+}
+
+CPP_EXPORT qmodule_t *qxir::getModule(qxir::ModuleId mid) noexcept {
+  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+
+  qcore_assert(mid < qxir_modules.size() && qxir_modules.at(mid).has_value(), "Module not found");
+  return qxir_modules.at(mid)->get();
+}
+
+LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf) {
+  try {
+    if (!lexer || !conf) {
+      return nullptr;
+    }
+
+    // qmodule_t *qxir = new qmodule_t();
+
+    // qxir->impl = new qxir_impl_t();
+    // qxir->conf = conf;
+    // qxir->root = root;
+    // qxir->lexer = lexer;
+    // qxir->failed = false;
+    // qxir->impl->diag.set_ctx(qxir);
+    /// TODO:
+    qcore_implement("qxir_new");
+
+    // return qxir;
+  } catch (...) {
+    return nullptr;
+  }
+}
+
+LIB_EXPORT void qxir_free(qmodule_t *qxir) {
+  try {
+    if (!qxir) {
+      return;
+    }
+
+    // delete qxir->impl;
+
+    // qxir->impl = nullptr;
+    // qxir->conf = nullptr;
+    // qxir->root = nullptr;
+    // qxir->lexer = nullptr;
+    /// TODO: Implement qxir_free
+    qcore_implement("qxir_free");
+
+    // delete qxir;
+  } catch (...) {
+    return;
+  }
+}
+
+LIB_EXPORT size_t qxir_max_modules(void) { return qxir::MAX_MODULE_INSTANCES; }

@@ -74,7 +74,7 @@ PassFunc Pass::getFunc() const {
   return m_func;
 }
 
-PassResult Pass::transform(qxir::Module &module) const {
+PassResult Pass::transform(qmodule_t *module) const {
   std::lock_guard<std::mutex> lock(m_mutex);
   return m_func(module);
 }
