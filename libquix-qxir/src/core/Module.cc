@@ -37,18 +37,55 @@
 static std::vector<std::optional<std::unique_ptr<qmodule_t>>> qxir_modules;
 static std::mutex qxir_modules_mutex;
 
-qmodule_t::qmodule_t(qxir::ModuleId id) { m_id = id; }
+qmodule_t::qmodule_t(qxir::ModuleId id) {
+  m_passes_applied.clear();
+  m_strings.clear();
+  m_diag = std::make_unique<qxir::diag::DiagnosticManager>();
+  m_type_mgr = std::make_unique<qxir::TypeManager>();
+
+  qcore_arena_open(&m_arena);
+
+  m_conf = nullptr;
+  m_lexer = nullptr;
+  m_root = nullptr;
+
+  m_id = id;
+}
 
 qmodule_t::~qmodule_t() {
-  if (m_arena) {
-    qcore_arena_close(&m_arena.value());
-  }
+  qcore_arena_close(&m_arena);
 
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
   qxir_modules[m_id].reset();
 }
 
-std::unique_ptr<qmodule_t> qxir::createModule() noexcept {
+qxir::ModuleId qmodule_t::getModuleId() noexcept { return m_id; }
+
+qxir::Type *qmodule_t::lookupType(qxir::TypeID tid)  { return m_type_mgr->get(tid); }
+
+void qmodule_t::setRoot(qxir_node_t *root) noexcept { m_root = root; }
+
+qxir_node_t *qmodule_t::getRoot() noexcept { return m_root; }
+
+void qmodule_t::applyPassLabel(const std::string &label)  {
+  m_passes_applied.insert(label);
+}
+
+bool qmodule_t::hasPassBeenRun(const std::string &label)  {
+  return m_passes_applied.contains(label);
+}
+
+std::string_view qmodule_t::push_string(std::string_view sv) {
+  for (const auto &str : m_strings) {
+    if (str == sv) {
+      return str;
+    }
+  }
+
+  return m_strings.insert(std::string(sv)).first->c_str();
+}
+
+std::unique_ptr<qmodule_t> qxir::createModule()  {
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
   ModuleId mid;
@@ -72,7 +109,7 @@ std::unique_ptr<qmodule_t> qxir::createModule() noexcept {
   return std::move(qxir_modules[mid].value());
 }
 
-CPP_EXPORT qmodule_t *qxir::getModule(qxir::ModuleId mid) noexcept {
+CPP_EXPORT qmodule_t *qxir::getModule(qxir::ModuleId mid)  {
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
   qcore_assert(mid < qxir_modules.size() && qxir_modules.at(mid).has_value(), "Module not found");
@@ -81,17 +118,14 @@ CPP_EXPORT qmodule_t *qxir::getModule(qxir::ModuleId mid) noexcept {
 
 LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf) {
   try {
-    if (!lexer || !conf) {
+    if (!conf) {
       return nullptr;
     }
 
-    // qmodule_t *qxir = new qmodule_t();
+    qmodule_t *obj = qxir::createModule().release();
 
-    // qxir->impl = new qxir_impl_t();
-    // qxir->conf = conf;
-    // qxir->root = root;
-    // qxir->lexer = lexer;
-    // qxir->failed = false;
+    obj->m_conf = conf;
+    obj->m_lexer = lexer;
     // qxir->impl->diag.set_ctx(qxir);
     /// TODO:
     qcore_implement("qxir_new");

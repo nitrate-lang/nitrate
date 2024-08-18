@@ -159,7 +159,7 @@ namespace qxir {
     qxir::ModuleId m_module_idx : 16; /* The module context index. */
     uint64_t m_constexpr : 1;         /* Is this expression a constant expression? */
     uint64_t m_volatile : 1;          /* Is this expression volatile? */
-
+   
     qlex_loc_t m_start_loc, m_end_loc;
 
     Expr(const Expr &) = delete;
@@ -254,7 +254,7 @@ namespace qxir {
     std::string getUniqueId() noexcept;
 
     qmodule_t *getModule() const noexcept;
-  } __attribute__((packed)) __attribute__((aligned(16)));
+  } __attribute__((packed));
 
 #define EXPR_SIZE sizeof(Expr)
 

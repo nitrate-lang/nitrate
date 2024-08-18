@@ -207,10 +207,10 @@ namespace qxir::diag {
     diag.end = end;
     diag.type = MessageType::BadTree;
 
-    g_qxir_inst->diag.push(std::move(diag));
-    g_qxir_inst->failed = true;
+    g_qxir_inst->m_diag.push(std::move(diag));
+    g_qxir_inst->m_failed = true;
 
-    if (g_qxir_inst->conf->has(QQV_FASTERROR, QQV_ON)) {
+    if (g_qxir_inst->m_conf->has(QQV_FASTERROR, QQV_ON)) {
       throw SyntaxError();
     }
   }

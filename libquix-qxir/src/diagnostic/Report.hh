@@ -54,11 +54,6 @@ namespace qxir::diag {
     FatalError,
   };
 
-  enum ControlFlow {
-    cont, /* Continue parsing */
-    stop, /* Stop parsing (throw an error) */
-  };
-
   enum class FormatStyle {
     Clang16Color,   /* Clang-like 16 color diagnostic format */
     ClangPlain,     /* Clang-like plain text diagnostic format */

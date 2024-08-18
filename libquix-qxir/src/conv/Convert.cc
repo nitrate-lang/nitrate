@@ -72,7 +72,7 @@ static void _signal_handler(int sig) {
   diag.start = diag.end = qlex_loc_t{};
   diag.type = MessageType::FatalError;
 
-  qxir_ctx->diag.push(std::move(diag));
+  qxir_ctx->m_diag.push(std::move(diag));
 
   sigguard_lock.unlock();
 
@@ -80,7 +80,7 @@ static void _signal_handler(int sig) {
 }
 
 static void install_sigguard(qmodule_t *qxir) {
-  if (qxir->conf->has(QQK_CRASHGUARD, QQV_OFF)) {
+  if (qxir->m_conf->has(QQK_CRASHGUARD, QQV_OFF)) {
     return;
   }
 
@@ -158,13 +158,13 @@ bool qxir_do(qmodule_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
       try {
         m = qxir;
         ConvState s;
-        *out = qconv(s, static_cast<const qparse::Node *>(qxir->root));
+        *out = qconv(s, static_cast<const qparse::Node *>(qxir->m_root));
         status = true;
       } catch (QError &e) {
-        qxir->failed = true;
+        qxir->m_failed = true;
       }
     } else {
-      qxir->failed = true;
+      qxir->m_failed = true;
     }
 
     /*==== Clean up signal handling for the converter ====*/
@@ -178,7 +178,7 @@ bool qxir_do(qmodule_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
     qxir::qxir_arena.swap(*arena);
 
     /*==================== Return status ====================*/
-    return status && !qxir->failed;
+    return status && !qxir->m_failed;
 
   } catch (...) { /*== This will be caught iff QQK_CRASHGUARD is QQV_ON ==*/
     abort();      /* iff QQK_CRASHGUARD is off we abort(). */
@@ -249,7 +249,7 @@ bool qxir_check(qmodule_t *qxir, const qxir_node_t *base) {
       return false;
     }
 
-    if (qxir->failed) {
+    if (qxir->m_failed) {
       return false;
     }
 
@@ -272,9 +272,9 @@ void qxir_dumps(qmodule_t *qxir, bool no_ansi, qxir_report_cb cb, uintptr_t data
     };
 
     if (no_ansi) {
-      qxir->diag.render(adapter, qxir::diag::FormatStyle::ClangPlain);
+      qxir->m_diag.render(adapter, qxir::diag::FormatStyle::ClangPlain);
     } else {
-      qxir->diag.render(adapter, qxir::diag::FormatStyle::Clang16Color);
+      qxir->m_diag.render(adapter, qxir::diag::FormatStyle::Clang16Color);
     }
   } catch (...) {
     return;
