@@ -137,7 +137,9 @@ namespace qxir {
 };  // namespace qxir
 
 class qxir_node_t {
-} __attribute__((packed));
+public:
+  qxir_node_t() = default;
+};
 
 namespace qxir {
 
@@ -156,7 +158,7 @@ namespace qxir {
     uint64_t m_volatile : 1;          /* Is this expression volatile? */
 
     qlex_loc_t m_start_loc;
-    uint16_t m_loc_size; // Diagnostics can not span more than 64K bytes.
+    uint16_t m_loc_size;  // Diagnostics can not span more than 64K bytes.
 
     Expr(const Expr &) = delete;
     Expr &operator=(const Expr &) = delete;
@@ -254,7 +256,7 @@ namespace qxir {
      * @return std::string The unique identifier.
      */
     std::string getUniqueId() noexcept;
-  } __attribute__((packed));
+  } __attribute__((packed)) __attribute__((aligned(8)));
 
 #define EXPR_SIZE sizeof(Expr)
 

@@ -621,6 +621,8 @@ LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
   } catch (...) {
     qcore_panic("qlex_tok_size: invalid token");
   }
+
+  __builtin_unreachable();
 }
 
 LIB_EXPORT qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf,
@@ -680,6 +682,8 @@ LIB_EXPORT qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *
   } catch (...) {
     qcore_panic("qlex_tok_write: invalid token");
   }
+
+  __builtin_unreachable();
 }
 
 LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
@@ -711,6 +715,8 @@ LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
     case qNote:
       return "COMMENT";
   }
+
+  __builtin_unreachable();
 }
 
 LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
@@ -742,6 +748,8 @@ LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
   } catch (...) {
     qcore_panic("qlex_eq: invalid token");
   }
+
+  __builtin_unreachable();
 }
 
 LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
@@ -773,6 +781,8 @@ LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
   } catch (...) {
     qcore_panic("qlex_lt: invalid token");
   }
+
+  __builtin_unreachable();
 }
 
 LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
@@ -804,6 +814,8 @@ LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
   } catch (...) {
     qcore_panic("qlex_str: invalid token");
   }
+
+  __builtin_unreachable();
 }
 
 LIB_EXPORT const char *qlex_opstr(qlex_op_t op) {
