@@ -44,7 +44,6 @@ void qxir_set_lexer(qmodule_t *mod, qlex_t *lexer);
 qxir_node_t *qxir_base(qmodule_t *mod);
 qxir_conf_t *qxir_get_conf(qmodule_t *mod);
 void qxir_set_conf(qmodule_t *mod, qxir_conf_t *conf);
-bool qxir_ok(qmodule_t *mod);
 
 #ifdef __cplusplus
 }
@@ -82,12 +81,12 @@ namespace qxir {
   public:
     TypeManager() = default;
 
-    TypeID add(Type *type)  {
+    TypeID add(Type *type) {
       m_types.push_back(type);
       return TypeID(m_types.size() - 1);
     }
 
-    Type *get(TypeID tid)  { return m_types.at(tid.m_id); }
+    Type *get(TypeID tid) { return m_types.at(tid.m_id); }
   };
 
   constexpr size_t MAX_MODULE_INSTANCES = std::numeric_limits<ModuleId>::max();
@@ -95,17 +94,17 @@ namespace qxir {
 }  // namespace qxir
 
 class qmodule_t {
-public:
   std::unordered_set<std::string> m_passes_applied;
   std::unordered_set<std::string> m_strings;
   std::unique_ptr<qxir::diag::DiagnosticManager> m_diag;
   std::unique_ptr<qxir::TypeManager> m_type_mgr;
-  qcore_arena_t m_arena;
+  qcore_arena_t m_node_arena;
   qxir_conf_t *m_conf;
   qlex_t *m_lexer;
   qxir_node_t *m_root;
   qxir::ModuleId m_id;
 
+public:
   qmodule_t(qxir::ModuleId id);
   ~qmodule_t();
 
@@ -120,35 +119,52 @@ public:
    * @param tid Type ID
    * @return Type* or nullptr if not found
    */
-  qxir::Type *lookupType(qxir::TypeID tid) ;
+  qxir::Type *lookupType(qxir::TypeID tid);
 
-  /**
-   * @brief Set the root node of the module.
-   * @param root Root node
-   */
   void setRoot(qxir_node_t *root) noexcept;
+  qxir_node_t *getRoot() noexcept;
+
+  void setLexer(qlex_t *lexer) noexcept;
+  qlex_t *getLexer() noexcept;
+
+  void setConf(qxir_conf_t *conf) noexcept;
+  qxir_conf_t *getConf() noexcept;
 
   /**
-   * @brief Get the root node of the module.
-   * @return qxir_node_t*
+   * @brief Enable or disable diagnostics.
+   * @param is_enabled Enable diagnostics
    */
-  qxir_node_t *getRoot() noexcept;
+  void enableDiagnostics(bool is_enabled) noexcept;
 
   /**
    * @brief Make it known that a pass has been applied to the module.
    * @param label Pass label
    */
-  void applyPassLabel(const std::string &label)  ;
-  bool hasPassBeenRun(const std::string &label) ;
+  void applyPassLabel(const std::string &label);
 
-  std::string_view push_string(std::string_view sv);
+  /**
+   * @brief Check if a pass has been applied to the module.
+   * @param label Pass label
+   */
+  bool hasPassBeenRun(const std::string &label);
+
+  /**
+   * @brief Intern a string.
+   * @param sv String view
+   * @return reference to the interned string
+   */
+  std::string_view internString(std::string_view sv);
+
+  qcore_arena_t &getNodeArena() { return m_node_arena; }
+
+  qxir::diag::DiagnosticManager &getDiag() { return *m_diag; }
 };
 
 #define QMODULE_SIZE sizeof(qmodule_t)
 
 namespace qxir {
-  qmodule_t *getModule(ModuleId mid) ;
-  std::unique_ptr<qmodule_t> createModule() ;
+  qmodule_t *getModule(ModuleId mid);
+  std::unique_ptr<qmodule_t> createModule();
 }  // namespace qxir
 
 #endif

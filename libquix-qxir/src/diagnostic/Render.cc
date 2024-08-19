@@ -186,7 +186,7 @@ size_t DiagnosticManager::render(DiagnosticMessageHandler handler, FormatStyle s
 }
 
 namespace qxir::diag {
-  void install_reference(qmodule_t *qxir) { g_qxir_inst = qxir; }
+  void install_reference(qmodule_t *qxir) noexcept { g_qxir_inst = qxir; }
 
   void badtree_impl(qlex_loc_t start, qlex_loc_t end, std::string_view fmt, va_list args) {
     std::string msg;
@@ -207,10 +207,9 @@ namespace qxir::diag {
     diag.end = end;
     diag.type = MessageType::BadTree;
 
-    g_qxir_inst->m_diag.push(std::move(diag));
-    g_qxir_inst->m_failed = true;
+    g_qxir_inst->getDiag().push(std::move(diag));
 
-    if (g_qxir_inst->m_conf->has(QQV_FASTERROR, QQV_ON)) {
+    if (g_qxir_inst->getConf()->has(QQV_FASTERROR, QQV_ON)) {
       throw SyntaxError();
     }
   }

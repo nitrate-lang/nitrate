@@ -109,7 +109,8 @@ typedef enum qxir_serial_t {
  *
  * @note This function is thread safe.
  */
-bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t *outlen, uint8_t argcnt, ...);
+bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t *outlen, uint32_t argcnt,
+                ...);
 
 /**
  * @brief Deserialize a QModule instance from a FILE stream.
@@ -125,14 +126,14 @@ bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t *outlen, u
  *
  * @note This function is thread safe.
  */
-bool qxir_read(qmodule_t *mod, FILE *in, size_t *inlen, uint8_t argcnt, ...);
+bool qxir_read(qmodule_t *mod, FILE *in, size_t *inlen, uint32_t argcnt, ...);
 
 /**
  * @brief Lower a parse tree into a QModule.
  *
  * @param mod Pointer to the QModule instance to lower into.
  * @param base The base node of the parse tree to lower.
- * @param diagnostics Whether to enable diagnosticss. Setting this to false may
+ * @param diagnostics Whether to enable diagnostics. Setting this to false may
  * potentially increase performance. Correctness will remain the same.
  *
  * @return True if the lowering was successful, false otherwise.
@@ -144,6 +145,8 @@ bool qxir_read(qmodule_t *mod, FILE *in, size_t *inlen, uint8_t argcnt, ...);
  * @note This function is thread safe.
  */
 bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics);
+
+typedef void (*qxir_node_cb)(qxir_node_t *cur, uintptr_t userdata);
 
 /**
  * @brief Just lower the damn thing and print it.
@@ -165,8 +168,8 @@ bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics);
  *
  * @note This function is thread safe.
  */
-bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mode, void (*cb)(qxir_node_t *),
-                    uint8_t argcnt, ...);
+bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mode, qxir_node_cb cb,
+                    uint32_t argcnt, ...);
 
 typedef enum qxir_audit_t {
   QXIR_AUDIT_NONE = 0,     /* No audit */

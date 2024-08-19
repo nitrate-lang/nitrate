@@ -206,7 +206,7 @@ LIB_EXPORT size_t qxir_conf_dump(qxir_conf_t *conf, FILE *stream, const char *fi
   }
 }
 
-bool qxir_conf_t::has(qxir_key_t option, qxir_val_t value) const {
+bool qxir_conf_t::has(qxir_key_t option, qxir_val_t value) const noexcept {
   try {
     for (const auto &dat : m_data) {
       if (dat.key == option && dat.value == value) {

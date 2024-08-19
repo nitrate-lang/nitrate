@@ -31,12 +31,12 @@
 
 #define __QUIX_IMPL__
 
-#include <quix-core/Arena.h>
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>
 #include <string.h>
 
 #include <array>
+#include <bit>
 #include <boost/bimap.hpp>
 #include <cctype>
 #include <charconv>
@@ -44,13 +44,15 @@
 #include <cstdio>
 #include <iomanip>
 #include <queue>
+#include <string>
+#include <string_view>
+#include <utility>
+#include <vector>
 
 #include "LibMacro.h"
 
 ///============================================================================///
 /// BEGIN: LEXICAL GRAMMAR CONSTRAINTS
-#define MAX_NUMBER_SIZE 128
-#define MAX_IDENTIFIER_SIZE 2048
 #define FLOATING_POINT_PRECISION 128
 /// END:   LEXICAL GRAMMAR CONSTRAINTS
 ///============================================================================///
@@ -246,54 +248,14 @@ namespace qlex {
   /// END:   LEXER LOOKUP TABLES
   ///============================================================================///
 
-  static thread_local qcore_arena_t g_lexer_arena;
-
   ///============================================================================///
   /// BEGIN: LEXER INTERNAL TYPES
-
-  template <class T>
-  struct Arena {
-    typedef T value_type;
-
-    Arena() = default;
-
-    template <class U>
-    constexpr Arena(const Arena<U> &) noexcept {}
-
-    [[nodiscard]] T *allocate(std::size_t n) {
-      return (T *)qcore_arena_alloc(&g_lexer_arena, n * sizeof(T));
-    }
-
-    void deallocate(T *p, std::size_t n) noexcept {
-      (void)p;
-      (void)n;
-    }
-  };
-
-  template <class T, class U>
-  bool operator==(const Arena<T> &, const Arena<U> &) {
-    return true;
-  }
-  template <class T, class U>
-  bool operator!=(const Arena<T> &, const Arena<U> &) {
-    return false;
-  }
-
-  typedef std::basic_string<char, std::char_traits<char>, Arena<char>> ident_buf_t;
-  typedef std::basic_string<char, std::char_traits<char>, Arena<char>> num_buf_t;
+  typedef std::string ident_buf_t;
+  typedef std::string num_buf_t;
   /// END:   LEXER INTERNAL TYPES
   ///============================================================================///
 
 }  // namespace qlex
-
-namespace std {
-  template <>
-  struct hash<qlex::ident_buf_t> {
-    std::size_t operator()(const qlex::ident_buf_t &str) const noexcept {
-      return std::hash<std::string_view>()(str);
-    }
-  };
-}  // namespace std
 
 enum class NumType {
   Invalid,
@@ -371,7 +333,7 @@ public:
 
   inline void release(qlex_size idx) { m_strings[idx].clear(); }
 
-  inline std::string_view operator[](qlex_size idx) const { return m_strings[idx]; }
+  inline std::string_view at(qlex_size idx) const { return m_strings.at(idx); }
 };
 #endif
 
@@ -387,7 +349,8 @@ class qlex_impl_t final {
   std::array<qlex_tok_t, TOKEN_BUF_SIZE> m_tokens;
   size_t m_tok_pos;
   std::queue<qlex_tok_t> m_undo;
-  std::unordered_map<qlex_size, qlex_size> m_val_to_off;
+  std::unordered_map<qlex_size, clever_me_t> m_tag_to_loc;
+  std::unordered_map<qlex_size, qlex_size> m_tag_to_off;
 
   std::deque<char> m_pushback;
   std::array<char, GETC_BUFFER_SIZE> m_buf;
@@ -395,6 +358,7 @@ class qlex_impl_t final {
   qlex_size m_row;
   qlex_size m_col;
   qlex_size m_offset;
+  qlex_size m_locctr;
   FILE *m_file;
 
   bool m_is_owned;
@@ -410,22 +374,24 @@ class qlex_impl_t final {
 
   char getc();
 
-  inline qlex_size off() {
+  qlex_loc_t loc() {
     clever_me_t bits;
-
     static_assert(sizeof(bits) == sizeof(qlex_size));
 
-    if (m_row > 2097152 || m_col > 1024) {
-      return 0;
-    } else {
+    if (m_row <= 2097152 || m_col <= 1024) {
       bits.rc_fmt = 1;
       bits.col = m_col;
       bits.row = m_row;
 
-      qlex_size val = std::bit_cast<qlex_size>(bits);
-      m_val_to_off[val] = m_offset;
-      return val;
+    } else {
+      bits.rc_fmt = 0;
     }
+
+    qlex_size tag = m_locctr++;
+    m_tag_to_loc[tag] = bits;
+    m_tag_to_off[tag] = m_offset;
+
+    return {tag};
   }
 
 public:
@@ -438,6 +404,7 @@ public:
         m_row(1),
         m_col(1),
         m_offset(0),
+        m_locctr(1),  // 0 means invalid location
         m_file(file),
         m_is_owned(is_owned) {
     if (fseek(file, 0, SEEK_SET) != 0) {
@@ -446,13 +413,14 @@ public:
   }
 
   ~qlex_impl_t() {
+    qcore_assert(m_file, "qlex_impl_t::~LexerState: file is NULL. Double free?");
+
     if (m_is_owned) {
       fclose(m_file);
     }
   }
 
-  inline StringRetainer &Strings() { return m_holdings; }
-  inline const StringRetainer &Strings() const { return m_holdings; }
+  const StringRetainer &Strings() const { return m_holdings; }
 
   qlex_tok_t next();
 
@@ -460,15 +428,54 @@ public:
   qlex_size save_userstring(std::string_view str) { return m_holdings.retain(str); }
 
   std::optional<qlex_size> loc2offset(qlex_loc_t loc) {
-    if (!m_val_to_off.contains(loc.idx)) [[unlikely]] {
+    if (!m_tag_to_off.contains(loc.tag)) [[unlikely]] {
       return std::nullopt;
     }
 
-    return m_val_to_off[loc.idx];
+    return m_tag_to_off[loc.tag];
+  }
+
+  std::optional<std::pair<qlex_size, qlex_size>> loc2rowcol(qlex_loc_t loc) {
+    if (!m_tag_to_loc.contains(loc.tag)) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    clever_me_t it = m_tag_to_loc[loc.tag];
+
+    if (!it.rc_fmt) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    qlex_size row = it.row;
+    qlex_size col = it.col;
+
+    return std::make_pair(row, col);
+  }
+
+  qlex_loc_t makeLoc(qlex_size row, qlex_size col, qlex_size offset) {
+    clever_me_t bits;
+    static_assert(sizeof(bits) == sizeof(qlex_size));
+
+    if (row <= 2097152 || col <= 1024) {
+      bits.rc_fmt = 1;
+      bits.col = col;
+      bits.row = row;
+
+    } else {
+      bits.rc_fmt = 0;
+    }
+
+    qlex_size tag = m_locctr++;
+    m_tag_to_loc[tag] = bits;
+    m_tag_to_off[tag] = offset;
+
+    return {tag};
   }
 
   FILE *file() { return m_file; }
 };
+
+///============================================================================///
 
 static qlex_tok_t _impl_next(qlex_t *self) {
   qlex_tok_t tok = qlex_peek(self);
@@ -507,156 +514,181 @@ static void _impl_destruct(qlex_t *self) {
   self->impl = nullptr;
 }
 
+///============================================================================///
+
 LIB_EXPORT qlex_t *qlex_new(FILE *file, const char *filename) {
-  if (!filename) {
-    filename = "<unknown>";
+  try {
+    qcore_assert(file, "qlex_new: file is NULL");
+
+    if (!filename) {
+      filename = "<unknown>";
+    }
+
+    qlex_t *lexer = new qlex_t;
+    lexer->impl = new qlex_impl_t(file, false);
+    lexer->next = _impl_next;
+    lexer->peek = _impl_peek;
+    lexer->push = _impl_push;
+    lexer->collect = _impl_collect;
+    lexer->destruct = _impl_destruct;
+    lexer->cur.ty = qErro;
+    lexer->flags = QLEX_FLAG_NONE;
+    lexer->filename = filename;
+
+    return lexer;
+  } catch (std::bad_alloc &) {
+    return nullptr;
+  } catch (...) {
+    qcore_panic("qlex_new: failed to create lexer");
   }
-
-  qlex_t *lexer = new qlex_t;
-  lexer->impl = new qlex_impl_t(file, false);
-  lexer->next = _impl_next;
-  lexer->peek = _impl_peek;
-  lexer->push = _impl_push;
-  lexer->collect = _impl_collect;
-  lexer->destruct = _impl_destruct;
-  lexer->cur.ty = qErro;
-  lexer->flags = QLEX_FLAG_NONE;
-  lexer->filename = filename;
-
-  return lexer;
 }
 
 LIB_EXPORT qlex_t *qlex_istream__libextra(qlex_cxx_std_istream_t istream, const char *filename) {
-  if (!filename) {
-    filename = "<unknown>";
-  }
-
-  std::stringstream *ss = std::bit_cast<std::stringstream *>(istream);
-  qcore_panicf("qlex_istream__libextra: not implemented; istream = %p, filename = %s", ss,
-               filename);
-
+  qcore_implement(__func__);
   /// TODO: Implement this function
+  (void)istream;
+  (void)filename;
 }
 
 LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename) {
-  if (!filename) {
-    filename = "<unknown>";
-  }
+  try {
+    if (!filename) {
+      filename = "<unknown>";
+    }
 
-  FILE *file = fmemopen((void *)src, len, "r");
-  if (!file) {
+    FILE *file = fmemopen((void *)src, len, "r");
+    if (!file) {
+      return nullptr;
+    }
+
+    qlex_t *lexer = new qlex_t;
+    lexer->impl = new qlex_impl_t(file, true);
+    lexer->next = _impl_next;
+    lexer->peek = _impl_peek;
+    lexer->push = _impl_push;
+    lexer->collect = _impl_collect;
+    lexer->destruct = _impl_destruct;
+    lexer->cur.ty = qErro;
+    lexer->flags = QLEX_FLAG_NONE;
+    lexer->filename = filename;
+
+    return lexer;
+  } catch (std::bad_alloc &) {
+    return nullptr;
+  } catch (...) {
     return nullptr;
   }
-
-  qlex_t *lexer = new qlex_t;
-  lexer->impl = new qlex_impl_t(file, true);
-  lexer->next = _impl_next;
-  lexer->peek = _impl_peek;
-  lexer->push = _impl_push;
-  lexer->collect = _impl_collect;
-  lexer->destruct = _impl_destruct;
-  lexer->cur.ty = qErro;
-  lexer->flags = QLEX_FLAG_NONE;
-  lexer->filename = filename;
-
-  return lexer;
 }
 
 LIB_EXPORT void qlex_free(qlex_t *lexer) {
-  if (!lexer) return;
+  try {
+    if (!lexer) {
+      return;
+    }
 
-  lexer->destruct(lexer);
+    lexer->destruct(lexer);
 
-  delete lexer;
+    delete lexer;
+  } catch (...) {
+    qcore_panic("qlex_free: failed to free lexer");
+  }
 }
 
 LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
-  switch (tok->ty) {
-    case qEofF:
-    case qErro:
-      return 0;
-    case qKeyW:
-      return qlex::keywords.right.at(tok->v.key).size();
-    case qOper:
-      return qlex::operators.right.at(tok->v.op).size();
-    case qPunc:
-      return qlex::punctuation.right.at(tok->v.punc).size();
-    case qName:
-      return lexer->impl->Strings()[tok->v.str_idx].size();
-    case qIntL: /* Fuck: this is incorrect */
-      return lexer->impl->Strings()[tok->v.str_idx].size();
-    case qNumL: /* Fuck: this is incorrect */
-      return lexer->impl->Strings()[tok->v.str_idx].size();
-    case qText:
-      return lexer->impl->Strings()[tok->v.str_idx].size() + 2;
-    case qChar:
-      return lexer->impl->Strings()[tok->v.str_idx].size() + 2;
-    case qMacB:
-      return lexer->impl->Strings()[tok->v.str_idx].size() + 3;
-    case qMacr:
-      return lexer->impl->Strings()[tok->v.str_idx].size() + 1;
-    case qNote: /* Fuck: this is incorrect */
-      return lexer->impl->Strings()[tok->v.str_idx].size();
-  }
+  /// TODO: Fix this code
 
-  __builtin_unreachable();
+  try {
+    switch (tok->ty) {
+      case qEofF:
+      case qErro:
+        return 0;
+      case qKeyW:
+        return qlex::keywords.right.at(tok->v.key).size();
+      case qOper:
+        return qlex::operators.right.at(tok->v.op).size();
+      case qPunc:
+        return qlex::punctuation.right.at(tok->v.punc).size();
+      case qName:
+        return lexer->impl->Strings().at(tok->v.str_idx).size();
+      case qIntL: /* Fuck: this is incorrect */
+        return lexer->impl->Strings().at(tok->v.str_idx).size();
+      case qNumL: /* Fuck: this is incorrect */
+        return lexer->impl->Strings().at(tok->v.str_idx).size();
+      case qText:
+        return lexer->impl->Strings().at(tok->v.str_idx).size() + 2;
+      case qChar:
+        return lexer->impl->Strings().at(tok->v.str_idx).size() + 2;
+      case qMacB:
+        return lexer->impl->Strings().at(tok->v.str_idx).size() + 3;
+      case qMacr:
+        return lexer->impl->Strings().at(tok->v.str_idx).size() + 1;
+      case qNote: /* Fuck: this is incorrect */
+        return lexer->impl->Strings().at(tok->v.str_idx).size();
+    }
+  } catch (std::out_of_range &) {
+    return 0;
+  } catch (...) {
+    qcore_panic("qlex_tok_size: invalid token");
+  }
 }
 
 LIB_EXPORT qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf,
                                     qlex_size size) {
-  size_t ret;
+  try {
+    size_t ret;
 
-  switch (tok->ty) {
-    case qEofF:
-    case qErro:
-      ret = 0;
-      break;
-    case qKeyW: {
-      if ((ret = qlex::keywords.right.at(tok->v.key).size()) <= size) {
-        memcpy(buf, qlex::keywords.right.at(tok->v.key).data(), ret);
-      } else {
+    switch (tok->ty) {
+      case qEofF:
+      case qErro:
         ret = 0;
-      }
-      break;
-    }
-    case qOper: {
-      if ((ret = qlex::operators.right.at(tok->v.op).size()) <= size) {
-        memcpy(buf, qlex::operators.right.at(tok->v.op).data(), ret);
-      } else {
-        ret = 0;
-      }
-      break;
-    }
-    case qPunc: {
-      if ((ret = qlex::punctuation.right.at(tok->v.punc).size()) <= size) {
-        memcpy(buf, qlex::punctuation.right.at(tok->v.punc).data(), ret);
-      } else {
-        ret = 0;
-      }
-      break;
-    }
-    case qName:
-    case qIntL:
-    case qNumL:
-    case qText:
-    case qChar:
-    case qMacB:
-    case qMacr:
-    case qNote: {
-      try {
-        if ((ret = lexer->impl->Strings()[tok->v.str_idx].size()) <= size) {
-          memcpy(buf, lexer->impl->Strings()[tok->v.str_idx].data(), ret);
+        break;
+      case qKeyW: {
+        if ((ret = qlex::keywords.right.at(tok->v.key).size()) <= size) {
+          memcpy(buf, qlex::keywords.right.at(tok->v.key).data(), ret);
         } else {
           ret = 0;
         }
-      } catch (...) {
-        ret = 0;
+        break;
       }
-      break;
+      case qOper: {
+        if ((ret = qlex::operators.right.at(tok->v.op).size()) <= size) {
+          memcpy(buf, qlex::operators.right.at(tok->v.op).data(), ret);
+        } else {
+          ret = 0;
+        }
+        break;
+      }
+      case qPunc: {
+        if ((ret = qlex::punctuation.right.at(tok->v.punc).size()) <= size) {
+          memcpy(buf, qlex::punctuation.right.at(tok->v.punc).data(), ret);
+        } else {
+          ret = 0;
+        }
+        break;
+      }
+      case qName:
+      case qIntL:
+      case qNumL:
+      case qText:
+      case qChar:
+      case qMacB:
+      case qMacr:
+      case qNote: {
+        if ((ret = lexer->impl->Strings().at(tok->v.str_idx).size()) <= size) {
+          memcpy(buf, lexer->impl->Strings().at(tok->v.str_idx).data(), ret);
+        } else {
+          ret = 0;
+        }
+        break;
+      }
     }
-  }
 
-  return ret;
+    return ret;
+  } catch (std::out_of_range &) {
+    return 0;
+  } catch (...) {
+    qcore_panic("qlex_tok_write: invalid token");
+  }
 }
 
 LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
@@ -688,175 +720,316 @@ LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
     case qNote:
       return "COMMENT";
   }
-
-  __builtin_unreachable();
 }
 
 LIB_EXPORT bool qlex_eq(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
-  if (a->ty != b->ty) return false;
+  try {
+    if (a->ty != b->ty) return false;
 
-  switch (a->ty) {
-    case qEofF:
-    case qErro:
-      return true;
-    case qKeyW:
-      return a->v.key == b->v.key;
-    case qOper:
-      return a->v.op == b->v.op;
-    case qPunc:
-      return a->v.punc == b->v.punc;
-    case qName:
-    case qIntL:
-    case qNumL:
-    case qText:
-    case qChar:
-    case qMacB:
-    case qMacr:
-    case qNote:
-      return lexer->impl->Strings()[a->v.str_idx] == lexer->impl->Strings()[b->v.str_idx];
+    switch (a->ty) {
+      case qEofF:
+      case qErro:
+        return true;
+      case qKeyW:
+        return a->v.key == b->v.key;
+      case qOper:
+        return a->v.op == b->v.op;
+      case qPunc:
+        return a->v.punc == b->v.punc;
+      case qName:
+      case qIntL:
+      case qNumL:
+      case qText:
+      case qChar:
+      case qMacB:
+      case qMacr:
+      case qNote:
+        return lexer->impl->Strings().at(a->v.str_idx) == lexer->impl->Strings().at(b->v.str_idx);
+    }
+  } catch (std::out_of_range &) {
+    return false;
+  } catch (...) {
+    qcore_panic("qlex_eq: invalid token");
   }
-
-  __builtin_unreachable();
 }
 
 LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b) {
-  if (a->ty != b->ty) return a->ty < b->ty;
+  try {
+    if (a->ty != b->ty) return a->ty < b->ty;
 
-  switch (a->ty) {
-    case qEofF:
-    case qErro:
-      return false;
-    case qKeyW:
-      return a->v.key < b->v.key;
-    case qOper:
-      return a->v.op < b->v.op;
-    case qPunc:
-      return a->v.punc < b->v.punc;
-    case qName:
-    case qIntL:
-    case qNumL:
-    case qText:
-    case qChar:
-    case qMacB:
-    case qMacr:
-    case qNote:
-      return lexer->impl->Strings()[a->v.str_idx] < lexer->impl->Strings()[b->v.str_idx];
+    switch (a->ty) {
+      case qEofF:
+      case qErro:
+        return false;
+      case qKeyW:
+        return a->v.key < b->v.key;
+      case qOper:
+        return a->v.op < b->v.op;
+      case qPunc:
+        return a->v.punc < b->v.punc;
+      case qName:
+      case qIntL:
+      case qNumL:
+      case qText:
+      case qChar:
+      case qMacB:
+      case qMacr:
+      case qNote:
+        return lexer->impl->Strings().at(a->v.str_idx) < lexer->impl->Strings().at(b->v.str_idx);
+    }
+  } catch (std::out_of_range &) {
+    return false;
+  } catch (...) {
+    qcore_panic("qlex_lt: invalid token");
   }
-
-  __builtin_unreachable();
 }
 
 LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
-  switch (tok->ty) {
-    case qEofF:
-    case qErro:
-    case qKeyW:
-    case qOper:
-    case qPunc:
-      *len = 0;
-      return "";
-    case qName:
-    case qIntL:
-    case qNumL:
-    case qText:
-    case qChar:
-    case qMacB:
-    case qMacr:
-    case qNote:
-      *len = lexer->impl->Strings()[tok->v.str_idx].size();
-      return lexer->impl->Strings()[tok->v.str_idx].data();
-  }
+  qcore_assert(tok && len, "qlex_str: tok or len is NULL");
 
-  __builtin_unreachable();
+  try {
+    switch (tok->ty) {
+      case qEofF:
+      case qErro:
+      case qKeyW:
+      case qOper:
+      case qPunc:
+        *len = 0;
+        return "";
+      case qName:
+      case qIntL:
+      case qNumL:
+      case qText:
+      case qChar:
+      case qMacB:
+      case qMacr:
+      case qNote:
+        *len = lexer->impl->Strings().at(tok->v.str_idx).size();
+        return lexer->impl->Strings().at(tok->v.str_idx).data();
+    }
+  } catch (std::out_of_range &) {
+    *len = 0;
+    return "";
+  } catch (...) {
+    qcore_panic("qlex_str: invalid token");
+  }
 }
 
-LIB_EXPORT const char *qlex_opstr(qlex_op_t op) { return qlex::operators.right.at(op).data(); }
+LIB_EXPORT const char *qlex_opstr(qlex_op_t op) {
+  try {
+    return qlex::operators.right.at(op).data();
+  } catch (...) {
+    qcore_panic("qlex_opstr: invalid operator");
+  }
+}
 
-LIB_EXPORT const char *qlex_kwstr(qlex_key_t kw) { return qlex::keywords.right.at(kw).data(); }
+LIB_EXPORT const char *qlex_kwstr(qlex_key_t kw) {
+  try {
+    return qlex::keywords.right.at(kw).data();
+  } catch (...) {
+    qcore_panic("qlex_kwstr: invalid keyword");
+  }
+}
 
 LIB_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
-  return qlex::punctuation.right.at(punct).data();
+  try {
+    return qlex::punctuation.right.at(punct).data();
+  } catch (...) {
+    qcore_panic("qlex_punctstr: invalid punctuation");
+  }
 }
 
 LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_size src_idx,
                                  qlex_tok_t *out) {
-  out->ty = ty;
-  out->loc.idx = src_idx;
-  out->v.str_idx = lexer->impl->save_userstring(str);
+  try {
+    if (src_idx != 0) {
+      /// TODO:
+      qcore_panic("qlex_tok_fromstr: source index is not supported");
+    }
+
+    out->ty = ty;
+    out->loc.tag = 0;
+    out->v.str_idx = lexer->impl->save_userstring(str);
+  } catch (std::bad_alloc &) {
+    qcore_panic("qlex_tok_fromstr: failed to create token: out of memory");
+  } catch (...) {
+    qcore_panic("qlex_tok_fromstr: failed to create token");
+  }
 }
 
 LIB_EXPORT const char *qlex_filename(qlex_t *lexer) { return lexer->filename; }
 
 LIB_EXPORT qlex_size qlex_line(qlex_t *lexer, qlex_loc_t loc) {
-  (void)lexer;
+  try {
+    auto r = lexer->impl->loc2rowcol(loc);
+    if (!r) {
+      return UINT32_MAX;
+    }
 
-  auto st = std::bit_cast<clever_me_t>(loc.idx);
-  return st.rc_fmt ? st.row : UINT32_MAX;
+    return r->first;
+  } catch (...) {
+    qcore_panic("qlex_line: failed to get line number");
+  }
 }
 
 LIB_EXPORT qlex_size qlex_col(qlex_t *lexer, qlex_loc_t loc) {
-  (void)lexer;
+  try {
+    auto r = lexer->impl->loc2rowcol(loc);
+    if (!r) {
+      return UINT32_MAX;
+    }
 
-  auto st = std::bit_cast<clever_me_t>(loc.idx);
-  return st.rc_fmt ? st.col : UINT32_MAX;
+    return r->second;
+  } catch (...) {
+    qcore_panic("qlex_col: failed to get column number");
+  }
 }
 
 LIB_EXPORT char *qlex_snippet(qlex_t *lexer, qlex_tok_t tok, qlex_size *offset) {
+  try {
 #define SNIPPET_SIZE 100
 
-  qlex_size tok_beg_offset;
-  char snippet_buf[SNIPPET_SIZE];
-  qlex_size tok_size = qlex_tok_size(lexer, &tok);
-  size_t curpos, seek_base_pos, read;
+    qlex_size tok_beg_offset;
+    char snippet_buf[SNIPPET_SIZE];
+    qlex_size tok_size = qlex_tok_size(lexer, &tok);
+    size_t curpos, seek_base_pos, read;
 
-  { /* Convert the location to an offset into the source */
-    auto src_offset_opt = lexer->impl->loc2offset(tok.loc);
-    if (!src_offset_opt) {
-      return nullptr; /* Return early if translation failed */
+    { /* Convert the location to an offset into the source */
+      auto src_offset_opt = lexer->impl->loc2offset(tok.loc);
+      if (!src_offset_opt) {
+        return nullptr; /* Return early if translation failed */
+      }
+
+      tok_beg_offset = *src_offset_opt - tok_size - 1;
     }
 
-    tok_beg_offset = *src_offset_opt - tok_size - 1;
+    { /* Calculate offsets and seek to the correct position */
+      curpos = ftell(lexer->impl->file());
+      seek_base_pos = tok_beg_offset < SNIPPET_SIZE / 2 ? 0 : tok_beg_offset - SNIPPET_SIZE / 2;
+
+      if (fseek(lexer->impl->file(), seek_base_pos, SEEK_SET) != 0) {
+        fseek(lexer->impl->file(), curpos, SEEK_SET);
+        return nullptr;
+      }
+    }
+
+    { /* Read the snippet and calculate token offset */
+      read = fread(snippet_buf, 1, SNIPPET_SIZE, lexer->impl->file());
+
+      if (tok_beg_offset < SNIPPET_SIZE / 2) {
+        *offset = tok_beg_offset;
+      } else {
+        *offset = SNIPPET_SIZE / 2;
+      }
+    }
+
+    // Extract the line that contains the token
+    qlex_size lstart = 0;
+
+    for (size_t i = 0; i < read; i++) {
+      if (snippet_buf[i] == '\n') {
+        lstart = i + 1;
+      } else if (i == *offset) { /* Danger ?? */
+        qlex_size count = (i - lstart) + tok_size;
+        char *output = (char *)malloc(count + 1);
+        memcpy(output, snippet_buf + lstart, count);
+        output[count] = '\0';
+        *offset -= lstart;
+        fseek(lexer->impl->file(), curpos, SEEK_SET);
+        return output;
+      }
+    }
+
+    fseek(lexer->impl->file(), curpos, SEEK_SET);
+    return nullptr;
+  } catch (std::bad_alloc &) {
+    return nullptr;
+  } catch (...) {
+    qcore_panic("qlex_snippet: failed to get snippet");
   }
+}
 
-  { /* Calculate offsets and seek to the correct position */
-    curpos = ftell(lexer->impl->file());
-    seek_base_pos = tok_beg_offset < SNIPPET_SIZE / 2 ? 0 : tok_beg_offset - SNIPPET_SIZE / 2;
+LIB_EXPORT qlex_loc_t qlex_offset(qlex_t *lexer, qlex_loc_t base, qlex_size offset) {
+  try {
+    long curpos;
+    std::optional<qlex_size> seek_base_pos;
+    uint8_t *buf = nullptr;
+    size_t bufsz;
 
-    if (fseek(lexer->impl->file(), seek_base_pos, SEEK_SET) != 0) {
+    if (!(seek_base_pos = lexer->impl->loc2offset(base))) {
+      return base;
+    }
+
+    if ((curpos = ftell(lexer->impl->file())) == -1) {
+      return base;
+    }
+
+    if (fseek(lexer->impl->file(), *seek_base_pos + offset, SEEK_SET) != 0) {
+      return base;
+    }
+
+    bufsz = offset;
+
+    if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
       fseek(lexer->impl->file(), curpos, SEEK_SET);
-      return nullptr;
+      return base;
     }
-  }
 
-  { /* Read the snippet and calculate token offset */
-    read = fread(snippet_buf, 1, SNIPPET_SIZE, lexer->impl->file());
-
-    if (tok_beg_offset < SNIPPET_SIZE / 2) {
-      *offset = tok_beg_offset;
-    } else {
-      *offset = SNIPPET_SIZE / 2;
-    }
-  }
-
-  // Extract the line that contains the token
-  qlex_size lstart = 0;
-
-  for (size_t i = 0; i < read; i++) {
-    if (snippet_buf[i] == '\n') {
-      lstart = i + 1;
-    } else if (i == *offset) { /* Danger ?? */
-      qlex_size count = (i - lstart) + tok_size;
-      char *output = (char *)malloc(count + 1);
-      memcpy(output, snippet_buf + lstart, count);
-      output[count] = '\0';
-      *offset -= lstart;
+    if (fread(buf, 1, bufsz, lexer->impl->file()) != bufsz) {
+      free(buf);
       fseek(lexer->impl->file(), curpos, SEEK_SET);
-      return output;
+      return base;
     }
-  }
 
-  fseek(lexer->impl->file(), curpos, SEEK_SET);
-  return nullptr;
+    buf[bufsz] = '\0';
+    fseek(lexer->impl->file(), curpos, SEEK_SET);
+
+    //===== AUTOMATA TO CALCULATE THE NEW ROW AND COLUMN =====//
+    uint32_t row, col;
+
+    if ((row = qlex_line(lexer, base)) == UINT32_MAX) {
+      free(buf);
+      return base;
+    }
+
+    if ((col = qlex_col(lexer, base)) == UINT32_MAX) {
+      free(buf);
+      return base;
+    }
+
+    for (size_t i = 0; i < bufsz; i++) {
+      if (buf[i] == '\n') {
+        row++;
+        col = 1;
+      } else {
+        col++;
+      }
+    }
+
+    free(buf);
+
+    return lexer->impl->makeLoc(row, col, *seek_base_pos + offset);
+  } catch (...) {
+    qcore_panic("qlex_offset: failed to calculate offset");
+  }
+}
+
+LIB_EXPORT qlex_size qlex_span(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end) {
+  try {
+    std::optional<qlex_size> begoff, endoff;
+
+    if (!(begoff = lexer->impl->loc2offset(start))) {
+      return UINT32_MAX;
+    }
+
+    if (!(endoff = lexer->impl->loc2offset(end))) {
+      return UINT32_MAX;
+    }
+
+    return *endoff - *begoff;
+  } catch (...) {
+    qcore_panic("qlex_span: failed to calculate span");
+  }
 }
 
 ///============================================================================///
@@ -907,11 +1080,6 @@ qlex_tok_t qlex_impl_t::next() {
 }
 
 void qlex_impl_t::refill_buffer() {
-  qcore_arena_t my_arena;
-  qcore_arena_open(&my_arena);
-
-  std::swap(my_arena, qlex::g_lexer_arena);
-
   for (size_t i = 0; i < TOKEN_BUF_SIZE; i++) {
     m_tokens[i] = do_automata();
 
@@ -920,7 +1088,7 @@ void qlex_impl_t::refill_buffer() {
       eof.ty = qEofF;
 
       if (i > 0) {
-        eof.loc.idx = m_tokens[i - 1].loc.idx;
+        eof.loc = m_tokens[i - 1].loc;
       }
 
       std::fill(m_tokens.begin() + i, m_tokens.end(), eof);
@@ -929,12 +1097,13 @@ void qlex_impl_t::refill_buffer() {
   }
 
   /* Must clear to prevent leaks */
-  num_cache.clear();
-  can_cache.clear();
+  if (num_cache.size() > 1000) {
+    num_cache.clear();
+  }
 
-  std::swap(my_arena, qlex::g_lexer_arena);
-
-  qcore_arena_close(&my_arena);
+  if (can_cache.size() > 1000) {
+    can_cache.clear();
+  }
 }
 
 static bool validate_identifier(std::string_view id) {
@@ -1012,16 +1181,7 @@ static NumType check_number_literal_type(qlex::num_buf_t &input) {
   } else {
     for (i = 0; i < input.size(); i++) {
       if (!(input[i] >= '0' && input[i] <= '9')) {
-        // static const auto regexpFloat =
-        //     std::regex("^([0-9]+(\\.[0-9]+)?)?(e[+-]?([0-9]+(\\.?[0-9]+)?)+)*$");
-
-        // if (std::regex_match(input.data(), regexpFloat)) {
-        //   return num_cache[input] = NumType::Floating;
-        // }
         try {
-          // std::stod(std::string(input));
-          // stod and check if it succeeds
-
           double x;
           auto r = std::from_chars(input.data(), input.data() + input.size(), x);
 
@@ -1265,7 +1425,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           /* Check for f-string */
           if (ibuf == "f" && c == '"') {
             m_pushback.push_back(c);
-            return qlex_tok_t(qKeyW, qKFString, off());
+            return qlex_tok_t(qKeyW, qKFString, loc());
           }
 
           /* We overshot; this must be a punctor ':' */
@@ -1279,14 +1439,14 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           /* Determine if it's a keyword or an identifier */
           for (const auto &[left, right] : qlex::keywords) {
             if (ibuf == left) {
-              return qlex_tok_t(qKeyW, right, off());
+              return qlex_tok_t(qKeyW, right, loc());
             }
           }
 
           /* Check if it's an operator */
           for (const auto &[left, right] : qlex::word_operators) {
             if (ibuf == left) {
-              return qlex_tok_t(qOper, right, off());
+              return qlex_tok_t(qOper, right, loc());
             }
           }
 
@@ -1296,7 +1456,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           }
 
           /* Return the identifier */
-          return qlex_tok_t(qName, m_holdings.retain(ibuf), off());
+          return qlex_tok_t(qName, m_holdings.retain(ibuf), loc());
         }
         case LexState::Integer: {
           qlex::num_buf_t nbuf;
@@ -1356,7 +1516,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           std::string norm;
           if ((type = check_number_literal_type(nbuf)) == NumType::Floating) {
             if (canonicalize_float(nbuf, norm)) {
-              return qlex_tok_t(qNumL, m_holdings.retain(std::move(norm)), off());
+              return qlex_tok_t(qNumL, m_holdings.retain(std::move(norm)), loc());
             } else {
               goto error_0;
             }
@@ -1369,7 +1529,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
           /* Canonicalize the number */
           if (canonicalize_number(nbuf, norm, type)) {
-            return qlex_tok_t(qIntL, m_holdings.retain(std::move(norm)), off());
+            return qlex_tok_t(qIntL, m_holdings.retain(std::move(norm)), loc());
           }
 
           /* Invalid number */
@@ -1384,7 +1544,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             continue;
           } else { /* Divide operator */
             m_pushback.push_back(c);
-            return qlex_tok_t(qOper, qOpSlash, off());
+            return qlex_tok_t(qOper, qOpSlash, loc());
           }
         }
         case LexState::CommentSingleLine: {
@@ -1393,7 +1553,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             c = getc();
           }
 
-          return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), off());
+          return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), loc());
         }
         case LexState::CommentMultiLine: {
           size_t level = 1;
@@ -1415,7 +1575,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
               if (tmp == '/') {
                 level--;
                 if (level == 0) {
-                  return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), off());
+                  return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), loc());
                 } else {
                   buf += "*";
                   buf += tmp;
@@ -1595,9 +1755,9 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
               m_pushback.push_back(c);
               /* Character or string */
               if (buf.front() == '\'' && buf.size() == 2) {
-                return qlex_tok_t(qChar, m_holdings.retain(std::string(1, buf[1])), off());
+                return qlex_tok_t(qChar, m_holdings.retain(std::string(1, buf[1])), loc());
               } else {
-                return qlex_tok_t(qText, m_holdings.retain(buf.substr(1, buf.size() - 1)), off());
+                return qlex_tok_t(qText, m_holdings.retain(buf.substr(1, buf.size() - 1)), loc());
               }
             }
           }
@@ -1632,12 +1792,12 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
               if (state_parens == 0) {
                 buf += ')';
-                return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), off());
+                return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), loc());
               }
             }
 
             if (c == '\n') {
-              return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), off());
+              return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), loc());
             }
 
             buf += c;
@@ -1655,7 +1815,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             }
 
             if (state_parens == 0) {
-              return qlex_tok_t(qMacB, m_holdings.retain(std::move(buf)), off());
+              return qlex_tok_t(qMacB, m_holdings.retain(std::move(buf)), loc());
             }
 
             buf += c;
@@ -1670,7 +1830,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             for (const auto &[left, right] : qlex::punctuation) {
               if (left == buf) {
                 m_pushback.push_back(c);
-                return qlex_tok_t(qPunc, right, off());
+                return qlex_tok_t(qPunc, right, loc());
               }
             }
           }
@@ -1718,7 +1878,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
           m_pushback.push_back(buf.back());
           m_pushback.push_back(c);
-          return qlex_tok_t(qOper, qlex::operators.left.at(buf.substr(0, buf.size() - 1)), off());
+          return qlex_tok_t(qOper, qlex::operators.left.at(buf.substr(0, buf.size() - 1)), loc());
         }
       }
     }
@@ -1728,7 +1888,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
       goto error_0;
     } else {
       reset_state();
-      return qlex_tok_t::eof(off());
+      return qlex_tok_t::eof(loc());
     }
   } catch (std::exception &e) { /* This should never happen */
     qcore_panicf("qlex_impl_t::do_automata: %s. The lexer has a bug.", e.what());
@@ -1739,6 +1899,6 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 error_0: { /* Reset the lexer and return error token */
   reset_state();
 
-  return qlex_tok_t::err(off());
+  return qlex_tok_t::err(loc());
 }
 }

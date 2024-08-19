@@ -931,7 +931,7 @@ int run_test_mode(const ArgumentParser &parser) {
   return 1;
 }
 
-#if QPKG_DEV_TOOLS
+#if QPKG_DEV_TOOLS || 1
 
 namespace qpkg::dev::bench {
   int run_benchmark_lexer() {
@@ -1245,8 +1245,8 @@ int run_dev_mode(
       return 1;
     }
 
-    qmodule_t *qxir = qxir_new(root, lexer, conf);
-    if (!qxir) {
+    qmodule_t *qmod = qxir_new(lexer, conf);
+    if (!qmod) {
       qxir_conf_free(conf);
       qcore_arena_close(&arena);
       qparse_free(ctx);
@@ -1257,9 +1257,8 @@ int run_dev_mode(
       return 1;
     }
 
-    qxir_node_t *qxir_root = nullptr;
-    if (!qxir_do(qxir, &arena, &qxir_root)) {
-      qxir_free(qxir);
+    if (!qxir_lower(qmod, root, true)) {
+      qxir_free(qmod);
       qxir_conf_free(conf);
       qcore_arena_close(&arena);
       qparse_free(ctx);
@@ -1270,27 +1269,15 @@ int run_dev_mode(
       return 1;
     }
 
-    qmodule_testplug(qxir_root);
+    qxir_node_t *qxir_root = qxir_base(qmod);
 
-    size_t out_len = 0;
-    char *out_str = qxir_repr(qxir_root, false, 2, &arena, &out_len);
-    if (!out_str) {
-      qxir_free(qxir);
-      qxir_conf_free(conf);
-      qcore_arena_close(&arena);
-      qparse_free(ctx);
-      qparse_conf_free(pconf);
-      qlex_free(lexer);
-      fclose(fp);
-      std::cerr << "Failed to generate QXIR tree" << std::endl;
-      return 1;
-    }
+    qmodule_testplug(qxir_root);
 
     FILE *out_fp = nullptr;
     if (!output.empty()) {
       out_fp = fopen(output.c_str(), "w");
       if (!out_fp) {
-        qxir_free(qxir);
+        qxir_free(qmod);
         qxir_conf_free(conf);
         qcore_arena_close(&arena);
         qparse_free(ctx);
@@ -1304,17 +1291,30 @@ int run_dev_mode(
       out_fp = stdout;
     }
 
-    fwrite(out_str, 1, out_len, out_fp);
+    if (!qxir_write(qmod, QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
+      if (!output.empty()) fclose(out_fp);
+
+      qxir_free(qmod);
+      qxir_conf_free(conf);
+      qcore_arena_close(&arena);
+      qparse_free(ctx);
+      qparse_conf_free(pconf);
+      qlex_free(lexer);
+      fclose(fp);
+      std::cerr << "Failed to generate QXIR tree" << std::endl;
+      return 1;
+    }
 
     if (!output.empty()) fclose(out_fp);
 
-    qxir_free(qxir);
+    qxir_free(qmod);
     qxir_conf_free(conf);
     qcore_arena_close(&arena);
     qparse_free(ctx);
     qparse_conf_free(pconf);
     qlex_free(lexer);
     fclose(fp);
+
     return 0;
   } else if (parser.is_used("--demangle")) {
     std::string input = parser.get<std::string>("--demangle");

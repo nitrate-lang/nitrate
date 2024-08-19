@@ -34,16 +34,21 @@
 #include <core/LibMacro.h>
 #include <quix-qxir/Module.h>
 
+#include <mutex>
+
+using namespace qxir;
+
 static std::vector<std::optional<std::unique_ptr<qmodule_t>>> qxir_modules;
 static std::mutex qxir_modules_mutex;
 
-qmodule_t::qmodule_t(qxir::ModuleId id) {
+qmodule_t::qmodule_t(ModuleId id) {
   m_passes_applied.clear();
   m_strings.clear();
-  m_diag = std::make_unique<qxir::diag::DiagnosticManager>();
-  m_type_mgr = std::make_unique<qxir::TypeManager>();
+  m_diag = std::make_unique<diag::DiagnosticManager>();
+  m_diag->set_ctx(this);
+  m_type_mgr = std::make_unique<TypeManager>();
 
-  qcore_arena_open(&m_arena);
+  qcore_arena_open(&m_node_arena);
 
   m_conf = nullptr;
   m_lexer = nullptr;
@@ -53,29 +58,40 @@ qmodule_t::qmodule_t(qxir::ModuleId id) {
 }
 
 qmodule_t::~qmodule_t() {
-  qcore_arena_close(&m_arena);
+  qcore_arena_close(&m_node_arena);
+
+  m_conf = nullptr;
+  m_lexer = nullptr;
+  m_root = nullptr;
 
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
   qxir_modules[m_id].reset();
 }
 
-qxir::ModuleId qmodule_t::getModuleId() noexcept { return m_id; }
+ModuleId qmodule_t::getModuleId() noexcept { return m_id; }
 
-qxir::Type *qmodule_t::lookupType(qxir::TypeID tid)  { return m_type_mgr->get(tid); }
+Type *qmodule_t::lookupType(TypeID tid) { return m_type_mgr->get(tid); }
 
 void qmodule_t::setRoot(qxir_node_t *root) noexcept { m_root = root; }
-
 qxir_node_t *qmodule_t::getRoot() noexcept { return m_root; }
 
-void qmodule_t::applyPassLabel(const std::string &label)  {
-  m_passes_applied.insert(label);
+void qmodule_t::setLexer(qlex_t *lexer) noexcept { m_lexer = lexer; }
+qlex_t *qmodule_t::getLexer() noexcept { return m_lexer; }
+
+void qmodule_t::setConf(qxir_conf_t *conf) noexcept { m_conf = conf; }
+qxir_conf_t *qmodule_t::getConf() noexcept { return m_conf; }
+
+void qmodule_t::enableDiagnostics(bool is_enabled) noexcept {
+  (void)is_enabled;
+  /// TODO:
 }
 
-bool qmodule_t::hasPassBeenRun(const std::string &label)  {
+void qmodule_t::applyPassLabel(const std::string &label) { m_passes_applied.insert(label); }
+bool qmodule_t::hasPassBeenRun(const std::string &label) {
   return m_passes_applied.contains(label);
 }
 
-std::string_view qmodule_t::push_string(std::string_view sv) {
+std::string_view qmodule_t::internString(std::string_view sv) {
   for (const auto &str : m_strings) {
     if (str == sv) {
       return str;
@@ -85,7 +101,9 @@ std::string_view qmodule_t::push_string(std::string_view sv) {
   return m_strings.insert(std::string(sv)).first->c_str();
 }
 
-std::unique_ptr<qmodule_t> qxir::createModule()  {
+///=============================================================================
+
+std::unique_ptr<qmodule_t> qxir::createModule() {
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
   ModuleId mid;
@@ -100,16 +118,12 @@ std::unique_ptr<qmodule_t> qxir::createModule()  {
     return nullptr;
   }
 
-  if (mid == qxir_modules.size()) {
-    qxir_modules.push_back(std::make_unique<qmodule_t>(mid));
-  } else {
-    qxir_modules[mid] = std::make_unique<qmodule_t>(mid);
-  }
+  qxir_modules.insert(qxir_modules.begin() + mid, std::make_unique<qmodule_t>(mid));
 
   return std::move(qxir_modules[mid].value());
 }
 
-CPP_EXPORT qmodule_t *qxir::getModule(qxir::ModuleId mid)  {
+CPP_EXPORT qmodule_t *qxir::getModule(ModuleId mid) {
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
   qcore_assert(mid < qxir_modules.size() && qxir_modules.at(mid).has_value(), "Module not found");
@@ -122,39 +136,37 @@ LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf) {
       return nullptr;
     }
 
-    qmodule_t *obj = qxir::createModule().release();
+    qmodule_t *obj = createModule().release();
 
-    obj->m_conf = conf;
-    obj->m_lexer = lexer;
-    // qxir->impl->diag.set_ctx(qxir);
-    /// TODO:
-    qcore_implement("qxir_new");
+    obj->setConf(conf);
+    obj->setLexer(lexer);
 
-    // return qxir;
+    return obj;
   } catch (...) {
     return nullptr;
   }
 }
 
-LIB_EXPORT void qxir_free(qmodule_t *qxir) {
+LIB_EXPORT void qxir_free(qmodule_t *mod) {
   try {
-    if (!qxir) {
+    if (!mod) {
       return;
     }
 
-    // delete qxir->impl;
-
-    // qxir->impl = nullptr;
-    // qxir->conf = nullptr;
-    // qxir->root = nullptr;
-    // qxir->lexer = nullptr;
-    /// TODO: Implement qxir_free
-    qcore_implement("qxir_free");
-
-    // delete qxir;
+    delete mod;
   } catch (...) {
-    return;
+    qcore_panic("qxir_free failed");
   }
 }
 
-LIB_EXPORT size_t qxir_max_modules(void) { return qxir::MAX_MODULE_INSTANCES; }
+LIB_EXPORT size_t qxir_max_modules(void) { return MAX_MODULE_INSTANCES; }
+
+LIB_EXPORT qlex_t *qxir_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
+
+LIB_EXPORT void qxir_set_lexer(qmodule_t *mod, qlex_t *lexer) { mod->setLexer(lexer); }
+
+LIB_EXPORT qxir_node_t *qxir_base(qmodule_t *mod) { return mod->getRoot(); }
+
+LIB_EXPORT qxir_conf_t *qxir_get_conf(qmodule_t *mod) { return mod->getConf(); }
+
+LIB_EXPORT void qxir_set_conf(qmodule_t *mod, qxir_conf_t *conf) { mod->setConf(conf); }

@@ -155,7 +155,38 @@ CPP_EXPORT bool Expr::isType() const noexcept {
 }
 
 CPP_EXPORT qxir::Type *qxir::Expr::getType() noexcept {
-  return getModule()->lookupType(m_type_idx);
+  /// TODO: Implement this
+  qcore_implement(__func__);
+}
+
+CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> qxir::Expr::getLoc() const noexcept {
+  qmodule_t *mod = getModule();
+  if (mod == nullptr) {
+    return {{0}, {0}};
+  }
+
+  qlex_t *lexer = mod->getLexer();
+  if (lexer == nullptr) {
+     return {{0}, {0}};
+  }
+
+  qlex_loc_t end = qlex_offset(lexer, m_start_loc, m_loc_size);
+  return {m_start_loc, end};
+}
+
+CPP_EXPORT void qxir::Expr::setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept {
+  qmodule_t *mod = getModule();
+  if (mod == nullptr) {
+    return;
+  }
+
+  qlex_t *lexer = mod->getLexer();
+  if (lexer == nullptr) {
+    return;
+  }
+
+  m_start_loc = loc.first;
+  m_loc_size = qlex_span(lexer, loc.first, loc.second);
 }
 
 CPP_EXPORT bool Expr::is(qxir_ty_t type) const noexcept { return type == getKind(); }
@@ -407,3 +438,7 @@ CPP_EXPORT std::string qxir::Expr::getUniqueId() noexcept {
 }
 
 CPP_EXPORT qmodule_t *qxir::Expr::getModule() const noexcept { return ::getModule(m_module_idx); }
+
+CPP_EXPORT void qxir::Expr::setModule(qmodule_t *module) noexcept {
+  m_module_idx = module->getModuleId();
+}

@@ -128,7 +128,7 @@ qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok);
  * @param buf Buffer to write the token to.
  * @param size Size of the buffer.
  *
- * @return Number of bytes written. Rerturns 0 if the buffer is too small.
+ * @return Number of bytes written. Rerturns 0 if the buffer is too small or the token is invalid.
  * @note This function is thread-safe.
  * @warning Buffer WILL NOT be null-terminated.
  */
@@ -187,6 +187,9 @@ const char *qlex_filename(qlex_t *lexer);
 qlex_size qlex_line(qlex_t *lexer, qlex_loc_t loc);
 qlex_size qlex_col(qlex_t *lexer, qlex_loc_t loc);
 char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, qlex_size *offset);
+
+qlex_loc_t qlex_offset(qlex_t *lexer, qlex_loc_t base, qlex_size offset);
+qlex_size qlex_span(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end);
 
 /**
  * @brief Get the string representation of a token type.

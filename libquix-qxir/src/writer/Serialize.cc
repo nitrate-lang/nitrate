@@ -53,7 +53,7 @@ typedef std::basic_stringstream<char, std::char_traits<char>, Arena<char>> ConvS
 
 static std::string escape_string(std::string_view input) {
   std::string output = "\"";
-  output.reserve(input.length() * 2);
+  output.reserve(input.length() + 2);
 
   for (char ch : input) {
     switch (ch) {
@@ -144,10 +144,6 @@ std::ostream &qxir::operator<<(std::ostream &os, qxir::Op op) {
       {Op::CastAs, "cast_as"},
       {Op::Bitsizeof, "bitsizeof"},
   };
-
-  if (!op_map.contains(op)) {
-    qcore_panic("Unknown operator");
-  }
 
   return os << op_map.at(op);
 }
@@ -540,9 +536,9 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
   }
 }
 
-static char *qxir_repr_arena(const Expr *_node, bool minify, size_t indent, qcore_arena_t *arena,
-                             size_t *outlen) {
-  qxir_arena.swap(*arena);
+static char *qxir_repr(const Expr *_node, bool minify, size_t indent, qcore_arena_t *arena,
+                       size_t *outlen) {
+  std::swap(qxir_arena.get(), *arena);
 
   /* Create a string stream based on the arena */
   ConvStream ss;
@@ -550,7 +546,6 @@ static char *qxir_repr_arena(const Expr *_node, bool minify, size_t indent, qcor
   const Expr *n = static_cast<const Expr *>(_node);
 
   /* Serialize the AST recursively */
-
   serialize_recurse(const_cast<Expr *>(n), ss, state);
 
   /**
@@ -562,58 +557,14 @@ static char *qxir_repr_arena(const Expr *_node, bool minify, size_t indent, qcor
   std::basic_string<char, std::char_traits<char>, Arena<char>> str = ss.str();
   *outlen = str.size();
 
-  qxir_arena.swap(*arena);
+  std::swap(qxir_arena.get(), *arena);
 
+  /**
+   * This will get around one of the compiler's warnings about returning a pointer to a temporary
+   * object.
+   */
   char *unsafe_bypass = static_cast<char *>(str.data());
-
   return unsafe_bypass;
-}
-
-static char *qxir_repr_malloc(const Expr *_node, bool minify, size_t indent, size_t *outlen) {
-  qcore_arena_t scratch;
-  char *out = nullptr, *out_tmp = nullptr;
-
-  qcore_arena_open(&scratch);
-
-  try {
-    out = qxir_repr_arena(_node, minify, indent, &scratch, outlen);
-
-    if (out) {
-      out_tmp = static_cast<char *>(malloc(*outlen));
-      if (!out_tmp) {
-        qcore_panic("Failed to allocate memory for AST representation");
-      }
-
-      memcpy(out_tmp, out, *outlen);
-
-      out = out_tmp;
-    }
-
-  } catch (...) {
-  }
-
-  qcore_arena_close(&scratch);
-
-  return out;
-}
-
-char *qxir_repr(const Expr *_node, bool minify, size_t indent, qcore_arena_t *arena,
-                size_t *outlen) {
-  /// TODO:
-  qcore_implement(__func__);
-
-  size_t outlen_v = 0;
-
-  /* Eliminate internal edge cases */
-  if (!outlen) {
-    outlen = &outlen_v;
-  }
-
-  if (arena) {
-    return qxir_repr_arena(_node, minify, indent, arena, outlen);
-  } else {
-    return qxir_repr_malloc(_node, minify, indent, outlen);
-  }
 }
 
 static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t *out_size,
@@ -649,26 +600,9 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
   }
 }
 
-void qxir_brepr(const Expr *node, bool compress, qcore_arena_t *arena, uint8_t **out,
-                size_t *outlen) {
-  /// TODO:
-  qcore_implement(__func__);
-
-  char *repr{};
-  qcore_arena_t scratch{};
-  bool our_arena{};
-
-  /* Open a scratch arena if one is not provided */
-  if (!arena) {
-    qcore_arena_open(&scratch);
-    arena = &scratch;
-    our_arena = true;
-  }
-
-  /* Validate the output buffer */
-  if (!out || !outlen) {
-    qcore_panic("Invalid output buffer for AST representation");
-  }
+static void qxir_brepr(const Expr *node, bool compress, qcore_arena_t *arena, uint8_t **out,
+                       size_t *outlen) {
+  char *repr;
 
   /* Generate the AST representation as ASCII */
   if ((repr = qxir_repr(node, true, 0, arena, outlen)) == NULL) {
@@ -682,23 +616,43 @@ void qxir_brepr(const Expr *node, bool compress, qcore_arena_t *arena, uint8_t *
     repr = (char *)tmp_out;
   }
 
-  /* Copy the AST representation to the output buffer, if necessary */
-  if (our_arena) {
-    *out = (uint8_t *)malloc(*outlen);
-    if (!*out) {
-      qcore_panic("Failed to allocate memory for AST representation");
-    }
-
-    memcpy(*out, repr, *outlen);
-    qcore_arena_close(arena);
-  } else {
-    /* Otherwise, just return the pointer to the arena alloc'ed buffer */
-    *out = (uint8_t *)repr;
-  }
+  *out = (uint8_t *)repr;
 }
 
 LIB_EXPORT bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t *outlen,
-                           uint8_t argcnt, ...) {
-  /// TODO:
-  qcore_implement(__func__);
+                           uint32_t argcnt, ...) {
+  qcore_arena_t arena;
+  size_t v_outlen;
+  Expr *node;
+
+  if (!outlen) {
+    outlen = &v_outlen;
+  }
+
+  node = static_cast<Expr *>(mod->getRoot());
+
+  qcore_arena_open(&arena);
+
+  switch (mode) {
+    case QXIR_SERIAL_CODE: {
+      char *buf = qxir_repr(node, false, 2, &arena, outlen);
+      fwrite(buf, 1, *outlen, out);
+      break;
+    }
+    case QXIR_SERIAL_CODE_MIN: {
+      char *buf = qxir_repr(node, true, 0, &arena, outlen);
+      fwrite(buf, 1, *outlen, out);
+      break;
+    }
+    case QXIR_SERIAL_B10: {
+      uint8_t *buf;
+      qxir_brepr(node, true, &arena, &buf, outlen);
+      fwrite(buf, 1, *outlen, out);
+      break;
+    }
+  }
+
+  qcore_arena_close(&arena);
+
+  return true;
 }

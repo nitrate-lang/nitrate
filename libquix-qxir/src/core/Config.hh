@@ -90,7 +90,7 @@ public:
     m_data.shrink_to_fit();
   }
 
-  bool has(qxir_key_t option, qxir_val_t value) const;
+  bool has(qxir_key_t option, qxir_val_t value) const noexcept;
 };
 
 #endif  // __QUIX_QXIR_CORE_CONFIG_H__

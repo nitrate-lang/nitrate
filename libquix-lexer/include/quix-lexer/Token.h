@@ -196,9 +196,7 @@ struct qlex_t;
 struct qlex_tok_t;
 
 typedef struct qlex_loc_t {
-  uint32_t idx : 24;
-
-  qlex_loc_t(qlex_size idx = 0) : idx(idx) {}
+  uint32_t tag : 24;
 } __attribute__((packed)) qlex_loc_t;
 
 extern "C" const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok, size_t *len);
@@ -220,17 +218,17 @@ typedef struct qlex_tok_t {
   } v;
 
   qlex_tok_t() : ty(qEofF), loc{} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, qlex_size src_idx = 0)
+  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, qlex_loc_t src_idx = {})
       : ty(ty), loc(src_idx), v{.punc = punc} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, qlex_size src_idx = 0)
+  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, qlex_loc_t src_idx = {})
       : ty(ty), loc(src_idx), v{.op = op} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, qlex_size src_idx = 0)
+  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, qlex_loc_t src_idx = {})
       : ty(ty), loc(src_idx), v{.key = key} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_size str_idx, qlex_size src_idx = 0)
+  qlex_tok_t(qlex_ty_t ty, qlex_size str_idx, qlex_loc_t src_idx = {})
       : ty(ty), loc(src_idx), v{.str_idx = str_idx} {}
 
-  static qlex_tok_t err(qlex_size src_idx) { return qlex_tok_t(qErro, src_idx, 0); }
-  static qlex_tok_t eof(qlex_size src_idx) { return qlex_tok_t(qEofF, src_idx, 0); }
+  static qlex_tok_t err(qlex_loc_t src_idx) { return qlex_tok_t(qErro, 0, src_idx); }
+  static qlex_tok_t eof(qlex_loc_t src_idx) { return qlex_tok_t(qEofF, 0, src_idx); }
 
   template <typename T>
   T as() const {
@@ -292,7 +290,7 @@ extern "C" {
 #else
 
 typedef struct qlex_loc_t {
-  uint32_t idx : 24;
+  uint32_t tag : 24;
 } __attribute__((packed)) qlex_loc_t;
 
 typedef struct qlex_tok_t {

@@ -1,6 +1,7 @@
 
 #include <errno.h>
 #include <quix-lexer/Lib.h>
+#include <quix-parser/Lib.h>
 #include <quix-qxir/Lib.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,8 +9,10 @@
 int main(int argc, char **argv) {
   FILE *source = NULL;
   qlex_t *lexer = NULL;
-  qxir_conf_t *conf = NULL;
-  qmodule_t *qxir = NULL;
+  qparse_conf_t *parconf = NULL;
+  qparse_t *parser = NULL;
+  qparse_node_t *node = NULL;
+  qcore_arena_t arena;
   int ret = 0;
 
   if (argc < 2) {
@@ -18,6 +21,15 @@ int main(int argc, char **argv) {
   }
 
   const char *path = argv[1];
+
+  qcore_arena_open(&arena);
+
+  if (!qparse_lib_init()) {
+    printf("Error: %s\n", qparse_strerror());
+
+    /* Handle parser library initialization error */
+    return -5;
+  }
 
   if (!qxir_lib_init()) {
     printf("Error: %s\n", qxir_strerror());
@@ -43,33 +55,41 @@ int main(int argc, char **argv) {
     goto cleanup;
   }
 
-  if ((conf = qxir_conf_new(true)) == NULL) {
-    printf("Error: %s\n", qxir_strerror());
+  if ((parconf = qparse_conf_new(true)) == NULL) {
+    printf("Error: %s\n", qparse_strerror());
 
-    /* Handle qxir configuration creation error */
+    /* Handle parser config error */
     ret = -3;
     goto cleanup;
   }
 
-  // if ((qxir = qxir_new(lexer, conf)) == NULL) {
-  //   printf("Error: %s\n", qxir_strerror());
+  if ((parser = qparse_new(lexer, parconf)) == NULL) {
+    printf("Error: %s\n", qparse_strerror());
 
-  //   /* Handle qxir creation error */
-  //   ret = -4;
-  //   goto cleanup;
-  // }
+    /* Handle parser creation error */
+    ret = -4;
+    goto cleanup;
+  }
 
-  /* Use qxir */
-  qxir_and_dump(qxir, stdout, NULL, NULL);
+  if (!qparse_do(parser, &arena, &node)) {
+    printf("Error: %s\n", qparse_strerror());
+
+    /* Handle parsing error */
+    ret = -5;
+    goto cleanup;
+  }
+
+  qxir_justprint(node, stdout, QXIR_SERIAL_CODE, NULL, 0);
 
 cleanup:
-  qxir_free(qxir);
-  qxir_conf_free(conf);
+  qparse_free(parser);
+  qparse_conf_free(parconf);
   qlex_free(lexer);
-
   if (source) fclose(source);
+  qcore_arena_close(&arena);
 
   qxir_lib_deinit();
+  qparse_lib_deinit();
 
   return ret;
 }

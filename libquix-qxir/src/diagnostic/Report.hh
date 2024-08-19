@@ -85,7 +85,7 @@ namespace qxir::diag {
   };
 
   /* Set reference to the current qxir */
-  void install_reference(qmodule_t *qxir);
+  void install_reference(qmodule_t *qxir) noexcept;
 
   /**
    * @brief Report a syntax error

@@ -102,8 +102,6 @@ namespace qxir {
     void *allocate(std::size_t bytes);
     void deallocate(void *ptr) noexcept;
 
-    void swap(qcore_arena_t &arena) noexcept { std::swap(m_arena, arena); }
-
     qcore_arena_t &get() { return m_arena; }
   };
 
@@ -139,9 +137,7 @@ namespace qxir {
 };  // namespace qxir
 
 class qxir_node_t {
-public:
-  qxir_node_t() = default;
-};
+} __attribute__((packed));
 
 namespace qxir {
 
@@ -155,19 +151,24 @@ namespace qxir {
     QCLASS_REFLECT()
 
     qxir_ty_t m_node_type : 6;        /* Typecode of this node. */
-    qxir::TypeID m_type_idx;          /* Typecode of this expression. */
     qxir::ModuleId m_module_idx : 16; /* The module context index. */
     uint64_t m_constexpr : 1;         /* Is this expression a constant expression? */
     uint64_t m_volatile : 1;          /* Is this expression volatile? */
-   
-    qlex_loc_t m_start_loc, m_end_loc;
+
+    qlex_loc_t m_start_loc;
+    uint16_t m_loc_size; // Diagnostics can not span more than 64K bytes.
 
     Expr(const Expr &) = delete;
     Expr &operator=(const Expr &) = delete;
 
   public:
     Expr(qxir_ty_t ty = QIR_NODE_BAD)
-        : m_node_type(ty), m_type_idx(0), m_module_idx(0), m_constexpr(0), m_volatile(0) {}
+        : m_node_type(ty),
+          m_module_idx(0),
+          m_constexpr(0),
+          m_volatile(0),
+          m_start_loc{},
+          m_loc_size(0) {}
 
     uint32_t thisSizeOf() const noexcept;
     qxir_ty_t getKind() const noexcept;
@@ -179,10 +180,11 @@ namespace qxir {
     inline void setConst(bool is_const) noexcept { m_constexpr = is_const; }
     inline void setVolatile(bool is_volatile) noexcept { m_volatile = is_volatile; }
 
-    qlex_loc_t getStartLoc() const noexcept { return m_start_loc; }
-    qlex_loc_t getEndLoc() const noexcept { return m_end_loc; }
-    void setStartLoc(qlex_loc_t loc) noexcept { m_start_loc = loc; }
-    void setEndLoc(qlex_loc_t loc) noexcept { m_end_loc = loc; }
+    std::pair<qlex_loc_t, qlex_loc_t> getLoc() const noexcept;
+    void setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
+
+    qmodule_t *getModule() const noexcept;
+    void setModule(qmodule_t *module) noexcept;
 
     Type *getType() noexcept;
 
@@ -252,8 +254,6 @@ namespace qxir {
      * @return std::string The unique identifier.
      */
     std::string getUniqueId() noexcept;
-
-    qmodule_t *getModule() const noexcept;
   } __attribute__((packed));
 
 #define EXPR_SIZE sizeof(Expr)
@@ -1061,10 +1061,7 @@ namespace qxir {
     QCLASS_REFLECT()
 
   public:
-    Asm() : Expr(QIR_NODE_ASM) {
-      /// TODO: Implement this.
-      qcore_panic("Not implemented yet.");
-    }
+    Asm() : Expr(QIR_NODE_ASM) { qcore_implement(__func__); }
   };
 
   ///=============================================================================

@@ -62,8 +62,6 @@ static const std::set<int> sigguard_signals = {SIGABRT, SIGBUS, SIGFPE, SIGILL, 
 static thread_local jmp_buf sigguard_env;
 static thread_local qmodule_t *qxir_ctx;
 
-thread_local qmodule_t *m = nullptr;
-
 static void _signal_handler(int sig) {
   sigguard_lock.lock();
 
@@ -72,15 +70,15 @@ static void _signal_handler(int sig) {
   diag.start = diag.end = qlex_loc_t{};
   diag.type = MessageType::FatalError;
 
-  qxir_ctx->m_diag.push(std::move(diag));
+  qxir_ctx->getDiag().push(std::move(diag));
 
   sigguard_lock.unlock();
 
   longjmp(sigguard_env, sig);
 }
 
-static void install_sigguard(qmodule_t *qxir) {
-  if (qxir->m_conf->has(QQK_CRASHGUARD, QQV_OFF)) {
+static void install_sigguard(qmodule_t *qxir) noexcept {
+  if (qxir->getConf()->has(QQK_CRASHGUARD, QQV_OFF)) {
     return;
   }
 
@@ -100,7 +98,7 @@ static void install_sigguard(qmodule_t *qxir) {
   }
 }
 
-static void uninstall_sigguard() {
+static void uninstall_sigguard() noexcept {
   std::lock_guard<std::mutex> lock(sigguard_lock);
   (void)lock;
 
@@ -126,139 +124,150 @@ public:
 static qxir::Expr *qconv(ConvState &s, const qparse::Node *node);
 
 LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics) {
-  /// TODO:
-  qcore_implement(__func__);
-}
-
-LIB_EXPORT bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mode,
-                               void (*cb)(qxir_node_t *), uint8_t argcnt, ...) {
-  /// TODO:
-  qcore_implement(__func__);
-}
-
-bool qxir_do(qmodule_t *qxir, qcore_arena_t *arena, qxir_node_t **out) {
-  try {
-    if (!qxir || !arena || !out) {
-      return false;
-    }
-    *out = nullptr;
-
-    /*=============== Swap in their arena ===============*/
-    qxir::qxir_arena.swap(*arena);
-
-    /*== Install thread-local references to the context struct ==*/
-    qxir::diag::install_reference(qxir);
-
-    /*==== Facilitate signal handling for the converter ====*/
-    install_sigguard(qxir);
-    qxir_ctx = qxir;
-
-    bool status = false;
-    if (setjmp(sigguard_env) == 0) {
-      try {
-        m = qxir;
-        ConvState s;
-        *out = qconv(s, static_cast<const qparse::Node *>(qxir->m_root));
-        status = true;
-      } catch (QError &e) {
-        qxir->m_failed = true;
-      }
-    } else {
-      qxir->m_failed = true;
-    }
-
-    /*==== Clean up signal handling for the converter ====*/
-    qxir_ctx = nullptr;
-    uninstall_sigguard();
-
-    /*== Uninstall thread-local references to the context struct ==*/
-    qxir::diag::install_reference(nullptr);
-
-    /*=============== Swap out their arena ===============*/
-    qxir::qxir_arena.swap(*arena);
-
-    /*==================== Return status ====================*/
-    return status && !qxir->m_failed;
-
-  } catch (...) { /*== This will be caught iff QQK_CRASHGUARD is QQV_ON ==*/
-    abort();      /* iff QQK_CRASHGUARD is off we abort(). */
-  }
-}
-
-bool qxir_and_dump(qmodule_t *qxir, FILE *out, void *x0, void *x1) {
-  try {
-    (void)x0;
-    (void)x1;
-
-    qcore_arena_t arena;
-    qxir_node_t *root;
-
-    if (!qxir || !out) {
-      return false;
-    }
-
-    qcore_arena_open(&arena);
-
-    if (!qxir_do(qxir, &arena, &root)) {
-      qcore_arena_close(&arena);
-      return false;
-    }
-
-    if (!qxir_write(qxir, QXIR_SERIAL_CODE, out, nullptr, 0)) {
-      qcore_arena_close(&arena);
-      return false;
-    }
-
-    qcore_arena_close(&arena);
-
-    return true;
-  } catch (...) {
+  if (!base) {
     return false;
   }
+
+  qcore_assert(mod, "qxir_lower: mod == nullptr");
+
+  std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
+  qxir::diag::install_reference(mod);
+  install_sigguard(mod);
+  qxir_ctx = mod;
+  mod->setRoot(nullptr);
+  mod->enableDiagnostics(diagnostics);
+
+  volatile bool status = false;  // For sanity
+
+  if (setjmp(sigguard_env) == 0) {
+    try {
+      ConvState s;
+      mod->setRoot(qconv(s, static_cast<const qparse::Node *>(base)));
+      status = true;
+    } catch (QError &e) {
+      // QError exception is control flow to abort the recursive lowering
+
+      status = false;  // For sanity
+
+      /**
+       * At this point status is false, so we can continue to the cleanup
+       */
+    }
+  } else {
+    status = false;  // For sanity
+
+    /**
+     * An signal (what is usually a fatal error) was caught,
+     * the program is pretty much in an undefined state. However,
+     * I don't care about the state of the program, I just want to
+     * clean up the resources and return to the trusting user code.
+     */
+  }
+
+  qxir_ctx = nullptr;
+  uninstall_sigguard();
+  qxir::diag::install_reference(nullptr);
+  std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
+
+  return status;
+}
+
+LIB_EXPORT bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mode, qxir_node_cb cb,
+                               uint32_t argcnt, ...) {
+  qxir_conf_t *conf = nullptr;
+  qmodule_t *mod = nullptr;
+
+  if ((conf = qxir_conf_new(true)) == nullptr) {
+    return false;
+  }
+
+  if ((mod = qxir_new(nullptr, conf)) == nullptr) {
+    qxir_conf_free(conf);
+    return false;
+  }
+
+  (void)qxir_lower(mod, base, false);
+
+  if (!mod->getRoot()) {
+    qxir_free(mod);
+    qxir_conf_free(conf);
+    return false;
+  }
+
+  if (cb) { /* Callback to user code */
+    uintptr_t userdata = 0;
+
+    if (argcnt > 0) { /* Extract userdata variadic parameter */
+      va_list args;
+      va_start(args, argcnt);
+      userdata = va_arg(args, uintptr_t);
+      va_end(args);
+    }
+
+    auto ucb = [cb, userdata](qxir::Expr *p, qxir::Expr *c) {
+      cb(static_cast<qxir_node_t *>(c), userdata);
+      return qxir::IterOp::Proceed;
+    };
+
+    qxir::Expr *root = static_cast<qxir::Expr *>(mod->getRoot());
+    qxir::iterate<qxir::dfs_pre, qxir::IterMP::none>(root, ucb);
+  }
+
+  if (!qxir_write(mod, mode, out, nullptr, 0)) {
+    qxir_free(mod);
+    qxir_conf_free(conf);
+    return false;
+  }
+
+  qxir_free(mod);
+  qxir_conf_free(conf);
+
+  return true;
+}
+
+#include <iomanip>
+
+static void dump_node_as_raw_hex(qxir::Expr *node) {
+  std::array<uint8_t, sizeof(qxir::Expr)> binbuf;
+  memcpy(binbuf.data(), node, sizeof(qxir::Expr));
+
+  // hex print
+  std::cout << "------------------------------------------------------------\n";
+  for (size_t i = 0; i < binbuf.size(); i++) {
+    std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)binbuf[i] << " ";
+  }
+  std::cout << "\n------------------------------------------------------------" << std::endl;
 }
 
 LIB_EXPORT void qmodule_testplug(void *node) {
   using namespace qxir;
   Expr *n = static_cast<Expr *>(node);
 
-  iterate<dfs_pre, IterMP::none>(n, [&](Expr *p, Expr *c) {
-    static std::mutex m;
-    std::lock_guard<std::mutex> lock(m);
+  std::cout << "sizeof(Expr): " << sizeof(Expr) << std::endl;
 
+  iterate<dfs_pre, IterMP::none>(n, [&](Expr *p, Expr *c) {
     if (p) {
-      std::cout << "Parent: " << p->thisTypeName() << " Id: " << p->getUniqueId();
+      std::cout << "ParentType: " << p->thisTypeName();
     } else {
-      std::cout << "Parent: nullptr Id: nullptr";
+      std::cout << "ParentType: nullptr";
     }
 
     if (c) {
-      std::cout << " Child: " << c->thisTypeName() << " Id: " << c->getUniqueId();
+      std::cout << " ChildType: " << c->thisTypeName();
     } else {
-      std::cout << " Child: nullptr Id: nullptr";
+      std::cout << " ChildType: nullptr";
+    }
+
+    std::cout << std::endl;
+
+    if (c) {
+      dump_node_as_raw_hex(c);
     }
 
     std::cout << std::endl;
 
     return IterOp::Proceed;
   });
-}
-
-bool qxir_check(qmodule_t *qxir, const qxir_node_t *base) {
-  try {
-    if (!qxir || !base) {
-      return false;
-    }
-
-    if (qxir->m_failed) {
-      return false;
-    }
-
-    /* Safety is overrated */
-    /// TODO:
-    qcore_implement("qxir_check");
-  } catch (...) {
-    return false;
-  }
 }
 
 void qxir_dumps(qmodule_t *qxir, bool no_ansi, qxir_report_cb cb, uintptr_t data) {
@@ -272,9 +281,9 @@ void qxir_dumps(qmodule_t *qxir, bool no_ansi, qxir_report_cb cb, uintptr_t data
     };
 
     if (no_ansi) {
-      qxir->m_diag.render(adapter, qxir::diag::FormatStyle::ClangPlain);
+      qxir->getDiag().render(adapter, qxir::diag::FormatStyle::ClangPlain);
     } else {
-      qxir->m_diag.render(adapter, qxir::diag::FormatStyle::Clang16Color);
+      qxir->getDiag().render(adapter, qxir::diag::FormatStyle::Clang16Color);
     }
   } catch (...) {
     return;
@@ -283,7 +292,7 @@ void qxir_dumps(qmodule_t *qxir, bool no_ansi, qxir_report_cb cb, uintptr_t data
 
 ///=============================================================================
 
-static std::string_view memorize(std::string_view sv) { return m->push_string(sv); }
+static std::string_view memorize(std::string_view sv) { return qxir_ctx->internString(sv); }
 static std::string_view memorize(qparse::String sv) {
   return memorize(std::string_view(sv.data(), sv.size()));
 }
@@ -2104,16 +2113,19 @@ static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
     qcore_panicf("qxir: conversion failed for node type: %d", static_cast<int>(n->this_typeid()));
   }
 
-  out->setStartLoc(n->get_start_pos());
-  out->setEndLoc(n->get_end_pos());
-
+  // Module context id must be assigned before location information
+  // is set.
+  out->setModule(qxir_ctx);
+  
+  out->setLoc({n->get_start_pos(), n->get_end_pos()});
+  
   return out;
 }
 
 ///=============================================================================
 
-static qxir_node_t *qxir_clone_impl(qmodule_t *src, qmodule_t *dst, const qxir_node_t *_node) {
-#define clone(X) static_cast<Expr *>(qxir_clone_impl(src, dst, X))
+static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
+#define clone(X) static_cast<Expr *>(qxir_clone_impl(X))
 
   using namespace qxir;
 
@@ -2415,8 +2427,11 @@ static qxir_node_t *qxir_clone_impl(qmodule_t *src, qmodule_t *dst, const qxir_n
 
   qcore_assert(out != nullptr, "qxir_clone: failed to clone node");
 
-  out->setStartLoc(in->getStartLoc());
-  out->setEndLoc(in->getEndLoc());
+  // Module context id must be assigned before location information
+  // is set.
+  out->setModule(qxir_ctx);
+
+  out->setLoc(in->getLoc());
   out->setConst(in->isConst());
   out->setVolatile(in->isVolatile());
 
@@ -2424,27 +2439,29 @@ static qxir_node_t *qxir_clone_impl(qmodule_t *src, qmodule_t *dst, const qxir_n
 }
 
 LIB_EXPORT qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node) {
-  /// TODO:
-  qcore_implement("qxir_clone");
+  qxir_node_t *out;
 
-  // qxir_node_t *out;
+  if (!node) {
+    return nullptr;
+  }
 
-  // if (!node) {
-  //   return nullptr;
-  // }
+  if (!dst) {
+    dst = static_cast<const qxir::Expr *>(node)->getModule();
+  }
 
-  // qcore_assert(src != nullptr && dst != nullptr, "qxir_clone: src or dst is nullptr");
-  // qcore_assert(alloc != nullptr, "qxir_clone: alloc is nullptr");
+  std::swap(qxir::qxir_arena.get(), dst->getNodeArena());
+  std::swap(qxir_ctx, dst);
 
-  // try {
-  //   qxir::qxir_arena.swap(*alloc);
-  //   std::swap(m, dst);
-  //   out = qxir_clone_impl(src, dst, node);
-  //   std::swap(m, dst);
-  //   qxir::qxir_arena.swap(*alloc);
+  out = nullptr;
 
-  //   return static_cast<qxir_node_t *>(out);
-  // } catch (...) {
-  //   qcore_panic("qxir_clone: failed to clone node");
-  // }
+  try {
+    out = qxir_clone_impl(node);
+  } catch (...) {
+    return nullptr;
+  }
+
+  std::swap(qxir_ctx, dst);
+  std::swap(qxir::qxir_arena.get(), dst->getNodeArena());
+
+  return static_cast<qxir_node_t *>(out);
 }
