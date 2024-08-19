@@ -183,11 +183,13 @@ static inline qlex_tok_t qlex_peek(qlex_t *lexer) { return lexer->peek(lexer); }
  */
 static inline void qlex_push(qlex_t *lexer, qlex_tok_t tok) { lexer->push(lexer, &tok); }
 
+static inline qlex_loc_t qlex_begin(const qlex_tok_t *tok) { return tok->start; }
+static inline qlex_loc_t qlex_end(const qlex_tok_t *tok) { return tok->end; }
+
 const char *qlex_filename(qlex_t *lexer);
 qlex_size qlex_line(qlex_t *lexer, qlex_loc_t loc);
 qlex_size qlex_col(qlex_t *lexer, qlex_loc_t loc);
 char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, qlex_size *offset);
-
 qlex_loc_t qlex_offset(qlex_t *lexer, qlex_loc_t base, qlex_size offset);
 qlex_size qlex_span(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end);
 

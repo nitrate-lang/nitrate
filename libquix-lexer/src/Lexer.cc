@@ -595,8 +595,6 @@ LIB_EXPORT void qlex_free(qlex_t *lexer) {
 }
 
 LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
-  /// TODO: Fix this code
-
   try {
     switch (tok->ty) {
       case qEofF:
@@ -609,21 +607,14 @@ LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
       case qPunc:
         return qlex::punctuation.right.at(tok->v.punc).size();
       case qName:
-        return lexer->impl->Strings().at(tok->v.str_idx).size();
-      case qIntL: /* Fuck: this is incorrect */
-        return lexer->impl->Strings().at(tok->v.str_idx).size();
-      case qNumL: /* Fuck: this is incorrect */
-        return lexer->impl->Strings().at(tok->v.str_idx).size();
+      case qIntL:
+      case qNumL: 
       case qText:
-        return lexer->impl->Strings().at(tok->v.str_idx).size() + 2;
       case qChar:
-        return lexer->impl->Strings().at(tok->v.str_idx).size() + 2;
       case qMacB:
-        return lexer->impl->Strings().at(tok->v.str_idx).size() + 3;
       case qMacr:
-        return lexer->impl->Strings().at(tok->v.str_idx).size() + 1;
-      case qNote: /* Fuck: this is incorrect */
-        return lexer->impl->Strings().at(tok->v.str_idx).size();
+      case qNote: 
+        return qlex_span(lexer, qlex_begin(tok), qlex_end(tok));
     }
   } catch (std::out_of_range &) {
     return 0;
@@ -848,7 +839,10 @@ LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, q
     }
 
     out->ty = ty;
-    out->loc.tag = 0;
+
+    out->start.tag = 0;
+    out->start.tag = 0;
+
     out->v.str_idx = lexer->impl->save_userstring(str);
   } catch (std::bad_alloc &) {
     qcore_panic("qlex_tok_fromstr: failed to create token: out of memory");
@@ -895,7 +889,7 @@ LIB_EXPORT char *qlex_snippet(qlex_t *lexer, qlex_tok_t tok, qlex_size *offset) 
     size_t curpos, seek_base_pos, read;
 
     { /* Convert the location to an offset into the source */
-      auto src_offset_opt = lexer->impl->loc2offset(tok.loc);
+      auto src_offset_opt = lexer->impl->loc2offset(tok.start);
       if (!src_offset_opt) {
         return nullptr; /* Return early if translation failed */
       }
@@ -1088,7 +1082,8 @@ void qlex_impl_t::refill_buffer() {
       eof.ty = qEofF;
 
       if (i > 0) {
-        eof.loc = m_tokens[i - 1].loc;
+        eof.start = m_tokens[i - 1].start;
+        eof.end = m_tokens[i - 1].end;
       }
 
       std::fill(m_tokens.begin() + i, m_tokens.end(), eof);
@@ -1335,6 +1330,8 @@ static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumT
 void qlex_impl_t::reset_state() { m_pushback.clear(); }
 
 qlex_tok_t qlex_impl_t::do_automata() noexcept {
+  /// TODO: Correctly handle token source locations
+  
   enum class LexState {
     Start,
     Identifier,
@@ -1355,6 +1352,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
   qlex_size state_parens = 0;
   char c;
   bool eof_is_error = true;
+  qlex_loc_t start_pos{};
 
   try {
     while (true) {
@@ -1373,25 +1371,30 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
         case LexState::Start: {
           if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
             continue;
-          } else if (std::isalpha(c) || c == '_') /* Identifier or keyword or operator */
-          {
+          } else if (std::isalpha(c) || c == '_') {
+            /* Identifier or keyword or operator */
+            start_pos = loc();
             buf += c, state = LexState::Identifier;
             continue;
-          } else if (c == '/') /* Comment or operator */
-          {
-            state = LexState::CommentStart;
+          } else if (c == '/') {
+            start_pos = loc();
+            state = LexState::CommentStart; /* Comment or operator */
             continue;
           } else if (std::isdigit(c)) {
+            start_pos = loc();
             buf += c, state = LexState::Integer;
             continue;
           } else if (c == '"' || c == '\'') {
+            start_pos = loc();
             buf += c, state = LexState::String;
             continue;
           } else if (c == '@') {
+            start_pos = loc();
             state = LexState::MacroStart;
             continue;
-          } else /* Operator or punctor or invalid */
-          {
+          } else {
+            /* Operator or punctor or invalid */
+            start_pos = loc();
             buf += c;
             state = LexState::Other;
             continue;
@@ -1425,7 +1428,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           /* Check for f-string */
           if (ibuf == "f" && c == '"') {
             m_pushback.push_back(c);
-            return qlex_tok_t(qKeyW, qKFString, loc());
+            return qlex_tok_t(qKeyW, qKFString, start_pos, loc());
           }
 
           /* We overshot; this must be a punctor ':' */
@@ -1439,14 +1442,14 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           /* Determine if it's a keyword or an identifier */
           for (const auto &[left, right] : qlex::keywords) {
             if (ibuf == left) {
-              return qlex_tok_t(qKeyW, right, loc());
+              return qlex_tok_t(qKeyW, right, start_pos, loc());
             }
           }
 
           /* Check if it's an operator */
           for (const auto &[left, right] : qlex::word_operators) {
             if (ibuf == left) {
-              return qlex_tok_t(qOper, right, loc());
+              return qlex_tok_t(qOper, right, start_pos, loc());
             }
           }
 
@@ -1456,7 +1459,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           }
 
           /* Return the identifier */
-          return qlex_tok_t(qName, m_holdings.retain(ibuf), loc());
+          return qlex_tok_t(qName, m_holdings.retain(ibuf), start_pos, loc());
         }
         case LexState::Integer: {
           qlex::num_buf_t nbuf;
@@ -1516,7 +1519,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           std::string norm;
           if ((type = check_number_literal_type(nbuf)) == NumType::Floating) {
             if (canonicalize_float(nbuf, norm)) {
-              return qlex_tok_t(qNumL, m_holdings.retain(std::move(norm)), loc());
+              return qlex_tok_t(qNumL, m_holdings.retain(std::move(norm)), start_pos, loc());
             } else {
               goto error_0;
             }
@@ -1529,7 +1532,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
           /* Canonicalize the number */
           if (canonicalize_number(nbuf, norm, type)) {
-            return qlex_tok_t(qIntL, m_holdings.retain(std::move(norm)), loc());
+            return qlex_tok_t(qIntL, m_holdings.retain(std::move(norm)), start_pos, loc());
           }
 
           /* Invalid number */
@@ -1544,7 +1547,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             continue;
           } else { /* Divide operator */
             m_pushback.push_back(c);
-            return qlex_tok_t(qOper, qOpSlash, loc());
+            return qlex_tok_t(qOper, qOpSlash, start_pos, loc());
           }
         }
         case LexState::CommentSingleLine: {
@@ -1553,7 +1556,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             c = getc();
           }
 
-          return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), loc());
+          return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), start_pos, loc());
         }
         case LexState::CommentMultiLine: {
           size_t level = 1;
@@ -1575,7 +1578,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
               if (tmp == '/') {
                 level--;
                 if (level == 0) {
-                  return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), loc());
+                  return qlex_tok_t(qNote, m_holdings.retain(std::move(buf)), start_pos, loc());
                 } else {
                   buf += "*";
                   buf += tmp;
@@ -1755,9 +1758,11 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
               m_pushback.push_back(c);
               /* Character or string */
               if (buf.front() == '\'' && buf.size() == 2) {
-                return qlex_tok_t(qChar, m_holdings.retain(std::string(1, buf[1])), loc());
+                return qlex_tok_t(qChar, m_holdings.retain(std::string(1, buf[1])), start_pos,
+                                  loc());
               } else {
-                return qlex_tok_t(qText, m_holdings.retain(buf.substr(1, buf.size() - 1)), loc());
+                return qlex_tok_t(qText, m_holdings.retain(buf.substr(1, buf.size() - 1)),
+                                  start_pos, loc());
               }
             }
           }
@@ -1792,12 +1797,12 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
               if (state_parens == 0) {
                 buf += ')';
-                return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), loc());
+                return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), start_pos, loc());
               }
             }
 
             if (c == '\n') {
-              return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), loc());
+              return qlex_tok_t(qMacr, m_holdings.retain(std::move(buf)), start_pos, loc());
             }
 
             buf += c;
@@ -1815,7 +1820,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             }
 
             if (state_parens == 0) {
-              return qlex_tok_t(qMacB, m_holdings.retain(std::move(buf)), loc());
+              return qlex_tok_t(qMacB, m_holdings.retain(std::move(buf)), start_pos, loc());
             }
 
             buf += c;
@@ -1830,7 +1835,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
             for (const auto &[left, right] : qlex::punctuation) {
               if (left == buf) {
                 m_pushback.push_back(c);
-                return qlex_tok_t(qPunc, right, loc());
+                return qlex_tok_t(qPunc, right, start_pos, loc());
               }
             }
           }
@@ -1878,7 +1883,8 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 
           m_pushback.push_back(buf.back());
           m_pushback.push_back(c);
-          return qlex_tok_t(qOper, qlex::operators.left.at(buf.substr(0, buf.size() - 1)), loc());
+          return qlex_tok_t(qOper, qlex::operators.left.at(buf.substr(0, buf.size() - 1)),
+                            start_pos, loc());
         }
       }
     }
@@ -1888,7 +1894,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
       goto error_0;
     } else {
       reset_state();
-      return qlex_tok_t::eof(loc());
+      return qlex_tok_t::eof(loc(), loc());
     }
   } catch (std::exception &e) { /* This should never happen */
     qcore_panicf("qlex_impl_t::do_automata: %s. The lexer has a bug.", e.what());
@@ -1899,6 +1905,6 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
 error_0: { /* Reset the lexer and return error token */
   reset_state();
 
-  return qlex_tok_t::err(loc());
+  return qlex_tok_t::err(loc(), loc());
 }
 }

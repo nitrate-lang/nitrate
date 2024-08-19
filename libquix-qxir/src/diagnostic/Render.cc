@@ -107,8 +107,8 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
 
   // std::stringstream ss;
   // ss << "\x1b[37;1m" << qlex_filename(m_qxir->lexer) << ":";
-  // qlex_size line = qlex_line(m_qxir->lexer, msg.tok.loc);
-  // qlex_size col = qlex_col(m_qxir->lexer, msg.tok.loc);
+  // qlex_size line = qlex_line(m_qxir->lexer, qlex_begin(msg.tok));
+  // qlex_size col = qlex_col(m_qxir->lexer, qlex_begin(msg.tok));
 
   // if (line != UINT32_MAX) {
   //   ss << line << ":";

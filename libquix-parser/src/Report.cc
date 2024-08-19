@@ -47,8 +47,8 @@ thread_local qparse_t *g_parser_inst;
 std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const {
   std::stringstream ss;
   ss << qlex_filename(m_parser->lexer) << ":";
-  qlex_size line = qlex_line(m_parser->lexer, msg.tok.loc);
-  qlex_size col = qlex_col(m_parser->lexer, msg.tok.loc);
+  qlex_size line = qlex_line(m_parser->lexer, qlex_begin(&msg.tok));
+  qlex_size col = qlex_col(m_parser->lexer, qlex_begin(&msg.tok));
 
   if (line != UINT32_MAX) {
     ss << line << ":";
@@ -93,8 +93,8 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
 std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) const {
   std::stringstream ss;
   ss << "\x1b[37;1m" << qlex_filename(m_parser->lexer) << ":";
-  qlex_size line = qlex_line(m_parser->lexer, msg.tok.loc);
-  qlex_size col = qlex_col(m_parser->lexer, msg.tok.loc);
+  qlex_size line = qlex_line(m_parser->lexer, qlex_begin(&msg.tok));
+  qlex_size col = qlex_col(m_parser->lexer, qlex_begin(&msg.tok));
 
   if (line != UINT32_MAX) {
     ss << line << ":";

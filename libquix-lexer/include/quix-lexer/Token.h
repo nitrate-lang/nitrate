@@ -207,7 +207,7 @@ typedef struct qlex_tok_t {
 
   /* Location of the token in the source code. */
   /* The token size will be calculated as needed. */
-  qlex_loc_t loc;
+  qlex_loc_t start, end;
 
   /* Token data */
   union {
@@ -215,20 +215,30 @@ typedef struct qlex_tok_t {
     qlex_op_t op;
     qlex_key_t key;
     qlex_size str_idx;
-  } v;
+  } __attribute__((packed)) v;
 
-  qlex_tok_t() : ty(qEofF), loc{} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, qlex_loc_t src_idx = {})
-      : ty(ty), loc(src_idx), v{.punc = punc} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, qlex_loc_t src_idx = {})
-      : ty(ty), loc(src_idx), v{.op = op} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, qlex_loc_t src_idx = {})
-      : ty(ty), loc(src_idx), v{.key = key} {}
-  qlex_tok_t(qlex_ty_t ty, qlex_size str_idx, qlex_loc_t src_idx = {})
-      : ty(ty), loc(src_idx), v{.str_idx = str_idx} {}
+  uint64_t pad : 4;
 
-  static qlex_tok_t err(qlex_loc_t src_idx) { return qlex_tok_t(qErro, 0, src_idx); }
-  static qlex_tok_t eof(qlex_loc_t src_idx) { return qlex_tok_t(qEofF, 0, src_idx); }
+  qlex_tok_t() : ty(qEofF), start({}), end({}), v{.str_idx = 0} {}
+
+  qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, qlex_loc_t loc_beg = {}, qlex_loc_t loc_end = {})
+      : ty(ty), start(loc_beg), end(loc_end), v{.punc = punc} {}
+
+  qlex_tok_t(qlex_ty_t ty, qlex_op_t op, qlex_loc_t loc_beg = {}, qlex_loc_t loc_end = {})
+      : ty(ty), start(loc_beg), end(loc_end), v{.op = op} {}
+
+  qlex_tok_t(qlex_ty_t ty, qlex_key_t key, qlex_loc_t loc_beg = {}, qlex_loc_t loc_end = {})
+      : ty(ty), start(loc_beg), end(loc_end), v{.key = key} {}
+
+  qlex_tok_t(qlex_ty_t ty, qlex_size str_idx, qlex_loc_t loc_beg = {}, qlex_loc_t loc_end = {})
+      : ty(ty), start(loc_beg), end(loc_end), v{.str_idx = str_idx} {}
+
+  static qlex_tok_t err(qlex_loc_t loc_start, qlex_loc_t loc_end) {
+    return qlex_tok_t(qErro, 0, loc_start, loc_end);
+  }
+  static qlex_tok_t eof(qlex_loc_t loc_start, qlex_loc_t loc_end) {
+    return qlex_tok_t(qEofF, 0, loc_start, loc_end);
+  }
 
   template <typename T>
   T as() const {
@@ -299,7 +309,7 @@ typedef struct qlex_tok_t {
 
   /* Location of the token in the source code. */
   /* The token size will be calculated as needed. */
-  qlex_loc_t loc;
+  qlex_loc_t start, end;
 
   /* Token data */
   union {
@@ -307,7 +317,9 @@ typedef struct qlex_tok_t {
     qlex_op_t op;
     qlex_key_t key;
     qlex_size str_idx;
-  } v;
+  } __attribute__((packed)) v;
+
+  uint64_t pad : 4;
 } __attribute__((packed)) qlex_tok_t;
 #endif
 
