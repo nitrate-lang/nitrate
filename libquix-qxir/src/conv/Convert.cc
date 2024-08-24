@@ -54,6 +54,14 @@ using namespace qxir::diag;
 struct ConvState {
   bool inside_function = false;
   std::unordered_map<std::string_view, qxir::Type *> typedef_map;
+  std::string ns_prefix;
+
+  std::string cur_named(std::string_view suffix) const {
+    if (ns_prefix.empty()) {
+      return std::string(suffix);
+    }
+    return ns_prefix + "::" + std::string(suffix);
+  }
 };
 
 static std::atomic<size_t> sigguard_refcount;
@@ -1266,7 +1274,9 @@ namespace qxir {
       throw QError();
     }
 
-    s.typedef_map.insert({memorize(n->get_name()), type->asType()});
+    std::string_view new_name = memorize(std::string_view(s.cur_named(n->get_name())));
+
+    s.typedef_map.insert({new_name, type->asType()});
 
     return create<VoidTy>();
   }
@@ -1314,9 +1324,42 @@ namespace qxir {
   }
 
   static Expr *qconv_subsystem(ConvState &s, const qparse::SubsystemDecl *n) {
-    /// TODO: subsystem
+    /**
+     * @brief Convert a subsystem declaration to a qxir sequence with
+     * namespace prefixes.
+     */
 
-    throw QError();
+    SeqItems items;
+
+    if (!n->get_body()) {
+      badtree(n, "qparse::SubsystemDecl::get_body() == nullptr");
+      throw QError();
+    }
+
+    std::string old_ns = s.ns_prefix;
+
+    if (s.ns_prefix.empty()) {
+      s.ns_prefix = std::string(n->get_name());
+    } else {
+      s.ns_prefix += "::" + std::string(n->get_name());
+    }
+
+    for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
+         ++it) {
+      auto item = qconv(s, *it);
+      if (!item) {
+        badtree(n, "qparse::SubsystemDecl::get_body() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(item);
+    }
+
+    s.ns_prefix = old_ns;
+
+    /// TODO: figure out what to do with the subsystem 'dependency' list
+
+    return create<Seq>(std::move(items));
   }
 
   static Expr *qconv_export(ConvState &s, const qparse::ExportDecl *n) {
@@ -1405,7 +1448,15 @@ namespace qxir {
       val = create<BinExpr>(val, type, Op::CastAs);
     }
 
-    auto g = create<Export>(memorize(n->get_name()), val);
+    std::string_view name;
+
+    if (s.inside_function) {
+      name = memorize(n->get_name());
+    } else {
+      name = memorize(std::string_view(s.cur_named(n->get_name())));
+    }
+
+    auto g = create<Local>(name, val);
     g->setConst(true);
     return g;
   }
@@ -1488,7 +1539,9 @@ namespace qxir {
         val = create<BinExpr>(val, type, Op::CastAs);
       }
 
-      return create<Export>(memorize(n->get_name()), val);
+      std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
+
+      return create<Local>(name, val);
     }
   }
 
@@ -2303,6 +2356,11 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     case QIR_NODE_EXPORT: {
       Export *n = static_cast<Export *>(in);
       out = create<Export>(memorize(n->getName()), clone(n->getValue()));
+      break;
+    }
+    case QIR_NODE_LOCAL: {
+      Local *n = static_cast<Local *>(in);
+      out = create<Local>(memorize(n->getName()), clone(n->getValue()));
       break;
     }
     case QIR_NODE_RET: {

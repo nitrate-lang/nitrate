@@ -72,16 +72,17 @@ CPP_EXPORT uint32_t Expr::thisSizeOf() const noexcept {
       SIZEOF_ROW(BinExpr),  SIZEOF_ROW(UnExpr),   SIZEOF_ROW(PostUnExpr), SIZEOF_ROW(Int),
       SIZEOF_ROW(Float),    SIZEOF_ROW(String),   SIZEOF_ROW(List),       SIZEOF_ROW(Alloc),
       SIZEOF_ROW(Call),     SIZEOF_ROW(Seq),      SIZEOF_ROW(Async),      SIZEOF_ROW(Index),
-      SIZEOF_ROW(Ident),    SIZEOF_ROW(Export),   SIZEOF_ROW(Ret),        SIZEOF_ROW(Brk),
-      SIZEOF_ROW(Cont),     SIZEOF_ROW(If),       SIZEOF_ROW(While),      SIZEOF_ROW(For),
-      SIZEOF_ROW(Form),     SIZEOF_ROW(Foreach),  SIZEOF_ROW(Case),       SIZEOF_ROW(Switch),
-      SIZEOF_ROW(Fn),       SIZEOF_ROW(Asm),      SIZEOF_ROW(U1Ty),       SIZEOF_ROW(U8Ty),
-      SIZEOF_ROW(U16Ty),    SIZEOF_ROW(U32Ty),    SIZEOF_ROW(U64Ty),      SIZEOF_ROW(U128Ty),
-      SIZEOF_ROW(I8Ty),     SIZEOF_ROW(I16Ty),    SIZEOF_ROW(I32Ty),      SIZEOF_ROW(I64Ty),
-      SIZEOF_ROW(I128Ty),   SIZEOF_ROW(F16Ty),    SIZEOF_ROW(F32Ty),      SIZEOF_ROW(F64Ty),
-      SIZEOF_ROW(F128Ty),   SIZEOF_ROW(VoidTy),   SIZEOF_ROW(PtrTy),      SIZEOF_ROW(OpaqueTy),
-      SIZEOF_ROW(StringTy), SIZEOF_ROW(StructTy), SIZEOF_ROW(UnionTy),    SIZEOF_ROW(ArrayTy),
-      SIZEOF_ROW(ListTy),   SIZEOF_ROW(IntrinTy), SIZEOF_ROW(FnTy),       SIZEOF_ROW(Tmp),
+      SIZEOF_ROW(Ident),    SIZEOF_ROW(Export),   SIZEOF_ROW(Local),      SIZEOF_ROW(Ret),
+      SIZEOF_ROW(Brk),      SIZEOF_ROW(Cont),     SIZEOF_ROW(If),         SIZEOF_ROW(While),
+      SIZEOF_ROW(For),      SIZEOF_ROW(Form),     SIZEOF_ROW(Foreach),    SIZEOF_ROW(Case),
+      SIZEOF_ROW(Switch),   SIZEOF_ROW(Fn),       SIZEOF_ROW(Asm),        SIZEOF_ROW(U1Ty),
+      SIZEOF_ROW(U8Ty),     SIZEOF_ROW(U16Ty),    SIZEOF_ROW(U32Ty),      SIZEOF_ROW(U64Ty),
+      SIZEOF_ROW(U128Ty),   SIZEOF_ROW(I8Ty),     SIZEOF_ROW(I16Ty),      SIZEOF_ROW(I32Ty),
+      SIZEOF_ROW(I64Ty),    SIZEOF_ROW(I128Ty),   SIZEOF_ROW(F16Ty),      SIZEOF_ROW(F32Ty),
+      SIZEOF_ROW(F64Ty),    SIZEOF_ROW(F128Ty),   SIZEOF_ROW(VoidTy),     SIZEOF_ROW(PtrTy),
+      SIZEOF_ROW(OpaqueTy), SIZEOF_ROW(StringTy), SIZEOF_ROW(StructTy),   SIZEOF_ROW(UnionTy),
+      SIZEOF_ROW(ArrayTy),  SIZEOF_ROW(ListTy),   SIZEOF_ROW(IntrinTy),   SIZEOF_ROW(FnTy),
+      SIZEOF_ROW(Tmp),
   };
 
   qcore_assert(sizes.size() == QIR_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
@@ -102,16 +103,17 @@ CPP_EXPORT const char *Expr::thisTypeName() const noexcept {
       NAMEOF_ROW(BINEXPR),   NAMEOF_ROW(UNEXPR),    NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(INT),
       NAMEOF_ROW(FLOAT),     NAMEOF_ROW(STRING),    NAMEOF_ROW(LIST),        NAMEOF_ROW(ALLOC),
       NAMEOF_ROW(CALL),      NAMEOF_ROW(SEQ),       NAMEOF_ROW(ASYNC),       NAMEOF_ROW(INDEX),
-      NAMEOF_ROW(IDENT),     NAMEOF_ROW(EXPORT),    NAMEOF_ROW(RET),         NAMEOF_ROW(BRK),
-      NAMEOF_ROW(CONT),      NAMEOF_ROW(IF),        NAMEOF_ROW(WHILE),       NAMEOF_ROW(FOR),
-      NAMEOF_ROW(FORM),      NAMEOF_ROW(FOREACH),   NAMEOF_ROW(CASE),        NAMEOF_ROW(SWITCH),
-      NAMEOF_ROW(FN),        NAMEOF_ROW(ASM),       NAMEOF_ROW(U1_TY),       NAMEOF_ROW(U8_TY),
-      NAMEOF_ROW(U16_TY),    NAMEOF_ROW(U32_TY),    NAMEOF_ROW(U64_TY),      NAMEOF_ROW(U128_TY),
-      NAMEOF_ROW(I8_TY),     NAMEOF_ROW(I16_TY),    NAMEOF_ROW(I32_TY),      NAMEOF_ROW(I64_TY),
-      NAMEOF_ROW(I128_TY),   NAMEOF_ROW(F16_TY),    NAMEOF_ROW(F32_TY),      NAMEOF_ROW(F64_TY),
-      NAMEOF_ROW(F128_TY),   NAMEOF_ROW(VOID_TY),   NAMEOF_ROW(PTR_TY),      NAMEOF_ROW(OPAQUE_TY),
-      NAMEOF_ROW(STRING_TY), NAMEOF_ROW(STRUCT_TY), NAMEOF_ROW(UNION_TY),    NAMEOF_ROW(ARRAY_TY),
-      NAMEOF_ROW(LIST_TY),   NAMEOF_ROW(INTRIN_TY), NAMEOF_ROW(FN_TY),       NAMEOF_ROW(TMP),
+      NAMEOF_ROW(IDENT),     NAMEOF_ROW(EXPORT),    NAMEOF_ROW(LOCAL),       NAMEOF_ROW(RET),
+      NAMEOF_ROW(BRK),       NAMEOF_ROW(CONT),      NAMEOF_ROW(IF),          NAMEOF_ROW(WHILE),
+      NAMEOF_ROW(FOR),       NAMEOF_ROW(FORM),      NAMEOF_ROW(FOREACH),     NAMEOF_ROW(CASE),
+      NAMEOF_ROW(SWITCH),    NAMEOF_ROW(FN),        NAMEOF_ROW(ASM),         NAMEOF_ROW(U1_TY),
+      NAMEOF_ROW(U8_TY),     NAMEOF_ROW(U16_TY),    NAMEOF_ROW(U32_TY),      NAMEOF_ROW(U64_TY),
+      NAMEOF_ROW(U128_TY),   NAMEOF_ROW(I8_TY),     NAMEOF_ROW(I16_TY),      NAMEOF_ROW(I32_TY),
+      NAMEOF_ROW(I64_TY),    NAMEOF_ROW(I128_TY),   NAMEOF_ROW(F16_TY),      NAMEOF_ROW(F32_TY),
+      NAMEOF_ROW(F64_TY),    NAMEOF_ROW(F128_TY),   NAMEOF_ROW(VOID_TY),     NAMEOF_ROW(PTR_TY),
+      NAMEOF_ROW(OPAQUE_TY), NAMEOF_ROW(STRING_TY), NAMEOF_ROW(STRUCT_TY),   NAMEOF_ROW(UNION_TY),
+      NAMEOF_ROW(ARRAY_TY),  NAMEOF_ROW(LIST_TY),   NAMEOF_ROW(INTRIN_TY),   NAMEOF_ROW(FN_TY),
+      NAMEOF_ROW(TMP),
   };
 
   qxir_ty_t type = getKind();
@@ -281,6 +283,10 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
       case QIR_NODE_EXPORT: {
         MIXIN_STRING(cur->as<Export>()->m_name);
         MIXIN_STRING(cur->as<Export>()->m_abi_name);
+        break;
+      }
+      case QIR_NODE_LOCAL: {
+        MIXIN_STRING(cur->as<Local>()->m_name);
         break;
       }
       case QIR_NODE_RET: {

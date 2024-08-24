@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#define QIR_NODE_COUNT 52
+#define QIR_NODE_COUNT 53
 
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
@@ -839,6 +839,22 @@ namespace qxir {
     Expr *setValue(Expr *value) noexcept { return m_value = value; }
   };
 
+  class Local final : public Expr {
+    QCLASS_REFLECT()
+
+    std::string_view m_name;
+    Expr *m_value;
+
+  public:
+    Local(std::string_view name, Expr *value) : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value) {}
+
+    std::string_view getName() noexcept { return m_name; }
+    std::string_view setName(std::string_view name) noexcept { return m_name = name; }
+
+    Expr *getValue() noexcept { return m_value; }
+    Expr *setValue(Expr *value) noexcept { return m_value = value; }
+  };
+  
   class Ret final : public Expr {
     QCLASS_REFLECT()
 

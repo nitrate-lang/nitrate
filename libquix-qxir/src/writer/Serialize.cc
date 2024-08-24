@@ -281,6 +281,13 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       serialize_recurse(n->as<Export>()->getValue(), ss, state);
       break;
     }
+    case QIR_NODE_LOCAL: {
+      ss << "local ";
+      ss << n->as<Local>()->getName();
+      ss << " = ";
+      serialize_recurse(n->as<Local>()->getValue(), ss, state);
+      break;
+    }
     case QIR_NODE_RET: {
       ss << "ret ";
       serialize_recurse(n->as<Ret>()->getExpr(), ss, state);

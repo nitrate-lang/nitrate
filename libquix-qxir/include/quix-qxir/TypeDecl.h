@@ -66,6 +66,7 @@ typedef enum qxir_ty_t {
   QIR_NODE_INDEX,
   QIR_NODE_IDENT,
   QIR_NODE_EXPORT,
+  QIR_NODE_LOCAL,
   QIR_NODE_RET,
   QIR_NODE_BRK,
   QIR_NODE_CONT,

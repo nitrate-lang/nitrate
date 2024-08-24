@@ -118,6 +118,10 @@ namespace qxir::detail {
         children.push_back(&base->as<Export>()->m_value);
         break;
       }
+      case QIR_NODE_LOCAL: {
+        children.push_back(&base->as<Local>()->m_value);
+        break;
+      }
       case QIR_NODE_RET: {
         children.push_back(&base->as<Ret>()->m_expr);
         break;
