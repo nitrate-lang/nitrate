@@ -71,8 +71,11 @@ static bool parse_union_field(qparse_t &job, qlex_t *rd, CompositeField **node) 
   }
 
   /* Check for a default value */
-  tok = qlex_next(rd);
-  if (tok.is<qPuncComa>()) {
+  tok = qlex_peek(rd);
+  if (tok.is<qPuncComa>() || tok.is<qPuncRCur>()) {
+    if (tok.is<qPuncComa>()) {
+      qlex_next(rd);
+    }
     *node = CompositeField::get(name, type);
     return true;
   }
