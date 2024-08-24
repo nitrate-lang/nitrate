@@ -376,7 +376,7 @@ namespace qparse {
     void set_start_pos(qlex_loc_t pos) { m_pos_start = pos; }
     void set_end_pos(qlex_loc_t pos) { m_pos_end = pos; }
     qlex_loc_t get_start_pos() const { return m_pos_start; }
-    qlex_loc_t get_end_pos() ;
+    qlex_loc_t get_end_pos() const { return m_pos_end; }
   };
 
   class Stmt : public Node {

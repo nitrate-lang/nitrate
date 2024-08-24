@@ -31,9 +31,9 @@
 
 #define __QUIX_IMPL__
 
-#include <stack>
+#include <parser/Parse.h>
 
-#include "parser/Parse.h"
+#include <stack>
 
 #define MAX_EXPR_DEPTH (10000)
 

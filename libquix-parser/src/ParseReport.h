@@ -39,7 +39,6 @@
 #include <functional>
 #include <memory>
 #include <queue>
-#include <span>
 #include <string_view>
 
 namespace qparse::diag {

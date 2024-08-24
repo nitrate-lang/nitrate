@@ -31,9 +31,9 @@
 
 #define __QUIX_IMPL__
 
-#include <utility>
+#include <parser/Parse.h>
 
-#include "parser/Parse.h"
+#include <utility>
 
 using namespace qparse;
 using namespace qparse::parser;
