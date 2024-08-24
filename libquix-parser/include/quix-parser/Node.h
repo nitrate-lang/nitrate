@@ -1301,27 +1301,19 @@ namespace qparse {
     PNODE_IMPL_CORE(Slice)
   };
 
-  typedef std::vector<Expr *, Arena<Expr *>> FStringArgs;
+  typedef std::vector<std::variant<String, Expr *>, Arena<std::variant<String, Expr *>>> FStringItems;
 
   class FString : public Expr {
   protected:
-    String m_value;
-    FStringArgs m_items;
+    FStringItems m_items;
 
   public:
-    FString(String value = "", std::initializer_list<Expr *> items = {})
-        : m_value(value), m_items(items) {}
-    FString(String value, const FStringArgs &items) : m_value(value), m_items(items) {}
+    FString(FStringItems items = {}) : m_items(items) {}
 
-    String get_value() const { return m_value; }
-    void set_value(String value) { m_value = value; }
-
-    FStringArgs &get_items() { return m_items; }
-    const FStringArgs &get_items() const { return m_items; }
+    FStringItems &get_items() { return m_items; }
+    const FStringItems &get_items() const { return m_items; }
+    void add_item(String item);
     void add_item(Expr *item);
-    void add_items(std::initializer_list<Expr *> items);
-    void clear_items();
-    void remove_item(Expr *item);
 
     PNODE_IMPL_CORE(FString)
   };

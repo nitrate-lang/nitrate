@@ -336,8 +336,13 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     }
     case QAST_NODE_FSTRING: {
       OBJECT_BEGIN("FString");
-      OBJECT_STR(n->as<FString>()->get_value());
-      OBJECT_ARRAY(n->as<FString>()->get_items());
+      for (const auto &v : n->as<FString>()->get_items()) {
+        if (std::holds_alternative<String>(v)) {
+          OBJECT_STR(std::get<String>(v));
+        } else {
+          OBJECT_SUB(std::get<Expr *>(v));
+        }
+      }
       OBJECT_END();
       break;
     }

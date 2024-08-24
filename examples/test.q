@@ -1,3 +1,1 @@
-pub "lua" subsystem dapi::module {
-  fn main
-} impl [stable];
+let x = f"2+2 is {2+2}";

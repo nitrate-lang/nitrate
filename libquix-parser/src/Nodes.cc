@@ -2779,12 +2779,18 @@ LIB_EXPORT Slice *Slice::clone_impl() const {
 
 LIB_EXPORT bool FString::verify_impl(std::ostream &os) const {
   for (auto item : m_items) {
-    if (!item) {
+    if (std::holds_alternative<String>(item)) {
+      continue;
+    }
+
+    auto x = std::get<Expr *>(item);
+
+    if (!x) {
       os << "FString: item is NULL\n";
       return false;
     }
 
-    if (!item->verify(os)) {
+    if (!x->verify(os)) {
       os << "FString: item is invalid\n";
       return false;
     }
@@ -2795,48 +2801,46 @@ LIB_EXPORT bool FString::verify_impl(std::ostream &os) const {
 
 LIB_EXPORT void FString::canonicalize_impl() {
   for (auto item : m_items) {
-    if (item) {
-      item->canonicalize();
+    if (std::holds_alternative<Expr *>(item)) {
+      auto x = std::get<Expr *>(item);
+      if (x) {
+        x->canonicalize();
+      }
     }
   }
 }
 
 LIB_EXPORT void FString::print_impl(std::ostream &os, bool debug) const {
-  os << "f\"" << m_value << "\"(";
+  os << "f\"";
 
-  for (size_t i = 0; i < m_items.size(); i++) {
-    if (m_items[i]) {
-      m_items[i]->print(os, debug);
+  for (auto item : m_items) {
+    if (std::holds_alternative<String>(item)) {
+      os << std::get<String>(item);
     } else {
-      os << "?";
-    }
-
-    if (i + 1 < m_items.size()) {
-      os << ", ";
+      os << "{";
+      std::get<Expr *>(item)->print(os, debug);
+      os << "}";
     }
   }
 
-  os << ")";
+  os << "\"";
 }
 
 LIB_EXPORT FString *FString::clone_impl() const {
-  FStringArgs items;
+  FStringItems items;
   for (auto item : m_items) {
-    if (item) {
-      items.push_back(item->clone());
+    if (std::holds_alternative<String>(item)) {
+      items.push_back(std::get<String>(item));
     } else {
-      items.push_back(nullptr);
+      items.push_back(std::get<Expr *>(item)->clone());
     }
   }
 
-  return FString::get(m_value, items);
+  return FString::get(items);
 }
 
-LIB_EXPORT void FString::add_item(Expr *item) { m_items.push_back(item); }
-LIB_EXPORT void FString::clear_items() { m_items.clear(); }
-LIB_EXPORT void FString::remove_item(Expr *item) {
-  std::erase_if(m_items, [item](auto &field) { return field == item; });
-}
+LIB_EXPORT void qparse::FString::add_item(qparse::String item) { m_items.push_back(item); }
+LIB_EXPORT void qparse::FString::add_item(qparse::Expr *item) { m_items.push_back(item); }
 
 LIB_EXPORT bool Ident::verify_impl(std::ostream &os) const {
   if (m_name.empty()) {

@@ -138,8 +138,8 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
    */
 
   qlex_tok_t tok = qlex_next(rd);
-  std::string fstr, rectified_template;
-  FStringArgs args;
+  std::string fstr, tmp;
+  FStringItems items;
   size_t state = 0, w_beg = 0, w_end = 0;
   Expr *expr = nullptr;
 
@@ -172,24 +172,32 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
 
       qlex_free(subrd);
 
-      args.push_back(expr);
-      rectified_template += "{}";
+      if (!tmp.empty()) {
+        items.push_back(tmp);
+        tmp.clear();
+      }
+
+      items.push_back(expr);
     } else if (c == '{') {
-      rectified_template += c;
+      tmp += c;
       state = 0;
     } else if (c == '}') {
-      rectified_template += c;
+      tmp += c;
       state = 0;
     } else if (state == 0) {
-      rectified_template += c;
+      tmp += c;
     }
+  }
+
+  if (!tmp.empty()) {
+    items.push_back(tmp);
   }
 
   if (state != 0) {
     syntax(tok, "F-string expression is not properly closed with '}'");
   }
 
-  *node = FString::get(rectified_template, args);
+  *node = FString::get(items);
 
   return true;
 }

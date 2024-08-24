@@ -1167,6 +1167,8 @@ namespace qxir {
       return new (Arena<F128Ty>().allocate(1)) F128Ty();
     } else if constexpr (std::is_same_v<T, VoidTy>) {
       return new (Arena<VoidTy>().allocate(1)) VoidTy();
+    } else if constexpr (std::is_same_v<T, StringTy>) {
+      return new (Arena<StringTy>().allocate(1)) StringTy();
     } else {
       static_assert(!std::is_same_v<T, T>,
                     "qxir::getType<T>(): Can not construct immuntable of this type.");

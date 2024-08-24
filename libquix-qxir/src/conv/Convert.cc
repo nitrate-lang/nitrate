@@ -833,9 +833,54 @@ namespace qxir {
   }
 
   static Expr *qconv_fstring(ConvState &s, const qparse::FString *n) {
-    /// TODO: fstring
+    /**
+     * @brief Convert a formatted string to a qxir string concatenation.
+     */
 
-    throw QError();
+    if (n->get_items().empty()) {
+      return create<String>("");
+    }
+
+    if (n->get_items().size() == 1) {
+      auto val = n->get_items().front();
+      if (std::holds_alternative<qparse::String>(val)) {
+        return create<String>(memorize(std::get<qparse::String>(val)));
+      } else if (std::holds_alternative<qparse::Expr *>(val)) {
+        auto expr = qconv(s, std::get<qparse::Expr *>(val));
+        if (!expr) {
+          badtree(n, "qparse::FString::get_items() vector contains nullptr");
+          throw QError();
+        }
+
+        return create<BinExpr>(expr, getType<StringTy>(), Op::CastAs);
+      } else {
+        qcore_panic("Invalid fstring item type");
+      }
+    }
+
+    Expr *concated = create<String>("");
+
+    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+      if (std::holds_alternative<qparse::String>(*it)) {
+        auto val = std::get<qparse::String>(*it);
+
+        concated = create<BinExpr>(concated, create<String>(memorize(val)), Op::Plus);
+      } else if (std::holds_alternative<qparse::Expr *>(*it)) {
+        auto val = std::get<qparse::Expr *>(*it);
+        auto expr = qconv(s, val);
+        if (!expr) {
+          badtree(n, "qparse::FString::get_items() vector contains nullptr");
+          throw QError();
+        }
+
+        expr = create<BinExpr>(expr, getType<StringTy>(), Op::CastAs);
+        concated = create<BinExpr>(concated, expr, Op::Plus);
+      } else {
+        qcore_panic("Invalid fstring item type");
+      }
+    }
+
+    return concated;
   }
 
   static Expr *qconv_ident(ConvState &s, const qparse::Ident *n) {
