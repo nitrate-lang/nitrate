@@ -224,8 +224,6 @@ static FunctionProperties read_function_properties(qlex_t *rd) {
 
   FunctionProperties props;
 
-  /// TODO: verify that this is what i want
-
   props._foreign = state.foreign_ctr;
   props._noexcept = state.noexcept_ctr;
   props._tsafe = state.tsafe_ctr;

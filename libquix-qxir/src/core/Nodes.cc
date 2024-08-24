@@ -35,6 +35,7 @@
 #include <core/LibMacro.h>
 #include <openssl/evp.h>
 #include <quix-core/Error.h>
+#include <quix-qxir/Inference.h>
 #include <quix-qxir/Module.h>
 #include <quix-qxir/Node.h>
 
@@ -155,8 +156,7 @@ CPP_EXPORT bool Expr::isType() const noexcept {
 }
 
 CPP_EXPORT qxir::Type *qxir::Expr::getType() noexcept {
-  /// TODO: Implement this
-  qcore_implement(__func__);
+  return static_cast<Type *>(qxir_infer(this));
 }
 
 CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> qxir::Expr::getLoc() const noexcept {
@@ -167,7 +167,7 @@ CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> qxir::Expr::getLoc() const noexcept
 
   qlex_t *lexer = mod->getLexer();
   if (lexer == nullptr) {
-     return {{0}, {0}};
+    return {{0}, {0}};
   }
 
   qlex_loc_t end = qlex_offset(lexer, m_start_loc, m_loc_size);
