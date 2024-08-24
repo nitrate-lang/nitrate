@@ -274,10 +274,11 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       ss << n->as<Ident>()->getName();
       break;
     }
-    case QIR_NODE_GLOBAL: {
-      ss << "global " << n->as<Global>()->getName();
+    case QIR_NODE_EXPORT: {
+      ss << "export[" << n->as<Export>()->getAbiName() << "] ";
+      ss << n->as<Export>()->getName();
       ss << " = ";
-      serialize_recurse(n->as<Global>()->getValue(), ss, state);
+      serialize_recurse(n->as<Export>()->getValue(), ss, state);
       break;
     }
     case QIR_NODE_RET: {
@@ -525,9 +526,8 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QIR_NODE_TMP: {
-      ss << "qnode<";
-      ss << static_cast<uint64_t>(n->as<Tmp>()->getTmpType());
-      ss << ">(" << n->as<Tmp>()->getData().type().name() << ")";
+      ss << "`" << static_cast<uint64_t>(n->as<Tmp>()->getTmpType());
+      ss << ";" << n->as<Tmp>()->getData().type().name() << "`";
       break;
     }
     default: {

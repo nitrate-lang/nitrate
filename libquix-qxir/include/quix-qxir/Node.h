@@ -816,18 +816,24 @@ namespace qxir {
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
   };
 
-  class Global final : public Expr {
+  class Export final : public Expr {
     QCLASS_REFLECT()
 
     std::string_view m_name;
+    std::string_view m_abi_name;
     Expr *m_value;
 
   public:
-    Global(std::string_view name, Expr *value)
-        : Expr(QIR_NODE_GLOBAL), m_name(name), m_value(value) {}
+    Export(std::string_view name, Expr *value, std::string_view abi_name = "")
+        : Expr(QIR_NODE_EXPORT), m_name(name), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getName() noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
+
+    std::string_view getAbiName() noexcept { return m_abi_name; }
+    std::string_view setAbiName(std::string_view abi_name) noexcept {
+      return m_abi_name = abi_name;
+    }
 
     Expr *getValue() noexcept { return m_value; }
     Expr *setValue(Expr *value) noexcept { return m_value = value; }
@@ -1079,6 +1085,7 @@ namespace qxir {
     VAR,
     CONST,
     FIELD,
+    NAMED_TYPE,
 
     BAD,
   };

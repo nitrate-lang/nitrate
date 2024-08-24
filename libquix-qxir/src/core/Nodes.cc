@@ -72,7 +72,7 @@ CPP_EXPORT uint32_t Expr::thisSizeOf() const noexcept {
       SIZEOF_ROW(BinExpr),  SIZEOF_ROW(UnExpr),   SIZEOF_ROW(PostUnExpr), SIZEOF_ROW(Int),
       SIZEOF_ROW(Float),    SIZEOF_ROW(String),   SIZEOF_ROW(List),       SIZEOF_ROW(Alloc),
       SIZEOF_ROW(Call),     SIZEOF_ROW(Seq),      SIZEOF_ROW(Async),      SIZEOF_ROW(Index),
-      SIZEOF_ROW(Ident),    SIZEOF_ROW(Global),   SIZEOF_ROW(Ret),        SIZEOF_ROW(Brk),
+      SIZEOF_ROW(Ident),    SIZEOF_ROW(Export),   SIZEOF_ROW(Ret),        SIZEOF_ROW(Brk),
       SIZEOF_ROW(Cont),     SIZEOF_ROW(If),       SIZEOF_ROW(While),      SIZEOF_ROW(For),
       SIZEOF_ROW(Form),     SIZEOF_ROW(Foreach),  SIZEOF_ROW(Case),       SIZEOF_ROW(Switch),
       SIZEOF_ROW(Fn),       SIZEOF_ROW(Asm),      SIZEOF_ROW(U1Ty),       SIZEOF_ROW(U8Ty),
@@ -102,7 +102,7 @@ CPP_EXPORT const char *Expr::thisTypeName() const noexcept {
       NAMEOF_ROW(BINEXPR),   NAMEOF_ROW(UNEXPR),    NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(INT),
       NAMEOF_ROW(FLOAT),     NAMEOF_ROW(STRING),    NAMEOF_ROW(LIST),        NAMEOF_ROW(ALLOC),
       NAMEOF_ROW(CALL),      NAMEOF_ROW(SEQ),       NAMEOF_ROW(ASYNC),       NAMEOF_ROW(INDEX),
-      NAMEOF_ROW(IDENT),     NAMEOF_ROW(GLOBAL),    NAMEOF_ROW(RET),         NAMEOF_ROW(BRK),
+      NAMEOF_ROW(IDENT),     NAMEOF_ROW(EXPORT),    NAMEOF_ROW(RET),         NAMEOF_ROW(BRK),
       NAMEOF_ROW(CONT),      NAMEOF_ROW(IF),        NAMEOF_ROW(WHILE),       NAMEOF_ROW(FOR),
       NAMEOF_ROW(FORM),      NAMEOF_ROW(FOREACH),   NAMEOF_ROW(CASE),        NAMEOF_ROW(SWITCH),
       NAMEOF_ROW(FN),        NAMEOF_ROW(ASM),       NAMEOF_ROW(U1_TY),       NAMEOF_ROW(U8_TY),
@@ -278,8 +278,9 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         MIXIN_STRING(cur->as<Ident>()->m_name);
         break;
       }
-      case QIR_NODE_GLOBAL: {
-        MIXIN_STRING(cur->as<Global>()->m_name);
+      case QIR_NODE_EXPORT: {
+        MIXIN_STRING(cur->as<Export>()->m_name);
+        MIXIN_STRING(cur->as<Export>()->m_abi_name);
         break;
       }
       case QIR_NODE_RET: {

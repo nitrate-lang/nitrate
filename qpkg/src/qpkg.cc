@@ -1269,9 +1269,9 @@ int run_dev_mode(
       return 1;
     }
 
-    qxir_node_t *qxir_root = qxir_base(qmod);
+    // qxir_base(qmod);
 
-    qmodule_testplug(qxir_root);
+    // qmodule_testplug(qxir_root);
 
     FILE *out_fp = nullptr;
     if (!output.empty()) {

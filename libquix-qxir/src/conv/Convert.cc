@@ -53,6 +53,7 @@ using namespace qxir::diag;
 
 struct ConvState {
   bool inside_function = false;
+  std::unordered_map<std::string_view, qxir::Type *> typedef_map;
 };
 
 static std::atomic<size_t> sigguard_refcount;
@@ -1118,15 +1119,45 @@ namespace qxir {
   }
 
   static Expr *qconv_region_ty(ConvState &s, const qparse::RegionTy *n) {
-    /// TODO: region_ty
+    /**
+     * @brief Convert a region type to a qxir struct type.
+     * @details This is a 1-to-1 conversion of the region type.
+     */
 
-    throw QError();
+    StructFields fields;
+
+    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+      auto item = qconv(s, *it)->asType();
+      if (!item) {
+        badtree(n, "qparse::RegionTy::get_items() vector contains nullptr");
+        throw QError();
+      }
+
+      fields.push_back(item);
+    }
+
+    return create<StructTy>(std::move(fields));
   }
 
   static Expr *qconv_union_ty(ConvState &s, const qparse::UnionTy *n) {
-    /// TODO: union_ty
+    /**
+     * @brief Convert a union type to a qxir struct type.
+     * @details This is a 1-to-1 conversion of the union type.
+     */
 
-    throw QError();
+    UnionFields fields;
+
+    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+      auto item = qconv(s, *it)->asType();
+      if (!item) {
+        badtree(n, "qparse::UnionTy::get_items() vector contains nullptr");
+        throw QError();
+      }
+
+      fields.push_back(item);
+    }
+
+    return create<UnionTy>(std::move(fields));
   }
 
   static Expr *qconv_array_ty(ConvState &s, const qparse::ArrayTy *n) {
@@ -1210,15 +1241,34 @@ namespace qxir {
   }
 
   static Expr *qconv_unres_ty(ConvState &s, const qparse::UnresolvedType *n) {
-    /// TODO: unres_ty
+    /**
+     * @brief Convert an unresolved type to a qxir type.
+     * @details This is a 1-to-1 conversion of the unresolved type.
+     */
 
-    throw QError();
+    return create<Tmp>(TmpType::NAMED_TYPE, memorize(n->get_name()));
   }
 
   static Expr *qconv_typedef(ConvState &s, const qparse::TypedefDecl *n) {
-    /// TODO: typedef
+    /**
+     * @brief Memorize a typedef declaration which will be used later for type resolution.
+     * @details This node will resolve to type void.
+     */
 
-    throw QError();
+    if (s.typedef_map.contains(n->get_name())) {
+      badtree(n, "confliting typedef declaration");
+      return create<VoidTy>();
+    }
+
+    auto type = qconv(s, n->get_type());
+    if (!type) {
+      badtree(n, "qparse::TypedefDecl::get_type() == nullptr");
+      throw QError();
+    }
+
+    s.typedef_map.insert({memorize(n->get_name()), type->asType()});
+
+    return create<VoidTy>();
   }
 
   static Expr *qconv_fndecl(ConvState &s, const qparse::FnDecl *n) {
@@ -1270,9 +1320,36 @@ namespace qxir {
   }
 
   static Expr *qconv_export(ConvState &s, const qparse::ExportDecl *n) {
-    /// TODO: export
+    /**
+     * @brief Convert an export declaration to a qxir export node.
+     * @details Convert a list of statements under a common ABI into a
+     * sequence under a common ABI.
+     */
 
-    throw QError();
+    static thread_local size_t name_ctr = 0;
+
+    SeqItems items;
+
+    if (!n->get_body()) {
+      badtree(n, "qparse::ExportDecl::get_body() == nullptr");
+      throw QError();
+    }
+
+    for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
+         ++it) {
+      auto item = qconv(s, *it);
+      if (!item) {
+        badtree(n, "qparse::ExportDecl::get_body() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(item);
+    }
+
+    Seq *seq = create<Seq>(std::move(items));
+    std::string name = std::string("__pub") + std::to_string(name_ctr++);
+
+    return create<Export>(memorize(std::string_view(name)), seq, memorize(n->get_abi_name()));
   }
 
   static Expr *qconv_composite_field(ConvState &s, const qparse::CompositeField *n) {
@@ -1328,7 +1405,7 @@ namespace qxir {
       val = create<BinExpr>(val, type, Op::CastAs);
     }
 
-    auto g = create<Global>(memorize(n->get_name()), val);
+    auto g = create<Export>(memorize(n->get_name()), val);
     g->setConst(true);
     return g;
   }
@@ -1403,15 +1480,15 @@ namespace qxir {
         }
       }
 
-      if (type && val) {
+      if (!val) {
+        val = create<Tmp>(TmpType::UNDEF_LITERAL);
+      }
+
+      if (type) {
         val = create<BinExpr>(val, type, Op::CastAs);
       }
 
-      if (!val) {
-        val = create<VoidTy>();
-      }
-
-      return create<Global>(memorize(n->get_name()), val);
+      return create<Export>(memorize(n->get_name()), val);
     }
   }
 
@@ -2116,9 +2193,9 @@ static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
   // Module context id must be assigned before location information
   // is set.
   out->setModule(qxir_ctx);
-  
+
   out->setLoc({n->get_start_pos(), n->get_end_pos()});
-  
+
   return out;
 }
 
@@ -2223,9 +2300,9 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       out = create<Ident>(memorize(static_cast<Ident *>(in)->getName()));
       break;
     }
-    case QIR_NODE_GLOBAL: {
-      Global *n = static_cast<Global *>(in);
-      out = create<Global>(memorize(n->getName()), clone(n->getValue()));
+    case QIR_NODE_EXPORT: {
+      Export *n = static_cast<Export *>(in);
+      out = create<Export>(memorize(n->getName()), clone(n->getValue()));
       break;
     }
     case QIR_NODE_RET: {

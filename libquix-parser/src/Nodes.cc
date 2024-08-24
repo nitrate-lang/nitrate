@@ -862,25 +862,6 @@ LIB_EXPORT bool Type::is_string() const {
 
 ///=============================================================================
 
-LIB_EXPORT String Decl::get_name() const { return m_name; }
-LIB_EXPORT void Decl::set_name(String name) { m_name = name; }
-
-LIB_EXPORT Type *Decl::get_type() const { return m_type; }
-LIB_EXPORT void Decl::set_type(Type *type) { m_type = type; }
-
-LIB_EXPORT DeclTags &Decl::get_tags() { return m_tags; }
-LIB_EXPORT void Decl::add_tag(String tag) { m_tags.insert(tag); }
-LIB_EXPORT void Decl::add_tags(std::set<std::string> tags) {
-  m_tags.insert(tags.begin(), tags.end());
-}
-LIB_EXPORT void Decl::clear_tags() { m_tags.clear(); }
-LIB_EXPORT void Decl::remove_tag(String tag) { m_tags.erase(tag); }
-
-LIB_EXPORT Visibility Decl::get_visibility() const { return m_visibility; }
-LIB_EXPORT void Decl::set_visibility(Visibility visibility) { m_visibility = visibility; }
-
-///=============================================================================
-
 LIB_EXPORT bool Expr::is_binexpr() const {
   if (is<BinExpr>()) {
     return true;
@@ -951,9 +932,6 @@ LIB_EXPORT ExprStmt *ExprStmt::clone_impl() const {
   return new ExprStmt(expr);
 }
 
-LIB_EXPORT Expr *ExprStmt::get_expr() const { return m_expr; }
-LIB_EXPORT void ExprStmt::set_expr(Expr *expr) { m_expr = expr; }
-
 LIB_EXPORT bool StmtExpr::verify_impl(std::ostream &os) const {
   if (!m_stmt) {
     os << "StmtExpr: statement is NULL\n";
@@ -986,9 +964,6 @@ LIB_EXPORT StmtExpr *StmtExpr::clone_impl() const {
   Stmt *stmt = m_stmt ? m_stmt->clone() : nullptr;
   return new StmtExpr(stmt);
 }
-
-LIB_EXPORT Stmt *StmtExpr::get_stmt() const { return m_stmt; }
-LIB_EXPORT void StmtExpr::set_stmt(Stmt *stmt) { m_stmt = stmt; }
 
 LIB_EXPORT bool TypeExpr::verify_impl(std::ostream &os) const {
   if (!m_type) {
@@ -1023,13 +998,7 @@ LIB_EXPORT TypeExpr *TypeExpr::clone_impl() const {
   return new TypeExpr(type);
 }
 
-LIB_EXPORT Type *TypeExpr::get_type() const { return m_type; }
-LIB_EXPORT void TypeExpr::set_type(Type *type) { m_type = type; }
-
 ///=============================================================================
-
-LIB_EXPORT Expr *ConstExpr::get_value() const { return m_value; }
-LIB_EXPORT void ConstExpr::set_value(Expr *value) { m_value = value; }
 
 LIB_EXPORT bool ConstExpr::verify_impl(std::ostream &os) const {
   qcore_panic("ConstExpr::verify_impl() is not implemented");
@@ -1071,9 +1040,6 @@ LIB_EXPORT void UnresolvedType::print_impl(std::ostream &os, bool debug) const {
 LIB_EXPORT UnresolvedType *UnresolvedType::clone_impl() const {
   return UnresolvedType::get(m_name);
 }
-
-LIB_EXPORT String UnresolvedType::get_name() const { return m_name; }
-LIB_EXPORT void UnresolvedType::set_name(String name) { m_name = name; }
 
 #define TRIVIAL_TYPE_IMPL(__typename, __dumpstr, __bits)            \
   bool __typename::verify_impl(std::ostream &os) const {            \
@@ -1145,11 +1111,6 @@ LIB_EXPORT PtrTy *PtrTy::clone_impl() const {
   return PtrTy::get(item, m_is_volatile);
 }
 
-LIB_EXPORT Type *PtrTy::get_item() const { return m_item; }
-LIB_EXPORT void PtrTy::set_item(Type *item) { m_item = item; }
-LIB_EXPORT bool PtrTy::is_volatile() const { return m_is_volatile; }
-LIB_EXPORT void PtrTy::set_volatile(bool is_volatile) { m_is_volatile = is_volatile; }
-
 LIB_EXPORT bool OpaqueTy::verify_impl(std::ostream &os) const {
   if (m_name.empty()) {
     os << "OpaqueTy: name is empty\n";
@@ -1165,9 +1126,6 @@ LIB_EXPORT void OpaqueTy::print_impl(std::ostream &os, bool debug) const {
   os << "opaque<" << m_name << ">";
 }
 LIB_EXPORT OpaqueTy *OpaqueTy::clone_impl() const { return OpaqueTy::get(m_name); }
-
-LIB_EXPORT String OpaqueTy::get_name() const { return m_name; }
-LIB_EXPORT void OpaqueTy::set_name(String name) { m_name = name; }
 
 LIB_EXPORT bool VectorTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
@@ -1205,9 +1163,6 @@ LIB_EXPORT VectorTy *VectorTy::clone_impl() const {
   return VectorTy::get(item);
 }
 
-LIB_EXPORT Type *VectorTy::get_item() const { return m_item; }
-LIB_EXPORT void VectorTy::set_item(Type *item) { m_item = item; }
-
 LIB_EXPORT bool SetTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "SetTy: item type is NULL\n";
@@ -1243,9 +1198,6 @@ LIB_EXPORT SetTy *SetTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return SetTy::get(item);
 }
-
-LIB_EXPORT Type *SetTy::get_item() const { return m_item; }
-LIB_EXPORT void SetTy::set_item(Type *item) { m_item = item; }
 
 LIB_EXPORT bool MapTy::verify_impl(std::ostream &os) const {
   if (!m_key) {
@@ -1305,12 +1257,6 @@ LIB_EXPORT MapTy *MapTy::clone_impl() const {
   return MapTy::get(key, value);
 }
 
-LIB_EXPORT Type *MapTy::get_key() const { return m_key; }
-LIB_EXPORT void MapTy::set_key(Type *key) { m_key = key; }
-
-LIB_EXPORT Type *MapTy::get_value() const { return m_value; }
-LIB_EXPORT void MapTy::set_value(Type *value) { m_value = value; }
-
 LIB_EXPORT bool TupleTy::verify_impl(std::ostream &os) const {
   for (size_t i = 0; i < m_items.size(); i++) {
     if (!m_items[i]) {
@@ -1364,9 +1310,6 @@ LIB_EXPORT TupleTy *TupleTy::clone_impl() const {
   return TupleTy::get(items);
 }
 
-LIB_EXPORT TupleTyItems &TupleTy::get_items() { return m_items; }
-LIB_EXPORT const TupleTyItems &TupleTy::get_items() const { return m_items; }
-
 LIB_EXPORT bool OptionalTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "OptionalTy: item type is NULL\n";
@@ -1402,9 +1345,6 @@ LIB_EXPORT OptionalTy *OptionalTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return OptionalTy::get(item);
 }
-
-LIB_EXPORT Type *OptionalTy::get_item() const { return m_item; }
-LIB_EXPORT void OptionalTy::set_item(Type *item) { m_item = item; }
 
 LIB_EXPORT bool ArrayTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
@@ -1467,11 +1407,6 @@ LIB_EXPORT ArrayTy *ArrayTy::clone_impl() const {
   return ArrayTy::get(item, size);
 }
 
-LIB_EXPORT Type *ArrayTy::get_item() const { return m_item; }
-LIB_EXPORT void ArrayTy::set_item(Type *item) { m_item = item; }
-LIB_EXPORT ConstExpr *ArrayTy::get_size() const { return m_size; }
-LIB_EXPORT void ArrayTy::set_size(ConstExpr *size) { m_size = size; }
-
 LIB_EXPORT bool EnumTy::verify_impl(std::ostream &os) const {
   if (!m_memtype) {
     os << "EnumTy: member item type is NULL\n";
@@ -1509,11 +1444,6 @@ LIB_EXPORT EnumTy *EnumTy::clone_impl() const {
   return EnumTy::get(m_name, memtype);
 }
 
-LIB_EXPORT String EnumTy::get_name() const { return m_name; }
-LIB_EXPORT void EnumTy::set_name(String name) { m_name = name; }
-LIB_EXPORT Type *EnumTy::get_memtype() const { return m_memtype; }
-LIB_EXPORT void EnumTy::set_memtype(Type *memtype) { m_memtype = memtype; }
-
 LIB_EXPORT bool MutTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "MutTy: item type is NULL\n";
@@ -1549,9 +1479,6 @@ LIB_EXPORT MutTy *MutTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return MutTy::get(item);
 }
-
-LIB_EXPORT Type *MutTy::get_item() const { return m_item; }
-LIB_EXPORT void MutTy::set_item(Type *item) { m_item = item; }
 
 LIB_EXPORT bool StructTy::verify_impl(std::ostream &os) const {
   std::set<String> names({});
@@ -1617,11 +1544,6 @@ LIB_EXPORT StructTy *StructTy::clone_impl() const {
   }
 
   return StructTy::get(fields);
-}
-
-LIB_EXPORT std::vector<StructItem, Arena<StructItem>> &StructTy::get_items() { return m_items; }
-LIB_EXPORT const std::vector<StructItem, Arena<StructItem>> &StructTy::get_items() const {
-  return m_items;
 }
 
 LIB_EXPORT void StructTy::add_item(String name, Type *item) { m_items.push_back({name, item}); }
@@ -1693,9 +1615,6 @@ LIB_EXPORT GroupTy *GroupTy::clone_impl() const {
   return GroupTy::get(fields);
 }
 
-LIB_EXPORT std::vector<Type *, Arena<Type *>> &GroupTy::get_items() { return m_items; }
-LIB_EXPORT const std::vector<Type *, Arena<Type *>> &GroupTy::get_items() const { return m_items; }
-
 LIB_EXPORT void GroupTy::add_item(Type *item) { m_items.push_back(item); }
 
 LIB_EXPORT void GroupTy::add_items(std::initializer_list<Type *> fields) {
@@ -1765,9 +1684,6 @@ LIB_EXPORT RegionTy *RegionTy::clone_impl() const {
   return RegionTy::get(fields);
 }
 
-LIB_EXPORT std::vector<Type *, Arena<Type *>> &RegionTy::get_items() { return m_items; }
-LIB_EXPORT const std::vector<Type *, Arena<Type *>> &RegionTy::get_items() const { return m_items; }
-
 LIB_EXPORT void RegionTy::add_item(Type *item) { m_items.push_back(item); }
 
 LIB_EXPORT void RegionTy::add_items(std::initializer_list<Type *> fields) {
@@ -1836,9 +1752,6 @@ LIB_EXPORT UnionTy *UnionTy::clone_impl() const {
 
   return UnionTy::get(fields);
 }
-
-LIB_EXPORT std::vector<Type *, Arena<Type *>> &UnionTy::get_items() { return m_items; }
-LIB_EXPORT const std::vector<Type *, Arena<Type *>> &UnionTy::get_items() const { return m_items; }
 
 LIB_EXPORT void UnionTy::add_item(Type *item) { m_items.push_back(item); }
 
@@ -2007,10 +1920,7 @@ LIB_EXPORT FuncTy *FuncTy::clone_impl() const {
 }
 
 LIB_EXPORT bool FuncTy::is_noreturn() const { return m_noreturn; }
-LIB_EXPORT void FuncTy::set_noreturn(bool noreturn) { m_noreturn = noreturn; }
-LIB_EXPORT Type *FuncTy::get_return_ty() const { return m_return; }
-LIB_EXPORT void FuncTy::set_return_ty(Type *ty) { m_return = ty; }
-LIB_EXPORT std::vector<FuncParam, Arena<FuncParam>> &FuncTy::get_params() { return m_params; }
+
 LIB_EXPORT void FuncTy::add_param(String name, Type *ty, Expr *default_val) {
   m_params.push_back({name, ty, default_val});
 }
@@ -2023,21 +1933,6 @@ LIB_EXPORT void FuncTy::clear_params() { m_params.clear(); }
 LIB_EXPORT void FuncTy::remove_param(String name) {
   std::erase_if(m_params, [name](auto &param) { return std::get<0>(param) == name; });
 }
-
-LIB_EXPORT FuncPurity FuncTy::get_purity() const { return m_purity; }
-LIB_EXPORT void FuncTy::set_purity(FuncPurity purity) { m_purity = purity; }
-
-LIB_EXPORT bool FuncTy::is_variadic() const { return m_variadic; }
-LIB_EXPORT void FuncTy::set_variadic(bool variadic) { m_variadic = variadic; }
-
-LIB_EXPORT bool FuncTy::is_foreign() const { return m_is_foreign; }
-LIB_EXPORT void FuncTy::set_foreign(bool is_foreign) { m_is_foreign = is_foreign; }
-
-LIB_EXPORT bool FuncTy::is_crashpoint() const { return m_crashpoint; }
-LIB_EXPORT void FuncTy::set_crashpoint(bool crashpoint) { m_crashpoint = crashpoint; }
-
-LIB_EXPORT bool FuncTy::is_noexcept() const { return m_noexcept; }
-LIB_EXPORT void FuncTy::set_noexcept(bool _noexcept) { m_noexcept = _noexcept; }
 
 ///=============================================================================
 
@@ -2082,12 +1977,6 @@ LIB_EXPORT UnaryExpr *UnaryExpr::clone_impl() const {
   Expr *rhs = m_rhs ? m_rhs->clone() : nullptr;
   return UnaryExpr::get(m_op, rhs);
 }
-
-LIB_EXPORT qlex_op_t UnaryExpr::get_op() const { return m_op; }
-LIB_EXPORT void UnaryExpr::set_op(qlex_op_t op) { m_op = op; }
-
-LIB_EXPORT Expr *UnaryExpr::get_rhs() const { return m_rhs; }
-LIB_EXPORT void UnaryExpr::set_rhs(Expr *rhs) { m_rhs = rhs; }
 
 LIB_EXPORT bool BinExpr::verify_impl(std::ostream &os) const {
   if (!m_lhs) {
@@ -2155,15 +2044,6 @@ LIB_EXPORT BinExpr *BinExpr::clone_impl() const {
   return BinExpr::get(lhs, m_op, rhs);
 }
 
-LIB_EXPORT qlex_op_t BinExpr::get_op() const { return m_op; }
-LIB_EXPORT void BinExpr::set_op(qlex_op_t op) { m_op = op; }
-
-LIB_EXPORT Expr *BinExpr::get_lhs() const { return m_lhs; }
-LIB_EXPORT void BinExpr::set_lhs(Expr *lhs) { m_lhs = lhs; }
-
-LIB_EXPORT Expr *BinExpr::get_rhs() const { return m_rhs; }
-LIB_EXPORT void BinExpr::set_rhs(Expr *rhs) { m_rhs = rhs; }
-
 LIB_EXPORT bool PostUnaryExpr::verify_impl(std::ostream &os) const {
   if (!m_lhs) {
     os << "PostUnaryExpr: lhs is NULL\n";
@@ -2207,12 +2087,6 @@ LIB_EXPORT PostUnaryExpr *PostUnaryExpr::clone_impl() const {
   Expr *lhs = m_lhs ? m_lhs->clone() : nullptr;
   return PostUnaryExpr::get(lhs, m_op);
 }
-
-LIB_EXPORT qlex_op_t PostUnaryExpr::get_op() const { return m_op; }
-LIB_EXPORT void PostUnaryExpr::set_op(qlex_op_t op) { m_op = op; }
-
-LIB_EXPORT Expr *PostUnaryExpr::get_lhs() const { return m_lhs; }
-LIB_EXPORT void PostUnaryExpr::set_lhs(Expr *lhs) { m_lhs = lhs; }
 
 LIB_EXPORT bool TernaryExpr::verify_impl(std::ostream &os) const {
   if (!m_cond) {
@@ -2298,15 +2172,6 @@ LIB_EXPORT TernaryExpr *TernaryExpr::clone_impl() const {
   return TernaryExpr::get(cond, lhs, rhs);
 }
 
-LIB_EXPORT Expr *TernaryExpr::get_cond() const { return m_cond; }
-LIB_EXPORT void TernaryExpr::set_cond(Expr *cond) { m_cond = cond; }
-
-LIB_EXPORT Expr *TernaryExpr::get_lhs() const { return m_lhs; }
-LIB_EXPORT void TernaryExpr::set_lhs(Expr *lhs) { m_lhs = lhs; }
-
-LIB_EXPORT Expr *TernaryExpr::get_rhs() const { return m_rhs; }
-LIB_EXPORT void TernaryExpr::set_rhs(Expr *rhs) { m_rhs = rhs; }
-
 ///=============================================================================
 
 LIB_EXPORT bool ConstInt::verify_impl(std::ostream &os) const {
@@ -2333,8 +2198,6 @@ LIB_EXPORT void ConstInt::print_impl(std::ostream &os, bool debug) const {
 }
 
 LIB_EXPORT ConstInt *ConstInt::clone_impl() const { return ConstInt::get(m_value); }
-
-LIB_EXPORT String ConstInt::get_value() const { return m_value; }
 
 LIB_EXPORT bool ConstFloat::verify_impl(std::ostream &os) const {
   if (m_value.empty()) {
@@ -2372,8 +2235,6 @@ LIB_EXPORT void ConstFloat::print_impl(std::ostream &os, bool debug) const {
 
 LIB_EXPORT ConstFloat *ConstFloat::clone_impl() const { return ConstFloat::get(m_value); }
 
-LIB_EXPORT String ConstFloat::get_value() const { return m_value; }
-
 LIB_EXPORT bool ConstBool::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
@@ -2388,8 +2249,6 @@ LIB_EXPORT void ConstBool::print_impl(std::ostream &os, bool debug) const {
 }
 
 LIB_EXPORT ConstBool *ConstBool::clone_impl() const { return ConstBool::get(m_value); }
-
-LIB_EXPORT bool ConstBool::get_value() const { return m_value; }
 
 LIB_EXPORT bool ConstChar::verify_impl(std::ostream &os) const {
   (void)os;
@@ -2408,8 +2267,6 @@ LIB_EXPORT void ConstChar::print_impl(std::ostream &os, bool debug) const {
 
 LIB_EXPORT ConstChar *ConstChar::clone_impl() const { return ConstChar::get(m_value); }
 
-LIB_EXPORT char32_t ConstChar::get_value() const { return m_value; }
-
 LIB_EXPORT bool ConstString::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
@@ -2423,8 +2280,6 @@ LIB_EXPORT void ConstString::print_impl(std::ostream &os, bool debug) const {
 }
 
 LIB_EXPORT ConstString *ConstString::clone_impl() const { return ConstString::get(m_value); }
-
-LIB_EXPORT String ConstString::get_value() const { return m_value; }
 
 LIB_EXPORT bool ConstNull::verify_impl(std::ostream &os) const {
   (void)os;
@@ -2524,11 +2379,6 @@ LIB_EXPORT Call *Call::clone_impl() const {
   return Call::get(func, args);
 }
 
-LIB_EXPORT Expr *Call::get_func() const { return m_func; }
-LIB_EXPORT void Call::set_func(Expr *func) { m_func = func; }
-
-LIB_EXPORT CallArgs &Call::get_args() { return m_args; }
-LIB_EXPORT const qparse::CallArgs &qparse::Call::get_args() const { return m_args; }
 LIB_EXPORT void Call::add_arg(CallArg arg) { m_args.push_back(arg); }
 LIB_EXPORT void Call::add_args(std::initializer_list<CallArg> args) {
   for (auto arg : args) {
@@ -2622,10 +2472,6 @@ LIB_EXPORT TemplCall *TemplCall::clone_impl() const {
   return TemplCall::get(func, args, template_args);
 }
 
-LIB_EXPORT Expr *TemplCall::get_func() const { return m_func; }
-LIB_EXPORT void TemplCall::set_func(Expr *func) { m_func = func; }
-
-LIB_EXPORT TemplateArgs &TemplCall::get_template_args() { return m_template_args; }
 LIB_EXPORT void TemplCall::add_template_arg(String name, ConstExpr *arg) {
   m_template_args[name] = arg;
 }
@@ -2687,8 +2533,6 @@ LIB_EXPORT List *List::clone_impl() const {
   return List::get(items);
 }
 
-LIB_EXPORT ListData &List::get_items() { return m_items; }
-LIB_EXPORT const ListData &List::get_items() const { return m_items; }
 LIB_EXPORT void List::add_item(Expr *item) { m_items.push_back(item); }
 LIB_EXPORT void List::clear_items() { m_items.clear(); }
 LIB_EXPORT void List::remove_item(Expr *item) {
@@ -2752,12 +2596,6 @@ LIB_EXPORT Assoc *Assoc::clone_impl() const {
   return Assoc::get(key, value);
 }
 
-LIB_EXPORT Expr *Assoc::get_key() const { return m_key; }
-LIB_EXPORT void Assoc::set_key(Expr *key) { m_key = key; }
-
-LIB_EXPORT Expr *Assoc::get_value() const { return m_value; }
-LIB_EXPORT void Assoc::set_value(Expr *value) { m_value = value; }
-
 LIB_EXPORT bool Field::verify_impl(std::ostream &os) const {
   if (!m_base) {
     os << "Field: base is NULL\n";
@@ -2797,12 +2635,6 @@ LIB_EXPORT Field *Field::clone_impl() const {
   Expr *base = m_base ? m_base->clone() : nullptr;
   return Field::get(base, m_field);
 }
-
-LIB_EXPORT Expr *Field::get_base() const { return m_base; }
-LIB_EXPORT void Field::set_base(Expr *base) { m_base = base; }
-
-LIB_EXPORT String Field::get_field() const { return m_field; }
-LIB_EXPORT void Field::set_field(String field) { m_field = field; }
 
 LIB_EXPORT bool Index::verify_impl(std::ostream &os) const {
   if (!m_base) {
@@ -2862,12 +2694,6 @@ LIB_EXPORT Index *Index::clone_impl() const {
 
   return Index::get(base, index);
 }
-
-LIB_EXPORT Expr *Index::get_base() const { return m_base; }
-LIB_EXPORT void Index::set_base(Expr *base) { m_base = base; }
-
-LIB_EXPORT Expr *Index::get_index() const { return m_index; }
-LIB_EXPORT void Index::set_index(Expr *index) { m_index = index; }
 
 LIB_EXPORT bool Slice::verify_impl(std::ostream &os) const {
   if (!m_base) {
@@ -2951,15 +2777,6 @@ LIB_EXPORT Slice *Slice::clone_impl() const {
   return Slice::get(base, start, end);
 }
 
-LIB_EXPORT Expr *Slice::get_base() const { return m_base; }
-LIB_EXPORT void Slice::set_base(Expr *base) { m_base = base; }
-
-LIB_EXPORT Expr *Slice::get_start() const { return m_start; }
-LIB_EXPORT void Slice::set_start(Expr *start) { m_start = start; }
-
-LIB_EXPORT Expr *Slice::get_end() const { return m_end; }
-LIB_EXPORT void Slice::set_end(Expr *end) { m_end = end; }
-
 LIB_EXPORT bool FString::verify_impl(std::ostream &os) const {
   for (auto item : m_items) {
     if (!item) {
@@ -3015,11 +2832,6 @@ LIB_EXPORT FString *FString::clone_impl() const {
   return FString::get(m_value, items);
 }
 
-LIB_EXPORT String FString::get_value() const { return m_value; }
-LIB_EXPORT void FString::set_value(String value) { m_value = value; }
-
-LIB_EXPORT FStringArgs &FString::get_items() { return m_items; }
-LIB_EXPORT const FStringArgs &FString::get_items() const { return m_items; }
 LIB_EXPORT void FString::add_item(Expr *item) { m_items.push_back(item); }
 LIB_EXPORT void FString::clear_items() { m_items.clear(); }
 LIB_EXPORT void FString::remove_item(Expr *item) {
@@ -3043,9 +2855,6 @@ LIB_EXPORT void Ident::print_impl(std::ostream &os, bool debug) const {
 }
 
 LIB_EXPORT Ident *Ident::clone_impl() const { return Ident::get(m_name); }
-
-LIB_EXPORT String Ident::get_name() const { return m_name; }
-LIB_EXPORT void Ident::set_name(String name) { m_name = name; }
 
 LIB_EXPORT bool SeqPoint::verify_impl(std::ostream &os) const {
   for (auto item : m_items) {
@@ -3096,8 +2905,6 @@ LIB_EXPORT SeqPoint *SeqPoint::clone_impl() const {
   return SeqPoint::get(items);
 }
 
-LIB_EXPORT SeqPointItems &SeqPoint::get_items() { return m_items; }
-LIB_EXPORT const SeqPointItems &SeqPoint::get_items() const { return m_items; }
 LIB_EXPORT void SeqPoint::add_item(Expr *item) { m_items.push_back(item); }
 LIB_EXPORT void SeqPoint::clear_items() { m_items.clear(); }
 LIB_EXPORT void SeqPoint::remove_item(Expr *item) {
@@ -3159,16 +2966,11 @@ LIB_EXPORT Block *Block::clone_impl() const {
   return Block::get(items);
 }
 
-LIB_EXPORT BlockItems &Block::get_items() { return m_items; }
-LIB_EXPORT const BlockItems &Block::get_items() const { return m_items; }
 LIB_EXPORT void Block::add_item(Stmt *item) { m_items.push_back(item); }
 LIB_EXPORT void Block::clear_items() { m_items.clear(); }
 LIB_EXPORT void Block::remove_item(Stmt *item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
-
-LIB_EXPORT bool Block::is_unsafe() const { return m_unsafe; }
-LIB_EXPORT void Block::set_unsafe(bool unsafe) { m_unsafe = unsafe; }
 
 LIB_EXPORT bool StmtList::verify_impl(std::ostream &os) const {
   for (auto item : m_items) {
@@ -3220,9 +3022,6 @@ LIB_EXPORT VolStmt *VolStmt::clone_impl() const {
   return VolStmt::get(stmt);
 }
 
-LIB_EXPORT Stmt *VolStmt::get_stmt() const { return m_stmt; }
-LIB_EXPORT void VolStmt::set_stmt(Stmt *stmt) { m_stmt = stmt; }
-
 LIB_EXPORT void StmtList::canonicalize_impl() {
   for (auto item : m_items) {
     if (item) {
@@ -3256,8 +3055,6 @@ LIB_EXPORT StmtList *StmtList::clone_impl() const {
   return StmtList::get(items);
 }
 
-LIB_EXPORT StmtListItems &StmtList::get_items() { return m_items; }
-LIB_EXPORT const StmtListItems &StmtList::get_items() const { return m_items; }
 LIB_EXPORT void StmtList::add_item(Stmt *item) { m_items.push_back(item); }
 LIB_EXPORT void StmtList::clear_items() { m_items.clear(); }
 LIB_EXPORT void StmtList::remove_item(Stmt *item) {
@@ -3316,9 +3113,6 @@ LIB_EXPORT ConstDecl *ConstDecl::clone_impl() const {
   return ConstDecl::get(m_name, type, value);
 }
 
-LIB_EXPORT Expr *ConstDecl::get_value() const { return m_value; }
-LIB_EXPORT void ConstDecl::set_value(Expr *value) { m_value = value; }
-
 LIB_EXPORT bool VarDecl::verify_impl(std::ostream &os) const {
   if (!m_value) {
     os << "VarDecl: value is NULL\n";
@@ -3370,9 +3164,6 @@ LIB_EXPORT VarDecl *VarDecl::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
   return VarDecl::get(m_name, type, value);
 }
-
-LIB_EXPORT Expr *VarDecl::get_value() const { return m_value; }
-LIB_EXPORT void VarDecl::set_value(Expr *value) { m_value = value; }
 
 LIB_EXPORT bool LetDecl::verify_impl(std::ostream &os) const {
   if (!m_value) {
@@ -3426,9 +3217,6 @@ LIB_EXPORT LetDecl *LetDecl::clone_impl() const {
   return LetDecl::get(m_name, type, value);
 }
 
-LIB_EXPORT Expr *LetDecl::get_value() const { return m_value; }
-LIB_EXPORT void LetDecl::set_value(Expr *value) { m_value = value; }
-
 LIB_EXPORT bool InlineAsm::verify_impl(std::ostream &os) const {
   for (auto item : m_args) {
     if (!item) {
@@ -3477,10 +3265,6 @@ LIB_EXPORT InlineAsm *InlineAsm::clone_impl() const {
   return InlineAsm::get(m_code, args);
 }
 
-LIB_EXPORT String InlineAsm::get_code() const { return m_code; }
-LIB_EXPORT void InlineAsm::set_code(String code) { m_code = code; }
-
-LIB_EXPORT InlineAsmArgs &InlineAsm::get_args() { return m_args; }
 LIB_EXPORT void InlineAsm::add_arg(Expr *arg) { m_args.push_back(arg); }
 LIB_EXPORT void InlineAsm::clear_args() { m_args.clear(); }
 LIB_EXPORT void InlineAsm::remove_arg(Expr *arg) {
@@ -3563,15 +3347,6 @@ LIB_EXPORT IfStmt *IfStmt::clone_impl() const {
   return IfStmt::get(cond, then, els);
 }
 
-LIB_EXPORT Expr *IfStmt::get_cond() const { return m_cond; }
-LIB_EXPORT void IfStmt::set_cond(Expr *cond) { m_cond = cond; }
-
-LIB_EXPORT Stmt *IfStmt::get_then() const { return m_then; }
-LIB_EXPORT void IfStmt::set_then(Stmt *then) { m_then = then; }
-
-LIB_EXPORT Stmt *IfStmt::get_else() const { return m_else; }
-LIB_EXPORT void IfStmt::set_else(Stmt *els) { m_else = els; }
-
 LIB_EXPORT bool WhileStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "WhileStmt: cond is NULL\n";
@@ -3624,12 +3399,6 @@ LIB_EXPORT WhileStmt *WhileStmt::clone_impl() const {
 
   return WhileStmt::get(cond, body);
 }
-
-LIB_EXPORT Expr *WhileStmt::get_cond() const { return m_cond; }
-LIB_EXPORT void WhileStmt::set_cond(Expr *cond) { m_cond = cond; }
-
-LIB_EXPORT Stmt *WhileStmt::get_body() const { return m_body; }
-LIB_EXPORT void WhileStmt::set_body(Stmt *body) { m_body = body; }
 
 LIB_EXPORT bool ForStmt::verify_impl(std::ostream &os) const {
   if (!m_init) {
@@ -3736,18 +3505,6 @@ LIB_EXPORT ForStmt *ForStmt::clone_impl() const {
   return ForStmt::get(init, cond, step, body);
 }
 
-LIB_EXPORT Stmt *ForStmt::get_init() const { return m_init; }
-LIB_EXPORT void ForStmt::set_init(Stmt *init) { m_init = init; }
-
-LIB_EXPORT Expr *ForStmt::get_cond() const { return m_cond; }
-LIB_EXPORT void ForStmt::set_cond(Expr *cond) { m_cond = cond; }
-
-LIB_EXPORT Expr *ForStmt::get_step() const { return m_step; }
-LIB_EXPORT void ForStmt::set_step(Expr *step) { m_step = step; }
-
-LIB_EXPORT Block *ForStmt::get_body() const { return m_body; }
-LIB_EXPORT void ForStmt::set_body(Block *body) { m_body = body; }
-
 LIB_EXPORT bool FormStmt::verify_impl(std::ostream &os) const {
   if (!m_expr) {
     os << "FormStmt: expr is NULL\n";
@@ -3828,21 +3585,6 @@ LIB_EXPORT FormStmt *FormStmt::clone_impl() const {
   return FormStmt::get(m_idx_ident, m_val_ident, expr, maxjobs, body);
 }
 
-LIB_EXPORT String FormStmt::get_idx_ident() const { return m_idx_ident; }
-LIB_EXPORT void FormStmt::set_idx_ident(String idx_ident) { m_idx_ident = idx_ident; }
-
-LIB_EXPORT String FormStmt::get_val_ident() const { return m_val_ident; }
-LIB_EXPORT void FormStmt::set_val_ident(String val_ident) { m_val_ident = val_ident; }
-
-LIB_EXPORT Expr *FormStmt::get_expr() const { return m_expr; }
-LIB_EXPORT void FormStmt::set_expr(Expr *expr) { m_expr = expr; }
-
-LIB_EXPORT Expr *FormStmt::get_maxjobs() const { return m_maxjobs; }
-LIB_EXPORT void FormStmt::set_maxjobs(Expr *maxjobs) { m_maxjobs = maxjobs; }
-
-LIB_EXPORT Stmt *FormStmt::get_body() const { return m_body; }
-LIB_EXPORT void FormStmt::set_body(Stmt *body) { m_body = body; }
-
 LIB_EXPORT bool ForeachStmt::verify_impl(std::ostream &os) const {
   if (!m_expr) {
     os << "ForeachStmt: expr is NULL\n";
@@ -3902,18 +3644,6 @@ LIB_EXPORT ForeachStmt *ForeachStmt::clone_impl() const {
   return ForeachStmt::get(m_idx_ident, m_val_ident, expr, body);
 }
 
-LIB_EXPORT String ForeachStmt::get_idx_ident() const { return m_idx_ident; }
-LIB_EXPORT void ForeachStmt::set_idx_ident(String idx_ident) { m_idx_ident = idx_ident; }
-
-LIB_EXPORT String ForeachStmt::get_val_ident() const { return m_val_ident; }
-LIB_EXPORT void ForeachStmt::set_val_ident(String val_ident) { m_val_ident = val_ident; }
-
-LIB_EXPORT Expr *ForeachStmt::get_expr() const { return m_expr; }
-LIB_EXPORT void ForeachStmt::set_expr(Expr *expr) { m_expr = expr; }
-
-LIB_EXPORT Stmt *ForeachStmt::get_body() const { return m_body; }
-LIB_EXPORT void ForeachStmt::set_body(Stmt *body) { m_body = body; }
-
 LIB_EXPORT bool BreakStmt::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
@@ -3972,9 +3702,6 @@ LIB_EXPORT ReturnStmt *ReturnStmt::clone_impl() const {
   Expr *value = m_value ? m_value->clone() : nullptr;
   return ReturnStmt::get(value);
 }
-
-LIB_EXPORT Expr *ReturnStmt::get_value() const { return m_value; }
-LIB_EXPORT void ReturnStmt::set_value(Expr *value) { m_value = value; }
 
 LIB_EXPORT bool ReturnIfStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
@@ -4037,12 +3764,6 @@ LIB_EXPORT ReturnIfStmt *ReturnIfStmt::clone_impl() const {
   return ReturnIfStmt::get(cond, value);
 }
 
-LIB_EXPORT Expr *ReturnIfStmt::get_cond() const { return m_cond; }
-LIB_EXPORT void ReturnIfStmt::set_cond(Expr *cond) { m_cond = cond; }
-
-LIB_EXPORT Expr *ReturnIfStmt::get_value() const { return m_value; }
-LIB_EXPORT void ReturnIfStmt::set_value(Expr *value) { m_value = value; }
-
 LIB_EXPORT bool RetZStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "RetZStmt: cond is NULL\n";
@@ -4104,12 +3825,6 @@ LIB_EXPORT RetZStmt *RetZStmt::clone_impl() const {
   return RetZStmt::get(cond, value);
 }
 
-LIB_EXPORT Expr *RetZStmt::get_cond() const { return m_cond; }
-LIB_EXPORT void RetZStmt::set_cond(Expr *cond) { m_cond = cond; }
-
-LIB_EXPORT Expr *RetZStmt::get_value() const { return m_value; }
-LIB_EXPORT void RetZStmt::set_value(Expr *value) { m_value = value; }
-
 LIB_EXPORT bool RetVStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "RetVStmt: cond is NULL\n";
@@ -4142,9 +3857,6 @@ LIB_EXPORT RetVStmt *RetVStmt::clone_impl() const {
 
   return RetVStmt::get(cond);
 }
-
-LIB_EXPORT Expr *RetVStmt::get_cond() const { return m_cond; }
-LIB_EXPORT void RetVStmt::set_cond(Expr *cond) { m_cond = cond; }
 
 LIB_EXPORT bool CaseStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
@@ -4204,12 +3916,6 @@ LIB_EXPORT CaseStmt *CaseStmt::clone_impl() const {
 
   return CaseStmt::get(cond, body);
 }
-
-LIB_EXPORT Expr *CaseStmt::get_cond() const { return m_cond; }
-LIB_EXPORT void CaseStmt::set_cond(Expr *cond) { m_cond = cond; }
-
-LIB_EXPORT Stmt *CaseStmt::get_body() const { return m_body; }
-LIB_EXPORT void CaseStmt::set_body(Stmt *body) { m_body = body; }
 
 LIB_EXPORT bool SwitchStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
@@ -4289,19 +3995,11 @@ LIB_EXPORT SwitchStmt *SwitchStmt::clone_impl() const {
   return SwitchStmt::get(cond, m_cases, _default);
 }
 
-LIB_EXPORT Expr *SwitchStmt::get_cond() const { return m_cond; }
-LIB_EXPORT void SwitchStmt::set_cond(Expr *cond) { m_cond = cond; }
-
-LIB_EXPORT SwitchCases &SwitchStmt::get_cases() { return m_cases; }
-LIB_EXPORT const SwitchCases &SwitchStmt::get_cases() const { return m_cases; }
 LIB_EXPORT void SwitchStmt::add_case(CaseStmt *item) { m_cases.push_back(item); }
 LIB_EXPORT void SwitchStmt::clear_cases() { m_cases.clear(); }
 LIB_EXPORT void SwitchStmt::remove_case(CaseStmt *item) {
   std::erase_if(m_cases, [item](auto &field) { return field == item; });
 }
-
-LIB_EXPORT Stmt *SwitchStmt::get_default() const { return m_default; }
-LIB_EXPORT void SwitchStmt::set_default(Stmt *item) { m_default = item; }
 
 LIB_EXPORT bool TypedefDecl::verify_impl(std::ostream &os) const {
   if (!m_type) {
@@ -4380,14 +4078,6 @@ LIB_EXPORT FnDecl *FnDecl::clone_impl() const {
   }
 }
 
-LIB_EXPORT FuncTy *FnDecl::get_type() const {
-  if (!m_type) {
-    return nullptr;
-  }
-
-  return m_type->as<FuncTy>();
-}
-
 LIB_EXPORT bool FnDef::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "FnDef: type is NULL\n";
@@ -4457,15 +4147,6 @@ LIB_EXPORT FnDef *FnDef::clone_impl() const {
   return FnDef::get(decl, body, precond, postcond);
 }
 
-LIB_EXPORT Stmt *FnDef::get_body() const { return m_body; }
-LIB_EXPORT void FnDef::set_body(Stmt *body) { m_body = body; }
-
-LIB_EXPORT Expr *FnDef::get_precond() const { return m_precond; }
-LIB_EXPORT void FnDef::set_precond(Expr *precond) { m_precond = precond; }
-
-LIB_EXPORT Expr *FnDef::get_postcond() const { return m_postcond; }
-LIB_EXPORT void FnDef::set_postcond(Expr *postcond) { m_postcond = postcond; }
-
 LIB_EXPORT bool CompositeField::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "CompositeField: type is NULL\n";
@@ -4520,9 +4201,6 @@ LIB_EXPORT CompositeField *CompositeField::clone_impl() const {
 
   return CompositeField::get(m_name, type, value);
 }
-
-LIB_EXPORT Expr *CompositeField::get_value() const { return m_value; }
-LIB_EXPORT void CompositeField::set_value(Expr *value) { m_value = value; }
 
 LIB_EXPORT bool StructDef::verify_impl(std::ostream &os) const {
   for (auto item : m_methods) {
@@ -4657,9 +4335,6 @@ LIB_EXPORT StructDef *StructDef::clone_impl() const {
   return StructDef::get(m_name, static_cast<StructTy *>(type), fields, methods, static_methods);
 }
 
-LIB_EXPORT StructTy *StructDef::get_type() const { return static_cast<StructTy *>(m_type); }
-
-LIB_EXPORT StructDefMethods &StructDef::get_methods() { return m_methods; }
 LIB_EXPORT void StructDef::add_method(FnDecl *item) { m_methods.push_back(item); }
 LIB_EXPORT void StructDef::add_methods(std::initializer_list<FnDecl *> items) {
   m_methods.insert(m_methods.end(), items.begin(), items.end());
@@ -4669,7 +4344,6 @@ LIB_EXPORT void StructDef::remove_method(FnDecl *item) {
   std::erase_if(m_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT StructDefStaticMethods &StructDef::get_static_methods() { return m_static_methods; }
 LIB_EXPORT void StructDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
 LIB_EXPORT void StructDef::add_static_methods(std::initializer_list<FnDecl *> items) {
   m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
@@ -4679,7 +4353,6 @@ LIB_EXPORT void StructDef::remove_static_method(FnDecl *item) {
   std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT StructDefFields &StructDef::get_fields() { return m_fields; }
 LIB_EXPORT void StructDef::add_field(CompositeField *item) { m_fields.push_back(item); }
 LIB_EXPORT void StructDef::add_fields(std::initializer_list<CompositeField *> items) {
   m_fields.insert(m_fields.end(), items.begin(), items.end());
@@ -4822,9 +4495,6 @@ LIB_EXPORT GroupDef *GroupDef::clone_impl() const {
   return GroupDef::get(m_name, static_cast<GroupTy *>(type), fields, methods, static_methods);
 }
 
-LIB_EXPORT GroupTy *GroupDef::get_type() const { return static_cast<GroupTy *>(m_type); }
-
-LIB_EXPORT GroupDefMethods &GroupDef::get_methods() { return m_methods; }
 LIB_EXPORT void GroupDef::add_method(FnDecl *item) { m_methods.push_back(item); }
 LIB_EXPORT void GroupDef::add_methods(std::initializer_list<FnDecl *> items) {
   m_methods.insert(m_methods.end(), items.begin(), items.end());
@@ -4834,7 +4504,6 @@ LIB_EXPORT void GroupDef::remove_method(FnDecl *item) {
   std::erase_if(m_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT GroupDefStaticMethods &GroupDef::get_static_methods() { return m_static_methods; }
 LIB_EXPORT void GroupDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
 LIB_EXPORT void GroupDef::add_static_methods(std::initializer_list<FnDecl *> items) {
   m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
@@ -4844,7 +4513,6 @@ LIB_EXPORT void GroupDef::remove_static_method(FnDecl *item) {
   std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT GroupDefFields &GroupDef::get_fields() { return m_fields; }
 LIB_EXPORT void GroupDef::add_field(CompositeField *item) { m_fields.push_back(item); }
 LIB_EXPORT void GroupDef::add_fields(std::initializer_list<CompositeField *> items) {
   m_fields.insert(m_fields.end(), items.begin(), items.end());
@@ -4987,9 +4655,6 @@ LIB_EXPORT RegionDef *RegionDef::clone_impl() const {
   return RegionDef::get(m_name, static_cast<RegionTy *>(type), fields, methods, static_methods);
 }
 
-LIB_EXPORT RegionTy *RegionDef::get_type() const { return static_cast<RegionTy *>(m_type); }
-
-LIB_EXPORT RegionDefMethods &RegionDef::get_methods() { return m_methods; }
 LIB_EXPORT void RegionDef::add_method(FnDecl *item) { m_methods.push_back(item); }
 LIB_EXPORT void RegionDef::add_methods(std::initializer_list<FnDecl *> items) {
   m_methods.insert(m_methods.end(), items.begin(), items.end());
@@ -4999,7 +4664,6 @@ LIB_EXPORT void RegionDef::remove_method(FnDecl *item) {
   std::erase_if(m_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT RegionDefStaticMethods &RegionDef::get_static_methods() { return m_static_methods; }
 LIB_EXPORT void RegionDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
 LIB_EXPORT void RegionDef::add_static_methods(std::initializer_list<FnDecl *> items) {
   m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
@@ -5009,7 +4673,6 @@ LIB_EXPORT void RegionDef::remove_static_method(FnDecl *item) {
   std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT RegionDefFields &RegionDef::get_fields() { return m_fields; }
 LIB_EXPORT void RegionDef::add_field(CompositeField *item) { m_fields.push_back(item); }
 LIB_EXPORT void RegionDef::add_fields(std::initializer_list<CompositeField *> items) {
   m_fields.insert(m_fields.end(), items.begin(), items.end());
@@ -5152,9 +4815,6 @@ LIB_EXPORT UnionDef *UnionDef::clone_impl() const {
   return UnionDef::get(m_name, static_cast<UnionTy *>(type), fields, methods, static_methods);
 }
 
-LIB_EXPORT UnionTy *UnionDef::get_type() const { return static_cast<UnionTy *>(m_type); }
-
-LIB_EXPORT UnionDefMethods &UnionDef::get_methods() { return m_methods; }
 LIB_EXPORT void UnionDef::add_method(FnDecl *item) { m_methods.push_back(item); }
 LIB_EXPORT void UnionDef::add_methods(std::initializer_list<FnDecl *> items) {
   m_methods.insert(m_methods.end(), items.begin(), items.end());
@@ -5164,7 +4824,6 @@ LIB_EXPORT void UnionDef::remove_method(FnDecl *item) {
   std::erase_if(m_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT UnionDefStaticMethods &UnionDef::get_static_methods() { return m_static_methods; }
 LIB_EXPORT void UnionDef::add_static_method(FnDecl *item) { m_static_methods.push_back(item); }
 LIB_EXPORT void UnionDef::add_static_methods(std::initializer_list<FnDecl *> items) {
   m_static_methods.insert(m_static_methods.end(), items.begin(), items.end());
@@ -5174,7 +4833,6 @@ LIB_EXPORT void UnionDef::remove_static_method(FnDecl *item) {
   std::erase_if(m_static_methods, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT UnionDefFields &UnionDef::get_fields() { return m_fields; }
 LIB_EXPORT void UnionDef::add_field(CompositeField *item) { m_fields.push_back(item); }
 LIB_EXPORT void UnionDef::add_fields(std::initializer_list<CompositeField *> items) {
   m_fields.insert(m_fields.end(), items.begin(), items.end());
@@ -5225,8 +4883,6 @@ LIB_EXPORT void EnumDef::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT EnumTy *EnumDef::get_type() const { return static_cast<EnumTy *>(m_type); }
-
 LIB_EXPORT EnumDef *EnumDef::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
 
@@ -5242,8 +4898,6 @@ LIB_EXPORT EnumDef *EnumDef::clone_impl() const {
   return EnumDef::get(m_name, static_cast<EnumTy *>(type), items);
 }
 
-LIB_EXPORT const EnumDefItems &EnumDef::get_items() { return m_items; }
-LIB_EXPORT const EnumDefItems &EnumDef::get_items() const { return m_items; }
 LIB_EXPORT void EnumDef::add_item(EnumItem item) { m_items.push_back(item); }
 LIB_EXPORT void EnumDef::add_items(std::initializer_list<EnumItem> items) {
   m_items.insert(m_items.end(), items.begin(), items.end());
@@ -5296,10 +4950,6 @@ LIB_EXPORT SubsystemDecl *SubsystemDecl::clone_impl() const {
   return SubsystemDecl::get(m_name, body, m_deps);
 }
 
-LIB_EXPORT Block *SubsystemDecl::get_body() const { return m_body; }
-LIB_EXPORT void SubsystemDecl::set_body(Block *body) { m_body = body; }
-
-LIB_EXPORT const SubsystemDeps &SubsystemDecl::get_deps() const { return m_deps; }
 LIB_EXPORT void SubsystemDecl::add_dep(qparse::String dep) { m_deps.insert(dep); }
 LIB_EXPORT void qparse::SubsystemDecl::add_deps(const qparse::SubsystemDeps &deps) {
   m_deps.insert(deps.begin(), deps.end());
@@ -5346,14 +4996,8 @@ LIB_EXPORT void ExportDecl::print_impl(std::ostream &os, bool debug) const {
 
 LIB_EXPORT ExportDecl *ExportDecl::clone_impl() const {
   StmtList *body = m_body ? m_body->clone() : nullptr;
-  return ExportDecl::get(body, m_lang);
+  return ExportDecl::get(body, m_abi_name);
 }
-
-LIB_EXPORT StmtList *ExportDecl::get_body() const { return m_body; }
-LIB_EXPORT void ExportDecl::set_body(StmtList *body) { m_body = body; }
-
-LIB_EXPORT ExportLang ExportDecl::get_lang() const { return m_lang; }
-LIB_EXPORT void ExportDecl::set_lang(ExportLang lang) { m_lang = lang; }
 
 ///=============================================================================
 

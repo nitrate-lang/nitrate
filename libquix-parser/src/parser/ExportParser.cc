@@ -39,24 +39,13 @@ using namespace qparse::parser;
 bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
   qlex_tok_t tok = qlex_peek(rd);
 
-  ExportLang langType = ExportLang::Default;
+  String abiName;
 
   if (tok.is(qText)) {
     qlex_next(rd);
 
-    std::string lang = tok.as_string(rd);
-
-    std::transform(lang.begin(), lang.end(), lang.begin(), ::tolower);
-
-    if (lang == "c") {
-      langType = ExportLang::C;
-    } else if (lang == "c++" || lang == "cxx") {
-      langType = ExportLang::CXX;
-    } else if (lang == "d" || lang == "dlang") {
-      langType = ExportLang::DLang;
-    } else {
-      syntax(tok, "Unrecognized export language: %s", lang.c_str());
-    }
+    abiName = tok.as_string(rd);
+    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
 
     tok = qlex_peek(rd);
   }
@@ -66,7 +55,7 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
     if (!parse(job, rd, &block, true)) return false;
 
     StmtList *stmts = StmtList::get(block->get_items());
-    *node = ExportDecl::get(stmts, langType);
+    *node = ExportDecl::get(stmts, abiName);
     return true;
   }
 
@@ -78,7 +67,7 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   StmtList *stmts = StmtList::get(block->get_items());
 
-  *node = ExportDecl::get(stmts, langType);
+  *node = ExportDecl::get(stmts, abiName);
 
   return true;
 }

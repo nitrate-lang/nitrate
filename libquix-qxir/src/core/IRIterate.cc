@@ -114,8 +114,8 @@ namespace qxir::detail {
       case QIR_NODE_IDENT: {
         break;
       }
-      case QIR_NODE_GLOBAL: {
-        children.push_back(&base->as<Global>()->m_value);
+      case QIR_NODE_EXPORT: {
+        children.push_back(&base->as<Export>()->m_value);
         break;
       }
       case QIR_NODE_RET: {
@@ -445,7 +445,7 @@ namespace qxir::detail {
       }
     };
 
-    const IterFn asyncfn = [&asyncfn](Expr *n, IterCallback cb, ChildSelect cs) {
+    const IterFn asyncfn = [](Expr *n, IterCallback cb, ChildSelect cs) {
       std::queue<Expr *> q;
       q.push(n);
 
@@ -514,7 +514,7 @@ namespace qxir::detail {
       }
     };
 
-    const IterFn asyncfn = [&asyncfn](Expr *n, IterCallback cb, ChildSelect cs) {
+    const IterFn asyncfn = [](Expr *n, IterCallback cb, ChildSelect cs) {
       std::queue<std::pair<Expr *, Expr *>> q;
       q.push({nullptr, n});
 
