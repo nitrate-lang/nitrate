@@ -161,6 +161,384 @@ CPP_EXPORT qxir::Type *qxir::Expr::getType() noexcept {
   return static_cast<Type *>(qxir_infer(this));
 }
 
+CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
+  qxir_ty_t kind = getKind();
+
+  if (kind != other->getKind()) {
+    return false;
+  }
+
+  switch (kind) {
+    case QIR_NODE_BINEXPR: {
+      auto a = as<BinExpr>();
+      auto b = other->as<BinExpr>();
+      if (a->m_op != b->m_op) {
+        return false;
+      }
+      return a->m_lhs->cmp_eq(b->m_lhs) && a->m_rhs->cmp_eq(b->m_rhs);
+    }
+    case QIR_NODE_UNEXPR: {
+      auto a = as<UnExpr>();
+      auto b = other->as<UnExpr>();
+      if (a->m_op != b->m_op) {
+        return false;
+      }
+      return a->m_expr->cmp_eq(b->m_expr);
+    }
+    case QIR_NODE_POST_UNEXPR: {
+      auto a = as<PostUnExpr>();
+      auto b = other->as<PostUnExpr>();
+      if (a->m_op != b->m_op) {
+        return false;
+      }
+      return a->m_expr->cmp_eq(b->m_expr);
+    }
+    case QIR_NODE_INT: {
+      return as<Int>()->getValue() == other->as<Int>()->getValue();
+    }
+    case QIR_NODE_FLOAT: {
+      return as<Float>()->getValue() == other->as<Float>()->getValue();
+    }
+    case QIR_NODE_STRING: {
+      return as<String>()->m_data == other->as<String>()->m_data;
+    }
+    case QIR_NODE_LIST: {
+      auto a = as<List>();
+      auto b = other->as<List>();
+      if (a->m_items.size() != b->m_items.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < a->m_items.size(); i++) {
+        if (!a->m_items[i]->cmp_eq(b->m_items[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case QIR_NODE_ALLOC: {
+      return as<Alloc>()->m_type->cmp_eq(other->as<Alloc>()->m_type);
+    }
+    case QIR_NODE_CALL: {
+      auto a = as<Call>();
+      auto b = other->as<Call>();
+      if (!a->m_fn->cmp_eq(b->m_fn)) {
+        return false;
+      }
+      if (a->m_args.size() != b->m_args.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < a->m_args.size(); i++) {
+        if (!a->m_args[i]->cmp_eq(b->m_args[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case QIR_NODE_SEQ: {
+      auto a = as<Seq>();
+      auto b = other->as<Seq>();
+      if (a->m_items.size() != b->m_items.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < a->m_items.size(); i++) {
+        if (!a->m_items[i]->cmp_eq(b->m_items[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case QIR_NODE_ASYNC: {
+      auto a = as<Async>();
+      auto b = other->as<Async>();
+      if (a->m_items.size() != b->m_items.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < a->m_items.size(); i++) {
+        if (!a->m_items[i]->cmp_eq(b->m_items[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case QIR_NODE_INDEX: {
+      auto a = as<Index>();
+      auto b = other->as<Index>();
+      if (!a->m_expr->cmp_eq(b->m_expr)) {
+        return false;
+      }
+      if (!a->m_index->cmp_eq(b->m_index)) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_IDENT: {
+      return as<Ident>()->m_name == other->as<Ident>()->m_name;
+    }
+    case QIR_NODE_EXPORT: {
+      auto a = as<Export>();
+      auto b = other->as<Export>();
+      if (a->m_abi_name != b->m_abi_name) {
+        return false;
+      }
+      if (a->m_name != b->m_name) {
+        return false;
+      }
+      return a->m_value->cmp_eq(b->m_value);
+    }
+    case QIR_NODE_LOCAL: {
+      auto a = as<Local>();
+      auto b = other->as<Local>();
+      if (a->m_name != b->m_name) {
+        return false;
+      }
+      return a->m_value->cmp_eq(b->m_value);
+    }
+    case QIR_NODE_RET: {
+      return as<Ret>()->m_expr->cmp_eq(other->as<Ret>()->m_expr);
+    }
+    case QIR_NODE_BRK: {
+      return true;
+    }
+    case QIR_NODE_CONT: {
+      return true;
+    }
+    case QIR_NODE_IF: {
+      auto a = as<If>();
+      auto b = other->as<If>();
+      if (!a->m_cond->cmp_eq(b->m_cond)) {
+        return false;
+      }
+      if (!a->m_then->cmp_eq(b->m_then)) {
+        return false;
+      }
+      if (!a->m_else->cmp_eq(b->m_else)) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_WHILE: {
+      auto a = as<While>();
+      auto b = other->as<While>();
+      if (!a->m_cond->cmp_eq(b->m_cond)) {
+        return false;
+      }
+      if (!a->m_body->cmp_eq(b->m_body)) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_FOR: {
+      auto a = as<For>();
+      auto b = other->as<For>();
+      if (!a->m_init->cmp_eq(b->m_init)) {
+        return false;
+      }
+      if (!a->m_cond->cmp_eq(b->m_cond)) {
+        return false;
+      }
+      if (!a->m_step->cmp_eq(b->m_step)) {
+        return false;
+      }
+      if (!a->m_body->cmp_eq(b->m_body)) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_FORM: {
+      auto a = as<Form>();
+      auto b = other->as<Form>();
+      if (!a->m_maxjobs->cmp_eq(b->m_maxjobs)) {
+        return false;
+      }
+      if (a->m_idx_ident != b->m_idx_ident) {
+        return false;
+      }
+      if (a->m_val_ident != b->m_val_ident) {
+        return false;
+      }
+      if (!a->m_expr->cmp_eq(b->m_expr)) {
+        return false;
+      }
+      if (!a->m_body->cmp_eq(b->m_body)) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_FOREACH: {
+      auto a = as<Foreach>();
+      auto b = other->as<Foreach>();
+      if (a->m_idx_ident != b->m_idx_ident) {
+        return false;
+      }
+      if (a->m_val_ident != b->m_val_ident) {
+        return false;
+      }
+      if (!a->m_expr->cmp_eq(b->m_expr)) {
+        return false;
+      }
+      if (!a->m_body->cmp_eq(b->m_body)) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_CASE: {
+      auto a = as<Case>();
+      auto b = other->as<Case>();
+      if (!a->m_cond->cmp_eq(b->m_cond)) {
+        return false;
+      }
+      if (!a->m_body->cmp_eq(b->m_body)) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_SWITCH: {
+      auto a = as<Switch>();
+      auto b = other->as<Switch>();
+      if (!a->m_cond->cmp_eq(b->m_cond)) {
+        return false;
+      }
+      if (!a->m_default->cmp_eq(b->m_default)) {
+        return false;
+      }
+      if (a->m_cases.size() != b->m_cases.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < a->m_cases.size(); i++) {
+        if (!a->m_cases[i]->cmp_eq(b->m_cases[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case QIR_NODE_FN: {
+      auto a = as<Fn>();
+      auto b = other->as<Fn>();
+      if (a->m_name != b->m_name) {
+        return false;
+      }
+      if (a->m_params.size() != b->m_params.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < a->m_params.size(); i++) {
+        if (!a->m_params[i]->cmp_eq(b->m_params[i])) {
+          return false;
+        }
+      }
+      if (!a->m_body->cmp_eq(b->m_body)) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_ASM: {
+      qcore_implement("Expr::cmp_eq for QIR_NODE_ASM");
+      break;
+    }
+    case QIR_NODE_U1_TY:
+    case QIR_NODE_U8_TY:
+    case QIR_NODE_U16_TY:
+    case QIR_NODE_U32_TY:
+    case QIR_NODE_U64_TY:
+    case QIR_NODE_U128_TY:
+    case QIR_NODE_I8_TY:
+    case QIR_NODE_I16_TY:
+    case QIR_NODE_I32_TY:
+    case QIR_NODE_I64_TY:
+    case QIR_NODE_I128_TY:
+    case QIR_NODE_F16_TY:
+    case QIR_NODE_F32_TY:
+    case QIR_NODE_F64_TY:
+    case QIR_NODE_F128_TY:
+    case QIR_NODE_VOID_TY:
+    case QIR_NODE_STRING_TY:
+      return true;
+    case QIR_NODE_PTR_TY: {
+      return as<PtrTy>()->m_pointee->cmp_eq(other->as<PtrTy>()->m_pointee);
+    }
+    case QIR_NODE_OPAQUE_TY: {
+      return as<OpaqueTy>()->m_name == other->as<OpaqueTy>()->m_name;
+    }
+    case QIR_NODE_STRUCT_TY: {
+      auto a = as<StructTy>();
+      auto b = other->as<StructTy>();
+      if (a->m_fields.size() != b->m_fields.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < a->m_fields.size(); i++) {
+        if (!a->m_fields[i]->cmp_eq(b->m_fields[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case QIR_NODE_UNION_TY: {
+      auto a = as<UnionTy>();
+      auto b = other->as<UnionTy>();
+      if (a->m_fields.size() != b->m_fields.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < a->m_fields.size(); i++) {
+        if (!a->m_fields[i]->cmp_eq(b->m_fields[i])) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case QIR_NODE_ARRAY_TY: {
+      auto a = as<ArrayTy>();
+      auto b = other->as<ArrayTy>();
+      if (!a->m_element->cmp_eq(b->m_element)) {
+        return false;
+      }
+      if (!a->m_size->cmp_eq(b->m_size)) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_LIST_TY: {
+      return as<ListTy>()->m_element->cmp_eq(other->as<ListTy>()->m_element);
+    }
+    case QIR_NODE_INTRIN_TY: {
+      return as<IntrinTy>()->m_name == other->as<IntrinTy>()->m_name;
+    }
+    case QIR_NODE_FN_TY: {
+      auto a = as<FnTy>();
+      auto b = other->as<FnTy>();
+      if (a->m_params.size() != b->m_params.size()) {
+        return false;
+      }
+      for (size_t i = 0; i < a->m_params.size(); i++) {
+        if (!a->m_params[i]->cmp_eq(b->m_params[i])) {
+          return false;
+        }
+      }
+      if (!a->m_return->cmp_eq(b->m_return)) {
+        return false;
+      }
+      if (a->m_attrs != b->m_attrs) {
+        return false;
+      }
+      return true;
+    }
+    case QIR_NODE_TMP: {
+      auto a = as<Tmp>();
+      auto b = other->as<Tmp>();
+      if (a->m_type != b->m_type) {
+        return false;
+      }
+      if (a->m_data.type() != b->m_data.type()) {
+        return false;
+      }
+
+      throw std::runtime_error("Expr::cmp_eq: attempt to compare fine structure of QIR_NODE_TMP");
+      break;
+    }
+    case QIR_NODE_BAD: {
+      return true;
+    }
+  }
+}
+
 CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> qxir::Expr::getLoc() const noexcept {
   qmodule_t *mod = getModule();
   if (mod == nullptr) {

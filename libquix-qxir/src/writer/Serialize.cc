@@ -230,7 +230,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QIR_NODE_SEQ: {
-      ss << "sequence {";
+      ss << "seq {";
       state.indent++;
       indent(ss, state);
       for (auto it = n->as<Seq>()->getItems().begin(); it != n->as<Seq>()->getItems().end(); ++it) {

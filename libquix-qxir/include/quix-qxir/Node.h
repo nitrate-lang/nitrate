@@ -239,6 +239,14 @@ namespace qxir {
     bool is(qxir_ty_t type) const noexcept;
 
     /**
+     * @brief Compare two nodes for equality.
+     * @param other The other node.
+     * @return true If the nodes are equivalent (deep comparison).
+     * @note This compare will be insensitive to metadata like module, source location, etc.
+     */
+    bool cmp_eq(const Expr *other) const;
+
+    /**
      * @brief Print the node to the output stream.
      * @param os The output stream.
      * @param isForDebug Whether to print the node for debugging.
@@ -630,17 +638,17 @@ namespace qxir {
 
     bool isNativeRepresentation() const noexcept { return m_data.m_u64 & FLAG_BIT; }
 
-    uint64_t getNativeRepresentation() noexcept {
+    uint64_t getNativeRepresentation() const noexcept {
       qcore_assert(isNativeRepresentation());
       return m_data.m_u64 & ~FLAG_BIT;
     }
 
-    std::string_view getStringRepresentation() noexcept {
+    std::string_view getStringRepresentation() const noexcept {
       qcore_assert(!isNativeRepresentation());
       return m_data.m_str;
     }
 
-    std::string getValue() noexcept {
+    std::string getValue() const noexcept {
       return isNativeRepresentation() ? std::to_string(getNativeRepresentation())
                                       : std::string(getStringRepresentation());
     }
@@ -666,17 +674,17 @@ namespace qxir {
 
     bool isNativeRepresentation() const noexcept { return std::holds_alternative<double>(m_data); }
 
-    double getNativeRepresentation() noexcept {
+    double getNativeRepresentation() const noexcept {
       qcore_assert(isNativeRepresentation());
       return std::get<double>(m_data);
     }
 
-    std::string_view getStringRepresentation() noexcept {
+    std::string_view getStringRepresentation() const noexcept {
       qcore_assert(!isNativeRepresentation());
       return std::get<const char *>(m_data);
     }
 
-    std::string getValue() noexcept {
+    std::string getValue() const noexcept {
       return isNativeRepresentation() ? std::to_string(getNativeRepresentation())
                                       : std::string(getStringRepresentation());
     }
@@ -740,14 +748,14 @@ namespace qxir {
   class Call final : public Expr {
     QCLASS_REFLECT()
 
-    Expr *m_fn;
+    FnTy *m_fn;
     CallArgs m_args;
 
   public:
-    Call(Expr *fn, const CallArgs &args) : Expr(QIR_NODE_CALL), m_fn(fn), m_args(args) {}
+    Call(FnTy *fn, const CallArgs &args) : Expr(QIR_NODE_CALL), m_fn(fn), m_args(args) {}
 
-    Expr *getFn() noexcept { return m_fn; }
-    Expr *setFn(Expr *fn) noexcept { return m_fn = fn; }
+    FnTy *getFn() noexcept { return m_fn; }
+    FnTy *setFn(FnTy *fn) noexcept { return m_fn = fn; }
 
     const CallArgs &getArgs() const noexcept { return m_args; }
     CallArgs &getArgs() noexcept { return m_args; }
@@ -808,9 +816,13 @@ namespace qxir {
     QCLASS_REFLECT()
 
     std::string_view m_name;
+    Expr *m_what;
 
   public:
-    Ident(std::string_view name) : Expr(QIR_NODE_IDENT), m_name(name) {}
+    Ident(std::string_view name, Expr *what) : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
+
+    Expr *getWhat() noexcept { return m_what; }
+    Expr *setWhat(Expr *what) noexcept { return m_what = what; }
 
     std::string_view getName() noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
@@ -846,7 +858,8 @@ namespace qxir {
     Expr *m_value;
 
   public:
-    Local(std::string_view name, Expr *value) : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value) {}
+    Local(std::string_view name, Expr *value)
+        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value) {}
 
     std::string_view getName() noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
@@ -854,7 +867,7 @@ namespace qxir {
     Expr *getValue() noexcept { return m_value; }
     Expr *setValue(Expr *value) noexcept { return m_value = value; }
   };
-  
+
   class Ret final : public Expr {
     QCLASS_REFLECT()
 

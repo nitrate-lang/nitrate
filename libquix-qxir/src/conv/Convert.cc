@@ -1342,6 +1342,28 @@ namespace qxir {
     /// TODO: region
 
     throw QError();
+
+    // IR struct type is a bit-packed structure composite; fields are nameless
+    // and are accessed by index. The QXIR region definition has named fields
+    // as well as embedded methods / metadata.
+    
+    /**
+     * 1. Create a vector of QXIR type fields.
+     * 2. Create a IR sequence items vector.
+     * 3. Iterate over the fields of the region definition.
+     * 3.1. Convert the field type to a qxir type.
+     * 3.2. Public the (field_name, field_index) to the global context
+     * 3.3. Add the field to the vector of fields.
+     * 4. Create a QXIR struct type with the vector of fields.
+     * 5. Iterate over the methods of the region definition.
+     * 5.1. Convert the method to a qxir function.
+     * 5.2. Append the IR function to the sequence items vector.
+     * 6. Iterate over the static methods of the region definition.
+     * 6.1. Convert the static method to a qxir function.
+     * 6.2. Append the IR function to the sequence items vector.
+     * 7. Create a QXIR SEQ node with the sequence items vector as well as the struct type.
+     * 8. Return the SEQ node.
+     */
   }
 
   static Expr *qconv_group(ConvState &s, const qparse::GroupDef *n) {
