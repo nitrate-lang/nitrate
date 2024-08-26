@@ -89,23 +89,9 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   (void)ec;
   (void)el;
 
-  switch (msg.type) {
-    case IssueClass::Debug:
-      ss << "debug";
-      break;
-    case IssueClass::Info:
-      ss << "info";
-      break;
-    case IssueClass::Warn:
-      ss << "warning";
-      break;
-    case IssueClass::Error:
-      ss << "error";
-      break;
-    case IssueClass::FatalError:
-      ss << "fatal error";
-      break;
-  }
+  std::array<const char *, 4> issue_classes = {"debug", "info", "warning", "error"};
+
+  ss << issue_classes[static_cast<size_t>(msg.type)];
 
   ss << ": " << msg.msg << " [" << issue_code_bimap.left.at(msg.code) << "]";
 

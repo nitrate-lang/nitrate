@@ -1873,25 +1873,22 @@ namespace qxir {
      *         with a default value of 1.
      */
 
-    auto init = qconv(s, n->get_init());
-    auto cond = qconv(s, n->get_cond());
-    auto step = qconv(s, n->get_step());
-    auto body = qconv(s, n->get_body());
+    qxir::Expr *init = nullptr, *cond, *step = nullptr, *body = nullptr;
 
-    if (!init) {
-      init = create<Int>(1);
+    if (n->get_init()) {
+      init = qconv(s, n->get_init());
     }
 
-    if (!cond) {
-      cond = create<Int>(1);  // infinite loop like 'for (;;) {}'
+    if (n->get_cond()) {
+      cond = qconv(s, n->get_cond());
     }
 
-    if (!step) {
-      step = create<Int>(1);
+    if (n->get_step()) {
+      step = qconv(s, n->get_step());
     }
 
-    if (!body) {
-      body = create<Int>(1);
+    if (n->get_body()) {
+      body = qconv(s, n->get_body());
     }
 
     return create<For>(init, cond, step, body);
