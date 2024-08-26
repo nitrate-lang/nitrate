@@ -64,7 +64,7 @@ static bool parse_decl(qparse_t &job, qlex_tok_t tok, qlex_t *rd,
   return true;
 }
 
-bool qparse::parser::parse_var(qparse_t &job, qlex_t *rd, StmtListItems &nodes) {
+bool qparse::parser::parse_var(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &nodes) {
   qlex_tok_t tok = qlex_next(rd);
 
   std::vector<std::pair<std::string, Type *>> decls;

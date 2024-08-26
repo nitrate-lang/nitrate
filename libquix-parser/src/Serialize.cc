@@ -814,12 +814,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_SLIST: {
-      OBJECT_BEGIN("SList");
-      OBJECT_ARRAY(n->as<StmtList>()->get_items());
-      OBJECT_END();
-      break;
-    }
     case QAST_NODE_EXPR_STMT: {
       OBJECT_BEGIN("EStmt");
       OBJECT_SUB(n->as<ExprStmt>()->get_expr());

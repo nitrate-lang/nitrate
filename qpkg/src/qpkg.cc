@@ -1205,6 +1205,8 @@ int run_dev_mode(
       return 1;
     }
 
+    qparse_conf_setopt(pconf, QPK_CRASHGUARD, QPV_OFF);
+
     qparse_t *ctx = qparse_new(lexer, pconf);
     if (!ctx) {
       qparse_conf_free(pconf);

@@ -109,27 +109,33 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
 
       switch (tok.as<qlex_key_t>()) {
         case qKVar: {
-          StmtListItems decls;
-          if (!parse_var(job, rd, decls)) {
+          std::vector<Stmt *> items;
+          if (!parse_var(job, rd, items)) {
             return false;
           }
-          for (auto &decl : decls) (*group)->add_item(decl);
+          for (auto &decl : items) {
+            (*group)->add_item(decl);
+          }
           break;
         }
         case qKLet: {
-          StmtListItems decls;
-          if (!parse_let(job, rd, decls)) {
+          std::vector<Stmt *> items;
+          if (!parse_let(job, rd, items)) {
             return false;
           }
-          for (auto &decl : decls) (*group)->add_item(decl);
+          for (auto &decl : items) {
+            (*group)->add_item(decl);
+          }
           break;
         }
         case qKConst: {
-          StmtListItems decls;
-          if (!parse_const(job, rd, decls)) {
+          std::vector<Stmt *> items;
+          if (!parse_const(job, rd, items)) {
             return false;
           }
-          for (auto &decl : decls) (*group)->add_item(decl);
+          for (auto &decl : items) {
+            (*group)->add_item(decl);
+          }
           break;
         }
         case qKEnum:

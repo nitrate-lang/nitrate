@@ -54,7 +54,7 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
     Block *block = nullptr;
     if (!parse(job, rd, &block, true)) return false;
 
-    StmtList *stmts = StmtList::get(block->get_items());
+    Block *stmts = Block::get(block->get_items());
     *node = ExportDecl::get(stmts, abiName);
     return true;
   }
@@ -65,7 +65,7 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
     return false;
   }
 
-  StmtList *stmts = StmtList::get(block->get_items());
+  Block *stmts = Block::get(block->get_items());
 
   *node = ExportDecl::get(stmts, abiName);
 

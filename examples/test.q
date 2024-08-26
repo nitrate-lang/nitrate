@@ -1,3 +1,1 @@
-type x = i32;
-type x = i32;
-type x = i32;
+let [i, v] = 00;

@@ -64,7 +64,7 @@ namespace qparse::parser {
   }
 }  // namespace qparse::parser
 
-bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, StmtListItems &nodes) {
+bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &nodes) {
   qlex_tok_t tok = qlex_next(rd);
 
   std::vector<std::pair<std::string, Type *>> decls;

@@ -2010,27 +2010,6 @@ namespace qxir {
     return create<Switch>(cond, std::move(cases), def);
   }
 
-  static Expr *qconv_slist(ConvState &s, const qparse::StmtList *n) {
-    /**
-     * @brief Convert a statement list to a qxir expression.
-     * @details This is a 1-to-1 conversion of the statement list.
-     */
-
-    SeqItems items;
-
-    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(s, *it);
-      if (!item) {
-        badtree(n, "qparse::StmtList::get_items() vector contains nullptr");
-        throw QError();
-      }
-
-      items.push_back(item);
-    }
-
-    return create<Seq>(std::move(items));
-  }
-
   static Expr *qconv_expr_stmt(ConvState &s, const qparse::ExprStmt *n) {
     /**
      * @brief Convert an expression inside a statement to a qxir expression.
@@ -2397,10 +2376,6 @@ static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
 
     case QAST_NODE_SWITCH:
       out = qconv_switch(s, n->as<qparse::SwitchStmt>());
-      break;
-
-    case QAST_NODE_SLIST:
-      out = qconv_slist(s, n->as<qparse::StmtList>());
       break;
 
     case QAST_NODE_EXPR_STMT:

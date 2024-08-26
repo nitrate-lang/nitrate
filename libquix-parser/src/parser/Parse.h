@@ -52,11 +52,11 @@ namespace qparse::parser {
 
   bool parse_pub(qparse_t &job, qlex_t *rd, Stmt **node);
 
-  bool parse_let(qparse_t &job, qlex_t *rd, StmtListItems &node);
+  bool parse_let(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 
-  bool parse_const(qparse_t &job, qlex_t *rd, StmtListItems &node);
+  bool parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 
-  bool parse_var(qparse_t &job, qlex_t *rd, StmtListItems &node);
+  bool parse_var(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 
   bool parse_enum(qparse_t &job, qlex_t *rd, Stmt **node);
 

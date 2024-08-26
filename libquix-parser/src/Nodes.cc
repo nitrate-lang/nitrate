@@ -125,7 +125,6 @@ LIB_EXPORT const char *Node::type_name(qparse_ty_t type) {
       NAMEOF_ROW(TYPE_EXPR),
       NAMEOF_ROW(BLOCK),
       NAMEOF_ROW(VOLSTMT),
-      NAMEOF_ROW(SLIST),
       NAMEOF_ROW(CONST),
       NAMEOF_ROW(VAR),
       NAMEOF_ROW(LET),
@@ -229,7 +228,6 @@ LIB_EXPORT uint32_t Node::this_sizeof() const {
       SIZEOF_ROW(TypeExpr),
       SIZEOF_ROW(Block),
       SIZEOF_ROW(VolStmt),
-      SIZEOF_ROW(StmtList),
       SIZEOF_ROW(ConstDecl),
       SIZEOF_ROW(VarDecl),
       SIZEOF_ROW(LetDecl),
@@ -335,7 +333,6 @@ LIB_EXPORT qparse_ty_t Node::this_typeid() const {
       TYPEID_ROW(TypeExpr, TYPE_EXPR),
       TYPEID_ROW(Block, BLOCK),
       TYPEID_ROW(VolStmt, VOLSTMT),
-      TYPEID_ROW(StmtList, SLIST),
       TYPEID_ROW(ConstDecl, CONST),
       TYPEID_ROW(VarDecl, VAR),
       TYPEID_ROW(LetDecl, LET),
@@ -2976,22 +2973,6 @@ LIB_EXPORT void Block::remove_item(Stmt *item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool StmtList::verify_impl(std::ostream &os) const {
-  for (auto item : m_items) {
-    if (!item) {
-      os << "StmtList: item is NULL\n";
-      return false;
-    }
-
-    if (!item->verify(os)) {
-      os << "StmtList: item is invalid\n";
-      return false;
-    }
-  }
-
-  return true;
-}
-
 LIB_EXPORT bool VolStmt::verify_impl(std::ostream &os) const {
   if (!m_stmt) {
     os << "VolStmt: stmt is NULL\n";
@@ -3024,45 +3005,6 @@ LIB_EXPORT void VolStmt::print_impl(std::ostream &os, bool debug) const {
 LIB_EXPORT VolStmt *VolStmt::clone_impl() const {
   Stmt *stmt = m_stmt ? m_stmt->clone() : nullptr;
   return VolStmt::get(stmt);
-}
-
-LIB_EXPORT void StmtList::canonicalize_impl() {
-  for (auto item : m_items) {
-    if (item) {
-      item->canonicalize();
-    }
-  }
-}
-
-LIB_EXPORT void StmtList::print_impl(std::ostream &os, bool debug) const {
-  for (auto item : m_items) {
-    if (item) {
-      item->print(os, debug);
-    } else {
-      os << "?";
-    }
-
-    os << "\n";
-  }
-}
-
-LIB_EXPORT StmtList *StmtList::clone_impl() const {
-  StmtListItems items;
-  for (auto item : m_items) {
-    if (item) {
-      items.push_back(item->clone());
-    } else {
-      items.push_back(nullptr);
-    }
-  }
-
-  return StmtList::get(items);
-}
-
-LIB_EXPORT void StmtList::add_item(Stmt *item) { m_items.push_back(item); }
-LIB_EXPORT void StmtList::clear_items() { m_items.clear(); }
-LIB_EXPORT void StmtList::remove_item(Stmt *item) {
-  std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
 LIB_EXPORT bool ConstDecl::verify_impl(std::ostream &os) const {
@@ -3501,7 +3443,7 @@ LIB_EXPORT void ForStmt::print_impl(std::ostream &os, bool debug) const {
 }
 
 LIB_EXPORT ForStmt *ForStmt::clone_impl() const {
-  Stmt *init = m_init ? m_init->clone() : nullptr;
+  Expr *init = m_init ? m_init->clone() : nullptr;
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
   Expr *step = m_step ? m_step->clone() : nullptr;
   Block *body = m_body ? m_body->clone() : nullptr;
@@ -4999,7 +4941,7 @@ LIB_EXPORT void ExportDecl::print_impl(std::ostream &os, bool debug) const {
 }
 
 LIB_EXPORT ExportDecl *ExportDecl::clone_impl() const {
-  StmtList *body = m_body ? m_body->clone() : nullptr;
+  Block *body = m_body ? m_body->clone() : nullptr;
   return ExportDecl::get(body, m_abi_name);
 }
 
@@ -5277,9 +5219,6 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
       break;
     case QAST_NODE_EXPORT:
       node = ExportDecl::get();
-      break;
-    case QAST_NODE_SLIST:
-      node = StmtList::get();
       break;
     case QAST_NODE_EXPR_STMT:
       node = ExprStmt::get();

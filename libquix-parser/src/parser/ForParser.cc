@@ -38,8 +38,7 @@ using namespace qparse::parser;
 using namespace qparse::diag;
 
 bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
-  Stmt *x0 = nullptr;
-  Expr *x1 = nullptr, *x2 = nullptr;
+  Expr *x0 = nullptr, *x1 = nullptr, *x2 = nullptr;
 
   qlex_tok_t tok = qlex_peek(rd);
   if (tok.is<qPuncLPar>()) {
@@ -48,18 +47,20 @@ bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     if (tok.is<qKLet>()) {
       qlex_next(rd);
-      StmtListItems let_node;
+      std::vector<Stmt *> let_node;
       if (!parse_let(job, rd, let_node)) {
         syntax(tok, "Failed to parse let statement in for loop");
       }
 
-      x0 = StmtList::get(let_node);
+      if (let_node.size() != 1) {
+        syntax(tok, "Expected let statement to have exactly one declaration");
+      } else {
+        x0 = StmtExpr::get(let_node[0]);
+      }
     } else {
-      Expr *x0_tmp = nullptr;
-      if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0_tmp)) {
+      if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0)) {
         syntax(tok, "Failed to parse for loop initializer");
       }
-      x0 = ExprStmt::get(x0_tmp);
 
       tok = qlex_next(rd);
       if (!tok.is<qPuncSemi>()) {
@@ -107,18 +108,20 @@ bool qparse::parser::parse_for(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     if (tok.is<qKLet>()) {
       qlex_next(rd);
-      StmtListItems let_node;
+      std::vector<Stmt *> let_node;
       if (!parse_let(job, rd, let_node)) {
         syntax(tok, "Failed to parse let statement in for loop");
       }
 
-      x0 = StmtList::get(let_node);
+      if (let_node.size() != 1) {
+        syntax(tok, "Expected let statement to have exactly one declaration");
+      } else {
+        x0 = StmtExpr::get(let_node[0]);
+      }
     } else {
-      Expr *x0_tmp = nullptr;
-      if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0_tmp)) {
+      if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &x0)) {
         return false;
       }
-      x0 = ExprStmt::get(x0_tmp);
 
       tok = qlex_next(rd);
       if (!tok.is<qPuncSemi>()) {

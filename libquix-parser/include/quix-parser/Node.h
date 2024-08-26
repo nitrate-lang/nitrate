@@ -135,12 +135,11 @@ typedef enum qparse_ty_t {
   QAST_NODE_FOREACH = 715,
   QAST_NODE_CASE = 716,
   QAST_NODE_SWITCH = 717,
-  QAST_NODE_SLIST = 718,
   QAST_NODE_EXPR_STMT = 719,
   QAST_NODE_VOLSTMT = 720,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 91
+#define QAST_NODE_COUNT 90
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -1387,25 +1386,6 @@ namespace qparse {
     PNODE_IMPL_CORE(VolStmt)
   };
 
-  typedef std::vector<Stmt *, Arena<Stmt *>> StmtListItems;
-  class StmtList : public Stmt {
-  protected:
-    StmtListItems m_items;
-
-  public:
-    StmtList(std::initializer_list<Stmt *> items = {}) : m_items(items) {}
-    StmtList(const StmtListItems &items) : m_items(items) {}
-
-    StmtListItems &get_items() { return m_items; }
-    const StmtListItems &get_items() const { return m_items; }
-    void add_item(Stmt *item);
-    void add_items(std::initializer_list<Stmt *> items);
-    void clear_items();
-    void remove_item(Stmt *item);
-
-    PNODE_IMPL_CORE(StmtList)
-  };
-
   class ConstDecl : public Decl {
   protected:
     Expr *m_value;
@@ -1514,17 +1494,17 @@ namespace qparse {
 
   class ForStmt : public FlowStmt {
   protected:
-    Stmt *m_init;
+    Expr *m_init;
     Expr *m_cond;
     Expr *m_step;
     Block *m_body;
 
   public:
-    ForStmt(Stmt *init = nullptr, Expr *cond = nullptr, Expr *step = nullptr, Block *body = nullptr)
+    ForStmt(Expr *init = nullptr, Expr *cond = nullptr, Expr *step = nullptr, Block *body = nullptr)
         : m_init(init), m_cond(cond), m_step(step), m_body(body) {}
 
-    Stmt *get_init() const { return m_init; }
-    void set_init(Stmt *init) { m_init = init; }
+    Expr *get_init() const { return m_init; }
+    void set_init(Expr *init) { m_init = init; }
 
     Expr *get_cond() const { return m_cond; }
     void set_cond(Expr *cond) { m_cond = cond; }
@@ -2040,17 +2020,17 @@ namespace qparse {
 
   class ExportDecl : public Decl {
   protected:
-    StmtList *m_body;
+    Block *m_body;
     String m_abi_name;
 
   public:
     ExportDecl(std::initializer_list<Stmt *> body = {}, String abi_name = "")
-        : Decl("", nullptr), m_body(StmtList::get(body)), m_abi_name(abi_name) {}
-    ExportDecl(StmtList *content, String abi_name = "")
+        : Decl("", nullptr), m_body(Block::get(body)), m_abi_name(abi_name) {}
+    ExportDecl(Block *content, String abi_name = "")
         : Decl("", nullptr), m_body(content), m_abi_name(abi_name) {}
 
-    StmtList *get_body() const { return m_body; }
-    void set_body(StmtList *body) { m_body = body; }
+    Block *get_body() const { return m_body; }
+    void set_body(Block *body) { m_body = body; }
 
     String get_abi_name() const { return m_abi_name; }
     void set_abi_name(String abi_name) { m_abi_name = abi_name; }
