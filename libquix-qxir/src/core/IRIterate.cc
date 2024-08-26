@@ -175,8 +175,8 @@ namespace qxir::detail {
         break;
       }
       case QIR_NODE_FN: {
-        for (Expr *&child : base->as<Fn>()->m_params) {
-          children.push_back(&child);
+        for (Type *&child : base->as<Fn>()->m_params) {
+          children.push_back(reinterpret_cast<Expr **>(&child));
         }
         children.push_back(reinterpret_cast<Expr **>(&base->as<Fn>()->m_body));
         break;

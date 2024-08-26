@@ -1,6 +1,3 @@
-pub "lua" subsystem game {
-  subsystem ui {
-    let show_secret_aimbot_menu = 20;
-  }
+fn fib(a: i1 = 10, b: i8 = 30, c: u16): u32 {
+  ret 0;
 }
-

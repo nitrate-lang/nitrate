@@ -219,6 +219,12 @@ namespace qxir::diag {
       qcore_panic("badtree: node is NULL");
     }
 
+    std::cerr << "badtree: " << fmt << std::endl;
+
+    if (!g_qxir_inst->isDiagnosticsEnabled()) {
+      return;
+    }
+
     va_list args;
     va_start(args, fmt);
     badtree_impl(node->get_start_pos(), node->get_end_pos(), fmt, args);

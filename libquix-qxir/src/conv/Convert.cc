@@ -53,8 +53,10 @@ using namespace qxir::diag;
 
 struct ConvState {
   bool inside_function = false;
-  std::unordered_map<std::string_view, qxir::Type *> typedef_map;
+  std::unordered_map<std::string, qxir::Type *> typedef_map;
   std::string ns_prefix;
+  std::unordered_map<std::string, std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
+      param_map;
 
   std::string cur_named(std::string_view suffix) const {
     if (ns_prefix.empty()) {
@@ -1160,15 +1162,45 @@ namespace qxir {
   }
 
   static Expr *qconv_struct_ty(ConvState &s, const qparse::StructTy *n) {
-    /// TODO: struct_ty
+    /**
+     * @brief Convert a struct type to a qxir struct type.
+     * @details This is a 1-to-1 conversion of the struct type.
+     */
 
-    throw QError();
+    StructFields fields;
+
+    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+      auto item = qconv(s, it->second)->asType();
+      if (!item) {
+        badtree(n, "qparse::StructTy::get_items() vector contains nullptr");
+        throw QError();
+      }
+
+      fields.push_back(item);
+    }
+
+    return create<StructTy>(std::move(fields));
   }
 
   static Expr *qconv_group_ty(ConvState &s, const qparse::GroupTy *n) {
-    /// TODO: group_ty
+    /**
+     * @brief Convert a group type to a qxir struct type.
+     * @details This is a 1-to-1 conversion of the group type.
+     */
 
-    throw QError();
+    StructFields fields;
+
+    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+      auto item = qconv(s, *it)->asType();
+      if (!item) {
+        badtree(n, "qparse::GroupTy::get_items() vector contains nullptr");
+        throw QError();
+      }
+
+      fields.push_back(item);
+    }
+
+    return create<StructTy>(std::move(fields));
   }
 
   static Expr *qconv_region_ty(ConvState &s, const qparse::RegionTy *n) {
@@ -1288,9 +1320,49 @@ namespace qxir {
   }
 
   static Expr *qconv_fn_ty(ConvState &s, const qparse::FuncTy *n) {
-    /// TODO: fn_ty
+    /**
+     * @brief Convert a function type to a qxir function type.
+     * @details For inter-language compatibility, we move intermediate
+     * optional parameters to the end of the parameter list during conversion.
+     * This way compatibility with C++ and other languages is maintained.
+     */
 
-    throw QError();
+    FnParams params;
+
+    bool post_optional = false;
+    Params::iterator first_optional;
+
+    for (auto it = n->get_params().begin(); it != n->get_params().end(); ++it) {
+      Type *type = qconv(s, std::get<1>(*it))->asType();
+      if (!type) {
+        badtree(n, "qparse::FnDef::get_type() == nullptr");
+        throw QError();
+      }
+
+      bool has_default = std::get<2>(*it) != nullptr;
+
+      if (!has_default && post_optional) {
+        params.insert(first_optional, type);
+      } else {
+        params.push_back(type);
+      }
+
+      if (has_default && !post_optional) {
+        post_optional = true;
+        first_optional = params.end();
+      }
+    }
+
+    Type *ret = qconv(s, n->get_return_ty())->asType();
+    if (!ret) {
+      badtree(n, "qparse::FnDef::get_ret() == nullptr");
+      throw QError();
+    }
+
+    FnAttrs attrs;
+    /// TODO: Function attributes
+
+    return create<FnTy>(std::move(params), ret, std::move(attrs));
   }
 
   static Expr *qconv_unres_ty(ConvState &s, const qparse::UnresolvedType *n) {
@@ -1308,7 +1380,10 @@ namespace qxir {
      * @details This node will resolve to type void.
      */
 
-    if (s.typedef_map.contains(n->get_name())) {
+    auto name = s.cur_named(n->get_name());
+
+    if (std::find_if(s.typedef_map.begin(), s.typedef_map.end(),
+                     [&](auto &pair) { return pair.first == name; }) != s.typedef_map.end()) {
       badtree(n, "confliting typedef declaration");
       return create<VoidTy>();
     }
@@ -1319,9 +1394,7 @@ namespace qxir {
       throw QError();
     }
 
-    std::string_view new_name = memorize(std::string_view(s.cur_named(n->get_name())));
-
-    s.typedef_map.insert({new_name, type->asType()});
+    s.typedef_map.insert({std::move(name), type->asType()});
 
     return create<VoidTy>();
   }
@@ -1346,7 +1419,7 @@ namespace qxir {
     // IR struct type is a bit-packed structure composite; fields are nameless
     // and are accessed by index. The QXIR region definition has named fields
     // as well as embedded methods / metadata.
-    
+
     /**
      * 1. Create a vector of QXIR type fields.
      * 2. Create a IR sequence items vector.
@@ -1385,9 +1458,113 @@ namespace qxir {
   }
 
   static Expr *qconv_fn(ConvState &s, const qparse::FnDef *n) {
-    /// TODO: fn
+    /**
+     * /// TODO: Write a detailed description of the function conversion process.
+     */
 
-    throw QError();
+    Expr *precond = nullptr, *postcond = nullptr;
+    Seq *body = nullptr;
+    Params params;
+    const qparse::FnDecl *decl = n;
+    qparse::FuncTy *fty = decl->get_type();
+
+    /* Produce the function preconditions */
+    if ((precond = qconv(s, n->get_precond()))) {
+      Ident *abort_name = create<Ident>("__qprecond_fail");
+      Call *abort_call = create<Call>(abort_name, CallArgs());
+
+      precond = create<If>(create<UnExpr>(precond, Op::LogicNot), abort_call, create<VoidTy>());
+    }
+
+    /* Produce the function postconditions */
+    if ((postcond = qconv(s, n->get_postcond()))) {
+      Ident *abort_name = create<Ident>("__qpostcond_fail");
+      Call *abort_call = create<Call>(abort_name, CallArgs());
+
+      postcond = create<If>(create<UnExpr>(postcond, Op::LogicNot), abort_call, create<VoidTy>());
+    }
+
+    { /* Produce the function body */
+      Expr *tmp = qconv(s, n->get_body());
+      if (!tmp) {
+        badtree(n, "qparse::FnDef::get_body() == nullptr");
+        throw QError();
+      }
+
+      if (tmp->getKind() != QIR_NODE_SEQ) {
+        tmp = create<Seq>(SeqItems({tmp}));
+      }
+
+      body = tmp->as<Seq>();
+
+      if (precond) {
+        body->getItems().insert(body->getItems().begin(), precond);
+      }
+      if (postcond) {
+        /// TODO: add postcond at each exit point
+      }
+    }
+
+    auto name = s.cur_named(n->get_name());
+
+    { /* Produce the function parameters */
+      bool post_optional = false;
+      Params::iterator first_optional;
+
+      for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
+        /**
+         * Parameter properties:
+         * 1. Name - All parameters have a name.
+         * 2. Type - All parameters have a type.
+         * 3. Default - Optional, if the parameter has a default value.
+         * 4. Position - All parameters have a position.
+         *
+         *
+         * Raw form:
+         * fn x(a: i32 = 20, b: i32, c: i32 = 30): i32
+         * Canonical form:
+         * fn x(b: i32, a: i32 = 20, c: i32 = 30): i32
+         * Calls:
+         * x(10); -> x(b: 10, a: 20, c: 30)
+         * x(10, 20); -> x(b: 10, a: 20, c: 30)
+         * x(10, 20, 30); -> x(b: 10, a: 20, c: 30)
+         * x(a: 10); -> error expected value for b
+         * x(20, c: 10); -> x(b: 20, a: 20, c: 10)
+         */
+
+        Type *type = qconv(s, std::get<1>(*it))->asType();
+        if (!type) {
+          badtree(n, "qparse::FnDef::get_type() == nullptr");
+          throw QError();
+        }
+
+        Expr *def = nullptr;
+        if (std::get<2>(*it)) {
+          def = qconv(s, std::get<2>(*it));
+          if (!def) {
+            badtree(n, "qparse::FnDef::get_type() == nullptr");
+            throw QError();
+          }
+        }
+
+        auto pname = s.cur_named(std::get<0>(*it));
+
+        if (!def && post_optional) {
+          params.insert(first_optional, type);
+        } else {
+          params.push_back(type);
+        }
+
+        s.param_map[name].push_back({pname, type, def});
+
+        if (def && !post_optional) {
+          post_optional = true;
+          first_optional = params.end();
+        }
+      }
+    }
+
+    return create<Fn>(memorize(std::string_view(name)), std::move(params), body);
   }
 
   static Expr *qconv_subsystem(ConvState &s, const qparse::SubsystemDecl *n) {
@@ -1423,8 +1600,6 @@ namespace qxir {
     }
 
     s.ns_prefix = old_ns;
-
-    /// TODO: figure out what to do with the subsystem 'dependency' list
 
     return create<Seq>(std::move(items));
   }
@@ -2489,7 +2664,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       Fn *n = static_cast<Fn *>(in);
       Params params;
       for (auto param : n->getParams()) {
-        params.push_back(clone(param));
+        params.push_back(clone(param)->asType());
       }
 
       out = create<Fn>(memorize(n->getName()), std::move(params), clone(n->getBody())->as<Seq>());

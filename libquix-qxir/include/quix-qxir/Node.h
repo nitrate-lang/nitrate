@@ -166,7 +166,7 @@ namespace qxir {
   public:
     Expr(qxir_ty_t ty = QIR_NODE_BAD)
         : m_node_type(ty),
-          m_module_idx(0),
+          m_module_idx(std::numeric_limits<ModuleId>::max()),
           m_constexpr(0),
           m_volatile(0),
           m_start_loc{},
@@ -272,9 +272,9 @@ namespace qxir {
   public:
     Type(qxir_ty_t ty) : Expr(ty) {}
 
-    bool isSizeKnown() const noexcept;
-    size_t getSizeBits();
-    inline size_t getSizeBytes() { return std::ceil(getSizeBits() / 8.0); }
+    bool hasKnownSize() noexcept;
+    uint64_t getSizeBits();
+    inline uint64_t getSizeBytes() { return std::ceil(getSizeBits() / 8.0); }
   };
 
   ///=============================================================================
@@ -748,14 +748,14 @@ namespace qxir {
   class Call final : public Expr {
     QCLASS_REFLECT()
 
-    FnTy *m_fn;
+    Expr *m_fn;
     CallArgs m_args;
 
   public:
-    Call(FnTy *fn, const CallArgs &args) : Expr(QIR_NODE_CALL), m_fn(fn), m_args(args) {}
+    Call(Expr *fn, const CallArgs &args) : Expr(QIR_NODE_CALL), m_fn(fn), m_args(args) {}
 
-    FnTy *getFn() noexcept { return m_fn; }
-    FnTy *setFn(FnTy *fn) noexcept { return m_fn = fn; }
+    Expr *getFn() noexcept { return m_fn; }
+    Expr *setFn(Expr *fn) noexcept { return m_fn = fn; }
 
     const CallArgs &getArgs() const noexcept { return m_args; }
     CallArgs &getArgs() noexcept { return m_args; }
@@ -819,7 +819,8 @@ namespace qxir {
     Expr *m_what;
 
   public:
-    Ident(std::string_view name, Expr *what) : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
+    Ident(std::string_view name, Expr *what = nullptr)
+        : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
 
     Expr *getWhat() noexcept { return m_what; }
     Expr *setWhat(Expr *what) noexcept { return m_what = what; }
@@ -1069,7 +1070,7 @@ namespace qxir {
     void addCase(Case *c) noexcept { m_cases.push_back(c); }
   };
 
-  typedef std::vector<Expr *, Arena<Expr *>> Params;
+  typedef std::vector<Type *, Arena<Type *>> Params;
 
   class Fn final : public Expr {
     QCLASS_REFLECT()
@@ -1088,7 +1089,7 @@ namespace qxir {
     const Params &getParams() const noexcept { return m_params; }
     Params &getParams() noexcept { return m_params; }
     void setParams(const Params &params) noexcept { m_params = params; }
-    void addParam(Expr *param) noexcept { m_params.push_back(param); }
+    void addParam(Type *param) noexcept { m_params.push_back(param); }
 
     Seq *getBody() noexcept { return m_body; }
     Seq *setBody(Seq *body) noexcept { return m_body = body; }
@@ -1235,6 +1236,43 @@ namespace qxir {
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }
+  }
+
+  Expr *evaluate_to_literal(const Expr *x) noexcept;
+
+  template <typename T>
+  std::optional<T> uint_as(const Expr *x) noexcept {
+#define IS_T(x) std::is_same_v<T, x>
+
+    qcore_assert(x != nullptr, "qxir::evaluate_as(): x is nullptr.");
+
+    static_assert(IS_T(std::string) || IS_T(uint64_t),
+                  "qxir::evaluate_as(): T must be either std::string or uint64_t.");
+
+    Expr *r = evaluate_to_literal(x);
+    if (r == nullptr) {
+      return std::nullopt;
+    }
+
+    qxir_ty_t ty = r->getKind();
+
+    if (ty != QIR_NODE_INT) {
+      return std::nullopt;
+    }
+
+    if constexpr (IS_T(std::string)) {
+      return r->as<Int>()->getValue();
+    } else if constexpr (IS_T(uint64_t)) {
+      try {
+        return std::stoull(r->as<Int>()->getValue());
+      } catch (const std::exception &e) {
+        return std::nullopt;
+      }
+    }
+
+    return std::nullopt;
+
+#undef IS_T
   }
 }  // namespace qxir
 

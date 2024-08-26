@@ -176,7 +176,6 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     case QIR_NODE_UNEXPR: {
       ss << "(";
       ss << n->as<UnExpr>()->getOp();
-      ss << " ";
       serialize_recurse(n->as<UnExpr>()->getExpr(), ss, state);
       ss << ")";
       break;
@@ -377,6 +376,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       ss << n->as<Fn>()->getName();
       ss << "(";
       for (auto it = n->as<Fn>()->getParams().begin(); it != n->as<Fn>()->getParams().end(); ++it) {
+        serialize_recurse(*it, ss, state);
         if (std::next(it) != n->as<Fn>()->getParams().end()) {
           ss << ",";
         }

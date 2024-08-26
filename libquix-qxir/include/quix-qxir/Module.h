@@ -91,6 +91,14 @@ namespace qxir {
 
   constexpr size_t MAX_MODULE_INSTANCES = std::numeric_limits<ModuleId>::max();
 
+  struct TargetInfo {
+    uint16_t m_pointer_size;
+
+    TargetInfo() : m_pointer_size(8) {}
+
+    uint16_t getPointerSize() const { return m_pointer_size; }
+  };
+
 }  // namespace qxir
 
 class qmodule_t {
@@ -98,11 +106,13 @@ class qmodule_t {
   std::unordered_set<std::string> m_strings;
   std::unique_ptr<qxir::diag::DiagnosticManager> m_diag;
   std::unique_ptr<qxir::TypeManager> m_type_mgr;
+  qxir::TargetInfo m_target_info;
   qcore_arena_t m_node_arena;
   qxir_conf_t *m_conf;
   qlex_t *m_lexer;
   qxir_node_t *m_root;
   qxir::ModuleId m_id;
+  bool m_diagnostics_enabled;
 
 public:
   qmodule_t(qxir::ModuleId id);
@@ -136,6 +146,8 @@ public:
    */
   void enableDiagnostics(bool is_enabled) noexcept;
 
+  bool isDiagnosticsEnabled() const noexcept { return m_diagnostics_enabled; }
+
   /**
    * @brief Make it known that a pass has been applied to the module.
    * @param label Pass label
@@ -158,6 +170,8 @@ public:
   qcore_arena_t &getNodeArena() { return m_node_arena; }
 
   qxir::diag::DiagnosticManager &getDiag() { return *m_diag; }
+
+  const qxir::TargetInfo &getTargetInfo() const { return m_target_info; }
 };
 
 #define QMODULE_SIZE sizeof(qmodule_t)

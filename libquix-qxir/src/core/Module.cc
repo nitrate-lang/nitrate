@@ -53,6 +53,7 @@ qmodule_t::qmodule_t(ModuleId id) {
   m_conf = nullptr;
   m_lexer = nullptr;
   m_root = nullptr;
+  m_diagnostics_enabled = true;
 
   m_id = id;
 }
@@ -81,10 +82,7 @@ qlex_t *qmodule_t::getLexer() noexcept { return m_lexer; }
 void qmodule_t::setConf(qxir_conf_t *conf) noexcept { m_conf = conf; }
 qxir_conf_t *qmodule_t::getConf() noexcept { return m_conf; }
 
-void qmodule_t::enableDiagnostics(bool is_enabled) noexcept {
-  (void)is_enabled;
-  /// TODO:
-}
+void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
 
 void qmodule_t::applyPassLabel(const std::string &label) { m_passes_applied.insert(label); }
 bool qmodule_t::hasPassBeenRun(const std::string &label) {
@@ -124,6 +122,8 @@ std::unique_ptr<qmodule_t> qxir::createModule() {
 }
 
 CPP_EXPORT qmodule_t *qxir::getModule(ModuleId mid) {
+  qcore_assert(mid != std::numeric_limits<ModuleId>::max(), "Invalid module ID");
+
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
   qcore_assert(mid < qxir_modules.size() && qxir_modules.at(mid).has_value(), "Module not found");
