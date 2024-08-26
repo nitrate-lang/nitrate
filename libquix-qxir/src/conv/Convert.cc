@@ -1322,15 +1322,13 @@ namespace qxir {
   static Expr *qconv_fn_ty(ConvState &s, const qparse::FuncTy *n) {
     /**
      * @brief Convert a function type to a qxir function type.
-     * @details For inter-language compatibility, we move intermediate
-     * optional parameters to the end of the parameter list during conversion.
-     * This way compatibility with C++ and other languages is maintained.
+     * @details Order of function parameters is consistent with their order
+     * of declaration. Support for `optional` arguments is up to the frontend,
+     * for inter-language compatibility, the ABI is not concerned with optional
+     * arguments as they have no significance at the binary interface level.
      */
 
     FnParams params;
-
-    bool post_optional = false;
-    Params::iterator first_optional;
 
     for (auto it = n->get_params().begin(); it != n->get_params().end(); ++it) {
       Type *type = qconv(s, std::get<1>(*it))->asType();
@@ -1339,18 +1337,7 @@ namespace qxir {
         throw QError();
       }
 
-      bool has_default = std::get<2>(*it) != nullptr;
-
-      if (!has_default && post_optional) {
-        params.insert(first_optional, type);
-      } else {
-        params.push_back(type);
-      }
-
-      if (has_default && !post_optional) {
-        post_optional = true;
-        first_optional = params.end();
-      }
+      params.push_back(type);
     }
 
     Type *ret = qconv(s, n->get_return_ty())->asType();
@@ -1508,9 +1495,6 @@ namespace qxir {
     auto name = s.cur_named(n->get_name());
 
     { /* Produce the function parameters */
-      bool post_optional = false;
-      Params::iterator first_optional;
-
       for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
         /**
          * Parameter properties:
@@ -1518,18 +1502,6 @@ namespace qxir {
          * 2. Type - All parameters have a type.
          * 3. Default - Optional, if the parameter has a default value.
          * 4. Position - All parameters have a position.
-         *
-         *
-         * Raw form:
-         * fn x(a: i32 = 20, b: i32, c: i32 = 30): i32
-         * Canonical form:
-         * fn x(b: i32, a: i32 = 20, c: i32 = 30): i32
-         * Calls:
-         * x(10); -> x(b: 10, a: 20, c: 30)
-         * x(10, 20); -> x(b: 10, a: 20, c: 30)
-         * x(10, 20, 30); -> x(b: 10, a: 20, c: 30)
-         * x(a: 10); -> error expected value for b
-         * x(20, c: 10); -> x(b: 20, a: 20, c: 10)
          */
 
         Type *type = qconv(s, std::get<1>(*it))->asType();
@@ -1547,20 +1519,8 @@ namespace qxir {
           }
         }
 
-        auto pname = s.cur_named(std::get<0>(*it));
-
-        if (!def && post_optional) {
-          params.insert(first_optional, type);
-        } else {
-          params.push_back(type);
-        }
-
-        s.param_map[name].push_back({pname, type, def});
-
-        if (def && !post_optional) {
-          post_optional = true;
-          first_optional = params.end();
-        }
+        params.push_back(type);
+        s.param_map[name].push_back({s.cur_named(std::get<0>(*it)), type, def});
       }
     }
 
