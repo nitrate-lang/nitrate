@@ -88,9 +88,7 @@ void qcore_vdebugf_(const char *fmt, va_list args);
 #define qcore_debug(msg) qcore_debug_(msg)
 #endif
 
-static __attribute__((noreturn)) inline void qcore_implement(const char *name) {
-  qcore_panicf("Function %s is not implemented.", name);
-}
+#define qcore_implement(name) qcore_panicf("%s is not implemented.", name)
 
 #ifdef __cplusplus
 }

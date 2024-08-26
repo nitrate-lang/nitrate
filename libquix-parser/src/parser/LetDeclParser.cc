@@ -115,8 +115,7 @@ bool qparse::parser::parse_let(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &n
     }
   } else if (tok.is<qOpSet>()) {
     if (multi_decl) {
-      /// TODO: Implement
-      throw std::runtime_error("Initializer not implemented for multiple declarations");
+      qcore_implement("Initializer for multiple declarations");
     }
 
     Expr *init = nullptr;

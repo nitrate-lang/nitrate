@@ -441,6 +441,8 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
 
     /*==================== Return status ====================*/
     return status && !parser->failed;
+  } catch (std::exception &e) {
+    qcore_panicf("qparse_do: unhandled exception: %s", e.what());
   } catch (...) {
     /*== This will be caught iff QPK_CRASHGUARD is QPV_ON ==*/
     abort();
