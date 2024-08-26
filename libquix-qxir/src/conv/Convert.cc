@@ -443,7 +443,7 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
     }
     case qOpRange: {
       /// TODO:
-      throw QError();
+      throw std::runtime_error("qOpRange not implemented");
     }
     case qOpBitcastAs: {
       return STD_BINOP(BitcastAs);
@@ -1873,22 +1873,25 @@ namespace qxir {
      *         with a default value of 1.
      */
 
-    qxir::Expr *init = nullptr, *cond, *step = nullptr, *body = nullptr;
+    auto init = qconv(s, n->get_init());
+    auto cond = qconv(s, n->get_cond());
+    auto step = qconv(s, n->get_step());
+    auto body = qconv(s, n->get_body());
 
-    if (n->get_init()) {
-      init = qconv(s, n->get_init());
+    if (!init) {
+      init = create<Int>(1);
     }
 
-    if (n->get_cond()) {
-      cond = qconv(s, n->get_cond());
+    if (!cond) {
+      cond = create<Int>(1);  // infinite loop like 'for (;;) {}'
     }
 
-    if (n->get_step()) {
-      step = qconv(s, n->get_step());
+    if (!step) {
+      step = create<Int>(1);
     }
 
-    if (n->get_body()) {
-      body = qconv(s, n->get_body());
+    if (!body) {
+      body = create<Int>(1);
     }
 
     return create<For>(init, cond, step, body);

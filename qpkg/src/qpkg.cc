@@ -1205,8 +1205,6 @@ int run_dev_mode(
       return 1;
     }
 
-    qparse_conf_setopt(pconf, QPK_CRASHGUARD, QPV_OFF);
-
     qparse_t *ctx = qparse_new(lexer, pconf);
     if (!ctx) {
       qparse_conf_free(pconf);
@@ -1261,7 +1259,7 @@ int run_dev_mode(
 
     if (!qxir_lower(qmod, root, true)) {
       qxir_diag_read(
-          qmod, QXIR_AUDIT_ALL, QXIR_DIAG_COLOR,
+          qmod, QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
           [](const uint8_t *msg, size_t size, uintptr_t data) {
             (void)data;
             std::cerr << std::string_view((const char *)msg, size) << std::endl;
