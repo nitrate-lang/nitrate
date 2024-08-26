@@ -113,6 +113,7 @@ class qmodule_t {
   qxir_node_t *m_root;
   qxir::ModuleId m_id;
   bool m_diagnostics_enabled;
+  bool m_failbit;
 
 public:
   qmodule_t(qxir::ModuleId id);
@@ -172,6 +173,9 @@ public:
   qxir::diag::DiagnosticManager &getDiag() { return *m_diag; }
 
   const qxir::TargetInfo &getTargetInfo() const { return m_target_info; }
+
+  void setFailbit(bool fail) { m_failbit = fail; }
+  bool getFailbit() const { return m_failbit; }
 };
 
 #define QMODULE_SIZE sizeof(qmodule_t)

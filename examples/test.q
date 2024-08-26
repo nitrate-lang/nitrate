@@ -1,1 +1,3 @@
-fn x(b: i16 = 0, c: i64, a: i8): i32 {}
+type x = i32;
+type x = i32;
+type x = i32;

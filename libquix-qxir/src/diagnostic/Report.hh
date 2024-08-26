@@ -49,39 +49,98 @@ namespace qxir::diag {
     SyntaxError() : std::runtime_error("") {}
   };
 
-  enum class MessageType {
-    BadTree,
+  enum class IssueClass {
+    Debug = 0,
+    Info,
+    Warn,
+    Error,
     FatalError,
   };
 
-  enum class FormatStyle {
-    Clang16Color,   /* Clang-like 16 color diagnostic format */
-    ClangPlain,     /* Clang-like plain text diagnostic format */
-    ClangTrueColor, /* Clang-like RGB TrueColor diagnostic format */
-    Default = Clang16Color,
+  enum class IssueCode {
+    Default = 0,
+
+    SignalReceived,
+    PTreeInvalid,
   };
 
-  typedef std::function<void(const char *)> DiagnosticMessageHandler;
+  typedef std::function<void(std::string_view)> DiagnosticMessageHandler;
 
   struct DiagMessage {
     std::string msg;
     qlex_loc_t start, end;
-    MessageType type;
+    IssueClass type;
+    IssueCode code;
+
+    DiagMessage(std::string_view msg = "", qlex_loc_t start = {0}, qlex_loc_t end = {0},
+                IssueClass type = IssueClass::Debug, IssueCode code = IssueCode::Default)
+        : msg(msg), start(start), end(end), type(type), code(code) {}
   };
 
   class DiagnosticManager {
     qmodule_t *m_qxir;
-    std::vector<DiagMessage> m_msgs;
+    std::unordered_map<qxir_audit_ticket_t, std::vector<DiagMessage>> m_msgs;
+    qxir_audit_ticket_t m_last_ticket;
 
     std::string mint_clang16_message(const DiagMessage &msg) const;
     std::string mint_plain_message(const DiagMessage &msg) const;
     std::string mint_clang_truecolor_message(const DiagMessage &msg) const;
+    size_t dump_diagnostic_vector(std::vector<DiagMessage> &vec, DiagnosticMessageHandler handler,
+                                  qxir_diag_format_t style);
 
   public:
-    void push(DiagMessage &&msg);
-    size_t render(DiagnosticMessageHandler handler, FormatStyle style) const;
+    DiagnosticManager() {
+      m_qxir = nullptr;
+      m_msgs[QXIR_AUDIT_CONV] = {};
+      m_last_ticket = QXIR_AUDIT_CONV;
+    }
+
+    void push(qxir_audit_ticket_t ticket, DiagMessage &&msg);
+    size_t render(qxir_audit_ticket_t ticket, DiagnosticMessageHandler handler,
+                  qxir_diag_format_t style);
 
     void set_ctx(qmodule_t *qxir) { m_qxir = qxir; }
+
+    size_t clear(qxir_audit_ticket_t t) {
+      if (t == QXIR_AUDIT_ALL) {
+        size_t n = 0;
+        for (auto &[_, msgs] : m_msgs) {
+          n += msgs.size();
+          msgs.clear();
+        }
+        return n;
+      } else if (t == QXIR_AUDIT_LAST) {
+        size_t n = m_msgs[m_last_ticket].size();
+        m_msgs[m_last_ticket].clear();
+        return n;
+      } else {
+        if (!m_msgs.contains(t)) {
+          return 0;
+        }
+
+        size_t n = m_msgs[t].size();
+        m_msgs[t].clear();
+        return n;
+      }
+    }
+
+    size_t count(qxir_audit_ticket_t t) {
+      if (t == QXIR_AUDIT_ALL) {
+        size_t n = 0;
+        for (const auto &[_, msgs] : m_msgs) {
+          n += msgs.size();
+        }
+        return n;
+      } else if (t == QXIR_AUDIT_LAST) {
+        return m_msgs[m_last_ticket].size();
+      } else {
+        if (!m_msgs.contains(t)) {
+          return 0;
+        }
+
+        return m_msgs[t].size();
+      }
+    }
   };
 
   /* Set reference to the current qxir */

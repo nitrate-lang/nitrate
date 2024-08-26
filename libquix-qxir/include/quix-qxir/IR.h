@@ -184,7 +184,7 @@ typedef enum qxir_audit_t {
 typedef uint32_t qxir_audit_ticket_t;
 
 #define QXIR_AUDIT_ALL ((qxir_audit_ticket_t)0x00000000)
-#define QXIR_AUDIT_FIRST ((qxir_audit_ticket_t)0x00000001)
+#define QXIR_AUDIT_CONV ((qxir_audit_ticket_t)0x00000001)
 #define QXIR_AUDIT_LAST ((qxir_audit_ticket_t)0xFFFFFFFF)
 
 /**
@@ -229,28 +229,11 @@ typedef enum qxir_diag_format_t {
   /**
    * @brief Code decimal serialization of the error code and source location.
    * @example `801802:1:1:/path/to/filename.q`
-   * @format <code>:<line>:<col>:<ascii_path>
-   *
-   * @note Non-ASCII characters in the path are replaces with '?'.
-   */
-  QXIR_DIAG_ASCII_ECODE_LOC,
-
-  /**
-   * @brief Code decimal serialization of the error code and source location.
-   * @example `801802:1:1:/path/to/filename.q`
    * @format <code>:<line>:<col>:<path>
    *
    * @note UTF-8 characters in the path are preserved.
    */
   QXIR_DIAG_UTF8_ECODE_LOC,
-
-  /**
-   * @brief Code decimal serialization of the error code and error message.
-   * @example `801802:This is an ASCII-only error message.`
-   * @format <code>:<ascii_message>
-   * @note The message will not contain any non-ASCII characters.
-   */
-  QXIR_DIAG_ASCII_ECODE_ETEXT,
 
   /**
    * @brief Code decimal serialization of the error code and UTF-8 error message.
@@ -260,57 +243,29 @@ typedef enum qxir_diag_format_t {
   QXIR_DIAG_UTF8_ECODE_ETEXT,
 
   /**
-   * @brief Code decimal serialization of the error code, source location, and error message.
-   * @example `801802:1:1:/path/to/filename.q:This is an ASCII-only error message.`
-   * @format <code>:<line>:<col>:<ascii_path>:<ascii_message>`
-   * @note Non-ASCII characters in the path are replaces with '?'.
-   * @note The message will not contain any non-ASCII characters.
-   */
-  QXIR_DIAG_ASCII_ECODE_LOC_ETEXT,
-
-  /**
    * @brief Unspecified format.
-   * @note No-ANSI colors are included; Non-ASCII characters are replaced with an unspecified
-   * character.
+   * @note No-ANSI colors are included.
    * @note Includes source location information as well as source code snippets (if available).
    * @note Includes error messages and suggestions.
    * @note Basically, everything you expect from a mainstream compiler (except without color).
    */
-  QXIR_DIAG_NOSTD_TTY_COMPLETE,
+  QXIR_DIAG_NOSTD_TTY_UTF8,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_COMPLETE`, but with undocumented differences.
-   */
-  QXIR_DIAG_NONSTD_ANSI16_ASCII_FULL,
-
-  /**
-   * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_COMPLETE`, but with undocumented differences.
+   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
    */
   QXIR_DIAG_NONSTD_ANSI16_UTF8_FULL,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_COMPLETE`, but with undocumented differences.
-   */
-  QXIR_DIAG_NONSTD_ANSI256_ASCII_FULL,
-
-  /**
-   * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_COMPLETE`, but with undocumented differences.
+   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
    */
   QXIR_DIAG_NONSTD_ANSI256_UTF8_FULL,
 
   /**
    * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_COMPLETE`, but with undocumented differences.
-   */
-  QXIR_DIAG_NONSTD_ANSIRGB_ASCII_FULL,
-
-  /**
-   * @brief Unspecified format.
-   * @note Similar to `QXIR_DIAG_NOSTD_TTY_COMPLETE`, but with undocumented differences.
+   * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
    */
   QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
 
@@ -324,7 +279,7 @@ typedef enum qxir_diag_format_t {
    * @brief Display in a modern terminal emulator with UTF-8 and no colors.
    * @note Includes everything the user would expect from a mainstream compiler.
    */
-  QXIR_DIAG_NOCOLOR = QXIR_DIAG_NOSTD_TTY_COMPLETE,
+  QXIR_DIAG_NOCOLOR = QXIR_DIAG_NOSTD_TTY_UTF8,
 } qxir_diag_format_t;
 
 /**
@@ -338,7 +293,7 @@ typedef enum qxir_diag_format_t {
  *
  * @return Number of reports processed.
  * @note If `ticket` is invalid, 0 is returned.
- * @note If `data` is arbitrary, it will be passed to the callback function.
+ * @note `data` is arbitrary it will be passed to the callback function.
  * @note If `!cb`, the number of reports that would have been processed is returned.
  *
  * @note This function will not diapose of any reports. Calling this function multiple times

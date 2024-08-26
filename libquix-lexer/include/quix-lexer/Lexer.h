@@ -192,6 +192,8 @@ qlex_size qlex_col(qlex_t *lexer, qlex_loc_t loc);
 char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, qlex_size *offset);
 qlex_loc_t qlex_offset(qlex_t *lexer, qlex_loc_t base, qlex_size offset);
 qlex_size qlex_span(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end);
+qlex_size qlex_spanx(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end,
+                     void (*callback)(const char *, qlex_size, uintptr_t), uintptr_t userdata);
 
 /**
  * @brief Get the string representation of a token type.
@@ -252,8 +254,7 @@ const char *qlex_opstr(qlex_op_t op);
 const char *qlex_kwstr(qlex_key_t kw);
 const char *qlex_punctstr(qlex_punc_t punct);
 
-void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_size src_idx,
-                      qlex_tok_t *out);
+void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_tok_t *out);
 
 #ifdef __cplusplus
 }

@@ -54,6 +54,7 @@ qmodule_t::qmodule_t(ModuleId id) {
   m_lexer = nullptr;
   m_root = nullptr;
   m_diagnostics_enabled = true;
+  m_failbit = false;
 
   m_id = id;
 }

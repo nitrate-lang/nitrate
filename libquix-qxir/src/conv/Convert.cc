@@ -79,9 +79,10 @@ static void _signal_handler(int sig) {
   DiagMessage diag;
   diag.msg = "FATAL Internal Error: Deadly Signal received: " + std::to_string(sig);
   diag.start = diag.end = qlex_loc_t{};
-  diag.type = MessageType::FatalError;
+  diag.type = IssueClass::FatalError;
+  diag.code = IssueCode::SignalReceived;
 
-  qxir_ctx->getDiag().push(std::move(diag));
+  qxir_ctx->getDiag().push(QXIR_AUDIT_CONV, std::move(diag));
 
   sigguard_lock.unlock();
 
@@ -154,7 +155,7 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
     try {
       ConvState s;
       mod->setRoot(qconv(s, static_cast<const qparse::Node *>(base)));
-      status = true;
+      status = !mod->getFailbit();
     } catch (QError &e) {
       // QError exception is control flow to abort the recursive lowering
 
@@ -279,26 +280,6 @@ LIB_EXPORT void qmodule_testplug(void *node) {
 
     return IterOp::Proceed;
   });
-}
-
-void qxir_dumps(qmodule_t *qxir, bool no_ansi, qxir_report_cb cb, uintptr_t data) {
-  try {
-    if (!qxir || !cb) {
-      return;
-    }
-
-    auto adapter = [&](const char *msg) {
-      cb((const uint8_t *)msg, std::strlen((const char *)msg), data);
-    };
-
-    if (no_ansi) {
-      qxir->getDiag().render(adapter, qxir::diag::FormatStyle::ClangPlain);
-    } else {
-      qxir->getDiag().render(adapter, qxir::diag::FormatStyle::Clang16Color);
-    }
-  } catch (...) {
-    return;
-  }
 }
 
 ///=============================================================================
@@ -1369,19 +1350,13 @@ namespace qxir {
 
     auto name = s.cur_named(n->get_name());
 
-    if (std::find_if(s.typedef_map.begin(), s.typedef_map.end(),
-                     [&](auto &pair) { return pair.first == name; }) != s.typedef_map.end()) {
-      badtree(n, "confliting typedef declaration");
-      return create<VoidTy>();
-    }
-
     auto type = qconv(s, n->get_type());
     if (!type) {
       badtree(n, "qparse::TypedefDecl::get_type() == nullptr");
       throw QError();
     }
 
-    s.typedef_map.insert({std::move(name), type->asType()});
+    s.typedef_map[std::move(name)] = type->asType();
 
     return create<VoidTy>();
   }

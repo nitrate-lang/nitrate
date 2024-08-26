@@ -1258,6 +1258,13 @@ int run_dev_mode(
     }
 
     if (!qxir_lower(qmod, root, true)) {
+      qxir_diag_read(
+          qmod, QXIR_AUDIT_ALL, QXIR_DIAG_COLOR,
+          [](const uint8_t *msg, size_t size, uintptr_t data) {
+            (void)data;
+            std::cerr << std::string_view((const char *)msg, size) << std::endl;
+          },
+          0);
       qxir_free(qmod);
       qxir_conf_free(conf);
       qcore_arena_close(&arena);
@@ -1268,10 +1275,6 @@ int run_dev_mode(
       std::cerr << "Failed to lower source to QXIR" << std::endl;
       return 1;
     }
-
-    // qxir_base(qmod);
-
-    // qmodule_testplug(qxir_root);
 
     FILE *out_fp = nullptr;
     if (!output.empty()) {

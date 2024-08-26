@@ -608,12 +608,12 @@ LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
         return qlex::punctuation.right.at(tok->v.punc).size();
       case qName:
       case qIntL:
-      case qNumL: 
+      case qNumL:
       case qText:
       case qChar:
       case qMacB:
       case qMacr:
-      case qNote: 
+      case qNote:
         return qlex_span(lexer, qlex_begin(tok), qlex_end(tok));
     }
   } catch (std::out_of_range &) {
@@ -842,14 +842,8 @@ LIB_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
   }
 }
 
-LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_size src_idx,
-                                 qlex_tok_t *out) {
+LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_tok_t *out) {
   try {
-    if (src_idx != 0) {
-      /// TODO:
-      qcore_panic("qlex_tok_fromstr: source index is not supported");
-    }
-
     out->ty = ty;
 
     out->start.tag = 0;
@@ -1032,9 +1026,71 @@ LIB_EXPORT qlex_size qlex_span(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end) 
       return UINT32_MAX;
     }
 
+    if (*endoff < *begoff) {
+      return 0;
+    }
+
     return *endoff - *begoff;
   } catch (...) {
     qcore_panic("qlex_span: failed to calculate span");
+  }
+}
+
+LIB_EXPORT qlex_size qlex_spanx(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end,
+                                void (*callback)(const char *, qlex_size, uintptr_t),
+                                uintptr_t userdata) {
+  /// TODO:
+  try {
+    std::optional<qlex_size> begoff, endoff;
+
+    if (!(begoff = lexer->impl->loc2offset(start))) {
+      return UINT32_MAX;
+    }
+
+    if (!(endoff = lexer->impl->loc2offset(end))) {
+      return UINT32_MAX;
+    }
+
+    if (*endoff < *begoff) {
+      return 0;
+    }
+
+    qlex_size span = *endoff - *begoff;
+
+    long curpos;
+    uint8_t *buf = nullptr;
+    size_t bufsz;
+
+    if ((curpos = ftell(lexer->impl->file())) == -1) {
+      return UINT32_MAX;
+    }
+
+    if (fseek(lexer->impl->file(), *begoff, SEEK_SET) != 0) {
+      return UINT32_MAX;
+    }
+
+    bufsz = span;
+
+    if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
+      fseek(lexer->impl->file(), curpos, SEEK_SET);
+      return UINT32_MAX;
+    }
+
+    if (fread(buf, 1, bufsz, lexer->impl->file()) != bufsz) {
+      free(buf);
+      fseek(lexer->impl->file(), curpos, SEEK_SET);
+      return UINT32_MAX;
+    }
+
+    buf[bufsz] = '\0';
+    fseek(lexer->impl->file(), curpos, SEEK_SET);
+
+    callback((const char *)buf, bufsz, userdata);
+
+    free(buf);
+    return span;
+  } catch (...) {
+    qcore_panic("qlex_spanx: failed to calculate span");
   }
 }
 
@@ -1343,7 +1399,7 @@ void qlex_impl_t::reset_state() { m_pushback.clear(); }
 
 qlex_tok_t qlex_impl_t::do_automata() noexcept {
   /// TODO: Correctly handle token source locations
-  
+
   enum class LexState {
     Start,
     Identifier,
