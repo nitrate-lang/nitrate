@@ -249,15 +249,10 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_SUB(n->as<Call>()->get_func());
       ss << "[";
       for (const auto &[k, v] : n->as<Call>()->get_args()) {
-        indent(ss, state);
-
-        ss << "(Param";
-        state.indent++;
-        indent(ss, state);
-        ss << escape_string(k);
-        state.indent--;
-
-        serialize_recurse(v, ss, state);
+        OBJECT_BEGIN("Param");
+        OBJECT_STR(k);
+        OBJECT_SUB(v);
+        OBJECT_END();
         ss << ")";
       }
       ss << "]";
@@ -269,31 +264,20 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_SUB(n->as<TemplCall>()->get_func());
       ss << "[";
       for (const auto &[k, v] : n->as<TemplCall>()->get_template_args()) {
-        indent(ss, state);
-
-        ss << "(Param";
-        state.indent++;
-        indent(ss, state);
-        ss << escape_string(k);
-        state.indent--;
-
-        serialize_recurse(v, ss, state);
+        OBJECT_BEGIN("Param");
+        OBJECT_STR(k);
+        OBJECT_SUB(v);
+        OBJECT_END();
         ss << ")";
       }
       ss << "]";
       OBJECT_SUB(n->as<TemplCall>()->get_func());
       ss << "[";
       for (const auto &[k, v] : n->as<TemplCall>()->get_args()) {
-        indent(ss, state);
-
-        ss << "(Param";
-        state.indent++;
-        indent(ss, state);
-        ss << escape_string(k);
-        state.indent--;
-
-        serialize_recurse(v, ss, state);
-        ss << ")";
+        OBJECT_BEGIN("Param");
+        OBJECT_STR(k);
+        OBJECT_SUB(v);
+        OBJECT_END();
       }
       ss << "]";
       OBJECT_END();
@@ -465,10 +449,10 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_STRUCT_TY: {
       OBJECT_BEGIN("Struct");
       for (const auto &[k, v] : n->as<StructTy>()->get_items()) {
-        indent(ss, state);
-        ss << "(Field" << escape_string(k);
-        serialize_recurse(v, ss, state);
-        ss << ")";
+        OBJECT_BEGIN("Field");
+        OBJECT_STR(k);
+        OBJECT_SUB(v);
+        OBJECT_END();
       }
       OBJECT_END();
       break;
@@ -534,21 +518,11 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_SUB(n->as<FuncTy>()->get_return_ty());
       ss << "[";
       for (const auto &param : n->as<FuncTy>()->get_params()) {
-        state.indent++;
-        indent(ss, state);
-
-        ss << "(Param";
-        state.indent++;
-        indent(ss, state);
-        ss << escape_string(std::get<0>(param));
-
-        state.indent--;
-
-        serialize_recurse(std::get<1>(param), ss, state);
-        serialize_recurse(std::get<2>(param), ss, state);
-
-        state.indent--;
-        ss << ")";
+        OBJECT_BEGIN("Param");
+        OBJECT_STR(std::get<0>(param));
+        OBJECT_SUB(std::get<1>(param));
+        OBJECT_SUB(std::get<2>(param));
+        OBJECT_END();
       }
       ss << "]";
       state.indent++;
@@ -631,10 +605,10 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       indent(ss, state);
       ss << "[";
       for (const auto &[k, v] : n->as<EnumDef>()->get_items()) {
-        indent(ss, state);
-        ss << "(Field" << escape_string(k);
-        serialize_recurse(v, ss, state);
-        ss << ")";
+        OBJECT_BEGIN("Field");
+        OBJECT_STR(k);
+        OBJECT_SUB(v);
+        OBJECT_END();
       }
       ss << "]";
       state.indent--;
@@ -646,6 +620,17 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_FN: {
       OBJECT_BEGIN("Fn");
       OBJECT_STR(n->as<FnDef>()->get_name());
+      state.indent++;
+      indent(ss, state);
+      ss << "[";
+      for (const auto &[v, mut] : n->as<FnDef>()->get_captures()) {
+        OBJECT_BEGIN("Capture");
+        OBJECT_STR(v);
+        OBJECT_NUM((int)mut);
+        OBJECT_END();
+      }
+      ss << "]";
+      state.indent--;
       OBJECT_SUB(n->as<FnDef>()->get_type());
       OBJECT_SUB(n->as<FnDef>()->get_precond());
       OBJECT_SUB(n->as<FnDef>()->get_postcond());

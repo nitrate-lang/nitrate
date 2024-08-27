@@ -4018,7 +4018,24 @@ LIB_EXPORT void FnDef::canonicalize_impl() {
 }
 
 LIB_EXPORT void FnDef::print_impl(std::ostream &os, bool debug) const {
-  os << "fn " << m_name << "(";
+  os << "fn ";
+
+  if (!m_captures.empty()) {
+    os << "[";
+    for (auto it = m_captures.begin(); it != m_captures.end(); ++it) {
+      if (it->second) {
+        os << "&";
+      }
+      os << it->first;
+
+      if (std::next(it) != m_captures.end()) {
+        os << ", ";
+      }
+    }
+    os << "] ";
+  }
+
+  os << m_name << "(";
 
   if (m_type) {
     m_type->print(os, debug);
@@ -4041,7 +4058,7 @@ LIB_EXPORT FnDef *FnDef::clone_impl() const {
   Expr *precond = m_precond ? m_precond->clone() : nullptr;
   Expr *postcond = m_postcond ? m_postcond->clone() : nullptr;
 
-  return FnDef::get(decl, body, precond, postcond);
+  return FnDef::get(decl, body, precond, postcond, m_captures);
 }
 
 LIB_EXPORT bool CompositeField::verify_impl(std::ostream &os) const {

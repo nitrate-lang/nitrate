@@ -248,9 +248,39 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   auto prop = read_function_properties(rd);
 
   qlex_tok_t tok = qlex_next(rd);
+  FnCaptures captures;
 
   if (tok.is(qName)) {
     fndecl->set_name(tok.as_string(rd));
+    tok = qlex_next(rd);
+  } else if (tok.is<qPuncLBrk>()) {
+    while (true) {
+      tok = qlex_next(rd);
+
+      if (tok.is<qPuncRBrk>()) {
+        break;
+      }
+
+      bool is_mut = false;
+
+      if (tok.is<qOpBitAnd>()) {
+        is_mut = true;
+        tok = qlex_next(rd);
+      }
+
+      if (!tok.is(qName)) {
+        syntax(tok, "Expected a capture name");
+        break;
+      }
+
+      captures.push_back({tok.as_string(rd), is_mut});
+      tok = qlex_peek(rd);
+
+      if (tok.is<qPuncComa>()) {
+        qlex_next(rd);
+      }
+    }
+
     tok = qlex_next(rd);
   }
 
@@ -351,7 +381,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       fndecl->set_type(ftype);
     }
 
-    fndecl = FnDef::get(fndecl, fnbody);
+    fndecl = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
 
     *node = fndecl;
     return true;
@@ -475,7 +505,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       fndecl->set_type(ftype);
     }
 
-    fndecl = FnDef::get(fndecl, fnbody, req_in, req_out);
+    fndecl = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
     fndecl->add_tags(implements);
 
     *node = fndecl;

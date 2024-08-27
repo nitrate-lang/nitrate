@@ -1300,7 +1300,8 @@ namespace qparse {
     PNODE_IMPL_CORE(Slice)
   };
 
-  typedef std::vector<std::variant<String, Expr *>, Arena<std::variant<String, Expr *>>> FStringItems;
+  typedef std::vector<std::variant<String, Expr *>, Arena<std::variant<String, Expr *>>>
+      FStringItems;
 
   class FString : public Expr {
   protected:
@@ -1721,16 +1722,20 @@ namespace qparse {
     PNODE_IMPL_CORE(FnDecl)
   };
 
+  typedef std::vector<std::pair<String, bool>, Arena<std::pair<String, bool>>> FnCaptures;
+
   class FnDef : public FnDecl {
   protected:
+    FnCaptures m_captures;
     Stmt *m_body;
     Expr *m_precond;
     Expr *m_postcond;
 
   public:
     FnDef(FnDecl *decl = nullptr, Stmt *body = nullptr, Expr *precond = nullptr,
-          Expr *postcond = nullptr)
+          Expr *postcond = nullptr, FnCaptures captures = {})
         : FnDecl(decl->get_name(), decl->get_type()),
+          m_captures(captures),
           m_body(body),
           m_precond(precond),
           m_postcond(postcond) {}
@@ -1743,6 +1748,10 @@ namespace qparse {
 
     Expr *get_postcond() const { return m_postcond; }
     void set_postcond(Expr *postcond) { m_postcond = postcond; }
+
+    FnCaptures &get_captures() { return m_captures; }
+    const FnCaptures &get_captures() const { return m_captures; }
+    void add_capture(String name, bool by_ref) { m_captures.push_back({name, by_ref}); }
 
     PNODE_IMPL_CORE(FnDef)
   };
