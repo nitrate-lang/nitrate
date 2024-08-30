@@ -250,7 +250,7 @@ bool parser::parse_group(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   { /* Check for an implementation/trait list */
-    if (tok.is<qKImpl>()) {
+    if (tok.is<qKWith>()) {
       qlex_next(rd);
       tok = qlex_next(rd);
 

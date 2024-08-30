@@ -469,7 +469,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       implements.insert("auto");
     }
 
-    if (tok.is<qKImpl>()) {
+    if (tok.is<qKWith>()) {
       qlex_next(rd);
       tok = qlex_next(rd);
       if (!tok.is<qPuncLBrk>()) {

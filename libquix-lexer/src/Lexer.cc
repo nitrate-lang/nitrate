@@ -92,7 +92,7 @@ namespace qlex {
           {"opaque", qKOpaque},
           {"enum", qKEnum},
           {"fstring", qKFString},
-          {"impl", qKImpl},
+          {"with", qKWith},
           {"fn", qKFn},
           {"noexcept", qKNoexcept},
           {"foreign", qKForeign},

@@ -144,7 +144,7 @@ typedef enum qlex_key_t {
   qKOpaque,     /* 'opaque' */
   qKEnum,       /* 'enum' */
   qKFString,    /* 'fstring' */
-  qKImpl,       /* 'impl' */
+  qKWith,       /* 'with' */
   qKFn,         /* 'fn' */
   qKNoexcept,   /* 'noexcept' */
   qKForeign,    /* 'foreign' */

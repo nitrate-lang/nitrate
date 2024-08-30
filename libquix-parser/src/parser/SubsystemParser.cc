@@ -105,7 +105,7 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   std::set<std::string> implements;
   tok = qlex_peek(rd);
-  if (tok.is<qKImpl>()) {
+  if (tok.is<qKWith>()) {
     qlex_next(rd);
     tok = qlex_next(rd);
     if (!tok.is<qPuncLBrk>()) {
