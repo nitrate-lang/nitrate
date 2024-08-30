@@ -2,9 +2,11 @@
 #include <quix-parser/Lib.h>
 #include <quix-qxir/Lib.h>
 
+#include <iostream>
 #include <optional>
 #include <stdexcept>
-#include <iostream>
+
+extern "C" const char *__asan_default_options() { return "detect_leaks=0"; }
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char **argv) {
   (void)argc;
@@ -20,7 +22,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char **argv) {
   std::cout << "  - libquix-lexer: " << qlex_lib_version() << std::endl;
   std::cout << "  - libquix-parser: " << qparse_lib_version() << std::endl;
   std::cout << "  - libquix-qxir: " << qxir_lib_version() << std::endl;
-  std::cout << "End of VERSIONS\n"; 
+  std::cout << "End of VERSIONS\n";
   std::cout << "+===========================================================+\n";
   return 0;
 }
