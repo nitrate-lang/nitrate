@@ -443,7 +443,7 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
     }
     case qOpRange: {
       /// TODO:
-      throw std::runtime_error("qOpRange not implemented");
+      throw QError();
     }
     case qOpBitcastAs: {
       return STD_BINOP(BitcastAs);
