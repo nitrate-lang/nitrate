@@ -1342,6 +1342,11 @@ namespace qxir {
     return create<Tmp>(TmpType::NAMED_TYPE, memorize(n->get_name()));
   }
 
+  static Expr *qconv_infer_ty(ConvState &s, const qparse::InferType *n) {
+    /// TODO:
+    throw QError();
+  }
+
   static Expr *qconv_typedef(ConvState &s, const qparse::TypedefDecl *n) {
     /**
      * @brief Memorize a typedef declaration which will be used later for type resolution.
@@ -2260,6 +2265,10 @@ static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
 
     case QAST_NODE_UNRES_TY:
       out = qconv_unres_ty(s, n->as<qparse::UnresolvedType>());
+      break;
+
+    case QAST_NODE_INFER_TY:
+      out = qconv_infer_ty(s, n->as<qparse::InferType>());
       break;
 
     case QAST_NODE_TYPEDEF:

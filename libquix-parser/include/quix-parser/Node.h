@@ -104,6 +104,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_RESULT_TY = 328,
   QAST_NODE_FN_TY = 329,
   QAST_NODE_UNRES_TY = 330,
+  QAST_NODE_INFER_TY = 331,
 
   QAST_NODE_TYPEDEF = 500,
   QAST_NODE_FNDECL = 501,
@@ -139,7 +140,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT = 720,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 90
+#define QAST_NODE_COUNT 91
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -581,6 +582,13 @@ namespace qparse {
     void set_name(String name) { m_name = name; }
 
     PNODE_IMPL_CORE(UnresolvedType)
+  };
+
+  class InferType : public Type {
+  public:
+    InferType() = default;
+
+    PNODE_IMPL_CORE(InferType)
   };
 
   class U1 : public TypeBuiltin {

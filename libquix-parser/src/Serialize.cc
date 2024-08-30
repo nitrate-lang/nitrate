@@ -538,6 +538,10 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
+    case QAST_NODE_INFER_TY: {
+      OBJECT_EMPTY("Infer");
+      break;
+    }
     case QAST_NODE_TYPEDEF: {
       OBJECT_BEGIN("Typedef");
       OBJECT_STR(n->as<TypedefDecl>()->get_name());

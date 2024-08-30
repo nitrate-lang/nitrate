@@ -128,6 +128,7 @@ LIB_EXPORT uint32_t Node::this_sizeof() const {
       SIZEOF_ROW(Expr),
       SIZEOF_ROW(ConstExpr),
       SIZEOF_ROW(UnresolvedType),
+      SIZEOF_ROW(InferType),
       SIZEOF_ROW(U1),
       SIZEOF_ROW(U8),
       SIZEOF_ROW(U16),
@@ -233,6 +234,7 @@ LIB_EXPORT qparse_ty_t Node::this_typeid() const {
       TYPEID_ROW(Expr, EXPR),
       TYPEID_ROW(ConstExpr, CEXPR),
       TYPEID_ROW(UnresolvedType, UNRES_TY),
+      TYPEID_ROW(InferType, INFER_TY),
       TYPEID_ROW(U1, U1_TY),
       TYPEID_ROW(U8, U8_TY),
       TYPEID_ROW(U16, U16_TY),
@@ -360,6 +362,7 @@ LIB_EXPORT bool Node::is_type() const {
     case QAST_NODE_RESULT_TY:
     case QAST_NODE_FN_TY:
     case QAST_NODE_UNRES_TY:
+    case QAST_NODE_INFER_TY:
       return true;
     default:
       return false;
@@ -988,6 +991,20 @@ LIB_EXPORT void UnresolvedType::print_impl(std::ostream &os, bool debug) const {
 LIB_EXPORT UnresolvedType *UnresolvedType::clone_impl() const {
   return UnresolvedType::get(m_name);
 }
+
+LIB_EXPORT bool InferType::verify_impl(std::ostream &os) const {
+  (void)os;
+  return true;
+}
+
+LIB_EXPORT void InferType::canonicalize_impl() {}
+
+LIB_EXPORT void InferType::print_impl(std::ostream &os, bool debug) const {
+  (void)debug;
+  os << "?";
+}
+
+LIB_EXPORT InferType *InferType::clone_impl() const { return InferType::get(); }
 
 #define TRIVIAL_TYPE_IMPL(__typename, __dumpstr, __bits)            \
   bool __typename::verify_impl(std::ostream &os) const {            \
@@ -4938,6 +4955,9 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
       break;
     case QAST_NODE_UNRES_TY:
       node = UnresolvedType::get();
+      break;
+    case QAST_NODE_INFER_TY:
+      node = InferType::get();
       break;
     case QAST_NODE_U1_TY:
       node = U1::get();

@@ -316,6 +316,14 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
 
     inner = MutTy::get(type);
     goto type_suffix;
+  } else if (tok.is<qOpTernary>()) {
+    /** QUIX INFERRED TYPE
+     *
+     * @brief Parse an inferred type.
+     */
+
+    inner = InferType::get();
+    goto type_suffix;
   } else {
     syntax(tok, "Expected a type");
     goto error_end;

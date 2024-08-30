@@ -1,1 +1,3 @@
-let [i, v] = 00;
+pub "C" fn _start(fd: i32) {
+
+} impl [noreturn];

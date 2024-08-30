@@ -111,17 +111,20 @@ static bool parse_fn_parameter(qparse_t &job, qlex_t *rd, FuncParam &param) {
   auto tok = qlex_next(rd);
 
   std::string name;
+  Type *type = nullptr;
+
   if (!tok.is(qName)) {
     syntax(tok, "Expected a parameter name before ':'");
   }
 
   name = tok.as_string(rd);
-  tok = qlex_next(rd);
+  tok = qlex_peek(rd);
   if (!tok.is<qPuncColn>()) {
-    syntax(tok, "Expected ':' after parameter name");
+    type = InferType::get();
+    param = {name, type, nullptr};
+    return true;
   }
-
-  Type *type = nullptr;
+  qlex_next(rd);
 
   if (!parse_type(job, rd, &type)) {
     qlex_next(rd);
