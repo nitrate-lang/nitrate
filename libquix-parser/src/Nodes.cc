@@ -122,97 +122,37 @@ LIB_EXPORT uint32_t Node::this_sizeof() const {
   { typeid(__type).hash_code(), sizeof(__type) }
 
   static const std::unordered_map<size_t, uint32_t> sizes = {
-      SIZEOF_ROW(Stmt),
-      SIZEOF_ROW(Type),
-      SIZEOF_ROW(Decl),
-      SIZEOF_ROW(Expr),
-      SIZEOF_ROW(ConstExpr),
-      SIZEOF_ROW(UnresolvedType),
-      SIZEOF_ROW(InferType),
-      SIZEOF_ROW(U1),
-      SIZEOF_ROW(U8),
-      SIZEOF_ROW(U16),
-      SIZEOF_ROW(U32),
-      SIZEOF_ROW(U64),
-      SIZEOF_ROW(U128),
-      SIZEOF_ROW(I8),
-      SIZEOF_ROW(I16),
-      SIZEOF_ROW(I32),
-      SIZEOF_ROW(I64),
-      SIZEOF_ROW(I128),
-      SIZEOF_ROW(F32),
-      SIZEOF_ROW(F64),
-      SIZEOF_ROW(VoidTy),
-      SIZEOF_ROW(StringTy),
-      SIZEOF_ROW(PtrTy),
-      SIZEOF_ROW(OpaqueTy),
-      SIZEOF_ROW(VectorTy),
-      SIZEOF_ROW(SetTy),
-      SIZEOF_ROW(MapTy),
-      SIZEOF_ROW(TupleTy),
-      SIZEOF_ROW(OptionalTy),
-      SIZEOF_ROW(ArrayTy),
-      SIZEOF_ROW(EnumTy),
-      SIZEOF_ROW(MutTy),
-      SIZEOF_ROW(StructTy),
-      SIZEOF_ROW(GroupTy),
-      SIZEOF_ROW(RegionTy),
-      SIZEOF_ROW(UnionTy),
-      SIZEOF_ROW(FuncTy),
-      SIZEOF_ROW(UnaryExpr),
-      SIZEOF_ROW(BinExpr),
-      SIZEOF_ROW(PostUnaryExpr),
-      SIZEOF_ROW(TernaryExpr),
-      SIZEOF_ROW(ConstInt),
-      SIZEOF_ROW(ConstFloat),
-      SIZEOF_ROW(ConstBool),
-      SIZEOF_ROW(ConstString),
-      SIZEOF_ROW(ConstChar),
-      SIZEOF_ROW(ConstNull),
-      SIZEOF_ROW(ConstUndef),
-      SIZEOF_ROW(Call),
-      SIZEOF_ROW(TemplCall),
-      SIZEOF_ROW(List),
-      SIZEOF_ROW(Assoc),
-      SIZEOF_ROW(Field),
-      SIZEOF_ROW(Index),
-      SIZEOF_ROW(Slice),
-      SIZEOF_ROW(FString),
-      SIZEOF_ROW(Ident),
-      SIZEOF_ROW(SeqPoint),
-      SIZEOF_ROW(StmtExpr),
-      SIZEOF_ROW(TypeExpr),
-      SIZEOF_ROW(Block),
-      SIZEOF_ROW(VolStmt),
-      SIZEOF_ROW(ConstDecl),
-      SIZEOF_ROW(VarDecl),
-      SIZEOF_ROW(LetDecl),
-      SIZEOF_ROW(InlineAsm),
-      SIZEOF_ROW(IfStmt),
-      SIZEOF_ROW(WhileStmt),
-      SIZEOF_ROW(ForStmt),
-      SIZEOF_ROW(FormStmt),
-      SIZEOF_ROW(ForeachStmt),
-      SIZEOF_ROW(BreakStmt),
-      SIZEOF_ROW(ContinueStmt),
-      SIZEOF_ROW(ReturnStmt),
-      SIZEOF_ROW(ReturnIfStmt),
-      SIZEOF_ROW(RetZStmt),
-      SIZEOF_ROW(RetVStmt),
-      SIZEOF_ROW(CaseStmt),
-      SIZEOF_ROW(SwitchStmt),
-      SIZEOF_ROW(TypedefDecl),
-      SIZEOF_ROW(FnDecl),
-      SIZEOF_ROW(FnDef),
-      SIZEOF_ROW(CompositeField),
-      SIZEOF_ROW(StructDef),
-      SIZEOF_ROW(GroupDef),
-      SIZEOF_ROW(RegionDef),
-      SIZEOF_ROW(UnionDef),
-      SIZEOF_ROW(EnumDef),
-      SIZEOF_ROW(SubsystemDecl),
-      SIZEOF_ROW(ExportDecl),
-      SIZEOF_ROW(ExprStmt),
+      SIZEOF_ROW(Stmt),         SIZEOF_ROW(Type),          SIZEOF_ROW(Decl),
+      SIZEOF_ROW(Expr),         SIZEOF_ROW(ConstExpr),     SIZEOF_ROW(UnresolvedType),
+      SIZEOF_ROW(InferType),    SIZEOF_ROW(TemplType),     SIZEOF_ROW(U1),
+      SIZEOF_ROW(U8),           SIZEOF_ROW(U16),           SIZEOF_ROW(U32),
+      SIZEOF_ROW(U64),          SIZEOF_ROW(U128),          SIZEOF_ROW(I8),
+      SIZEOF_ROW(I16),          SIZEOF_ROW(I32),           SIZEOF_ROW(I64),
+      SIZEOF_ROW(I128),         SIZEOF_ROW(F32),           SIZEOF_ROW(F64),
+      SIZEOF_ROW(VoidTy),       SIZEOF_ROW(StringTy),      SIZEOF_ROW(PtrTy),
+      SIZEOF_ROW(OpaqueTy),     SIZEOF_ROW(VectorTy),      SIZEOF_ROW(SetTy),
+      SIZEOF_ROW(MapTy),        SIZEOF_ROW(TupleTy),       SIZEOF_ROW(OptionalTy),
+      SIZEOF_ROW(ArrayTy),      SIZEOF_ROW(EnumTy),        SIZEOF_ROW(MutTy),
+      SIZEOF_ROW(StructTy),     SIZEOF_ROW(GroupTy),       SIZEOF_ROW(RegionTy),
+      SIZEOF_ROW(UnionTy),      SIZEOF_ROW(FuncTy),        SIZEOF_ROW(UnaryExpr),
+      SIZEOF_ROW(BinExpr),      SIZEOF_ROW(PostUnaryExpr), SIZEOF_ROW(TernaryExpr),
+      SIZEOF_ROW(ConstInt),     SIZEOF_ROW(ConstFloat),    SIZEOF_ROW(ConstBool),
+      SIZEOF_ROW(ConstString),  SIZEOF_ROW(ConstChar),     SIZEOF_ROW(ConstNull),
+      SIZEOF_ROW(ConstUndef),   SIZEOF_ROW(Call),          SIZEOF_ROW(TemplCall),
+      SIZEOF_ROW(List),         SIZEOF_ROW(Assoc),         SIZEOF_ROW(Field),
+      SIZEOF_ROW(Index),        SIZEOF_ROW(Slice),         SIZEOF_ROW(FString),
+      SIZEOF_ROW(Ident),        SIZEOF_ROW(SeqPoint),      SIZEOF_ROW(StmtExpr),
+      SIZEOF_ROW(TypeExpr),     SIZEOF_ROW(Block),         SIZEOF_ROW(VolStmt),
+      SIZEOF_ROW(ConstDecl),    SIZEOF_ROW(VarDecl),       SIZEOF_ROW(LetDecl),
+      SIZEOF_ROW(InlineAsm),    SIZEOF_ROW(IfStmt),        SIZEOF_ROW(WhileStmt),
+      SIZEOF_ROW(ForStmt),      SIZEOF_ROW(FormStmt),      SIZEOF_ROW(ForeachStmt),
+      SIZEOF_ROW(BreakStmt),    SIZEOF_ROW(ContinueStmt),  SIZEOF_ROW(ReturnStmt),
+      SIZEOF_ROW(ReturnIfStmt), SIZEOF_ROW(RetZStmt),      SIZEOF_ROW(RetVStmt),
+      SIZEOF_ROW(CaseStmt),     SIZEOF_ROW(SwitchStmt),    SIZEOF_ROW(TypedefDecl),
+      SIZEOF_ROW(FnDecl),       SIZEOF_ROW(FnDef),         SIZEOF_ROW(CompositeField),
+      SIZEOF_ROW(StructDef),    SIZEOF_ROW(GroupDef),      SIZEOF_ROW(RegionDef),
+      SIZEOF_ROW(UnionDef),     SIZEOF_ROW(EnumDef),       SIZEOF_ROW(SubsystemDecl),
+      SIZEOF_ROW(ExportDecl),   SIZEOF_ROW(ExprStmt),
   };
 
   qcore_assert(sizes.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
@@ -235,6 +175,7 @@ LIB_EXPORT qparse_ty_t Node::this_typeid() const {
       TYPEID_ROW(ConstExpr, CEXPR),
       TYPEID_ROW(UnresolvedType, UNRES_TY),
       TYPEID_ROW(InferType, INFER_TY),
+      TYPEID_ROW(TemplType, TEMPL_TY),
       TYPEID_ROW(U1, U1_TY),
       TYPEID_ROW(U8, U8_TY),
       TYPEID_ROW(U16, U16_TY),
@@ -363,6 +304,7 @@ LIB_EXPORT bool Node::is_type() const {
     case QAST_NODE_FN_TY:
     case QAST_NODE_UNRES_TY:
     case QAST_NODE_INFER_TY:
+    case QAST_NODE_TEMPL_TY:
       return true;
     default:
       return false;
@@ -1005,6 +947,78 @@ LIB_EXPORT void InferType::print_impl(std::ostream &os, bool debug) const {
 }
 
 LIB_EXPORT InferType *InferType::clone_impl() const { return InferType::get(); }
+
+LIB_EXPORT bool TemplType::verify_impl(std::ostream &os) const {
+  if (!m_template) {
+    os << "TemplType: template type is NULL\n";
+    return false;
+  }
+
+  if (!m_template->verify(os)) {
+    os << "TemplType: template type is invalid\n";
+    return false;
+  }
+
+  for (auto &arg : m_args) {
+    if (!arg) {
+      os << "TemplType: template argument is NULL\n";
+      return false;
+    }
+
+    if (!arg->verify(os)) {
+      os << "TemplType: template argument is invalid\n";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+LIB_EXPORT void TemplType::canonicalize_impl() {
+  if (m_template) {
+    m_template->canonicalize();
+  }
+
+  for (auto &arg : m_args) {
+    if (arg) {
+      arg->canonicalize();
+    }
+  }
+}
+
+LIB_EXPORT void TemplType::print_impl(std::ostream &os, bool debug) const {
+  if (m_template) {
+    m_template->print(os, debug);
+  } else {
+    os << "?";
+  }
+
+  os << "<";
+
+  for (size_t i = 0; i < m_args.size(); i++) {
+    if (i > 0) {
+      os << ", ";
+    }
+
+    if (m_args[i]) {
+      m_args[i]->print(os, debug);
+    } else {
+      os << "?";
+    }
+  }
+
+  os << ">";
+}
+
+LIB_EXPORT TemplType *TemplType::clone_impl() const {
+  Type *templ = m_template ? m_template->clone() : nullptr;
+  TemplTypeArgs args;
+  for (auto &arg : m_args) {
+    args.push_back(arg ? arg->clone() : nullptr);
+  }
+
+  return TemplType::get(templ, args);
+}
 
 #define TRIVIAL_TYPE_IMPL(__typename, __dumpstr, __bits)            \
   bool __typename::verify_impl(std::ostream &os) const {            \
@@ -4958,6 +4972,9 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
       break;
     case QAST_NODE_INFER_TY:
       node = InferType::get();
+      break;
+    case QAST_NODE_TEMPL_TY:
+      node = TemplType::get();
       break;
     case QAST_NODE_U1_TY:
       node = U1::get();

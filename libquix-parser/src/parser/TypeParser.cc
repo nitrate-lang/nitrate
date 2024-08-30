@@ -330,6 +330,45 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   }
 
 type_suffix: {
+  /** QUIX TEMPLATE TYPES
+   *
+   */
+
+  tok = qlex_peek(rd);
+  if (tok.is<qOpLT>()) {
+    qlex_next(rd);
+    
+    TemplTypeArgs args;
+
+    while (true) {
+      tok = qlex_peek(rd);
+      if (tok.is<qOpGT>() || tok.ty == qEofF) {
+        break;
+      }
+
+      Expr *arg = nullptr;
+      if (!parse_expr(job, rd, {qlex_tok_t(qOper, qOpGT), qlex_tok_t(qPunc, qPuncComa)}, &arg) ||
+          !arg) {
+        syntax(tok, "Expected a template type argument");
+        goto error_end;
+      }
+
+      args.push_back(arg);
+
+      tok = qlex_peek(rd);
+      if (tok.is<qPuncComa>()) {
+        qlex_next(rd);
+      }
+    }
+
+    if (!(tok = qlex_next(rd)).is<qOpGT>()) {
+      syntax(tok, "Expected '>' after template type arguments");
+      goto error_end;
+    }
+
+    inner = TemplType::get(inner, args);
+  }
+
   /** QUIX TYPE SUFFIXES
    *
    * @brief Parse type suffixes (syntax sugar).

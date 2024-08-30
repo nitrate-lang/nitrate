@@ -105,6 +105,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_FN_TY = 329,
   QAST_NODE_UNRES_TY = 330,
   QAST_NODE_INFER_TY = 331,
+  QAST_NODE_TEMPL_TY = 332,
 
   QAST_NODE_TYPEDEF = 500,
   QAST_NODE_FNDECL = 501,
@@ -140,7 +141,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT = 720,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 91
+#define QAST_NODE_COUNT 92
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -589,6 +590,25 @@ namespace qparse {
     InferType() = default;
 
     PNODE_IMPL_CORE(InferType)
+  };
+
+  typedef std::vector<Expr *, Arena<Expr *>> TemplTypeArgs;
+  class TemplType : public Type {
+    Type *m_template;
+    TemplTypeArgs m_args;
+
+  public:
+    TemplType(Type *templ = nullptr, std::initializer_list<Expr *> args = {})
+        : m_template(templ), m_args(args) {}
+    TemplType(Type *templ, const TemplTypeArgs &args) : m_template(templ), m_args(args) {}
+
+    Type *get_template() const { return m_template; }
+    void set_template(Type *templ) { m_template = templ; }
+
+    TemplTypeArgs &get_args() { return m_args; }
+    const TemplTypeArgs &get_args() const { return m_args; }
+
+    PNODE_IMPL_CORE(TemplType)
   };
 
   class U1 : public TypeBuiltin {

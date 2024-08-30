@@ -266,8 +266,6 @@ typedef struct qlex_tok_t {
     } else if constexpr (std::is_same_v<decltype(V), qlex_op_t>) {
       return ty == qOper && as<qlex_op_t>() == V;
     }
-
-    static_assert(std::is_same_v<decltype(V), decltype(V)>, "Invalid type");
   }
 
   inline std::string as_string(qlex_t *lexer) {
