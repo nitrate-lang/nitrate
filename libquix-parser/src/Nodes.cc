@@ -2238,10 +2238,7 @@ LIB_EXPORT void ConstChar::canonicalize_impl() {}
 
 LIB_EXPORT void ConstChar::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
-  os << "'";
-  /// TODO: Print char32_t as utf-8 to stream
-  qcore_implement(__func__);
-  os << "'";
+  os << "'\\u{" << std::hex << (int32_t)m_value << "}'" << std::dec;
 }
 
 LIB_EXPORT ConstChar *ConstChar::clone_impl() const { return ConstChar::get(m_value); }

@@ -544,10 +544,10 @@ LIB_EXPORT qlex_t *qlex_new(FILE *file, const char *filename) {
 }
 
 LIB_EXPORT qlex_t *qlex_istream__libextra(qlex_cxx_std_istream_t istream, const char *filename) {
-  qcore_implement(__func__);
-  /// TODO: Implement this function
   (void)istream;
   (void)filename;
+
+  qcore_implement(__func__);
 }
 
 LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename) {
@@ -1039,7 +1039,6 @@ LIB_EXPORT qlex_size qlex_span(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end) 
 LIB_EXPORT qlex_size qlex_spanx(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end,
                                 void (*callback)(const char *, qlex_size, uintptr_t),
                                 uintptr_t userdata) {
-  /// TODO:
   try {
     std::optional<qlex_size> begoff, endoff;
 

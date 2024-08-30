@@ -1,9 +1,96 @@
+#include <quix-lexer/Lib.h>
+#include <quix-parser/Lib.h>
+#include <quix-qxir/Lib.h>
+
+#include <optional>
 #include <stdexcept>
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
-  (void)Data;
-  (void)Size;
+extern "C" int LLVMFuzzerInitialize(int *argc, char **argv) {
+  (void)argc;
+  (void)argv;
 
-  /// TODO: Implement the fuzzer.
-  throw std::runtime_error("Fuzzing not implemented.");
+  qlex_lib_init();
+  qparse_lib_init();
+  qxir_lib_init();
+  return 0;
+}
+
+extern "C" int LLVMFuzzerFinalize() {
+  qxir_lib_deinit();
+  qparse_lib_deinit();
+  qlex_lib_deinit();
+  return 0;
+}
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+  qparse_node_t *node = nullptr;
+  FILE *fp = nullptr;
+  qlex_t *lex = nullptr;
+  std::optional<qcore_arena_t> arena;
+  qparse_conf_t *conf = nullptr;
+  qparse_t *parse = nullptr;
+  qxir_conf_t *conf2 = nullptr;
+  qmodule_t *mod = nullptr;
+  bool success = false;
+
+  if (Size == 0) {
+    return 0;
+  }
+
+  if ((fp = fmemopen((void *)Data, Size, "r")) == nullptr) {
+    goto cleanup;
+  }
+
+  if ((lex = qlex_new(fp, nullptr)) == nullptr) {
+    goto cleanup;
+  }
+
+  if ((conf = qparse_conf_new(true)) == nullptr) {
+    goto cleanup;
+  }
+
+  qparse_conf_setopt(conf, QPK_CRASHGUARD, QPV_OFF);
+
+  if ((parse = qparse_new(lex, conf)) == nullptr) {
+    goto cleanup;
+  }
+
+  arena = qcore_arena_t();
+  qcore_arena_open(&*arena);
+
+  if (!qparse_do(parse, &*arena, &node)) {
+    goto cleanup;
+  }
+
+  if ((conf2 = qxir_conf_new(true)) == nullptr) {
+    goto cleanup;
+  }
+
+  qxir_conf_setopt(conf2, QQK_CRASHGUARD, QQV_OFF);
+
+  if ((mod = qxir_new(lex, conf2)) == nullptr) {
+    goto cleanup;
+  }
+
+  if (!qxir_lower(mod, node, true)) {
+    goto cleanup;
+  }
+
+  success = true;
+
+cleanup:
+  qxir_free(mod);
+  qxir_conf_free(conf2);
+  qparse_free(parse);
+  qparse_conf_free(conf);
+  if (arena) {
+    qcore_arena_close(&*arena);
+  }
+  qlex_free(lex);
+  if (fp) {
+    fclose(fp);
+  }
+  node = nullptr;
+
+  return success ? 1 : 0;
 }

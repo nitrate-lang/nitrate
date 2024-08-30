@@ -331,19 +331,38 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   tok = qlex_peek(rd);
-  /// TODO: Implement function properties
+  switch (prop._purity) {
+    case Purity::Pure:
+      ftype->set_purity(FuncPurity::PURE);
+      break;
+    case Purity::QuasiPure:
+      ftype->set_purity(FuncPurity::QUASIPURE);
+      break;
+    case Purity::RetroPure:
+      ftype->set_purity(FuncPurity::RETROPURE);
+      break;
+    case Purity::Impure:
+      if (prop._tsafe) {
+        ftype->set_purity(FuncPurity::IMPURE_THREAD_SAFE);
+      } else {
+        ftype->set_purity(FuncPurity::IMPURE_THREAD_UNSAFE);
+      }
+      break;
+  }
+
+  Type *ret_type = nullptr;
+
+  ftype->set_variadic(is_variadic);
+  ftype->set_foreign(prop._foreign);
+  ftype->set_noexcept(prop._noexcept);
+  ftype->set_return_ty(ret_type);
+  fndecl->set_type(ftype);
 
   if (tok.is<qPuncSemi>()) {
-    ftype->set_variadic(is_variadic);
-    ftype->set_foreign(prop._foreign);
-    ftype->set_noexcept(prop._noexcept);
-    fndecl->set_type(ftype);
     qlex_next(rd);
     *node = fndecl;
     return true;
   }
-
-  Type *ret_type = nullptr;
 
   if (tok.is<qPuncColn>()) {
     qlex_next(rd);
@@ -353,9 +372,6 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
 
     ftype->set_return_ty(ret_type);
-    ftype->set_variadic(is_variadic);
-    ftype->set_foreign(prop._foreign);
-    ftype->set_noexcept(prop._noexcept);
     fndecl->set_type(ftype);
 
     tok = qlex_peek(rd);
@@ -378,9 +394,6 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     if (!fndecl->get_type()) {
       ftype->set_return_ty(VoidTy::get());
-      ftype->set_variadic(is_variadic);
-      ftype->set_foreign(prop._foreign);
-      ftype->set_noexcept(prop._noexcept);
       fndecl->set_type(ftype);
     }
 
@@ -502,9 +515,6 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     if (!fndecl->get_type()) {
       ftype->set_return_ty(VoidTy::get());
-      ftype->set_variadic(is_variadic);
-      ftype->set_foreign(prop._foreign);
-      ftype->set_noexcept(prop._noexcept);
       fndecl->set_type(ftype);
     }
 
