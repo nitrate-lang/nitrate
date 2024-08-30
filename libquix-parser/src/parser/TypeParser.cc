@@ -94,7 +94,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
          *       to account for this.
          */
 
-        if (!parse_function(job, rd, &fn)) {
+        if (!parse_function(job, rd, &fn) || !fn) {
           syntax(tok, "Malformed function type");
           goto error_end;
         }

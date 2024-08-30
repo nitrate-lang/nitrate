@@ -173,7 +173,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       qlex_next(rd);
 
       /* Parse the function definition */
-      if (!parse_function(job, rd, &method)) {
+      if (!parse_function(job, rd, &method) || !method) {
         syntax(tok, "Expected function definition in struct definition");
       }
 
@@ -208,7 +208,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
       }
 
       /* Parse the function definition */
-      if (!parse_function(job, rd, &method)) {
+      if (!parse_function(job, rd, &method) || !method) {
         syntax(tok, "Expected function definition in struct definition");
       }
 
