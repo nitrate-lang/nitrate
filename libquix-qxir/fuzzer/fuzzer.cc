@@ -4,6 +4,7 @@
 
 #include <optional>
 #include <stdexcept>
+#include <iostream>
 
 extern "C" int LLVMFuzzerInitialize(int *argc, char **argv) {
   (void)argc;
