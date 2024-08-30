@@ -175,6 +175,7 @@ bool parser::parse_union(qparse_t &job, qlex_t *rd, Stmt **node) {
       /* Parse the function definition */
       if (!parse_function(job, rd, &method) || !method) {
         syntax(tok, "Expected function definition in union definition");
+        return false;
       }
 
       /* Assign the visibility to the method */
@@ -210,6 +211,7 @@ bool parser::parse_union(qparse_t &job, qlex_t *rd, Stmt **node) {
       /* Parse the function definition */
       if (!parse_function(job, rd, &method) || !method) {
         syntax(tok, "Expected function definition in union definition");
+        return false;
       }
 
       /* Assign the visibility to the method */
