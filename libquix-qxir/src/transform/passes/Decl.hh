@@ -29,52 +29,26 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
+#ifndef __QUIX_QXIR_PASSES_DECL_H__
+#define __QUIX_QXIR_PASSES_DECL_H__
 
-#include <passes/Pass.hh>
+#include <transform/Pass.hh>
 
-using namespace qxir::passes;
+namespace qxir::passes::impl {
+#define DECLARE_QIR_PASS(name) \
+  PassResult name(qmodule_t *mod) { return PassResult(#name, true); }
 
-void PassResult::print(std::ostream &out) const {
-  out << "Pass " << m_name << " " << (m_success ? "succeeded" : "failed");
-}
+  DECLARE_QIR_PASS(ds_acyclic);
+  DECLARE_QIR_PASS(ds_nilchk);
+  DECLARE_QIR_PASS(ds_chtype);
+  DECLARE_QIR_PASS(ds_discov);
+  DECLARE_QIR_PASS(ns_flatten);
+  DECLARE_QIR_PASS(fnflatten);
+  DECLARE_QIR_PASS(tyinfer);
+  DECLARE_QIR_PASS(nm_premangle);
 
-std::mutex Pass::m_mutex;
-std::unordered_map<PassName, std::shared_ptr<Pass>> Pass::m_passes;
+#undef DECLARE_QIR_PASS
 
-const std::weak_ptr<Pass> Pass::create(PassName name, PassFunc func) {
-  std::lock_guard<std::mutex> lock(m_mutex);
+}  // namespace qxir::passes::impl
 
-  if (m_passes.contains(name)) {
-    auto pass = m_passes[name];
-    pass->m_func = func;
-    return pass;
-  }
-
-  return m_passes[name] = std::shared_ptr<Pass>(new Pass(name, func));
-}
-
-const std::weak_ptr<Pass> Pass::get(PassName name) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  if (m_passes.count(name) == 0) {
-    return std::weak_ptr<Pass>();
-  }
-
-  return m_passes[name];
-}
-
-PassName Pass::getName() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_name;
-}
-
-PassFunc Pass::getFunc() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_func;
-}
-
-PassResult Pass::transform(qmodule_t *module) const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_func(module);
-}
+#endif  // __QUIX_QXIR_PASSES_DECL_H__

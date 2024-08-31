@@ -29,23 +29,88 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_PASSES_PASS_MANAGER_H__
-#define __QUIX_QXIR_PASSES_PASS_MANAGER_H__
+#include <quix-core/Error.h>
 
-#include <ostream>
-#include <passes/PassGroup.hh>
+#define __QXIR_IMPL__
+#include <quix-qxir/Module.h>
 
-namespace qxir::passes {
-  class StdTransform final {
-    std::weak_ptr<PassGroup> m_root;
+#include <transform/PassGroup.hh>
 
-    static std::weak_ptr<PassGroup> optimize_order(std::vector<PassName> passes);
+using namespace qxir::passes;
 
-  public:
-    static std::unique_ptr<StdTransform> create();
+void PassGroupResult::print(std::ostream &out) const {
+  for (const auto &result : m_results) {
+    result.print(out);
+    out << std::endl;
+  }
+}
 
-    bool transform(qmodule_t* module, std::ostream& out);
-  };
-}  // namespace qxir::passes
+thread_local std::unordered_map<PassGroupName, std::shared_ptr<PassGroup>> PassGroup::m_groups;
 
-#endif  // __QUIX_QXIR_PASSES_PASS_MANAGER_H__
+void PassGroup::register_group(const PassGroupName &name, const std::vector<PassName> &passes,
+                               const PassGroupDependencies &dependencies) {
+  if (m_groups.contains(name)) {
+    auto group = m_groups[name];
+    group->m_passes = passes;
+    group->m_dependencies = dependencies;
+  } else {
+    m_groups[name] = std::shared_ptr<PassGroup>(new PassGroup(name, passes, dependencies));
+  }
+}
+
+const PassGroup *PassGroup::get(PassGroupName name) {
+  if (!m_groups.contains(name)) {
+    qcore_panicf("Expected pass group %s to exist. But it was not found.", name.c_str());
+  }
+
+  return m_groups[name].get();
+}
+
+PassGroupName PassGroup::getName() const { return m_name; }
+
+std::vector<PassName> PassGroup::getPasses() const { return m_passes; }
+
+PassGroupDependencies PassGroup::getDependencies() const { return m_dependencies; }
+
+bool PassGroup::hasPass(const PassName &name) const {
+  return std::find(m_passes.begin(), m_passes.end(), name) != m_passes.end();
+}
+
+bool PassGroup::hasDependency(const PassGroupName &name) const {
+  return std::find_if(m_dependencies.begin(), m_dependencies.end(), [&name](const auto &dep) {
+           return dep.first == name;
+         }) != m_dependencies.end();
+}
+
+PassGroupResult PassGroup::transform(qmodule_t *module) const {
+  PassGroupResult result;
+
+  for (const auto &dep : m_dependencies) {
+    auto depRef = PassGroup::get(dep.first);
+
+    if (dep.second == DependencyFrequency::Once && module->hasPassBeenRun(dep.first)) {
+      continue;
+    }
+
+    auto res = depRef->transform(module);
+    result += res;
+
+    module->applyPassLabel(dep.first);
+
+    if (!res) {
+      return result;
+    }
+  }
+
+  for (const auto &pass : m_passes) {
+    auto passRef = Pass::get(pass);
+    auto res = passRef->transform(module);
+    result |= res;
+
+    if (!res) {
+      break;
+    }
+  }
+
+  return result;
+}

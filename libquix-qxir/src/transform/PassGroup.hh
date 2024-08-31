@@ -29,56 +29,68 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_PASSES_PASS_H__
-#define __QUIX_QXIR_PASSES_PASS_H__
-
-#include <quix-qxir/Node.h>
+#ifndef __QUIX_QXIR_PASSES_PASSGROUP_H__
+#define __QUIX_QXIR_PASSES_PASSGROUP_H__
 
 #include <memory>
 #include <mutex>
 #include <ostream>
-#include <string>
+#include <transform/Pass.hh>
 #include <unordered_map>
-
-namespace qxir {
-  class Module;
-}
+#include <vector>
 
 namespace qxir::passes {
-  typedef std::string PassName;
+  typedef std::string PassGroupName;
 
-  class PassResult final { /* Optimize this; deduplicate / change m_name to an integral type */
-    PassName m_name;
-    bool m_success;
+  class PassGroupResult final {
+    std::vector<PassResult> m_results;
 
   public:
-    PassResult(PassName name, bool success) : m_name(std::move(name)), m_success(success) {}
+    PassGroupResult() = default;
 
-    bool operator!() const { return !m_success; }
-    void print(std::ostream &out) const;
+    void operator|=(const PassResult& result) { m_results.push_back(result); }
+    void operator+=(const PassGroupResult& result) {
+      m_results.insert(m_results.end(), result.m_results.begin(), result.m_results.end());
+    }
+
+    bool operator!() const {
+      return std::find_if(m_results.begin(), m_results.end(),
+                          [](const PassResult& result) { return !result; }) != m_results.end();
+    }
+
+    void print(std::ostream& out) const;
   };
 
-  typedef PassResult (*PassFunc)(qmodule_t *module);
+  enum class DependencyFrequency { Always, Once };
 
-  class Pass final {
-    PassName m_name;
-    PassFunc m_func;
+  typedef std::vector<std::pair<PassGroupName, DependencyFrequency>> PassGroupDependencies;
 
-    static std::mutex m_mutex;
-    static std::unordered_map<PassName, std::shared_ptr<Pass>> m_passes;
+  class PassGroup final {
+    PassGroupName m_name;
+    std::vector<PassName> m_passes;
+    PassGroupDependencies m_dependencies;
 
-    Pass(PassName name, PassFunc func) : m_name(std::move(name)), m_func(func) {}
-    Pass(const Pass &) = delete;
+    static thread_local std::unordered_map<PassGroupName, std::shared_ptr<PassGroup>> m_groups;
+
+    PassGroup(PassGroupName name, std::vector<PassName> passes, PassGroupDependencies dependencies)
+        : m_name(std::move(name)),
+          m_passes(std::move(passes)),
+          m_dependencies(std::move(dependencies)) {}
 
   public:
-    static const std::weak_ptr<Pass> create(PassName name, PassFunc func);
-    static const std::weak_ptr<Pass> get(PassName name);
+    static void register_group(const PassGroupName& name, const std::vector<PassName>& passes,
+                               const PassGroupDependencies& dependencies);
 
-    PassName getName() const;
-    PassFunc getFunc() const;
+    static const PassGroup* get(PassGroupName name);
 
-    PassResult transform(qmodule_t *module) const;
+    PassGroupName getName() const;
+    std::vector<PassName> getPasses() const;
+    PassGroupDependencies getDependencies() const;
+    bool hasPass(const PassName& name) const;
+    bool hasDependency(const PassGroupName& name) const;
+
+    PassGroupResult transform(qmodule_t* module) const;
   };
 }  // namespace qxir::passes
 
-#endif  // __QUIX_QXIR_PASSES_PASS_H__
+#endif  // __QUIX_QXIR_PASSES_PASSGROUP_H__

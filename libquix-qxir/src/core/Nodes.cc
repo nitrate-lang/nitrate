@@ -795,7 +795,6 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
       }
       case QIR_NODE_TMP: {
         MIXIN_PRIMITIVE(cur->as<Tmp>()->m_type);
-        /// TODO: Mixin arbitrary data in std::any
         break;
       }
       case QIR_NODE_BAD: {

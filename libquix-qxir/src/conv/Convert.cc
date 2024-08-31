@@ -44,8 +44,9 @@
 #include <atomic>
 #include <core/Config.hh>
 #include <cstring>
+#include <sstream>
 #include <diagnostic/Report.hh>
-#include <passes/PassManager.hh>
+#include <transform/PassManager.hh>
 
 #include "core/LibMacro.h"
 
@@ -156,6 +157,14 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
       ConvState s;
       mod->setRoot(qconv(s, static_cast<const qparse::Node *>(base)));
       status = !mod->getFailbit();
+
+      if (status) {
+        std::stringstream ss;
+        status = qxir::passes::StdTransform::create()->transform(mod, ss);
+
+        /// TODO: Do something with the output stream
+        std::cout << ss.str();
+      }
     } catch (QError &e) {
       // QError exception is control flow to abort the recursive lowering
 
@@ -442,7 +451,7 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
       return qxir::create<qxir::Call>(method, qxir::CallArgs({lhs}));
     }
     case qOpRange: {
-      /// TODO:
+      /// TODO: Implement range operator
       throw QError();
     }
     case qOpBitcastAs: {
@@ -1343,12 +1352,12 @@ namespace qxir {
   }
 
   static Expr *qconv_infer_ty(ConvState &s, const qparse::InferType *n) {
-    /// TODO:
+    /// TODO: infer_ty
     throw QError();
   }
 
   static Expr *qconv_templ_ty(ConvState &s, const qparse::TemplType *n) {
-    /// TODO:
+    /// TODO: templ_ty
     throw QError();
   }
 
@@ -1430,10 +1439,6 @@ namespace qxir {
   }
 
   static Expr *qconv_fn(ConvState &s, const qparse::FnDef *n) {
-    /**
-     * /// TODO: Write a detailed description of the function conversion process.
-     */
-
     Expr *precond = nullptr, *postcond = nullptr;
     Seq *body = nullptr;
     Params params;
@@ -1611,8 +1616,6 @@ namespace qxir {
   }
 
   static Expr *qconv_const(ConvState &s, const qparse::ConstDecl *n) {
-    /// TODO: Write explanation
-
     if (!n->get_value()) {
       badtree(n, "parse::ConstDecl::get_value() == nullptr");
       throw QError();
@@ -1655,8 +1658,6 @@ namespace qxir {
   }
 
   static Expr *qconv_let(ConvState &s, const qparse::LetDecl *n) {
-    /// TODO: Write explanation
-
     if (!n->get_type() && !n->get_value()) {
       badtree(n,
               "qparse::LetDecl::get_type() == nullptr && qparse::LetDecl::get_value() == nullptr");

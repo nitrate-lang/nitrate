@@ -29,116 +29,53 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
-
 #define __QXIR_IMPL__
+
+#include <quix-core/Error.h>
 #include <quix-qxir/Module.h>
 
-#include <passes/PassGroup.hh>
+#include <iostream>
+#include <transform/Pass.hh>
 
 using namespace qxir::passes;
 
-void PassGroupResult::print(std::ostream &out) const {
-  for (const auto &result : m_results) {
-    result.print(out);
-    out << std::endl;
+void PassResult::print(std::ostream &out) const {
+  if (!m_success) {
+    out << "Pass " << m_name << " failed with error: ?.";
+    return;
   }
 }
 
-std::unordered_map<PassGroupName, std::shared_ptr<PassGroup>> PassGroup::m_groups;
+std::mutex Pass::m_mutex;
+std::unordered_map<PassName, std::shared_ptr<Pass>> Pass::m_passes;
 
-const std::weak_ptr<PassGroup> PassGroup::create(const PassGroupName &name,
-                                                 const std::vector<PassName> &passes,
-                                                 const PassGroupDependencies &dependencies) {
+void Pass::register_pass(PassName name, PassFunc func) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  if (m_groups.contains(name)) {
-    auto group = m_groups[name];
-    group->m_passes = passes;
-    group->m_dependencies = dependencies;
-    return group;
+  if (m_passes.contains(name)) {
+    qcore_panicf("Pass %s already exists.", name.c_str());
   }
 
-  return m_groups[name] = std::shared_ptr<PassGroup>(new PassGroup(name, passes, dependencies));
+  m_passes[name] = std::shared_ptr<Pass>(new Pass(name, func));
 }
 
-const std::weak_ptr<PassGroup> PassGroup::get(PassGroupName name) {
+const Pass *Pass::get(PassName name) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  if (!m_groups.contains(name)) {
-    return std::weak_ptr<PassGroup>();
+  if (m_passes.count(name) == 0) {
+    qcore_panicf("Expected pass %s to exist. But it was not found.", name.c_str());
   }
 
-  return m_groups[name];
+  return m_passes[name].get();
 }
 
-PassGroupName PassGroup::getName() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_name;
-}
+PassName Pass::getName() const { return m_name; }
 
-std::vector<PassName> PassGroup::getPasses() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_passes;
-}
+PassFunc Pass::getFunc() const { return m_func; }
 
-PassGroupDependencies PassGroup::getDependencies() const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_dependencies;
-}
+PassResult Pass::transform(qmodule_t *module) const {
+  auto res = m_func(module);
+  module->applyPassLabel(m_name);
 
-bool PassGroup::hasPass(const PassName &name) const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  return std::find(m_passes.begin(), m_passes.end(), name) != m_passes.end();
-}
-
-bool PassGroup::hasDependency(const PassGroupName &name) const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  return std::find_if(m_dependencies.begin(), m_dependencies.end(), [&name](const auto &dep) {
-           return dep.first == name;
-         }) != m_dependencies.end();
-}
-
-PassGroupResult PassGroup::transform(qmodule_t *module) const {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-  PassGroupResult result;
-
-  for (const auto &dep : m_dependencies) {
-    auto depRef = PassGroup::get(dep.first).lock();
-    if (!depRef) {
-      qcore_panicf("Expected pass group %s to exist. But a weak_ptr reference was unacquireable.",
-                   dep.first.c_str());
-    }
-
-    if (dep.second == DependencyFrequency::Once && module->hasPassBeenRun(dep.first)) {
-      continue;
-    }
-
-    auto res = depRef->transform(module);
-    result += res;
-
-    if (!res) {
-      return result;
-    }
-  }
-
-  for (const auto &pass : m_passes) {
-    auto passRef = Pass::get(pass).lock();
-    if (!passRef) {
-      qcore_panicf("Expected pass %s to exist. But a weak_ptr reference was unacquireable.",
-                   pass.c_str());
-    }
-
-    auto res = passRef->transform(module);
-    result |= res;
-
-    if (!res) {
-      break;
-    }
-  }
-
-  return result;
+  return res;
 }

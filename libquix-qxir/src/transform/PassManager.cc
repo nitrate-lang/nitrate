@@ -34,81 +34,77 @@
 #include <quix-qxir/Module.h>
 
 #include <mutex>
-#include <passes/PassManager.hh>
+#include <transform/PassManager.hh>
+#include <transform/passes/Decl.hh>
 
 using namespace qxir::passes;
 
 static void seed_passes() {
-  PassFunc placeholder = [](qmodule_t* module) -> PassResult {
-    /// TODO: Write passes
-    qcore_implement("placeholder");
-  };
-
-  Pass::create("ds-acyclic", placeholder);
-  Pass::create("ds-nilchk", placeholder);
-  Pass::create("ds-chtype", placeholder);
-  Pass::create("ds-discov", placeholder);
-  Pass::create("ns-flatten", placeholder);
-  Pass::create("fnflatten", placeholder);
-  Pass::create("tyinfer", placeholder);
-  Pass::create("nm-premangle", placeholder);
+  Pass::register_pass("ds-acyclic", impl::ds_acyclic);
+  Pass::register_pass("ds-nilchk", impl::ds_nilchk);
+  Pass::register_pass("ds-chtype", impl::ds_chtype);
+  Pass::register_pass("ds-discov", impl::ds_discov);
+  Pass::register_pass("ns-flatten", impl::ns_flatten);
+  Pass::register_pass("fnflatten", impl::fnflatten);
+  Pass::register_pass("tyinfer", impl::tyinfer);
+  Pass::register_pass("nm-premangle", impl::nm_premangle);
 
   /* Read-only passes */
-  PassGroup::create("g0", {"ds-acyclic", "ds-nilchk"}, {});
-  PassGroup::create("g1", {"ds-chtype"}, {{"g0", DependencyFrequency::Once}});
-  PassGroup::create("g2", {"ds-discov"},
-                    {{"g0", DependencyFrequency::Once}, {"g1", DependencyFrequency::Once}});
+  PassGroup::register_group("g0", {"ds-acyclic", "ds-nilchk"}, {});
+  PassGroup::register_group("g1", {"ds-chtype"}, {{"g0", DependencyFrequency::Once}});
+  PassGroup::register_group("g2", {"ds-discov"},
+                            {{"g0", DependencyFrequency::Once}, {"g1", DependencyFrequency::Once}});
 
   /* Transformative passes */
-  PassGroup::create("g3", {"ns-flatten"},
-                    {{"g0", DependencyFrequency::Once},
-                     {"g1", DependencyFrequency::Once},
-                     {"g2", DependencyFrequency::Once}});
-  PassGroup::create("g4", {"fnflatten"},
-                    {{"g0", DependencyFrequency::Once},
-                     {"g1", DependencyFrequency::Once},
-                     {"g2", DependencyFrequency::Once},
-                     {"g3", DependencyFrequency::Once}});
-  PassGroup::create("g5", {"tyinfer"},
-                    {{"g0", DependencyFrequency::Once},
-                     {"g1", DependencyFrequency::Once},
-                     {"g2", DependencyFrequency::Once},
-                     {"g3", DependencyFrequency::Once},
-                     {"g4", DependencyFrequency::Once}});
-  PassGroup::create("g6", {"nm-premangle"},
-                    {{"g0", DependencyFrequency::Once},
-                     {"g1", DependencyFrequency::Once},
-                     {"g2", DependencyFrequency::Once},
-                     {"g3", DependencyFrequency::Once},
-                     {"g4", DependencyFrequency::Once},
-                     {"g5", DependencyFrequency::Once}});
+  PassGroup::register_group("g3", {"ns-flatten"},
+                            {{"g0", DependencyFrequency::Once},
+                             {"g1", DependencyFrequency::Once},
+                             {"g2", DependencyFrequency::Once}});
+  PassGroup::register_group("g4", {"fnflatten"},
+                            {{"g0", DependencyFrequency::Once},
+                             {"g1", DependencyFrequency::Once},
+                             {"g2", DependencyFrequency::Once},
+                             {"g3", DependencyFrequency::Once}});
+  PassGroup::register_group("g5", {"tyinfer"},
+                            {{"g0", DependencyFrequency::Once},
+                             {"g1", DependencyFrequency::Once},
+                             {"g2", DependencyFrequency::Once},
+                             {"g3", DependencyFrequency::Once},
+                             {"g4", DependencyFrequency::Once}});
+  PassGroup::register_group("g6", {"nm-premangle"},
+                            {{"g0", DependencyFrequency::Once},
+                             {"g1", DependencyFrequency::Once},
+                             {"g2", DependencyFrequency::Once},
+                             {"g3", DependencyFrequency::Once},
+                             {"g4", DependencyFrequency::Once},
+                             {"g5", DependencyFrequency::Once}});
 
   /* Root pass group */
-  PassGroup::create("root", {},
-                    {{"g0", DependencyFrequency::Once},
-                     {"g1", DependencyFrequency::Once},
-                     {"g2", DependencyFrequency::Once},
-                     {"g3", DependencyFrequency::Once},
-                     {"g4", DependencyFrequency::Once},
-                     {"g5", DependencyFrequency::Once},
-                     {"g6", DependencyFrequency::Once}});
+  PassGroup::register_group("root", {},
+                            {{"g0", DependencyFrequency::Once},
+                             {"g1", DependencyFrequency::Once},
+                             {"g2", DependencyFrequency::Once},
+                             {"g3", DependencyFrequency::Once},
+                             {"g4", DependencyFrequency::Once},
+                             {"g5", DependencyFrequency::Once},
+                             {"g6", DependencyFrequency::Once}});
 }
 
-std::weak_ptr<PassGroup> StdTransform::optimize_order(std::vector<PassName> passes) {
-  /// TODO:
+const PassGroup* StdTransform::optimize_order(std::vector<PassName> passes) {
+  /// TODO: Implement pass ordering
 
   return PassGroup::get("root");
 
   qcore_implement("StdTransform::optimize_order");
 }
 
-std::unique_ptr<StdTransform> StdTransform::create() {
+const StdTransform* StdTransform::create() {
   static std::once_flag flag;
   std::call_once(flag, seed_passes);
 
-  std::unique_ptr<StdTransform> ptr = std::make_unique<StdTransform>();
+  thread_local StdTransform ptr;
 
-  ptr->m_root = optimize_order({
+  ptr.m_root = optimize_order({
       "ds-acyclic",   /* Data structure acyclic verification */
       "ds-nilchk",    /* Data structure null pointer verification	*/
       "ds-chtype",    /* Data structure child type */
@@ -119,16 +115,11 @@ std::unique_ptr<StdTransform> StdTransform::create() {
       "nm-premangle", /* Name Pre-mangling */
   });
 
-  return ptr;
+  return &ptr;
 }
 
-bool StdTransform::transform(qmodule_t* module, std::ostream& out) {
-  auto ref = m_root.lock();
-  if (!ref) {
-    return false;
-  }
-
-  auto res = ref->transform(module);
+bool StdTransform::transform(qmodule_t* module, std::ostream& out) const {
+  auto res = m_root->transform(module);
   res.print(out);
 
   return !!res;
