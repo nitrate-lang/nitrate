@@ -29,6 +29,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define QXIR_USE_CPP_API
+
+#include <quix-qxir/Node.h>
+
 #include <transform/passes/Decl.hh>
 
 /**
@@ -40,7 +44,23 @@
  */
 
 bool qxir::passes::impl::ds_nilchk(qmodule_t *mod) {
-  /// TODO: Implement pass
-  
-  return true;
+  bool has_bad_null = false;
+
+  const auto cb = [&has_bad_null, mod](Expr *par, Expr *cur) -> IterOp {
+    if (cur == nullptr) [[unlikely]] {
+      has_bad_null = true;
+
+      mod->getDiag().push(
+          QXIR_AUDIT_CONV,
+          diag::DiagMessage("Illegal nullptr pointer found in module IR data structure.",
+                            diag::IssueClass::FatalError, diag::IssueCode::DSNullPtr));
+      return IterOp::Abort;
+    }
+
+    return IterOp::Proceed;
+  };
+
+  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
+
+  return !has_bad_null;
 }

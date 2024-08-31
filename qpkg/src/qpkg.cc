@@ -1276,6 +1276,14 @@ int run_dev_mode(
       return 1;
     }
 
+    qxir_diag_read(
+        qmod, QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
+        [](const uint8_t *msg, size_t size, uintptr_t data) {
+          (void)data;
+          std::cerr << std::string_view((const char *)msg, size) << std::endl;
+        },
+        0);
+
     FILE *out_fp = nullptr;
     if (!output.empty()) {
       out_fp = fopen(output.c_str(), "w");

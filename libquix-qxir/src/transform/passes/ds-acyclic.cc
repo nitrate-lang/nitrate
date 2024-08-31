@@ -48,7 +48,9 @@ bool qxir::passes::impl::ds_acyclic(qmodule_t *mod) {
   bool has_cycle = false;
 
   const auto cb = [&visited, &has_cycle, mod](Expr *par, Expr *cur) -> IterOp {
-    if (visited.contains(cur) || true) [[unlikely]] {
+    /// FIXME: If Type nodes are optimized via deduplication, this will break.
+
+    if (visited.contains(cur)) [[unlikely]] {
       has_cycle = true;
 
       mod->getDiag().push(

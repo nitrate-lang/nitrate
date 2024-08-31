@@ -67,6 +67,10 @@ PassName Pass::getName() const { return m_name; }
 PassFunc Pass::getFunc() const { return m_func; }
 
 bool Pass::transform(qmodule_t *module) const {
+  module->getDiag().push(
+      QXIR_AUDIT_CONV, diag::DiagMessage("Running pass " + m_name + " on module IR data structure.",
+                                         diag::IssueClass::Debug, diag::IssueCode::Default));
+
   auto res = m_func(module);
   module->applyPassLabel(m_name);
 

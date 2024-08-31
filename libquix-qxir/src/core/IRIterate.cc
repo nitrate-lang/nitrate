@@ -54,6 +54,10 @@ namespace qxir::detail {
   std::vector<Expr **> get_children_sorted(Expr *base, ChildSelect cs) {
     std::vector<Expr **> children;
 
+    if (!base) {
+      return children;
+    }
+
     switch (base->getKind()) {
       case QIR_NODE_BINEXPR: {
         children.push_back(&base->as<BinExpr>()->m_lhs);
@@ -301,7 +305,14 @@ namespace qxir::detail {
 
     typedef std::function<void(Expr *, const IterCallback &, const ChildSelect &)> IterFn;
 
-    cb(nullptr, base);
+    switch (cb(nullptr, base)) {
+      case IterOp::Proceed:
+        break;
+      case IterOp::Abort:
+        return;
+      case IterOp::SkipChildren:
+        return;
+    }
 
     const IterFn syncfn = [&syncfn](Expr *n, const IterCallback &cb, const ChildSelect &cs) {
       for (Expr **child : get_children_sorted(n, cs)) {
