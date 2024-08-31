@@ -57,6 +57,8 @@ static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
         {IssueCode::SignalReceived, "-Wcompiler-error"},
         {IssueCode::DSPolyCyclicRef, "-Wds-cyclic-ref"},
         {IssueCode::DSNullPtr, "-Wds-nullptr"},
+        {IssueCode::DSBadType, "-Wds-bad-type"},
+        {IssueCode::DSMissingMod, "-Wds-missing-mod"},
     });
 
 ///============================================================================///

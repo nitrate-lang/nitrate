@@ -95,7 +95,7 @@ CPP_EXPORT uint32_t Expr::thisSizeOf() const noexcept {
 
 CPP_EXPORT qxir_ty_t Expr::getKind() const noexcept { return m_node_type; }
 
-CPP_EXPORT const char *Expr::thisTypeName() const noexcept {
+CPP_EXPORT const char *Expr::getKindName() const noexcept {
 #define NAMEOF_ROW(__name) \
   { QIR_NODE_##__name, "QIR_NODE_" #__name }
 

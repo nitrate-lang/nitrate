@@ -44,8 +44,8 @@
 #include <atomic>
 #include <core/Config.hh>
 #include <cstring>
-#include <sstream>
 #include <diagnostic/Report.hh>
+#include <sstream>
 #include <transform/PassManager.hh>
 
 #include "core/LibMacro.h"
@@ -72,7 +72,7 @@ static std::mutex sigguard_lock;
 static std::unordered_map<int, sighandler_t> sigguard_old;
 static const std::set<int> sigguard_signals = {SIGABRT, SIGBUS, SIGFPE, SIGILL, SIGSEGV, SIGSYS};
 static thread_local jmp_buf sigguard_env;
-static thread_local qmodule_t *qxir_ctx;
+thread_local qmodule_t *qxir::current;
 
 static void _signal_handler(int sig) {
   sigguard_lock.lock();
@@ -83,7 +83,7 @@ static void _signal_handler(int sig) {
   diag.type = IssueClass::FatalError;
   diag.code = IssueCode::SignalReceived;
 
-  qxir_ctx->getDiag().push(QXIR_AUDIT_CONV, std::move(diag));
+  qxir::current->getDiag().push(QXIR_AUDIT_CONV, std::move(diag));
 
   sigguard_lock.unlock();
 
@@ -146,7 +146,7 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
   std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
   qxir::diag::install_reference(mod);
   install_sigguard(mod);
-  qxir_ctx = mod;
+  qxir::current = mod;
   mod->setRoot(nullptr);
   mod->enableDiagnostics(diagnostics);
 
@@ -185,7 +185,7 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
      */
   }
 
-  qxir_ctx = nullptr;
+  qxir::current = nullptr;
   uninstall_sigguard();
   qxir::diag::install_reference(nullptr);
   std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
@@ -268,13 +268,13 @@ LIB_EXPORT void qmodule_testplug(void *node) {
 
   iterate<dfs_pre, IterMP::none>(n, [&](Expr *p, Expr *c) {
     if (p) {
-      std::cout << "ParentType: " << p->thisTypeName();
+      std::cout << "ParentType: " << p->getKindName();
     } else {
       std::cout << "ParentType: nullptr";
     }
 
     if (c) {
-      std::cout << " ChildType: " << c->thisTypeName();
+      std::cout << " ChildType: " << c->getKindName();
     } else {
       std::cout << " ChildType: nullptr";
     }
@@ -293,7 +293,7 @@ LIB_EXPORT void qmodule_testplug(void *node) {
 
 ///=============================================================================
 
-static std::string_view memorize(std::string_view sv) { return qxir_ctx->internString(sv); }
+static std::string_view memorize(std::string_view sv) { return qxir::current->internString(sv); }
 static std::string_view memorize(qparse::String sv) {
   return memorize(std::string_view(sv.data(), sv.size()));
 }
@@ -2414,10 +2414,6 @@ static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
     qcore_panicf("qxir: conversion failed for node type: %d", static_cast<int>(n->this_typeid()));
   }
 
-  // Module context id must be assigned before location information
-  // is set.
-  out->setModule(qxir_ctx);
-
   out->setLoc({n->get_start_pos(), n->get_end_pos()});
 
   return out;
@@ -2733,10 +2729,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
 
   qcore_assert(out != nullptr, "qxir_clone: failed to clone node");
 
-  // Module context id must be assigned before location information
-  // is set.
-  out->setModule(qxir_ctx);
-
   out->setLoc(in->getLoc());
   out->setConst(in->isConst());
   out->setVolatile(in->isVolatile());
@@ -2756,7 +2748,7 @@ LIB_EXPORT qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node) {
   }
 
   std::swap(qxir::qxir_arena.get(), dst->getNodeArena());
-  std::swap(qxir_ctx, dst);
+  std::swap(qxir::current, dst);
 
   out = nullptr;
 
@@ -2766,7 +2758,7 @@ LIB_EXPORT qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node) {
     return nullptr;
   }
 
-  std::swap(qxir_ctx, dst);
+  std::swap(qxir::current, dst);
   std::swap(qxir::qxir_arena.get(), dst->getNodeArena());
 
   return static_cast<qxir_node_t *>(out);

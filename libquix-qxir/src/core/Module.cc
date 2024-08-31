@@ -124,11 +124,12 @@ std::unique_ptr<qmodule_t> qxir::createModule(std::string name) {
 }
 
 CPP_EXPORT qmodule_t *qxir::getModule(ModuleId mid) {
-  qcore_assert(mid != std::numeric_limits<ModuleId>::max(), "Invalid module ID");
-
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
-  qcore_assert(mid < qxir_modules.size() && qxir_modules.at(mid).has_value(), "Module not found");
+  if (mid >= qxir_modules.size() || !qxir_modules.at(mid).has_value()) {
+    return nullptr;
+  }
+
   return qxir_modules.at(mid)->get();
 }
 

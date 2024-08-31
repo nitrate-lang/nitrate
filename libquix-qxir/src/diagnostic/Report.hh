@@ -64,6 +64,8 @@ namespace qxir::diag {
     PTreeInvalid,
     DSPolyCyclicRef,
     DSNullPtr,
+    DSBadType,
+    DSMissingMod,
   };
 
   typedef std::function<void(std::string_view)> DiagnosticMessageHandler;

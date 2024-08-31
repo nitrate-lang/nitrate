@@ -174,7 +174,7 @@ namespace qxir {
 
     uint32_t thisSizeOf() const noexcept;
     qxir_ty_t getKind() const noexcept;
-    const char *thisTypeName() const noexcept;
+    const char *getKindName() const noexcept;
 
     bool isType() const noexcept;
     inline bool isConst() const noexcept { return m_constexpr; }
@@ -1144,53 +1144,61 @@ namespace qxir {
   typedef std::tuple<Expr *, std::string_view> FieldTmpNodeCradle;
 
 #define TYPE_SIZE sizeof(Expr)
+  extern thread_local qmodule_t *current;
 
   template <typename T>
   constexpr T *getType() {
+    Type *type = nullptr;
     if constexpr (std::is_same_v<T, U1Ty>) {
-      return new (Arena<U1Ty>().allocate(1)) U1Ty();
+      type = new (Arena<U1Ty>().allocate(1)) U1Ty();
     } else if constexpr (std::is_same_v<T, U8Ty>) {
-      return new (Arena<U8Ty>().allocate(1)) U8Ty();
+      type = new (Arena<U8Ty>().allocate(1)) U8Ty();
     } else if constexpr (std::is_same_v<T, U16Ty>) {
-      return new (Arena<U16Ty>().allocate(1)) U16Ty();
+      type = new (Arena<U16Ty>().allocate(1)) U16Ty();
     } else if constexpr (std::is_same_v<T, U32Ty>) {
-      return new (Arena<U32Ty>().allocate(1)) U32Ty();
+      type = new (Arena<U32Ty>().allocate(1)) U32Ty();
     } else if constexpr (std::is_same_v<T, U64Ty>) {
-      return new (Arena<U64Ty>().allocate(1)) U64Ty();
+      type = new (Arena<U64Ty>().allocate(1)) U64Ty();
     } else if constexpr (std::is_same_v<T, U128Ty>) {
-      return new (Arena<U128Ty>().allocate(1)) U128Ty();
+      type = new (Arena<U128Ty>().allocate(1)) U128Ty();
     } else if constexpr (std::is_same_v<T, I8Ty>) {
-      return new (Arena<I8Ty>().allocate(1)) I8Ty();
+      type = new (Arena<I8Ty>().allocate(1)) I8Ty();
     } else if constexpr (std::is_same_v<T, I16Ty>) {
-      return new (Arena<I16Ty>().allocate(1)) I16Ty();
+      type = new (Arena<I16Ty>().allocate(1)) I16Ty();
     } else if constexpr (std::is_same_v<T, I32Ty>) {
-      return new (Arena<I32Ty>().allocate(1)) I32Ty();
+      type = new (Arena<I32Ty>().allocate(1)) I32Ty();
     } else if constexpr (std::is_same_v<T, I64Ty>) {
-      return new (Arena<I64Ty>().allocate(1)) I64Ty();
+      type = new (Arena<I64Ty>().allocate(1)) I64Ty();
     } else if constexpr (std::is_same_v<T, I128Ty>) {
-      return new (Arena<I128Ty>().allocate(1)) I128Ty();
+      type = new (Arena<I128Ty>().allocate(1)) I128Ty();
     } else if constexpr (std::is_same_v<T, F16Ty>) {
-      return new (Arena<F16Ty>().allocate(1)) F16Ty();
+      type = new (Arena<F16Ty>().allocate(1)) F16Ty();
     } else if constexpr (std::is_same_v<T, F32Ty>) {
-      return new (Arena<F32Ty>().allocate(1)) F32Ty();
+      type = new (Arena<F32Ty>().allocate(1)) F32Ty();
     } else if constexpr (std::is_same_v<T, F64Ty>) {
-      return new (Arena<F64Ty>().allocate(1)) F64Ty();
+      type = new (Arena<F64Ty>().allocate(1)) F64Ty();
     } else if constexpr (std::is_same_v<T, F128Ty>) {
-      return new (Arena<F128Ty>().allocate(1)) F128Ty();
+      type = new (Arena<F128Ty>().allocate(1)) F128Ty();
     } else if constexpr (std::is_same_v<T, VoidTy>) {
-      return new (Arena<VoidTy>().allocate(1)) VoidTy();
+      type = new (Arena<VoidTy>().allocate(1)) VoidTy();
     } else if constexpr (std::is_same_v<T, StringTy>) {
-      return new (Arena<StringTy>().allocate(1)) StringTy();
+      type = new (Arena<StringTy>().allocate(1)) StringTy();
     } else {
       static_assert(!std::is_same_v<T, T>,
                     "qxir::getType<T>(): Can not construct immuntable of this type.");
     }
+
+    type->setModule(current);
+
+    return static_cast<T *>(type);
   }
 
   template <typename T, typename... Args>
   static T *create(Args &&...args) {
-    void *ptr = Arena<T>().allocate(1);
-    return new (ptr) T(std::forward<Args>(args)...);
+    void *raw = Arena<T>().allocate(1);
+    auto ptr = new (raw) T(std::forward<Args>(args)...);
+    ptr->setModule(current);
+    return ptr;
   }
 
   enum IterMode {

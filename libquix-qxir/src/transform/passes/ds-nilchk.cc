@@ -45,8 +45,9 @@
 
 bool qxir::passes::impl::ds_nilchk(qmodule_t *mod) {
   bool has_bad_null = false;
+  bool missing_mod = false;
 
-  const auto cb = [&has_bad_null, mod](Expr *par, Expr *cur) -> IterOp {
+  const auto cb = [&has_bad_null, &missing_mod, mod](Expr *par, Expr *cur) -> IterOp {
     if (cur == nullptr) [[unlikely]] {
       has_bad_null = true;
 
@@ -57,10 +58,22 @@ bool qxir::passes::impl::ds_nilchk(qmodule_t *mod) {
       return IterOp::Abort;
     }
 
+    if (cur->getModule() == nullptr) {
+      missing_mod = true;
+
+      mod->getDiag().push(
+          QXIR_AUDIT_CONV,
+          diag::DiagMessage(
+              "Module pointer missing in node of type " + std::string(cur->getKindName()),
+              diag::IssueClass::FatalError, diag::IssueCode::DSMissingMod, cur->getLoc().first,
+              cur->getLoc().second));
+      return IterOp::Abort;
+    }
+
     return IterOp::Proceed;
   };
 
   iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
 
-  return !has_bad_null;
+  return !has_bad_null && !missing_mod;
 }
