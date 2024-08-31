@@ -58,7 +58,7 @@ bool qxir::passes::impl::ds_nilchk(qmodule_t *mod) {
       return IterOp::Abort;
     }
 
-    if (cur->getModule() == nullptr) {
+    if (cur->getModule() == nullptr) [[unlikely]] {
       missing_mod = true;
 
       mod->getDiag().push(

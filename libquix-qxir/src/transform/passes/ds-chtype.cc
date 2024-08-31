@@ -60,7 +60,7 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
     (void)bad_ty;  /// TODO: remove voider
     (void)mod;     /// TODO: remove voider
 
-    qxir_ty_t T = cur->getKind();
+    // qxir_ty_t T = cur->getKind();
 
     switch (par->getKind()) {
       case QIR_NODE_BINEXPR: {

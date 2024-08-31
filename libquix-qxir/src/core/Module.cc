@@ -38,7 +38,7 @@
 
 using namespace qxir;
 
-static std::vector<std::optional<std::unique_ptr<qmodule_t>>> qxir_modules;
+static std::vector<std::optional<qmodule_t *>> qxir_modules;
 static std::mutex qxir_modules_mutex;
 
 qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
@@ -66,9 +66,6 @@ qmodule_t::~qmodule_t() {
   m_conf = nullptr;
   m_lexer = nullptr;
   m_root = nullptr;
-
-  std::lock_guard<std::mutex> lock(qxir_modules_mutex);
-  qxir_modules[m_id].reset();
 }
 
 ModuleId qmodule_t::getModuleId() noexcept { return m_id; }
@@ -103,7 +100,7 @@ std::string_view qmodule_t::internString(std::string_view sv) {
 
 ///=============================================================================
 
-std::unique_ptr<qmodule_t> qxir::createModule(std::string name) {
+qmodule_t *qxir::createModule(std::string name) {
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
   ModuleId mid;
@@ -118,9 +115,9 @@ std::unique_ptr<qmodule_t> qxir::createModule(std::string name) {
     return nullptr;
   }
 
-  qxir_modules.insert(qxir_modules.begin() + mid, std::make_unique<qmodule_t>(mid, name));
+  qxir_modules.insert(qxir_modules.begin() + mid, new qmodule_t(mid, name));
 
-  return std::move(qxir_modules[mid].value());
+  return qxir_modules[mid].value();
 }
 
 CPP_EXPORT qmodule_t *qxir::getModule(ModuleId mid) {
@@ -130,7 +127,7 @@ CPP_EXPORT qmodule_t *qxir::getModule(ModuleId mid) {
     return nullptr;
   }
 
-  return qxir_modules.at(mid)->get();
+  return qxir_modules.at(mid).value();
 }
 
 LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *name) {
@@ -139,7 +136,7 @@ LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *nam
       return nullptr;
     }
 
-    qmodule_t *obj = createModule(name).release();
+    qmodule_t *obj = createModule(name);
 
     obj->setConf(conf);
     obj->setLexer(lexer);
@@ -156,7 +153,11 @@ LIB_EXPORT void qxir_free(qmodule_t *mod) {
       return;
     }
 
+    std::lock_guard<std::mutex> lock(qxir_modules_mutex);
+
+    auto mid = mod->getModuleId();
     delete mod;
+    qxir_modules.at(mid).reset();
   } catch (...) {
     qcore_panic("qxir_free failed");
   }

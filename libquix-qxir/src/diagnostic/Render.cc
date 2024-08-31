@@ -35,6 +35,7 @@
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-qxir/Module.h>
+#include <quix-qxir/Node.h>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
@@ -42,8 +43,6 @@
 #include <sstream>
 
 using namespace qxir::diag;
-
-thread_local qmodule_t *g_qxir_inst;
 
 template <typename L, typename R>
 boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
@@ -318,8 +317,6 @@ size_t DiagnosticManager::render(qxir_audit_ticket_t ticket, DiagnosticMessageHa
 }
 
 namespace qxir::diag {
-  void install_reference(qmodule_t *qxir) noexcept { g_qxir_inst = qxir; }
-
   void badtree_impl(qlex_loc_t start, qlex_loc_t end, std::string_view fmt, va_list args) {
     std::string msg;
 
@@ -340,9 +337,9 @@ namespace qxir::diag {
     diag.type = IssueClass::Error;
     diag.code = IssueCode::PTreeInvalid;
 
-    g_qxir_inst->getDiag().push(QXIR_AUDIT_CONV, std::move(diag));
+    current->getDiag().push(QXIR_AUDIT_CONV, std::move(diag));
 
-    if (g_qxir_inst->getConf()->has(QQV_FASTERROR, QQV_ON)) {
+    if (current->getConf()->has(QQV_FASTERROR, QQV_ON)) {
       throw SyntaxError();
     }
   }
@@ -352,9 +349,9 @@ namespace qxir::diag {
       qcore_panic("badtree: node is NULL");
     }
 
-    g_qxir_inst->setFailbit(true);
+    current->setFailbit(true);
 
-    if (!g_qxir_inst->isDiagnosticsEnabled()) {
+    if (!current->isDiagnosticsEnabled()) {
       return;
     }
 
@@ -371,12 +368,14 @@ LIB_EXPORT size_t qxir_diag_read(qmodule_t *qxir, qxir_audit_ticket_t ticket,
     qxir->getDiag().count(ticket);
   }
 
-  return qxir->getDiag().render(
+  auto res = qxir->getDiag().render(
       ticket,
       [cb, data](std::string_view v) {
         cb(reinterpret_cast<const uint8_t *>(v.data()), v.size(), data);
       },
       format);
+
+  return res;
 }
 
 LIB_EXPORT size_t qxir_diag_clear(qmodule_t *qxir, qxir_audit_ticket_t ticket) {

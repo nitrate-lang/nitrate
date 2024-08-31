@@ -144,7 +144,6 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
   qcore_assert(mod, "qxir_lower: mod == nullptr");
 
   std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
-  qxir::diag::install_reference(mod);
   install_sigguard(mod);
   qxir::current = mod;
   mod->setRoot(nullptr);
@@ -187,7 +186,6 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
 
   qxir::current = nullptr;
   uninstall_sigguard();
-  qxir::diag::install_reference(nullptr);
   std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
 
   return status;

@@ -196,7 +196,7 @@ public:
 
 namespace qxir {
   qmodule_t *getModule(ModuleId mid);
-  std::unique_ptr<qmodule_t> createModule(std::string name = "?");
+  qmodule_t *createModule(std::string name = "?");
 }  // namespace qxir
 
 #endif

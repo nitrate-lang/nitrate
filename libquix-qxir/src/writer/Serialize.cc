@@ -689,6 +689,7 @@ LIB_EXPORT bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t
   }
 
   qcore_arena_close(&arena);
+  fflush(out);
 
   return true;
 }
