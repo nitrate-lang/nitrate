@@ -74,8 +74,8 @@ ModuleId qmodule_t::getModuleId() noexcept { return m_id; }
 
 Type *qmodule_t::lookupType(TypeID tid) { return m_type_mgr->get(tid); }
 
-void qmodule_t::setRoot(qxir_node_t *root) noexcept { m_root = root; }
-qxir_node_t *qmodule_t::getRoot() noexcept { return m_root; }
+void qmodule_t::setRoot(qxir::Expr *root) noexcept { m_root = root; }
+qxir::Expr *qmodule_t::getRoot() noexcept { return m_root; }
 
 void qmodule_t::setLexer(qlex_t *lexer) noexcept { m_lexer = lexer; }
 qlex_t *qmodule_t::getLexer() noexcept { return m_lexer; }
@@ -166,7 +166,9 @@ LIB_EXPORT qlex_t *qxir_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
 
 LIB_EXPORT void qxir_set_lexer(qmodule_t *mod, qlex_t *lexer) { mod->setLexer(lexer); }
 
-LIB_EXPORT qxir_node_t *qxir_base(qmodule_t *mod) { return mod->getRoot(); }
+LIB_EXPORT qxir_node_t *qxir_base(qmodule_t *mod) {
+  return reinterpret_cast<qxir_node_t *>(mod->getRoot());
+}
 
 LIB_EXPORT qxir_conf_t *qxir_get_conf(qmodule_t *mod) { return mod->getConf(); }
 

@@ -55,6 +55,7 @@ static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
         {IssueCode::Default, "-Wdefault"},
         {IssueCode::PTreeInvalid, "-Wparse"},
         {IssueCode::SignalReceived, "-Wcompiler-error"},
+        {IssueCode::DSPolyCyclicRef, "-Wds-cyclic-ref"},
     });
 
 ///============================================================================///

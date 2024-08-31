@@ -99,6 +99,8 @@ namespace qxir {
     uint16_t getPointerSize() const { return m_pointer_size; }
   };
 
+  class Expr;
+
 }  // namespace qxir
 
 class qmodule_t {
@@ -110,7 +112,7 @@ class qmodule_t {
   qcore_arena_t m_node_arena;
   qxir_conf_t *m_conf;
   qlex_t *m_lexer;
-  qxir_node_t *m_root;
+  qxir::Expr *m_root;
   qxir::ModuleId m_id;
   bool m_diagnostics_enabled;
   bool m_failbit;
@@ -132,8 +134,8 @@ public:
    */
   qxir::Type *lookupType(qxir::TypeID tid);
 
-  void setRoot(qxir_node_t *root) noexcept;
-  qxir_node_t *getRoot() noexcept;
+  void setRoot(qxir::Expr *root) noexcept;
+  qxir::Expr *getRoot() noexcept;
 
   void setLexer(qlex_t *lexer) noexcept;
   qlex_t *getLexer() noexcept;

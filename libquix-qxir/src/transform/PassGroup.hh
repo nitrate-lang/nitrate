@@ -43,19 +43,27 @@ namespace qxir::passes {
   typedef std::string PassGroupName;
 
   class PassGroupResult final {
-    std::vector<PassResult> m_results;
+    std::unordered_map<PassName, bool> m_results;
 
   public:
     PassGroupResult() = default;
 
-    void operator|=(const PassResult& result) { m_results.push_back(result); }
     void operator+=(const PassGroupResult& result) {
-      m_results.insert(m_results.end(), result.m_results.begin(), result.m_results.end());
+      for (const auto& [name, success] : result.m_results) {
+        m_results[name] = success;
+      }
     }
 
+    void add(const PassName& name, bool success) { m_results[name] = success; }
+
     bool operator!() const {
-      return std::find_if(m_results.begin(), m_results.end(),
-                          [](const PassResult& result) { return !result; }) != m_results.end();
+      for (const auto& [name, success] : m_results) {
+        if (!success) {
+          return true;
+        }
+      }
+
+      return false;
     }
 
     void print(std::ostream& out) const;

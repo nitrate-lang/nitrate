@@ -35,8 +35,7 @@
 #include <transform/Pass.hh>
 
 namespace qxir::passes::impl {
-#define DECLARE_QIR_PASS(name) \
-  PassResult name(qmodule_t *mod) { return PassResult(#name, true); }
+#define DECLARE_QIR_PASS(name) bool name(qmodule_t *mod)
 
   DECLARE_QIR_PASS(ds_acyclic);
   DECLARE_QIR_PASS(ds_nilchk);

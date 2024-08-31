@@ -47,18 +47,7 @@ namespace qxir {
 namespace qxir::passes {
   typedef std::string PassName;
 
-  class PassResult final { /* Optimize this; deduplicate / change m_name to an integral type */
-    PassName m_name;
-    bool m_success;
-
-  public:
-    PassResult(PassName name, bool success) : m_name(std::move(name)), m_success(success) {}
-
-    bool operator!() const { return !m_success; }
-    void print(std::ostream &out) const;
-  };
-
-  typedef PassResult (*PassFunc)(qmodule_t *module);
+  typedef bool (*PassFunc)(qmodule_t *module);
 
   class Pass final {
     PassName m_name;
@@ -77,7 +66,7 @@ namespace qxir::passes {
     PassName getName() const;
     PassFunc getFunc() const;
 
-    PassResult transform(qmodule_t *module) const;
+    bool transform(qmodule_t *module) const;
   };
 }  // namespace qxir::passes
 

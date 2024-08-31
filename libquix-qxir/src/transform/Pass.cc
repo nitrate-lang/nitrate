@@ -39,13 +39,6 @@
 
 using namespace qxir::passes;
 
-void PassResult::print(std::ostream &out) const {
-  if (!m_success) {
-    out << "Pass " << m_name << " failed with error: ?.";
-    return;
-  }
-}
-
 std::mutex Pass::m_mutex;
 std::unordered_map<PassName, std::shared_ptr<Pass>> Pass::m_passes;
 
@@ -73,7 +66,7 @@ PassName Pass::getName() const { return m_name; }
 
 PassFunc Pass::getFunc() const { return m_func; }
 
-PassResult Pass::transform(qmodule_t *module) const {
+bool Pass::transform(qmodule_t *module) const {
   auto res = m_func(module);
   module->applyPassLabel(m_name);
 

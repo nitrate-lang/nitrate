@@ -62,6 +62,7 @@ namespace qxir::diag {
 
     SignalReceived,
     PTreeInvalid,
+    DSPolyCyclicRef,
   };
 
   typedef std::function<void(std::string_view)> DiagnosticMessageHandler;
@@ -72,8 +73,8 @@ namespace qxir::diag {
     IssueClass type;
     IssueCode code;
 
-    DiagMessage(std::string_view msg = "", qlex_loc_t start = {0}, qlex_loc_t end = {0},
-                IssueClass type = IssueClass::Debug, IssueCode code = IssueCode::Default)
+    DiagMessage(std::string_view msg = "", IssueClass type = IssueClass::Debug,
+                IssueCode code = IssueCode::Default, qlex_loc_t start = {0}, qlex_loc_t end = {0})
         : msg(msg), start(start), end(end), type(type), code(code) {}
   };
 

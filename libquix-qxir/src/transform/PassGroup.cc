@@ -39,9 +39,10 @@
 using namespace qxir::passes;
 
 void PassGroupResult::print(std::ostream &out) const {
-  for (const auto &result : m_results) {
-    result.print(out);
-    out << std::endl;
+  for (const auto &[name, result] : m_results) {
+    if (!result) {
+      out << "Pass " << name << " failed.\n";
+    }
   }
 }
 
@@ -105,7 +106,7 @@ PassGroupResult PassGroup::transform(qmodule_t *module) const {
   for (const auto &pass : m_passes) {
     auto passRef = Pass::get(pass);
     auto res = passRef->transform(module);
-    result |= res;
+    result.add(pass, res);
 
     if (!res) {
       break;
