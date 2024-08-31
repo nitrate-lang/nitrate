@@ -662,7 +662,6 @@ LIB_EXPORT bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t
                            uint32_t argcnt, ...) {
   qcore_arena_t arena;
   size_t v_outlen;
-  Expr *node;
 
   if (!outlen) {
     outlen = &v_outlen;
