@@ -11,7 +11,7 @@ Dependency graph of the module pass system. Arrows indicate system dependencies.
 | `ds-acyclic`    | Data structure acyclic verification          | Verifies that there are no cyclic references in the module.             | Hybrid (g0) deps []                                         |
 | `ds-nilchk`     | Data structure null pointer verification     | Verifies that the module does not contain illegal null pointers.        | Hybrid (g0) deps []                                         |
 | `ds-chtype`     | Data structure child type                    | Verifies all nodes identity is permitted with respect to the parent.    | Standalone (g1) deps [`g0`]                                 |
-| `ds-discov`     | Data structure discovery                     | Builds a lookup table of construct names within the module.             | Standalone (g2) deps [`g0`, `g1`]                           |
+| `ds-resolv`     | Data structure discovery                     | Builds a lookup table of construct names within the module.             | Standalone (g2) deps [`g0`, `g1`]                           |
 
 ---
 

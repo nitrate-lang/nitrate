@@ -40,7 +40,7 @@ namespace qxir::passes::impl {
   DECLARE_QIR_PASS(ds_acyclic);
   DECLARE_QIR_PASS(ds_nilchk);
   DECLARE_QIR_PASS(ds_chtype);
-  DECLARE_QIR_PASS(ds_discov);
+  DECLARE_QIR_PASS(ds_resolv);
   DECLARE_QIR_PASS(ns_flatten);
   DECLARE_QIR_PASS(fnflatten);
   DECLARE_QIR_PASS(tyinfer);

@@ -1302,7 +1302,7 @@ int run_dev_mode(
       out_fp = stdout;
     }
 
-    if (!qxir_write(qmod, QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
+    if (!qxir_write(qxir_base(qmod), QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
       if (!output.empty()) fclose(out_fp);
 
       qxir_free(qmod);

@@ -43,7 +43,7 @@ static void seed_passes() {
   Pass::register_pass("ds-acyclic", impl::ds_acyclic);
   Pass::register_pass("ds-nilchk", impl::ds_nilchk);
   Pass::register_pass("ds-chtype", impl::ds_chtype);
-  Pass::register_pass("ds-discov", impl::ds_discov);
+  Pass::register_pass("ds-resolv", impl::ds_resolv);
   Pass::register_pass("ns-flatten", impl::ns_flatten);
   Pass::register_pass("fnflatten", impl::fnflatten);
   Pass::register_pass("tyinfer", impl::tyinfer);
@@ -52,7 +52,7 @@ static void seed_passes() {
   /* Read-only passes */
   PassGroup::register_group("g0", {"ds-acyclic", "ds-nilchk"}, {});
   PassGroup::register_group("g1", {"ds-chtype"}, {{"g0", DependencyFrequency::Once}});
-  PassGroup::register_group("g2", {"ds-discov"},
+  PassGroup::register_group("g2", {"ds-resolv"},
                             {{"g0", DependencyFrequency::Once}, {"g1", DependencyFrequency::Once}});
 
   /* Transformative passes */
@@ -108,7 +108,7 @@ const StdTransform* StdTransform::create() {
       "ds-acyclic",   /* Data structure acyclic verification */
       "ds-nilchk",    /* Data structure null pointer verification	*/
       "ds-chtype",    /* Data structure child type */
-      "ds-discov",    /* Data structure discovery	*/
+      "ds-resolv",    /* Data structure discovery	*/
       "ns-flatten",   /* Namespace flattening	*/
       "fnflatten",    /* Function flattening */
       "tyinfer",      /* Type inference	*/

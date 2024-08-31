@@ -39,6 +39,9 @@
  * @brief Ensure that the module IR data structure is acyclic.
  *
  * @note If nodes are optimized via deduplication, this will break.
+ * 
+ * @timecomplexity O(n)
+ * @spacecomplexity O(n)
  */
 
 bool qxir::passes::impl::ds_acyclic(qmodule_t *mod) {

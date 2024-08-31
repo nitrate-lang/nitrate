@@ -526,7 +526,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       if (a->m_type != b->m_type) {
         return false;
       }
-      if (a->m_data.type() != b->m_data.type()) {
+      if (a->m_data != b->m_data) {
         return false;
       }
 
@@ -578,7 +578,7 @@ CPP_EXPORT void qxir::Expr::dump(std::ostream &os, bool isForDebug) const {
   size_t len = 0;
 
   FILE *fmembuf = open_memstream(&cstr, &len);
-  if (!qxir_write(this->getModule(), QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
+  if (!qxir_write(this, QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
     qcore_panic("Failed to dump expression");
   }
   fflush(fmembuf);
@@ -794,7 +794,12 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_TMP: {
+        /*
+          typedef std::variant<LetTmpNodeCradle, CallArgsTmpNodeCradle, FieldTmpNodeCradle,
+          std::string_view> TmpNodeCradle;
+        */
         MIXIN_PRIMITIVE(cur->as<Tmp>()->m_type);
+        /// FIXME: Implement hashing for TmpNodeCradle
         break;
       }
       case QIR_NODE_BAD: {

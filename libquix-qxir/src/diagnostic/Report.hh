@@ -66,6 +66,8 @@ namespace qxir::diag {
     DSNullPtr,
     DSBadType,
     DSMissingMod,
+
+    Redefinition,
   };
 
   typedef std::function<void(std::string_view)> DiagnosticMessageHandler;
@@ -151,6 +153,24 @@ namespace qxir::diag {
    * @brief Report a syntax error
    */
   void badtree(const qparse::Node *node, std::string_view fmt, ...);
+
+#define CONV_DEBUG(_msg)               \
+  mod->getDiag().push(QXIR_AUDIT_CONV, \
+                      diag::DiagMessage(_msg, diag::IssueClass::Debug, diag::IssueCode::Default));
+
+#define DUPLICATE_VARIABLE(_varname)                                                 \
+  mod->getDiag().push(                                                               \
+      QXIR_AUDIT_CONV,                                                               \
+      diag::DiagMessage("Variable named " + std::string(_varname) + " is redefined", \
+                        diag::IssueClass::Error, diag::IssueCode::Redefinition,      \
+                        cur->getLoc().first, cur->getLoc().second));
+
+#define DUPLICATE_FUNCTION(_varname)                                                 \
+  mod->getDiag().push(                                                               \
+      QXIR_AUDIT_CONV,                                                               \
+      diag::DiagMessage("Function named " + std::string(_varname) + " is redefined", \
+                        diag::IssueClass::Error, diag::IssueCode::Redefinition,      \
+                        cur->getLoc().first, cur->getLoc().second));
 };  // namespace qxir::diag
 
 #endif  // __QUIX_QXIR_REPORT_H__

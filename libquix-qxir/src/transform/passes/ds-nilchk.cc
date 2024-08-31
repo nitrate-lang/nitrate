@@ -37,6 +37,9 @@
 
 /**
  * @brief Ensure that no nodes are nullptr or have missing module pointers.
+ *
+ * @timecomplexity O(n)
+ * @spacecomplexity O(1)
  */
 
 bool qxir::passes::impl::ds_nilchk(qmodule_t *mod) {

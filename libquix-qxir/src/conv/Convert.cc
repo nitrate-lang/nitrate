@@ -56,8 +56,6 @@ struct ConvState {
   bool inside_function = false;
   std::unordered_map<std::string, qxir::Type *> typedef_map;
   std::string ns_prefix;
-  std::unordered_map<std::string, std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
-      param_map;
 
   std::string cur_named(std::string_view suffix) const {
     if (ns_prefix.empty()) {
@@ -228,11 +226,10 @@ LIB_EXPORT bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mod
       return qxir::IterOp::Proceed;
     };
 
-    qxir::Expr *root = static_cast<qxir::Expr *>(mod->getRoot());
-    qxir::iterate<qxir::dfs_pre, qxir::IterMP::none>(root, ucb);
+    qxir::iterate<qxir::dfs_pre, qxir::IterMP::none>(mod->getRoot(), ucb);
   }
 
-  if (!qxir_write(mod, mode, out, nullptr, 0)) {
+  if (!qxir_write(mod->getRoot(), mode, out, nullptr, 0)) {
     qxir_free(mod);
     qxir_conf_free(conf);
     return false;
@@ -728,6 +725,8 @@ namespace qxir {
 
       std::get<1>(datapack).push_back({memorize(it->first), arg});
     }
+
+    std::get<0>(datapack) = base;
 
     return create<Tmp>(TmpType::CALL, std::move(datapack));
   }
@@ -1508,11 +1507,16 @@ namespace qxir {
         }
 
         params.push_back(type);
-        s.param_map[name].push_back({s.cur_named(std::get<0>(*it)), type, def});
+        current->getParameterMap()[name].push_back({s.cur_named(std::get<0>(*it)), type, def});
       }
     }
 
-    return create<Fn>(memorize(std::string_view(name)), std::move(params), body);
+    auto str = memorize(std::string_view(name));
+    auto obj = create<Fn>(str, std::move(params), body);
+
+    current->getFunctions().insert({str, obj});
+
+    return obj;
   }
 
   static Expr *qconv_subsystem(ConvState &s, const qparse::SubsystemDecl *n) {
@@ -1646,6 +1650,8 @@ namespace qxir {
 
     auto g = create<Local>(name, val);
     g->setConst(true);
+
+    current->getVariables().insert({name, g});
     return g;
   }
 
@@ -1727,7 +1733,9 @@ namespace qxir {
 
       std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
 
-      return create<Local>(name, val);
+      auto l = create<Local>(name, val);
+      current->getVariables().insert({name, l});
+      return l;
     }
   }
 
