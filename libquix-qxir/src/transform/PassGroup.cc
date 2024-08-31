@@ -89,14 +89,14 @@ PassGroupResult PassGroup::transform(qmodule_t *module) const {
   for (const auto &dep : m_dependencies) {
     auto depRef = PassGroup::get(dep.first);
 
-    if (dep.second == DependencyFrequency::Once && module->hasPassBeenRun(dep.first)) {
+    if (dep.second == DependencyFrequency::Once && module->hasPassGroupBeenRun(dep.first)) {
       continue;
     }
 
     auto res = depRef->transform(module);
     result += res;
 
-    module->applyPassLabel(dep.first);
+    module->applyPassGroupLabel(dep.first);
 
     if (!res) {
       return result;

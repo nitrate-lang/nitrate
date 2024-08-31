@@ -48,6 +48,7 @@ extern "C" {
  *
  * @param lexer Source code lexer instance or NULL.
  * @param conf Module configuration.
+ * @param name Module name or NULL.
  *
  * @return On success, a new QModule instance is returned. On failure, NULL is returned.
  *
@@ -72,7 +73,7 @@ extern "C" {
  *
  * @note This function is thread safe.
  */
-qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf);
+qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *name);
 
 /**
  * @brief Free a QModule instance and ALL of its associated resources.

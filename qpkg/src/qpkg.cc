@@ -1245,7 +1245,7 @@ int run_dev_mode(
       return 1;
     }
 
-    qmodule_t *qmod = qxir_new(lexer, conf);
+    qmodule_t *qmod = qxir_new(lexer, conf, source.c_str());
     if (!qmod) {
       qxir_conf_free(conf);
       qcore_arena_close(&arena);

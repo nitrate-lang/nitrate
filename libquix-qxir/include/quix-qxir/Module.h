@@ -105,10 +105,12 @@ namespace qxir {
 
 class qmodule_t {
   std::unordered_set<std::string> m_passes_applied;
+  std::unordered_set<std::string> m_pass_groups_applied;
   std::unordered_set<std::string> m_strings;
   std::unique_ptr<qxir::diag::DiagnosticManager> m_diag;
   std::unique_ptr<qxir::TypeManager> m_type_mgr;
   qxir::TargetInfo m_target_info;
+  std::string m_module_name;
   qcore_arena_t m_node_arena;
   qxir_conf_t *m_conf;
   qlex_t *m_lexer;
@@ -118,7 +120,7 @@ class qmodule_t {
   bool m_failbit;
 
 public:
-  qmodule_t(qxir::ModuleId id);
+  qmodule_t(qxir::ModuleId id, const std::string &name = "?");
   ~qmodule_t();
 
   /**
@@ -157,11 +159,21 @@ public:
    */
   void applyPassLabel(const std::string &label);
 
+  const std::unordered_set<std::string> &getPassesApplied() const { return m_passes_applied; }
+
   /**
    * @brief Check if a pass has been applied to the module.
    * @param label Pass label
    */
   bool hasPassBeenRun(const std::string &label);
+
+  bool hasPassGroupBeenRun(const std::string &label) {
+    return m_pass_groups_applied.contains(label);
+  }
+  void applyPassGroupLabel(const std::string &label) { m_pass_groups_applied.insert(label); }
+
+  const std::string getName() const { return m_module_name; }
+  void setName(const std::string &name) { m_module_name = name; }
 
   /**
    * @brief Intern a string.
@@ -184,7 +196,7 @@ public:
 
 namespace qxir {
   qmodule_t *getModule(ModuleId mid);
-  std::unique_ptr<qmodule_t> createModule();
+  std::unique_ptr<qmodule_t> createModule(std::string name = "?");
 }  // namespace qxir
 
 #endif

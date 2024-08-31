@@ -82,7 +82,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
   qxir_conf_setopt(conf2, QQK_CRASHGUARD, QQV_OFF);
 
-  if ((mod = qxir_new(lex, conf2)) == nullptr) {
+  if ((mod = qxir_new(lex, conf2, nullptr)) == nullptr) {
     goto cleanup;
   }
 

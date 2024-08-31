@@ -202,7 +202,7 @@ LIB_EXPORT bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mod
     return false;
   }
 
-  if ((mod = qxir_new(nullptr, conf)) == nullptr) {
+  if ((mod = qxir_new(nullptr, conf, nullptr)) == nullptr) {
     qxir_conf_free(conf);
     return false;
   }

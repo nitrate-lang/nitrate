@@ -41,12 +41,13 @@ using namespace qxir;
 static std::vector<std::optional<std::unique_ptr<qmodule_t>>> qxir_modules;
 static std::mutex qxir_modules_mutex;
 
-qmodule_t::qmodule_t(ModuleId id) {
+qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
   m_passes_applied.clear();
   m_strings.clear();
   m_diag = std::make_unique<diag::DiagnosticManager>();
   m_diag->set_ctx(this);
   m_type_mgr = std::make_unique<TypeManager>();
+  m_module_name = name;
 
   qcore_arena_open(&m_node_arena);
 
@@ -102,7 +103,7 @@ std::string_view qmodule_t::internString(std::string_view sv) {
 
 ///=============================================================================
 
-std::unique_ptr<qmodule_t> qxir::createModule() {
+std::unique_ptr<qmodule_t> qxir::createModule(std::string name) {
   std::lock_guard<std::mutex> lock(qxir_modules_mutex);
 
   ModuleId mid;
@@ -117,7 +118,7 @@ std::unique_ptr<qmodule_t> qxir::createModule() {
     return nullptr;
   }
 
-  qxir_modules.insert(qxir_modules.begin() + mid, std::make_unique<qmodule_t>(mid));
+  qxir_modules.insert(qxir_modules.begin() + mid, std::make_unique<qmodule_t>(mid, name));
 
   return std::move(qxir_modules[mid].value());
 }
@@ -131,13 +132,13 @@ CPP_EXPORT qmodule_t *qxir::getModule(ModuleId mid) {
   return qxir_modules.at(mid)->get();
 }
 
-LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf) {
+LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *name) {
   try {
     if (!conf) {
       return nullptr;
     }
 
-    qmodule_t *obj = createModule().release();
+    qmodule_t *obj = createModule(name).release();
 
     obj->setConf(conf);
     obj->setLexer(lexer);
