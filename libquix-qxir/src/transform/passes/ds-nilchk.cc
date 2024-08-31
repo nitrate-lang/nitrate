@@ -36,11 +36,7 @@
 #include <transform/passes/Decl.hh>
 
 /**
- * @brief [TODO: Write a short description of this pass]
- *
- * @details [TODO: Write a detailed description of this pass]
- *
- * @note [TODO: Write any additional notes about this pass]
+ * @brief Ensure that no nodes are nullptr or have missing module pointers.
  */
 
 bool qxir::passes::impl::ds_nilchk(qmodule_t *mod) {

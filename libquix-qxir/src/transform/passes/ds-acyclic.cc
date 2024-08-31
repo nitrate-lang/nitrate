@@ -36,11 +36,9 @@
 #include <transform/passes/Decl.hh>
 
 /**
- * @brief [TODO: Write a short description of this pass]
+ * @brief Ensure that the module IR data structure is acyclic.
  *
- * @details [TODO: Write a detailed description of this pass]
- *
- * @note [TODO: Write any additional notes about this pass]
+ * @note If nodes are optimized via deduplication, this will break.
  */
 
 bool qxir::passes::impl::ds_acyclic(qmodule_t *mod) {
@@ -48,8 +46,6 @@ bool qxir::passes::impl::ds_acyclic(qmodule_t *mod) {
   bool has_cycle = false;
 
   const auto cb = [&visited, &has_cycle, mod](Expr *par, Expr *cur) -> IterOp {
-    /// FIXME: If Type nodes are optimized via deduplication, this will break.
-
     if (visited.contains(cur)) [[unlikely]] {
       has_cycle = true;
 

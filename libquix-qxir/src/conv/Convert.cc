@@ -1869,7 +1869,7 @@ namespace qxir {
     }
 
     if (!body) {
-      body = create<Int>(1);
+      body = getType<VoidTy>();
     }
 
     return create<While>(cond, body);

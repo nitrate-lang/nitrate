@@ -36,19 +36,23 @@
 #include <transform/passes/Decl.hh>
 
 /**
- * @brief [TODO: Write a short description of this pass]
+ * @brief Verify runtime polymorphic nodes are of suitable types.
  *
- * @details [TODO: Write a detailed description of this pass]
+ * @details Ensure that a pointer to a concrete node is actually a pointer to that concrete node
+ * type.
  *
- * @note [TODO: Write any additional notes about this pass]
+ * @note Optimize this code to not do extra work when checking.
  */
 
 bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
-#define EPUT(msg)                                                                      \
-  mod->getDiag().push(                                                                 \
-      QXIR_AUDIT_CONV,                                                                 \
-      diag::DiagMessage(msg, diag::IssueClass::FatalError, diag::IssueCode::DSBadType, \
-                        cur->getLoc().first, cur->getLoc().second));
+#define EPUT(msg)                                                                        \
+  {                                                                                      \
+    bad_ty = true;                                                                       \
+    mod->getDiag().push(                                                                 \
+        QXIR_AUDIT_CONV,                                                                 \
+        diag::DiagMessage(msg, diag::IssueClass::FatalError, diag::IssueCode::DSBadType, \
+                          cur->getLoc().first, cur->getLoc().second));                   \
+  }
 
   bool bad_ty = false;
 
@@ -57,24 +61,16 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       return IterOp::Proceed;
     }
 
-    (void)bad_ty;  /// TODO: remove voider
-    (void)mod;     /// TODO: remove voider
-
-    // qxir_ty_t T = cur->getKind();
-
     switch (par->getKind()) {
       case QIR_NODE_BINEXPR: {
-        /// TODO: check child nodes
         break;
       }
 
       case QIR_NODE_UNEXPR: {
-        /// TODO: check child nodes
         break;
       }
 
       case QIR_NODE_POST_UNEXPR: {
-        /// TODO: check child nodes
         break;
       }
 
@@ -91,32 +87,39 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       }
 
       case QIR_NODE_LIST: {
-        /// TODO: check child nodes
+        if (cur->isType()) {
+          EPUT("List child node is a type node");
+        }
         break;
       }
 
       case QIR_NODE_ALLOC: {
-        /// TODO: check child nodes
+        if (!cur->isType()) {
+          EPUT("Allocation child node is not a type node");
+        }
         break;
       }
 
       case QIR_NODE_CALL: {
-        /// TODO: check child nodes
+        if (cur->isType()) {
+          EPUT("Call child node is a type node");
+        }
+
         break;
       }
 
       case QIR_NODE_SEQ: {
-        /// TODO: check child nodes
         break;
       }
 
       case QIR_NODE_ASYNC: {
-        /// TODO: check child nodes
         break;
       }
 
       case QIR_NODE_INDEX: {
-        /// TODO: check child nodes
+        if (cur->isType()) {
+          EPUT("Index child node is a type node");
+        }
         break;
       }
 
@@ -125,17 +128,23 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       }
 
       case QIR_NODE_EXPORT: {
-        /// TODO: check child nodes
+        if (cur->isType()) {
+          EPUT("Export child node is a type node");
+        }
         break;
       }
 
       case QIR_NODE_LOCAL: {
-        /// TODO: check child nodes
+        if (cur->isType()) {
+          EPUT("Local child node is a type node");
+        }
         break;
       }
 
       case QIR_NODE_RET: {
-        /// TODO: check child nodes
+        if (cur->isType() && cur->getKind() != QIR_NODE_VOID_TY) {
+          EPUT("Return child node value is a type node");
+        }
         break;
       }
 
@@ -148,42 +157,119 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       }
 
       case QIR_NODE_IF: {
-        /// TODO: check child nodes
+        If *ifn = par->as<If>();
+
+        if (ifn->getCond()->isType()) {
+          EPUT("If condition is a type node");
+        }
+
+        if (ifn->getThen()->isType()) {
+          EPUT("If then branch is a type node");
+        }
+
+        if (ifn->getElse()->isType() && ifn->getElse()->getKind() != QIR_NODE_VOID_TY) {
+          EPUT("If else branch is a type node");
+        }
+
         break;
       }
 
       case QIR_NODE_WHILE: {
-        /// TODO: check child nodes
+        While *whilen = par->as<While>();
+
+        if (whilen->getCond()->isType()) {
+          EPUT("While condition is a type node");
+        }
+
+        if (whilen->getBody()->isType() && whilen->getBody()->getKind() != QIR_NODE_VOID_TY) {
+          EPUT("While body is a type node");
+        }
         break;
       }
 
       case QIR_NODE_FOR: {
-        /// TODO: check child nodes
+        For *forn = par->as<For>();
+
+        if (forn->getInit()->isType()) {
+          EPUT("For init is a type node");
+        }
+
+        if (forn->getCond()->isType()) {
+          EPUT("For condition is a type node");
+        }
+
+        if (forn->getStep()->isType()) {
+          EPUT("For step is a type node");
+        }
+
+        if (forn->getBody()->isType() && forn->getBody()->getKind() != QIR_NODE_VOID_TY) {
+          EPUT("For body is a type node");
+        }
         break;
       }
 
       case QIR_NODE_FORM: {
-        /// TODO: check child nodes
+        Form *formn = par->as<Form>();
+
+        if (formn->getMaxJobs()->isType()) {
+          EPUT("Form maxjobs is a type node");
+        }
+
+        if (formn->getExpr()->isType()) {
+          EPUT("Form expr is a type node");
+        }
+
+        if (formn->getBody()->isType() && formn->getBody()->getKind() != QIR_NODE_VOID_TY) {
+          EPUT("Form body is a type node");
+        }
         break;
       }
 
       case QIR_NODE_FOREACH: {
-        /// TODO: check child nodes
+        Foreach *forn = par->as<Foreach>();
+
+        if (forn->getExpr()->isType()) {
+          EPUT("Foreach expr is a type node");
+        }
+
+        if (forn->getBody()->isType() && forn->getBody()->getKind() != QIR_NODE_VOID_TY) {
+          EPUT("Foreach body is a type node");
+        }
         break;
       }
 
       case QIR_NODE_CASE: {
-        /// TODO: check child nodes
+        Case *casen = par->as<Case>();
+
+        if (casen->getCond()->isType()) {
+          EPUT("Case condition is a type node");
+        }
+
+        if (casen->getBody()->isType() && casen->getBody()->getKind() != QIR_NODE_VOID_TY) {
+          EPUT("Case body is a type node");
+        }
         break;
       }
 
       case QIR_NODE_SWITCH: {
-        /// TODO: check child nodes
+        Switch *switn = par->as<Switch>();
+
+        if (switn->getCond()->isType()) {
+          EPUT("Switch condition is a type node");
+        }
+
+        if (switn->getDefault()->isType() && switn->getDefault()->getKind() != QIR_NODE_VOID_TY) {
+          EPUT("Switch default is a type node");
+        }
         break;
       }
 
       case QIR_NODE_FN: {
-        /// TODO: check child nodes
+        Fn *fnn = par->as<Fn>();
+
+        if (fnn->getBody()->isType() && fnn->getBody()->getKind() != QIR_NODE_VOID_TY) {
+          EPUT("Function body is a type node");
+        }
         break;
       }
 
@@ -257,7 +343,9 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       }
 
       case QIR_NODE_PTR_TY: {
-        /// TODO: check child nodes
+        if (!cur->isType()) {
+          EPUT("Pointer is not a type node");
+        }
         break;
       }
 
@@ -270,32 +358,52 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       }
 
       case QIR_NODE_STRUCT_TY: {
-        /// TODO: check child nodes
+        if (!cur->isType()) {
+          EPUT("Struct is not a type node");
+        }
         break;
       }
 
       case QIR_NODE_UNION_TY: {
-        /// TODO: check child nodes
+        if (!cur->isType()) {
+          EPUT("Union is not a type node");
+        }
         break;
       }
 
       case QIR_NODE_ARRAY_TY: {
-        /// TODO: check child nodes
+        if (!par->as<ArrayTy>()->getElement()->isType()) {
+          EPUT("Array element is not a type node");
+        }
+        if (par->as<ArrayTy>()->getCount()->isType()) {
+          EPUT("Array size is a type node");
+        }
         break;
       }
 
       case QIR_NODE_LIST_TY: {
-        /// TODO: check child nodes
+        if (!cur->isType()) {
+          EPUT("List is not a type node");
+        }
         break;
       }
 
       case QIR_NODE_INTRIN_TY: {
-        /// TODO: check child nodes
         break;
       }
 
       case QIR_NODE_FN_TY: {
-        /// TODO: check child nodes
+        FnTy *fnty = par->as<FnTy>();
+
+        if (fnty->getReturn()->isType()) {
+          EPUT("Function return type is a type node");
+        }
+
+        for (const auto &p : fnty->getParams()) {
+          if (!p->isType()) {
+            EPUT("Function parameter is not a type node");
+          }
+        }
         break;
       }
 
