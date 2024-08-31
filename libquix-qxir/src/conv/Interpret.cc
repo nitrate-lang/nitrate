@@ -38,8 +38,7 @@
 
 using namespace qxir;
 
-qxir::Expr *qxir::evaluate_to_literal(const qxir::Expr *x) noexcept
-{
+qxir::Expr *qxir::evaluate_to_literal(const qxir::Expr *x) noexcept {
   qcore_implement(__func__);
   /// TODO: Interpret const expressions.
 }

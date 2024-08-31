@@ -57,7 +57,7 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
   bool bad_ty = false;
 
   const auto cb = [&bad_ty, mod](Expr *par, Expr *cur) -> IterOp {
-    if (!par || !cur) {
+    if (!par) {
       return IterOp::Proceed;
     }
 

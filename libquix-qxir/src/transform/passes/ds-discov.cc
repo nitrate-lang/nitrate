@@ -29,6 +29,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define QXIR_USE_CPP_API
+
+#include <quix-qxir/Node.h>
+
 #include <transform/passes/Decl.hh>
 
 /**
@@ -40,7 +44,28 @@
  */
 
 bool qxir::passes::impl::ds_discov(qmodule_t *mod) {
-  /// TODO: Implement pass
-  
+  std::unordered_map<std::string, Expr *> functions;
+  std::unordered_map<std::string, Expr *> variables;
+  std::unordered_map<std::string, Expr *> structs;
+  std::unordered_map<std::string, Expr *> unions;
+  std::unordered_map<std::string, Expr *> typedefs;
+
+  (void)functions;
+  (void)variables;
+  (void)structs;
+  (void)unions;
+  (void)typedefs;
+
+  const auto cb = [&](Expr *, Expr *cur) -> IterOp {
+    switch (cur->getKind()) {
+      default:
+        break;
+    }
+    /// TODO: Implement pass
+    return IterOp::Proceed;
+  };
+
+  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
+
   return true;
 }

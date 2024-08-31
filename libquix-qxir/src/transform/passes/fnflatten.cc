@@ -41,6 +41,6 @@
 
 bool qxir::passes::impl::fnflatten(qmodule_t *mod) {
   /// TODO: Implement pass
-  
+
   return true;
 }

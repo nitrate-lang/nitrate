@@ -52,12 +52,12 @@ boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>:
 static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
     make_bimap<IssueCode, std::string_view>({
         {IssueCode::Default, "-Wdefault"},
-        {IssueCode::PTreeInvalid, "-Wparse"},
-        {IssueCode::SignalReceived, "-Wcompiler-error"},
-        {IssueCode::DSPolyCyclicRef, "-Wds-cyclic-ref"},
-        {IssueCode::DSNullPtr, "-Wds-nullptr"},
-        {IssueCode::DSBadType, "-Wds-bad-type"},
-        {IssueCode::DSMissingMod, "-Wds-missing-mod"},
+        {IssueCode::PTreeInvalid, "-Werror=ptree-invalid"},
+        {IssueCode::SignalReceived, "-Werror=signal-recv"},
+        {IssueCode::DSPolyCyclicRef, "-Werror=ds-cyclic-ref"},
+        {IssueCode::DSNullPtr, "-Werror=ds-nullptr"},
+        {IssueCode::DSBadType, "-Werror=ds-bad-type"},
+        {IssueCode::DSMissingMod, "-Werror=ds-missing-mod"},
     });
 
 ///============================================================================///
