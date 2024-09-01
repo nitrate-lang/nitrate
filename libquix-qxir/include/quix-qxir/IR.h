@@ -110,8 +110,8 @@ typedef enum qxir_serial_t {
  *
  * @note This function is thread safe.
  */
-bool qxir_write(const qxir_node_t *node, qxir_serial_t mode, FILE *out, size_t *outlen, uint32_t argcnt,
-                ...);
+bool qxir_write(const qxir_node_t *node, qxir_serial_t mode, FILE *out, size_t *outlen,
+                uint32_t argcnt, ...);
 
 /**
  * @brief Deserialize a QModule instance from a FILE stream.

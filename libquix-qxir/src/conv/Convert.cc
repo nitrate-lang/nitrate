@@ -221,8 +221,8 @@ LIB_EXPORT bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mod
       va_end(args);
     }
 
-    auto ucb = [cb, userdata](qxir::Expr *p, qxir::Expr *c) {
-      cb(static_cast<qxir_node_t *>(c), userdata);
+    auto ucb = [cb, userdata](qxir::Expr *p, qxir::Expr **c) {
+      cb(static_cast<qxir_node_t *>(*c), userdata);
       return qxir::IterOp::Proceed;
     };
 
@@ -261,23 +261,23 @@ LIB_EXPORT void qmodule_testplug(void *node) {
 
   std::cout << "sizeof(Expr): " << sizeof(Expr) << std::endl;
 
-  iterate<dfs_pre, IterMP::none>(n, [&](Expr *p, Expr *c) {
+  iterate<dfs_pre, IterMP::none>(n, [&](Expr *p, Expr **c) {
     if (p) {
       std::cout << "ParentType: " << p->getKindName();
     } else {
       std::cout << "ParentType: nullptr";
     }
 
-    if (c) {
-      std::cout << " ChildType: " << c->getKindName();
+    if (*c) {
+      std::cout << " ChildType: " << (*c)->getKindName();
     } else {
       std::cout << " ChildType: nullptr";
     }
 
     std::cout << std::endl;
 
-    if (c) {
-      dump_node_as_raw_hex(c);
+    if (*c) {
+      dump_node_as_raw_hex(*c);
     }
 
     std::cout << std::endl;
@@ -291,6 +291,19 @@ LIB_EXPORT void qmodule_testplug(void *node) {
 static std::string_view memorize(std::string_view sv) { return qxir::current->internString(sv); }
 static std::string_view memorize(qparse::String sv) {
   return memorize(std::string_view(sv.data(), sv.size()));
+}
+
+static qxir::Tmp *create_simple_call(
+    ConvState &s, std::string_view name,
+    std::vector<std::pair<std::string_view, qxir::Expr *>,
+                qxir::Arena<std::pair<std::string_view, qxir::Expr *>>>
+        args = {}) {
+  qxir::DirectCallArgsTmpNodeCradle datapack;
+
+  std::get<0>(datapack) = qxir::create<qxir::Ident>(memorize(name));
+  std::get<1>(datapack) = std::move(args);
+
+  return create<qxir::Tmp>(qxir::TmpType::CALL, std::move(datapack));
 }
 
 qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) {
@@ -437,13 +450,13 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
       return STD_BINOP(CastAs);
     }
     case qOpIs: {
-      auto fn = qxir::create<qxir::Ident>("__is");
-      return qxir::create<qxir::Call>(fn, qxir::CallArgs({lhs, rhs}));
+      return create_simple_call(s, "__is", {{"lhs", lhs}, {"rhs", rhs}});
     }
     case qOpIn: {
-      auto methname = qxir::create<qxir::String>("has");
-      auto method = qxir::create<qxir::Index>(rhs, methname);
-      return qxir::create<qxir::Call>(method, qxir::CallArgs({lhs}));
+      // auto methname = qxir::create<qxir::String>("has");
+      // auto method = qxir::create<qxir::Index>(rhs, methname);
+      // return qxir::create<qxir::DirectCall>(method, qxir::DirectCallArgs({lhs}));
+      qcore_implement("qOpIn");
     }
     case qOpRange: {
       /// TODO: Implement range operator
@@ -492,17 +505,14 @@ qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
     }
     case qOpSizeof: {
       auto bits = qxir::create<qxir::UnExpr>(rhs, qxir::Op::Bitsizeof);
-      auto ceilfn = qxir::create<qxir::Ident>("__min");
-      auto arg = qxir::create<qxir::BinExpr>(bits, qxir::create<qxir::Int>(8), qxir::Op::Slash);
-      auto bytes = qxir::create<qxir::Call>(ceilfn, qxir::CallArgs({arg}));
-      return bytes;
+      auto arg = qxir::create<qxir::BinExpr>(bits, qxir::create<qxir::Float>(8), qxir::Op::Slash);
+      return create_simple_call(s, "__ceil", {{"0", arg}});
     }
     case qOpAlignof: {
       return STD_UNOP(Alignof);
     }
     case qOpTypeof: {
-      auto fn = qxir::create<qxir::Ident>("__typeof");
-      return qxir::create<qxir::Call>(fn, qxir::CallArgs({rhs}));
+      return create_simple_call(s, "__typeof", {{"0", rhs}});
     }
     case qOpOffsetof: {
       return STD_UNOP(Offsetof);
@@ -533,6 +543,7 @@ qxir::Expr *qconv_lower_post_unexpr(ConvState &s, qxir::Expr *lhs, qlex_op_t op)
 }
 
 namespace qxir {
+
   static Expr *qconv_cexpr(ConvState &s, const qparse::ConstExpr *n) {
     auto c = qconv(s, n->get_value());
     if (!c) {
@@ -715,7 +726,7 @@ namespace qxir {
       throw QError();
     }
 
-    CallArgsTmpNodeCradle datapack;
+    DirectCallArgsTmpNodeCradle datapack;
     for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
       auto arg = qconv(s, it->second);
       if (!arg) {
@@ -1444,18 +1455,14 @@ namespace qxir {
 
     /* Produce the function preconditions */
     if ((precond = qconv(s, n->get_precond()))) {
-      Ident *abort_name = create<Ident>("__qprecond_fail");
-      Call *abort_call = create<Call>(abort_name, CallArgs());
-
-      precond = create<If>(create<UnExpr>(precond, Op::LogicNot), abort_call, create<VoidTy>());
+      precond = create<If>(create<UnExpr>(precond, Op::LogicNot),
+                           create_simple_call(s, "__qprecond_fail"), create<VoidTy>());
     }
 
     /* Produce the function postconditions */
     if ((postcond = qconv(s, n->get_postcond()))) {
-      Ident *abort_name = create<Ident>("__qpostcond_fail");
-      Call *abort_call = create<Call>(abort_name, CallArgs());
-
-      postcond = create<If>(create<UnExpr>(postcond, Op::LogicNot), abort_call, create<VoidTy>());
+      postcond = create<If>(create<UnExpr>(postcond, Op::LogicNot),
+                            create_simple_call(s, "__qpostcond_fail"), create<VoidTy>());
     }
 
     { /* Produce the function body */
@@ -2492,13 +2499,13 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       out = create<Alloc>(clone(static_cast<Alloc *>(in)->getAllocType())->asType());
       break;
     }
-    case QIR_NODE_CALL: {
-      Call *n = static_cast<Call *>(in);
-      CallArgs args;
+    case QIR_NODE_DCALL: {
+      DirectCall *n = static_cast<DirectCall *>(in);
+      DirectCallArgs args;
       for (auto arg : n->getArgs()) {
         args.push_back(clone(arg));
       }
-      out = create<Call>(clone(n->getFn()), std::move(args));
+      out = create<DirectCall>(clone(n->getFn())->as<Fn>(), std::move(args));
       break;
     }
     case QIR_NODE_SEQ: {

@@ -3,12 +3,7 @@ subsystem app {
 
     }
 
-    fn bar() {
-
+    fn main() {
+        foo();
     }
-}
-
-fn main() {
-    foo();
-    bar();
 }

@@ -140,7 +140,7 @@ namespace qxir {
   class String;
   class List;
   class Alloc;
-  class Call;
+  class DirectCall;
   class Seq;
   class Async;
   class Index;
@@ -200,7 +200,7 @@ public:
   qxir::Type *lookupType(qxir::TypeID tid);
 
   void setRoot(qxir::Expr *root) noexcept;
-  qxir::Expr *getRoot() noexcept;
+  qxir::Expr *&getRoot() noexcept;
 
   void setLexer(qlex_t *lexer) noexcept;
   qlex_t *getLexer() noexcept;

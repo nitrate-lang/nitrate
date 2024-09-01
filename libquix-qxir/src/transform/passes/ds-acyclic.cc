@@ -39,7 +39,7 @@
  * @brief Ensure that the module IR data structure is acyclic.
  *
  * @note If nodes are optimized via deduplication, this will break.
- * 
+ *
  * @timecomplexity O(n)
  * @spacecomplexity O(n)
  */
@@ -48,8 +48,8 @@ bool qxir::passes::impl::ds_acyclic(qmodule_t *mod) {
   std::unordered_set<qxir_node_t *> visited;
   bool has_cycle = false;
 
-  const auto cb = [&visited, &has_cycle, mod](Expr *par, Expr *cur) -> IterOp {
-    if (visited.contains(cur)) [[unlikely]] {
+  const auto cb = [&visited, &has_cycle, mod](Expr *par, Expr **cur) -> IterOp {
+    if (visited.contains(*cur)) [[unlikely]] {
       has_cycle = true;
 
       mod->getDiag().push(
@@ -60,7 +60,7 @@ bool qxir::passes::impl::ds_acyclic(qmodule_t *mod) {
       return IterOp::Abort;
     }
 
-    visited.insert(cur);
+    visited.insert(*cur);
     return IterOp::Proceed;
   };
 

@@ -220,18 +220,6 @@ namespace qxir {
     /**
      * @brief Type check.
      *
-     * @tparam T The type to check.
-     * @return true If the type matches.
-     * @return false If the type does not match.
-     */
-    template <typename T>
-    bool is() const noexcept {
-      return typeid(*this) == typeid(T);
-    }
-
-    /**
-     * @brief Type check.
-     *
      * @param type The type to check.
      * @return true If the type matches.
      * @return false If the type does not match.
@@ -743,23 +731,24 @@ namespace qxir {
     size_t getSizeBytes() noexcept { return m_type->getSizeBytes(); }
   };
 
-  typedef std::vector<Expr *, Arena<Expr *>> CallArgs;
+  typedef std::vector<Expr *, Arena<Expr *>> DirectCallArgs;
 
-  class Call final : public Expr {
+  class DirectCall final : public Expr {
     QCLASS_REFLECT()
 
-    Expr *m_fn;
-    CallArgs m_args;
+    Fn *m_iref; /* Possibly cyclic reference to the function. */
+    DirectCallArgs m_args;
 
   public:
-    Call(Expr *fn, const CallArgs &args) : Expr(QIR_NODE_CALL), m_fn(fn), m_args(args) {}
+    DirectCall(Fn *ref, const DirectCallArgs &args)
+        : Expr(QIR_NODE_DCALL), m_iref(ref), m_args(args) {}
 
-    Expr *getFn() noexcept { return m_fn; }
-    Expr *setFn(Expr *fn) noexcept { return m_fn = fn; }
+    Fn *getFn() noexcept { return m_iref; }
+    Fn *setFn(Fn *ref) noexcept { return m_iref = ref; }
 
-    const CallArgs &getArgs() const noexcept { return m_args; }
-    CallArgs &getArgs() noexcept { return m_args; }
-    void setArgs(const CallArgs &args) noexcept { m_args = args; }
+    const DirectCallArgs &getArgs() const noexcept { return m_args; }
+    DirectCallArgs &getArgs() noexcept { return m_args; }
+    void setArgs(const DirectCallArgs &args) noexcept { m_args = args; }
 
     size_t getNumArgs() noexcept { return m_args.size(); }
   };
@@ -1124,11 +1113,13 @@ namespace qxir {
 
   typedef std::tuple<Expr *, std::vector<std::pair<std::string_view, Expr *>,
                                          Arena<std::pair<std::string_view, Expr *>>>>
-      CallArgsTmpNodeCradle;
+      DirectCallArgsTmpNodeCradle;
 
   typedef std::tuple<Expr *, std::string_view> FieldTmpNodeCradle;
 
-  typedef std::variant<LetTmpNodeCradle, CallArgsTmpNodeCradle, FieldTmpNodeCradle, std::string_view> TmpNodeCradle;
+  typedef std::variant<LetTmpNodeCradle, DirectCallArgsTmpNodeCradle, FieldTmpNodeCradle,
+                       std::string_view>
+      TmpNodeCradle;
 
   class Tmp final : public Expr {
     QCLASS_REFLECT()
@@ -1221,26 +1212,26 @@ namespace qxir {
     SkipChildren,
   };
 
-  typedef std::function<IterOp(Expr *p, Expr *c)> IterCallback;
+  typedef std::function<IterOp(Expr *p, Expr **c)> IterCallback;
   typedef std::function<bool(Expr **a, Expr **b)> ChildSelect;
 
   namespace detail {
-    void dfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel);
-    void dfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel);
-    void bfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel);
-    void bfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel);
+    void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel);
+    void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel);
+    void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel);
+    void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel);
   }  // namespace detail
 
   template <IterMode mode, IterMP mp = IterMP::none>
   void iterate(Expr *base, IterCallback cb, ChildSelect cs = nullptr) {
     if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl(base, cb, cs, mp == IterMP::async);
+      return detail::dfs_pre_impl(&base, cb, cs, mp == IterMP::async);
     } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl(base, cb, cs, mp == IterMP::async);
+      return detail::dfs_post_impl(&base, cb, cs, mp == IterMP::async);
     } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl(base, cb, cs, mp == IterMP::async);
+      return detail::bfs_pre_impl(&base, cb, cs, mp == IterMP::async);
     } else if constexpr (mode == bfs_post) {
-      return detail::bfs_post_impl(base, cb, cs, mp == IterMP::async);
+      return detail::bfs_post_impl(&base, cb, cs, mp == IterMP::async);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }

@@ -57,10 +57,12 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
 
   bool bad_ty = false;
 
-  const auto cb = [&bad_ty, mod](Expr *par, Expr *cur) -> IterOp {
+  const auto cb = [&bad_ty, mod](Expr *par, Expr **_cur) -> IterOp {
     if (!par) {
       return IterOp::Proceed;
     }
+
+    Expr *cur = *_cur;
 
     switch (par->getKind()) {
       case QIR_NODE_BINEXPR: {
@@ -101,9 +103,9 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         break;
       }
 
-      case QIR_NODE_CALL: {
+      case QIR_NODE_DCALL: {
         if (cur->isType()) {
-          EPUT("Call child node is a type node");
+          EPUT("DirectCall child node is a type node");
         }
 
         break;

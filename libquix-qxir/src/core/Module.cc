@@ -73,7 +73,7 @@ ModuleId qmodule_t::getModuleId() noexcept { return m_id; }
 Type *qmodule_t::lookupType(TypeID tid) { return m_type_mgr->get(tid); }
 
 void qmodule_t::setRoot(qxir::Expr *root) noexcept { m_root = root; }
-qxir::Expr *qmodule_t::getRoot() noexcept { return m_root; }
+qxir::Expr *&qmodule_t::getRoot() noexcept { return m_root; }
 
 void qmodule_t::setLexer(qlex_t *lexer) noexcept { m_lexer = lexer; }
 qlex_t *qmodule_t::getLexer() noexcept { return m_lexer; }

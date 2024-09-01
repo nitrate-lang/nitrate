@@ -46,8 +46,8 @@ bool qxir::passes::impl::ds_nilchk(qmodule_t *mod) {
   bool has_bad_null = false;
   bool missing_mod = false;
 
-  const auto cb = [&has_bad_null, &missing_mod, mod](Expr *par, Expr *cur) -> IterOp {
-    if (cur == nullptr) [[unlikely]] {
+  const auto cb = [&has_bad_null, &missing_mod, mod](Expr *par, Expr **_cur) -> IterOp {
+    if (*_cur == nullptr) [[unlikely]] {
       has_bad_null = true;
 
       mod->getDiag().push(
@@ -56,6 +56,8 @@ bool qxir::passes::impl::ds_nilchk(qmodule_t *mod) {
                             diag::IssueClass::FatalError, diag::IssueCode::DSNullPtr));
       return IterOp::Abort;
     }
+
+    Expr *cur = *_cur;
 
     if (cur->getModule() == nullptr) [[unlikely]] {
       missing_mod = true;

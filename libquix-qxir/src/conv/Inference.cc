@@ -684,8 +684,8 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         T = create<PtrTy>(E->as<Alloc>()->getAllocType());
         break;
       }
-      case QIR_NODE_CALL: {
-        T = E->as<Call>()->getFn()->getType()->as<FnTy>()->getReturn();
+      case QIR_NODE_DCALL: {
+        T = E->as<DirectCall>()->getFn()->getType()->as<FnTy>()->getReturn();
         break;
       }
       case QIR_NODE_SEQ: {

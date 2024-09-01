@@ -91,9 +91,8 @@ namespace qxir::detail {
         children.push_back(reinterpret_cast<Expr **>(&base->as<Alloc>()->m_type));
         break;
       }
-      case QIR_NODE_CALL: {
-        children.push_back(&base->as<Call>()->m_fn);
-        for (Expr *&child : base->as<Call>()->m_args) {
+      case QIR_NODE_DCALL: {
+        for (Expr *&child : base->as<DirectCall>()->m_args) {
           children.push_back(&child);
         }
         break;
@@ -116,6 +115,7 @@ namespace qxir::detail {
         break;
       }
       case QIR_NODE_IDENT: {
+        // Don't print the m_what
         break;
       }
       case QIR_NODE_EXPORT: {
@@ -296,14 +296,14 @@ namespace qxir::detail {
     IterAbort() = default;
   };
 
-  CPP_EXPORT void dfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void dfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
     qcore_assert(base != nullptr && cb != nullptr, "dfs_pre_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    typedef std::function<void(Expr *, const IterCallback &, const ChildSelect &)> IterFn;
+    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
 
     switch (cb(nullptr, base)) {
       case IterOp::Proceed:
@@ -314,11 +314,11 @@ namespace qxir::detail {
         return;
     }
 
-    const IterFn syncfn = [&syncfn](Expr *n, const IterCallback &cb, const ChildSelect &cs) {
-      for (Expr **child : get_children_sorted(n, cs)) {
-        switch (cb(n, *child)) {
+    const IterFn syncfn = [&syncfn](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+      for (Expr **child : get_children_sorted(*n, cs)) {
+        switch (cb(*n, child)) {
           case IterOp::Proceed:
-            syncfn(*child, cb, cs);
+            syncfn(child, cb, cs);
             break;
           case IterOp::Abort:
             throw IterAbort();
@@ -328,15 +328,15 @@ namespace qxir::detail {
       }
     };
 
-    const IterFn asyncfn = [&asyncfn](Expr *n, IterCallback cb, ChildSelect cs) {
-      std::vector<Expr **> children = get_children_sorted(n, cs);
+    const IterFn asyncfn = [&asyncfn](Expr **n, IterCallback cb, ChildSelect cs) {
+      std::vector<Expr **> children = get_children_sorted(*n, cs);
 
       std::list<std::future<void>> futures;
       for (Expr **child : children) {
         futures.push_back(std::async(std::launch::async, [&asyncfn, cb, child, cs]() {
-          switch (cb(*child, *child)) {
+          switch (cb(*child, child)) {
             case IterOp::Proceed:
-              asyncfn(*child, cb, cs);
+              asyncfn(child, cb, cs);
               break;
             case IterOp::Abort:
               /// WARNING: This will be non-deterministic
@@ -363,19 +363,19 @@ namespace qxir::detail {
     }
   }
 
-  CPP_EXPORT void dfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
     qcore_assert(base != nullptr && cb != nullptr, "dfs_post_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    typedef std::function<void(Expr *, const IterCallback &, const ChildSelect &)> IterFn;
+    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
 
-    const IterFn syncfn = [&syncfn](Expr *n, const IterCallback &cb, const ChildSelect &cs) {
-      for (Expr **child : get_children_sorted(n, cs)) {
-        syncfn(*child, cb, cs);
-        switch (cb(n, *child)) {
+    const IterFn syncfn = [&syncfn](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+      for (Expr **child : get_children_sorted(*n, cs)) {
+        syncfn(child, cb, cs);
+        switch (cb(*n, child)) {
           case IterOp::Proceed:
             break;
           case IterOp::Abort:
@@ -387,14 +387,14 @@ namespace qxir::detail {
       }
     };
 
-    const IterFn asyncfn = [&asyncfn](Expr *n, IterCallback cb, ChildSelect cs) {
-      std::vector<Expr **> children = get_children_sorted(n, cs);
+    const IterFn asyncfn = [&asyncfn](Expr **n, IterCallback cb, ChildSelect cs) {
+      std::vector<Expr **> children = get_children_sorted(*n, cs);
 
       std::list<std::future<void>> futures;
       for (Expr **child : children) {
         futures.push_back(std::async(std::launch::async, [&asyncfn, cb, child, cs]() {
-          asyncfn(*child, cb, cs);
-          switch (cb(*child, *child)) {
+          asyncfn(child, cb, cs);
+          switch (cb(*child, child)) {
             case IterOp::Proceed:
               break;
             case IterOp::Abort:
@@ -426,7 +426,7 @@ namespace qxir::detail {
     }
   }
 
-  CPP_EXPORT void bfs_pre_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
     /// TODO: Verify that this is correct
     qcore_assert(base != nullptr && cb != nullptr, "bfs_pre_impl: base and cb must not be null");
 
@@ -434,20 +434,20 @@ namespace qxir::detail {
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    typedef std::function<void(Expr *, const IterCallback &, const ChildSelect &)> IterFn;
+    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
 
     cb(nullptr, base);
 
-    const IterFn syncfn = [](Expr *n, const IterCallback &cb, const ChildSelect &cs) {
+    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::queue<Expr *> q;
-      q.push(n);
+      q.push(*n);
 
       while (!q.empty()) {
         Expr *cur = q.front();
         q.pop();
 
         for (Expr **child : get_children_sorted(cur, cs)) {
-          switch (cb(cur, *child)) {
+          switch (cb(cur, child)) {
             case IterOp::Proceed:
               q.push(*child);
               break;
@@ -460,9 +460,9 @@ namespace qxir::detail {
       }
     };
 
-    const IterFn asyncfn = [](Expr *n, IterCallback cb, ChildSelect cs) {
+    const IterFn asyncfn = [](Expr **n, IterCallback cb, ChildSelect cs) {
       std::queue<Expr *> q;
-      q.push(n);
+      q.push(*n);
 
       while (!q.empty()) {
         Expr *cur = q.front();
@@ -473,7 +473,7 @@ namespace qxir::detail {
         std::list<std::future<void>> futures;
         for (Expr **child : children) {
           futures.push_back(std::async(std::launch::async, [cb, child, &q]() {
-            switch (cb(*child, *child)) {
+            switch (cb(*child, child)) {
               case IterOp::Proceed:
                 q.push(*child);
                 break;
@@ -503,7 +503,7 @@ namespace qxir::detail {
     }
   }
 
-  CPP_EXPORT void bfs_post_impl(Expr *base, IterCallback cb, ChildSelect cs, bool parallel) {
+  CPP_EXPORT void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
     /// TODO: Verify that this is correct
     qcore_assert(base != nullptr && cb != nullptr, "bfs_post_impl: base and cb must not be null");
 
@@ -511,37 +511,37 @@ namespace qxir::detail {
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    typedef std::function<void(Expr *, const IterCallback &, const ChildSelect &)> IterFn;
+    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
 
-    const IterFn syncfn = [](Expr *n, const IterCallback &cb, const ChildSelect &cs) {
-      std::queue<std::pair<Expr *, Expr *>> q;
+    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+      std::queue<std::pair<Expr *, Expr **>> q;
       q.push({nullptr, n});
 
       while (!q.empty()) {
-        Expr *cur = q.front().second;
+        Expr **cur = q.front().second;
         q.pop();
 
-        for (Expr **child : get_children_sorted(cur, cs)) {
-          q.push({cur, *child});
+        for (Expr **child : get_children_sorted(*cur, cs)) {
+          q.push({*cur, child});
         }
 
         cb(q.front().first, cur);
       }
     };
 
-    const IterFn asyncfn = [](Expr *n, IterCallback cb, ChildSelect cs) {
-      std::queue<std::pair<Expr *, Expr *>> q;
+    const IterFn asyncfn = [](Expr **n, IterCallback cb, ChildSelect cs) {
+      std::queue<std::pair<Expr *, Expr **>> q;
       q.push({nullptr, n});
 
       while (!q.empty()) {
-        Expr *cur = q.front().second;
+        Expr **cur = q.front().second;
         q.pop();
 
-        std::vector<Expr **> children = get_children_sorted(cur, cs);
+        std::vector<Expr **> children = get_children_sorted(*cur, cs);
 
         std::list<std::future<void>> futures;
         for (Expr **child : children) {
-          q.push({cur, *child});
+          q.push({*cur, child});
         }
 
         for (std::future<void> &f : futures) {

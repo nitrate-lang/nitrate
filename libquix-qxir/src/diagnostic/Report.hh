@@ -171,6 +171,13 @@ namespace qxir::diag {
       diag::DiagMessage("Function named " + std::string(_varname) + " is redefined", \
                         diag::IssueClass::Error, diag::IssueCode::Redefinition,      \
                         cur->getLoc().first, cur->getLoc().second));
+
+#define NO_MATCHING_FUNCTION(_funcname)                                                         \
+  mod->getDiag().push(QXIR_AUDIT_CONV,                                                          \
+                      diag::DiagMessage("No matching function named " + std::string(_funcname), \
+                                        diag::IssueClass::Error, diag::IssueCode::Redefinition, \
+                                        cur->getLoc().first, cur->getLoc().second));
+
 };  // namespace qxir::diag
 
 #endif  // __QUIX_QXIR_REPORT_H__

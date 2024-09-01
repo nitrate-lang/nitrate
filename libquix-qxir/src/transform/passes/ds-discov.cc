@@ -50,12 +50,12 @@
 bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
   bool error = false;
 
-  const auto cb = [&](Expr *, Expr *_cur) -> IterOp {
-    if (_cur->getKind() != QIR_NODE_TMP) {
+  const auto cb = [&](Expr *par, Expr **_cur) -> IterOp {
+    if ((*_cur)->getKind() != QIR_NODE_TMP) {
       return IterOp::Proceed;
     }
 
-    Tmp *cur = _cur->as<Tmp>();
+    Tmp *cur = (*_cur)->as<Tmp>();
     TmpType tt = cur->getTmpType();
 
     switch (tt) {
@@ -70,34 +70,29 @@ bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
       }
 
       case TmpType::CALL: {
-        // /// TODO:
-        // const CallArgsTmpNodeCradle &info = std::get<CallArgsTmpNodeCradle>(cur->getData());
-        // const Expr *base = std::get<0>(info);
-        // const auto &args = std::get<1>(info);
+        const auto &info = std::get<DirectCallArgsTmpNodeCradle>(cur->getData());
+        const Expr *base = std::get<0>(info);
+        const auto &args = std::get<1>(info);
 
-        // if (base->getKind() == QIR_NODE_IDENT) {
-        //   /* Direct call */
+        if (base->getKind() == QIR_NODE_IDENT) { /* Direct call */
+          const std::string_view &name = base->as<Ident>()->getName();
 
-        //   /// TODO: Replace with function reference
-        //   const std::string_view &name = base->as<Ident>()->getName();
-          
-        //   if (mod->getFunctions().left.count(name) == 0) {
-        //     /// TODO: Function not found
-        //   }
+          if (mod->getFunctions().left.count(name) == 0) {
+            NO_MATCHING_FUNCTION(name);
+            error = true;
+            return IterOp::Proceed;
+          }
 
-          
-        // } else {
-        //   /* Indirect call */
+          DirectCallArgs new_args;
 
-        //   /// TODO: Learn what an indirect call [actually] is.
-        //   /// Do I need lookup tables? How does this apply to non-native builds?
-        //   qcore_panic("Indirect calls are not yet supported.");
-        // }
+          /// TODO: convert args to DirectCallArgs
 
-        // base->dump(std::cout);
-        // for (auto &[name, value] : args) {
-        //   value->dump(std::cout);
-        // }
+          *_cur = create<DirectCall>(mod->getFunctions().left.at(name), std::move(new_args));
+        } else { /* Indirect call */
+          /// TODO: Learn what an indirect call [actually] is.
+          /// Do I need lookup tables? How does this apply to non-native builds?
+          qcore_panic("Indirect calls are not yet supported.");
+        }
         break;
       }
 

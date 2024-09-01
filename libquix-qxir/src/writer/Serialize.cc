@@ -148,12 +148,21 @@ std::ostream &qxir::operator<<(std::ostream &os, qxir::Op op) {
   return os << op_map.at(op);
 }
 
-static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
+static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
+                              std::unordered_set<Expr *> &visited) {
   if (!n) {
     // Nicely handle null nodes
     ss << "{?}";
     return;
   }
+
+  if (visited.contains(n)) {
+    ss << "{...}";
+    return;
+  }
+  visited.insert(n);
+
+#define recurse(x) serialize_recurse(x, ss, state, visited)
 
   if (n->isConst()) {
     ss << "const ";
@@ -165,24 +174,24 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
   switch (n->getKind()) {
     case QIR_NODE_BINEXPR: {
       ss << "(";
-      serialize_recurse(n->as<BinExpr>()->getLHS(), ss, state);
+      recurse(n->as<BinExpr>()->getLHS());
       ss << " ";
       ss << n->as<BinExpr>()->getOp();
       ss << " ";
-      serialize_recurse(n->as<BinExpr>()->getRHS(), ss, state);
+      recurse(n->as<BinExpr>()->getRHS());
       ss << ")";
       break;
     }
     case QIR_NODE_UNEXPR: {
       ss << "(";
       ss << n->as<UnExpr>()->getOp();
-      serialize_recurse(n->as<UnExpr>()->getExpr(), ss, state);
+      recurse(n->as<UnExpr>()->getExpr());
       ss << ")";
       break;
     }
     case QIR_NODE_POST_UNEXPR: {
       ss << "(";
-      serialize_recurse(n->as<PostUnExpr>()->getExpr(), ss, state);
+      recurse(n->as<PostUnExpr>()->getExpr());
       ss << n->as<PostUnExpr>()->getOp();
       ss << ")";
       break;
@@ -203,7 +212,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       ss << "{";
       for (auto it = n->as<List>()->getItems().begin(); it != n->as<List>()->getItems().end();
            ++it) {
-        serialize_recurse(*it, ss, state);
+        recurse(*it);
         if (std::next(it) != n->as<List>()->getItems().end()) {
           ss << ",";
         }
@@ -213,15 +222,16 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     }
     case QIR_NODE_ALLOC: {
       ss << "alloc ";
-      serialize_recurse(n->as<Alloc>()->getType(), ss, state);
+      recurse(n->as<Alloc>()->getType());
       break;
     }
-    case QIR_NODE_CALL: {
-      serialize_recurse(n->as<Call>()->getFn(), ss, state);
+    case QIR_NODE_DCALL: {
+      ss << n->as<DirectCall>()->getFn()->getName();
       ss << "(";
-      for (auto it = n->as<Call>()->getArgs().begin(); it != n->as<Call>()->getArgs().end(); ++it) {
-        serialize_recurse(*it, ss, state);
-        if (std::next(it) != n->as<Call>()->getArgs().end()) {
+      for (auto it = n->as<DirectCall>()->getArgs().begin();
+           it != n->as<DirectCall>()->getArgs().end(); ++it) {
+        recurse(*it);
+        if (std::next(it) != n->as<DirectCall>()->getArgs().end()) {
           ss << ",";
         }
       }
@@ -233,7 +243,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       state.indent++;
       indent(ss, state);
       for (auto it = n->as<Seq>()->getItems().begin(); it != n->as<Seq>()->getItems().end(); ++it) {
-        serialize_recurse(*it, ss, state);
+        recurse(*it);
         ss << ",";
 
         if (std::next(it) != n->as<Seq>()->getItems().end()) {
@@ -250,7 +260,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       state.indent++;
       indent(ss, state);
       for (auto it = n->as<Seq>()->getItems().begin(); it != n->as<Seq>()->getItems().end(); ++it) {
-        serialize_recurse(*it, ss, state);
+        recurse(*it);
         ss << ",";
 
         if (std::next(it) != n->as<Seq>()->getItems().end()) {
@@ -263,9 +273,9 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QIR_NODE_INDEX: {
-      serialize_recurse(n->as<Index>()->getExpr(), ss, state);
+      recurse(n->as<Index>()->getExpr());
       ss << "[";
-      serialize_recurse(n->as<Index>()->getIndex(), ss, state);
+      recurse(n->as<Index>()->getIndex());
       ss << "]";
       break;
     }
@@ -277,19 +287,19 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       ss << "export[" << n->as<Export>()->getAbiName() << "] ";
       ss << n->as<Export>()->getName();
       ss << " = ";
-      serialize_recurse(n->as<Export>()->getValue(), ss, state);
+      recurse(n->as<Export>()->getValue());
       break;
     }
     case QIR_NODE_LOCAL: {
       ss << "local ";
       ss << n->as<Local>()->getName();
       ss << " = ";
-      serialize_recurse(n->as<Local>()->getValue(), ss, state);
+      recurse(n->as<Local>()->getValue());
       break;
     }
     case QIR_NODE_RET: {
       ss << "ret ";
-      serialize_recurse(n->as<Ret>()->getExpr(), ss, state);
+      recurse(n->as<Ret>()->getExpr());
       break;
     }
     case QIR_NODE_BRK: {
@@ -302,70 +312,70 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     }
     case QIR_NODE_IF: {
       ss << "if (";
-      serialize_recurse(n->as<If>()->getCond(), ss, state);
+      recurse(n->as<If>()->getCond());
       ss << ") then ";
-      serialize_recurse(n->as<If>()->getThen(), ss, state);
+      recurse(n->as<If>()->getThen());
       ss << " else ";
-      serialize_recurse(n->as<If>()->getElse(), ss, state);
+      recurse(n->as<If>()->getElse());
       break;
     }
     case QIR_NODE_WHILE: {
       ss << "while (";
-      serialize_recurse(n->as<While>()->getCond(), ss, state);
+      recurse(n->as<While>()->getCond());
       ss << ") ";
-      serialize_recurse(n->as<While>()->getBody(), ss, state);
+      recurse(n->as<While>()->getBody());
       break;
     }
     case QIR_NODE_FOR: {
       ss << "for (";
-      serialize_recurse(n->as<For>()->getInit(), ss, state);
+      recurse(n->as<For>()->getInit());
       ss << "; ";
-      serialize_recurse(n->as<For>()->getCond(), ss, state);
+      recurse(n->as<For>()->getCond());
       ss << "; ";
-      serialize_recurse(n->as<For>()->getStep(), ss, state);
+      recurse(n->as<For>()->getStep());
       ss << ") ";
-      serialize_recurse(n->as<For>()->getBody(), ss, state);
+      recurse(n->as<For>()->getBody());
       break;
     }
     case QIR_NODE_FORM: {
       ss << "form (";
-      serialize_recurse(n->as<Form>()->getMaxJobs(), ss, state);
+      recurse(n->as<Form>()->getMaxJobs());
       ss << ") (" << n->as<Form>()->getIdxIdent() << "; ";
       ss << n->as<Form>()->getValIdent() << "; ";
-      serialize_recurse(n->as<Form>()->getExpr(), ss, state);
+      recurse(n->as<Form>()->getExpr());
       ss << ") ";
-      serialize_recurse(n->as<Form>()->getBody(), ss, state);
+      recurse(n->as<Form>()->getBody());
       break;
     }
     case QIR_NODE_FOREACH: {
       ss << "form (" << n->as<Form>()->getIdxIdent() << "; ";
       ss << n->as<Form>()->getValIdent() << "; ";
-      serialize_recurse(n->as<Form>()->getExpr(), ss, state);
+      recurse(n->as<Form>()->getExpr());
       ss << ") ";
-      serialize_recurse(n->as<Form>()->getBody(), ss, state);
+      recurse(n->as<Form>()->getBody());
       break;
     }
     case QIR_NODE_CASE: {
       ss << "case ";
-      serialize_recurse(n->as<Case>()->getCond(), ss, state);
+      recurse(n->as<Case>()->getCond());
       ss << ": ";
-      serialize_recurse(n->as<Case>()->getBody(), ss, state);
+      recurse(n->as<Case>()->getBody());
       break;
     }
     case QIR_NODE_SWITCH: {
       ss << "switch (";
-      serialize_recurse(n->as<Switch>()->getCond(), ss, state);
+      recurse(n->as<Switch>()->getCond());
       ss << ") {";
       state.indent++;
       indent(ss, state);
       for (auto it = n->as<Switch>()->getCases().begin(); it != n->as<Switch>()->getCases().end();
            ++it) {
-        serialize_recurse(*it, ss, state);
+        recurse(*it);
         ss << ",";
         indent(ss, state);
       }
       ss << "default: ";
-      serialize_recurse(n->as<Switch>()->getDefault(), ss, state);
+      recurse(n->as<Switch>()->getDefault());
       state.indent--;
       indent(ss, state);
       ss << "}";
@@ -376,13 +386,13 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       ss << n->as<Fn>()->getName();
       ss << "(";
       for (auto it = n->as<Fn>()->getParams().begin(); it != n->as<Fn>()->getParams().end(); ++it) {
-        serialize_recurse(*it, ss, state);
+        recurse(*it);
         if (std::next(it) != n->as<Fn>()->getParams().end()) {
           ss << ",";
         }
       }
       ss << ") ";
-      serialize_recurse(n->as<Fn>()->getBody(), ss, state);
+      recurse(n->as<Fn>()->getBody());
       break;
     }
     case QIR_NODE_U1_TY: {
@@ -450,7 +460,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QIR_NODE_PTR_TY: {
-      serialize_recurse(n->as<PtrTy>()->getPointee(), ss, state);
+      recurse(n->as<PtrTy>()->getPointee());
       ss << "*";
       break;
     }
@@ -469,7 +479,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       indent(ss, state);
       for (auto it = n->as<StructTy>()->getFields().begin();
            it != n->as<StructTy>()->getFields().end(); ++it) {
-        serialize_recurse(*it, ss, state);
+        recurse(*it);
         ss << ",";
 
         if (std::next(it) != n->as<StructTy>()->getFields().end()) {
@@ -487,7 +497,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       indent(ss, state);
       for (auto it = n->as<UnionTy>()->getFields().begin();
            it != n->as<UnionTy>()->getFields().end(); ++it) {
-        serialize_recurse(*it, ss, state);
+        recurse(*it);
         ss << ",";
 
         if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
@@ -501,15 +511,15 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     }
     case QIR_NODE_ARRAY_TY: {
       ss << "[";
-      serialize_recurse(n->as<ArrayTy>()->getElement(), ss, state);
+      recurse(n->as<ArrayTy>()->getElement());
       ss << "; ";
-      serialize_recurse(n->as<ArrayTy>()->getCount(), ss, state);
+      recurse(n->as<ArrayTy>()->getCount());
       ss << "]";
       break;
     }
     case QIR_NODE_LIST_TY: {
       ss << "[";
-      serialize_recurse(n->as<ListTy>()->getElement(), ss, state);
+      recurse(n->as<ListTy>()->getElement());
       ss << "]";
       break;
     }
@@ -523,13 +533,13 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
       ss << "fn (";
       for (auto it = n->as<FnTy>()->getParams().begin(); it != n->as<FnTy>()->getParams().end();
            ++it) {
-        serialize_recurse(*it, ss, state);
+        recurse(*it);
         if (std::next(it) != n->as<FnTy>()->getParams().end()) {
           ss << ",";
         }
       }
       ss << "): ";
-      serialize_recurse(n->as<FnTy>()->getReturn(), ss, state);
+      recurse(n->as<FnTy>()->getReturn());
       break;
     }
     case QIR_NODE_TMP: {
@@ -585,7 +595,8 @@ static char *qxir_repr(qxir_node_t *node, bool minify, size_t indent, qcore_aren
   }
 
   /* Serialize the AST recursively */
-  serialize_recurse(static_cast<Expr *>(node), ss, state);
+  std::unordered_set<Expr *> v;
+  serialize_recurse(static_cast<Expr *>(node), ss, state, v);
 
   /**
    * @brief We can do the following because the std::string destructor will
