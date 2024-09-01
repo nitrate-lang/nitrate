@@ -58,6 +58,8 @@ static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
         {IssueCode::DSNullPtr, "-Werror=ds-nullptr"},
         {IssueCode::DSBadType, "-Werror=ds-bad-type"},
         {IssueCode::DSMissingMod, "-Werror=ds-missing-mod"},
+
+        {IssueCode::Redefinition, "-Werror=redefinition"},
     });
 
 ///============================================================================///

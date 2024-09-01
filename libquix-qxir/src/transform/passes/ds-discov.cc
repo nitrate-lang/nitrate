@@ -33,6 +33,7 @@
 
 #include <quix-qxir/Node.h>
 
+#include <boost/bimap.hpp>
 #include <transform/passes/Decl.hh>
 
 /**
@@ -41,31 +42,111 @@
  * @details [TODO: Write a detailed description of this pass]
  *
  * @note [TODO: Write any additional notes about this pass]
+ *
+ * @timecomplexity O(n)
+ * @spacecomplexity O(n)
  */
 
-bool qxir::passes::impl::ds_discov(qmodule_t *mod) {
-  std::unordered_map<std::string, Expr *> functions;
-  std::unordered_map<std::string, Expr *> variables;
-  std::unordered_map<std::string, Expr *> structs;
-  std::unordered_map<std::string, Expr *> unions;
-  std::unordered_map<std::string, Expr *> typedefs;
+bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
+  bool error = false;
 
-  (void)functions;
-  (void)variables;
-  (void)structs;
-  (void)unions;
-  (void)typedefs;
-
-  const auto cb = [&](Expr *, Expr *cur) -> IterOp {
-    switch (cur->getKind()) {
-      default:
-        break;
+  const auto cb = [&](Expr *, Expr *_cur) -> IterOp {
+    if (_cur->getKind() != QIR_NODE_TMP) {
+      return IterOp::Proceed;
     }
-    /// TODO: Implement pass
+
+    Tmp *cur = _cur->as<Tmp>();
+    TmpType tt = cur->getTmpType();
+
+    switch (tt) {
+      case TmpType::NULL_LITERAL: {
+        /// TODO:
+        break;
+      }
+
+      case TmpType::UNDEF_LITERAL: {
+        /// TODO:
+        break;
+      }
+
+      case TmpType::CALL: {
+        // /// TODO:
+        // const CallArgsTmpNodeCradle &info = std::get<CallArgsTmpNodeCradle>(cur->getData());
+        // const Expr *base = std::get<0>(info);
+        // const auto &args = std::get<1>(info);
+
+        // if (base->getKind() == QIR_NODE_IDENT) {
+        //   /* Direct call */
+
+        //   /// TODO: Replace with function reference
+        //   const std::string_view &name = base->as<Ident>()->getName();
+          
+        //   if (mod->getFunctions().left.count(name) == 0) {
+        //     /// TODO: Function not found
+        //   }
+
+          
+        // } else {
+        //   /* Indirect call */
+
+        //   /// TODO: Learn what an indirect call [actually] is.
+        //   /// Do I need lookup tables? How does this apply to non-native builds?
+        //   qcore_panic("Indirect calls are not yet supported.");
+        // }
+
+        // base->dump(std::cout);
+        // for (auto &[name, value] : args) {
+        //   value->dump(std::cout);
+        // }
+        break;
+      }
+
+      case TmpType::ENUM: {
+        /// TODO:
+        break;
+      }
+
+      case TmpType::LET: {
+        /// TODO:
+        break;
+      }
+
+      case TmpType::VAR: {
+        /// TODO:
+        break;
+      }
+
+      case TmpType::CONST: {
+        /// TODO:
+        break;
+      }
+
+      case TmpType::FIELD: {
+        /// TODO:
+        break;
+      }
+
+      case TmpType::NAMED_TYPE: {
+        /// TODO:
+        break;
+      }
+
+      default: {
+        qcore_panicf("Invalid temporary type: %d", static_cast<int>(tt));
+      }
+    }
+
     return IterOp::Proceed;
   };
 
   iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
 
-  return true;
+  for (auto &[name, fn] : mod->getFunctions()) {
+    CONV_DEBUG("Found function: " + std::string(name));
+  }
+  for (auto &[name, var] : mod->getVariables()) {
+    CONV_DEBUG("Found variable: " + std::string(name));
+  }
+
+  return !error;
 }

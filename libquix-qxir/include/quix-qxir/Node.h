@@ -825,7 +825,7 @@ namespace qxir {
     Expr *getWhat() noexcept { return m_what; }
     Expr *setWhat(Expr *what) noexcept { return m_what = what; }
 
-    std::string_view getName() noexcept { return m_name; }
+    std::string_view getName() const noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
   };
 
@@ -840,10 +840,10 @@ namespace qxir {
     Export(std::string_view name, Expr *value, std::string_view abi_name = "")
         : Expr(QIR_NODE_EXPORT), m_name(name), m_abi_name(abi_name), m_value(value) {}
 
-    std::string_view getName() noexcept { return m_name; }
+    std::string_view getName() const noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
 
-    std::string_view getAbiName() noexcept { return m_abi_name; }
+    std::string_view getAbiName() const noexcept { return m_abi_name; }
     std::string_view setAbiName(std::string_view abi_name) noexcept {
       return m_abi_name = abi_name;
     }
@@ -1120,21 +1120,6 @@ namespace qxir {
     BAD,
   };
 
-  class Tmp final : public Expr {
-    QCLASS_REFLECT()
-
-    TmpType m_type;
-    std::any m_data;
-
-  public:
-    Tmp(TmpType type = TmpType::BAD, const std::any &data = {})
-        : Expr(QIR_NODE_TMP), m_type(type), m_data(data) {}
-
-    TmpType getTmpType() noexcept { return m_type; }
-    std::any &getData() noexcept { return m_data; }
-    const std::any &getData() const noexcept { return m_data; }
-  };
-
   typedef std::tuple<std::string_view, Expr *> LetTmpNodeCradle;
 
   typedef std::tuple<Expr *, std::vector<std::pair<std::string_view, Expr *>,
@@ -1142,6 +1127,23 @@ namespace qxir {
       CallArgsTmpNodeCradle;
 
   typedef std::tuple<Expr *, std::string_view> FieldTmpNodeCradle;
+
+  typedef std::variant<LetTmpNodeCradle, CallArgsTmpNodeCradle, FieldTmpNodeCradle, std::string_view> TmpNodeCradle;
+
+  class Tmp final : public Expr {
+    QCLASS_REFLECT()
+
+    TmpType m_type;
+    TmpNodeCradle m_data;
+
+  public:
+    Tmp(TmpType type = TmpType::BAD, const TmpNodeCradle &data = {})
+        : Expr(QIR_NODE_TMP), m_type(type), m_data(data) {}
+
+    TmpType getTmpType() noexcept { return m_type; }
+    TmpNodeCradle &getData() noexcept { return m_data; }
+    const TmpNodeCradle &getData() const noexcept { return m_data; }
+  };
 
 #define TYPE_SIZE sizeof(Expr)
   extern thread_local qmodule_t *current;

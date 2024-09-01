@@ -534,7 +534,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
     }
     case QIR_NODE_TMP: {
       ss << "`" << static_cast<uint64_t>(n->as<Tmp>()->getTmpType());
-      ss << ";" << n->as<Tmp>()->getData().type().name() << "`";
+      ss << ";" << n->as<Tmp>()->getData().index() << "`";
       break;
     }
     default: {
@@ -543,14 +543,14 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state) {
   }
 }
 
-static char *qxir_repr(qmodule_t *mod, bool minify, size_t indent, qcore_arena_t *arena,
+static char *qxir_repr(qxir_node_t *node, bool minify, size_t indent, qcore_arena_t *arena,
                        size_t *outlen) {
   std::swap(qxir_arena.get(), *arena);
 
   /* Create a string stream based on the arena */
   ConvStream ss;
   ConvState state = {0, indent, minify};
-  const Expr *n = mod->getRoot();
+  qmodule_t *mod = static_cast<Expr *>(node)->getModule();
 
   { /* Print the module name */
     ss << "; Module: " << mod->getName() << "\n";
@@ -585,7 +585,7 @@ static char *qxir_repr(qmodule_t *mod, bool minify, size_t indent, qcore_arena_t
   }
 
   /* Serialize the AST recursively */
-  serialize_recurse(const_cast<Expr *>(n), ss, state);
+  serialize_recurse(static_cast<Expr *>(node), ss, state);
 
   /**
    * @brief We can do the following because the std::string destructor will
@@ -639,12 +639,12 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
   }
 }
 
-static void qxir_brepr(qmodule_t *mod, bool compress, qcore_arena_t *arena, uint8_t **out,
+static void qxir_brepr(qxir_node_t *node, bool compress, qcore_arena_t *arena, uint8_t **out,
                        size_t *outlen) {
   char *repr;
 
   /* Generate the AST representation as ASCII */
-  if ((repr = qxir_repr(mod, true, 0, arena, outlen)) == NULL) {
+  if ((repr = qxir_repr(node, true, 0, arena, outlen)) == NULL) {
     qcore_panic("Failed to generate AST representation");
   }
 
@@ -658,7 +658,7 @@ static void qxir_brepr(qmodule_t *mod, bool compress, qcore_arena_t *arena, uint
   *out = (uint8_t *)repr;
 }
 
-LIB_EXPORT bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t *outlen,
+LIB_EXPORT bool qxir_write(const qxir_node_t *_node, qxir_serial_t mode, FILE *out, size_t *outlen,
                            uint32_t argcnt, ...) {
   qcore_arena_t arena;
   size_t v_outlen;
@@ -669,20 +669,22 @@ LIB_EXPORT bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t
 
   qcore_arena_open(&arena);
 
+  qxir_node_t *node = const_cast<qxir_node_t *>(_node);
+
   switch (mode) {
     case QXIR_SERIAL_CODE: {
-      char *buf = qxir_repr(mod, false, 2, &arena, outlen);
+      char *buf = qxir_repr(node, false, 2, &arena, outlen);
       fwrite(buf, 1, *outlen, out);
       break;
     }
     case QXIR_SERIAL_CODE_MIN: {
-      char *buf = qxir_repr(mod, true, 0, &arena, outlen);
+      char *buf = qxir_repr(node, true, 0, &arena, outlen);
       fwrite(buf, 1, *outlen, out);
       break;
     }
     case QXIR_SERIAL_B10: {
       uint8_t *buf;
-      qxir_brepr(mod, true, &arena, &buf, outlen);
+      qxir_brepr(node, true, &arena, &buf, outlen);
       fwrite(buf, 1, *outlen, out);
       break;
     }

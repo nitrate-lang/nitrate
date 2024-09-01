@@ -98,7 +98,7 @@ typedef enum qxir_serial_t {
 /**
  * @brief Serialize a QModule instance to a FILE stream.
  *
- * @param module Pointer to the module to serialize.
+ * @param node Pointer to the node to serialize.
  * @param mode The serialization mode.
  * @param out The FILE stream to serialize to.
  * @param outlen Number of bytes written to the stream (if not NULL).
@@ -110,7 +110,7 @@ typedef enum qxir_serial_t {
  *
  * @note This function is thread safe.
  */
-bool qxir_write(qmodule_t *mod, qxir_serial_t mode, FILE *out, size_t *outlen, uint32_t argcnt,
+bool qxir_write(const qxir_node_t *node, qxir_serial_t mode, FILE *out, size_t *outlen, uint32_t argcnt,
                 ...);
 
 /**

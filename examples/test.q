@@ -1,5 +1,14 @@
+subsystem app {
+    fn foo() {
 
+    }
 
-fn main(a: i32 =0) {
- 
+    fn bar() {
+
+    }
+}
+
+fn main() {
+    foo();
+    bar();
 }

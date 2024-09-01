@@ -55,6 +55,7 @@ void qxir_set_conf(qmodule_t *mod, qxir_conf_t *conf);
 #include <quix-core/Arena.h>
 #include <quix-parser/Node.h>
 
+#include <boost/bimap.hpp>
 #include <cstdint>
 #include <diagnostic/Report.hh>
 #include <limits>
@@ -103,10 +104,72 @@ namespace qxir {
 
 }  // namespace qxir
 
+namespace qxir {
+  class Expr;
+  class Type;
+  class BinExpr;
+  class UnExpr;
+  class PostUnExpr;
+  class U1Ty;
+  class U8Ty;
+  class U16Ty;
+  class U32Ty;
+  class U64Ty;
+  class U128Ty;
+  class I8Ty;
+  class I16Ty;
+  class I32Ty;
+  class I64Ty;
+  class I128Ty;
+  class F16Ty;
+  class F32Ty;
+  class F64Ty;
+  class F128Ty;
+  class VoidTy;
+  class PtrTy;
+  class OpaqueTy;
+  class StringTy;
+  class StructTy;
+  class UnionTy;
+  class ArrayTy;
+  class ListTy;
+  class IntrinTy;
+  class FnTy;
+  class Int;
+  class Float;
+  class String;
+  class List;
+  class Alloc;
+  class Call;
+  class Seq;
+  class Async;
+  class Index;
+  class Ident;
+  class Export;
+  class Local;
+  class Ret;
+  class Brk;
+  class Cont;
+  class If;
+  class While;
+  class For;
+  class Form;
+  class Foreach;
+  class Case;
+  class Switch;
+  class Fn;
+  class Asm;
+  class Tmp;
+}  // namespace qxir
+
 class qmodule_t {
   std::unordered_set<std::string> m_passes_applied;
   std::unordered_set<std::string> m_pass_groups_applied;
   std::unordered_set<std::string> m_strings;
+  boost::bimap<std::string_view, qxir::Fn *> functions;
+  boost::bimap<std::string_view, qxir::Local *> variables;
+  std::unordered_map<std::string, std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
+      m_parameters;
   std::unique_ptr<qxir::diag::DiagnosticManager> m_diag;
   std::unique_ptr<qxir::TypeManager> m_type_mgr;
   qxir::TargetInfo m_target_info;
@@ -174,6 +237,10 @@ public:
 
   const std::string getName() const { return m_module_name; }
   void setName(const std::string &name) { m_module_name = name; }
+
+  auto &getFunctions() { return functions; }
+  auto &getVariables() { return variables; }
+  auto &getParameterMap() { return m_parameters; }
 
   /**
    * @brief Intern a string.

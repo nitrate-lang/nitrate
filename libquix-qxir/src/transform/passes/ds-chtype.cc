@@ -37,11 +37,12 @@
 
 /**
  * @brief Verify runtime polymorphic nodes are of suitable types.
- *
  * @details Ensure that a pointer to a concrete node is actually a pointer to that concrete node
  * type.
- *
  * @note Optimize this code to not do extra work when checking.
+ *
+ * @timecomplexity O(n)
+ * @spacecomplexity O(1)
  */
 
 bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
