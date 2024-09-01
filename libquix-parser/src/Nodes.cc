@@ -795,7 +795,7 @@ LIB_EXPORT bool Expr::is_ternaryexpr() const {
   return as<ConstExpr>()->get_value()->is_ternaryexpr();
 }
 
-LIB_EXPORT bool ExprStmt::verify_impl(std::ostream &os) const {
+bool ExprStmt::verify_impl(std::ostream &os) const {
   if (!m_expr) {
     os << "ExprStmt: expression is NULL\n";
     return false;
@@ -809,13 +809,13 @@ LIB_EXPORT bool ExprStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ExprStmt::canonicalize_impl() {
+void ExprStmt::canonicalize_impl() {
   if (m_expr) {
     m_expr->canonicalize();
   }
 }
 
-LIB_EXPORT void ExprStmt::print_impl(std::ostream &os, bool debug) const {
+void ExprStmt::print_impl(std::ostream &os, bool debug) const {
   if (m_expr) {
     m_expr->print(os, debug);
   } else {
@@ -824,12 +824,12 @@ LIB_EXPORT void ExprStmt::print_impl(std::ostream &os, bool debug) const {
   os << ";";
 }
 
-LIB_EXPORT ExprStmt *ExprStmt::clone_impl() const {
+ExprStmt *ExprStmt::clone_impl() const {
   Expr *expr = m_expr ? m_expr->clone() : nullptr;
   return new ExprStmt(expr);
 }
 
-LIB_EXPORT bool StmtExpr::verify_impl(std::ostream &os) const {
+bool StmtExpr::verify_impl(std::ostream &os) const {
   if (!m_stmt) {
     os << "StmtExpr: statement is NULL\n";
     return false;
@@ -843,13 +843,13 @@ LIB_EXPORT bool StmtExpr::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void StmtExpr::canonicalize_impl() {
+void StmtExpr::canonicalize_impl() {
   if (m_stmt) {
     m_stmt->canonicalize();
   }
 }
 
-LIB_EXPORT void StmtExpr::print_impl(std::ostream &os, bool debug) const {
+void StmtExpr::print_impl(std::ostream &os, bool debug) const {
   if (m_stmt) {
     m_stmt->print(os, debug);
   } else {
@@ -857,12 +857,12 @@ LIB_EXPORT void StmtExpr::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT StmtExpr *StmtExpr::clone_impl() const {
+StmtExpr *StmtExpr::clone_impl() const {
   Stmt *stmt = m_stmt ? m_stmt->clone() : nullptr;
   return new StmtExpr(stmt);
 }
 
-LIB_EXPORT bool TypeExpr::verify_impl(std::ostream &os) const {
+bool TypeExpr::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "TypeExpr: type is NULL\n";
     return false;
@@ -876,13 +876,13 @@ LIB_EXPORT bool TypeExpr::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void TypeExpr::canonicalize_impl() {
+void TypeExpr::canonicalize_impl() {
   if (m_type) {
     m_type->canonicalize();
   }
 }
 
-LIB_EXPORT void TypeExpr::print_impl(std::ostream &os, bool debug) const {
+void TypeExpr::print_impl(std::ostream &os, bool debug) const {
   if (m_type) {
     m_type->print(os, debug);
   } else {
@@ -890,31 +890,31 @@ LIB_EXPORT void TypeExpr::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT TypeExpr *TypeExpr::clone_impl() const {
+TypeExpr *TypeExpr::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
   return new TypeExpr(type);
 }
 
 ///=============================================================================
 
-LIB_EXPORT bool ConstExpr::verify_impl(std::ostream &os) const {
+bool ConstExpr::verify_impl(std::ostream &os) const {
   qcore_implement(__func__);
   (void)os;
 }
 
-LIB_EXPORT void ConstExpr::canonicalize_impl() { qcore_implement(__func__); }
+void ConstExpr::canonicalize_impl() { qcore_implement(__func__); }
 
-LIB_EXPORT void ConstExpr::print_impl(std::ostream &os, bool debug) const {
+void ConstExpr::print_impl(std::ostream &os, bool debug) const {
   qcore_implement(__func__);
   (void)os;
   (void)debug;
 }
 
-LIB_EXPORT ConstExpr *ConstExpr::clone_impl() const { qcore_implement(__func__); }
+ConstExpr *ConstExpr::clone_impl() const { qcore_implement(__func__); }
 
 ///=============================================================================
 
-LIB_EXPORT bool UnresolvedType::verify_impl(std::ostream &os) const {
+bool UnresolvedType::verify_impl(std::ostream &os) const {
   if (m_name.empty()) {
     os << "UnresolvedType: name is empty\n";
     return false;
@@ -923,32 +923,30 @@ LIB_EXPORT bool UnresolvedType::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void UnresolvedType::canonicalize_impl() {}
+void UnresolvedType::canonicalize_impl() {}
 
-LIB_EXPORT void UnresolvedType::print_impl(std::ostream &os, bool debug) const {
+void UnresolvedType::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << m_name;
 }
 
-LIB_EXPORT UnresolvedType *UnresolvedType::clone_impl() const {
-  return UnresolvedType::get(m_name);
-}
+UnresolvedType *UnresolvedType::clone_impl() const { return UnresolvedType::get(m_name); }
 
-LIB_EXPORT bool InferType::verify_impl(std::ostream &os) const {
+bool InferType::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
 }
 
-LIB_EXPORT void InferType::canonicalize_impl() {}
+void InferType::canonicalize_impl() {}
 
-LIB_EXPORT void InferType::print_impl(std::ostream &os, bool debug) const {
+void InferType::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << "?";
 }
 
-LIB_EXPORT InferType *InferType::clone_impl() const { return InferType::get(); }
+InferType *InferType::clone_impl() const { return InferType::get(); }
 
-LIB_EXPORT bool TemplType::verify_impl(std::ostream &os) const {
+bool TemplType::verify_impl(std::ostream &os) const {
   if (!m_template) {
     os << "TemplType: template type is NULL\n";
     return false;
@@ -974,7 +972,7 @@ LIB_EXPORT bool TemplType::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void TemplType::canonicalize_impl() {
+void TemplType::canonicalize_impl() {
   if (m_template) {
     m_template->canonicalize();
   }
@@ -986,7 +984,7 @@ LIB_EXPORT void TemplType::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void TemplType::print_impl(std::ostream &os, bool debug) const {
+void TemplType::print_impl(std::ostream &os, bool debug) const {
   if (m_template) {
     m_template->print(os, debug);
   } else {
@@ -1010,7 +1008,7 @@ LIB_EXPORT void TemplType::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT TemplType *TemplType::clone_impl() const {
+TemplType *TemplType::clone_impl() const {
   Type *templ = m_template ? m_template->clone() : nullptr;
   TemplTypeArgs args;
   for (auto &arg : m_args) {
@@ -1041,7 +1039,7 @@ LIB_EXPORT TRIVIAL_TYPE_IMPL(U1, "u1", 1) LIB_EXPORT TRIVIAL_TYPE_IMPL(U8, "u8",
     TRIVIAL_TYPE_IMPL(F64, "f64", 64) LIB_EXPORT TRIVIAL_TYPE_IMPL(VoidTy, "void", 0) LIB_EXPORT
     TRIVIAL_TYPE_IMPL(StringTy, "string", 8)
 
-        LIB_EXPORT bool PtrTy::verify_impl(std::ostream &os) const {
+        bool PtrTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "PtrTy: item type is NULL\n";
     return false;
@@ -1055,13 +1053,13 @@ LIB_EXPORT TRIVIAL_TYPE_IMPL(U1, "u1", 1) LIB_EXPORT TRIVIAL_TYPE_IMPL(U8, "u8",
   return true;
 }
 
-LIB_EXPORT void PtrTy::canonicalize_impl() {
+void PtrTy::canonicalize_impl() {
   if (m_item) {
     m_item->canonicalize();
   }
 }
 
-LIB_EXPORT void PtrTy::print_impl(std::ostream &os, bool debug) const {
+void PtrTy::print_impl(std::ostream &os, bool debug) const {
   if (m_is_volatile) {
     os << "volatile<ptr<";
 
@@ -1085,12 +1083,12 @@ LIB_EXPORT void PtrTy::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT PtrTy *PtrTy::clone_impl() const {
+PtrTy *PtrTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return PtrTy::get(item, m_is_volatile);
 }
 
-LIB_EXPORT bool OpaqueTy::verify_impl(std::ostream &os) const {
+bool OpaqueTy::verify_impl(std::ostream &os) const {
   if (m_name.empty()) {
     os << "OpaqueTy: name is empty\n";
     return false;
@@ -1099,14 +1097,14 @@ LIB_EXPORT bool OpaqueTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void OpaqueTy::canonicalize_impl() {}
-LIB_EXPORT void OpaqueTy::print_impl(std::ostream &os, bool debug) const {
+void OpaqueTy::canonicalize_impl() {}
+void OpaqueTy::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << "opaque<" << m_name << ">";
 }
-LIB_EXPORT OpaqueTy *OpaqueTy::clone_impl() const { return OpaqueTy::get(m_name); }
+OpaqueTy *OpaqueTy::clone_impl() const { return OpaqueTy::get(m_name); }
 
-LIB_EXPORT bool VectorTy::verify_impl(std::ostream &os) const {
+bool VectorTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "VectorTy: item type is NULL\n";
     return false;
@@ -1120,13 +1118,13 @@ LIB_EXPORT bool VectorTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void VectorTy::canonicalize_impl() {
+void VectorTy::canonicalize_impl() {
   if (m_item) {
     m_item->canonicalize();
   }
 }
 
-LIB_EXPORT void VectorTy::print_impl(std::ostream &os, bool debug) const {
+void VectorTy::print_impl(std::ostream &os, bool debug) const {
   if (!m_item) {
     os << "vec<?>";
     return;
@@ -1137,12 +1135,12 @@ LIB_EXPORT void VectorTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT VectorTy *VectorTy::clone_impl() const {
+VectorTy *VectorTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return VectorTy::get(item);
 }
 
-LIB_EXPORT bool SetTy::verify_impl(std::ostream &os) const {
+bool SetTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "SetTy: item type is NULL\n";
     return false;
@@ -1156,13 +1154,13 @@ LIB_EXPORT bool SetTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void SetTy::canonicalize_impl() {
+void SetTy::canonicalize_impl() {
   if (m_item) {
     m_item->canonicalize();
   }
 }
 
-LIB_EXPORT void SetTy::print_impl(std::ostream &os, bool debug) const {
+void SetTy::print_impl(std::ostream &os, bool debug) const {
   if (!m_item) {
     os << "set<?>";
     return;
@@ -1173,12 +1171,12 @@ LIB_EXPORT void SetTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT SetTy *SetTy::clone_impl() const {
+SetTy *SetTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return SetTy::get(item);
 }
 
-LIB_EXPORT bool MapTy::verify_impl(std::ostream &os) const {
+bool MapTy::verify_impl(std::ostream &os) const {
   if (!m_key) {
     os << "MapTy: key type is NULL\n";
     return false;
@@ -1202,7 +1200,7 @@ LIB_EXPORT bool MapTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void MapTy::canonicalize_impl() {
+void MapTy::canonicalize_impl() {
   if (m_key) {
     m_key->canonicalize();
   }
@@ -1212,7 +1210,7 @@ LIB_EXPORT void MapTy::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void MapTy::print_impl(std::ostream &os, bool debug) const {
+void MapTy::print_impl(std::ostream &os, bool debug) const {
   if (!m_key) {
     os << "map<?, ";
   } else {
@@ -1229,14 +1227,14 @@ LIB_EXPORT void MapTy::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT MapTy *MapTy::clone_impl() const {
+MapTy *MapTy::clone_impl() const {
   Type *key = m_key ? m_key->clone() : nullptr;
   Type *value = m_value ? m_value->clone() : nullptr;
 
   return MapTy::get(key, value);
 }
 
-LIB_EXPORT bool TupleTy::verify_impl(std::ostream &os) const {
+bool TupleTy::verify_impl(std::ostream &os) const {
   for (size_t i = 0; i < m_items.size(); i++) {
     if (!m_items[i]) {
       os << "TupleTy: item " << i << " is NULL\n";
@@ -1252,13 +1250,13 @@ LIB_EXPORT bool TupleTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void TupleTy::canonicalize_impl() {
+void TupleTy::canonicalize_impl() {
   for (auto item : m_items) {
     item->canonicalize();
   }
 }
 
-LIB_EXPORT void TupleTy::print_impl(std::ostream &os, bool debug) const {
+void TupleTy::print_impl(std::ostream &os, bool debug) const {
   os << "tuple<";
 
   for (size_t i = 0; i < m_items.size(); i++) {
@@ -1276,7 +1274,7 @@ LIB_EXPORT void TupleTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT TupleTy *TupleTy::clone_impl() const {
+TupleTy *TupleTy::clone_impl() const {
   std::vector<Type *, Arena<Type *>> items;
   for (auto item : m_items) {
     if (item) {
@@ -1289,7 +1287,7 @@ LIB_EXPORT TupleTy *TupleTy::clone_impl() const {
   return TupleTy::get(items);
 }
 
-LIB_EXPORT bool OptionalTy::verify_impl(std::ostream &os) const {
+bool OptionalTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "OptionalTy: item type is NULL\n";
     return false;
@@ -1303,13 +1301,13 @@ LIB_EXPORT bool OptionalTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void OptionalTy::canonicalize_impl() {
+void OptionalTy::canonicalize_impl() {
   if (m_item) {
     m_item->canonicalize();
   }
 }
 
-LIB_EXPORT void OptionalTy::print_impl(std::ostream &os, bool debug) const {
+void OptionalTy::print_impl(std::ostream &os, bool debug) const {
   if (!m_item) {
     os << "opt<?>";
     return;
@@ -1320,12 +1318,12 @@ LIB_EXPORT void OptionalTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT OptionalTy *OptionalTy::clone_impl() const {
+OptionalTy *OptionalTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return OptionalTy::get(item);
 }
 
-LIB_EXPORT bool ArrayTy::verify_impl(std::ostream &os) const {
+bool ArrayTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "ArrayTy: item type is NULL\n";
     return false;
@@ -1349,7 +1347,7 @@ LIB_EXPORT bool ArrayTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ArrayTy::canonicalize_impl() {
+void ArrayTy::canonicalize_impl() {
   if (m_item) {
     m_item->canonicalize();
   }
@@ -1359,7 +1357,7 @@ LIB_EXPORT void ArrayTy::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void ArrayTy::print_impl(std::ostream &os, bool debug) const {
+void ArrayTy::print_impl(std::ostream &os, bool debug) const {
   os << "array<";
 
   if (m_item) {
@@ -1379,14 +1377,14 @@ LIB_EXPORT void ArrayTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT ArrayTy *ArrayTy::clone_impl() const {
+ArrayTy *ArrayTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   ConstExpr *size = m_size ? m_size->clone() : nullptr;
 
   return ArrayTy::get(item, size);
 }
 
-LIB_EXPORT bool EnumTy::verify_impl(std::ostream &os) const {
+bool EnumTy::verify_impl(std::ostream &os) const {
   if (!m_memtype) {
     os << "EnumTy: member item type is NULL\n";
     return false;
@@ -1400,13 +1398,13 @@ LIB_EXPORT bool EnumTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void EnumTy::canonicalize_impl() {
+void EnumTy::canonicalize_impl() {
   if (m_memtype) {
     m_memtype->canonicalize();
   }
 }
 
-LIB_EXPORT void EnumTy::print_impl(std::ostream &os, bool debug) const {
+void EnumTy::print_impl(std::ostream &os, bool debug) const {
   os << "enum<" << m_name << ", ";
 
   if (m_memtype) {
@@ -1418,12 +1416,12 @@ LIB_EXPORT void EnumTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT EnumTy *EnumTy::clone_impl() const {
+EnumTy *EnumTy::clone_impl() const {
   Type *memtype = m_memtype ? m_memtype->clone() : nullptr;
   return EnumTy::get(m_name, memtype);
 }
 
-LIB_EXPORT bool MutTy::verify_impl(std::ostream &os) const {
+bool MutTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
     os << "MutTy: item type is NULL\n";
     return false;
@@ -1437,13 +1435,13 @@ LIB_EXPORT bool MutTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void MutTy::canonicalize_impl() {
+void MutTy::canonicalize_impl() {
   if (m_item) {
     m_item->canonicalize();
   }
 }
 
-LIB_EXPORT void MutTy::print_impl(std::ostream &os, bool debug) const {
+void MutTy::print_impl(std::ostream &os, bool debug) const {
   if (!m_item) {
     os << "mut<?>";
     return;
@@ -1454,12 +1452,12 @@ LIB_EXPORT void MutTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT MutTy *MutTy::clone_impl() const {
+MutTy *MutTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
   return MutTy::get(item);
 }
 
-LIB_EXPORT bool StructTy::verify_impl(std::ostream &os) const {
+bool StructTy::verify_impl(std::ostream &os) const {
   std::set<String> names({});
 
   for (size_t i = 0; i < m_items.size(); i++) {
@@ -1484,7 +1482,7 @@ LIB_EXPORT bool StructTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void StructTy::canonicalize_impl() {
+void StructTy::canonicalize_impl() {
   for (auto &[name, item] : m_items) {
     if (item) {
       item->canonicalize();
@@ -1492,7 +1490,7 @@ LIB_EXPORT void StructTy::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void StructTy::print_impl(std::ostream &os, bool debug) const {
+void StructTy::print_impl(std::ostream &os, bool debug) const {
   os << "struct<";
 
   for (size_t i = 0; i < m_items.size(); i++) {
@@ -1512,7 +1510,7 @@ LIB_EXPORT void StructTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT StructTy *StructTy::clone_impl() const {
+StructTy *StructTy::clone_impl() const {
   std::vector<StructItem, Arena<StructItem>> fields;
   for (auto &[name, item] : m_items) {
     if (item) {
@@ -1539,7 +1537,7 @@ LIB_EXPORT void StructTy::remove_item(String name) {
   std::erase_if(m_items, [name](auto &field) { return field.first == name; });
 }
 
-LIB_EXPORT bool GroupTy::verify_impl(std::ostream &os) const {
+bool GroupTy::verify_impl(std::ostream &os) const {
   for (size_t i = 0; i < m_items.size(); i++) {
     if (!m_items[i]) {
       os << "GroupTy: item " << i << " is NULL\n";
@@ -1555,7 +1553,7 @@ LIB_EXPORT bool GroupTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void GroupTy::canonicalize_impl() {
+void GroupTy::canonicalize_impl() {
   for (auto item : m_items) {
     if (item) {
       item->canonicalize();
@@ -1563,7 +1561,7 @@ LIB_EXPORT void GroupTy::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void GroupTy::print_impl(std::ostream &os, bool debug) const {
+void GroupTy::print_impl(std::ostream &os, bool debug) const {
   os << "group<";
 
   for (size_t i = 0; i < m_items.size(); i++) {
@@ -1581,7 +1579,7 @@ LIB_EXPORT void GroupTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT GroupTy *GroupTy::clone_impl() const {
+GroupTy *GroupTy::clone_impl() const {
   std::vector<Type *, Arena<Type *>> fields;
   for (auto item : m_items) {
     if (item) {
@@ -1608,7 +1606,7 @@ LIB_EXPORT void GroupTy::remove_item(Type *item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool RegionTy::verify_impl(std::ostream &os) const {
+bool RegionTy::verify_impl(std::ostream &os) const {
   for (size_t i = 0; i < m_items.size(); i++) {
     if (!m_items[i]) {
       os << "RegionTy: item " << i << " is NULL\n";
@@ -1624,7 +1622,7 @@ LIB_EXPORT bool RegionTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void RegionTy::canonicalize_impl() {
+void RegionTy::canonicalize_impl() {
   for (auto item : m_items) {
     if (item) {
       item->canonicalize();
@@ -1632,7 +1630,7 @@ LIB_EXPORT void RegionTy::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void RegionTy::print_impl(std::ostream &os, bool debug) const {
+void RegionTy::print_impl(std::ostream &os, bool debug) const {
   os << "region<";
 
   for (size_t i = 0; i < m_items.size(); i++) {
@@ -1650,7 +1648,7 @@ LIB_EXPORT void RegionTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT RegionTy *RegionTy::clone_impl() const {
+RegionTy *RegionTy::clone_impl() const {
   std::vector<Type *, Arena<Type *>> fields;
   for (auto item : m_items) {
     if (item) {
@@ -1677,7 +1675,7 @@ LIB_EXPORT void RegionTy::remove_item(Type *item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool UnionTy::verify_impl(std::ostream &os) const {
+bool UnionTy::verify_impl(std::ostream &os) const {
   for (size_t i = 0; i < m_items.size(); i++) {
     if (!m_items[i]) {
       os << "UnionTy: item " << i << " is NULL\n";
@@ -1693,7 +1691,7 @@ LIB_EXPORT bool UnionTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void UnionTy::canonicalize_impl() {
+void UnionTy::canonicalize_impl() {
   for (auto item : m_items) {
     if (item) {
       item->canonicalize();
@@ -1701,7 +1699,7 @@ LIB_EXPORT void UnionTy::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void UnionTy::print_impl(std::ostream &os, bool debug) const {
+void UnionTy::print_impl(std::ostream &os, bool debug) const {
   os << "union<";
 
   for (size_t i = 0; i < m_items.size(); i++) {
@@ -1719,7 +1717,7 @@ LIB_EXPORT void UnionTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT UnionTy *UnionTy::clone_impl() const {
+UnionTy *UnionTy::clone_impl() const {
   std::vector<Type *, Arena<Type *>> fields;
   for (auto item : m_items) {
     if (item) {
@@ -1746,7 +1744,7 @@ LIB_EXPORT void UnionTy::remove_item(Type *item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool FuncTy::verify_impl(std::ostream &os) const {
+bool FuncTy::verify_impl(std::ostream &os) const {
   if (!m_return) {
     os << "FuncTy: return type is NULL\n";
     return false;
@@ -1794,7 +1792,7 @@ LIB_EXPORT bool FuncTy::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void FuncTy::canonicalize_impl() {
+void FuncTy::canonicalize_impl() {
   for (auto &[name, param, default_val] : m_params) {
     if (param) {
       param->canonicalize();
@@ -1810,7 +1808,7 @@ LIB_EXPORT void FuncTy::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void FuncTy::print_impl(std::ostream &os, bool debug) const {
+void FuncTy::print_impl(std::ostream &os, bool debug) const {
   os << "func<(";
 
   for (size_t i = 0; i < m_params.size(); i++) {
@@ -1883,7 +1881,7 @@ LIB_EXPORT void FuncTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-LIB_EXPORT FuncTy *FuncTy::clone_impl() const {
+FuncTy *FuncTy::clone_impl() const {
   std::vector<FuncParam, Arena<FuncParam>> params;
   for (auto [name, param, default_val] : m_params) {
     Type *p = param ? param->clone() : nullptr;
@@ -1915,7 +1913,7 @@ LIB_EXPORT void FuncTy::remove_param(String name) {
 
 ///=============================================================================
 
-LIB_EXPORT bool UnaryExpr::verify_impl(std::ostream &os) const {
+bool UnaryExpr::verify_impl(std::ostream &os) const {
   if (!m_rhs) {
     os << "UnaryExpr: rhs is NULL\n";
     return false;
@@ -1934,13 +1932,13 @@ LIB_EXPORT bool UnaryExpr::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void UnaryExpr::canonicalize_impl() {
+void UnaryExpr::canonicalize_impl() {
   if (m_rhs) {
     m_rhs->canonicalize();
   }
 }
 
-LIB_EXPORT void UnaryExpr::print_impl(std::ostream &os, bool debug) const {
+void UnaryExpr::print_impl(std::ostream &os, bool debug) const {
   os << "(";
 
   os << m_op;
@@ -1952,12 +1950,12 @@ LIB_EXPORT void UnaryExpr::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT UnaryExpr *UnaryExpr::clone_impl() const {
+UnaryExpr *UnaryExpr::clone_impl() const {
   Expr *rhs = m_rhs ? m_rhs->clone() : nullptr;
   return UnaryExpr::get(m_op, rhs);
 }
 
-LIB_EXPORT bool BinExpr::verify_impl(std::ostream &os) const {
+bool BinExpr::verify_impl(std::ostream &os) const {
   if (!m_lhs) {
     os << "BinExpr: lhs is NULL\n";
     return false;
@@ -1986,7 +1984,7 @@ LIB_EXPORT bool BinExpr::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void BinExpr::canonicalize_impl() {
+void BinExpr::canonicalize_impl() {
   if (m_lhs) {
     m_lhs->canonicalize();
   }
@@ -1996,7 +1994,7 @@ LIB_EXPORT void BinExpr::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void BinExpr::print_impl(std::ostream &os, bool debug) const {
+void BinExpr::print_impl(std::ostream &os, bool debug) const {
   os << "(";
 
   if (m_lhs) {
@@ -2016,14 +2014,14 @@ LIB_EXPORT void BinExpr::print_impl(std::ostream &os, bool debug) const {
   os << ")";
 }
 
-LIB_EXPORT BinExpr *BinExpr::clone_impl() const {
+BinExpr *BinExpr::clone_impl() const {
   Expr *lhs = m_lhs ? m_lhs->clone() : nullptr;
   Expr *rhs = m_rhs ? m_rhs->clone() : nullptr;
 
   return BinExpr::get(lhs, m_op, rhs);
 }
 
-LIB_EXPORT bool PostUnaryExpr::verify_impl(std::ostream &os) const {
+bool PostUnaryExpr::verify_impl(std::ostream &os) const {
   if (!m_lhs) {
     os << "PostUnaryExpr: lhs is NULL\n";
     return false;
@@ -2042,13 +2040,13 @@ LIB_EXPORT bool PostUnaryExpr::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void PostUnaryExpr::canonicalize_impl() {
+void PostUnaryExpr::canonicalize_impl() {
   if (m_lhs) {
     m_lhs->canonicalize();
   }
 }
 
-LIB_EXPORT void PostUnaryExpr::print_impl(std::ostream &os, bool debug) const {
+void PostUnaryExpr::print_impl(std::ostream &os, bool debug) const {
   os << "(";
 
   if (m_lhs) {
@@ -2062,12 +2060,12 @@ LIB_EXPORT void PostUnaryExpr::print_impl(std::ostream &os, bool debug) const {
   os << ")";
 }
 
-LIB_EXPORT PostUnaryExpr *PostUnaryExpr::clone_impl() const {
+PostUnaryExpr *PostUnaryExpr::clone_impl() const {
   Expr *lhs = m_lhs ? m_lhs->clone() : nullptr;
   return PostUnaryExpr::get(lhs, m_op);
 }
 
-LIB_EXPORT bool TernaryExpr::verify_impl(std::ostream &os) const {
+bool TernaryExpr::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "TernaryExpr: cond is NULL\n";
     return false;
@@ -2101,7 +2099,7 @@ LIB_EXPORT bool TernaryExpr::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void TernaryExpr::canonicalize_impl() {
+void TernaryExpr::canonicalize_impl() {
   if (m_cond) {
     m_cond->canonicalize();
   }
@@ -2115,7 +2113,7 @@ LIB_EXPORT void TernaryExpr::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void TernaryExpr::print_impl(std::ostream &os, bool debug) const {
+void TernaryExpr::print_impl(std::ostream &os, bool debug) const {
   os << "(";
 
   if (m_cond) {
@@ -2143,7 +2141,7 @@ LIB_EXPORT void TernaryExpr::print_impl(std::ostream &os, bool debug) const {
   os << "))";
 }
 
-LIB_EXPORT TernaryExpr *TernaryExpr::clone_impl() const {
+TernaryExpr *TernaryExpr::clone_impl() const {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
   Expr *lhs = m_lhs ? m_lhs->clone() : nullptr;
   Expr *rhs = m_rhs ? m_rhs->clone() : nullptr;
@@ -2153,7 +2151,7 @@ LIB_EXPORT TernaryExpr *TernaryExpr::clone_impl() const {
 
 ///=============================================================================
 
-LIB_EXPORT bool ConstInt::verify_impl(std::ostream &os) const {
+bool ConstInt::verify_impl(std::ostream &os) const {
   if (m_value.empty()) {
     os << "ConstInt: value is empty\n";
     return false;
@@ -2169,16 +2167,16 @@ LIB_EXPORT bool ConstInt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ConstInt::canonicalize_impl() {}
+void ConstInt::canonicalize_impl() {}
 
-LIB_EXPORT void ConstInt::print_impl(std::ostream &os, bool debug) const {
+void ConstInt::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << m_value;
 }
 
-LIB_EXPORT ConstInt *ConstInt::clone_impl() const { return ConstInt::get(m_value); }
+ConstInt *ConstInt::clone_impl() const { return ConstInt::get(m_value); }
 
-LIB_EXPORT bool ConstFloat::verify_impl(std::ostream &os) const {
+bool ConstFloat::verify_impl(std::ostream &os) const {
   if (m_value.empty()) {
     os << "ConstFloat: value is empty\n";
     return false;
@@ -2205,83 +2203,83 @@ LIB_EXPORT bool ConstFloat::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ConstFloat::canonicalize_impl() {}
+void ConstFloat::canonicalize_impl() {}
 
-LIB_EXPORT void ConstFloat::print_impl(std::ostream &os, bool debug) const {
+void ConstFloat::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << m_value;
 }
 
-LIB_EXPORT ConstFloat *ConstFloat::clone_impl() const { return ConstFloat::get(m_value); }
+ConstFloat *ConstFloat::clone_impl() const { return ConstFloat::get(m_value); }
 
-LIB_EXPORT bool ConstBool::verify_impl(std::ostream &os) const {
+bool ConstBool::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
 }
 
-LIB_EXPORT void ConstBool::canonicalize_impl() {}
+void ConstBool::canonicalize_impl() {}
 
-LIB_EXPORT void ConstBool::print_impl(std::ostream &os, bool debug) const {
+void ConstBool::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
 
   os << (m_value ? "true" : "false");
 }
 
-LIB_EXPORT ConstBool *ConstBool::clone_impl() const { return ConstBool::get(m_value); }
+ConstBool *ConstBool::clone_impl() const { return ConstBool::get(m_value); }
 
-LIB_EXPORT bool ConstChar::verify_impl(std::ostream &os) const {
+bool ConstChar::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
 }
 
-LIB_EXPORT void ConstChar::canonicalize_impl() {}
+void ConstChar::canonicalize_impl() {}
 
-LIB_EXPORT void ConstChar::print_impl(std::ostream &os, bool debug) const {
+void ConstChar::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << "'\\u{" << std::hex << (int32_t)m_value << "}'" << std::dec;
 }
 
-LIB_EXPORT ConstChar *ConstChar::clone_impl() const { return ConstChar::get(m_value); }
+ConstChar *ConstChar::clone_impl() const { return ConstChar::get(m_value); }
 
-LIB_EXPORT bool ConstString::verify_impl(std::ostream &os) const {
+bool ConstString::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
 }
 
-LIB_EXPORT void ConstString::canonicalize_impl() {}
+void ConstString::canonicalize_impl() {}
 
-LIB_EXPORT void ConstString::print_impl(std::ostream &os, bool debug) const {
+void ConstString::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << "\"" << m_value << "\"";
 }
 
-LIB_EXPORT ConstString *ConstString::clone_impl() const { return ConstString::get(m_value); }
+ConstString *ConstString::clone_impl() const { return ConstString::get(m_value); }
 
-LIB_EXPORT bool ConstNull::verify_impl(std::ostream &os) const {
+bool ConstNull::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
 }
-LIB_EXPORT void ConstNull::canonicalize_impl() {}
-LIB_EXPORT void ConstNull::print_impl(std::ostream &os, bool debug) const {
+void ConstNull::canonicalize_impl() {}
+void ConstNull::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << "null";
 }
-LIB_EXPORT ConstNull *ConstNull::clone_impl() const { return ConstNull::get(); }
+ConstNull *ConstNull::clone_impl() const { return ConstNull::get(); }
 
-LIB_EXPORT bool ConstUndef::verify_impl(std::ostream &os) const {
+bool ConstUndef::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
 }
-LIB_EXPORT void ConstUndef::canonicalize_impl() {}
-LIB_EXPORT void ConstUndef::print_impl(std::ostream &os, bool debug) const {
+void ConstUndef::canonicalize_impl() {}
+void ConstUndef::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << "undef";
 }
-LIB_EXPORT ConstUndef *ConstUndef::clone_impl() const { return ConstUndef::get(); }
+ConstUndef *ConstUndef::clone_impl() const { return ConstUndef::get(); }
 
 ///=============================================================================
 
-LIB_EXPORT bool Call::verify_impl(std::ostream &os) const {
+bool Call::verify_impl(std::ostream &os) const {
   if (!m_func) {
     os << "CallExpr: function is NULL\n";
     return false;
@@ -2307,7 +2305,7 @@ LIB_EXPORT bool Call::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void Call::canonicalize_impl() {
+void Call::canonicalize_impl() {
   if (m_func) {
     m_func->canonicalize();
   }
@@ -2319,7 +2317,7 @@ LIB_EXPORT void Call::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void Call::print_impl(std::ostream &os, bool debug) const {
+void Call::print_impl(std::ostream &os, bool debug) const {
   if (m_func) {
     m_func->print(os, debug);
   } else {
@@ -2343,7 +2341,7 @@ LIB_EXPORT void Call::print_impl(std::ostream &os, bool debug) const {
   os << ")";
 }
 
-LIB_EXPORT Call *Call::clone_impl() const {
+Call *Call::clone_impl() const {
   Expr *func = m_func ? m_func->clone() : nullptr;
   CallArgs args;
 
@@ -2366,7 +2364,7 @@ LIB_EXPORT void Call::remove_arg(String name) {
   std::erase_if(m_args, [name](auto &arg) { return arg.first == name; });
 }
 
-LIB_EXPORT bool TemplCall::verify_impl(std::ostream &os) const {
+bool TemplCall::verify_impl(std::ostream &os) const {
   if (!m_func) {
     os << "TemplCall: function is NULL\n";
     return false;
@@ -2404,7 +2402,7 @@ LIB_EXPORT bool TemplCall::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void TemplCall::canonicalize_impl() {
+void TemplCall::canonicalize_impl() {
   if (m_func) {
     m_func->canonicalize();
   }
@@ -2422,14 +2420,14 @@ LIB_EXPORT void TemplCall::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void TemplCall::print_impl(std::ostream &os, bool debug) const {
+void TemplCall::print_impl(std::ostream &os, bool debug) const {
   (void)os;
   (void)debug;
 
   qcore_implement(__func__);
 }
 
-LIB_EXPORT TemplCall *TemplCall::clone_impl() const {
+TemplCall *TemplCall::clone_impl() const {
   Expr *func = m_func ? m_func->clone() : nullptr;
   CallArgs args;
 
@@ -2454,7 +2452,7 @@ LIB_EXPORT void TemplCall::add_template_arg(String name, ConstExpr *arg) {
 LIB_EXPORT void TemplCall::clear_template_args() { m_template_args.clear(); }
 LIB_EXPORT void TemplCall::remove_template_arg(String name) { m_template_args.erase(name); }
 
-LIB_EXPORT bool List::verify_impl(std::ostream &os) const {
+bool List::verify_impl(std::ostream &os) const {
   for (size_t i = 0; i < m_items.size(); i++) {
     if (!m_items[i]) {
       os << "List: item " << i << " is NULL\n";
@@ -2470,7 +2468,7 @@ LIB_EXPORT bool List::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void List::canonicalize_impl() {
+void List::canonicalize_impl() {
   for (auto item : m_items) {
     if (item) {
       item->canonicalize();
@@ -2478,7 +2476,7 @@ LIB_EXPORT void List::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void List::print_impl(std::ostream &os, bool debug) const {
+void List::print_impl(std::ostream &os, bool debug) const {
   os << "[";
 
   for (size_t i = 0; i < m_items.size(); i++) {
@@ -2496,7 +2494,7 @@ LIB_EXPORT void List::print_impl(std::ostream &os, bool debug) const {
   os << "]";
 }
 
-LIB_EXPORT List *List::clone_impl() const {
+List *List::clone_impl() const {
   ListData items;
   for (auto item : m_items) {
     if (item) {
@@ -2515,7 +2513,7 @@ LIB_EXPORT void List::remove_item(Expr *item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool Assoc::verify_impl(std::ostream &os) const {
+bool Assoc::verify_impl(std::ostream &os) const {
   if (!m_key) {
     os << "Assoc: key is NULL\n";
     return false;
@@ -2539,7 +2537,7 @@ LIB_EXPORT bool Assoc::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void Assoc::canonicalize_impl() {
+void Assoc::canonicalize_impl() {
   if (m_key) {
     m_key->canonicalize();
   }
@@ -2549,7 +2547,7 @@ LIB_EXPORT void Assoc::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void Assoc::print_impl(std::ostream &os, bool debug) const {
+void Assoc::print_impl(std::ostream &os, bool debug) const {
   if (m_key) {
     m_key->print(os, debug);
   } else {
@@ -2565,14 +2563,14 @@ LIB_EXPORT void Assoc::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT Assoc *Assoc::clone_impl() const {
+Assoc *Assoc::clone_impl() const {
   Expr *key = m_key ? m_key->clone() : nullptr;
   Expr *value = m_value ? m_value->clone() : nullptr;
 
   return Assoc::get(key, value);
 }
 
-LIB_EXPORT bool Field::verify_impl(std::ostream &os) const {
+bool Field::verify_impl(std::ostream &os) const {
   if (!m_base) {
     os << "Field: base is NULL\n";
     return false;
@@ -2591,13 +2589,13 @@ LIB_EXPORT bool Field::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void Field::canonicalize_impl() {
+void Field::canonicalize_impl() {
   if (m_base) {
     m_base->canonicalize();
   }
 }
 
-LIB_EXPORT void Field::print_impl(std::ostream &os, bool debug) const {
+void Field::print_impl(std::ostream &os, bool debug) const {
   if (m_base) {
     m_base->print(os, debug);
   } else {
@@ -2607,12 +2605,12 @@ LIB_EXPORT void Field::print_impl(std::ostream &os, bool debug) const {
   os << "." << m_field;
 }
 
-LIB_EXPORT Field *Field::clone_impl() const {
+Field *Field::clone_impl() const {
   Expr *base = m_base ? m_base->clone() : nullptr;
   return Field::get(base, m_field);
 }
 
-LIB_EXPORT bool Index::verify_impl(std::ostream &os) const {
+bool Index::verify_impl(std::ostream &os) const {
   if (!m_base) {
     os << "Index: base is NULL\n";
     return false;
@@ -2636,7 +2634,7 @@ LIB_EXPORT bool Index::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void Index::canonicalize_impl() {
+void Index::canonicalize_impl() {
   if (m_base) {
     m_base->canonicalize();
   }
@@ -2646,7 +2644,7 @@ LIB_EXPORT void Index::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void Index::print_impl(std::ostream &os, bool debug) const {
+void Index::print_impl(std::ostream &os, bool debug) const {
   if (m_base) {
     m_base->print(os, debug);
   } else {
@@ -2664,14 +2662,14 @@ LIB_EXPORT void Index::print_impl(std::ostream &os, bool debug) const {
   os << "]";
 }
 
-LIB_EXPORT Index *Index::clone_impl() const {
+Index *Index::clone_impl() const {
   Expr *base = m_base ? m_base->clone() : nullptr;
   Expr *index = m_index ? m_index->clone() : nullptr;
 
   return Index::get(base, index);
 }
 
-LIB_EXPORT bool Slice::verify_impl(std::ostream &os) const {
+bool Slice::verify_impl(std::ostream &os) const {
   if (!m_base) {
     os << "Slice: base is NULL\n";
     return false;
@@ -2705,7 +2703,7 @@ LIB_EXPORT bool Slice::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void Slice::canonicalize_impl() {
+void Slice::canonicalize_impl() {
   if (m_base) {
     m_base->canonicalize();
   }
@@ -2719,7 +2717,7 @@ LIB_EXPORT void Slice::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void Slice::print_impl(std::ostream &os, bool debug) const {
+void Slice::print_impl(std::ostream &os, bool debug) const {
   if (m_base) {
     m_base->print(os, debug);
   } else {
@@ -2745,7 +2743,7 @@ LIB_EXPORT void Slice::print_impl(std::ostream &os, bool debug) const {
   os << "]";
 }
 
-LIB_EXPORT Slice *Slice::clone_impl() const {
+Slice *Slice::clone_impl() const {
   Expr *base = m_base ? m_base->clone() : nullptr;
   Expr *start = m_start ? m_start->clone() : nullptr;
   Expr *end = m_end ? m_end->clone() : nullptr;
@@ -2753,7 +2751,7 @@ LIB_EXPORT Slice *Slice::clone_impl() const {
   return Slice::get(base, start, end);
 }
 
-LIB_EXPORT bool FString::verify_impl(std::ostream &os) const {
+bool FString::verify_impl(std::ostream &os) const {
   for (auto item : m_items) {
     if (std::holds_alternative<String>(item)) {
       continue;
@@ -2775,7 +2773,7 @@ LIB_EXPORT bool FString::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void FString::canonicalize_impl() {
+void FString::canonicalize_impl() {
   for (auto item : m_items) {
     if (std::holds_alternative<Expr *>(item)) {
       auto x = std::get<Expr *>(item);
@@ -2786,7 +2784,7 @@ LIB_EXPORT void FString::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void FString::print_impl(std::ostream &os, bool debug) const {
+void FString::print_impl(std::ostream &os, bool debug) const {
   os << "f\"";
 
   for (auto item : m_items) {
@@ -2802,7 +2800,7 @@ LIB_EXPORT void FString::print_impl(std::ostream &os, bool debug) const {
   os << "\"";
 }
 
-LIB_EXPORT FString *FString::clone_impl() const {
+FString *FString::clone_impl() const {
   FStringItems items;
   for (auto item : m_items) {
     if (std::holds_alternative<String>(item)) {
@@ -2818,7 +2816,7 @@ LIB_EXPORT FString *FString::clone_impl() const {
 LIB_EXPORT void qparse::FString::add_item(qparse::String item) { m_items.push_back(item); }
 LIB_EXPORT void qparse::FString::add_item(qparse::Expr *item) { m_items.push_back(item); }
 
-LIB_EXPORT bool Ident::verify_impl(std::ostream &os) const {
+bool Ident::verify_impl(std::ostream &os) const {
   if (m_name.empty()) {
     os << "Ident: name is empty\n";
     return false;
@@ -2827,16 +2825,16 @@ LIB_EXPORT bool Ident::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void Ident::canonicalize_impl() {}
+void Ident::canonicalize_impl() {}
 
-LIB_EXPORT void Ident::print_impl(std::ostream &os, bool debug) const {
+void Ident::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << m_name;
 }
 
-LIB_EXPORT Ident *Ident::clone_impl() const { return Ident::get(m_name); }
+Ident *Ident::clone_impl() const { return Ident::get(m_name); }
 
-LIB_EXPORT bool SeqPoint::verify_impl(std::ostream &os) const {
+bool SeqPoint::verify_impl(std::ostream &os) const {
   for (auto item : m_items) {
     if (!item) {
       os << "SeqPoint: item is NULL\n";
@@ -2852,7 +2850,7 @@ LIB_EXPORT bool SeqPoint::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void SeqPoint::canonicalize_impl() {
+void SeqPoint::canonicalize_impl() {
   for (auto item : m_items) {
     if (item) {
       item->canonicalize();
@@ -2860,7 +2858,7 @@ LIB_EXPORT void SeqPoint::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void SeqPoint::print_impl(std::ostream &os, bool debug) const {
+void SeqPoint::print_impl(std::ostream &os, bool debug) const {
   for (auto item : m_items) {
     if (item) {
       item->print(os, debug);
@@ -2872,7 +2870,7 @@ LIB_EXPORT void SeqPoint::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT SeqPoint *SeqPoint::clone_impl() const {
+SeqPoint *SeqPoint::clone_impl() const {
   SeqPointItems items;
   for (auto item : m_items) {
     if (item) {
@@ -2893,7 +2891,7 @@ LIB_EXPORT void SeqPoint::remove_item(Expr *item) {
 
 ///=============================================================================
 
-LIB_EXPORT bool Block::verify_impl(std::ostream &os) const {
+bool Block::verify_impl(std::ostream &os) const {
   for (auto item : m_items) {
     if (!item) {
       os << "Block: item is NULL\n";
@@ -2909,7 +2907,7 @@ LIB_EXPORT bool Block::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void Block::canonicalize_impl() {
+void Block::canonicalize_impl() {
   for (auto item : m_items) {
     if (item) {
       item->canonicalize();
@@ -2917,7 +2915,7 @@ LIB_EXPORT void Block::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void Block::print_impl(std::ostream &os, bool debug) const {
+void Block::print_impl(std::ostream &os, bool debug) const {
   os << "{\n";
 
   for (auto item : m_items) {
@@ -2933,7 +2931,7 @@ LIB_EXPORT void Block::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT Block *Block::clone_impl() const {
+Block *Block::clone_impl() const {
   BlockItems items;
   for (auto item : m_items) {
     if (item) {
@@ -2952,7 +2950,7 @@ LIB_EXPORT void Block::remove_item(Stmt *item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool VolStmt::verify_impl(std::ostream &os) const {
+bool VolStmt::verify_impl(std::ostream &os) const {
   if (!m_stmt) {
     os << "VolStmt: stmt is NULL\n";
     return false;
@@ -2966,13 +2964,13 @@ LIB_EXPORT bool VolStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void VolStmt::canonicalize_impl() {
+void VolStmt::canonicalize_impl() {
   if (m_stmt) {
     m_stmt->canonicalize();
   }
 }
 
-LIB_EXPORT void VolStmt::print_impl(std::ostream &os, bool debug) const {
+void VolStmt::print_impl(std::ostream &os, bool debug) const {
   os << "volatile ";
   if (m_stmt) {
     m_stmt->print(os, debug);
@@ -2981,12 +2979,12 @@ LIB_EXPORT void VolStmt::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT VolStmt *VolStmt::clone_impl() const {
+VolStmt *VolStmt::clone_impl() const {
   Stmt *stmt = m_stmt ? m_stmt->clone() : nullptr;
   return VolStmt::get(stmt);
 }
 
-LIB_EXPORT bool ConstDecl::verify_impl(std::ostream &os) const {
+bool ConstDecl::verify_impl(std::ostream &os) const {
   if (!m_value) {
     os << "ConstDecl: value is NULL\n";
     return false;
@@ -3010,13 +3008,13 @@ LIB_EXPORT bool ConstDecl::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ConstDecl::canonicalize_impl() {
+void ConstDecl::canonicalize_impl() {
   if (m_value) {
     m_value->canonicalize();
   }
 }
 
-LIB_EXPORT void ConstDecl::print_impl(std::ostream &os, bool debug) const {
+void ConstDecl::print_impl(std::ostream &os, bool debug) const {
   os << "const " << m_name;
 
   if (m_type) {
@@ -3032,13 +3030,13 @@ LIB_EXPORT void ConstDecl::print_impl(std::ostream &os, bool debug) const {
   os << ";";
 }
 
-LIB_EXPORT ConstDecl *ConstDecl::clone_impl() const {
+ConstDecl *ConstDecl::clone_impl() const {
   Expr *value = m_value ? m_value->clone() : nullptr;
   Type *type = m_type ? m_type->clone() : nullptr;
   return ConstDecl::get(m_name, type, value);
 }
 
-LIB_EXPORT bool VarDecl::verify_impl(std::ostream &os) const {
+bool VarDecl::verify_impl(std::ostream &os) const {
   if (!m_value) {
     os << "VarDecl: value is NULL\n";
     return false;
@@ -3062,13 +3060,13 @@ LIB_EXPORT bool VarDecl::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void VarDecl::canonicalize_impl() {
+void VarDecl::canonicalize_impl() {
   if (m_value) {
     m_value->canonicalize();
   }
 }
 
-LIB_EXPORT void VarDecl::print_impl(std::ostream &os, bool debug) const {
+void VarDecl::print_impl(std::ostream &os, bool debug) const {
   os << "var " << m_name;
 
   if (m_type) {
@@ -3084,13 +3082,13 @@ LIB_EXPORT void VarDecl::print_impl(std::ostream &os, bool debug) const {
   os << ";";
 }
 
-LIB_EXPORT VarDecl *VarDecl::clone_impl() const {
+VarDecl *VarDecl::clone_impl() const {
   Expr *value = m_value ? m_value->clone() : nullptr;
   Type *type = m_type ? m_type->clone() : nullptr;
   return VarDecl::get(m_name, type, value);
 }
 
-LIB_EXPORT bool LetDecl::verify_impl(std::ostream &os) const {
+bool LetDecl::verify_impl(std::ostream &os) const {
   if (!m_value) {
     os << "LetDecl: value is NULL\n";
     return false;
@@ -3114,13 +3112,13 @@ LIB_EXPORT bool LetDecl::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void LetDecl::canonicalize_impl() {
+void LetDecl::canonicalize_impl() {
   if (m_value) {
     m_value->canonicalize();
   }
 }
 
-LIB_EXPORT void LetDecl::print_impl(std::ostream &os, bool debug) const {
+void LetDecl::print_impl(std::ostream &os, bool debug) const {
   os << "let " << m_name;
 
   if (m_type) {
@@ -3136,13 +3134,13 @@ LIB_EXPORT void LetDecl::print_impl(std::ostream &os, bool debug) const {
   os << ";";
 }
 
-LIB_EXPORT LetDecl *LetDecl::clone_impl() const {
+LetDecl *LetDecl::clone_impl() const {
   Expr *value = m_value ? m_value->clone() : nullptr;
   Type *type = m_type ? m_type->clone() : nullptr;
   return LetDecl::get(m_name, type, value);
 }
 
-LIB_EXPORT bool InlineAsm::verify_impl(std::ostream &os) const {
+bool InlineAsm::verify_impl(std::ostream &os) const {
   for (auto item : m_args) {
     if (!item) {
       os << "InlineAsm: item is NULL\n";
@@ -3158,7 +3156,7 @@ LIB_EXPORT bool InlineAsm::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void InlineAsm::canonicalize_impl() {
+void InlineAsm::canonicalize_impl() {
   for (auto item : m_args) {
     if (item) {
       item->canonicalize();
@@ -3166,7 +3164,7 @@ LIB_EXPORT void InlineAsm::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void InlineAsm::print_impl(std::ostream &os, bool debug) const {
+void InlineAsm::print_impl(std::ostream &os, bool debug) const {
   os << "asm(\"" << m_code << "\"";
 
   for (auto item : m_args) {
@@ -3177,7 +3175,7 @@ LIB_EXPORT void InlineAsm::print_impl(std::ostream &os, bool debug) const {
   os << ");";
 }
 
-LIB_EXPORT InlineAsm *InlineAsm::clone_impl() const {
+InlineAsm *InlineAsm::clone_impl() const {
   InlineAsmArgs args;
   for (auto item : m_args) {
     if (item) {
@@ -3196,7 +3194,7 @@ LIB_EXPORT void InlineAsm::remove_arg(Expr *arg) {
   std::erase_if(m_args, [arg](auto &field) { return field == arg; });
 }
 
-LIB_EXPORT bool IfStmt::verify_impl(std::ostream &os) const {
+bool IfStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "IfStmt: cond is NULL\n";
     return false;
@@ -3230,7 +3228,7 @@ LIB_EXPORT bool IfStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void IfStmt::canonicalize_impl() {
+void IfStmt::canonicalize_impl() {
   if (m_cond) {
     m_cond->canonicalize();
   }
@@ -3244,7 +3242,7 @@ LIB_EXPORT void IfStmt::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void IfStmt::print_impl(std::ostream &os, bool debug) const {
+void IfStmt::print_impl(std::ostream &os, bool debug) const {
   os << "if (";
   m_cond->print(os, debug);
   os << ") ";
@@ -3264,7 +3262,7 @@ LIB_EXPORT void IfStmt::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT IfStmt *IfStmt::clone_impl() const {
+IfStmt *IfStmt::clone_impl() const {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
   Stmt *then = m_then ? m_then->clone() : nullptr;
   Stmt *els = m_else ? m_else->clone() : nullptr;
@@ -3272,7 +3270,7 @@ LIB_EXPORT IfStmt *IfStmt::clone_impl() const {
   return IfStmt::get(cond, then, els);
 }
 
-LIB_EXPORT bool WhileStmt::verify_impl(std::ostream &os) const {
+bool WhileStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "WhileStmt: cond is NULL\n";
     return false;
@@ -3296,7 +3294,7 @@ LIB_EXPORT bool WhileStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void WhileStmt::canonicalize_impl() {
+void WhileStmt::canonicalize_impl() {
   if (m_cond) {
     m_cond->canonicalize();
   }
@@ -3306,7 +3304,7 @@ LIB_EXPORT void WhileStmt::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void WhileStmt::print_impl(std::ostream &os, bool debug) const {
+void WhileStmt::print_impl(std::ostream &os, bool debug) const {
   os << "while (";
   m_cond->print(os, debug);
   os << ") ";
@@ -3318,14 +3316,14 @@ LIB_EXPORT void WhileStmt::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT WhileStmt *WhileStmt::clone_impl() const {
+WhileStmt *WhileStmt::clone_impl() const {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
   Stmt *body = m_body ? m_body->clone() : nullptr;
 
   return WhileStmt::get(cond, body);
 }
 
-LIB_EXPORT bool ForStmt::verify_impl(std::ostream &os) const {
+bool ForStmt::verify_impl(std::ostream &os) const {
   if (!m_init) {
     os << "ForStmt: init is NULL\n";
     return false;
@@ -3369,7 +3367,7 @@ LIB_EXPORT bool ForStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ForStmt::canonicalize_impl() {
+void ForStmt::canonicalize_impl() {
   if (m_init) {
     m_init->canonicalize();
   }
@@ -3387,7 +3385,7 @@ LIB_EXPORT void ForStmt::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void ForStmt::print_impl(std::ostream &os, bool debug) const {
+void ForStmt::print_impl(std::ostream &os, bool debug) const {
   os << "for (";
 
   if (m_init) {
@@ -3421,7 +3419,7 @@ LIB_EXPORT void ForStmt::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT ForStmt *ForStmt::clone_impl() const {
+ForStmt *ForStmt::clone_impl() const {
   Expr *init = m_init ? m_init->clone() : nullptr;
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
   Expr *step = m_step ? m_step->clone() : nullptr;
@@ -3430,7 +3428,7 @@ LIB_EXPORT ForStmt *ForStmt::clone_impl() const {
   return ForStmt::get(init, cond, step, body);
 }
 
-LIB_EXPORT bool FormStmt::verify_impl(std::ostream &os) const {
+bool FormStmt::verify_impl(std::ostream &os) const {
   if (!m_expr) {
     os << "FormStmt: expr is NULL\n";
     return false;
@@ -3464,7 +3462,7 @@ LIB_EXPORT bool FormStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void FormStmt::canonicalize_impl() {
+void FormStmt::canonicalize_impl() {
   if (m_expr) {
     m_expr->canonicalize();
   }
@@ -3478,7 +3476,7 @@ LIB_EXPORT void FormStmt::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void FormStmt::print_impl(std::ostream &os, bool debug) const {
+void FormStmt::print_impl(std::ostream &os, bool debug) const {
   os << "form (";
   if (m_maxjobs) {
     m_maxjobs->print(os, debug);
@@ -3502,7 +3500,7 @@ LIB_EXPORT void FormStmt::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT FormStmt *FormStmt::clone_impl() const {
+FormStmt *FormStmt::clone_impl() const {
   Expr *expr = m_expr ? m_expr->clone() : nullptr;
   Expr *maxjobs = m_maxjobs ? m_maxjobs->clone() : nullptr;
   Stmt *body = m_body ? m_body->clone() : nullptr;
@@ -3510,7 +3508,7 @@ LIB_EXPORT FormStmt *FormStmt::clone_impl() const {
   return FormStmt::get(m_idx_ident, m_val_ident, expr, maxjobs, body);
 }
 
-LIB_EXPORT bool ForeachStmt::verify_impl(std::ostream &os) const {
+bool ForeachStmt::verify_impl(std::ostream &os) const {
   if (!m_expr) {
     os << "ForeachStmt: expr is NULL\n";
     return false;
@@ -3534,7 +3532,7 @@ LIB_EXPORT bool ForeachStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ForeachStmt::canonicalize_impl() {
+void ForeachStmt::canonicalize_impl() {
   if (m_expr) {
     m_expr->canonicalize();
   }
@@ -3544,7 +3542,7 @@ LIB_EXPORT void ForeachStmt::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void ForeachStmt::print_impl(std::ostream &os, bool debug) const {
+void ForeachStmt::print_impl(std::ostream &os, bool debug) const {
   os << "foreach (" << m_idx_ident << ", " << m_val_ident << " in ";
 
   if (m_expr) {
@@ -3562,36 +3560,36 @@ LIB_EXPORT void ForeachStmt::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT ForeachStmt *ForeachStmt::clone_impl() const {
+ForeachStmt *ForeachStmt::clone_impl() const {
   Expr *expr = m_expr ? m_expr->clone() : nullptr;
   Stmt *body = m_body ? m_body->clone() : nullptr;
 
   return ForeachStmt::get(m_idx_ident, m_val_ident, expr, body);
 }
 
-LIB_EXPORT bool BreakStmt::verify_impl(std::ostream &os) const {
+bool BreakStmt::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
 }
-LIB_EXPORT void BreakStmt::canonicalize_impl() {}
-LIB_EXPORT void BreakStmt::print_impl(std::ostream &os, bool debug) const {
+void BreakStmt::canonicalize_impl() {}
+void BreakStmt::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << "break;";
 }
-LIB_EXPORT BreakStmt *BreakStmt::clone_impl() const { return BreakStmt::get(); }
+BreakStmt *BreakStmt::clone_impl() const { return BreakStmt::get(); }
 
-LIB_EXPORT bool ContinueStmt::verify_impl(std::ostream &os) const {
+bool ContinueStmt::verify_impl(std::ostream &os) const {
   (void)os;
   return true;
 }
-LIB_EXPORT void ContinueStmt::canonicalize_impl() {}
-LIB_EXPORT void ContinueStmt::print_impl(std::ostream &os, bool debug) const {
+void ContinueStmt::canonicalize_impl() {}
+void ContinueStmt::print_impl(std::ostream &os, bool debug) const {
   (void)debug;
   os << "continue;";
 }
-LIB_EXPORT ContinueStmt *ContinueStmt::clone_impl() const { return ContinueStmt::get(); }
+ContinueStmt *ContinueStmt::clone_impl() const { return ContinueStmt::get(); }
 
-LIB_EXPORT bool ReturnStmt::verify_impl(std::ostream &os) const {
+bool ReturnStmt::verify_impl(std::ostream &os) const {
   if (!m_value) {
     os << "ReturnStmt: value is NULL\n";
     return false;
@@ -3605,13 +3603,13 @@ LIB_EXPORT bool ReturnStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ReturnStmt::canonicalize_impl() {
+void ReturnStmt::canonicalize_impl() {
   if (m_value) {
     m_value->canonicalize();
   }
 }
 
-LIB_EXPORT void ReturnStmt::print_impl(std::ostream &os, bool debug) const {
+void ReturnStmt::print_impl(std::ostream &os, bool debug) const {
   os << "return ";
 
   if (m_value) {
@@ -3623,12 +3621,12 @@ LIB_EXPORT void ReturnStmt::print_impl(std::ostream &os, bool debug) const {
   os << ";";
 }
 
-LIB_EXPORT ReturnStmt *ReturnStmt::clone_impl() const {
+ReturnStmt *ReturnStmt::clone_impl() const {
   Expr *value = m_value ? m_value->clone() : nullptr;
   return ReturnStmt::get(value);
 }
 
-LIB_EXPORT bool ReturnIfStmt::verify_impl(std::ostream &os) const {
+bool ReturnIfStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "ReturnIfStmt: cond is NULL\n";
     return false;
@@ -3652,7 +3650,7 @@ LIB_EXPORT bool ReturnIfStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ReturnIfStmt::canonicalize_impl() {
+void ReturnIfStmt::canonicalize_impl() {
   if (m_cond) {
     m_cond->canonicalize();
   }
@@ -3662,7 +3660,7 @@ LIB_EXPORT void ReturnIfStmt::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void ReturnIfStmt::print_impl(std::ostream &os, bool debug) const {
+void ReturnIfStmt::print_impl(std::ostream &os, bool debug) const {
   os << "retif (";
 
   if (m_cond) {
@@ -3682,14 +3680,14 @@ LIB_EXPORT void ReturnIfStmt::print_impl(std::ostream &os, bool debug) const {
   os << ";";
 }
 
-LIB_EXPORT ReturnIfStmt *ReturnIfStmt::clone_impl() const {
+ReturnIfStmt *ReturnIfStmt::clone_impl() const {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
   Expr *value = m_value ? m_value->clone() : nullptr;
 
   return ReturnIfStmt::get(cond, value);
 }
 
-LIB_EXPORT bool RetZStmt::verify_impl(std::ostream &os) const {
+bool RetZStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "RetZStmt: cond is NULL\n";
     return false;
@@ -3713,7 +3711,7 @@ LIB_EXPORT bool RetZStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void RetZStmt::canonicalize_impl() {
+void RetZStmt::canonicalize_impl() {
   if (m_cond) {
     m_cond->canonicalize();
   }
@@ -3723,7 +3721,7 @@ LIB_EXPORT void RetZStmt::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void RetZStmt::print_impl(std::ostream &os, bool debug) const {
+void RetZStmt::print_impl(std::ostream &os, bool debug) const {
   os << "retz (";
 
   if (m_cond) {
@@ -3743,14 +3741,14 @@ LIB_EXPORT void RetZStmt::print_impl(std::ostream &os, bool debug) const {
   os << ";";
 }
 
-LIB_EXPORT RetZStmt *RetZStmt::clone_impl() const {
+RetZStmt *RetZStmt::clone_impl() const {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
   Expr *value = m_value ? m_value->clone() : nullptr;
 
   return RetZStmt::get(cond, value);
 }
 
-LIB_EXPORT bool RetVStmt::verify_impl(std::ostream &os) const {
+bool RetVStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "RetVStmt: cond is NULL\n";
     return false;
@@ -3759,13 +3757,13 @@ LIB_EXPORT bool RetVStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void RetVStmt::canonicalize_impl() {
+void RetVStmt::canonicalize_impl() {
   if (m_cond) {
     m_cond->canonicalize();
   }
 }
 
-LIB_EXPORT void RetVStmt::print_impl(std::ostream &os, bool debug) const {
+void RetVStmt::print_impl(std::ostream &os, bool debug) const {
   os << "retv (";
 
   if (m_cond) {
@@ -3777,13 +3775,13 @@ LIB_EXPORT void RetVStmt::print_impl(std::ostream &os, bool debug) const {
   os << ")";
 }
 
-LIB_EXPORT RetVStmt *RetVStmt::clone_impl() const {
+RetVStmt *RetVStmt::clone_impl() const {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
 
   return RetVStmt::get(cond);
 }
 
-LIB_EXPORT bool CaseStmt::verify_impl(std::ostream &os) const {
+bool CaseStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "CaseStmt: cond is NULL\n";
     return false;
@@ -3807,7 +3805,7 @@ LIB_EXPORT bool CaseStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void CaseStmt::canonicalize_impl() {
+void CaseStmt::canonicalize_impl() {
   if (m_cond) {
     m_cond->canonicalize();
   }
@@ -3817,7 +3815,7 @@ LIB_EXPORT void CaseStmt::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void CaseStmt::print_impl(std::ostream &os, bool debug) const {
+void CaseStmt::print_impl(std::ostream &os, bool debug) const {
   os << "case ";
 
   if (m_cond) {
@@ -3835,14 +3833,14 @@ LIB_EXPORT void CaseStmt::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT CaseStmt *CaseStmt::clone_impl() const {
+CaseStmt *CaseStmt::clone_impl() const {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
   Stmt *body = m_body ? m_body->clone() : nullptr;
 
   return CaseStmt::get(cond, body);
 }
 
-LIB_EXPORT bool SwitchStmt::verify_impl(std::ostream &os) const {
+bool SwitchStmt::verify_impl(std::ostream &os) const {
   if (!m_cond) {
     os << "SwitchStmt: cond is NULL\n";
     return false;
@@ -3868,7 +3866,7 @@ LIB_EXPORT bool SwitchStmt::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void SwitchStmt::canonicalize_impl() {
+void SwitchStmt::canonicalize_impl() {
   if (m_cond) {
     m_cond->canonicalize();
   }
@@ -3880,7 +3878,7 @@ LIB_EXPORT void SwitchStmt::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void SwitchStmt::print_impl(std::ostream &os, bool debug) const {
+void SwitchStmt::print_impl(std::ostream &os, bool debug) const {
   os << "switch (";
 
   if (m_cond) {
@@ -3904,7 +3902,7 @@ LIB_EXPORT void SwitchStmt::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT SwitchStmt *SwitchStmt::clone_impl() const {
+SwitchStmt *SwitchStmt::clone_impl() const {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
   Stmt *_default = m_default ? m_default->clone() : nullptr;
 
@@ -3926,7 +3924,7 @@ LIB_EXPORT void SwitchStmt::remove_case(CaseStmt *item) {
   std::erase_if(m_cases, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool TypedefDecl::verify_impl(std::ostream &os) const {
+bool TypedefDecl::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "TypedefDecl: type is NULL\n";
     return false;
@@ -3940,13 +3938,13 @@ LIB_EXPORT bool TypedefDecl::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void TypedefDecl::canonicalize_impl() {
+void TypedefDecl::canonicalize_impl() {
   if (m_type) {
     m_type->canonicalize();
   }
 }
 
-LIB_EXPORT void TypedefDecl::print_impl(std::ostream &os, bool debug) const {
+void TypedefDecl::print_impl(std::ostream &os, bool debug) const {
   os << "typedef ";
 
   if (m_type) {
@@ -3958,12 +3956,12 @@ LIB_EXPORT void TypedefDecl::print_impl(std::ostream &os, bool debug) const {
   os << " " << m_name << ";";
 }
 
-LIB_EXPORT TypedefDecl *TypedefDecl::clone_impl() const {
+TypedefDecl *TypedefDecl::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
   return TypedefDecl::get(m_name, type);
 }
 
-LIB_EXPORT bool FnDecl::verify_impl(std::ostream &os) const {
+bool FnDecl::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "FnDecl: type is NULL\n";
     return false;
@@ -3977,13 +3975,13 @@ LIB_EXPORT bool FnDecl::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void FnDecl::canonicalize_impl() {
+void FnDecl::canonicalize_impl() {
   if (m_type) {
     m_type->canonicalize();
   }
 }
 
-LIB_EXPORT void FnDecl::print_impl(std::ostream &os, bool debug) const {
+void FnDecl::print_impl(std::ostream &os, bool debug) const {
   os << "fn " << m_name << "(";
 
   if (m_type) {
@@ -3995,7 +3993,7 @@ LIB_EXPORT void FnDecl::print_impl(std::ostream &os, bool debug) const {
   os << ")";
 }
 
-LIB_EXPORT FnDecl *FnDecl::clone_impl() const {
+FnDecl *FnDecl::clone_impl() const {
   if (m_type) {
     return FnDecl::get(m_name, m_type->clone()->as<FuncTy>());
   } else {
@@ -4003,7 +4001,7 @@ LIB_EXPORT FnDecl *FnDecl::clone_impl() const {
   }
 }
 
-LIB_EXPORT bool FnDef::verify_impl(std::ostream &os) const {
+bool FnDef::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "FnDef: type is NULL\n";
     return false;
@@ -4027,7 +4025,7 @@ LIB_EXPORT bool FnDef::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void FnDef::canonicalize_impl() {
+void FnDef::canonicalize_impl() {
   if (m_type) {
     m_type->canonicalize();
   }
@@ -4045,7 +4043,7 @@ LIB_EXPORT void FnDef::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void FnDef::print_impl(std::ostream &os, bool debug) const {
+void FnDef::print_impl(std::ostream &os, bool debug) const {
   os << "fn ";
 
   if (!m_captures.empty()) {
@@ -4080,7 +4078,7 @@ LIB_EXPORT void FnDef::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT FnDef *FnDef::clone_impl() const {
+FnDef *FnDef::clone_impl() const {
   Stmt *body = m_body ? m_body->clone() : nullptr;
   FnDecl *decl = FnDecl::clone_impl();
   Expr *precond = m_precond ? m_precond->clone() : nullptr;
@@ -4089,7 +4087,7 @@ LIB_EXPORT FnDef *FnDef::clone_impl() const {
   return FnDef::get(decl, body, precond, postcond, m_captures);
 }
 
-LIB_EXPORT bool CompositeField::verify_impl(std::ostream &os) const {
+bool CompositeField::verify_impl(std::ostream &os) const {
   if (!m_type) {
     os << "CompositeField: type is NULL\n";
     return false;
@@ -4113,7 +4111,7 @@ LIB_EXPORT bool CompositeField::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void CompositeField::canonicalize_impl() {
+void CompositeField::canonicalize_impl() {
   if (m_type) {
     m_type->canonicalize();
   }
@@ -4123,7 +4121,7 @@ LIB_EXPORT void CompositeField::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void CompositeField::print_impl(std::ostream &os, bool debug) const {
+void CompositeField::print_impl(std::ostream &os, bool debug) const {
   os << m_name;
 
   if (m_type) {
@@ -4137,14 +4135,14 @@ LIB_EXPORT void CompositeField::print_impl(std::ostream &os, bool debug) const {
   }
 }
 
-LIB_EXPORT CompositeField *CompositeField::clone_impl() const {
+CompositeField *CompositeField::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
   Expr *value = m_value ? m_value->clone() : nullptr;
 
   return CompositeField::get(m_name, type, value);
 }
 
-LIB_EXPORT bool StructDef::verify_impl(std::ostream &os) const {
+bool StructDef::verify_impl(std::ostream &os) const {
   for (auto item : m_methods) {
     if (!item) {
       os << "StructDef: method is NULL\n";
@@ -4184,7 +4182,7 @@ LIB_EXPORT bool StructDef::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void StructDef::canonicalize_impl() {
+void StructDef::canonicalize_impl() {
   for (auto item : m_methods) {
     if (item) {
       item->canonicalize();
@@ -4204,7 +4202,7 @@ LIB_EXPORT void StructDef::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void StructDef::print_impl(std::ostream &os, bool debug) const {
+void StructDef::print_impl(std::ostream &os, bool debug) const {
   os << "struct " << m_name << " {\n";
 
   for (auto item : m_fields) {
@@ -4244,7 +4242,7 @@ LIB_EXPORT void StructDef::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT StructDef *StructDef::clone_impl() const {
+StructDef *StructDef::clone_impl() const {
   auto type = m_type ? m_type->clone() : nullptr;
 
   StructDefFields fields;
@@ -4304,7 +4302,7 @@ LIB_EXPORT void StructDef::remove_field(CompositeField *item) {
   std::erase_if(m_fields, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool GroupDef::verify_impl(std::ostream &os) const {
+bool GroupDef::verify_impl(std::ostream &os) const {
   for (auto item : m_methods) {
     if (!item) {
       os << "GroupDef: method is NULL\n";
@@ -4344,7 +4342,7 @@ LIB_EXPORT bool GroupDef::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void GroupDef::canonicalize_impl() {
+void GroupDef::canonicalize_impl() {
   for (auto item : m_methods) {
     if (item) {
       item->canonicalize();
@@ -4364,7 +4362,7 @@ LIB_EXPORT void GroupDef::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void GroupDef::print_impl(std::ostream &os, bool debug) const {
+void GroupDef::print_impl(std::ostream &os, bool debug) const {
   os << "group " << m_name << " {\n";
 
   for (auto item : m_fields) {
@@ -4404,7 +4402,7 @@ LIB_EXPORT void GroupDef::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT GroupDef *GroupDef::clone_impl() const {
+GroupDef *GroupDef::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
 
   GroupDefFields fields;
@@ -4464,7 +4462,7 @@ LIB_EXPORT void GroupDef::remove_field(CompositeField *item) {
   std::erase_if(m_fields, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool RegionDef::verify_impl(std::ostream &os) const {
+bool RegionDef::verify_impl(std::ostream &os) const {
   for (auto item : m_methods) {
     if (!item) {
       os << "RegionDef: method is NULL\n";
@@ -4504,7 +4502,7 @@ LIB_EXPORT bool RegionDef::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void RegionDef::canonicalize_impl() {
+void RegionDef::canonicalize_impl() {
   for (auto item : m_methods) {
     if (item) {
       item->canonicalize();
@@ -4524,7 +4522,7 @@ LIB_EXPORT void RegionDef::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void RegionDef::print_impl(std::ostream &os, bool debug) const {
+void RegionDef::print_impl(std::ostream &os, bool debug) const {
   os << "region " << m_name << " {\n";
 
   for (auto item : m_fields) {
@@ -4564,7 +4562,7 @@ LIB_EXPORT void RegionDef::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT RegionDef *RegionDef::clone_impl() const {
+RegionDef *RegionDef::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
 
   RegionDefFields fields;
@@ -4624,7 +4622,7 @@ LIB_EXPORT void RegionDef::remove_field(CompositeField *item) {
   std::erase_if(m_fields, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool UnionDef::verify_impl(std::ostream &os) const {
+bool UnionDef::verify_impl(std::ostream &os) const {
   for (auto item : m_methods) {
     if (!item) {
       os << "UnionDef: method is NULL\n";
@@ -4664,7 +4662,7 @@ LIB_EXPORT bool UnionDef::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void UnionDef::canonicalize_impl() {
+void UnionDef::canonicalize_impl() {
   for (auto item : m_methods) {
     if (item) {
       item->canonicalize();
@@ -4684,7 +4682,7 @@ LIB_EXPORT void UnionDef::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void UnionDef::print_impl(std::ostream &os, bool debug) const {
+void UnionDef::print_impl(std::ostream &os, bool debug) const {
   os << "union " << m_name << " {\n";
 
   for (auto item : m_fields) {
@@ -4724,7 +4722,7 @@ LIB_EXPORT void UnionDef::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT UnionDef *UnionDef::clone_impl() const {
+UnionDef *UnionDef::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
 
   UnionDefFields fields;
@@ -4784,7 +4782,7 @@ LIB_EXPORT void UnionDef::remove_field(CompositeField *item) {
   std::erase_if(m_fields, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool EnumDef::verify_impl(std::ostream &os) const {
+bool EnumDef::verify_impl(std::ostream &os) const {
   for (auto item : m_items) {
     if (!item.second) {
       os << "EnumDef: item is NULL\n";
@@ -4800,7 +4798,7 @@ LIB_EXPORT bool EnumDef::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void EnumDef::canonicalize_impl() {
+void EnumDef::canonicalize_impl() {
   for (auto item : m_items) {
     if (item.second) {
       item.second->canonicalize();
@@ -4808,7 +4806,7 @@ LIB_EXPORT void EnumDef::canonicalize_impl() {
   }
 }
 
-LIB_EXPORT void EnumDef::print_impl(std::ostream &os, bool debug) const {
+void EnumDef::print_impl(std::ostream &os, bool debug) const {
   os << "enum " << m_name << " {\n";
 
   for (auto item : m_items) {
@@ -4825,7 +4823,7 @@ LIB_EXPORT void EnumDef::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT EnumDef *EnumDef::clone_impl() const {
+EnumDef *EnumDef::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
 
   EnumDefItems items;
@@ -4849,7 +4847,7 @@ LIB_EXPORT void EnumDef::remove_item(EnumItem item) {
   std::erase_if(m_items, [item](auto &field) { return field == item; });
 }
 
-LIB_EXPORT bool SubsystemDecl::verify_impl(std::ostream &os) const {
+bool SubsystemDecl::verify_impl(std::ostream &os) const {
   if (m_type) {
     os << "SubsystemDecl: type must be NULL\n";
     return false;
@@ -4868,13 +4866,13 @@ LIB_EXPORT bool SubsystemDecl::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void SubsystemDecl::canonicalize_impl() {
+void SubsystemDecl::canonicalize_impl() {
   if (m_body) {
     m_body->canonicalize();
   }
 }
 
-LIB_EXPORT void SubsystemDecl::print_impl(std::ostream &os, bool debug) const {
+void SubsystemDecl::print_impl(std::ostream &os, bool debug) const {
   os << "subsystem " << m_name << " {\n";
 
   if (m_body) {
@@ -4886,7 +4884,7 @@ LIB_EXPORT void SubsystemDecl::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT SubsystemDecl *SubsystemDecl::clone_impl() const {
+SubsystemDecl *SubsystemDecl::clone_impl() const {
   Block *body = m_body ? m_body->clone() : nullptr;
 
   return SubsystemDecl::get(m_name, body, m_deps);
@@ -4899,7 +4897,7 @@ LIB_EXPORT void qparse::SubsystemDecl::add_deps(const qparse::SubsystemDeps &dep
 LIB_EXPORT void SubsystemDecl::clear_deps() { m_deps.clear(); }
 LIB_EXPORT void SubsystemDecl::remove_dep(String dep) { m_deps.erase(dep); }
 
-LIB_EXPORT bool ExportDecl::verify_impl(std::ostream &os) const {
+bool ExportDecl::verify_impl(std::ostream &os) const {
   if (m_type) {
     os << "ExportDecl: type must be NULL\n";
     return false;
@@ -4918,13 +4916,13 @@ LIB_EXPORT bool ExportDecl::verify_impl(std::ostream &os) const {
   return true;
 }
 
-LIB_EXPORT void ExportDecl::canonicalize_impl() {
+void ExportDecl::canonicalize_impl() {
   if (m_body) {
     m_body->canonicalize();
   }
 }
 
-LIB_EXPORT void ExportDecl::print_impl(std::ostream &os, bool debug) const {
+void ExportDecl::print_impl(std::ostream &os, bool debug) const {
   os << "export " << m_name << " {\n";
 
   if (m_body) {
@@ -4936,7 +4934,7 @@ LIB_EXPORT void ExportDecl::print_impl(std::ostream &os, bool debug) const {
   os << "}";
 }
 
-LIB_EXPORT ExportDecl *ExportDecl::clone_impl() const {
+ExportDecl *ExportDecl::clone_impl() const {
   Block *body = m_body ? m_body->clone() : nullptr;
   return ExportDecl::get(body, m_abi_name);
 }

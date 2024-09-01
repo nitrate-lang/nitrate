@@ -64,7 +64,7 @@ void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }
 
 ///=============================================================================
 
-CPP_EXPORT uint32_t Expr::thisSizeOf() const noexcept {
+CPP_EXPORT uint32_t Expr::getKindSize() const noexcept {
 #define SIZEOF_ROW(__type) \
   { typeid(__type).hash_code(), sizeof(__type) }
 

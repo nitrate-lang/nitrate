@@ -86,6 +86,7 @@ bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
           DirectCallArgs new_args;
 
           /// TODO: convert args to DirectCallArgs
+          (void)args;
 
           *_cur = create<DirectCall>(mod->getFunctions().left.at(name), std::move(new_args));
         } else { /* Indirect call */

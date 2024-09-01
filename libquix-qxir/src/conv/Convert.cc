@@ -889,7 +889,9 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the identifier.
      */
 
-    return create<Ident>(memorize(n->get_name()));
+    auto str = s.cur_named(n->get_name());
+
+    return create<Ident>(memorize(std::string_view(str)));
   }
 
   static Expr *qconv_seq_point(ConvState &s, const qparse::SeqPoint *n) {

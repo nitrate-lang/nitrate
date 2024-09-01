@@ -29,7 +29,7 @@ RUN echo "cmake -S /app -B /app/build/release -DCMAKE_BUILD_TYPE=Release" >> /op
 RUN echo "cmake --build /app/build/release -j`nproc`" >> /opt/build.sh
 RUN echo "mkdir -p /app/bin" >> /opt/build.sh
 RUN echo "rm -rf /app/bin/*" >> /opt/build.sh
-RUN echo "cp /app/build/release/*/*.a /app/bin/" >> /opt/build.sh
+RUN echo "cp /app/build/release/*/*.a /app/build/release/*/*.so /app/bin/" >> /opt/build.sh
 RUN echo "cp /app/build/release/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
 RUN echo "chmod -R 777 /app/bin/" >> /opt/build.sh
 RUN chmod +x /opt/build.sh

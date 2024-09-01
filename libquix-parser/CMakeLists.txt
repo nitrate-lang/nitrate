@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
+SET(BUILD_FLAGS_COMMON -g3 -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQPARSE_ID=${QPARSE_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQPARSE_ID="undefined")
 
@@ -54,4 +54,15 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_link_options(quix-parser PRIVATE -flto)
   target_link_libraries(quix-parser PRIVATE quix-core quix-lexer libdeflate.a)
   add_dependencies(quix-parser quix-core quix-lexer)
+
+  #================== CREATE STATICLIB RELEASE BUILD ================
+  add_library(quix-parser-shared SHARED ${CXX_SOURCES})
+  target_include_directories(quix-parser-shared PUBLIC src include 
+    ${CMAKE_SOURCE_DIR}/libquix-core/include
+    ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
+  target_compile_options(quix-parser-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
+  target_link_options(quix-parser-shared PRIVATE -flto)
+  target_link_libraries(quix-parser-shared PRIVATE quix-core-shared quix-lexer-shared deflate)
+  add_dependencies(quix-parser-shared quix-core-shared quix-lexer-shared)
+  set_target_properties(quix-parser-shared PROPERTIES OUTPUT_NAME quix-parser)
 endif()

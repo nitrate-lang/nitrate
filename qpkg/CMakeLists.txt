@@ -18,7 +18,7 @@ file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
 
 add_executable(qpkg ${QPKG_CXX_SOURCES})
 target_include_directories(qpkg PRIVATE src )
-target_compile_options(qpkg PRIVATE -Werror -O3 -g -fPIC -Wall -Wextra -Wpedantic -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments -Wno-error=overlength-strings -Wno-predefined-identifier-outside-function)
+target_compile_options(qpkg PRIVATE -Werror -O3 -g3 -fPIC -Wall -Wextra -Wpedantic -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments -Wno-error=overlength-strings -Wno-predefined-identifier-outside-function)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
     target_compile_options(qpkg PRIVATE -DQPKG_ID=${QPKG_ID} -flto)

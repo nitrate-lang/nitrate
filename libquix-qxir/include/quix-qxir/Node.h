@@ -172,7 +172,7 @@ namespace qxir {
           m_start_loc{},
           m_loc_size(0) {}
 
-    uint32_t thisSizeOf() const noexcept;
+    uint32_t getKindSize() const noexcept;
     qxir_ty_t getKind() const noexcept;
     const char *getKindName() const noexcept;
 

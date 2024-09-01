@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
+SET(BUILD_FLAGS_COMMON -g3 -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQXIR_ID=${QXIR_ID} -Wno-unused-parameter)
 SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O0 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -Wno-unused-variable -DQXIR_ID="undefined")
 
@@ -56,4 +56,16 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_link_options(quix-qxir PRIVATE -flto)
   target_link_libraries(quix-qxir PRIVATE quix-core quix-parser libdeflate.a libcrypto.a)
   add_dependencies(quix-qxir quix-core quix-parser)
+
+  #================== CREATE STATICLIB RELEASE BUILD ================
+  add_library(quix-qxir-shared SHARED ${CXX_SOURCES})
+  target_include_directories(quix-qxir-shared PUBLIC src include 
+    ${CMAKE_SOURCE_DIR}/libquix-core/include
+    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+    ${CMAKE_SOURCE_DIR}/libquix-parser/include)
+  target_compile_options(quix-qxir-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
+  target_link_options(quix-qxir-shared PRIVATE -flto)
+  target_link_libraries(quix-qxir-shared PRIVATE quix-core-shared quix-parser-shared deflate)
+  add_dependencies(quix-qxir-shared quix-core-shared quix-parser-shared)
+  set_target_properties(quix-qxir-shared PROPERTIES OUTPUT_NAME quix-qxir)
 endif()
