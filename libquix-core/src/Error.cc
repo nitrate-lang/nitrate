@@ -277,6 +277,8 @@ LIB_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
 
   panic_render_report(panic_split_message(msg));
 
+  free(msg);
+
   abort();
 }
 

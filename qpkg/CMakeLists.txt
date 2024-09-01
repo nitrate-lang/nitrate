@@ -16,28 +16,218 @@ message(STATUS "qpkg VersionId: ${QPKG_ID}")
 
 file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
 
-add_executable(qpkg ${QPKG_CXX_SOURCES})
-target_include_directories(qpkg PRIVATE src )
-target_compile_options(qpkg PRIVATE -Werror -O3 -g3 -fPIC -Wall -Wextra -Wpedantic -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments -Wno-error=overlength-strings -Wno-predefined-identifier-outside-function)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0)
 
 if (CMAKE_BUILD_TYPE STREQUAL "Release")
-    target_compile_options(qpkg PRIVATE -DQPKG_ID=${QPKG_ID} -flto)
-    target_link_libraries(qpkg PRIVATE libyaml-cpp.a libboost_filesystem.a quix-qxir quix-parser quix-lexer quix-core)
+    #================== CREATE APPLICATION RELEASE BUILD ================
+    add_executable(qpkg ${QPKG_CXX_SOURCES})
+    target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-parser/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
+    target_compile_options(qpkg PRIVATE -Werror
+                                        -O3
+                                        -g
+                                        -fPIC
+                                        -Wall
+                                        -Wextra
+                                        -Wpedantic
+                                        -Wno-mismatched-tags
+                                        -Wno-gnu-zero-variadic-macro-arguments
+                                        -Wno-error=overlength-strings
+                                        -DQPKG_ID=${QPKG_ID}
+                                        -flto)
+    target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a quix-qxir quix-parser
+                                       quix-lexer quix-core)
     target_link_options(qpkg PRIVATE -flto -static-libgcc -static-libstdc++)
-    add_dependencies(qpkg quix-parser quix-lexer quix-core quix-qxir)
+    add_dependencies(qpkg quix-qxir
+                          quix-parser
+                          quix-lexer
+                          quix-core
+                          yaml-cpp)
+
+    #================== CREATE STATICLIB RELEASE BUILD ================
+    add_library(qpkg-static STATIC ${QPKG_CXX_SOURCES})
+    target_include_directories(qpkg-static PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-parser/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                       ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
+    target_compile_options(qpkg-static PRIVATE -Werror
+                                               -O3
+                                               -g
+                                               -fPIC
+                                               -Wall
+                                               -Wextra
+                                               -Wpedantic
+                                               -Wno-mismatched-tags
+                                               -Wno-gnu-zero-variadic-macro-arguments
+                                               -Wno-error=overlength-strings
+                                               -DQPKG_ID=${QPKG_ID}
+                                               -flto
+                                               -fvisibility=hidden
+                                               -fvisibility-inlines-hidden
+                                               -DQPKG_LIBRARY)
+    target_link_libraries(qpkg-static PRIVATE yaml-cpp
+                                              libboost_filesystem.a
+                                              quix-qxir
+                                              quix-parser
+                                              quix-lexer
+                                              quix-core)
+    target_link_options(qpkg-static PRIVATE -flto
+                                            -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
+    add_dependencies(qpkg-static quix-qxir
+                                 quix-parser
+                                 quix-lexer
+                                 quix-core
+                                 yaml-cpp)
+    set_target_properties(qpkg-static PROPERTIES OUTPUT_NAME qpkg)
+
+    #================== CREATE SHAREDLIB RELEASE BUILD ================
+    add_library(qpkg-shared SHARED ${QPKG_CXX_SOURCES})
+    target_include_directories(qpkg-shared PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-parser/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                       ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
+    target_compile_options(qpkg-shared PRIVATE -Werror
+                                               -O3
+                                               -g
+                                               -fPIC
+                                               -Wall
+                                               -Wextra
+                                               -Wpedantic
+                                               -Wno-mismatched-tags
+                                               -Wno-gnu-zero-variadic-macro-arguments
+                                               -Wno-error=overlength-strings
+                                               -DQPKG_ID=${QPKG_ID}
+                                               -flto
+                                               -fvisibility=hidden
+                                               -fvisibility-inlines-hidden
+                                               -DQPKG_LIBRARY)
+    target_link_libraries(qpkg-shared PRIVATE yaml-cpp
+                                              libboost_filesystem.a
+                                              quix-qxir-shared
+                                              quix-parser-shared
+                                              quix-lexer-shared
+                                              quix-core-shared)
+    target_link_options(qpkg-shared PRIVATE -flto
+                                            -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
+    add_dependencies(qpkg-shared quix-qxir-shared
+                                 quix-parser-shared
+                                 quix-lexer-shared
+                                 quix-core-shared
+                                 yaml-cpp)
+    set_target_properties(qpkg-shared PROPERTIES OUTPUT_NAME qpkg)
 else()
-    target_compile_options(qpkg PRIVATE -DQPKG_ID="undefined")
-    target_link_libraries(qpkg PRIVATE libyaml-cpp.a libboost_filesystem.a quix-qxir quix-parser quix-lexer quix-core -fsanitize=address -fsanitize=undefined)
-    target_link_options(qpkg PRIVATE -static-libgcc -static-libstdc++)
-    add_dependencies(qpkg quix-parser quix-lexer quix-core quix-qxir)
-endif()
+    #================== CREATE APPLICATION DEBUG BUILD ================
+    add_executable(qpkg ${QPKG_CXX_SOURCES})
+    target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-parser/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
+    target_compile_options(qpkg PRIVATE -Werror
+                                        -O3
+                                        -g
+                                        -fPIC
+                                        -Wall
+                                        -Wextra
+                                        -Wpedantic
+                                        -Wno-mismatched-tags
+                                        -Wno-gnu-zero-variadic-macro-arguments
+                                        -Wno-error=overlength-strings
+                                        -DQPKG_ID="undefined"
+                                        -fsanitize=address
+                                        -fsanitize=undefined)
+    target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a quix-qxir quix-parser
+                                       quix-lexer quix-core)
+    target_link_options(qpkg PRIVATE -static-libgcc
+                                     -static-libstdc++
+                                     -fsanitize=address
+                                     -fsanitize=undefined)
+    add_dependencies(qpkg quix-qxir
+                          quix-parser
+                          quix-lexer
+                          quix-core
+                          yaml-cpp)
 
-target_include_directories(qpkg PRIVATE ${CMAKE_SOURCE_DIR}/libquix-core/include
-                                        ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-                                        ${CMAKE_SOURCE_DIR}/libquix-parser/include
-                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
-)
+    #================== CREATE STATICLIB DEBUG BUILD ================
+    add_library(qpkg-static STATIC ${QPKG_CXX_SOURCES})
+    target_include_directories(qpkg-static PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-parser/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                       ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
+    target_compile_options(qpkg-static PRIVATE -Werror
+                                               -O3
+                                               -g
+                                               -fPIC
+                                               -Wall
+                                               -Wextra
+                                               -Wpedantic
+                                               -Wno-mismatched-tags
+                                               -Wno-gnu-zero-variadic-macro-arguments
+                                               -Wno-error=overlength-strings
+                                               -DQPKG_ID="undefined"
+                                               -fvisibility=hidden
+                                               -fvisibility-inlines-hidden
+                                               -DQPKG_LIBRARY
+                                               -fsanitize=address
+                                               -fsanitize=undefined)
+    target_link_libraries(qpkg-static PRIVATE yaml-cpp
+                                              libboost_filesystem.a
+                                              quix-qxir
+                                              quix-parser
+                                              quix-lexer
+                                              quix-core)
+    target_link_options(qpkg-static PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map
+                                            -fsanitize=address
+                                            -fsanitize=undefined)
+    add_dependencies(qpkg-static quix-qxir
+                                 quix-parser
+                                 quix-lexer
+                                 quix-core
+                                 yaml-cpp)
+    set_target_properties(qpkg-static PROPERTIES OUTPUT_NAME qpkg)
 
-if (BUILD_TESTING)
-    add_subdirectory(test)
+    #================== CREATE SHAREDLIB DEBUG BUILD ================
+    add_library(qpkg-shared SHARED ${QPKG_CXX_SOURCES})
+    target_include_directories(qpkg-shared PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-parser/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                       ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
+    target_compile_options(qpkg-shared PRIVATE -Werror
+                                               -O3
+                                               -g
+                                               -fPIC
+                                               -Wall
+                                               -Wextra
+                                               -Wpedantic
+                                               -Wno-mismatched-tags
+                                               -Wno-gnu-zero-variadic-macro-arguments
+                                               -Wno-error=overlength-strings
+                                               -DQPKG_ID="undefined"
+                                               -fvisibility=hidden
+                                               -fvisibility-inlines-hidden
+                                               -DQPKG_LIBRARY
+                                               -fsanitize=address
+                                               -fsanitize=undefined)
+    target_link_libraries(qpkg-shared PRIVATE yaml-cpp
+                                              libboost_filesystem.a
+                                              quix-qxir-shared
+                                              quix-parser-shared
+                                              quix-lexer-shared
+                                              quix-core-shared)
+    target_link_options(qpkg-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map
+                                            -fsanitize=address
+                                            -fsanitize=undefined)
+    add_dependencies(qpkg-shared quix-qxir-shared
+                                 quix-parser-shared
+                                 quix-lexer-shared
+                                 quix-core-shared
+                                 yaml-cpp)
+    set_target_properties(qpkg-shared PROPERTIES OUTPUT_NAME qpkg)
 endif()

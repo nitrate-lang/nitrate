@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g3 -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
+SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQPARSE_ID=${QPARSE_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQPARSE_ID="undefined")
 
@@ -41,6 +41,17 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_link_libraries(quix-parser PRIVATE quix-core quix-lexer libdeflate.a)
   target_link_options(quix-parser PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-parser quix-core quix-lexer)
+
+  #================== CREATE SHAREDLIB DEBUG BUILD ==================
+  add_library(quix-parser-shared SHARED ${CXX_SOURCES})
+  target_include_directories(quix-parser-shared PUBLIC src include
+    ${CMAKE_SOURCE_DIR}/libquix-core/include
+    ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
+  target_compile_options(quix-parser-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
+  target_link_libraries(quix-parser-shared PRIVATE quix-core quix-lexer libdeflate.a)
+  target_link_options(quix-parser-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+  add_dependencies(quix-parser-shared quix-core quix-lexer)
+  set_target_properties(quix-parser-shared PROPERTIES OUTPUT_NAME quix-parser)
 
   add_subdirectory(tests)
   add_subdirectory(fuzzer)

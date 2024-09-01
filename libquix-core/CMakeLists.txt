@@ -17,7 +17,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g3 -fPIC -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-mismatched-tags)
+SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-mismatched-tags)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQCORE_ID=${QCORE_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-unused-parameter -DQCORE_ID="undefined")
 
@@ -31,6 +31,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_include_directories(quix-core PUBLIC src include)
   target_compile_options(quix-core PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-core PRIVATE )
+
+  #================== CREATE SHAREDLIB DEBUG BUILD ==================
+  add_library(quix-core-shared SHARED ${CXX_SOURCES})
+  target_include_directories(quix-core-shared PUBLIC src include)
+  target_compile_options(quix-core-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
+  target_link_libraries(quix-core-shared PRIVATE)
+  set_target_properties(quix-core-shared PROPERTIES OUTPUT_NAME quix-core)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE STATICLIB RELEASE BUILD ================
   add_library(quix-core STATIC ${CXX_SOURCES})

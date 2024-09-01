@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-SET(FLAGS -O3 -g3 -Wall -Wextra -pedantic -Werror -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+SET(FLAGS -O3 -g -Wall -Wextra -pedantic -Werror -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
 
 add_executable(libquix-lexer-fuzzer ${SOURCE})
 target_include_directories(libquix-lexer-fuzzer PUBLIC ../include ${CMAKE_SOURCE_DIR}/libquix-core/include)

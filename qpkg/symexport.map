@@ -1,0 +1,6 @@
+{
+    global:
+        qpkg_*;
+    local:
+        *;
+};
