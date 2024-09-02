@@ -41,6 +41,7 @@
 
 bool qxir::passes::impl::tyinfer(qmodule_t *mod) {
   /// TODO: Implement pass
+  (void)mod;
 
   return true;
 }

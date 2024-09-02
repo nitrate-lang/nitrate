@@ -159,7 +159,7 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
         status = qxir::passes::StdTransform::create()->transform(mod, ss);
 
         /// TODO: Do something with the output stream
-        std::cout << ss.str();
+        // std::cout << ss.str();
       }
     } catch (QError &e) {
       // QError exception is control flow to abort the recursive lowering
@@ -179,6 +179,11 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
      * I don't care about the state of the program, I just want to
      * clean up the resources and return to the trusting user code.
      */
+  }
+
+  if (!status) {
+    mod->getDiag().push(QXIR_AUDIT_CONV,
+                        DiagMessage("Compilation failed", IssueClass::Error, IssueCode::Default));
   }
 
   qxir::current = nullptr;
@@ -307,9 +312,12 @@ static qxir::Tmp *create_simple_call(
 
 qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) {
 #define STD_BINOP(op) qxir::create<qxir::BinExpr>(lhs, rhs, qxir::Op::op)
-#define ASSIGN_BINOP(op)                                                                \
-  qxir::create<qxir::BinExpr>(lhs, qxir::create<qxir::BinExpr>(lhs, rhs, qxir::Op::op), \
-                              qxir::Op::Set)
+#define ASSIGN_BINOP(op)                                                                    \
+  qxir::create<qxir::BinExpr>(                                                              \
+      lhs,                                                                                  \
+      qxir::create<qxir::BinExpr>(static_cast<qxir::Expr *>(qxir_clone(nullptr, lhs)), rhs, \
+                                  qxir::Op::op),                                            \
+      qxir::Op::Set)
 
   switch (op) {
     case qOpPlus: {
@@ -449,7 +457,7 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
       return STD_BINOP(CastAs);
     }
     case qOpIs: {
-      return create_simple_call(s, "__is", {{"lhs", lhs}, {"rhs", rhs}});
+      return create_simple_call(s, "__detail::_is", {{"lhs", lhs}, {"rhs", rhs}});
     }
     case qOpIn: {
       // auto methname = qxir::create<qxir::String>("has");
@@ -505,13 +513,13 @@ qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
     case qOpSizeof: {
       auto bits = qxir::create<qxir::UnExpr>(rhs, qxir::Op::Bitsizeof);
       auto arg = qxir::create<qxir::BinExpr>(bits, qxir::create<qxir::Float>(8), qxir::Op::Slash);
-      return create_simple_call(s, "__ceil", {{"0", arg}});
+      return create_simple_call(s, "std::ceil", {{"0", arg}});
     }
     case qOpAlignof: {
       return STD_UNOP(Alignof);
     }
     case qOpTypeof: {
-      return create_simple_call(s, "__typeof", {{"0", rhs}});
+      return create_simple_call(s, "__detail::type_of", {{"0", rhs}});
     }
     case qOpOffsetof: {
       return STD_UNOP(Offsetof);
@@ -1457,13 +1465,13 @@ namespace qxir {
     /* Produce the function preconditions */
     if ((precond = qconv(s, n->get_precond()))) {
       precond = create<If>(create<UnExpr>(precond, Op::LogicNot),
-                           create_simple_call(s, "__qprecond_fail"), create<VoidTy>());
+                           create_simple_call(s, "__detail::precond_fail"), create<VoidTy>());
     }
 
     /* Produce the function postconditions */
     if ((postcond = qconv(s, n->get_postcond()))) {
       postcond = create<If>(create<UnExpr>(postcond, Op::LogicNot),
-                            create_simple_call(s, "__qpostcond_fail"), create<VoidTy>());
+                            create_simple_call(s, "__detail::postcond_fail"), create<VoidTy>());
     }
 
     { /* Produce the function body */
@@ -1491,7 +1499,7 @@ namespace qxir {
     auto str = memorize(std::string_view(name));
 
     current->getParameterMap()[str] = {};
-    
+
     { /* Produce the function parameters */
       for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
         /**

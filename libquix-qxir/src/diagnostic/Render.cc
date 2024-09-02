@@ -59,6 +59,9 @@ static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
         {IssueCode::DSMissingMod, "-Werror=ds-missing-mod"},
 
         {IssueCode::Redefinition, "-Werror=redefinition"},
+        {IssueCode::UnknownFunction, "-Werror=unknown-function"},
+        {IssueCode::TooManyArguments, "-Werror=too-many-arguments"},
+        {IssueCode::UnknownArgument, "-Werror=unknown-argument"},
     });
 
 ///============================================================================///
@@ -84,10 +87,14 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
     el = qlex_line(lx, msg.end);
     ec = qlex_col(lx, msg.end);
 
-    print_qsizeloc(ss, sl);
-    ss << ":";
-    print_qsizeloc(ss, sc);
-    ss << ": ";
+    if (sl != UINT32_MAX && sc != UINT32_MAX) {
+      print_qsizeloc(ss, sl);
+      ss << ":";
+      print_qsizeloc(ss, sc);
+      ss << ":";
+    }
+
+    ss << " ";
   }
 
   (void)ec;
@@ -111,7 +118,11 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
       break;
   }
 
-  ss << ": " << msg.msg << " [" << issue_code_bimap.left.at(msg.code) << "]";
+  ss << ": " << msg.msg;
+
+  if (msg.code != IssueCode::Default) {
+    ss << " [" << issue_code_bimap.left.at(msg.code) << "]";
+  }
 
   qlex_spanx(
       lx, msg.start, msg.end,
@@ -141,10 +152,14 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
     el = qlex_line(lx, msg.end);
     ec = qlex_col(lx, msg.end);
 
-    print_qsizeloc(ss, sl);
-    ss << ":";
-    print_qsizeloc(ss, sc);
-    ss << ":\x1b[0m ";
+    if (sl != UINT32_MAX && sc != UINT32_MAX) {
+      print_qsizeloc(ss, sl);
+      ss << ":";
+      print_qsizeloc(ss, sc);
+      ss << ":\x1b[0m";
+    }
+
+    ss << " ";
   }
 
   (void)ec;
@@ -152,24 +167,39 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
 
   switch (msg.type) {
     case IssueClass::Debug:
-      ss << "\x1b[1mdebug:\x1b[0m " << msg.msg << " \x1b[39;1m[\x1b[0m\x1b[1m"
-         << issue_code_bimap.left.at(msg.code) << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      ss << "\x1b[1mdebug:\x1b[0m " << msg.msg;
+      if (msg.code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[1m" << issue_code_bimap.left.at(msg.code)
+           << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      }
       break;
     case IssueClass::Info:
-      ss << "\x1b[37;1minfo:\x1b[0m " << msg.msg << " \x1b[39;1m[\x1b[0m\x1b[37;1m"
-         << issue_code_bimap.left.at(msg.code) << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      ss << "\x1b[37;1minfo:\x1b[0m " << msg.msg;
+      if (msg.code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m" << issue_code_bimap.left.at(msg.code)
+           << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      }
       break;
     case IssueClass::Warn:
-      ss << "\x1b[35;1mwarning:\x1b[0m " << msg.msg << " \x1b[39;1m[\x1b[0m\x1b[35;1m"
-         << issue_code_bimap.left.at(msg.code) << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      ss << "\x1b[35;1mwarning:\x1b[0m " << msg.msg;
+      if (msg.code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m" << issue_code_bimap.left.at(msg.code)
+           << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      }
       break;
     case IssueClass::Error:
-      ss << "\x1b[31;1merror:\x1b[0m " << msg.msg << " \x1b[39;1m[\x1b[0m\x1b[31;1m"
-         << issue_code_bimap.left.at(msg.code) << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      ss << "\x1b[31;1merror:\x1b[0m " << msg.msg;
+      if (msg.code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m" << issue_code_bimap.left.at(msg.code)
+           << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      }
       break;
     case IssueClass::FatalError:
-      ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.msg << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m"
-         << issue_code_bimap.left.at(msg.code) << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.msg;
+      if (msg.code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m" << issue_code_bimap.left.at(msg.code)
+           << "\x1b[0m\x1b[39;1m]\x1b[0m";
+      }
       break;
   }
 
@@ -211,7 +241,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * @format <code>
        */
       case QXIR_DIAG_ASCII_ECODE: {
-        handler(std::to_string(static_cast<uint64_t>(msg.code)));
+        handler(std::to_string(static_cast<uint64_t>(msg.code)), msg.type);
         break;
       }
 
@@ -229,7 +259,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
         ss << qlex_col(m_qxir->getLexer(), msg.start) << ":";
         ss << qlex_filename(m_qxir->getLexer());
 
-        handler(ss.str());
+        handler(ss.str(), msg.type);
         break;
       }
 
@@ -243,7 +273,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
         ss << std::to_string(static_cast<uint64_t>(msg.code)) << ":";
         ss << msg.msg;
 
-        handler(ss.str());
+        handler(ss.str(), msg.type);
         break;
       }
 
@@ -257,7 +287,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * color).
        */
       case QXIR_DIAG_NOSTD_TTY_UTF8: {
-        handler(mint_plain_message(msg));
+        handler(mint_plain_message(msg), msg.type);
         break;
       }
 
@@ -266,7 +296,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSI16_UTF8_FULL: {
-        handler(mint_clang16_message(msg));
+        handler(mint_clang16_message(msg), msg.type);
         break;
       }
 
@@ -275,7 +305,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSI256_UTF8_FULL: {
-        handler(mint_clang16_message(msg));
+        handler(mint_clang16_message(msg), msg.type);
         break;
       }
 
@@ -284,12 +314,12 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
-        handler(mint_clang_truecolor_message(msg));
+        handler(mint_clang_truecolor_message(msg), msg.type);
         break;
       }
 
       default: {
-        handler(mint_plain_message(msg));
+        handler(mint_plain_message(msg), msg.type);
         break;
       }
     }
@@ -363,6 +393,12 @@ namespace qxir::diag {
   }
 }  // namespace qxir::diag
 
+static const std::unordered_map<IssueClass, qxir_level_t> issue_class_map = {
+    {IssueClass::Debug, QXIR_LEVEL_DEBUG},      {IssueClass::Info, QXIR_LEVEL_INFO},
+    {IssueClass::Warn, QXIR_LEVEL_WARN},        {IssueClass::Error, QXIR_LEVEL_ERROR},
+    {IssueClass::FatalError, QXIR_LEVEL_FATAL},
+};
+
 LIB_EXPORT size_t qxir_diag_read(qmodule_t *qxir, qxir_audit_ticket_t ticket,
                                  qxir_diag_format_t format, qxir_report_cb cb, uintptr_t data) {
   if (!cb) {
@@ -371,8 +407,8 @@ LIB_EXPORT size_t qxir_diag_read(qmodule_t *qxir, qxir_audit_ticket_t ticket,
 
   auto res = qxir->getDiag().render(
       ticket,
-      [cb, data](std::string_view v) {
-        cb(reinterpret_cast<const uint8_t *>(v.data()), v.size(), data);
+      [cb, data](std::string_view v, IssueClass lvl) {
+        cb(reinterpret_cast<const uint8_t *>(v.data()), v.size(), issue_class_map.at(lvl), data);
       },
       format);
 

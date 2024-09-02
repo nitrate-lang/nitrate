@@ -43,6 +43,7 @@ static std::mutex qxir_modules_mutex;
 
 qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
   m_passes_applied.clear();
+  m_pass_groups_applied.clear();
   m_strings.clear();
   m_diag = std::make_unique<diag::DiagnosticManager>();
   m_diag->set_ctx(this);
@@ -82,11 +83,6 @@ void qmodule_t::setConf(qxir_conf_t *conf) noexcept { m_conf = conf; }
 qxir_conf_t *qmodule_t::getConf() noexcept { return m_conf; }
 
 void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
-
-void qmodule_t::applyPassLabel(const std::string &label) { m_passes_applied.insert(label); }
-bool qmodule_t::hasPassBeenRun(const std::string &label) {
-  return m_passes_applied.contains(label);
-}
 
 std::string_view qmodule_t::internString(std::string_view sv) {
   for (const auto &str : m_strings) {

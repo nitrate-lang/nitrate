@@ -82,8 +82,7 @@ static void seed_passes() {
 
   /* Root pass group */
   PassGroup::register_group("root", {},
-                            {{"g0", DependencyFrequency::Always},
-                             {"g1", DependencyFrequency::Once},
+                            {{"g1", DependencyFrequency::Once},
                              {"g2", DependencyFrequency::Once},
                              {"g3", DependencyFrequency::Once},
                              {"g4", DependencyFrequency::Once},
@@ -106,8 +105,6 @@ const StdTransform* StdTransform::create() {
   thread_local StdTransform ptr;
 
   ptr.m_root = optimize_order({
-      "ds-acyclic",   /* Data structure acyclic verification */
-      "ds-nilchk",    /* Data structure null pointer verification	*/
       "ds-chtype",    /* Data structure child type */
       "ds-resolv",    /* Data structure discovery	*/
       "ns-flatten",   /* Namespace flattening	*/

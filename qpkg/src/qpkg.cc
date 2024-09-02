@@ -122,7 +122,7 @@ namespace argparse_setup {
         .default_value(std::string("."))
         .nargs(1);
 
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
@@ -196,7 +196,7 @@ namespace argparse_setup {
         .nargs(1)
         .scan<'u', uint32_t>();
 
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
@@ -258,14 +258,14 @@ namespace argparse_setup {
   void setup_argparse_clean(ArgumentParser &parser) {
     parser.add_argument("package-src").help("path to package source").nargs(1);
 
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
   }
 
   void setup_argparse_update(ArgumentParser &parser) {
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
@@ -297,7 +297,7 @@ namespace argparse_setup {
   void setup_argparse_install(ArgumentParser &parser) {
     parser.add_argument("src").help("source of package to install").nargs(1);
 
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
@@ -377,7 +377,7 @@ namespace argparse_setup {
         .default_value(std::string("."))
         .nargs(1);
 
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
@@ -429,7 +429,7 @@ namespace argparse_setup {
   void setup_argparse_format(ArgumentParser &parser) {
     parser.add_argument("package-src").help("path to package source").nargs(1);
 
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
@@ -446,7 +446,7 @@ namespace argparse_setup {
   }
 
   void setup_argparse_list(ArgumentParser &parser) {
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
@@ -465,7 +465,7 @@ namespace argparse_setup {
   void setup_argparse_test(ArgumentParser &parser) {
     parser.add_argument("package-name").help("name of package to test").nargs(1);
 
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
@@ -564,7 +564,7 @@ namespace argparse_setup {
       ArgumentParser &parser,
       std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) {
     /*================= CONFIG BASIC =================*/
-    parser.add_argument("-V", "--verbose")
+    parser.add_argument("-v", "--verbose")
         .help("print verbose output")
         .default_value(false)
         .implicit_value(true);
@@ -573,7 +573,7 @@ namespace argparse_setup {
     parser.add_argument("--demangle").help("demangle QUIX symbol names").nargs(1);
 
     /*================= BENCH SUBPARSER =================*/
-    auto bench = std::make_unique<ArgumentParser>("bench");
+    auto bench = std::make_unique<ArgumentParser>("bench", "1.0", default_arguments::help);
 
     bench->add_argument("-n", "--name")
         .choices("lexer", "parser", "quix-ir", "delta-ir", "llvm-ir", "llvm-codegen", "c11-codegen",
@@ -584,22 +584,30 @@ namespace argparse_setup {
         .help("list available benchmarks")
         .default_value(false)
         .implicit_value(true);
+    bench->add_argument("-v", "--verbose")
+        .help("print verbose output")
+        .default_value(false)
+        .implicit_value(true);
 
     subparsers["bench"] = std::move(bench);
 
     /*================= QPARSE SUBPARSER =================*/
-    auto parse = std::make_unique<ArgumentParser>("parse");
+    auto parse = std::make_unique<ArgumentParser>("parse", "1.0", default_arguments::help);
 
     parse->add_argument("source").help("source file to parse").nargs(1);
     parse->add_argument("-o", "--output")
         .help("output file for parse tree")
         .default_value(std::string(""))
         .nargs(1);
+    parse->add_argument("-v", "--verbose")
+        .help("print verbose output")
+        .default_value(false)
+        .implicit_value(true);
 
     subparsers["parse"] = std::move(parse);
 
     /*================= QXIR SUBPARSER =================*/
-    auto qxir = std::make_unique<ArgumentParser>("qxir");
+    auto qxir = std::make_unique<ArgumentParser>("qxir", "1.0", default_arguments::help);
 
     qxir->add_argument("source").help("source file to lower into QXIR").nargs(1);
     qxir->add_argument("-o", "--output")
@@ -610,11 +618,20 @@ namespace argparse_setup {
         .help("optimizations to apply to QXIR")
         .default_value(std::string(""))
         .nargs(1);
+    qxir->add_argument("-v", "--verbose")
+        .help("print verbose output")
+        .default_value(false)
+        .implicit_value(true);
 
     subparsers["qxir"] = std::move(qxir);
 
     /*================= TEST SUBPARSER =================*/
-    auto test = std::make_unique<ArgumentParser>("test");
+    auto test = std::make_unique<ArgumentParser>("test", "1.0", default_arguments::help);
+
+    test->add_argument("-v", "--verbose")
+        .help("print verbose output")
+        .default_value(false)
+        .implicit_value(true);
 
     subparsers["test"] = std::move(test);
 
@@ -1005,8 +1022,6 @@ namespace qpkg::router {
   int run_dev_mode(
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) {
-    core::FormatAdapter::PluginAndInit(parser["--verbose"] == true, g_use_colors);
-
     if (parser.is_subcommand_used("bench")) {
       enum class Benchmark {
         LEXER,
@@ -1020,6 +1035,7 @@ namespace qpkg::router {
       };
 
       auto &bench_parser = *subparsers.at("bench");
+      core::FormatAdapter::PluginAndInit(bench_parser["--verbose"] == true, g_use_colors);
 
       if (bench_parser["--list"] == true) {
         qout << "Available benchmarks:" << std::endl;
@@ -1090,9 +1106,13 @@ namespace qpkg::router {
 
       return 0;
     } else if (parser.is_subcommand_used("test")) {
+      auto &test_parser = *subparsers.at("test");
+      core::FormatAdapter::PluginAndInit(test_parser["--verbose"] == true, g_use_colors);
+
       return dev::test::run_tests();
     } else if (parser.is_subcommand_used("parse")) {
       auto &parse_parser = *subparsers.at("parse");
+      core::FormatAdapter::PluginAndInit(parse_parser["--verbose"] == true, g_use_colors);
 
       std::string source = parse_parser.get<std::string>("source");
       std::string output = parse_parser.get<std::string>("--output");
@@ -1188,10 +1208,12 @@ namespace qpkg::router {
       return 0;
     } else if (parser.is_subcommand_used("qxir")) {
       auto &qxir_parser = *subparsers.at("qxir");
+      core::FormatAdapter::PluginAndInit(qxir_parser["--verbose"] == true, g_use_colors);
 
       std::string source = qxir_parser.get<std::string>("source");
       std::string output = qxir_parser.get<std::string>("--output");
       std::string opts = qxir_parser.get<std::string>("--opts");
+      bool verbose = qxir_parser["--verbose"] == true;
 
       FILE *fp = fopen(source.c_str(), "r");
       if (!fp) {
@@ -1266,14 +1288,16 @@ namespace qpkg::router {
         return 1;
       }
 
+      auto cb = [](const uint8_t *msg, size_t size, qxir_level_t lvl, uintptr_t data) {
+        if (!data && lvl < QXIR_LEVEL_INFO) {
+          return;
+        }
+        qerr << std::string_view((const char *)msg, size) << std::endl;
+      };
+
       if (!qxir_lower(qmod, root, true)) {
-        qxir_diag_read(
-            qmod, QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
-            [](const uint8_t *msg, size_t size, uintptr_t data) {
-              (void)data;
-              qerr << std::string_view((const char *)msg, size) << std::endl;
-            },
-            0);
+        qxir_diag_read(qmod, QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
+                       verbose);
         qxir_free(qmod);
         qxir_conf_free(conf);
         qcore_arena_close(&arena);
@@ -1281,17 +1305,11 @@ namespace qpkg::router {
         qparse_conf_free(pconf);
         qlex_free(lexer);
         fclose(fp);
-        qerr << "Failed to lower source to QXIR" << std::endl;
         return 1;
       }
 
-      qxir_diag_read(
-          qmod, QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
-          [](const uint8_t *msg, size_t size, uintptr_t data) {
-            (void)data;
-            qerr << std::string_view((const char *)msg, size) << std::endl;
-          },
-          0);
+      qxir_diag_read(qmod, QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
+                     verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
@@ -1406,17 +1424,17 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
   }
 
   /* Setup argument parser instances */
-  static thread_local ArgumentParser init_parser("init");
-  static thread_local ArgumentParser build_parser("build");
-  static thread_local ArgumentParser clean_parser("clean");
-  static thread_local ArgumentParser update_parser("update");
-  static thread_local ArgumentParser install_parser("install");
-  static thread_local ArgumentParser doc_parser("doc");
-  static thread_local ArgumentParser format_parser("format");
-  static thread_local ArgumentParser list_parser("list");
-  static thread_local ArgumentParser test_parser("test");
+  static thread_local ArgumentParser init_parser("init", "1.0", default_arguments::help);
+  static thread_local ArgumentParser build_parser("build", "1.0", default_arguments::help);
+  static thread_local ArgumentParser clean_parser("clean", "1.0", default_arguments::help);
+  static thread_local ArgumentParser update_parser("update", "1.0", default_arguments::help);
+  static thread_local ArgumentParser install_parser("install", "1.0", default_arguments::help);
+  static thread_local ArgumentParser doc_parser("doc", "1.0", default_arguments::help);
+  static thread_local ArgumentParser format_parser("format", "1.0", default_arguments::help);
+  static thread_local ArgumentParser list_parser("list", "1.0", default_arguments::help);
+  static thread_local ArgumentParser test_parser("test", "1.0", default_arguments::help);
 #if QPKG_DEV_TOOLS
-  static thread_local ArgumentParser dev_parser("dev");
+  static thread_local ArgumentParser dev_parser("dev", "1.0", default_arguments::help);
   static thread_local std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
       dev_subparsers;
 #endif

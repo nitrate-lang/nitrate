@@ -1,0 +1,11 @@
+CompileFlags:
+  Add: [-std=gnu++20,
+        -I/usr/include/c++/13/,
+        -I/usr/include/x86_64-linux-gnu/c++/13,
+        -Wno-mismatched-tags,
+        -Wall,
+        -Wextra,
+        -Werror,
+        -pedantic,
+        -Wno-gnu-zero-variadic-macro-arguments,
+        -Wno-unused-parameter]

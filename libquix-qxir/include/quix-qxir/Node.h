@@ -418,7 +418,7 @@ namespace qxir {
     QCLASS_REFLECT()
 
   public:
-    I16Ty() : Type(QIR_NODE_I16_TY) {};
+    I16Ty() : Type(QIR_NODE_I16_TY){};
   };
 
   class I32Ty final : public Type {

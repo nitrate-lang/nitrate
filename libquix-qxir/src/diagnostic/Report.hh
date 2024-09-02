@@ -66,9 +66,12 @@ namespace qxir::diag {
     DSMissingMod,
 
     Redefinition,
+    UnknownFunction,
+    TooManyArguments,
+    UnknownArgument,
   };
 
-  typedef std::function<void(std::string_view)> DiagnosticMessageHandler;
+  typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
 
   struct DiagMessage {
     std::string msg;
@@ -170,10 +173,10 @@ namespace qxir::diag {
                         diag::IssueClass::Error, diag::IssueCode::Redefinition,      \
                         cur->getLoc().first, cur->getLoc().second));
 
-#define NO_MATCHING_FUNCTION(_funcname)                                                         \
-  mod->getDiag().push(QXIR_AUDIT_CONV,                                                          \
-                      diag::DiagMessage("No matching function named " + std::string(_funcname), \
-                                        diag::IssueClass::Error, diag::IssueCode::Redefinition, \
+#define NO_MATCHING_FUNCTION(_funcname)                                                            \
+  mod->getDiag().push(QXIR_AUDIT_CONV,                                                             \
+                      diag::DiagMessage("No matching function named " + std::string(_funcname),    \
+                                        diag::IssueClass::Error, diag::IssueCode::UnknownFunction, \
                                         cur->getLoc().first, cur->getLoc().second));
 
 #define NO_MATCHING_PARAMETER(_funcname, _paramname)                                               \
@@ -181,14 +184,14 @@ namespace qxir::diag {
       QXIR_AUDIT_CONV,                                                                             \
       diag::DiagMessage("Call to function " + std::string(_funcname) +                             \
                             " has no matching default parameter named " + std::string(_paramname), \
-                        diag::IssueClass::Error, diag::IssueCode::Redefinition,                    \
+                        diag::IssueClass::Error, diag::IssueCode::UnknownArgument,                 \
                         cur->getLoc().first, cur->getLoc().second));
 
 #define TOO_MANY_ARGUMENTS(_funcname)                                                        \
   mod->getDiag().push(                                                                       \
       QXIR_AUDIT_CONV,                                                                       \
       diag::DiagMessage("Too many arguments provided to function " + std::string(_funcname), \
-                        diag::IssueClass::Error, diag::IssueCode::Redefinition,              \
+                        diag::IssueClass::Error, diag::IssueCode::TooManyArguments,          \
                         cur->getLoc().first, cur->getLoc().second));
 
 };  // namespace qxir::diag

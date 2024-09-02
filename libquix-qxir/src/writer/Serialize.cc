@@ -187,8 +187,9 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
     case QIR_NODE_UNEXPR: {
       ss << "(";
       ss << n->as<UnExpr>()->getOp();
+      ss << "(";
       recurse(n->as<UnExpr>()->getExpr());
-      ss << ")";
+      ss << "))";
       break;
     }
     case QIR_NODE_POST_UNEXPR: {

@@ -41,6 +41,7 @@
 
 bool qxir::passes::impl::nm_premangle(qmodule_t *mod) {
   /// TODO: Implement pass
+  (void)mod;
 
   return true;
 }

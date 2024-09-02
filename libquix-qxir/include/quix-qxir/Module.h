@@ -162,12 +162,13 @@ namespace qxir {
 }  // namespace qxir
 
 class qmodule_t {
-  std::unordered_set<std::string> m_passes_applied;
-  std::unordered_set<std::string> m_pass_groups_applied;
+  std::vector<std::string> m_passes_applied;
+  std::vector<std::string> m_pass_groups_applied;
   std::unordered_set<std::string> m_strings;
   boost::bimap<std::string_view, qxir::Fn *> functions;
   boost::bimap<std::string_view, qxir::Local *> variables;
-  std::unordered_map<std::string_view, std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
+  std::unordered_map<std::string_view,
+                     std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
       m_parameters;
   std::unique_ptr<qxir::diag::DiagnosticManager> m_diag;
   std::unique_ptr<qxir::TypeManager> m_type_mgr;
@@ -219,20 +220,23 @@ public:
    * @brief Make it known that a pass has been applied to the module.
    * @param label Pass label
    */
-  void applyPassLabel(const std::string &label);
-
-  const std::unordered_set<std::string> &getPassesApplied() const { return m_passes_applied; }
+  void applyPassLabel(const std::string &label) { m_passes_applied.push_back(label); }
+  const auto &getPassesApplied() const { return m_passes_applied; }
 
   /**
    * @brief Check if a pass has been applied to the module.
    * @param label Pass label
    */
-  bool hasPassBeenRun(const std::string &label);
+  bool hasPassBeenRun(const std::string &label) {
+    return std::find(m_passes_applied.begin(), m_passes_applied.end(), label) !=
+           m_passes_applied.end();
+  }
 
   bool hasPassGroupBeenRun(const std::string &label) {
-    return m_pass_groups_applied.contains(label);
+    return std::find(m_pass_groups_applied.begin(), m_pass_groups_applied.end(), label) !=
+           m_pass_groups_applied.end();
   }
-  void applyPassGroupLabel(const std::string &label) { m_pass_groups_applied.insert(label); }
+  void applyPassGroupLabel(const std::string &label) { m_pass_groups_applied.push_back(label); }
 
   const std::string getName() const { return m_module_name; }
   void setName(const std::string &name) { m_module_name = name; }

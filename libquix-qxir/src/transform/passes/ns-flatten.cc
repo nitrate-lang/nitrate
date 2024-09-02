@@ -41,6 +41,7 @@
 
 bool qxir::passes::impl::ns_flatten(qmodule_t *mod) {
   /// TODO: Implement pass
+  (void)mod;
 
   return true;
 }
