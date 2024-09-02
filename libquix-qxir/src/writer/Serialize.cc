@@ -34,9 +34,11 @@
 #include <libdeflate.h>
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/Lib.h>
 
+#include <chrono>
 #include <cstring>
+#include <iomanip>
 #include <sstream>
 
 #include "core/LibMacro.h"
@@ -387,9 +389,12 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
       ss << "(";
       for (auto it = n->as<Fn>()->getParams().begin(); it != n->as<Fn>()->getParams().end(); ++it) {
         recurse(*it);
-        if (std::next(it) != n->as<Fn>()->getParams().end()) {
+        if (std::next(it) != n->as<Fn>()->getParams().end() || n->as<Fn>()->isVariadic()) {
           ss << ",";
         }
+      }
+      if (n->as<Fn>()->isVariadic()) {
+        ss << "...";
       }
       ss << ") ";
       recurse(n->as<Fn>()->getBody());
@@ -562,36 +567,46 @@ static char *qxir_repr(qxir_node_t *node, bool minify, size_t indent, qcore_aren
   ConvState state = {0, indent, minify};
   qmodule_t *mod = static_cast<Expr *>(node)->getModule();
 
-  { /* Print the module name */
-    ss << "; Module: " << mod->getName() << "\n";
-  }
+  if (!minify) {
+    { /* Print the module name */
+      ss << "; Module: " << mod->getName() << "\n";
+    }
 
-  { /* Print the passes applied */
-    ss << "; Passes: [";
-    size_t i = 0;
-    for (auto it = mod->getPassesApplied().begin(); it != mod->getPassesApplied().end(); ++it) {
-      ss << *it;
+    { /* Print the passes applied */
+      ss << "; Passes: [";
+      size_t i = 0;
+      for (auto it = mod->getPassesApplied().begin(); it != mod->getPassesApplied().end(); ++it) {
+        ss << *it;
 
-      if (std::next(it) != mod->getPassesApplied().end()) {
-        ss << ",";
+        if (std::next(it) != mod->getPassesApplied().end()) {
+          ss << ",";
 
-        if (!minify) {
-          ss << " ";
-          if (i % 6 == 0 && i != 0) {
-            ss << "\n;          ";
+          if (!minify) {
+            ss << " ";
+            if (i % 6 == 0 && i != 0) {
+              ss << "\n;          ";
+            }
           }
         }
+
+        i++;
       }
-
-      i++;
+      ss << "]\n";
     }
-    ss << "]";
 
-    if (minify) {
-      ss << "\n";
-    } else {
-      ss << "\n\n";
+    { /* Print other metadata */
+      auto now = std::chrono::system_clock::now();
+      auto in_time_t = std::chrono::system_clock::to_time_t(now);
+      std::stringstream tmp_ss;
+      tmp_ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%d %X");
+      std::string datestamp = tmp_ss.str();
+
+      ss << "; Timestamp: " << datestamp << "\n";
+      ss << "; Compiler: " << qxir_lib_version() << "\n";
+      ss << "; Copyright (C) " + datestamp.substr(0, 4) + " Wesley Jones\n";
     }
+
+    ss << "\n\n";
   }
 
   /* Serialize the AST recursively */

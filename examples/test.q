@@ -1,9 +1,7 @@
-subsystem app {
-    fn foo() {
+fn printn(fmt: string = "") {
 
-    }
+}
 
-    fn main() {
-        foo();
-    }
+fn main() {
+    printn("Hello, World!");
 }

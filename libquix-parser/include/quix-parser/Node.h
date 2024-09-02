@@ -152,7 +152,7 @@ qlex_loc_t qparse_endpos(qparse_node_t *node);
 /// END: ABSTRACT SYNTAX TREE DATA TYPES
 ///=============================================================================
 
-#if (defined(__cplusplus) && defined(QPARSE_USE_CPP_API)) || defined(__QPARSE_IMPL__)
+#if (defined(__cplusplus)) || defined(__QPARSE_IMPL__)
 
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>

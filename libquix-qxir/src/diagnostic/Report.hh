@@ -32,8 +32,6 @@
 #ifndef __QUIX_QXIR_REPORT_H__
 #define __QUIX_QXIR_REPORT_H__
 
-#define QPARSE_USE_CPP_API
-
 #include <quix-lexer/Token.h>
 #include <quix-parser/Node.h>
 #include <quix-qxir/IR.h>
@@ -177,6 +175,21 @@ namespace qxir::diag {
                       diag::DiagMessage("No matching function named " + std::string(_funcname), \
                                         diag::IssueClass::Error, diag::IssueCode::Redefinition, \
                                         cur->getLoc().first, cur->getLoc().second));
+
+#define NO_MATCHING_PARAMETER(_funcname, _paramname)                                               \
+  mod->getDiag().push(                                                                             \
+      QXIR_AUDIT_CONV,                                                                             \
+      diag::DiagMessage("Call to function " + std::string(_funcname) +                             \
+                            " has no matching default parameter named " + std::string(_paramname), \
+                        diag::IssueClass::Error, diag::IssueCode::Redefinition,                    \
+                        cur->getLoc().first, cur->getLoc().second));
+
+#define TOO_MANY_ARGUMENTS(_funcname)                                                        \
+  mod->getDiag().push(                                                                       \
+      QXIR_AUDIT_CONV,                                                                       \
+      diag::DiagMessage("Too many arguments provided to function " + std::string(_funcname), \
+                        diag::IssueClass::Error, diag::IssueCode::Redefinition,              \
+                        cur->getLoc().first, cur->getLoc().second));
 
 };  // namespace qxir::diag
 

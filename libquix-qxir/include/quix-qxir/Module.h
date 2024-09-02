@@ -51,7 +51,6 @@ void qxir_set_conf(qmodule_t *mod, qxir_conf_t *conf);
 
 #if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
 
-#define QPARSE_USE_CPP_API
 #include <quix-core/Arena.h>
 #include <quix-parser/Node.h>
 
@@ -168,7 +167,7 @@ class qmodule_t {
   std::unordered_set<std::string> m_strings;
   boost::bimap<std::string_view, qxir::Fn *> functions;
   boost::bimap<std::string_view, qxir::Local *> variables;
-  std::unordered_map<std::string, std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
+  std::unordered_map<std::string_view, std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
       m_parameters;
   std::unique_ptr<qxir::diag::DiagnosticManager> m_diag;
   std::unique_ptr<qxir::TypeManager> m_type_mgr;

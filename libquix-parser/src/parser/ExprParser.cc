@@ -114,7 +114,7 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t
       return nullptr;
     }
 
-    call_args.push_back({"__" + std::to_string(pos_arg_count++), arg});
+    call_args.push_back({std::to_string(pos_arg_count++), arg});
 
     goto comma;
   }

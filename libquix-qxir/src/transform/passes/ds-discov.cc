@@ -72,23 +72,79 @@ bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
       case TmpType::CALL: {
         const auto &info = std::get<DirectCallArgsTmpNodeCradle>(cur->getData());
         const Expr *base = std::get<0>(info);
-        const auto &args = std::get<1>(info);
+        const auto &provided_args = std::get<1>(info);
 
         if (base->getKind() == QIR_NODE_IDENT) { /* Direct call */
-          const std::string_view &name = base->as<Ident>()->getName();
+          const std::string_view &funcname = base->as<Ident>()->getName();
 
-          if (mod->getFunctions().left.count(name) == 0) {
-            NO_MATCHING_FUNCTION(name);
-            error = true;
-            return IterOp::Proceed;
+          { /* Function does not exist */
+            if (mod->getFunctions().left.count(funcname) == 0) {
+              NO_MATCHING_FUNCTION(funcname);
+              error = true;
+              return IterOp::Proceed;
+            }
           }
 
+          qcore_assert(mod->getParameterMap().contains(funcname));
+
+          std::unordered_map<std::string_view, std::pair<size_t, Expr *>> named_args_map;
+          Fn *target = mod->getFunctions().left.at(funcname);
+          const auto &params = mod->getParameterMap().at(funcname);
           DirectCallArgs new_args;
+          new_args.resize(std::max(provided_args.size(), target->getParams().size()));
+          size_t pos_i = 0;
 
-          /// TODO: convert args to DirectCallArgs
-          (void)args;
+          qcore_assert(params.size() == target->getParams().size());
 
-          *_cur = create<DirectCall>(mod->getFunctions().left.at(name), std::move(new_args));
+          for (size_t i = 0; i < params.size(); i++) {
+            named_args_map[std::get<0>(params[i])] = {i, std::get<2>(params[i])};
+          }
+
+          { /* Check for too many arguments */
+            if (provided_args.size() > params.size() && !target->isVariadic()) {
+              TOO_MANY_ARGUMENTS(funcname);
+              error = true;
+              return IterOp::Proceed;
+            }
+          }
+
+          { /* Allocate arguments into function parameters */
+            for (auto &[name, arg] : provided_args) {
+              if (std::isdigit(name.at(0))) { /* positional argument */
+                new_args.at(pos_i) = arg;
+                pos_i++;
+              } else { /* named argument */
+                if (!named_args_map.contains(name)) {
+                  std::cout << "No matching parameter: " << name << std::endl;
+                  NO_MATCHING_PARAMETER(funcname, name);
+                  error = true;
+                  return IterOp::Proceed;
+                }
+
+                new_args[named_args_map[name].first] = arg;
+                if (named_args_map[name].first <= pos_i) {
+                  pos_i++;
+                }
+              }
+            }
+
+            for (size_t i = 0; i < new_args.size(); i++) {
+              if (new_args[i]) {
+                continue;
+              }
+
+              Expr *_default = std::get<2>(params.at(i));
+              if (_default) {
+                new_args[i] = _default;
+              } else {
+                NO_MATCHING_PARAMETER(funcname, std::get<0>(params.at(i)));
+                error = true;
+                return IterOp::Proceed;
+              }
+            }
+          }
+
+          *_cur = create<DirectCall>(target, std::move(new_args));
         } else { /* Indirect call */
           /// TODO: Learn what an indirect call [actually] is.
           /// Do I need lookup tables? How does this apply to non-native builds?

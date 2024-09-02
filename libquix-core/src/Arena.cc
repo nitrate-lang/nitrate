@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-// #define QCORE_NDEBUG
+#define QCORE_NDEBUG
 
 #include <errno.h>
 #include <quix-core/Arena.h>

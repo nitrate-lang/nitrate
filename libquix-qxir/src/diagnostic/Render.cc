@@ -30,7 +30,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define __QXIR_IMPL__
-#define QPARSE_USE_CPP_API
 
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>

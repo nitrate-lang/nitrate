@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-SET(FLAGS -O3 -g -Wall -Wextra -pedantic -Werror -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+SET(FLAGS -O3 -g -Wall -Wextra -pedantic -Werror -Wno-error=mismatched-tags -Wno-error=gnu-zero-variadic-macro-arguments -Wno-gnu-zero-variadic-macro-arguments -Wno-mismatched-tags -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
 
 add_executable(libquix-parser-fuzzer ${SOURCE})
 target_include_directories(libquix-parser-fuzzer PUBLIC ../include ${CMAKE_SOURCE_DIR}/libquix-core/include)

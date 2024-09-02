@@ -30,7 +30,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define __QUIX_IMPL__
-#define QPARSE_USE_CPP_API
 #define QXIR_USE_CPP_API
 
 #include <quix-core/Error.h>
@@ -1489,7 +1488,10 @@ namespace qxir {
     }
 
     auto name = s.cur_named(n->get_name());
+    auto str = memorize(std::string_view(name));
 
+    current->getParameterMap()[str] = {};
+    
     { /* Produce the function parameters */
       for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
         /**
@@ -1516,12 +1518,13 @@ namespace qxir {
         }
 
         params.push_back(type);
-        current->getParameterMap()[name].push_back({s.cur_named(std::get<0>(*it)), type, def});
+        current->getParameterMap()[str].push_back({std::string(std::get<0>(*it)), type, def});
       }
     }
 
-    auto str = memorize(std::string_view(name));
     auto obj = create<Fn>(str, std::move(params), body);
+
+    obj->setVariadic(fty->is_variadic());
 
     current->getFunctions().insert({str, obj});
 

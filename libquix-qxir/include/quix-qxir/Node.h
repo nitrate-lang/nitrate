@@ -1067,10 +1067,11 @@ namespace qxir {
     std::string_view m_name;
     Params m_params;
     Seq *m_body;
+    bool m_variadic;
 
   public:
-    Fn(std::string_view name, const Params &params, Seq *body)
-        : Expr(QIR_NODE_FN), m_name(name), m_params(params), m_body(body) {}
+    Fn(std::string_view name, const Params &params, Seq *body, bool variadic = false)
+        : Expr(QIR_NODE_FN), m_name(name), m_params(params), m_body(body), m_variadic(variadic) {}
 
     std::string_view getName() noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
@@ -1082,6 +1083,9 @@ namespace qxir {
 
     Seq *getBody() noexcept { return m_body; }
     Seq *setBody(Seq *body) noexcept { return m_body = body; }
+
+    bool isVariadic() noexcept { return m_variadic; }
+    void setVariadic(bool variadic) noexcept { m_variadic = variadic; }
   };
 
   class Asm final : public Expr {
