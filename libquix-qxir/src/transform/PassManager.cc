@@ -41,7 +41,7 @@ using namespace qxir::passes;
 
 static void seed_passes() {
   Pass::register_pass("ds-acyclic", impl::ds_acyclic);
-  Pass::register_pass("ds-nilchk", impl::ds_nilchk);
+  Pass::register_pass("ds-nullchk", impl::ds_nullchk);
   Pass::register_pass("ds-chtype", impl::ds_chtype);
   Pass::register_pass("ds-resolv", impl::ds_resolv);
   Pass::register_pass("ns-flatten", impl::ns_flatten);
@@ -50,7 +50,7 @@ static void seed_passes() {
   Pass::register_pass("nm-premangle", impl::nm_premangle);
 
   /* Read-only passes */
-  PassGroup::register_group("g0", {"ds-acyclic", "ds-nilchk"}, {});
+  PassGroup::register_group("g0", {"ds-acyclic", "ds-nullchk"}, {});
   PassGroup::register_group("g1", {"ds-chtype"}, {{"g0", DependencyFrequency::Always}});
   PassGroup::register_group(
       "g2", {"ds-resolv"},

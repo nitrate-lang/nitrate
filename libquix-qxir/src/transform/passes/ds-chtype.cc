@@ -64,6 +64,10 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
 
     Expr *cur = *_cur;
 
+    if (cur->is(QIR_NODE_TMP)) {
+      return IterOp::Proceed;
+    }
+
     switch (par->getKind()) {
       case QIR_NODE_BINEXPR: {
         break;
@@ -398,8 +402,8 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       case QIR_NODE_FN_TY: {
         FnTy *fnty = par->as<FnTy>();
 
-        if (fnty->getReturn()->isType()) {
-          EPUT("Function return type is a type node");
+        if (!fnty->getReturn()->isType()) {
+          EPUT("Function return type is not a type node");
         }
 
         for (const auto &p : fnty->getParams()) {

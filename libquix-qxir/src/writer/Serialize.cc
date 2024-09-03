@@ -351,11 +351,11 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
       break;
     }
     case QIR_NODE_FOREACH: {
-      ss << "form (" << n->as<Form>()->getIdxIdent() << "; ";
-      ss << n->as<Form>()->getValIdent() << "; ";
-      recurse(n->as<Form>()->getExpr());
+      ss << "foreach (" << n->as<Foreach>()->getIdxIdent() << "; ";
+      ss << n->as<Foreach>()->getValIdent() << "; ";
+      recurse(n->as<Foreach>()->getExpr());
       ss << ") ";
-      recurse(n->as<Form>()->getBody());
+      recurse(n->as<Foreach>()->getBody());
       break;
     }
     case QIR_NODE_CASE: {

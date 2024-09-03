@@ -38,7 +38,7 @@ namespace qxir::passes::impl {
 #define DECLARE_QIR_PASS(name) bool name(qmodule_t *mod)
 
   DECLARE_QIR_PASS(ds_acyclic);
-  DECLARE_QIR_PASS(ds_nilchk);
+  DECLARE_QIR_PASS(ds_nullchk);
   DECLARE_QIR_PASS(ds_chtype);
   DECLARE_QIR_PASS(ds_resolv);
   DECLARE_QIR_PASS(ns_flatten);

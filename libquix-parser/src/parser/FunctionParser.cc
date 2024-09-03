@@ -355,11 +355,11 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   ftype->set_variadic(is_variadic);
   ftype->set_foreign(prop._foreign);
   ftype->set_noexcept(prop._noexcept);
-  ftype->set_return_ty(ret_type);
   fndecl->set_type(ftype);
 
-  if (tok.is<qPuncSemi>()) {
-    qlex_next(rd);
+  if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncSemi>()) {
+    ftype->set_return_ty(VoidTy::get());
+
     *node = fndecl;
     return true;
   }
@@ -372,11 +372,10 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
 
     ftype->set_return_ty(ret_type);
-    fndecl->set_type(ftype);
 
     tok = qlex_peek(rd);
-    if (tok.is<qPuncSemi>()) {
-      qlex_next(rd);
+    if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncSemi>()) {
+      ftype->set_return_ty(VoidTy::get());
       *node = fndecl;
       return true;
     }
@@ -392,9 +391,8 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       return false;
     }
 
-    if (!fndecl->get_type()) {
+    if (!ftype->get_return_ty()) {
       ftype->set_return_ty(VoidTy::get());
-      fndecl->set_type(ftype);
     }
 
     fndecl = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
@@ -513,9 +511,8 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       tok = qlex_peek(rd);
     }
 
-    if (!fndecl->get_type()) {
+    if (!ftype->get_return_ty()) {
       ftype->set_return_ty(VoidTy::get());
-      fndecl->set_type(ftype);
     }
 
     fndecl = FnDef::get(fndecl, fnbody, req_in, req_out, captures);

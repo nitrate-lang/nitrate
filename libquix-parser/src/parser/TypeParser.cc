@@ -107,7 +107,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
         inner = fn->as<FnDecl>()->get_type();
 
         /* Push a semicolon to account for the above usage. */
-        qlex_push(rd, qlex_tok_t(qPunc, qPuncSemi));
+        // qlex_push(rd, qlex_tok_t(qPunc, qPuncSemi));
 
         goto type_suffix;
       }
