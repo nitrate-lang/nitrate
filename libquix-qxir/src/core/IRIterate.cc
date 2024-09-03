@@ -91,8 +91,8 @@ namespace qxir::detail {
         children.push_back(reinterpret_cast<Expr **>(&base->as<Alloc>()->m_type));
         break;
       }
-      case QIR_NODE_DCALL: {
-        for (Expr *&child : base->as<DirectCall>()->m_args) {
+      case QIR_NODE_CALL: {
+        for (Expr *&child : base->as<Call>()->m_args) {
           children.push_back(&child);
         }
         break;
@@ -118,8 +118,8 @@ namespace qxir::detail {
         // Don't print the m_what
         break;
       }
-      case QIR_NODE_EXPORT: {
-        children.push_back(&base->as<Export>()->m_value);
+      case QIR_NODE_EXTERN: {
+        children.push_back(&base->as<Extern>()->m_value);
         break;
       }
       case QIR_NODE_LOCAL: {

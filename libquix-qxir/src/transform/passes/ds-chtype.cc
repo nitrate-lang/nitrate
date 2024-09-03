@@ -107,9 +107,15 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         break;
       }
 
-      case QIR_NODE_DCALL: {
+      case QIR_NODE_CALL: {
         if (cur->isType()) {
-          EPUT("DirectCall child node is a type node");
+          EPUT("Call child node is a type node");
+        }
+        Call *calln = par->as<Call>();
+        auto tkind = calln->getTarget()->getKind();
+
+        if (tkind != QIR_NODE_LOCAL && tkind != QIR_NODE_FN) {
+          EPUT("Call target is not an ident, local, or function node");
         }
 
         break;
@@ -134,15 +140,15 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         break;
       }
 
-      case QIR_NODE_EXPORT: {
+      case QIR_NODE_EXTERN: {
         if (cur->isType()) {
-          EPUT("Export child node is a type node");
+          EPUT("Extern child node is a type node");
         }
         break;
       }
 
       case QIR_NODE_LOCAL: {
-        if (cur->isType()) {
+        if (cur->isType() && !cur->is(QIR_NODE_FN_TY)) {
           EPUT("Local child node is a type node");
         }
         break;

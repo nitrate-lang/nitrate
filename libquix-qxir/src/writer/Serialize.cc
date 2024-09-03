@@ -228,13 +228,19 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
       recurse(n->as<Alloc>()->getType());
       break;
     }
-    case QIR_NODE_DCALL: {
-      ss << n->as<DirectCall>()->getFn()->getName();
+    case QIR_NODE_CALL: {
+      auto tkind = n->as<Call>()->getTarget()->getKind();
+      if (tkind == QIR_NODE_LOCAL) {
+        ss << n->as<Call>()->getTarget()->as<Local>()->getName();
+      } else if (tkind == QIR_NODE_FN) {
+        ss << n->as<Call>()->getTarget()->as<Fn>()->getName();
+      } else {
+        recurse(n->as<Call>()->getTarget());
+      }
       ss << "(";
-      for (auto it = n->as<DirectCall>()->getArgs().begin();
-           it != n->as<DirectCall>()->getArgs().end(); ++it) {
+      for (auto it = n->as<Call>()->getArgs().begin(); it != n->as<Call>()->getArgs().end(); ++it) {
         recurse(*it);
-        if (std::next(it) != n->as<DirectCall>()->getArgs().end()) {
+        if (std::next(it) != n->as<Call>()->getArgs().end()) {
           ss << ",";
         }
       }
@@ -286,11 +292,9 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
       ss << n->as<Ident>()->getName();
       break;
     }
-    case QIR_NODE_EXPORT: {
-      ss << "export[" << n->as<Export>()->getAbiName() << "] ";
-      ss << n->as<Export>()->getName();
-      ss << " = ";
-      recurse(n->as<Export>()->getValue());
+    case QIR_NODE_EXTERN: {
+      ss << "extern " << escape_string(n->as<Extern>()->getAbiName()) << " ";
+      recurse(n->as<Extern>()->getValue());
       break;
     }
     case QIR_NODE_LOCAL: {
@@ -537,12 +541,16 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
     }
     case QIR_NODE_FN_TY: {
       ss << "fn (";
+      bool variadic = n->as<FnTy>()->getAttrs().contains(FnAttr::Variadic);
       for (auto it = n->as<FnTy>()->getParams().begin(); it != n->as<FnTy>()->getParams().end();
            ++it) {
         recurse(*it);
-        if (std::next(it) != n->as<FnTy>()->getParams().end()) {
+        if (std::next(it) != n->as<FnTy>()->getParams().end() || variadic) {
           ss << ",";
         }
+      }
+      if (variadic) {
+        ss << "...";
       }
       ss << "): ";
       recurse(n->as<FnTy>()->getReturn());

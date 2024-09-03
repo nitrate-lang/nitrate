@@ -139,12 +139,12 @@ namespace qxir {
   class String;
   class List;
   class Alloc;
-  class DirectCall;
+  class Call;
   class Seq;
   class Async;
   class Index;
   class Ident;
-  class Export;
+  class Extern;
   class Local;
   class Ret;
   class Brk;
@@ -165,7 +165,7 @@ class qmodule_t {
   std::vector<std::string> m_passes_applied;
   std::vector<std::string> m_pass_groups_applied;
   std::unordered_set<std::string> m_strings;
-  boost::bimap<std::string_view, qxir::Fn *> functions;
+  boost::bimap<std::string_view, std::pair<qxir::FnTy *, qxir::Expr *>> functions;
   boost::bimap<std::string_view, qxir::Local *> variables;
   std::unordered_map<std::string_view,
                      std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>

@@ -157,9 +157,6 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
       if (status) {
         std::stringstream ss;
         status = qxir::passes::StdTransform::create()->transform(mod, ss);
-
-        /// TODO: Do something with the output stream
-        // std::cout << ss.str();
       }
     } catch (QError &e) {
       // QError exception is control flow to abort the recursive lowering
@@ -302,7 +299,7 @@ static qxir::Tmp *create_simple_call(
     std::vector<std::pair<std::string_view, qxir::Expr *>,
                 qxir::Arena<std::pair<std::string_view, qxir::Expr *>>>
         args = {}) {
-  qxir::DirectCallArgsTmpNodeCradle datapack;
+  qxir::CallArgsTmpNodeCradle datapack;
 
   std::get<0>(datapack) = qxir::create<qxir::Ident>(memorize(name));
   std::get<1>(datapack) = std::move(args);
@@ -462,7 +459,7 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
     case qOpIn: {
       // auto methname = qxir::create<qxir::String>("has");
       // auto method = qxir::create<qxir::Index>(rhs, methname);
-      // return qxir::create<qxir::DirectCall>(method, qxir::DirectCallArgs({lhs}));
+      // return qxir::create<qxir::Call>(method, qxir::CallArgs({lhs}));
       qcore_implement("qOpIn");
     }
     case qOpRange: {
@@ -733,7 +730,7 @@ namespace qxir {
       throw QError();
     }
 
-    DirectCallArgsTmpNodeCradle datapack;
+    CallArgsTmpNodeCradle datapack;
     for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
       auto arg = qconv(s, it->second);
       if (!arg) {
@@ -1354,7 +1351,10 @@ namespace qxir {
     }
 
     FnAttrs attrs;
-    /// TODO: Function attributes
+
+    if (n->is_variadic()) {
+      attrs.insert(FnAttr::Variadic);
+    }
 
     return create<FnTy>(std::move(params), ret, std::move(attrs));
   }
@@ -1398,9 +1398,57 @@ namespace qxir {
   }
 
   static Expr *qconv_fndecl(ConvState &s, const qparse::FnDecl *n) {
-    /// TODO: fndecl
+    Params params;
+    qparse::FuncTy *fty = n->get_type();
 
-    throw QError();
+    auto name = s.cur_named(n->get_name());
+    auto str = memorize(std::string_view(name));
+
+    current->getParameterMap()[str] = {};
+
+    { /* Produce the function parameters */
+      for (auto it = fty->get_params().begin(); it != fty->get_params().end(); ++it) {
+        /**
+         * Parameter properties:
+         * 1. Name - All parameters have a name.
+         * 2. Type - All parameters have a type.
+         * 3. Default - Optional, if the parameter has a default value.
+         * 4. Position - All parameters have a position.
+         */
+
+        Type *type = qconv(s, std::get<1>(*it))->asType();
+        if (!type) {
+          badtree(n, "qparse::FnDecl::get_type() == nullptr");
+          throw QError();
+        }
+
+        Expr *def = nullptr;
+        if (std::get<2>(*it)) {
+          def = qconv(s, std::get<2>(*it));
+          if (!def) {
+            badtree(n, "qparse::FnDecl::get_type() == nullptr");
+            throw QError();
+          }
+        }
+
+        params.push_back(type);
+        current->getParameterMap()[str].push_back({std::string(std::get<0>(*it)), type, def});
+      }
+    }
+
+    // auto obj = create<Fn>(str, std::move(params), nullptr, fty->is_variadic());
+
+    auto fnty = qconv(s, fty);
+    if (!fnty) {
+      badtree(n, "qparse::FnDecl::get_type() == nullptr");
+      throw QError();
+    }
+
+    Local *local = create<Local>(str, fnty);
+
+    current->getFunctions().insert({str, {fnty->as<FnTy>(), local}});
+
+    return local;
   }
 
   static Expr *qconv_struct(ConvState &s, const qparse::StructDef *n) {
@@ -1530,11 +1578,15 @@ namespace qxir {
       }
     }
 
-    auto obj = create<Fn>(str, std::move(params), body);
+    auto fnty = qconv(s, fty);
+    if (!fnty) {
+      badtree(n, "qparse::FnDef::get_type() == nullptr");
+      throw QError();
+    }
 
-    obj->setVariadic(fty->is_variadic());
+    auto obj = create<Fn>(str, std::move(params), body, fty->is_variadic());
 
-    current->getFunctions().insert({str, obj});
+    current->getFunctions().insert({str, {fnty->as<FnTy>(), obj}});
 
     return obj;
   }
@@ -1583,30 +1635,43 @@ namespace qxir {
      * sequence under a common ABI.
      */
 
-    static thread_local size_t name_ctr = 0;
-
-    SeqItems items;
-
     if (!n->get_body()) {
       badtree(n, "qparse::ExportDecl::get_body() == nullptr");
       throw QError();
     }
 
-    for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
-         ++it) {
-      auto item = qconv(s, *it);
+    std::string_view abi_name;
+
+    if (n->get_abi_name().empty()) {
+      abi_name = "std";
+    } else {
+      abi_name = memorize(n->get_abi_name());
+    }
+
+    if (n->get_body()->get_items().size() == 1) {
+      auto item = qconv(s, n->get_body()->get_items().front());
       if (!item) {
         badtree(n, "qparse::ExportDecl::get_body() vector contains nullptr");
         throw QError();
       }
 
-      items.push_back(item);
+      return create<Extern>(item, abi_name);
+    } else {
+      SeqItems items;
+
+      for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
+           ++it) {
+        auto item = qconv(s, *it);
+        if (!item) {
+          badtree(n, "qparse::ExportDecl::get_body() vector contains nullptr");
+          throw QError();
+        }
+
+        items.push_back(item);
+      }
+
+      return create<Extern>(create<Seq>(std::move(items)), abi_name);
     }
-
-    Seq *seq = create<Seq>(std::move(items));
-    std::string name = std::string("__pub") + std::to_string(name_ctr++);
-
-    return create<Export>(memorize(std::string_view(name)), seq, memorize(n->get_abi_name()));
   }
 
   static Expr *qconv_composite_field(ConvState &s, const qparse::CompositeField *n) {
@@ -2512,13 +2577,13 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       out = create<Alloc>(clone(static_cast<Alloc *>(in)->getAllocType())->asType());
       break;
     }
-    case QIR_NODE_DCALL: {
-      DirectCall *n = static_cast<DirectCall *>(in);
-      DirectCallArgs args;
+    case QIR_NODE_CALL: {
+      Call *n = static_cast<Call *>(in);
+      CallArgs args;
       for (auto arg : n->getArgs()) {
         args.push_back(clone(arg));
       }
-      out = create<DirectCall>(clone(n->getFn())->as<Fn>(), std::move(args));
+      out = create<Call>(clone(n->getTarget()), std::move(args));
       break;
     }
     case QIR_NODE_SEQ: {
@@ -2546,9 +2611,9 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       out = create<Ident>(memorize(static_cast<Ident *>(in)->getName()));
       break;
     }
-    case QIR_NODE_EXPORT: {
-      Export *n = static_cast<Export *>(in);
-      out = create<Export>(memorize(n->getName()), clone(n->getValue()));
+    case QIR_NODE_EXTERN: {
+      Extern *n = static_cast<Extern *>(in);
+      out = create<Extern>(clone(n->getValue()), memorize(n->getAbiName()));
       break;
     }
     case QIR_NODE_LOCAL: {

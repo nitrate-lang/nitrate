@@ -69,19 +69,19 @@ CPP_EXPORT uint32_t Expr::getKindSize() const noexcept {
   { typeid(__type).hash_code(), sizeof(__type) }
 
   static const std::unordered_map<size_t, uint32_t> sizes = {
-      SIZEOF_ROW(BinExpr),    SIZEOF_ROW(UnExpr),   SIZEOF_ROW(PostUnExpr), SIZEOF_ROW(Int),
-      SIZEOF_ROW(Float),      SIZEOF_ROW(String),   SIZEOF_ROW(List),       SIZEOF_ROW(Alloc),
-      SIZEOF_ROW(DirectCall), SIZEOF_ROW(Seq),      SIZEOF_ROW(Async),      SIZEOF_ROW(Index),
-      SIZEOF_ROW(Ident),      SIZEOF_ROW(Export),   SIZEOF_ROW(Local),      SIZEOF_ROW(Ret),
-      SIZEOF_ROW(Brk),        SIZEOF_ROW(Cont),     SIZEOF_ROW(If),         SIZEOF_ROW(While),
-      SIZEOF_ROW(For),        SIZEOF_ROW(Form),     SIZEOF_ROW(Foreach),    SIZEOF_ROW(Case),
-      SIZEOF_ROW(Switch),     SIZEOF_ROW(Fn),       SIZEOF_ROW(Asm),        SIZEOF_ROW(U1Ty),
-      SIZEOF_ROW(U8Ty),       SIZEOF_ROW(U16Ty),    SIZEOF_ROW(U32Ty),      SIZEOF_ROW(U64Ty),
-      SIZEOF_ROW(U128Ty),     SIZEOF_ROW(I8Ty),     SIZEOF_ROW(I16Ty),      SIZEOF_ROW(I32Ty),
-      SIZEOF_ROW(I64Ty),      SIZEOF_ROW(I128Ty),   SIZEOF_ROW(F16Ty),      SIZEOF_ROW(F32Ty),
-      SIZEOF_ROW(F64Ty),      SIZEOF_ROW(F128Ty),   SIZEOF_ROW(VoidTy),     SIZEOF_ROW(PtrTy),
-      SIZEOF_ROW(OpaqueTy),   SIZEOF_ROW(StringTy), SIZEOF_ROW(StructTy),   SIZEOF_ROW(UnionTy),
-      SIZEOF_ROW(ArrayTy),    SIZEOF_ROW(ListTy),   SIZEOF_ROW(IntrinTy),   SIZEOF_ROW(FnTy),
+      SIZEOF_ROW(BinExpr),  SIZEOF_ROW(UnExpr),   SIZEOF_ROW(PostUnExpr), SIZEOF_ROW(Int),
+      SIZEOF_ROW(Float),    SIZEOF_ROW(String),   SIZEOF_ROW(List),       SIZEOF_ROW(Alloc),
+      SIZEOF_ROW(Call),     SIZEOF_ROW(Seq),      SIZEOF_ROW(Async),      SIZEOF_ROW(Index),
+      SIZEOF_ROW(Ident),    SIZEOF_ROW(Extern),   SIZEOF_ROW(Local),      SIZEOF_ROW(Ret),
+      SIZEOF_ROW(Brk),      SIZEOF_ROW(Cont),     SIZEOF_ROW(If),         SIZEOF_ROW(While),
+      SIZEOF_ROW(For),      SIZEOF_ROW(Form),     SIZEOF_ROW(Foreach),    SIZEOF_ROW(Case),
+      SIZEOF_ROW(Switch),   SIZEOF_ROW(Fn),       SIZEOF_ROW(Asm),        SIZEOF_ROW(U1Ty),
+      SIZEOF_ROW(U8Ty),     SIZEOF_ROW(U16Ty),    SIZEOF_ROW(U32Ty),      SIZEOF_ROW(U64Ty),
+      SIZEOF_ROW(U128Ty),   SIZEOF_ROW(I8Ty),     SIZEOF_ROW(I16Ty),      SIZEOF_ROW(I32Ty),
+      SIZEOF_ROW(I64Ty),    SIZEOF_ROW(I128Ty),   SIZEOF_ROW(F16Ty),      SIZEOF_ROW(F32Ty),
+      SIZEOF_ROW(F64Ty),    SIZEOF_ROW(F128Ty),   SIZEOF_ROW(VoidTy),     SIZEOF_ROW(PtrTy),
+      SIZEOF_ROW(OpaqueTy), SIZEOF_ROW(StringTy), SIZEOF_ROW(StructTy),   SIZEOF_ROW(UnionTy),
+      SIZEOF_ROW(ArrayTy),  SIZEOF_ROW(ListTy),   SIZEOF_ROW(IntrinTy),   SIZEOF_ROW(FnTy),
       SIZEOF_ROW(Tmp),
   };
 
@@ -102,8 +102,8 @@ CPP_EXPORT const char *Expr::getKindName() const noexcept {
   static const std::unordered_map<qxir_ty_t, const char *> names = {
       NAMEOF_ROW(BINEXPR),   NAMEOF_ROW(UNEXPR),    NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(INT),
       NAMEOF_ROW(FLOAT),     NAMEOF_ROW(STRING),    NAMEOF_ROW(LIST),        NAMEOF_ROW(ALLOC),
-      NAMEOF_ROW(DCALL),     NAMEOF_ROW(SEQ),       NAMEOF_ROW(ASYNC),       NAMEOF_ROW(INDEX),
-      NAMEOF_ROW(IDENT),     NAMEOF_ROW(EXPORT),    NAMEOF_ROW(LOCAL),       NAMEOF_ROW(RET),
+      NAMEOF_ROW(CALL),      NAMEOF_ROW(SEQ),       NAMEOF_ROW(ASYNC),       NAMEOF_ROW(INDEX),
+      NAMEOF_ROW(IDENT),     NAMEOF_ROW(EXTERN),    NAMEOF_ROW(LOCAL),       NAMEOF_ROW(RET),
       NAMEOF_ROW(BRK),       NAMEOF_ROW(CONT),      NAMEOF_ROW(IF),          NAMEOF_ROW(WHILE),
       NAMEOF_ROW(FOR),       NAMEOF_ROW(FORM),      NAMEOF_ROW(FOREACH),     NAMEOF_ROW(CASE),
       NAMEOF_ROW(SWITCH),    NAMEOF_ROW(FN),        NAMEOF_ROW(ASM),         NAMEOF_ROW(U1_TY),
@@ -218,9 +218,9 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_ALLOC: {
       return as<Alloc>()->m_type->cmp_eq(other->as<Alloc>()->m_type);
     }
-    case QIR_NODE_DCALL: {
-      auto a = as<DirectCall>();
-      auto b = other->as<DirectCall>();
+    case QIR_NODE_CALL: {
+      auto a = as<Call>();
+      auto b = other->as<Call>();
       if (!a->m_iref->cmp_eq(b->m_iref)) {
         return false;
       }
@@ -274,13 +274,10 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_IDENT: {
       return as<Ident>()->m_name == other->as<Ident>()->m_name;
     }
-    case QIR_NODE_EXPORT: {
-      auto a = as<Export>();
-      auto b = other->as<Export>();
+    case QIR_NODE_EXTERN: {
+      auto a = as<Extern>();
+      auto b = other->as<Extern>();
       if (a->m_abi_name != b->m_abi_name) {
-        return false;
-      }
-      if (a->m_name != b->m_name) {
         return false;
       }
       return a->m_value->cmp_eq(b->m_value);
@@ -643,7 +640,7 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
       case QIR_NODE_ALLOC: {
         break;
       }
-      case QIR_NODE_DCALL: {
+      case QIR_NODE_CALL: {
         break;
       }
       case QIR_NODE_SEQ: {
@@ -659,9 +656,8 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         MIXIN_STRING(cur->as<Ident>()->m_name);
         break;
       }
-      case QIR_NODE_EXPORT: {
-        MIXIN_STRING(cur->as<Export>()->m_name);
-        MIXIN_STRING(cur->as<Export>()->m_abi_name);
+      case QIR_NODE_EXTERN: {
+        MIXIN_STRING(cur->as<Extern>()->m_abi_name);
         break;
       }
       case QIR_NODE_LOCAL: {
@@ -785,7 +781,7 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_FN_TY: {
-        std::set<FnTag> tags;
+        std::set<FnAttr> tags;
         for (auto &tag : cur->as<FnTy>()->m_attrs) {
           tags.insert(tag);
         }
@@ -796,7 +792,7 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
       }
       case QIR_NODE_TMP: {
         /*
-          typedef std::variant<LetTmpNodeCradle, DirectCallArgsTmpNodeCradle, FieldTmpNodeCradle,
+          typedef std::variant<LetTmpNodeCradle, CallArgsTmpNodeCradle, FieldTmpNodeCradle,
           std::string_view> TmpNodeCradle;
         */
         MIXIN_PRIMITIVE(cur->as<Tmp>()->m_type);

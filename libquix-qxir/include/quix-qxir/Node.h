@@ -576,12 +576,13 @@ namespace qxir {
     std::string_view getName() noexcept { return m_name; }
   };
 
-  enum class FnTag {
-    NONE,
+  enum class FnAttr {
+    Variadic,
   };
 
   typedef std::vector<Type *, Arena<Type *>> FnParams;
-  typedef std::unordered_set<FnTag, std::hash<FnTag>, std::equal_to<FnTag>, Arena<FnTag>> FnAttrs;
+  typedef std::unordered_set<FnAttr, std::hash<FnAttr>, std::equal_to<FnAttr>, Arena<FnAttr>>
+      FnAttrs;
 
   class FnTy final : public Type {
     QCLASS_REFLECT()
@@ -731,24 +732,23 @@ namespace qxir {
     size_t getSizeBytes() noexcept { return m_type->getSizeBytes(); }
   };
 
-  typedef std::vector<Expr *, Arena<Expr *>> DirectCallArgs;
+  typedef std::vector<Expr *, Arena<Expr *>> CallArgs;
 
-  class DirectCall final : public Expr {
+  class Call final : public Expr {
     QCLASS_REFLECT()
 
-    Fn *m_iref; /* Possibly cyclic reference to the function. */
-    DirectCallArgs m_args;
+    Expr *m_iref; /* Possibly cyclic reference to the target. */
+    CallArgs m_args;
 
   public:
-    DirectCall(Fn *ref, const DirectCallArgs &args)
-        : Expr(QIR_NODE_DCALL), m_iref(ref), m_args(args) {}
+    Call(Expr *ref, const CallArgs &args) : Expr(QIR_NODE_CALL), m_iref(ref), m_args(args) {}
 
-    Fn *getFn() noexcept { return m_iref; }
-    Fn *setFn(Fn *ref) noexcept { return m_iref = ref; }
+    Expr *getTarget() noexcept { return m_iref; }
+    Expr *setTarget(Expr *ref) noexcept { return m_iref = ref; }
 
-    const DirectCallArgs &getArgs() const noexcept { return m_args; }
-    DirectCallArgs &getArgs() noexcept { return m_args; }
-    void setArgs(const DirectCallArgs &args) noexcept { m_args = args; }
+    const CallArgs &getArgs() const noexcept { return m_args; }
+    CallArgs &getArgs() noexcept { return m_args; }
+    void setArgs(const CallArgs &args) noexcept { m_args = args; }
 
     size_t getNumArgs() noexcept { return m_args.size(); }
   };
@@ -818,19 +818,15 @@ namespace qxir {
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
   };
 
-  class Export final : public Expr {
+  class Extern final : public Expr {
     QCLASS_REFLECT()
 
-    std::string_view m_name;
     std::string_view m_abi_name;
     Expr *m_value;
 
   public:
-    Export(std::string_view name, Expr *value, std::string_view abi_name = "")
-        : Expr(QIR_NODE_EXPORT), m_name(name), m_abi_name(abi_name), m_value(value) {}
-
-    std::string_view getName() const noexcept { return m_name; }
-    std::string_view setName(std::string_view name) noexcept { return m_name = name; }
+    Extern(Expr *value, std::string_view abi_name = "")
+        : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getAbiName() const noexcept { return m_abi_name; }
     std::string_view setAbiName(std::string_view abi_name) noexcept {
@@ -1117,11 +1113,11 @@ namespace qxir {
 
   typedef std::tuple<Expr *, std::vector<std::pair<std::string_view, Expr *>,
                                          Arena<std::pair<std::string_view, Expr *>>>>
-      DirectCallArgsTmpNodeCradle;
+      CallArgsTmpNodeCradle;
 
   typedef std::tuple<Expr *, std::string_view> FieldTmpNodeCradle;
 
-  typedef std::variant<LetTmpNodeCradle, DirectCallArgsTmpNodeCradle, FieldTmpNodeCradle,
+  typedef std::variant<LetTmpNodeCradle, CallArgsTmpNodeCradle, FieldTmpNodeCradle,
                        std::string_view>
       TmpNodeCradle;
 

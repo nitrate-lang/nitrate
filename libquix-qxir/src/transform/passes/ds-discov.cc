@@ -70,7 +70,7 @@ bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
       }
 
       case TmpType::CALL: {
-        const auto &info = std::get<DirectCallArgsTmpNodeCradle>(cur->getData());
+        const auto &info = std::get<CallArgsTmpNodeCradle>(cur->getData());
         const Expr *base = std::get<0>(info);
         const auto &provided_args = std::get<1>(info);
 
@@ -86,22 +86,24 @@ bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
           }
 
           qcore_assert(mod->getParameterMap().contains(funcname));
+          Expr *target = mod->getFunctions().left.at(funcname).second;
+          FnTy *ft = mod->getFunctions().left.at(funcname).first;
 
           std::unordered_map<std::string_view, std::pair<size_t, Expr *>> named_args_map;
-          Fn *target = mod->getFunctions().left.at(funcname);
           const auto &params = mod->getParameterMap().at(funcname);
-          DirectCallArgs new_args;
-          new_args.resize(std::max(provided_args.size(), target->getParams().size()));
+          CallArgs new_args;
+          new_args.resize(std::max(provided_args.size(), ft->getParams().size()));
           size_t pos_i = 0;
 
-          qcore_assert(params.size() == target->getParams().size());
+          qcore_assert(params.size() == ft->getParams().size());
 
           for (size_t i = 0; i < params.size(); i++) {
             named_args_map[std::get<0>(params[i])] = {i, std::get<2>(params[i])};
           }
 
           { /* Check for too many arguments */
-            if (provided_args.size() > params.size() && !target->isVariadic()) {
+            if (provided_args.size() > params.size() &&
+                !ft->getAttrs().contains(FnAttr::Variadic)) {
               TOO_MANY_ARGUMENTS(funcname);
               error = true;
               return IterOp::Proceed;
@@ -144,11 +146,7 @@ bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
             }
           }
 
-          *_cur = create<DirectCall>(target, std::move(new_args));
-        } else { /* Indirect call */
-          /// TODO: Learn what an indirect call [actually] is.
-          /// Do I need lookup tables? How does this apply to non-native builds?
-          qcore_panic("Indirect calls are not yet supported.");
+          *_cur = create<Call>(target, std::move(new_args));
         }
         break;
       }
