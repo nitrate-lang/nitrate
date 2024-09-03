@@ -1101,8 +1101,6 @@ namespace qxir {
     CALL,
     ENUM,
     LET,
-    VAR,
-    CONST,
     FIELD,
     NAMED_TYPE,
 

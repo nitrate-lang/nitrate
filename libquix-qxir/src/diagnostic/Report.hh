@@ -194,6 +194,12 @@ namespace qxir::diag {
                         diag::IssueClass::Error, diag::IssueCode::TooManyArguments,          \
                         cur->getLoc().first, cur->getLoc().second));
 
+#define NO_MATCHING_TYPE(_typename)                                                          \
+  mod->getDiag().push(QXIR_AUDIT_CONV,                                                       \
+                      diag::DiagMessage("No matching type named " + std::string(_typename),  \
+                                        diag::IssueClass::Error, diag::IssueCode::DSBadType, \
+                                        cur->getLoc().first, cur->getLoc().second));
+
 };  // namespace qxir::diag
 
 #endif  // __QUIX_QXIR_REPORT_H__

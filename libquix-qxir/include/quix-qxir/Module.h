@@ -170,6 +170,7 @@ class qmodule_t {
   std::unordered_map<std::string_view,
                      std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
       m_parameters;
+  std::unordered_map<std::string_view, qxir::Type *> m_typedef_map;
   std::unique_ptr<qxir::diag::DiagnosticManager> m_diag;
   std::unique_ptr<qxir::TypeManager> m_type_mgr;
   qxir::TargetInfo m_target_info;
@@ -244,6 +245,7 @@ public:
   auto &getFunctions() { return functions; }
   auto &getVariables() { return variables; }
   auto &getParameterMap() { return m_parameters; }
+  auto &getTypeMap() { return m_typedef_map; }
 
   /**
    * @brief Intern a string.

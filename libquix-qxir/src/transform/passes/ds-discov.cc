@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <string_view>
 #define QXIR_USE_CPP_API
 
 #include <quix-qxir/Node.h>
@@ -161,23 +162,21 @@ bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
         break;
       }
 
-      case TmpType::VAR: {
-        /// TODO:
-        break;
-      }
-
-      case TmpType::CONST: {
-        /// TODO:
-        break;
-      }
-
       case TmpType::FIELD: {
         /// TODO:
         break;
       }
 
       case TmpType::NAMED_TYPE: {
-        /// TODO:
+        const auto &name = std::get<std::string_view>(cur->as<Tmp>()->getData());
+
+        if (!mod->getTypeMap().contains(name)) {
+          NO_MATCHING_TYPE(name);
+          error = true;
+          break;
+        }
+
+        *_cur = mod->getTypeMap().at(name);
         break;
       }
 

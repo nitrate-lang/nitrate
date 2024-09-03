@@ -53,7 +53,6 @@ using namespace qxir::diag;
 
 struct ConvState {
   bool inside_function = false;
-  std::unordered_map<std::string, qxir::Type *> typedef_map;
   std::string ns_prefix;
 
   std::string cur_named(std::string_view suffix) const {
@@ -1389,8 +1388,9 @@ namespace qxir {
      * @brief Memorize a typedef declaration which will be used later for type resolution.
      * @details This node will resolve to type void.
      */
-
-    auto name = s.cur_named(n->get_name());
+    
+    auto str = s.cur_named(n->get_name());
+    auto name = memorize(std::string_view(str));
 
     auto type = qconv(s, n->get_type());
     if (!type) {
@@ -1398,7 +1398,7 @@ namespace qxir {
       throw QError();
     }
 
-    s.typedef_map[std::move(name)] = type->asType();
+    current->getTypeMap()[name] = type->asType();
 
     return create<VoidTy>();
   }
