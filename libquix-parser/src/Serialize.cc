@@ -361,9 +361,9 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_MUT_TY: {
+    case QAST_NODE_REF_TY: {
       OBJECT_BEGIN("Mut");
-      OBJECT_SUB(n->as<MutTy>()->get_item());
+      OBJECT_SUB(n->as<RefTy>()->get_item());
       OBJECT_END();
       break;
     }

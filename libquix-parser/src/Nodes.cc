@@ -79,7 +79,7 @@ LIB_EXPORT const char *Node::type_name(qparse_ty_t type) {
       NAMEOF_ROW(SET_TY),      NAMEOF_ROW(MAP_TY),
       NAMEOF_ROW(TUPLE_TY),    NAMEOF_ROW(RESULT_TY),
       NAMEOF_ROW(ARRAY_TY),    NAMEOF_ROW(ENUM_TY),
-      NAMEOF_ROW(MUT_TY),      NAMEOF_ROW(STRUCT_TY),
+      NAMEOF_ROW(REF_TY),      NAMEOF_ROW(STRUCT_TY),
       NAMEOF_ROW(GROUP_TY),    NAMEOF_ROW(REGION_TY),
       NAMEOF_ROW(UNION_TY),    NAMEOF_ROW(FN_TY),
       NAMEOF_ROW(UNEXPR),      NAMEOF_ROW(BINEXPR),
@@ -132,7 +132,7 @@ LIB_EXPORT uint32_t Node::this_sizeof() const {
       SIZEOF_ROW(VoidTy),       SIZEOF_ROW(StringTy),      SIZEOF_ROW(PtrTy),
       SIZEOF_ROW(OpaqueTy),     SIZEOF_ROW(VectorTy),      SIZEOF_ROW(SetTy),
       SIZEOF_ROW(MapTy),        SIZEOF_ROW(TupleTy),       SIZEOF_ROW(OptionalTy),
-      SIZEOF_ROW(ArrayTy),      SIZEOF_ROW(EnumTy),        SIZEOF_ROW(MutTy),
+      SIZEOF_ROW(ArrayTy),      SIZEOF_ROW(EnumTy),        SIZEOF_ROW(RefTy),
       SIZEOF_ROW(StructTy),     SIZEOF_ROW(GroupTy),       SIZEOF_ROW(RegionTy),
       SIZEOF_ROW(UnionTy),      SIZEOF_ROW(FuncTy),        SIZEOF_ROW(UnaryExpr),
       SIZEOF_ROW(BinExpr),      SIZEOF_ROW(PostUnaryExpr), SIZEOF_ROW(TernaryExpr),
@@ -200,7 +200,7 @@ LIB_EXPORT qparse_ty_t Node::this_typeid() const {
       TYPEID_ROW(OptionalTy, RESULT_TY),
       TYPEID_ROW(ArrayTy, ARRAY_TY),
       TYPEID_ROW(EnumTy, ENUM_TY),
-      TYPEID_ROW(MutTy, MUT_TY),
+      TYPEID_ROW(RefTy, REF_TY),
       TYPEID_ROW(StructTy, STRUCT_TY),
       TYPEID_ROW(GroupTy, GROUP_TY),
       TYPEID_ROW(RegionTy, REGION_TY),
@@ -272,7 +272,7 @@ LIB_EXPORT const char *Node::this_nameof() const { return type_name(this_typeid(
 LIB_EXPORT bool Node::is_type() const {
   switch (this_typeid()) {
     case QAST_NODE_TYPE:
-    case QAST_NODE_MUT_TY:
+    case QAST_NODE_REF_TY:
     case QAST_NODE_U1_TY:
     case QAST_NODE_U8_TY:
     case QAST_NODE_U16_TY:
@@ -420,8 +420,8 @@ LIB_EXPORT std::string Node::to_string(bool minify, bool binary_repr) const {
 ///=============================================================================
 
 LIB_EXPORT bool Type::is_primitive() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_primitive();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_primitive();
   }
 
   switch (this_typeid()) {
@@ -446,64 +446,64 @@ LIB_EXPORT bool Type::is_primitive() const {
 }
 
 LIB_EXPORT bool Type::is_array() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_array();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_array();
   }
 
   return this_typeid() == QAST_NODE_ARRAY_TY;
 }
 
 LIB_EXPORT bool Type::is_vector() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_vector();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_vector();
   }
 
   return this_typeid() == QAST_NODE_VECTOR_TY;
 }
 
 LIB_EXPORT bool Type::is_tuple() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_tuple();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_tuple();
   }
 
   return this_typeid() == QAST_NODE_TUPLE_TY;
 }
 
 LIB_EXPORT bool Type::is_set() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_set();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_set();
   }
 
   return this_typeid() == QAST_NODE_SET_TY;
 }
 
 LIB_EXPORT bool Type::is_map() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_map();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_map();
   }
 
   return this_typeid() == QAST_NODE_MAP_TY;
 }
 
 LIB_EXPORT bool Type::is_pointer() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_pointer();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_pointer();
   }
 
   return this_typeid() == QAST_NODE_PTR_TY;
 }
 
 LIB_EXPORT bool Type::is_function() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_function();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_function();
   }
 
   return this_typeid() == QAST_NODE_FN_TY;
 }
 
 LIB_EXPORT bool Type::is_composite() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_composite();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_composite();
   }
 
   switch (this_typeid()) {
@@ -523,16 +523,16 @@ LIB_EXPORT bool Type::is_composite() const {
 }
 
 LIB_EXPORT bool Type::is_union() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_union();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_union();
   }
 
   return this_typeid() == QAST_NODE_UNION_TY;
 }
 
 LIB_EXPORT bool Type::is_numeric() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_numeric();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_numeric();
   }
 
   switch (this_typeid()) {
@@ -556,8 +556,8 @@ LIB_EXPORT bool Type::is_numeric() const {
 }
 
 LIB_EXPORT bool Type::is_integral() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_integral();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_integral();
   }
 
   switch (this_typeid()) {
@@ -579,8 +579,8 @@ LIB_EXPORT bool Type::is_integral() const {
 }
 
 LIB_EXPORT bool Type::is_floating_point() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_floating_point();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_floating_point();
   }
 
   switch (this_typeid()) {
@@ -593,8 +593,8 @@ LIB_EXPORT bool Type::is_floating_point() const {
 }
 
 LIB_EXPORT bool Type::is_signed() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_signed();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_signed();
   }
 
   switch (this_typeid()) {
@@ -612,8 +612,8 @@ LIB_EXPORT bool Type::is_signed() const {
 }
 
 LIB_EXPORT bool Type::is_unsigned() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_unsigned();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_unsigned();
   }
 
   switch (this_typeid()) {
@@ -630,30 +630,28 @@ LIB_EXPORT bool Type::is_unsigned() const {
 }
 
 LIB_EXPORT bool Type::is_void() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_void();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_void();
   }
 
   return this_typeid() == QAST_NODE_VOID_TY;
 }
 
 LIB_EXPORT bool Type::is_bool() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_bool();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_bool();
   }
 
   return this_typeid() == QAST_NODE_U1_TY;
 }
 
-LIB_EXPORT bool Type::is_mutable() const { return this_typeid() == QAST_NODE_MUT_TY; }
-
-LIB_EXPORT bool Type::is_const() const { return !is_mutable(); }
+LIB_EXPORT bool Type::is_ref() const { return this_typeid() == QAST_NODE_REF_TY; }
 
 LIB_EXPORT bool Type::is_volatile() const { return m_volatile; }
 
 LIB_EXPORT bool Type::is_ptr_to(const Type *type) const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_ptr_to(type);
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_ptr_to(type);
   }
 
   if (!is_pointer()) {
@@ -661,97 +659,16 @@ LIB_EXPORT bool Type::is_ptr_to(const Type *type) const {
   }
 
   Type *item = as<PtrTy>()->get_item();
-  while (item->is<MutTy>()) {
-    item = item->as<MutTy>()->get_item();
+  while (item->is<RefTy>()) {
+    item = item->as<RefTy>()->get_item();
   }
 
   return item->is(type->this_typeid());
-}
-
-LIB_EXPORT bool Type::is_mut_ptr_to(const Type *type) const {
-  if (!is<MutTy>()) {
-    return false;
-  }
-
-  return as<MutTy>()->get_item()->is_ptr_to(type);
-}
-
-LIB_EXPORT bool Type::is_const_ptr_to(const Type *type) const {
-  if (is<MutTy>()) {
-    return false;
-  }
-
-  return is_ptr_to(type);
-}
-
-LIB_EXPORT bool Type::is_ptr_to_mut(const Type *type) const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_ptr_to_mut(type);
-  }
-
-  if (!is_pointer()) {
-    return false;
-  }
-
-  Type *item = as<PtrTy>()->get_item();
-  if (!item->is<MutTy>()) {
-    return false;
-  }
-
-  while (item->is<MutTy>()) {
-    item = item->as<MutTy>()->get_item();
-  }
-
-  return item->is(type->this_typeid());
-}
-
-LIB_EXPORT bool Type::is_ptr_to_const(const Type *type) const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_ptr_to_const(type);
-  }
-
-  if (!is_pointer()) {
-    return false;
-  }
-
-  return as<PtrTy>()->get_item()->is(type->this_typeid());
-}
-
-LIB_EXPORT bool Type::is_mut_ptr_to_mut(const Type *type) const {
-  if (!is<MutTy>()) {
-    return false;
-  }
-
-  return as<MutTy>()->get_item()->is_ptr_to_mut(type);
-}
-
-LIB_EXPORT bool Type::is_mut_ptr_to_const(const Type *type) const {
-  if (!is<MutTy>()) {
-    return false;
-  }
-
-  return as<MutTy>()->get_item()->is_ptr_to_const(type);
-}
-
-LIB_EXPORT bool Type::is_const_ptr_to_mut(const Type *type) const {
-  if (is<MutTy>()) {
-    return false;
-  }
-
-  return is_ptr_to_mut(type);
-}
-
-LIB_EXPORT bool Type::is_const_ptr_to_const(const Type *type) const {
-  if (is<MutTy>()) {
-    return false;
-  }
-
-  return is_ptr_to_const(type);
 }
 
 LIB_EXPORT bool Type::is_string() const {
-  if (is<MutTy>()) {
-    return as<MutTy>()->get_item()->is_string();
+  if (is<RefTy>()) {
+    return as<RefTy>()->get_item()->is_string();
   }
 
   return this_typeid() == QAST_NODE_STRING_TY;
@@ -1421,27 +1338,27 @@ EnumTy *EnumTy::clone_impl() const {
   return EnumTy::get(m_name, memtype);
 }
 
-bool MutTy::verify_impl(std::ostream &os) const {
+bool RefTy::verify_impl(std::ostream &os) const {
   if (!m_item) {
-    os << "MutTy: item type is NULL\n";
+    os << "RefTy: item type is NULL\n";
     return false;
   }
 
   if (!m_item->verify(os)) {
-    os << "MutTy: item type is invalid\n";
+    os << "RefTy: item type is invalid\n";
     return false;
   }
 
   return true;
 }
 
-void MutTy::canonicalize_impl() {
+void RefTy::canonicalize_impl() {
   if (m_item) {
     m_item->canonicalize();
   }
 }
 
-void MutTy::print_impl(std::ostream &os, bool debug) const {
+void RefTy::print_impl(std::ostream &os, bool debug) const {
   if (!m_item) {
     os << "mut<?>";
     return;
@@ -1452,9 +1369,9 @@ void MutTy::print_impl(std::ostream &os, bool debug) const {
   os << ">";
 }
 
-MutTy *MutTy::clone_impl() const {
+RefTy *RefTy::clone_impl() const {
   Type *item = m_item ? m_item->clone() : nullptr;
-  return MutTy::get(item);
+  return RefTy::get(item);
 }
 
 bool StructTy::verify_impl(std::ostream &os) const {
@@ -5043,8 +4960,8 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
     case QAST_NODE_ENUM_TY:
       node = EnumTy::get();
       break;
-    case QAST_NODE_MUT_TY:
-      node = MutTy::get();
+    case QAST_NODE_REF_TY:
+      node = RefTy::get();
       break;
     case QAST_NODE_STRUCT_TY:
       node = StructTy::get();

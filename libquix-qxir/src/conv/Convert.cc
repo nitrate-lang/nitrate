@@ -955,10 +955,16 @@ namespace qxir {
     throw QError();
   }
 
-  static Expr *qconv_mut_ty(ConvState &s, const qparse::MutTy *n) {
-    /// TODO: mut_ty
+  static Expr *qconv_mut_ty(ConvState &s, const qparse::RefTy *n) {
+    /// TODO: ref_ty
 
-    throw QError();
+    auto pointee = qconv(s, n->get_item());
+    if (!pointee) {
+      badtree(n, "qparse::RefTy::get_item() == nullptr");
+      throw QError();
+    }
+
+    return create<PtrTy>(pointee->asType());
   }
 
   static Expr *qconv_u1_ty(ConvState &s, const qparse::U1 *n) {
@@ -2240,8 +2246,8 @@ static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
       out = qconv_templ_call(s, n->as<qparse::TemplCall>());
       break;
 
-    case QAST_NODE_MUT_TY:
-      out = qconv_mut_ty(s, n->as<qparse::MutTy>());
+    case QAST_NODE_REF_TY:
+      out = qconv_mut_ty(s, n->as<qparse::RefTy>());
       break;
 
     case QAST_NODE_U1_TY:

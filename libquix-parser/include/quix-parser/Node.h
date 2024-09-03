@@ -73,7 +73,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_TYPE_EXPR = 127,
   QAST_NODE_TEMPL_CALL = 128,
 
-  QAST_NODE_MUT_TY = 300,
+  QAST_NODE_REF_TY = 300,
   QAST_NODE_U1_TY = 301,
   QAST_NODE_U8_TY = 302,
   QAST_NODE_U16_TY = 303,
@@ -411,18 +411,9 @@ namespace qparse {
     bool is_unsigned() const;
     bool is_void() const;
     bool is_bool() const;
-    bool is_mutable() const;
-    bool is_const() const;
+    bool is_ref() const;
     bool is_volatile() const;
     bool is_ptr_to(const Type *type) const;
-    bool is_mut_ptr_to(const Type *type) const;
-    bool is_const_ptr_to(const Type *type) const;
-    bool is_ptr_to_mut(const Type *type) const;
-    bool is_ptr_to_const(const Type *type) const;
-    bool is_mut_ptr_to_mut(const Type *type) const;
-    bool is_mut_ptr_to_const(const Type *type) const;
-    bool is_const_ptr_to_mut(const Type *type) const;
-    bool is_const_ptr_to_const(const Type *type) const;
     bool is_string() const;
 
     virtual Type *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
@@ -847,16 +838,16 @@ namespace qparse {
     PNODE_IMPL_CORE(EnumTy)
   };
 
-  class MutTy : public TypeComplex {
+  class RefTy : public TypeComplex {
     Type *m_item;
 
   public:
-    MutTy(Type *item = nullptr) : m_item(item) {}
+    RefTy(Type *item = nullptr) : m_item(item) {}
 
     Type *get_item() const { return m_item; }
     void set_item(Type *item) { m_item = item; }
 
-    PNODE_IMPL_CORE(MutTy)
+    PNODE_IMPL_CORE(RefTy)
   };
 
   typedef std::pair<String, Type *> StructItem;

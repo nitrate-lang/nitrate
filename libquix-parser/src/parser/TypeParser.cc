@@ -303,7 +303,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
 
     inner = PtrTy::get(type);
     goto type_suffix;
-  } else if (tok.is<qOpLogicNot>()) {
+  } else if (tok.is<qOpBitAnd>()) {
     /** QUIX MUTABLE TYPE
      *
      * @brief Parse a mutable type.
@@ -314,7 +314,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       goto error_end;
     }
 
-    inner = MutTy::get(type);
+    inner = RefTy::get(type);
     goto type_suffix;
   } else if (tok.is<qOpTernary>()) {
     /** QUIX INFERRED TYPE

@@ -91,8 +91,6 @@ static void seed_passes() {
 }
 
 const PassGroup* StdTransform::optimize_order(std::vector<PassName> passes) {
-  /// TODO: Implement pass ordering
-
   return PassGroup::get("root");
 
   qcore_implement("StdTransform::optimize_order");
