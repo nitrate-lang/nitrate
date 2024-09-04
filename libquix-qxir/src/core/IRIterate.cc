@@ -305,37 +305,30 @@ namespace qxir::detail {
 
     typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
 
-    switch (cb(nullptr, base)) {
-      case IterOp::Proceed:
-        break;
-      case IterOp::Abort:
-        return;
-      case IterOp::SkipChildren:
-        return;
-    }
-
     const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
-      std::vector<Expr **> s;
-      s.push_back(n);
+      std::stack<std::pair<Expr *, Expr **>> s;
+      s.push({nullptr, n});
 
       while (!s.empty()) {
-        Expr **cur = s.back();
-        s.pop_back();
+        auto cur = s.top();
+        s.pop();
 
-        for (Expr **child : get_children_sorted(*cur, cs)) {
-          if (std::find(s.cbegin(), s.cend(), child) != s.cend()) {
-            std::cerr << "dfs_pre_impl: cycle detected" << std::endl;
-            continue;
-          }
+        bool skip = false;
 
-          switch (cb(*cur, child)) {
-            case IterOp::Proceed:
-              s.push_back(child);
-              break;
-            case IterOp::Abort:
-              throw IterAbort();
-            case IterOp::SkipChildren:
-              break;
+        switch (cb(cur.first, cur.second)) {
+          case IterOp::Proceed:
+            break;
+          case IterOp::Abort:
+            throw IterAbort();
+          case IterOp::SkipChildren:
+            skip = true;
+            break;
+        }
+
+        if (!skip) {
+          auto children = get_children_sorted(*cur.second, cs);
+          for (auto it = children.rbegin(); it != children.rend(); ++it) {
+            s.push({*cur.second, *it});
           }
         }
       }
@@ -361,16 +354,26 @@ namespace qxir::detail {
 
     typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
 
-    const IterFn syncfn = [&syncfn](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
-      for (Expr **child : get_children_sorted(*n, cs)) {
-        syncfn(child, cb, cs);
-        switch (cb(*n, child)) {
+    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+      std::stack<std::pair<Expr *, Expr **>> s;
+      s.push({nullptr, n});
+
+      while (!s.empty()) {
+        auto cur = s.top();
+        s.pop();
+
+        auto children = get_children_sorted(*cur.second, cs);
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+          s.push({*cur.second, *it});
+        }
+
+        switch (cb(cur.first, cur.second)) {
           case IterOp::Proceed:
             break;
           case IterOp::Abort:
             throw IterAbort();
           case IterOp::SkipChildren:
-            qcore_panic("dfs_post_impl: SkipChildren not supported");
+            qcore_assert(false, "dfs_post_impl: IterOp::SkipChildren not supported");
             break;
         }
       }
@@ -390,7 +393,6 @@ namespace qxir::detail {
   }
 
   CPP_EXPORT void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
-    /// TODO: Verify that this is correct
     qcore_assert(base != nullptr && cb != nullptr, "bfs_pre_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
@@ -400,24 +402,29 @@ namespace qxir::detail {
     typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
 
     const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
-      std::queue<Expr *> q;
-      q.push(*n);
+      std::queue<std::pair<Expr *, Expr **>> s;
+      s.push({nullptr, n});
 
-      cb(nullptr, n);
+      while (!s.empty()) {
+        auto cur = s.front();
+        s.pop();
 
-      while (!q.empty()) {
-        Expr *cur = q.front();
-        q.pop();
+        bool skip = false;
 
-        for (Expr **child : get_children_sorted(cur, cs)) {
-          switch (cb(cur, child)) {
-            case IterOp::Proceed:
-              q.push(*child);
-              break;
-            case IterOp::Abort:
-              throw IterAbort();
-            case IterOp::SkipChildren:
-              break;
+        switch (cb(cur.first, cur.second)) {
+          case IterOp::Proceed:
+            break;
+          case IterOp::Abort:
+            throw IterAbort();
+          case IterOp::SkipChildren:
+            skip = true;
+            break;
+        }
+
+        if (!skip) {
+          auto children = get_children_sorted(*cur.second, cs);
+          for (auto it = children.rbegin(); it != children.rend(); ++it) {
+            s.push({*cur.second, *it});
           }
         }
       }
@@ -435,7 +442,6 @@ namespace qxir::detail {
   }
 
   CPP_EXPORT void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
-    /// TODO: Verify that this is correct
     qcore_assert(base != nullptr && cb != nullptr, "bfs_post_impl: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */
@@ -445,18 +451,27 @@ namespace qxir::detail {
     typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
 
     const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
-      std::queue<std::pair<Expr *, Expr **>> q;
-      q.push({nullptr, n});
+      std::queue<std::pair<Expr *, Expr **>> s;
+      s.push({nullptr, n});
 
-      while (!q.empty()) {
-        Expr **cur = q.front().second;
-        q.pop();
+      while (!s.empty()) {
+        auto cur = s.front();
+        s.pop();
 
-        for (Expr **child : get_children_sorted(*cur, cs)) {
-          q.push({*cur, child});
+        auto children = get_children_sorted(*cur.second, cs);
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {
+          s.push({*cur.second, *it});
         }
 
-        cb(q.front().first, cur);
+        switch (cb(cur.first, cur.second)) {
+          case IterOp::Proceed:
+            break;
+          case IterOp::Abort:
+            throw IterAbort();
+          case IterOp::SkipChildren:
+            qcore_assert(false, "bfs_post_impl: IterOp::SkipChildren not supported");
+            break;
+        }
       }
     };
 

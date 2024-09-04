@@ -1,7 +1,7 @@
-struct A {
-  x: B,
+fn foo() {
+  bar();
 }
 
-struct B {
-  x: A,
+fn bar() {
+  foo();
 }
