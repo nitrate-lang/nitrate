@@ -234,6 +234,8 @@ namespace qxir {
      */
     bool cmp_eq(const Expr *other) const;
 
+    bool is_acyclic() const noexcept;
+
     /**
      * @brief Print the node to the output stream.
      * @param os The output stream.

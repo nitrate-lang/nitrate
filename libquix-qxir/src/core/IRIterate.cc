@@ -314,16 +314,29 @@ namespace qxir::detail {
         return;
     }
 
-    const IterFn syncfn = [&syncfn](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
-      for (Expr **child : get_children_sorted(*n, cs)) {
-        switch (cb(*n, child)) {
-          case IterOp::Proceed:
-            syncfn(child, cb, cs);
-            break;
-          case IterOp::Abort:
-            throw IterAbort();
-          case IterOp::SkipChildren:
-            break;
+    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+      std::vector<Expr **> s;
+      s.push_back(n);
+
+      while (!s.empty()) {
+        Expr **cur = s.back();
+        s.pop_back();
+
+        for (Expr **child : get_children_sorted(*cur, cs)) {
+          if (std::find(s.cbegin(), s.cend(), child) != s.cend()) {
+            std::cerr << "dfs_pre_impl: cycle detected" << std::endl;
+            continue;
+          }
+
+          switch (cb(*cur, child)) {
+            case IterOp::Proceed:
+              s.push_back(child);
+              break;
+            case IterOp::Abort:
+              throw IterAbort();
+            case IterOp::SkipChildren:
+              break;
+          }
         }
       }
     };
@@ -459,8 +472,6 @@ namespace qxir::detail {
   }
 
   CPP_EXPORT void iter_children(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
-    //
-
     qcore_assert(base != nullptr && cb != nullptr, "iter_children: base and cb must not be null");
 
     if (!cs) { /* Iterate in the order the children are stored in the classes */

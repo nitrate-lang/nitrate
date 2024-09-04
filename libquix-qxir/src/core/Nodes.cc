@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <unordered_set>
 #define __QXIR_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
@@ -536,6 +537,54 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
   }
 }
 
+// Utility function to detect cycle in a directed graph
+bool isCyclicUtil(qxir::Expr *base, std::unordered_set<qxir::Expr *> &visited,
+                  std::unordered_set<qxir::Expr *> &recStack) {
+  bool has_cycle = false;
+
+  if (!visited.contains(base)) {
+    // Mark the current node as visited
+    // and part of recursion stack
+    visited.insert(base);
+    recStack.insert(base);
+
+    // Recur for all the vertices adjacent
+    // to this vertex
+    iterate<IterMode::children>(base, [&](qxir::Expr *par, qxir::Expr **cur) -> IterOp {
+      if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) {
+        has_cycle = true;
+        return IterOp::Abort;
+      } else if (recStack.contains(*cur)) {
+        has_cycle = true;
+        return IterOp::Abort;
+      }
+
+      return IterOp::Proceed;
+    });
+  }
+
+  // Remove the vertex from recursion stack
+  recStack.erase(base);
+  return has_cycle;
+}
+
+CPP_EXPORT bool qxir::Expr::is_acyclic() const noexcept {
+  std::unordered_set<Expr *> visited, recStack;
+  bool has_cycle = false;
+
+  Expr *ptr = const_cast<Expr *>(this);
+  iterate<IterMode::children>(ptr, [&](Expr *par, Expr **cur) -> IterOp {
+    if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) {
+      has_cycle = true;
+      return IterOp::Abort;
+    }
+
+    return IterOp::Proceed;
+  });
+
+  return !has_cycle;
+}
+
 CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> qxir::Expr::getLoc() const noexcept {
   qmodule_t *mod = getModule();
   if (mod == nullptr) {
@@ -583,6 +632,7 @@ CPP_EXPORT void qxir::Expr::dump(std::ostream &os, bool isForDebug) const {
   os.write(cstr, len);
 
   fclose(fmembuf);
+  free(cstr);
 }
 
 CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {

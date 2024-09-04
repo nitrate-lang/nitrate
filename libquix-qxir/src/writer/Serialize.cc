@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstddef>
 #define __QXIR_IMPL__
 
 #include <libdeflate.h>
@@ -51,56 +52,110 @@ struct ConvState {
   bool minify;
 };
 
-typedef std::basic_stringstream<char, std::char_traits<char>, Arena<char>> ConvStream;
+template <typename L, typename R>
+boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+  return boost::bimap<L, R>(list.begin(), list.end());
+}
 
-static std::string escape_string(std::string_view input) {
-  std::string output = "\"";
-  output.reserve(input.length() + 2);
+static const boost::bimap<Op, std::string_view> opstr_map = make_bimap<Op, std::string_view>({
+    {Op::Plus, "+"},
+    {Op::Minus, "-"},
+    {Op::Times, "*"},
+    {Op::Slash, "/"},
+    {Op::Percent, "%"},
+    {Op::BitAnd, "&"},
+    {Op::BitOr, "|"},
+    {Op::BitXor, "^"},
+    {Op::BitNot, "~"},
+    {Op::LogicAnd, "&&"},
+    {Op::LogicOr, "||"},
+    {Op::LogicNot, "!"},
+    {Op::LShift, "<<"},
+    {Op::RShift, ">>"},
+    {Op::ROTR, ">>>"},
+    {Op::ROTL, "<<<"},
+    {Op::Inc, "++"},
+    {Op::Dec, "--"},
+    {Op::Set, "="},
+    {Op::LT, "<"},
+    {Op::GT, ">"},
+    {Op::LE, "<="},
+    {Op::GE, ">="},
+    {Op::Eq, "=="},
+    {Op::NE, "!="},
+    {Op::Alignof, "alignof"},
+    {Op::Typeof, "typeof"},
+    {Op::Offsetof, "offsetof"},
+    {Op::BitcastAs, "bitcast_as"},
+    {Op::CastAs, "cast_as"},
+    {Op::Bitsizeof, "bitsizeof"},
+});
+
+static inline FILE &operator<<(FILE &ss, const char *s) {
+  fprintf(&ss, "%s", s);
+  return ss;
+}
+
+static inline FILE &operator<<(FILE &ss, Op s) {
+  fprintf(&ss, "%s", opstr_map.left.at(s).data());
+  return ss;
+}
+
+static inline FILE &operator<<(FILE &ss, const std::string_view &s) {
+  fprintf(&ss, "%s", s.data());
+  return ss;
+}
+
+static inline FILE &operator<<(FILE &ss, const size_t s) {
+  fprintf(&ss, "%zu", s);
+  return ss;
+}
+
+static void escape_string(FILE &ss, std::string_view input) {
+  fputc('"', &ss);
 
   for (char ch : input) {
     switch (ch) {
       case '"':
-        output += "\\\"";
+        fprintf(&ss, "\\\"");
         break;
       case '\\':
-        output += "\\\\";
+        fprintf(&ss, "\\\\");
         break;
       case '\b':
-        output += "\\b";
+        fprintf(&ss, "\\b");
         break;
       case '\f':
-        output += "\\f";
+        fprintf(&ss, "\\f");
         break;
       case '\n':
-        output += "\\n";
+        fprintf(&ss, "\\n");
         break;
       case '\r':
-        output += "\\r";
+        fprintf(&ss, "\\r");
         break;
       case '\t':
-        output += "\\t";
+        fprintf(&ss, "\\t");
         break;
       case '\0':
-        output += "\\0";
+        fprintf(&ss, "\\0");
         break;
       default:
         if (ch >= 32 && ch < 127) {
-          output += ch;
+          fputc(ch, &ss);
         } else {
           char hex[5];
           snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
-          output += hex;
+          fprintf(&ss, "%s", hex);
         }
         break;
     }
   }
 
-  output += "\"";
-
-  return output;
+  fputc('"', &ss);
 }
 
-static void indent(ConvStream &ss, ConvState &state) {
+static void indent(FILE &ss, ConvState &state) {
   if (state.minify) {
     return;
   }
@@ -112,59 +167,22 @@ static void indent(ConvStream &ss, ConvState &state) {
   }
 }
 
-std::ostream &qxir::operator<<(std::ostream &os, qxir::Op op) {
-  static const std::unordered_map<Op, std::string> op_map = {
-      {Op::Plus, "+"},
-      {Op::Minus, "-"},
-      {Op::Times, "*"},
-      {Op::Slash, "/"},
-      {Op::Percent, "%"},
-      {Op::BitAnd, "&"},
-      {Op::BitOr, "|"},
-      {Op::BitXor, "^"},
-      {Op::BitNot, "~"},
-      {Op::LogicAnd, "&&"},
-      {Op::LogicOr, "||"},
-      {Op::LogicNot, "!"},
-      {Op::LShift, "<<"},
-      {Op::RShift, ">>"},
-      {Op::ROTR, ">>>"},
-      {Op::ROTL, "<<<"},
-      {Op::Inc, "++"},
-      {Op::Dec, "--"},
-      {Op::Set, "="},
-      {Op::LT, "<"},
-      {Op::GT, ">"},
-      {Op::LE, "<="},
-      {Op::GE, ">="},
-      {Op::Eq, "=="},
-      {Op::NE, "!="},
-      {Op::Alignof, "alignof"},
-      {Op::Typeof, "typeof"},
-      {Op::Offsetof, "offsetof"},
-      {Op::BitcastAs, "bitcast_as"},
-      {Op::CastAs, "cast_as"},
-      {Op::Bitsizeof, "bitsizeof"},
-  };
-
-  return os << op_map.at(op);
-}
-
-static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
-                              std::unordered_set<Expr *> &visited) {
-  if (!n) {
-    // Nicely handle null nodes
+static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state,
+                              std::unordered_set<Expr *> &visited, bool is_cylic) {
+  if (!n) { /* Nicely handle null nodes */
     ss << "{?}";
-    return;
+    return true;
   }
 
-  if (visited.contains(n)) {
-    ss << "{...}";
-    return;
+  if (is_cylic) {
+    if (visited.contains(n)) {
+      ss << "{...}";
+      return true;
+    }
+    visited.insert(n);
   }
-  visited.insert(n);
 
-#define recurse(x) serialize_recurse(x, ss, state, visited)
+#define recurse(x) serialize_recurse(x, ss, state, visited, is_cylic)
 
   if (n->isConst()) {
     ss << "const ";
@@ -208,7 +226,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
       break;
     }
     case QIR_NODE_STRING: {
-      ss << escape_string(n->as<String>()->getValue());
+      escape_string(ss, n->as<String>()->getValue());
       break;
     }
     case QIR_NODE_LIST: {
@@ -293,7 +311,9 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
       break;
     }
     case QIR_NODE_EXTERN: {
-      ss << "extern " << escape_string(n->as<Extern>()->getAbiName()) << " ";
+      ss << "extern ";
+      escape_string(ss, n->as<Extern>()->getAbiName());
+      ss << " ";
       recurse(n->as<Extern>()->getValue());
       break;
     }
@@ -535,7 +555,7 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
     }
     case QIR_NODE_INTRIN_TY: {
       ss << "[";
-      ss << escape_string(n->as<IntrinTy>()->getName());
+      escape_string(ss, n->as<IntrinTy>()->getName());
       ss << "]";
       break;
     }
@@ -565,16 +585,13 @@ static void serialize_recurse(Expr *n, ConvStream &ss, ConvState &state,
       qcore_panicf("Unknown node type: %d", n->getKind());
     }
   }
+
+  return true;
 }
 
-static char *qxir_repr(qxir_node_t *node, bool minify, size_t indent, qcore_arena_t *arena,
-                       size_t *outlen) {
-  std::swap(qxir_arena.get(), *arena);
-
-  /* Create a string stream based on the arena */
-  ConvStream ss;
+static bool to_codeform(Expr *node, bool minify, size_t indent, FILE &ss) {
   ConvState state = {0, indent, minify};
-  qmodule_t *mod = static_cast<Expr *>(node)->getModule();
+  qmodule_t *mod = node->getModule();
 
   if (!minify) {
     { /* Print the module name */
@@ -620,113 +637,106 @@ static char *qxir_repr(qxir_node_t *node, bool minify, size_t indent, qcore_aren
 
   /* Serialize the AST recursively */
   std::unordered_set<Expr *> v;
-  serialize_recurse(static_cast<Expr *>(node), ss, state, v);
-
-  /**
-   * @brief We can do the following because the std::string destructor will
-   * invoke the arena's destructor, which is a no-op until the arena itself is
-   * destroyed. So we can safely return the string's data pointer knowing it will exists for as long
-   * as the arena does.
-   */
-  std::basic_string<char, std::char_traits<char>, Arena<char>> str = ss.str();
-  *outlen = str.size();
-
-  std::swap(qxir_arena.get(), *arena);
-
-  /**
-   * This will get around one of the compiler's warnings about returning a pointer to a temporary
-   * object.
-   */
-  char *unsafe_bypass = static_cast<char *>(str.data());
-  return unsafe_bypass;
+  return serialize_recurse(node, ss, state, v, !node->is_acyclic());
 }
 
-static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t *out_size,
-                        qcore_arena_t *arena) {
+static bool raw_deflate(const uint8_t *in, size_t in_size, FILE &out) {
   struct libdeflate_compressor *ctx{};
 
   /* Allocate a compressor context; level 8 is a fairly good tradeoff */
   ctx = libdeflate_alloc_compressor(8);
   if (!ctx) {
-    qcore_panic("Failed to allocate: libdeflate_compressor content. out-of-memory");
+    return false;
   }
 
   /* Compute the largest possible compressed buffer size */
-  *out_size = libdeflate_deflate_compress_bound(ctx, in_size);
+  size_t out_size = libdeflate_deflate_compress_bound(ctx, in_size);
 
-  /* Allocate memory for the compressed buffer */
-  *out = static_cast<uint8_t *>(qcore_arena_alloc(arena, *out_size));
+  uint8_t *buf = new uint8_t[out_size];
 
-  if (!*out) {
-    libdeflate_free_compressor(ctx);
-    qcore_panic("Failed to allocate memory for compressed AST representation");
-  }
+  out_size = libdeflate_deflate_compress(ctx, in, in_size, buf, out_size);
 
-  /* Compress the data */
-  *out_size = libdeflate_deflate_compress(ctx, in, in_size, *out, *out_size);
-
-  /* Liberate the compressor context */
   libdeflate_free_compressor(ctx);
 
   /* Check for compression failure */
   if (out_size == 0) {
-    qcore_panic("Failed to compress AST representation");
+    delete[] buf;
+    return false;
   }
+
+  fwrite(buf, 1, out_size, &out);
+
+  delete[] buf;
+
+  return true;
 }
 
-static void qxir_brepr(qxir_node_t *node, bool compress, qcore_arena_t *arena, uint8_t **out,
-                       size_t *outlen) {
-  char *repr;
+static bool to_binform(Expr *node, bool compress, FILE &out) {
+  char *membuf;
+  size_t memlen;
+
+  FILE *mem = open_memstream(&membuf, &memlen);
 
   /* Generate the AST representation as ASCII */
-  if ((repr = qxir_repr(node, true, 0, arena, outlen)) == NULL) {
-    qcore_panic("Failed to generate AST representation");
+  if (!to_codeform(node, true, 0, *mem)) {
+    fclose(mem);
+    return false;
   }
 
-  /* Compress the AST representation */
   if (compress) {
-    uint8_t *tmp_out;
-    raw_deflate((const uint8_t *)repr, *outlen, &tmp_out, outlen, arena);
-    repr = (char *)tmp_out;
+    if (!raw_deflate((const uint8_t *)membuf, memlen, out)) {
+      fclose(mem);
+      return false;
+    }
   }
 
-  *out = (uint8_t *)repr;
+  fclose(mem);
+
+  return true;
 }
 
 LIB_EXPORT bool qxir_write(const qxir_node_t *_node, qxir_serial_t mode, FILE *out, size_t *outlen,
                            uint32_t argcnt, ...) {
-  qcore_arena_t arena;
-  size_t v_outlen;
+  bool status;
+  Expr *node;
+  long start, end;
 
-  if (!outlen) {
-    outlen = &v_outlen;
-  }
+  node = static_cast<Expr *>(const_cast<qxir_node_t *>(_node));
 
-  qcore_arena_open(&arena);
-
-  qxir_node_t *node = const_cast<qxir_node_t *>(_node);
-
-  switch (mode) {
-    case QXIR_SERIAL_CODE: {
-      char *buf = qxir_repr(node, false, 2, &arena, outlen);
-      fwrite(buf, 1, *outlen, out);
-      break;
-    }
-    case QXIR_SERIAL_CODE_MIN: {
-      char *buf = qxir_repr(node, true, 0, &arena, outlen);
-      fwrite(buf, 1, *outlen, out);
-      break;
-    }
-    case QXIR_SERIAL_B10: {
-      uint8_t *buf;
-      qxir_brepr(node, true, &arena, &buf, outlen);
-      fwrite(buf, 1, *outlen, out);
-      break;
+  if (outlen) {
+    if ((start = ftell(out)) == -1) {
+      return false;
     }
   }
 
-  qcore_arena_close(&arena);
+  try {
+    switch (mode) {
+      case QXIR_SERIAL_CODE: {
+        status = to_codeform(node, false, 2, *out);
+        break;
+      }
+      case QXIR_SERIAL_CODE_MIN: {
+        status = to_codeform(node, true, 0, *out);
+        break;
+      }
+      case QXIR_SERIAL_B10: {
+        status = to_binform(node, true, *out);
+        break;
+      }
+    }
+  } catch (...) {
+    return false;
+  }
+
+  if (outlen) {
+    if ((end = ftell(out)) == -1) {
+      return false;
+    }
+
+    *outlen = end - start;
+  }
+
   fflush(out);
 
-  return true;
+  return status;
 }

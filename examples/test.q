@@ -1,7 +1,7 @@
-fn foo(x: i32) {
-  bar();
+struct A {
+  x: B,
 }
 
-fn bar() {
-  foo(x: i32);
+struct B {
+  x: A,
 }

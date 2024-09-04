@@ -230,7 +230,7 @@ static bool recursive_resolve(qxir::Expr **base) {
 
   bool error = false;
 
-  const auto cb = [&](Expr *, Expr **_cur) -> IterOp {
+  const auto cb = [&error](Expr *, Expr **_cur) -> IterOp {
     if (!resolve_node(_cur)) {
       error = true;
     }
@@ -248,71 +248,92 @@ static bool alpha_pass(qmodule_t *mod) {
 
   bool error = false;
 
-  for (auto &[name, type] : mod->getTypeMap()) {
-    Expr *tmp = type;
-    if (!recursive_resolve(&tmp)) {
-      error = true;
+  { /* Phase 1 */
+    for (auto it = mod->getParameterMap().begin(); it != mod->getParameterMap().end(); it++) {
+      for (auto &[name, type, expr] : it->second) {
+        Expr *tmp = type;
+        if (!recursive_resolve(&tmp)) {
+          error = true;
+        }
+        type = tmp->asType();
+
+        if (expr) {
+          tmp = expr;
+          if (!recursive_resolve(&tmp)) {
+            error = true;
+          }
+
+          expr = tmp;
+        }
+      }
     }
-    type = tmp->asType();
   }
 
-  for (auto it = mod->getFunctions().begin(); it != mod->getFunctions().end(); it++) {
-    Expr *fn = (*it).right.second;
-    Expr *ft = (*it).right.first;
+  { /* Phase 2 */
+    std::vector<std::pair<std::string_view, std::pair<FnTy *, Expr *>>> simped;
 
-    error |= !recursive_resolve(&fn) || !recursive_resolve(&ft);
+    for (auto it = mod->getFunctions().begin(); it != mod->getFunctions().end(); it++) {
+      simped.push_back({(*it).left, {(*it).right.first, (*it).right.second}});
+    }
 
-    mod->getFunctions().replace_right(it, std::make_pair(fn->as<FnTy>(), fn));
+    for (auto &[name, func] : simped) {
+      Expr *fn = func.second;
+      Expr *ft = func.first;
+
+      error |= !recursive_resolve(&fn) || !recursive_resolve(&ft);
+    }
+
+    mod->getFunctions().clear();
+    for (auto &[name, func] : simped) {
+      mod->getFunctions().insert({name, func});
+    }
   }
 
-  for (auto it = mod->getParameterMap().begin(); it != mod->getParameterMap().end(); it++) {
-    for (auto &[name, type, expr] : it->second) {
+  { /* Phase 3 */
+    for (auto it = mod->getCompositeFields().begin(); it != mod->getCompositeFields().end(); it++) {
+      for (auto &[name, type, expr] : it->second) {
+        Expr *tmp = type;
+        if (!recursive_resolve(&tmp)) {
+          error = true;
+        }
+        type = tmp->asType();
+
+        if (expr) {
+          tmp = expr;
+          if (!recursive_resolve(&tmp)) {
+            error = true;
+          }
+
+          expr = tmp;
+        }
+      }
+    }
+  }
+
+  { /* Phase 4 */
+    for (auto &[name, expr] : mod->getNamedConstants()) {
+      Expr *tmp = expr;
+      if (!recursive_resolve(&tmp)) {
+        error = true;
+      }
+      expr = tmp;
+    }
+  }
+
+  { /* Phase 5 */
+    for (auto &[name, type] : mod->getTypeMap()) {
       Expr *tmp = type;
       if (!recursive_resolve(&tmp)) {
         error = true;
       }
       type = tmp->asType();
-
-      if (expr) {
-        tmp = expr;
-        if (!recursive_resolve(&tmp)) {
-          error = true;
-        }
-
-        expr = tmp;
-      }
     }
   }
 
-  for (auto it = mod->getCompositeFields().begin(); it != mod->getCompositeFields().end(); it++) {
-    for (auto &[name, type, expr] : it->second) {
-      Expr *tmp = type;
-      if (!recursive_resolve(&tmp)) {
-        error = true;
-      }
-      type = tmp->asType();
-
-      if (expr) {
-        tmp = expr;
-        if (!recursive_resolve(&tmp)) {
-          error = true;
-        }
-
-        expr = tmp;
-      }
-    }
-  }
-
-  for (auto &[name, expr] : mod->getNamedConstants()) {
-    Expr *tmp = expr;
-    if (!recursive_resolve(&tmp)) {
+  { /* Phase 6 */
+    if (!recursive_resolve(&mod->getRoot())) {
       error = true;
     }
-    expr = tmp;
-  }
-
-  if (!recursive_resolve(&mod->getRoot())) {
-    error = true;
   }
 
   return !error;

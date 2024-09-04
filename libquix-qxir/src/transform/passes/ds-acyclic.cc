@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "diagnostic/Report.hh"
+#include "quix-qxir/IR.h"
 #define QXIR_USE_CPP_API
 
 #include <quix-qxir/Node.h>
@@ -45,17 +47,13 @@
  */
 
 bool qxir::passes::impl::ds_acyclic(qmodule_t *mod) {
-  //
-
-  std::cout << "+=========== BEGIN DUMP ===========+\n";
-
-  iterate<bfs_pre>(mod->getRoot(), [](qxir::Expr *p, qxir::Expr **c) -> IterOp {
-    (*c)->dump();
-    std::cout << "\n====================\n";
-    return IterOp::Proceed;
-  });
-
-  std::cout << "+=========== END DUMP ===========+\n\n";
+  if (!mod->getRoot()->is_acyclic()) {
+    mod->getDiag().push(
+        QXIR_AUDIT_CONV,
+        diag::DiagMessage("Cyclic polymorphic node reference detected in module IR data structure.",
+                          diag::IssueClass::FatalError, diag::IssueCode::DSPolyCyclicRef));
+    return false;
+  }
 
   return true;
 }
