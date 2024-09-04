@@ -29,6 +29,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <functional>
+#include <string>
+#include <string_view>
 #define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
@@ -45,6 +48,7 @@
 #include <cstring>
 #include <diagnostic/Report.hh>
 #include <sstream>
+#include <stack>
 #include <transform/PassManager.hh>
 
 #include "core/LibMacro.h"
@@ -54,6 +58,7 @@ using namespace qxir::diag;
 struct ConvState {
   bool inside_function = false;
   std::string ns_prefix;
+  std::stack<qparse::String> composite_expanse;
 
   std::string cur_named(std::string_view suffix) const {
     if (ns_prefix.empty()) {
@@ -540,6 +545,7 @@ qxir::Expr *qconv_lower_post_unexpr(ConvState &s, qxir::Expr *lhs, qlex_op_t op)
       return STD_POST_OP(Dec);
     }
     default: {
+      badtree(nullptr, "Unknown post-unary operator");
       throw QError();
     }
   }
@@ -1163,11 +1169,11 @@ namespace qxir {
      */
 
     auto memtype = qconv(s, n->get_memtype());
-    if (memtype) {
-      return memtype;
+    if (!memtype) {
+      return create<Tmp>(TmpType::ENUM, memorize(n->get_name()));
     }
 
-    return create<Tmp>(TmpType::ENUM, memorize(n->get_name()));
+    return memtype;
   }
 
   static Expr *qconv_struct_ty(ConvState &s, const qparse::StructTy *n) {
@@ -1388,7 +1394,7 @@ namespace qxir {
      * @brief Memorize a typedef declaration which will be used later for type resolution.
      * @details This node will resolve to type void.
      */
-    
+
     auto str = s.cur_named(n->get_name());
     auto name = memorize(std::string_view(str));
 
@@ -1458,55 +1464,263 @@ namespace qxir {
   }
 
   static Expr *qconv_struct(ConvState &s, const qparse::StructDef *n) {
-    /// TODO: struct
+    /**
+     * @brief Convert a struct definition to a qxir sequence.
+     * @details This is a 1-to-1 conversion of the struct definition.
+     */
 
-    throw QError();
+    StructFields fields;
+    SeqItems items;
+
+    for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
+      if (!*it) {
+        badtree(n, "qparse::StructDef::get_fields() vector contains nullptr");
+        throw QError();
+      }
+
+      s.composite_expanse.push((*it)->get_name());
+      auto field = qconv(s, *it);
+      s.composite_expanse.pop();
+
+      fields.push_back(field->asType());
+    }
+
+    std::string name = s.cur_named(n->get_name());
+    auto sv = memorize(std::string_view(name));
+
+    StructTy *st = create<StructTy>(std::move(fields));
+
+    current->getTypeMap()[sv] = st;
+
+    for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
+      auto method = qconv(s, *it);
+      if (!method) {
+        badtree(n, "qparse::StructDef::get_methods() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(method);
+    }
+
+    for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
+      auto method = qconv(s, *it);
+      if (!method) {
+        badtree(n, "qparse::StructDef::get_static_methods() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(method);
+    }
+
+    return create<Seq>(std::move(items));
   }
 
   static Expr *qconv_region(ConvState &s, const qparse::RegionDef *n) {
-    /// TODO: region
-
-    throw QError();
-
-    // IR struct type is a bit-packed structure composite; fields are nameless
-    // and are accessed by index. The QXIR region definition has named fields
-    // as well as embedded methods / metadata.
-
     /**
-     * 1. Create a vector of QXIR type fields.
-     * 2. Create a IR sequence items vector.
-     * 3. Iterate over the fields of the region definition.
-     * 3.1. Convert the field type to a qxir type.
-     * 3.2. Public the (field_name, field_index) to the global context
-     * 3.3. Add the field to the vector of fields.
-     * 4. Create a QXIR struct type with the vector of fields.
-     * 5. Iterate over the methods of the region definition.
-     * 5.1. Convert the method to a qxir function.
-     * 5.2. Append the IR function to the sequence items vector.
-     * 6. Iterate over the static methods of the region definition.
-     * 6.1. Convert the static method to a qxir function.
-     * 6.2. Append the IR function to the sequence items vector.
-     * 7. Create a QXIR SEQ node with the sequence items vector as well as the struct type.
-     * 8. Return the SEQ node.
+     * @brief Convert a region definition to a qxir sequence.
+     * @details This is a 1-to-1 conversion of the region definition.
      */
+
+    StructFields fields;
+    SeqItems items;
+
+    for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
+      if (!*it) {
+        badtree(n, "qparse::RegionDef::get_fields() vector contains nullptr");
+        throw QError();
+      }
+
+      s.composite_expanse.push((*it)->get_name());
+      auto field = qconv(s, *it);
+      s.composite_expanse.pop();
+
+      fields.push_back(field->asType());
+    }
+
+    std::string name = s.cur_named(n->get_name());
+    auto sv = memorize(std::string_view(name));
+
+    StructTy *st = create<StructTy>(std::move(fields));
+
+    current->getTypeMap()[sv] = st;
+
+    for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
+      auto method = qconv(s, *it);
+      if (!method) {
+        badtree(n, "qparse::RegionDef::get_methods() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(method);
+    }
+
+    for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
+      auto method = qconv(s, *it);
+      if (!method) {
+        badtree(n, "qparse::RegionDef::get_static_methods() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(method);
+    }
+
+    return create<Seq>(std::move(items));
   }
 
   static Expr *qconv_group(ConvState &s, const qparse::GroupDef *n) {
-    /// TODO: group
+    /**
+     * @brief Convert a group definition to a qxir sequence.
+     * @details This is a 1-to-1 conversion of the group definition.
+     */
 
-    throw QError();
+    StructFields fields;
+    SeqItems items;
+
+    for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
+      if (!*it) {
+        badtree(n, "qparse::GroupDef::get_fields() vector contains nullptr");
+        throw QError();
+      }
+
+      s.composite_expanse.push((*it)->get_name());
+      auto field = qconv(s, *it);
+      s.composite_expanse.pop();
+
+      fields.push_back(field->asType());
+    }
+
+    std::string name = s.cur_named(n->get_name());
+    auto sv = memorize(std::string_view(name));
+
+    StructTy *st = create<StructTy>(std::move(fields));
+
+    current->getTypeMap()[sv] = st;
+
+    for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
+      auto method = qconv(s, *it);
+      if (!method) {
+        badtree(n, "qparse::GroupDef::get_methods() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(method);
+    }
+
+    for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
+      auto method = qconv(s, *it);
+      if (!method) {
+        badtree(n, "qparse::GroupDef::get_static_methods() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(method);
+    }
+
+    return create<Seq>(std::move(items));
   }
 
   static Expr *qconv_union(ConvState &s, const qparse::UnionDef *n) {
-    /// TODO: union
+    /**
+     * @brief Convert a union definition to a qxir sequence.
+     * @details This is a 1-to-1 conversion of the union definition.
+     */
 
-    throw QError();
+    UnionFields fields;
+    SeqItems items;
+
+    for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
+      if (!*it) {
+        badtree(n, "qparse::UnionDef::get_fields() vector contains nullptr");
+        throw QError();
+      }
+
+      s.composite_expanse.push((*it)->get_name());
+      auto field = qconv(s, *it);
+      s.composite_expanse.pop();
+
+      fields.push_back(field->asType());
+    }
+
+    std::string name = s.cur_named(n->get_name());
+    auto sv = memorize(std::string_view(name));
+
+    UnionTy *st = create<UnionTy>(std::move(fields));
+
+    current->getTypeMap()[sv] = st;
+
+    for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
+      auto method = qconv(s, *it);
+      if (!method) {
+        badtree(n, "qparse::UnionDef::get_methods() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(method);
+    }
+
+    for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
+      auto method = qconv(s, *it);
+      if (!method) {
+        badtree(n, "qparse::UnionDef::get_static_methods() vector contains nullptr");
+        throw QError();
+      }
+
+      items.push_back(method);
+    }
+
+    return create<Seq>(std::move(items));
   }
 
   static Expr *qconv_enum(ConvState &s, const qparse::EnumDef *n) {
-    /// TODO: enum
+    /**
+     * @brief Convert an enum definition to a qxir sequence.
+     * @details Extrapolate the fields by adding 1 to the previous field value.
+     */
 
-    throw QError();
+    std::string name = s.cur_named(n->get_name());
+    auto sv = memorize(std::string_view(name));
+
+    Type *type = nullptr;
+    if (n->get_type()) {
+      type = qconv(s, n->get_type())->asType();
+      if (!type) {
+        badtree(n, "qparse::EnumDef::get_type() == nullptr");
+        throw QError();
+      }
+    } else {
+      type = create<Tmp>(TmpType::ENUM, sv)->asType();
+    }
+
+    current->getTypeMap()[sv] = type->asType();
+
+    Expr *last = nullptr;
+
+    for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+      Expr *cur = nullptr;
+
+      if (it->second) {
+        cur = qconv(s, it->second);
+        if (!cur) {
+          badtree(n, "qparse::EnumDef::get_items() vector contains nullptr");
+          throw QError();
+        }
+
+        last = cur;
+      } else {
+        if (!last) {
+          last = cur = create<Int>(0);
+        } else {
+          last = cur = create<BinExpr>(last, create<Int>(1), Op::Plus);
+        }
+      }
+
+      std::string_view field_name =
+          memorize(std::string_view(name + "::" + std::string(it->first)));
+
+      current->getNamedConstants().insert({field_name, cur});
+    }
+
+    return create<VoidTy>();
   }
 
   static Expr *qconv_fn(ConvState &s, const qparse::FnDef *n) {
@@ -1681,9 +1895,32 @@ namespace qxir {
   }
 
   static Expr *qconv_composite_field(ConvState &s, const qparse::CompositeField *n) {
-    /// TODO: composite_field
+    auto type = qconv(s, n->get_type());
+    if (!type) {
+      badtree(n, "qparse::CompositeField::get_type() == nullptr");
+      throw QError();
+    }
 
-    throw QError();
+    Expr *_def = nullptr;
+    if (n->get_value()) {
+      _def = qconv(s, n->get_value());
+      if (!_def) {
+        badtree(n, "qparse::CompositeField::get_value() == nullptr");
+        throw QError();
+      }
+    }
+
+    if (s.composite_expanse.empty()) {
+      badtree(n, "state.composite_expanse.empty()");
+      throw QError();
+    }
+
+    std::string_view dt_name = memorize(s.composite_expanse.top());
+
+    current->getCompositeFields()[dt_name].push_back(
+        {std::string(n->get_name()), type->asType(), _def});
+
+    return type;
   }
 
   static Expr *qconv_block(ConvState &s, const qparse::Block *n) {

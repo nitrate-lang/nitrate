@@ -84,6 +84,7 @@ static bool parse_struct_field(qparse_t &job, qlex_t *rd, CompositeField **node)
     if (!tok.is<qOpSet>()) {
       syntax(tok, "Expected '=' or ',' after field type in struct definition");
     }
+    qlex_next(rd);
 
     /* Parse the default value */
     if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},

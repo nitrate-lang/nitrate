@@ -2005,12 +2005,12 @@ namespace qparse {
     EnumDefItems m_items;
 
   public:
-    EnumDef(String name = "", EnumTy *type = nullptr, std::initializer_list<EnumItem> items = {})
+    EnumDef(String name = "", Type *type = nullptr, std::initializer_list<EnumItem> items = {})
         : Decl(name, type), m_items(items) {}
-    EnumDef(String name, EnumTy *type, const EnumDefItems &items)
+    EnumDef(String name, Type *type, const EnumDefItems &items)
         : Decl(name, type), m_items(items) {}
 
-    virtual EnumTy *get_type() const override { return static_cast<EnumTy *>(m_type); }
+    virtual Type *get_type() const override { return static_cast<Type *>(m_type); }
 
     EnumDefItems &get_items() { return m_items; }
     const EnumDefItems &get_items() const { return m_items; }

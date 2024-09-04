@@ -69,6 +69,9 @@ namespace qxir::diag {
     UnknownFunction,
     TooManyArguments,
     UnknownArgument,
+
+    UnknownType,
+    UnresolvedIdentifier,
   };
 
   typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
@@ -199,6 +202,12 @@ namespace qxir::diag {
                       diag::DiagMessage("No matching type named " + std::string(_typename),  \
                                         diag::IssueClass::Error, diag::IssueCode::DSBadType, \
                                         cur->getLoc().first, cur->getLoc().second));
+
+#define UNRESOLVED_IDENTIFIER(_id)                                                            \
+  mod->getDiag().push(                                                                        \
+      QXIR_AUDIT_CONV,                                                                        \
+      diag::DiagMessage("Unresolved identifier " + std::string(_id), diag::IssueClass::Error, \
+                        diag::IssueCode::DSNullPtr, cur->getLoc().first, cur->getLoc().second));
 
 };  // namespace qxir::diag
 

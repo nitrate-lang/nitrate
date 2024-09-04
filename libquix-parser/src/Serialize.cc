@@ -440,7 +440,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QAST_NODE_ENUM_TY: {
-      OBJECT_BEGIN("Enum");
+      OBJECT_BEGIN("EnumTy");
       OBJECT_STR(n->as<EnumTy>()->get_name());
       OBJECT_SUB(n->as<EnumTy>()->get_memtype());
       OBJECT_END();
@@ -612,6 +612,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_ENUM: {
       OBJECT_BEGIN("Enum");
       OBJECT_STR(n->as<EnumDef>()->get_name());
+      OBJECT_SUB(n->as<EnumDef>()->get_type());
       state.indent++;
       indent(ss, state);
       ss << "[";

@@ -575,7 +575,7 @@ CPP_EXPORT void qxir::Expr::dump(std::ostream &os, bool isForDebug) const {
   size_t len = 0;
 
   FILE *fmembuf = open_memstream(&cstr, &len);
-  if (!qxir_write(this, QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
+  if (!qxir_write(this, QXIR_SERIAL_CODE_MIN, fmembuf, nullptr, 0)) {
     qcore_panic("Failed to dump expression");
   }
   fflush(fmembuf);
@@ -598,7 +598,8 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
     qcore_panic("Failed to initialize EVP_MD_CTX");
   }
 
-  iterate<IterMode::dfs_pre>(this, [ctx](Expr *, Expr **_cur) -> IterOp {
+  Expr *ptr = this;
+  iterate<IterMode::dfs_pre>(ptr, [ctx](Expr *, Expr **_cur) -> IterOp {
     Expr *cur = *_cur;
     uint8_t kind = static_cast<uint8_t>(cur->getKind());
 

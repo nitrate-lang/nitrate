@@ -4752,7 +4752,7 @@ EnumDef *EnumDef::clone_impl() const {
     }
   }
 
-  return EnumDef::get(m_name, static_cast<EnumTy *>(type), items);
+  return EnumDef::get(m_name, type, items);
 }
 
 LIB_EXPORT void EnumDef::add_item(EnumItem item) { m_items.push_back(item); }

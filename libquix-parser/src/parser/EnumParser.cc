@@ -91,7 +91,9 @@ bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
   Type *type = nullptr;
   if (tok.is<qPuncColn>()) {
     qlex_next(rd);
-    if (!parse_type(job, rd, &type)) return false;
+    if (!parse_type(job, rd, &type)) {
+      return false;
+    }
   }
 
   tok = qlex_next(rd);
@@ -114,6 +116,6 @@ bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
   }
 
-  *node = EnumDef::get(name, EnumTy::get(name, type), fields);
+  *node = EnumDef::get(name, type, fields);
   return true;
 }

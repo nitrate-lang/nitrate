@@ -328,33 +328,9 @@ namespace qxir::detail {
       }
     };
 
-    const IterFn asyncfn = [&asyncfn](Expr **n, IterCallback cb, ChildSelect cs) {
-      std::vector<Expr **> children = get_children_sorted(*n, cs);
-
-      std::list<std::future<void>> futures;
-      for (Expr **child : children) {
-        futures.push_back(std::async(std::launch::async, [&asyncfn, cb, child, cs]() {
-          switch (cb(*child, child)) {
-            case IterOp::Proceed:
-              asyncfn(child, cb, cs);
-              break;
-            case IterOp::Abort:
-              /// WARNING: This will be non-deterministic
-              throw IterAbort();
-            case IterOp::SkipChildren:
-              break;
-          }
-        }));
-      }
-
-      for (std::future<void> &f : futures) {
-        f.get();
-      }
-    };
-
     try {
       if (parallel) {
-        asyncfn(base, cb, cs);
+        qcore_panic("dfs_pre_impl: parallel not supported");
       } else {
         syncfn(base, cb, cs);
       }
@@ -387,39 +363,13 @@ namespace qxir::detail {
       }
     };
 
-    const IterFn asyncfn = [&asyncfn](Expr **n, IterCallback cb, ChildSelect cs) {
-      std::vector<Expr **> children = get_children_sorted(*n, cs);
-
-      std::list<std::future<void>> futures;
-      for (Expr **child : children) {
-        futures.push_back(std::async(std::launch::async, [&asyncfn, cb, child, cs]() {
-          asyncfn(child, cb, cs);
-          switch (cb(*child, child)) {
-            case IterOp::Proceed:
-              break;
-            case IterOp::Abort:
-              /// WARNING: This will be non-deterministic
-              throw IterAbort();
-            case IterOp::SkipChildren:
-              qcore_panic("dfs_post_impl: SkipChildren not supported");
-              break;
-          }
-        }));
-      }
-
-      for (std::future<void> &f : futures) {
-        f.get();
-      }
-    };
-
     try {
       if (parallel) {
-        asyncfn(base, cb, cs);
+        qcore_panic("dfs_post_impl: parallel not supported");
       } else {
         syncfn(base, cb, cs);
+        cb(nullptr, base);
       }
-
-      cb(nullptr, base);
 
     } catch (IterAbort &) {
       return;
@@ -436,11 +386,11 @@ namespace qxir::detail {
 
     typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
 
-    cb(nullptr, base);
-
     const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::queue<Expr *> q;
       q.push(*n);
+
+      cb(nullptr, n);
 
       while (!q.empty()) {
         Expr *cur = q.front();
@@ -460,41 +410,9 @@ namespace qxir::detail {
       }
     };
 
-    const IterFn asyncfn = [](Expr **n, IterCallback cb, ChildSelect cs) {
-      std::queue<Expr *> q;
-      q.push(*n);
-
-      while (!q.empty()) {
-        Expr *cur = q.front();
-        q.pop();
-
-        std::vector<Expr **> children = get_children_sorted(cur, cs);
-
-        std::list<std::future<void>> futures;
-        for (Expr **child : children) {
-          futures.push_back(std::async(std::launch::async, [cb, child, &q]() {
-            switch (cb(*child, child)) {
-              case IterOp::Proceed:
-                q.push(*child);
-                break;
-              case IterOp::Abort:
-                /// WARNING: This will be non-deterministic
-                throw IterAbort();
-              case IterOp::SkipChildren:
-                break;
-            }
-          }));
-        }
-
-        for (std::future<void> &f : futures) {
-          f.get();
-        }
-      }
-    };
-
     try {
       if (parallel) {
-        asyncfn(base, cb, cs);
+        qcore_panic("bfs_pre_impl: parallel not supported");
       } else {
         syncfn(base, cb, cs);
       }
@@ -529,26 +447,61 @@ namespace qxir::detail {
       }
     };
 
+    try {
+      if (parallel) {
+        qcore_panic("bfs_post_impl: parallel not supported");
+      } else {
+        syncfn(base, cb, cs);
+      }
+    } catch (IterAbort &) {
+      return;
+    }
+  }
+
+  CPP_EXPORT void iter_children(Expr **base, IterCallback cb, ChildSelect cs, bool parallel) {
+    //
+
+    qcore_assert(base != nullptr && cb != nullptr, "iter_children: base and cb must not be null");
+
+    if (!cs) { /* Iterate in the order the children are stored in the classes */
+      cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
+    }
+
+    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
+
+    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+      for (Expr **child : get_children_sorted(*n, cs)) {
+        switch (cb(*n, child)) {
+          case IterOp::Proceed:
+            break;
+          case IterOp::Abort:
+            throw IterAbort();
+          case IterOp::SkipChildren:
+            return;
+        }
+      }
+    };
+
     const IterFn asyncfn = [](Expr **n, IterCallback cb, ChildSelect cs) {
-      std::queue<std::pair<Expr *, Expr **>> q;
-      q.push({nullptr, n});
+      std::vector<Expr **> children = get_children_sorted(*n, cs);
 
-      while (!q.empty()) {
-        Expr **cur = q.front().second;
-        q.pop();
+      std::list<std::future<void>> futures;
+      for (Expr **child : children) {
+        futures.push_back(std::async(std::launch::async, [cb, child, cs]() {
+          switch (cb(*child, child)) {
+            case IterOp::Proceed:
+              break;
+            case IterOp::Abort:
+              /// WARNING: This will be non-deterministic
+              throw IterAbort();
+            case IterOp::SkipChildren:
+              return;
+          }
+        }));
+      }
 
-        std::vector<Expr **> children = get_children_sorted(*cur, cs);
-
-        std::list<std::future<void>> futures;
-        for (Expr **child : children) {
-          q.push({*cur, child});
-        }
-
-        for (std::future<void> &f : futures) {
-          f.get();
-        }
-
-        cb(q.front().first, cur);
+      for (std::future<void> &f : futures) {
+        f.get();
       }
     };
 

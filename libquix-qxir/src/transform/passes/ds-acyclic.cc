@@ -45,26 +45,17 @@
  */
 
 bool qxir::passes::impl::ds_acyclic(qmodule_t *mod) {
-  std::unordered_set<qxir_node_t *> visited;
-  bool has_cycle = false;
+  //
 
-  const auto cb = [&visited, &has_cycle, mod](Expr *par, Expr **cur) -> IterOp {
-    if (visited.contains(*cur)) [[unlikely]] {
-      has_cycle = true;
+  std::cout << "+=========== BEGIN DUMP ===========+\n";
 
-      mod->getDiag().push(
-          QXIR_AUDIT_CONV,
-          diag::DiagMessage(
-              "Cyclic polymorphic node reference detected in module IR data structure.",
-              diag::IssueClass::FatalError, diag::IssueCode::DSPolyCyclicRef));
-      return IterOp::Abort;
-    }
-
-    visited.insert(*cur);
+  iterate<bfs_pre>(mod->getRoot(), [](qxir::Expr *p, qxir::Expr **c) -> IterOp {
+    (*c)->dump();
+    std::cout << "\n====================\n";
     return IterOp::Proceed;
-  };
+  });
 
-  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
+  std::cout << "+=========== END DUMP ===========+\n\n";
 
-  return !has_cycle;
+  return true;
 }

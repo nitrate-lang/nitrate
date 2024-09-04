@@ -239,7 +239,7 @@ namespace qxir {
      * @param os The output stream.
      * @param isForDebug Whether to print the node for debugging.
      */
-    void dump(std::ostream &os, bool isForDebug = false) const;
+    void dump(std::ostream &os = std::cout, bool isForDebug = false) const;
 
     /**
      * @brief Compute the hash of the node.
@@ -1197,6 +1197,7 @@ namespace qxir {
     dfs_post,
     bfs_pre,
     bfs_post,
+    children,
   };
 
   enum class IterMP {
@@ -1218,10 +1219,11 @@ namespace qxir {
     void dfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel);
     void bfs_pre_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel);
     void bfs_post_impl(Expr **base, IterCallback cb, ChildSelect cs, bool parallel);
+    void iter_children(Expr **base, IterCallback cb, ChildSelect cs, bool parallel);
   }  // namespace detail
 
   template <IterMode mode, IterMP mp = IterMP::none>
-  void iterate(Expr *base, IterCallback cb, ChildSelect cs = nullptr) {
+  void iterate(Expr *&base, IterCallback cb, ChildSelect cs = nullptr) {
     if constexpr (mode == dfs_pre) {
       return detail::dfs_pre_impl(&base, cb, cs, mp == IterMP::async);
     } else if constexpr (mode == dfs_post) {
@@ -1230,6 +1232,8 @@ namespace qxir {
       return detail::bfs_pre_impl(&base, cb, cs, mp == IterMP::async);
     } else if constexpr (mode == bfs_post) {
       return detail::bfs_post_impl(&base, cb, cs, mp == IterMP::async);
+    } else if constexpr (mode == children) {
+      return detail::iter_children(&base, cb, cs, mp == IterMP::async);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }
