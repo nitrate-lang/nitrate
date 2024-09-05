@@ -140,6 +140,7 @@ typedef enum qlex_key_t {
   qKStruct,     /* 'struct' */
   qKRegion,     /* 'region' */
   qKGroup,      /* 'group' */
+  qKClass,      /* 'class' */
   qKUnion,      /* 'union' */
   qKOpaque,     /* 'opaque' */
   qKEnum,       /* 'enum' */

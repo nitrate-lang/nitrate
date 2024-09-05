@@ -244,73 +244,72 @@ static FunctionProperties read_function_properties(qlex_t *rd) {
   return props;
 }
 
-bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
-  FnDecl *fndecl = FnDecl::get();
-  FuncTy *ftype = FuncTy::get();
-
-  auto prop = read_function_properties(rd);
-
-  qlex_tok_t tok = qlex_next(rd);
-  FnCaptures captures;
-
-  if (tok.is(qName)) {
-    fndecl->set_name(tok.as_string(rd));
-    tok = qlex_next(rd);
-  } else if (tok.is<qPuncLBrk>()) {
+static bool parse_captures_and_name(qlex_tok_t &c, qlex_t *rd, FnDecl *fndecl,
+                                    FnCaptures &captures) {
+  if (c.is(qName)) {
+    fndecl->set_name(c.as_string(rd));
+    c = qlex_next(rd);
+  } else if (c.is<qPuncLBrk>()) {
     while (true) {
-      tok = qlex_next(rd);
+      c = qlex_next(rd);
 
-      if (tok.is<qPuncRBrk>()) {
+      if (c.is<qPuncRBrk>()) {
         break;
       }
 
       bool is_mut = false;
 
-      if (tok.is<qOpBitAnd>()) {
+      if (c.is<qOpBitAnd>()) {
         is_mut = true;
-        tok = qlex_next(rd);
+        c = qlex_next(rd);
       }
 
-      if (!tok.is(qName)) {
-        syntax(tok, "Expected a capture name");
-        break;
+      if (!c.is(qName)) {
+        syntax(c, "Expected a capture name");
+        return false;
       }
 
-      captures.push_back({tok.as_string(rd), is_mut});
-      tok = qlex_peek(rd);
+      captures.push_back({c.as_string(rd), is_mut});
+      c = qlex_peek(rd);
 
-      if (tok.is<qPuncComa>()) {
+      if (c.is<qPuncComa>()) {
         qlex_next(rd);
       }
     }
 
-    tok = qlex_next(rd);
+    c = qlex_next(rd);
   }
 
-  if (!tok.is<qPuncLPar>()) {
-    syntax(tok, "Expected '(' after function name");
+  return true;
+}
+
+static bool parse_parameters(qparse_t &job, qlex_tok_t &c, qlex_t *rd, FuncTy *ftype,
+                             bool &is_variadic) {
+  if (!c.is<qPuncLPar>()) {
+    syntax(c, "Expected '(' after function name");
   }
-  bool is_variadic = false;
+
+  is_variadic = false;
 
   while (1) {
-    tok = qlex_peek(rd);
-    if (tok.is(qEofF)) {
-      syntax(tok, "Unexpected EOF in function signature");
+    c = qlex_peek(rd);
+    if (c.is(qEofF)) {
+      syntax(c, "Unexpected EOF in function signature");
       return false;
     }
 
-    if (tok.is<qPuncRPar>()) {
+    if (c.is<qPuncRPar>()) {
       qlex_next(rd);
       break;
     }
 
-    if (tok.is<qOpEllipsis>()) {
+    if (c.is<qOpEllipsis>()) {
       is_variadic = true;
 
       qlex_next(rd);
-      tok = qlex_next(rd);
-      if (!tok.is<qPuncRPar>()) {
-        syntax(tok, "Expected ')' after '...'");
+      c = qlex_next(rd);
+      if (!c.is<qPuncRPar>()) {
+        syntax(c, "Expected ')' after '...'");
       }
 
       break;
@@ -318,19 +317,25 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     FuncParam param;
     if (!parse_fn_parameter(job, rd, param)) {
-      syntax(tok, "Expected a parameter");
+      syntax(c, "Expected a parameter");
+      return false;
     }
 
     ftype->add_param(std::get<0>(param), std::get<1>(param), std::get<2>(param));
 
-    tok = qlex_peek(rd);
-    if (tok.is<qPuncComa>()) {
+    c = qlex_peek(rd);
+    if (c.is<qPuncComa>()) {
       qlex_next(rd);
       continue;
     }
   }
 
-  tok = qlex_peek(rd);
+  c = qlex_peek(rd);
+
+  return true;
+}
+
+static bool translate_purity(FunctionProperties prop, FuncTy *ftype) {
   switch (prop._purity) {
     case Purity::Pure:
       ftype->set_purity(FuncPurity::PURE);
@@ -350,165 +355,242 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       break;
   }
 
-  Type *ret_type = nullptr;
+  return true;
+}
 
-  ftype->set_variadic(is_variadic);
-  ftype->set_foreign(prop._foreign);
-  ftype->set_noexcept(prop._noexcept);
-  fndecl->set_type(ftype);
-
-  if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncSemi>()) {
-    ftype->set_return_ty(VoidTy::get());
-
-    *node = fndecl;
-    return true;
-  }
-
-  if (tok.is<qPuncColn>()) {
+static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job, Expr *&req_in,
+                              Expr *&req_out) {
+  if (c.is<qKReq>()) {
+    /* Parse constraint block */
     qlex_next(rd);
 
-    if (!parse_type(job, rd, &ret_type)) {
-      syntax(tok, "Expected a return type after ':'");
+    c = qlex_next(rd);
+    if (!c.is<qPuncLCur>()) {
+      syntax(c, "Expected '{' after 'req'");
     }
 
-    ftype->set_return_ty(ret_type);
+    while (true) {
+      c = qlex_peek(rd);
+      if (c.is(qEofF)) {
+        syntax(c, "Unexpected EOF in 'req' block");
+        return false;
+      }
 
-    tok = qlex_peek(rd);
+      if (c.is<qPuncRCur>()) {
+        qlex_next(rd);
+        break;
+      }
+
+      Expr *expr = nullptr;
+      qlex_next(rd);
+      if (c.is<qOpIn>()) {
+        if (!req_in) {
+          req_in = ConstBool::get(true);
+        }
+
+        if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
+          syntax(c, "Expected an expression after 'in'");
+          return false;
+        }
+
+        c = qlex_next(rd);
+        if (!c.is<qPuncSemi>()) {
+          syntax(c, "Expected ';' after expression");
+          return false;
+        }
+
+        expr = UnaryExpr::get(qOpLogicNot, expr);
+        expr = UnaryExpr::get(qOpLogicNot, expr);
+
+        req_in = BinExpr::get(req_in, qOpLogicAnd, expr);
+      } else if (c.is<qOpOut>()) {
+        if (!req_out) {
+          req_out = ConstBool::get(true);
+        }
+
+        if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
+          syntax(c, "Expected an expression after 'out'");
+          return false;
+        }
+
+        c = qlex_next(rd);
+        if (!c.is<qPuncSemi>()) {
+          syntax(c, "Expected ';' after expression");
+          return false;
+        }
+
+        expr = UnaryExpr::get(qOpLogicNot, expr);
+        expr = UnaryExpr::get(qOpLogicNot, expr);
+        req_out = BinExpr::get(req_out, qOpLogicAnd, expr);
+      } else {
+        syntax(c, "Expected 'in' or 'out' after 'req'");
+        return false;
+      }
+    }
+
+    c = qlex_peek(rd);
+  }
+
+  return true;
+}
+
+static bool parse_with_tags(qlex_tok_t &c, qlex_t *rd, std::set<std::string> &implements) {
+  if (c.is<qKWith>()) {
+    qlex_next(rd);
+    c = qlex_next(rd);
+    if (!c.is<qPuncLBrk>()) {
+      syntax(c, "Expected '[' after 'impl'");
+      return false;
+    }
+
+    while (true) {
+      c = qlex_next(rd);
+      if (c.is(qEofF)) {
+        syntax(c, "Unexpected EOF in 'impl' block");
+        return false;
+      }
+
+      if (c.is<qPuncRBrk>()) {
+        break;
+      }
+
+      if (!c.is(qName)) {
+        syntax(c, "Expected a trait name after 'impl'");
+        return false;
+      }
+
+      if (implements.contains(c.as_string(rd))) {
+        syntax(c, "Duplicate trait implementation");
+        return false;
+      }
+
+      implements.insert(c.as_string(rd));
+
+      c = qlex_peek(rd);
+      if (c.is<qPuncComa>()) {
+        qlex_next(rd);
+      }
+    }
+
+    c = qlex_peek(rd);
+  }
+
+  return true;
+}
+
+bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
+  FnDecl *fndecl = FnDecl::get();
+  FuncTy *ftype = FuncTy::get();
+  Type *ret_type = nullptr;
+  FnCaptures captures;
+  qlex_tok_t tok{};
+  FunctionProperties prop;
+  bool is_variadic = false;
+
+  prop = read_function_properties(rd);
+  tok = qlex_next(rd);
+
+  { /* Parse function name or anonymous function capture list */
+    if (!parse_captures_and_name(tok, rd, fndecl, captures)) {
+      syntax(tok, "Expected a function name or capture list");
+      return false;
+    }
+  }
+
+  { /* Parse function parameters */
+    if (!parse_parameters(job, tok, rd, ftype, is_variadic)) {
+      return false;
+    }
+  }
+
+  { /* Convert function properties */
+    if (!translate_purity(prop, ftype)) {
+      syntax(tok, "Failed to translate purity");
+      return false;
+    }
+  }
+
+  { /* Set function type and assign to function declaration */
+    ftype->set_variadic(is_variadic);
+    ftype->set_foreign(prop._foreign);
+    ftype->set_noexcept(prop._noexcept);
+    fndecl->set_type(ftype);
+  }
+
+  { /* Function declaration with implicit return type of void */
     if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncSemi>()) {
       ftype->set_return_ty(VoidTy::get());
+
       *node = fndecl;
       return true;
     }
   }
 
-  if (tok.is<qOpArrow>()) {
-    qlex_next(rd);
+  { /* Function with explicit return type */
+    if (tok.is<qPuncColn>()) {
+      qlex_next(rd);
 
-    Block *fnbody = nullptr;
+      if (!parse_type(job, rd, &ret_type)) {
+        syntax(tok, "Expected a return type after ':'");
+      }
 
-    if (!parse(job, rd, &fnbody, false, true)) {
-      syntax(tok, "Expected a block after '=>'");
-      return false;
+      ftype->set_return_ty(ret_type);
+      tok = qlex_peek(rd);
+
+      { /* Function declaration with explicit return type */
+        if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
+            tok.is<qPuncSemi>()) {
+          ftype->set_return_ty(VoidTy::get());
+          *node = fndecl;
+          return true;
+        }
+      }
     }
+  }
 
-    if (!ftype->get_return_ty()) {
-      ftype->set_return_ty(VoidTy::get());
+  { /* Function definition with arrow syntax */
+    if (tok.is<qOpArrow>()) {
+      qlex_next(rd);
+
+      Block *fnbody = nullptr;
+
+      if (!parse(job, rd, &fnbody, false, true)) {
+        syntax(tok, "Expected a block after '=>'");
+        return false;
+      }
+
+      if (!ftype->get_return_ty()) {
+        ftype->set_return_ty(VoidTy::get());
+      }
+
+      fndecl = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
+
+      *node = fndecl;
+      return true;
     }
+  }
 
-    fndecl = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
-
-    *node = fndecl;
-    return true;
-  } else if (tok.is<qPuncLCur>()) {
+  if (tok.is<qPuncLCur>()) {
     Block *fnbody = nullptr;
+    Expr *req_in = nullptr, *req_out = nullptr;
+    std::set<std::string> implements;
 
     if (!parse(job, rd, &fnbody)) {
       syntax(tok, "Expected a block after '{'");
     }
 
     tok = qlex_peek(rd);
-    Expr *req_in = nullptr, *req_out = nullptr;
-    if (tok.is<qKReq>()) {
-      /* Parse constraint block */
-      qlex_next(rd);
 
-      tok = qlex_next(rd);
-      if (!tok.is<qPuncLCur>()) {
-        syntax(tok, "Expected '{' after 'req'");
-      }
-
-      while (true) {
-        tok = qlex_peek(rd);
-        if (tok.is(qEofF)) {
-          syntax(tok, "Unexpected EOF in 'req' block");
-          break;
-        }
-
-        if (tok.is<qPuncRCur>()) {
-          qlex_next(rd);
-          break;
-        }
-
-        Expr *expr = nullptr;
-        qlex_next(rd);
-        if (tok.is<qOpIn>()) {
-          if (!req_in) {
-            req_in = ConstBool::get(true);
-          }
-
-          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
-            syntax(tok, "Expected an expression after 'in'");
-          }
-
-          tok = qlex_next(rd);
-          if (!tok.is<qPuncSemi>()) {
-            syntax(tok, "Expected ';' after expression");
-          }
-
-          expr = UnaryExpr::get(qOpLogicNot, expr);
-          expr = UnaryExpr::get(qOpLogicNot, expr);
-
-          req_in = BinExpr::get(req_in, qOpLogicAnd, expr);
-        } else if (tok.is<qOpOut>()) {
-          if (!req_out) {
-            req_out = ConstBool::get(true);
-          }
-
-          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
-            syntax(tok, "Expected an expression after 'out'");
-          }
-
-          tok = qlex_next(rd);
-          if (!tok.is<qPuncSemi>()) {
-            syntax(tok, "Expected ';' after expression");
-          }
-
-          expr = UnaryExpr::get(qOpLogicNot, expr);
-          expr = UnaryExpr::get(qOpLogicNot, expr);
-          req_out = BinExpr::get(req_out, qOpLogicAnd, expr);
-        } else {
-          syntax(tok, "Expected 'in' or 'out' after 'req'");
-        }
-      }
-
-      tok = qlex_peek(rd);
+    if (!parse_constraints(tok, rd, job, req_in, req_out)) {
+      return false;
     }
 
-    std::set<std::string> implements;
+    if (!parse_with_tags(tok, rd, implements)) {
+      return false;
+    }
 
     if (!job.conf->has(QPK_NO_AUTO_IMPL, QPV_FUNCTION)) {
       implements.insert("auto");
-    }
-
-    if (tok.is<qKWith>()) {
-      qlex_next(rd);
-      tok = qlex_next(rd);
-      if (!tok.is<qPuncLBrk>()) {
-        syntax(tok, "Expected '[' after 'impl'");
-      }
-
-      while (true) {
-        tok = qlex_next(rd);
-        if (tok.is(qEofF)) {
-          syntax(tok, "Unexpected EOF in 'impl' block");
-          break;
-        }
-
-        if (tok.is<qPuncRBrk>()) break;
-
-        if (!tok.is(qName)) {
-          syntax(tok, "Expected a trait name after 'impl'");
-        }
-
-        implements.insert(tok.as_string(rd));
-
-        tok = qlex_peek(rd);
-        if (tok.is<qPuncComa>()) {
-          qlex_next(rd);
-        }
-      }
-
-      tok = qlex_peek(rd);
     }
 
     if (!ftype->get_return_ty()) {
@@ -520,11 +602,13 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     *node = fndecl;
     return true;
-  } else if (ret_type) {
+  }
+
+  if (ret_type) {
     syntax(tok, "Expected '{', '=>', or ';' in function declaration");
     return true;
-  } else {
-    syntax(tok, "Expected ':', '{', '=>', or ';' in function declaration");
-    return true;
   }
+
+  syntax(tok, "Expected ':', '{', '=>', or ';' in function declaration");
+  return true;
 }

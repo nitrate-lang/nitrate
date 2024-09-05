@@ -45,7 +45,7 @@ static thread_local std::map<std::string_view, Type *> primitives = {
     {"u8", U8::get()},     {"u16", U16::get()},         {"u32", U32::get()},    {"u64", U64::get()},
     {"u128", U128::get()}, {"i8", I8::get()},           {"i16", I16::get()},    {"i32", I32::get()},
     {"i64", I64::get()},   {"i128", I128::get()},       {"f32", F32::get()},    {"f64", F64::get()},
-    {"i1", U1::get()},     {"string", StringTy::get()}, {"void", VoidTy::get()}};
+    {"u1", U1::get()},     {"string", StringTy::get()}, {"void", VoidTy::get()}};
 
 bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   /** QUIX TYPE PARSER
@@ -337,7 +337,7 @@ type_suffix: {
   tok = qlex_peek(rd);
   if (tok.is<qOpLT>()) {
     qlex_next(rd);
-    
+
     TemplTypeArgs args;
 
     while (true) {

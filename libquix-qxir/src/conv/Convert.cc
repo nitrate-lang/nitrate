@@ -32,6 +32,8 @@
 #include <functional>
 #include <string>
 #include <string_view>
+
+#include "quix-parser/Node.h"
 #define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
@@ -67,6 +69,13 @@ struct ConvState {
     return ns_prefix + "::" + std::string(suffix);
   }
 };
+
+std::string ns_join(std::string_view a, std::string_view b) {
+  if (a.empty()) {
+    return std::string(b);
+  }
+  return std::string(a) + "::" + std::string(b);
+}
 
 static std::atomic<size_t> sigguard_refcount;
 static std::mutex sigguard_lock;
@@ -135,7 +144,8 @@ public:
   QError() = default;
 };
 
-static qxir::Expr *qconv(ConvState &s, const qparse::Node *node);
+static qxir::Expr *qconv_one(ConvState &s, const qparse::Node *node);
+static std::vector<qxir::Expr *> qconv_any(ConvState &s, const qparse::Node *node);
 
 LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics) {
   if (!base) {
@@ -155,7 +165,7 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
   if (setjmp(sigguard_env) == 0) {
     try {
       ConvState s;
-      mod->setRoot(qconv(s, static_cast<const qparse::Node *>(base)));
+      mod->setRoot(qconv_one(s, static_cast<const qparse::Node *>(base)));
       status = !mod->getFailbit();
 
       if (status) {
@@ -554,7 +564,7 @@ qxir::Expr *qconv_lower_post_unexpr(ConvState &s, qxir::Expr *lhs, qlex_op_t op)
 namespace qxir {
 
   static Expr *qconv_cexpr(ConvState &s, const qparse::ConstExpr *n) {
-    auto c = qconv(s, n->get_value());
+    auto c = qconv_one(s, n->get_value());
     if (!c) {
       badtree(n, "qparse::ConstExpr::get_value() == nullptr");
       throw QError();
@@ -573,13 +583,13 @@ namespace qxir {
      *         compatible operator.
      */
 
-    auto lhs = qconv(s, n->get_lhs());
+    auto lhs = qconv_one(s, n->get_lhs());
     if (!lhs) {
       badtree(n, "qparse::BinExpr::get_lhs() == nullptr");
       throw QError();
     }
 
-    auto rhs = qconv(s, n->get_rhs());
+    auto rhs = qconv_one(s, n->get_rhs());
 
     if (!rhs) {
       badtree(n, "qparse::BinExpr::get_rhs() == nullptr");
@@ -597,7 +607,7 @@ namespace qxir {
      *         operator.
      */
 
-    auto rhs = qconv(s, n->get_rhs());
+    auto rhs = qconv_one(s, n->get_rhs());
     if (!rhs) {
       badtree(n, "qparse::UnaryExpr::get_rhs() == nullptr");
       throw QError();
@@ -614,7 +624,7 @@ namespace qxir {
      *         operator.
      */
 
-    auto lhs = qconv(s, n->get_lhs());
+    auto lhs = qconv_one(s, n->get_lhs());
     if (!lhs) {
       badtree(n, "qparse::PostUnaryExpr::get_lhs() == nullptr");
       throw QError();
@@ -630,19 +640,19 @@ namespace qxir {
      *        branches of the ternary expression.
      */
 
-    auto cond = qconv(s, n->get_cond());
+    auto cond = qconv_one(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::TernaryExpr::get_cond() == nullptr");
       throw QError();
     }
 
-    auto t = qconv(s, n->get_lhs());
+    auto t = qconv_one(s, n->get_lhs());
     if (!t) {
       badtree(n, "qparse::TernaryExpr::get_lhs() == nullptr");
       throw QError();
     }
 
-    auto f = qconv(s, n->get_rhs());
+    auto f = qconv_one(s, n->get_rhs());
     if (!f) {
       badtree(n, "qparse::TernaryExpr::get_rhs() == nullptr");
       throw QError();
@@ -729,7 +739,7 @@ namespace qxir {
      *         later.
      */
 
-    auto base = qconv(s, n->get_func());
+    auto base = qconv_one(s, n->get_func());
     if (!base) {
       badtree(n, "qparse::Call::get_func() == nullptr");
       throw QError();
@@ -737,7 +747,7 @@ namespace qxir {
 
     CallArgsTmpNodeCradle datapack;
     for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
-      auto arg = qconv(s, it->second);
+      auto arg = qconv_one(s, it->second);
       if (!arg) {
         badtree(n, "qparse::Call::get_args() vector contains nullptr");
         throw QError();
@@ -760,7 +770,7 @@ namespace qxir {
     ListItems items;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(s, *it);
+      auto item = qconv_one(s, *it);
       if (!item) {
         badtree(n, "qparse::List::get_items() vector contains nullptr");
         throw QError();
@@ -778,13 +788,13 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the associative list.
      */
 
-    auto key = qconv(s, n->get_key());
+    auto key = qconv_one(s, n->get_key());
     if (!key) {
       badtree(n, "qparse::Assoc::get_key() == nullptr");
       throw QError();
     }
 
-    auto value = qconv(s, n->get_value());
+    auto value = qconv_one(s, n->get_value());
     if (!value) {
       badtree(n, "qparse::Assoc::get_value() == nullptr");
       throw QError();
@@ -800,7 +810,7 @@ namespace qxir {
      *          for later lowering.
      */
 
-    auto base = qconv(s, n->get_base());
+    auto base = qconv_one(s, n->get_base());
     if (!base) {
       badtree(n, "qparse::Field::get_base() == nullptr");
       throw QError();
@@ -820,13 +830,13 @@ namespace qxir {
      *         expression.
      */
 
-    auto base = qconv(s, n->get_base());
+    auto base = qconv_one(s, n->get_base());
     if (!base) {
       badtree(n, "qparse::Index::get_base() == nullptr");
       throw QError();
     }
 
-    auto index = qconv(s, n->get_index());
+    auto index = qconv_one(s, n->get_index());
     if (!index) {
       badtree(n, "qparse::Index::get_index() == nullptr");
       throw QError();
@@ -855,7 +865,7 @@ namespace qxir {
       if (std::holds_alternative<qparse::String>(val)) {
         return create<String>(memorize(std::get<qparse::String>(val)));
       } else if (std::holds_alternative<qparse::Expr *>(val)) {
-        auto expr = qconv(s, std::get<qparse::Expr *>(val));
+        auto expr = qconv_one(s, std::get<qparse::Expr *>(val));
         if (!expr) {
           badtree(n, "qparse::FString::get_items() vector contains nullptr");
           throw QError();
@@ -876,7 +886,7 @@ namespace qxir {
         concated = create<BinExpr>(concated, create<String>(memorize(val)), Op::Plus);
       } else if (std::holds_alternative<qparse::Expr *>(*it)) {
         auto val = std::get<qparse::Expr *>(*it);
-        auto expr = qconv(s, val);
+        auto expr = qconv_one(s, val);
         if (!expr) {
           badtree(n, "qparse::FString::get_items() vector contains nullptr");
           throw QError();
@@ -912,7 +922,7 @@ namespace qxir {
     SeqItems items;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(s, *it);
+      auto item = qconv_one(s, *it);
       if (!item) {
         badtree(n, "qparse::SeqPoint::get_items() vector contains nullptr");
         throw QError();
@@ -930,7 +940,7 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the statement expression.
      */
 
-    auto stmt = qconv(s, n->get_stmt());
+    auto stmt = qconv_one(s, n->get_stmt());
     if (!stmt) {
       badtree(n, "qparse::StmtExpr::get_stmt() == nullptr");
       throw QError();
@@ -945,7 +955,7 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the type expression.
      */
 
-    auto type = qconv(s, n->get_type());
+    auto type = qconv_one(s, n->get_type());
     if (!type) {
       badtree(n, "qparse::TypeExpr::get_type() == nullptr");
       throw QError();
@@ -963,7 +973,7 @@ namespace qxir {
   static Expr *qconv_mut_ty(ConvState &s, const qparse::RefTy *n) {
     /// TODO: ref_ty
 
-    auto pointee = qconv(s, n->get_item());
+    auto pointee = qconv_one(s, n->get_item());
     if (!pointee) {
       badtree(n, "qparse::RefTy::get_item() == nullptr");
       throw QError();
@@ -1132,7 +1142,7 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the pointer type.
      */
 
-    auto pointee = qconv(s, n->get_item());
+    auto pointee = qconv_one(s, n->get_item());
     if (!pointee) {
       badtree(n, "qparse::PtrTy::get_item() == nullptr");
       throw QError();
@@ -1168,7 +1178,7 @@ namespace qxir {
      *        type. Otherwise, we wrap it for later conversion.
      */
 
-    auto memtype = qconv(s, n->get_memtype());
+    auto memtype = qconv_one(s, n->get_memtype());
     if (!memtype) {
       return create<Tmp>(TmpType::ENUM, memorize(n->get_name()));
     }
@@ -1185,7 +1195,7 @@ namespace qxir {
     StructFields fields;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(s, it->second)->asType();
+      auto item = qconv_one(s, it->second)->asType();
       if (!item) {
         badtree(n, "qparse::StructTy::get_items() vector contains nullptr");
         throw QError();
@@ -1206,7 +1216,7 @@ namespace qxir {
     StructFields fields;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(s, *it)->asType();
+      auto item = qconv_one(s, *it)->asType();
       if (!item) {
         badtree(n, "qparse::GroupTy::get_items() vector contains nullptr");
         throw QError();
@@ -1227,7 +1237,7 @@ namespace qxir {
     StructFields fields;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(s, *it)->asType();
+      auto item = qconv_one(s, *it)->asType();
       if (!item) {
         badtree(n, "qparse::RegionTy::get_items() vector contains nullptr");
         throw QError();
@@ -1248,7 +1258,7 @@ namespace qxir {
     UnionFields fields;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(s, *it)->asType();
+      auto item = qconv_one(s, *it)->asType();
       if (!item) {
         badtree(n, "qparse::UnionTy::get_items() vector contains nullptr");
         throw QError();
@@ -1266,13 +1276,13 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the array type.
      */
 
-    auto item = qconv(s, n->get_item());
+    auto item = qconv_one(s, n->get_item());
     if (!item) {
       badtree(n, "qparse::ArrayTy::get_item() == nullptr");
       throw QError();
     }
 
-    auto count = qconv(s, n->get_size());
+    auto count = qconv_one(s, n->get_size());
     if (!count) {
       badtree(n, "qparse::ArrayTy::get_size() == nullptr");
       throw QError();
@@ -1287,7 +1297,7 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the vector type.
      */
 
-    auto item = qconv(s, n->get_item());
+    auto item = qconv_one(s, n->get_item());
     if (!item) {
       badtree(n, "qparse::VectorTy::get_item() == nullptr");
       throw QError();
@@ -1310,7 +1320,7 @@ namespace qxir {
 
     StructFields fields;
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(s, *it)->asType();
+      auto item = qconv_one(s, *it)->asType();
       if (!item) {
         badtree(n, "qparse::TupleTy::get_items() vector contains nullptr");
         throw QError();
@@ -1346,7 +1356,7 @@ namespace qxir {
     FnParams params;
 
     for (auto it = n->get_params().begin(); it != n->get_params().end(); ++it) {
-      Type *type = qconv(s, std::get<1>(*it))->asType();
+      Type *type = qconv_one(s, std::get<1>(*it))->asType();
       if (!type) {
         badtree(n, "qparse::FnDef::get_type() == nullptr");
         throw QError();
@@ -1355,7 +1365,7 @@ namespace qxir {
       params.push_back(type);
     }
 
-    Type *ret = qconv(s, n->get_return_ty())->asType();
+    Type *ret = qconv_one(s, n->get_return_ty())->asType();
     if (!ret) {
       badtree(n, "qparse::FnDef::get_ret() == nullptr");
       throw QError();
@@ -1389,7 +1399,7 @@ namespace qxir {
     throw QError();
   }
 
-  static Expr *qconv_typedef(ConvState &s, const qparse::TypedefDecl *n) {
+  static std::vector<Expr *> qconv_typedef(ConvState &s, const qparse::TypedefDecl *n) {
     /**
      * @brief Memorize a typedef declaration which will be used later for type resolution.
      * @details This node will resolve to type void.
@@ -1398,7 +1408,7 @@ namespace qxir {
     auto str = s.cur_named(n->get_name());
     auto name = memorize(std::string_view(str));
 
-    auto type = qconv(s, n->get_type());
+    auto type = qconv_one(s, n->get_type());
     if (!type) {
       badtree(n, "qparse::TypedefDecl::get_type() == nullptr");
       throw QError();
@@ -1406,7 +1416,7 @@ namespace qxir {
 
     current->getTypeMap()[name] = type->asType();
 
-    return create<VoidTy>();
+    return {};
   }
 
   static Expr *qconv_fndecl(ConvState &s, const qparse::FnDecl *n) {
@@ -1428,7 +1438,7 @@ namespace qxir {
          * 4. Position - All parameters have a position.
          */
 
-        Type *type = qconv(s, std::get<1>(*it))->asType();
+        Type *type = qconv_one(s, std::get<1>(*it))->asType();
         if (!type) {
           badtree(n, "qparse::FnDecl::get_type() == nullptr");
           throw QError();
@@ -1436,7 +1446,7 @@ namespace qxir {
 
         Expr *def = nullptr;
         if (std::get<2>(*it)) {
-          def = qconv(s, std::get<2>(*it));
+          def = qconv_one(s, std::get<2>(*it));
           if (!def) {
             badtree(n, "qparse::FnDecl::get_type() == nullptr");
             throw QError();
@@ -1450,7 +1460,7 @@ namespace qxir {
 
     // auto obj = create<Fn>(str, std::move(params), nullptr, fty->is_variadic());
 
-    auto fnty = qconv(s, fty);
+    auto fnty = qconv_one(s, fty);
     if (!fnty) {
       badtree(n, "qparse::FnDecl::get_type() == nullptr");
       throw QError();
@@ -1463,14 +1473,14 @@ namespace qxir {
     return local;
   }
 
-  static Expr *qconv_struct(ConvState &s, const qparse::StructDef *n) {
+  static std::vector<Expr *> qconv_struct(ConvState &s, const qparse::StructDef *n) {
     /**
      * @brief Convert a struct definition to a qxir sequence.
      * @details This is a 1-to-1 conversion of the struct definition.
      */
 
     StructFields fields;
-    SeqItems items;
+    std::vector<Expr *> items;
 
     for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
       if (!*it) {
@@ -1479,7 +1489,7 @@ namespace qxir {
       }
 
       s.composite_expanse.push((*it)->get_name());
-      auto field = qconv(s, *it);
+      auto field = qconv_one(s, *it);
       s.composite_expanse.pop();
 
       fields.push_back(field->asType());
@@ -1493,7 +1503,14 @@ namespace qxir {
     current->getTypeMap()[sv] = st;
 
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-      auto method = qconv(s, *it);
+      qparse::FnDecl *cur_meth = *it;
+      auto old_name = cur_meth->get_name();
+      cur_meth->set_name(ns_join(name, old_name));
+
+      auto method = qconv_one(s, *it);
+
+      cur_meth->set_name(old_name);
+
       if (!method) {
         badtree(n, "qparse::StructDef::get_methods() vector contains nullptr");
         throw QError();
@@ -1503,7 +1520,14 @@ namespace qxir {
     }
 
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-      auto method = qconv(s, *it);
+      qparse::FnDecl *cur_meth = *it;
+      auto old_name = cur_meth->get_name();
+      cur_meth->set_name(ns_join(name, old_name));
+
+      auto method = qconv_one(s, *it);
+
+      cur_meth->set_name(old_name);
+
       if (!method) {
         badtree(n, "qparse::StructDef::get_static_methods() vector contains nullptr");
         throw QError();
@@ -1512,17 +1536,17 @@ namespace qxir {
       items.push_back(method);
     }
 
-    return create<Seq>(std::move(items));
+    return items;
   }
 
-  static Expr *qconv_region(ConvState &s, const qparse::RegionDef *n) {
+  static std::vector<Expr *> qconv_region(ConvState &s, const qparse::RegionDef *n) {
     /**
      * @brief Convert a region definition to a qxir sequence.
      * @details This is a 1-to-1 conversion of the region definition.
      */
 
     StructFields fields;
-    SeqItems items;
+    std::vector<Expr *> items;
 
     for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
       if (!*it) {
@@ -1531,7 +1555,7 @@ namespace qxir {
       }
 
       s.composite_expanse.push((*it)->get_name());
-      auto field = qconv(s, *it);
+      auto field = qconv_one(s, *it);
       s.composite_expanse.pop();
 
       fields.push_back(field->asType());
@@ -1545,7 +1569,14 @@ namespace qxir {
     current->getTypeMap()[sv] = st;
 
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-      auto method = qconv(s, *it);
+      qparse::FnDecl *cur_meth = *it;
+      auto old_name = cur_meth->get_name();
+      cur_meth->set_name(ns_join(name, old_name));
+
+      auto method = qconv_one(s, *it);
+
+      cur_meth->set_name(old_name);
+
       if (!method) {
         badtree(n, "qparse::RegionDef::get_methods() vector contains nullptr");
         throw QError();
@@ -1555,7 +1586,14 @@ namespace qxir {
     }
 
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-      auto method = qconv(s, *it);
+      qparse::FnDecl *cur_meth = *it;
+      auto old_name = cur_meth->get_name();
+      cur_meth->set_name(ns_join(name, old_name));
+
+      auto method = qconv_one(s, *it);
+
+      cur_meth->set_name(old_name);
+
       if (!method) {
         badtree(n, "qparse::RegionDef::get_static_methods() vector contains nullptr");
         throw QError();
@@ -1564,17 +1602,17 @@ namespace qxir {
       items.push_back(method);
     }
 
-    return create<Seq>(std::move(items));
+    return items;
   }
 
-  static Expr *qconv_group(ConvState &s, const qparse::GroupDef *n) {
+  static std::vector<Expr *> qconv_group(ConvState &s, const qparse::GroupDef *n) {
     /**
      * @brief Convert a group definition to a qxir sequence.
      * @details This is a 1-to-1 conversion of the group definition.
      */
 
     StructFields fields;
-    SeqItems items;
+    std::vector<Expr *> items;
 
     for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
       if (!*it) {
@@ -1583,7 +1621,7 @@ namespace qxir {
       }
 
       s.composite_expanse.push((*it)->get_name());
-      auto field = qconv(s, *it);
+      auto field = qconv_one(s, *it);
       s.composite_expanse.pop();
 
       fields.push_back(field->asType());
@@ -1597,7 +1635,14 @@ namespace qxir {
     current->getTypeMap()[sv] = st;
 
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-      auto method = qconv(s, *it);
+      qparse::FnDecl *cur_meth = *it;
+      auto old_name = cur_meth->get_name();
+      cur_meth->set_name(ns_join(name, old_name));
+
+      auto method = qconv_one(s, *it);
+
+      cur_meth->set_name(old_name);
+
       if (!method) {
         badtree(n, "qparse::GroupDef::get_methods() vector contains nullptr");
         throw QError();
@@ -1607,7 +1652,14 @@ namespace qxir {
     }
 
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-      auto method = qconv(s, *it);
+      qparse::FnDecl *cur_meth = *it;
+      auto old_name = cur_meth->get_name();
+      cur_meth->set_name(ns_join(name, old_name));
+
+      auto method = qconv_one(s, *it);
+
+      cur_meth->set_name(old_name);
+
       if (!method) {
         badtree(n, "qparse::GroupDef::get_static_methods() vector contains nullptr");
         throw QError();
@@ -1616,17 +1668,17 @@ namespace qxir {
       items.push_back(method);
     }
 
-    return create<Seq>(std::move(items));
+    return items;
   }
 
-  static Expr *qconv_union(ConvState &s, const qparse::UnionDef *n) {
+  static std::vector<Expr *> qconv_union(ConvState &s, const qparse::UnionDef *n) {
     /**
      * @brief Convert a union definition to a qxir sequence.
      * @details This is a 1-to-1 conversion of the union definition.
      */
 
     UnionFields fields;
-    SeqItems items;
+    std::vector<Expr *> items;
 
     for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
       if (!*it) {
@@ -1635,7 +1687,7 @@ namespace qxir {
       }
 
       s.composite_expanse.push((*it)->get_name());
-      auto field = qconv(s, *it);
+      auto field = qconv_one(s, *it);
       s.composite_expanse.pop();
 
       fields.push_back(field->asType());
@@ -1649,7 +1701,14 @@ namespace qxir {
     current->getTypeMap()[sv] = st;
 
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
-      auto method = qconv(s, *it);
+      qparse::FnDecl *cur_meth = *it;
+      auto old_name = cur_meth->get_name();
+      cur_meth->set_name(ns_join(name, old_name));
+
+      auto method = qconv_one(s, *it);
+
+      cur_meth->set_name(old_name);
+
       if (!method) {
         badtree(n, "qparse::UnionDef::get_methods() vector contains nullptr");
         throw QError();
@@ -1659,7 +1718,14 @@ namespace qxir {
     }
 
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
-      auto method = qconv(s, *it);
+      qparse::FnDecl *cur_meth = *it;
+      auto old_name = cur_meth->get_name();
+      cur_meth->set_name(ns_join(name, old_name));
+
+      auto method = qconv_one(s, *it);
+
+      cur_meth->set_name(old_name);
+
       if (!method) {
         badtree(n, "qparse::UnionDef::get_static_methods() vector contains nullptr");
         throw QError();
@@ -1668,10 +1734,10 @@ namespace qxir {
       items.push_back(method);
     }
 
-    return create<Seq>(std::move(items));
+    return items;
   }
 
-  static Expr *qconv_enum(ConvState &s, const qparse::EnumDef *n) {
+  static std::vector<Expr *> qconv_enum(ConvState &s, const qparse::EnumDef *n) {
     /**
      * @brief Convert an enum definition to a qxir sequence.
      * @details Extrapolate the fields by adding 1 to the previous field value.
@@ -1682,7 +1748,7 @@ namespace qxir {
 
     Type *type = nullptr;
     if (n->get_type()) {
-      type = qconv(s, n->get_type())->asType();
+      type = qconv_one(s, n->get_type())->asType();
       if (!type) {
         badtree(n, "qparse::EnumDef::get_type() == nullptr");
         throw QError();
@@ -1699,7 +1765,7 @@ namespace qxir {
       Expr *cur = nullptr;
 
       if (it->second) {
-        cur = qconv(s, it->second);
+        cur = qconv_one(s, it->second);
         if (!cur) {
           badtree(n, "qparse::EnumDef::get_items() vector contains nullptr");
           throw QError();
@@ -1720,7 +1786,7 @@ namespace qxir {
       current->getNamedConstants().insert({field_name, cur});
     }
 
-    return create<VoidTy>();
+    return {};
   }
 
   static Expr *qconv_fn(ConvState &s, const qparse::FnDef *n) {
@@ -1731,19 +1797,19 @@ namespace qxir {
     qparse::FuncTy *fty = decl->get_type();
 
     /* Produce the function preconditions */
-    if ((precond = qconv(s, n->get_precond()))) {
+    if ((precond = qconv_one(s, n->get_precond()))) {
       precond = create<If>(create<UnExpr>(precond, Op::LogicNot),
                            create_simple_call(s, "__detail::precond_fail"), create<VoidTy>());
     }
 
     /* Produce the function postconditions */
-    if ((postcond = qconv(s, n->get_postcond()))) {
+    if ((postcond = qconv_one(s, n->get_postcond()))) {
       postcond = create<If>(create<UnExpr>(postcond, Op::LogicNot),
                             create_simple_call(s, "__detail::postcond_fail"), create<VoidTy>());
     }
 
     { /* Produce the function body */
-      Expr *tmp = qconv(s, n->get_body());
+      Expr *tmp = qconv_one(s, n->get_body());
       if (!tmp) {
         badtree(n, "qparse::FnDef::get_body() == nullptr");
         throw QError();
@@ -1778,7 +1844,7 @@ namespace qxir {
          * 4. Position - All parameters have a position.
          */
 
-        Type *type = qconv(s, std::get<1>(*it))->asType();
+        Type *type = qconv_one(s, std::get<1>(*it))->asType();
         if (!type) {
           badtree(n, "qparse::FnDef::get_type() == nullptr");
           throw QError();
@@ -1786,7 +1852,7 @@ namespace qxir {
 
         Expr *def = nullptr;
         if (std::get<2>(*it)) {
-          def = qconv(s, std::get<2>(*it));
+          def = qconv_one(s, std::get<2>(*it));
           if (!def) {
             badtree(n, "qparse::FnDef::get_type() == nullptr");
             throw QError();
@@ -1798,7 +1864,7 @@ namespace qxir {
       }
     }
 
-    auto fnty = qconv(s, fty);
+    auto fnty = qconv_one(s, fty);
     if (!fnty) {
       badtree(n, "qparse::FnDef::get_type() == nullptr");
       throw QError();
@@ -1811,13 +1877,13 @@ namespace qxir {
     return obj;
   }
 
-  static Expr *qconv_subsystem(ConvState &s, const qparse::SubsystemDecl *n) {
+  static std::vector<Expr *> qconv_subsystem(ConvState &s, const qparse::SubsystemDecl *n) {
     /**
      * @brief Convert a subsystem declaration to a qxir sequence with
      * namespace prefixes.
      */
 
-    SeqItems items;
+    std::vector<Expr *> items;
 
     if (!n->get_body()) {
       badtree(n, "qparse::SubsystemDecl::get_body() == nullptr");
@@ -1834,21 +1900,17 @@ namespace qxir {
 
     for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
          ++it) {
-      auto item = qconv(s, *it);
-      if (!item) {
-        badtree(n, "qparse::SubsystemDecl::get_body() vector contains nullptr");
-        throw QError();
-      }
+      auto item = qconv_any(s, *it);
 
-      items.push_back(item);
+      items.insert(items.end(), item.begin(), item.end());
     }
 
     s.ns_prefix = old_ns;
 
-    return create<Seq>(std::move(items));
+    return items;
   }
 
-  static Expr *qconv_export(ConvState &s, const qparse::ExportDecl *n) {
+  static std::vector<Expr *> qconv_export(ConvState &s, const qparse::ExportDecl *n) {
     /**
      * @brief Convert an export declaration to a qxir export node.
      * @details Convert a list of statements under a common ABI into a
@@ -1869,19 +1931,19 @@ namespace qxir {
     }
 
     if (n->get_body()->get_items().size() == 1) {
-      auto item = qconv(s, n->get_body()->get_items().front());
+      auto item = qconv_one(s, n->get_body()->get_items().front());
       if (!item) {
         badtree(n, "qparse::ExportDecl::get_body() vector contains nullptr");
         throw QError();
       }
 
-      return create<Extern>(item, abi_name);
+      return {create<Extern>(item, abi_name)};
     } else {
       SeqItems items;
 
       for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
            ++it) {
-        auto item = qconv(s, *it);
+        auto item = qconv_one(s, *it);
         if (!item) {
           badtree(n, "qparse::ExportDecl::get_body() vector contains nullptr");
           throw QError();
@@ -1890,12 +1952,12 @@ namespace qxir {
         items.push_back(item);
       }
 
-      return create<Extern>(create<Seq>(std::move(items)), abi_name);
+      return {create<Extern>(create<Seq>(std::move(items)), abi_name)};
     }
   }
 
   static Expr *qconv_composite_field(ConvState &s, const qparse::CompositeField *n) {
-    auto type = qconv(s, n->get_type());
+    auto type = qconv_one(s, n->get_type());
     if (!type) {
       badtree(n, "qparse::CompositeField::get_type() == nullptr");
       throw QError();
@@ -1903,7 +1965,7 @@ namespace qxir {
 
     Expr *_def = nullptr;
     if (n->get_value()) {
-      _def = qconv(s, n->get_value());
+      _def = qconv_one(s, n->get_value());
       if (!_def) {
         badtree(n, "qparse::CompositeField::get_value() == nullptr");
         throw QError();
@@ -1933,13 +1995,9 @@ namespace qxir {
     SeqItems items;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-      auto item = qconv(s, *it);
-      if (!item) {
-        badtree(n, "qparse::Block::get_items() vector contains nullptr");
-        throw QError();
-      }
+      auto item = qconv_any(s, *it);
 
-      items.push_back(item);
+      items.insert(items.end(), item.begin(), item.end());
     }
 
     return create<Seq>(std::move(items));
@@ -1951,7 +2009,7 @@ namespace qxir {
       throw QError();
     }
 
-    auto val = qconv(s, n->get_value());
+    auto val = qconv_one(s, n->get_value());
     if (!val) {
       badtree(n, "qparse::ConstDecl::get_value() == nullptr");
       throw QError();
@@ -1959,7 +2017,7 @@ namespace qxir {
 
     Type *type = nullptr;
     if (n->get_type()) {
-      type = qconv(s, n->get_type())->asType();
+      type = qconv_one(s, n->get_type())->asType();
       if (!type) {
         badtree(n, "qparse::ConstDecl::get_type() == nullptr");
         throw QError();
@@ -1998,7 +2056,7 @@ namespace qxir {
 
     if (s.inside_function) {
       if (!n->get_type()) {
-        auto val = qconv(s, n->get_value());
+        auto val = qconv_one(s, n->get_value());
         if (!val) {
           badtree(n, "qparse::LetDecl::get_value() == nullptr");
           throw QError();
@@ -2010,7 +2068,7 @@ namespace qxir {
 
         return create<Tmp>(TmpType::LET, std::move(datapack));
       } else {
-        auto type = qconv(s, n->get_type());
+        auto type = qconv_one(s, n->get_type());
         if (!type) {
           badtree(n, "qparse::LetDecl::get_type() == nullptr");
           throw QError();
@@ -2019,7 +2077,7 @@ namespace qxir {
         auto alloc = create<Alloc>(type->asType());
 
         if (n->get_value()) {
-          auto val = qconv(s, n->get_value());
+          auto val = qconv_one(s, n->get_value());
           if (!val) {
             badtree(n, "qparse::LetDecl::get_value() == nullptr");
             throw QError();
@@ -2035,7 +2093,7 @@ namespace qxir {
     } else {
       Type *type = nullptr;
       if (n->get_type()) {
-        type = qconv(s, n->get_type())->asType();
+        type = qconv_one(s, n->get_type())->asType();
         if (!type) {
           badtree(n, "qparse::LetDecl::get_type() == nullptr");
           throw QError();
@@ -2044,7 +2102,7 @@ namespace qxir {
 
       Expr *val = nullptr;
       if (n->get_value()) {
-        val = qconv(s, n->get_value());
+        val = qconv_one(s, n->get_value());
         if (!val) {
           badtree(n, "qparse::LetDecl::get_value() == nullptr");
           throw QError();
@@ -2077,7 +2135,7 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the return statement.
      */
 
-    auto val = qconv(s, n->get_value());
+    auto val = qconv_one(s, n->get_value());
     if (!val) {
       val = create<VoidTy>();
     }
@@ -2091,13 +2149,13 @@ namespace qxir {
      * @details Lower into an 'if (cond) {return val}' expression.
      */
 
-    auto cond = qconv(s, n->get_cond());
+    auto cond = qconv_one(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::ReturnIfStmt::get_cond() == nullptr");
       throw QError();
     }
 
-    auto val = qconv(s, n->get_value());
+    auto val = qconv_one(s, n->get_value());
     if (!val) {
       badtree(n, "qparse::ReturnIfStmt::get_value() == nullptr");
       throw QError();
@@ -2112,7 +2170,7 @@ namespace qxir {
      * @details Lower into an 'if (!cond) {return val}' expression.
      */
 
-    auto cond = qconv(s, n->get_cond());
+    auto cond = qconv_one(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::RetZStmt::get_cond() == nullptr");
       throw QError();
@@ -2120,7 +2178,7 @@ namespace qxir {
 
     auto inv_cond = create<UnExpr>(cond, Op::LogicNot);
 
-    auto val = qconv(s, n->get_value());
+    auto val = qconv_one(s, n->get_value());
     if (!val) {
       badtree(n, "qparse::RetZStmt::get_value() == nullptr");
       throw QError();
@@ -2135,7 +2193,7 @@ namespace qxir {
      * @details Lower into an 'if (cond) {return void}' expression.
      */
 
-    auto cond = qconv(s, n->get_cond());
+    auto cond = qconv_one(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::RetVStmt::get_cond() == nullptr");
       throw QError();
@@ -2169,9 +2227,9 @@ namespace qxir {
      *        replaced with a void expression.
      */
 
-    auto cond = qconv(s, n->get_cond());
-    auto then = qconv(s, n->get_then());
-    auto els = qconv(s, n->get_else());
+    auto cond = qconv_one(s, n->get_cond());
+    auto then = qconv_one(s, n->get_then());
+    auto els = qconv_one(s, n->get_else());
 
     if (!cond) {
       badtree(n, "qparse::IfStmt::get_cond() == nullptr");
@@ -2197,8 +2255,8 @@ namespace qxir {
      *         with a default value of 1.
      */
 
-    auto cond = qconv(s, n->get_cond());
-    auto body = qconv(s, n->get_body());
+    auto cond = qconv_one(s, n->get_cond());
+    auto body = qconv_one(s, n->get_body());
 
     if (!cond) {
       cond = create<Int>(1);
@@ -2218,10 +2276,10 @@ namespace qxir {
      *         with a default value of 1.
      */
 
-    auto init = qconv(s, n->get_init());
-    auto cond = qconv(s, n->get_cond());
-    auto step = qconv(s, n->get_step());
-    auto body = qconv(s, n->get_body());
+    auto init = qconv_one(s, n->get_init());
+    auto cond = qconv_one(s, n->get_cond());
+    auto step = qconv_one(s, n->get_step());
+    auto body = qconv_one(s, n->get_body());
 
     if (!init) {
       init = create<Int>(1);
@@ -2248,7 +2306,7 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the form loop.
      */
 
-    auto maxjobs = qconv(s, n->get_maxjobs());
+    auto maxjobs = qconv_one(s, n->get_maxjobs());
     if (!maxjobs) {
       badtree(n, "qparse::FormStmt::get_maxjobs() == nullptr");
       throw QError();
@@ -2257,13 +2315,13 @@ namespace qxir {
     auto idx_name = memorize(n->get_idx_ident());
     auto val_name = memorize(n->get_val_ident());
 
-    auto iter = qconv(s, n->get_expr());
+    auto iter = qconv_one(s, n->get_expr());
     if (!iter) {
       badtree(n, "qparse::FormStmt::get_expr() == nullptr");
       throw QError();
     }
 
-    auto body = qconv(s, n->get_body());
+    auto body = qconv_one(s, n->get_body());
     if (!body) {
       badtree(n, "qparse::FormStmt::get_body() == nullptr");
       throw QError();
@@ -2281,13 +2339,13 @@ namespace qxir {
     auto idx_name = memorize(n->get_idx_ident());
     auto val_name = memorize(n->get_val_ident());
 
-    auto iter = qconv(s, n->get_expr());
+    auto iter = qconv_one(s, n->get_expr());
     if (!iter) {
       badtree(n, "qparse::ForeachStmt::get_expr() == nullptr");
       throw QError();
     }
 
-    auto body = qconv(s, n->get_body());
+    auto body = qconv_one(s, n->get_body());
     if (!body) {
       badtree(n, "qparse::ForeachStmt::get_body() == nullptr");
       throw QError();
@@ -2302,13 +2360,13 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the case statement.
      */
 
-    auto cond = qconv(s, n->get_cond());
+    auto cond = qconv_one(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::CaseStmt::get_cond() == nullptr");
       throw QError();
     }
 
-    auto body = qconv(s, n->get_body());
+    auto body = qconv_one(s, n->get_body());
     if (!body) {
       badtree(n, "qparse::CaseStmt::get_body() == nullptr");
       throw QError();
@@ -2324,7 +2382,7 @@ namespace qxir {
      *        expression.
      */
 
-    auto cond = qconv(s, n->get_cond());
+    auto cond = qconv_one(s, n->get_cond());
     if (!cond) {
       badtree(n, "qparse::SwitchStmt::get_cond() == nullptr");
       throw QError();
@@ -2332,7 +2390,7 @@ namespace qxir {
 
     SwitchCases cases;
     for (auto it = n->get_cases().begin(); it != n->get_cases().end(); ++it) {
-      auto item = qconv(s, *it);
+      auto item = qconv_one(s, *it);
       if (!item) {
         badtree(n, "qparse::SwitchStmt::get_cases() vector contains nullptr");
         throw QError();
@@ -2343,7 +2401,7 @@ namespace qxir {
 
     Expr *def = nullptr;
     if (n->get_default()) {
-      def = qconv(s, n->get_default());
+      def = qconv_one(s, n->get_default());
       if (!def) {
         badtree(n, "qparse::SwitchStmt::get_default() == nullptr");
         throw QError();
@@ -2361,7 +2419,7 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the expression statement.
      */
 
-    return qconv(s, n->get_expr());
+    return qconv_one(s, n->get_expr());
   }
 
   static Expr *qconv_volstmt(ConvState &s, const qparse::VolStmt *n) {
@@ -2370,14 +2428,14 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the volatile statement.
      */
 
-    auto expr = qconv(s, n->get_stmt());
+    auto expr = qconv_one(s, n->get_stmt());
     expr->setVolatile(true);
 
     return expr;
   }
 }  // namespace qxir
 
-static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
+static qxir::Expr *qconv_one(ConvState &s, const qparse::Node *n) {
   using namespace qxir;
 
   if (!n) {
@@ -2615,44 +2673,12 @@ static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
       out = qconv_templ_ty(s, n->as<qparse::TemplType>());
       break;
 
-    case QAST_NODE_TYPEDEF:
-      out = qconv_typedef(s, n->as<qparse::TypedefDecl>());
-      break;
-
     case QAST_NODE_FNDECL:
       out = qconv_fndecl(s, n->as<qparse::FnDecl>());
       break;
 
-    case QAST_NODE_STRUCT:
-      out = qconv_struct(s, n->as<qparse::StructDef>());
-      break;
-
-    case QAST_NODE_REGION:
-      out = qconv_region(s, n->as<qparse::RegionDef>());
-      break;
-
-    case QAST_NODE_GROUP:
-      out = qconv_group(s, n->as<qparse::GroupDef>());
-      break;
-
-    case QAST_NODE_UNION:
-      out = qconv_union(s, n->as<qparse::UnionDef>());
-      break;
-
-    case QAST_NODE_ENUM:
-      out = qconv_enum(s, n->as<qparse::EnumDef>());
-      break;
-
     case QAST_NODE_FN:
       out = qconv_fn(s, n->as<qparse::FnDef>());
-      break;
-
-    case QAST_NODE_SUBSYSTEM:
-      out = qconv_subsystem(s, n->as<qparse::SubsystemDecl>());
-      break;
-
-    case QAST_NODE_EXPORT:
-      out = qconv_export(s, n->as<qparse::ExportDecl>());
       break;
 
     case QAST_NODE_COMPOSITE_FIELD:
@@ -2749,6 +2775,62 @@ static qxir::Expr *qconv(ConvState &s, const qparse::Node *n) {
   }
 
   out->setLoc({n->get_start_pos(), n->get_end_pos()});
+
+  return out;
+}
+
+static std::vector<qxir::Expr *> qconv_any(ConvState &s, const qparse::Node *n) {
+  using namespace qxir;
+
+  if (!n) {
+    return {};
+  }
+
+  std::vector<qxir::Expr *> out;
+
+  switch (n->this_typeid()) {
+    case QAST_NODE_TYPEDEF:
+      out = qconv_typedef(s, n->as<qparse::TypedefDecl>());
+      break;
+
+    case QAST_NODE_ENUM:
+      out = qconv_enum(s, n->as<qparse::EnumDef>());
+      break;
+
+    case QAST_NODE_STRUCT:
+      out = qconv_struct(s, n->as<qparse::StructDef>());
+      break;
+
+    case QAST_NODE_REGION:
+      out = qconv_region(s, n->as<qparse::RegionDef>());
+      break;
+
+    case QAST_NODE_GROUP:
+      out = qconv_group(s, n->as<qparse::GroupDef>());
+      break;
+
+    case QAST_NODE_UNION:
+      out = qconv_union(s, n->as<qparse::UnionDef>());
+      break;
+
+    case QAST_NODE_SUBSYSTEM:
+      out = qconv_subsystem(s, n->as<qparse::SubsystemDecl>());
+      break;
+
+    case QAST_NODE_EXPORT:
+      out = qconv_export(s, n->as<qparse::ExportDecl>());
+      break;
+
+    default: {
+      auto expr = qconv_one(s, n);
+      if (expr) {
+        out.push_back(expr);
+      } else {
+        badtree(n, "qxir::qconv_any() failed to convert node");
+        throw QError();
+      }
+    }
+  }
 
   return out;
 }

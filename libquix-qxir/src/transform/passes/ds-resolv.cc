@@ -364,11 +364,11 @@ static bool beta_pass(qmodule_t *mod) {
     std::string_view name = cur->getName();
 
     if (mod->getFunctions().left.count(name) > 0) {
-      *_cur = mod->getFunctions().left.at(name).second;
+      cur->setWhat(mod->getFunctions().left.at(name).second);
     } else if (mod->getVariables().left.count(name) > 0) {
-      *_cur = mod->getVariables().left.at(name);
+      cur->setWhat(mod->getVariables().left.at(name));
     } else if (mod->getNamedConstants().count(name) > 0) {
-      *_cur = mod->getNamedConstants().at(name);
+      cur->setWhat(mod->getNamedConstants().at(name));
     } else {
       UNRESOLVED_IDENTIFIER(name);
       error = true;

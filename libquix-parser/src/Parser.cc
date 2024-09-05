@@ -63,7 +63,9 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
     }
 
     while ((tok = qlex_peek(rd)).ty != qEofF) {
-      if (single_stmt && (*group)->get_items().size() > 0) break;
+      if (single_stmt && (*group)->get_items().size() > 0) {
+        break;
+      }
 
       if (expect_braces) {
         if (tok.is<qPuncRCur>()) {
@@ -118,6 +120,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           }
           break;
         }
+
         case qKLet: {
           std::vector<Stmt *> items;
           if (!parse_let(job, rd, items)) {
@@ -128,6 +131,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           }
           break;
         }
+
         case qKConst: {
           std::vector<Stmt *> items;
           if (!parse_const(job, rd, items)) {
@@ -138,115 +142,179 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           }
           break;
         }
-        case qKEnum:
+
+        case qKEnum: {
           if (!parse_enum(job, rd, &node)) {
             return false;
           }
           break;
-        case qKStruct:
+        }
+
+        case qKStruct: {
           if (!parse_struct(job, rd, &node)) {
             return false;
           }
           break;
-        case qKRegion:
+        }
+
+        case qKRegion: {
           if (!parse_region(job, rd, &node)) {
             return false;
           }
           break;
-        case qKGroup:
+        }
+
+        case qKGroup: {
           if (!parse_group(job, rd, &node)) {
             return false;
           }
           break;
-        case qKUnion:
+        }
+
+        case qKClass: {
+          if (!parse_group(job, rd, &node)) {
+            return false;
+          }
+          break;
+        }
+
+        case qKUnion: {
           if (!parse_union(job, rd, &node)) {
             return false;
           }
           break;
-        case qKType:
+        }
+
+        case qKType: {
           if (!parse_typedef(job, rd, &node)) {
             return false;
           }
           break;
-        case qKSubsystem:
+        }
+
+        case qKSubsystem: {
           if (!parse_subsystem(job, rd, &node)) {
             return false;
           }
           break;
-        case qKFn:
+        }
+
+        case qKFn: {
           if (!parse_function(job, rd, &node)) {
             return false;
           }
           break;
-        case qKPub:
-        case qKImport:  // they both declare external functions
-          if (!parse_pub(job, rd, &node)) {
-            return false;
-          }
+        }
+
+        case qKPub: {
+          case qKImport:  // they both declare external functions
+            if (!parse_pub(job, rd, &node)) {
+              return false;
+            }
+            break;
+        }
+
+        case qKSec: {
           break;
-        case qKSec:
-          break;
-        case qKReturn:
+        }
+
+        case qKReturn: {
           if (!parse_return(job, rd, &node)) {
             return false;
           }
           break;
-        case qKRetif:
+        }
+
+        case qKRetif: {
           if (!parse_retif(job, rd, &node)) {
             return false;
           }
           break;
-        case qKRetz:
+        }
+
+        case qKRetz: {
           if (!parse_retz(job, rd, &node)) {
             return false;
           }
           break;
-        case qKRetv:
+        }
+
+        case qKRetv: {
           if (!parse_retv(job, rd, &node)) {
             return false;
           }
           break;
-        case qKBreak:
+        }
+
+        case qKBreak: {
           node = BreakStmt::get();
           break;
-        case qKContinue:
+        }
+
+        case qKContinue: {
           node = ContinueStmt::get();
           break;
-        case qKIf:
+        }
+
+        case qKIf: {
           if (!parse_if(job, rd, &node)) {
             return false;
           }
           break;
-        case qKWhile:
+        }
+
+        case qKWhile: {
           if (!parse_while(job, rd, &node)) {
             return false;
           }
           break;
-        case qKFor:
+        }
+
+        case qKFor: {
           if (!parse_for(job, rd, &node)) {
             return false;
           }
           break;
-        case qKForm:
+        }
+
+        case qKForm: {
           if (!parse_form(job, rd, &node)) {
             return false;
           }
           break;
-        case qKForeach:
+        }
+
+        case qKForeach: {
           if (!parse_foreach(job, rd, &node)) {
             return false;
           }
           break;
-        case qKSwitch:
+        }
+
+        case qKSwitch: {
           if (!parse_switch(job, rd, &node)) {
             return false;
           }
           break;
-        case qK__Asm__:
+        }
+
+        case qK__Asm__: {
           if (!parse_inline_asm(job, rd, &node)) {
             return false;
           }
           break;
+        }
+
+        case qKTrue: {
+          (*group)->add_item(ExprStmt::get(ConstBool::get(true)));
+          break;
+        }
+
+        case qKFalse: {
+          (*group)->add_item(ExprStmt::get(ConstBool::get(false)));
+          break;
+        }
+
         case qKUnsafe: {
           Block *block = nullptr;
           tok = qlex_peek(rd);
@@ -264,6 +332,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           (*group)->add_item(block);
           break;
         }
+
         case qKSafe: {
           Block *block = nullptr;
           tok = qlex_peek(rd);
@@ -280,6 +349,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           (*group)->add_item(block);
           break;
         }
+
         case qKVolatile: {
           Block *block = nullptr;
           tok = qlex_peek(rd);
@@ -296,6 +366,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           (*group)->add_item(VolStmt::get(block));
           break;
         }
+
         default:
           syntax(tok, "Unexpected keyword");
           break;
@@ -357,7 +428,10 @@ static void _signal_hander(int sig) {
   sigguard_lock.lock();
 
   DiagMessage diag;
-  diag.msg = "FATAL Internal Error: Deadly Signal received: " + std::to_string(sig);
+  diag.msg =
+      "FATAL Internal Error: Deadly Signal "
+      "received: " +
+      std::to_string(sig);
   diag.tok = qlex_tok_t(qEofF, 0);
   diag.type = MessageType::FatalError;
 
@@ -382,7 +456,10 @@ static void install_sigguard(qparse_t *parser) {
   for (int sig : sigguard_signals) {
     sighandler_t old = signal(sig, _signal_hander);
     if (old == SIG_ERR) {
-      qcore_panicf("Failed to install signal handler for signal %d", sig);
+      qcore_panicf(
+          "Failed to install signal handler for "
+          "signal %d",
+          sig);
     }
     sigguard_old[sig] = old;
   }
@@ -398,7 +475,10 @@ static void uninstall_sigguard() {
   for (int sig : sigguard_signals) {
     sighandler_t old = signal(sig, sigguard_old[sig]);
     if (old == SIG_ERR) {
-      qcore_panicf("Failed to uninstall signal handler for signal %d", sig);
+      qcore_panicf(
+          "Failed to uninstall signal handler "
+          "for signal %d",
+          sig);
     }
   }
 
@@ -412,13 +492,16 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
   *out = nullptr;
 
   try {
-    /*=============== Swap in their arena ===============*/
+    /*=============== Swap in their arena
+     * ===============*/
     qparse::qparse_arena.swap(*arena);
 
-    /*== Install thread-local references to the parser ==*/
+    /*== Install thread-local references to the
+     * parser ==*/
     qparse::diag::install_reference(parser);
 
-    /*==== Facilitate signal handling for the parser ====*/
+    /*==== Facilitate signal handling for the
+     * parser ====*/
     install_sigguard(parser);
     parser_ctx = parser;
 
@@ -429,22 +512,27 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
       parser->failed = true;
     }
 
-    /*==== Clean up signal handling for the parser ====*/
+    /*==== Clean up signal handling for the parser
+     * ====*/
     parser_ctx = nullptr;
     uninstall_sigguard();
 
-    /*== Uninstall thread-local references to the parser ==*/
+    /*== Uninstall thread-local references to the
+     * parser ==*/
     qparse::diag::install_reference(nullptr);
 
-    /*=============== Swap out their arena ===============*/
+    /*=============== Swap out their arena
+     * ===============*/
     qparse::qparse_arena.swap(*arena);
 
-    /*==================== Return status ====================*/
+    /*==================== Return status
+     * ====================*/
     return status && !parser->failed;
   } catch (std::exception &e) {
     qcore_panicf("qparse_do: unhandled exception: %s", e.what());
   } catch (...) {
-    /*== This will be caught iff QPK_CRASHGUARD is QPV_ON ==*/
+    /*== This will be caught iff QPK_CRASHGUARD is
+     * QPV_ON ==*/
     abort();
   }
 }
@@ -487,7 +575,9 @@ LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
   }
 
   if (!parser->impl) {
-    qcore_panic("qpase_check: invariant violation: parser->impl is NULL");
+    qcore_panic(
+        "qpase_check: invariant violation: "
+        "parser->impl is NULL");
   }
 
   /* Safety is overrated */

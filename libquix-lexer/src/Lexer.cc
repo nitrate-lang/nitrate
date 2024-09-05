@@ -88,6 +88,7 @@ namespace qlex {
           {"struct", qKStruct},
           {"region", qKRegion},
           {"group", qKGroup},
+          {"class", qKClass},
           {"union", qKUnion},
           {"opaque", qKOpaque},
           {"enum", qKEnum},

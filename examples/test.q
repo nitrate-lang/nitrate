@@ -1,7 +1,5 @@
-struct A {
-  x: B,
-}
-
-struct B {
-  x: A,
+fn main() {
+  fn inner(): i32 {
+    0;
+  }
 }
