@@ -1819,7 +1819,17 @@ namespace qxir {
         tmp = create<Seq>(SeqItems({tmp}));
       }
 
-      body = tmp->as<Seq>();
+      Seq *seq = tmp->as<Seq>();
+
+      { /* Implicit return */
+        if (!seq->getItems().empty()) {
+          if (seq->getItems().back()->getKind() != QIR_NODE_RET) {
+            seq->getItems().back() = create<Ret>(seq->getItems().back());
+          }
+        }
+      }
+
+      body = seq;
 
       if (precond) {
         body->getItems().insert(body->getItems().begin(), precond);
