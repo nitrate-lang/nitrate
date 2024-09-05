@@ -32,6 +32,7 @@
 #include <functional>
 #include <string>
 #include <string_view>
+#include <unordered_set>
 
 #include "quix-parser/Node.h"
 #define __QUIX_IMPL__
@@ -970,9 +971,7 @@ namespace qxir {
     throw QError();
   }
 
-  static Expr *qconv_mut_ty(ConvState &s, const qparse::RefTy *n) {
-    /// TODO: ref_ty
-
+  static Expr *qconv_ref_ty(ConvState &s, const qparse::RefTy *n) {
     auto pointee = qconv_one(s, n->get_item());
     if (!pointee) {
       badtree(n, "qparse::RefTy::get_item() == nullptr");
@@ -1386,7 +1385,10 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the unresolved type.
      */
 
-    return create<Tmp>(TmpType::NAMED_TYPE, memorize(n->get_name()));
+    auto str = s.cur_named(n->get_name());
+    auto name = memorize(std::string_view(str));
+
+    return create<Tmp>(TmpType::NAMED_TYPE, name);
   }
 
   static Expr *qconv_infer_ty(ConvState &s, const qparse::InferType *n) {
@@ -2552,7 +2554,7 @@ static qxir::Expr *qconv_one(ConvState &s, const qparse::Node *n) {
       break;
 
     case QAST_NODE_REF_TY:
-      out = qconv_mut_ty(s, n->as<qparse::RefTy>());
+      out = qconv_ref_ty(s, n->as<qparse::RefTy>());
       break;
 
     case QAST_NODE_U1_TY:

@@ -49,6 +49,112 @@
  * @spacecomplexity O(n)
  */
 
+static std::string_view memorize(std::string_view sv) { return qxir::current->internString(sv); }
+
+static std::pair<std::vector<std::string>, std::string> split_ns(std::string_view the) {
+  std::vector<std::string> ns;
+
+  size_t start = 0;
+  size_t end = the.find("::");
+
+  while (end != std::string::npos) {
+    ns.push_back(std::string(the.substr(start, end - start)));
+    start = end + 2;
+    end = the.find("::", start);
+  }
+
+  ns.push_back(std::string(the.substr(start)));
+
+  std::string_view name = ns.back();
+  ns.pop_back();
+
+  return {ns, std::string(name)};
+}
+
+static std::string join_ns(const std::vector<std::string> &ns, const std::string &name) {
+  std::string result;
+
+  for (size_t i = 0; i < ns.size(); i++) {
+    result += ns[i] + "::";
+  }
+
+  result += name;
+  return result;
+}
+
+enum class IdentWhat {
+  Variable,
+  NamedConstant,
+  Function,
+  Typename,
+};
+
+static std::optional<std::pair<std::string, IdentWhat>> resolve_name(qmodule_t *mod,
+                                                                     std::string_view name) {
+  // This algorithm is SLOOOW; FIXME: Make it faster
+  auto ns = split_ns(name);
+
+  {  // Resolve attempt 1
+    while (true) {
+      std::string n = join_ns(ns.first, ns.second);
+
+      if (mod->getVariables().left.count(n) > 0) {
+        return std::make_pair(n, IdentWhat::Variable);
+      }
+
+      if (mod->getNamedConstants().count(n) > 0) {
+        return std::make_pair(n, IdentWhat::NamedConstant);
+      }
+
+      if (mod->getFunctions().left.count(n) > 0) {
+        return std::make_pair(n, IdentWhat::Function);
+      }
+
+      if (mod->getTypeMap().count(n) > 0) {
+        return std::make_pair(n, IdentWhat::Typename);
+      }
+
+      if (ns.first.empty()) {
+        break;
+      }
+
+      ns.first.pop_back();
+    }
+  }
+
+  ns = split_ns(name);
+
+  {  // Resolve attempt 2
+    while (true) {
+      std::string n = join_ns(ns.first, ns.second);
+
+      if (mod->getVariables().left.count(n) > 0) {
+        return std::make_pair(n, IdentWhat::Variable);
+      }
+
+      if (mod->getNamedConstants().count(n) > 0) {
+        return std::make_pair(n, IdentWhat::NamedConstant);
+      }
+
+      if (mod->getFunctions().left.count(n) > 0) {
+        return std::make_pair(n, IdentWhat::Function);
+      }
+
+      if (mod->getTypeMap().count(n) > 0) {
+        return std::make_pair(n, IdentWhat::Typename);
+      }
+
+      if (ns.first.empty()) {
+        break;
+      }
+
+      ns.first.erase(ns.first.begin());
+    }
+  }
+
+  return std::nullopt;
+}
+
 static bool resolve_node(qxir::Expr **_cur) {
   if ((*_cur)->getKind() != QIR_NODE_TMP) {
     return true;
@@ -78,14 +184,23 @@ static bool resolve_node(qxir::Expr **_cur) {
       const auto &provided_args = std::get<1>(info);
 
       if (base->getKind() == QIR_NODE_IDENT) { /* Direct call */
-        const std::string_view &funcname = base->as<Ident>()->getName();
+        std::string funcname = std::string(base->as<Ident>()->getName());
 
-        { /* Function does not exist */
-          if (mod->getFunctions().left.count(funcname) == 0) {
+        { /* Resolve the function */
+          auto resolved = resolve_name(mod, funcname);
+          if (!resolved) {
             NO_MATCHING_FUNCTION(funcname);
             error = true;
             break;
           }
+
+          if (resolved->second != IdentWhat::Function) {
+            NO_MATCHING_FUNCTION(funcname);
+            error = true;
+            break;
+          }
+
+          funcname = resolved->first;
         }
 
         qcore_assert(mod->getParameterMap().contains(funcname));
@@ -207,13 +322,14 @@ static bool resolve_node(qxir::Expr **_cur) {
     case TmpType::NAMED_TYPE: {
       std::string_view name = std::get<std::string_view>(cur->as<Tmp>()->getData());
 
-      if (!mod->getTypeMap().contains(name)) {
+      auto resolved = resolve_name(mod, name);
+
+      if (resolved && resolved->second == IdentWhat::Typename) {
+        *_cur = mod->getTypeMap().at(resolved->first);
+      } else {
         NO_MATCHING_TYPE(name);
         error = true;
-        break;
       }
-
-      *_cur = mod->getTypeMap().at(name);
       break;
     }
 
@@ -363,16 +479,25 @@ static bool beta_pass(qmodule_t *mod) {
     Ident *cur = (*_cur)->as<Ident>();
     std::string_view name = cur->getName();
 
-    if (mod->getFunctions().left.count(name) > 0) {
-      cur->setWhat(mod->getFunctions().left.at(name).second);
-    } else if (mod->getVariables().left.count(name) > 0) {
-      cur->setWhat(mod->getVariables().left.at(name));
-    } else if (mod->getNamedConstants().count(name) > 0) {
-      cur->setWhat(mod->getNamedConstants().at(name));
-    } else {
-      UNRESOLVED_IDENTIFIER(name);
-      error = true;
+    auto resolved = resolve_name(mod, name);
+
+    if (resolved) {
+      if (resolved->second == IdentWhat::Variable) {
+        cur->setWhat(mod->getVariables().left.at(resolved->first));
+      } else if (resolved->second == IdentWhat::NamedConstant) {
+        cur->setWhat(mod->getNamedConstants().at(resolved->first));
+      } else if (resolved->second == IdentWhat::Function) {
+        cur->setWhat(mod->getFunctions().left.at(resolved->first).first);
+      }
+
+      cur->setName(memorize(resolved->first));
+
+      return IterOp::Proceed;
     }
+
+    UNRESOLVED_IDENTIFIER(name);
+    error = true;
+
     return IterOp::Proceed;
   };
 

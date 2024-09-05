@@ -197,17 +197,18 @@ namespace qxir::diag {
                         diag::IssueClass::Error, diag::IssueCode::TooManyArguments,          \
                         cur->getLoc().first, cur->getLoc().second));
 
-#define NO_MATCHING_TYPE(_typename)                                                          \
-  mod->getDiag().push(QXIR_AUDIT_CONV,                                                       \
-                      diag::DiagMessage("No matching type named " + std::string(_typename),  \
-                                        diag::IssueClass::Error, diag::IssueCode::DSBadType, \
+#define NO_MATCHING_TYPE(_typename)                                                            \
+  mod->getDiag().push(QXIR_AUDIT_CONV,                                                         \
+                      diag::DiagMessage("No matching type named " + std::string(_typename),    \
+                                        diag::IssueClass::Error, diag::IssueCode::UnknownType, \
                                         cur->getLoc().first, cur->getLoc().second));
 
 #define UNRESOLVED_IDENTIFIER(_id)                                                            \
   mod->getDiag().push(                                                                        \
       QXIR_AUDIT_CONV,                                                                        \
       diag::DiagMessage("Unresolved identifier " + std::string(_id), diag::IssueClass::Error, \
-                        diag::IssueCode::DSNullPtr, cur->getLoc().first, cur->getLoc().second));
+                        diag::IssueCode::UnresolvedIdentifier, cur->getLoc().first,           \
+                        cur->getLoc().second));
 
 };  // namespace qxir::diag
 
