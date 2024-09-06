@@ -51,11 +51,11 @@
 #include <stack>
 
 namespace qxir::detail {
-  std::vector<Expr **> get_children_sorted(Expr *base, ChildSelect cs) {
-    std::vector<Expr **> children;
+  void get_children_sorted(Expr *base, ChildSelect cs, std::vector<Expr **> &children) {
+    children.clear();
 
     if (!base) {
-      return children;
+      return;
     }
 
     switch (base->getKind()) {
@@ -82,6 +82,7 @@ namespace qxir::detail {
         break;
       }
       case QIR_NODE_LIST: {
+        children.reserve(base->as<List>()->m_items.size());
         for (Expr *&child : base->as<List>()->m_items) {
           children.push_back(&child);
         }
@@ -92,18 +93,21 @@ namespace qxir::detail {
         break;
       }
       case QIR_NODE_CALL: {
+        children.reserve(base->as<Call>()->m_args.size());
         for (Expr *&child : base->as<Call>()->m_args) {
           children.push_back(&child);
         }
         break;
       }
       case QIR_NODE_SEQ: {
+        children.reserve(base->as<Seq>()->m_items.size());
         for (Expr *&child : base->as<Seq>()->m_items) {
           children.push_back(&child);
         }
         break;
       }
       case QIR_NODE_ASYNC: {
+        children.reserve(base->as<Async>()->m_items.size());
         for (Expr *&child : base->as<Async>()->m_items) {
           children.push_back(&child);
         }
@@ -172,6 +176,7 @@ namespace qxir::detail {
       }
       case QIR_NODE_SWITCH: {
         children.push_back(&base->as<Switch>()->m_cond);
+        children.reserve(base->as<Switch>()->m_cases.size() + 2);
         for (Case *&child : base->as<Switch>()->m_cases) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
@@ -179,6 +184,7 @@ namespace qxir::detail {
         break;
       }
       case QIR_NODE_FN: {
+        children.reserve(base->as<Fn>()->m_params.size() + 1);
         for (Type *&child : base->as<Fn>()->m_params) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
@@ -248,12 +254,14 @@ namespace qxir::detail {
         break;
       }
       case QIR_NODE_STRUCT_TY: {
+        children.reserve(base->as<StructTy>()->m_fields.size());
         for (Type *&child : base->as<StructTy>()->m_fields) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
         break;
       }
       case QIR_NODE_UNION_TY: {
+        children.reserve(base->as<UnionTy>()->m_fields.size());
         for (Type *&child : base->as<UnionTy>()->m_fields) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
@@ -272,6 +280,7 @@ namespace qxir::detail {
         break;
       }
       case QIR_NODE_FN_TY: {
+        children.reserve(base->as<FnTy>()->m_params.size() + 1);
         for (Type *&child : base->as<FnTy>()->m_params) {
           children.push_back(reinterpret_cast<Expr **>(&child));
         }
@@ -288,7 +297,7 @@ namespace qxir::detail {
 
     std::sort(children.begin(), children.end(), cs);
 
-    return children;
+    return;
   }
 
   class IterAbort {
@@ -305,6 +314,8 @@ namespace qxir::detail {
 
     const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::stack<std::pair<Expr *, Expr **>> s;
+      std::vector<Expr **> children;
+
       s.push({nullptr, n});
 
       while (!s.empty()) {
@@ -324,7 +335,7 @@ namespace qxir::detail {
         }
 
         if (!skip) {
-          auto children = get_children_sorted(*cur.second, cs);
+          get_children_sorted(*cur.second, cs, children);
           for (auto it = children.rbegin(); it != children.rend(); ++it) {
             s.push({*cur.second, *it});
           }
@@ -352,13 +363,15 @@ namespace qxir::detail {
 
     const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::stack<std::pair<Expr *, Expr **>> s;
+      std::vector<Expr **> children;
+
       s.push({nullptr, n});
 
       while (!s.empty()) {
         auto cur = s.top();
         s.pop();
 
-        auto children = get_children_sorted(*cur.second, cs);
+        get_children_sorted(*cur.second, cs, children);
         for (auto it = children.rbegin(); it != children.rend(); ++it) {
           s.push({*cur.second, *it});
         }
@@ -397,6 +410,8 @@ namespace qxir::detail {
 
     const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::queue<std::pair<Expr *, Expr **>> s;
+      std::vector<Expr **> children;
+
       s.push({nullptr, n});
 
       while (!s.empty()) {
@@ -416,7 +431,7 @@ namespace qxir::detail {
         }
 
         if (!skip) {
-          auto children = get_children_sorted(*cur.second, cs);
+          get_children_sorted(*cur.second, cs, children);
           for (auto it = children.rbegin(); it != children.rend(); ++it) {
             s.push({*cur.second, *it});
           }
@@ -444,13 +459,15 @@ namespace qxir::detail {
 
     const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::queue<std::pair<Expr *, Expr **>> s;
+      std::vector<Expr **> children;
+
       s.push({nullptr, n});
 
       while (!s.empty()) {
         auto cur = s.front();
         s.pop();
 
-        auto children = get_children_sorted(*cur.second, cs);
+        get_children_sorted(*cur.second, cs, children);
         for (auto it = children.rbegin(); it != children.rend(); ++it) {
           s.push({*cur.second, *it});
         }
@@ -486,7 +503,10 @@ namespace qxir::detail {
     }
 
     const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
-      for (Expr **child : get_children_sorted(*n, cs)) {
+      std::vector<Expr **> children;
+      get_children_sorted(*n, cs, children);
+
+      for (Expr **child : children) {
         switch (cb(*n, child)) {
           case IterOp::Proceed:
             break;
@@ -499,7 +519,8 @@ namespace qxir::detail {
     };
 
     const auto asyncfn = [](Expr **n, IterCallback cb, ChildSelect cs) {
-      std::vector<Expr **> children = get_children_sorted(*n, cs);
+      std::vector<Expr **> children;
+      get_children_sorted(*n, cs, children);
 
       std::list<std::future<void>> futures;
       for (Expr **child : children) {
