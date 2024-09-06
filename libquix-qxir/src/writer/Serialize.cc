@@ -171,13 +171,18 @@ static void indent(FILE &ss, ConvState &state) {
   }
 }
 
-static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state,
-                              std::unordered_set<Expr *> &visited, bool is_cylic) {
+static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
+#if !defined(NDEBUG)
+                              ,
+                              std::unordered_set<Expr *> &visited, bool is_cylic
+#endif
+) {
   if (!n) { /* Nicely handle null nodes */
     ss << "{?}";
     return true;
   }
 
+#if !defined(NDEBUG)
   if (is_cylic) {
     if (visited.contains(n)) {
       ss << "{...}";
@@ -185,8 +190,10 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state,
     }
     visited.insert(n);
   }
-
 #define recurse(x) serialize_recurse(x, ss, state, visited, is_cylic)
+#else
+#define recurse(x) serialize_recurse(x, ss, state)
+#endif
 
   if (n->isConst()) {
     ss << "const ";
@@ -641,8 +648,11 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
     ss << "\n\n";
   }
 
+#if !defined(NDEBUG)
   std::unordered_set<Expr *> v;
   bool is_cylic = !node->is_acyclic();
+#endif
+
   bool some_type = false;
   std::unordered_set<uint64_t> type_ids;
 
@@ -662,7 +672,12 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
         indent(ss, state);
         for (auto it = n->as<StructTy>()->getFields().begin();
              it != n->as<StructTy>()->getFields().end(); ++it) {
-          serialize_recurse(*it, ss, state, v, is_cylic);
+          serialize_recurse(*it, ss, state
+#if !defined(NDEBUG)
+                            ,
+                            v, is_cylic
+#endif
+          );
           ss << ",";
 
           if (std::next(it) != n->as<StructTy>()->getFields().end()) {
@@ -687,7 +702,12 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
         indent(ss, state);
         for (auto it = n->as<UnionTy>()->getFields().begin();
              it != n->as<UnionTy>()->getFields().end(); ++it) {
-          serialize_recurse(*it, ss, state, v, is_cylic);
+          serialize_recurse(*it, ss, state
+#if !defined(NDEBUG)
+                            ,
+                            v, is_cylic
+#endif
+          );
           ss << ",";
 
           if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
@@ -714,7 +734,12 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
   ss << "\n";
 
   /* Serialize the AST recursively */
-  return serialize_recurse(node, ss, state, v, is_cylic);
+  return serialize_recurse(node, ss, state
+#if !defined(NDEBUG)
+                           ,
+                           v, is_cylic
+#endif
+  );
 }
 
 static bool raw_deflate(const uint8_t *in, size_t in_size, FILE &out) {
