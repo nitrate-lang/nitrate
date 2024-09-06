@@ -29,9 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdint>
-#include <unordered_map>
-#include <unordered_set>
 #define __QXIR_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
@@ -45,7 +42,10 @@
 #include <boost/uuid/name_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <cstdint>
 #include <cstring>
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace qxir;
 
@@ -539,9 +539,8 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
   }
 }
 
-// Utility function to detect cycle in a directed graph
-bool isCyclicUtil(qxir::Expr *base, std::unordered_set<qxir::Expr *> &visited,
-                  std::unordered_set<qxir::Expr *> &recStack) {
+static bool isCyclicUtil(qxir::Expr *base, std::unordered_set<qxir::Expr *> &visited,
+                         std::unordered_set<qxir::Expr *> &recStack) {
   bool has_cycle = false;
 
   if (!visited.contains(base)) {
@@ -553,10 +552,10 @@ bool isCyclicUtil(qxir::Expr *base, std::unordered_set<qxir::Expr *> &visited,
     // Recur for all the vertices adjacent
     // to this vertex
     iterate<IterMode::children>(base, [&](qxir::Expr *par, qxir::Expr **cur) -> IterOp {
-      if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) {
+      if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) [[unlikely]] {
         has_cycle = true;
         return IterOp::Abort;
-      } else if (recStack.contains(*cur)) {
+      } else if (recStack.contains(*cur)) [[unlikely]] {
         has_cycle = true;
         return IterOp::Abort;
       }
@@ -576,7 +575,7 @@ CPP_EXPORT bool qxir::Expr::is_acyclic() const noexcept {
 
   Expr *ptr = const_cast<Expr *>(this);
   iterate<IterMode::children>(ptr, [&](Expr *par, Expr **cur) -> IterOp {
-    if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) {
+    if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) [[unlikely]] {
       has_cycle = true;
       return IterOp::Abort;
     }

@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstddef>
+#include <string_view>
 #define __QUIX_IMPL__
 
 #include <parser/Parse.h>
@@ -137,17 +139,25 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
    * @return true if it is okay to proceed, false otherwise
    */
 
-  qlex_tok_t tok = qlex_next(rd);
-  std::string fstr, tmp;
+  qlex_tok_t tok;
+  std::string tmp;
+  std::string_view fstr;
   FStringItems items;
   size_t state = 0, w_beg = 0, w_end = 0;
   Expr *expr = nullptr;
 
+  tok = qlex_next(rd);
   if (!tok.is(qText)) {
     syntax(tok, "Expected a string literal in F-string expression");
   }
 
-  fstr = tok.as_string(rd);
+  {
+    size_t len;
+    const char *ptr = qlex_str(rd, &tok, &len);
+    fstr = std::string_view(ptr, len);
+  }
+
+  tmp.reserve(fstr.size());
 
   for (size_t i = 0; i < fstr.size(); i++) {
     char c = fstr[i];
@@ -159,9 +169,9 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
       w_end = i + 1;
       state = 0;
 
-      std::string sub = fstr.substr(w_beg, w_end - w_beg) + "\n";
+      std::string_view sub = fstr.substr(w_beg, w_end - w_beg);
 
-      qlex_t *subrd = qlex_direct(sub.c_str(), sub.size(), "fstring");
+      qlex_t *subrd = qlex_direct(sub.data(), sub.size(), "fstring");
       qlex_tok_t subtok = qlex_peek(subrd);
 
       if (!parse_expr(job, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr, depth + 1) || !expr) {
@@ -173,8 +183,7 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
       qlex_free(subrd);
 
       if (!tmp.empty()) {
-        items.push_back(tmp);
-        tmp.clear();
+        items.push_back(std::move(tmp));
       }
 
       items.push_back(expr);
@@ -190,14 +199,14 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
   }
 
   if (!tmp.empty()) {
-    items.push_back(tmp);
+    items.push_back(std::move(tmp));
   }
 
   if (state != 0) {
     syntax(tok, "F-string expression is not properly closed with '}'");
   }
 
-  *node = FString::get(items);
+  *node = FString::get(std::move(items));
 
   return true;
 }
