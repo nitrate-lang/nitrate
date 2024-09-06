@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstdint>
+#include <unordered_map>
 #include <unordered_set>
 #define __QXIR_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
@@ -878,4 +880,23 @@ CPP_EXPORT qmodule_t *qxir::Expr::getModule() const noexcept { return ::getModul
 
 CPP_EXPORT void qxir::Expr::setModule(qmodule_t *module) noexcept {
   m_module_idx = module->getModuleId();
+}
+
+CPP_EXPORT uint64_t Type::getTypeIncrement() const {
+  static thread_local std::unordered_map<const Type *, uint64_t> type_map;
+  static thread_local uint64_t last = 0;
+
+  if (type_map.contains(this)) {
+    return type_map.at(this);
+  }
+
+  for (auto &[key, value] : type_map) {
+    if (key->cmp_eq(this)) {
+      return value;
+    }
+  }
+
+  type_map[this] = last;
+
+  return last++;
 }

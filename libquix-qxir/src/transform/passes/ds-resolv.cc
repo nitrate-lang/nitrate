@@ -65,10 +65,10 @@ static std::pair<std::vector<std::string>, std::string> split_ns(std::string_vie
 
   ns.push_back(std::string(the.substr(start)));
 
-  std::string_view name = ns.back();
+  std::string name = ns.back();
   ns.pop_back();
 
-  return {ns, std::string(name)};
+  return {ns, name};
 }
 
 static std::string join_ns(const std::vector<std::string> &ns, const std::string &name) {

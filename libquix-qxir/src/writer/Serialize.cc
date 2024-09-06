@@ -30,6 +30,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cstddef>
+#include <cstdint>
+#include <unordered_set>
+
+#include "quix-qxir/TypeDecl.h"
 #define __QXIR_IMPL__
 
 #include <libdeflate.h>
@@ -504,39 +508,41 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state,
       break;
     }
     case QIR_NODE_STRUCT_TY: {
-      ss << "struct {";
-      state.indent++;
-      indent(ss, state);
-      for (auto it = n->as<StructTy>()->getFields().begin();
-           it != n->as<StructTy>()->getFields().end(); ++it) {
-        recurse(*it);
-        ss << ",";
+      ss << "%" << n->as<StructTy>()->getTypeIncrement();
+      // ss << "struct {";
+      // state.indent++;
+      // indent(ss, state);
+      // for (auto it = n->as<StructTy>()->getFields().begin();
+      //      it != n->as<StructTy>()->getFields().end(); ++it) {
+      //   recurse(*it);
+      //   ss << ",";
 
-        if (std::next(it) != n->as<StructTy>()->getFields().end()) {
-          indent(ss, state);
-        }
-      }
-      state.indent--;
-      indent(ss, state);
-      ss << "}";
+      //   if (std::next(it) != n->as<StructTy>()->getFields().end()) {
+      //     indent(ss, state);
+      //   }
+      // }
+      // state.indent--;
+      // indent(ss, state);
+      // ss << "}";
       break;
     }
     case QIR_NODE_UNION_TY: {
-      ss << "union {";
-      state.indent++;
-      indent(ss, state);
-      for (auto it = n->as<UnionTy>()->getFields().begin();
-           it != n->as<UnionTy>()->getFields().end(); ++it) {
-        recurse(*it);
-        ss << ",";
+      ss << "%" << n->as<UnionTy>()->getTypeIncrement();
+      // ss << "union {";
+      // state.indent++;
+      // indent(ss, state);
+      // for (auto it = n->as<UnionTy>()->getFields().begin();
+      //      it != n->as<UnionTy>()->getFields().end(); ++it) {
+      //   recurse(*it);
+      //   ss << ",";
 
-        if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
-          indent(ss, state);
-        }
-      }
-      state.indent--;
-      indent(ss, state);
-      ss << "}";
+      //   if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
+      //     indent(ss, state);
+      //   }
+      // }
+      // state.indent--;
+      // indent(ss, state);
+      // ss << "}";
       break;
     }
     case QIR_NODE_ARRAY_TY: {
@@ -589,8 +595,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state,
   return true;
 }
 
-static bool to_codeform(Expr *node, bool minify, size_t indent, FILE &ss) {
-  ConvState state = {0, indent, minify};
+static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
+  ConvState state = {0, indent_size, minify};
   qmodule_t *mod = node->getModule();
 
   if (!minify) {
@@ -635,9 +641,80 @@ static bool to_codeform(Expr *node, bool minify, size_t indent, FILE &ss) {
     ss << "\n\n";
   }
 
-  /* Serialize the AST recursively */
   std::unordered_set<Expr *> v;
-  return serialize_recurse(node, ss, state, v, !node->is_acyclic());
+  bool is_cylic = !node->is_acyclic();
+  bool some_type = false;
+  std::unordered_set<uint64_t> type_ids;
+
+  auto cb = [&](Expr *par, Expr **_cur) -> IterOp {
+    Expr *n = *_cur;
+
+    switch (n->getKind()) {
+      case QIR_NODE_STRUCT_TY: {
+        uint64_t type_id = n->getType()->getTypeIncrement();
+        if (type_ids.contains(type_id)) {
+          break;
+        }
+        type_ids.insert(type_id);
+        ss << "%" << type_id << " = struct {";
+
+        state.indent++;
+        indent(ss, state);
+        for (auto it = n->as<StructTy>()->getFields().begin();
+             it != n->as<StructTy>()->getFields().end(); ++it) {
+          serialize_recurse(*it, ss, state, v, is_cylic);
+          ss << ",";
+
+          if (std::next(it) != n->as<StructTy>()->getFields().end()) {
+            indent(ss, state);
+          }
+        }
+        state.indent--;
+        indent(ss, state);
+        ss << "}\n";
+        some_type = true;
+        break;
+      }
+
+      case QIR_NODE_UNION_TY: {
+        uint64_t type_id = n->getType()->getTypeIncrement();
+        if (type_ids.contains(type_id)) {
+          break;
+        }
+        type_ids.insert(type_id);
+        ss << "%" << type_id << " = union {";
+        state.indent++;
+        indent(ss, state);
+        for (auto it = n->as<UnionTy>()->getFields().begin();
+             it != n->as<UnionTy>()->getFields().end(); ++it) {
+          serialize_recurse(*it, ss, state, v, is_cylic);
+          ss << ",";
+
+          if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
+            indent(ss, state);
+          }
+        }
+        state.indent--;
+        indent(ss, state);
+        ss << "}\n";
+        some_type = true;
+        break;
+      }
+
+      default: {
+        break;
+      }
+    }
+
+    return IterOp::Proceed;
+  };
+
+  iterate<dfs_pre>(node, cb);
+
+  ss << "\n";
+
+  /* Serialize the AST recursively */
+  return serialize_recurse(node, ss, state, v, is_cylic);
 }
 
 static bool raw_deflate(const uint8_t *in, size_t in_size, FILE &out) {

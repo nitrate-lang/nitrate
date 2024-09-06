@@ -265,6 +265,7 @@ namespace qxir {
     bool hasKnownSize() noexcept;
     uint64_t getSizeBits();
     inline uint64_t getSizeBytes() { return std::ceil(getSizeBits() / 8.0); }
+    uint64_t getTypeIncrement() const;
   };
 
   ///=============================================================================
