@@ -20,7 +20,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQPARSE_ID=${QPARSE_ID})
-SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQPARSE_ID="undefined")
+SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQPARSE_ID="undefined")
 
 if (MEMORY_OVER_SPEED)
   SET(PROJECT_RELEASE_FLAGS ${PROJECT_RELEASE_FLAGS} -DMEMORY_OVER_SPEED=1)
