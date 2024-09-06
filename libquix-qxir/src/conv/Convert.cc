@@ -920,6 +920,7 @@ namespace qxir {
      */
 
     SeqItems items;
+    items.reserve(n->get_items().size());
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
       auto item = qconv_one(s, *it);
@@ -1951,6 +1952,7 @@ namespace qxir {
       return {create<Extern>(item, abi_name)};
     } else {
       SeqItems items;
+      items.reserve(n->get_body()->get_items().size());
 
       for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
            ++it) {
@@ -2004,6 +2006,7 @@ namespace qxir {
      */
 
     SeqItems items;
+    items.reserve(n->get_items().size());
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
       auto item = qconv_any(s, *it);
@@ -2903,6 +2906,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     }
     case QIR_NODE_LIST: {
       ListItems items;
+      items.reserve(static_cast<List *>(in)->getItems().size());
       for (auto item : static_cast<List *>(in)->getItems()) {
         items.push_back(clone(item));
       }
@@ -2924,6 +2928,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     }
     case QIR_NODE_SEQ: {
       SeqItems items;
+      items.reserve(static_cast<Seq *>(in)->getItems().size());
       for (auto item : static_cast<Seq *>(in)->getItems()) {
         items.push_back(clone(item));
       }
@@ -2932,6 +2937,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     }
     case QIR_NODE_ASYNC: {
       AsyncItems items;
+      items.reserve(static_cast<Async *>(in)->getItems().size());
       for (auto item : static_cast<Async *>(in)->getItems()) {
         items.push_back(clone(item));
       }
@@ -3006,6 +3012,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     case QIR_NODE_SWITCH: {
       Switch *n = static_cast<Switch *>(in);
       SwitchCases cases;
+      cases.reserve(n->getCases().size());
       for (auto item : n->getCases()) {
         cases.push_back(clone(item)->as<Case>());
       }
@@ -3015,6 +3022,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     case QIR_NODE_FN: {
       Fn *n = static_cast<Fn *>(in);
       Params params;
+      params.reserve(n->getParams().size());
       for (auto param : n->getParams()) {
         params.push_back(clone(param)->asType());
       }
@@ -3106,6 +3114,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     }
     case QIR_NODE_STRUCT_TY: {
       StructFields fields;
+      fields.reserve(static_cast<StructTy *>(in)->getFields().size());
       for (auto field : static_cast<StructTy *>(in)->getFields()) {
         fields.push_back(clone(field)->asType());
       }
@@ -3114,6 +3123,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     }
     case QIR_NODE_UNION_TY: {
       UnionFields fields;
+      fields.reserve(static_cast<UnionTy *>(in)->getFields().size());
       for (auto field : static_cast<UnionTy *>(in)->getFields()) {
         fields.push_back(clone(field)->asType());
       }
@@ -3137,6 +3147,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     case QIR_NODE_FN_TY: {
       FnTy *n = static_cast<FnTy *>(in);
       FnParams params;
+      params.reserve(n->getParams().size());
       for (auto param : n->getParams()) {
         params.push_back(clone(param)->asType());
       }
