@@ -21,7 +21,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQLEX_ID=${QLEX_ID})
-SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O0 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQLEX_ID="undefined")
+SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQLEX_ID="undefined")
 
 if (MEMORY_OVER_SPEED)
   SET(PROJECT_RELEASE_FLAGS ${PROJECT_RELEASE_FLAGS} -DMEMORY_OVER_SPEED=1)
@@ -69,5 +69,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_link_libraries(quix-lexer-shared PRIVATE quix-core)
   add_dependencies(quix-lexer-shared quix-core)
   set_target_properties(quix-lexer-shared PROPERTIES OUTPUT_NAME quix-lexer)
+
+  add_subdirectory(tests)
 endif()
 

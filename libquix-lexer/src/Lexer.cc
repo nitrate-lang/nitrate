@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <csetjmp>
 #define __QUIX_IMPL__
 
 #include <quix-core/Error.h>
@@ -37,11 +36,12 @@
 #include <string.h>
 
 #include <array>
-#include <bit>
 #include <boost/bimap.hpp>
+#include <boost/unordered_map.hpp>
 #include <cctype>
 #include <charconv>
 #include <cmath>
+#include <csetjmp>
 #include <cstdio>
 #include <iomanip>
 #include <queue>
@@ -60,8 +60,8 @@
 
 ///============================================================================///
 /// BEGIN: PERFORMANCE HYPER PARAMETERS
-#define GETC_BUFFER_SIZE 10
-#define TOKEN_BUF_SIZE 10
+#define GETC_BUFFER_SIZE 64
+#define TOKEN_BUF_SIZE 64
 /// END:   PERFORMANCE HYPER PARAMETERS
 ///============================================================================///
 
@@ -269,12 +269,12 @@ enum class NumType {
   Floating,
 };
 
-static thread_local std::unordered_map<qlex::num_buf_t, NumType> num_cache;
-static thread_local std::unordered_map<qlex::num_buf_t, qlex::num_buf_t> can_cache;
+static thread_local boost::unordered_map<qlex::num_buf_t, NumType> num_cache;
+static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t> can_cache;
 
 #if MEMORY_OVER_SPEED
 class StringRetainer {
-  std::unordered_map<uint8_t, std::vector<std::string>> m_strings;
+  boost::unordered_map<uint8_t, std::vector<std::string>> m_strings;
 
 #define BIN_ID(x) (x & 0x7)
 #define INDEX_ID(x) (x >> 3)
@@ -345,24 +345,25 @@ struct clever_me_t {
   uint32_t row : 21;   /* Row number (max 2097152) */
 } __attribute__((packed)) bits;
 
-class qlex_impl_t final {
-  StringRetainer m_holdings;
-
-  std::array<qlex_tok_t, TOKEN_BUF_SIZE> m_tokens;
+struct qlex_impl_t final {
+private:
   size_t m_tok_pos;
-  std::queue<qlex_tok_t> m_undo;
-  std::unordered_map<qlex_size, clever_me_t> m_tag_to_loc;
-  std::unordered_map<qlex_size, qlex_size> m_tag_to_off;
-
-  std::deque<char> m_pushback;
-  std::array<char, GETC_BUFFER_SIZE> m_buf;
   size_t m_bufpos;
   qlex_size m_row;
   qlex_size m_col;
   qlex_size m_offset;
   qlex_size m_locctr;
-  FILE *m_file;
+  StringRetainer m_holdings;
 
+  std::deque<char> m_pushback;
+  std::queue<qlex_tok_t> m_undo;
+  boost::unordered_map<qlex_size, clever_me_t> m_tag_to_loc;
+  boost::unordered_map<qlex_size, qlex_size> m_tag_to_off;
+
+  std::array<char, GETC_BUFFER_SIZE> m_buf;
+  std::array<qlex_tok_t, TOKEN_BUF_SIZE> m_tokens;
+
+  FILE *m_file;
   bool m_is_owned;
 
   void refill_buffer();
@@ -372,36 +373,35 @@ class qlex_impl_t final {
   char getc();
 
   qlex_loc_t loc() {
-    clever_me_t bits;
     static_assert(sizeof(bits) == sizeof(qlex_size));
 
     if (m_row <= 2097152 || m_col <= 1024) {
+      clever_me_t bits;
+
       bits.rc_fmt = 1;
       bits.col = m_col;
       bits.row = m_row;
 
+      qlex_size tag = m_locctr++;
+      m_tag_to_loc[tag] = bits;
+      m_tag_to_off[tag] = m_offset;
+
+      return {tag};
     } else {
-      bits.rc_fmt = 0;
+      return {0};
     }
-
-    qlex_size tag = m_locctr++;
-    m_tag_to_loc[tag] = bits;
-    m_tag_to_off[tag] = m_offset;
-
-    return {tag};
   }
 
 public:
   qlex_impl_t(FILE *file, bool is_owned)
-      : m_holdings(),
-        m_tokens(),
-        m_tok_pos(TOKEN_BUF_SIZE + 1),
-        m_buf(),
-        m_bufpos(GETC_BUFFER_SIZE + 1),
+      : m_tok_pos(TOKEN_BUF_SIZE + 1),
+        m_bufpos(GETC_BUFFER_SIZE),
         m_row(1),
         m_col(1),
         m_offset(0),
         m_locctr(1),  // 0 means invalid location
+        m_holdings(),
+
         m_file(file),
         m_is_owned(is_owned) {
     if (fseek(file, 0, SEEK_SET) != 0) {
@@ -425,7 +425,7 @@ public:
   qlex_size save_userstring(std::string_view str) { return m_holdings.retain(str); }
 
   std::optional<qlex_size> loc2offset(qlex_loc_t loc) {
-    if (!m_tag_to_off.contains(loc.tag)) [[unlikely]] {
+    if (m_tag_to_off.find(loc.tag) == m_tag_to_off.end()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -433,7 +433,7 @@ public:
   }
 
   std::optional<std::pair<qlex_size, qlex_size>> loc2rowcol(qlex_loc_t loc) {
-    if (!m_tag_to_loc.contains(loc.tag)) [[unlikely]] {
+    if (m_tag_to_loc.find(loc.tag) == m_tag_to_loc.end()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -802,8 +802,9 @@ LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
       case qMacB:
       case qMacr:
       case qNote:
-        *len = lexer->impl->Strings().at(tok->v.str_idx).size();
-        return lexer->impl->Strings().at(tok->v.str_idx).data();
+        auto x = lexer->impl->Strings().at(tok->v.str_idx);
+        *len = x.size();
+        return x.data();
     }
   } catch (std::out_of_range &) {
     *len = 0;
@@ -1096,7 +1097,7 @@ static jmp_buf getc_jmpbuf;
 
 char qlex_impl_t::getc() {
   /* Refill the buffer if necessary */
-  if (m_bufpos >= GETC_BUFFER_SIZE) [[unlikely]] {
+  if (m_bufpos == GETC_BUFFER_SIZE) [[unlikely]] {
     size_t read = fread(m_buf.data(), 1, GETC_BUFFER_SIZE, m_file);
 
     if (read == 0) [[unlikely]] {
@@ -1136,8 +1137,6 @@ qlex_tok_t qlex_impl_t::next() {
 
   return m_tokens[m_tok_pos++];
 }
-
-#include <iostream>
 
 void qlex_impl_t::refill_buffer() {
   // C++ has some wierd UB if 'i' is initialized before the 'setjmp'
@@ -1195,7 +1194,7 @@ static bool validate_identifier(std::string_view id) {
 }
 
 static NumType check_number_literal_type(qlex::num_buf_t &input) {
-  if (num_cache.contains(input)) return num_cache[input];
+  if (num_cache.find(input) != num_cache.end()) return num_cache[input];
 
   if (input.empty()) return num_cache[input] = NumType::Invalid;
 
@@ -1284,7 +1283,7 @@ static bool canonicalize_float(std::string_view input, std::string &norm) {
 }
 
 static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumType type) {
-  if (can_cache.contains(number)) {
+  if (can_cache.find(number) != can_cache.end()) {
     return norm = can_cache[number], true;
   }
 
@@ -1504,17 +1503,17 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           }
           m_pushback.push_back(c);
 
-          /* Determine if it's a keyword or an identifier */
-          for (const auto &[left, right] : qlex::keywords) {
-            if (ibuf == left) {
-              return qlex_tok_t(qKeyW, right, start_pos, loc());
+          { /* Determine if it's a keyword or an identifier */
+            auto it = qlex::keywords.left.find(ibuf);
+            if (it != qlex::keywords.left.end()) {
+              return qlex_tok_t(qKeyW, it->second, start_pos, loc());
             }
           }
 
-          /* Check if it's an operator */
-          for (const auto &[left, right] : qlex::word_operators) {
-            if (ibuf == left) {
-              return qlex_tok_t(qOper, right, start_pos, loc());
+          { /* Check if it's an operator */
+            auto it = qlex::word_operators.left.find(ibuf);
+            if (it != qlex::word_operators.left.end()) {
+              return qlex_tok_t(qOper, it->second, start_pos, loc());
             }
           }
 
@@ -1897,11 +1896,10 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
         case LexState::Other: {
           /* Check if it's a punctor */
           if (buf.size() == 1) {
-            for (const auto &[left, right] : qlex::punctuation) {
-              if (left == buf) {
-                m_pushback.push_back(c);
-                return qlex_tok_t(qPunc, right, start_pos, loc());
-              }
+            auto it = qlex::punctuation.left.find(buf);
+            if (it != qlex::punctuation.left.end()) {
+              m_pushback.push_back(c);
+              return qlex_tok_t(qPunc, it->second, start_pos, loc());
             }
           }
 
@@ -1923,12 +1921,10 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           bool found = false;
           while (true) {
             bool contains = false;
-            for (const auto &[left, right] : qlex::operators) {
-              if (left == buf) {
-                contains = true;
-                found = true;
-                break;
-              }
+            if (std::any_of(qlex::operators.begin(), qlex::operators.end(),
+                            [&](const auto &pair) { return pair.left == buf; })) {
+              contains = true;
+              found = true;
             }
 
             if (contains) {

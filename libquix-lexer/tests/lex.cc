@@ -1,56 +1,56 @@
 #include <quix-lexer/Lib.h>
 
-#include <chrono>
+#include <fstream>
 #include <filesystem>
 #include <iostream>
 #include <vector>
 
-static void print_token(qlex_t *lexer, qlex_tok_t tok) {
+static void print_token(qlex_t *lexer, qlex_tok_t tok, std::ostream &out) {
   size_t len;
 
   switch (tok.ty) {
     case qEofF:
-      std::cout << "EOF()";
+      out << "EOF()";
       break;
     case qErro:
-      std::cout << "ERRO()";
+      out << "ERRO()";
       break;
     case qKeyW:
-      std::cout << "KEYW(" << qlex_kwstr(tok.v.key) << ")";
+      out << "KEYW(" << qlex_kwstr(tok.v.key) << ")";
       break;
     case qOper:
-      std::cout << "OPER(" << qlex_opstr(tok.v.op) << ")";
+      out << "OPER(" << qlex_opstr(tok.v.op) << ")";
       break;
     case qPunc:
-      std::cout << "PUNC(" << qlex_punctstr(tok.v.punc) << ")";
+      out << "PUNC(" << qlex_punctstr(tok.v.punc) << ")";
       break;
     case qName:
-      std::cout << "NAME(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "NAME(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qIntL:
-      std::cout << "INTL(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "INTL(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qNumL:
-      std::cout << "NUML(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "NUML(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qText:
-      std::cout << "TEXT(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "TEXT(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qChar:
-      std::cout << "CHAR(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "CHAR(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qMacB:
-      std::cout << "MACB(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "MACB(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qMacr:
-      std::cout << "MACR(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "MACR(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qNote:
-      std::cout << "NOTE(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "NOTE(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
   }
 
-  std::cout << "\n";
+  out << "\n";
 }
 
 void do_lex(FILE *file) {
@@ -58,9 +58,17 @@ void do_lex(FILE *file) {
 
   qlex_tok_t tok;
 
-  while ((tok = qlex_next(lexer)).ty != qEofF) {
-    print_token(lexer, tok);
+  std::fstream out("lex.out", std::ios::out);
+  if (!out.is_open()) {
+    std::cerr << "Failed to open output file" << std::endl;
+    return;
   }
+
+  while ((tok = qlex_next(lexer)).ty != qEofF) {
+    print_token(lexer, tok, out);
+  }
+
+  out.close();
 
   qlex_free(lexer);
 }
