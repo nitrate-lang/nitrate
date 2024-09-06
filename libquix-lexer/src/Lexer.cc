@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <csetjmp>
 #define __QUIX_IMPL__
 
 #include <quix-core/Error.h>
@@ -59,8 +60,8 @@
 
 ///============================================================================///
 /// BEGIN: PERFORMANCE HYPER PARAMETERS
-#define GETC_BUFFER_SIZE 2048
-#define TOKEN_BUF_SIZE 1024
+#define GETC_BUFFER_SIZE 10
+#define TOKEN_BUF_SIZE 10
 /// END:   PERFORMANCE HYPER PARAMETERS
 ///============================================================================///
 
@@ -363,11 +364,6 @@ class qlex_impl_t final {
   FILE *m_file;
 
   bool m_is_owned;
-
-  class GetCControlFlow {
-  public:
-    GetCControlFlow() = default;
-  };
 
   void refill_buffer();
   qlex_tok_t do_automata() noexcept;
@@ -1096,15 +1092,15 @@ LIB_EXPORT qlex_size qlex_spanx(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end,
 
 ///============================================================================///
 
-char qlex_impl_t::getc() {
-  size_t read;
+static jmp_buf getc_jmpbuf;
 
+char qlex_impl_t::getc() {
   /* Refill the buffer if necessary */
   if (m_bufpos >= GETC_BUFFER_SIZE) [[unlikely]] {
-    read = fread(m_buf.data(), 1, GETC_BUFFER_SIZE, m_file);
+    size_t read = fread(m_buf.data(), 1, GETC_BUFFER_SIZE, m_file);
 
     if (read == 0) [[unlikely]] {
-      throw GetCControlFlow();
+      longjmp(getc_jmpbuf, 1);
     }
 
     memset(m_buf.data() + read, '\n', GETC_BUFFER_SIZE - read);
@@ -1141,22 +1137,22 @@ qlex_tok_t qlex_impl_t::next() {
   return m_tokens[m_tok_pos++];
 }
 
+#include <iostream>
+
 void qlex_impl_t::refill_buffer() {
-  for (size_t i = 0; i < TOKEN_BUF_SIZE; i++) {
-    m_tokens[i] = do_automata();
+  // C++ has some wierd UB if 'i' is initialized before the 'setjmp'
+  static thread_local size_t i;
 
-    if (m_tokens[i].ty == qEofF) [[unlikely]] {
-      qlex_tok_t eof{};
-      eof.ty = qEofF;
-
-      if (i > 0) {
-        eof.start = m_tokens[i - 1].start;
-        eof.end = m_tokens[i - 1].end;
-      }
-
-      std::fill(m_tokens.begin() + i, m_tokens.end(), eof);
-      break;
+  if (setjmp(getc_jmpbuf) == 0) {
+    i = 0;
+    while (i < TOKEN_BUF_SIZE) {
+      m_tokens[i] = do_automata();
+      i = i + 1;
     }
+  } else [[unlikely]] {
+    m_tokens[i].ty = qEofF;
+
+    reset_state();
   }
 
   /* Must clear to prevent leaks */
@@ -1177,7 +1173,7 @@ static bool validate_identifier(std::string_view id) {
 
   int state = 0;
 
-  for (const auto &c : id) {
+  for (char c : id) {
     switch (state) {
       case 0:
         if (std::isalnum(c) || c == '_') continue;
@@ -1429,6 +1425,7 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
           eof_is_error = false;
           c = getc();
           eof_is_error = true;
+          (void)eof_is_error;
         } else {
           c = m_pushback.front();
           m_pushback.pop_front();
@@ -1957,13 +1954,6 @@ qlex_tok_t qlex_impl_t::do_automata() noexcept {
       }
     }
     goto error_0;
-  } catch (GetCControlFlow &) { /* This is just faster than checking for EOF everywhere */
-    if (eof_is_error) {
-      goto error_0;
-    } else {
-      reset_state();
-      return qlex_tok_t::eof(loc(), loc());
-    }
   } catch (std::exception &e) { /* This should never happen */
     qcore_panicf("qlex_impl_t::do_automata: %s. The lexer has a bug.", e.what());
   } catch (...) { /* This should never happen */
