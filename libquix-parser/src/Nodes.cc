@@ -743,7 +743,7 @@ void ExprStmt::print_impl(std::ostream &os, bool debug) const {
 
 ExprStmt *ExprStmt::clone_impl() const {
   Expr *expr = m_expr ? m_expr->clone() : nullptr;
-  return new ExprStmt(expr);
+  return ExprStmt::get(expr);
 }
 
 bool StmtExpr::verify_impl(std::ostream &os) const {
@@ -776,7 +776,7 @@ void StmtExpr::print_impl(std::ostream &os, bool debug) const {
 
 StmtExpr *StmtExpr::clone_impl() const {
   Stmt *stmt = m_stmt ? m_stmt->clone() : nullptr;
-  return new StmtExpr(stmt);
+  return StmtExpr::get(stmt);
 }
 
 bool TypeExpr::verify_impl(std::ostream &os) const {
@@ -809,25 +809,44 @@ void TypeExpr::print_impl(std::ostream &os, bool debug) const {
 
 TypeExpr *TypeExpr::clone_impl() const {
   Type *type = m_type ? m_type->clone() : nullptr;
-  return new TypeExpr(type);
+  return TypeExpr::get(type);
 }
 
 ///=============================================================================
 
 bool ConstExpr::verify_impl(std::ostream &os) const {
-  qcore_implement(__func__);
-  (void)os;
+  if (!m_value) {
+    os << "ConstExpr: value is NULL\n";
+    return false;
+  }
+
+  if (!m_value->verify(os)) {
+    os << "ConstExpr: value is invalid\n";
+    return false;
+  }
+
+  return true;
 }
 
-void ConstExpr::canonicalize_impl() { qcore_implement(__func__); }
+void ConstExpr::canonicalize_impl() {
+  if (m_value) {
+    m_value->canonicalize();
+  }
+}
 
 void ConstExpr::print_impl(std::ostream &os, bool debug) const {
-  qcore_implement(__func__);
-  (void)os;
-  (void)debug;
+  os << "const ";
+  if (m_value) {
+    m_value->print(os, debug);
+  } else {
+    os << "?";
+  }
 }
 
-ConstExpr *ConstExpr::clone_impl() const { qcore_implement(__func__); }
+ConstExpr *ConstExpr::clone_impl() const {
+  Expr *value = m_value ? m_value->clone() : nullptr;
+  return ConstExpr::get(value);
+}
 
 ///=============================================================================
 

@@ -472,10 +472,9 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
       return create_simple_call(s, "__detail::_is", {{"lhs", lhs}, {"rhs", rhs}});
     }
     case qOpIn: {
-      // auto methname = qxir::create<qxir::String>("has");
-      // auto method = qxir::create<qxir::Index>(rhs, methname);
-      // return qxir::create<qxir::Call>(method, qxir::CallArgs({lhs}));
-      qcore_implement("qOpIn");
+      auto methname = qxir::create<qxir::String>("has");
+      auto method = qxir::create<qxir::Index>(rhs, methname);
+      return qxir::create<qxir::Call>(method, qxir::CallArgs({lhs}));
     }
     case qOpRange: {
       /// TODO: Implement range operator

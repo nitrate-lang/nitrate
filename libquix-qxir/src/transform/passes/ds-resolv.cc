@@ -30,6 +30,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <string_view>
+
+#include "quix-qxir/TypeDecl.h"
 #define QXIR_USE_CPP_API
 
 #include <quix-qxir/Inference.h>
@@ -495,13 +497,81 @@ static bool beta_pass(qmodule_t *mod) {
       return IterOp::Proceed;
     }
 
-    UNRESOLVED_IDENTIFIER(name);
-    error = true;
-
     return IterOp::Proceed;
   };
 
   iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
+
+  ///=============================================================================
+  /// Resolve function parameters
+
+  auto cb2 = [&](Expr *, Expr **_cur) -> IterOp {
+    if ((*_cur)->getKind() != QIR_NODE_FN) {
+      return IterOp::Proceed;
+    }
+
+    Fn *cur = (*_cur)->as<Fn>();
+    auto name = cur->getName();
+
+    auto inner = [name, mod](Expr *, Expr **_cur) -> IterOp {
+      if ((*_cur)->getKind() == QIR_NODE_FN) {
+        return IterOp::SkipChildren;
+      }
+
+      if ((*_cur)->getKind() != QIR_NODE_IDENT) {
+        return IterOp::Proceed;
+      }
+
+      if ((*_cur)->as<Ident>()->getWhat()) {
+        return IterOp::Proceed;
+      }
+
+      std::string_view ident_name = (*_cur)->as<Ident>()->getName();
+      size_t l = ident_name.find_last_of("::");
+      if (l != std::string::npos) {
+        ident_name = ident_name.substr(l + 1);
+      }
+
+      for (auto &[param_name, param_type, param_default] : mod->getParameterMap().at(name)) {
+        if (param_name == ident_name) {
+          (*_cur)->as<Ident>()->setWhat(param_type);
+          return IterOp::Proceed;
+        }
+      }
+
+      auto cur = (*_cur)->as<Ident>();
+      UNRESOLVED_IDENTIFIER(ident_name);
+
+      return IterOp::Proceed;
+    };
+
+    Expr *body = cur->getBody();
+    iterate<IterMode::dfs_pre, IterMP::none>(body, inner);
+
+    return IterOp::Proceed;
+  };
+
+  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb2);
+
+  ///=============================================================================
+
+  auto cb3 = [&](Expr *, Expr **_cur) -> IterOp {
+    if ((*_cur)->getKind() != QIR_NODE_IDENT) {
+      return IterOp::Proceed;
+    }
+
+    Ident *cur = (*_cur)->as<Ident>();
+
+    if (!cur->getWhat()) {
+      UNRESOLVED_IDENTIFIER(cur->getName());
+    }
+
+    return IterOp::Proceed;
+  };
+
+  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb3);
+
+  ///=============================================================================
 
   return !error;
 }
