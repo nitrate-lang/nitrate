@@ -294,7 +294,7 @@ bool parser::parse_union(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   UnionDef *sdef = UnionDef::get(name, nullptr, fields, methods, static_methods);
-  sdef->add_tags(implements);
+  sdef->add_tags(std::move(implements));
   *node = sdef;
   return true;
 }

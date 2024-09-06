@@ -598,7 +598,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
 
     fndecl = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
-    fndecl->add_tags(implements);
+    fndecl->add_tags(std::move(implements));
 
     *node = fndecl;
     return true;

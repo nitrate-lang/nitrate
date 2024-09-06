@@ -294,7 +294,7 @@ bool parser::parse_struct(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   StructDef *sdef = StructDef::get(name, nullptr, fields, methods, static_methods);
-  sdef->add_tags(implements);
+  sdef->add_tags(std::move(implements));
   *node = sdef;
   return true;
 }

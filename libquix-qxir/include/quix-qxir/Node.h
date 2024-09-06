@@ -173,7 +173,7 @@ namespace qxir {
           m_loc_size(0) {}
 
     uint32_t getKindSize() const noexcept;
-    qxir_ty_t getKind() const noexcept;
+    qxir_ty_t getKind() const noexcept { return m_node_type; }
     const char *getKindName() const noexcept;
 
     bool isType() const noexcept;

@@ -46,11 +46,7 @@
 #define REGION_SIZE (1024 * 16)
 
 static inline uintptr_t ALIGNED(uintptr_t ptr, size_t align) {
-  if (ptr % align) {
-    return ptr + (align - (ptr % align));
-  }
-
-  return ptr;
+  return (ptr % align) ? (ptr + (align - (ptr % align))) : ptr;
 }
 
 class qcore_arena_impl_t {

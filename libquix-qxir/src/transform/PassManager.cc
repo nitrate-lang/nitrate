@@ -56,7 +56,15 @@ static void seed_passes() {
   Pass::register_pass("nm-premangle", impl::nm_premangle);
 
   /* Read-only passes */
-  PassGroup::register_group("g0", {"ds-acyclic", "ds-nullchk"}, {});
+  PassGroup::register_group("g0",
+                            {
+  /// FIXME: Write a better algorithm for this pass so that it isn't
+  /// a bottleneck.
+#if !defined(NDEBUG)
+                                "ds-acyclic",
+#endif
+                                "ds-nullchk"},
+                            {});
   PassGroup::register_group("g1", {"ds-chtype"}, {{"g0", SAFETY_MODE}});
   PassGroup::register_group("g2", {"ds-resolv"},
                             {{"g0", SAFETY_MODE}, {"g1", DependencyFrequency::Once}});

@@ -442,7 +442,7 @@ namespace qparse {
     DeclTags &get_tags() { return m_tags; }
     const DeclTags &get_tags() const { return m_tags; }
     void add_tag(String tag) { m_tags.insert(tag); }
-    void add_tags(std::set<std::string> tags) {
+    void add_tags(const std::set<std::string> &tags) {
       for (const auto &tag : tags) {
         m_tags.insert(tag);
       }
