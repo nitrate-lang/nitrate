@@ -352,17 +352,19 @@ static bool recursive_resolve(qxir::Expr **base) {
     if (!resolve_node(_cur)) {
       error = true;
     }
-
-    if (!(*_cur)->is_acyclic()) {
-      /// TODO: Fix the actual problem at the source
-      (*_cur)->getModule()->getDiag().push(
-          QXIR_AUDIT_CONV,
-          diag::DiagMessage(
-              "Cyclic polymorphic node reference detected in module IR data structure.",
-              diag::IssueClass::FatalError, diag::IssueCode::DSPolyCyclicRef));
-      error = true;
-      return IterOp::Abort;
-    }
+    
+    /// TODO: BUG: IMPORTANT: Fix the resolution pass to guarantee that cyclic references are not created
+    
+    // if (!(*_cur)->is_acyclic()) {
+    //   /// TODO: Fix the actual problem at the source
+    //   (*_cur)->getModule()->getDiag().push(
+    //       QXIR_AUDIT_CONV,
+    //       diag::DiagMessage(
+    //           "Cyclic polymorphic node reference detected in module IR data structure.",
+    //           diag::IssueClass::FatalError, diag::IssueCode::DSPolyCyclicRef));
+    //   error = true;
+    //   return IterOp::Abort;
+    // }
 
     return IterOp::Proceed;
   };

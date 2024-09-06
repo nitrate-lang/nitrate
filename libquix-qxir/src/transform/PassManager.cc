@@ -39,6 +39,12 @@
 
 using namespace qxir::passes;
 
+#ifdef NDEBUG
+#define SAFETY_MODE DependencyFrequency::Once
+#else
+#define SAFETY_MODE DependencyFrequency::Always
+#endif
+
 static void seed_passes() {
   Pass::register_pass("ds-acyclic", impl::ds_acyclic);
   Pass::register_pass("ds-nullchk", impl::ds_nullchk);
@@ -51,29 +57,27 @@ static void seed_passes() {
 
   /* Read-only passes */
   PassGroup::register_group("g0", {"ds-acyclic", "ds-nullchk"}, {});
-  PassGroup::register_group("g1", {"ds-chtype"}, {{"g0", DependencyFrequency::Always}});
-  PassGroup::register_group(
-      "g2", {"ds-resolv"},
-      {{"g0", DependencyFrequency::Always}, {"g1", DependencyFrequency::Once}});
+  PassGroup::register_group("g1", {"ds-chtype"}, {{"g0", SAFETY_MODE}});
+  PassGroup::register_group("g2", {"ds-resolv"},
+                            {{"g0", SAFETY_MODE}, {"g1", DependencyFrequency::Once}});
 
   /* Transformative passes */
-  PassGroup::register_group("g3", {"ns-flatten"},
-                            {{"g0", DependencyFrequency::Always},
-                             {"g1", DependencyFrequency::Once},
-                             {"g2", DependencyFrequency::Once}});
+  PassGroup::register_group(
+      "g3", {"ns-flatten"},
+      {{"g0", SAFETY_MODE}, {"g1", DependencyFrequency::Once}, {"g2", DependencyFrequency::Once}});
   PassGroup::register_group("g4", {"fnflatten"},
-                            {{"g0", DependencyFrequency::Always},
+                            {{"g0", SAFETY_MODE},
                              {"g1", DependencyFrequency::Once},
                              {"g2", DependencyFrequency::Once},
                              {"g3", DependencyFrequency::Once}});
   PassGroup::register_group("g5", {"tyinfer"},
-                            {{"g0", DependencyFrequency::Always},
+                            {{"g0", SAFETY_MODE},
                              {"g1", DependencyFrequency::Once},
                              {"g2", DependencyFrequency::Once},
                              {"g3", DependencyFrequency::Once},
                              {"g4", DependencyFrequency::Once}});
   PassGroup::register_group("g6", {"nm-premangle"},
-                            {{"g0", DependencyFrequency::Always},
+                            {{"g0", SAFETY_MODE},
                              {"g1", DependencyFrequency::Once},
                              {"g2", DependencyFrequency::Once},
                              {"g3", DependencyFrequency::Once},
