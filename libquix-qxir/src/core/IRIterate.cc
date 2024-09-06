@@ -303,9 +303,7 @@ namespace qxir::detail {
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
-
-    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::stack<std::pair<Expr *, Expr **>> s;
       s.push({nullptr, n});
 
@@ -352,9 +350,7 @@ namespace qxir::detail {
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
-
-    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::stack<std::pair<Expr *, Expr **>> s;
       s.push({nullptr, n});
 
@@ -399,9 +395,7 @@ namespace qxir::detail {
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
-
-    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::queue<std::pair<Expr *, Expr **>> s;
       s.push({nullptr, n});
 
@@ -448,9 +442,7 @@ namespace qxir::detail {
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
-
-    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       std::queue<std::pair<Expr *, Expr **>> s;
       s.push({nullptr, n});
 
@@ -493,9 +485,7 @@ namespace qxir::detail {
       cs = [](Expr **a, Expr **b) -> bool { return (uintptr_t)a < (uintptr_t)b; };
     }
 
-    typedef std::function<void(Expr **, const IterCallback &, const ChildSelect &)> IterFn;
-
-    const IterFn syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
+    const auto syncfn = [](Expr **n, const IterCallback &cb, const ChildSelect &cs) {
       for (Expr **child : get_children_sorted(*n, cs)) {
         switch (cb(*n, child)) {
           case IterOp::Proceed:
@@ -508,7 +498,7 @@ namespace qxir::detail {
       }
     };
 
-    const IterFn asyncfn = [](Expr **n, IterCallback cb, ChildSelect cs) {
+    const auto asyncfn = [](Expr **n, IterCallback cb, ChildSelect cs) {
       std::vector<Expr **> children = get_children_sorted(*n, cs);
 
       std::list<std::future<void>> futures;
