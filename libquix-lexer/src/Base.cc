@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstddef>
 #define __QUIX_IMPL__
 
 #include <quix-core/Error.h>
@@ -42,6 +43,7 @@
 #include <csetjmp>
 #include <cstdio>
 #include <quix-lexer/Base.hh>
+#include <stack>
 #include <utility>
 
 #include "LibMacro.h"
@@ -424,11 +426,11 @@ void qlex_t::collect_impl(const qlex_tok_t *tok) {
 
 std::string_view qlex_t::get_string(qlex_size idx) {
 #ifdef MEMORY_OVER_SPEED
-  if (auto it = m_strings->left.find(idx); it != m_strings->left.end()) [[likely]] {
+  if (auto it = m_strings->first.left.find(idx); it != m_strings->first.left.end()) [[likely]] {
     return it->second;
   }
 #else
-  if (auto it = m_strings->find(idx); it != m_strings->end()) [[likely]] {
+  if (auto it = m_strings->first.find(idx); it != m_strings->first.end()) [[likely]] {
     return it->second;
   }
 #endif
@@ -438,19 +440,19 @@ std::string_view qlex_t::get_string(qlex_size idx) {
 
 qlex_size qlex_t::put_string(std::string_view str) {
 #ifdef MEMORY_OVER_SPEED
-  if (auto it = m_strings->right.find(str); it != m_strings->right.end()) {
+  if (auto it = m_strings->first.right.find(str); it != m_strings->first.right.end()) {
     return it->second;
   }
 
-  m_strings->insert({m_string_ctr, std::string(str)});
-  return m_string_ctr++;
+  m_strings->first.insert({m_strings->second, std::string(str)});
+  return m_strings->second++;
 #else
   if (str.empty()) [[unlikely]] {
     return UINT32_MAX;
   }
 
-  (*m_strings)[m_string_ctr] = std::string(str);
-  return m_string_ctr++;
+  (*m_strings).first[m_strings->second] = std::string(str);
+  return m_strings->second++;
 #endif
 }
 
@@ -458,8 +460,8 @@ void qlex_t::release_string(qlex_size idx) {
 #ifdef MEMORY_OVER_SPEED
 
 #else
-  if (auto it = m_strings->find(idx); it != m_strings->end()) [[likely]] {
-    m_strings->erase(it);
+  if (auto it = m_strings->first.find(idx); it != m_strings->first.end()) [[likely]] {
+    m_strings->first.erase(it);
   }
 #endif
 }
@@ -468,7 +470,7 @@ void qlex_t::replace_interner(StringInterner new_interner) { m_strings = new_int
 
 ///============================================================================///
 
-static thread_local jmp_buf getc_jmpbuf;
+static thread_local std::stack<__jmp_buf_tag> getc_jmpbuf;
 
 char qlex_t::getc() {
   /* Refill the buffer if necessary */
@@ -476,7 +478,7 @@ char qlex_t::getc() {
     size_t read = fread(m_getc_buf.data(), 1, GETC_BUFFER_SIZE, m_file);
 
     if (read == 0) [[unlikely]] {
-      longjmp(getc_jmpbuf, 1);
+      longjmp(&getc_jmpbuf.top(), 1);
     }
 
     memset(m_getc_buf.data() + read, '\n', GETC_BUFFER_SIZE - read);
@@ -517,18 +519,19 @@ qlex_tok_t qlex_t::peek() {
 }
 
 void qlex_t::refill_buffer() {
-  // C++ has some wierd UB if 'i' is initialized before the 'setjmp'
-  static thread_local size_t i;
+  std::fill(m_tok_buf.begin(), m_tok_buf.end(), qlex_tok_t::eof({}, {}));
 
-  if (setjmp(getc_jmpbuf) == 0) {
-    i = 0;
-    while (i < TOKEN_BUF_SIZE) {
+  getc_jmpbuf.push({});
+
+  if (setjmp(&getc_jmpbuf.top()) == 0) {
+    for (size_t i = 0; i < TOKEN_BUF_SIZE; i++) {
       m_tok_buf[i] = next_impl();
-      i++;
     }
   } else [[unlikely]] {
-    m_tok_buf[i].ty = qEofF;
+    // We have reached the end of the file
   }
+
+  getc_jmpbuf.pop();
 }
 
 qlex_tok_t qlex_t::step_buffer() {

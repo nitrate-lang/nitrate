@@ -78,12 +78,12 @@ protected:
   qlex_size m_offset;
 
 #ifdef MEMORY_OVER_SPEED
-  typedef std::shared_ptr<boost::bimap<qlex_size, std::string>> StringInterner;
+  typedef std::shared_ptr<std::pair<boost::bimap<qlex_size, std::string>, qlex_size>>
+      StringInterner;
 #else
-  typedef std::shared_ptr<std::unordered_map<qlex_size, std::string>> StringInterner;
+  typedef std::shared_ptr<std::pair<std::unordered_map<qlex_size, std::string>, qlex_size>>
+      StringInterner;
 #endif
-
-  qlex_size m_string_ctr;
 
   boost::unordered_map<qlex_size, clever_me_t> m_tag_to_loc;
   boost::unordered_map<qlex_size, qlex_size> m_tag_to_off;
@@ -104,7 +104,7 @@ public:
 
   ///============================================================================///
 
-  virtual qlex_tok_t next_impl() = 0;
+  virtual inline qlex_tok_t next_impl() { qcore_panic("Not implemented"); }
 
   virtual std::optional<qlex_size> loc2offset(qlex_loc_t loc);
   virtual std::optional<std::pair<qlex_size, qlex_size>> loc2rowcol(qlex_loc_t loc);
@@ -119,7 +119,7 @@ public:
   std::string_view get_string(qlex_size idx);
   qlex_size put_string(std::string_view str);
   void release_string(qlex_size idx);
-  void replace_interner(StringInterner new_interner);
+  virtual void replace_interner(StringInterner new_interner);
 
   char getc();
   qlex_tok_t next();
@@ -134,7 +134,6 @@ public:
         m_row(1),
         m_col(1),
         m_offset(0),
-        m_string_ctr(1),
         m_tag_to_loc({}),
         m_tag_to_off({}),
         m_locctr(1),
