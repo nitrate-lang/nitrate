@@ -202,7 +202,7 @@ typedef struct qlex_loc_t {
 
 extern "C" const char *qlex_str(struct qlex_t *lexer, struct qlex_tok_t *tok, size_t *len);
 
-typedef struct qlex_tok_t {
+typedef struct qlex_tok_t final {
   /* Token type */
   qlex_ty_t ty : 4;
 

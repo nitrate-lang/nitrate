@@ -8,4 +8,5 @@ CompileFlags:
         -Werror,
         -pedantic,
         -Wno-gnu-zero-variadic-macro-arguments,
-        -Wno-unused-parameter]
+        -Wno-unused-parameter,
+        -Wno-missing-field-initializers]

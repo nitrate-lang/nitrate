@@ -41,31 +41,12 @@
 extern "C" {
 #endif
 
-struct qlex_impl_t;
-typedef struct qlex_impl_t qlex_impl_t;
-
-struct qlex_t;
-typedef qlex_tok_t (*qlex_get_fn)(struct qlex_t *self);
-typedef void (*qlex_collect_fn)(struct qlex_t *self, const qlex_tok_t *tok);
-typedef void (*qlex_free_fn)(struct qlex_t *self);
-typedef void (*qlex_push_fn)(struct qlex_t *self, const qlex_tok_t *tok);
+typedef struct qlex_t qlex_t;
 
 #define QLEX_FLAG_NONE 0
 #define QLEX_NO_COMMENTS 0x01
 
 typedef uint32_t qlex_flags_t;
-
-typedef struct qlex_t {
-  qlex_impl_t *impl;
-  qlex_get_fn next;
-  qlex_get_fn peek;
-  qlex_push_fn push;
-  qlex_collect_fn collect;
-  qlex_free_fn destruct;
-  qlex_tok_t cur;
-  qlex_flags_t flags;
-  const char *filename;
-} qlex_t;
 
 /**
  * @brief Create a new lexer context.
@@ -106,8 +87,8 @@ qlex_t *qlex_direct(const char *src, size_t len, const char *filename);
  */
 void qlex_free(qlex_t *lexer);
 
-static inline void qlex_set_flags(qlex_t *lexer, qlex_flags_t flags) { lexer->flags = flags; }
-static inline qlex_flags_t qlex_get_flags(qlex_t *lexer) { return lexer->flags; }
+void qlex_set_flags(qlex_t *lexer, qlex_flags_t flags);
+qlex_flags_t qlex_get_flags(qlex_t *lexer);
 
 /**
  * @brief Calculate the size of a token.
@@ -145,9 +126,7 @@ qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *buf, qlex_s
  * @note This function merely suggests that the token can be deallocated. The lexer may choose to
  * ignore this suggestion.
  */
-static inline void qlex_collect(qlex_t *lexer, const qlex_tok_t *tok) {
-  lexer->collect(lexer, tok);
-}
+void qlex_collect(qlex_t *lexer, const qlex_tok_t *tok);
 
 /**
  * @brief Lex the next token.
@@ -157,7 +136,7 @@ static inline void qlex_collect(qlex_t *lexer, const qlex_tok_t *tok) {
  * @return The next token.
  * @note This function is thread-safe.
  */
-static inline qlex_tok_t qlex_next(qlex_t *lexer) { return lexer->next(lexer); }
+qlex_tok_t qlex_next(qlex_t *lexer);
 
 /**
  * @brief Peek at the next token.
@@ -168,7 +147,7 @@ static inline qlex_tok_t qlex_next(qlex_t *lexer) { return lexer->next(lexer); }
  * @note This function is thread-safe.
  * @note Will not consume the token.
  */
-static inline qlex_tok_t qlex_peek(qlex_t *lexer) { return lexer->peek(lexer); }
+qlex_tok_t qlex_peek(qlex_t *lexer);
 
 /**
  * @brief Push a token back into the lexer.
@@ -181,7 +160,7 @@ static inline qlex_tok_t qlex_peek(qlex_t *lexer) { return lexer->peek(lexer); }
  * @note Tokens pushed back to the lexer will be stored in a queue. They will be accessed in FIFO
  * order with precedence over tokens from the input stream, irrespective of internal buffering.
  */
-static inline void qlex_push(qlex_t *lexer, qlex_tok_t tok) { lexer->push(lexer, &tok); }
+void qlex_push(qlex_t *lexer, qlex_tok_t tok);
 
 static inline qlex_loc_t qlex_begin(const qlex_tok_t *tok) { return tok->start; }
 static inline qlex_loc_t qlex_end(const qlex_tok_t *tok) { return tok->end; }

@@ -1,7 +1,7 @@
 #include <quix-lexer/Lib.h>
 
-#include <fstream>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -48,6 +48,10 @@ static void print_token(qlex_t *lexer, qlex_tok_t tok, std::ostream &out) {
     case qNote:
       out << "NOTE(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
+
+    default:
+      out << "UNKNOWN(" << tok.ty << ")";
+      break;
   }
 
   out << "\n";
@@ -58,17 +62,15 @@ void do_lex(FILE *file) {
 
   qlex_tok_t tok;
 
-  std::fstream out("lex.out", std::ios::out);
-  if (!out.is_open()) {
-    std::cerr << "Failed to open output file" << std::endl;
-    return;
-  }
+  // std::fstream out("lex.out", std::ios::out);
+  // if (!out.is_open()) {
+  //   std::cerr << "Failed to open output file" << std::endl;
+  //   return;
+  // }
 
   while ((tok = qlex_next(lexer)).ty != qEofF) {
-    print_token(lexer, tok, out);
+    print_token(lexer, tok, std::cout);
   }
-
-  out.close();
 
   qlex_free(lexer);
 }
