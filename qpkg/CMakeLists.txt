@@ -23,6 +23,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_executable(qpkg ${QPKG_CXX_SOURCES})
     target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
@@ -39,11 +40,12 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                         -DQPKG_ID=${QPKG_ID}
                                         -flto)
     target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a quix-qxir quix-parser
-                                       quix-lexer quix-core)
+                                       quix-lexer quix-prep quix-core)
     target_link_options(qpkg PRIVATE -flto -static-libgcc -static-libstdc++)
     add_dependencies(qpkg quix-qxir
                           quix-parser
                           quix-lexer
+                          quix-prep
                           quix-core
                           yaml-cpp)
 
@@ -51,6 +53,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_library(qpkg-static STATIC ${QPKG_CXX_SOURCES})
     target_include_directories(qpkg-static PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
@@ -74,12 +77,14 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                               quix-qxir
                                               quix-parser
                                               quix-lexer
+                                              quix-prep
                                               quix-core)
     target_link_options(qpkg-static PRIVATE -flto
                                             -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
     add_dependencies(qpkg-static quix-qxir
                                  quix-parser
                                  quix-lexer
+                                 quix-prep
                                  quix-core
                                  yaml-cpp)
     set_target_properties(qpkg-static PROPERTIES OUTPUT_NAME qpkg)
@@ -88,6 +93,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
     add_library(qpkg-shared SHARED ${QPKG_CXX_SOURCES})
     target_include_directories(qpkg-shared PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
@@ -111,12 +117,14 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                               quix-qxir-shared
                                               quix-parser-shared
                                               quix-lexer-shared
+                                              quix-prep-shared
                                               quix-core-shared)
     target_link_options(qpkg-shared PRIVATE -flto
                                             -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
     add_dependencies(qpkg-shared quix-qxir-shared
                                  quix-parser-shared
                                  quix-lexer-shared
+                                 quix-prep-shared
                                  quix-core-shared
                                  yaml-cpp)
     set_target_properties(qpkg-shared PROPERTIES OUTPUT_NAME qpkg)
@@ -125,6 +133,7 @@ else()
     add_executable(qpkg ${QPKG_CXX_SOURCES})
     target_include_directories(qpkg PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
@@ -142,7 +151,7 @@ else()
                                         -fsanitize=address
                                         -fsanitize=undefined)
     target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a quix-qxir quix-parser
-                                       quix-lexer quix-core)
+                                       quix-lexer quix-prep quix-core)
     target_link_options(qpkg PRIVATE -static-libgcc
                                      -static-libstdc++
                                      -fsanitize=address
@@ -150,6 +159,7 @@ else()
     add_dependencies(qpkg quix-qxir
                           quix-parser
                           quix-lexer
+                          quix-prep
                           quix-core
                           yaml-cpp)
 
@@ -157,6 +167,7 @@ else()
     add_library(qpkg-static STATIC ${QPKG_CXX_SOURCES})
     target_include_directories(qpkg-static PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
@@ -181,6 +192,7 @@ else()
                                               quix-qxir
                                               quix-parser
                                               quix-lexer
+                                              quix-prep
                                               quix-core)
     target_link_options(qpkg-static PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map
                                             -fsanitize=address
@@ -188,6 +200,7 @@ else()
     add_dependencies(qpkg-static quix-qxir
                                  quix-parser
                                  quix-lexer
+                                 quix-prep
                                  quix-core
                                  yaml-cpp)
     set_target_properties(qpkg-static PROPERTIES OUTPUT_NAME qpkg)
@@ -196,6 +209,7 @@ else()
     add_library(qpkg-shared SHARED ${QPKG_CXX_SOURCES})
     target_include_directories(qpkg-shared PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
@@ -220,6 +234,7 @@ else()
                                               quix-qxir-shared
                                               quix-parser-shared
                                               quix-lexer-shared
+                                              quix-prep-shared
                                               quix-core-shared)
     target_link_options(qpkg-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map
                                             -fsanitize=address
@@ -227,6 +242,7 @@ else()
     add_dependencies(qpkg-shared quix-qxir-shared
                                  quix-parser-shared
                                  quix-lexer-shared
+                                 quix-prep-shared
                                  quix-core-shared
                                  yaml-cpp)
     set_target_properties(qpkg-shared PROPERTIES OUTPUT_NAME qpkg)

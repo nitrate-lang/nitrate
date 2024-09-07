@@ -33,6 +33,7 @@
 #include <quix-core/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
+#include <quix-prep/Lib.h>
 #include <quix-qxir/Lib.h>
 
 // #include <build/EngineBuilder.hh>
@@ -78,8 +79,9 @@ static std::string qpkg_deps_version_string() {
 
   std::stringstream ss;
 
-  std::array<std::string_view, 4> QPKG_DEPS = {qcore_lib_version(), qlex_lib_version(),
-                                               qparse_lib_version(), qxir_lib_version()};
+  std::array<std::string_view, 5> QPKG_DEPS = {qcore_lib_version(), qlex_lib_version(),
+                                               qprep_lib_version(), qparse_lib_version(),
+                                               qxir_lib_version()};
 
   ss << "{\"ver\":\"" << QPKG_ID << "\",\"stable\":" << (QPKG_STABLE ? "true" : "false")
      << ",\"using\":[";
@@ -1123,7 +1125,7 @@ namespace qpkg::router {
         return 1;
       }
 
-      qlex_t *lexer = qlex_new(fp, source.c_str());
+      qlex_t *lexer = qprep_new(fp, source.c_str());
       if (!lexer) {
         fclose(fp);
         qerr << "Failed to create lexer" << std::endl;
@@ -1221,7 +1223,7 @@ namespace qpkg::router {
         return 1;
       }
 
-      qlex_t *lexer = qlex_new(fp, source.c_str());
+      qlex_t *lexer = qprep_new(fp, source.c_str());
       if (!lexer) {
         fclose(fp);
         qerr << "Failed to create lexer" << std::endl;
@@ -1399,6 +1401,11 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
 
       if (!qlex_lib_init()) {
         qerr << "Failed to initialize QUIX-LEX library" << std::endl;
+        return -1;
+      }
+
+      if (!qprep_lib_init()) {
+        qerr << "Failed to initialize QUIX-PREP library" << std::endl;
         return -1;
       }
 
