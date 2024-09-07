@@ -16,7 +16,7 @@ RUN cd /usr/include && ln -s llvm-14/llvm llvm && ln -s llvm-c-14/llvm-c llvm-c
 RUN cd /usr/bin && ln -s llvm-config-14 llvm14-config
 
 # Build Lua5.1 from source
-COPY deps/lua-5.4.7 /tmp/lua-5.4.7
+COPY libquix-prep/deps/lua-5.4.7 /tmp/lua-5.4.7
 RUN cd /tmp/lua-5.4.7 && make a && cp liblua.a /usr/lib/liblua5.4.a
 RUN mkdir -p /usr/include/lua5.4
 RUN cp -r /tmp/lua-5.4.7/*.h /usr/include/lua5.4/
