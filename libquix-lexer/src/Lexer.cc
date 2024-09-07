@@ -108,7 +108,7 @@ namespace qlex {
           {"unsafe", qKUnsafe},
           {"safe", qKSafe},
           {"volatile", qKVolatile},
-          {"req", qKReq},
+          {"promise", qKPromise},
           {"if", qKIf},
           {"else", qKElse},
           {"for", qKFor},

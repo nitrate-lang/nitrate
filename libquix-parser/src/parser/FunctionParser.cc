@@ -360,7 +360,7 @@ static bool translate_purity(FunctionProperties prop, FuncTy *ftype) {
 
 static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job, Expr *&req_in,
                               Expr *&req_out) {
-  if (c.is<qKReq>()) {
+  if (c.is<qKPromise>()) {
     /* Parse constraint block */
     qlex_next(rd);
 
