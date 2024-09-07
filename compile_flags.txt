@@ -5,6 +5,8 @@
 -I
 ./libquix-lexer/include
 -I
+./libquix-prep/include
+-I
 ./libquix-parser/include
 -I
 ./libquix-parser/src
