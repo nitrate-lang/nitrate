@@ -35,17 +35,21 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   #================== CREATE STATICLIB DEBUG BUILD ==================
   add_library(quix-prep STATIC ${CXX_SOURCES})
-  target_include_directories(quix-prep PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
+  target_include_directories(quix-prep PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include 
+                                                          ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                          ${CMAKE_SOURCE_DIR}/libquix-prep/deps/lua-5.4.7)
   target_compile_options(quix-prep PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-prep PRIVATE quix-core quix-lexer)
+  target_link_libraries(quix-prep PRIVATE quix-core quix-lexer lua5.4)
   target_link_options(quix-prep PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-prep quix-core quix-lexer)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
   add_library(quix-prep-shared SHARED ${CXX_SOURCES})
-  target_include_directories(quix-prep-shared PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
+  target_include_directories(quix-prep-shared PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include
+                                                                 ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                                 ${CMAKE_SOURCE_DIR}/libquix-prep/deps/lua-5.4.7)
   target_compile_options(quix-prep-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer)
+  target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer lua5.4)
   target_link_options(quix-prep-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-prep-shared quix-core quix-lexer)
   set_target_properties(quix-prep-shared PROPERTIES OUTPUT_NAME quix-prep)
@@ -55,18 +59,22 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE STATICLIB RELEASE BUILD ================
   add_library(quix-prep STATIC ${CXX_SOURCES})
-  target_include_directories(quix-prep PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
+  target_include_directories(quix-prep PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include
+                                                          ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                          ${CMAKE_SOURCE_DIR}/libquix-prep/deps/lua-5.4.7)
   target_compile_options(quix-prep PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-prep PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-prep PRIVATE quix-core quix-lexer)
+  target_link_libraries(quix-prep PRIVATE quix-core quix-lexer lua5.4)
   add_dependencies(quix-prep quix-core quix-lexer)
 
   #================== CREATE SHAREDLIB RELEASE BUILD ================
   add_library(quix-prep-shared SHARED ${CXX_SOURCES})
-  target_include_directories(quix-prep-shared PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
+  target_include_directories(quix-prep-shared PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include
+                                                                 ${CMAKE_SOURCE_DIR}/libquix-lexer/include
+                                                                 ${CMAKE_SOURCE_DIR}/libquix-prep/deps/lua-5.4.7)
   target_compile_options(quix-prep-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-prep-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer)
+  target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer lua5.4)
   add_dependencies(quix-prep-shared quix-core quix-lexer)
   set_target_properties(quix-prep-shared PROPERTIES OUTPUT_NAME quix-prep)
 
