@@ -1,4 +1,4 @@
-#include <quix-lexer/Lib.h>
+#include <quix-prep/Lib.h>
 #include <quix-parser/Lib.h>
 
 #include <stdexcept>
@@ -13,7 +13,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     throw std::runtime_error("fmemopen failed");
   }
 
-  qlex_t *lex = qlex_new(fp, nullptr);
+  qlex_t *lex = qprep_new(fp, nullptr);
   if (!lex) {
     fclose(fp);
     throw std::runtime_error("qlex_new failed");

@@ -66,7 +66,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_link_libraries(quix-parser PRIVATE quix-core quix-lexer libdeflate.a)
   add_dependencies(quix-parser quix-core quix-lexer)
 
-  #================== CREATE STATICLIB RELEASE BUILD ================
+  #================== CREATE SHAREDLIB RELEASE BUILD ================
   add_library(quix-parser-shared SHARED ${CXX_SOURCES})
   target_include_directories(quix-parser-shared PUBLIC src include 
     ${CMAKE_SOURCE_DIR}/libquix-core/include

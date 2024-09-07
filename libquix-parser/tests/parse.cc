@@ -2,6 +2,7 @@
 #include <errno.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
+#include <quix-prep/Lib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -19,6 +20,13 @@ int main(int argc, char **argv) {
 
   const char *path = argv[1];
 
+  if (!qprep_lib_init()) {
+    printf("Error: %s\n", qlex_strerror());
+
+    /* Handle preprocessor library initialization error */
+    return -2;
+  }
+
   if (!qparse_lib_init()) {
     printf("Error: %s\n", qparse_strerror());
 
@@ -35,7 +43,7 @@ int main(int argc, char **argv) {
     goto cleanup;
   }
 
-  if ((lexer = qlex_new(source, nullptr)) == NULL) {
+  if ((lexer = qprep_new(source, nullptr)) == NULL) {
     printf("Error: %s\n", qlex_strerror());
 
     /* Handle lexer creation error */
@@ -70,6 +78,7 @@ cleanup:
   if (source) fclose(source);
 
   qparse_lib_deinit();
+  qprep_lib_deinit();
 
   return ret;
 }
