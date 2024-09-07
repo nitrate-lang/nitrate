@@ -40,12 +40,12 @@ subsystem cc: [intrin::Compiler] {
 ##################################################
 # BEGIN: DEFAULT IMPORTS                         #
 ##################################################
-@import core::env;
-@import core::io;
-@import core::constant;
-@import core::type;
-@import core::trait;
-@import core::util;
+# @import core::env;
+# @import core::io;
+# @import core::constant;
+# @import core::type;
+# @import core::trait;
+# @import core::util;
 ##################################################
 # END:   DEFAULT IMPORTS                         #
 ##################################################
