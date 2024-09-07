@@ -1,0 +1,131 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "QUIX",
+  "patterns": [
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#singleQuotedString"
+    },
+    {
+      "include": "#multiLineComment"
+    },
+    {
+      "include": "#singleLineCommentTypeA"
+    },
+    {
+      "include": "#singleLineCommentTypeB"
+    },
+    {
+      "include": "#singleLineCommentTypeC"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#commonTypes"
+    },
+    {
+      "include": "#commonIdentifier"
+    },
+    {
+      "include": "#float"
+    },
+    {
+      "include": "#integer"
+    },
+    {
+      "include": "#preprocessorInvoke"
+    },
+    {
+      "include": "#proprocessorFunction"
+    }
+  ],
+  "repository": {
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.quix",
+          "match": "\\b(using|subsystem|import|pub|sec|pro|type|let|var|const|static|template|hyperparam|struct|region|group|class|union|opaque|enum|fstring|with|fn|noexcept|foreign|impure|tsafe|pure|quasipure|retropure|crashpoint|inline|unsafe|safe|volatile|promise|if|else|for|while|do|switch|case|default|break|continue|ret|retif|retz|retv|form|foreach|__asm__|undef|null|true|false|as|is|in|sizeof|alignof|typeof|offsetof|bitcast_as|bitsizeof|out)\\b"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.quix",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.quix",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "singleQuotedString": {
+      "name": "string.quoted.single.quix",
+      "begin": "'",
+      "end": "'",
+      "patterns": [
+        {
+          "name": "constant.character.escape.quix",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "multiLineComment": {
+      "name": "comment.block.quix",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    "singleLineCommentTypeA": {
+      "name": "comment.line.quix",
+      "match": "//.*"
+    },
+    "singleLineCommentTypeB": {
+      "name": "comment.line.quix",
+      "match": "#.*"
+    },
+    "singleLineCommentTypeC": {
+      "name": "comment.line.quix",
+      "match": "~>.*"
+    },
+    "commonIdentifier": {
+      "name": "variable.other.common.quix",
+      "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b"
+    },
+    "commonTypes": {
+      "patterns": [
+        {
+          "name": "storage.type.quix",
+          "match": "\\b(u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f16|f32|f64|f128|u1|string|str|void|usize|isize|any|bool|solid)\\b"
+        }
+      ]
+    },
+    "integer": {
+      "name": "constant.numeric.integer.quix",
+      "match": "\\b(0x[0-9a-fA-F_]+(_\\w+)?|0b[01_]+(_\\w+)?|0o[0-7_]+(_\\w+)?|0d[0-9_]+|[\\d_]+(_\\w+)?)\\b"
+    },
+    "float": {
+      "name": "constant.numeric.float.quix",
+      "match": "\\b(\\d[\\d_]*\\.\\d[\\d_]*([eE][+-]?\\d[\\d_]*)?|\\d[\\d_]*[eE][+-]?\\d[\\d_]*(\\.\\d[\\d_]*)?)\\b"
+    },
+    "preprocessorInvoke": {
+      "name": "meta.preprocessor.quix",
+      "match": "@[\\w:]+"
+    },
+    "proprocessorFunction": {
+      "begin": "@\\(fn.+\\{",
+      "end": "\\}\\)",
+      "patterns": [
+        {
+          "include": "source.lua"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.q"
+}

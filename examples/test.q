@@ -1,6 +1,6 @@
-//////////////////////////////////////////////////
-// BEGIN: SPECIALIZATION INITIALIZATION         //
-//////////////////////////////////////////////////
+##################################################
+# BEGIN: SPECIALIZATION INITIALIZATION           #
+##################################################
 fn ___quixcc_ioctl_(cmd: string, ...): void;
 
 ___quixcc_ioctl_("parser_version", "1.0");
@@ -9,13 +9,13 @@ ___quixcc_ioctl_("load_modules", "default");
 ___quixcc_ioctl_("set_stack_initilization", "true");
 ___quixcc_ioctl_("set_heap_default_clear", "true");
 ___quixcc_ioctl_("set_random_heap", "true");
-//////////////////////////////////////////////////
-// END:   SPECIALIZATION INITIALIZATION         //
-//////////////////////////////////////////////////
+##################################################
+# END:   SPECIALIZATION INITIALIZATION           # 
+##################################################
 
-//////////////////////////////////////////////////
-// BEGIN: TARGET SPECIFIC SYMBOLS               //
-//////////////////////////////////////////////////
+##################################################
+# BEGIN: TARGET SPECIFIC SYMBOLS                 # 
+##################################################
 subsystem cc: [intrin::Compiler] {
   type uptr_type = u64;
   type iptr_type = i64;
@@ -33,19 +33,19 @@ subsystem cc: [intrin::Compiler] {
                         "sse", "mmx", "3dnow",
                         "3dnowext"];
 };
-//////////////////////////////////////////////////
-// END:   TARGET SPECIFIC SYMBOLS               //
-//////////////////////////////////////////////////
+##################################################
+# END:   TARGET SPECIFIC SYMBOLS                 #
+##################################################
 
-//////////////////////////////////////////////////
-// BEGIN: DEFAULT IMPORTS                       //
-//////////////////////////////////////////////////
-// @import core::env;
-// @import core::io;
-// @import core::constant;
-// @import core::type;
-// @import core::trait;
-// @import core::util;
-//////////////////////////////////////////////////
-// END:   DEFAULT IMPORTS                       //
-//////////////////////////////////////////////////
+##################################################
+# BEGIN: DEFAULT IMPORTS                         #
+##################################################
+@import core::env;
+@import core::io;
+@import core::constant;
+@import core::type;
+@import core::trait;
+@import core::util;
+##################################################
+# END:   DEFAULT IMPORTS                         #
+##################################################
