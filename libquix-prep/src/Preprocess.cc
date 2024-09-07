@@ -30,7 +30,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <quix-core/Error.h>
+#include <quix-lexer/Lexer.h>
+#include <quix-lexer/Lib.h>
 #include <quix-lexer/Token.h>
+#include <quix-prep/Lib.h>
 
 extern "C" {
 #include <lua5.4/lauxlib.h>
@@ -39,10 +42,15 @@ extern "C" {
 }
 
 #include <functional>
+#include <memory>
 #include <new>
+#include <optional>
+#include <queue>
 #include <quix-lexer/Base.hh>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include "LibMacro.h"
 
@@ -66,24 +74,120 @@ public:
 };
 
 class qprep_impl_t : public qlex_t {
+  struct Core {
+    std::unordered_map<std::string_view, std::string> defines;
+    std::unordered_set<std::string_view> macros_funcs;
+    std::vector<QSysCall> qsyscalls;
+    std::shared_ptr<lua_State *> L;
+  };
+
+  std::queue<qlex_tok_t> m_tok_queue;
+  std::shared_ptr<Core> m_core;
   qlex_t *m_inner;
-  std::unordered_map<std::string_view, std::string> m_defines;
-  lua_State *m_L;
-  std::vector<QSysCall> m_qsyscalls;
 
-  std::vector<qlex_tok_t> run_lua_code(std::string_view s) {
-    std::vector<qlex_tok_t> result;
+  enum class Level {
+    Debug,
+    Info,
+    Warn,
+    Error,
+    Fatal,
+  };
 
-    if (luaL_dostring(m_L, s.data()) != LUA_OK) {
-      const char *err = lua_tostring(m_L, -1);
-      qcore_panicf("run_lua_code: %s", err);
+  void emit_message(Level level, std::string_view format, ...) {
+    /// TODO: Implement message emitter
+
+    const std::unordered_map<Level, const char *> level_names = {
+        {Level::Debug, "DEBUG"}, {Level::Info, "INFO"},   {Level::Warn, "WARN"},
+        {Level::Error, "ERROR"}, {Level::Fatal, "FATAL"},
+    };
+
+    fprintf(stderr, "%s: ", level_names.at(level));
+
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format.data(), args);
+    va_end(args);
+  }
+
+  std::optional<std::string> run_lua_code(std::string_view s) {
+    int error;
+
+    error = luaL_dostring(*m_core->L, s.data());
+    if (error) {
+      emit_message(Level::Error, "Failed to run Lua code: %s\n", lua_tostring(*m_core->L, -1));
+      return std::nullopt;
     }
 
-    /// TODO: get output into token buffer queue
-    return result;
+    if (lua_isnil(*m_core->L, -1)) {
+      return "";
+    } else if (lua_isstring(*m_core->L, -1)) {
+      return lua_tostring(*m_core->L, -1);
+    } else if (lua_isnumber(*m_core->L, -1)) {
+      return std::to_string(lua_tonumber(*m_core->L, -1));
+    } else if (lua_isboolean(*m_core->L, -1)) {
+      return lua_toboolean(*m_core->L, -1) ? "true" : "false";
+    } else {
+      emit_message(Level::Error, "Invalid Lua return value: %s\n",
+                   lua_typename(*m_core->L, lua_type(*m_core->L, -1)));
+      return std::nullopt;
+    }
+  }
+
+  static std::string_view ltrim(std::string_view s) {
+    s.remove_prefix(std::min(s.find_first_not_of(" \t\n\r"), s.size()));
+    return s;
+  }
+
+  static std::string_view rtrim(std::string_view s) {
+    s.remove_suffix(std::min(s.size() - s.find_last_not_of(" \t\n\r") - 1, s.size()));
+    return s;
+  }
+
+  bool run_and_expand(std::string_view code) {
+    auto res = run_lua_code(code);
+    if (!res.has_value()) {
+      return false;
+    }
+
+    code = ltrim(code);
+
+    if (code.starts_with("function ")) {
+      size_t pos = code.find_first_of("(");
+      if (pos != std::string_view::npos) {
+        std::string_view name = code.substr(9, pos - 9);
+        name = rtrim(name);
+        m_core->macros_funcs.insert(name);
+      }
+    }
+
+    FILE *resbuf = fmemopen((void *)res->data(), res->size(), "r");
+    if (resbuf == nullptr) {
+      qcore_panic("qprep_impl_t::next_impl: failed to create a memory buffer");
+    }
+
+    {
+      qlex_t *clone = weak_clone(resbuf, m_filename);
+
+      qlex_tok_t tok;
+      while ((tok = qlex_next(clone)).ty != qEofF) {
+        m_tok_queue.push(tok);
+      }
+
+      qlex_free(clone);
+    }
+
+    fclose(resbuf);
+
+    return true;
   }
 
   virtual qlex_tok_t next_impl() override {
+    if (!m_tok_queue.empty()) {
+      qlex_tok_t x = m_tok_queue.front();
+      m_tok_queue.pop();
+      return x;
+    }
+
     qlex_tok_t x = m_inner->next_impl();
 
     switch (x.ty) {
@@ -103,26 +207,37 @@ class qprep_impl_t : public qlex_t {
       case qName: {
         std::string_view name = get_string(x.v.str_idx);
 
-        if (m_defines.find(name) != m_defines.end()) {
+        if (m_core->defines.find(name) != m_core->defines.end()) {
           x.ty = qText;
-          x.v.str_idx = put_string(m_defines[name]);
+          x.v.str_idx = put_string((m_core->defines)[name]);
         }
 
         return x;
       }
       case qMacB: {
-        /// TODO: Macro block
-        std::string_view code = get_string(x.v.str_idx);
-
-        run_lua_code(code);
+        if (!run_and_expand(get_string(x.v.str_idx))) {
+          return x;
+        }
 
         return next_impl();
       }
       case qMacr: {
-        std::string_view name = get_string(x.v.str_idx);
+        std::string_view body = get_string(x.v.str_idx);
 
-        if (name.find('(') != std::string_view::npos) {
-          /// TODO: Function-like macro
+        size_t pos = body.find_first_of("(");
+        if (pos != std::string_view::npos) {
+          std::string_view name = body.substr(0, pos);
+
+          if (!m_core->macros_funcs.contains(name)) {
+            emit_message(Level::Error, "Undefined macro function: %s\n", name.data());
+            return x;
+          }
+
+          if (!run_and_expand(body)) {
+            return x;
+          }
+
+          return next_impl();
         } else {
           /// TODO: Object-like macro
         }
@@ -135,22 +250,40 @@ class qprep_impl_t : public qlex_t {
 
   void setup_qsyscalls() {
     /// TODO: Write qsyscalls
+
+#define add_qsyscall(name, id, func) m_core->qsyscalls.emplace_back(name, id, func)
+
+    add_qsyscall("get_lexer_version", 0x0000, [](qprep_impl_t *, std::vector<const char *>) {
+      /**
+        @brief Get the version of the lexer library.
+       */
+
+      return qlex_lib_version();
+    });
+
+    add_qsyscall("get_preprocessor_version", 0x0001, [](qprep_impl_t *, std::vector<const char *>) {
+      /**
+        @brief Get the version of the lexer library.
+       */
+
+      return qprep_lib_version();
+    });
   }
 
   void install_lua_api() {
     setup_qsyscalls();
 
-    lua_newtable(m_L);
-    lua_newtable(m_L);
+    lua_newtable(*m_core->L);
+    lua_newtable(*m_core->L);
 
-    for (auto qcall : m_qsyscalls) {
+    for (auto qcall : m_core->qsyscalls) {
       std::string_view name = qcall.getName();
 
-      lua_pushinteger(m_L, (lua_Integer)(uintptr_t)this);
-      lua_pushinteger(m_L, qcall.getId());
+      lua_pushinteger(*m_core->L, (lua_Integer)(uintptr_t)this);
+      lua_pushinteger(*m_core->L, qcall.getId());
 
       lua_pushcclosure(
-          m_L,
+          *m_core->L,
           [](lua_State *L) -> int {
             qprep_impl_t *engine;
             uint32_t call_num;
@@ -176,7 +309,7 @@ class qprep_impl_t : public qlex_t {
               }
             }
 
-            std::string result = engine->m_qsyscalls[call_num].call(engine, args);
+            std::string result = engine->m_core->qsyscalls.at(call_num).call(engine, args);
 
             /* Return a single string result */
             lua_pushstring(L, result.c_str());
@@ -184,42 +317,81 @@ class qprep_impl_t : public qlex_t {
             return 1;
           },
           2);
-      lua_setfield(m_L, -2, name.data());
+      lua_setfield(*m_core->L, -2, name.data());
     }
 
-    lua_setfield(m_L, -2, "api");
-    lua_setglobal(m_L, "quix");
+    lua_setfield(*m_core->L, -2, "api");
+    lua_setglobal(*m_core->L, "quix");
+  }
+
+  void replace_interner(StringInterner new_interner) override {
+    m_strings = new_interner;
+    m_inner->replace_interner(new_interner);
+  }
+
+  qlex_t *weak_clone(FILE *file, const char *filename) const {
+    qprep_impl_t *clone = new qprep_impl_t(file, filename);
+
+    clone->m_core = m_core;
+    clone->replace_interner(m_strings);
+
+    return clone;
   }
 
 public:
-  qprep_impl_t(FILE *file, const char *filename, bool is_owned)
-      : qlex_t(nullptr, filename, is_owned) {
-    /* Create the inner lexer */
-    if ((m_inner = qlex_new(file, filename)) == nullptr) {
-      throw std::bad_alloc();
+  qprep_impl_t(FILE *file, const char *filename) : qlex_t(file, filename, false) {
+    m_inner = nullptr;
+    m_core = std::make_shared<Core>();
+
+    { /* Create the inner lexer */
+      qlex_t *inner = nullptr;
+      if ((inner = qlex_new(file, filename)) == nullptr) {
+        throw std::bad_alloc();
+      }
+
+      m_inner = inner;
+    }
+
+    /* Bind the inner string interner to the outer one
+       so that external calls will work properly. */
+    replace_interner(m_inner->m_strings);
+  }
+
+  qprep_impl_t(FILE *file, const char *filename, bool is_owned) : qlex_t(file, filename, is_owned) {
+    m_core = std::make_shared<Core>();
+    m_inner = nullptr;
+
+    { /* Create the inner lexer */
+      qlex_t *inner = nullptr;
+      if ((inner = qlex_new(file, filename)) == nullptr) {
+        throw std::bad_alloc();
+      }
+
+      m_inner = inner;
     }
 
     /* Bind the inner string interner to the outer one
        so that external calls will work properly. */
     replace_interner(m_inner->m_strings);
 
-    /* Create the Lua state */
-    if ((m_L = luaL_newstate()) == nullptr) {
-      throw std::bad_alloc();
+    { /* Create the Lua state */
+      lua_State **L = new lua_State *(luaL_newstate());
+      if ((m_core->L = std::shared_ptr<lua_State *>(L, [](lua_State **p) {
+             lua_close(*p);
+             delete p;
+           })) == nullptr) {
+        throw std::bad_alloc();
+      }
+
+      /* Load the special selection of standard libraries */
+      luaL_openlibs(*m_core->L);
+
+      /* Install the QUIX API */
+      install_lua_api();
     }
-
-    /* Load the special selection of standard libraries */
-    luaL_openlibs(m_L);
-
-    /* Install the QUIX API */
-    install_lua_api();
   }
 
-  virtual ~qprep_impl_t() {
-    lua_close(m_L);
-
-    qlex_free(m_inner);
-  }
+  virtual ~qprep_impl_t() { qlex_free(m_inner); }
 };
 
 LIB_EXPORT qlex_t *qprep_new(FILE *file, const char *filename) {
