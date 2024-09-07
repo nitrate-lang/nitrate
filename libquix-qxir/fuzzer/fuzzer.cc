@@ -1,10 +1,10 @@
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
+#include <quix-prep/Lib.h>
 #include <quix-qxir/Lib.h>
 
 #include <iostream>
 #include <optional>
-#include <stdexcept>
 
 extern "C" const char *__asan_default_options() { return "detect_leaks=0"; }
 
@@ -13,13 +13,15 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char **argv) {
   (void)argv;
 
   qlex_lib_init();
+  qprep_lib_init();
   qparse_lib_init();
   qxir_lib_init();
 
   std::cout << "+===========================================================+\n";
-  std::cout << "Initialized libquix-lexer, libquix-parser, and libquix-qxir\n";
+  std::cout << "Initialized libquix-lexer, libquix-prep, libquix-parser, and libquix-qxir\n";
   std::cout << "VERSIONS:\n";
   std::cout << "  - libquix-lexer: " << qlex_lib_version() << std::endl;
+  std::cout << "  - libquix-prep: " << qprep_lib_version() << std::endl;
   std::cout << "  - libquix-parser: " << qparse_lib_version() << std::endl;
   std::cout << "  - libquix-qxir: " << qxir_lib_version() << std::endl;
   std::cout << "End of VERSIONS\n";
@@ -30,6 +32,7 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char **argv) {
 extern "C" int LLVMFuzzerFinalize() {
   qxir_lib_deinit();
   qparse_lib_deinit();
+  qprep_lib_deinit();
   qlex_lib_deinit();
 
   std::cout << "Deinitialized libquix-lexer, libquix-parser, and libquix-qxir" << std::endl;
@@ -55,7 +58,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     goto cleanup;
   }
 
-  if ((lex = qlex_new(fp, nullptr)) == nullptr) {
+  if ((lex = qprep_new(fp, nullptr)) == nullptr) {
     goto cleanup;
   }
 

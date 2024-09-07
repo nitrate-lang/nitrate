@@ -12,6 +12,6 @@ SET(FLAGS -O3 -g -Wall -Wextra -pedantic -Werror -Wno-error=mismatched-tags -Wno
 add_executable(libquix-qxir-fuzzer ${SOURCE})
 target_include_directories(libquix-qxir-fuzzer PUBLIC ../include ${CMAKE_SOURCE_DIR}/libquix-core/include)
 target_compile_options(libquix-qxir-fuzzer PRIVATE ${FLAGS})
-target_link_libraries(libquix-qxir-fuzzer PRIVATE quix-qxir quix-lexer quix-core)
+target_link_libraries(libquix-qxir-fuzzer PRIVATE quix-qxir quix-lexer quix-prep quix-core)
 target_link_options(libquix-qxir-fuzzer PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
-add_dependencies(libquix-qxir-fuzzer quix-qxir)
+add_dependencies(libquix-qxir-fuzzer quix-qxir quix-lexer quix-prep quix-core)
