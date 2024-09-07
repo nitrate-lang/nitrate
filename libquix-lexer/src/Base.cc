@@ -424,11 +424,11 @@ void qlex_t::collect_impl(const qlex_tok_t *tok) {
 
 std::string_view qlex_t::get_string(qlex_size idx) {
 #ifdef MEMORY_OVER_SPEED
-  if (auto it = m_strings.left.find(idx); it != m_strings.left.end()) [[likely]] {
+  if (auto it = m_strings->left.find(idx); it != m_strings->left.end()) [[likely]] {
     return it->second;
   }
 #else
-  if (auto it = m_strings.find(idx); it != m_strings.end()) [[likely]] {
+  if (auto it = m_strings->find(idx); it != m_strings->end()) [[likely]] {
     return it->second;
   }
 #endif
@@ -438,18 +438,18 @@ std::string_view qlex_t::get_string(qlex_size idx) {
 
 qlex_size qlex_t::put_string(std::string_view str) {
 #ifdef MEMORY_OVER_SPEED
-  if (auto it = m_strings.right.find(str); it != m_strings.right.end()) {
+  if (auto it = m_strings->right.find(str); it != m_strings->right.end()) {
     return it->second;
   }
 
-  m_strings.insert({m_string_ctr, std::string(str)});
+  m_strings->insert({m_string_ctr, std::string(str)});
   return m_string_ctr++;
 #else
   if (str.empty()) [[unlikely]] {
     return UINT32_MAX;
   }
 
-  m_strings[m_string_ctr] = std::string(str);
+  (*m_strings)[m_string_ctr] = std::string(str);
   return m_string_ctr++;
 #endif
 }
@@ -458,11 +458,13 @@ void qlex_t::release_string(qlex_size idx) {
 #ifdef MEMORY_OVER_SPEED
 
 #else
-  if (auto it = m_strings.find(idx); it != m_strings.end()) [[likely]] {
-    m_strings.erase(it);
+  if (auto it = m_strings->find(idx); it != m_strings->end()) [[likely]] {
+    m_strings->erase(it);
   }
 #endif
 }
+
+void qlex_t::replace_interner(StringInterner new_interner) { m_strings = new_interner; }
 
 ///============================================================================///
 

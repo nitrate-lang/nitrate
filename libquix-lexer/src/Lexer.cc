@@ -283,8 +283,6 @@ public:
 
 LIB_EXPORT qlex_t *qlex_new(FILE *file, const char *filename) {
   try {
-    qcore_assert(file, "qlex_new: file is NULL");
-
     return new qlex_impl_t(file, filename, false);
   } catch (std::bad_alloc &) {
     return nullptr;

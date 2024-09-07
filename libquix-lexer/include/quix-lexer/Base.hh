@@ -39,6 +39,7 @@
 #include <array>
 #include <boost/bimap.hpp>
 #include <boost/unordered_map.hpp>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -50,7 +51,7 @@
 namespace qlex::common {}  // namespace qlex::common
 
 struct qlex_t {
-private:
+protected:
   ///============================================================================///
   /// BEGIN: PERFORMANCE HYPER PARAMETERS
   static constexpr qlex_size GETC_BUFFER_SIZE = 64;
@@ -77,10 +78,11 @@ private:
   qlex_size m_offset;
 
 #ifdef MEMORY_OVER_SPEED
-  boost::bimap<qlex_size, std::string> m_strings;
+  typedef std::shared_ptr<boost::bimap<qlex_size, std::string>> StringInterner;
 #else
-  std::unordered_map<qlex_size, std::string> m_strings;
+  typedef std::shared_ptr<std::unordered_map<qlex_size, std::string>> StringInterner;
 #endif
+
   qlex_size m_string_ctr;
 
   boost::unordered_map<qlex_size, clever_me_t> m_tag_to_loc;
@@ -92,6 +94,8 @@ private:
   void refill_buffer();
 
 public:
+  StringInterner m_strings;
+
   qlex_flags_t m_flags;
 
   const char *m_filename;
@@ -115,6 +119,7 @@ public:
   std::string_view get_string(qlex_size idx);
   qlex_size put_string(std::string_view str);
   void release_string(qlex_size idx);
+  void replace_interner(StringInterner new_interner);
 
   char getc();
   qlex_tok_t next();
@@ -129,11 +134,11 @@ public:
         m_row(1),
         m_col(1),
         m_offset(0),
-        m_strings({}),
         m_string_ctr(1),
         m_tag_to_loc({}),
         m_tag_to_off({}),
         m_locctr(1),
+        m_strings(std::make_shared<decltype(m_strings)::element_type>()),
         m_flags(0),
         m_filename(filename),
         m_file(file),
