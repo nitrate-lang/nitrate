@@ -1285,7 +1285,8 @@ LIB_EXPORT bool qlex_lt(qlex_t *lexer, const qlex_tok_t *a, const qlex_tok_t *b)
 }
 
 LIB_EXPORT const char *qlex_str(qlex_t *lexer, qlex_tok_t *tok, size_t *len) {
-  qcore_assert(tok && len, "qlex_str: tok or len is NULL");
+  size_t _len;
+  if (!len) len = &_len;
 
   try {
     switch (tok->ty) {
