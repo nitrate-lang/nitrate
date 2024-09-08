@@ -48,14 +48,12 @@
 #include <unordered_map>
 #endif
 
-namespace qlex::common {}  // namespace qlex::common
-
 struct qlex_t {
 protected:
   ///============================================================================///
   /// BEGIN: PERFORMANCE HYPER PARAMETERS
   static constexpr qlex_size GETC_BUFFER_SIZE = 64;
-  static constexpr qlex_size TOKEN_BUF_SIZE = 64;
+  static constexpr qlex_size TOKEN_BUF_SIZE = 1;
   /// END:   PERFORMANCE HYPER PARAMETERS
   ///============================================================================///
 
@@ -104,7 +102,7 @@ public:
 
   ///============================================================================///
 
-  virtual inline qlex_tok_t next_impl() { qcore_panic("Not implemented"); }
+  virtual qlex_tok_t next_impl() = 0;
 
   virtual std::optional<qlex_size> loc2offset(qlex_loc_t loc);
   virtual std::optional<std::pair<qlex_size, qlex_size>> loc2rowcol(qlex_loc_t loc);

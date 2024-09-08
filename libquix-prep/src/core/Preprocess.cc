@@ -29,13 +29,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QUIX_IMPL__
+
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-lexer/Lib.h>
 #include <quix-lexer/Token.h>
 #include <quix-prep/Lib.h>
-
-#include <iostream>
 
 extern "C" {
 #include <lua5.4/lauxlib.h>
@@ -43,7 +43,6 @@ extern "C" {
 #include <lua5.4/lualib.h>
 }
 
-#include <functional>
 #include <memory>
 #include <new>
 #include <optional>
@@ -56,9 +55,7 @@ extern "C" {
 
 #include "core/LibMacro.h"
 
-class qprep_impl_t;
-
-typedef std::function<std::string(qprep_impl_t *, std::vector<const char *>)> qsyscall_t;
+typedef int (*qsyscall_t)(lua_State *L);
 
 class QSysCall final {
   std::string_view m_name;
@@ -71,21 +68,27 @@ public:
 
   std::string_view getName() const { return m_name; }
   uint32_t getId() const { return m_id; }
-
-  std::string call(qprep_impl_t *engine, std::vector<const char *> args);
+  qsyscall_t getFunc() const { return m_func; }
 };
 
-class qprep_impl_t : public qlex_t {
+struct qprep_impl_t final : public qlex_t {
+private:
   struct Core {
     std::unordered_map<std::string_view, std::string> defines;
     std::unordered_set<std::string_view> macros_funcs;
     std::vector<QSysCall> qsyscalls;
-    std::shared_ptr<lua_State *> L;
+    lua_State *L;
+
+    ~Core() {
+      if (L) {
+        lua_close(L);
+      }
+    }
   };
 
-  std::queue<qlex_tok_t> m_tok_queue;
   std::shared_ptr<Core> m_core;
   qlex_t *m_inner;
+  bool m_do_expanse;
 
   enum class Level {
     Debug,
@@ -114,23 +117,23 @@ class qprep_impl_t : public qlex_t {
   std::optional<std::string> run_lua_code(std::string_view s) {
     int error;
 
-    error = luaL_dostring(*m_core->L, s.data());
+    error = luaL_dostring(m_core->L, s.data());
     if (error) {
-      emit_message(Level::Error, "Failed to run Lua code: %s\n", lua_tostring(*m_core->L, -1));
+      emit_message(Level::Error, "Failed to run Lua code: %s\n", lua_tostring(m_core->L, -1));
       return std::nullopt;
     }
 
-    if (lua_isnil(*m_core->L, -1)) {
+    if (lua_isnil(m_core->L, -1)) {
       return "";
-    } else if (lua_isstring(*m_core->L, -1)) {
-      return lua_tostring(*m_core->L, -1);
-    } else if (lua_isnumber(*m_core->L, -1)) {
-      return std::to_string(lua_tonumber(*m_core->L, -1));
-    } else if (lua_isboolean(*m_core->L, -1)) {
-      return lua_toboolean(*m_core->L, -1) ? "true" : "false";
+    } else if (lua_isstring(m_core->L, -1)) {
+      return lua_tostring(m_core->L, -1);
+    } else if (lua_isnumber(m_core->L, -1)) {
+      return std::to_string(lua_tonumber(m_core->L, -1));
+    } else if (lua_isboolean(m_core->L, -1)) {
+      return lua_toboolean(m_core->L, -1) ? "true" : "false";
     } else {
       emit_message(Level::Error, "Invalid Lua return value: %s\n",
-                   lua_typename(*m_core->L, lua_type(*m_core->L, -1)));
+                   lua_typename(m_core->L, lua_type(m_core->L, -1)));
       return std::nullopt;
     }
   }
@@ -162,6 +165,10 @@ class qprep_impl_t : public qlex_t {
       }
     }
 
+    if (res->empty()) {
+      return true;
+    }
+
     FILE *resbuf = fmemopen((void *)res->data(), res->size(), "r");
     if (resbuf == nullptr) {
       qcore_panic("qprep_impl_t::next_impl: failed to create a memory buffer");
@@ -172,7 +179,7 @@ class qprep_impl_t : public qlex_t {
 
       qlex_tok_t tok;
       while ((tok = qlex_next(clone)).ty != qEofF) {
-        m_tok_queue.push(tok);
+        qlex_push(m_inner, tok);
       }
 
       qlex_free(clone);
@@ -184,13 +191,11 @@ class qprep_impl_t : public qlex_t {
   }
 
   virtual qlex_tok_t next_impl() override {
-    if (!m_tok_queue.empty()) {
-      qlex_tok_t x = m_tok_queue.front();
-      m_tok_queue.pop();
+    qlex_tok_t x = m_inner->next_impl();
+
+    if (!m_do_expanse) {
       return x;
     }
-
-    qlex_tok_t x = m_inner->next_impl();
 
     switch (x.ty) {
       case qEofF:
@@ -298,79 +303,162 @@ class qprep_impl_t : public qlex_t {
   }
 
   void setup_qsyscalls() {
-    /// TODO: Write qsyscalls
+#define add_qsyscall(__name, __id, __func) m_core->qsyscalls.emplace_back(__name, __id, __func)
+#define get_engine() (qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1))
 
-#define add_qsyscall(name, id, func) m_core->qsyscalls.emplace_back(name, id, func)
+    static const std::unordered_map<std::string_view, std::string_view (*)(void)> comp_versions;
 
-    add_qsyscall("get_lexer_version", 0x0000, [](qprep_impl_t *, std::vector<const char *>) {
+    add_qsyscall("verof", 0x0000, [](lua_State *L) {
       /**
-        @brief Get the version of the lexer library.
+        @brief Get the version of a component.
        */
 
-      return qlex_lib_version();
+      int nargs = lua_gettop(L);
+      if (nargs != 1) {
+        return luaL_error(L, "Invalid number of arguments: expected 1, got %d", nargs);
+      }
+
+      if (!lua_isstring(L, 1)) {
+        return luaL_error(L, "Invalid argument #1: expected string, got %s",
+                          lua_typename(L, lua_type(L, 1)));
+      }
+
+      std::string_view name = lua_tostring(L, 1);
+
+      if (comp_versions.contains(name)) {
+        lua_pushstring(L, comp_versions.at(name)().data());
+        return 1;
+      }
+
+      luaL_error(L, "Unknown component: %s", name.data());
+      return 0;
     });
 
-    add_qsyscall("get_preprocessor_version", 0x0001, [](qprep_impl_t *, std::vector<const char *>) {
+    add_qsyscall("next", 0x0001, [](lua_State *L) {
       /**
-        @brief Get the version of the lexer library.
+        @brief Next token.
        */
 
-      return qprep_lib_version();
+      qprep_impl_t *obj = get_engine();
+
+      bool old = obj->m_do_expanse;
+      obj->m_do_expanse = false;
+      qlex_tok_t tok = qlex_next(obj);
+      obj->m_do_expanse = old;
+
+      lua_newtable(L);
+
+      lua_pushstring(L, "ty");
+      lua_pushstring(L, qlex_ty_str(tok.ty));
+      lua_settable(L, -3);
+
+      lua_pushstring(L, "v");
+      switch (tok.ty) {
+        case qEofF:
+        case qErro: {
+          lua_pushnil(L);
+          break;
+        }
+        case qKeyW: {
+          lua_pushstring(L, qlex_kwstr(tok.v.key));
+          break;
+        }
+        case qOper: {
+          lua_pushstring(L, qlex_opstr(tok.v.op));
+          break;
+        }
+        case qPunc: {
+          lua_pushstring(L, qlex_punctstr(tok.v.punc));
+          break;
+        }
+        case qIntL:
+        case qNumL:
+        case qText:
+        case qChar:
+        case qName:
+        case qMacB:
+        case qMacr:
+        case qNote: {
+          lua_pushstring(L, obj->get_string(tok.v.str_idx).data());
+          break;
+        }
+      }
+
+      lua_settable(L, -3);
+
+      return 1;
+    });
+
+    add_qsyscall("peek", 0x0002, [](lua_State *L) {
+      /**
+        @brief Peek token.
+       */
+
+      qprep_impl_t *obj = get_engine();
+
+      bool old = obj->m_do_expanse;
+      obj->m_do_expanse = false;
+      qlex_tok_t tok = qlex_peek(obj);
+      obj->m_do_expanse = old;
+
+      lua_newtable(L);
+
+      lua_pushstring(L, "ty");
+      lua_pushstring(L, qlex_ty_str(tok.ty));
+      lua_settable(L, -3);
+
+      lua_pushstring(L, "v");
+      switch (tok.ty) {
+        case qEofF:
+        case qErro: {
+          lua_pushnil(L);
+          break;
+        }
+        case qKeyW: {
+          lua_pushstring(L, qlex_kwstr(tok.v.key));
+          break;
+        }
+        case qOper: {
+          lua_pushstring(L, qlex_opstr(tok.v.op));
+          break;
+        }
+        case qPunc: {
+          lua_pushstring(L, qlex_punctstr(tok.v.punc));
+          break;
+        }
+        case qIntL:
+        case qNumL:
+        case qText:
+        case qChar:
+        case qName:
+        case qMacB:
+        case qMacr:
+        case qNote: {
+          lua_pushstring(L, obj->get_string(tok.v.str_idx).data());
+          break;
+        }
+      }
+
+      lua_settable(L, -3);
+
+      return 1;
     });
   }
 
   void install_lua_api() {
     setup_qsyscalls();
 
-    lua_newtable(*m_core->L);
-    lua_newtable(*m_core->L);
+    lua_newtable(m_core->L);
+    lua_newtable(m_core->L);
 
-    for (auto qcall : m_core->qsyscalls) {
-      std::string_view name = qcall.getName();
-
-      lua_pushinteger(*m_core->L, (lua_Integer)(uintptr_t)this);
-      lua_pushinteger(*m_core->L, qcall.getId());
-
-      lua_pushcclosure(
-          *m_core->L,
-          [](lua_State *L) -> int {
-            qprep_impl_t *engine;
-            uint32_t call_num;
-
-            { /* Get closure upvalues */
-              int engine_idx = lua_upvalueindex(1);
-              int call_num_idx = lua_upvalueindex(2);
-
-              engine = (qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, engine_idx);
-              call_num = luaL_checkinteger(L, call_num_idx);
-            }
-
-            // Detect how many arguments are passed
-            int nargs = lua_gettop(L);
-            std::vector<const char *> args;
-            for (int i = 1; i <= nargs; i++) {
-              if (lua_isstring(L, i) || lua_isnumber(L, i)) {
-                args.push_back(lua_tostring(L, i));
-              } else if (lua_isboolean(L, i)) {
-                args.push_back(lua_toboolean(L, i) ? "1" : "0");
-              } else {
-                return luaL_error(L, "Invalid argument #%d", i);
-              }
-            }
-
-            std::string result = engine->m_core->qsyscalls.at(call_num).call(engine, args);
-
-            /* Return a single string result */
-            lua_pushstring(L, result.c_str());
-
-            return 1;
-          },
-          2);
-      lua_setfield(*m_core->L, -2, name.data());
+    for (const auto &qcall : m_core->qsyscalls) {
+      lua_pushinteger(m_core->L, (lua_Integer)(uintptr_t)this);
+      lua_pushcclosure(m_core->L, qcall.getFunc(), 1);
+      lua_setfield(m_core->L, -2, qcall.getName().data());
     }
 
-    lua_setfield(*m_core->L, -2, "api");
-    lua_setglobal(*m_core->L, "quix");
+    lua_setfield(m_core->L, -2, "api");
+    lua_setglobal(m_core->L, "quix");
   }
 
   void replace_interner(StringInterner new_interner) override {
@@ -391,6 +479,7 @@ public:
   qprep_impl_t(FILE *file, const char *filename) : qlex_t(file, filename, false) {
     m_inner = nullptr;
     m_core = std::make_shared<Core>();
+    m_do_expanse = true;
 
     { /* Create the inner lexer */
       qlex_t *inner = nullptr;
@@ -409,6 +498,7 @@ public:
   qprep_impl_t(FILE *file, const char *filename, bool is_owned) : qlex_t(file, filename, is_owned) {
     m_core = std::make_shared<Core>();
     m_inner = nullptr;
+    m_do_expanse = true;
 
     { /* Create the inner lexer */
       qlex_t *inner = nullptr;
@@ -424,23 +514,17 @@ public:
     replace_interner(m_inner->m_strings);
 
     { /* Create the Lua state */
-      lua_State **L = new lua_State *(luaL_newstate());
-      if ((m_core->L = std::shared_ptr<lua_State *>(L, [](lua_State **p) {
-             lua_close(*p);
-             delete p;
-           })) == nullptr) {
-        throw std::bad_alloc();
-      }
+      m_core->L = luaL_newstate();
 
       /* Load the special selection of standard libraries */
-      luaL_openlibs(*m_core->L);
+      luaL_openlibs(m_core->L);
 
       /* Install the QUIX API */
       install_lua_api();
     }
   }
 
-  virtual ~qprep_impl_t() { qlex_free(m_inner); }
+  virtual ~qprep_impl_t() override { qlex_free(m_inner); }
 };
 
 LIB_EXPORT qlex_t *qprep_new(FILE *file, const char *filename) {
@@ -451,10 +535,4 @@ LIB_EXPORT qlex_t *qprep_new(FILE *file, const char *filename) {
   } catch (...) {
     qcore_panic("qprep_new: failed to create lexer");
   }
-}
-
-std::string QSysCall::call(qprep_impl_t *engine, std::vector<const char *> args) {
-  qcore_assert(engine != nullptr && m_func != nullptr);
-
-  return m_func(engine, args);
 }

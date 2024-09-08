@@ -40,7 +40,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
                                                           ${CMAKE_SOURCE_DIR}/libquix-prep/deps/lua-5.4.7)
   target_compile_options(quix-prep PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-prep PRIVATE quix-core quix-lexer lua5.4)
-  target_link_options(quix-prep PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+  target_link_options(quix-prep PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -asan-use-private-alias=1)
   add_dependencies(quix-prep quix-core quix-lexer)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -50,7 +50,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
                                                                  ${CMAKE_SOURCE_DIR}/libquix-prep/deps/lua-5.4.7)
   target_compile_options(quix-prep-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer lua5.4)
-  target_link_options(quix-prep-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+  target_link_options(quix-prep-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -asan-use-private-alias=1)
   add_dependencies(quix-prep-shared quix-core quix-lexer)
   set_target_properties(quix-prep-shared PROPERTIES OUTPUT_NAME quix-prep)
 

@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstddef>
 #define __QUIX_IMPL__
 
 #include <quix-core/Error.h>
@@ -41,9 +40,9 @@
 #include <cctype>
 #include <cmath>
 #include <csetjmp>
+#include <cstddef>
 #include <cstdio>
 #include <quix-lexer/Base.hh>
-#include <stack>
 #include <utility>
 
 #include "LibMacro.h"
@@ -470,15 +469,13 @@ void qlex_t::replace_interner(StringInterner new_interner) { m_strings = new_int
 
 ///============================================================================///
 
-static thread_local std::stack<__jmp_buf_tag> getc_jmpbuf;
-
 char qlex_t::getc() {
   /* Refill the buffer if necessary */
   if (m_getc_pos == GETC_BUFFER_SIZE) [[unlikely]] {
     size_t read = fread(m_getc_buf.data(), 1, GETC_BUFFER_SIZE, m_file);
 
     if (read == 0) [[unlikely]] {
-      longjmp(&getc_jmpbuf.top(), 1);
+      return EOF;
     }
 
     memset(m_getc_buf.data() + read, '\n', GETC_BUFFER_SIZE - read);
@@ -519,19 +516,9 @@ qlex_tok_t qlex_t::peek() {
 }
 
 void qlex_t::refill_buffer() {
-  std::fill(m_tok_buf.begin(), m_tok_buf.end(), qlex_tok_t::eof({}, {}));
-
-  getc_jmpbuf.push({});
-
-  if (setjmp(&getc_jmpbuf.top()) == 0) {
-    for (size_t i = 0; i < TOKEN_BUF_SIZE; i++) {
-      m_tok_buf[i] = next_impl();
-    }
-  } else [[unlikely]] {
-    // We have reached the end of the file
+  for (size_t i = 0; i < TOKEN_BUF_SIZE; i++) {
+    m_tok_buf[i] = next_impl();
   }
-
-  getc_jmpbuf.pop();
 }
 
 qlex_tok_t qlex_t::step_buffer() {

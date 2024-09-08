@@ -266,7 +266,7 @@ enum class NumType {
 static thread_local boost::unordered_map<qlex::num_buf_t, NumType> num_cache;
 static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t> can_cache;
 
-class qlex_impl_t : public qlex_t {
+struct qlex_impl_t final : public qlex_t {
   std::deque<char> m_pushback;
 
   qlex_tok_t do_automata();
@@ -276,7 +276,7 @@ class qlex_impl_t : public qlex_t {
 
 public:
   qlex_impl_t(FILE *file, const char *filename, bool is_owned) : qlex_t(file, filename, is_owned) {}
-  virtual ~qlex_impl_t() = default;
+  virtual ~qlex_impl_t() override{};
 };
 
 ///============================================================================///
@@ -558,6 +558,10 @@ qlex_tok_t qlex_impl_t::do_automata() {
           c = m_pushback.front();
           m_pushback.pop_front();
         }
+      }
+
+      if (c == EOF) {
+        return qlex_tok_t::eof(cur_loc(), cur_loc());
       }
 
       switch (state) {
