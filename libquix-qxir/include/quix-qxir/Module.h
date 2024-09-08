@@ -141,7 +141,6 @@ namespace qxir {
   class Alloc;
   class Call;
   class Seq;
-  class Async;
   class Index;
   class Ident;
   class Extern;

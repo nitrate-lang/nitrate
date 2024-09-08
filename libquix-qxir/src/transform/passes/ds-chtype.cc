@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "quix-qxir/TypeDecl.h"
 #define QXIR_USE_CPP_API
 
 #include <quix-qxir/Node.h>
@@ -114,18 +115,15 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         Call *calln = par->as<Call>();
         auto tkind = calln->getTarget()->getKind();
 
-        if (tkind != QIR_NODE_LOCAL && tkind != QIR_NODE_FN) {
-          EPUT("Call target is not an ident, local, or function node");
+        if (tkind != QIR_NODE_LOCAL && tkind != QIR_NODE_IDENT && tkind != QIR_NODE_FN &&
+            tkind != QIR_NODE_INDEX) {
+          EPUT("Call target is not an local, ident, fn or index node");
         }
 
         break;
       }
 
       case QIR_NODE_SEQ: {
-        break;
-      }
-
-      case QIR_NODE_ASYNC: {
         break;
       }
 

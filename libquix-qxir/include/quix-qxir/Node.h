@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#define QIR_NODE_COUNT 53
+#define QIR_NODE_COUNT 52
 
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
@@ -164,7 +164,7 @@ namespace qxir {
     Expr &operator=(const Expr &) = delete;
 
   public:
-    Expr(qxir_ty_t ty = QIR_NODE_BAD)
+    Expr(qxir_ty_t ty)
         : m_node_type(ty),
           m_module_idx(std::numeric_limits<ModuleId>::max()),
           m_constexpr(0),
@@ -772,22 +772,6 @@ namespace qxir {
     void addItem(Expr *item) noexcept { m_items.push_back(item); }
   };
 
-  typedef std::vector<Expr *, Arena<Expr *>> AsyncItems;
-
-  class Async final : public Expr {
-    QCLASS_REFLECT()
-
-    AsyncItems m_items;
-
-  public:
-    Async(const AsyncItems &items) : Expr(QIR_NODE_ASYNC), m_items(items) {}
-
-    const AsyncItems &getItems() const noexcept { return m_items; }
-    AsyncItems &getItems() noexcept { return m_items; }
-    void setItems(const AsyncItems &items) noexcept { m_items = items; }
-    void addItem(Expr *item) noexcept { m_items.push_back(item); }
-  };
-
   class Index final : public Expr {
     QCLASS_REFLECT()
 
@@ -1104,7 +1088,6 @@ namespace qxir {
     CALL,
     ENUM,
     LET,
-    FIELD,
     NAMED_TYPE,
 
     BAD,

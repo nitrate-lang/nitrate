@@ -32,11 +32,7 @@
 #include <transform/passes/Decl.hh>
 
 /**
- * @brief [TODO: Write a short description of this pass]
- *
- * @details [TODO: Write a detailed description of this pass]
- *
- * @note [TODO: Write any additional notes about this pass]
+ * @brief Do type inference on the module.
  */
 
 bool qxir::passes::impl::tyinfer(qmodule_t *mod) {

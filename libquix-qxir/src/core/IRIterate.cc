@@ -106,13 +106,6 @@ namespace qxir::detail {
         }
         break;
       }
-      case QIR_NODE_ASYNC: {
-        children.reserve(base->as<Async>()->m_items.size());
-        for (Expr *&child : base->as<Async>()->m_items) {
-          children.push_back(&child);
-        }
-        break;
-      }
       case QIR_NODE_INDEX: {
         children.push_back(&base->as<Index>()->m_expr);
         children.push_back(&base->as<Index>()->m_index);
@@ -288,9 +281,6 @@ namespace qxir::detail {
         break;
       }
       case QIR_NODE_TMP: {
-        break;
-      }
-      case QIR_NODE_BAD: {
         break;
       }
     }

@@ -293,23 +293,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       ss << "}";
       break;
     }
-    case QIR_NODE_ASYNC: {
-      ss << "async {";
-      state.indent++;
-      indent(ss, state);
-      for (auto it = n->as<Seq>()->getItems().begin(); it != n->as<Seq>()->getItems().end(); ++it) {
-        recurse(*it);
-        ss << ",";
-
-        if (std::next(it) != n->as<Seq>()->getItems().end()) {
-          indent(ss, state);
-        }
-      }
-      state.indent--;
-      indent(ss, state);
-      ss << "}";
-      break;
-    }
     case QIR_NODE_INDEX: {
       recurse(n->as<Index>()->getExpr());
       ss << "[";

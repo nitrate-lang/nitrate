@@ -29,10 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <functional>
 #include <string>
 #include <string_view>
-#include <unordered_set>
 
 #include "quix-parser/Node.h"
 #define __QUIX_IMPL__
@@ -739,26 +737,50 @@ namespace qxir {
      *         later.
      */
 
-    auto base = qconv_one(s, n->get_func());
-    if (!base) {
+    auto target = qconv_one(s, n->get_func());
+    if (!target) {
       badtree(n, "qparse::Call::get_func() == nullptr");
       throw QError();
     }
 
-    CallArgsTmpNodeCradle datapack;
-    for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
-      auto arg = qconv_one(s, it->second);
-      if (!arg) {
-        badtree(n, "qparse::Call::get_args() vector contains nullptr");
-        throw QError();
+    bool has_named_param =
+        std::any_of(n->get_args().begin(), n->get_args().end(), [](const auto &p) {
+          if (p.first.empty()) {
+            badtree(nullptr, "Implicit positional argument is malformed");
+            throw QError();
+          }
+
+          return !std::isdigit(p.first[0]);
+        });
+
+    if (has_named_param) {
+      CallArgsTmpNodeCradle datapack;
+      for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
+        auto arg = qconv_one(s, it->second);
+        if (!arg) {
+          badtree(n, "qparse::Call::get_args() vector contains nullptr");
+          throw QError();
+        }
+
+        std::get<1>(datapack).push_back({memorize(it->first), arg});
+      }
+      std::get<0>(datapack) = target;
+
+      return create<Tmp>(TmpType::CALL, std::move(datapack));
+    } else {
+      CallArgs args;
+      for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
+        auto arg = qconv_one(s, it->second);
+        if (!arg) {
+          badtree(n, "qparse::Call::get_args() vector contains nullptr");
+          throw QError();
+        }
+
+        args.push_back(arg);
       }
 
-      std::get<1>(datapack).push_back({memorize(it->first), arg});
+      return create<Call>(target, std::move(args));
     }
-
-    std::get<0>(datapack) = base;
-
-    return create<Tmp>(TmpType::CALL, std::move(datapack));
   }
 
   static Expr *qconv_list(ConvState &s, const qparse::List *n) {
@@ -816,11 +838,7 @@ namespace qxir {
       throw QError();
     }
 
-    FieldTmpNodeCradle datapack;
-    std::get<0>(datapack) = base;
-    std::get<1>(datapack) = memorize(n->get_field());
-
-    return create<Tmp>(TmpType::FIELD, std::move(datapack));
+    return create<Index>(base, create<String>(memorize(n->get_field())));
   }
 
   static Expr *qconv_index(ConvState &s, const qparse::Index *n) {
@@ -846,9 +864,32 @@ namespace qxir {
   }
 
   static Expr *qconv_slice(ConvState &s, const qparse::Slice *n) {
-    /// TODO: slice
+    /**
+     * @brief Convert a slice expression to a qxir expression.
+     * @details Recursively convert the base, start, and end of the slice
+     *         expression and pass them so the .slice() method which is
+     *         assumed to be present in the base object.
+     */
 
-    throw QError();
+    auto base = qconv_one(s, n->get_base());
+    if (!base) {
+      badtree(n, "qparse::Slice::get_base() == nullptr");
+      throw QError();
+    }
+
+    auto start = qconv_one(s, n->get_start());
+    if (!start) {
+      badtree(n, "qparse::Slice::get_start() == nullptr");
+      throw QError();
+    }
+
+    auto end = qconv_one(s, n->get_end());
+    if (!end) {
+      badtree(n, "qparse::Slice::get_end() == nullptr");
+      throw QError();
+    }
+
+    return create<Call>(create<Index>(base, create<String>("slice")), CallArgs({start, end}));
   }
 
   static Expr *qconv_fstring(ConvState &s, const qparse::FString *n) {
@@ -2935,15 +2976,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       out = create<Seq>(std::move(items));
       break;
     }
-    case QIR_NODE_ASYNC: {
-      AsyncItems items;
-      items.reserve(static_cast<Async *>(in)->getItems().size());
-      for (auto item : static_cast<Async *>(in)->getItems()) {
-        items.push_back(clone(item));
-      }
-      out = create<Async>(std::move(items));
-      break;
-    }
     case QIR_NODE_INDEX: {
       Index *n = static_cast<Index *>(in);
       out = create<Index>(clone(n->getExpr()), clone(n->getIndex()));
@@ -3157,10 +3189,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     case QIR_NODE_TMP: {
       Tmp *n = static_cast<Tmp *>(in);
       out = create<Tmp>(n->getTmpType(), n->getData());
-      break;
-    }
-    case QIR_NODE_BAD: {
-      out = create<Expr>(QIR_NODE_BAD);
       break;
     }
   }

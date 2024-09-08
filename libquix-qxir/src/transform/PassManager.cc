@@ -50,7 +50,6 @@ static void seed_passes() {
   Pass::register_pass("ds-nullchk", impl::ds_nullchk);
   Pass::register_pass("ds-chtype", impl::ds_chtype);
   Pass::register_pass("ds-resolv", impl::ds_resolv);
-  Pass::register_pass("ns-flatten", impl::ns_flatten);
   Pass::register_pass("fnflatten", impl::fnflatten);
   Pass::register_pass("tyinfer", impl::tyinfer);
   Pass::register_pass("nm-premangle", impl::nm_premangle);
@@ -71,24 +70,17 @@ static void seed_passes() {
 
   /* Transformative passes */
   PassGroup::register_group(
-      "g3", {"ns-flatten"},
+      "g4", {"fnflatten"},
       {{"g0", SAFETY_MODE}, {"g1", DependencyFrequency::Once}, {"g2", DependencyFrequency::Once}});
-  PassGroup::register_group("g4", {"fnflatten"},
-                            {{"g0", SAFETY_MODE},
-                             {"g1", DependencyFrequency::Once},
-                             {"g2", DependencyFrequency::Once},
-                             {"g3", DependencyFrequency::Once}});
   PassGroup::register_group("g5", {"tyinfer"},
                             {{"g0", SAFETY_MODE},
                              {"g1", DependencyFrequency::Once},
                              {"g2", DependencyFrequency::Once},
-                             {"g3", DependencyFrequency::Once},
                              {"g4", DependencyFrequency::Once}});
   PassGroup::register_group("g6", {"nm-premangle"},
                             {{"g0", SAFETY_MODE},
                              {"g1", DependencyFrequency::Once},
                              {"g2", DependencyFrequency::Once},
-                             {"g3", DependencyFrequency::Once},
                              {"g4", DependencyFrequency::Once},
                              {"g5", DependencyFrequency::Once}});
 
@@ -96,7 +88,6 @@ static void seed_passes() {
   PassGroup::register_group("root", {},
                             {{"g1", DependencyFrequency::Once},
                              {"g2", DependencyFrequency::Once},
-                             {"g3", DependencyFrequency::Once},
                              {"g4", DependencyFrequency::Once},
                              {"g5", DependencyFrequency::Once},
                              {"g6", DependencyFrequency::Once}});
@@ -117,7 +108,6 @@ const StdTransform* StdTransform::create() {
   ptr.m_root = optimize_order({
       "ds-chtype",    /* Data structure child type */
       "ds-resolv",    /* Data structure discovery	*/
-      "ns-flatten",   /* Namespace flattening	*/
       "fnflatten",    /* Function flattening */
       "tyinfer",      /* Type inference	*/
       "nm-premangle", /* Name Pre-mangling */

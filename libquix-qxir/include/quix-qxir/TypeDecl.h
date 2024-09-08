@@ -62,7 +62,6 @@ typedef enum qxir_ty_t {
   QIR_NODE_ALLOC,
   QIR_NODE_CALL,
   QIR_NODE_SEQ,
-  QIR_NODE_ASYNC,
   QIR_NODE_INDEX,
   QIR_NODE_IDENT,
   QIR_NODE_EXTERN,
@@ -107,7 +106,6 @@ typedef enum qxir_ty_t {
   QIR_NODE_FN_TY,
 
   QIR_NODE_TMP, /* Temp node; must be resolved with more information */
-  QIR_NODE_BAD,
 } qxir_ty_t;
 
 typedef struct qxir_conf_t qxir_conf_t;

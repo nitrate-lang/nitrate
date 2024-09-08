@@ -41,7 +41,6 @@ namespace qxir::passes::impl {
   DECLARE_QIR_PASS(ds_nullchk);
   DECLARE_QIR_PASS(ds_chtype);
   DECLARE_QIR_PASS(ds_resolv);
-  DECLARE_QIR_PASS(ns_flatten);
   DECLARE_QIR_PASS(fnflatten);
   DECLARE_QIR_PASS(tyinfer);
   DECLARE_QIR_PASS(nm_premangle);

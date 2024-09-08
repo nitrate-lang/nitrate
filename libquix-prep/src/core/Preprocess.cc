@@ -277,8 +277,11 @@ class qprep_impl_t : public qlex_t {
             return x;
           }
 
-          std::string code = "return " + std::string(body);
+          std::string code = std::string(body);
 
+          // Conv arguments to string type
+
+          code = "return " + code;
           if (!run_and_expand(code)) {
             return x;
           }

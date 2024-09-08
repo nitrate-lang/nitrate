@@ -41,11 +41,9 @@
 #include <transform/passes/Decl.hh>
 
 /**
- * @brief [TODO: Write a short description of this pass]
+ * @brief Remove the temporary node and replace it with the resolved node.
  *
- * @details [TODO: Write a detailed description of this pass]
- *
- * @note [TODO: Write any additional notes about this pass]
+ * @details See code.
  *
  * @timecomplexity O(n)
  * @spacecomplexity O(n)
@@ -316,11 +314,6 @@ static bool resolve_node(qxir::Expr **_cur) {
       break;
     }
 
-    case TmpType::FIELD: {
-      /// TODO:
-      break;
-    }
-
     case TmpType::NAMED_TYPE: {
       std::string_view name = std::get<std::string_view>(cur->as<Tmp>()->getData());
 
@@ -352,11 +345,11 @@ static bool recursive_resolve(qxir::Expr **base) {
     if (!resolve_node(_cur)) {
       error = true;
     }
-    
-    /// TODO: BUG: IMPORTANT: Fix the resolution pass to guarantee that cyclic references are not created
-    
+
+    /// TODO: BUG: IMPORTANT: Fix the resolution pass to guarantee that cyclic references are not
+    /// created
+
     // if (!(*_cur)->is_acyclic()) {
-    //   /// TODO: Fix the actual problem at the source
     //   (*_cur)->getModule()->getDiag().push(
     //       QXIR_AUDIT_CONV,
     //       diag::DiagMessage(

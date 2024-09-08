@@ -696,10 +696,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         }
         break;
       }
-      case QIR_NODE_ASYNC: {
-        T = getType<VoidTy>();
-        break;
-      }
       case QIR_NODE_INDEX: {
         Type *B = E->as<Index>()->getExpr()->getType();
         Expr *V = E->as<Index>()->getIndex();
