@@ -35,6 +35,8 @@
 #include <quix-lexer/Token.h>
 #include <quix-prep/Lib.h>
 
+#include <iostream>
+
 extern "C" {
 #include <lua5.4/lauxlib.h>
 #include <lua5.4/lua.h>
@@ -215,8 +217,50 @@ class qprep_impl_t : public qlex_t {
         return x;
       }
       case qMacB: {
-        if (!run_and_expand(get_string(x.v.str_idx))) {
-          return x;
+        std::string_view block = get_string(x.v.str_idx);
+        block = ltrim(block);
+        if (!block.starts_with("fn ")) {
+          if (!run_and_expand(block)) {
+            return x;
+          }
+        } else {
+          block = block.substr(3);
+          block = ltrim(block);
+          size_t pos = block.find_first_of("(");
+          if (pos == std::string_view::npos) {
+            emit_message(Level::Error, "Invalid macro function definition: %s\n", block.data());
+            return x;
+          }
+
+          std::string_view name = block.substr(0, pos);
+          name = rtrim(name);
+
+          std::string code = "function " + std::string(name) + std::string(block.substr(pos));
+
+          { /* Remove the opening brace */
+            pos = code.find_first_of("{");
+            if (pos == std::string::npos) {
+              emit_message(Level::Error, "Invalid macro function definition: %s\n", block.data());
+              return x;
+            }
+            code.erase(pos, 1);
+          }
+
+          { /* Remove the closing brace */
+            pos = code.find_last_of("}");
+            if (pos == std::string::npos) {
+              emit_message(Level::Error, "Invalid macro function definition: %s\n", block.data());
+              return x;
+            }
+            code.erase(pos, 1);
+            code.insert(pos, "end");
+          }
+
+          std::string_view sv = get_string(put_string(code));
+
+          if (!run_and_expand(sv)) {
+            return x;
+          }
         }
 
         return next_impl();
@@ -233,7 +277,9 @@ class qprep_impl_t : public qlex_t {
             return x;
           }
 
-          if (!run_and_expand(body)) {
+          std::string code = "return " + std::string(body);
+
+          if (!run_and_expand(code)) {
             return x;
           }
 
