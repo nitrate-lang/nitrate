@@ -383,7 +383,8 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       }
 
       case QIR_NODE_ARRAY_TY: {
-        if (!par->as<ArrayTy>()->getElement()->isType()) {
+        if (!par->as<ArrayTy>()->getElement()->isType() &&
+            par->as<ArrayTy>()->getElement()->getKind() != QIR_NODE_IDENT) {
           EPUT("Array element is not a type node");
         }
         if (par->as<ArrayTy>()->getCount()->isType()) {
