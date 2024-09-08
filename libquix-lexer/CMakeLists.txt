@@ -38,7 +38,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_include_directories(quix-lexer PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include)
   target_compile_options(quix-lexer PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-lexer PRIVATE quix-core)
-  target_link_options(quix-lexer PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+  target_link_options(quix-lexer PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -asan-use-private-alias=1)
   add_dependencies(quix-lexer quix-core)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -46,7 +46,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_include_directories(quix-lexer-shared PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include)
   target_compile_options(quix-lexer-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-lexer-shared PRIVATE quix-core)
-  target_link_options(quix-lexer-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+  target_link_options(quix-lexer-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -asan-use-private-alias=1)
   add_dependencies(quix-lexer-shared quix-core)
   set_target_properties(quix-lexer-shared PROPERTIES OUTPUT_NAME quix-lexer)
 
