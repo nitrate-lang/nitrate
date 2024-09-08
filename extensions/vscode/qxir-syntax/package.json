@@ -3,7 +3,7 @@
   "displayName": "QUIX-IR",
   "publisher": "qpkg",
   "description": "QUIX-IR syntax highlighting support ",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "repository": "https://github.com/Kracken256/quix/extensions/vscode/qxir-syntax",
   "engines": {
     "vscode": "^1.92.0"

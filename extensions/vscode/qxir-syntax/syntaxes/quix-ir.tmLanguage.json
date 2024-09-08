@@ -52,7 +52,7 @@
     },
     "comment": {
       "name": "comment.line.qir",
-      "match": ";.*"
+      "match": "^\\s*;.*"
     },
     "commonIdentifier": {
       "name": "variable.other.common.qir",
