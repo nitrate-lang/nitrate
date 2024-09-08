@@ -35,7 +35,7 @@
 
 #include <atomic>
 
-#include "LibMacro.h"
+#include "core/LibMacro.h"
 
 #ifndef QPREP_ID
 #warning "QPREP_ID must be defined"

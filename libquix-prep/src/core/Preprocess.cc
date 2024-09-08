@@ -54,7 +54,7 @@ extern "C" {
 #include <unordered_set>
 #include <vector>
 
-#include "LibMacro.h"
+#include "core/LibMacro.h"
 
 class qprep_impl_t;
 
