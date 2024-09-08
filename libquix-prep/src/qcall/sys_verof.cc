@@ -34,7 +34,7 @@
 #include <qcall/List.hh>
 
 extern "C" {
-#include <lua5.4/lauxlib.h>
+#include <lua/lauxlib.h>
 }
 
 #include <unordered_map>

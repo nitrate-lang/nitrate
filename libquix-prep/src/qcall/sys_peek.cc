@@ -35,7 +35,7 @@
 #include <qcall/List.hh>
 
 extern "C" {
-#include <lua5.4/lauxlib.h>
+#include <lua/lauxlib.h>
 }
 
 int qcall::sys_peek(lua_State* L) {

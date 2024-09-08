@@ -19,7 +19,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments -Wno-error=return-type-c-linkage -Wno-return-type-c-linkage)
+SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments -Wno-return-type-c-linkage -Wno-return-type-c-linkage)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQLEX_ID=${QLEX_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQLEX_ID="undefined")
 
@@ -38,7 +38,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_include_directories(quix-lexer PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include)
   target_compile_options(quix-lexer PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-lexer PRIVATE quix-core)
-  target_link_options(quix-lexer PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -asan-use-private-alias=1)
+  target_link_options(quix-lexer PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-lexer quix-core)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -46,7 +46,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_include_directories(quix-lexer-shared PUBLIC src include ${CMAKE_SOURCE_DIR}/libquix-core/include)
   target_compile_options(quix-lexer-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-lexer-shared PRIVATE quix-core)
-  target_link_options(quix-lexer-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -asan-use-private-alias=1)
+  target_link_options(quix-lexer-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-lexer-shared quix-core)
   set_target_properties(quix-lexer-shared PROPERTIES OUTPUT_NAME quix-lexer)
 

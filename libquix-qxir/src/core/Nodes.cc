@@ -517,6 +517,8 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       break;
     }
   }
+
+  __builtin_unreachable();
 }
 
 static bool isCyclicUtil(qxir::Expr *base, std::unordered_set<qxir::Expr *> &visited,
