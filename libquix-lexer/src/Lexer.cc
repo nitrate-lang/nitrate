@@ -1191,23 +1191,23 @@ LIB_EXPORT qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *
 LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   switch (ty) {
     case qEofF:
-      return "eoff";
+      return "eof";
     case qErro:
-      return "erro";
+      return "err";
     case qKeyW:
-      return "keyw";
+      return "key";
     case qOper:
-      return "oper";
+      return "op";
     case qPunc:
-      return "punc";
+      return "sym";
     case qName:
       return "name";
     case qIntL:
-      return "intl";
+      return "int";
     case qNumL:
-      return "numl";
+      return "num";
     case qText:
-      return "text";
+      return "str";
     case qChar:
       return "char";
     case qMacB:
