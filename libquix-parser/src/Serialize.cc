@@ -253,7 +253,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
         OBJECT_STR(k);
         OBJECT_SUB(v);
         OBJECT_END();
-        ss << ")";
       }
       ss << "]";
       OBJECT_END();
@@ -268,7 +267,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
         OBJECT_STR(k);
         OBJECT_SUB(v);
         OBJECT_END();
-        ss << ")";
       }
       ss << "]";
       OBJECT_SUB(n->as<TemplCall>()->get_func());
