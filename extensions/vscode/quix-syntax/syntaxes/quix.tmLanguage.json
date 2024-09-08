@@ -118,8 +118,8 @@
       "match": "@[\\w:]+"
     },
     "proprocessorFunction": {
-      "begin": "@\\(\\s*function",
-      "end": "end\\s*\\)",
+      "begin": "@\\([\\s\n]*fn",
+      "end": "\\}\\);?$",
       "patterns": [
         {
           "include": "source.lua"
