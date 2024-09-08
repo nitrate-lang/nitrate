@@ -71,3 +71,69 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   return true;
 }
+
+bool qparse::parser::parse_sec(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_peek(rd);
+
+  String abiName;
+
+  if (tok.is(qText)) {
+    qlex_next(rd);
+
+    abiName = tok.as_string(rd);
+    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
+
+    tok = qlex_peek(rd);
+  }
+
+  if (tok.is<qPuncLCur>()) {
+    Block *block = nullptr;
+    if (!parse(job, rd, &block, true)) return false;
+
+    *node = Block::get(block->get_items());
+    return true;
+  }
+
+  Block *block = nullptr;
+  if (!parse(job, rd, &block, false, true)) {
+    syntax(tok, "Expected block or statement list after 'sec'");
+    return false;
+  }
+
+  *node = Block::get(block->get_items());
+
+  return true;
+}
+
+bool qparse::parser::parse_pro(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_tok_t tok = qlex_peek(rd);
+
+  String abiName;
+
+  if (tok.is(qText)) {
+    qlex_next(rd);
+
+    abiName = tok.as_string(rd);
+    std::transform(abiName.begin(), abiName.end(), abiName.begin(), ::tolower);
+
+    tok = qlex_peek(rd);
+  }
+
+  if (tok.is<qPuncLCur>()) {
+    Block *block = nullptr;
+    if (!parse(job, rd, &block, true)) return false;
+
+    *node = Block::get(block->get_items());
+    return true;
+  }
+
+  Block *block = nullptr;
+  if (!parse(job, rd, &block, false, true)) {
+    syntax(tok, "Expected block or statement list after 'pro'");
+    return false;
+  }
+
+  *node = Block::get(block->get_items());
+
+  return true;
+}

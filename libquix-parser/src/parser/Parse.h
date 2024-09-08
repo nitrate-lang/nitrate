@@ -51,6 +51,8 @@ namespace qparse::parser {
              bool single_stmt = false);
 
   bool parse_pub(qparse_t &job, qlex_t *rd, Stmt **node);
+  bool parse_sec(qparse_t &job, qlex_t *rd, Stmt **node);
+  bool parse_pro(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_let(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &node);
 

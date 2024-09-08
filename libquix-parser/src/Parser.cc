@@ -206,15 +206,25 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           break;
         }
 
-        case qKPub: {
-          case qKImport:  // they both declare external functions
-            if (!parse_pub(job, rd, &node)) {
-              return false;
-            }
-            break;
+        case qKPub:
+        case qKImport: {  // they both declare external functions
+          if (!parse_pub(job, rd, &node)) {
+            return false;
+          }
+          break;
         }
 
         case qKSec: {
+          if (!parse_sec(job, rd, &node)) {
+            return false;
+          }
+          break;
+        }
+
+        case qKPro: {
+          if (!parse_pro(job, rd, &node)) {
+            return false;
+          }
           break;
         }
 
