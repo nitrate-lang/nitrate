@@ -1187,31 +1187,31 @@ LIB_EXPORT qlex_size qlex_tok_write(qlex_t *lexer, const qlex_tok_t *tok, char *
 LIB_EXPORT const char *qlex_ty_str(qlex_ty_t ty) {
   switch (ty) {
     case qEofF:
-      return "EOF";
+      return "eoff";
     case qErro:
-      return "ERROR";
+      return "erro";
     case qKeyW:
-      return "KEYWORD";
+      return "keyw";
     case qOper:
-      return "OPERATOR";
+      return "oper";
     case qPunc:
-      return "PUNCTUATION";
+      return "punc";
     case qName:
-      return "IDENTIFIER";
+      return "name";
     case qIntL:
-      return "INTEGER";
+      return "intl";
     case qNumL:
-      return "NUMBER";
+      return "numl";
     case qText:
-      return "STRING";
+      return "text";
     case qChar:
-      return "CHARACTER";
+      return "char";
     case qMacB:
-      return "MACRO_BLOCK";
+      return "macb";
     case qMacr:
-      return "MACRO";
+      return "macr";
     case qNote:
-      return "COMMENT";
+      return "note";
   }
 
   __builtin_unreachable();
