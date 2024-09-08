@@ -1041,7 +1041,7 @@ qlex_tok_t qlex_impl_t::do_automata() {
           /* Special case for a comment */
           if (buf[0] == '#') {
             buf.clear();
-            buf += c;
+            m_pushback.push_back(c);
             state = LexState::CommentSingleLine;
             continue;
           }
