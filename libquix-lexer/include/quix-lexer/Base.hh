@@ -43,6 +43,7 @@
 #include <optional>
 #include <string>
 #include <string_view>
+#include <queue>
 
 #ifndef MEMORY_OVER_SPEED
 #include <unordered_map>
@@ -68,6 +69,7 @@ protected:
 
   qlex_size m_tok_pos;
   std::array<qlex_tok_t, TOKEN_BUF_SIZE> m_tok_buf;
+  std::queue<qlex_tok_t> m_undo;
 
   qlex_tok_t m_cur;
 

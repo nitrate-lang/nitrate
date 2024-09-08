@@ -395,9 +395,8 @@ qlex_loc_t qlex_t::cur_loc() { return save_loc(m_row, m_col, m_offset); }
 ///============================================================================///
 
 void qlex_t::push_impl(const qlex_tok_t *tok) {
-  /// TODO: Implement this function
-  qcore_implement(__func__);
-  (void)tok;
+  m_undo.push(*tok);
+  m_cur.ty = qErro;
 }
 
 void qlex_t::collect_impl(const qlex_tok_t *tok) {
@@ -498,6 +497,12 @@ char qlex_t::getc() {
 }
 
 qlex_tok_t qlex_t::next() {
+  if (!m_undo.empty()) {
+    qlex_tok_t tok = m_undo.front();
+    m_undo.pop();
+    return tok;
+  }
+
   qlex_tok_t t = peek();
   m_cur.ty = qErro;
   return t;
