@@ -29,27 +29,49 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QUIX_IMPL__
+
 #include <qcall/List.hh>
 
-using namespace qcall;
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
-const std::vector<QSysCall> qcall::qsyscalls = {
-    {"verof", 0x0000, sys_verof}, /* Get information about the Quix compiler */
+#include <string>
 
-    {"next", 0x0010, sys_next}, /* Get the next token from the lexer */
-    {"peek", 0x0011, sys_peek}, /* Peek at the next token from the lexer */
-    {"emit", 0x0012, sys_emit}, /* Emit data subject to recursive expansion */
+int qcall::sys_get(lua_State* L) {
+  /**
+   * @brief Get named value from the environment.
+   */
 
-    {"ilog", 0x0050, sys_ilog},   /* Put a value into the invisible log */
-    {"debug", 0x0051, sys_debug}, /* Print a debug message */
-    {"info", 0x0052, sys_info},   /* Print an informational message */
-    {"warn", 0x0053, sys_warn},   /* Print a warning message */
-    {"error", 0x0054, sys_error}, /* Print an error message */
-    {"abort", 0x0055, sys_abort}, /* Print an error message and stop the compiler */
-    {"fatal", 0x0056, sys_fatal}, /* Print a fatal error message and stop the compiler */
+  int nargs = lua_gettop(L);
+  if (nargs < 1) {
+    return luaL_error(L, "expected at least 1 argument, got %d", nargs);
+  }
 
-    {"get", 0x0080, sys_get},     /* Get a value from the environment */
-    {"fetch", 0x0081, sys_fetch}, /* Fetch a value from local http server */
-    {"set", 0x0082, sys_set},     /* Set a value in the environment */
+  if (!lua_isstring(L, 1)) {
+    return luaL_error(L, "expected string, got %s", lua_typename(L, lua_type(L, 1)));
+  }
 
-};
+  bool bypass_cache = false;
+  if (nargs > 1) {
+    if (!lua_isboolean(L, 2)) {
+      return luaL_error(L, "expected boolean, got %s", lua_typename(L, lua_type(L, 2)));
+    }
+
+    bypass_cache = lua_toboolean(L, 2);
+  }
+
+  const char* unsafe_uri = lua_tostring(L, 1);
+
+  (void)unsafe_uri;
+  (void)bypass_cache;
+
+  /// TODO: Implement sys_fetch
+
+  std::string value = "TODO";
+
+  lua_pushstring(L, value.c_str());
+
+  return 1;
+}

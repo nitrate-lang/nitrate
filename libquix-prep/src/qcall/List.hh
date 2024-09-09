@@ -59,8 +59,11 @@ namespace qcall {
   ///////////// BEGIN QCALL FUNCTIONS /////////////
 
   int sys_verof(lua_State* L);
+
   int sys_next(lua_State* L);
   int sys_peek(lua_State* L);
+  int sys_emit(lua_State* L);
+
   int sys_ilog(lua_State* L);
   int sys_debug(lua_State* L);
   int sys_info(lua_State* L);
@@ -68,6 +71,11 @@ namespace qcall {
   int sys_error(lua_State* L);
   int sys_abort(lua_State* L);
   int sys_fatal(lua_State* L);
+
+  int sys_get(lua_State* L);
+  int sys_set(lua_State* L);
+
+  int sys_fetch(lua_State* L);
 
   ////////////// END QCALL FUNCTIONS //////////////
 

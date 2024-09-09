@@ -29,27 +29,34 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QUIX_IMPL__
+
+#include <core/Preprocess.hh>
 #include <qcall/List.hh>
 
-using namespace qcall;
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
-const std::vector<QSysCall> qcall::qsyscalls = {
-    {"verof", 0x0000, sys_verof}, /* Get information about the Quix compiler */
+int qcall::sys_emit(lua_State* L) {
+  /**
+   *   @brief Next token.
+   */
 
-    {"next", 0x0010, sys_next}, /* Get the next token from the lexer */
-    {"peek", 0x0011, sys_peek}, /* Peek at the next token from the lexer */
-    {"emit", 0x0012, sys_emit}, /* Emit data subject to recursive expansion */
+  int nargs = lua_gettop(L);
+  if (nargs < 1) {
+    return luaL_error(L, "sys_emit: expected at least 1 argument, got %d", nargs);
+  }
 
-    {"ilog", 0x0050, sys_ilog},   /* Put a value into the invisible log */
-    {"debug", 0x0051, sys_debug}, /* Print a debug message */
-    {"info", 0x0052, sys_info},   /* Print an informational message */
-    {"warn", 0x0053, sys_warn},   /* Print a warning message */
-    {"error", 0x0054, sys_error}, /* Print an error message */
-    {"abort", 0x0055, sys_abort}, /* Print an error message and stop the compiler */
-    {"fatal", 0x0056, sys_fatal}, /* Print a fatal error message and stop the compiler */
+  qprep_impl_t* obj = get_engine();
 
-    {"get", 0x0080, sys_get},     /* Get a value from the environment */
-    {"fetch", 0x0081, sys_fetch}, /* Fetch a value from local http server */
-    {"set", 0x0082, sys_set},     /* Set a value in the environment */
+  for (int i = 1; i <= nargs; i++) {
+    if (!lua_isstring(L, i)) {
+      return luaL_error(L, "sys_emit: expected string, got %s", lua_typename(L, lua_type(L, i)));
+    }
 
-};
+    obj->expand_raw(lua_tostring(L, i));
+  }
+
+  return 0;
+}
