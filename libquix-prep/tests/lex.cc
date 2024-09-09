@@ -70,7 +70,7 @@ void do_lex(FILE *file) {
     if (tok.ty == qEofF || tok.ty == qErro) {
       break;
     }
-    print_token(lexer, tok, std::cout);
+    print_token(lexer, tok, out);
   }
 
   out.close();

@@ -524,7 +524,7 @@ qlex_tok_t qlex_t::peek() {
 }
 
 void qlex_t::refill_buffer() {
-  std::fill(m_tok_buf.begin(), m_tok_buf.end(), qlex_tok_t{qErro, 0});
+  std::fill(m_tok_buf.begin(), m_tok_buf.end(), qlex_tok_t{qEofF, 0});
 
   __jmp_buf_tag jmp;
   g_jmpstack.push(jmp);
