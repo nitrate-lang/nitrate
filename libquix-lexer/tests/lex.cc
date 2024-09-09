@@ -68,7 +68,11 @@ void do_lex(FILE *file) {
   //   return;
   // }
 
-  while ((tok = qlex_next(lexer)).ty != qEofF) {
+  while (true) {
+    tok = qlex_next(lexer);
+    if (tok.ty == qEofF || tok.ty == qErro) {
+      break;
+    }
     print_token(lexer, tok, std::cout);
   }
 

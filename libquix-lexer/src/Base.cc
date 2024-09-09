@@ -468,13 +468,15 @@ void qlex_t::replace_interner(StringInterner new_interner) { m_strings = new_int
 
 ///============================================================================///
 
+static thread_local __jmp_buf_tag g_eof_jmp_buf;
+
 char qlex_t::getc() {
   /* Refill the buffer if necessary */
   if (m_getc_pos == GETC_BUFFER_SIZE) [[unlikely]] {
     size_t read = fread(m_getc_buf.data(), 1, GETC_BUFFER_SIZE, m_file);
 
     if (read == 0) [[unlikely]] {
-      return EOF;
+      longjmp(&g_eof_jmp_buf, 1);
     }
 
     memset(m_getc_buf.data() + read, '\n', GETC_BUFFER_SIZE - read);
@@ -521,8 +523,12 @@ qlex_tok_t qlex_t::peek() {
 }
 
 void qlex_t::refill_buffer() {
-  for (size_t i = 0; i < TOKEN_BUF_SIZE; i++) {
-    m_tok_buf[i] = next_impl();
+  std::fill(m_tok_buf.begin(), m_tok_buf.end(), qlex_tok_t{qErro, 0});
+  
+  if (setjmp(&g_eof_jmp_buf) == 0) {
+    for (size_t i = 0; i < TOKEN_BUF_SIZE; i++) {
+      m_tok_buf[i] = next_impl();
+    }
   }
 }
 
