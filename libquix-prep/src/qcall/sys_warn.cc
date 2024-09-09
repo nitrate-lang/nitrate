@@ -29,19 +29,45 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QUIX_IMPL__
+
+#include <cstdio>
 #include <qcall/List.hh>
 
-using namespace qcall;
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
-const std::vector<QSysCall> qcall::qsyscalls = {
-    {"verof", 0x0000, sys_verof}, /* Get information about the Quix compiler */
-    {"next", 0x0001, sys_next},   /* Get the next token from the lexer */
-    {"peek", 0x0002, sys_peek},   /* Peek at the next token from the lexer */
-    {"ilog", 0x0003, sys_ilog},   /* Put a value into the invisible log */
-    {"debug", 0x0004, sys_debug}, /* Print a debug message */
-    {"info", 0x0005, sys_info},   /* Print an informational message */
-    {"warn", 0x0006, sys_warn},   /* Print a warning message */
-    {"error", 0x0007, sys_error}, /* Print an error message */
-    {"abort", 0x0008, sys_abort}, /* Print an error message and stop the compiler */
-    {"fatal", 0x0009, sys_fatal}, /* Print a fatal error message and stop the compiler */
-};
+#include <iostream>
+
+/// TODO: Implement the warn log
+static thread_local std::ostream& warn_log = std::clog;
+
+int qcall::sys_warn(lua_State* L) {
+  /**
+   * @brief Put a value into the warn log.
+   */
+
+  int nargs = lua_gettop(L);
+  if (nargs == 0) {
+    return luaL_error(L, "Expected at least one argument, got 0");
+  }
+
+  // Print variadic arguments
+  for (int i = 1; i <= nargs; i++) {
+    if (lua_isstring(L, i)) {
+      warn_log << lua_tostring(L, i);
+    } else if (lua_isnumber(L, i)) {
+      warn_log << lua_tonumber(L, i);
+    } else if (lua_isboolean(L, i)) {
+      warn_log << (lua_toboolean(L, i) ? "true" : "false");
+    } else {
+      return luaL_error(L, "Invalid argument #%d: expected string, number, or boolean, got %s", i,
+                        lua_typename(L, lua_type(L, i)));
+    }
+  }
+
+  warn_log << std::endl;
+
+  return 0;
+}
