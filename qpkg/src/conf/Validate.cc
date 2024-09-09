@@ -42,7 +42,6 @@ enum class KeyName {
   URL,
   LICENSES,
   SOURCES,
-  HEADERS,
   TARGET,
   TRIPLE,
   CPU,
@@ -62,7 +61,6 @@ static std::unordered_map<std::string, KeyName> key_map = {{"name", KeyName::NAM
                                                            {"url", KeyName::URL},
                                                            {"licenses", KeyName::LICENSES},
                                                            {"sources", KeyName::SOURCES},
-                                                           {"headers", KeyName::HEADERS},
                                                            {"target", KeyName::TARGET},
                                                            {"triple", KeyName::TRIPLE},
                                                            {"cpu", KeyName::CPU},
@@ -243,19 +241,6 @@ bool qpkg::conf::ValidateConfig(const qpkg::conf::Config &config,
           }
         }
         break;
-      case KeyName::HEADERS:
-        if (!config[key].is<std::vector<std::string>>()) {
-          LOG(core::ERROR) << "Invalid value type for key 'headers' in configuration" << std::endl;
-          return false;
-        }
-        for (const auto &source : config[key].as<std::vector<std::string>>()) {
-          if (!std::filesystem::exists(base / source) ||
-              !std::filesystem::is_directory(base / source)) {
-            LOG(core::ERROR) << "Directory does not exist: " << source << std::endl;
-            return false;
-          }
-        }
-        break;
       case KeyName::TARGET:
         if (!config[key].is<std::string>()) {
           LOG(core::ERROR) << "Invalid value type for key 'target' in configuration" << std::endl;
@@ -347,9 +332,6 @@ void qpkg::conf::PopulateConfig(qpkg::conf::Config &config) {
 
   if (!config.m_root.has<std::vector<std::string>>("depends"))
     config.m_root.set("depends", std::vector<std::string>());
-
-  if (!config.m_root.has<std::vector<std::string>>("headers"))
-    config.m_root.set("headers", std::vector<std::string>());
 
   if (!config.m_root.has<std::vector<std::string>>("sources"))
     config.m_root.set("sources", std::vector<std::string>());

@@ -119,12 +119,12 @@ void qpkg::init::Package::writeMain() {
     return;
   }
 
-  main << R"(@use "v1.0";
+  main << R"(@use "v1.0";  ~> Use v1.0 of QUIX
 
-@import std;
+@import std;  ~> Import the standard library
 
-fn main() {
-    printn("Hello, World!");
+pub fn main(args: [str]) {
+  printn("Sup, stepbro?");
 }
 )";
 }
@@ -144,7 +144,6 @@ bool qpkg::init::Package::createPackage() {
 
   try {
     if (!std::filesystem::create_directories(m_output / m_name / "src") ||
-        !std::filesystem::create_directories(m_output / m_name / "include") ||
         !std::filesystem::create_directories(m_output / m_name / "test") ||
         !std::filesystem::create_directories(m_output / m_name / "doc")) {
       LOG(core::ERROR) << "Failed to create package directories" << std::endl;
@@ -160,6 +159,16 @@ bool qpkg::init::Package::createPackage() {
     if (!touch(m_output / m_name / "README.md")) {
       LOG(core::ERROR) << "Failed to create package files" << std::endl;
       return false;
+    }
+
+    {
+      std::ofstream readme((m_output / m_name / "README.md").string());
+      if (!readme.is_open()) {
+        LOG(core::ERROR) << "Failed to create README file" << std::endl;
+        return false;
+      }
+
+      readme << "# " << m_name << "\n\n";
     }
 
     conf::ConfigGroup grp;
@@ -180,7 +189,6 @@ bool qpkg::init::Package::createPackage() {
       grp.set("licenses", std::vector<std::string>());
 
     grp.set("sources", std::vector<std::string>({"src"}));
-    grp.set("headers", std::vector<std::string>({"include"}));
 
     switch (m_type) {
       case PackageType::PROGRAM:
