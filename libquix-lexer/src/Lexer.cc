@@ -982,30 +982,21 @@ qlex_tok_t qlex_impl_t::do_automata() {
         case LexState::SingleLineMacro: {
           /*
           Format:
-              ... @macro_name(arg1, arg2, arg3, ...) ...
+              ... @macro_name  ...
           */
 
           while (true) {
-            if (c == '(') {
-              state_parens++;
-            } else if (c == ')') {
-              state_parens--;
-
-              if (state_parens == 0) {
-                buf += ')';
-                return qlex_tok_t(qMacr, put_string(std::move(buf)), start_pos, cur_loc());
-              }
-            }
-
-            if (c == '\n') {
-              return qlex_tok_t(qMacr, put_string(std::move(buf)), start_pos, cur_loc());
+            if (std::isspace(c)) {
+              break;
             }
 
             buf += c;
-
             c = getc();
           }
-          continue;
+
+          m_pushback.push_back(c);
+
+          return qlex_tok_t(qMacr, put_string(std::move(buf)), start_pos, cur_loc());
         }
         case LexState::BlockMacro: {
           while (true) {
