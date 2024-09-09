@@ -31,6 +31,7 @@
 
 #define __QUIX_IMPL__
 
+#include <quix-core/Env.h>
 #include <quix-lexer/Token.h>
 
 #include <memory>
@@ -55,6 +56,7 @@ struct qprep_impl_t final : public qlex_t {
 
   std::shared_ptr<Core> m_core;
   bool m_do_expanse;
+  qcore_env_t old_env_tmp;
 
   enum class Level {
     Debug,
@@ -65,6 +67,7 @@ struct qprep_impl_t final : public qlex_t {
   };
 
   virtual qlex_tok_t next_impl() override;
+  virtual void eof_callback() override;
 
   void emit_message(Level level, std::string_view format, ...);
   std::optional<std::string> run_lua_code(std::string_view s);

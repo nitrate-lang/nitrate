@@ -508,6 +508,8 @@ static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumT
 
 void qlex_t::reset_automata() { m_pushback.clear(); }
 
+void qlex_t::eof_callback() {}
+
 qlex_tok_t qlex_t::next_impl() {
   /// TODO: Correctly handle token source locations
 

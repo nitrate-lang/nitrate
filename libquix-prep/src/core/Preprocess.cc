@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "quix-core/Env.h"
 #define __QUIX_IMPL__
 
 #include <core/LibMacro.h>
@@ -163,130 +164,146 @@ bool qprep_impl_t::run_and_expand(std::string_view code) {
   return true;
 }
 
-qlex_tok_t qprep_impl_t::next_impl() {
-  try {
-    qlex_tok_t x = qlex_t::next_impl();
-
-    if (!m_do_expanse) {
-      return x;
-    }
-
-    switch (x.ty) {
-      case qEofF:
-      case qErro:
-      case qKeyW:
-      case qIntL:
-      case qText:
-      case qChar:
-      case qNumL:
-      case qOper:
-      case qPunc:
-      case qNote: {
-        /// Just pass through
-        return x;
-      }
-      case qName: {
-        std::string_view name = get_string(x.v.str_idx);
-
-        if (m_core->defines.find(name) != m_core->defines.end()) {
-          x.ty = qText;
-          x.v.str_idx = put_string((m_core->defines)[name]);
-        }
-
-        return x;
-      }
-      case qMacB: {
-        std::string_view block = get_string(x.v.str_idx);
-        block = ltrim(block);
-        if (!block.starts_with("fn ")) {
-          if (!run_and_expand(block)) {
-            emit_message(Level::Error, "Failed to expand macro block: %s\n", block.data());
-            return x;
-          }
-        } else {
-          block = block.substr(3);
-          block = ltrim(block);
-          size_t pos = block.find_first_of("(");
-          if (pos == std::string_view::npos) {
-            emit_message(Level::Error, "Invalid macro function definition: %s\n", block.data());
-            return x;
-          }
-
-          std::string_view name = block.substr(0, pos);
-          name = rtrim(name);
-
-          std::string code = "function " + std::string(name) + std::string(block.substr(pos));
-
-          { /* Remove the opening brace */
-            pos = code.find_first_of("{");
-            if (pos == std::string::npos) {
-              emit_message(Level::Error, "Invalid macro function definition: %s\n", block.data());
-              return x;
-            }
-            code.erase(pos, 1);
-          }
-
-          { /* Remove the closing brace */
-            pos = code.find_last_of("}");
-            if (pos == std::string::npos) {
-              emit_message(Level::Error, "Invalid macro function definition: %s\n", block.data());
-              return x;
-            }
-            code.erase(pos, 1);
-            code.insert(pos, "end");
-          }
-
-          std::string_view sv = get_string(put_string(code));
-
-          if (!run_and_expand(sv)) {
-            emit_message(Level::Error, "Failed to expand macro function: %s\n", name.data());
-            return x;
-          }
-        }
-
-        return qlex_next(this);
-      }
-      case qMacr: {
-        std::string_view body = get_string(x.v.str_idx);
-
-        size_t pos = body.find_first_of("(");
-        if (pos != std::string_view::npos) {
-          std::string_view name = body.substr(0, pos);
-
-          if (!m_core->macros_funcs.contains(name)) {
-            emit_message(Level::Error, "Undefined macro function: %s\n", name.data());
-            return x;
-          }
-
-          std::string code = "return " + std::string(body);
-          if (!run_and_expand(code)) {
-            emit_message(Level::Error, "Failed to expand macro function: %s\n", body.data());
-            return x;
-          }
-
-          return qlex_next(this);
-        } else {
-          if (!m_core->macros_funcs.contains(body)) {
-            emit_message(Level::Error, "Undefined macro function: %s\n", body.data());
-            return x;
-          }
-
-          std::string code = "return " + std::string(body) + "()";
-          if (!run_and_expand(code)) {
-            emit_message(Level::Error, "Failed to expand macro function: %s\n", body.data());
-            return x;
-          }
-
-          return qlex_next(this);
-        }
-      }
-    }
-
-    __builtin_unreachable();
-
-  } catch (StopException &) {
-    return qlex_tok_t{qErro, 0};
+void qprep_impl_t::eof_callback() {
+  if (old_env_tmp != nullptr) {
+    qcore_env_set_current(old_env_tmp);
   }
+
+  qlex_t::eof_callback();
+}
+
+qlex_tok_t qprep_impl_t::next_impl() {
+  qlex_tok_t x;
+
+  old_env_tmp = qcore_env_current();
+  qcore_env_set_current(this);
+
+  try {
+    x = qlex_t::next_impl();
+
+    if (m_do_expanse) {
+      switch (x.ty) {
+        case qEofF:
+        case qErro:
+        case qKeyW:
+        case qIntL:
+        case qText:
+        case qChar:
+        case qNumL:
+        case qOper:
+        case qPunc:
+        case qNote: {
+          /// Just pass x through
+          break;
+        }
+        case qName: {
+          std::string_view name = get_string(x.v.str_idx);
+
+          if (m_core->defines.find(name) != m_core->defines.end()) {
+            x.ty = qText;
+            x.v.str_idx = put_string((m_core->defines)[name]);
+          }
+
+          break;
+        }
+        case qMacB: {
+          std::string_view block = get_string(x.v.str_idx);
+          block = ltrim(block);
+          if (!block.starts_with("fn ")) {
+            if (!run_and_expand(block)) {
+              emit_message(Level::Error, "Failed to expand macro block: %s\n", block.data());
+              break;
+            }
+          } else {
+            block = block.substr(3);
+            block = ltrim(block);
+            size_t pos = block.find_first_of("(");
+            if (pos == std::string_view::npos) {
+              emit_message(Level::Error, "Invalid macro function definition: %s\n", block.data());
+              break;
+            }
+
+            std::string_view name = block.substr(0, pos);
+            name = rtrim(name);
+
+            std::string code = "function " + std::string(name) + std::string(block.substr(pos));
+
+            { /* Remove the opening brace */
+              pos = code.find_first_of("{");
+              if (pos == std::string::npos) {
+                emit_message(Level::Error, "Invalid macro function definition: %s\n", block.data());
+                break;
+              }
+              code.erase(pos, 1);
+            }
+
+            { /* Remove the closing brace */
+              pos = code.find_last_of("}");
+              if (pos == std::string::npos) {
+                emit_message(Level::Error, "Invalid macro function definition: %s\n", block.data());
+                break;
+              }
+              code.erase(pos, 1);
+              code.insert(pos, "end");
+            }
+
+            std::string_view sv = get_string(put_string(code));
+
+            if (!run_and_expand(sv)) {
+              emit_message(Level::Error, "Failed to expand macro function: %s\n", name.data());
+              break;
+            }
+          }
+
+          x = qlex_next(this);
+          break;
+        }
+        case qMacr: {
+          std::string_view body = get_string(x.v.str_idx);
+
+          size_t pos = body.find_first_of("(");
+          if (pos != std::string_view::npos) {
+            std::string_view name = body.substr(0, pos);
+
+            if (!m_core->macros_funcs.contains(name)) {
+              emit_message(Level::Error, "Undefined macro function: %s\n", name.data());
+              break;
+            }
+
+            std::string code = "return " + std::string(body);
+            if (!run_and_expand(code)) {
+              emit_message(Level::Error, "Failed to expand macro function: %s\n", body.data());
+              break;
+            }
+
+            x = qlex_next(this);
+            break;
+          } else {
+            if (!m_core->macros_funcs.contains(body)) {
+              emit_message(Level::Error, "Undefined macro function: %s\n", body.data());
+              break;
+            }
+
+            std::string code = "return " + std::string(body) + "()";
+            if (!run_and_expand(code)) {
+              emit_message(Level::Error, "Failed to expand macro function: %s\n", body.data());
+              break;
+            }
+
+            x = qlex_next(this);
+            break;
+          }
+        }
+      }
+    }
+  } catch (StopException &) {
+    x.ty = qErro;
+  }
+
+  qcore_env_set_current(old_env_tmp);
+  old_env_tmp = nullptr;
+
+  return x;
 }
 
 void qprep_impl_t::install_lua_api() {
@@ -315,12 +332,16 @@ qlex_t *qprep_impl_t::weak_clone(FILE *file, const char *filename) const {
 qprep_impl_t::qprep_impl_t(FILE *file, const char *filename) : qlex_t(file, filename, false) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
+
+  qcore_env_create(this);
 }
 
 qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned)
     : qlex_t(file, filename, is_owned) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
+
+  qcore_env_create(this);
 
   { /* Create the Lua state */
     m_core->L = luaL_newstate();
@@ -333,7 +354,7 @@ qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned)
   }
 }
 
-qprep_impl_t::~qprep_impl_t() {}
+qprep_impl_t::~qprep_impl_t() { qcore_env_forget(this); }
 
 ///=============================================================================
 
