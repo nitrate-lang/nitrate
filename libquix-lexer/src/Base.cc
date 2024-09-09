@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include "quix-core/Env.h"
 #define __QUIX_IMPL__
 
 #include <quix-core/Error.h>
@@ -329,15 +330,29 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
 
 LIB_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
   try {
-    return self->next();
+    qcore_env_t old = qcore_env_current();
+    qcore_env_set_current(*self->m_env);
+
+    qlex_tok_t tok = self->next();
+
+    qcore_env_set_current(old);
+
+    return tok;
   } catch (...) {
     qcore_panic("qlex_next: failed to get next token");
   }
 }
 
-LIB_EXPORT qlex_tok_t qlex_peek(qlex_t *lexer) {
+LIB_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
   try {
-    return lexer->peek();
+    qcore_env_t old = qcore_env_current();
+    qcore_env_set_current(*self->m_env);
+
+    qlex_tok_t tok = self->peek();
+
+    qcore_env_set_current(old);
+
+    return tok;
   } catch (...) {
     qcore_panic("qlex_peek: failed to peek next token");
   }

@@ -39,11 +39,13 @@
 #include <array>
 #include <boost/bimap.hpp>
 #include <boost/unordered_map.hpp>
+#include <deque>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
-#include <deque>
+
+#include "quix-core/Env.h"
 
 #ifndef MEMORY_OVER_SPEED
 #include <unordered_map>
@@ -95,6 +97,7 @@ private:
 
 public:
   StringInterner m_strings;
+  std::shared_ptr<qcore_env_t> m_env;
 
   qlex_flags_t m_flags;
 
@@ -146,8 +149,18 @@ public:
     }
 
     m_next_tok.ty = qErro;
+
+    m_env =
+        std::shared_ptr<qcore_env_t>(new qcore_env_t(qcore_env_create(this)), [](qcore_env_t *env) {
+          qcore_env_forget(*env);
+          delete env;
+        });
   }
-  virtual ~qlex_t() = default;
+  virtual ~qlex_t() {
+    if (m_is_owned) {
+      fclose(m_file);
+    }
+  }
 };
 
 #endif  // __QUIX_LEXER_BASE_H__

@@ -38,7 +38,6 @@
 #include <optional>
 #include <quix-lexer/Base.hh>
 #include <string_view>
-#include <unordered_map>
 #include <unordered_set>
 
 #define get_engine() (qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1))
@@ -47,7 +46,6 @@ struct lua_State;
 
 struct qprep_impl_t final : public qlex_t {
   struct Core {
-    std::unordered_map<std::string_view, std::string> defines;
     std::unordered_set<std::string_view> macros_funcs;
     lua_State *L;
 
@@ -56,7 +54,7 @@ struct qprep_impl_t final : public qlex_t {
 
   std::shared_ptr<Core> m_core;
   bool m_do_expanse;
-  qcore_env_t old_env_tmp;
+  size_t m_depth;
 
   enum class Level {
     Debug,
@@ -74,7 +72,7 @@ struct qprep_impl_t final : public qlex_t {
   bool run_and_expand(std::string_view code);
   void expand_raw(std::string_view code);
   void install_lua_api();
-  qlex_t *weak_clone(FILE *file, const char *filename) const;
+  qlex_t *weak_clone(FILE *file, const char *filename);
 
 public:
   qprep_impl_t(FILE *file, const char *filename);

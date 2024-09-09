@@ -32,15 +32,14 @@
 #include <quix-core/Env.h>
 #include <quix-core/Error.h>
 
+#include <cstdio>
 #include <mutex>
 #include <string>
 #include <unordered_map>
 
 #include "LibMacro.h"
 
-static std::unordered_map<qcore_env_t, std::unordered_map<std::string, std::string>> g_envs = {
-    {0, {}},
-};
+static std::unordered_map<qcore_env_t, std::unordered_map<std::string, std::string>> g_envs;
 static std::mutex g_envs_mutex;
 static thread_local qcore_env_t g_current_env = 0;
 
@@ -64,6 +63,10 @@ LIB_EXPORT void qcore_env_forget(qcore_env_t env) {
 LIB_EXPORT qcore_env_t qcore_env_current() { return g_current_env; }
 
 LIB_EXPORT void qcore_env_set_current(qcore_env_t env) {
+  if (env == 0) {
+    return;
+  }
+  
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(env), "Environment does not exist.");

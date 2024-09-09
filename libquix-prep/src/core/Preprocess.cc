@@ -56,9 +56,10 @@ extern "C" {
 #include <unordered_map>
 #include <unordered_set>
 
+
 using namespace qcall;
 
-#define get_engine() (qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1))
+#define MAX_RECURSION_DEPTH 4096
 
 ///=============================================================================
 
@@ -164,19 +165,10 @@ bool qprep_impl_t::run_and_expand(std::string_view code) {
   return true;
 }
 
-void qprep_impl_t::eof_callback() {
-  if (old_env_tmp != nullptr) {
-    qcore_env_set_current(old_env_tmp);
-  }
-
-  qlex_t::eof_callback();
-}
+void qprep_impl_t::eof_callback() { qlex_t::eof_callback(); }
 
 qlex_tok_t qprep_impl_t::next_impl() {
   qlex_tok_t x;
-
-  old_env_tmp = qcore_env_current();
-  qcore_env_set_current(this);
 
   try {
     x = qlex_t::next_impl();
@@ -197,13 +189,15 @@ qlex_tok_t qprep_impl_t::next_impl() {
           break;
         }
         case qName: {
-          std::string_view name = get_string(x.v.str_idx);
+          std::string key = "def." + std::string(get_string(x.v.str_idx));
 
-          if (m_core->defines.find(name) != m_core->defines.end()) {
-            x.ty = qText;
-            x.v.str_idx = put_string((m_core->defines)[name]);
+          const char *value = qcore_env_get(key.c_str());
+          if (value == nullptr) {
+            break;
           }
 
+          expand_raw(value);
+          x = qlex_next(this);
           break;
         }
         case qMacB: {
@@ -300,9 +294,6 @@ qlex_tok_t qprep_impl_t::next_impl() {
     x.ty = qErro;
   }
 
-  qcore_env_set_current(old_env_tmp);
-  old_env_tmp = nullptr;
-
   return x;
 }
 
@@ -320,11 +311,19 @@ void qprep_impl_t::install_lua_api() {
   lua_setglobal(m_core->L, "quix");
 }
 
-qlex_t *qprep_impl_t::weak_clone(FILE *file, const char *filename) const {
+qlex_t *qprep_impl_t::weak_clone(FILE *file, const char *filename) {
+  if (m_depth > MAX_RECURSION_DEPTH) {
+    emit_message(Level::Fatal, "Maximum macro recursion depth reached\n");
+    throw StopException();
+  }
+
   qprep_impl_t *clone = new qprep_impl_t(file, filename);
 
   clone->m_core = m_core;
   clone->replace_interner(m_strings);
+  clone->m_env = m_env;
+  clone->m_flags = m_flags;
+  clone->m_depth = m_depth + 1;
 
   return clone;
 }
@@ -332,16 +331,14 @@ qlex_t *qprep_impl_t::weak_clone(FILE *file, const char *filename) const {
 qprep_impl_t::qprep_impl_t(FILE *file, const char *filename) : qlex_t(file, filename, false) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
-
-  qcore_env_create(this);
+  m_depth = 0;
 }
 
 qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned)
     : qlex_t(file, filename, is_owned) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
-
-  qcore_env_create(this);
+  m_depth = 0;
 
   { /* Create the Lua state */
     m_core->L = luaL_newstate();
@@ -354,7 +351,7 @@ qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned)
   }
 }
 
-qprep_impl_t::~qprep_impl_t() { qcore_env_forget(this); }
+qprep_impl_t::~qprep_impl_t() {}
 
 ///=============================================================================
 
