@@ -117,6 +117,26 @@ std::optional<std::string> qprep_impl_t::run_lua_code(std::string_view s) {
   }
 }
 
+void qprep_impl_t::expand_raw(std::string_view code) {
+  FILE *resbuf = fmemopen((void *)code.data(), code.size(), "r");
+  if (resbuf == nullptr) {
+    qcore_panic("qprep_impl_t::next_impl: failed to create a memory buffer");
+  }
+
+  {
+    qlex_t *clone = weak_clone(resbuf, m_filename);
+
+    qlex_tok_t tok;
+    while ((tok = qlex_next(clone)).ty != qEofF) {
+      qlex_insert(this, tok);
+    }
+
+    qlex_free(clone);
+  }
+
+  fclose(resbuf);
+}
+
 bool qprep_impl_t::run_and_expand(std::string_view code) {
   auto res = run_lua_code(code);
   if (!res.has_value()) {
@@ -138,30 +158,14 @@ bool qprep_impl_t::run_and_expand(std::string_view code) {
     return true;
   }
 
-  FILE *resbuf = fmemopen((void *)res->data(), res->size(), "r");
-  if (resbuf == nullptr) {
-    qcore_panic("qprep_impl_t::next_impl: failed to create a memory buffer");
-  }
-
-  {
-    qlex_t *clone = weak_clone(resbuf, m_filename);
-
-    qlex_tok_t tok;
-    while ((tok = qlex_next(clone)).ty != qEofF) {
-      qlex_push(m_inner, tok);
-    }
-
-    qlex_free(clone);
-  }
-
-  fclose(resbuf);
+  expand_raw(*res);
 
   return true;
 }
 
 qlex_tok_t qprep_impl_t::next_impl() {
   try {
-    qlex_tok_t x = m_inner->next_impl();
+    qlex_tok_t x = qlex_t::next_impl();
 
     if (!m_do_expanse) {
       return x;
@@ -196,6 +200,7 @@ qlex_tok_t qprep_impl_t::next_impl() {
         block = ltrim(block);
         if (!block.starts_with("fn ")) {
           if (!run_and_expand(block)) {
+            emit_message(Level::Error, "Failed to expand macro block: %s\n", block.data());
             return x;
           }
         } else {
@@ -234,11 +239,12 @@ qlex_tok_t qprep_impl_t::next_impl() {
           std::string_view sv = get_string(put_string(code));
 
           if (!run_and_expand(sv)) {
+            emit_message(Level::Error, "Failed to expand macro function: %s\n", name.data());
             return x;
           }
         }
 
-        return next_impl();
+        return qlex_next(this);
       }
       case qMacr: {
         std::string_view body = get_string(x.v.str_idx);
@@ -254,10 +260,11 @@ qlex_tok_t qprep_impl_t::next_impl() {
 
           std::string code = "return " + std::string(body);
           if (!run_and_expand(code)) {
+            emit_message(Level::Error, "Failed to expand macro function: %s\n", body.data());
             return x;
           }
 
-          return next_impl();
+          return qlex_next(this);
         } else {
           if (!m_core->macros_funcs.contains(body)) {
             emit_message(Level::Error, "Undefined macro function: %s\n", body.data());
@@ -266,10 +273,11 @@ qlex_tok_t qprep_impl_t::next_impl() {
 
           std::string code = "return " + std::string(body) + "()";
           if (!run_and_expand(code)) {
+            emit_message(Level::Error, "Failed to expand macro function: %s\n", body.data());
             return x;
           }
 
-          return next_impl();
+          return qlex_next(this);
         }
       }
     }
@@ -304,48 +312,15 @@ qlex_t *qprep_impl_t::weak_clone(FILE *file, const char *filename) const {
   return clone;
 }
 
-void qprep_impl_t::replace_interner(StringInterner new_interner) {
-  m_strings = new_interner;
-  m_inner->replace_interner(new_interner);
-}
-
 qprep_impl_t::qprep_impl_t(FILE *file, const char *filename) : qlex_t(file, filename, false) {
-  m_inner = nullptr;
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
-
-  { /* Create the inner lexer */
-    qlex_t *inner = nullptr;
-    if ((inner = qlex_new(file, filename)) == nullptr) {
-      throw std::bad_alloc();
-    }
-
-    m_inner = inner;
-  }
-
-  /* Bind the inner string interner to the outer one
-     so that external calls will work properly. */
-  replace_interner(m_inner->m_strings);
 }
 
 qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned)
     : qlex_t(file, filename, is_owned) {
   m_core = std::make_shared<Core>();
-  m_inner = nullptr;
   m_do_expanse = true;
-
-  { /* Create the inner lexer */
-    qlex_t *inner = nullptr;
-    if ((inner = qlex_new(file, filename)) == nullptr) {
-      throw std::bad_alloc();
-    }
-
-    m_inner = inner;
-  }
-
-  /* Bind the inner string interner to the outer one
-     so that external calls will work properly. */
-  replace_interner(m_inner->m_strings);
 
   { /* Create the Lua state */
     m_core->L = luaL_newstate();
@@ -358,7 +333,7 @@ qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned)
   }
 }
 
-qprep_impl_t::~qprep_impl_t() { qlex_free(m_inner); }
+qprep_impl_t::~qprep_impl_t() {}
 
 ///=============================================================================
 

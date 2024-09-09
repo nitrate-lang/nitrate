@@ -41,20 +41,19 @@
 #include <boost/unordered_map.hpp>
 #include <memory>
 #include <optional>
+#include <queue>
 #include <string>
 #include <string_view>
-#include <queue>
 
 #ifndef MEMORY_OVER_SPEED
 #include <unordered_map>
 #endif
 
 struct qlex_t {
-protected:
+private:
   ///============================================================================///
   /// BEGIN: PERFORMANCE HYPER PARAMETERS
   static constexpr qlex_size GETC_BUFFER_SIZE = 64;
-  static constexpr qlex_size TOKEN_BUF_SIZE = 1;
   /// END:   PERFORMANCE HYPER PARAMETERS
   ///============================================================================///
 
@@ -67,11 +66,10 @@ protected:
   qlex_size m_getc_pos;
   std::array<char, GETC_BUFFER_SIZE> m_getc_buf;
 
-  qlex_size m_tok_pos;
-  std::array<qlex_tok_t, TOKEN_BUF_SIZE> m_tok_buf;
-  std::queue<qlex_tok_t> m_undo;
+  std::deque<qlex_tok_t> m_tok_buf;
+  std::deque<char> m_pushback;
 
-  qlex_tok_t m_cur;
+  qlex_tok_t m_next_tok;
 
   qlex_size m_row;
   qlex_size m_col;
@@ -90,8 +88,10 @@ protected:
 
   qlex_size m_locctr;
 
+private:
   qlex_tok_t step_buffer();
-  void refill_buffer();
+  void reset_automata();
+  char getc();
 
 public:
   StringInterner m_strings;
@@ -104,7 +104,7 @@ public:
 
   ///============================================================================///
 
-  virtual qlex_tok_t next_impl() = 0;
+  virtual qlex_tok_t next_impl();
 
   virtual std::optional<qlex_size> loc2offset(qlex_loc_t loc);
   virtual std::optional<std::pair<qlex_size, qlex_size>> loc2rowcol(qlex_loc_t loc);
@@ -113,24 +113,22 @@ public:
 
   ///============================================================================///
 
-  void push_impl(const qlex_tok_t *tok);
-  void collect_impl(const qlex_tok_t *tok);
-
   std::string_view get_string(qlex_size idx);
   qlex_size put_string(std::string_view str);
   void release_string(qlex_size idx);
   virtual void replace_interner(StringInterner new_interner);
 
-  char getc();
   qlex_tok_t next();
   qlex_tok_t peek();
+
+  void push_impl(const qlex_tok_t *tok);
+  void collect_impl(const qlex_tok_t *tok);
 
   ///============================================================================///
 
   qlex_t(FILE *file, const char *filename, bool is_owned)
       : m_getc_pos(GETC_BUFFER_SIZE),
-        m_tok_pos(TOKEN_BUF_SIZE),
-        m_cur({}),
+        m_next_tok({}),
         m_row(1),
         m_col(1),
         m_offset(0),
@@ -146,7 +144,7 @@ public:
       m_filename = "<unknown>";
     }
 
-    m_cur.ty = qErro;
+    m_next_tok.ty = qErro;
   }
   virtual ~qlex_t() = default;
 };

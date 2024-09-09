@@ -51,7 +51,7 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
 
     qlex_tok_t newtok;
     qlex_tok_fromstr(rd, qName, name.substr(name.find("::") + 2).c_str(), &newtok);
-    qlex_push(rd, newtok);
+    qlex_insert(rd, newtok);
 
     if (!parse_subsystem(job, rd, &sub)) return false;
 

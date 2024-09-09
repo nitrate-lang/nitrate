@@ -160,7 +160,7 @@ qlex_tok_t qlex_peek(qlex_t *lexer);
  * @note Tokens pushed back to the lexer will be stored in a queue. They will be accessed in FIFO
  * order with precedence over tokens from the input stream, irrespective of internal buffering.
  */
-void qlex_push(qlex_t *lexer, qlex_tok_t tok);
+void qlex_insert(qlex_t *lexer, qlex_tok_t tok);
 
 static inline qlex_loc_t qlex_begin(const qlex_tok_t *tok) { return tok->start; }
 static inline qlex_loc_t qlex_end(const qlex_tok_t *tok) { return tok->end; }

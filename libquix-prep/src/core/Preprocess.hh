@@ -54,7 +54,6 @@ struct qprep_impl_t final : public qlex_t {
   };
 
   std::shared_ptr<Core> m_core;
-  qlex_t *m_inner;
   bool m_do_expanse;
 
   enum class Level {
@@ -70,8 +69,8 @@ struct qprep_impl_t final : public qlex_t {
   void emit_message(Level level, std::string_view format, ...);
   std::optional<std::string> run_lua_code(std::string_view s);
   bool run_and_expand(std::string_view code);
+  void expand_raw(std::string_view code);
   void install_lua_api();
-  void replace_interner(StringInterner new_interner) override;
   qlex_t *weak_clone(FILE *file, const char *filename) const;
 
 public:

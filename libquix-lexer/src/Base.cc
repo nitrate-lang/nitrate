@@ -91,7 +91,7 @@ LIB_EXPORT qlex_flags_t qlex_get_flags(qlex_t *obj) { return obj->m_flags; }
 
 LIB_EXPORT void qlex_collect(qlex_t *obj, const qlex_tok_t *tok) { obj->collect_impl(tok); }
 
-LIB_EXPORT void qlex_push(qlex_t *obj, qlex_tok_t tok) { obj->push_impl(&tok); }
+LIB_EXPORT void qlex_insert(qlex_t *obj, qlex_tok_t tok) { obj->push_impl(&tok); }
 LIB_EXPORT const char *qlex_filename(qlex_t *obj) { return obj->m_filename; }
 
 LIB_EXPORT qlex_size qlex_line(qlex_t *obj, qlex_loc_t loc) {
@@ -396,8 +396,8 @@ qlex_loc_t qlex_t::cur_loc() { return save_loc(m_row, m_col, m_offset); }
 ///============================================================================///
 
 void qlex_t::push_impl(const qlex_tok_t *tok) {
-  m_undo.push(*tok);
-  m_cur.ty = qErro;
+  m_tok_buf.push_back(*tok);
+  m_next_tok.ty = qErro;
 }
 
 void qlex_t::collect_impl(const qlex_tok_t *tok) {
@@ -500,49 +500,50 @@ char qlex_t::getc() {
 }
 
 qlex_tok_t qlex_t::next() {
-  if (!m_undo.empty()) {
-    qlex_tok_t tok = m_undo.front();
-    m_undo.pop();
-    return tok;
+  qlex_tok_t tok;
+
+  if (m_next_tok.ty != qErro) {
+    tok = m_next_tok;
+    m_next_tok.ty = qErro;
+  } else {
+    do {
+      m_next_tok.ty = qErro;
+      tok = step_buffer();
+    } while (m_flags & QLEX_NO_COMMENTS && tok.ty == qNote);
   }
 
-  qlex_tok_t t = peek();
-  m_cur.ty = qErro;
-  return t;
+  return tok;
 }
 
 qlex_tok_t qlex_t::peek() {
-  if (m_cur.ty != qErro) {
-    return m_cur;
+  if (m_next_tok.ty != qErro) {
+    return m_next_tok;
   }
 
-  do {
-    m_cur = step_buffer();
-  } while (m_flags & QLEX_NO_COMMENTS && m_cur.ty == qNote);
-
-  return m_cur;
-}
-
-void qlex_t::refill_buffer() {
-  std::fill(m_tok_buf.begin(), m_tok_buf.end(), qlex_tok_t{qEofF, 0});
-
-  __jmp_buf_tag jmp;
-  g_jmpstack.push(jmp);
-
-  if (setjmp(&g_jmpstack.top()) == 0) {
-    for (size_t i = 0; i < TOKEN_BUF_SIZE; i++) {
-      m_tok_buf[i] = next_impl();
-    }
-  }
-
-  g_jmpstack.pop();
+  return m_next_tok = next();
 }
 
 qlex_tok_t qlex_t::step_buffer() {
-  if (m_tok_pos == TOKEN_BUF_SIZE) {
-    refill_buffer();
-    m_tok_pos = 0;
+  qlex_tok_t tok;
+
+  if (!m_tok_buf.empty()) {
+    tok = m_tok_buf.front();
+    m_tok_buf.pop_front();
+    return tok;
   }
 
-  return m_tok_buf[m_tok_pos++];
+  {
+    __jmp_buf_tag jmp;
+    g_jmpstack.push(jmp);
+
+    if (setjmp(&g_jmpstack.top()) == 0) {
+      tok = next_impl();
+    } else {
+      tok.ty = qEofF;
+    }
+
+    g_jmpstack.pop();
+  }
+
+  return tok;
 }
