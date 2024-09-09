@@ -266,24 +266,11 @@ enum class NumType {
 static thread_local boost::unordered_map<qlex::num_buf_t, NumType> num_cache;
 static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t> can_cache;
 
-struct qlex_impl_t final : public qlex_t {
-  std::deque<char> m_pushback;
-
-  qlex_tok_t do_automata();
-  void reset_state();
-
-  virtual qlex_tok_t next_impl() override { return do_automata(); }
-
-public:
-  qlex_impl_t(FILE *file, const char *filename, bool is_owned) : qlex_t(file, filename, is_owned) {}
-  virtual ~qlex_impl_t() override{};
-};
-
 ///============================================================================///
 
 LIB_EXPORT qlex_t *qlex_new(FILE *file, const char *filename) {
   try {
-    return new qlex_impl_t(file, filename, false);
+    return new qlex_t(file, filename, false);
   } catch (std::bad_alloc &) {
     return nullptr;
   } catch (...) {
@@ -519,9 +506,9 @@ static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumT
   return can_cache[number] = (norm = s), true;
 }
 
-void qlex_impl_t::reset_state() { m_pushback.clear(); }
+void qlex_t::reset_automata() { m_pushback.clear(); }
 
-qlex_tok_t qlex_impl_t::do_automata() {
+qlex_tok_t qlex_t::do_automata() {
   /// TODO: Correctly handle token source locations
 
   enum class LexState {
@@ -947,7 +934,7 @@ qlex_tok_t qlex_impl_t::do_automata() {
           } else {
             do {
               c = getc();
-            } while (std::isspace(c) || c == '\\');
+            } while (c == ' ' || c == '\t' || c == '\\');
 
             if (c == buf[0]) {
               continue;
@@ -1074,11 +1061,11 @@ qlex_tok_t qlex_impl_t::do_automata() {
     }
     goto error_0;
   } catch (std::exception &e) { /* This should never happen */
-    qcore_panicf("qlex_impl_t::do_automata: %s. The lexer has a bug.", e.what());
+    qcore_panicf("qlex_t::do_automata: %s. The lexer has a bug.", e.what());
   }
 
 error_0: { /* Reset the lexer and return error token */
-  reset_state();
+  reset_automata();
 
   return qlex_tok_t::err(cur_loc(), cur_loc());
 }
