@@ -38,13 +38,13 @@
 extern "C" {
 #endif
 
-typedef uint64_t qcore_env_t;
+typedef void *qcore_env_t;
 
 /**
  * @brief Create a new environment.
- * @return The environment handle.
+ * @return The environment handle otherwise a NOP if the environment already exists.
  */
-qcore_env_t qcore_env_create();
+qcore_env_t qcore_env_create(qcore_env_t env);
 
 /**
  * @brief Drop a reference to an environment.

@@ -32,38 +32,47 @@
 #include <quix-core/Env.h>
 #include <quix-core/Error.h>
 
-#include <atomic>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 
 #include "LibMacro.h"
 
-static std::atomic<qcore_env_t> g_last_env = 1;
-static std::unordered_map<qcore_env_t, std::unordered_map<std::string, std::string>> g_envs;
+static std::unordered_map<qcore_env_t, std::unordered_map<std::string, std::string>> g_envs = {
+    {0, {}},
+};
+static std::mutex g_envs_mutex;
 static thread_local qcore_env_t g_current_env = 0;
 
-LIB_EXPORT qcore_env_t qcore_env_create() {
-  qcore_env_t env = g_last_env++;
-  g_envs[env] = std::unordered_map<std::string, std::string>();
+LIB_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
+  std::lock_guard<std::mutex> lock(g_envs_mutex);
+
+  if (!g_envs.count(env)) {
+    g_envs[env] = {};
+  }
+
   return env;
 }
 
-LIB_EXPORT void qcore_env_destroy(qcore_env_t env) {
+LIB_EXPORT void qcore_env_forget(qcore_env_t env) {
+  std::lock_guard<std::mutex> lock(g_envs_mutex);
+  
   qcore_assert(g_envs.count(env), "Environment does not exist.");
   g_envs.erase(env);
 }
 
-LIB_EXPORT qcore_env_t qcore_env_current() {
-  qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
-  return g_current_env;
-}
+LIB_EXPORT qcore_env_t qcore_env_current() { return g_current_env; }
 
 LIB_EXPORT void qcore_env_set_current(qcore_env_t env) {
+  std::lock_guard<std::mutex> lock(g_envs_mutex);
+
   qcore_assert(g_envs.count(env), "Environment does not exist.");
   g_current_env = env;
 }
 
 LIB_EXPORT void qcore_env_set(const char *key, const char *value) {
+  std::lock_guard<std::mutex> lock(g_envs_mutex);
+
   qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
 
   if (value == NULL) {
@@ -74,6 +83,8 @@ LIB_EXPORT void qcore_env_set(const char *key, const char *value) {
 }
 
 LIB_EXPORT const char *qcore_env_get(const char *key) {
+  std::lock_guard<std::mutex> lock(g_envs_mutex);
+
   qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
 
   if (g_envs[g_current_env].count(key)) {
