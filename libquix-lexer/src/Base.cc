@@ -43,7 +43,6 @@
 #include <cstddef>
 #include <cstdio>
 #include <quix-lexer/Base.hh>
-#include <stack>
 #include <utility>
 
 #include "LibMacro.h"
@@ -469,7 +468,7 @@ void qlex_t::replace_interner(StringInterner new_interner) { m_strings = new_int
 
 ///============================================================================///
 
-static thread_local std::stack<__jmp_buf_tag> g_jmpstack;
+class GetCExcept {};
 
 char qlex_t::getc() {
   /* Refill the buffer if necessary */
@@ -477,7 +476,7 @@ char qlex_t::getc() {
     size_t read = fread(m_getc_buf.data(), 1, GETC_BUFFER_SIZE, m_file);
 
     if (read == 0) [[unlikely]] {
-      longjmp(&g_jmpstack.top(), 1);
+      throw GetCExcept();
     }
 
     memset(m_getc_buf.data() + read, '\n', GETC_BUFFER_SIZE - read);
@@ -532,18 +531,17 @@ qlex_tok_t qlex_t::step_buffer() {
     return tok;
   }
 
-  {
-    __jmp_buf_tag jmp;
-    g_jmpstack.push(jmp);
-
-    if (setjmp(&g_jmpstack.top()) == 0) {
-      tok = next_impl();
-    } else {
+  try {
+    m_tok_buf.push_back(next_impl());
+    tok = m_tok_buf.front();
+    m_tok_buf.pop_front();
+    return tok;
+  } catch (GetCExcept &) {
+    if (m_tok_buf.empty()) {
       tok.ty = qEofF;
+      return tok;
     }
-
-    g_jmpstack.pop();
   }
 
-  return tok;
+  return step_buffer();
 }
