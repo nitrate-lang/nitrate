@@ -31,6 +31,8 @@
 
 #define __QUIX_IMPL__
 
+#include <quix-core/Env.h>
+
 #include <qcall/List.hh>
 
 extern "C" {
@@ -55,13 +57,7 @@ int qcall::sys_set(lua_State* L) {
     return luaL_error(L, "expected string, got %s", lua_typename(L, lua_type(L, 2)));
   }
 
-  const char* name = lua_tostring(L, 1);
-  const char* value = lua_tostring(L, 2);
-
-  (void)name;
-  (void)value;
-
-  /// TODO: Implement sys_set
+  qcore_env_set(lua_tostring(L, 1), lua_tostring(L, 2));
 
   return 0;
 }

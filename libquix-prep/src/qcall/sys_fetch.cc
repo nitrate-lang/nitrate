@@ -41,27 +41,38 @@ extern "C" {
 
 int qcall::sys_fetch(lua_State* L) {
   /**
-   * @brief Get named value from the environment.
+   * @brief Download a file.
    */
 
   int nargs = lua_gettop(L);
-  if (nargs != 1) {
-    return luaL_error(L, "expected 1 argument, got %d", nargs);
+  if (nargs < 1) {
+    return luaL_error(L, "expected at least 1 argument, got %d", nargs);
   }
 
   if (!lua_isstring(L, 1)) {
     return luaL_error(L, "expected string, got %s", lua_typename(L, lua_type(L, 1)));
   }
 
-  const char* name = lua_tostring(L, 1);
+  bool bypass_cache = false;
+  if (nargs > 1) {
+    if (!lua_isboolean(L, 2)) {
+      return luaL_error(L, "expected boolean, got %s", lua_typename(L, lua_type(L, 2)));
+    }
 
-  (void)name;
+    bypass_cache = lua_toboolean(L, 2);
+  }
 
-  /// TODO: Implement sys_get
+  const char* unsafe_uri = lua_tostring(L, 1);
+
+  (void)unsafe_uri;
+  (void)bypass_cache;
+
+  /// TODO: Implement sys_fetch
 
   std::string value = "TODO";
 
   lua_pushstring(L, value.c_str());
 
   return 1;
+  
 }
