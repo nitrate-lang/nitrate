@@ -79,3 +79,5 @@ public:
   qprep_impl_t(FILE *file, const char *filename, bool is_owned);
   virtual ~qprep_impl_t() override;
 };
+
+class StopException {};
