@@ -290,7 +290,7 @@ qlex_tok_t qprep_impl_t::next_impl() {
       }
     }
   } catch (StopException &) {
-    x.ty = qErro;
+    x.ty = qEofF;
   }
 
   return x;
