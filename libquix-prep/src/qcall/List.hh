@@ -64,7 +64,6 @@ namespace qcall {
   int sys_peek(lua_State* L);
   int sys_emit(lua_State* L);
 
-  int sys_ilog(lua_State* L);
   int sys_debug(lua_State* L);
   int sys_info(lua_State* L);
   int sys_warn(lua_State* L);

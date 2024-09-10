@@ -40,7 +40,6 @@ const std::vector<QSysCall> qcall::qsyscalls = {
     {"peek", 0x0011, sys_peek}, /* Peek at the next token from the lexer */
     {"emit", 0x0012, sys_emit}, /* Emit data subject to recursive expansion */
 
-    {"ilog", 0x0050, sys_ilog},   /* Put a value into the invisible log */
     {"debug", 0x0051, sys_debug}, /* Print a debug message */
     {"info", 0x0052, sys_info},   /* Print an informational message */
     {"warn", 0x0053, sys_warn},   /* Print a warning message */
