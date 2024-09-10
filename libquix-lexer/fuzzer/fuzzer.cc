@@ -4,6 +4,10 @@
 #include <quix-lexer/Classes.hh>
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+  if (Size == 0) {
+    return 0;
+  }
+  
   FILE *fp = fmemopen((void *)Data, Size, "r");
   if (fp == NULL) {
     return 0;

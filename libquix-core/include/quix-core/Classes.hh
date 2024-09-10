@@ -59,6 +59,7 @@ public:
     std::random_device rd;
     std::uniform_int_distribution<uintptr_t> gen;
     m_env = qcore_env_create(gen(rd));
+    qcore_env_set_current(m_env);
   }
   ~qcore_env() { qcore_env_destroy(m_env); }
 
