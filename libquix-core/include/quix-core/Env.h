@@ -32,6 +32,7 @@
 #ifndef __QUIX_CORE_ENV_H__
 #define __QUIX_CORE_ENV_H__
 
+#include <stdarg.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -82,6 +83,28 @@ void qcore_env_set(const char *key, const char *value);
  * @note Strings will be cloned internally.
  */
 const char *qcore_env_get(const char *key);
+
+typedef enum {
+  QCORE_DEBUG,
+  QCORE_INFO,
+  QCORE_WARN,
+  QCORE_ERROR,
+  QCORE_FATAL,
+} qcore_log_t;
+
+void qcore_begin(qcore_log_t level);
+int qcore_vwritef(const char *fmt, va_list args);
+void qcore_end();
+
+static inline int qcore_writef(const char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int ret = qcore_vwritef(fmt, args);
+  va_end(args);
+  return ret;
+}
+
+static inline int qcore_write(const char *msg) { return qcore_writef("%s", msg); }
 
 #ifdef __cplusplus
 }

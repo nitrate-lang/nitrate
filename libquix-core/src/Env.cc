@@ -31,15 +31,23 @@
 
 #include <quix-core/Env.h>
 #include <quix-core/Error.h>
+#include <threads.h>
 
 #include <cstdio>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 
 #include "LibMacro.h"
 
-static std::unordered_map<qcore_env_t, std::unordered_map<std::string, std::string>> g_envs;
+struct Environment {
+  std::unordered_map<std::string, std::string> env;
+  std::stringstream log_buffer;
+  qcore_log_t log_level;
+};
+
+static std::unordered_map<qcore_env_t, Environment> g_envs;
 static std::mutex g_envs_mutex;
 static thread_local qcore_env_t g_current_env = 0;
 
@@ -55,7 +63,7 @@ LIB_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
 
 LIB_EXPORT void qcore_env_destroy(qcore_env_t env) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
-  
+
   qcore_assert(g_envs.count(env), "Environment does not exist.");
   g_envs.erase(env);
 }
@@ -66,7 +74,7 @@ LIB_EXPORT void qcore_env_set_current(qcore_env_t env) {
   if (env == 0) {
     return;
   }
-  
+
   std::lock_guard<std::mutex> lock(g_envs_mutex);
 
   qcore_assert(g_envs.count(env), "Environment does not exist.");
@@ -79,9 +87,9 @@ LIB_EXPORT void qcore_env_set(const char *key, const char *value) {
   qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
 
   if (value == NULL) {
-    g_envs[g_current_env].erase(key);
+    g_envs[g_current_env].env.erase(key);
   } else {
-    g_envs[g_current_env][key] = value;
+    g_envs[g_current_env].env[key] = value;
   }
 }
 
@@ -90,9 +98,69 @@ LIB_EXPORT const char *qcore_env_get(const char *key) {
 
   qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
 
-  if (g_envs[g_current_env].count(key)) {
-    return g_envs[g_current_env][key].c_str();
+  if (g_envs[g_current_env].env.count(key)) {
+    return g_envs[g_current_env].env[key].c_str();
   } else {
     return NULL;
   }
+}
+
+LIB_EXPORT void qcore_begin(qcore_log_t level) {
+  std::lock_guard<std::mutex> lock(g_envs_mutex);
+
+  qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
+
+  g_envs[g_current_env].log_buffer.str("");
+  g_envs[g_current_env].log_level = level;
+}
+
+#include <iostream>
+
+LIB_EXPORT void qcore_end() {
+  std::lock_guard<std::mutex> lock(g_envs_mutex);
+
+  qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
+
+  std::string message = g_envs[g_current_env].log_buffer.str();
+
+  switch (g_envs[g_current_env].log_level) {
+    case QCORE_DEBUG:
+      std::cerr << "[DEBUG] " << message << std::endl;
+      break;
+
+    case QCORE_INFO:
+      std::cerr << "[INFO] " << message << std::endl;
+      break;
+
+    case QCORE_WARN:
+      std::cerr << "[WARN] " << message << std::endl;
+      break;
+
+    case QCORE_ERROR:
+      std::cerr << "[ERROR] " << message << std::endl;
+      break;
+
+    case QCORE_FATAL:
+      std::cerr << "[FATAL] " << message << std::endl;
+      break;
+  }
+}
+
+LIB_EXPORT int qcore_vwritef(const char *fmt, va_list args) {
+  char *buffer = NULL;
+  int size = vasprintf(&buffer, fmt, args);
+  if (size < 0) {
+    qcore_panic("Failed to allocate memory for log message.");
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(g_envs_mutex);
+    qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
+
+    g_envs[g_current_env].log_buffer << std::string_view(buffer, size);
+  }
+
+  free(buffer);
+
+  return size;
 }
