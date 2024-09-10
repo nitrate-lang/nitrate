@@ -31,17 +31,15 @@
 
 #define __QUIX_IMPL__
 
+#include <quix-core/Env.h>
+
+#include <core/Preprocess.hh>
 #include <cstdio>
 #include <qcall/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
-
-#include <iostream>
-
-/// TODO: Implement the error log
-static thread_local std::ostream& error_log = std::clog;
 
 int qcall::sys_error(lua_State* L) {
   /**
@@ -53,21 +51,22 @@ int qcall::sys_error(lua_State* L) {
     return luaL_error(L, "Expected at least one argument, got 0");
   }
 
-  // Print variadic arguments
+  qcore_begin(QCORE_ERROR);
+
   for (int i = 1; i <= nargs; i++) {
     if (lua_isstring(L, i)) {
-      error_log << lua_tostring(L, i);
+      qcore_write(lua_tostring(L, i));
     } else if (lua_isnumber(L, i)) {
-      error_log << lua_tonumber(L, i);
+      qcore_writef("%g", (double)lua_tonumber(L, i));
     } else if (lua_isboolean(L, i)) {
-      error_log << (lua_toboolean(L, i) ? "true" : "false");
+      qcore_write(lua_toboolean(L, i) ? "true" : "false");
     } else {
       return luaL_error(L, "Invalid argument #%d: expected string, number, or boolean, got %s", i,
                         lua_typename(L, lua_type(L, i)));
     }
   }
 
-  error_log << std::endl;
+  qcore_end();
 
   return 0;
 }
