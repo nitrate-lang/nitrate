@@ -410,6 +410,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       return true;
     }
     case QIR_NODE_ASM: {
+      /// FIXME: Implement comparison for QIR_NODE_ASM
       qcore_implement("Expr::cmp_eq for QIR_NODE_ASM");
       break;
     }
@@ -730,6 +731,7 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_ASM: {
+        /// FIXME: Implement hashing for QIR_NODE_ASM
         qcore_implement("QIR_NODE_ASM node hashing");
         break;
       }

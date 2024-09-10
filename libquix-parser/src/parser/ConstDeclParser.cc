@@ -115,6 +115,7 @@ bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> 
     }
   } else if (tok.is<qOpSet>()) {
     if (multi_decl) {
+      /// TODO: Implement initializer for multiple declarations
       qcore_implement("Initializer for multiple declarations");
     }
 

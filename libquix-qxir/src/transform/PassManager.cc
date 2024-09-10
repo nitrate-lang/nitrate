@@ -57,8 +57,6 @@ static void seed_passes() {
   /* Read-only passes */
   PassGroup::register_group("g0",
                             {
-  /// FIXME: Write a better algorithm for this pass so that it isn't
-  /// a bottleneck.
 #if !defined(NDEBUG)
                                 "ds-acyclic",
 #endif
@@ -95,8 +93,6 @@ static void seed_passes() {
 
 const PassGroup* StdTransform::optimize_order(std::vector<PassName> passes) {
   return PassGroup::get("root");
-
-  qcore_implement("StdTransform::optimize_order");
 }
 
 const StdTransform* StdTransform::create() {

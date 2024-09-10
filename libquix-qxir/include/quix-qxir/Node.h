@@ -1073,7 +1073,10 @@ namespace qxir {
     QCLASS_REFLECT()
 
   public:
-    Asm() : Expr(QIR_NODE_ASM) { qcore_implement(__func__); }
+    Asm() : Expr(QIR_NODE_ASM) {
+      /// FIXME: Implement this.
+      qcore_implement(__func__);
+    }
   };
 
   ///=============================================================================

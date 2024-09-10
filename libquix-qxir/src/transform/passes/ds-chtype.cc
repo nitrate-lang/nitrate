@@ -285,6 +285,7 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       }
 
       case QIR_NODE_ASM: {
+        /// FIXME: Implement this
         qcore_implement("asm chtype");
         break;
       }

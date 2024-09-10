@@ -2166,6 +2166,7 @@ namespace qxir {
   }
 
   static Expr *qconv_inline_asm(ConvState &s, const qparse::InlineAsm *n) {
+    /// FIXME: inline_asm
     qcore_implement("qconv_inline_asm");
   }
 
@@ -3048,6 +3049,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       break;
     }
     case QIR_NODE_ASM: {
+      /// FIXME: Implement cloning for qxir::Asm
       qcore_implement("QIR_NODE_ASM cloning");
       break;
     }
