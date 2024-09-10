@@ -106,6 +106,13 @@ static inline int qcore_writef(const char *fmt, ...) {
 
 static inline int qcore_write(const char *msg) { return qcore_writef("%s", msg); }
 
+#define qcore_print(_lvl, ...) \
+  do {                         \
+    qcore_begin(_lvl);         \
+    qcore_writef(__VA_ARGS__); \
+    qcore_end();               \
+  } while (0)
+
 #ifdef __cplusplus
 }
 #endif

@@ -74,5 +74,4 @@ int qcall::sys_fetch(lua_State* L) {
   lua_pushstring(L, value.c_str());
 
   return 1;
-  
 }
