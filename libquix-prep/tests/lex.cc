@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <quix-core/Classes.hh>
+#include <quix-prep/Classes.hh>
 #include <vector>
 
 static void print_token(qlex_t *lexer, qlex_tok_t tok, std::ostream &out) {
@@ -55,7 +57,8 @@ static void print_token(qlex_t *lexer, qlex_tok_t tok, std::ostream &out) {
 }
 
 void do_lex(FILE *file) {
-  qlex_t *lexer = qprep_new(file, nullptr);
+  qcore_env env;
+  qprep lexer(file, nullptr, env.get());
 
   qlex_tok_t tok;
 
@@ -66,16 +69,14 @@ void do_lex(FILE *file) {
   }
 
   while (true) {
-    tok = qlex_next(lexer);
+    tok = qlex_next(lexer.get());
     if (tok.ty == qEofF || tok.ty == qErro) {
       break;
     }
-    print_token(lexer, tok, out);
+    print_token(lexer.get(), tok, out);
   }
 
   out.close();
-
-  qlex_free(lexer);
 }
 
 int main(int argc, char **argv) {

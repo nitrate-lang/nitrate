@@ -32,6 +32,7 @@
 #ifndef __QUIX_LEXER_LEX_H__
 #define __QUIX_LEXER_LEX_H__
 
+#include <quix-core/Env.h>
 #include <quix-lexer/Token.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -53,11 +54,13 @@ typedef uint32_t qlex_flags_t;
  *
  * @param file A seekable file stream.
  * @param filename Name of the file or NULL for default.
+ * @param env Parent environment.
  *
  * @return New lexer context or NULL if an error occurred.
+ * @note The lifetime of the file stream and environment must exceed the lifetime of the lexer.
  * @note This function is thread-safe.
  */
-qlex_t *qlex_new(FILE *file, const char *filename);
+qlex_t *qlex_new(FILE *file, const char *filename, qcore_env_t env);
 
 typedef uintptr_t qlex_cxx_std_istream_t;
 qlex_t *qlex_istream__libextra(qlex_cxx_std_istream_t istream, const char *filename);
@@ -71,12 +74,14 @@ qlex_t *qlex_istream__libextra(qlex_cxx_std_istream_t istream, const char *filen
  * @param src Source code.
  * @param len Length of the source code.
  * @param filename Name of the file or NULL for default.
+ * @param env Parent environment.
  *
  * @return New lexer context or NULL if an error occurred.
  * @note This function is thread-safe.
+ * @note The lifetime of the file stream and environment must exceed the lifetime of the lexer.
  * @warning The source code pointer must be valid for the duration of the lexer context.
  */
-qlex_t *qlex_direct(const char *src, size_t len, const char *filename);
+qlex_t *qlex_direct(const char *src, size_t len, const char *filename, qcore_env_t env);
 
 /**
  * @brief Destroy a lexer context.

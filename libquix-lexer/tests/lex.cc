@@ -1,8 +1,9 @@
 #include <quix-lexer/Lib.h>
 
 #include <filesystem>
-#include <fstream>
 #include <iostream>
+#include <quix-core/Classes.hh>
+#include <quix-lexer/Classes.hh>
 #include <vector>
 
 static void print_token(qlex_t *lexer, qlex_tok_t tok, std::ostream &out) {
@@ -58,25 +59,18 @@ static void print_token(qlex_t *lexer, qlex_tok_t tok, std::ostream &out) {
 }
 
 void do_lex(FILE *file) {
-  qlex_t *lexer = qlex_new(file, nullptr);
+  qcore_env env;
+  qlex lexer(file, nullptr, env.get());
 
   qlex_tok_t tok;
 
-  // std::fstream out("lex.out", std::ios::out);
-  // if (!out.is_open()) {
-  //   std::cerr << "Failed to open output file" << std::endl;
-  //   return;
-  // }
-
   while (true) {
-    tok = qlex_next(lexer);
+    tok = qlex_next(lexer.get());
     if (tok.ty == qEofF || tok.ty == qErro) {
       break;
     }
-    print_token(lexer, tok, std::cout);
+    print_token(lexer.get(), tok, std::cout);
   }
-
-  qlex_free(lexer);
 }
 
 int main(int argc, char **argv) {

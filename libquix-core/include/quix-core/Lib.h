@@ -38,6 +38,7 @@ extern "C" {
 
 #include <quix-core/Arena.h>
 #include <quix-core/Cache.h>
+#include <quix-core/Env.h>
 #include <quix-core/Error.h>
 
 /**

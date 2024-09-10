@@ -3,6 +3,8 @@
 #include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <quix-core/Classes.hh>
+#include <quix-lexer/Classes.hh>
 #include <vector>
 
 using timepoint_t = std::chrono::time_point<std::chrono::high_resolution_clock>;
@@ -44,14 +46,13 @@ void do_benchmark(FILE *file) {
 
   start = std::chrono::high_resolution_clock::now();
   {
-    qlex_t *lexer = qlex_new(file, nullptr);
+    qcore_env env;
+    qlex lexer(file, nullptr, env.get());
 
     qlex_tok_t tok;
-    while ((tok = qlex_next(lexer)).ty != qEofF) {
+    while ((tok = qlex_next(lexer.get())).ty != qEofF) {
       ++tok_count;
     }
-
-    qlex_free(lexer);
   }
   end = std::chrono::high_resolution_clock::now();
 

@@ -171,7 +171,7 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
 
       std::string_view sub = fstr.substr(w_beg, w_end - w_beg);
 
-      qlex_t *subrd = qlex_direct(sub.data(), sub.size(), "fstring");
+      qlex_t *subrd = qlex_direct(sub.data(), sub.size(), "fstring", job.env);
       qlex_tok_t subtok = qlex_peek(subrd);
 
       if (!parse_expr(job, subrd, {qlex_tok_t(qPunc, qPuncRCur)}, &expr, depth + 1) || !expr) {

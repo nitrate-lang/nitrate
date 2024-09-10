@@ -97,7 +97,7 @@ private:
 
 public:
   StringInterner m_strings;
-  std::shared_ptr<qcore_env_t> m_env;
+  qcore_env_t m_env;
 
   qlex_flags_t m_flags;
 
@@ -130,7 +130,7 @@ public:
 
   ///============================================================================///
 
-  qlex_t(FILE *file, const char *filename, bool is_owned)
+  qlex_t(FILE *file, const char *filename, bool is_owned, qcore_env_t env)
       : m_getc_pos(GETC_BUFFER_SIZE),
         m_next_tok({}),
         m_row(1),
@@ -140,6 +140,7 @@ public:
         m_tag_to_off({}),
         m_locctr(1),
         m_strings(std::make_shared<decltype(m_strings)::element_type>()),
+        m_env(env),
         m_flags(0),
         m_filename(filename),
         m_file(file),
@@ -149,12 +150,6 @@ public:
     }
 
     m_next_tok.ty = qErro;
-
-    m_env =
-        std::shared_ptr<qcore_env_t>(new qcore_env_t(qcore_env_create(this)), [](qcore_env_t *env) {
-          qcore_env_forget(*env);
-          delete env;
-        });
   }
   virtual ~qlex_t() {
     if (m_is_owned) {

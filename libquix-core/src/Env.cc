@@ -53,7 +53,7 @@ LIB_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
   return env;
 }
 
-LIB_EXPORT void qcore_env_forget(qcore_env_t env) {
+LIB_EXPORT void qcore_env_destroy(qcore_env_t env) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
   
   qcore_assert(g_envs.count(env), "Environment does not exist.");

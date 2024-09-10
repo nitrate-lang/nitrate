@@ -36,6 +36,7 @@
 #include <quix-parser/Parser.h>
 
 #include <cstring>
+#include <unordered_map>
 
 #include "LibMacro.h"
 
@@ -46,13 +47,9 @@ namespace qparse {
   __attribute__((visibility("default"))) thread_local ArenaAllocatorImpl qparse_arena;
 }
 
-LIB_EXPORT ArenaAllocatorImpl::ArenaAllocatorImpl() { qcore_arena_open(&m_arena); }
-
-LIB_EXPORT ArenaAllocatorImpl::~ArenaAllocatorImpl() { qcore_arena_close(&m_arena); }
-
 LIB_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
   const std::size_t alignment = 16;
-  return qcore_arena_alloc_ex(&m_arena, size, alignment);
+  return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
 }
 
 LIB_EXPORT void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }

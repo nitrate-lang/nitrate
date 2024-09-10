@@ -3,8 +3,14 @@
 #include <quix-prep/Lib.h>
 #include <quix-qxir/Lib.h>
 
+#include <cstdio>
 #include <iostream>
-#include <optional>
+#include <quix-core/Classes.hh>
+#include <quix-parser/Classes.hh>
+#include <quix-prep/Classes.hh>
+#include <quix-qxir/Classes.hh>
+
+#include "quix-qxir/TypeDecl.h"
 
 extern "C" const char *__asan_default_options() { return "detect_leaks=0"; }
 
@@ -39,75 +45,56 @@ extern "C" int LLVMFuzzerFinalize() {
   return 0;
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
-  qparse_node_t *node = nullptr;
-  FILE *fp = nullptr;
-  qlex_t *lex = nullptr;
-  std::optional<qcore_arena_t> arena;
-  qparse_conf_t *conf = nullptr;
-  qparse_t *parse = nullptr;
-  qxir_conf_t *conf2 = nullptr;
-  qmodule_t *mod = nullptr;
-  bool success = false;
+class CppFILE {
+  FILE *m_fp;
 
+public:
+  CppFILE(const uint8_t *data, size_t size) {
+    m_fp = fmemopen((void *)data, size, "r");
+    if (m_fp == nullptr) {
+      throw std::runtime_error("fmemopen failed");
+    }
+  }
+
+  ~CppFILE() { fclose(m_fp); }
+
+  FILE *get() const { return m_fp; }
+};
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   if (Size == 0) {
     return 0;
   }
 
-  if ((fp = fmemopen((void *)Data, Size, "r")) == nullptr) {
-    goto cleanup;
+  try {
+    CppFILE fp(Data, Size);
+
+    qcore_env env;
+
+    qprep lex(fp.get(), nullptr, env.get());
+    qparse_conf conf;
+    qparse_conf_setopt(conf.get(), QPK_CRASHGUARD, QPV_OFF);
+
+    qparser parser(lex.get(), conf.get(), env.get());
+
+    qparse_node_t *node = nullptr;
+    qcore_arena arena;
+    if (!qparse_do(parser.get(), arena.get(), &node)) {
+      return 0;
+    }
+
+    qxir_conf conf2;
+    qxir_conf_setopt(conf2.get(), QQK_CRASHGUARD, QQV_OFF);
+
+    qmodule mod(lex.get(), conf2.get(), nullptr);
+
+    if (!qxir_lower(mod.get(), node, true)) {
+      return 0;
+    }
+
+    return 1;
+  } catch (const std::exception &e) {
+    std::cerr << "Exception: " << e.what() << std::endl;
+    return 0;
   }
-
-  if ((lex = qprep_new(fp, nullptr)) == nullptr) {
-    goto cleanup;
-  }
-
-  if ((conf = qparse_conf_new(true)) == nullptr) {
-    goto cleanup;
-  }
-
-  qparse_conf_setopt(conf, QPK_CRASHGUARD, QPV_OFF);
-
-  if ((parse = qparse_new(lex, conf)) == nullptr) {
-    goto cleanup;
-  }
-
-  arena = qcore_arena_t();
-  qcore_arena_open(&*arena);
-
-  if (!qparse_do(parse, &*arena, &node)) {
-    goto cleanup;
-  }
-
-  if ((conf2 = qxir_conf_new(true)) == nullptr) {
-    goto cleanup;
-  }
-
-  qxir_conf_setopt(conf2, QQK_CRASHGUARD, QQV_OFF);
-
-  if ((mod = qxir_new(lex, conf2, nullptr)) == nullptr) {
-    goto cleanup;
-  }
-
-  if (!qxir_lower(mod, node, true)) {
-    goto cleanup;
-  }
-
-  success = true;
-
-cleanup:
-  qxir_free(mod);
-  qxir_conf_free(conf2);
-  qparse_free(parse);
-  qparse_conf_free(conf);
-  if (arena) {
-    qcore_arena_close(&*arena);
-  }
-  qlex_free(lex);
-  if (fp) {
-    fclose(fp);
-  }
-  node = nullptr;
-
-  return success ? 1 : 0;
 }

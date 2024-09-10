@@ -36,11 +36,15 @@
 #include <quix-prep/Lib.h>
 #include <quix-qxir/Lib.h>
 
+#include <quix-core/Classes.hh>
+#include <quix-parser/Classes.hh>
+#include <quix-qxir/Classes.hh>
+
 // #include <build/EngineBuilder.hh>
 #include <clean/Cleanup.hh>
 #include <core/Config.hh>
 #include <core/Logger.hh>
-
+#include <quix-prep/Classes.hh>
 #if QPKG_DEV_TOOLS
 // #include <dev/bench/bench.hh>
 // #include <dev/test/test.hh>
@@ -1125,57 +1129,31 @@ namespace qpkg::router {
         return 1;
       }
 
-      qlex_t *lexer = qprep_new(fp, source.c_str());
-      if (!lexer) {
-        fclose(fp);
-        qerr << "Failed to create lexer" << std::endl;
-        return 1;
-      }
+      qcore_env env;
 
-      qparse_conf_t *pconf = qparse_conf_new(true);
-      if (!pconf) {
-        qlex_free(lexer);
-        fclose(fp);
-        qerr << "Failed to create parser configuration" << std::endl;
-        return 1;
-      }
+      qprep lexer(fp, source.c_str(), env.get());
 
-      qparse_t *ctx = qparse_new(lexer, pconf);
-      if (!ctx) {
-        qparse_conf_free(pconf);
-        qlex_free(lexer);
-        fclose(fp);
-        qerr << "Failed to create parser context" << std::endl;
-        return 1;
-      }
+      qparse_conf pconf;
+      qparser ctx(lexer.get(), pconf.get(), env.get());
 
-      qcore_arena_t arena;
-      qcore_arena_open(&arena);
+      qcore_arena arena;
       qparse_node_t *root = nullptr;
-      if (!qparse_do(ctx, &arena, &root)) {
+      if (!qparse_do(ctx.get(), arena.get(), &root)) {
         auto cb = [](const char *msg, size_t size, uintptr_t data) {
           (void)size;
           (void)data;
           qerr << msg << std::endl;
         };
 
-        qparse_dumps(ctx, false, cb, 0);
-        qcore_arena_close(&arena);
-        qparse_free(ctx);
-        qparse_conf_free(pconf);
-        qlex_free(lexer);
+        qparse_dumps(ctx.get(), false, cb, 0);
         fclose(fp);
         qerr << "Failed to parse source" << std::endl;
         return 1;
       }
 
       size_t out_len = 0;
-      char *out_str = qparse_repr(root, false, 2, &arena, &out_len);
+      char *out_str = qparse_repr(root, false, 2, arena.get(), &out_len);
       if (!out_str) {
-        qcore_arena_close(&arena);
-        qparse_free(ctx);
-        qparse_conf_free(pconf);
-        qlex_free(lexer);
         fclose(fp);
         qerr << "Failed to generate parse tree" << std::endl;
         return 1;
@@ -1185,10 +1163,6 @@ namespace qpkg::router {
       if (!output.empty()) {
         out_fp = fopen(output.c_str(), "w");
         if (!out_fp) {
-          qcore_arena_close(&arena);
-          qparse_free(ctx);
-          qparse_conf_free(pconf);
-          qlex_free(lexer);
           fclose(fp);
           qerr << "Failed to open output file" << std::endl;
           return 1;
@@ -1201,10 +1175,6 @@ namespace qpkg::router {
 
       if (!output.empty()) fclose(out_fp);
 
-      qcore_arena_close(&arena);
-      qparse_free(ctx);
-      qparse_conf_free(pconf);
-      qlex_free(lexer);
       fclose(fp);
 
       return 0;
@@ -1223,72 +1193,29 @@ namespace qpkg::router {
         return 1;
       }
 
-      qlex_t *lexer = qprep_new(fp, source.c_str());
-      if (!lexer) {
-        fclose(fp);
-        qerr << "Failed to create lexer" << std::endl;
-        return 1;
-      }
+      qcore_env env;
 
-      qparse_conf_t *pconf = qparse_conf_new(true);
-      if (!pconf) {
-        qlex_free(lexer);
-        fclose(fp);
-        qerr << "Failed to create parser configuration" << std::endl;
-        return 1;
-      }
+      qprep lexer(fp, source.c_str(), env.get());
+      qparse_conf pconf;
+      qparser ctx(lexer.get(), pconf.get(), env.get());
 
-      qparse_t *ctx = qparse_new(lexer, pconf);
-      if (!ctx) {
-        qparse_conf_free(pconf);
-        qlex_free(lexer);
-        fclose(fp);
-        qerr << "Failed to create parser context" << std::endl;
-        return 1;
-      }
-
-      qcore_arena_t arena;
-      qcore_arena_open(&arena);
+      qcore_arena arena;
       qparse_node_t *root = nullptr;
-      if (!qparse_do(ctx, &arena, &root)) {
+      if (!qparse_do(ctx.get(), arena.get(), &root)) {
         auto cb = [](const char *msg, size_t size, uintptr_t data) {
           (void)size;
           (void)data;
           qerr << msg << std::endl;
         };
 
-        qparse_dumps(ctx, false, cb, 0);
-        qcore_arena_close(&arena);
-        qparse_free(ctx);
-        qparse_conf_free(pconf);
-        qlex_free(lexer);
+        qparse_dumps(ctx.get(), false, cb, 0);
         fclose(fp);
         qerr << "Failed to parse source" << std::endl;
         return 1;
       }
 
-      qxir_conf_t *conf = qxir_conf_new(true);
-      if (!conf) {
-        qcore_arena_close(&arena);
-        qparse_free(ctx);
-        qparse_conf_free(pconf);
-        qlex_free(lexer);
-        fclose(fp);
-        qerr << "Failed to create QXIR configuration" << std::endl;
-        return 1;
-      }
-
-      qmodule_t *qmod = qxir_new(lexer, conf, source.c_str());
-      if (!qmod) {
-        qxir_conf_free(conf);
-        qcore_arena_close(&arena);
-        qparse_free(ctx);
-        qparse_conf_free(pconf);
-        qlex_free(lexer);
-        fclose(fp);
-        qerr << "Failed to create QXIR context" << std::endl;
-        return 1;
-      }
+      qxir_conf conf;
+      qmodule qmod(lexer.get(), conf.get(), source.c_str());
 
       auto cb = [](const uint8_t *msg, size_t size, qxir_level_t lvl, uintptr_t data) {
         if (!data && lvl < QXIR_LEVEL_INFO) {
@@ -1297,32 +1224,20 @@ namespace qpkg::router {
         qerr << std::string_view((const char *)msg, size) << std::endl;
       };
 
-      if (!qxir_lower(qmod, root, true)) {
-        qxir_diag_read(qmod, QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
-                       verbose);
-        qxir_free(qmod);
-        qxir_conf_free(conf);
-        qcore_arena_close(&arena);
-        qparse_free(ctx);
-        qparse_conf_free(pconf);
-        qlex_free(lexer);
+      if (!qxir_lower(qmod.get(), root, true)) {
+        qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
+                       g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
         fclose(fp);
         return 1;
       }
 
-      qxir_diag_read(qmod, QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb,
-                     verbose);
+      qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
+                     cb, verbose);
 
       FILE *out_fp = nullptr;
       if (!output.empty()) {
         out_fp = fopen(output.c_str(), "w");
         if (!out_fp) {
-          qxir_free(qmod);
-          qxir_conf_free(conf);
-          qcore_arena_close(&arena);
-          qparse_free(ctx);
-          qparse_conf_free(pconf);
-          qlex_free(lexer);
           fclose(fp);
           qerr << "Failed to open output file" << std::endl;
           return 1;
@@ -1331,15 +1246,8 @@ namespace qpkg::router {
         out_fp = stdout;
       }
 
-      if (!qxir_write(qxir_base(qmod), QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
+      if (!qxir_write(qxir_base(qmod.get()), QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
         if (!output.empty()) fclose(out_fp);
-
-        qxir_free(qmod);
-        qxir_conf_free(conf);
-        qcore_arena_close(&arena);
-        qparse_free(ctx);
-        qparse_conf_free(pconf);
-        qlex_free(lexer);
         fclose(fp);
         qerr << "Failed to generate QXIR tree" << std::endl;
         return 1;
@@ -1347,12 +1255,6 @@ namespace qpkg::router {
 
       if (!output.empty()) fclose(out_fp);
 
-      qxir_free(qmod);
-      qxir_conf_free(conf);
-      qcore_arena_close(&arena);
-      qparse_free(ctx);
-      qparse_conf_free(pconf);
-      qlex_free(lexer);
       fclose(fp);
 
       return 0;

@@ -80,6 +80,7 @@ qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <quix-core/Classes.hh>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -91,18 +92,15 @@ qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 
 namespace qxir {
   class ArenaAllocatorImpl {
-    /// WARNING: This must be the first member; C bindings use
-    /// qxir_arena as of type `qcore_arena_t`.
-    qcore_arena_t m_arena;
+    qcore_arena m_arena;
 
   public:
-    ArenaAllocatorImpl();
-    ~ArenaAllocatorImpl();
+    ArenaAllocatorImpl() = default;
 
     void *allocate(std::size_t bytes);
     void deallocate(void *ptr) noexcept;
 
-    qcore_arena_t &get() { return m_arena; }
+    qcore_arena_t &get() { return *m_arena.get(); }
   };
 
   extern "C" thread_local ArenaAllocatorImpl qxir_arena;

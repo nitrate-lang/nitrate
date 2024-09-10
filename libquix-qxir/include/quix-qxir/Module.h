@@ -35,6 +35,8 @@
 #include <quix-lexer/Lexer.h>
 #include <quix-qxir/TypeDecl.h>
 
+#include <quix-core/Classes.hh>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -178,7 +180,7 @@ class qmodule_t {
   std::unique_ptr<qxir::TypeManager> m_type_mgr;
   qxir::TargetInfo m_target_info;
   std::string m_module_name;
-  qcore_arena_t m_node_arena;
+  qcore_arena m_node_arena;
   qxir_conf_t *m_conf;
   qlex_t *m_lexer;
   qxir::Expr *m_root;
@@ -259,7 +261,7 @@ public:
    */
   std::string_view internString(std::string_view sv);
 
-  qcore_arena_t &getNodeArena() { return m_node_arena; }
+  qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
 
   qxir::diag::DiagnosticManager &getDiag() { return *m_diag; }
 

@@ -50,8 +50,6 @@ qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
   m_type_mgr = std::make_unique<TypeManager>();
   m_module_name = name;
 
-  qcore_arena_open(&m_node_arena);
-
   m_conf = nullptr;
   m_lexer = nullptr;
   m_root = nullptr;
@@ -62,8 +60,6 @@ qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
 }
 
 qmodule_t::~qmodule_t() {
-  qcore_arena_close(&m_node_arena);
-
   m_conf = nullptr;
   m_lexer = nullptr;
   m_root = nullptr;

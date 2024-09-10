@@ -29,62 +29,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_ENV_H__
-#define __QUIX_CORE_ENV_H__
+#ifndef __QUIX_PREP_CLASSES_H__
+#define __QUIX_PREP_CLASSES_H__
 
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
+#ifndef __cplusplus
+#error "This header is for C++ only."
 #endif
 
-typedef uintptr_t qcore_env_t;
+#include <quix-core/Error.h>
+#include <quix-prep/Preprocess.h>
 
-/**
- * @brief Create a new environment.
- * @return The environment handle otherwise a NOP if the environment already exists.
- */
-qcore_env_t qcore_env_create(qcore_env_t env);
+#include <stdexcept>
 
-/**
- * @brief Drop a reference to an environment.
- * @param env The environment handle.
- * @note The environment will be destroyed when the last reference is dropped.
- */
-void qcore_env_destroy(qcore_env_t env);
+class qprep final {
+  qlex_t *m_lex;
 
-/**
- * @brief Get the current environment.
- * @return The current environment handle.
- */
-qcore_env_t qcore_env_current();
+public:
+  qprep(FILE *fp, const char *filename, qcore_env_t env) {
+    if ((m_lex = qprep_new(fp, filename, env)) == nullptr) {
+      throw std::runtime_error("qlex_new failed");
+    }
+  }
+  ~qprep() { qlex_free(m_lex); }
 
-/**
- * @brief Set the current environment.
- * @param env The environment handle.
- */
-void qcore_env_set_current(qcore_env_t env);
+  qlex_t *get() {
+    qcore_assert(m_lex != nullptr);
+    return m_lex;
+  }
+};
 
-/**
- * @brief Get the value of an environment variable.
- * @param key The environment variable key.
- * @return The value of the environment variable, or NULL to unset the variable.
- * @note Strings will be cloned internally.
- */
-void qcore_env_set(const char *key, const char *value);
-
-#define qcore_env_unset(key) qcore_env_set(key, NULL)
-
-/**
- * @brief Get the value of an environment variable.
- * @param key The environment variable key.
- * @return The value of the environment variable, or NULL if the variable is not set.
- * @note Strings will be cloned internally.
- */
-const char *qcore_env_get(const char *key);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // __QUIX_CORE_ENV_H__
+#endif  // __QUIX_PREP_CLASSES_H__

@@ -1,8 +1,10 @@
 #include <quix-lexer/Lib.h>
 
-#include <chrono>
+#include <algorithm>
 #include <filesystem>
 #include <iostream>
+#include <quix-core/Classes.hh>
+#include <quix-lexer/Classes.hh>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -13,22 +15,18 @@ struct Dist {
 
 void do_dist(FILE *file) {
   fseek(file, 0, SEEK_END);
-  size_t size = ftell(file);
   fseek(file, 0, SEEK_SET);
 
-  size_t tok_count = 0;
   Dist dist;
 
   {
-    qlex_t *lexer = qlex_new(file, nullptr);
+    qcore_env env;
+    qlex lexer(file, nullptr, env.get());
 
     qlex_tok_t tok;
-    while ((tok = qlex_next(lexer)).ty != qEofF) {
+    while ((tok = qlex_next(lexer.get())).ty != qEofF) {
       ++dist.counts[tok.ty];
-      ++tok_count;
     }
-
-    qlex_free(lexer);
   }
 
   std::cout << "Token distribution:" << std::endl;

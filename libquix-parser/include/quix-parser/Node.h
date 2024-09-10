@@ -160,35 +160,29 @@ qlex_loc_t qparse_endpos(qparse_node_t *node);
 
 #include <cassert>
 #include <iostream>
-#include <limits>
 #include <map>
-#include <memory>
-#include <optional>
 #include <ostream>
+#include <quix-core/Classes.hh>
 #include <set>
 #include <stdexcept>
 #include <string>
 #include <tuple>
-#include <unordered_map>
 #include <variant>
 #include <vector>
 
 namespace qparse {
   class ArenaAllocatorImpl {
-    /// WARNING: This must be the first member; C bindings use
-    /// qparse_arena as of type `qcore_arena_t`.
-    qcore_arena_t m_arena;
+    qcore_arena m_arena;
 
   public:
-    ArenaAllocatorImpl();
-    ~ArenaAllocatorImpl();
+    ArenaAllocatorImpl() = default;
 
     void *allocate(std::size_t bytes);
     void deallocate(void *ptr) noexcept;
 
-    void swap(qcore_arena_t &arena) { std::swap(m_arena, arena); }
+    void swap(qcore_arena_t &arena) { std::swap(*m_arena.get(), arena); }
 
-    qcore_arena_t &get() { return m_arena; }
+    qcore_arena_t &get() { return *m_arena.get(); }
   };
 
   extern "C" thread_local ArenaAllocatorImpl qparse_arena;
@@ -276,7 +270,7 @@ public:                                                                         
     return node;                                                                       \
   }
 
-class qparse_node_t {
+struct qparse_node_t {
 public:
   qparse_node_t() = default;
 };

@@ -75,8 +75,8 @@ struct qprep_impl_t final : public qlex_t {
   qlex_t *weak_clone(FILE *file, const char *filename);
 
 public:
-  qprep_impl_t(FILE *file, const char *filename);
-  qprep_impl_t(FILE *file, const char *filename, bool is_owned);
+  qprep_impl_t(FILE *file, const char *filename, qcore_env_t env);
+  qprep_impl_t(FILE *file, const char *filename, bool is_owned, qcore_env_t env);
   virtual ~qprep_impl_t() override;
 };
 

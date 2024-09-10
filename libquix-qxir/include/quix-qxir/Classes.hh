@@ -29,62 +29,45 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_ENV_H__
-#define __QUIX_CORE_ENV_H__
+#ifndef __QUIX_IR_CLASSES_H__
+#define __QUIX_IR_CLASSES_H__
 
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
+#ifndef __cplusplus
+#error "This header is for C++ only."
 #endif
 
-typedef uintptr_t qcore_env_t;
+#include <quix-core/Error.h>
+#include <quix-qxir/Config.h>
+#include <quix-qxir/IR.h>
 
-/**
- * @brief Create a new environment.
- * @return The environment handle otherwise a NOP if the environment already exists.
- */
-qcore_env_t qcore_env_create(qcore_env_t env);
+#include <stdexcept>
 
-/**
- * @brief Drop a reference to an environment.
- * @param env The environment handle.
- * @note The environment will be destroyed when the last reference is dropped.
- */
-void qcore_env_destroy(qcore_env_t env);
+class qxir_conf final {
+  qxir_conf_t *m_conf;
 
-/**
- * @brief Get the current environment.
- * @return The current environment handle.
- */
-qcore_env_t qcore_env_current();
+public:
+  qxir_conf(bool use_default = true) {
+    if ((m_conf = qxir_conf_new(use_default)) == nullptr) {
+      throw std::runtime_error("qxir_conf_new failed");
+    }
+  }
+  ~qxir_conf() { qxir_conf_free(m_conf); }
 
-/**
- * @brief Set the current environment.
- * @param env The environment handle.
- */
-void qcore_env_set_current(qcore_env_t env);
+  qxir_conf_t *get() const { return m_conf; }
+};
 
-/**
- * @brief Get the value of an environment variable.
- * @param key The environment variable key.
- * @return The value of the environment variable, or NULL to unset the variable.
- * @note Strings will be cloned internally.
- */
-void qcore_env_set(const char *key, const char *value);
+class qmodule final {
+  qmodule_t *m_module;
 
-#define qcore_env_unset(key) qcore_env_set(key, NULL)
+public:
+  qmodule(qlex_t *lexer, qxir_conf_t *conf, const char *name) {
+    if ((m_module = qxir_new(lexer, conf, name)) == nullptr) {
+      throw std::runtime_error("qxir_new failed");
+    }
+  }
+  ~qmodule() { qxir_free(m_module); }
 
-/**
- * @brief Get the value of an environment variable.
- * @param key The environment variable key.
- * @return The value of the environment variable, or NULL if the variable is not set.
- * @note Strings will be cloned internally.
- */
-const char *qcore_env_get(const char *key);
+  qmodule_t *get() const { return m_module; }
+};
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // __QUIX_CORE_ENV_H__
+#endif  // __QUIX_IR_CLASSES_H__

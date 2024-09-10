@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <filesystem>
 #include <iostream>
+#include <quix-core/Classes.hh>
+#include <quix-prep/Classes.hh>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
@@ -16,14 +18,13 @@ void do_dist(FILE *file) {
   Dist dist;
 
   {
-    qlex_t *lexer = qprep_new(file, nullptr);
+    qcore_env env;
+    qprep lexer(file, nullptr, env.get());
 
     qlex_tok_t tok;
-    while ((tok = qlex_next(lexer)).ty != qEofF) {
+    while ((tok = qlex_next(lexer.get())).ty != qEofF) {
       ++dist.counts[tok.ty];
     }
-
-    qlex_free(lexer);
   }
 
   std::cout << "Token distribution:" << std::endl;

@@ -42,6 +42,7 @@
 
 #include <atomic>
 #include <cstring>
+#include <quix-core/Classes.hh>
 
 #include "LibMacro.h"
 
@@ -395,7 +396,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
   }
 }
 
-LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf) {
+LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf, qcore_env_t env) {
   if (!lexer || !conf) {
     return nullptr;
   }
@@ -407,6 +408,7 @@ LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf) {
   parser->conf = conf;
   parser->failed = false;
   parser->impl->diag.set_ctx(parser);
+  parser->env = env;
 
   qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
 
@@ -551,26 +553,21 @@ LIB_EXPORT bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1)
   (void)x0;
   (void)x1;
 
-  qcore_arena_t arena;
+  qcore_arena arena;
   qparse_node_t *node = nullptr;
 
   if (!parser || !out) {
     return false;
   }
 
-  qcore_arena_open(&arena);
-
-  if (!qparse_do(parser, &arena, &node)) {
-    qcore_arena_close(&arena);
+  if (!qparse_do(parser, arena.get(), &node)) {
     return false;
   }
 
   size_t len = 0;
-  char *repr = qparse_repr(node, false, 2, &arena, &len);
+  char *repr = qparse_repr(node, false, 2, arena.get(), &len);
 
   fwrite(repr, 1, len, out);
-
-  qcore_arena_close(&arena);
 
   return true;
 }

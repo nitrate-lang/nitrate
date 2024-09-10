@@ -51,7 +51,7 @@
 
 ///============================================================================///
 
-LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename) {
+LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename, qcore_env_t env) {
   try {
     if (!filename) {
       filename = "<unknown>";
@@ -62,7 +62,7 @@ LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename
       return nullptr;
     }
 
-    qlex_t *obj = qlex_new(file, filename);
+    qlex_t *obj = qlex_new(file, filename, env);
     if (!obj) {
       fclose(file);
       return nullptr;
@@ -331,7 +331,7 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
 LIB_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
   try {
     qcore_env_t old = qcore_env_current();
-    qcore_env_set_current(*self->m_env);
+    qcore_env_set_current(self->m_env);
 
     qlex_tok_t tok = self->next();
 
@@ -346,7 +346,7 @@ LIB_EXPORT qlex_tok_t qlex_next(qlex_t *self) {
 LIB_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
   try {
     qcore_env_t old = qcore_env_current();
-    qcore_env_set_current(*self->m_env);
+    qcore_env_set_current(self->m_env);
 
     qlex_tok_t tok = self->peek();
 

@@ -37,6 +37,7 @@
 #include <quix-parser/Node.h>
 
 #include <cstring>
+#include <quix-core/Classes.hh>
 #include <sstream>
 
 #include "LibMacro.h"
@@ -859,13 +860,11 @@ static char *qparse_repr_arena(const Node *_node, bool minify, size_t indent, qc
 }
 
 static char *qparse_repr_malloc(const Node *_node, bool minify, size_t indent, size_t *outlen) {
-  qcore_arena_t scratch;
+  qcore_arena scratch;
   char *out = nullptr, *out_tmp = nullptr;
 
-  qcore_arena_open(&scratch);
-
   try {
-    out = qparse_repr_arena(_node, minify, indent, &scratch, outlen);
+    out = qparse_repr_arena(_node, minify, indent, scratch.get(), outlen);
 
     if (out) {
       out_tmp = static_cast<char *>(malloc(*outlen));
@@ -880,8 +879,6 @@ static char *qparse_repr_malloc(const Node *_node, bool minify, size_t indent, s
 
   } catch (...) {
   }
-
-  qcore_arena_close(&scratch);
 
   return out;
 }
@@ -935,13 +932,12 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
 LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress, qcore_arena_t *arena,
                              uint8_t **out, size_t *outlen) {
   char *repr{};
-  qcore_arena_t scratch{};
+  qcore_arena scratch;
   bool our_arena{};
 
   /* Open a scratch arena if one is not provided */
   if (!arena) {
-    qcore_arena_open(&scratch);
-    arena = &scratch;
+    arena = scratch.get();
     our_arena = true;
   }
 
@@ -970,7 +966,6 @@ LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress, qcore_ar
     }
 
     memcpy(*out, repr, *outlen);
-    qcore_arena_close(arena);
   } else {
     /* Otherwise, just return the pointer to the arena alloc'ed buffer */
     *out = (uint8_t *)repr;

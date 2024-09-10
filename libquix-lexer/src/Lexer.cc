@@ -268,9 +268,9 @@ static thread_local boost::unordered_map<qlex::num_buf_t, qlex::num_buf_t> can_c
 
 ///============================================================================///
 
-LIB_EXPORT qlex_t *qlex_new(FILE *file, const char *filename) {
+LIB_EXPORT qlex_t *qlex_new(FILE *file, const char *filename, qcore_env_t env) {
   try {
-    return new qlex_t(file, filename, false);
+    return new qlex_t(file, filename, false, env);
   } catch (std::bad_alloc &) {
     return nullptr;
   } catch (...) {

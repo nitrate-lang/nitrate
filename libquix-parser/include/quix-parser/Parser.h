@@ -33,6 +33,7 @@
 #define __QUIX_PARSER_PARSER_H__
 
 #include <quix-core/Arena.h>
+#include <quix-core/Env.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Config.h>
 #include <quix-parser/Node.h>
@@ -50,6 +51,7 @@ typedef struct qparse_t {
   qlex_t *lexer;       /* Polymporphic lexer */
   qparse_conf_t *conf; /* Parser configuration */
   bool failed;         /* Whether the parser failed (ie syntax errors) */
+  qcore_env_t env;     /* The Environment */
 } qparse_t;
 
 /**
@@ -58,6 +60,7 @@ typedef struct qparse_t {
  *
  * @param lexer Lexer stream object.
  * @param conf Parser configuration object.
+ * @param env The environment.
  *
  * @return A new parser instance or NULL if an error occurred.
  *
@@ -68,7 +71,7 @@ typedef struct qparse_t {
  *
  * @note This function is thread safe.
  */
-qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf);
+qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf, qcore_env_t env);
 
 /**
  * @brief Free a parser instance.

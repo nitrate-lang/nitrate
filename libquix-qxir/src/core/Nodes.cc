@@ -54,13 +54,9 @@ namespace qxir {
   thread_local ArenaAllocatorImpl qxir_arena;
 }
 
-ArenaAllocatorImpl::ArenaAllocatorImpl() { qcore_arena_open(&m_arena); }
-
-ArenaAllocatorImpl::~ArenaAllocatorImpl() { qcore_arena_close(&m_arena); }
-
 void *ArenaAllocatorImpl::allocate(std::size_t size) {
   const std::size_t alignment = 16;
-  return qcore_arena_alloc_ex(&m_arena, size, alignment);
+  return qcore_arena_alloc_ex(m_arena.get(), size, alignment);
 }
 
 void ArenaAllocatorImpl::deallocate(void *ptr) noexcept { (void)ptr; }

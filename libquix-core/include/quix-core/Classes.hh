@@ -29,62 +29,40 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_ENV_H__
-#define __QUIX_CORE_ENV_H__
+#ifndef __QUIX_CORE_CLASSES_H__
+#define __QUIX_CORE_CLASSES_H__
 
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
+#ifndef __cplusplus
+#error "This header is for C++ only."
 #endif
 
-typedef uintptr_t qcore_env_t;
+#include <quix-core/Arena.h>
+#include <quix-core/Env.h>
 
-/**
- * @brief Create a new environment.
- * @return The environment handle otherwise a NOP if the environment already exists.
- */
-qcore_env_t qcore_env_create(qcore_env_t env);
+#include <random>
 
-/**
- * @brief Drop a reference to an environment.
- * @param env The environment handle.
- * @note The environment will be destroyed when the last reference is dropped.
- */
-void qcore_env_destroy(qcore_env_t env);
+class qcore_arena final {
+  qcore_arena_t m_arena;
 
-/**
- * @brief Get the current environment.
- * @return The current environment handle.
- */
-qcore_env_t qcore_env_current();
+public:
+  qcore_arena() { qcore_arena_open(&m_arena); }
+  ~qcore_arena() { qcore_arena_close(&m_arena); }
 
-/**
- * @brief Set the current environment.
- * @param env The environment handle.
- */
-void qcore_env_set_current(qcore_env_t env);
+  qcore_arena_t *get() { return &m_arena; }
+};
 
-/**
- * @brief Get the value of an environment variable.
- * @param key The environment variable key.
- * @return The value of the environment variable, or NULL to unset the variable.
- * @note Strings will be cloned internally.
- */
-void qcore_env_set(const char *key, const char *value);
+class qcore_env final {
+  qcore_env_t m_env;
 
-#define qcore_env_unset(key) qcore_env_set(key, NULL)
+public:
+  qcore_env() {
+    std::random_device rd;
+    std::uniform_int_distribution<uintptr_t> gen;
+    m_env = qcore_env_create(gen(rd));
+  }
+  ~qcore_env() { qcore_env_destroy(m_env); }
 
-/**
- * @brief Get the value of an environment variable.
- * @param key The environment variable key.
- * @return The value of the environment variable, or NULL if the variable is not set.
- * @note Strings will be cloned internally.
- */
-const char *qcore_env_get(const char *key);
+  qcore_env_t &get() { return m_env; }
+};
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // __QUIX_CORE_ENV_H__
+#endif  // __QUIX_CORE_CLASSES_H__

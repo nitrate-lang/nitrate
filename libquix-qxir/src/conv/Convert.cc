@@ -48,6 +48,7 @@
 #include <core/Config.hh>
 #include <cstring>
 #include <diagnostic/Report.hh>
+#include <quix-qxir/Classes.hh>
 #include <sstream>
 #include <stack>
 #include <transform/PassManager.hh>
@@ -205,23 +206,12 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
 
 LIB_EXPORT bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mode, qxir_node_cb cb,
                                uint32_t argcnt, ...) {
-  qxir_conf_t *conf = nullptr;
-  qmodule_t *mod = nullptr;
+  qxir_conf conf;
+  qmodule mod(nullptr, conf.get(), nullptr);
 
-  if ((conf = qxir_conf_new(true)) == nullptr) {
-    return false;
-  }
+  (void)qxir_lower(mod.get(), base, false);
 
-  if ((mod = qxir_new(nullptr, conf, nullptr)) == nullptr) {
-    qxir_conf_free(conf);
-    return false;
-  }
-
-  (void)qxir_lower(mod, base, false);
-
-  if (!mod->getRoot()) {
-    qxir_free(mod);
-    qxir_conf_free(conf);
+  if (!mod.get()->getRoot()) {
     return false;
   }
 
@@ -240,17 +230,12 @@ LIB_EXPORT bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mod
       return qxir::IterOp::Proceed;
     };
 
-    qxir::iterate<qxir::dfs_pre, qxir::IterMP::none>(mod->getRoot(), ucb);
+    qxir::iterate<qxir::dfs_pre, qxir::IterMP::none>(mod.get()->getRoot(), ucb);
   }
 
-  if (!qxir_write(mod->getRoot(), mode, out, nullptr, 0)) {
-    qxir_free(mod);
-    qxir_conf_free(conf);
+  if (!qxir_write(mod.get()->getRoot(), mode, out, nullptr, 0)) {
     return false;
   }
-
-  qxir_free(mod);
-  qxir_conf_free(conf);
 
   return true;
 }

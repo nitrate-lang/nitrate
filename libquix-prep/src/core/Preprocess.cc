@@ -56,7 +56,6 @@ extern "C" {
 #include <unordered_map>
 #include <unordered_set>
 
-
 using namespace qcall;
 
 #define MAX_RECURSION_DEPTH 4096
@@ -317,25 +316,25 @@ qlex_t *qprep_impl_t::weak_clone(FILE *file, const char *filename) {
     throw StopException();
   }
 
-  qprep_impl_t *clone = new qprep_impl_t(file, filename);
+  qprep_impl_t *clone = new qprep_impl_t(file, filename, m_env);
 
   clone->m_core = m_core;
   clone->replace_interner(m_strings);
-  clone->m_env = m_env;
   clone->m_flags = m_flags;
   clone->m_depth = m_depth + 1;
 
   return clone;
 }
 
-qprep_impl_t::qprep_impl_t(FILE *file, const char *filename) : qlex_t(file, filename, false) {
+qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, qcore_env_t env)
+    : qlex_t(file, filename, false, env) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
   m_depth = 0;
 }
 
-qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned)
-    : qlex_t(file, filename, is_owned) {
+qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned, qcore_env_t env)
+    : qlex_t(file, filename, is_owned, env) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
   m_depth = 0;
@@ -355,9 +354,9 @@ qprep_impl_t::~qprep_impl_t() {}
 
 ///=============================================================================
 
-LIB_EXPORT qlex_t *qprep_new(FILE *file, const char *filename) {
+LIB_EXPORT qlex_t *qprep_new(FILE *file, const char *filename, qcore_env_t env) {
   try {
-    return new qprep_impl_t(file, filename, false);
+    return new qprep_impl_t(file, filename, false, env);
   } catch (std::bad_alloc &) {
     return nullptr;
   } catch (...) {
