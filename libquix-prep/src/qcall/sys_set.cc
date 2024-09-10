@@ -53,11 +53,13 @@ int qcall::sys_set(lua_State* L) {
     return luaL_error(L, "expected string, got %s", lua_typename(L, lua_type(L, 1)));
   }
 
-  if (!lua_isstring(L, 2)) {
-    return luaL_error(L, "expected string, got %s", lua_typename(L, lua_type(L, 2)));
+  if (lua_isnil(L, 2)) {
+    qcore_env_set(lua_tostring(L, 1), nullptr);
+  } else if (lua_isstring(L, 2)) {
+    qcore_env_set(lua_tostring(L, 1), lua_tostring(L, 2));
+  } else {
+    return luaL_error(L, "expected string or nil, got %s", lua_typename(L, lua_type(L, 2)));
   }
-
-  qcore_env_set(lua_tostring(L, 1), lua_tostring(L, 2));
 
   return 0;
 }

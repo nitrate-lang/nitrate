@@ -410,7 +410,7 @@ qlex_loc_t qlex_t::cur_loc() { return save_loc(m_row, m_col, m_offset); }
 ///============================================================================///
 
 void qlex_t::push_impl(const qlex_tok_t *tok) {
-  m_tok_buf.push_back(*tok);
+  m_tok_buf.insert(m_tok_buf.begin(), *tok);
   m_next_tok.ty = qErro;
 }
 
@@ -541,16 +541,13 @@ qlex_tok_t qlex_t::step_buffer() {
   qlex_tok_t tok;
 
   if (!m_tok_buf.empty()) {
-    tok = m_tok_buf.front();
-    m_tok_buf.pop_front();
+    tok = m_tok_buf.back();
+    m_tok_buf.pop_back();
     return tok;
   }
 
   try {
     m_tok_buf.push_back(next_impl());
-    tok = m_tok_buf.front();
-    m_tok_buf.pop_front();
-    return tok;
   } catch (GetCExcept &) {
     if (m_tok_buf.empty()) {
       tok.ty = qEofF;

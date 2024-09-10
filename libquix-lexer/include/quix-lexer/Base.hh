@@ -68,7 +68,7 @@ private:
   qlex_size m_getc_pos;
   std::array<char, GETC_BUFFER_SIZE> m_getc_buf;
 
-  std::deque<qlex_tok_t> m_tok_buf;
+  std::vector<qlex_tok_t> m_tok_buf;
   std::deque<char> m_pushback;
 
   qlex_tok_t m_next_tok;
