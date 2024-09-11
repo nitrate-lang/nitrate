@@ -310,7 +310,11 @@ static bool validate_identifier(std::string_view id) {
 }
 
 static NumType check_number_literal_type(qlex::num_buf_t &input) {
-  if (num_cache.find(input) != num_cache.end()) return num_cache[input];
+  if (num_cache.size() > 4096) {
+    num_cache = {};
+  } else if (num_cache.find(input) != num_cache.end()) {
+    return num_cache[input];
+  }
 
   if (input.empty()) return num_cache[input] = NumType::Invalid;
 
@@ -399,7 +403,9 @@ static bool canonicalize_float(std::string_view input, std::string &norm) {
 }
 
 static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumType type) {
-  if (can_cache.find(number) != can_cache.end()) {
+  if (can_cache.size() > 4096) {
+    can_cache = {};
+  } else if (can_cache.find(number) != can_cache.end()) {
     return norm = can_cache[number], true;
   }
 
