@@ -313,11 +313,6 @@ void qprep_impl_t::install_lua_api() {
 }
 
 qlex_t *qprep_impl_t::weak_clone(FILE *file, const char *filename) {
-  if (m_depth > MAX_RECURSION_DEPTH) {
-    qcore_print(QCORE_FATAL, "Maximum macro recursion depth reached\n");
-    throw StopException();
-  }
-
   qprep_impl_t *clone = new qprep_impl_t(file, filename, m_env);
 
   clone->m_core = m_core;
