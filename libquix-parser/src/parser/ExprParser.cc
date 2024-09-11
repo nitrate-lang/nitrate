@@ -29,15 +29,18 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstddef>
-#include <string_view>
 #define __QUIX_IMPL__
 
 #include <parser/Parse.h>
 
+#include <cstddef>
 #include <stack>
+#include <stdexcept>
+#include <string_view>
 
 #define MAX_EXPR_DEPTH (10000)
+
+#define MAX_LIST_DUP (10000)
 
 using namespace qparse;
 using namespace qparse::parser;
@@ -473,8 +476,20 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
                     syntax(tok, "Expected a constant integer in list element");
                     return false;
                   }
+                  size_t count_val = 0;
 
-                  size_t count_val = std::atoi(count->as<ConstInt>()->get_value().c_str());
+                  try {
+                    count_val = std::stoi(count->as<ConstInt>()->get_value().c_str());
+                  } catch (std::out_of_range &) {
+                    syntax(tok, "Expected a constant integer in list element. std::stoi() failed");
+                    return false;
+                  }
+
+                  if (count_val > MAX_LIST_DUP) {
+                    syntax(tok, "List element duplication count exceeds the maximum limit");
+                    return false;
+                  }
+
                   for (size_t i = 0; i < count_val; i++) {
                     elements.push_back(element);
                   }
