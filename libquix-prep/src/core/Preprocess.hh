@@ -44,6 +44,8 @@
 
 struct lua_State;
 
+extern std::string_view quix_code_prefix;
+
 struct qprep_impl_t final : public qlex_t {
   struct Core {
     std::unordered_set<std::string_view> macros_funcs;

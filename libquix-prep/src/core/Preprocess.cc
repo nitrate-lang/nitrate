@@ -343,6 +343,9 @@ qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned, qcor
     /* Install the QUIX API */
     install_lua_api();
   }
+
+  // Run the standard language prefix
+  expand_raw(quix_code_prefix);
 }
 
 qprep_impl_t::~qprep_impl_t() {}
