@@ -61,6 +61,7 @@ s.json
 app
 main.c
 libquix-lexer/fuzzer/corpus/*
+libquix-prep/fuzzer/corpus/*
 fuzz-*.log
 libquix-parser/fuzzer/corpus/*
 libquix-qxir/fuzzer/corpus/*

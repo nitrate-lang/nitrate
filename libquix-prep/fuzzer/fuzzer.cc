@@ -1,10 +1,24 @@
-#include <quix-prep/Lib.h>
-
-#include <stdexcept>
+#include <quix-core/Classes.hh>
+#include <quix-prep/Classes.hh>
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
-  (void)Data;
-  (void)Size;
-  throw std::runtime_error("Not implemented");
+  if (Size == 0) {
+    return 0;
+  }
+
+  qcore_fuzzing = false;
+
+  FILE *fp = fmemopen((void *)Data, Size, "r");
+  if (fp == NULL) {
+    return 0;
+  }
+
+  qcore_env env;
+  qprep lex(fp, nullptr, env.get());
+
+  while (qlex_next(lex.get()).ty != qEofF);
+
+  fclose(fp);
+
   return 0;
 }
