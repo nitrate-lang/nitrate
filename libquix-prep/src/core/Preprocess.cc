@@ -300,7 +300,6 @@ qlex_tok_t qprep_impl_t::next_impl() {
 
 void qprep_impl_t::install_lua_api() {
   lua_newtable(m_core->L);
-  lua_newtable(m_core->L);
 
   for (const auto &qcall : qsyscalls) {
     lua_pushinteger(m_core->L, (lua_Integer)(uintptr_t)this);
@@ -308,7 +307,6 @@ void qprep_impl_t::install_lua_api() {
     lua_setfield(m_core->L, -2, qcall.getName().data());
   }
 
-  lua_setfield(m_core->L, -2, "api");
   lua_setglobal(m_core->L, "quix");
 }
 
