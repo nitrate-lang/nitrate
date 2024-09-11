@@ -50,7 +50,9 @@ struct Environment {
 static std::unordered_map<qcore_env_t, Environment> g_envs;
 static std::mutex g_envs_mutex;
 static thread_local qcore_env_t g_current_env = 0;
-LIB_EXPORT bool qcore_fuzzing = true;
+extern "C" {
+__attribute__((visibility("default"))) bool qcore_fuzzing = true;
+}
 
 LIB_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
