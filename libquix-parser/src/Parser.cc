@@ -455,7 +455,7 @@ static void _signal_hander(int sig) {
 }
 
 static void install_sigguard(qparse_t *parser) {
-  if (parser->conf->has(QPK_CRASHGUARD, QPV_OFF)) {
+  if (parser->conf->has(QPK_CRASHGUARD, QPV_OFF) || qcore_fuzzing) {
     return;
   }
 
@@ -477,7 +477,11 @@ static void install_sigguard(qparse_t *parser) {
   }
 }
 
-static void uninstall_sigguard() {
+static void uninstall_sigguard(qparse_t *parser) {
+  if (parser->conf->has(QPK_CRASHGUARD, QPV_OFF) || qcore_fuzzing) {
+    return;
+  }
+
   std::lock_guard<std::mutex> lock(sigguard_lock);
 
   if (--sigguard_refcount > 0) {
@@ -527,7 +531,7 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
     /*==== Clean up signal handling for the parser
      * ====*/
     parser_ctx = nullptr;
-    uninstall_sigguard();
+    uninstall_sigguard(parser);
 
     /*== Uninstall thread-local references to the
      * parser ==*/
