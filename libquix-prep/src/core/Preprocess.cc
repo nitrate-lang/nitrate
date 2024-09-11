@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "quix-core/Env.h"
 #define __QUIX_IMPL__
 
 #include <core/LibMacro.h>
@@ -40,7 +39,10 @@
 #include <quix-prep/Lib.h>
 
 #include <core/Preprocess.hh>
+#include <cstddef>
 #include <qcall/List.hh>
+
+#include "quix-core/Env.h"
 
 extern "C" {
 #include <lua/lauxlib.h>
@@ -57,7 +59,7 @@ extern "C" {
 
 using namespace qcall;
 
-#define MAX_RECURSION_DEPTH 4096
+#define MAX_RECURSION_DEPTH 256
 
 ///=============================================================================
 
@@ -149,10 +151,27 @@ bool qprep_impl_t::run_and_expand(std::string_view code) {
 
 void qprep_impl_t::eof_callback() { qlex_t::eof_callback(); }
 
+class RecursiveGuard {
+  size_t &m_depth;
+
+public:
+  RecursiveGuard(size_t &depth) : m_depth(depth) { m_depth++; }
+  ~RecursiveGuard() { m_depth--; }
+
+  bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
+};
+
 qlex_tok_t qprep_impl_t::next_impl() {
   qlex_tok_t x;
 
   try {
+    RecursiveGuard guard(m_depth);
+
+    if (guard.should_stop()) {
+      qcore_print(QCORE_FATAL, "Maximum macro recursion depth reached\n");
+      throw StopException();
+    }
+
     x = qlex_t::next_impl();
 
     if (m_do_expanse) {
