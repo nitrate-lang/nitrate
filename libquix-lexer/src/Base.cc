@@ -543,17 +543,13 @@ qlex_tok_t qlex_t::step_buffer() {
   if (!m_tok_buf.empty()) {
     tok = m_tok_buf.back();
     m_tok_buf.pop_back();
-    return tok;
-  }
-
-  try {
-    m_tok_buf.push_back(next_impl());
-  } catch (GetCExcept &) {
-    if (m_tok_buf.empty()) {
+  } else {
+    try {
+      m_tok_buf.push_back(next_impl());
+    } catch (GetCExcept &) {
       tok.ty = qEofF;
-      return tok;
     }
   }
 
-  return step_buffer();
+  return tok;
 }
