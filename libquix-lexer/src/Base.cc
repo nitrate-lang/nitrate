@@ -546,6 +546,8 @@ qlex_tok_t qlex_t::step_buffer() {
   } else {
     try {
       m_tok_buf.push_back(next_impl());
+      tok = m_tok_buf.back();
+      m_tok_buf.pop_back();
     } catch (GetCExcept &) {
       tok.ty = qEofF;
     }

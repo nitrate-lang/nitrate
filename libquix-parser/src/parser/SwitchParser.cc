@@ -50,8 +50,7 @@ bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
     syntax(tok, "Expected '{' after switch condition");
   }
 
-  while (true) {
-    tok = qlex_peek(rd);
+  while ((tok = qlex_peek(rd)).ty != qEofF) {
     if (tok.is<qPuncRCur>()) {
       break;
     }
