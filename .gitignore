@@ -68,3 +68,5 @@ libquix-qxir/fuzzer/corpus/*
 *.snap
 source.q
 hello.tree
+lex-aware-fuzzer.txt
+bugs/
