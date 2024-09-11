@@ -24,51 +24,46 @@ static void print_token(qlex_t *lexer, qlex_tok_t tok, std::ostream &out) {
 
   switch (tok.ty) {
     case qEofF:
-      out << "EOF()";
       break;
     case qErro:
-      out << "ERRO()";
+      out << "$$$ERROR$$$";
       break;
     case qKeyW:
-      out << "KEYW(" << qlex_kwstr(tok.v.key) << ")";
+      out << qlex_kwstr(tok.v.key);
       break;
     case qOper:
-      out << "OPER(" << qlex_opstr(tok.v.op) << ")";
+      out << qlex_opstr(tok.v.op);
       break;
     case qPunc:
-      out << "PUNC(" << qlex_punctstr(tok.v.punc) << ")";
+      out << qlex_punctstr(tok.v.punc);
       break;
     case qName:
-      out << "NAME(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << std::string_view(qlex_str(lexer, &tok, &len), len);
       break;
     case qIntL:
-      out << "INTL(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << std::string_view(qlex_str(lexer, &tok, &len), len);
       break;
     case qNumL:
-      out << "NUML(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << std::string_view(qlex_str(lexer, &tok, &len), len);
       break;
     case qText:
-      out << "TEXT(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "\"" << std::string_view(qlex_str(lexer, &tok, &len), len) << "\"";
       break;
     case qChar:
-      out << "CHAR(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "'" << std::string_view(qlex_str(lexer, &tok, &len), len) << "'";
       break;
     case qMacB:
-      out << "MACB(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "@(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
       break;
     case qMacr:
-      out << "MACR(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
+      out << "@" << std::string_view(qlex_str(lexer, &tok, &len), len);
       break;
     case qNote:
-      out << "NOTE(" << std::string_view(qlex_str(lexer, &tok, &len), len) << ")";
-      break;
-
-    default:
-      out << "UNKNOWN(" << tok.ty << ")";
+      out << "/*" << std::string_view(qlex_str(lexer, &tok, &len), len) << "*/";
       break;
   }
 
-  out << "\n";
+  out << " ";
 }
 
 static std::string_view random_ascii_stringid() {
