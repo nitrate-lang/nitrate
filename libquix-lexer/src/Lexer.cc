@@ -561,7 +561,7 @@ qlex_tok_t qlex_t::next_impl() {
 
       switch (state) {
         case LexState::Start: {
-          if (c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+          if (std::isspace(c)) {
             continue;
           } else if (std::isalpha(c) || c == '_') {
             /* Identifier or keyword or operator */
@@ -942,7 +942,7 @@ qlex_tok_t qlex_t::next_impl() {
           } else {
             do {
               c = getc();
-            } while (c == ' ' || c == '\t' || c == '\\');
+            } while (std::isspace(c) || c == '\\');
 
             if (c == buf[0]) {
               continue;
