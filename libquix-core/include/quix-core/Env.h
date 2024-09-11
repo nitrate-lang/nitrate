@@ -104,6 +104,8 @@ static inline int qcore_writef(const char *fmt, ...) {
   return ret;
 }
 
+extern bool qcore_fuzzing;
+
 static inline int qcore_write(const char *msg) { return qcore_writef("%s", msg); }
 
 #define qcore_print(_lvl, ...) \

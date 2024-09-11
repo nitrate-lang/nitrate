@@ -50,6 +50,7 @@ struct Environment {
 static std::unordered_map<qcore_env_t, Environment> g_envs;
 static std::mutex g_envs_mutex;
 static thread_local qcore_env_t g_current_env = 0;
+LIB_EXPORT bool qcore_fuzzing = true;
 
 LIB_EXPORT qcore_env_t qcore_env_create(qcore_env_t env) {
   std::lock_guard<std::mutex> lock(g_envs_mutex);
@@ -121,27 +122,32 @@ LIB_EXPORT void qcore_end() {
 
   qcore_assert(g_envs.count(g_current_env), "Current environment does not exist.");
 
+  if (!qcore_fuzzing) {
+    return;
+  }
+
   std::string message = g_envs[g_current_env].log_buffer.str();
+  std::ostream &ss = std::cerr;
 
   switch (g_envs[g_current_env].log_level) {
     case QCORE_DEBUG:
-      std::cerr << "[DEBUG] " << message << std::endl;
+      ss << "[DEBUG] " << message << std::endl;
       break;
 
     case QCORE_INFO:
-      std::cerr << "[INFO] " << message << std::endl;
+      ss << "[INFO] " << message << std::endl;
       break;
 
     case QCORE_WARN:
-      std::cerr << "[WARN] " << message << std::endl;
+      ss << "[WARN] " << message << std::endl;
       break;
 
     case QCORE_ERROR:
-      std::cerr << "[ERROR] " << message << std::endl;
+      ss << "[ERROR] " << message << std::endl;
       break;
 
     case QCORE_FATAL:
-      std::cerr << "[FATAL] " << message << std::endl;
+      ss << "[FATAL] " << message << std::endl;
       break;
   }
 }
