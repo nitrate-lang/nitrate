@@ -70,7 +70,7 @@ void do_lex(FILE *file) {
 
   while (true) {
     tok = qlex_next(lexer.get());
-    if (tok.ty == qEofF || tok.ty == qErro) {
+    if (tok.ty == qEofF) {
       break;
     }
     print_token(lexer.get(), tok, out);
