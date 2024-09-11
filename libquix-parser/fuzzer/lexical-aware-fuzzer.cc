@@ -14,6 +14,7 @@
 #include <string_view>
 
 #define FEEDBACK_INTERVAL 1
+#define SAVE_COUNTER_FILE_INTERVAL 1000
 #define BYTESTR_SIZE 4
 #define ASCII_SIZE 4
 
@@ -222,6 +223,14 @@ int main(int argc, char **argv) {
     if ((seed % FEEDBACK_INTERVAL) == 0) {
       printf("\rLast: 0x%016lx, Next: 0x%016lx ", seed, seed + 1);
       fflush(stdout);
+    }
+
+    if ((seed % SAVE_COUNTER_FILE_INTERVAL) == 0) {
+      FILE *f = fopen("lex-aware-fuzzer.txt", "w");
+      if (f) {
+        fprintf(f, "0x%016lx", seed);
+        fclose(f);
+      }
     }
 
     seed++;
