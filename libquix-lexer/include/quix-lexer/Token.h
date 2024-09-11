@@ -55,20 +55,19 @@ typedef enum qlex_ty_t {
 } __attribute__((packed)) qlex_ty_t;
 
 typedef enum qlex_punc_t {
-  qPuncLPar = 1, /* Left parenthesis */
-  qPuncRPar,     /* Right parenthesis */
-  qPuncLBrk,     /* Left bracket */
-  qPuncRBrk,     /* Right bracket */
-  qPuncLCur,     /* Left curly brace */
-  qPuncRCur,     /* Right curly brace */
-  qPuncComa,     /* Comma */
-  qPuncColn,     /* Colon */
-  qPuncSemi,     /* Semicolon */
+  qPuncLPar, /* Left parenthesis */
+  qPuncRPar, /* Right parenthesis */
+  qPuncLBrk, /* Left bracket */
+  qPuncRBrk, /* Right bracket */
+  qPuncLCur, /* Left curly brace */
+  qPuncRCur, /* Right curly brace */
+  qPuncComa, /* Comma */
+  qPuncColn, /* Colon */
+  qPuncSemi, /* Semicolon */
 } __attribute__((packed)) qlex_punc_t;
 
 typedef enum qlex_op_t {
-  qOpUnknown = 0, /* Unknown operator */
-  qOpTernary = 1, /* '?:': Ternary operator */
+  qOpTernary,     /* '?:': Ternary operator */
   qOpArrow,       /* '=>': Arrow operator */
   qOpDot,         /* '.': Dot operator */
   qOpPlus,        /* '+': Addition operator */
@@ -220,7 +219,7 @@ typedef struct qlex_tok_t final {
 
   uint64_t pad : 4;
 
-  qlex_tok_t() : ty(qEofF), start({}), end({}), v{.str_idx = 0} {}
+  qlex_tok_t() : ty(qErro), start({}), end({}), v{.str_idx = 0} {}
 
   qlex_tok_t(qlex_ty_t ty, qlex_punc_t punc, qlex_loc_t loc_beg = {}, qlex_loc_t loc_end = {})
       : ty(ty), start(loc_beg), end(loc_end), v{.punc = punc} {}

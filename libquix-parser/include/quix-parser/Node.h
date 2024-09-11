@@ -1022,7 +1022,7 @@ namespace qparse {
     qlex_op_t m_op;
 
   public:
-    UnaryExpr(qlex_op_t op = qOpUnknown, Expr *rhs = nullptr) : m_rhs(rhs), m_op(op) {}
+    UnaryExpr(qlex_op_t op = qOpTernary, Expr *rhs = nullptr) : m_rhs(rhs), m_op(op) {}
 
     Expr *get_rhs() const { return m_rhs; }
     void set_rhs(Expr *rhs) { m_rhs = rhs; }
@@ -1040,7 +1040,7 @@ namespace qparse {
     qlex_op_t m_op;
 
   public:
-    BinExpr(Expr *lhs = nullptr, qlex_op_t op = qOpUnknown, Expr *rhs = nullptr)
+    BinExpr(Expr *lhs = nullptr, qlex_op_t op = qOpTernary, Expr *rhs = nullptr)
         : m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *get_lhs() const { return m_lhs; }
@@ -1061,7 +1061,7 @@ namespace qparse {
     qlex_op_t m_op;
 
   public:
-    PostUnaryExpr(Expr *lhs = nullptr, qlex_op_t op = qOpUnknown) : m_lhs(lhs), m_op(op) {}
+    PostUnaryExpr(Expr *lhs = nullptr, qlex_op_t op = qOpTernary) : m_lhs(lhs), m_op(op) {}
 
     Expr *get_lhs() const { return m_lhs; }
     void set_lhs(Expr *lhs) { m_lhs = lhs; }
