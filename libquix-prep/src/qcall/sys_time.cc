@@ -31,39 +31,28 @@
 
 #define __QUIX_IMPL__
 
+#include <chrono>
 #include <qcall/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-#include <unordered_map>
-
-static const std::unordered_map<std::string_view, std::string_view (*)(void)> comp_versions;
-
-int qcall::sys_verof(lua_State* L) {
+int qcall::sys_time(lua_State* L) {
   /**
-   * @brief Get the version of a component.
+   * @brief Get the current UNIX timestamp in milliseconds
    */
 
   int nargs = lua_gettop(L);
-  if (nargs != 1) {
-    return luaL_error(L, "Invalid number of arguments: expected 1, got %d", nargs);
+  if (nargs != 0) {
+    return luaL_error(L, "Expected 0 arguments, got %d", nargs);
   }
 
-  if (!lua_isstring(L, 1)) {
-    return luaL_error(L, "Invalid argument #1: expected string, got %s",
-                      lua_typename(L, lua_type(L, 1)));
-  }
+  auto now = std::chrono::system_clock::now();
+  auto epoch = now.time_since_epoch();
+  auto milli_seconds = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
 
-  std::string_view name = lua_tostring(L, 1);
+  lua_pushinteger(L, milli_seconds.count());
 
-  if (comp_versions.contains(name)) {
-    lua_pushstring(L, comp_versions.at(name)().data());
-    return 1;
-  }
-
-  luaL_error(L, "Unknown component: %s", name.data());
-
-  return 0;
+  return 1;
 }

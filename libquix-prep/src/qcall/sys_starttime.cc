@@ -29,51 +29,43 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <exception>
 #define __QUIX_IMPL__
 
 #include <quix-core/Env.h>
+#include <quix-core/Error.h>
 
 #include <qcall/List.hh>
+#include <string>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-static const std::vector<std::string_view> immutable_namespaces = {"this."};
-
-int qcall::sys_set(lua_State* L) {
+int qcall::sys_starttime(lua_State* L) {
   /**
-   * @brief Set named value to the environment.
+   * @brief Get the start time in milliseconds
    */
 
   int nargs = lua_gettop(L);
-  if (nargs != 2) {
-    return luaL_error(L, "expected 2 arguments, got %d", nargs);
+  if (nargs != 0) {
+    return luaL_error(L, "Expected 0 arguments, got %d", nargs);
   }
 
-  if (!lua_isstring(L, 1)) {
-    return luaL_error(L, "expected string, got %s", lua_typename(L, lua_type(L, 1)));
+  const char* starttime = qcore_env_get("this.created_at");
+
+  if (starttime == nullptr) {
+    qcore_panic("Failed to get the start time of the compiler");
   }
 
-  std::string_view key = lua_tostring(L, 1);
-
-  if (key.empty()) {
-    return luaL_error(L, "expected non-empty string, got empty string");
+  int64_t start_time;
+  try {
+    start_time = std::stoll(starttime);
+  } catch (const std::exception& e) {
+    qcore_panicf("Failed to convert the start time to an integer: %s", e.what());
   }
 
-  for (const auto& ns : immutable_namespaces) {
-    if (key.starts_with(ns)) {
-      return luaL_error(L, "cannot set items in immutable namespace");
-    }
-  }
+  lua_pushinteger(L, start_time);
 
-  if (lua_isnil(L, 2)) {
-    qcore_env_set(key.data(), nullptr);
-  } else if (lua_isstring(L, 2)) {
-    qcore_env_set(key.data(), lua_tostring(L, 2));
-  } else {
-    return luaL_error(L, "expected string or nil, got %s", lua_typename(L, lua_type(L, 2)));
-  }
-
-  return 0;
+  return 1;
 }

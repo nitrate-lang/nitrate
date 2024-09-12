@@ -42,6 +42,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <chrono>
 #include <random>
 
 class qcore_arena final {
@@ -64,7 +65,7 @@ public:
     m_env = qcore_env_create(gen(rd));
     qcore_env_set_current(m_env);
 
-    { // Set a random job ID
+    {  // Set a random job ID
       boost::uuids::random_generator gen;
       boost::uuids::uuid uuid = gen();
       std::string uuid_str = boost::uuids::to_string(uuid);
@@ -73,6 +74,14 @@ public:
 
     // Set the default QUIX FS server port
     qcore_env_set("this.srvport", "52781");
+
+    {  // Set the compiler start time
+      std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+      std::chrono::milliseconds ms =
+          std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+
+      qcore_env_set("this.created_at", std::to_string(ms.count()).c_str());
+    }
   }
   ~qcore_env() { qcore_env_destroy(m_env); }
 

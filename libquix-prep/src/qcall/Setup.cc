@@ -34,8 +34,6 @@
 using namespace qcall;
 
 const std::vector<QSysCall> qcall::qsyscalls = {
-    {"verof", 0x0000, sys_verof}, /* Get information about the Quix compiler */
-
     {"next", 0x0010, sys_next}, /* Get the next token from the lexer */
     {"peek", 0x0011, sys_peek}, /* Peek at the next token from the lexer */
     {"emit", 0x0012, sys_emit}, /* Emit data subject to recursive expansion */
@@ -53,4 +51,7 @@ const std::vector<QSysCall> qcall::qsyscalls = {
     {"fetch", 0x0082, sys_fetch}, /* Fetch arbitrary data by URL using curl */
 
     {"random", 0x00A0, sys_random}, /* Get a cryptographic random number */
+
+    {"starttime", 0x00A1, sys_starttime}, /* Get the start time of the compiler in milliseconds */
+    {"time", 0x00A2, sys_time},           /* Get the current UNIX timestamp in milliseconds */
 };

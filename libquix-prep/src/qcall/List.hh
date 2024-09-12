@@ -58,12 +58,12 @@ namespace qcall {
 
   ///////////// BEGIN QCALL FUNCTIONS /////////////
 
-  int sys_verof(lua_State* L);
-
+  /* ==== Source processing ==== */
   int sys_next(lua_State* L);
   int sys_peek(lua_State* L);
   int sys_emit(lua_State* L);
 
+  /* ===== Message Logging ===== */
   int sys_debug(lua_State* L);
   int sys_info(lua_State* L);
   int sys_warn(lua_State* L);
@@ -71,12 +71,19 @@ namespace qcall {
   int sys_abort(lua_State* L);
   int sys_fatal(lua_State* L);
 
+  /* ====== Global State ======= */
   int sys_get(lua_State* L);
   int sys_set(lua_State* L);
 
+  /* ====== Data Feching ======= */
   int sys_fetch(lua_State* L);
 
+  /* ===== Non-Determinism ===== */
   int sys_random(lua_State* L);
+
+  /* ====== Time and Date ====== */
+  int sys_starttime(lua_State* L);
+  int sys_time(lua_State* L);
 
   ////////////// END QCALL FUNCTIONS //////////////
 
