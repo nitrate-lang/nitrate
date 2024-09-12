@@ -1974,17 +1974,11 @@ namespace qxir {
          ++it) {
       auto result = qconv_any(s, *it);
       for (auto &item : result) {
-        items.push_back(item);
+        items.push_back(create<Extern>(item, abi_name));
       }
     }
 
-    if (items.size() == 1) {
-      return {create<Extern>(items.front(), abi_name)};
-    } else {
-      SeqItems seq_items;
-      seq_items.insert(seq_items.end(), items.begin(), items.end());
-      return {create<Extern>(create<Seq>(std::move(seq_items)), abi_name)};
-    }
+    return items;
   }
 
   static Expr *qconv_composite_field(ConvState &s, const qparse::CompositeField *n) {
