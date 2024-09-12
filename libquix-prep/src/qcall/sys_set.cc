@@ -53,10 +53,24 @@ int qcall::sys_set(lua_State* L) {
     return luaL_error(L, "expected string, got %s", lua_typename(L, lua_type(L, 1)));
   }
 
+  std::string_view key = lua_tostring(L, 1);
+
+  if (key.empty()) {
+    return luaL_error(L, "expected non-empty string, got empty string");
+  }
+
+  static const std::vector<std::string_view> immutable_namespaces = {"this."};
+
+  for (const auto& ns : immutable_namespaces) {
+    if (key.starts_with(ns)) {
+      return luaL_error(L, "cannot set items in immutable namespace");
+    }
+  }
+
   if (lua_isnil(L, 2)) {
-    qcore_env_set(lua_tostring(L, 1), nullptr);
+    qcore_env_set(key.data(), nullptr);
   } else if (lua_isstring(L, 2)) {
-    qcore_env_set(lua_tostring(L, 1), lua_tostring(L, 2));
+    qcore_env_set(key.data(), lua_tostring(L, 2));
   } else {
     return luaL_error(L, "expected string or nil, got %s", lua_typename(L, lua_type(L, 2)));
   }
