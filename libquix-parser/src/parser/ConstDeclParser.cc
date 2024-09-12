@@ -68,29 +68,7 @@ bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> 
   qlex_tok_t tok = qlex_next(rd);
 
   std::vector<std::pair<std::string, Type *>> decls;
-  bool multi_decl = false;
-  if (tok.is<qPuncLBrk>()) {
-    multi_decl = true;
-
-    while ((tok = qlex_peek(rd)).ty != qEofF) {
-      if (tok.is<qPuncRBrk>()) {
-        qlex_next(rd);
-        break;
-      }
-
-      std::pair<std::string, Type *> decl;
-      if (!parse_decl(job, qlex_next(rd), rd, decl)) {
-        return false;
-      }
-
-      decls.push_back(decl);
-
-      tok = qlex_peek(rd);
-      if (tok.is<qPuncComa>()) {
-        qlex_next(rd);
-      }
-    }
-  } else if (tok.is(qName)) {
+  if (tok.is(qName)) {
     std::pair<std::string, Type *> decl;
     if (!parse_decl(job, tok, rd, decl)) {
       return false;
@@ -114,11 +92,6 @@ bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> 
       nodes.push_back(const_decl);
     }
   } else if (tok.is<qOpSet>()) {
-    if (multi_decl) {
-      /// TODO: Implement initializer for multiple declarations
-      qcore_implement("Initializer for multiple declarations");
-    }
-
     Expr *init = nullptr;
     if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &init) || !init) {
       syntax(tok, "Expected an expression after '=' in constant declaration");
