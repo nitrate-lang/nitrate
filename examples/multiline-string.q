@@ -6,4 +6,4 @@ subsystem std::history : [UnitedStatesHistory] {
                         "re the Blessings of Liberty to ourselves and our" \
                         " Posterity, do ordain and establish this Constit" \
                         "ution for the United States of America.";
-} impl [immutable];
+} with [immutable];

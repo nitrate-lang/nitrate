@@ -1,0 +1,1 @@
+@import "https://raw.githubusercontent.com/Kracken256/quix/main/examples/multiline-number.q";
