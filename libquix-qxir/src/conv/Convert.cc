@@ -1968,30 +1968,22 @@ namespace qxir {
       abi_name = memorize(n->get_abi_name());
     }
 
-    if (n->get_body()->get_items().size() == 1) {
-      auto item = qconv_one(s, n->get_body()->get_items().front());
-      if (!item) {
-        badtree(n, "qparse::ExportDecl::get_body() vector contains nullptr");
-        throw QError();
-      }
+    std::vector<qxir::Expr *> items;
 
-      return {create<Extern>(item, abi_name)};
-    } else {
-      SeqItems items;
-      items.reserve(n->get_body()->get_items().size());
-
-      for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
-           ++it) {
-        auto item = qconv_one(s, *it);
-        if (!item) {
-          badtree(n, "qparse::ExportDecl::get_body() vector contains nullptr");
-          throw QError();
-        }
-
+    for (auto it = n->get_body()->get_items().begin(); it != n->get_body()->get_items().end();
+         ++it) {
+      auto result = qconv_any(s, *it);
+      for (auto &item : result) {
         items.push_back(item);
       }
+    }
 
-      return {create<Extern>(create<Seq>(std::move(items)), abi_name)};
+    if (items.size() == 1) {
+      return {create<Extern>(items.front(), abi_name)};
+    } else {
+      SeqItems seq_items;
+      seq_items.insert(seq_items.end(), items.begin(), items.end());
+      return {create<Extern>(create<Seq>(std::move(seq_items)), abi_name)};
     }
   }
 
