@@ -728,44 +728,19 @@ namespace qxir {
       throw QError();
     }
 
-    bool has_named_param =
-        std::any_of(n->get_args().begin(), n->get_args().end(), [](const auto &p) {
-          if (p.first.empty()) {
-            badtree(nullptr, "Implicit positional argument is malformed");
-            throw QError();
-          }
-
-          return !std::isdigit(p.first[0]);
-        });
-
-    if (has_named_param) {
-      CallArgsTmpNodeCradle datapack;
-      for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
-        auto arg = qconv_one(s, it->second);
-        if (!arg) {
-          badtree(n, "qparse::Call::get_args() vector contains nullptr");
-          throw QError();
-        }
-
-        std::get<1>(datapack).push_back({memorize(it->first), arg});
-      }
-      std::get<0>(datapack) = target;
-
-      return create<Tmp>(TmpType::CALL, std::move(datapack));
-    } else {
-      CallArgs args;
-      for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
-        auto arg = qconv_one(s, it->second);
-        if (!arg) {
-          badtree(n, "qparse::Call::get_args() vector contains nullptr");
-          throw QError();
-        }
-
-        args.push_back(arg);
+    CallArgsTmpNodeCradle datapack;
+    for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
+      auto arg = qconv_one(s, it->second);
+      if (!arg) {
+        badtree(n, "qparse::Call::get_args() vector contains nullptr");
+        throw QError();
       }
 
-      return create<Call>(target, std::move(args));
+      std::get<1>(datapack).push_back({memorize(it->first), arg});
     }
+    std::get<0>(datapack) = target;
+
+    return create<Tmp>(TmpType::CALL, std::move(datapack));
   }
 
   static Expr *qconv_list(ConvState &s, const qparse::List *n) {
