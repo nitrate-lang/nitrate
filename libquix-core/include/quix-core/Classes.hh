@@ -39,6 +39,9 @@
 #include <quix-core/Arena.h>
 #include <quix-core/Env.h>
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <random>
 
 class qcore_arena final {
@@ -60,6 +63,16 @@ public:
     std::uniform_int_distribution<uintptr_t> gen;
     m_env = qcore_env_create(gen(rd));
     qcore_env_set_current(m_env);
+
+    { // Set a random job ID
+      boost::uuids::random_generator gen;
+      boost::uuids::uuid uuid = gen();
+      std::string uuid_str = boost::uuids::to_string(uuid);
+      qcore_env_set("this.job", uuid_str.c_str());
+    }
+
+    // Set the default QUIX FS server port
+    qcore_env_set("this.srvport", "52781");
   }
   ~qcore_env() { qcore_env_destroy(m_env); }
 
