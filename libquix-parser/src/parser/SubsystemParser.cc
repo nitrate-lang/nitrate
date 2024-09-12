@@ -43,26 +43,6 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   std::string name = tok.as_string(rd);
-
-  if (name.find("::") != std::string::npos) {
-    Stmt *sub = nullptr;
-
-    std::string subname = name.substr(0, name.find("::"));
-
-    qlex_tok_t newtok;
-    qlex_tok_fromstr(rd, qName, name.substr(name.find("::") + 2).c_str(), &newtok);
-    qlex_insert(rd, newtok);
-
-    if (!parse_subsystem(job, rd, &sub)) return false;
-
-    Block *block = Block::get();
-    block->add_item(sub);
-
-    *node = SubsystemDecl::get(subname, block);
-
-    return true;
-  }
-
   SubsystemDeps deps;
 
   tok = qlex_peek(rd);
