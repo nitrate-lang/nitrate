@@ -2,8 +2,9 @@
   "name": "quix",
   "displayName": "QUIX",
   "publisher": "qpkg",
-  "description": "QUIX syntax highlighting support ",
-  "version": "0.0.6",
+  "description": "QUIX syntax highlighting support",
+  "icon": "images/icon.png",
+  "version": "0.0.7",
   "repository": "https://github.com/Kracken256/quix/extensions/vscode/quix-syntax",
   "engines": {
     "vscode": "^1.92.0"
@@ -12,16 +13,30 @@
     "Programming Languages"
   ],
   "contributes": {
-    "languages": [{
-      "id": "quix",
-      "aliases": ["QUIX", "quix"],
-      "extensions": [".q",".qh"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "quix",
-      "scopeName": "source.q",
-      "path": "./syntaxes/quix.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "quix",
+        "aliases": [
+          "QUIX",
+          "quix"
+        ],
+        "extensions": [
+          ".q",
+          ".qh"
+        ],
+        "icon": {
+          "light": "./icons/icon-light.png",
+          "dark": "./icons/icon-dark.png"
+        },
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "quix",
+        "scopeName": "source.q",
+        "path": "./syntaxes/quix.tmLanguage.json"
+      }
+    ]
   }
 }
