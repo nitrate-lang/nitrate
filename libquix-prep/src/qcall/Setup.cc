@@ -47,7 +47,10 @@ const std::vector<QSysCall> qcall::qsyscalls = {
     {"abort", 0x0055, sys_abort}, /* Print an error message and stop the compiler */
     {"fatal", 0x0056, sys_fatal}, /* Print a fatal error message and stop the compiler */
 
-    {"get", 0x0080, sys_get},     /* Get a value from the environment */
-    {"fetch", 0x0081, sys_fetch}, /* Fetch arbitrary data by URL using curl */
-    {"set", 0x0082, sys_set},     /* Set a value in the environment */
+    {"get", 0x0080, sys_get}, /* Get a value from the environment */
+    {"set", 0x0081, sys_set}, /* Set a value in the environment */
+
+    {"fetch", 0x0082, sys_fetch}, /* Fetch arbitrary data by URL using curl */
+
+    {"random", 0x00A0, sys_random}, /* Get a cryptographic random number */
 };

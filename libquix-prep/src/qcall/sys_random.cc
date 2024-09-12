@@ -29,57 +29,72 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QPREP_QCALL_LIST_HH__
-#define __QPREP_QCALL_LIST_HH__
+#define __QUIX_IMPL__
 
-#include <cstdint>
-#include <string_view>
-#include <vector>
+#include <openssl/rand.h>
+#include <quix-core/Env.h>
 
-struct lua_State;
+#include <core/Preprocess.hh>
+#include <cstdio>
+#include <qcall/List.hh>
 
-namespace qcall {
-  typedef int (*qsyscall_t)(lua_State* L);
-  class QSysCall final {
-    std::string_view m_name;
-    uint32_t m_id;
-    qsyscall_t m_func;
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
-  public:
-    QSysCall(std::string_view name = "", uint32_t id = 0, qsyscall_t func = nullptr)
-        : m_name(name), m_id(id), m_func(func) {}
+int qcall::sys_random(lua_State* L) {
+  /**
+   * @brief Get a cryptographic random number (in the range [a, b]).
+   */
 
-    std::string_view getName() const { return m_name; }
-    uint32_t getId() const { return m_id; }
-    qsyscall_t getFunc() const { return m_func; }
-  };
+  int64_t min, max;
 
-  extern const std::vector<QSysCall> qsyscalls;
+  int nargs = lua_gettop(L);
+  if (nargs == 0) {
+    min = 0;
+    max = 0xff;
+  } else if (nargs == 1) {
+    min = 0;
+    if (lua_isnumber(L, 1)) {
+      max = lua_tointeger(L, 1);
+    } else {
+      return luaL_error(L, "Invalid argument #1: expected number, got %s",
+                        lua_typename(L, lua_type(L, 1)));
+    }
+  } else if (nargs == 2) {
+    if (lua_isnumber(L, 1)) {
+      min = lua_tointeger(L, 1);
+    } else {
+      return luaL_error(L, "Invalid argument #1: expected number, got %s",
+                        lua_typename(L, lua_type(L, 1)));
+    }
 
-  ///////////// BEGIN QCALL FUNCTIONS /////////////
+    if (lua_isnumber(L, 2)) {
+      max = lua_tointeger(L, 2);
+    } else {
+      return luaL_error(L, "Invalid argument #2: expected number, got %s",
+                        lua_typename(L, lua_type(L, 2)));
+    }
+  } else {
+    return luaL_error(L, "Expected at most two arguments, got %d", nargs);
+  }
 
-  int sys_verof(lua_State* L);
+  if (min > max) {
+    return luaL_error(L, "Invalid range: min > max");
+  }
 
-  int sys_next(lua_State* L);
-  int sys_peek(lua_State* L);
-  int sys_emit(lua_State* L);
+  union {
+    uint8_t buf[8];
+    uint64_t num;
+  } u;
 
-  int sys_debug(lua_State* L);
-  int sys_info(lua_State* L);
-  int sys_warn(lua_State* L);
-  int sys_error(lua_State* L);
-  int sys_abort(lua_State* L);
-  int sys_fatal(lua_State* L);
+  if (RAND_bytes(u.buf, sizeof(u.buf)) != 1) {
+    return luaL_error(L, "Failed to generate random number");
+  }
 
-  int sys_get(lua_State* L);
-  int sys_set(lua_State* L);
+  u.num = (u.num % (max - min + 1)) + min;
 
-  int sys_fetch(lua_State* L);
+  lua_pushinteger(L, u.num);
 
-  int sys_random(lua_State* L);
-
-  ////////////// END QCALL FUNCTIONS //////////////
-
-};  // namespace qcall
-
-#endif  // __QPREP_QCALL_LIST_HH__
+  return 1;
+}
