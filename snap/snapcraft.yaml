@@ -25,6 +25,8 @@ parts:
       - libcurlpp-dev
     stage-packages:
       - git
+      - libcurlpp0
+      - libdeflate0
       
 apps:
   qpkg:
