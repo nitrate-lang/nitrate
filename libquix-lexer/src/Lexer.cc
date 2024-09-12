@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstdint>
 #define __QUIX_IMPL__
 
 #include <quix-core/Error.h>
@@ -1110,8 +1111,10 @@ LIB_EXPORT qlex_size qlex_tok_size(qlex_t *lexer, const qlex_tok_t *tok) {
       case qChar:
       case qMacB:
       case qMacr:
-      case qNote:
-        return qlex_span(lexer, qlex_begin(tok), qlex_end(tok));
+      case qNote: {
+        qlex_size r = qlex_span(lexer, qlex_begin(tok), qlex_end(tok));
+        return r == UINT32_MAX ? 0 : r;
+      }
     }
   } catch (std::out_of_range &) {
     return 0;
