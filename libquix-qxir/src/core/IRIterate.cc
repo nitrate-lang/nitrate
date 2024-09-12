@@ -37,10 +37,9 @@
  * crash, so it should be easy to detect.
  */
 
-/* TODO: Optimize the heck out of this code */
-
 #define __QXIR_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
+
 #include <core/LibMacro.h>
 #include <quix-qxir/Node.h>
 
