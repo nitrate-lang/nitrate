@@ -270,7 +270,6 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
 
     qlex_size tok_beg_offset;
     char snippet_buf[SNIPPET_SIZE];
-    qlex_size tok_size = qlex_tok_size(obj, &tok);
     size_t curpos, seek_base_pos, read;
 
     { /* Convert the location to an offset into the source */
@@ -279,7 +278,7 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
         return nullptr; /* Return early if translation failed */
       }
 
-      tok_beg_offset = *src_offset_opt - tok_size - 1;
+      tok_beg_offset = *src_offset_opt - 1;
     }
 
     { /* Calculate offsets and seek to the correct position */
@@ -294,6 +293,7 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
 
     { /* Read the snippet and calculate token offset */
       read = fread(snippet_buf, 1, SNIPPET_SIZE, obj->m_file);
+      memset(snippet_buf + read, 0, SNIPPET_SIZE - read);
 
       if (tok_beg_offset < SNIPPET_SIZE / 2) {
         *offset = tok_beg_offset;
@@ -303,17 +303,28 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
     }
 
     // Extract the line that contains the token
-    qlex_size lstart = 0;
+    qlex_size slice_start = 0;
 
     for (size_t i = 0; i < read; i++) {
       if (snippet_buf[i] == '\n') {
-        lstart = i + 1;
+        slice_start = i + 1;
       } else if (i == *offset) { /* Danger ?? */
-        qlex_size count = (i - lstart) + tok_size;
-        char *output = (char *)malloc(count + 1);
-        memcpy(output, snippet_buf + lstart, count);
-        output[count] = '\0';
-        *offset -= lstart;
+        size_t slice_end;
+        for (slice_end = i; slice_end < read; slice_end++) {
+          char ch = snippet_buf[slice_end];
+          if (ch == '\n' || ch == 0) {
+            break;
+          }
+        }
+
+        qlex_size slice_size = slice_end - slice_start;
+        char *output = (char *)malloc(slice_size + 1);
+        if (!output) {
+          qcore_panic("qlex_snippet: failed to allocate memory");
+        }
+        memcpy(output, snippet_buf + slice_start, slice_size);
+        output[slice_size] = '\0';
+        *offset -= slice_start;
         fseek(obj->m_file, curpos, SEEK_SET);
         return output;
       }
