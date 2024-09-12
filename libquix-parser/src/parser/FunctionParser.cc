@@ -540,7 +540,6 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       { /* Function declaration with explicit return type */
         if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
             tok.is<qPuncSemi>()) {
-          ftype->set_return_ty(VoidTy::get());
           *node = fndecl;
           return true;
         }
