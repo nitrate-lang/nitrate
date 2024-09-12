@@ -37,11 +37,17 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
+#include <quix-core/Env.h>
+
+#include <atomic>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
 #include <curlpp/cURLpp.hpp>
+#include <list>
 #include <sstream>
 #include <string>
+
+static std::atomic<uint64_t> sys_fetch_request_count = 0;
 
 int qcall::sys_fetch(lua_State* L) {
   /**
@@ -76,6 +82,14 @@ int qcall::sys_fetch(lua_State* L) {
     request.setOpt(new curlpp::options::Url(unsafe_uri));
     request.setOpt(new curlpp::options::FollowLocation(true));
     request.setOpt(new curlpp::options::WriteStream(&result));
+
+    std::list<std::string> header = {
+        "User-Agent: QUIX Compiler Suite",
+        "QUIX-Request-Id: " + std::to_string(++sys_fetch_request_count),
+        "QUIX-Session-Id: " + std::string(qcore_env_get("this.job")),
+    };
+    request.setOpt(new curlpp::options::HttpHeader(header));
+
     request.perform();
 
     lua_pushstring(L, result.str().c_str());
