@@ -39,7 +39,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-parser/include)
   target_compile_options(quix-qxir PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-qxir PRIVATE quix-core quix-parser libdeflate.a libcrypto.a)
+  target_link_libraries(quix-qxir PRIVATE quix-core quix-parser libdeflate.a crypto)
   target_link_options(quix-qxir PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-qxir quix-core quix-parser)
 
@@ -66,7 +66,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-parser/include)
   target_compile_options(quix-qxir PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-qxir PRIVATE -flto)
-  target_link_libraries(quix-qxir PRIVATE quix-core quix-parser libdeflate.a libcrypto.a)
+  target_link_libraries(quix-qxir PRIVATE quix-core quix-parser libdeflate.a crypto)
   add_dependencies(quix-qxir quix-core quix-parser)
 
   #================== CREATE STATICLIB RELEASE BUILD ================

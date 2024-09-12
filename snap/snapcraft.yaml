@@ -22,6 +22,7 @@ parts:
       - libyaml-cpp-dev
       - libhpdf-dev
       - libssl-dev
+      - libcurlpp-dev
     stage-packages:
       - git
       

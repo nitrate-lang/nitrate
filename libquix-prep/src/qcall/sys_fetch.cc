@@ -37,6 +37,10 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
+#include <curlpp/Easy.hpp>
+#include <curlpp/Options.hpp>
+#include <curlpp/cURLpp.hpp>
+#include <sstream>
 #include <string>
 
 int qcall::sys_fetch(lua_State* L) {
@@ -61,17 +65,25 @@ int qcall::sys_fetch(lua_State* L) {
 
     bypass_cache = lua_toboolean(L, 2);
   }
+  (void)bypass_cache;
 
   const char* unsafe_uri = lua_tostring(L, 1);
 
-  (void)unsafe_uri;
-  (void)bypass_cache;
+  try {
+    std::stringstream result;
+    curlpp::Easy request;
 
-  /// TODO: Implement sys_fetch
+    request.setOpt(new curlpp::options::Url(unsafe_uri));
+    request.setOpt(new curlpp::options::FollowLocation(true));
+    request.setOpt(new curlpp::options::WriteStream(&result));
+    request.perform();
 
-  std::string value = "TODO";
+    lua_pushstring(L, result.str().c_str());
 
-  lua_pushstring(L, value.c_str());
-
-  return 1;
+    return 1;
+  } catch (curlpp::RuntimeError& e) {
+    return luaL_error(L, "curlpp::RuntimeError: %s", e.what());
+  } catch (curlpp::LogicError& e) {
+    return luaL_error(L, "curlpp::LogicError: %s", e.what());
+  }
 }
