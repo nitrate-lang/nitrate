@@ -3,7 +3,7 @@
   "displayName": "QUIX",
   "publisher": "qpkg",
   "description": "QUIX syntax highlighting support ",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "repository": "https://github.com/Kracken256/quix/extensions/vscode/quix-syntax",
   "engines": {
     "vscode": "^1.92.0"
