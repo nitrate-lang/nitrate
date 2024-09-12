@@ -55,7 +55,7 @@ struct qlex_t {
 private:
   ///============================================================================///
   /// BEGIN: PERFORMANCE HYPER PARAMETERS
-  static constexpr qlex_size GETC_BUFFER_SIZE = 64;
+  static constexpr qlex_size GETC_BUFFER_SIZE = 4096;
   /// END:   PERFORMANCE HYPER PARAMETERS
   ///============================================================================///
 

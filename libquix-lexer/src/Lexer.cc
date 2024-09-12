@@ -980,18 +980,28 @@ qlex_tok_t qlex_t::next_impl() {
               ... @macro_name  ...
           */
 
-          while (true) {
-            if (std::isspace(c)) {
-              break;
-            }
-
+          while (std::isalnum(c) || c == '_') {
             buf += c;
             c = getc();
           }
 
-          m_pushback.push_back(c);
+          while (true) {
+            if (c == '(') {
+              state_parens++;
+            } else if (c == ')') {
+              state_parens--;
+            }
 
-          return qlex_tok_t(qMacr, put_string(std::move(buf)), start_pos, cur_loc());
+            buf += c;
+
+            if (state_parens == 0) {
+              return qlex_tok_t(qMacr, put_string(std::move(buf)), start_pos, cur_loc());
+            }
+
+            c = getc();
+          }
+
+          continue;
         }
         case LexState::BlockMacro: {
           while (true) {

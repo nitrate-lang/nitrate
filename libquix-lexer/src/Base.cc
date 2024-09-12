@@ -494,7 +494,7 @@ char qlex_t::getc() {
       throw GetCExcept();
     }
 
-    memset(m_getc_buf.data() + read, '\n', GETC_BUFFER_SIZE - read);
+    memset(m_getc_buf.data() + read, '#', GETC_BUFFER_SIZE - read);
     m_getc_pos = 0;
   }
 
