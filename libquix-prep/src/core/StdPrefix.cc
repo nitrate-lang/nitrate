@@ -111,11 +111,18 @@ std::string_view quix_code_prefix = R"(@(fn define() {
   local name = quix.next(); local semi = quix.next();
 
   -- Verify that the sequence is correct
-  if name.ty ~= 'name' then
-    quix.abort('Expected module name after @import.');
-  end
   if semi.ty ~= 'sym' or semi.v ~= ';' then
     quix.abort('Expected semicolon after module name');
+  end
+  if name.ty == 'str' then
+    local content = quix.fetch(name.v);
+    if content == nil then
+      quix.abort('Failed to fetch module: ', quix.errno);
+    end
+    return content;
+  end
+  if name.ty ~= 'name' then
+    quix.abort('Expected module name after @import.');
   end
   name = name.v;
 
