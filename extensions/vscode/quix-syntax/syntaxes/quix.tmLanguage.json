@@ -42,7 +42,10 @@
       "include": "#preprocessorInvoke"
     },
     {
-      "include": "#proprocessorFunction"
+      "include": "#proprocessorFunctionA"
+    },
+    {
+      "include": "#proprocessorFunctionB"
     }
   ],
   "repository": {
@@ -117,9 +120,18 @@
       "name": "meta.preprocessor.quix",
       "match": "@[\\w:]+"
     },
-    "proprocessorFunction": {
+    "proprocessorFunctionA": {
       "begin": "@\\([\\s\n]*fn",
-      "end": "\\}\\);?$",
+      "end": "\\}\\)$",
+      "patterns": [
+        {
+          "include": "source.lua"
+        }
+      ]
+    },
+    "proprocessorFunctionB": {
+      "begin": "@\\(",
+      "end": "\\)$",
       "patterns": [
         {
           "include": "source.lua"
