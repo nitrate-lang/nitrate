@@ -119,6 +119,7 @@ std::string_view quix_code_prefix = R"(@(fn define() {
     if content == nil then
       quix.abort('Failed to fetch module: ', quix.errno);
     end
+    quix.debug(string.format('Fetched module: %s (%d bytes)', name.v, #content));
     return content;
   end
   if name.ty ~= 'name' then
