@@ -30,12 +30,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <argparse.h>
+#include <quix-codegen/Code.h>
 #include <quix-core/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-prep/Lib.h>
 #include <quix-qxir/Lib.h>
 
+#include <quix-codegen/Classes.hh>
 #include <quix-core/Classes.hh>
 #include <quix-parser/Classes.hh>
 #include <quix-qxir/Classes.hh>
@@ -45,6 +47,9 @@
 #include <core/Config.hh>
 #include <core/Logger.hh>
 #include <quix-prep/Classes.hh>
+#include <unordered_map>
+
+#include "quix-codegen/Config.h"
 #if QPKG_DEV_TOOLS
 // #include <dev/bench/bench.hh>
 // #include <dev/test/test.hh>
@@ -631,6 +636,29 @@ namespace argparse_setup {
 
     subparsers["qxir"] = std::move(qxir);
 
+    /*================= CODEGEN SUBPARSER =================*/
+    auto codegen = std::make_unique<ArgumentParser>("codegen", "1.0", default_arguments::help);
+
+    codegen->add_argument("source").help("source file to generate code for").nargs(1);
+    codegen->add_argument("-o", "--output")
+        .help("output file for generated code")
+        .default_value(std::string(""))
+        .nargs(1);
+    codegen->add_argument("-O", "--opts")
+        .help("optimizations to apply to codegen")
+        .default_value(std::string(""))
+        .nargs(1);
+    codegen->add_argument("-v", "--verbose")
+        .help("print verbose output")
+        .default_value(false)
+        .implicit_value(true);
+    codegen->add_argument("-t", "--target")
+        .help("Target to generate code for")
+        .default_value(std::string("native"))
+        .nargs(1);
+
+    subparsers["codegen"] = std::move(codegen);
+
     /*================= TEST SUBPARSER =================*/
     auto test = std::make_unique<ArgumentParser>("test", "1.0", default_arguments::help);
 
@@ -645,6 +673,7 @@ namespace argparse_setup {
     parser.add_subparser(*subparsers["test"]);
     parser.add_subparser(*subparsers["parse"]);
     parser.add_subparser(*subparsers["qxir"]);
+    parser.add_subparser(*subparsers["codegen"]);
   }
 
 #endif
@@ -1251,6 +1280,98 @@ namespace qpkg::router {
         fclose(fp);
         qerr << "Failed to generate QXIR tree" << std::endl;
         return 1;
+      }
+
+      if (!output.empty()) fclose(out_fp);
+
+      fclose(fp);
+
+      return 0;
+    } else if (parser.is_subcommand_used("codegen")) {
+      auto &qxir_parser = *subparsers.at("codegen");
+      core::FormatAdapter::PluginAndInit(qxir_parser["--verbose"] == true, g_use_colors);
+
+      std::string source = qxir_parser.get<std::string>("source");
+      std::string output = qxir_parser.get<std::string>("--output");
+      std::string opts = qxir_parser.get<std::string>("--opts");
+      bool verbose = qxir_parser["--verbose"] == true;
+      std::string target = qxir_parser.get<std::string>("--target");
+
+      FILE *fp = fopen(source.c_str(), "r");
+      if (!fp) {
+        qerr << "Failed to open source file" << std::endl;
+        return 1;
+      }
+
+      qcore_env env;
+
+      qprep lexer(fp, source.c_str(), env.get());
+      qparse_conf pconf;
+      qparser ctx(lexer.get(), pconf.get(), env.get());
+
+      qcore_arena arena;
+      qparse_node_t *root = nullptr;
+      if (!qparse_do(ctx.get(), arena.get(), &root)) {
+        auto cb = [](const char *msg, size_t size, uintptr_t data) {
+          (void)size;
+          (void)data;
+          qerr << msg << std::endl;
+        };
+
+        qparse_dumps(ctx.get(), false, cb, 0);
+        fclose(fp);
+        qerr << "Failed to parse source" << std::endl;
+        return 1;
+      }
+
+      qxir_conf conf;
+      qmodule qmod(lexer.get(), conf.get(), source.c_str());
+
+      auto cb = [](const uint8_t *msg, size_t size, qxir_level_t lvl, uintptr_t data) {
+        if (!data && lvl < QXIR_LEVEL_INFO) {
+          return;
+        }
+        qerr << std::string_view((const char *)msg, size) << std::endl;
+      };
+
+      if (!qxir_lower(qmod.get(), root, true)) {
+        qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
+                       g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
+        fclose(fp);
+        return 1;
+      }
+
+      qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL, g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR,
+                     cb, verbose);
+
+      FILE *out_fp = nullptr;
+      if (!output.empty()) {
+        out_fp = fopen(output.c_str(), "w");
+        if (!out_fp) {
+          fclose(fp);
+          qerr << "Failed to open output file" << std::endl;
+          return 1;
+        }
+      } else {
+        out_fp = stdout;
+      }
+
+      static const std::unordered_map<std::string, qcode_lang_t> target_map = {
+          {"c11", QCODE_C11},   {"c++", QCODE_CXX11},       {"ts", QCODE_TS},
+          {"rust", QCODE_RUST}, {"python3", QCODE_PYTHON3}, {"csharp", QCODE_CSHARP}};
+
+      qcode_conf qcode_conf;
+
+      if (target_map.contains(target)) {
+        if (!qcode_transcode(qmod.get(), qcode_conf.get(), target_map.at(target), QCODE_GOOGLE, nullptr, out_fp)) {
+          if (!output.empty()) fclose(out_fp);
+          fclose(fp);
+          qerr << "Failed to generate code" << std::endl;
+          return 1;
+        }
+      } else {
+        /// TODO: LLVM Codegen
+        qerr << "Unknown target specified" << std::endl;
       }
 
       if (!output.empty()) fclose(out_fp);

@@ -26,6 +26,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                 ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
     target_compile_options(qpkg PRIVATE -Werror
                                         -O3
@@ -39,7 +40,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                         -Wno-error=overlength-strings
                                         -DQPKG_ID=${QPKG_ID}
                                         -flto)
-    target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a quix-qxir quix-parser
+    target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a
+                                       quix-codegen
+                                       quix-qxir quix-parser
                                        quix-lexer quix-prep quix-core)
     target_link_options(qpkg PRIVATE -flto -static-libgcc -static-libstdc++)
     add_dependencies(qpkg quix-qxir
@@ -56,6 +59,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                        ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
     target_compile_options(qpkg-static PRIVATE -Werror
                                                -O3
@@ -74,6 +78,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                -DQPKG_LIBRARY)
     target_link_libraries(qpkg-static PRIVATE yaml-cpp
                                               libboost_filesystem.a
+                                              quix-codegen
                                               quix-qxir
                                               quix-parser
                                               quix-lexer
@@ -96,6 +101,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                        ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
     target_compile_options(qpkg-shared PRIVATE -Werror
                                                -O3
@@ -114,6 +120,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                -DQPKG_LIBRARY)
     target_link_libraries(qpkg-shared PRIVATE yaml-cpp
                                               libboost_filesystem.a
+                                              quix-codegen-shared
                                               quix-qxir-shared
                                               quix-parser-shared
                                               quix-lexer-shared
@@ -136,6 +143,7 @@ else()
                                                 ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
     target_compile_options(qpkg PRIVATE -Werror
                                         -O3
@@ -150,7 +158,9 @@ else()
                                         -DQPKG_ID="undefined"
                                         -fsanitize=address
                                         -fsanitize=undefined)
-    target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a quix-qxir quix-parser
+    target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a 
+                                       quix-codegen
+                                       quix-qxir quix-parser
                                        quix-lexer quix-prep quix-core)
     target_link_options(qpkg PRIVATE -static-libgcc
                                      -static-libstdc++
@@ -170,6 +180,7 @@ else()
                                                        ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
     target_compile_options(qpkg-static PRIVATE -Werror
                                                -O3
@@ -189,6 +200,7 @@ else()
                                                -fsanitize=undefined)
     target_link_libraries(qpkg-static PRIVATE yaml-cpp
                                               libboost_filesystem.a
+                                              quix-codegen
                                               quix-qxir
                                               quix-parser
                                               quix-lexer
@@ -212,6 +224,7 @@ else()
                                                        ${CMAKE_SOURCE_DIR}/libquix-prep/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-parser/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+                                                       ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
     target_compile_options(qpkg-shared PRIVATE -Werror
                                                -O3
@@ -231,6 +244,7 @@ else()
                                                -fsanitize=undefined)
     target_link_libraries(qpkg-shared PRIVATE yaml-cpp
                                               libboost_filesystem.a
+                                              quix-codegen-shared
                                               quix-qxir-shared
                                               quix-parser-shared
                                               quix-lexer-shared
