@@ -1103,6 +1103,17 @@ namespace qxir {
     return create<I128Ty>();
   }
 
+  static Expr *qconv_f16_ty(ConvState &s, const qparse::F16 *n) {
+    /**
+     * @brief Convert a F16 type to a qxir expression type.
+     * @details This is a 1-to-1 conversion of the F16 type.
+     */
+
+    (void)n;
+
+    return create<F16Ty>();
+  }
+
   static Expr *qconv_f32_ty(ConvState &s, const qparse::F32 *n) {
     /**
      * @brief Convert a F32 type to a qxir expression type.
@@ -1123,6 +1134,17 @@ namespace qxir {
     (void)n;
 
     return create<F64Ty>();
+  }
+
+  static Expr *qconv_f128_ty(ConvState &s, const qparse::F128 *n) {
+    /**
+     * @brief Convert a F128 type to a qxir expression type.
+     * @details This is a 1-to-1 conversion of the F128 type.
+     */
+
+    (void)n;
+
+    return create<F128Ty>();
   }
 
   static Expr *qconv_void_ty(ConvState &s, const qparse::VoidTy *n) {
@@ -2559,12 +2581,20 @@ static qxir::Expr *qconv_one(ConvState &s, const qparse::Node *n) {
       out = qconv_i128_ty(s, n->as<qparse::I128>());
       break;
 
+    case QAST_NODE_F16_TY:
+      out = qconv_f16_ty(s, n->as<qparse::F16>());
+      break;
+
     case QAST_NODE_F32_TY:
       out = qconv_f32_ty(s, n->as<qparse::F32>());
       break;
 
     case QAST_NODE_F64_TY:
       out = qconv_f64_ty(s, n->as<qparse::F64>());
+      break;
+
+    case QAST_NODE_F128_TY:
+      out = qconv_f128_ty(s, n->as<qparse::F128>());
       break;
 
     case QAST_NODE_VOID_TY:

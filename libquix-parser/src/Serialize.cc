@@ -410,12 +410,20 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_EMPTY("I128");
       break;
     }
+    case QAST_NODE_F16_TY: {
+      OBJECT_EMPTY("F16");
+      break;
+    }
     case QAST_NODE_F32_TY: {
       OBJECT_EMPTY("F32");
       break;
     }
     case QAST_NODE_F64_TY: {
       OBJECT_EMPTY("F64");
+      break;
+    }
+    case QAST_NODE_F128_TY: {
+      OBJECT_EMPTY("F128");
       break;
     }
     case QAST_NODE_VOID_TY: {

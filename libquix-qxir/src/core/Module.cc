@@ -32,8 +32,8 @@
 #define __QXIR_IMPL__
 
 #include <core/LibMacro.h>
-#include <quix-qxir/Module.h>
 #include <quix-core/Error.h>
+#include <quix-qxir/Module.h>
 
 #include <mutex>
 

@@ -33,8 +33,6 @@
 
 #include <parser/Parse.h>
 
-#include <utility>
-
 using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse::diag;
@@ -42,10 +40,11 @@ using namespace qparse::diag;
 // Lifetime integrity requires the primitives to be thread-local because the Node Arena allocator is
 // thread-local.
 static thread_local std::map<std::string_view, Type *> primitives = {
-    {"u8", U8::get()},     {"u16", U16::get()},         {"u32", U32::get()},    {"u64", U64::get()},
-    {"u128", U128::get()}, {"i8", I8::get()},           {"i16", I16::get()},    {"i32", I32::get()},
-    {"i64", I64::get()},   {"i128", I128::get()},       {"f32", F32::get()},    {"f64", F64::get()},
-    {"u1", U1::get()},     {"string", StringTy::get()}, {"void", VoidTy::get()}};
+    {"u8", U8::get()},      {"u16", U16::get()},   {"u32", U32::get()}, {"u64", U64::get()},
+    {"u128", U128::get()},  {"i8", I8::get()},     {"i16", I16::get()}, {"i32", I32::get()},
+    {"i64", I64::get()},    {"i128", I128::get()}, {"f16", F16::get()}, {"f32", F32::get()},
+    {"f64", F64::get()},    {"f128", F128::get()}, {"u1", U1::get()},   {"string", StringTy::get()},
+    {"void", VoidTy::get()}};
 
 bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   /** QUIX TYPE PARSER

@@ -271,7 +271,8 @@ static bool resolve_node(qxir::Expr **_cur) {
 
         *_cur = create<Call>(target, std::move(new_args));
       } else {
-        std::cout << "Indirect call not supported yet for type: " << base->getKindName() << std::endl;
+        std::cout << "Indirect call not supported yet for type: " << base->getKindName()
+                  << std::endl;
         error = true;
       }
       break;

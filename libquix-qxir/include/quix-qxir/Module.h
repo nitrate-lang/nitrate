@@ -57,10 +57,10 @@ void qxir_set_conf(qmodule_t *mod, qxir_conf_t *conf);
 
 #include <boost/bimap.hpp>
 #include <cstdint>
-#include <quix-qxir/Report.hh>
 #include <limits>
 #include <memory>
 #include <optional>
+#include <quix-qxir/Report.hh>
 #include <string>
 #include <unordered_set>
 #include <vector>
