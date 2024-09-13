@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#define QIR_NODE_COUNT 51
+#define QIR_NODE_COUNT 50
 
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
@@ -566,17 +566,6 @@ namespace qxir {
     Type *getElement() noexcept { return m_element; }
   };
 
-  class IntrinTy final : public Type {
-    QCLASS_REFLECT()
-
-    std::string_view m_name;
-
-  public:
-    IntrinTy(std::string_view name) : Type(QIR_NODE_INTRIN_TY), m_name(name) {}
-
-    std::string_view getName() noexcept { return m_name; }
-  };
-
   enum class FnAttr {
     Variadic,
   };
@@ -876,16 +865,16 @@ namespace qxir {
     QCLASS_REFLECT()
 
     Expr *m_cond;
-    Expr *m_body;
+    Seq *m_body;
 
   public:
-    While(Expr *cond, Expr *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
+    While(Expr *cond, Seq *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
 
-    Expr *getBody() noexcept { return m_body; }
-    Expr *setBody(Expr *body) noexcept { return m_body = body; }
+    Seq *getBody() noexcept { return m_body; }
+    Seq *setBody(Seq *body) noexcept { return m_body = body; }
   };
 
   class For final : public Expr {

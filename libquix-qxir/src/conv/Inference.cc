@@ -207,6 +207,8 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
   Expr *E = static_cast<Expr *>(_node);
   Type *T = nullptr;
 
+  qxir::current = E->getModule();
+
   if (E->isType()) {
     T = E->as<Type>();
   } else {
@@ -620,19 +622,19 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
 
         if (I->isNativeRepresentation()) {
           if (I->getNativeRepresentation() > UINT32_MAX) {
-            T = getType<U64Ty>();
+            T = getType<I64Ty>();
           } else {
-            T = getType<U32Ty>();
+            T = getType<I32Ty>();
           }
         } else {
           std::string_view val = I->getStringRepresentation();
           boost::multiprecision::cpp_int num(val.data());
           if (num > UINT64_MAX) {
-            T = getType<U128Ty>();
+            T = getType<I128Ty>();
           } else if (num > UINT32_MAX) {
-            T = getType<U64Ty>();
+            T = getType<I64Ty>();
           } else {
-            T = getType<U32Ty>();
+            T = getType<I32Ty>();
           }
         }
         break;
@@ -766,7 +768,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         break;
       }
       case QIR_NODE_RET: {
-        T = getType<VoidTy>();
+        T = E->as<Ret>()->getExpr()->getType();
         break;
       }
       case QIR_NODE_BRK: {
@@ -871,7 +873,6 @@ bool qxir::Type::hasKnownSize() noexcept {
     case QIR_NODE_OPAQUE_TY:
     case QIR_NODE_STRING_TY:
     case QIR_NODE_LIST_TY:
-    case QIR_NODE_INTRIN_TY:
       return false;
     default: {
       qcore_panicf("Invalid type kind: %d", this->getKind());

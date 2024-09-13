@@ -80,7 +80,7 @@ CPP_EXPORT uint32_t Expr::getKindSize() const noexcept {
       SIZEOF_ROW(F16Ty),    SIZEOF_ROW(F32Ty),   SIZEOF_ROW(F64Ty),      SIZEOF_ROW(F128Ty),
       SIZEOF_ROW(VoidTy),   SIZEOF_ROW(PtrTy),   SIZEOF_ROW(OpaqueTy),   SIZEOF_ROW(StringTy),
       SIZEOF_ROW(StructTy), SIZEOF_ROW(UnionTy), SIZEOF_ROW(ArrayTy),    SIZEOF_ROW(ListTy),
-      SIZEOF_ROW(IntrinTy), SIZEOF_ROW(FnTy),    SIZEOF_ROW(Tmp),
+      SIZEOF_ROW(FnTy),     SIZEOF_ROW(Tmp),
   };
 
   qcore_assert(sizes.size() == QIR_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
@@ -108,7 +108,7 @@ CPP_EXPORT const char *Expr::getKindName() const noexcept {
       NAMEOF_ROW(F16_TY),    NAMEOF_ROW(F32_TY),   NAMEOF_ROW(F64_TY),      NAMEOF_ROW(F128_TY),
       NAMEOF_ROW(VOID_TY),   NAMEOF_ROW(PTR_TY),   NAMEOF_ROW(OPAQUE_TY),   NAMEOF_ROW(STRING_TY),
       NAMEOF_ROW(STRUCT_TY), NAMEOF_ROW(UNION_TY), NAMEOF_ROW(ARRAY_TY),    NAMEOF_ROW(LIST_TY),
-      NAMEOF_ROW(INTRIN_TY), NAMEOF_ROW(FN_TY),    NAMEOF_ROW(TMP),
+      NAMEOF_ROW(FN_TY),     NAMEOF_ROW(TMP),
   };
 
   qxir_ty_t type = getKind();
@@ -144,7 +144,6 @@ CPP_EXPORT bool Expr::isType() const noexcept {
     case QIR_NODE_UNION_TY:
     case QIR_NODE_ARRAY_TY:
     case QIR_NODE_LIST_TY:
-    case QIR_NODE_INTRIN_TY:
     case QIR_NODE_FN_TY:
       return true;
     default:
@@ -475,9 +474,6 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_LIST_TY: {
       return as<ListTy>()->m_element->cmp_eq(other->as<ListTy>()->m_element);
     }
-    case QIR_NODE_INTRIN_TY: {
-      return as<IntrinTy>()->m_name == other->as<IntrinTy>()->m_name;
-    }
     case QIR_NODE_FN_TY: {
       auto a = as<FnTy>();
       auto b = other->as<FnTy>();
@@ -797,10 +793,6 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_LIST_TY: {
-        break;
-      }
-      case QIR_NODE_INTRIN_TY: {
-        MIXIN_STRING(cur->as<IntrinTy>()->m_name);
         break;
       }
       case QIR_NODE_FN_TY: {

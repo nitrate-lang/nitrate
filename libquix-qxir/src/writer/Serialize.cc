@@ -514,12 +514,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       ss << "]";
       break;
     }
-    case QIR_NODE_INTRIN_TY: {
-      ss << "[";
-      escape_string(ss, n->as<IntrinTy>()->getName());
-      ss << "]";
-      break;
-    }
     case QIR_NODE_FN_TY: {
       ss << "fn (";
       bool variadic = n->as<FnTy>()->getAttrs().contains(FnAttr::Variadic);

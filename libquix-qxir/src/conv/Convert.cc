@@ -47,8 +47,8 @@
 #include <atomic>
 #include <core/Config.hh>
 #include <cstring>
-#include <quix-qxir/Report.hh>
 #include <quix-qxir/Classes.hh>
+#include <quix-qxir/Report.hh>
 #include <sstream>
 #include <stack>
 #include <transform/PassManager.hh>
@@ -2231,10 +2231,12 @@ namespace qxir {
     }
 
     if (!body) {
-      body = getType<VoidTy>();
+      body = create<Seq>(SeqItems({}));
+    } else if (body->getKind() != QIR_NODE_SEQ) {
+      body = create<Seq>(SeqItems({body}));
     }
 
-    return create<While>(cond, body);
+    return create<While>(cond, body->as<Seq>());
   }
 
   static Expr *qconv_for(ConvState &s, const qparse::ForStmt *n) {
@@ -2923,7 +2925,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     }
     case QIR_NODE_WHILE: {
       While *n = static_cast<While *>(in);
-      out = create<While>(clone(n->getCond()), clone(n->getBody()));
+      out = create<While>(clone(n->getCond()), clone(n->getBody())->as<Seq>());
       break;
     }
     case QIR_NODE_FOR: {
@@ -3080,10 +3082,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     case QIR_NODE_LIST_TY: {
       ListTy *n = static_cast<ListTy *>(in);
       out = create<ListTy>(clone(n->getElement())->asType());
-      break;
-    }
-    case QIR_NODE_INTRIN_TY: {
-      out = create<IntrinTy>(memorize(static_cast<IntrinTy *>(in)->getName()));
       break;
     }
     case QIR_NODE_FN_TY: {

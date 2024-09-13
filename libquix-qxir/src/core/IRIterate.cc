@@ -136,7 +136,7 @@ namespace qxir::detail {
       }
       case QIR_NODE_WHILE: {
         children.push_back(&base->as<While>()->m_cond);
-        children.push_back(&base->as<While>()->m_body);
+        children.push_back(reinterpret_cast<Expr **>(&base->as<While>()->m_body));
         break;
       }
       case QIR_NODE_FOR: {
@@ -263,9 +263,6 @@ namespace qxir::detail {
       }
       case QIR_NODE_LIST_TY: {
         children.push_back(reinterpret_cast<Expr **>(&base->as<ListTy>()->m_element));
-        break;
-      }
-      case QIR_NODE_INTRIN_TY: {
         break;
       }
       case QIR_NODE_FN_TY: {

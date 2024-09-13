@@ -397,10 +397,6 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         break;
       }
 
-      case QIR_NODE_INTRIN_TY: {
-        break;
-      }
-
       case QIR_NODE_FN_TY: {
         FnTy *fnty = par->as<FnTy>();
 

@@ -133,7 +133,6 @@ namespace qxir {
   class UnionTy;
   class ArrayTy;
   class ListTy;
-  class IntrinTy;
   class FnTy;
   class Int;
   class Float;

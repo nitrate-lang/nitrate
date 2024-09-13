@@ -101,7 +101,6 @@ typedef enum qxir_ty_t {
   QIR_NODE_UNION_TY,
   QIR_NODE_ARRAY_TY,
   QIR_NODE_LIST_TY,
-  QIR_NODE_INTRIN_TY,
   QIR_NODE_FN_TY,
 
   QIR_NODE_TMP, /* Temp node; must be resolved with more information */
