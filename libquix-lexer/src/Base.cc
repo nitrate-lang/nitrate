@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "quix-core/Env.h"
+#define __QUIX_LEXER_IMPL__
 #define __QUIX_IMPL__
 
 #include <quix-core/Error.h>
@@ -47,6 +47,7 @@
 #include <utility>
 
 #include "LibMacro.h"
+#include "quix-core/Env.h"
 #include "quix-lexer/Token.h"
 
 ///============================================================================///

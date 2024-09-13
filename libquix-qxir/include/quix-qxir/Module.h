@@ -54,11 +54,10 @@ void qxir_set_conf(qmodule_t *mod, qxir_conf_t *conf);
 #if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
 
 #include <quix-core/Arena.h>
-#include <quix-parser/Node.h>
 
 #include <boost/bimap.hpp>
 #include <cstdint>
-#include <diagnostic/Report.hh>
+#include <quix-qxir/Report.hh>
 #include <limits>
 #include <memory>
 #include <optional>

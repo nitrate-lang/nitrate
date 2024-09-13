@@ -33,12 +33,13 @@
 
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
+#include <quix-parser/Node.h>
 #include <quix-qxir/Module.h>
 #include <quix-qxir/Node.h>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
-#include <diagnostic/Report.hh>
+#include <quix-qxir/Report.hh>
 #include <sstream>
 
 using namespace qxir::diag;

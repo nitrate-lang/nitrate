@@ -31,6 +31,7 @@
 
 #define __QPARSE_IMPL__
 #define __QUIX_IMPL__
+#define __QUIX_LEXER_IMPL__
 
 #include <Impl.h>
 #include <parser/Parse.h>

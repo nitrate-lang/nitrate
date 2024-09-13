@@ -185,7 +185,7 @@ typedef enum qlex_key_t {
 
 typedef uint32_t qlex_size;
 
-#if defined(__cplusplus) && defined(__QUIX_IMPL__)
+#if defined(__cplusplus) && defined(__QUIX_LEXER_IMPL__)
 }
 
 #include <stdexcept>

@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdint>
+#define __QUIX_LEXER_IMPL__
 #define __QUIX_IMPL__
 
 #include <quix-core/Error.h>
@@ -43,6 +43,7 @@
 #include <charconv>
 #include <cmath>
 #include <csetjmp>
+#include <cstdint>
 #include <cstdio>
 #include <deque>
 #include <iomanip>

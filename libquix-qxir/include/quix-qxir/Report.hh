@@ -33,13 +33,16 @@
 #define __QUIX_QXIR_REPORT_H__
 
 #include <quix-lexer/Token.h>
-#include <quix-parser/Node.h>
 #include <quix-qxir/IR.h>
 
 #include <cstdarg>
 #include <functional>
 #include <stdexcept>
 #include <string_view>
+
+namespace qparse {
+  class Node;
+}
 
 namespace qxir::diag {
   class SyntaxError : public std::runtime_error {

@@ -33,13 +33,14 @@
 #define __QUIX_QXIR_QXIR_H__
 
 #include <quix-lexer/Lexer.h>
-#include <quix-parser/Node.h>
 #include <quix-qxir/TypeDecl.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct qparse_node_t qparse_node_t;
 
 /**
  * @brief Create QModule instance.

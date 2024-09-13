@@ -32,6 +32,7 @@
 #ifndef __QUIXCC_PARSE_H__
 #define __QUIXCC_PARSE_H__
 
+#define __QUIX_LEXER_IMPL__
 #define __QPARSE_IMPL__
 
 #ifndef __cplusplus

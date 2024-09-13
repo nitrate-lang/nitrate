@@ -33,6 +33,7 @@
 
 #include <core/LibMacro.h>
 #include <quix-qxir/Module.h>
+#include <quix-core/Error.h>
 
 #include <mutex>
 

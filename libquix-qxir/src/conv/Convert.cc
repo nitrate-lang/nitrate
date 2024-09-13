@@ -47,7 +47,7 @@
 #include <atomic>
 #include <core/Config.hh>
 #include <cstring>
-#include <diagnostic/Report.hh>
+#include <quix-qxir/Report.hh>
 #include <quix-qxir/Classes.hh>
 #include <sstream>
 #include <stack>

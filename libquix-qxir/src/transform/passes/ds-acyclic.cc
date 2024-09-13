@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "diagnostic/Report.hh"
+#include "quix-qxir/Report.hh"
 #include "quix-qxir/IR.h"
 #define QXIR_USE_CPP_API
 
