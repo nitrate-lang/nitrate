@@ -1,0 +1,6 @@
+{
+    global:
+        qcode_*;
+    local:
+        *;
+};

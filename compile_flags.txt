@@ -17,4 +17,8 @@
 -I
 ./libquix-qxir/src
 -I
+./libquix-codegen/include
+-I
+./libquix-codegen/src
+-I
 ./qpkg/src
