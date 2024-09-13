@@ -31,7 +31,6 @@
 
 #include "quix-qxir/TypeDecl.h"
 #define __QUIX_IMPL__
-
 #define QXIR_USE_CPP_API
 
 #include <core/LibMacro.h>
@@ -41,44 +40,9 @@
 
 #include <chrono>
 #include <core/Config.hh>
-#include <map>
 #include <transcode/Targets.hh>
 
 using namespace qxir;
-
-//  static const std::unordered_map<Op, std::string_view> post_unexprs_ops = {
-// {Op::Plus,      "?"},
-// {Op::Minus,     "?"},
-// {Op::Times,     "?"},
-// {Op::Slash,     "?"},
-// {Op::Percent,   "?"},
-// {Op::BitAnd,    "?"},
-// {Op::BitOr,     "?"},
-// {Op::BitXor,    "?"},
-// {Op::BitNot,    "?"},
-// {Op::LogicAnd,  "?"},
-// {Op::LogicOr,   "?"},
-// {Op::LogicNot,  "?"},
-// {Op::LShift,    "?"},
-// {Op::RShift,    "?"},
-// {Op::ROTR,      "?"},
-// {Op::ROTL,      "?"},
-// {Op::Inc,       "?"},
-// {Op::Dec,       "?"},
-// {Op::Set,       "?"},
-// {Op::LT,        "?"},
-// {Op::GT,        "?"},
-// {Op::LE,        "?"},
-// {Op::GE,        "?"},
-// {Op::Eq,        "?"},
-// {Op::NE,        "?"},
-// {Op::Alignof,   "?"},
-// {Op::Typeof,    "?"},
-// {Op::Offsetof,  "?"},
-// {Op::BitcastAs, "?"},
-// {Op::CastAs,    "?"},
-// {Op::Bitsizeof, "?"},
-//       };
 
 static void write_header(std::ostream &out) {
   auto now = std::chrono::system_clock::now();
@@ -115,39 +79,128 @@ static void write_header(std::ostream &out) {
   out << "////////////////////////////////////////////////////////////////////////////////\n\n";
 }
 
-static void write_stdinc(std::ostream &out) {
-  static const std::set<std::string_view> stdincs = {
-      "stdint.h",
-      "stdbool.h",
+struct PreGenParam {
+  bool use_qint128_t = false;
+  bool use_quint128_t = false;
+  bool use_qf16_t = false;
+  bool use_qf32_t = false;
+  bool use_qf64_t = false;
+  bool use_qf128_t = false;
+  bool use_rotl = false;
+  bool use_rotr = false;
+};
+
+static PreGenParam pregen_iterate(Expr *root) {
+  PreGenParam param;
+
+  const auto cb = [&param](Expr *, Expr **p_cur) -> IterOp {
+    Expr *cur = *p_cur;
+
+    switch (cur->getKind()) {
+      case QIR_NODE_I128_TY:
+        param.use_qint128_t = true;
+        break;
+      case QIR_NODE_U128_TY:
+        param.use_quint128_t = true;
+        break;
+      case QIR_NODE_F16_TY:
+        param.use_qf16_t = true;
+        break;
+      case QIR_NODE_F32_TY:
+        param.use_qf32_t = true;
+        break;
+      case QIR_NODE_F64_TY:
+        param.use_qf64_t = true;
+        break;
+      case QIR_NODE_F128_TY:
+        param.use_qf128_t = true;
+        break;
+      case QIR_NODE_BINEXPR: {
+        auto op = cur->as<BinExpr>()->getOp();
+        if (op == Op::ROTL) {
+          param.use_rotl = true;
+        } else if (op == Op::ROTR) {
+          param.use_rotr = true;
+        }
+        break;
+      }
+      default:
+        break;
+    }
+    return IterOp::Proceed;
   };
 
-  out << "#define QUIX_TRANSCODE 1\n\n";
+  iterate<dfs_pre, IterMP::none>(root, cb);
 
-  for (const auto &stdinc : stdincs) {
-    out << "#include <" << stdinc << ">\n";
+  return param;
+}
+
+static void write_stdinc(std::ostream &out, const PreGenParam &param) {
+  out << "#define QUIX_TRANSCODE 1\n";
+
+  if (param.use_rotl || param.use_rotr) {
+    out << "#define __qinline inline __attribute__((always_inline))\n";
+  }
+  out << "\n";
+
+  out << "#include <stdbool.h>\n";
+  out << "#include <stdint.h>\n";
+  if (param.use_qf32_t || param.use_qf64_t) {
+    out << "#include <math.h>\n";
   }
 
   out << "\n";
 }
 
-static void write_coretypes(std::ostream &out) {
-  /// TODO: Implement floating point types
-
-  static const std::map<std::string_view, std::string_view> types = {
-      {"qint128_t", "void"},  /* 128-bit signed integer*/
-      {"quint128_t", "void"}, /* 128-bit unsigned integer*/
-
-      {"qf16_t", "void"},   /* 16-bit float*/
-      {"qf32_t", "float"},  /* 32-bit float*/
-      {"qf64_t", "double"}, /* 64-bit float*/
-      {"qf128_t", "void"},  /* 128-bit float*/
-  };
-
-  for (const auto &[alias, c11_type] : types) {
-    out << "typedef " << c11_type << " " << alias << ";\n";
+static void write_coretypes(std::ostream &out, const PreGenParam &param) {
+  if (param.use_qint128_t) {
+    out << "typedef __int128 qint128_t;\n";
+  }
+  if (param.use_quint128_t) {
+    out << "typedef unsigned __int128 quint128_t;\n";
+  }
+  if (param.use_qf16_t) {
+    out << "typedef __fp16 qf16_t;\n";
+  }
+  if (param.use_qf32_t) {
+    out << "typedef _Float32 qf32_t;\n";
+  }
+  if (param.use_qf64_t) {
+    out << "typedef _Float64 qf64_t;\n";
+  }
+  if (param.use_qf128_t) {
+    out << "typedef __float128 qf128_t;\n";
   }
 
-  out << "\n";
+  if (param.use_qint128_t || param.use_quint128_t || param.use_qf16_t || param.use_qf32_t ||
+      param.use_qf64_t || param.use_qf128_t) {
+    out << "\n";
+  }
+}
+
+static void write_builtins(std::ostream &out, const PreGenParam &param) {
+  static constexpr std::string_view builtin_rotl =
+      R"(static __qinline uint64_t __rotlu64(uint64_t x, uint64_t r, uint8_t sz) {
+  r %= sz;
+  return (x << r) | (x >> (sz - r));
+})";
+
+  static constexpr std::string_view builtin_rotr =
+      R"(static __qinline uint64_t __rotru64(uint64_t x, uint64_t r, uint8_t sz) {
+  r %= sz;
+  return (x >> r) | (x << (sz - r));
+})";
+
+  if (param.use_rotl) {
+    out << builtin_rotl << "\n";
+  }
+  if (param.use_rotr) {
+    out << builtin_rotr << "\n";
+  }
+
+  if (param.use_rotl || param.use_rotr) {
+    out << "\n";
+  }
 }
 
 struct ConvState {
@@ -214,6 +267,25 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
         out << ")(";
         recurse(n->as<BinExpr>()->getLHS());
         out << ')';
+      } else if (n->as<BinExpr>()->getOp() == Op::ROTL) {
+        out << "__rotlu64(";
+        recurse(n->as<BinExpr>()->getLHS());
+        out << ",";
+        recurse(n->as<BinExpr>()->getRHS());
+        out << ',';
+        out << static_cast<Type *>(qxir_infer(n->as<BinExpr>()->getLHS()))->getSizeBits();
+        out << ")";
+      } else if (n->as<BinExpr>()->getOp() == Op::ROTR) {
+        out << "__rotru64(";
+        recurse(n->as<BinExpr>()->getLHS());
+        out << ",";
+        recurse(n->as<BinExpr>()->getRHS());
+        out << ',';
+        out << static_cast<Type *>(qxir_infer(n->as<BinExpr>()->getLHS()))->getSizeBits();
+        out << ")";
+      } else if (n->as<BinExpr>()->getOp() == Op::BitcastAs) {
+        /// TODO: Implement bitcast
+        qcore_implement("bitcast");
       } else {
         recurse(n->as<BinExpr>()->getLHS());
 
@@ -221,11 +293,8 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
             {Op::Plus, "+"},      {Op::Minus, "-"},    {Op::Times, "*"},   {Op::Slash, "/"},
             {Op::Percent, "%"},   {Op::BitAnd, "&"},   {Op::BitOr, "|"},   {Op::BitXor, "^"},
             {Op::LogicAnd, "&&"}, {Op::LogicOr, "||"}, {Op::LShift, "<<"}, {Op::RShift, ">>"},
-            {Op::ROTR, "?"},      {Op::ROTL, "?"},     {Op::Set, "="},     {Op::LT, "<"},
-            {Op::GT, ">"},        {Op::LE, "<="},      {Op::GE, ">="},     {Op::Eq, "=="},
-            {Op::NE, "!="},
-            // {Op::BitcastAs, "?"},
-            // {Op::CastAs,    "?"},
+            {Op::Set, "="},       {Op::LT, "<"},       {Op::GT, ">"},      {Op::LE, "<="},
+            {Op::GE, ">="},       {Op::Eq, "=="},      {Op::NE, "!="},
         };
 
         auto it = binexpr_ops.find(n->as<BinExpr>()->getOp());
@@ -353,8 +422,20 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
     }
 
     case QIR_NODE_INDEX: {
-      /// TODO:
-      out << "/* TODO */";
+      recurse(n->as<Index>()->getExpr());
+      auto tp = n->as<Index>()->getIndex()->getKind();
+
+      if (tp == QIR_NODE_STRING) {
+        out << '.';
+        out << n->as<Index>()->getIndex()->as<String>()->getValue();
+      } else if (tp == QIR_NODE_INT) {
+        out << '[';
+        recurse(n->as<Index>()->getIndex());
+        out << ']';
+      } else {
+        qcore_panic("unexpected index type in serialization");
+      }
+
       break;
     }
 
@@ -364,19 +445,58 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
     }
 
     case QIR_NODE_EXTERN: {
-      /// TODO:
-      out << "/* TODO */";
+      auto val = n->as<Extern>()->getValue();
+      auto ty = val->getKind();
+
+      if (ty == QIR_NODE_FN) {
+        out << "__attribute__((default)) ";
+        recurse(val);
+      } else if (ty == QIR_NODE_LOCAL) {
+        if (val->as<Local>()->getValue()->getKind() == QIR_NODE_FN_TY) {
+          out << "extern ";
+          auto fty = val->as<Local>()->getValue()->as<FnTy>();
+          recurse(fty->getReturn());
+
+          out << ' ' << val->as<Local>()->getName() << '(';
+          for (size_t i = 0; i < fty->getParams().size(); i++) {
+            if (i != 0) {
+              out << ',';
+            }
+            recurse(fty->getParams()[i]);
+            out << " _P" << i;
+          }
+          if (fty->getAttrs().contains(FnAttr::Variadic)) {
+            if (fty->getParams().size() != 0) {
+              out << ',';
+            }
+
+            out << "...";
+          }
+
+          out << ')';
+        } else {
+          out << "__attribute__((default)) ";
+          recurse(val);
+        }
+      }
+
       break;
     }
 
     case QIR_NODE_LOCAL: {
-      auto T = static_cast<Expr *>(qxir_infer(n->as<Local>()->getValue()));
-      recurse(T);
-      out << ' ' << n->as<Local>()->getName();
+      auto T = static_cast<Type *>(qxir_infer(n->as<Local>()->getValue()));
+
       if (T->getKind() == QIR_NODE_ARRAY_TY) {
+        recurse(T);
+        out << ' ' << n->as<Local>()->getName();
         out << '[' << T->as<ArrayTy>()->getCount() << "]";
       } else if (T->getKind() == QIR_NODE_LIST_TY) {
+        recurse(T);
+        out << ' ' << n->as<Local>()->getName();
         out << "[]";
+      } else {
+        recurse(T);
+        out << ' ' << n->as<Local>()->getName();
       }
       out << "=";
       recurse(n->as<Local>()->getValue());
@@ -400,42 +520,56 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
     }
 
     case QIR_NODE_IF: {
-      /// TODO:
-      out << "/* TODO */";
+      out << "if(";
+      recurse(n->as<If>()->getCond());
+      out << ")";
+      recurse(n->as<If>()->getThen());
+      out << ";";
+      if (n->as<If>()->getElse()->getKind() != QIR_NODE_VOID_TY) {
+        out << "else";
+        recurse(n->as<If>()->getElse());
+        out << ";";
+      }
       break;
     }
 
     case QIR_NODE_WHILE: {
       out << "while(";
       recurse(n->as<While>()->getCond());
-      out << "){";
-      for (auto &child : n->as<While>()->getBody()->getItems()) {
-        if (child->getKind() == QIR_NODE_VOID_TY) {
-          continue;
-        }
-
-        recurse(child);
-        out << ';';
-      }
-      out << '}';
+      out << ")";
+      recurse(n->as<While>()->getBody());
       break;
     }
 
     case QIR_NODE_FOR: {
-      /// TODO:
-      out << "/* TODO */";
+      out << "for(";
+      recurse(n->as<For>()->getInit());
+      out << ';';
+      recurse(n->as<For>()->getCond());
+      out << ';';
+      recurse(n->as<For>()->getStep());
+      out << ")";
+      recurse(n->as<For>()->getBody());
       break;
     }
 
     case QIR_NODE_FORM: {
       /// TODO:
       out << "/* TODO */";
+
+      /**
+       * 1. Create thread pool / use library
+       * 2. Push to thread pool somehow? Lambdas not supported in C11
+       * 3. Join threads at end of For Multi Loop
+       */
+
       break;
     }
 
     case QIR_NODE_FOREACH: {
       /// TODO:
       out << "/* TODO */";
+      // Foreach Expr is an Impure Callable that returns a pair<key, value>
       break;
     }
 
@@ -470,7 +604,7 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
           out << ",";
         }
         recurse(n->as<Fn>()->getParams()[i]);
-        out << " __" << i;
+        out << " _P" << i;
       }
       out << "){";
 
@@ -586,34 +720,49 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
     }
 
     case QIR_NODE_STRING_TY: {
-      /// TODO:
       out << "const char*";
       break;
     }
 
     case QIR_NODE_STRUCT_TY: {
-      out << "struct __S" << n->as<StructTy>()->getTypeIncrement();
+      out << "struct _T" << n->as<StructTy>()->getTypeIncrement();
       break;
     }
 
     case QIR_NODE_UNION_TY: {
-      out << "union __U" << n->as<UnionTy>()->getTypeIncrement();
+      out << "union _T" << n->as<UnionTy>()->getTypeIncrement();
       break;
     }
 
     case QIR_NODE_ARRAY_TY: {
-      recurse(n->as<ArrayTy>()->getElement());
+      out << "_T" << n->as<ArrayTy>()->getElement()->getTypeIncrement();
       break;
     }
 
     case QIR_NODE_LIST_TY: {
-      recurse(n->as<ListTy>()->getElement());
+      out << "_T" << n->as<ListTy>()->getElement()->getTypeIncrement();
       break;
     }
 
     case QIR_NODE_FN_TY: {
-      /// TODO:
-      out << "/* TODO */";
+      out << "_T" << n->as<FnTy>()->getReturn()->getTypeIncrement();
+      // recurse(n->as<FnTy>()->getReturn());
+      // out << "(*)";
+      // out << '(';
+      // for (size_t i = 0; i < n->as<FnTy>()->getParams().size(); i++) {
+      //   if (i != 0) {
+      //     out << ',';
+      //   }
+      //   recurse(n->as<FnTy>()->getParams()[i]);
+      // }
+      // if (n->as<FnTy>()->getAttrs().contains(FnAttr::Variadic)) {
+      //   if (n->as<FnTy>()->getParams().size() != 0) {
+      //     out << ',';
+      //   }
+
+      //   out << "...";
+      // }
+      // out << ')';
       break;
     }
 
@@ -626,8 +775,11 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
 
 bool codegen::for_c11(qmodule_t *module, std::ostream &err, std::ostream &out) {
   write_header(out);
-  write_stdinc(out);
-  write_coretypes(out);
+
+  PreGenParam param = pregen_iterate(module->getRoot());
+  write_stdinc(out, param);
+  write_coretypes(out, param);
+  write_builtins(out, param);
 
   ConvState state;
   return serialize_recurse(module->getRoot(), out, state);
