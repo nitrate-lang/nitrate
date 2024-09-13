@@ -252,11 +252,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       ss << "}";
       break;
     }
-    case QIR_NODE_ALLOC: {
-      ss << "alloc ";
-      recurse(n->as<Alloc>()->getType());
-      break;
-    }
     case QIR_NODE_CALL: {
       auto tkind = n->as<Call>()->getTarget()->getKind();
       if (tkind == QIR_NODE_LOCAL) {

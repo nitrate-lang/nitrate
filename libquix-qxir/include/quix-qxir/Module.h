@@ -140,7 +140,6 @@ namespace qxir {
   class Float;
   class String;
   class List;
-  class Alloc;
   class Call;
   class Seq;
   class Index;

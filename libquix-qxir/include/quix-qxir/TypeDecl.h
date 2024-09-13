@@ -59,7 +59,6 @@ typedef enum qxir_ty_t {
   QIR_NODE_STRING,
   QIR_NODE_LIST,
 
-  QIR_NODE_ALLOC,
   QIR_NODE_CALL,
   QIR_NODE_SEQ,
   QIR_NODE_INDEX,

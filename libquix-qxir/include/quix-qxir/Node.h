@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#define QIR_NODE_COUNT 52
+#define QIR_NODE_COUNT 51
 
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
@@ -718,20 +718,6 @@ namespace qxir {
   ///=============================================================================
   /// BEGIN: EXPRESSIONS
   ///=============================================================================
-
-  class Alloc : public Expr {
-    QCLASS_REFLECT()
-
-    Type *m_type;
-
-  public:
-    Alloc(Type *type) : Expr(QIR_NODE_ALLOC), m_type(type) {}
-
-    Type *getAllocType() noexcept { return m_type; }
-    Type *setAllocType(Type *type) noexcept { return m_type = type; }
-
-    size_t getSizeBytes() noexcept { return m_type->getSizeBytes(); }
-  };
 
   typedef std::vector<Expr *, Arena<Expr *>> CallArgs;
 

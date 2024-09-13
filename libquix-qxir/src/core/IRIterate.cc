@@ -87,10 +87,6 @@ namespace qxir::detail {
         }
         break;
       }
-      case QIR_NODE_ALLOC: {
-        children.push_back(reinterpret_cast<Expr **>(&base->as<Alloc>()->m_type));
-        break;
-      }
       case QIR_NODE_CALL: {
         children.reserve(base->as<Call>()->m_args.size());
         for (Expr *&child : base->as<Call>()->m_args) {

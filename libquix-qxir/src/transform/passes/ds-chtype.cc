@@ -104,13 +104,6 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         break;
       }
 
-      case QIR_NODE_ALLOC: {
-        if (!cur->isType()) {
-          EPUT("Allocation child node is not a type node");
-        }
-        break;
-      }
-
       case QIR_NODE_CALL: {
         if (cur->isType()) {
           EPUT("Call child node is a type node");

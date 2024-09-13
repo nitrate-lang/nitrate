@@ -1793,6 +1793,9 @@ namespace qxir {
   }
 
   static Expr *qconv_fn(ConvState &s, const qparse::FnDef *n) {
+    bool old_inside_function = s.inside_function;
+    s.inside_function = true;
+
     Expr *precond = nullptr, *postcond = nullptr;
     Seq *body = nullptr;
     Params params;
@@ -1887,6 +1890,7 @@ namespace qxir {
 
     current->getFunctions().insert({str, {fnty->as<FnTy>(), obj}});
 
+    s.inside_function = old_inside_function;
     return obj;
   }
 
@@ -2055,75 +2059,37 @@ namespace qxir {
       throw QError();
     }
 
-    if (s.inside_function) {
-      if (!n->get_type()) {
-        auto val = qconv_one(s, n->get_value());
-        if (!val) {
-          badtree(n, "qparse::LetDecl::get_value() == nullptr");
-          throw QError();
-        }
-
-        LetTmpNodeCradle datapack;
-        std::get<0>(datapack) = memorize(n->get_name());
-        std::get<1>(datapack) = val;
-
-        return create<Tmp>(TmpType::LET, std::move(datapack));
-      } else {
-        auto type = qconv_one(s, n->get_type());
-        if (!type) {
-          badtree(n, "qparse::LetDecl::get_type() == nullptr");
-          throw QError();
-        }
-
-        auto alloc = create<Alloc>(type->asType());
-
-        if (n->get_value()) {
-          auto val = qconv_one(s, n->get_value());
-          if (!val) {
-            badtree(n, "qparse::LetDecl::get_value() == nullptr");
-            throw QError();
-          }
-
-          auto assign = create<BinExpr>(alloc, val, Op::Set);
-
-          return create<Seq>(SeqItems({alloc, assign}));
-        } else {
-          return alloc;
-        }
+    Type *type = nullptr;
+    if (n->get_type()) {
+      type = qconv_one(s, n->get_type())->asType();
+      if (!type) {
+        badtree(n, "qparse::LetDecl::get_type() == nullptr");
+        throw QError();
       }
-    } else {
-      Type *type = nullptr;
-      if (n->get_type()) {
-        type = qconv_one(s, n->get_type())->asType();
-        if (!type) {
-          badtree(n, "qparse::LetDecl::get_type() == nullptr");
-          throw QError();
-        }
-      }
-
-      Expr *val = nullptr;
-      if (n->get_value()) {
-        val = qconv_one(s, n->get_value());
-        if (!val) {
-          badtree(n, "qparse::LetDecl::get_value() == nullptr");
-          throw QError();
-        }
-      }
-
-      if (!val) {
-        val = create<Tmp>(TmpType::UNDEF_LITERAL);
-      }
-
-      if (type) {
-        val = create<BinExpr>(val, type, Op::CastAs);
-      }
-
-      std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
-
-      auto l = create<Local>(name, val);
-      current->getVariables().insert({name, l});
-      return l;
     }
+
+    Expr *val = nullptr;
+    if (n->get_value()) {
+      val = qconv_one(s, n->get_value());
+      if (!val) {
+        badtree(n, "qparse::LetDecl::get_value() == nullptr");
+        throw QError();
+      }
+    }
+
+    if (!val) {
+      val = create<Tmp>(TmpType::UNDEF_LITERAL);
+    }
+
+    if (type) {
+      val = create<BinExpr>(val, type, Op::CastAs);
+    }
+
+    std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
+
+    auto l = create<Local>(name, val);
+    current->getVariables().insert({name, l});
+    return l;
   }
 
   static Expr *qconv_inline_asm(ConvState &s, const qparse::InlineAsm *n) {
@@ -2899,10 +2865,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
         items.push_back(clone(item));
       }
       out = create<List>(std::move(items));
-      break;
-    }
-    case QIR_NODE_ALLOC: {
-      out = create<Alloc>(clone(static_cast<Alloc *>(in)->getAllocType())->asType());
       break;
     }
     case QIR_NODE_CALL: {
