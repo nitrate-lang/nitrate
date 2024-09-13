@@ -62,7 +62,9 @@ static void do_pass(qmodule_t *mod, Expr *&base, std::string cur_scope,
       if (orig_name.empty()) {
         orig_name = std::to_string(counter++);
       }
-      new_scope = cur_scope + "::" + orig_name;
+
+      new_scope = cur_scope.empty() ? orig_name : cur_scope + "::" + orig_name;
+
       (*cur)->as<Fn>()->setName(mod->internString(new_scope));
       functions.push_back(reinterpret_cast<Fn **>(cur));
     }
