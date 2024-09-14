@@ -197,7 +197,7 @@ void qcode_conf_clear(qcode_conf_t *conf);
  * @note This function is thread-safe.
  */
 size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream, const char *field_delim,
-                         const char *line_delim);
+                       const char *line_delim);
 
 #ifdef __cplusplus
 }

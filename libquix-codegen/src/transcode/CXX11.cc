@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "quix-qxir/TypeDecl.h"
 #define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
@@ -38,8 +37,10 @@
 #include <quix-qxir/Inference.h>
 #include <quix-qxir/Node.h>
 
+#include <boost/multiprecision/cpp_int.hpp>
 #include <chrono>
 #include <core/Config.hh>
+#include <cstdint>
 #include <transcode/Targets.hh>
 
 using namespace qxir;
@@ -80,12 +81,6 @@ static void write_header(std::ostream &out) {
 }
 
 struct PreGenParam {
-  bool use_qint128_t = false;
-  bool use_quint128_t = false;
-  bool use_qf16_t = false;
-  bool use_qf32_t = false;
-  bool use_qf64_t = false;
-  bool use_qf128_t = false;
   bool use_rotl = false;
   bool use_rotr = false;
   bool use_vector = false;
@@ -103,24 +98,6 @@ static PreGenParam pregen_iterate(Expr *root) {
     Expr *cur = *p_cur;
 
     switch (cur->getKind()) {
-      case QIR_NODE_I128_TY:
-        param.use_qint128_t = true;
-        break;
-      case QIR_NODE_U128_TY:
-        param.use_quint128_t = true;
-        break;
-      case QIR_NODE_F16_TY:
-        param.use_qf16_t = true;
-        break;
-      case QIR_NODE_F32_TY:
-        param.use_qf32_t = true;
-        break;
-      case QIR_NODE_F64_TY:
-        param.use_qf64_t = true;
-        break;
-      case QIR_NODE_F128_TY:
-        param.use_qf128_t = true;
-        break;
       case QIR_NODE_BINEXPR: {
         auto op = cur->as<BinExpr>()->getOp();
         if (op == Op::ROTL) {
@@ -170,17 +147,15 @@ static void write_stdinc(std::ostream &out, const PreGenParam &param) {
   out << "#define qexport __attribute__((visibility(\"default\")))\n";
   out << "\n";
 
-  out << "#include <stdbool.h>\n";
-  out << "#include <stdint.h>\n\n";
   if (param.use_array) {
     out << "#include <array>\n";
   }
   if (param.use_bitcast) {
     out << "#include <bit>\n";
   }
-  if (param.use_qf32_t || param.use_qf64_t) {
-    out << "#include <cmath>\n";
-  }
+  out << "#include <cmath>\n";
+  out << "#include <cstdint>\n";
+
   if (param.use_functional) {
     out << "#include <functional>\n";
   }
@@ -198,29 +173,65 @@ static void write_stdinc(std::ostream &out, const PreGenParam &param) {
 }
 
 static void write_coretypes(std::ostream &out, const PreGenParam &param) {
-  if (param.use_qint128_t) {
-    out << "typedef __int128 qint128_t;\n";
-  }
-  if (param.use_quint128_t) {
-    out << "typedef unsigned __int128 quint128_t;\n";
-  }
-  if (param.use_qf16_t) {
-    out << "typedef __fp16 qf16_t;\n";
-  }
-  if (param.use_qf32_t) {
-    out << "typedef _Float32 qf32_t;\n";
-  }
-  if (param.use_qf64_t) {
-    out << "typedef _Float64 qf64_t;\n";
-  }
-  if (param.use_qf128_t) {
-    out << "typedef __float128 qf128_t;\n";
-  }
+  out << "typedef __fp16 qf16_t;\n";
+  out << "typedef _Float32 qf32_t;\n";
+  out << "typedef _Float64 qf64_t;\n";
+  out << "typedef __float128 qf128_t;\n\n";
+  out << R"(template <typename T>
+class qint128_base;
 
-  if (param.use_qint128_t || param.use_quint128_t || param.use_qf16_t || param.use_qf32_t ||
-      param.use_qf64_t || param.use_qf128_t) {
-    out << "\n";
-  }
+typedef qint128_base<unsigned __int128> quint128_t;
+typedef qint128_base<__int128> qint128_t;
+
+template <typename T>
+class qint128_base {
+  T m_v;
+
+public:
+  qint128_base(T v) : m_v(v) {}
+  qint128_base(quint128_t v) : m_v(v()) {}
+  qint128_base(uint64_t hi, uint64_t lo) : m_v(((T)hi << 64) | lo) {}
+
+  explicit operator qint128_t() const { return m_v; }
+
+  qint128_base& operator=(const quint128_t& rhs) { return (m_v = rhs()), *this; }
+
+  T operator()() const { return m_v; }
+  T& operator()() { return m_v; }
+
+  qint128_base operator+(const qint128_base& rhs) { return m_v + rhs.m_v; }
+  qint128_base operator-(const qint128_base& rhs) { return m_v - rhs.m_v; }
+  qint128_base operator*(const qint128_base& rhs) { return m_v * rhs.m_v; }
+  qint128_base operator/(const qint128_base& rhs) { return m_v / rhs.m_v; }
+  qint128_base operator%(const qint128_base& rhs) { return m_v % rhs.m_v; }
+  qint128_base operator&(const qint128_base& rhs) { return m_v & rhs.m_v; }
+  qint128_base operator|(const qint128_base& rhs) { return m_v | rhs.m_v; }
+  qint128_base operator^(const qint128_base& rhs) { return m_v ^ rhs.m_v; }
+  qint128_base operator<<(const qint128_base& rhs) { return m_v << rhs.m_v; }
+  qint128_base operator>>(const qint128_base& rhs) { return m_v >> rhs.m_v; }
+
+  bool operator&&(const qint128_base& rhs) { return m_v && rhs.m_v; }
+  bool operator||(const qint128_base& rhs) { return m_v || rhs.m_v; }
+  bool operator==(const qint128_base& rhs) { return m_v == rhs.m_v; }
+  bool operator!=(const qint128_base& rhs) { return m_v != rhs.m_v; }
+  bool operator<(const qint128_base& rhs) { return m_v < rhs.m_v; }
+  bool operator>(const qint128_base& rhs) { return m_v > rhs.m_v; }
+  bool operator<=(const qint128_base& rhs) { return m_v <= rhs.m_v; }
+  bool operator>=(const qint128_base& rhs) { return m_v >= rhs.m_v; }
+
+  qint128_base& operator+=(const qint128_base& rhs) { return (m_v += rhs.m_v), *this; }
+  qint128_base& operator-=(const qint128_base& rhs) { return (m_v -= rhs.m_v), *this; }
+  qint128_base& operator*=(const qint128_base& rhs) { return (m_v *= rhs.m_v), *this; }
+  qint128_base& operator/=(const qint128_base& rhs) { return (m_v /= rhs.m_v), *this; }
+  qint128_base& operator%=(const qint128_base& rhs) { return (m_v %= rhs.m_v), *this; }
+  qint128_base& operator&=(const qint128_base& rhs) { return (m_v &= rhs.m_v), *this; }
+  qint128_base& operator|=(const qint128_base& rhs) { return (m_v |= rhs.m_v), *this; }
+  qint128_base& operator^=(const qint128_base& rhs) { return (m_v ^= rhs.m_v), *this; }
+  qint128_base& operator<<=(const qint128_base& rhs) { return (m_v <<= rhs.m_v), *this; }
+  qint128_base& operator>>=(const qint128_base& rhs) { return (m_v >>= rhs.m_v), *this; }
+};
+)";
+  out << "\n";
 }
 
 static void write_builtins(std::ostream &out, const PreGenParam &param) {
@@ -399,7 +410,17 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
     }
 
     case QIR_NODE_INT: {
-      out << n->as<Int>()->getValue();
+      errno = 0;
+      char *end;
+      uint64_t x = std::strtoul(n->as<Int>()->getValue().c_str(), &end, 10);
+      if (errno == 0) {
+        out << x;
+      } else {
+        boost::multiprecision::cpp_int y(n->as<Int>()->getValue());
+        uint64_t hi = (y >> 64).convert_to<uint64_t>();
+        uint64_t lo = (y & 0xFFFFFFFFFFFFFFFF).convert_to<uint64_t>();
+        out << "quint128_t(" << hi << "ULL," << lo << "ULL)";
+      }
       break;
     }
 
@@ -518,6 +539,9 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
       } else if (ty == QIR_NODE_LOCAL) {
         if (val->as<Local>()->getValue()->getKind() == QIR_NODE_FN_TY) {
           out << "extern ";
+          if (n->as<Extern>()->getAbiName() == "c") {
+            out << "\"C\" ";
+          }
           auto fty = val->as<Local>()->getValue()->as<FnTy>();
           recurse(fty->getReturn());
 
@@ -576,7 +600,6 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
         state.stmt_mode = false;
         recurse(n->as<Ret>()->getExpr());
         state.stmt_mode = old_stmt_mode;
-        out << ';';
       }
       break;
     }
@@ -635,7 +658,7 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
       out << "){";
       state.stmt_mode = true;
       recurse(n->as<For>()->getBody());
-      out << ";}";
+      out << "}";
       state.stmt_mode = old_stmt_mode;
       break;
     }
@@ -708,14 +731,7 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
         out << "){";
         bool old = state.inside_func;
         state.inside_func = true;
-        for (auto &child : n->as<Fn>()->getBody()->getItems()) {
-          if (child->getKind() == QIR_NODE_VOID_TY) {
-            continue;
-          }
-
-          recurse(child);
-          out << ';';
-        }
+        recurse(n->as<Fn>()->getBody());
         state.inside_func = old;
         out << '}';
       } else {
@@ -733,14 +749,7 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
 
         bool old = state.inside_func;
         state.inside_func = true;
-        for (auto &child : n->as<Fn>()->getBody()->getItems()) {
-          if (child->getKind() == QIR_NODE_VOID_TY) {
-            continue;
-          }
-
-          recurse(child);
-          out << ';';
-        }
+        recurse(n->as<Fn>()->getBody());
         state.inside_func = old;
         out << '}';
       }

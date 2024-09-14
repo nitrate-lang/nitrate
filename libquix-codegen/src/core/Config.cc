@@ -169,7 +169,7 @@ LIB_EXPORT void qcode_conf_clear(qcode_conf_t *conf) {
 }
 
 LIB_EXPORT size_t qcode_conf_dump(qcode_conf_t *conf, FILE *stream, const char *field_delim,
-                                    const char *line_delim) {
+                                  const char *line_delim) {
   try {
     if (!stream) {
       qcore_panic("qcode_conf_dump: Contract violation: 'stream' parameter cannot be NULL.");
