@@ -38,7 +38,6 @@
 #include <transcode/Targets.hh>
 
 bool codegen::for_ts(qmodule_t *module, std::ostream &err, std::ostream &out) {
-  /// TODO: Implement qcode_for_ts
   qcore_implement(__func__);
   return false;
 }

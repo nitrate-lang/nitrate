@@ -38,7 +38,6 @@
 #include <transcode/Targets.hh>
 
 bool codegen::for_csharp(qmodule_t *module, std::ostream &err, std::ostream &out) {
-  /// TODO: Implement qcode_for_csharp
   qcore_implement(__func__);
   return false;
 }
