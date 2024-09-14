@@ -93,6 +93,7 @@ struct PreGenParam {
   bool use_bitcast = false;
   bool use_tuple = false;
   bool use_string = false;
+  bool use_functional = false;
 };
 
 static PreGenParam pregen_iterate(Expr *root) {
@@ -134,6 +135,7 @@ static PreGenParam pregen_iterate(Expr *root) {
       case QIR_NODE_STRUCT_TY:
         param.use_tuple = true;
         break;
+      case QIR_NODE_STRING:
       case QIR_NODE_STRING_TY:
         param.use_string = true;
         break;
@@ -143,6 +145,10 @@ static PreGenParam pregen_iterate(Expr *root) {
         break;
       case QIR_NODE_ARRAY_TY:
         param.use_array = true;
+        break;
+      case QIR_NODE_FN:
+      case QIR_NODE_FN_TY:
+        param.use_functional = true;
         break;
       default:
         break;
@@ -161,27 +167,31 @@ static void write_stdinc(std::ostream &out, const PreGenParam &param) {
   if (param.use_rotl || param.use_rotr) {
     out << "#define __qinline inline __attribute__((always_inline))\n";
   }
+  out << "#define qexport __attribute__((visibility(\"default\")))\n";
   out << "\n";
 
   out << "#include <stdbool.h>\n";
-  out << "#include <stdint.h>\n";
-  if (param.use_qf32_t || param.use_qf64_t) {
-    out << "#include <math.h>\n";
+  out << "#include <stdint.h>\n\n";
+  if (param.use_array) {
+    out << "#include <array>\n";
   }
   if (param.use_bitcast) {
     out << "#include <bit>\n";
   }
-  if (param.use_tuple) {
-    out << "#include <tuple>\n";
+  if (param.use_qf32_t || param.use_qf64_t) {
+    out << "#include <cmath>\n";
+  }
+  if (param.use_functional) {
+    out << "#include <functional>\n";
   }
   if (param.use_string) {
     out << "#include <string>\n";
   }
+  if (param.use_tuple) {
+    out << "#include <tuple>\n";
+  }
   if (param.use_vector) {
     out << "#include <vector>\n";
-  }
-  if (param.use_array) {
-    out << "#include <array>\n";
   }
 
   out << "\n";
@@ -241,6 +251,7 @@ static void write_builtins(std::ostream &out, const PreGenParam &param) {
 struct ConvState {
   bool inside_func = false;
   bool stmt_mode = true;
+  bool is_static = true;
 };
 
 static void escape_string(std::ostream &out, std::string_view input) {
@@ -487,11 +498,14 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
     }
 
     case QIR_NODE_IDENT: {
-      out << n->as<Ident>()->getName();
+      out << n->as<Ident>()->getWhat()->getName();
       break;
     }
 
     case QIR_NODE_EXTERN: {
+      bool old_is_static = state.is_static;
+      state.is_static = false;
+
       bool old_stmt_mode = state.stmt_mode;
       state.stmt_mode = true;
 
@@ -499,7 +513,7 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
       auto ty = val->getKind();
 
       if (ty == QIR_NODE_FN) {
-        out << "__attribute__((visibility(\"default\"))) ";
+        out << "qexport ";
         recurse(val);
       } else if (ty == QIR_NODE_LOCAL) {
         if (val->as<Local>()->getValue()->getKind() == QIR_NODE_FN_TY) {
@@ -525,46 +539,45 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
 
           out << ')';
         } else {
-          out << "__attribute__((visibility(\"default\"))) ";
+          out << "qexport ";
           recurse(val);
         }
       }
 
       state.stmt_mode = old_stmt_mode;
+      state.is_static = old_is_static;
       break;
     }
 
     case QIR_NODE_LOCAL: {
+      if (state.is_static) {
+        out << "static ";
+      }
+
       bool old_stmt_mode = state.stmt_mode;
       state.stmt_mode = false;
       auto T = static_cast<Type *>(qxir_infer(n->as<Local>()->getValue()));
       state.stmt_mode = old_stmt_mode;
 
-      if (T->getKind() == QIR_NODE_ARRAY_TY) {
-        recurse(T);
-        out << ' ' << n->as<Local>()->getName();
-        out << '[';
-        recurse(T->as<ArrayTy>()->getCount());
-        out << ']';
-      } else if (T->getKind() == QIR_NODE_LIST_TY) {
-        recurse(T);
-        out << ' ' << n->as<Local>()->getName();
-        out << "[]";
-      } else {
-        recurse(T);
-        out << ' ' << n->as<Local>()->getName();
+      recurse(T);
+      out << ' ' << n->as<Local>()->getName();
+      if (!n->as<Local>()->getValue()->isType()) {
+        out << "=";
+        recurse(n->as<Local>()->getValue());
       }
-      out << "=";
-      recurse(n->as<Local>()->getValue());
       break;
     }
 
     case QIR_NODE_RET: {
-      out << "return ";
-      bool old_stmt_mode = state.stmt_mode;
-      state.stmt_mode = false;
-      recurse(n->as<Ret>()->getExpr());
-      state.stmt_mode = old_stmt_mode;
+      out << "return";
+      if (n->as<Ret>()->getExpr()->getKind() != QIR_NODE_VOID_TY) {
+        out << ' ';
+        bool old_stmt_mode = state.stmt_mode;
+        state.stmt_mode = false;
+        recurse(n->as<Ret>()->getExpr());
+        state.stmt_mode = old_stmt_mode;
+        out << ';';
+      }
       break;
     }
 
@@ -682,29 +695,56 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
     }
 
     case QIR_NODE_FN: {
-      recurse(static_cast<Expr *>(qxir_infer(n->as<Fn>()->getBody())));
-      out << ' ' << n->as<Fn>()->getName() << "(";
-      for (size_t i = 0; i < n->as<Fn>()->getParams().size(); i++) {
-        if (i != 0) {
-          out << ",";
+      if (state.stmt_mode) {
+        recurse(static_cast<Expr *>(qxir_infer(n->as<Fn>()->getBody())));
+        out << ' ' << n->as<Fn>()->getName() << "(";
+        for (size_t i = 0; i < n->as<Fn>()->getParams().size(); i++) {
+          if (i != 0) {
+            out << ",";
+          }
+          recurse(n->as<Fn>()->getParams()[i].first);
+          out << ' ' << n->as<Fn>()->getParams()[i].second;
         }
-        recurse(n->as<Fn>()->getParams()[i].first);
-        out << ' ' << n->as<Fn>()->getParams()[i].second;
-      }
-      out << "){";
+        out << "){";
+        bool old = state.inside_func;
+        state.inside_func = true;
+        for (auto &child : n->as<Fn>()->getBody()->getItems()) {
+          if (child->getKind() == QIR_NODE_VOID_TY) {
+            continue;
+          }
 
-      bool old = state.inside_func;
-      state.inside_func = true;
-      for (auto &child : n->as<Fn>()->getBody()->getItems()) {
-        if (child->getKind() == QIR_NODE_VOID_TY) {
-          continue;
+          recurse(child);
+          out << ';';
         }
+        state.inside_func = old;
+        out << '}';
+      } else {
+        out << "[](";
+        for (size_t i = 0; i < n->as<Fn>()->getParams().size(); i++) {
+          if (i != 0) {
+            out << ",";
+          }
+          recurse(n->as<Fn>()->getParams()[i].first);
+          out << ' ' << n->as<Fn>()->getParams()[i].second;
+        }
+        out << ")->";
+        recurse(static_cast<Expr *>(qxir_infer(n->as<Fn>()->getBody())));
+        out << '{';
 
-        recurse(child);
-        out << ';';
+        bool old = state.inside_func;
+        state.inside_func = true;
+        for (auto &child : n->as<Fn>()->getBody()->getItems()) {
+          if (child->getKind() == QIR_NODE_VOID_TY) {
+            continue;
+          }
+
+          recurse(child);
+          out << ';';
+        }
+        state.inside_func = old;
+        out << '}';
       }
-      state.inside_func = old;
-      out << '}';
+
       break;
     }
 
