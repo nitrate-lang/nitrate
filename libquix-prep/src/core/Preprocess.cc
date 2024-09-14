@@ -55,7 +55,6 @@ extern "C" {
 #include <optional>
 #include <quix-lexer/Base.hh>
 #include <string_view>
-#include <unordered_set>
 
 using namespace qcall;
 
@@ -136,7 +135,6 @@ bool qprep_impl_t::run_and_expand(std::string_view code) {
     if (pos != std::string_view::npos) {
       std::string_view name = code.substr(9, pos - 9);
       name = rtrim(name);
-      m_core->macros_funcs.insert(name);
     }
   }
 
@@ -258,13 +256,6 @@ qlex_tok_t qprep_impl_t::next_impl() {
 
           size_t pos = body.find_first_of("(");
           if (pos != std::string_view::npos) {
-            std::string_view name = body.substr(0, pos);
-
-            if (!m_core->macros_funcs.contains(name)) {
-              qcore_print(QCORE_ERROR, "Undefined macro function: %s\n", name.data());
-              break;
-            }
-
             std::string code = "return " + std::string(body);
             if (!run_and_expand(code)) {
               qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n", body.data());
@@ -274,11 +265,6 @@ qlex_tok_t qprep_impl_t::next_impl() {
             x = qlex_next(this);
             break;
           } else {
-            if (!m_core->macros_funcs.contains(body)) {
-              qcore_print(QCORE_ERROR, "Undefined macro function: %s\n", body.data());
-              break;
-            }
-
             std::string code = "return " + std::string(body) + "()";
             if (!run_and_expand(code)) {
               qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n", body.data());

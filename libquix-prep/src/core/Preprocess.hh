@@ -38,7 +38,6 @@
 #include <optional>
 #include <quix-lexer/Base.hh>
 #include <string_view>
-#include <unordered_set>
 
 #define get_engine() (qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1))
 
@@ -48,7 +47,6 @@ extern std::string_view quix_code_prefix;
 
 struct qprep_impl_t final : public qlex_t {
   struct Core {
-    std::unordered_set<std::string_view> macros_funcs;
     lua_State *L;
 
     ~Core();
