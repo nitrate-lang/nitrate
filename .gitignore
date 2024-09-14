@@ -70,3 +70,4 @@ source.q
 hello.tree
 lex-aware-fuzzer.txt
 bugs/
+libquix-codegen/test-transcode.cpp
