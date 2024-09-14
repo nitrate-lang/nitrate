@@ -1,5 +1,7 @@
 # Project TODO List
 
+fn-flatten pass broke QIR_NODE_EXTERN, need to fix.
+
 - Garbage Collection
   - Summary:
     - A runtime-less garbage collection system that will have the collector invoked
