@@ -402,7 +402,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       ss << n->as<Fn>()->getName();
       ss << "(";
       for (auto it = n->as<Fn>()->getParams().begin(); it != n->as<Fn>()->getParams().end(); ++it) {
-        recurse(*it);
+        ss << it->second << ": ";
+        recurse(it->first);
         if (std::next(it) != n->as<Fn>()->getParams().end() || n->as<Fn>()->isVariadic()) {
           ss << ",";
         }

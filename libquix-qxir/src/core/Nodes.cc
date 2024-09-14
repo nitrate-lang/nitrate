@@ -396,7 +396,10 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
         return false;
       }
       for (size_t i = 0; i < a->m_params.size(); i++) {
-        if (!a->m_params[i]->cmp_eq(b->m_params[i])) {
+        if (a->m_params[i].second != b->m_params[i].second) {
+          return false;
+        }
+        if (!a->m_params[i].first->cmp_eq(b->m_params[i].first)) {
           return false;
         }
       }

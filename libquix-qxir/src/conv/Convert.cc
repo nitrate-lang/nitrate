@@ -1478,7 +1478,9 @@ namespace qxir {
           }
         }
 
-        params.push_back(type);
+        std::string_view sv = memorize(std::string_view(std::get<0>(*it)));
+
+        params.push_back({type, sv});
         current->getParameterMap()[str].push_back({std::string(std::get<0>(*it)), type, def});
       }
     }
@@ -1851,7 +1853,7 @@ namespace qxir {
 
       { /* Implicit return */
         if (!seq->getItems().empty()) {
-          if (seq->getItems().back()->getKind() != QIR_NODE_RET) {
+          if (seq->getItems().back()->getKind() != QIR_NODE_RET && !fty->get_return_ty()->is_void()) {
             seq->getItems().back() = create<Ret>(seq->getItems().back());
           }
         }
@@ -1897,7 +1899,9 @@ namespace qxir {
           }
         }
 
-        params.push_back(type);
+        std::string_view sv = memorize(std::string_view(std::get<0>(*it)));
+
+        params.push_back({type, sv});
         current->getParameterMap()[str].push_back({std::string(std::get<0>(*it)), type, def});
       }
     }
@@ -2997,7 +3001,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       Params params;
       params.reserve(n->getParams().size());
       for (auto param : n->getParams()) {
-        params.push_back(clone(param)->asType());
+        params.push_back({clone(param.first)->asType(), memorize(param.second)});
       }
 
       out = create<Fn>(memorize(n->getName()), std::move(params), clone(n->getBody())->as<Seq>());

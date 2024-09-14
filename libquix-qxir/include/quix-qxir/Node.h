@@ -1015,7 +1015,9 @@ namespace qxir {
     void addCase(Case *c) noexcept { m_cases.push_back(c); }
   };
 
-  typedef std::vector<Type *, Arena<Type *>> Params;
+  typedef std::vector<std::pair<Type *, std::string_view>,
+                      Arena<std::pair<Type *, std::string_view>>>
+      Params;
 
   class Fn final : public Expr {
     QCLASS_REFLECT()
@@ -1035,7 +1037,6 @@ namespace qxir {
     const Params &getParams() const noexcept { return m_params; }
     Params &getParams() noexcept { return m_params; }
     void setParams(const Params &params) noexcept { m_params = params; }
-    void addParam(Type *param) noexcept { m_params.push_back(param); }
 
     Seq *getBody() noexcept { return m_body; }
     Seq *setBody(Seq *body) noexcept { return m_body = body; }

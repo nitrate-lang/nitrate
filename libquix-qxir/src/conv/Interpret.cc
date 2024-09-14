@@ -41,6 +41,7 @@ using namespace qxir;
 qxir::Expr *qxir::evaluate_to_literal(const qxir::Expr *x) noexcept {
   (void)x;
 
-  qcore_implement(__func__);
+  return create<Int>(0);
+  // qcore_implement(__func__);
   /// TODO: Interpret const expressions.
 }
