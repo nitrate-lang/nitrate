@@ -561,6 +561,219 @@ CPP_EXPORT bool qxir::Expr::is_acyclic() const noexcept {
   return !has_cycle;
 }
 
+CPP_EXPORT std::string_view qxir::Expr::getName() const noexcept {
+  std::string_view R = "";
+
+  switch (this->getKind()) {
+    case QIR_NODE_BINEXPR: {
+      break;
+    }
+
+    case QIR_NODE_UNEXPR: {
+      break;
+    }
+
+    case QIR_NODE_POST_UNEXPR: {
+      break;
+    }
+
+    case QIR_NODE_INT: {
+      break;
+    }
+
+    case QIR_NODE_FLOAT: {
+      break;
+    }
+
+    case QIR_NODE_STRING: {
+      break;
+    }
+
+    case QIR_NODE_LIST: {
+      break;
+    }
+
+    case QIR_NODE_CALL: {
+      break;
+    }
+
+    case QIR_NODE_SEQ: {
+      break;
+    }
+
+    case QIR_NODE_INDEX: {
+      break;
+    }
+
+    case QIR_NODE_IDENT: {
+      R = as<Ident>()->m_name;
+      break;
+    }
+
+    case QIR_NODE_EXTERN: {
+      break;
+    }
+
+    case QIR_NODE_LOCAL: {
+      R = as<Local>()->m_name;
+      break;
+    }
+
+    case QIR_NODE_RET: {
+      break;
+    }
+
+    case QIR_NODE_BRK: {
+      break;
+    }
+
+    case QIR_NODE_CONT: {
+      break;
+    }
+
+    case QIR_NODE_IF: {
+      break;
+    }
+
+    case QIR_NODE_WHILE: {
+      break;
+    }
+
+    case QIR_NODE_FOR: {
+      break;
+    }
+
+    case QIR_NODE_FORM: {
+      break;
+    }
+
+    case QIR_NODE_FOREACH: {
+      break;
+    }
+
+    case QIR_NODE_CASE: {
+      break;
+    }
+
+    case QIR_NODE_SWITCH: {
+      break;
+    }
+
+    case QIR_NODE_FN: {
+      R = as<Fn>()->m_name;
+      break;
+    }
+
+    case QIR_NODE_ASM: {
+      qcore_implement("Expr::getName for QIR_NODE_ASM");
+      break;
+    }
+
+    case QIR_NODE_U1_TY: {
+      break;
+    }
+
+    case QIR_NODE_U8_TY: {
+      break;
+    }
+
+    case QIR_NODE_U16_TY: {
+      break;
+    }
+
+    case QIR_NODE_U32_TY: {
+      break;
+    }
+
+    case QIR_NODE_U64_TY: {
+      break;
+    }
+
+    case QIR_NODE_U128_TY: {
+      break;
+    }
+
+    case QIR_NODE_I8_TY: {
+      break;
+    }
+
+    case QIR_NODE_I16_TY: {
+      break;
+    }
+
+    case QIR_NODE_I32_TY: {
+      break;
+    }
+
+    case QIR_NODE_I64_TY: {
+      break;
+    }
+
+    case QIR_NODE_I128_TY: {
+      break;
+    }
+
+    case QIR_NODE_F16_TY: {
+      break;
+    }
+
+    case QIR_NODE_F32_TY: {
+      break;
+    }
+
+    case QIR_NODE_F64_TY: {
+      break;
+    }
+
+    case QIR_NODE_F128_TY: {
+      break;
+    }
+
+    case QIR_NODE_VOID_TY: {
+      break;
+    }
+
+    case QIR_NODE_PTR_TY: {
+      break;
+    }
+
+    case QIR_NODE_OPAQUE_TY: {
+      R = as<OpaqueTy>()->m_name;
+      break;
+    }
+
+    case QIR_NODE_STRING_TY: {
+      break;
+    }
+
+    case QIR_NODE_STRUCT_TY: {
+      break;
+    }
+
+    case QIR_NODE_UNION_TY: {
+      break;
+    }
+
+    case QIR_NODE_ARRAY_TY: {
+      break;
+    }
+
+    case QIR_NODE_LIST_TY: {
+      break;
+    }
+
+    case QIR_NODE_FN_TY: {
+      break;
+    }
+
+    case QIR_NODE_TMP: {
+      break;
+    }
+  }
+
+  return R;
+}
+
 CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> qxir::Expr::getLoc() const noexcept {
   qmodule_t *mod = getModule();
   if (mod == nullptr) {

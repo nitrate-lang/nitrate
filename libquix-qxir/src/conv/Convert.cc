@@ -61,6 +61,7 @@ struct ConvState {
   bool inside_function = false;
   std::string ns_prefix;
   std::stack<qparse::String> composite_expanse;
+  qxir::AbiTag abi_mode = qxir::AbiTag::Internal;
 
   std::string cur_named(std::string_view suffix) const {
     if (ns_prefix.empty()) {
@@ -299,7 +300,7 @@ static qxir::Tmp *create_simple_call(
         args = {}) {
   qxir::CallArgsTmpNodeCradle datapack;
 
-  std::get<0>(datapack) = qxir::create<qxir::Ident>(memorize(name));
+  std::get<0>(datapack) = qxir::create<qxir::Ident>(memorize(name), nullptr);
   std::get<1>(datapack) = std::move(args);
 
   return create<qxir::Tmp>(qxir::TmpType::CALL, std::move(datapack));
@@ -911,7 +912,7 @@ namespace qxir {
 
     auto str = s.cur_named(n->get_name());
 
-    return create<Ident>(memorize(std::string_view(str)));
+    return create<Ident>(memorize(std::string_view(str)), nullptr);
   }
 
   static Expr *qconv_seq_point(ConvState &s, const qparse::SeqPoint *n) {
@@ -1493,7 +1494,7 @@ namespace qxir {
       throw QError();
     }
 
-    Local *local = create<Local>(str, fnty);
+    Local *local = create<Local>(str, fnty, s.abi_mode);
 
     current->getFunctions().insert({str, {fnty->as<FnTy>(), local}});
 
@@ -1853,8 +1854,12 @@ namespace qxir {
 
       { /* Implicit return */
         if (!seq->getItems().empty()) {
-          if (seq->getItems().back()->getKind() != QIR_NODE_RET && !fty->get_return_ty()->is_void()) {
-            seq->getItems().back() = create<Ret>(seq->getItems().back());
+          if (seq->getItems().back()->getKind() != QIR_NODE_RET) {
+            if (!fty->get_return_ty()->is_void()) {
+              seq->getItems().back() = create<Ret>(seq->getItems().back());
+            } else {
+              seq->getItems().push_back(create<Ret>(create<VoidTy>()));
+            }
           }
         }
       }
@@ -1912,7 +1917,7 @@ namespace qxir {
       throw QError();
     }
 
-    auto obj = create<Fn>(str, std::move(params), body, fty->is_variadic());
+    auto obj = create<Fn>(str, std::move(params), body, fty->is_variadic(), s.abi_mode);
 
     current->getFunctions().insert({str, {fnty->as<FnTy>(), obj}});
 
@@ -1960,6 +1965,19 @@ namespace qxir {
      * sequence under a common ABI.
      */
 
+    AbiTag old = s.abi_mode;
+
+    if (n->get_abi_name().empty()) {
+      s.abi_mode = AbiTag::Default;
+    } else if (n->get_abi_name() == "q") {
+      s.abi_mode = AbiTag::QUIX;
+    } else if (n->get_abi_name() == "c") {
+      s.abi_mode = AbiTag::C;
+    } else {
+      badtree(n, "qparse::ExportDecl abi name is not supported: '" + n->get_abi_name() + "'");
+      throw QError();
+    }
+
     if (!n->get_body()) {
       badtree(n, "qparse::ExportDecl::get_body() == nullptr");
       throw QError();
@@ -1982,6 +2000,8 @@ namespace qxir {
         items.push_back(create<Extern>(item, abi_name));
       }
     }
+
+    s.abi_mode = old;
 
     return items;
   }
@@ -2035,26 +2055,25 @@ namespace qxir {
   }
 
   static Expr *qconv_const(ConvState &s, const qparse::ConstDecl *n) {
-    if (!n->get_value()) {
-      badtree(n, "parse::ConstDecl::get_value() == nullptr");
-      throw QError();
-    }
-
-    auto val = qconv_one(s, n->get_value());
-    if (!val) {
-      badtree(n, "qparse::ConstDecl::get_value() == nullptr");
-      throw QError();
-    }
-
+    Expr *init = qconv_one(s, n->get_value());
     Type *type = nullptr;
     if (n->get_type()) {
-      type = qconv_one(s, n->get_type())->asType();
-      if (!type) {
-        badtree(n, "qparse::ConstDecl::get_type() == nullptr");
-        throw QError();
+      Expr *tmp = qconv_one(s, n->get_type());
+      if (tmp) {
+        type = tmp->asType();
       }
+    }
 
-      val = create<BinExpr>(val, type, Op::CastAs);
+    if (init && type) {
+      if (!init->getType()->cmp_eq(type)) {
+        init = create<BinExpr>(init, type, Op::CastAs);
+      }
+    } else if (!init && type) {
+      init = type;
+    } else if (!init && !type) {
+      badtree(
+          n, "parse::ConstDecl::get_value() == nullptr && parse::ConstDecl::get_type() == nullptr");
+      throw QError();
     }
 
     std::string_view name;
@@ -2065,7 +2084,7 @@ namespace qxir {
       name = memorize(std::string_view(s.cur_named(n->get_name())));
     }
 
-    auto g = create<Local>(name, val);
+    auto g = create<Local>(name, init, s.abi_mode);
     g->setConst(true);
 
     current->getVariables().insert({name, g});
@@ -2079,43 +2098,39 @@ namespace qxir {
   }
 
   static Expr *qconv_let(ConvState &s, const qparse::LetDecl *n) {
-    if (!n->get_type() && !n->get_value()) {
-      badtree(n,
-              "qparse::LetDecl::get_type() == nullptr && qparse::LetDecl::get_value() == nullptr");
+    Expr *init = qconv_one(s, n->get_value());
+    Type *type = nullptr;
+    if (n->get_type()) {
+      Expr *tmp = qconv_one(s, n->get_type());
+      if (tmp) {
+        type = tmp->asType();
+      }
+    }
+
+    if (init && type) {
+      if (!init->getType()->cmp_eq(type)) {
+        init = create<BinExpr>(init, type, Op::CastAs);
+      }
+    } else if (!init && type) {
+      init = type;
+    } else if (!init && !type) {
+      badtree(
+          n, "parse::ConstDecl::get_value() == nullptr && parse::ConstDecl::get_type() == nullptr");
       throw QError();
     }
 
-    Type *type = nullptr;
-    if (n->get_type()) {
-      type = qconv_one(s, n->get_type())->asType();
-      if (!type) {
-        badtree(n, "qparse::LetDecl::get_type() == nullptr");
-        throw QError();
-      }
+    std::string_view name;
+
+    if (s.inside_function) {
+      name = memorize(n->get_name());
+    } else {
+      name = memorize(std::string_view(s.cur_named(n->get_name())));
     }
 
-    Expr *val = nullptr;
-    if (n->get_value()) {
-      val = qconv_one(s, n->get_value());
-      if (!val) {
-        badtree(n, "qparse::LetDecl::get_value() == nullptr");
-        throw QError();
-      }
-    }
+    auto g = create<Local>(name, init, s.abi_mode);
+    current->getVariables().insert({name, g});
 
-    if (!val) {
-      val = create<Tmp>(TmpType::UNDEF_LITERAL);
-    }
-
-    if (type) {
-      val = create<BinExpr>(val, type, Op::CastAs);
-    }
-
-    std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
-
-    auto l = create<Local>(name, val);
-    current->getVariables().insert({name, l});
-    return l;
+    return g;
   }
 
   static Expr *qconv_inline_asm(ConvState &s, const qparse::InlineAsm *n) {
@@ -2927,7 +2942,8 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       break;
     }
     case QIR_NODE_IDENT: {
-      out = create<Ident>(memorize(static_cast<Ident *>(in)->getName()));
+      out = create<Ident>(memorize(static_cast<Ident *>(in)->getName()),
+                          nullptr /* FIXME: DAMN IT!! */);
       break;
     }
     case QIR_NODE_EXTERN: {
@@ -2937,7 +2953,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     }
     case QIR_NODE_LOCAL: {
       Local *n = static_cast<Local *>(in);
-      out = create<Local>(memorize(n->getName()), clone(n->getValue()));
+      out = create<Local>(memorize(n->getName()), clone(n->getValue()), n->getAbiTag());
       break;
     }
     case QIR_NODE_RET: {
@@ -3004,7 +3020,8 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
         params.push_back({clone(param.first)->asType(), memorize(param.second)});
       }
 
-      out = create<Fn>(memorize(n->getName()), std::move(params), clone(n->getBody())->as<Seq>());
+      out = create<Fn>(memorize(n->getName()), std::move(params), clone(n->getBody())->as<Seq>(),
+                       n->isVariadic(), n->getAbiTag());
       break;
     }
     case QIR_NODE_ASM: {

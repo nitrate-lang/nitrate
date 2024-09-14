@@ -309,8 +309,13 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
     case QIR_NODE_LOCAL: {
       ss << "local ";
       ss << n->as<Local>()->getName();
-      ss << " = ";
-      recurse(n->as<Local>()->getValue());
+      if (n->as<Local>()->getValue()->isType()) {
+        ss << ": ";
+        recurse(n->as<Local>()->getValue());
+      } else {
+        ss << " = ";
+        recurse(n->as<Local>()->getValue());
+      }
       break;
     }
     case QIR_NODE_RET: {

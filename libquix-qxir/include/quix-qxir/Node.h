@@ -180,6 +180,9 @@ namespace qxir {
     inline void setConst(bool is_const) noexcept { m_constexpr = is_const; }
     inline void setVolatile(bool is_volatile) noexcept { m_volatile = is_volatile; }
 
+    // Returns "" if the construct is not named.
+    std::string_view getName() const noexcept;
+
     std::pair<qlex_loc_t, qlex_loc_t> getLoc() const noexcept;
     void setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
 
@@ -302,6 +305,13 @@ namespace qxir {
     BitcastAs, /* 'bitcast_as': Bitcast operator */
     CastAs,    /* 'cast_as': Common operator */
     Bitsizeof, /* 'bitsizeof': Bit size of operator */
+  };
+
+  enum class AbiTag {
+    C,
+    QUIX,
+    Internal,
+    Default = QUIX,
   };
 
   std::ostream &operator<<(std::ostream &os, Op op);
@@ -504,8 +514,6 @@ namespace qxir {
 
   public:
     OpaqueTy(std::string_view name) : Type(QIR_NODE_OPAQUE_TY), m_name(name) {}
-
-    std::string_view getName() noexcept { return m_name; }
   };
 
   class StringTy final : public Type {
@@ -768,13 +776,12 @@ namespace qxir {
     Expr *m_what;
 
   public:
-    Ident(std::string_view name, Expr *what = nullptr)
+    Ident(std::string_view name, Expr *what)
         : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
 
     Expr *getWhat() noexcept { return m_what; }
     Expr *setWhat(Expr *what) noexcept { return m_what = what; }
 
-    std::string_view getName() const noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
   };
 
@@ -785,7 +792,7 @@ namespace qxir {
     Expr *m_value;
 
   public:
-    Extern(Expr *value, std::string_view abi_name = "")
+    Extern(Expr *value, std::string_view abi_name)
         : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getAbiName() const noexcept { return m_abi_name; }
@@ -802,16 +809,19 @@ namespace qxir {
 
     std::string_view m_name;
     Expr *m_value;
+    AbiTag m_abi_tag;
 
   public:
-    Local(std::string_view name, Expr *value)
-        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value) {}
+    Local(std::string_view name, Expr *value, AbiTag abi_tag)
+        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value), m_abi_tag(abi_tag) {}
 
-    std::string_view getName() noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
 
     Expr *getValue() noexcept { return m_value; }
     Expr *setValue(Expr *value) noexcept { return m_value = value; }
+
+    AbiTag getAbiTag() const noexcept { return m_abi_tag; }
+    AbiTag setAbiTag(AbiTag abi_tag) noexcept { return m_abi_tag = abi_tag; }
   };
 
   class Ret final : public Expr {
@@ -1026,12 +1036,13 @@ namespace qxir {
     Params m_params;
     Seq *m_body;
     bool m_variadic;
+    AbiTag m_abi_tag;
 
   public:
-    Fn(std::string_view name, const Params &params, Seq *body, bool variadic = false)
-        : Expr(QIR_NODE_FN), m_name(name), m_params(params), m_body(body), m_variadic(variadic) {}
+    Fn(std::string_view name, const Params &params, Seq *body, bool variadic, AbiTag abi_tag)
+        : Expr(QIR_NODE_FN), m_name(name), m_params(params), m_body(body), m_variadic(variadic),
+          m_abi_tag(abi_tag) {}
 
-    std::string_view getName() noexcept { return m_name; }
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
 
     const Params &getParams() const noexcept { return m_params; }
@@ -1043,6 +1054,9 @@ namespace qxir {
 
     bool isVariadic() noexcept { return m_variadic; }
     void setVariadic(bool variadic) noexcept { m_variadic = variadic; }
+
+    AbiTag getAbiTag() const noexcept { return m_abi_tag; }
+    AbiTag setAbiTag(AbiTag abi_tag) noexcept { return m_abi_tag = abi_tag; }
   };
 
   class Asm final : public Expr {
@@ -1202,7 +1216,7 @@ namespace qxir {
     }
   }
 
-  Expr *evaluate_to_literal(const Expr *x) noexcept;
+  Expr *evaluate_to_literal(Expr *x) noexcept;
 
   template <typename T>
   std::optional<T> uint_as(const Expr *x) noexcept {
@@ -1213,7 +1227,7 @@ namespace qxir {
     static_assert(IS_T(std::string) || IS_T(uint64_t),
                   "qxir::evaluate_as(): T must be either std::string or uint64_t.");
 
-    Expr *r = evaluate_to_literal(x);
+    Expr *r = evaluate_to_literal(const_cast<Expr *>(x));
     if (r == nullptr) {
       return std::nullopt;
     }

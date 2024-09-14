@@ -322,27 +322,51 @@ static void mangle_type(Type *n, std::ostream &ss) {
 }
 
 static void mangle_function(Fn *n) {
-  std::stringstream ss;
-  ss << "_Q";
+  switch (n->getAbiTag()) {
+    case qxir::AbiTag::C: {
+      std::string s = std::string(n->getName());
+      std::replace(s.begin(), s.end(), ':', '_');
+      n->setName(n->getModule()->internString(s));
+      break;
+    }
+    case qxir::AbiTag::Internal:
+    case qxir::AbiTag::QUIX: {
+      std::stringstream ss;
+      ss << "_Q";
 
-  encode_ns_size_value(n->getName(), ss);
-  mangle_type(n->getType(), ss);
+      encode_ns_size_value(n->getName(), ss);
+      mangle_type(n->getType(), ss);
 
-  ss << "_0";
+      ss << "_0";
 
-  n->setName(n->getModule()->internString(ss.str()));
+      n->setName(n->getModule()->internString(ss.str()));
+      break;
+    }
+  }
 }
 
 static void mangle_local(Local *n) {
-  std::stringstream ss;
-  ss << "_Q";
+  switch (n->getAbiTag()) {
+    case qxir::AbiTag::C: {
+      std::string s = std::string(n->getName());
+      std::replace(s.begin(), s.end(), ':', '_');
+      n->setName(n->getModule()->internString(s));
+      break;
+    }
+    case qxir::AbiTag::Internal:
+    case qxir::AbiTag::QUIX: {
+      std::stringstream ss;
+      ss << "_Q";
 
-  encode_ns_size_value(n->getName(), ss);
-  mangle_type(n->getType(), ss);
+      encode_ns_size_value(n->getName(), ss);
+      mangle_type(n->getType(), ss);
 
-  ss << "_0";
+      ss << "_0";
 
-  n->setName(n->getModule()->internString(ss.str()));
+      n->setName(n->getModule()->internString(ss.str()));
+      break;
+    }
+  }
 }
 
 bool qxir::passes::impl::nm_premangle(qmodule_t *mod) {
