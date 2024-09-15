@@ -11,10 +11,6 @@ RUN apt install -y libssl-dev libboost-all-dev libzstd-dev libclang-common-14-de
 
 RUN apt install -y clang
 
-# Create symlinks for llvm14
-RUN cd /usr/include && ln -s llvm-14/llvm llvm && ln -s llvm-c-14/llvm-c llvm-c
-RUN cd /usr/bin && ln -s llvm-config-14 llvm14-config
-
 # Make the build script
 RUN echo "#!/bin/sh" > /opt/build.sh
 RUN echo "mkdir -p /app/build/debug" >> /opt/build.sh

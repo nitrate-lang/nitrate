@@ -45,7 +45,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                        quix-qxir quix-parser
                                        quix-lexer quix-prep quix-core)
     target_link_options(qpkg PRIVATE -flto -static-libgcc -static-libstdc++)
-    add_dependencies(qpkg quix-qxir
+    add_dependencies(qpkg quix-codegen
+                          quix-qxir
                           quix-parser
                           quix-lexer
                           quix-prep
@@ -86,7 +87,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                               quix-core)
     target_link_options(qpkg-static PRIVATE -flto
                                             -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-    add_dependencies(qpkg-static quix-qxir
+    add_dependencies(qpkg-static quix-codegen
+                                 quix-qxir
                                  quix-parser
                                  quix-lexer
                                  quix-prep
@@ -128,7 +130,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                               quix-core-shared)
     target_link_options(qpkg-shared PRIVATE -flto
                                             -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-    add_dependencies(qpkg-shared quix-qxir-shared
+    add_dependencies(qpkg-shared quix-codegen-shared
+                                 quix-qxir-shared
                                  quix-parser-shared
                                  quix-lexer-shared
                                  quix-prep-shared
@@ -166,7 +169,8 @@ else()
                                      -static-libstdc++
                                      -fsanitize=address
                                      -fsanitize=undefined)
-    add_dependencies(qpkg quix-qxir
+    add_dependencies(qpkg quix-codegen
+                          quix-qxir
                           quix-parser
                           quix-lexer
                           quix-prep
@@ -209,7 +213,8 @@ else()
     target_link_options(qpkg-static PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map
                                             -fsanitize=address
                                             -fsanitize=undefined)
-    add_dependencies(qpkg-static quix-qxir
+    add_dependencies(qpkg-static quix-codegen
+                                 quix-qxir
                                  quix-parser
                                  quix-lexer
                                  quix-prep
@@ -253,7 +258,8 @@ else()
     target_link_options(qpkg-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map
                                             -fsanitize=address
                                             -fsanitize=undefined)
-    add_dependencies(qpkg-shared quix-qxir-shared
+    add_dependencies(qpkg-shared quix-codegen-shared
+                                 quix-qxir-shared
                                  quix-parser-shared
                                  quix-lexer-shared
                                  quix-prep-shared

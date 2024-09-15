@@ -13,17 +13,19 @@ set(CODEGEN_ID "\"CODEGEN_${SHA256SUMS}\"")
 message(STATUS "libquix-codegen VersionId: ${CODEGEN_ID}")
 
 #================== GET LLVM LIBRARIES =====================
-execute_process(COMMAND llvm14-config --ldflags
+execute_process(COMMAND llvm-config-14 --ldflags
 OUTPUT_VARIABLE LLVM_LD_FLAGS
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-execute_process(COMMAND llvm14-config --link-shared --libfiles
+execute_process(COMMAND llvm-config-14 --link-shared --libfiles
 OUTPUT_VARIABLE LLVM_LIBS_RAW
 OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 string(REPLACE "\n" " " LLVM_LIBS "${LLVM_LIBS_RAW}")
 string(REPLACE " " ";" LLVM_LIBS "${LLVM_LIBS}")
 string(REPLACE "\n" " " LLVM_LIBS_BASH "${LLVM_LIBS_RAW}")
+
+find_library(CLANG_LIB clang-cpp14 /usr/lib/llvm-14/lib)
 
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
@@ -67,13 +69,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
   target_compile_options(quix-codegen PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-codegen PRIVATE quix-core z tinfo clang-cpp)
+  target_link_libraries(quix-codegen PRIVATE quix-core z tinfo ${CLANG_LIB})
   foreach(lib ${LLVM_LIBS})
     target_link_libraries(quix-codegen PRIVATE ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
-  target_link_options(quix-codegen PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -L/)
-  add_dependencies(quix-codegen quix-core)
+  target_link_options(quix-codegen PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+  add_dependencies(quix-codegen quix-core quix-qxir)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
   add_library(quix-codegen-shared SHARED ${CXX_SOURCES})
@@ -82,13 +84,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
   target_compile_options(quix-codegen-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-codegen-shared PRIVATE quix-core z tinfo clang-cpp)
+  target_link_libraries(quix-codegen-shared PRIVATE quix-core z tinfo ${CLANG_LIB})
   foreach(lib ${LLVM_LIBS})
     target_link_libraries(quix-codegen-shared PRIVATE ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
   target_link_options(quix-codegen-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
-  add_dependencies(quix-codegen-shared quix-core)
+  add_dependencies(quix-codegen-shared quix-core quix-qxir)
   set_target_properties(quix-codegen-shared PROPERTIES OUTPUT_NAME quix-codegen)
 
   add_subdirectory(tests)
@@ -101,12 +103,12 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
   target_compile_options(quix-codegen PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-codegen PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-codegen PRIVATE quix-core z tinfo clang-cpp)
+  target_link_libraries(quix-codegen PRIVATE quix-core z tinfo ${CLANG_LIB})
   foreach(lib ${LLVM_LIBS})
     target_link_libraries(quix-codegen PRIVATE ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
-  add_dependencies(quix-codegen quix-core)
+  add_dependencies(quix-codegen quix-core quix-qxir)
 
   #================== CREATE STATICLIB RELEASE BUILD ================
   add_library(quix-codegen-shared SHARED ${CXX_SOURCES})
@@ -116,11 +118,11 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
   target_compile_options(quix-codegen-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-codegen-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-codegen-shared PRIVATE quix-core-shared z tinfo clang-cpp)
+  target_link_libraries(quix-codegen-shared PRIVATE quix-core-shared z tinfo ${CLANG_LIB})
   foreach(lib ${LLVM_LIBS})
     target_link_libraries(quix-codegen-shared PRIVATE ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
-  add_dependencies(quix-codegen-shared quix-core-shared)
+  add_dependencies(quix-codegen-shared quix-core-shared quix-qxir)
   set_target_properties(quix-codegen-shared PROPERTIES OUTPUT_NAME quix-codegen)
 endif()

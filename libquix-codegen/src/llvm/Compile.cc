@@ -29,11 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <llvm-14/llvm/Support/CodeGen.h>
-#include <llvm-14/llvm/Support/ManagedStatic.h>
-
-#include <cstdint>
-#include <streambuf>
 #define __QUIX_IMPL__
 
 #include <clang/AST/ASTConsumer.h>
@@ -67,7 +62,9 @@
 #include <llvm/InitializePasses.h>
 #include <llvm/MC/TargetRegistry.h>
 #include <llvm/Passes/PassBuilder.h>
+#include <llvm/Support/CodeGen.h>
 #include <llvm/Support/Host.h>
+#include <llvm/Support/ManagedStatic.h>
 #include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/Support/raw_os_ostream.h>
@@ -81,10 +78,12 @@
 #include <quix-codegen/Config.h>
 #include <quix-core/Error.h>
 
+#include <cstdint>
 #include <exception>
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <streambuf>
 
 class OStreamWriter : public std::streambuf {
   FILE* m_file;

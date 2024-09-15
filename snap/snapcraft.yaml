@@ -16,18 +16,30 @@ parts:
     cmake-parameters:
       - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DSTRIP_OUTPUT=ON
     source: .
-    build-packages: 
+    build-packages:
       - libboost-all-dev
       - libdeflate-dev
       - libyaml-cpp-dev
       - libhpdf-dev
       - libssl-dev
       - libcurlpp-dev
+      - llvm-14-dev
+      - libclang-14-dev
+      - libclang-cpp14-dev
+      - llvm-14
+      - libzstd-dev
+      - rapidjson-dev
+      - libreadline-dev
     stage-packages:
       - git
       - libcurlpp0
       - libdeflate0
-      
+      - libllvm14
+      - libclang-cpp14
+    override-stage: |
+      snapcraftctl stage
+      rm /usr/lib/x86_64-linux-gnu/libicuio.so.70.1 /usr/lib/x86_64-linux-gnu/libicutest.so.70.1
+
 apps:
   qpkg:
     command: usr/bin/qpkg
