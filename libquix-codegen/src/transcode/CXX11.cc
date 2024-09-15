@@ -139,6 +139,12 @@ static PreGenParam pregen_iterate(Expr *root) {
 }
 
 static void write_stdinc(std::ostream &out, const PreGenParam &param) {
+  /// NOTE: [Standard] includes are not currently available in the clang setup.
+  /// Either eliminate them as a dependency or more likely configure the clang
+  /// frongend to properly include the standard headers. Ideally, they could
+  /// be bundled as static data in the produced binary and referenced 
+  /// internally. To avoid external dependencies, this is the best approach.
+
   out << "#define QUIX_TRANSCODE 1\n";
 
   if (param.use_rotl || param.use_rotr) {
