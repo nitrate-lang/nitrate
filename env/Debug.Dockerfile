@@ -7,7 +7,7 @@ VOLUME /app/
 RUN apt clean
 RUN apt update --fix-missing
 RUN apt install -y cmake make llvm-14 upx
-RUN apt install -y libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev rapidjson-dev libdeflate-dev libreadline-dev libcurlpp-dev
+RUN apt install -y libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev rapidjson-dev libdeflate-dev libreadline-dev libcurlpp-dev libclang-dev libclang-cpp-dev
 
 RUN apt install -y clang
 

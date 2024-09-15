@@ -50,6 +50,7 @@
 #include <unordered_map>
 
 #include "quix-codegen/Config.h"
+#include "quix-codegen/Lib.h"
 #if QPKG_DEV_TOOLS
 // #include <dev/bench/bench.hh>
 // #include <dev/test/test.hh>
@@ -88,9 +89,9 @@ static std::string qpkg_deps_version_string() {
 
   std::stringstream ss;
 
-  std::array<std::string_view, 5> QPKG_DEPS = {qcore_lib_version(), qlex_lib_version(),
+  std::array<std::string_view, 6> QPKG_DEPS = {qcore_lib_version(), qlex_lib_version(),
                                                qprep_lib_version(), qparse_lib_version(),
-                                               qxir_lib_version()};
+                                               qxir_lib_version(),  qcode_lib_version()};
 
   ss << "{\"ver\":\"" << QPKG_ID << "\",\"stable\":" << (QPKG_STABLE ? "true" : "false")
      << ",\"using\":[";
@@ -1363,15 +1364,38 @@ namespace qpkg::router {
       qcode_conf qcode_conf;
 
       if (target_map.contains(target)) {
-        if (!qcode_transcode(qmod.get(), qcode_conf.get(), target_map.at(target), QCODE_GOOGLE, nullptr, out_fp)) {
+        if (!qcode_transcode(qmod.get(), qcode_conf.get(), target_map.at(target), QCODE_GOOGLE,
+                             nullptr, out_fp)) {
           if (!output.empty()) fclose(out_fp);
           fclose(fp);
           qerr << "Failed to generate code" << std::endl;
           return 1;
         }
       } else {
-        /// TODO: LLVM Codegen
-        qerr << "Unknown target specified" << std::endl;
+        if (target == "ir") {
+          if (!qcode_ir(qmod.get(), qcode_conf.get(), stderr, out_fp)) {
+            if (!output.empty()) fclose(out_fp);
+            fclose(fp);
+            qerr << "Failed to generate code" << std::endl;
+            return 1;
+          }
+        } else if (target == "asm") {
+          if (!qcode_asm(qmod.get(), qcode_conf.get(), stderr, out_fp)) {
+            if (!output.empty()) fclose(out_fp);
+            fclose(fp);
+            qerr << "Failed to generate code" << std::endl;
+            return 1;
+          }
+        } else if (target == "obj") {
+          if (!qcode_obj(qmod.get(), qcode_conf.get(), stderr, out_fp)) {
+            if (!output.empty()) fclose(out_fp);
+            fclose(fp);
+            qerr << "Failed to generate code" << std::endl;
+            return 1;
+          }
+        } else {
+          qerr << "Unknown target specified" << std::endl;
+        }
       }
 
       if (!output.empty()) fclose(out_fp);
@@ -1439,6 +1463,11 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
 
       if (!qxir_lib_init()) {
         qerr << "Failed to initialize QUIX-IR library" << std::endl;
+        return -1;
+      }
+
+      if (!qcode_lib_init()) {
+        qerr << "Failed to initialize QUIX-CODE library" << std::endl;
         return -1;
       }
 

@@ -29,11 +29,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/ManagedStatic.h>
+#include <llvm/Support/TargetSelect.h>
 #include <quix-codegen/Lib.h>
 #include <quix-core/Lib.h>
 #include <sys/resource.h>
 
 #include <atomic>
+#include <iostream>
 
 #include "core/LibMacro.h"
 
@@ -62,13 +66,38 @@ static void increase_stack_size() {
   }
 }
 
-static bool do_init() {
-  increase_stack_size();
+static bool InitializeLLVM() {
+#ifdef LLVM_SUUPORT_ALL_TARGETS
+  llvm::InitializeAllTargetInfos();
+  llvm::InitializeAllTargets();
+  llvm::InitializeAllTargetMCs();
+  llvm::InitializeAllAsmParsers();
+  llvm::InitializeAllAsmPrinters();
+
+  /* Check if LLVM is initialized */
+  if (llvm::TargetRegistry::targets().empty()) {
+    std::cerr << "error: LLVM initialization failed" << std::endl;
+    return false;
+  }
+#else
+#warning "Building LIBQUIXCC without support for ANY LLVM targets!!"
+#endif
 
   return true;
 }
 
-static void do_deinit() {}
+static void DoinitializeLLVM() { llvm::llvm_shutdown(); }
+
+static bool do_init() {
+  increase_stack_size();
+  if (!InitializeLLVM()) {
+    return false;
+  }
+
+  return true;
+}
+
+static void do_deinit() { DoinitializeLLVM(); }
 
 LIB_EXPORT bool qcode_lib_init() {
   if (qcode_lib_ref_count++ > 1) {
@@ -87,9 +116,9 @@ LIB_EXPORT void qcode_lib_deinit() {
     return;
   }
 
-  qcore_lib_deinit();
+  do_deinit();
 
-  return do_deinit();
+  qcore_lib_deinit();
 }
 
 LIB_EXPORT const char* qcode_lib_version() {

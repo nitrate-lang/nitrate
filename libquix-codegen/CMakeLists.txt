@@ -12,6 +12,19 @@ string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(CODEGEN_ID "\"CODEGEN_${SHA256SUMS}\"")
 message(STATUS "libquix-codegen VersionId: ${CODEGEN_ID}")
 
+#================== GET LLVM LIBRARIES =====================
+execute_process(COMMAND llvm14-config --ldflags
+OUTPUT_VARIABLE LLVM_LD_FLAGS
+OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+execute_process(COMMAND llvm14-config --link-shared --libfiles
+OUTPUT_VARIABLE LLVM_LIBS_RAW
+OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+string(REPLACE "\n" " " LLVM_LIBS "${LLVM_LIBS_RAW}")
+string(REPLACE " " ";" LLVM_LIBS "${LLVM_LIBS}")
+string(REPLACE "\n" " " LLVM_LIBS_BASH "${LLVM_LIBS_RAW}")
+
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -22,10 +35,18 @@ set(SUPPORT_TARGETS -DTRANSCODE_TARGET_C11
                     -DTRANSCODE_TARGET_TYPESCRIPT 
                     -DTRANSCODE_TARGET_RUST 
                     -DTRANSCODE_TARGET_PYTHON 
-                    -DTRANSCODE_TARGET_CSHARP)
+                    -DTRANSCODE_TARGET_CSHARP
+                    -DLLVM_SUUPORT_ALL_TARGETS)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments ${SUPPORT_TARGETS})
+SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic 
+                       -Werror -Wno-mismatched-tags 
+                       -Wno-gnu-zero-variadic-macro-arguments 
+                       ${SUPPORT_TARGETS}
+                       -I/usr/lib/llvm-14/include 
+                       -Wno-deprecated-enum-enum-conversion
+                       
+                       )
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DCODEGEN_ID=${CODEGEN_ID} -Wno-unused-parameter)
 SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -Wno-unused-variable -DCODEGEN_ID="undefined")
 
@@ -46,8 +67,12 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
   target_compile_options(quix-codegen PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-codegen PRIVATE quix-core)
-  target_link_options(quix-codegen PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+  target_link_libraries(quix-codegen PRIVATE quix-core z tinfo clang-cpp)
+  foreach(lib ${LLVM_LIBS})
+    target_link_libraries(quix-codegen PRIVATE ${lib})
+    message(STATUS "Linking ${lib}")
+  endforeach()
+  target_link_options(quix-codegen PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -L/)
   add_dependencies(quix-codegen quix-core)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -57,7 +82,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
   target_compile_options(quix-codegen-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-codegen-shared PRIVATE quix-core)
+  target_link_libraries(quix-codegen-shared PRIVATE quix-core z tinfo clang-cpp)
+  foreach(lib ${LLVM_LIBS})
+    target_link_libraries(quix-codegen-shared PRIVATE ${lib})
+    message(STATUS "Linking ${lib}")
+  endforeach()
   target_link_options(quix-codegen-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-codegen-shared quix-core)
   set_target_properties(quix-codegen-shared PROPERTIES OUTPUT_NAME quix-codegen)
@@ -72,7 +101,11 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
   target_compile_options(quix-codegen PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-codegen PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-codegen PRIVATE quix-core)
+  target_link_libraries(quix-codegen PRIVATE quix-core z tinfo clang-cpp)
+  foreach(lib ${LLVM_LIBS})
+    target_link_libraries(quix-codegen PRIVATE ${lib})
+    message(STATUS "Linking ${lib}")
+  endforeach()
   add_dependencies(quix-codegen quix-core)
 
   #================== CREATE STATICLIB RELEASE BUILD ================
@@ -83,7 +116,11 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
   target_compile_options(quix-codegen-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-codegen-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-codegen-shared PRIVATE quix-core-shared)
+  target_link_libraries(quix-codegen-shared PRIVATE quix-core-shared z tinfo clang-cpp)
+  foreach(lib ${LLVM_LIBS})
+    target_link_libraries(quix-codegen-shared PRIVATE ${lib})
+    message(STATUS "Linking ${lib}")
+  endforeach()
   add_dependencies(quix-codegen-shared quix-core-shared)
   set_target_properties(quix-codegen-shared PROPERTIES OUTPUT_NAME quix-codegen)
 endif()

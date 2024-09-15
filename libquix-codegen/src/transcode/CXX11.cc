@@ -922,11 +922,15 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
 bool codegen::for_cxx11(qmodule_t *module, std::ostream &err, std::ostream &out) {
   write_header(out);
 
-  PreGenParam param = pregen_iterate(module->getRoot());
-  write_stdinc(out, param);
-  write_coretypes(out, param);
-  write_builtins(out, param);
+  out << "int main(int argc, char **argv) { int x = 0; int y = 2; return x+y;}\n";
+  return true;
 
-  ConvState state;
-  return serialize_recurse(module->getRoot(), out, state);
+  /// TODO: Re-enable
+  // PreGenParam param = pregen_iterate(module->getRoot());
+  // write_stdinc(out, param);
+  // write_coretypes(out, param);
+  // write_builtins(out, param);
+
+  // ConvState state;
+  // return serialize_recurse(module->getRoot(), out, state);
 }

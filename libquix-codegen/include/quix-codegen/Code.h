@@ -70,6 +70,14 @@ typedef enum {
 bool qcode_transcode(qmodule_t* module, qcode_conf_t* conf, qcode_lang_t lang, qcode_style_t style,
                      FILE* err, FILE* out);
 
+///==============================================================================
+
+bool qcode_ir(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
+bool qcode_asm(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
+bool qcode_obj(qmodule_t* module, qcode_conf_t* conf, FILE* err, FILE* out);
+
+///==============================================================================
+
 #ifdef __cplusplus
 }
 #endif
