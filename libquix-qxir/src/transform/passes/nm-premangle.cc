@@ -67,9 +67,7 @@ static void encode_ns_size_value(std::string_view input, std::ostream &ss) {
         break;
       }
       case 1: {
-        if (input[i] == ':') {
-          buf.push_back(':');
-        } else {
+        if (input[i] != ':') {
           ss << buf.size() << buf;
           buf.clear();
           buf.push_back(input[i]);
