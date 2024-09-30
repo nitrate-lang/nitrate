@@ -142,7 +142,7 @@ static void write_stdinc(std::ostream &out, const PreGenParam &param) {
   /// NOTE: [Standard] includes are not currently available in the clang setup.
   /// Either eliminate them as a dependency or more likely configure the clang
   /// frongend to properly include the standard headers. Ideally, they could
-  /// be bundled as static data in the produced binary and referenced 
+  /// be bundled as static data in the produced binary and referenced
   /// internally. To avoid external dependencies, this is the best approach.
 
   out << "#define QUIX_TRANSCODE 1\n";
@@ -153,90 +153,48 @@ static void write_stdinc(std::ostream &out, const PreGenParam &param) {
   out << "#define qexport __attribute__((visibility(\"default\")))\n";
   out << "\n";
 
-  if (param.use_array) {
-    out << "#include <array>\n";
-  }
-  if (param.use_bitcast) {
-    out << "#include <bit>\n";
-  }
-  out << "#include <cmath>\n";
-  out << "#include <cstdint>\n";
+  // if (param.use_array) {
+  //   out << "#include <array>\n";
+  // }
+  // if (param.use_bitcast) {
+  //   out << "#include <bit>\n";
+  // }
+  // out << "#include <cmath>\n";
+  // out << "#include <cstdint>\n";
 
-  if (param.use_functional) {
-    out << "#include <functional>\n";
-  }
-  if (param.use_string) {
-    out << "#include <string>\n";
-  }
-  if (param.use_tuple) {
-    out << "#include <tuple>\n";
-  }
-  if (param.use_vector) {
-    out << "#include <vector>\n";
-  }
+  // if (param.use_functional) {
+  //   out << "#include <functional>\n";
+  // }
+  // if (param.use_string) {
+  //   out << "#include <string>\n";
+  // }
+  // if (param.use_tuple) {
+  //   out << "#include <tuple>\n";
+  // }
+  // if (param.use_vector) {
+  //   out << "#include <vector>\n";
+  // }
 
   out << "\n";
 }
 
 static void write_coretypes(std::ostream &out, const PreGenParam &param) {
-  out << "typedef __fp16 qf16_t;\n";
-  out << "typedef _Float32 qf32_t;\n";
-  out << "typedef _Float64 qf64_t;\n";
-  out << "typedef __float128 qf128_t;\n\n";
-  out << R"(template <typename T>
-class qint128_base;
+  out << "typedef unsigned long long size_t;\n"; /* FIXME: Generate based on target triple */
 
-typedef qint128_base<unsigned __int128> quint128_t;
-typedef qint128_base<__int128> qint128_t;
+  // out << "typedef __fp16 qf16_t;\n";
+  // out << "typedef float qf32_t;\n";
+  // out << "typedef double qf64_t;\n";
+  // out << "typedef __float128 qf128_t;\n";
 
-template <typename T>
-class qint128_base {
-  T m_v;
+  { /* B*/
+    out << R"()";
+  }
 
-public:
-  qint128_base(T v) : m_v(v) {}
-  qint128_base(quint128_t v) : m_v(v()) {}
-  qint128_base(uint64_t hi, uint64_t lo) : m_v(((T)hi << 64) | lo) {}
+  { /* qstring implementation */
 
-  explicit operator qint128_t() const { return m_v; }
+    out << R"()";
+  }
 
-  qint128_base& operator=(const quint128_t& rhs) { return (m_v = rhs()), *this; }
-
-  T operator()() const { return m_v; }
-  T& operator()() { return m_v; }
-
-  qint128_base operator+(const qint128_base& rhs) { return m_v + rhs.m_v; }
-  qint128_base operator-(const qint128_base& rhs) { return m_v - rhs.m_v; }
-  qint128_base operator*(const qint128_base& rhs) { return m_v * rhs.m_v; }
-  qint128_base operator/(const qint128_base& rhs) { return m_v / rhs.m_v; }
-  qint128_base operator%(const qint128_base& rhs) { return m_v % rhs.m_v; }
-  qint128_base operator&(const qint128_base& rhs) { return m_v & rhs.m_v; }
-  qint128_base operator|(const qint128_base& rhs) { return m_v | rhs.m_v; }
-  qint128_base operator^(const qint128_base& rhs) { return m_v ^ rhs.m_v; }
-  qint128_base operator<<(const qint128_base& rhs) { return m_v << rhs.m_v; }
-  qint128_base operator>>(const qint128_base& rhs) { return m_v >> rhs.m_v; }
-
-  bool operator&&(const qint128_base& rhs) { return m_v && rhs.m_v; }
-  bool operator||(const qint128_base& rhs) { return m_v || rhs.m_v; }
-  bool operator==(const qint128_base& rhs) { return m_v == rhs.m_v; }
-  bool operator!=(const qint128_base& rhs) { return m_v != rhs.m_v; }
-  bool operator<(const qint128_base& rhs) { return m_v < rhs.m_v; }
-  bool operator>(const qint128_base& rhs) { return m_v > rhs.m_v; }
-  bool operator<=(const qint128_base& rhs) { return m_v <= rhs.m_v; }
-  bool operator>=(const qint128_base& rhs) { return m_v >= rhs.m_v; }
-
-  qint128_base& operator+=(const qint128_base& rhs) { return (m_v += rhs.m_v), *this; }
-  qint128_base& operator-=(const qint128_base& rhs) { return (m_v -= rhs.m_v), *this; }
-  qint128_base& operator*=(const qint128_base& rhs) { return (m_v *= rhs.m_v), *this; }
-  qint128_base& operator/=(const qint128_base& rhs) { return (m_v /= rhs.m_v), *this; }
-  qint128_base& operator%=(const qint128_base& rhs) { return (m_v %= rhs.m_v), *this; }
-  qint128_base& operator&=(const qint128_base& rhs) { return (m_v &= rhs.m_v), *this; }
-  qint128_base& operator|=(const qint128_base& rhs) { return (m_v |= rhs.m_v), *this; }
-  qint128_base& operator^=(const qint128_base& rhs) { return (m_v ^= rhs.m_v), *this; }
-  qint128_base& operator<<=(const qint128_base& rhs) { return (m_v <<= rhs.m_v), *this; }
-  qint128_base& operator>>=(const qint128_base& rhs) { return (m_v >>= rhs.m_v), *this; }
-};
-)";
   out << "\n";
 }
 
