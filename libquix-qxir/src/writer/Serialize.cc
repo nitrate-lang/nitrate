@@ -403,7 +403,9 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       if (n->as<Fn>()->isVariadic()) {
         ss << "...";
       }
-      ss << ") ";
+      ss << ") -> ";
+      recurse(n->as<Fn>()->getBody()->getType());
+      ss << " ";
       recurse(n->as<Fn>()->getBody());
       break;
     }
