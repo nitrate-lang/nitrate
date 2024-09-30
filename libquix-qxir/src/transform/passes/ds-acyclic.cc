@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QUIX_IMPL__
+
 #include "quix-qxir/IR.h"
 #include "quix-qxir/Report.hh"
 #define QXIR_USE_CPP_API

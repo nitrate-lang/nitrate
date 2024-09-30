@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QUIX_IMPL__
+
 #include "quix-qxir/TypeDecl.h"
 #define QXIR_USE_CPP_API
 
@@ -111,8 +113,7 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         Call *calln = par->as<Call>();
         auto tkind = calln->getTarget()->getKind();
 
-        if (tkind != QIR_NODE_LOCAL && tkind != QIR_NODE_IDENT && tkind != QIR_NODE_FN &&
-            tkind != QIR_NODE_INDEX) {
+        if (tkind != QIR_NODE_LOCAL && tkind != QIR_NODE_FN && tkind != QIR_NODE_INDEX) {
           EPUT("Call target is not an local, ident, fn or index node");
         }
 
@@ -127,10 +128,6 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         if (cur->isType()) {
           EPUT("Index child node is a type node");
         }
-        break;
-      }
-
-      case QIR_NODE_IDENT: {
         break;
       }
 
@@ -228,19 +225,6 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
 
         if (formn->getBody()->isType() && formn->getBody()->getKind() != QIR_NODE_VOID_TY) {
           EPUT("Form body is a type node");
-        }
-        break;
-      }
-
-      case QIR_NODE_FOREACH: {
-        Foreach *forn = par->as<Foreach>();
-
-        if (forn->getExpr()->isType()) {
-          EPUT("Foreach expr is a type node");
-        }
-
-        if (forn->getBody()->isType() && forn->getBody()->getKind() != QIR_NODE_VOID_TY) {
-          EPUT("Foreach body is a type node");
         }
         break;
       }
@@ -380,8 +364,7 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
       }
 
       case QIR_NODE_ARRAY_TY: {
-        if (!par->as<ArrayTy>()->getElement()->isType() &&
-            par->as<ArrayTy>()->getElement()->getKind() != QIR_NODE_IDENT) {
+        if (!par->as<ArrayTy>()->getElement()->isType()) {
           EPUT("Array element is not a type node");
         }
         if (par->as<ArrayTy>()->getCount()->isType()) {
@@ -390,22 +373,15 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         break;
       }
 
-      case QIR_NODE_LIST_TY: {
-        if (!cur->isType()) {
-          EPUT("List is not a type node");
-        }
-        break;
-      }
-
       case QIR_NODE_FN_TY: {
         FnTy *fnty = par->as<FnTy>();
 
-        if (!fnty->getReturn()->isType() && fnty->getReturn()->getKind() != QIR_NODE_IDENT) {
+        if (!fnty->getReturn()->isType()) {
           EPUT("Function return type is not a type node");
         }
 
         for (const auto &p : fnty->getParams()) {
-          if (!p->isType() && p->getKind() != QIR_NODE_IDENT) {
+          if (!p->isType()) {
             EPUT("Function parameter is not a type node");
           }
         }

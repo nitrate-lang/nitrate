@@ -37,7 +37,7 @@
  * crash, so it should be easy to detect.
  */
 
-#define __QXIR_IMPL__
+#define __QUIX_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <core/LibMacro.h>
@@ -106,10 +106,6 @@ namespace qxir::detail {
         children.push_back(&base->as<Index>()->m_index);
         break;
       }
-      case QIR_NODE_IDENT: {
-        // Don't print the m_what
-        break;
-      }
       case QIR_NODE_EXTERN: {
         children.push_back(&base->as<Extern>()->m_value);
         break;
@@ -150,11 +146,6 @@ namespace qxir::detail {
         children.push_back(&base->as<Form>()->m_maxjobs);
         children.push_back(&base->as<Form>()->m_expr);
         children.push_back(reinterpret_cast<Expr **>(&base->as<Form>()->m_body));
-        break;
-      }
-      case QIR_NODE_FOREACH: {
-        children.push_back(&base->as<Foreach>()->m_expr);
-        children.push_back(reinterpret_cast<Expr **>(&base->as<Foreach>()->m_body));
         break;
       }
       case QIR_NODE_CASE: {
@@ -259,10 +250,6 @@ namespace qxir::detail {
       case QIR_NODE_ARRAY_TY: {
         children.push_back(reinterpret_cast<Expr **>(&base->as<ArrayTy>()->m_element));
         children.push_back(&base->as<ArrayTy>()->m_size);
-        break;
-      }
-      case QIR_NODE_LIST_TY: {
-        children.push_back(reinterpret_cast<Expr **>(&base->as<ListTy>()->m_element));
         break;
       }
       case QIR_NODE_FN_TY: {

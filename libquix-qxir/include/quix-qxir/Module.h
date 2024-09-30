@@ -51,7 +51,7 @@ void qxir_set_conf(qmodule_t *mod, qxir_conf_t *conf);
 }
 #endif
 
-#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
+#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QUIX_IMPL__)
 
 #include <quix-core/Arena.h>
 
@@ -132,7 +132,6 @@ namespace qxir {
   class StructTy;
   class UnionTy;
   class ArrayTy;
-  class ListTy;
   class FnTy;
   class Int;
   class Float;
@@ -141,7 +140,6 @@ namespace qxir {
   class Call;
   class Seq;
   class Index;
-  class Ident;
   class Extern;
   class Local;
   class Ret;
@@ -151,12 +149,13 @@ namespace qxir {
   class While;
   class For;
   class Form;
-  class Foreach;
   class Case;
   class Switch;
   class Fn;
   class Asm;
+#ifdef __QUIX_IMPL__
   class Tmp;
+#endif
 }  // namespace qxir
 
 class qmodule_t {

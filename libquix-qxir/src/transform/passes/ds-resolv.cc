@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QUIX_IMPL__
+
 #include <string_view>
 
 #include "quix-qxir/TypeDecl.h"
@@ -183,8 +185,8 @@ static bool resolve_node(qxir::Expr **_cur) {
       const Expr *base = std::get<0>(info);
       const auto &provided_args = std::get<1>(info);
 
-      if (base->getKind() == QIR_NODE_IDENT) { /* Direct call */
-        std::string funcname = std::string(base->as<Ident>()->getName());
+      if (base->getKind() == QIR_NODE_FN) { /* Direct call */
+        std::string funcname = std::string(base->as<Fn>()->getName());
 
         { /* Resolve the function */
           auto resolved = resolve_name(mod, funcname);
@@ -467,119 +469,119 @@ static bool alpha_pass(qmodule_t *mod) {
   return !error;
 }
 
-static bool beta_pass(qmodule_t *mod) {
-  using namespace qxir;
+// static bool beta_pass(qmodule_t *mod) {
+//   using namespace qxir;
 
-  bool error = false;
+//   bool error = false;
 
-  auto cb = [&](Expr *, Expr **_cur) -> IterOp {
-    if ((*_cur)->getKind() != QIR_NODE_IDENT) {
-      return IterOp::Proceed;
-    }
+//   auto cb = [&](Expr *, Expr **_cur) -> IterOp {
+//     if ((*_cur)->getKind() != QIR_NODE_IDENT) {
+//       return IterOp::Proceed;
+//     }
 
-    Ident *cur = (*_cur)->as<Ident>();
-    std::string_view name = cur->getName();
+//     Ident *cur = (*_cur)->as<Ident>();
+//     std::string_view name = cur->getName();
 
-    auto resolved = resolve_name(mod, name);
+//     auto resolved = resolve_name(mod, name);
 
-    if (resolved) {
-      if (resolved->second == IdentWhat::Variable) {
-        cur->setWhat(mod->getVariables().left.at(resolved->first));
-      } else if (resolved->second == IdentWhat::NamedConstant) {
-        cur->setWhat(mod->getNamedConstants().at(resolved->first));
-      } else if (resolved->second == IdentWhat::Function) {
-        cur->setWhat(mod->getFunctions().left.at(resolved->first).first);
-      }
+//     if (resolved) {
+//       if (resolved->second == IdentWhat::Variable) {
+//         cur->setWhat(mod->getVariables().left.at(resolved->first));
+//       } else if (resolved->second == IdentWhat::NamedConstant) {
+//         cur->setWhat(mod->getNamedConstants().at(resolved->first));
+//       } else if (resolved->second == IdentWhat::Function) {
+//         cur->setWhat(mod->getFunctions().left.at(resolved->first).first);
+//       }
 
-      cur->setName(memorize(resolved->first));
+//       cur->setName(memorize(resolved->first));
 
-      return IterOp::Proceed;
-    }
+//       return IterOp::Proceed;
+//     }
 
-    return IterOp::Proceed;
-  };
+//     return IterOp::Proceed;
+//   };
 
-  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
+//   iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
 
-  ///=============================================================================
-  /// Resolve function parameters
+//   ///=============================================================================
+//   /// Resolve function parameters
 
-  auto cb2 = [&](Expr *, Expr **_cur) -> IterOp {
-    if ((*_cur)->getKind() != QIR_NODE_FN) {
-      return IterOp::Proceed;
-    }
+//   auto cb2 = [&](Expr *, Expr **_cur) -> IterOp {
+//     if ((*_cur)->getKind() != QIR_NODE_FN) {
+//       return IterOp::Proceed;
+//     }
 
-    Fn *cur = (*_cur)->as<Fn>();
-    auto name = cur->getName();
+//     Fn *cur = (*_cur)->as<Fn>();
+//     auto name = cur->getName();
 
-    auto inner = [name, mod](Expr *, Expr **_cur) -> IterOp {
-      if ((*_cur)->getKind() == QIR_NODE_FN) {
-        return IterOp::SkipChildren;
-      }
+//     auto inner = [name, mod](Expr *, Expr **_cur) -> IterOp {
+//       if ((*_cur)->getKind() == QIR_NODE_FN) {
+//         return IterOp::SkipChildren;
+//       }
 
-      if ((*_cur)->getKind() != QIR_NODE_IDENT) {
-        return IterOp::Proceed;
-      }
+//       if ((*_cur)->getKind() != QIR_NODE_IDENT) {
+//         return IterOp::Proceed;
+//       }
 
-      if ((*_cur)->as<Ident>()->getWhat()) {
-        return IterOp::Proceed;
-      }
+//       if ((*_cur)->as<Ident>()->getWhat()) {
+//         return IterOp::Proceed;
+//       }
 
-      std::string_view ident_name = (*_cur)->as<Ident>()->getName();
-      size_t l = ident_name.find_last_of("::");
-      if (l != std::string::npos) {
-        ident_name = ident_name.substr(l + 1);
-      }
+//       std::string_view ident_name = (*_cur)->as<Ident>()->getName();
+//       size_t l = ident_name.find_last_of("::");
+//       if (l != std::string::npos) {
+//         ident_name = ident_name.substr(l + 1);
+//       }
 
-      for (auto &[param_name, param_type, param_default] : mod->getParameterMap().at(name)) {
-        if (param_name == ident_name) {
-          (*_cur)->as<Ident>()->setWhat(param_type);
-          return IterOp::Proceed;
-        }
-      }
+//       for (auto &[param_name, param_type, param_default] : mod->getParameterMap().at(name)) {
+//         if (param_name == ident_name) {
+//           (*_cur)->as<Ident>()->setWhat(param_type);
+//           return IterOp::Proceed;
+//         }
+//       }
 
-      auto cur = (*_cur)->as<Ident>();
-      UNRESOLVED_IDENTIFIER(ident_name);
+//       auto cur = (*_cur)->as<Ident>();
+//       UNRESOLVED_IDENTIFIER(ident_name);
 
-      return IterOp::Proceed;
-    };
+//       return IterOp::Proceed;
+//     };
 
-    Expr *body = cur->getBody();
-    iterate<IterMode::dfs_pre, IterMP::none>(body, inner);
+//     Expr *body = cur->getBody();
+//     iterate<IterMode::dfs_pre, IterMP::none>(body, inner);
 
-    return IterOp::Proceed;
-  };
+//     return IterOp::Proceed;
+//   };
 
-  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb2);
+//   iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb2);
 
-  ///=============================================================================
+//   ///=============================================================================
 
-  auto cb3 = [&](Expr *, Expr **_cur) -> IterOp {
-    if ((*_cur)->getKind() != QIR_NODE_IDENT) {
-      return IterOp::Proceed;
-    }
+//   auto cb3 = [&](Expr *, Expr **_cur) -> IterOp {
+//     if ((*_cur)->getKind() != QIR_NODE_IDENT) {
+//       return IterOp::Proceed;
+//     }
 
-    Ident *cur = (*_cur)->as<Ident>();
+//     Ident *cur = (*_cur)->as<Ident>();
 
-    if (!cur->getWhat()) {
-      UNRESOLVED_IDENTIFIER(cur->getName());
-    }
+//     if (!cur->getWhat()) {
+//       UNRESOLVED_IDENTIFIER(cur->getName());
+//     }
 
-    return IterOp::Proceed;
-  };
+//     return IterOp::Proceed;
+//   };
 
-  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb3);
+//   iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb3);
 
-  ///=============================================================================
+//   ///=============================================================================
 
-  return !error;
-}
+//   return !error;
+// }
 
 bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
   bool error = false;
 
   error |= !alpha_pass(mod);
-  error |= !beta_pass(mod);
+  // error |= !beta_pass(mod);
 
   for (auto &[name, fn] : mod->getFunctions()) {
     CONV_DEBUG("Found function: " + std::string(name));

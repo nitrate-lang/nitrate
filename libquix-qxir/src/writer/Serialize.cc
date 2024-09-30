@@ -29,12 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstddef>
-#include <cstdint>
-#include <unordered_set>
-
-#include "quix-qxir/TypeDecl.h"
-#define __QXIR_IMPL__
+#define __QUIX_IMPL__
 
 #include <libdeflate.h>
 #include <quix-core/Error.h>
@@ -42,11 +37,15 @@
 #include <quix-qxir/Lib.h>
 
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <iomanip>
 #include <sstream>
+#include <unordered_set>
 
 #include "core/LibMacro.h"
+#include "quix-qxir/TypeDecl.h"
 
 using namespace qxir;
 
@@ -295,10 +294,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       ss << "]";
       break;
     }
-    case QIR_NODE_IDENT: {
-      ss << n->as<Ident>()->getName();
-      break;
-    }
     case QIR_NODE_EXTERN: {
       ss << "extern ";
       escape_string(ss, n->as<Extern>()->getAbiName());
@@ -366,14 +361,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       recurse(n->as<Form>()->getExpr());
       ss << ") ";
       recurse(n->as<Form>()->getBody());
-      break;
-    }
-    case QIR_NODE_FOREACH: {
-      ss << "foreach (" << n->as<Foreach>()->getIdxIdent() << "; ";
-      ss << n->as<Foreach>()->getValIdent() << "; ";
-      recurse(n->as<Foreach>()->getExpr());
-      ss << ") ";
-      recurse(n->as<Foreach>()->getBody());
       break;
     }
     case QIR_NODE_CASE: {
@@ -511,12 +498,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       recurse(n->as<ArrayTy>()->getElement());
       ss << "; ";
       recurse(n->as<ArrayTy>()->getCount());
-      ss << "]";
-      break;
-    }
-    case QIR_NODE_LIST_TY: {
-      ss << "[";
-      recurse(n->as<ListTy>()->getElement());
       ss << "]";
       break;
     }

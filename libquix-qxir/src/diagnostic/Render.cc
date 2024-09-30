@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QXIR_IMPL__
+#define __QUIX_IMPL__
 
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>

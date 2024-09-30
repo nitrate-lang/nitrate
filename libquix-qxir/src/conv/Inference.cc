@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QXIR_IMPL__
+#define __QUIX_IMPL__
 #include <core/LibMacro.h>
 #include <quix-qxir/Inference.h>
 #include <quix-qxir/Node.h>
@@ -664,7 +664,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
       }
       case QIR_NODE_LIST: {
         if (E->as<List>()->getItems().empty()) {
-          T = create<ListTy>(getType<VoidTy>());
+          T = nullptr; // Can not infer empty list type
         } else {
           std::vector<Type *> types;
           for (auto &item : E->as<List>()->getItems()) {
@@ -675,7 +675,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
                                          [&](Type *X) { return X->cmp_eq(types.front()); });
 
           if (homogeneous) {
-            T = create<ListTy>(types.front());
+            T = create<ArrayTy>(types.front(), create<Int>(types.size()));
           } else {
             T = create<StructTy>(StructFields(types.begin(), types.end()));
           }
@@ -700,8 +700,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
 
         if (B->is(QIR_NODE_PTR_TY)) {  // *X -> X
           T = B->as<PtrTy>()->getPointee();
-        } else if (B->is(QIR_NODE_LIST_TY)) {  // [X] -> X
-          T = B->as<ListTy>()->getElement();
         } else if (B->is(QIR_NODE_ARRAY_TY)) {  // [X; N] -> X
           T = B->as<ArrayTy>()->getElement();
         } else if (B->is(QIR_NODE_STRING_TY)) {  // string -> u8
@@ -755,10 +753,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         }
         break;
       }
-      case QIR_NODE_IDENT: {
-        T = E->as<Ident>()->getWhat()->getType();
-        break;
-      }
       case QIR_NODE_EXTERN: {
         T = getType<VoidTy>();
         break;
@@ -792,10 +786,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         break;
       }
       case QIR_NODE_FORM: {
-        T = getType<VoidTy>();
-        break;
-      }
-      case QIR_NODE_FOREACH: {
         T = getType<VoidTy>();
         break;
       }
@@ -872,7 +862,6 @@ bool qxir::Type::hasKnownSize() noexcept {
     }
     case QIR_NODE_OPAQUE_TY:
     case QIR_NODE_STRING_TY:
-    case QIR_NODE_LIST_TY:
       return false;
     default: {
       qcore_panicf("Invalid type kind: %d", this->getKind());

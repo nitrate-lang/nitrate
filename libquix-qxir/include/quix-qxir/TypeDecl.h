@@ -50,60 +50,59 @@ typedef struct qmodule_t qmodule_t;
  * @brief Quixcc abstract syntax tree node type.
  */
 typedef enum qxir_ty_t {
-  QIR_NODE_BINEXPR,
-  QIR_NODE_UNEXPR,
-  QIR_NODE_POST_UNEXPR,
+  QIR_NODE_BINEXPR,     /* Binary expression */
+  QIR_NODE_UNEXPR,      /* Unary expression */
+  QIR_NODE_POST_UNEXPR, /* Postfix unary expression */
 
-  QIR_NODE_INT,
-  QIR_NODE_FLOAT,
-  QIR_NODE_STRING,
-  QIR_NODE_LIST,
+  QIR_NODE_INT,    /* Integer literal */
+  QIR_NODE_FLOAT,  /* Floating-point literal */
+  QIR_NODE_STRING, /* String literal */
+  QIR_NODE_LIST,   /* List literal */
 
-  QIR_NODE_CALL,
-  QIR_NODE_SEQ,
-  QIR_NODE_INDEX,
-  QIR_NODE_IDENT,
-  QIR_NODE_EXTERN,
-  QIR_NODE_LOCAL,
-  QIR_NODE_RET,
-  QIR_NODE_BRK,
-  QIR_NODE_CONT,
-  QIR_NODE_IF,
-  QIR_NODE_WHILE,
-  QIR_NODE_FOR,
-  QIR_NODE_FORM,
-  QIR_NODE_FOREACH,
-  QIR_NODE_CASE,
-  QIR_NODE_SWITCH,
-  QIR_NODE_FN,
-  QIR_NODE_ASM,
+  QIR_NODE_CALL,   /* Function call */
+  QIR_NODE_SEQ,    /* Sequence */
+  QIR_NODE_INDEX,  /* Index / member access */
+  QIR_NODE_EXTERN, /* Linker visibility modifier */
+  QIR_NODE_LOCAL,  /* Variable declaration */
+  QIR_NODE_RET,    /* Return statement */
+  QIR_NODE_BRK,    /* Break statement */
+  QIR_NODE_CONT,   /* Continue statement */
+  QIR_NODE_IF,     /* If statement */
+  QIR_NODE_WHILE,  /* While loop */
+  QIR_NODE_FOR,    /* For loop */
+  QIR_NODE_FORM,   /* Parallel for loop */
+  QIR_NODE_CASE,   /* Case statement */
+  QIR_NODE_SWITCH, /* Switch statement */
+  QIR_NODE_FN,     /* Function definition */
+  QIR_NODE_ASM,    /* Inline assembly */
 
-  QIR_NODE_U1_TY,
-  QIR_NODE_U8_TY,
-  QIR_NODE_U16_TY,
-  QIR_NODE_U32_TY,
-  QIR_NODE_U64_TY,
-  QIR_NODE_U128_TY,
-  QIR_NODE_I8_TY,
-  QIR_NODE_I16_TY,
-  QIR_NODE_I32_TY,
-  QIR_NODE_I64_TY,
-  QIR_NODE_I128_TY,
-  QIR_NODE_F16_TY,
-  QIR_NODE_F32_TY,
-  QIR_NODE_F64_TY,
-  QIR_NODE_F128_TY,
-  QIR_NODE_VOID_TY,
-  QIR_NODE_PTR_TY,
-  QIR_NODE_OPAQUE_TY,
-  QIR_NODE_STRING_TY,
-  QIR_NODE_STRUCT_TY,
-  QIR_NODE_UNION_TY,
-  QIR_NODE_ARRAY_TY,
-  QIR_NODE_LIST_TY,
-  QIR_NODE_FN_TY,
+  QIR_NODE_U1_TY,     /* 1-bit unsigned integer (boolean) */
+  QIR_NODE_U8_TY,     /* 8-bit unsigned integer */
+  QIR_NODE_U16_TY,    /* 16-bit unsigned integer */
+  QIR_NODE_U32_TY,    /* 32-bit unsigned integer */
+  QIR_NODE_U64_TY,    /* 64-bit unsigned integer */
+  QIR_NODE_U128_TY,   /* 128-bit unsigned integer */
+  QIR_NODE_I8_TY,     /* 8-bit signed integer */
+  QIR_NODE_I16_TY,    /* 16-bit signed integer */
+  QIR_NODE_I32_TY,    /* 32-bit signed integer */
+  QIR_NODE_I64_TY,    /* 64-bit signed integer */
+  QIR_NODE_I128_TY,   /* 128-bit signed integer */
+  QIR_NODE_F16_TY,    /* 16-bit floating-point */
+  QIR_NODE_F32_TY,    /* 32-bit floating-point */
+  QIR_NODE_F64_TY,    /* 64-bit floating-point */
+  QIR_NODE_F128_TY,   /* 128-bit floating-point */
+  QIR_NODE_VOID_TY,   /* Void type */
+  QIR_NODE_PTR_TY,    /* Pointer type */
+  QIR_NODE_OPAQUE_TY, /* Opaque type */
+  QIR_NODE_STRING_TY, /* String type */
+  QIR_NODE_STRUCT_TY, /* Struct type */
+  QIR_NODE_UNION_TY,  /* Union type */
+  QIR_NODE_ARRAY_TY,  /* Array type */
+  QIR_NODE_FN_TY,     /* Function type */
 
+#ifdef __QUIX_IMPL__
   QIR_NODE_TMP, /* Temp node; must be resolved with more information */
+#endif
 } qxir_ty_t;
 
 typedef struct qxir_conf_t qxir_conf_t;

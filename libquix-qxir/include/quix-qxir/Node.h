@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#define QIR_NODE_COUNT 50
+#define QIR_NODE_COUNT 47
 
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
@@ -62,7 +62,7 @@ qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 /// END: ABSTRACT SYNTAX TREE DATA TYPES
 ///=============================================================================
 
-#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QXIR_IMPL__)
+#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QUIX_IMPL__)
 
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>
@@ -563,17 +563,6 @@ namespace qxir {
     Expr *getCount() { return m_size; }
   };
 
-  class ListTy final : public Type {
-    QCLASS_REFLECT()
-
-    Type *m_element;
-
-  public:
-    ListTy(Type *element) : Type(QIR_NODE_LIST_TY), m_element(element) {}
-
-    Type *getElement() noexcept { return m_element; }
-  };
-
   enum class FnAttr {
     Variadic,
   };
@@ -769,22 +758,6 @@ namespace qxir {
     Expr *setIndex(Expr *index) noexcept { return m_index = index; }
   };
 
-  class Ident final : public Expr {
-    QCLASS_REFLECT()
-
-    std::string_view m_name;
-    Expr *m_what;
-
-  public:
-    Ident(std::string_view name, Expr *what)
-        : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
-
-    Expr *getWhat() noexcept { return m_what; }
-    Expr *setWhat(Expr *what) noexcept { return m_what = what; }
-
-    std::string_view setName(std::string_view name) noexcept { return m_name = name; }
-  };
-
   class Extern final : public Expr {
     QCLASS_REFLECT()
 
@@ -951,39 +924,6 @@ namespace qxir {
     Seq *setBody(Seq *body) noexcept { return m_body = body; }
   };
 
-  class Foreach final : public Expr {
-    QCLASS_REFLECT()
-
-    std::string_view m_idx_ident;
-    std::string_view m_val_ident;
-    Expr *m_expr;
-    Seq *m_body;
-
-  public:
-    Foreach(std::string_view idx_ident, std::string_view val_ident, Expr *expr, Seq *body)
-        : Expr(QIR_NODE_FOREACH),
-          m_idx_ident(idx_ident),
-          m_val_ident(val_ident),
-          m_expr(expr),
-          m_body(body) {}
-
-    std::string_view getIdxIdent() noexcept { return m_idx_ident; }
-    std::string_view setIdxIdent(std::string_view idx_ident) noexcept {
-      return m_idx_ident = idx_ident;
-    }
-
-    std::string_view getValIdent() noexcept { return m_val_ident; }
-    std::string_view setValIdent(std::string_view val_ident) noexcept {
-      return m_val_ident = val_ident;
-    }
-
-    Expr *getExpr() noexcept { return m_expr; }
-    Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
-
-    Seq *getBody() noexcept { return m_body; }
-    Seq *setBody(Seq *body) noexcept { return m_body = body; }
-  };
-
   class Case final : public Expr {
     QCLASS_REFLECT()
 
@@ -1040,7 +980,11 @@ namespace qxir {
 
   public:
     Fn(std::string_view name, const Params &params, Seq *body, bool variadic, AbiTag abi_tag)
-        : Expr(QIR_NODE_FN), m_name(name), m_params(params), m_body(body), m_variadic(variadic),
+        : Expr(QIR_NODE_FN),
+          m_name(name),
+          m_params(params),
+          m_body(body),
+          m_variadic(variadic),
           m_abi_tag(abi_tag) {}
 
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
@@ -1072,6 +1016,8 @@ namespace qxir {
   ///=============================================================================
   /// END: EXPRESSIONS
   ///=============================================================================
+
+#ifdef __QUIX_IMPL__
 
   enum class TmpType {
     NULL_LITERAL,
@@ -1110,6 +1056,7 @@ namespace qxir {
     TmpNodeCradle &getData() noexcept { return m_data; }
     const TmpNodeCradle &getData() const noexcept { return m_data; }
   };
+#endif
 
 #define TYPE_SIZE sizeof(Expr)
   extern thread_local qmodule_t *current;

@@ -29,11 +29,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QUIX_IMPL__
+
 #include <string>
 #include <string_view>
 
 #include "quix-parser/Node.h"
-#define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
 #include <quix-core/Error.h>
@@ -298,12 +299,13 @@ static qxir::Tmp *create_simple_call(
     std::vector<std::pair<std::string_view, qxir::Expr *>,
                 qxir::Arena<std::pair<std::string_view, qxir::Expr *>>>
         args = {}) {
-  qxir::CallArgsTmpNodeCradle datapack;
+  // qxir::CallArgsTmpNodeCradle datapack;
 
-  std::get<0>(datapack) = qxir::create<qxir::Ident>(memorize(name), nullptr);
-  std::get<1>(datapack) = std::move(args);
+  // std::get<0>(datapack) = qxir::create<qxir::Ident>(memorize(name), nullptr);
+  // std::get<1>(datapack) = std::move(args);
 
-  return create<qxir::Tmp>(qxir::TmpType::CALL, std::move(datapack));
+  // return create<qxir::Tmp>(qxir::TmpType::CALL, std::move(datapack));
+  qcore_implement(__func__);
 }
 
 qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) {
@@ -912,7 +914,8 @@ namespace qxir {
 
     auto str = s.cur_named(n->get_name());
 
-    return create<Ident>(memorize(std::string_view(str)), nullptr);
+    // return create<Ident>(memorize(std::string_view(str)), nullptr);
+    qcore_implement(__func__);
   }
 
   static Expr *qconv_seq_point(ConvState &s, const qparse::SeqPoint *n) {
@@ -1320,13 +1323,14 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the vector type.
      */
 
-    auto item = qconv_one(s, n->get_item());
-    if (!item) {
-      badtree(n, "qparse::VectorTy::get_item() == nullptr");
-      throw QError();
-    }
+    // auto item = qconv_one(s, n->get_item());
+    // if (!item) {
+    //   badtree(n, "qparse::VectorTy::get_item() == nullptr");
+    //   throw QError();
+    // }
 
-    return create<ListTy>(item->asType());
+    // return create<ListTy>(item->asType());
+    qcore_implement(__func__);
   }
 
   static Expr *qconv_map_ty(ConvState &s, const qparse::MapTy *n) {
@@ -2347,22 +2351,23 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the foreach loop.
      */
 
-    auto idx_name = memorize(n->get_idx_ident());
-    auto val_name = memorize(n->get_val_ident());
+    // auto idx_name = memorize(n->get_idx_ident());
+    // auto val_name = memorize(n->get_val_ident());
 
-    auto iter = qconv_one(s, n->get_expr());
-    if (!iter) {
-      badtree(n, "qparse::ForeachStmt::get_expr() == nullptr");
-      throw QError();
-    }
+    // auto iter = qconv_one(s, n->get_expr());
+    // if (!iter) {
+    //   badtree(n, "qparse::ForeachStmt::get_expr() == nullptr");
+    //   throw QError();
+    // }
 
-    auto body = qconv_one(s, n->get_body());
-    if (!body) {
-      badtree(n, "qparse::ForeachStmt::get_body() == nullptr");
-      throw QError();
-    }
+    // auto body = qconv_one(s, n->get_body());
+    // if (!body) {
+    //   badtree(n, "qparse::ForeachStmt::get_body() == nullptr");
+    //   throw QError();
+    // }
 
-    return create<Foreach>(idx_name, val_name, iter, create<Seq>(SeqItems({body})));
+    // return create<Foreach>(idx_name, val_name, iter, create<Seq>(SeqItems({body})));
+    qcore_implement(__func__);
   }
 
   static Expr *qconv_case(ConvState &s, const qparse::CaseStmt *n) {
@@ -2941,11 +2946,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       out = create<Index>(clone(n->getExpr()), clone(n->getIndex()));
       break;
     }
-    case QIR_NODE_IDENT: {
-      out = create<Ident>(memorize(static_cast<Ident *>(in)->getName()),
-                          nullptr /* FIXME: DAMN IT!! */);
-      break;
-    }
     case QIR_NODE_EXTERN: {
       Extern *n = static_cast<Extern *>(in);
       out = create<Extern>(clone(n->getValue()), memorize(n->getAbiName()));
@@ -2989,12 +2989,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       out =
           create<Form>(memorize(n->getIdxIdent()), memorize(n->getValIdent()),
                        clone(n->getMaxJobs()), clone(n->getExpr()), clone(n->getBody())->as<Seq>());
-      break;
-    }
-    case QIR_NODE_FOREACH: {
-      Foreach *n = static_cast<Foreach *>(in);
-      out = create<Foreach>(memorize(n->getIdxIdent()), memorize(n->getValIdent()),
-                            clone(n->getExpr()), clone(n->getBody())->as<Seq>());
       break;
     }
     case QIR_NODE_CASE: {
@@ -3128,11 +3122,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     case QIR_NODE_ARRAY_TY: {
       ArrayTy *n = static_cast<ArrayTy *>(in);
       out = create<ArrayTy>(clone(n->getElement())->asType(), clone(n->getCount()));
-      break;
-    }
-    case QIR_NODE_LIST_TY: {
-      ListTy *n = static_cast<ListTy *>(in);
-      out = create<ListTy>(clone(n->getElement())->asType());
       break;
     }
     case QIR_NODE_FN_TY: {

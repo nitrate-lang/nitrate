@@ -31,7 +31,7 @@
 
 #include <quix-core/Error.h>
 
-#define __QXIR_IMPL__
+#define __QUIX_IMPL__
 #include <quix-qxir/Module.h>
 
 #include <transform/PassGroup.hh>

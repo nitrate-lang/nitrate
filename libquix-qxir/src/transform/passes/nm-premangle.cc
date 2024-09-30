@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define __QUIX_IMPL__
+
 #include <cstdint>
 #include <sstream>
 
@@ -278,17 +280,6 @@ static void mangle_type(Type *n, std::ostream &ss) {
       ss << sz.value();
       ss << '_';
       mangle_type(n->as<ArrayTy>()->getElement(), ss);
-      break;
-    }
-
-    case QIR_NODE_LIST_TY: {
-      /**
-       * @brief Lists are first class types in QUIX.
-       * They therefore have a their own mangling scheme.
-       */
-
-      ss << 'L';
-      mangle_type(n->as<ListTy>()->getElement(), ss);
       break;
     }
 

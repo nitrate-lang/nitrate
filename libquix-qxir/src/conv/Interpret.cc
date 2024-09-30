@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QXIR_IMPL__
+#define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
 #include <core/LibMacro.h>
@@ -545,11 +545,6 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
         ANS = create<Int>(str->getValue()[idx_val]);
       }
 
-      break;
-    }
-
-    case QIR_NODE_IDENT: {
-      // Unsupported.
       break;
     }
 

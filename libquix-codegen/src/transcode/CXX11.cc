@@ -116,7 +116,6 @@ static PreGenParam pregen_iterate(Expr *root) {
       case QIR_NODE_STRING_TY:
         param.use_string = true;
         break;
-      case QIR_NODE_LIST_TY:
       case QIR_NODE_LIST:
         param.use_vector = true;
         break;
@@ -470,20 +469,11 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
         out << '[';
         recurse(n->as<Index>()->getIndex());
         out << ']';
-      } else if (tp == QIR_NODE_IDENT) {
-        out << '[';
-        recurse(n->as<Index>()->getIndex());
-        out << ']';
       } else {
         qcore_panicf("unexpected index type in serialization: %d", (int)tp);
       }
 
       state.stmt_mode = old_stmt_mode;
-      break;
-    }
-
-    case QIR_NODE_IDENT: {
-      out << n->as<Ident>()->getWhat()->getName();
       break;
     }
 
@@ -637,13 +627,6 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
        * 3. Join threads at end of For Multi Loop
        */
 
-      break;
-    }
-
-    case QIR_NODE_FOREACH: {
-      /// TODO:
-      out << "/* TODO */";
-      // Foreach Expr is an Impure Callable that returns a pair<key, value>
       break;
     }
 
@@ -844,13 +827,6 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
       recurse(n->as<ArrayTy>()->getElement());
       out << ',';
       recurse(n->as<ArrayTy>()->getCount());
-      out << '>';
-      break;
-    }
-
-    case QIR_NODE_LIST_TY: {
-      out << "std::vector<";
-      recurse(n->as<ListTy>()->getElement());
       out << '>';
       break;
     }
