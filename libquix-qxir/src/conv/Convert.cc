@@ -2168,6 +2168,8 @@ namespace qxir {
       throw QError();
     }
 
+    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
+
     auto val = qconv_one(s, n->get_value());
     if (!val) {
       badtree(n, "qparse::ReturnIfStmt::get_value() == nullptr");
@@ -2188,6 +2190,7 @@ namespace qxir {
       badtree(n, "qparse::RetZStmt::get_cond() == nullptr");
       throw QError();
     }
+    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
 
     auto inv_cond = create<UnExpr>(cond, Op::LogicNot);
 
@@ -2211,6 +2214,7 @@ namespace qxir {
       badtree(n, "qparse::RetVStmt::get_cond() == nullptr");
       throw QError();
     }
+    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
 
     return create<If>(cond, create<Ret>(create<VoidTy>()), create<VoidTy>());
   }
@@ -2248,6 +2252,7 @@ namespace qxir {
       badtree(n, "qparse::IfStmt::get_cond() == nullptr");
       throw QError();
     }
+    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
 
     if (!then) {
       badtree(n, "qparse::IfStmt::get_then() == nullptr");
@@ -2274,6 +2279,8 @@ namespace qxir {
     if (!cond) {
       cond = create<Int>(1);
     }
+
+    cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
 
     if (!body) {
       body = create<Seq>(SeqItems({}));
@@ -2302,6 +2309,7 @@ namespace qxir {
 
     if (!cond) {
       cond = create<Int>(1);  // infinite loop like 'for (;;) {}'
+      cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
     }
 
     if (!step) {
