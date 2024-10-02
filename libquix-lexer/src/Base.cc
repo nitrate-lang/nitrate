@@ -42,6 +42,7 @@
 #include <cmath>
 #include <csetjmp>
 #include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <quix-lexer/Base.hh>
 #include <utility>
@@ -127,30 +128,31 @@ LIB_EXPORT qlex_loc_t qlex_offset(qlex_t *obj, qlex_loc_t base, qlex_size offset
     std::optional<qlex_size> seek_base_pos;
     uint8_t *buf = nullptr;
     size_t bufsz;
+    qlex_loc_t res{.tag = 0};
 
     if (!(seek_base_pos = obj->loc2offset(base))) {
-      return base;
+      return res;
     }
 
     if ((curpos = ftell(obj->m_file)) == -1) {
-      return base;
+      return res;
     }
 
     if (fseek(obj->m_file, *seek_base_pos + offset, SEEK_SET) != 0) {
-      return base;
+      return res;
     }
 
     bufsz = offset;
 
     if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
       fseek(obj->m_file, curpos, SEEK_SET);
-      return base;
+      return res;
     }
 
     if (fread(buf, 1, bufsz, obj->m_file) != bufsz) {
       free(buf);
       fseek(obj->m_file, curpos, SEEK_SET);
-      return base;
+      return res;
     }
 
     buf[bufsz] = '\0';
@@ -161,12 +163,12 @@ LIB_EXPORT qlex_loc_t qlex_offset(qlex_t *obj, qlex_loc_t base, qlex_size offset
 
     if ((row = qlex_line(obj, base)) == UINT32_MAX) {
       free(buf);
-      return base;
+      return res;
     }
 
     if ((col = qlex_col(obj, base)) == UINT32_MAX) {
       free(buf);
-      return base;
+      return res;
     }
 
     for (size_t i = 0; i < bufsz; i++) {
@@ -223,7 +225,7 @@ LIB_EXPORT qlex_size qlex_spanx(qlex_t *obj, qlex_loc_t start, qlex_loc_t end,
     }
 
     if (*endoff < *begoff) {
-      return 0;
+      return UINT32_MAX;
     }
 
     qlex_size span = *endoff - *begoff;
