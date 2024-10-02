@@ -43,9 +43,6 @@
     },
     {
       "include": "#proprocessorFunctionA"
-    },
-    {
-      "include": "#proprocessorFunctionB"
     }
   ],
   "repository": {
@@ -123,15 +120,6 @@
     "proprocessorFunctionA": {
       "begin": "@\\([\\s\n]*fn",
       "end": "\\}\\)$",
-      "patterns": [
-        {
-          "include": "source.lua"
-        }
-      ]
-    },
-    "proprocessorFunctionB": {
-      "begin": "@\\(",
-      "end": "\\)$",
       "patterns": [
         {
           "include": "source.lua"
