@@ -1,3 +1,14 @@
+InlayHints:
+  BlockEnd: No
+  Designators: No
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes
+  TypeNameLimit: 24
+Diagnostics:
+  ClangTidy:
+    Add: modernize* readability* performance* bugprone* cppcoreguidelines*
+    Remove: modernize-use-trailing-return-type
 CompileFlags:
   Add: [-std=gnu++20,
         -I/usr/include/c++/13/,

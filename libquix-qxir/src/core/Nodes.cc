@@ -1011,7 +1011,7 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
   return gen("qxir");
 }
 
-CPP_EXPORT std::string qxir::Expr::getUniqueId() noexcept {
+CPP_EXPORT std::string qxir::Expr::getUniqueUUID() noexcept {
   return boost::uuids::to_string(hash());
 }
 
@@ -1021,21 +1021,21 @@ CPP_EXPORT void qxir::Expr::setModule(qmodule_t *module) noexcept {
   m_module_idx = module->getModuleId();
 }
 
-CPP_EXPORT uint64_t Type::getTypeIncrement() const {
-  static thread_local std::unordered_map<const Type *, uint64_t> type_map;
+CPP_EXPORT uint64_t Expr::getUniqId() const {
+  static thread_local std::unordered_map<const Expr *, uint64_t> id_map;
   static thread_local uint64_t last = 0;
 
-  if (type_map.contains(this)) {
-    return type_map.at(this);
+  if (id_map.contains(this)) {
+    return id_map.at(this);
   }
 
-  for (auto &[key, value] : type_map) {
+  for (auto &[key, value] : id_map) {
     if (key->cmp_eq(this)) {
       return value;
     }
   }
 
-  type_map[this] = last;
+  id_map[this] = last;
 
   return last++;
 }

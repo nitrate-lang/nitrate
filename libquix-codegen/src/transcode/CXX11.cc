@@ -823,7 +823,7 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
     }
 
     case QIR_NODE_UNION_TY: {
-      out << "union _T" << n->as<UnionTy>()->getTypeIncrement();
+      out << "union _T" << n->as<UnionTy>()->getUniqId();
       break;
     }
 

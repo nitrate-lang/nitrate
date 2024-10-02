@@ -179,6 +179,10 @@ namespace qxir {
     inline bool isVolatile() const noexcept { return m_volatile; }
     inline void setConst(bool is_const) noexcept { m_constexpr = is_const; }
     inline void setVolatile(bool is_volatile) noexcept { m_volatile = is_volatile; }
+    inline bool isLiteral() const noexcept {
+      return m_node_type == QIR_NODE_INT || m_node_type == QIR_NODE_FLOAT ||
+             m_node_type == QIR_NODE_STRING;
+    }
 
     // Returns "" if the construct is not named.
     std::string_view getName() const noexcept;
@@ -247,14 +251,24 @@ namespace qxir {
     /**
      * @brief Compute the hash of the node.
      * @return boost::uuids::uuid The hash.
+     * @note This code will be the same on different compiler runs as long as the compiler version
+     * is the same.
      */
     boost::uuids::uuid hash() noexcept;
 
     /**
      * @brief Get a unique identifier for the node.
      * @return std::string The unique identifier.
+     * @note Wrapper around hash()
      */
-    std::string getUniqueId() noexcept;
+    std::string getUniqueUUID() noexcept;
+
+    /**
+     * @brief Get a short code to uniquely identify the node.
+     * @return uint64_t The unique identifier.
+     * @note This code may be different for different compiler runs.
+     */
+    uint64_t getUniqId() const;
   } __attribute__((packed)) __attribute__((aligned(8)));
 
 #define EXPR_SIZE sizeof(Expr)
@@ -264,9 +278,11 @@ namespace qxir {
     Type(qxir_ty_t ty) : Expr(ty) {}
 
     bool hasKnownSize() noexcept;
+    bool hasKnownAlign() noexcept;
     uint64_t getSizeBits();
     inline uint64_t getSizeBytes() { return std::ceil(getSizeBits() / 8.0); }
-    uint64_t getTypeIncrement() const;
+    uint64_t getAlignBits();
+    inline uint64_t getAlignBytes() { return std::ceil(getAlignBits() / 8.0); }
 
     bool is_primitive() const;
     bool is_array() const;
@@ -622,10 +638,12 @@ namespace qxir {
     static constexpr uint64_t FLAG_BIT = 1ULL << 63;
 
   public:
-    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} {}
+    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} { setConst(true); }
+
     Int(std::string_view str) : Expr(QIR_NODE_INT), m_data{.m_str = str.data()} {
       qcore_assert((m_data.m_u64 & FLAG_BIT) == 0,
                    "Optimized code assumed an invariant that does not hold on this architecture.");
+      setConst(true);
     }
 
     bool isNativeRepresentation() const noexcept { return m_data.m_u64 & FLAG_BIT; }
@@ -661,8 +679,8 @@ namespace qxir {
     static_assert(sizeof(double) == 8);
 
   public:
-    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} {}
-    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} {}
+    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} { setConst(true); }
+    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} { setConst(true); }
 
     bool isNativeRepresentation() const noexcept { return std::holds_alternative<double>(m_data); }
 
@@ -691,7 +709,7 @@ namespace qxir {
     std::string_view m_data;
 
   public:
-    String(std::string_view data) : Expr(QIR_NODE_STRING), m_data(data) {}
+    String(std::string_view data) : Expr(QIR_NODE_STRING), m_data(data) { setConst(true); }
 
     std::string_view getValue() noexcept { return m_data; }
     std::string_view setValue(std::string_view data) noexcept { return m_data = data; }

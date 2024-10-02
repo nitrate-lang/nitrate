@@ -194,7 +194,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
 #define recurse(x) serialize_recurse(x, ss, state)
 #endif
 
-  if (n->isConst()) {
+  if (n->isConst() && !n->isLiteral()) {
     ss << "const ";
   }
   if (n->isVolatile()) {
@@ -228,15 +228,17 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       break;
     }
     case QIR_NODE_INT: {
-      ss << n->as<Int>()->getValue();
+      recurse(n->as<Int>()->getType());
+      ss << " " << n->as<Int>()->getValue();
       break;
     }
     case QIR_NODE_FLOAT: {
-      ss << n->as<Float>()->getValue();
+      recurse(n->as<Float>()->getType());
+      ss << " " << n->as<Float>()->getValue();
       break;
     }
     case QIR_NODE_STRING: {
-      escape_string(ss, n->as<String>()->getValue());
+      ss << "%" << n->as<String>()->getUniqId();
       break;
     }
     case QIR_NODE_LIST: {
@@ -307,10 +309,10 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
     }
     case QIR_NODE_LOCAL: {
       ss << "local ";
+      recurse(n->as<Local>()->getType());
+      ss << " ";
       ss << n->as<Local>()->getName();
       if (n->as<Local>()->getValue()->isType()) {
-        ss << ": ";
-        recurse(n->as<Local>()->getValue());
       } else {
         ss << " = ";
         recurse(n->as<Local>()->getValue());
@@ -330,6 +332,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       ss << "cont";
       break;
     }
+
     case QIR_NODE_IF: {
       ss << "if (";
       recurse(n->as<If>()->getCond());
@@ -386,8 +389,10 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
         ss << ",";
         indent(ss, state);
       }
-      ss << "default: ";
-      recurse(n->as<Switch>()->getDefault());
+      if (n->as<Switch>()->getDefault()->getKind() != QIR_NODE_VOID_TY) {
+        ss << "default: ";
+        recurse(n->as<Switch>()->getDefault());
+      }
       state.indent--;
       indent(ss, state);
       ss << "}";
@@ -492,11 +497,11 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       break;
     }
     case QIR_NODE_STRUCT_TY: {
-      ss << "%" << n->as<StructTy>()->getTypeIncrement();
+      ss << "%" << n->as<StructTy>()->getUniqId();
       break;
     }
     case QIR_NODE_UNION_TY: {
-      ss << "%" << n->as<UnionTy>()->getTypeIncrement();
+      ss << "%" << n->as<UnionTy>()->getUniqId();
       break;
     }
     case QIR_NODE_ARRAY_TY: {
@@ -577,7 +582,7 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
 
       ss << "; Timestamp: " << datestamp << "\n";
       ss << "; Compiler: " << qxir_lib_version() << "\n";
-      ss << "; Copyright (C) " + datestamp.substr(0, 4) + " Wesley Jones\n\n";
+      ss << "; Compiler invented by Wesley Jones\n\n";
     }
   }
 
@@ -587,18 +592,32 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
 #endif
 
   {
-    std::unordered_set<uint64_t> type_ids;
+    std::unordered_set<uint64_t> node_ids;
 
     auto cb = [&](Expr *par, Expr **_cur) -> IterOp {
       Expr *n = *_cur;
 
       switch (n->getKind()) {
-        case QIR_NODE_STRUCT_TY: {
-          uint64_t type_id = n->getType()->getTypeIncrement();
-          if (type_ids.contains(type_id)) {
+        case QIR_NODE_STRING: {
+          uint64_t type_id = n->getUniqId();
+          if (node_ids.contains(type_id)) {
             break;
           }
-          type_ids.insert(type_id);
+
+          node_ids.insert(type_id);
+
+          ss << "%" << type_id << " = ";
+          escape_string(ss, n->as<String>()->getValue());
+          ss << "\n";
+          break;
+        }
+
+        case QIR_NODE_STRUCT_TY: {
+          uint64_t type_id = n->getType()->getUniqId();
+          if (node_ids.contains(type_id)) {
+            break;
+          }
+          node_ids.insert(type_id);
           ss << "%" << type_id << " = struct {";
 
           state.indent++;
@@ -624,11 +643,11 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
         }
 
         case QIR_NODE_UNION_TY: {
-          uint64_t type_id = n->getType()->getTypeIncrement();
-          if (type_ids.contains(type_id)) {
+          uint64_t type_id = n->getType()->getUniqId();
+          if (node_ids.contains(type_id)) {
             break;
           }
-          type_ids.insert(type_id);
+          node_ids.insert(type_id);
           ss << "%" << type_id << " = union {";
           state.indent++;
           indent(ss, state);
@@ -662,7 +681,7 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
 
     iterate<dfs_pre>(node, cb);
 
-    if (type_ids.size() > 0) {
+    if (node_ids.size() > 0) {
       ss << "\n";
     }
   }
