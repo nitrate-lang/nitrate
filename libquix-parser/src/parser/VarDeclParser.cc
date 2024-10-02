@@ -89,6 +89,7 @@ bool qparse::parser::parse_var(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &n
   if (tok.is<qPuncSemi>()) {
     for (auto &decl : decls) {
       VarDecl *var_decl = VarDecl::get(decl.first, decl.second, nullptr);
+      var_decl->set_end_pos(tok.end);
       nodes.push_back(var_decl);
     }
   } else if (tok.is<qOpSet>()) {
@@ -103,6 +104,7 @@ bool qparse::parser::parse_var(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &n
     }
 
     VarDecl *var_decl = VarDecl::get(decls[0].first, decls[0].second, init);
+    var_decl->set_end_pos(tok.end);
     nodes.push_back(var_decl);
   } else {
     syntax(tok, "Expected a ';' or '=' after the var declaration");

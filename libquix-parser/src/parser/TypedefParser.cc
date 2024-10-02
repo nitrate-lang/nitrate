@@ -61,6 +61,7 @@ bool qparse::parser::parse_typedef(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   *node = TypedefDecl::get(name, type);
+  (*node)->set_end_pos(tok.end);
 
   return true;
 }

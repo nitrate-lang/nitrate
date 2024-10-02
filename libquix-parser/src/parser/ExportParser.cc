@@ -52,10 +52,12 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
 
   if (tok.is<qPuncLCur>()) {
     Block *block = nullptr;
-    if (!parse(job, rd, &block, true)) return false;
+    if (!parse(job, rd, &block, true)) {
+      return false;
+    }
 
-    Block *stmts = Block::get(block->get_items());
-    *node = ExportDecl::get(stmts, abiName);
+    *node = ExportDecl::get(block, abiName);
+    (*node)->set_end_pos(block->get_end_pos());
     return true;
   }
 
@@ -65,10 +67,8 @@ bool qparse::parser::parse_pub(qparse_t &job, qlex_t *rd, Stmt **node) {
     return false;
   }
 
-  Block *stmts = Block::get(block->get_items());
-
-  *node = ExportDecl::get(stmts, abiName);
-
+  *node = ExportDecl::get(block, abiName);
+  (*node)->set_end_pos(block->get_end_pos());
   return true;
 }
 
@@ -90,7 +90,8 @@ bool qparse::parser::parse_sec(qparse_t &job, qlex_t *rd, Stmt **node) {
     Block *block = nullptr;
     if (!parse(job, rd, &block, true)) return false;
 
-    *node = Block::get(block->get_items());
+    *node = block;
+    (*node)->set_end_pos(block->get_end_pos());
     return true;
   }
 
@@ -100,8 +101,8 @@ bool qparse::parser::parse_sec(qparse_t &job, qlex_t *rd, Stmt **node) {
     return false;
   }
 
-  *node = Block::get(block->get_items());
-
+  *node = block;
+  (*node)->set_end_pos(block->get_end_pos());
   return true;
 }
 
@@ -123,7 +124,8 @@ bool qparse::parser::parse_pro(qparse_t &job, qlex_t *rd, Stmt **node) {
     Block *block = nullptr;
     if (!parse(job, rd, &block, true)) return false;
 
-    *node = Block::get(block->get_items());
+    *node = block;
+    (*node)->set_end_pos(block->get_end_pos());
     return true;
   }
 
@@ -133,7 +135,8 @@ bool qparse::parser::parse_pro(qparse_t &job, qlex_t *rd, Stmt **node) {
     return false;
   }
 
-  *node = Block::get(block->get_items());
+  *node = block;
+  (*node)->set_end_pos(block->get_end_pos());
 
   return true;
 }

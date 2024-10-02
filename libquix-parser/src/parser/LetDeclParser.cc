@@ -89,6 +89,7 @@ bool qparse::parser::parse_let(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &n
   if (tok.is<qPuncSemi>()) {
     for (auto &decl : decls) {
       LetDecl *let_decl = LetDecl::get(decl.first, decl.second, nullptr);
+      let_decl->set_end_pos(tok.end);
       nodes.push_back(let_decl);
     }
   } else if (tok.is<qOpSet>()) {
@@ -103,6 +104,7 @@ bool qparse::parser::parse_let(qparse_t &job, qlex_t *rd, std::vector<Stmt *> &n
     }
 
     LetDecl *let_decl = LetDecl::get(decls[0].first, decls[0].second, init);
+    let_decl->set_end_pos(tok.end);
     nodes.push_back(let_decl);
   } else {
     syntax(tok, "Expected a ';' or '=' after the let declaration");

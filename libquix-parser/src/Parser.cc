@@ -103,7 +103,11 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           syntax(tok, "Expected ';'");
         }
 
-        (*group)->add_item(ExprStmt::get(expr));
+        ExprStmt *stmt = ExprStmt::get(expr);
+        stmt->set_start_pos(expr->get_start_pos());
+        stmt->set_end_pos(tok.end);
+
+        (*group)->add_item(stmt);
         continue;
       }
 
@@ -111,6 +115,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
 
       Stmt *node = nullptr;
 
+      qlex_loc_t loc_start = tok.start;
       switch (tok.as<qlex_key_t>()) {
         case qKVar: {
           std::vector<Stmt *> items;
@@ -318,12 +323,12 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
         }
 
         case qKTrue: {
-          (*group)->add_item(ExprStmt::get(ConstBool::get(true)));
+          node = ExprStmt::get(ConstBool::get(true));
           break;
         }
 
         case qKFalse: {
-          (*group)->add_item(ExprStmt::get(ConstBool::get(false)));
+          node = ExprStmt::get(ConstBool::get(false));
           break;
         }
 
@@ -341,7 +346,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           }
 
           block->set_unsafe(true);
-          (*group)->add_item(block);
+          node = block;
           break;
         }
 
@@ -358,7 +363,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
             }
           }
           block->set_unsafe(false);
-          (*group)->add_item(block);
+          node = block;
           break;
         }
 
@@ -375,7 +380,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
             }
           }
 
-          (*group)->add_item(VolStmt::get(block));
+          node = VolStmt::get(block);
           break;
         }
 
@@ -384,7 +389,11 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
           break;
       }
 
-      if (node) (*group)->add_item(node);
+      if (node) {
+        node->set_start_pos(loc_start);
+        /* End position is supplied by producer */
+        (*group)->add_item(node);
+      }
     }
 
     if (expect_braces) {

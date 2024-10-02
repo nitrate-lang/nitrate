@@ -93,7 +93,9 @@ bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
       syntax(tok, "Expected block after case expression");
     }
 
-    cases.push_back(CaseStmt::get(case_expr, case_block));
+    CaseStmt *case_stmt = CaseStmt::get(case_expr, case_block);
+    case_stmt->set_end_pos(case_block->get_end_pos());
+    cases.push_back(case_stmt);
   }
 
   tok = qlex_next(rd);
@@ -102,6 +104,7 @@ bool qparse::parser::parse_switch(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   *node = SwitchStmt::get(cond, cases, default_case);
+  (*node)->set_end_pos(tok.end);
 
   return true;
 }

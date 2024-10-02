@@ -89,6 +89,7 @@ bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> 
   if (tok.is<qPuncSemi>()) {
     for (auto &decl : decls) {
       ConstDecl *const_decl = ConstDecl::get(decl.first, decl.second, nullptr);
+      const_decl->set_end_pos(tok.end);
       nodes.push_back(const_decl);
     }
   } else if (tok.is<qOpSet>()) {
@@ -103,6 +104,7 @@ bool qparse::parser::parse_const(qparse_t &job, qlex_t *rd, std::vector<Stmt *> 
     }
 
     ConstDecl *const_decl = ConstDecl::get(decls[0].first, decls[0].second, init);
+    const_decl->set_end_pos(tok.end);
     nodes.push_back(const_decl);
   } else {
     syntax(tok, "Expected a ';' or '=' after the constant declaration");

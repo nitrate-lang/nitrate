@@ -36,9 +36,12 @@
 using namespace qparse::parser;
 
 bool qparse::parser::parse_if(qparse_t &job, qlex_t *rd, Stmt **node) {
+  qlex_loc_t loc_end;
+
   Expr *cond = nullptr;
-  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &cond))
+  if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncLCur), qlex_tok_t(qOper, qOpArrow)}, &cond)) {
     return false;
+  }
 
   Block *then_block = nullptr;
   if (qlex_peek(rd).is<qOpArrow>()) {
@@ -60,15 +63,26 @@ bool qparse::parser::parse_if(qparse_t &job, qlex_t *rd, Stmt **node) {
         return false;
       }
     } else {
-      if (!parse(job, rd, &else_block, true, false)) {
-        return false;
+      if (qlex_peek(rd).is<qKIf>()) {
+        qlex_next(rd);
+        if (!parse_if(job, rd, reinterpret_cast<Stmt **>(&else_block))) {
+          return false;
+        }
+      } else {
+        if (!parse(job, rd, &else_block, true, false)) {
+          return false;
+        }
       }
     }
 
+    loc_end = else_block->get_end_pos();
     *node = IfStmt::get(cond, then_block, else_block);
   } else {
+    loc_end = then_block->get_end_pos();
     *node = IfStmt::get(cond, then_block, nullptr);
   }
+
+  (*node)->set_end_pos(loc_end);
 
   return true;
 }

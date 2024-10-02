@@ -42,6 +42,7 @@ bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (tok.is<qPuncSemi>()) {
     qlex_next(rd);
     *node = ReturnStmt::get();
+    (*node)->set_end_pos(tok.end);
     return true;
   }
 
@@ -57,6 +58,8 @@ bool qparse::parser::parse_return(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (!tok.is<qPuncSemi>()) {
     syntax(tok, "Expected a semicolon after the return statement.");
   }
+
+  (*node)->set_end_pos(tok.end);
 
   return true;
 }
@@ -84,6 +87,7 @@ bool qparse::parser::parse_retif(qparse_t &job, qlex_t *rd, Stmt **node) {
     syntax(tok, "Expected a semicolon after the return-if expression.");
   }
   *node = ReturnIfStmt::get(condition, return_expr);
+  (*node)->set_end_pos(tok.end);
 
   return true;
 }
@@ -111,6 +115,7 @@ bool qparse::parser::parse_retz(qparse_t &job, qlex_t *rd, Stmt **node) {
     syntax(tok, "Expected a semicolon after the return-zero expression.");
   }
   *node = RetZStmt::get(condition, return_expr);
+  (*node)->set_end_pos(tok.end);
 
   return true;
 }
@@ -129,6 +134,7 @@ bool qparse::parser::parse_retv(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   *node = RetVStmt::get(cond);
+  (*node)->set_end_pos(tok.end);
 
   return true;
 }

@@ -59,6 +59,8 @@ static bool parse_enum_field(qparse_t &job, qlex_t *rd, EnumDefItems &fields) {
     }
 
     item.second = ConstExpr::get(expr);
+    item.second->set_start_pos(expr->get_start_pos());
+    item.second->set_end_pos(expr->get_end_pos());
 
     tok = qlex_peek(rd);
   }
@@ -117,5 +119,7 @@ bool qparse::parser::parse_enum(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   *node = EnumDef::get(name, type, fields);
+  (*node)->set_end_pos(tok.end);
+
   return true;
 }

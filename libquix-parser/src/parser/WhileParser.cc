@@ -50,6 +50,7 @@ bool qparse::parser::parse_while(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   *node = WhileStmt::get(cond, then_block);
+  (*node)->set_end_pos(then_block->get_end_pos());
 
   return true;
 }

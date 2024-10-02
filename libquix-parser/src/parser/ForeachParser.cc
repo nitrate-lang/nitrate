@@ -98,6 +98,7 @@ bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   *node = ForeachStmt::get(idx_ident, val_ident, expr, block);
+  (*node)->set_end_pos(block->get_end_pos());
 
   return true;
 }

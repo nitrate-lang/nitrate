@@ -104,6 +104,7 @@ bool qparse::parser::parse_form(qparse_t &job, qlex_t *rd, Stmt **node) {
   }
 
   *node = FormStmt::get(idx_ident, val_ident, expr, maxjobs, block);
+  (*node)->set_end_pos(block->get_end_pos());
 
   return true;
 }
