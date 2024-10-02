@@ -282,7 +282,8 @@ typedef enum qxir_diag_format_t {
   QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,
 
   /**
-   * @brief Display in a modern terminal emulator with UTF-8 and RGB colors.
+   * @brief Display in a modern terminal emulator with UTF-8, RGB colors, ANSI-box drawing, and
+   * full diagnostics with source highlighting.
    * @note Includes everything the user would expect from a mainstream compiler.
    */
   QXIR_DIAG_COLOR = QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL,

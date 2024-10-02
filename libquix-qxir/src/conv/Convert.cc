@@ -199,6 +199,16 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
                         DiagMessage("Compilation failed", IssueClass::Error, IssueCode::Default));
   }
 
+  // iterate<qxir::dfs_pre>(mod->getRoot(), [mod](qxir::Expr *par, qxir::Expr **cur) -> qxir::IterOp {
+  //   auto pos = (*cur)->getLoc();
+
+  //   mod->getDiag().push(
+  //       QXIR_AUDIT_CONV,
+  //       qxir::diag::DiagMessage("Testing reporting", qxir::diag::IssueClass::Warn,
+  //                               qxir::diag::IssueCode::Default, pos.first, pos.second));
+  //   return qxir::IterOp::Proceed;
+  // });
+
   qxir::current = nullptr;
   uninstall_sigguard();
   std::swap(qxir::qxir_arena.get(), mod->getNodeArena());

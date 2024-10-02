@@ -97,7 +97,7 @@ namespace qxir::diag {
 
     std::string mint_clang16_message(const DiagMessage &msg) const;
     std::string mint_plain_message(const DiagMessage &msg) const;
-    std::string mint_clang_truecolor_message(const DiagMessage &msg) const;
+    std::string mint_modern_message(const DiagMessage &msg) const;
     size_t dump_diagnostic_vector(std::vector<DiagMessage> &vec, DiagnosticMessageHandler handler,
                                   qxir_diag_format_t style);
 

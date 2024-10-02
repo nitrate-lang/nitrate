@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cstddef>
 #define __QUIX_IMPL__
 
 #include <core/LibMacro.h>
@@ -39,6 +40,7 @@
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
+#include <cstdint>
 #include <quix-qxir/Report.hh>
 #include <sstream>
 
@@ -128,7 +130,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
     ss << " [" << issue_code_bimap.left.at(msg.code) << "]";
   }
 
-  qlex_spanx(
+  qlex_size res = qlex_spanx(
       lx, msg.start, msg.end,
       [](const char *str, qlex_size len, uintptr_t x) {
         if (len > 100) {
@@ -136,9 +138,12 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
         }
 
         std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
-        ss << '\n' << str;
+        ss << '\n' << std::string_view(str, len);
       },
       reinterpret_cast<uintptr_t>(&ss));
+  if (res == UINT32_MAX) {
+    ss << "\n# [failed to extract source code snippet]\n";
+  }
 
   return ss.str();
 }
@@ -156,18 +161,21 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
     el = qlex_line(lx, msg.end);
     ec = qlex_col(lx, msg.end);
 
-    if (sl != UINT32_MAX || sc != UINT32_MAX) {
+    if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX || ec != UINT32_MAX) {
       print_qsizeloc(ss, sl);
       ss << ":";
       print_qsizeloc(ss, sc);
+
+      ss << "-";
+      print_qsizeloc(ss, el);
+      ss << ":";
+      print_qsizeloc(ss, ec);
+
       ss << ":\x1b[0m";
     }
 
     ss << " ";
   }
-
-  (void)ec;
-  (void)el;
 
   switch (msg.type) {
     case IssueClass::Debug:
@@ -207,7 +215,7 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
       break;
   }
 
-  qlex_spanx(
+  qlex_size res = qlex_spanx(
       lx, msg.start, msg.end,
       [](const char *str, qlex_size len, uintptr_t x) {
         if (len > 100) {
@@ -215,15 +223,14 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
         }
 
         std::stringstream &ss = *reinterpret_cast<std::stringstream *>(x);
-        ss << '\n' << str;
+        ss << '\n' << std::string_view(str, len) << '\n';
       },
       reinterpret_cast<uintptr_t>(&ss));
+  if (res == UINT32_MAX) {
+    ss << "\n# [\x1b[35;1mfailed to extract source code snippet\x1b[0m]\n";
+  }
 
   return ss.str();
-}
-
-std::string DiagnosticManager::mint_clang_truecolor_message(const DiagMessage &msg) const {
-  return mint_clang16_message(msg); /* For now this will do okay */
 }
 
 ///============================================================================///
@@ -318,7 +325,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
-        handler(mint_clang_truecolor_message(msg), msg.type);
+        handler(mint_modern_message(msg), msg.type);
         break;
       }
 
