@@ -131,6 +131,10 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         break;
       }
 
+      case QIR_NODE_IDENT: {
+        break;
+      }
+
       case QIR_NODE_EXTERN: {
         if (cur->isType()) {
           EPUT("Extern child node is a type node");

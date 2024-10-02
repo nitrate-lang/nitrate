@@ -29,17 +29,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <llvm-14/llvm/IR/GlobalValue.h>
-
-#include <unordered_map>
 #define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
 #include <core/LibMacro.h>
 #include <llvm-14/llvm/IR/BasicBlock.h>
 #include <llvm-14/llvm/IR/DerivedTypes.h>
+#include <llvm-14/llvm/IR/GlobalValue.h>
 #include <llvm-14/llvm/IR/Instructions.h>
 #include <llvm-14/llvm/IR/Type.h>
+#include <llvm-14/llvm/IR/Value.h>
 #include <llvm/ExecutionEngine/ExecutionEngine.h>
 #include <llvm/ExecutionEngine/MCJIT.h>
 #include <llvm/ExecutionEngine/SectionMemoryManager.h>
@@ -80,6 +79,9 @@
 #include <stack>
 #include <stdexcept>
 #include <streambuf>
+#include <unordered_map>
+
+#include "quix-qxir/TypeDecl.h"
 
 class OStreamWriter : public std::streambuf {
   FILE *m_file;
@@ -306,7 +308,8 @@ LIB_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE 
 
         if (llvm::verifyModule(*module->get(), &o)) {
           e << "error: failed to verify module" << std::endl;
-          return false;
+          /// FIXME: Fail here
+          // return false;
         }
 
         module.value()->print(o, nullptr);
@@ -369,7 +372,7 @@ struct Mode {
 };
 
 struct State {
-  std::stack<llvm::AllocaInst *> return_val;
+  std::stack<std::pair<llvm::AllocaInst *, llvm::BasicBlock *>> return_val;
   std::stack<llvm::GlobalValue::LinkageTypes> linkage;
   std::stack<std::pair<llvm::Function *, std::unordered_map<std::string_view, llvm::AllocaInst *>>>
       locals;
@@ -380,11 +383,17 @@ struct State {
   std::stack<LoopBlock> loops;
 
   bool in_fn;
+  bool did_ret;
+  bool did_brk;
+  bool did_cont;
 
   static State defaults() {
     State s;
     s.linkage.push(llvm::GlobalValue::LinkageTypes::InternalLinkage);
     s.in_fn = false;
+    s.did_ret = false;
+    s.did_brk = false;
+    s.did_cont = false;
     return s;
   }
 };
@@ -400,6 +409,7 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
 static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Call *N);
 static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Seq *N);
 static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Index *N);
+static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Ident *N);
 static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Extern *N);
 static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Local *N);
 static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Ret *N);
@@ -488,6 +498,11 @@ auto V(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Expr *N) -> val_t {
 
     case QIR_NODE_INDEX: {
       R = QIR_NODE_INDEX_C(m, b, cf, s, N->as<qxir::Index>());
+      break;
+    }
+
+    case QIR_NODE_IDENT: {
+      R = QIR_NODE_IDENT_C(m, b, cf, s, N->as<qxir::Ident>());
       break;
     }
 
@@ -736,6 +751,71 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *
   return m;
 }
 
+static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llvm::Value *L,
+                             qxir::Op O, llvm::Type *R, qxir::Type *LT, qxir::Type *RT) {
+  /**
+   * @brief [Write explanation here]
+   *
+   * @note [Write expected behavior here]
+   *
+   * @note [Write assumptions here]
+   */
+
+  val_t E;
+
+  switch (O) {
+    case qxir::Op::BitcastAs: {
+      E = b.CreateBitCast(L, R);
+      break;
+    }
+
+    case qxir::Op::CastAs: {
+      std::cout << "Casting" << std::endl;
+      /// TODO: Implement casting
+
+      llvm::Type *IR_LT = L->getType();
+      // llvm::TypeSize lsz = IR_LT->getPrimitiveSizeInBits();
+      // llvm::TypeSize rsz = R->getPrimitiveSizeInBits();
+
+      /* Handle floating point */
+      if (IR_LT->isFloatingPointTy() && RT->is_signed()) {
+        E = b.CreateFPToSI(L, R);
+      } else if (IR_LT->isFloatingPointTy() && RT->is_unsigned()) {
+        E = b.CreateFPToUI(L, R);
+      } else if (LT->is_signed() && RT->is_floating_point()) {
+        E = b.CreateSIToFP(L, R);
+      } else if (LT->is_unsigned() && RT->is_floating_point()) {
+        E = b.CreateUIToFP(L, R);
+      }
+
+      /* Integer stuff */
+      /// TODO: Verify me
+      else if (LT->is_signed() && RT->is_signed()) {
+        E = b.CreateSExtOrTrunc(L, R);
+      } else if (LT->is_unsigned() && RT->is_signed()) {
+        E = b.CreateZExtOrTrunc(L, R);
+      } else if (LT->is_signed() && RT->is_unsigned()) {
+        E = b.CreateSExtOrTrunc(L, R);
+      } else if (LT->is_unsigned() && RT->is_unsigned()) {
+        E = b.CreateZExtOrTrunc(L, R);
+      } else {
+        std::cout << "Failed to cast from " << LT->getKindName() << " to " << RT->getKindName()
+                  << std::endl;
+      }
+
+      /// TODO: Implement casting
+
+      break;
+    }
+
+    default: {
+      qcore_panic("unexpected binary operator");
+    }
+  }
+
+  return E;
+}
+
 static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::BinExpr *N) {
   /**
    * @brief [Write explanation here]
@@ -745,7 +825,37 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
    * @note [Write assumptions here]
    */
 
-  /// TODO: Implement conversion for node
+  val_t L = V(m, b, cf, s, N->getLHS());
+  if (!L) {
+    return std::nullopt;
+  }
+
+  qxir::Op O = N->getOp();
+
+  if (N->getRHS()->isType()) { /* Do casting */
+    ty_t TY = T(m, b, cf, s, N->getRHS()->asType());
+    if (!TY) {
+      return std::nullopt;
+    }
+
+    qxir::Type *L_T = N->getLHS()->getType();
+    if (!L_T) {
+      return std::nullopt;
+    }
+
+    qxir::Type *R_T = N->getRHS()->getType();
+    if (!R_T) {
+      return std::nullopt;
+    }
+
+    return binexpr_do_cast(m, b, cf, s, L.value(), O, TY.value(), L_T, R_T);
+  }
+
+  val_t R = V(m, b, cf, s, N->getRHS());
+
+  /// TODO: Binary expressions
+  (void)R;
+
   qcore_implement(__func__);
 }
 
@@ -931,6 +1041,34 @@ static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   qcore_implement(__func__);
 }
 
+static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Ident *N) {
+  /**
+   * @brief [Write explanation here]
+   *
+   * @note [Write expected behavior here]
+   *
+   * @note [Write assumptions here]
+   */
+
+  if (s.in_fn) {
+    auto &locals = s.locals.top().second;
+    auto it = locals.find(N->getName());
+    if (it == locals.end()) {
+      return std::nullopt;
+    }
+
+    /// FIXME: ???
+    return b.CreateLoad(it->second->getAllocatedType(), it->second);
+  } else {
+    auto it = m.getNamedValue(N->getName());
+    if (!it) {
+      return std::nullopt;
+    }
+
+    return it;
+  }
+}
+
 static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Extern *N) {
   /**
    * @brief [Write explanation here]
@@ -1013,18 +1151,23 @@ static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
    * @note [Write assumptions here]
    */
 
+  val_t R;
+
   if (N->getExpr()->getKind() != QIR_NODE_VOID_TY) {
-    val_t R = V(m, b, cf, s, N->getExpr());
+    R = V(m, b, cf, s, N->getExpr());
     if (!R) {
       return std::nullopt;
     }
 
-    b.CreateStore(R.value(), s.return_val.top());
-
-    return R;
+    b.CreateStore(R.value(), s.return_val.top().first);
+  } else {
+    R = llvm::Constant::getNullValue(llvm::Type::getInt32Ty(m.getContext()));
   }
 
-  return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(m.getContext()));
+  b.CreateBr(s.return_val.top().second);
+  s.did_ret = true;
+
+  return R;
 }
 
 static val_t QIR_NODE_BRK_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Brk *N) {
@@ -1038,6 +1181,7 @@ static val_t QIR_NODE_BRK_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
 
   qcore_assert(!s.loops.empty(), "break statement outside of loop?");
 
+  s.did_brk = true;
   return b.CreateBr(s.loops.top().exit);
 }
 
@@ -1052,6 +1196,7 @@ static val_t QIR_NODE_CONT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
 
   qcore_assert(!s.loops.empty(), "continue statement outside of loop?");
 
+  s.did_cont = true;
   return b.CreateBr(s.loops.top().step);
 }
 
@@ -1078,23 +1223,33 @@ static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
   b.CreateCondBr(R.value(), then, els);
   b.SetInsertPoint(then);
 
+  bool old_did_ret = s.did_ret;
   val_t R_T = V(m, b, cf, s, N->getThen());
   if (!R_T) {
     return std::nullopt;
   }
 
-  b.CreateBr(end);
+  if (!s.did_ret) {
+    b.CreateBr(end);
+  }
+  s.did_ret = old_did_ret;
+
   b.SetInsertPoint(els);
 
-  val_t R_E = V(m, b, cf, s, N->getElse());
-  if (!R_E) {
-    return std::nullopt;
+  s.did_ret = false;
+  if (N->getElse()->getKind() != QIR_NODE_VOID_TY) {
+    val_t R_E = V(m, b, cf, s, N->getElse());
+    if (!R_E) {
+      return std::nullopt;
+    }
   }
-
-  b.CreateBr(end);
+  if (!s.did_ret) {
+    b.CreateBr(end);
+  }
+  s.did_ret = old_did_ret;
   b.SetInsertPoint(end);
 
-  return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(m.getContext()));
+  return end;
 }
 
 static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::While *N) {
@@ -1124,18 +1279,27 @@ static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   b.SetInsertPoint(body);
   s.loops.push({body, end});
 
+  bool did_brk = s.did_brk;
+  bool did_cont = s.did_cont;
+  bool old_ret = s.did_ret;
+
   val_t R_B = V(m, b, cf, s, N->getBody());
   if (!R_B) {
     return std::nullopt;
   }
 
-  b.CreateBr(begin);
+  if (!s.did_brk && !s.did_cont && !s.did_ret) {
+    b.CreateBr(begin);
+  }
+  s.did_brk = did_brk;
+  s.did_cont = did_cont;
+  s.did_ret = old_ret;
 
   s.loops.pop();
 
   b.SetInsertPoint(end);
 
-  return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(m.getContext()));
+  return end;
 }
 
 static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::For *N) {
@@ -1170,13 +1334,24 @@ static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
   b.CreateCondBr(R_C.value(), body, end);
   b.SetInsertPoint(body);
   s.loops.push({begin, end});
+  
 
+  bool did_brk = s.did_brk;
+  bool did_cont = s.did_cont;
+  bool old_ret = s.did_ret;
+  
   val_t R_B = V(m, b, cf, s, N->getBody());
   if (!R_B) {
     return std::nullopt;
-  }
+  } 
 
-  b.CreateBr(step);
+  if (!s.did_brk && !s.did_cont && !s.did_ret) {
+    b.CreateBr(step);
+  }
+  s.did_brk = did_brk;
+  s.did_cont = did_cont;
+  s.did_ret = old_ret;
+
   b.SetInsertPoint(step);
 
   val_t R_S = V(m, b, cf, s, N->getStep());
@@ -1190,7 +1365,7 @@ static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
 
   b.SetInsertPoint(end);
 
-  return llvm::Constant::getNullValue(llvm::Type::getInt32Ty(m.getContext()));
+  return end;
 }
 
 static val_t QIR_NODE_FORM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Form *N) {
@@ -1264,7 +1439,7 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
 
   { /* Lower return type */
     // Use type inference to get return type
-    ty_t R = T(m, b, cf, s, N->getBody()->getType());
+    ty_t R = T(m, b, cf, s, N->getType()->as<qxir::FnTy>()->getReturn());
     if (!R) {
       s.in_fn = in_fn_old;
       return std::nullopt;
@@ -1282,20 +1457,20 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
     llvm::BasicBlock *entry, *exit;
 
     entry = llvm::BasicBlock::Create(m.getContext(), "entry", fn);
+    exit = llvm::BasicBlock::Create(m.getContext(), "end", fn);
+
     b.SetInsertPoint(entry);
 
     llvm::AllocaInst *ret_val_alloc = nullptr;
     if (!ret_ty->isVoidTy()) {
-      ret_val_alloc = b.CreateAlloca(ret_ty);
+      ret_val_alloc = b.CreateAlloca(ret_ty, nullptr, "__ret");
     }
-    s.return_val.push(ret_val_alloc);
+    s.return_val.push({ret_val_alloc, exit});
 
     {
-      exit = llvm::BasicBlock::Create(m.getContext(), "end", fn);
-
       b.SetInsertPoint(exit);
       if (!ret_ty->isVoidTy()) {
-        llvm::LoadInst *ret_val = b.CreateLoad(ret_ty, s.return_val.top());
+        llvm::LoadInst *ret_val = b.CreateLoad(ret_ty, s.return_val.top().first);
         b.CreateRet(ret_val);
       } else {
         b.CreateRetVoid();
@@ -1306,8 +1481,16 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
 
     for (size_t i = 0; i < N->getParams().size(); i++) {
       fn->getArg(i)->setName(N->getParams()[i].second);
+
+      std::string ploc_name = "_Q" + std::string(N->getParams()[i].second);
+      llvm::AllocaInst *param_alloc = b.CreateAlloca(fn->getArg(i)->getType(), nullptr, ploc_name);
+
+      b.CreateStore(fn->getArg(i), param_alloc);
+      s.locals.top().second.emplace(N->getParams()[i].second, param_alloc);
     }
 
+    bool old_did_ret = s.did_ret;
+    
     for (auto &node : N->getBody()->getItems()) {
       val_t R = V(m, b, cf, s, node);
       if (!R) {
@@ -1318,7 +1501,10 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
       }
     }
 
-    b.CreateBr(exit);
+    if (!s.did_ret) {
+      b.CreateBr(exit);
+    }
+    s.did_ret = old_did_ret;
 
     s.return_val.pop();
     s.in_fn = in_fn_old;

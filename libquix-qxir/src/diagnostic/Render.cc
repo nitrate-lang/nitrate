@@ -91,7 +91,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
     el = qlex_line(lx, msg.end);
     ec = qlex_col(lx, msg.end);
 
-    if (sl != UINT32_MAX && sc != UINT32_MAX) {
+    if (sl != UINT32_MAX || sc != UINT32_MAX) {
       print_qsizeloc(ss, sl);
       ss << ":";
       print_qsizeloc(ss, sc);
@@ -156,7 +156,7 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
     el = qlex_line(lx, msg.end);
     ec = qlex_col(lx, msg.end);
 
-    if (sl != UINT32_MAX && sc != UINT32_MAX) {
+    if (sl != UINT32_MAX || sc != UINT32_MAX) {
       print_qsizeloc(ss, sl);
       ss << ":";
       print_qsizeloc(ss, sc);

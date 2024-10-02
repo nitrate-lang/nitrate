@@ -68,18 +68,18 @@ CPP_EXPORT uint32_t Expr::getKindSize() const noexcept {
   { typeid(__type).hash_code(), sizeof(__type) }
 
   static const std::unordered_map<size_t, uint32_t> sizes = {
-      SIZEOF_ROW(BinExpr),  SIZEOF_ROW(UnExpr),   SIZEOF_ROW(PostUnExpr), SIZEOF_ROW(Int),
-      SIZEOF_ROW(Float),    SIZEOF_ROW(String),   SIZEOF_ROW(List),       SIZEOF_ROW(Call),
-      SIZEOF_ROW(Seq),      SIZEOF_ROW(Index),    SIZEOF_ROW(Extern),     SIZEOF_ROW(Local),
-      SIZEOF_ROW(Ret),      SIZEOF_ROW(Brk),      SIZEOF_ROW(Cont),       SIZEOF_ROW(If),
-      SIZEOF_ROW(While),    SIZEOF_ROW(For),      SIZEOF_ROW(Form),       SIZEOF_ROW(Case),
-      SIZEOF_ROW(Switch),   SIZEOF_ROW(Fn),       SIZEOF_ROW(Asm),        SIZEOF_ROW(U1Ty),
-      SIZEOF_ROW(U8Ty),     SIZEOF_ROW(U16Ty),    SIZEOF_ROW(U32Ty),      SIZEOF_ROW(U64Ty),
-      SIZEOF_ROW(U128Ty),   SIZEOF_ROW(I8Ty),     SIZEOF_ROW(I16Ty),      SIZEOF_ROW(I32Ty),
-      SIZEOF_ROW(I64Ty),    SIZEOF_ROW(I128Ty),   SIZEOF_ROW(F16Ty),      SIZEOF_ROW(F32Ty),
-      SIZEOF_ROW(F64Ty),    SIZEOF_ROW(F128Ty),   SIZEOF_ROW(VoidTy),     SIZEOF_ROW(PtrTy),
-      SIZEOF_ROW(OpaqueTy), SIZEOF_ROW(StringTy), SIZEOF_ROW(StructTy),   SIZEOF_ROW(UnionTy),
-      SIZEOF_ROW(ArrayTy),  SIZEOF_ROW(FnTy),     SIZEOF_ROW(Tmp),
+      SIZEOF_ROW(BinExpr), SIZEOF_ROW(UnExpr),   SIZEOF_ROW(PostUnExpr), SIZEOF_ROW(Int),
+      SIZEOF_ROW(Float),   SIZEOF_ROW(String),   SIZEOF_ROW(List),       SIZEOF_ROW(Call),
+      SIZEOF_ROW(Seq),     SIZEOF_ROW(Index),    SIZEOF_ROW(Index),      SIZEOF_ROW(Extern),
+      SIZEOF_ROW(Local),   SIZEOF_ROW(Ret),      SIZEOF_ROW(Brk),        SIZEOF_ROW(Cont),
+      SIZEOF_ROW(If),      SIZEOF_ROW(While),    SIZEOF_ROW(For),        SIZEOF_ROW(Form),
+      SIZEOF_ROW(Case),    SIZEOF_ROW(Switch),   SIZEOF_ROW(Fn),         SIZEOF_ROW(Asm),
+      SIZEOF_ROW(U1Ty),    SIZEOF_ROW(U8Ty),     SIZEOF_ROW(U16Ty),      SIZEOF_ROW(U32Ty),
+      SIZEOF_ROW(U64Ty),   SIZEOF_ROW(U128Ty),   SIZEOF_ROW(I8Ty),       SIZEOF_ROW(I16Ty),
+      SIZEOF_ROW(I32Ty),   SIZEOF_ROW(I64Ty),    SIZEOF_ROW(I128Ty),     SIZEOF_ROW(F16Ty),
+      SIZEOF_ROW(F32Ty),   SIZEOF_ROW(F64Ty),    SIZEOF_ROW(F128Ty),     SIZEOF_ROW(VoidTy),
+      SIZEOF_ROW(PtrTy),   SIZEOF_ROW(OpaqueTy), SIZEOF_ROW(StringTy),   SIZEOF_ROW(StructTy),
+      SIZEOF_ROW(UnionTy), SIZEOF_ROW(ArrayTy),  SIZEOF_ROW(FnTy),       SIZEOF_ROW(Tmp),
   };
 
   qcore_assert(sizes.size() == QIR_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
@@ -95,18 +95,18 @@ CPP_EXPORT const char *Expr::getKindName() const noexcept {
   { QIR_NODE_##__name, "QIR_NODE_" #__name }
 
   static const std::unordered_map<qxir_ty_t, const char *> names = {
-      NAMEOF_ROW(BINEXPR),   NAMEOF_ROW(UNEXPR),    NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(INT),
-      NAMEOF_ROW(FLOAT),     NAMEOF_ROW(STRING),    NAMEOF_ROW(LIST),        NAMEOF_ROW(CALL),
-      NAMEOF_ROW(SEQ),       NAMEOF_ROW(INDEX),     NAMEOF_ROW(EXTERN),      NAMEOF_ROW(LOCAL),
-      NAMEOF_ROW(RET),       NAMEOF_ROW(BRK),       NAMEOF_ROW(CONT),        NAMEOF_ROW(IF),
-      NAMEOF_ROW(WHILE),     NAMEOF_ROW(FOR),       NAMEOF_ROW(FORM),        NAMEOF_ROW(CASE),
-      NAMEOF_ROW(SWITCH),    NAMEOF_ROW(FN),        NAMEOF_ROW(ASM),         NAMEOF_ROW(U1_TY),
-      NAMEOF_ROW(U8_TY),     NAMEOF_ROW(U16_TY),    NAMEOF_ROW(U32_TY),      NAMEOF_ROW(U64_TY),
-      NAMEOF_ROW(U128_TY),   NAMEOF_ROW(I8_TY),     NAMEOF_ROW(I16_TY),      NAMEOF_ROW(I32_TY),
-      NAMEOF_ROW(I64_TY),    NAMEOF_ROW(I128_TY),   NAMEOF_ROW(F16_TY),      NAMEOF_ROW(F32_TY),
-      NAMEOF_ROW(F64_TY),    NAMEOF_ROW(F128_TY),   NAMEOF_ROW(VOID_TY),     NAMEOF_ROW(PTR_TY),
-      NAMEOF_ROW(OPAQUE_TY), NAMEOF_ROW(STRING_TY), NAMEOF_ROW(STRUCT_TY),   NAMEOF_ROW(UNION_TY),
-      NAMEOF_ROW(ARRAY_TY),  NAMEOF_ROW(FN_TY),     NAMEOF_ROW(TMP),
+      NAMEOF_ROW(BINEXPR),  NAMEOF_ROW(UNEXPR),    NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(INT),
+      NAMEOF_ROW(FLOAT),    NAMEOF_ROW(STRING),    NAMEOF_ROW(LIST),        NAMEOF_ROW(CALL),
+      NAMEOF_ROW(SEQ),      NAMEOF_ROW(INDEX),     NAMEOF_ROW(IDENT),       NAMEOF_ROW(EXTERN),
+      NAMEOF_ROW(LOCAL),    NAMEOF_ROW(RET),       NAMEOF_ROW(BRK),         NAMEOF_ROW(CONT),
+      NAMEOF_ROW(IF),       NAMEOF_ROW(WHILE),     NAMEOF_ROW(FOR),         NAMEOF_ROW(FORM),
+      NAMEOF_ROW(CASE),     NAMEOF_ROW(SWITCH),    NAMEOF_ROW(FN),          NAMEOF_ROW(ASM),
+      NAMEOF_ROW(U1_TY),    NAMEOF_ROW(U8_TY),     NAMEOF_ROW(U16_TY),      NAMEOF_ROW(U32_TY),
+      NAMEOF_ROW(U64_TY),   NAMEOF_ROW(U128_TY),   NAMEOF_ROW(I8_TY),       NAMEOF_ROW(I16_TY),
+      NAMEOF_ROW(I32_TY),   NAMEOF_ROW(I64_TY),    NAMEOF_ROW(I128_TY),     NAMEOF_ROW(F16_TY),
+      NAMEOF_ROW(F32_TY),   NAMEOF_ROW(F64_TY),    NAMEOF_ROW(F128_TY),     NAMEOF_ROW(VOID_TY),
+      NAMEOF_ROW(PTR_TY),   NAMEOF_ROW(OPAQUE_TY), NAMEOF_ROW(STRING_TY),   NAMEOF_ROW(STRUCT_TY),
+      NAMEOF_ROW(UNION_TY), NAMEOF_ROW(ARRAY_TY),  NAMEOF_ROW(FN_TY),       NAMEOF_ROW(TMP),
   };
 
   qxir_ty_t type = getKind();
@@ -246,6 +246,9 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       }
       return true;
     }
+    case QIR_NODE_IDENT: {
+      return as<Ident>()->m_name == other->as<Ident>()->m_name;
+    }
     case QIR_NODE_EXTERN: {
       auto a = as<Extern>();
       auto b = other->as<Extern>();
@@ -367,6 +370,9 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       auto a = as<Fn>();
       auto b = other->as<Fn>();
       if (a->m_name != b->m_name) {
+        return false;
+      }
+      if (!a->m_return->cmp_eq(b->m_return)) {
         return false;
       }
       if (a->m_params.size() != b->m_params.size()) {
@@ -576,6 +582,11 @@ CPP_EXPORT std::string_view qxir::Expr::getName() const noexcept {
     }
 
     case QIR_NODE_INDEX: {
+      break;
+    }
+
+    case QIR_NODE_IDENT: {
+      R = as<Ident>()->m_name;
       break;
     }
 
@@ -847,6 +858,10 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
       case QIR_NODE_INDEX: {
         break;
       }
+      case QIR_NODE_IDENT: {
+        MIXIN_STRING(cur->as<Ident>()->m_name);
+        break;
+      }
       case QIR_NODE_EXTERN: {
         MIXIN_STRING(cur->as<Extern>()->m_abi_name);
         break;
@@ -1024,3 +1039,146 @@ CPP_EXPORT uint64_t Type::getTypeIncrement() const {
 
   return last++;
 }
+
+CPP_EXPORT bool Type::is_primitive() const {
+  switch (getKind()) {
+    case QIR_NODE_U1_TY:
+    case QIR_NODE_U8_TY:
+    case QIR_NODE_U16_TY:
+    case QIR_NODE_U32_TY:
+    case QIR_NODE_U64_TY:
+    case QIR_NODE_U128_TY:
+    case QIR_NODE_I8_TY:
+    case QIR_NODE_I16_TY:
+    case QIR_NODE_I32_TY:
+    case QIR_NODE_I64_TY:
+    case QIR_NODE_I128_TY:
+    case QIR_NODE_F16_TY:
+    case QIR_NODE_F32_TY:
+    case QIR_NODE_F64_TY:
+    case QIR_NODE_F128_TY:
+    case QIR_NODE_VOID_TY:
+      return true;
+    default:
+      return false;
+  }
+}
+
+CPP_EXPORT bool Type::is_array() const { return getKind() == QIR_NODE_ARRAY_TY; }
+
+CPP_EXPORT bool Type::is_pointer() const { return getKind() == QIR_NODE_PTR_TY; }
+
+CPP_EXPORT bool Type::is_function() const { return getKind() == QIR_NODE_FN_TY; }
+
+CPP_EXPORT bool Type::is_composite() const {
+  switch (getKind()) {
+    case QIR_NODE_STRING_TY:
+    case QIR_NODE_STRUCT_TY:
+    case QIR_NODE_UNION_TY:
+    case QIR_NODE_ARRAY_TY:
+      return true;
+    default:
+      return false;
+  }
+}
+
+CPP_EXPORT bool Type::is_union() const { return getKind() == QIR_NODE_UNION_TY; }
+
+CPP_EXPORT bool Type::is_numeric() const {
+  switch (getKind()) {
+    case QIR_NODE_U1_TY:
+    case QIR_NODE_U8_TY:
+    case QIR_NODE_U16_TY:
+    case QIR_NODE_U32_TY:
+    case QIR_NODE_U64_TY:
+    case QIR_NODE_U128_TY:
+    case QIR_NODE_I8_TY:
+    case QIR_NODE_I16_TY:
+    case QIR_NODE_I32_TY:
+    case QIR_NODE_I64_TY:
+    case QIR_NODE_I128_TY:
+    case QIR_NODE_F16_TY:
+    case QIR_NODE_F32_TY:
+    case QIR_NODE_F64_TY:
+    case QIR_NODE_F128_TY:
+      return true;
+    default:
+      return false;
+  }
+}
+
+CPP_EXPORT bool Type::is_integral() const {
+  switch (getKind()) {
+    case QIR_NODE_U1_TY:
+    case QIR_NODE_U8_TY:
+    case QIR_NODE_U16_TY:
+    case QIR_NODE_U32_TY:
+    case QIR_NODE_U64_TY:
+    case QIR_NODE_U128_TY:
+    case QIR_NODE_I8_TY:
+    case QIR_NODE_I16_TY:
+    case QIR_NODE_I32_TY:
+    case QIR_NODE_I64_TY:
+    case QIR_NODE_I128_TY:
+      return true;
+    default:
+      return false;
+  }
+}
+
+CPP_EXPORT bool Type::is_floating_point() const {
+  switch (getKind()) {
+    case QIR_NODE_F16_TY:
+    case QIR_NODE_F32_TY:
+    case QIR_NODE_F64_TY:
+    case QIR_NODE_F128_TY:
+      return true;
+    default:
+      return false;
+  }
+}
+
+CPP_EXPORT bool Type::is_signed() const {
+  switch (getKind()) {
+    case QIR_NODE_I8_TY:
+    case QIR_NODE_I16_TY:
+    case QIR_NODE_I32_TY:
+    case QIR_NODE_I64_TY:
+    case QIR_NODE_I128_TY:
+    case QIR_NODE_F16_TY:
+    case QIR_NODE_F32_TY:
+    case QIR_NODE_F64_TY:
+    case QIR_NODE_F128_TY:
+      return true;
+    default:
+      return false;
+  }
+}
+
+CPP_EXPORT bool Type::is_unsigned() const {
+  switch (getKind()) {
+    case QIR_NODE_U1_TY:
+    case QIR_NODE_U8_TY:
+    case QIR_NODE_U16_TY:
+    case QIR_NODE_U32_TY:
+    case QIR_NODE_U64_TY:
+    case QIR_NODE_U128_TY:
+      return true;
+    default:
+      return false;
+  }
+}
+
+CPP_EXPORT bool Type::is_void() const { return getKind() == QIR_NODE_VOID_TY; }
+
+CPP_EXPORT bool Type::is_bool() const { return getKind() == QIR_NODE_U1_TY; }
+
+CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
+  if (is_pointer()) {
+    return as<PtrTy>()->m_pointee->cmp_eq(type);
+  }
+
+  return false;
+}
+
+CPP_EXPORT bool Type::is_string() const { return getKind() == QIR_NODE_STRING_TY; }

@@ -664,7 +664,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
       }
       case QIR_NODE_LIST: {
         if (E->as<List>()->getItems().empty()) {
-          T = nullptr; // Can not infer empty list type
+          T = nullptr;  // Can not infer empty list type
         } else {
           std::vector<Type *> types;
           for (auto &item : E->as<List>()->getItems()) {
@@ -753,6 +753,11 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         }
         break;
       }
+      case QIR_NODE_IDENT: {
+        qcore_assert(E->as<Ident>()->getWhat() != nullptr, "Ident node has no target");
+        T = E->as<Ident>()->getWhat()->getType();
+        break;
+      }
       case QIR_NODE_EXTERN: {
         T = getType<VoidTy>();
         break;
@@ -804,7 +809,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         }
 
         FnAttrs attrs;
-        T = create<FnTy>(std::move(params), E->as<Fn>()->getBody()->getType(), std::move(attrs));
+        T = create<FnTy>(std::move(params), E->as<Fn>()->getReturn(), std::move(attrs));
         break;
       }
       case QIR_NODE_ASM: {

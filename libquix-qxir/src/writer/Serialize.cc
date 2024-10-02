@@ -294,6 +294,10 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       ss << "]";
       break;
     }
+    case QIR_NODE_IDENT: {
+      ss << n->as<Ident>()->getName();
+      break;
+    }
     case QIR_NODE_EXTERN: {
       ss << "extern ";
       escape_string(ss, n->as<Extern>()->getAbiName());
@@ -404,7 +408,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
         ss << "...";
       }
       ss << ") -> ";
-      recurse(n->as<Fn>()->getBody()->getType());
+      recurse(n->as<Fn>()->getReturn());
       ss << " ";
       recurse(n->as<Fn>()->getBody());
       break;

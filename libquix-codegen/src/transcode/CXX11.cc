@@ -477,6 +477,11 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
       break;
     }
 
+    case QIR_NODE_IDENT: {
+      out << n->as<Ident>()->getName();
+      break;
+    }
+
     case QIR_NODE_EXTERN: {
       bool old_is_static = state.is_static;
       state.is_static = false;
@@ -666,7 +671,7 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
 
     case QIR_NODE_FN: {
       if (state.stmt_mode) {
-        recurse(static_cast<Expr *>(qxir_infer(n->as<Fn>()->getBody())));
+        recurse(static_cast<Expr *>(n->as<Fn>()->getReturn()));
         out << ' ' << n->as<Fn>()->getName() << "(";
         for (size_t i = 0; i < n->as<Fn>()->getParams().size(); i++) {
           if (i != 0) {
@@ -691,7 +696,7 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
           out << ' ' << n->as<Fn>()->getParams()[i].second;
         }
         out << ")->";
-        recurse(static_cast<Expr *>(qxir_infer(n->as<Fn>()->getBody())));
+        recurse(n->as<Fn>()->getReturn());
         out << '{';
 
         bool old = state.inside_func;

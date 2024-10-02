@@ -106,6 +106,9 @@ namespace qxir::detail {
         children.push_back(&base->as<Index>()->m_index);
         break;
       }
+      case QIR_NODE_IDENT: {
+        break;
+      }
       case QIR_NODE_EXTERN: {
         children.push_back(&base->as<Extern>()->m_value);
         break;
@@ -167,6 +170,7 @@ namespace qxir::detail {
         for (auto &child : base->as<Fn>()->m_params) {
           children.push_back(reinterpret_cast<Expr **>(&child.first));
         }
+        children.push_back(reinterpret_cast<Expr **>(&base->as<Fn>()->m_return));
         children.push_back(reinterpret_cast<Expr **>(&base->as<Fn>()->m_body));
         break;
       }

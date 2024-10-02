@@ -62,6 +62,7 @@ typedef enum qxir_ty_t {
   QIR_NODE_CALL,   /* Function call */
   QIR_NODE_SEQ,    /* Sequence */
   QIR_NODE_INDEX,  /* Index / member access */
+  QIR_NODE_IDENT,  /* Identifier */
   QIR_NODE_EXTERN, /* Linker visibility modifier */
   QIR_NODE_LOCAL,  /* Variable declaration */
   QIR_NODE_RET,    /* Return statement */

@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#define QIR_NODE_COUNT 47
+#define QIR_NODE_COUNT 48
 
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
@@ -267,6 +267,22 @@ namespace qxir {
     uint64_t getSizeBits();
     inline uint64_t getSizeBytes() { return std::ceil(getSizeBits() / 8.0); }
     uint64_t getTypeIncrement() const;
+
+    bool is_primitive() const;
+    bool is_array() const;
+    bool is_pointer() const;
+    bool is_function() const;
+    bool is_composite() const;
+    bool is_union() const;
+    bool is_numeric() const;
+    bool is_integral() const;
+    bool is_floating_point() const;
+    bool is_signed() const;
+    bool is_unsigned() const;
+    bool is_void() const;
+    bool is_bool() const;
+    bool is_ptr_to(const Type *type) const;
+    bool is_string() const;
   };
 
   ///=============================================================================
@@ -758,6 +774,21 @@ namespace qxir {
     Expr *setIndex(Expr *index) noexcept { return m_index = index; }
   };
 
+  class Ident final : public Expr {
+    QCLASS_REFLECT()
+
+    std::string_view m_name;
+    Expr *m_what;
+
+  public:
+    Ident(std::string_view name, Expr *what) : Expr(QIR_NODE_IDENT), m_name(name), m_what(what) {}
+
+    Expr *getWhat() noexcept { return m_what; }
+    Expr *setWhat(Expr *what) noexcept { return m_what = what; }
+
+    std::string_view setName(std::string_view name) noexcept { return m_name = name; }
+  };
+
   class Extern final : public Expr {
     QCLASS_REFLECT()
 
@@ -974,15 +1005,18 @@ namespace qxir {
 
     std::string_view m_name;
     Params m_params;
+    Type *m_return;
     Seq *m_body;
     bool m_variadic;
     AbiTag m_abi_tag;
 
   public:
-    Fn(std::string_view name, const Params &params, Seq *body, bool variadic, AbiTag abi_tag)
+    Fn(std::string_view name, const Params &params, Type *ret_ty, Seq *body, bool variadic,
+       AbiTag abi_tag)
         : Expr(QIR_NODE_FN),
           m_name(name),
           m_params(params),
+          m_return(ret_ty),
           m_body(body),
           m_variadic(variadic),
           m_abi_tag(abi_tag) {}
@@ -992,6 +1026,9 @@ namespace qxir {
     const Params &getParams() const noexcept { return m_params; }
     Params &getParams() noexcept { return m_params; }
     void setParams(const Params &params) noexcept { m_params = params; }
+
+    Type *getReturn() noexcept { return m_return; }
+    Type *setReturn(Type *ret_ty) noexcept { return m_return = ret_ty; }
 
     Seq *getBody() noexcept { return m_body; }
     Seq *setBody(Seq *body) noexcept { return m_body = body; }

@@ -140,6 +140,7 @@ namespace qxir {
   class Call;
   class Seq;
   class Index;
+  class Ident;
   class Extern;
   class Local;
   class Ret;

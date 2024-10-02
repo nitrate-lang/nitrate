@@ -914,7 +914,7 @@ namespace qxir {
 
     auto str = s.cur_named(n->get_name());
 
-    // return create<Ident>(memorize(std::string_view(str)), nullptr);
+    return create<Ident>(memorize(std::string_view(str)), nullptr);
     qcore_implement(__func__);
   }
 
@@ -1860,7 +1860,8 @@ namespace qxir {
         if (!seq->getItems().empty()) {
           if (seq->getItems().back()->getKind() != QIR_NODE_RET) {
             if (!fty->get_return_ty()->is_void()) {
-              seq->getItems().back() = create<Ret>(seq->getItems().back());
+              /// FIXME: Not all code paths return a value
+              badtree(n, "Not all code paths return a value");
             } else {
               seq->getItems().push_back(create<Ret>(create<VoidTy>()));
             }
@@ -1915,15 +1916,16 @@ namespace qxir {
       }
     }
 
-    auto fnty = qconv_one(s, fty);
+    FnTy *fnty = static_cast<FnTy *>(qconv_one(s, fty));
     if (!fnty) {
       badtree(n, "qparse::FnDef::get_type() == nullptr");
       throw QError();
     }
 
-    auto obj = create<Fn>(str, std::move(params), body, fty->is_variadic(), s.abi_mode);
+    auto obj =
+        create<Fn>(str, std::move(params), fnty->getReturn(), body, fty->is_variadic(), s.abi_mode);
 
-    current->getFunctions().insert({str, {fnty->as<FnTy>(), obj}});
+    current->getFunctions().insert({str, {fnty, obj}});
 
     s.inside_function = old_inside_function;
     return obj;
@@ -2954,6 +2956,11 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       out = create<Index>(clone(n->getExpr()), clone(n->getIndex()));
       break;
     }
+    case QIR_NODE_IDENT: {
+      out =
+          create<Ident>(memorize(static_cast<Ident *>(in)->getName()), nullptr /* TODO: Fix ref */);
+      break;
+    }
     case QIR_NODE_EXTERN: {
       Extern *n = static_cast<Extern *>(in);
       out = create<Extern>(clone(n->getValue()), memorize(n->getAbiName()));
@@ -3022,8 +3029,8 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
         params.push_back({clone(param.first)->asType(), memorize(param.second)});
       }
 
-      out = create<Fn>(memorize(n->getName()), std::move(params), clone(n->getBody())->as<Seq>(),
-                       n->isVariadic(), n->getAbiTag());
+      out = create<Fn>(memorize(n->getName()), std::move(params), clone(n->getReturn())->asType(),
+                       clone(n->getBody())->as<Seq>(), n->isVariadic(), n->getAbiTag());
       break;
     }
     case QIR_NODE_ASM: {
