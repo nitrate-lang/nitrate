@@ -40,6 +40,7 @@
 #include <boost/bimap.hpp>
 #include <boost/unordered_map.hpp>
 #include <deque>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -76,6 +77,7 @@ private:
   qlex_size m_row;
   qlex_size m_col;
   qlex_size m_offset;
+  char m_last_ch;
 
 #ifdef MEMORY_OVER_SPEED
   typedef std::shared_ptr<std::pair<boost::bimap<qlex_size, std::string>, qlex_size>>
@@ -134,8 +136,9 @@ public:
       : m_getc_pos(GETC_BUFFER_SIZE),
         m_next_tok({}),
         m_row(1),
-        m_col(1),
-        m_offset(0),
+        m_col(0),
+        m_offset(std::numeric_limits<qlex_size>::max()),
+        m_last_ch(0),
         m_tag_to_loc({}),
         m_tag_to_off({}),
         m_locctr(1),

@@ -510,19 +510,18 @@ char qlex_t::getc() {
     m_getc_pos = 0;
   }
 
-  char c = m_getc_buf[m_getc_pos++];
+  { /* Update source location */
+    if (m_last_ch == '\n') {
+      m_row++;
+      m_col = 1;
+    } else {
+      m_col++;
+    }
 
-  /* Update the row and column */
-  if (c == '\n') {
-    m_row++;
-    m_col = 1;
-  } else {
-    m_col++;
+    m_offset++;
   }
 
-  m_offset++;
-
-  return c;
+  return m_last_ch = m_getc_buf[m_getc_pos++];
 }
 
 qlex_tok_t qlex_t::next() {
