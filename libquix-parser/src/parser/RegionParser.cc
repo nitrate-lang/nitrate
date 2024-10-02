@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+/// TODO: Source location
 #define __QUIX_IMPL__
 
 #include <parser/Parse.h>
@@ -72,8 +73,8 @@ static bool parse_region_field(qparse_t &job, qlex_t *rd, CompositeField **node)
 
   /* Check for a default value */
   tok = qlex_peek(rd);
-  if (tok.is<qPuncComa>() || tok.is<qPuncRCur>()) {
-    if (tok.is<qPuncComa>()) {
+  if (tok.is<qPuncComa>() || tok.is<qPuncSemi>() || tok.is<qPuncRCur>()) {
+    if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
       qlex_next(rd);
     }
     *node = CompositeField::get(name, type);
@@ -87,7 +88,9 @@ static bool parse_region_field(qparse_t &job, qlex_t *rd, CompositeField **node)
     qlex_next(rd);
 
     /* Parse the default value */
-    if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncRCur)},
+    if (!parse_expr(job, rd,
+                    {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
+                     qlex_tok_t(qPunc, qPuncRCur)},
                     &value) ||
         !value) {
       syntax(tok, "Expected default value after '=' in region definition");
@@ -227,7 +230,7 @@ bool parser::parse_region(qparse_t &job, qlex_t *rd, Stmt **node) {
       }
 
       tok = qlex_peek(rd);
-      if (tok.is<qPuncComa>()) {
+      if (tok.is<qPuncComa>() || tok.is<qPuncSemi>()) {
         qlex_next(rd);
       }
 
