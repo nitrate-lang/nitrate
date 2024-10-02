@@ -170,12 +170,77 @@ void qlex_insert(qlex_t *lexer, qlex_tok_t tok);
 static inline qlex_loc_t qlex_begin(const qlex_tok_t *tok) { return tok->start; }
 static inline qlex_loc_t qlex_end(const qlex_tok_t *tok) { return tok->end; }
 
+/**
+ * @brief Return non-owning pointer to the filename associated with the lexer.
+ *
+ * @param lexer Lexer context.
+ *
+ * @return Non-owning pointer to the filename.
+ */
 const char *qlex_filename(qlex_t *lexer);
+
+/**
+ * @brief Get the line number of a location.
+ *
+ * @param lexer Lexer context.
+ * @param loc Location.
+ *
+ * @return Line number or UINT32_MAX on error.
+ * @note This function is thread-safe.
+ */
 qlex_size qlex_line(qlex_t *lexer, qlex_loc_t loc);
+
+/**
+ * @brief Get the column number of a location.
+ *
+ * @param lexer Lexer context.
+ * @param loc Location.
+ *
+ * @return Column number or UINT32_MAX on error.
+ * @note This function is thread-safe.
+ */
 qlex_size qlex_col(qlex_t *lexer, qlex_loc_t loc);
+
 char *qlex_snippet(qlex_t *lexer, qlex_tok_t loc, qlex_size *offset);
+
+/**
+ * @brief Calculate offset in source file from location structure.
+ *
+ * @param lexer Lexer context.
+ * @param base Base location.
+ * @param offset Offset in bytes. Negative values are allowed.
+ *
+ * @return New location structure. Tag member will be 0 on error.
+ * @note This function is thread-safe.
+ */
 qlex_loc_t qlex_offset(qlex_t *lexer, qlex_loc_t base, qlex_size offset);
+
+/**
+ * @brief Get the number of bytes between two locations.
+ *
+ * @param lexer Lexer context.
+ * @param start Start location.
+ * @param end End location.
+ *
+ * @return Number of bytes between the two locations or UINT32_MAX on error.
+ * @note This function is thread-safe.
+ */
 qlex_size qlex_span(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end);
+
+/**
+ * @brief Get the number of bytes between two locations.
+ *
+ * @param lexer Lexer context.
+ * @param start Start location.
+ * @param end End location.
+ * @param callback Callback function to call with the slice of the source in the span.
+ * @param userdata Userdata to pass to the callback.
+ *
+ * @return Number of bytes between the two locations or UINT32_MAX on error.
+ * @note This function is thread-safe.
+ * @note If the callback is ever called this function is guaranteed to not return UINT32_MAX.
+ *       Otherwise, the return value is UINT32_MAX.
+ */
 qlex_size qlex_spanx(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end,
                      void (*callback)(const char *, qlex_size, uintptr_t), uintptr_t userdata);
 
