@@ -199,7 +199,8 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
                         DiagMessage("Compilation failed", IssueClass::Error, IssueCode::Default));
   }
 
-  // iterate<qxir::dfs_pre>(mod->getRoot(), [mod](qxir::Expr *par, qxir::Expr **cur) -> qxir::IterOp {
+  // iterate<qxir::dfs_pre>(mod->getRoot(), [mod](qxir::Expr *par, qxir::Expr **cur) -> qxir::IterOp
+  // {
   //   auto pos = (*cur)->getLoc();
 
   //   mod->getDiag().push(
@@ -1515,6 +1516,8 @@ namespace qxir {
     return local;
   }
 
+#define align(x, a) (((x) + (a) - 1) & ~((a) - 1))
+
   static std::vector<Expr *> qconv_struct(ConvState &s, const qparse::StructDef *n) {
     /**
      * @brief Convert a struct definition to a qxir sequence.
@@ -1523,6 +1526,7 @@ namespace qxir {
 
     StructFields fields;
     std::vector<Expr *> items;
+    size_t offset = 0;
 
     for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
       if (!*it) {
@@ -1534,7 +1538,14 @@ namespace qxir {
       auto field = qconv_one(s, *it);
       s.composite_expanse.pop();
 
+      size_t field_align = field->asType()->getAlignBytes();
+      size_t padding = align(offset, field_align) - offset;
+      if (padding > 0) {
+        fields.push_back(create<ArrayTy>(getType<U8Ty>(), create<Int>(padding)));
+      }
+
       fields.push_back(field->asType());
+      offset += field->asType()->getSizeBytes();
     }
 
     std::string name = s.cur_named(n->get_name());
@@ -1656,17 +1667,36 @@ namespace qxir {
     StructFields fields;
     std::vector<Expr *> items;
 
-    for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
-      if (!*it) {
-        badtree(n, "qparse::GroupDef::get_fields() vector contains nullptr");
-        throw QError();
+    { /* Optimize layout with field sorting */
+      std::vector<Type *> tmp_fields;
+      for (auto it = n->get_fields().begin(); it != n->get_fields().end(); ++it) {
+        if (!*it) {
+          badtree(n, "qparse::GroupDef::get_fields() vector contains nullptr");
+          throw QError();
+        }
+
+        s.composite_expanse.push((*it)->get_name());
+        auto field = qconv_one(s, *it);
+        s.composite_expanse.pop();
+
+        tmp_fields.push_back(field->asType());
       }
 
-      s.composite_expanse.push((*it)->get_name());
-      auto field = qconv_one(s, *it);
-      s.composite_expanse.pop();
+      std::sort(tmp_fields.begin(), tmp_fields.end(), [](Type *a, Type *b) {
+        return a->getSizeBits() > b->getSizeBits();
+      });
 
-      fields.push_back(field->asType());
+      size_t offset = 0;
+      for (auto it = tmp_fields.begin(); it != tmp_fields.end(); ++it) {
+        size_t field_align = (*it)->getAlignBytes();
+        size_t padding = align(offset, field_align) - offset;
+        if (padding > 0) {
+          fields.push_back(create<ArrayTy>(getType<U8Ty>(), create<Int>(padding)));
+        }
+
+        fields.push_back(*it);
+        offset += (*it)->getSizeBytes();
+      }
     }
 
     std::string name = s.cur_named(n->get_name());
@@ -1867,12 +1897,9 @@ namespace qxir {
       Seq *seq = tmp->as<Seq>();
 
       { /* Implicit return */
-        if (!seq->getItems().empty()) {
-          if (seq->getItems().back()->getKind() != QIR_NODE_RET) {
-            if (!fty->get_return_ty()->is_void()) {
-              /// FIXME: Not all code paths return a value
-              badtree(n, "Not all code paths return a value");
-            } else {
+        if (fty->get_return_ty()->is_void()) {
+          if (!seq->getItems().empty()) {
+            if (seq->getItems().back()->getKind() != QIR_NODE_RET) {
               seq->getItems().push_back(create<Ret>(create<VoidTy>()));
             }
           }

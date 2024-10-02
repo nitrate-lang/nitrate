@@ -30,11 +30,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define __QUIX_IMPL__
+
 #include <core/LibMacro.h>
 #include <quix-qxir/Inference.h>
 #include <quix-qxir/Node.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
+#include <cstdint>
 
 using namespace qxir;
 
@@ -646,14 +648,12 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
           T = getType<F64Ty>();
         } else {
           std::string_view val = F->getStringRepresentation();
-          if (val.ends_with("f32")) {
-            T = getType<F32Ty>();
-          } else if (val.ends_with("f64")) {
-            T = getType<F64Ty>();
-          } else if (val.ends_with("f128")) {
+          if (val.ends_with("f128")) {
             T = getType<F128Ty>();
+          } else if (val.ends_with("f32")) {
+            T = getType<F32Ty>();
           } else {
-            T = nullptr;  // Unknown floating-point type suffix
+            T = getType<F64Ty>();  // Default to f64
           }
         }
         break;
@@ -874,6 +874,50 @@ bool qxir::Type::hasKnownSize() noexcept {
   }
 }
 
+bool qxir::Type::hasKnownAlign() noexcept {
+  switch (this->getKind()) {
+    case QIR_NODE_U1_TY:
+    case QIR_NODE_U8_TY:
+    case QIR_NODE_U16_TY:
+    case QIR_NODE_U32_TY:
+    case QIR_NODE_U64_TY:
+    case QIR_NODE_U128_TY:
+    case QIR_NODE_I8_TY:
+    case QIR_NODE_I16_TY:
+    case QIR_NODE_I32_TY:
+    case QIR_NODE_I64_TY:
+    case QIR_NODE_I128_TY:
+    case QIR_NODE_F16_TY:
+    case QIR_NODE_F32_TY:
+    case QIR_NODE_F64_TY:
+    case QIR_NODE_F128_TY:
+    case QIR_NODE_VOID_TY:
+    case QIR_NODE_PTR_TY:
+    case QIR_NODE_FN_TY:
+      return true;
+    case QIR_NODE_STRUCT_TY: {
+      return std::all_of(this->as<StructTy>()->getFields().begin(),
+                         this->as<StructTy>()->getFields().end(),
+                         [](Type *T) { return T->hasKnownAlign(); });
+    }
+    case QIR_NODE_UNION_TY: {
+      return std::all_of(this->as<UnionTy>()->getFields().begin(),
+                         this->as<UnionTy>()->getFields().end(),
+                         [](Type *T) { return T->hasKnownAlign(); });
+    }
+    case QIR_NODE_ARRAY_TY: {
+      return this->as<ArrayTy>()->getElement()->hasKnownAlign() &&
+             this->as<ArrayTy>()->getCount()->isConst();
+    }
+    case QIR_NODE_OPAQUE_TY:
+    case QIR_NODE_STRING_TY:
+      return false;
+    default: {
+      qcore_panicf("Invalid type kind: %d", this->getKind());
+    }
+  }
+}
+
 CPP_EXPORT uint64_t qxir::Type::getSizeBits() {
   qcore_assert(this->hasKnownSize(), "Attempted to get the size of a type with an unknown size");
 
@@ -945,7 +989,7 @@ CPP_EXPORT uint64_t qxir::Type::getSizeBits() {
       break;
     }
     case QIR_NODE_PTR_TY: {
-      size = getModule()->getTargetInfo().getPointerSize();
+      size = getModule()->getTargetInfo().getPointerSize() * 8;
       break;
     }
     case QIR_NODE_STRUCT_TY: {
@@ -974,7 +1018,7 @@ CPP_EXPORT uint64_t qxir::Type::getSizeBits() {
       break;
     }
     case QIR_NODE_FN_TY: {
-      size = getModule()->getTargetInfo().getPointerSize();
+      size = getModule()->getTargetInfo().getPointerSize() * 8;
       break;
     }
     default: {
@@ -983,4 +1027,108 @@ CPP_EXPORT uint64_t qxir::Type::getSizeBits() {
   }
 
   return size;
+}
+
+CPP_EXPORT uint64_t qxir::Type::getAlignBits() {
+  qcore_assert(this->hasKnownSize(), "Attempted to get the size of a type with an unknown size");
+
+  uint64_t align;
+
+  switch (this->getKind()) {
+    case QIR_NODE_U1_TY: {
+      align = 8;
+      break;
+    }
+    case QIR_NODE_U8_TY: {
+      align = 8;
+      break;
+    }
+    case QIR_NODE_U16_TY: {
+      align = 16;
+      break;
+    }
+    case QIR_NODE_U32_TY: {
+      align = 32;
+      break;
+    }
+    case QIR_NODE_U64_TY: {
+      align = 64;
+      break;
+    }
+    case QIR_NODE_U128_TY: {
+      align = 128;
+      break;
+    }
+    case QIR_NODE_I8_TY: {
+      align = 8;
+      break;
+    }
+    case QIR_NODE_I16_TY: {
+      align = 16;
+      break;
+    }
+    case QIR_NODE_I32_TY: {
+      align = 32;
+      break;
+    }
+    case QIR_NODE_I64_TY: {
+      align = 64;
+      break;
+    }
+    case QIR_NODE_I128_TY: {
+      align = 128;
+      break;
+    }
+    case QIR_NODE_F16_TY: {
+      align = 16;
+      break;
+    }
+    case QIR_NODE_F32_TY: {
+      align = 32;
+      break;
+    }
+    case QIR_NODE_F64_TY: {
+      align = 64;
+      break;
+    }
+    case QIR_NODE_F128_TY: {
+      align = 128;
+      break;
+    }
+    case QIR_NODE_VOID_TY: {
+      align = 0;
+      break;
+    }
+    case QIR_NODE_PTR_TY: {
+      align = getModule()->getTargetInfo().getPointerSize() * 8;
+      break;
+    }
+    case QIR_NODE_STRUCT_TY: {
+      align = 0;
+      for (const auto &field : this->as<StructTy>()->getFields()) {
+        align = std::max(align, field->getSizeBits());
+      }
+      break;
+    }
+    case QIR_NODE_UNION_TY: {
+      align = 0;
+      for (const auto &field : this->as<UnionTy>()->getFields()) {
+        align = std::max(align, field->getSizeBits());
+      }
+      break;
+    }
+    case QIR_NODE_ARRAY_TY: {
+      align = this->as<ArrayTy>()->getElement()->getAlignBits();
+      break;
+    }
+    case QIR_NODE_FN_TY: {
+      align = getModule()->getTargetInfo().getPointerSize() * 8;
+      break;
+    }
+    default: {
+      qcore_panicf("Invalid type kind: %d", this->getKind());
+    }
+  }
+
+  return align;
 }
