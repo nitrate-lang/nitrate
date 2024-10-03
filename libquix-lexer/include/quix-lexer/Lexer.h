@@ -244,6 +244,9 @@ qlex_size qlex_span(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end);
 qlex_size qlex_spanx(qlex_t *lexer, qlex_loc_t start, qlex_loc_t end,
                      void (*callback)(const char *, qlex_size, uintptr_t), uintptr_t userdata);
 
+void qlex_rect(qlex_t *lexer, qlex_size x_0, qlex_size y_0, qlex_size x_1, qlex_size y_1, char *out,
+               size_t max_size, char fill);
+
 /**
  * @brief Get the string representation of a token type.
  *
