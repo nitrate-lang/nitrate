@@ -54,3 +54,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_link_libraries(quix-core-shared PRIVATE)
   set_target_properties(quix-core-shared PROPERTIES OUTPUT_NAME quix-core)
 endif()
+
+install(TARGETS quix-core-shared DESTINATION lib)
+install(TARGETS quix-core DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include)

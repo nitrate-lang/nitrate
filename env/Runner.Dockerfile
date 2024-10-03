@@ -4,5 +4,5 @@ RUN apt-get update && apt-get install -y \
     llvm libcurlpp-dev
 
 WORKDIR /app
-ADD bin/qpkg /usr/bin/qpkg
+ADD build/bin/qpkg /usr/bin/qpkg
 

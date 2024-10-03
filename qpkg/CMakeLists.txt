@@ -267,3 +267,7 @@ else()
                                  yaml-cpp)
     set_target_properties(qpkg-shared PROPERTIES OUTPUT_NAME qpkg)
 endif()
+
+install(TARGETS qpkg-shared DESTINATION lib)
+install(TARGETS qpkg-static DESTINATION lib)
+install(TARGETS qpkg DESTINATION bin)

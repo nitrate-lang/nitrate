@@ -4,18 +4,6 @@ fn-flatten pass broke QIR_NODE_EXTERN, need to fix.
 
 ---
 
-Write a facade library named `libquix`.
-```c
-// Library initialization is handled automatically by the library.
-bool quix_cc(FILE *source, FILE *output, bool (*diag_cb)(const char *utf8_message, const char *from_subsystem),
-             const char *options[]);
-
-/// @brief Deinitialize the library.
-void quix_deinit(void);
-```
-
----
-
 - Garbage Collection
   - Summary:
     - A runtime-less garbage collection system that will have the collector invoked

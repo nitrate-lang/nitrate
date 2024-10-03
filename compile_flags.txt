@@ -21,6 +21,10 @@
 -I
 ./libquix-codegen/src
 -I
+./libquix/include
+-I
+./libquix/src
+-I
 ./qpkg/src
 -I
 /usr/lib/llvm-14/include

@@ -9,13 +9,17 @@ if not os.path.exists(os.path.join(cwd, 'libquix-parser')):
     print("Please run this script from the root of the repository.")
     sys.exit(1)
 
+if os.name != 'posix':
+    print("This script is only supported on Unix-like systems.")
+    sys.exit(1)
+
 # Check if Docker is installed
 if os.system('docker --version') != 0:
     print("Docker is not installed.")
     sys.exit(1)
 
 if '--clean-all' in sys.argv:
-    os.system('rm -rf bin build')
+    os.system('rm -rf .build build')
     print("Cleaned all.")
     sys.exit(0)
 
@@ -56,18 +60,15 @@ if '--release' in sys.argv:
         print("Release build failed.")
         sys.exit(1)
     if '--strip' in sys.argv:
-        for file in os.listdir(os.path.join(cwd, 'bin')):
-            if file.endswith('.a'):
-                continue
-            if os.system('strip {0}'.format(os.path.join(cwd, 'bin', file))) != 0:
-                print("Failed to strip {0}".format(file))
-                sys.exit(1)
+        os.system('find build/bin -type f -exec strip {} \\;')
+        os.system('find build/lib -type f -iname "*.so" -exec strip {} \\;')
         print("Stripped release binaries.")
 
     if '--upx-best' in sys.argv:
+        raise Exception("Auto UPX packing is not implemented")
         files = ['qpkg', 'qld', 'qcc']
         for file in files:
-            if os.system('upx --best {0}'.format(os.path.join(cwd, 'bin', file))) != 0:
+            if os.system('upx --best {0}'.format(os.path.join(cwd, 'build/bin/', file))) != 0:
                 print("Failed to UPX {0}".format(file))
                 sys.exit(1)
 
@@ -81,6 +82,10 @@ if '--debug' in sys.argv:
     if os.system('docker run -v {0}:/app --rm -it quixcc-debug:latest'.format(cwd)) != 0:
         print("Debug build failed.")
         sys.exit(1)
+    if '--strip' in sys.argv:
+      os.system('find build/bin -type f -exec strip {} \\;')
+      os.system('find build/lib -type f -iname "*.so" -exec strip {} \\;')
+      print("Stripped debug binaries.")
     print("Debug build complete.")
 
     regenerate_runner()

@@ -83,3 +83,6 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   add_subdirectory(tests)
 endif()
 
+install(TARGETS quix-prep-shared DESTINATION lib)
+install(TARGETS quix-prep DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include)

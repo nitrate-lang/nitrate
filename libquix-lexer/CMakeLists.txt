@@ -73,3 +73,6 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   add_subdirectory(tests)
 endif()
 
+install(TARGETS quix-lexer-shared DESTINATION lib)
+install(TARGETS quix-lexer DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include)

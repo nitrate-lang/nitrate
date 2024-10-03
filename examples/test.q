@@ -1,3 +1,3 @@
-fn main(): i32 {
-  ret 42;
+fn main() {
+  xy;
 }

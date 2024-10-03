@@ -126,3 +126,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   add_dependencies(quix-codegen-shared quix-core-shared quix-qxir)
   set_target_properties(quix-codegen-shared PROPERTIES OUTPUT_NAME quix-codegen)
 endif()
+
+install(TARGETS quix-codegen-shared DESTINATION lib)
+install(TARGETS quix-codegen DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include)

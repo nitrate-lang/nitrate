@@ -13,14 +13,13 @@ RUN apt install -y clang
 
 # Make the build script
 RUN echo "#!/bin/sh" > /opt/build.sh
-RUN echo "mkdir -p /app/build/release" >> /opt/build.sh
-RUN echo "cmake -S /app -B /app/build/release -DCMAKE_BUILD_TYPE=Release" >> /opt/build.sh
-RUN echo "cmake --build /app/build/release -j`nproc`" >> /opt/build.sh
-RUN echo "mkdir -p /app/bin" >> /opt/build.sh
-RUN echo "rm -rf /app/bin/*" >> /opt/build.sh
-RUN echo "cp /app/build/release/*/*.a /app/build/release/*/*.so /app/bin/" >> /opt/build.sh
-RUN echo "cp /app/build/release/qpkg/qpkg /app/bin/qpkg" >> /opt/build.sh
-RUN echo "chmod -R 777 /app/bin/" >> /opt/build.sh
+RUN echo "mkdir -p /app/.build/release" >> /opt/build.sh
+RUN echo "cmake -S /app -B /app/.build/release -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/app/build || exit 1" >> /opt/build.sh
+RUN echo "cmake --build /app/.build/release -j`nproc` || exit 1" >> /opt/build.sh
+RUN echo "mkdir -p /app/build" >> /opt/build.sh
+RUN echo "rm -rf /app/build/*" >> /opt/build.sh
+RUN echo "cmake --install /app/.build/release || exit 1" >> /opt/build.sh
+RUN echo "chmod -R 777 /app/build/ || exit 1" >> /opt/build.sh
 RUN chmod +x /opt/build.sh
 
 WORKDIR /app

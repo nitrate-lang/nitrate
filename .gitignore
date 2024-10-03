@@ -32,6 +32,7 @@
 *.app
 
 # Cmake
+.build/
 build/
 qpkg/example-project
 
@@ -39,7 +40,6 @@ qpkg/example-project
 temp/
 .vscode
 docs/Testing/Temporary/LastTest.log
-bin/
 memory-optimization/
 TODO
 libquixcc/test/src/test-suite.cc

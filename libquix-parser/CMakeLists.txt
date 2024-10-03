@@ -77,3 +77,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   add_dependencies(quix-parser-shared quix-core-shared quix-lexer-shared)
   set_target_properties(quix-parser-shared PROPERTIES OUTPUT_NAME quix-parser)
 endif()
+
+install(TARGETS quix-parser-shared DESTINATION lib)
+install(TARGETS quix-parser DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include)
