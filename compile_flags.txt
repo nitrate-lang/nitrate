@@ -28,3 +28,5 @@
 ./qpkg/src
 -I
 /usr/lib/llvm-14/include
+-I
+.build/debug/_deps/googletest-src/googletest/include

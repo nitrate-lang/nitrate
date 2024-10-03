@@ -71,6 +71,12 @@ typedef void (*quix_diag_cb)(const char *message, const char *by, uint64_t userd
  * available. This function is mostly just a wrapper around various internal subsystems and
  * therefore has limited knowledge of the actual semantics of the options.
  *
+ * @note The library will be initialized automatically if it is not already initialized. This is
+ * done to make the library easier to use. However, this may not be the desired behavior in some
+ * cases. To prevent this behavior, call `quix_lib_init` before calling this function. If the
+ * library is already initialized, this will not increment the library's reference count otherwise
+ * it will.
+ *
  * @warning This function is thread-safe. However, it it may block other threads in some cases. Some
  * components can the number of concurrent runs on them which will result in an error being returned
  * for an otherwise valid call. This is not a bug, but a feature to maximize the efficiency of the

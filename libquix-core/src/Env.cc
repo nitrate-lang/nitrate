@@ -128,6 +128,10 @@ LIB_EXPORT void qcore_end() {
     return;
   }
 
+  if (g_envs[g_current_env].env.contains("this.noprint")) {
+    return;
+  }
+
   std::string message = g_envs[g_current_env].log_buffer.str();
   std::ostream &ss = std::cerr;
 

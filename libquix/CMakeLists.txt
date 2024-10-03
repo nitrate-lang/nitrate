@@ -83,6 +83,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   set_target_properties(quix-shared PROPERTIES OUTPUT_NAME quix)
 endif()
 
+add_subdirectory(test)
+
 install(TARGETS quix-shared DESTINATION lib)
 install(TARGETS quix DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)

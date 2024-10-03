@@ -81,9 +81,8 @@ typedef bool (*quix_subsystem_impl)(FILE *source, FILE *output,
                                     std::function<void(const char *)> diag_cb,
                                     const std::vector<std::string_view> &opts);
 
-static bool impl_subsys_basic_lexer(FILE *source, FILE *output,
-                                    std::function<void(const char *)> diag_cb,
-                                    const std::vector<std::string_view> &opts);
+bool impl_subsys_basic_lexer(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+                             const std::vector<std::string_view> &opts);
 
 static bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
                              const std::vector<std::string_view> &opts);
@@ -125,6 +124,9 @@ LIB_EXPORT bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64
     }
   }
 
+  qcore_env env;
+  qcore_env_set("this.noprint", "");
+
   std::vector<std::string_view> opts;
   if (!parse_options(options, opts)) {
     qcore_print(QCORE_ERROR, "Failed to parse options");
@@ -152,18 +154,6 @@ LIB_EXPORT bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64
 }
 
 ///============================================================================///
-
-static bool impl_subsys_basic_lexer(FILE *source, FILE *output,
-                                    std::function<void(const char *)> diag_cb,
-                                    const std::vector<std::string_view> &opts) {
-  (void)source;
-  (void)output;
-  (void)diag_cb;
-  (void)opts;
-
-  /// TODO: Implement lexer wrapper
-  return false;
-}
 
 static bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
                              const std::vector<std::string_view> &opts) {
