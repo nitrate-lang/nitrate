@@ -37,6 +37,8 @@ using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse::diag;
 
+/// TODO: Source location
+
 // Lifetime integrity requires the primitives to be thread-local because the Node Arena allocator is
 // thread-local.
 static thread_local std::map<std::string_view, Type *> primitives = {

@@ -31,7 +31,6 @@
 
 #define __QUIX_IMPL__
 
-#include <cstdint>
 #include <sstream>
 
 #include "quix-qxir/TypeDecl.h"
@@ -273,11 +272,7 @@ static void mangle_type(Type *n, std::ostream &ss) {
 
     case QIR_NODE_ARRAY_TY: {
       ss << 'A';
-      auto sz = uint_as<uint64_t>(n->as<ArrayTy>()->getCount());
-      if (!sz.has_value()) {
-        qcore_panic("Array size must be a constant expression.");
-      }
-      ss << sz.value();
+      ss << n->as<ArrayTy>()->getCount();
       ss << '_';
       mangle_type(n->as<ArrayTy>()->getElement(), ss);
       break;
@@ -365,6 +360,22 @@ bool qxir::passes::impl::nm_premangle(qmodule_t *mod) {
     } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
       mangle_local((*cur)->as<Local>());
     }
+
+    return IterOp::Proceed;
+  });
+
+  /* Update identifiers to use the new names */
+  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
+    if ((*cur)->getKind() != QIR_NODE_IDENT) {
+      return IterOp::Proceed;
+    }
+
+    Ident *ident = (*cur)->as<Ident>();
+    if (!ident->getWhat()) {
+      return IterOp::Proceed;
+    }
+
+    ident->setName(ident->getWhat()->getName());
 
     return IterOp::Proceed;
   });

@@ -119,8 +119,9 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
       {}}},
     {IssueCode::UnresolvedIdentifier,
      {"unresolved-identifier", /* TODO: Summarize */
-      "write me",
-      {}}},
+      "404 - Identifier not found.",
+      {"Make sure the identifier is defined in the current scope.", "Check for typos.",
+       "Check for visibility."}}},
 });
 
 ///============================================================================///
@@ -234,10 +235,10 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   { /* Print filename and source row:column start and end */
     ss << "\x1b[37;1m" << qlex_filename(lx) << ":";
 
-    sl = qlex_line(lx, msg.start);
-    sc = qlex_col(lx, msg.start);
-    el = qlex_line(lx, msg.end);
-    ec = qlex_col(lx, msg.end);
+    sl = qlex_line(lx, msg.m_start);
+    sc = qlex_col(lx, msg.m_start);
+    el = qlex_line(lx, msg.m_end);
+    ec = qlex_col(lx, msg.m_end);
 
     if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX || ec != UINT32_MAX) {
       print_qsizeloc(ss, sl);
@@ -256,24 +257,24 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print message flagname */
-    switch (msg.type) {
+    switch (msg.m_type) {
       case IssueClass::Debug:
-        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << details.left.at(msg.code).flagname << "\x1b[0m\n";
+        ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << details.left.at(msg.m_code).flagname << "\x1b[0m\n";
         break;
       case IssueClass::Info:
-        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m" << details.left.at(msg.code).flagname
+        ss << "\x1b[37;1minfo:\x1b[0m \x1b[37;1m" << details.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
       case IssueClass::Warn:
-        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m" << details.left.at(msg.code).flagname
+        ss << "\x1b[35;1mwarning:\x1b[0m \x1b[35;1m" << details.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
       case IssueClass::Error:
-        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m" << details.left.at(msg.code).flagname
+        ss << "\x1b[31;1merror:\x1b[0m \x1b[31;1m" << details.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
       case IssueClass::FatalError:
-        ss << "\x1b[31;1;4mfatal error:\x1b[0m \x1b[31;1;4m" << details.left.at(msg.code).flagname
+        ss << "\x1b[31;1;4mfatal error:\x1b[0m \x1b[31;1;4m" << details.left.at(msg.m_code).flagname
            << "\x1b[0m\n";
         break;
     }
@@ -290,7 +291,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print message overview */
-    auto lines = word_break(details.left.at(msg.code).overview, WIDTH);
+    auto lines = word_break(details.left.at(msg.m_code).overview, WIDTH);
 
     if (lines.size() == 0) {
     } else if (lines.size() == 1) {
@@ -305,7 +306,7 @@ std::string DiagnosticManager::mint_modern_message(const DiagMessage &msg) const
   }
 
   { /* Print code intelligence */
-    auto hints = details.left.at(msg.code).hints;
+    auto hints = details.left.at(msg.m_code).hints;
 
     if (!hints.empty()) {
       ss << ind << "\x1b[33m╔═\x1b[0m \x1b[32;1mCode Intelligence:\x1b[0m\n";

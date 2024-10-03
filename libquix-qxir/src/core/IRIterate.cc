@@ -253,7 +253,6 @@ namespace qxir::detail {
       }
       case QIR_NODE_ARRAY_TY: {
         children.push_back(reinterpret_cast<Expr **>(&base->as<ArrayTy>()->m_element));
-        children.push_back(&base->as<ArrayTy>()->m_size);
         break;
       }
       case QIR_NODE_FN_TY: {

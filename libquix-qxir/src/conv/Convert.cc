@@ -29,11 +29,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <unordered_map>
+#include <unordered_set>
 #define __QUIX_IMPL__
 
-#include <string>
-#include <string_view>
-
+#include "quix-lexer/Token.h"
 #include "quix-parser/Node.h"
 #define QXIR_USE_CPP_API
 
@@ -52,6 +52,8 @@
 #include <quix-qxir/Report.hh>
 #include <sstream>
 #include <stack>
+#include <string>
+#include <string_view>
 #include <transform/PassManager.hh>
 
 #include "core/LibMacro.h"
@@ -63,6 +65,8 @@ struct ConvState {
   std::string ns_prefix;
   std::stack<qparse::String> composite_expanse;
   qxir::AbiTag abi_mode = qxir::AbiTag::Internal;
+  qxir::Type *return_type = nullptr;
+  std::stack<std::unordered_map<std::string_view, qxir::Local *>> local_scope;
 
   std::string cur_named(std::string_view suffix) const {
     if (ns_prefix.empty()) {
@@ -90,10 +94,10 @@ static void _signal_handler(int sig) {
   sigguard_lock.lock();
 
   DiagMessage diag;
-  diag.msg = "FATAL Internal Error: Deadly Signal received: " + std::to_string(sig);
-  diag.start = diag.end = qlex_loc_t{};
-  diag.type = IssueClass::FatalError;
-  diag.code = IssueCode::SignalReceived;
+  diag.m_msg = "FATAL Internal Error: Deadly Signal received: " + std::to_string(sig);
+  diag.m_start = diag.m_end = qlex_loc_t{};
+  diag.m_type = IssueClass::FatalError;
+  diag.m_code = IssueCode::SignalReceived;
 
   qxir::current->getDiag().push(QXIR_AUDIT_CONV, std::move(diag));
 
@@ -174,6 +178,8 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
         std::stringstream ss;
         status = qxir::passes::StdTransform::create()->transform(mod, ss);
       }
+
+      status = !mod->getFailbit();
     } catch (QError &e) {
       // QError exception is control flow to abort the recursive lowering
 
@@ -187,7 +193,7 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
     status = false;  // For sanity
 
     /**
-     * An signal (what is usually a fatal error) was caught,
+     * A signal (what is usually a fatal error) was caught,
      * the program is pretty much in an undefined state. However,
      * I don't care about the state of the program, I just want to
      * clean up the resources and return to the trusting user code.
@@ -328,100 +334,132 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
                                   qxir::Op::op),                                            \
       qxir::Op::Set)
 
+  qxir::Expr *R = nullptr;
+
   switch (op) {
     case qOpPlus: {
-      return STD_BINOP(Plus);
+      R = STD_BINOP(Plus);
+      break;
     }
     case qOpMinus: {
-      return STD_BINOP(Minus);
+      R = STD_BINOP(Minus);
+      break;
     }
     case qOpTimes: {
-      return STD_BINOP(Times);
+      R = STD_BINOP(Times);
+      break;
     }
     case qOpSlash: {
-      return STD_BINOP(Slash);
+      R = STD_BINOP(Slash);
+      break;
     }
     case qOpPercent: {
-      return STD_BINOP(Percent);
+      R = STD_BINOP(Percent);
+      break;
     }
     case qOpBitAnd: {
-      return STD_BINOP(BitAnd);
+      R = STD_BINOP(BitAnd);
+      break;
     }
     case qOpBitOr: {
-      return STD_BINOP(BitOr);
+      R = STD_BINOP(BitOr);
+      break;
     }
     case qOpBitXor: {
-      return STD_BINOP(BitXor);
+      R = STD_BINOP(BitXor);
+      break;
     }
     case qOpBitNot: {
-      return STD_BINOP(BitNot);
+      R = STD_BINOP(BitNot);
+      break;
     }
     case qOpLogicAnd: {
-      return STD_BINOP(LogicAnd);
+      R = STD_BINOP(LogicAnd);
+      break;
     }
     case qOpLogicOr: {
-      return STD_BINOP(LogicOr);
+      R = STD_BINOP(LogicOr);
+      break;
     }
     case qOpLogicXor: {
       // A ^^ B == (A || B) && !(A && B)
       auto a = qxir::create<qxir::BinExpr>(lhs, rhs, qxir::Op::LogicOr);
       auto b = qxir::create<qxir::BinExpr>(lhs, rhs, qxir::Op::LogicAnd);
       auto not_b = qxir::create<qxir::UnExpr>(b, qxir::Op::LogicNot);
-      return qxir::create<qxir::BinExpr>(a, not_b, qxir::Op::LogicAnd);
+      R = qxir::create<qxir::BinExpr>(a, not_b, qxir::Op::LogicAnd);
+      break;
     }
     case qOpLogicNot: {
-      return STD_BINOP(LogicNot);
+      R = STD_BINOP(LogicNot);
+      break;
     }
     case qOpLShift: {
-      return STD_BINOP(LShift);
+      R = STD_BINOP(LShift);
+      break;
     }
     case qOpRShift: {
-      return STD_BINOP(RShift);
+      R = STD_BINOP(RShift);
+      break;
     }
     case qOpROTR: {
-      return STD_BINOP(ROTR);
+      R = STD_BINOP(ROTR);
+      break;
     }
     case qOpROTL: {
-      return STD_BINOP(ROTL);
+      R = STD_BINOP(ROTL);
+      break;
     }
     case qOpInc: {
-      return STD_BINOP(Inc);
+      R = STD_BINOP(Inc);
+      break;
     }
     case qOpDec: {
-      return STD_BINOP(Dec);
+      R = STD_BINOP(Dec);
+      break;
     }
     case qOpSet: {
-      return STD_BINOP(Set);
+      R = STD_BINOP(Set);
+      break;
     }
     case qOpPlusSet: {
-      return ASSIGN_BINOP(Plus);
+      R = ASSIGN_BINOP(Plus);
+      break;
     }
     case qOpMinusSet: {
-      return ASSIGN_BINOP(Minus);
+      R = ASSIGN_BINOP(Minus);
+      break;
     }
     case qOpTimesSet: {
-      return ASSIGN_BINOP(Times);
+      R = ASSIGN_BINOP(Times);
+      break;
     }
     case qOpSlashSet: {
-      return ASSIGN_BINOP(Slash);
+      R = ASSIGN_BINOP(Slash);
+      break;
     }
     case qOpPercentSet: {
-      return ASSIGN_BINOP(Percent);
+      R = ASSIGN_BINOP(Percent);
+      break;
     }
     case qOpBitAndSet: {
-      return ASSIGN_BINOP(BitAnd);
+      R = ASSIGN_BINOP(BitAnd);
+      break;
     }
     case qOpBitOrSet: {
-      return ASSIGN_BINOP(BitOr);
+      R = ASSIGN_BINOP(BitOr);
+      break;
     }
     case qOpBitXorSet: {
-      return ASSIGN_BINOP(BitXor);
+      R = ASSIGN_BINOP(BitXor);
+      break;
     }
     case qOpLogicAndSet: {
-      return ASSIGN_BINOP(LogicAnd);
+      R = ASSIGN_BINOP(LogicAnd);
+      break;
     }
     case qOpLogicOrSet: {
-      return ASSIGN_BINOP(LogicOr);
+      R = ASSIGN_BINOP(LogicOr);
+      break;
     }
     case qOpLogicXorSet: {
       // a ^^= b == a = (a || b) && !(a && b)
@@ -433,57 +471,77 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
           lhs, qxir::create<qxir::BinExpr>(a, not_b, qxir::Op::LogicAnd), qxir::Op::Set);
     }
     case qOpLShiftSet: {
-      return ASSIGN_BINOP(LShift);
+      R = ASSIGN_BINOP(LShift);
+      break;
     }
     case qOpRShiftSet: {
-      return ASSIGN_BINOP(RShift);
+      R = ASSIGN_BINOP(RShift);
+      break;
     }
     case qOpROTRSet: {
-      return ASSIGN_BINOP(ROTR);
+      R = ASSIGN_BINOP(ROTR);
+      break;
     }
     case qOpROTLSet: {
-      return ASSIGN_BINOP(ROTL);
+      R = ASSIGN_BINOP(ROTL);
+      break;
     }
     case qOpLT: {
-      return STD_BINOP(LT);
+      R = STD_BINOP(LT);
+      break;
     }
     case qOpGT: {
-      return STD_BINOP(GT);
+      R = STD_BINOP(GT);
+      break;
     }
     case qOpLE: {
-      return STD_BINOP(LE);
+      R = STD_BINOP(LE);
+      break;
     }
     case qOpGE: {
-      return STD_BINOP(GE);
+      R = STD_BINOP(GE);
+      break;
     }
     case qOpEq: {
-      return STD_BINOP(Eq);
+      R = STD_BINOP(Eq);
+      break;
     }
     case qOpNE: {
-      return STD_BINOP(NE);
+      R = STD_BINOP(NE);
+      break;
     }
     case qOpAs: {
-      return STD_BINOP(CastAs);
+      R = STD_BINOP(CastAs);
+      break;
     }
     case qOpIs: {
-      return create_simple_call(s, "__detail::_is", {{"lhs", lhs}, {"rhs", rhs}});
+      R = create_simple_call(s, "__detail::_is", {{"lhs", lhs}, {"rhs", rhs}});
+      break;
     }
     case qOpIn: {
       auto methname = qxir::create<qxir::String>("has");
       auto method = qxir::create<qxir::Index>(rhs, methname);
-      return qxir::create<qxir::Call>(method, qxir::CallArgs({lhs}));
+      R = qxir::create<qxir::Call>(method, qxir::CallArgs({lhs}));
+      break;
     }
     case qOpRange: {
       /// TODO: Implement range operator
       throw QError();
     }
     case qOpBitcastAs: {
-      return STD_BINOP(BitcastAs);
+      R = STD_BINOP(BitcastAs);
+      break;
     }
     default: {
       throw QError();
     }
   }
+
+  if (op == qOpBitcastAs || op == qOpAs) {
+    R->setConstExpr(lhs->isConstExpr() && rhs->isConstExpr());
+  }
+
+  return R;
 }
 
 qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
@@ -567,7 +625,7 @@ namespace qxir {
       throw QError();
     }
 
-    c->setConst(true);
+    c->setConstExpr(true);
 
     return c;
   }
@@ -750,6 +808,8 @@ namespace qxir {
         throw QError();
       }
 
+      // Implicit conversion are done later
+
       std::get<1>(datapack).push_back({memorize(it->first), arg});
     }
     std::get<0>(datapack) = target;
@@ -764,6 +824,7 @@ namespace qxir {
      */
 
     ListItems items;
+    bool not_const = false;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
       auto item = qconv_one(s, *it);
@@ -773,9 +834,15 @@ namespace qxir {
       }
 
       items.push_back(item);
+      if (!item->isConstExpr()) {
+        not_const = true;
+      }
     }
 
-    return create<List>(std::move(items));
+    List *list = create<List>(std::move(items));
+    list->setConstExpr(!not_const);
+
+    return list;
   }
 
   static Expr *qconv_assoc(ConvState &s, const qparse::Assoc *n) {
@@ -886,7 +953,9 @@ namespace qxir {
           throw QError();
         }
 
-        return create<BinExpr>(expr, getType<StringTy>(), Op::CastAs);
+        BinExpr *s = create<BinExpr>(expr, getType<StringTy>(), Op::CastAs);
+        s->setConstExpr(expr->isConstExpr());
+        return s;
       } else {
         qcore_panic("Invalid fstring item type");
       }
@@ -898,7 +967,9 @@ namespace qxir {
       if (std::holds_alternative<qparse::String>(*it)) {
         auto val = std::get<qparse::String>(*it);
 
+        bool was_const = concated->isConstExpr();
         concated = create<BinExpr>(concated, create<String>(memorize(val)), Op::Plus);
+        concated->setConstExpr(was_const);
       } else if (std::holds_alternative<qparse::Expr *>(*it)) {
         auto val = std::get<qparse::Expr *>(*it);
         auto expr = qconv_one(s, val);
@@ -922,6 +993,13 @@ namespace qxir {
      * @brief Convert an identifier to a qxir expression.
      * @details This is a 1-to-1 conversion of the identifier.
      */
+
+    if (s.inside_function) {
+      auto find = s.local_scope.top().find(n->get_name());
+      if (find != s.local_scope.top().end()) {
+        return create<Ident>(memorize(n->get_name()), find->second);
+      }
+    }
 
     auto str = s.cur_named(n->get_name());
 
@@ -1325,7 +1403,15 @@ namespace qxir {
       throw QError();
     }
 
-    return create<ArrayTy>(item->asType(), count);
+    /// TODO: Invoke an interpreter to calculate size expression
+    if (count->getKind() != QIR_NODE_INT) {
+      badtree(n, "Non integer literal array size is not supported");
+      throw QError();
+    }
+
+    uint64_t size = std::atoi(static_cast<qxir::Int *>(count)->getValue().c_str());
+
+    return create<ArrayTy>(item->asType(), size);
   }
 
   static Expr *qconv_vector_ty(ConvState &s, const qparse::VectorTy *n) {
@@ -1541,7 +1627,7 @@ namespace qxir {
       size_t field_align = field->asType()->getAlignBytes();
       size_t padding = align(offset, field_align) - offset;
       if (padding > 0) {
-        fields.push_back(create<ArrayTy>(getType<U8Ty>(), create<Int>(padding)));
+        fields.push_back(create<ArrayTy>(getType<U8Ty>(), padding));
       }
 
       fields.push_back(field->asType());
@@ -1682,16 +1768,15 @@ namespace qxir {
         tmp_fields.push_back(field->asType());
       }
 
-      std::sort(tmp_fields.begin(), tmp_fields.end(), [](Type *a, Type *b) {
-        return a->getSizeBits() > b->getSizeBits();
-      });
+      std::sort(tmp_fields.begin(), tmp_fields.end(),
+                [](Type *a, Type *b) { return a->getSizeBits() > b->getSizeBits(); });
 
       size_t offset = 0;
       for (auto it = tmp_fields.begin(); it != tmp_fields.end(); ++it) {
         size_t field_align = (*it)->getAlignBytes();
         size_t padding = align(offset, field_align) - offset;
         if (padding > 0) {
-          fields.push_back(create<ArrayTy>(getType<U8Ty>(), create<Int>(padding)));
+          fields.push_back(create<ArrayTy>(getType<U8Ty>(), padding));
         }
 
         fields.push_back(*it);
@@ -1871,6 +1956,12 @@ namespace qxir {
     const qparse::FnDecl *decl = n;
     qparse::FuncTy *fty = decl->get_type();
 
+    FnTy *fnty = static_cast<FnTy *>(qconv_one(s, fty));
+    if (!fnty) {
+      badtree(n, "qparse::FnDef::get_type() == nullptr");
+      throw QError();
+    }
+
     /* Produce the function preconditions */
     if ((precond = qconv_one(s, n->get_precond()))) {
       precond = create<If>(create<UnExpr>(precond, Op::LogicNot),
@@ -1884,6 +1975,10 @@ namespace qxir {
     }
 
     { /* Produce the function body */
+      Type *old_return_ty = s.return_type;
+      s.return_type = fnty->getReturn();
+      s.local_scope.push({});
+
       Expr *tmp = qconv_one(s, n->get_body());
       if (!tmp) {
         badtree(n, "qparse::FnDef::get_body() == nullptr");
@@ -1914,6 +2009,9 @@ namespace qxir {
       if (postcond) {
         /// TODO: add postcond at each exit point
       }
+
+      s.local_scope.pop();
+      s.return_type = old_return_ty;
     }
 
     auto name = s.cur_named(n->get_name());
@@ -1951,12 +2049,6 @@ namespace qxir {
         params.push_back({type, sv});
         current->getParameterMap()[str].push_back({std::string(std::get<0>(*it)), type, def});
       }
-    }
-
-    FnTy *fnty = static_cast<FnTy *>(qconv_one(s, fty));
-    if (!fnty) {
-      badtree(n, "qparse::FnDef::get_type() == nullptr");
-      throw QError();
     }
 
     auto obj =
@@ -2088,11 +2180,15 @@ namespace qxir {
     SeqItems items;
     items.reserve(n->get_items().size());
 
+    s.local_scope.push({});
+
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
       auto item = qconv_any(s, *it);
 
       items.insert(items.end(), item.begin(), item.end());
     }
+
+    s.local_scope.pop();
 
     return create<Seq>(std::move(items));
   }
@@ -2108,9 +2204,7 @@ namespace qxir {
     }
 
     if (init && type) {
-      if (!init->getType()->cmp_eq(type)) {
-        init = create<BinExpr>(init, type, Op::CastAs);
-      }
+      init = create<BinExpr>(init, type, Op::CastAs);
     } else if (!init && type) {
       init = type;
     } else if (!init && !type) {
@@ -2119,19 +2213,27 @@ namespace qxir {
       throw QError();
     }
 
-    std::string_view name;
-
     if (s.inside_function) {
-      name = memorize(n->get_name());
+      std::string_view name = memorize(n->get_name());
+      Local *local = create<Local>(name, init, s.abi_mode);
+      local->setMutable(false);
+
+      if (s.local_scope.top().contains(name)) {
+        local->getModule()->getDiag().push(
+            QXIR_AUDIT_CONV,
+            diag::DiagMessage("Variable named " + std::string(name) + " is redefined",
+                              diag::IssueClass::Error, diag::IssueCode::Redefinition,
+                              n->get_start_pos(), n->get_end_pos()));
+      }
+      s.local_scope.top()[name] = local;
+      return local;
     } else {
-      name = memorize(std::string_view(s.cur_named(n->get_name())));
+      std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
+      auto g = create<Local>(name, init, s.abi_mode);
+      g->setMutable(false);
+      current->getGlobalVariables().insert({name, g});
+      return g;
     }
-
-    auto g = create<Local>(name, init, s.abi_mode);
-    g->setConst(true);
-
-    current->getVariables().insert({name, g});
-    return g;
   }
 
   static Expr *qconv_var(ConvState &s, const qparse::VarDecl *n) {
@@ -2151,9 +2253,7 @@ namespace qxir {
     }
 
     if (init && type) {
-      if (!init->getType()->cmp_eq(type)) {
-        init = create<BinExpr>(init, type, Op::CastAs);
-      }
+      init = create<BinExpr>(init, type, Op::CastAs);
     } else if (!init && type) {
       init = type;
     } else if (!init && !type) {
@@ -2162,18 +2262,25 @@ namespace qxir {
       throw QError();
     }
 
-    std::string_view name;
-
     if (s.inside_function) {
-      name = memorize(n->get_name());
+      std::string_view name = memorize(n->get_name());
+      Local *local = create<Local>(name, init, s.abi_mode);
+
+      if (s.local_scope.top().contains(name)) {
+        local->getModule()->getDiag().push(
+            QXIR_AUDIT_CONV,
+            diag::DiagMessage("Variable named " + std::string(name) + " is redefined",
+                              diag::IssueClass::Error, diag::IssueCode::Redefinition,
+                              n->get_start_pos(), n->get_end_pos()));
+      }
+      s.local_scope.top()[name] = local;
+      return local;
     } else {
-      name = memorize(std::string_view(s.cur_named(n->get_name())));
+      std::string_view name = memorize(std::string_view(s.cur_named(n->get_name())));
+      auto g = create<Local>(name, init, s.abi_mode);
+      current->getGlobalVariables().insert({name, g});
+      return g;
     }
-
-    auto g = create<Local>(name, init, s.abi_mode);
-    current->getVariables().insert({name, g});
-
-    return g;
   }
 
   static Expr *qconv_inline_asm(ConvState &s, const qparse::InlineAsm *n) {
@@ -2191,6 +2298,7 @@ namespace qxir {
     if (!val) {
       val = create<VoidTy>();
     }
+    val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
     return create<Ret>(val);
   }
@@ -2214,6 +2322,7 @@ namespace qxir {
       badtree(n, "qparse::ReturnIfStmt::get_value() == nullptr");
       throw QError();
     }
+    val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
     return create<If>(cond, create<Ret>(val), create<VoidTy>());
   }
@@ -2238,6 +2347,7 @@ namespace qxir {
       badtree(n, "qparse::RetZStmt::get_value() == nullptr");
       throw QError();
     }
+    val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
     return create<If>(inv_cond, create<Ret>(val), create<VoidTy>());
   }
@@ -2491,10 +2601,12 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the volatile statement.
      */
 
-    auto expr = qconv_one(s, n->get_stmt());
-    expr->setVolatile(true);
+    // auto expr = qconv_one(s, n->get_stmt());
+    // expr->setVolatile(true);
 
-    return expr;
+    // return expr;
+
+    qcore_implement(__func__);
   }
 }  // namespace qxir
 
@@ -2908,8 +3020,10 @@ static std::vector<qxir::Expr *> qconv_any(ConvState &s, const qparse::Node *n) 
 
 ///=============================================================================
 
-static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
-#define clone(X) static_cast<Expr *>(qxir_clone_impl(X))
+static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
+                                    std::unordered_map<const qxir_node_t *, qxir_node_t *> &map,
+                                    std::unordered_set<qxir_node_t *> &in_visited) {
+#define clone(X) static_cast<Expr *>(qxir_clone_impl(X, map, in_visited))
 
   using namespace qxir;
 
@@ -2994,8 +3108,8 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
       break;
     }
     case QIR_NODE_IDENT: {
-      out =
-          create<Ident>(memorize(static_cast<Ident *>(in)->getName()), nullptr /* TODO: Fix ref */);
+      qxir::Expr *bad_tmp_ref = static_cast<Ident *>(in)->getWhat();
+      out = create<Ident>(memorize(static_cast<Ident *>(in)->getName()), bad_tmp_ref);
       break;
     }
     case QIR_NODE_EXTERN: {
@@ -3173,7 +3287,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
     }
     case QIR_NODE_ARRAY_TY: {
       ArrayTy *n = static_cast<ArrayTy *>(in);
-      out = create<ArrayTy>(clone(n->getElement())->asType(), clone(n->getCount()));
+      out = create<ArrayTy>(clone(n->getElement())->asType(), n->getCount());
       break;
     }
     case QIR_NODE_FN_TY: {
@@ -3196,8 +3310,11 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node) {
   qcore_assert(out != nullptr, "qxir_clone: failed to clone node");
 
   out->setLoc(in->getLoc());
-  out->setConst(in->isConst());
-  out->setVolatile(in->isVolatile());
+  out->setConstExpr(in->isConstExpr());
+  out->setMutable(in->isMutable());
+
+  map[in] = out;
+  in_visited.insert(in);
 
   return static_cast<qxir_node_t *>(out);
 }
@@ -3219,7 +3336,25 @@ LIB_EXPORT qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node) {
   out = nullptr;
 
   try {
-    out = qxir_clone_impl(node);
+    std::unordered_map<const qxir_node_t *, qxir_node_t *> map;
+    std::unordered_set<qxir_node_t *> in_visited;
+    out = qxir_clone_impl(node, map, in_visited);
+
+    { /* Resolve Directed Acyclic* Graph Internal References */
+      using namespace qxir;
+
+      Expr *out_expr = static_cast<Expr *>(out);
+      iterate<dfs_pre>(out_expr, [&](Expr *, Expr **_cur) -> IterOp {
+        Expr *cur = *_cur;
+
+        if (in_visited.contains(cur)) {
+          *_cur = static_cast<Expr *>(map[cur]);
+        }
+
+        return IterOp::Proceed;
+      });
+      out = out_expr;
+    }
   } catch (...) {
     return nullptr;
   }

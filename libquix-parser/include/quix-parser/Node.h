@@ -299,7 +299,7 @@ namespace qparse {
     virtual void print_impl(std::ostream &os, bool debug) const = 0;
     virtual Node *clone_impl() const = 0;
 
-    qlex_loc_t m_pos_start{}, m_pos_end{};
+    qlex_loc_t m_pos_start{0}, m_pos_end{0};
 
   public:
     Node() = default;

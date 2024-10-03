@@ -383,11 +383,11 @@ std::optional<qlex_size> qlex_t::loc2offset(qlex_loc_t loc) {
 }
 
 std::optional<std::pair<qlex_size, qlex_size>> qlex_t::loc2rowcol(qlex_loc_t loc) {
-  if (m_tag_to_loc.find(loc.tag) == m_tag_to_loc.end()) [[unlikely]] {
+  if (m_tag_to_loc.left.find(loc.tag) == m_tag_to_loc.left.end()) [[unlikely]] {
     return std::nullopt;
   }
 
-  clever_me_t it = m_tag_to_loc[loc.tag];
+  clever_me_t it = m_tag_to_loc.left.at(loc.tag);
 
   if (!it.rc_fmt) [[unlikely]] {
     return std::nullopt;
@@ -400,23 +400,26 @@ std::optional<std::pair<qlex_size, qlex_size>> qlex_t::loc2rowcol(qlex_loc_t loc
 }
 
 qlex_loc_t qlex_t::save_loc(qlex_size row, qlex_size col, qlex_size offset) {
-  clever_me_t bits;
-  static_assert(sizeof(bits) == sizeof(qlex_size));
+  if (row <= 2097152 || col <= 1024) [[likely]] {
+    clever_me_t bits;
+    static_assert(sizeof(bits) == sizeof(qlex_size));
 
-  if (row <= 2097152 || col <= 1024) {
     bits.rc_fmt = 1;
     bits.col = col;
     bits.row = row;
 
+    if (m_tag_to_loc.right.find(bits) != m_tag_to_loc.right.end()) {
+      return {m_tag_to_loc.right.at(bits)};
+    }
+
+    qlex_size tag = m_locctr++;
+    m_tag_to_loc.insert({tag, bits});
+    m_tag_to_off[tag] = offset;
+
+    return {tag};
   } else {
-    bits.rc_fmt = 0;
+    return {0};
   }
-
-  qlex_size tag = m_locctr++;
-  m_tag_to_loc[tag] = bits;
-  m_tag_to_off[tag] = offset;
-
-  return {tag};
 }
 
 qlex_loc_t qlex_t::cur_loc() { return save_loc(m_row, m_col, m_offset); }

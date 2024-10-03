@@ -675,7 +675,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
                                          [&](Type *X) { return X->cmp_eq(types.front()); });
 
           if (homogeneous) {
-            T = create<ArrayTy>(types.front(), create<Int>(types.size()));
+            T = create<ArrayTy>(types.front(), types.size());
           } else {
             T = create<StructTy>(StructFields(types.begin(), types.end()));
           }
@@ -862,8 +862,7 @@ bool qxir::Type::hasKnownSize() noexcept {
                          [](Type *T) { return T->hasKnownSize(); });
     }
     case QIR_NODE_ARRAY_TY: {
-      return this->as<ArrayTy>()->getElement()->hasKnownSize() &&
-             this->as<ArrayTy>()->getCount()->isConst();
+      return this->as<ArrayTy>()->getElement()->hasKnownSize();
     }
     case QIR_NODE_OPAQUE_TY:
     case QIR_NODE_STRING_TY:
@@ -906,8 +905,7 @@ bool qxir::Type::hasKnownAlign() noexcept {
                          [](Type *T) { return T->hasKnownAlign(); });
     }
     case QIR_NODE_ARRAY_TY: {
-      return this->as<ArrayTy>()->getElement()->hasKnownAlign() &&
-             this->as<ArrayTy>()->getCount()->isConst();
+      return this->as<ArrayTy>()->getElement()->hasKnownAlign();
     }
     case QIR_NODE_OPAQUE_TY:
     case QIR_NODE_STRING_TY:
@@ -1007,14 +1005,7 @@ CPP_EXPORT uint64_t qxir::Type::getSizeBits() {
       break;
     }
     case QIR_NODE_ARRAY_TY: {
-      std::optional<uint64_t> element_size =
-          qxir::uint_as<uint64_t>(this->as<ArrayTy>()->getCount());
-
-      if (!element_size.has_value()) {
-        qcore_panic("Array type size calculation failed");
-      }
-
-      size = this->as<ArrayTy>()->getElement()->getSizeBits() * element_size.value();
+      size = this->as<ArrayTy>()->getElement()->getSizeBits() * this->as<ArrayTy>()->getCount();
       break;
     }
     case QIR_NODE_FN_TY: {

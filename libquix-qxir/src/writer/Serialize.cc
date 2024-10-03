@@ -194,11 +194,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
 #define recurse(x) serialize_recurse(x, ss, state)
 #endif
 
-  if (n->isConst() && !n->isLiteral()) {
+  if (n->isConstExpr() && !n->isLiteral() && !n->isType()) {
     ss << "const ";
-  }
-  if (n->isVolatile()) {
-    ss << "volatile ";
   }
 
   switch (n->getKind()) {
@@ -507,8 +504,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
     case QIR_NODE_ARRAY_TY: {
       ss << "[";
       recurse(n->as<ArrayTy>()->getElement());
-      ss << "; ";
-      recurse(n->as<ArrayTy>()->getCount());
+      ss << "; " << n->as<ArrayTy>()->getCount();
       ss << "]";
       break;
     }

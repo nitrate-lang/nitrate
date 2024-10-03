@@ -88,10 +88,10 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   {  // Print the filename and location information
     ss << qlex_filename(lx) << ":";
 
-    sl = qlex_line(lx, msg.start);
-    sc = qlex_col(lx, msg.start);
-    el = qlex_line(lx, msg.end);
-    ec = qlex_col(lx, msg.end);
+    sl = qlex_line(lx, msg.m_start);
+    sc = qlex_col(lx, msg.m_start);
+    el = qlex_line(lx, msg.m_end);
+    ec = qlex_col(lx, msg.m_end);
 
     if (sl != UINT32_MAX || sc != UINT32_MAX) {
       print_qsizeloc(ss, sl);
@@ -106,7 +106,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
   (void)ec;
   (void)el;
 
-  switch (msg.type) {
+  switch (msg.m_type) {
     case IssueClass::Debug:
       ss << "debug";
       break;
@@ -124,14 +124,14 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
       break;
   }
 
-  ss << ": " << msg.msg;
+  ss << ": " << msg.m_msg;
 
-  if (msg.code != IssueCode::Default) {
-    ss << " [" << issue_code_bimap.left.at(msg.code) << "]";
+  if (msg.m_code != IssueCode::Default) {
+    ss << " [" << issue_code_bimap.left.at(msg.m_code) << "]";
   }
 
   qlex_size res = qlex_spanx(
-      lx, msg.start, msg.end,
+      lx, msg.m_start, msg.m_end,
       [](const char *str, qlex_size len, uintptr_t x) {
         if (len > 100) {
           len = 100;
@@ -156,10 +156,10 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
   {  // Print the filename and location information
     ss << "\x1b[39;1m" << qlex_filename(lx) << ":";
 
-    sl = qlex_line(lx, msg.start);
-    sc = qlex_col(lx, msg.start);
-    el = qlex_line(lx, msg.end);
-    ec = qlex_col(lx, msg.end);
+    sl = qlex_line(lx, msg.m_start);
+    sc = qlex_col(lx, msg.m_start);
+    el = qlex_line(lx, msg.m_end);
+    ec = qlex_col(lx, msg.m_end);
 
     if (sl != UINT32_MAX || sc != UINT32_MAX || el != UINT32_MAX || ec != UINT32_MAX) {
       print_qsizeloc(ss, sl);
@@ -177,46 +177,46 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
     ss << " ";
   }
 
-  switch (msg.type) {
+  switch (msg.m_type) {
     case IssueClass::Debug:
-      ss << "\x1b[1mdebug:\x1b[0m " << msg.msg;
-      if (msg.code != IssueCode::Default) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[1m" << issue_code_bimap.left.at(msg.code)
+      ss << "\x1b[1mdebug:\x1b[0m " << msg.m_msg;
+      if (msg.m_code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[1m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Info:
-      ss << "\x1b[37;1minfo:\x1b[0m " << msg.msg;
-      if (msg.code != IssueCode::Default) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m" << issue_code_bimap.left.at(msg.code)
+      ss << "\x1b[37;1minfo:\x1b[0m " << msg.m_msg;
+      if (msg.m_code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Warn:
-      ss << "\x1b[35;1mwarning:\x1b[0m " << msg.msg;
-      if (msg.code != IssueCode::Default) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m" << issue_code_bimap.left.at(msg.code)
+      ss << "\x1b[35;1mwarning:\x1b[0m " << msg.m_msg;
+      if (msg.m_code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Error:
-      ss << "\x1b[31;1merror:\x1b[0m " << msg.msg;
-      if (msg.code != IssueCode::Default) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m" << issue_code_bimap.left.at(msg.code)
+      ss << "\x1b[31;1merror:\x1b[0m " << msg.m_msg;
+      if (msg.m_code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::FatalError:
-      ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.msg;
-      if (msg.code != IssueCode::Default) {
-        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m" << issue_code_bimap.left.at(msg.code)
+      ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.m_msg;
+      if (msg.m_code != IssueCode::Default) {
+        ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
   }
 
   qlex_size res = qlex_spanx(
-      lx, msg.start, msg.end,
+      lx, msg.m_start, msg.m_end,
       [](const char *str, qlex_size len, uintptr_t x) {
         if (len > 100) {
           len = 100;
@@ -237,8 +237,56 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
 
 using namespace qxir::diag;
 
+uint64_t DiagMessage::hash() const {
+  /* Not quite a PHF, but it's pretty close as long as there are not two many subject strings */
+  /* In the worst case messages will be discarded, but that can be fixed by passing a parameter
+     to disable deduplication */
+
+  struct BitPack {
+    IssueClass m_type : 3;
+    IssueCode m_code : 10;
+    uint64_t m_msg_trunc : 7;
+    uint64_t m_end_trunc : 20;
+    uint64_t m_start : 24;
+  } __attribute__((packed)) bp;
+
+  bp.m_type = m_type;
+  bp.m_code = m_code;
+  bp.m_msg_trunc = std::hash<std::string_view>{}(m_msg);
+  bp.m_start = m_start.tag;
+  bp.m_end_trunc = m_end.tag;
+
+  return std::bit_cast<uint64_t>(bp);
+}
+
 void DiagnosticManager::push(qxir_audit_ticket_t ticket, DiagMessage &&msg) {
-  m_msgs[ticket].push_back(std::move(msg));
+  auto &chan = m_msgs[ticket];
+
+  switch (msg.m_type) {
+    case IssueClass::Debug:
+      break;
+    case IssueClass::Info:
+      break;
+    case IssueClass::Warn:
+      /// TODO: Warnings as errors
+      break;
+    case IssueClass::Error:
+      current->setFailbit(true);
+      break;
+    case IssueClass::FatalError:
+      current->setFailbit(true);
+      break;
+  }
+
+  { /* Prevent duplicates and maintain order of messages */
+    auto hash = msg.hash();
+    if (chan.visited.contains(hash)) {
+      return;
+    }
+    chan.visited.insert(hash);
+  }
+
+  chan.vec.push_back(std::move(msg));
 }
 
 size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
@@ -252,7 +300,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * @format <code>
        */
       case QXIR_DIAG_ASCII_ECODE: {
-        handler(std::to_string(static_cast<uint64_t>(msg.code)), msg.type);
+        handler(std::to_string(static_cast<uint64_t>(msg.m_code)), msg.m_type);
         break;
       }
 
@@ -265,12 +313,12 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        */
       case QXIR_DIAG_UTF8_ECODE_LOC: {
         std::stringstream ss;
-        ss << std::to_string(static_cast<uint64_t>(msg.code)) << ":";
-        ss << qlex_line(m_qxir->getLexer(), msg.start) << ":";
-        ss << qlex_col(m_qxir->getLexer(), msg.start) << ":";
+        ss << std::to_string(static_cast<uint64_t>(msg.m_code)) << ":";
+        ss << qlex_line(m_qxir->getLexer(), msg.m_start) << ":";
+        ss << qlex_col(m_qxir->getLexer(), msg.m_start) << ":";
         ss << qlex_filename(m_qxir->getLexer());
 
-        handler(ss.str(), msg.type);
+        handler(ss.str(), msg.m_type);
         break;
       }
 
@@ -281,10 +329,10 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        */
       case QXIR_DIAG_UTF8_ECODE_ETEXT: {
         std::stringstream ss;
-        ss << std::to_string(static_cast<uint64_t>(msg.code)) << ":";
-        ss << msg.msg;
+        ss << std::to_string(static_cast<uint64_t>(msg.m_code)) << ":";
+        ss << msg.m_msg;
 
-        handler(ss.str(), msg.type);
+        handler(ss.str(), msg.m_type);
         break;
       }
 
@@ -298,7 +346,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * color).
        */
       case QXIR_DIAG_NOSTD_TTY_UTF8: {
-        handler(mint_plain_message(msg), msg.type);
+        handler(mint_plain_message(msg), msg.m_type);
         break;
       }
 
@@ -307,7 +355,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSI16_UTF8_FULL: {
-        handler(mint_clang16_message(msg), msg.type);
+        handler(mint_clang16_message(msg), msg.m_type);
         break;
       }
 
@@ -316,7 +364,7 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSI256_UTF8_FULL: {
-        handler(mint_clang16_message(msg), msg.type);
+        handler(mint_clang16_message(msg), msg.m_type);
         break;
       }
 
@@ -325,12 +373,12 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
        * @note Similar to `QXIR_DIAG_NOSTD_TTY_UTF8`, but with undocumented differences.
        */
       case QXIR_DIAG_NONSTD_ANSIRGB_UTF8_FULL: {
-        handler(mint_modern_message(msg), msg.type);
+        handler(mint_modern_message(msg), msg.m_type);
         break;
       }
 
       default: {
-        handler(mint_plain_message(msg), msg.type);
+        handler(mint_plain_message(msg), msg.m_type);
         break;
       }
     }
@@ -344,17 +392,17 @@ size_t DiagnosticManager::render(qxir_audit_ticket_t ticket, DiagnosticMessageHa
   if (ticket == QXIR_AUDIT_ALL) {
     size_t n = 0;
     for (auto &[_, msgs] : m_msgs) {
-      n += dump_diagnostic_vector(msgs, handler, style);
+      n += dump_diagnostic_vector(msgs.vec, handler, style);
     }
     return n;
   } else if (ticket == QXIR_AUDIT_LAST) {
-    return dump_diagnostic_vector(m_msgs[m_last_ticket], handler, style);
+    return dump_diagnostic_vector(m_msgs[m_last_ticket].vec, handler, style);
   } else {
     if (!m_msgs.contains(ticket)) {
       return 0;
     }
 
-    return dump_diagnostic_vector(m_msgs[ticket], handler, style);
+    return dump_diagnostic_vector(m_msgs[ticket].vec, handler, style);
   }
 }
 
@@ -373,11 +421,11 @@ namespace qxir::diag {
     }
 
     DiagMessage diag;
-    diag.msg = std::move(msg);
-    diag.start = start;
-    diag.end = end;
-    diag.type = IssueClass::Error;
-    diag.code = IssueCode::PTreeInvalid;
+    diag.m_msg = std::move(msg);
+    diag.m_start = start;
+    diag.m_end = end;
+    diag.m_type = IssueClass::Error;
+    diag.m_code = IssueCode::PTreeInvalid;
 
     current->getDiag().push(QXIR_AUDIT_CONV, std::move(diag));
 
@@ -428,4 +476,14 @@ LIB_EXPORT size_t qxir_diag_read(qmodule_t *qxir, qxir_audit_ticket_t ticket,
 
 LIB_EXPORT size_t qxir_diag_clear(qmodule_t *qxir, qxir_audit_ticket_t ticket) {
   return qxir->getDiag().clear(ticket);
+}
+
+void qxir::diag::report(diag::IssueCode code, diag::IssueClass type, qlex_loc_t loc_start,
+                        qlex_loc_t loc_end, int channel) {
+  current->getDiag().push(channel, diag::DiagMessage("", type, code, loc_start, loc_end));
+}
+
+void qxir::diag::report(diag::IssueCode code, diag::IssueClass type, std::string_view subject,
+                        qlex_loc_t loc_start, qlex_loc_t loc_end, int channel) {
+  current->getDiag().push(channel, diag::DiagMessage(subject, type, code, loc_start, loc_end));
 }

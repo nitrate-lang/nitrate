@@ -371,9 +371,6 @@ bool qxir::passes::impl::ds_chtype(qmodule_t *mod) {
         if (!par->as<ArrayTy>()->getElement()->isType()) {
           EPUT("Array element is not a type node");
         }
-        if (par->as<ArrayTy>()->getCount()->isType()) {
-          EPUT("Array size is a type node");
-        }
         break;
       }
 

@@ -64,6 +64,14 @@ private:
     uint32_t rc_fmt : 1; /* Holds the row-column format? */
     uint32_t col : 10;   /* Column number (max 1024) */
     uint32_t row : 21;   /* Row number (max 2097152) */
+
+    bool operator<(const clever_me_t &other) const {
+      if (row != other.row) {
+        return row < other.row;
+      } else {
+        return col < other.col;
+      }
+    }
   } __attribute__((packed));
 
   qlex_size m_getc_pos;
@@ -87,7 +95,7 @@ private:
       StringInterner;
 #endif
 
-  boost::unordered_map<qlex_size, clever_me_t> m_tag_to_loc;
+  boost::bimap<qlex_size, clever_me_t> m_tag_to_loc;
   boost::unordered_map<qlex_size, qlex_size> m_tag_to_off;
 
   qlex_size m_locctr;
@@ -139,7 +147,7 @@ public:
         m_col(0),
         m_offset(std::numeric_limits<qlex_size>::max()),
         m_last_ch(0),
-        m_tag_to_loc({}),
+        m_tag_to_loc(),
         m_tag_to_off({}),
         m_locctr(1),
         m_strings(std::make_shared<decltype(m_strings)::element_type>()),

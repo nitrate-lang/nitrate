@@ -51,6 +51,8 @@ extern "C" {
  * @note If `dst` NULL, the function will clone into the same module.
  * @note If `node` NULL, the function will return NULL.
  * @note This clone is a deep copy.
+ *
+ * @note Be nice to this function, it does more than you think.
  */
 qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 
@@ -153,7 +155,7 @@ namespace qxir {
     qxir_ty_t m_node_type : 6;        /* Typecode of this node. */
     qxir::ModuleId m_module_idx : 16; /* The module context index. */
     uint64_t m_constexpr : 1;         /* Is this expression a constant expression? */
-    uint64_t m_volatile : 1;          /* Is this expression volatile? */
+    uint64_t m_mutable : 1;           /* Is this expression mutable? */
 
     qlex_loc_t m_start_loc;
     uint16_t m_loc_size;  // Diagnostics can not span more than 64K bytes.
@@ -166,8 +168,8 @@ namespace qxir {
         : m_node_type(ty),
           m_module_idx(std::numeric_limits<ModuleId>::max()),
           m_constexpr(0),
-          m_volatile(0),
-          m_start_loc{},
+          m_mutable(1),
+          m_start_loc{0},
           m_loc_size(0) {}
 
     uint32_t getKindSize() const noexcept;
@@ -175,10 +177,10 @@ namespace qxir {
     const char *getKindName() const noexcept;
 
     bool isType() const noexcept;
-    inline bool isConst() const noexcept { return m_constexpr; }
-    inline bool isVolatile() const noexcept { return m_volatile; }
-    inline void setConst(bool is_const) noexcept { m_constexpr = is_const; }
-    inline void setVolatile(bool is_volatile) noexcept { m_volatile = is_volatile; }
+    inline bool isConstExpr() const noexcept { return m_constexpr; }
+    inline bool isMutable() const noexcept { return m_mutable; }
+    inline void setConstExpr(bool is_const) noexcept { m_constexpr = is_const; }
+    inline void setMutable(bool is_mut) noexcept { m_mutable = is_mut; }
     inline bool isLiteral() const noexcept {
       return m_node_type == QIR_NODE_INT || m_node_type == QIR_NODE_FLOAT ||
              m_node_type == QIR_NODE_STRING;
@@ -188,6 +190,8 @@ namespace qxir {
     std::string_view getName() const noexcept;
 
     std::pair<qlex_loc_t, qlex_loc_t> getLoc() const noexcept;
+    qlex_loc_t locBeg() const noexcept;
+    qlex_loc_t locEnd() const noexcept;
     void setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
 
     qmodule_t *getModule() const noexcept;
@@ -274,14 +278,15 @@ namespace qxir {
 #define EXPR_SIZE sizeof(Expr)
 
   class Type : public Expr {
+    uint64_t getAlignBits();
+
   public:
-    Type(qxir_ty_t ty) : Expr(ty) {}
+    Type(qxir_ty_t ty) : Expr(ty) { setConstExpr(true); }
 
     bool hasKnownSize() noexcept;
     bool hasKnownAlign() noexcept;
     uint64_t getSizeBits();
     inline uint64_t getSizeBytes() { return std::ceil(getSizeBits() / 8.0); }
-    uint64_t getAlignBits();
     inline uint64_t getAlignBytes() { return std::ceil(getAlignBits() / 8.0); }
 
     bool is_primitive() const;
@@ -585,14 +590,14 @@ namespace qxir {
     QCLASS_REFLECT()
 
     Type *m_element;
-    Expr *m_size;
+    size_t m_size;
 
   public:
-    ArrayTy(Type *element, Expr *size)
+    ArrayTy(Type *element, size_t size)
         : Type(QIR_NODE_ARRAY_TY), m_element(element), m_size(size) {}
 
     Type *getElement() noexcept { return m_element; }
-    Expr *getCount() { return m_size; }
+    size_t getCount() { return m_size; }
   };
 
   enum class FnAttr {
@@ -638,12 +643,12 @@ namespace qxir {
     static constexpr uint64_t FLAG_BIT = 1ULL << 63;
 
   public:
-    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} { setConst(true); }
+    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} { setConstExpr(true); }
 
     Int(std::string_view str) : Expr(QIR_NODE_INT), m_data{.m_str = str.data()} {
       qcore_assert((m_data.m_u64 & FLAG_BIT) == 0,
                    "Optimized code assumed an invariant that does not hold on this architecture.");
-      setConst(true);
+      setConstExpr(true);
     }
 
     bool isNativeRepresentation() const noexcept { return m_data.m_u64 & FLAG_BIT; }
@@ -679,8 +684,8 @@ namespace qxir {
     static_assert(sizeof(double) == 8);
 
   public:
-    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} { setConst(true); }
-    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} { setConst(true); }
+    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} { setConstExpr(true); }
+    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} { setConstExpr(true); }
 
     bool isNativeRepresentation() const noexcept { return std::holds_alternative<double>(m_data); }
 
@@ -709,7 +714,7 @@ namespace qxir {
     std::string_view m_data;
 
   public:
-    String(std::string_view data) : Expr(QIR_NODE_STRING), m_data(data) { setConst(true); }
+    String(std::string_view data) : Expr(QIR_NODE_STRING), m_data(data) { setConstExpr(true); }
 
     std::string_view getValue() noexcept { return m_data; }
     std::string_view setValue(std::string_view data) noexcept { return m_data = data; }
@@ -1079,7 +1084,6 @@ namespace qxir {
     UNDEF_LITERAL,
     CALL,
     ENUM,
-    LET,
     NAMED_TYPE,
 
     BAD,

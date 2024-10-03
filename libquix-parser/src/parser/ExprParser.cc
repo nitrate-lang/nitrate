@@ -29,9 +29,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+/// TODO: Source location
+#define __QUIX_LEXER_IMPL__
 #define __QUIX_IMPL__
 
 #include <parser/Parse.h>
+#include <quix-parser/Node.h>
 
 #include <cstddef>
 #include <stack>
@@ -39,8 +42,13 @@
 #include <string_view>
 
 #define MAX_EXPR_DEPTH (10000)
-
 #define MAX_LIST_DUP (10000)
+
+static inline qparse::Expr *LOC_121(qparse::Expr *p, qlex_tok_t t) {
+  p->set_start_pos(t.start);
+  p->set_end_pos(t.end);
+  return p;
+}
 
 using namespace qparse;
 using namespace qparse::parser;
@@ -268,7 +276,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
          * @brief
          */
 
-        stack.push(ConstInt::get(tok.as_string(rd)));
+        stack.push(LOC_121(ConstInt::get(tok.as_string(rd)), tok));
         continue;
       }
       case qNumL: {
@@ -276,7 +284,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
          * @brief
          */
 
-        stack.push(ConstFloat::get(tok.as_string(rd)));
+        stack.push(LOC_121(ConstFloat::get(tok.as_string(rd)), tok));
         continue;
       }
       case qText: {
@@ -284,7 +292,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
          * @brief
          */
 
-        stack.push(ConstString::get(tok.as_string(rd)));
+        stack.push(LOC_121(ConstString::get(tok.as_string(rd)), tok));
         continue;
       }
       case qChar: {
@@ -303,25 +311,25 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           v = (v << 8) | str[i];
         }
 
-        stack.push(ConstChar::get(v));
+        stack.push(LOC_121(ConstChar::get(v), tok));
         continue;
       }
       case qKeyW: {
         switch (tok.as<qlex_key_t>()) {
           case qKTrue: {
-            stack.push(ConstBool::get(true));
+            stack.push(LOC_121(ConstBool::get(true), tok));
             continue;
           }
           case qKFalse: {
-            stack.push(ConstBool::get(false));
+            stack.push(LOC_121(ConstBool::get(false), tok));
             continue;
           }
           case qKNull: {
-            stack.push(ConstNull::get());
+            stack.push(LOC_121(ConstNull::get(), tok));
             continue;
           }
           case qKUndef: {
-            stack.push(ConstUndef::get());
+            stack.push(LOC_121(ConstUndef::get(), tok));
             continue;
           }
           case qKFn: {
@@ -699,7 +707,10 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
           qlex_next(rd);
           continue;
         } else {
-          stack.push(Ident::get(ident));
+          Ident *id = Ident::get(ident);
+          id->set_start_pos(tok.start);
+          id->set_end_pos(tok.end);
+          stack.push(id);
           continue;
         }
       }

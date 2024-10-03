@@ -452,7 +452,7 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       if (!a->m_element->cmp_eq(b->m_element)) {
         return false;
       }
-      if (!a->m_size->cmp_eq(b->m_size)) {
+      if (a->m_size != b->m_size) {
         return false;
       }
       return true;
@@ -748,29 +748,40 @@ CPP_EXPORT std::string_view qxir::Expr::getName() const noexcept {
 
 CPP_EXPORT std::pair<qlex_loc_t, qlex_loc_t> qxir::Expr::getLoc() const noexcept {
   qmodule_t *mod = getModule();
-  if (mod == nullptr) {
-    return {{0}, {0}};
-  }
+  qcore_assert(mod != nullptr, "Module is not set");
 
   qlex_t *lexer = mod->getLexer();
-  if (lexer == nullptr) {
-    return {{0}, {0}};
-  }
+  qcore_assert(lexer != nullptr, "Lexer is not set");
 
-  qlex_loc_t end = qlex_offset(lexer, m_start_loc, m_loc_size);
-  return {m_start_loc, end};
+  return {m_start_loc, qlex_offset(lexer, m_start_loc, m_loc_size)};
+}
+
+CPP_EXPORT qlex_loc_t qxir::Expr::locBeg() const noexcept {
+  qmodule_t *mod = getModule();
+  qcore_assert(mod != nullptr, "Module is not set");
+
+  qlex_t *lexer = mod->getLexer();
+  qcore_assert(lexer != nullptr, "Lexer is not set");
+
+  return m_start_loc;
+}
+
+CPP_EXPORT qlex_loc_t qxir::Expr::locEnd() const noexcept {
+  qmodule_t *mod = getModule();
+  qcore_assert(mod != nullptr, "Module is not set");
+
+  qlex_t *lexer = mod->getLexer();
+  qcore_assert(lexer != nullptr, "Lexer is not set");
+
+  return qlex_offset(lexer, m_start_loc, m_loc_size);
 }
 
 CPP_EXPORT void qxir::Expr::setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept {
   qmodule_t *mod = getModule();
-  if (mod == nullptr) {
-    return;
-  }
+  qcore_assert(mod != nullptr, "Module is not set");
 
   qlex_t *lexer = mod->getLexer();
-  if (lexer == nullptr) {
-    return;
-  }
+  qcore_assert(lexer != nullptr, "Lexer is not set");
 
   m_start_loc = loc.first;
   m_loc_size = qlex_span(lexer, loc.first, loc.second);

@@ -830,9 +830,7 @@ static bool serialize_recurse(Expr *n, std::ostream &out, ConvState &state) {
     case QIR_NODE_ARRAY_TY: {
       out << "std::array<";
       recurse(n->as<ArrayTy>()->getElement());
-      out << ',';
-      recurse(n->as<ArrayTy>()->getCount());
-      out << '>';
+      out << ',' << n->as<ArrayTy>()->getCount() << '>';
       break;
     }
 

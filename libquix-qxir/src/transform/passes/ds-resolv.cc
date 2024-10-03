@@ -31,15 +31,13 @@
 
 #define __QUIX_IMPL__
 
-#include <string_view>
-
 #include "quix-qxir/TypeDecl.h"
 #define QXIR_USE_CPP_API
-
 #include <quix-qxir/Inference.h>
 #include <quix-qxir/Node.h>
 
 #include <boost/bimap.hpp>
+#include <string_view>
 #include <transform/passes/Decl.hh>
 
 /**
@@ -50,6 +48,8 @@
  * @timecomplexity O(n)
  * @spacecomplexity O(n)
  */
+
+using namespace qxir::diag;
 
 static std::string_view memorize(std::string_view sv) { return qxir::current->internString(sv); }
 
@@ -100,7 +100,7 @@ static std::optional<std::pair<std::string, IdentWhat>> resolve_name(qmodule_t *
     while (true) {
       std::string n = join_ns(ns.first, ns.second);
 
-      if (mod->getVariables().left.count(n) > 0) {
+      if (mod->getGlobalVariables().left.count(n) > 0) {
         return std::make_pair(n, IdentWhat::Variable);
       }
 
@@ -130,7 +130,7 @@ static std::optional<std::pair<std::string, IdentWhat>> resolve_name(qmodule_t *
     while (true) {
       std::string n = join_ns(ns.first, ns.second);
 
-      if (mod->getVariables().left.count(n) > 0) {
+      if (mod->getGlobalVariables().left.count(n) > 0) {
         return std::make_pair(n, IdentWhat::Variable);
       }
 
@@ -183,10 +183,10 @@ static bool resolve_node(qxir::Expr **_cur) {
     case TmpType::CALL: {
       const auto &info = std::get<CallArgsTmpNodeCradle>(cur->getData());
       const Expr *base = std::get<0>(info);
-      const auto &provided_args = std::get<1>(info);
+      const auto &user_args = std::get<1>(info);
 
-      if (base->getKind() == QIR_NODE_FN) { /* Direct call */
-        std::string funcname = std::string(base->as<Fn>()->getName());
+      if (base->getKind() == QIR_NODE_IDENT) { /* Direct call */
+        std::string funcname = std::string(base->as<Ident>()->getName());
 
         { /* Resolve the function */
           auto resolved = resolve_name(mod, funcname);
@@ -206,23 +206,32 @@ static bool resolve_node(qxir::Expr **_cur) {
         }
 
         qcore_assert(mod->getParameterMap().contains(funcname));
+
+        struct PMapVal {
+          size_t pos;
+          Type *type;
+        };
+
+        /* Some faster data structures */
         Expr *target = mod->getFunctions().left.at(funcname).second;
         FnTy *ft = mod->getFunctions().left.at(funcname).first;
-
-        std::unordered_map<std::string_view, std::pair<size_t, Expr *>> named_args_map;
-        const auto &params = mod->getParameterMap().at(funcname);
-        CallArgs new_args;
-        new_args.resize(std::max(provided_args.size(), ft->getParams().size()));
+        std::unordered_map<std::string_view, PMapVal> param_map;
+        CallArgs arguments;
         size_t pos_i = 0;
 
+        /* Calculate the number of arguments to be passed */
+        arguments.resize(std::max(user_args.size(), ft->getParams().size()));
+
+        const auto &params = mod->getParameterMap().at(funcname);
         qcore_assert(params.size() == ft->getParams().size());
 
+        /* Create a map of parameter names to their positions and types */
         for (size_t i = 0; i < params.size(); i++) {
-          named_args_map[std::get<0>(params[i])] = {i, std::get<2>(params[i])};
+          param_map[std::get<0>(params[i])] = {i, std::get<1>(params[i])};
         }
 
         { /* Check for too many arguments */
-          if (provided_args.size() > params.size() && !ft->getAttrs().contains(FnAttr::Variadic)) {
+          if (user_args.size() > params.size() && !ft->getAttrs().contains(FnAttr::Variadic)) {
             TOO_MANY_ARGUMENTS(funcname);
             error = true;
             break;
@@ -230,19 +239,29 @@ static bool resolve_node(qxir::Expr **_cur) {
         }
 
         { /* Allocate arguments into function parameters */
-          for (auto &[name, arg] : provided_args) {
-            if (std::isdigit(name.at(0))) { /* positional argument */
-              new_args.at(pos_i) = arg;
+          for (const auto &[name, arg] : user_args) {
+            /* Handle positional argument */
+            if (std::isdigit(name.at(0))) {
+              if (pos_i < params.size()) {
+                BinExpr *casted = create<BinExpr>(arg, std::get<1>(params.at(pos_i)), Op::CastAs);
+                arguments.at(pos_i) = casted;
+              } else {
+                // This must be a variadic argument. Casting is not possible.
+                arguments.at(pos_i) = arg;
+              }
               pos_i++;
-            } else { /* named argument */
-              if (!named_args_map.contains(name)) {
+            } else { /* Handle named argument */
+              if (!param_map.contains(name)) {
                 NO_MATCHING_PARAMETER(funcname, name);
                 error = true;
                 break;
               }
 
-              new_args[named_args_map[name].first] = arg;
-              if (named_args_map[name].first <= pos_i) {
+              BinExpr *casted = create<BinExpr>(arg, param_map[name].type, Op::CastAs);
+              arguments[param_map[name].pos] = casted;
+
+              /* Handle mixed named and positional arguments */
+              if (param_map[name].pos <= pos_i) {
                 pos_i++;
               }
             }
@@ -251,14 +270,15 @@ static bool resolve_node(qxir::Expr **_cur) {
             break;
           }
 
-          for (size_t i = 0; i < new_args.size(); i++) {
-            if (new_args[i]) {
+          /* Assign default arguments and do checking */
+          for (size_t i = 0; i < arguments.size(); i++) {
+            if (arguments[i]) {
               continue;
             }
 
             Expr *_default = std::get<2>(params.at(i));
             if (_default) {
-              new_args[i] = _default;
+              arguments[i] = create<BinExpr>(_default, std::get<1>(params.at(i)), Op::CastAs);
             } else {
               NO_MATCHING_PARAMETER(funcname, std::get<0>(params.at(i)));
               error = true;
@@ -271,7 +291,8 @@ static bool resolve_node(qxir::Expr **_cur) {
           }
         }
 
-        *_cur = create<Call>(target, std::move(new_args));
+        /* Create the call */
+        *_cur = create<Call>(target, std::move(arguments));
       } else {
         std::cout << "Indirect call not supported yet for type: " << base->getKindName()
                   << std::endl;
@@ -284,7 +305,7 @@ static bool resolve_node(qxir::Expr **_cur) {
       std::string_view name = std::get<std::string_view>(cur->as<Tmp>()->getData());
 
       if (!mod->getTypeMap().contains(name)) {
-        NO_MATCHING_TYPE(name);
+        report(IssueCode::UnknownType, IssueClass::Error, name);
         error = true;
         break;
       }
@@ -315,11 +336,6 @@ static bool resolve_node(qxir::Expr **_cur) {
       break;
     }
 
-    case TmpType::LET: {
-      /// TODO:
-      break;
-    }
-
     case TmpType::NAMED_TYPE: {
       std::string_view name = std::get<std::string_view>(cur->as<Tmp>()->getData());
 
@@ -328,7 +344,7 @@ static bool resolve_node(qxir::Expr **_cur) {
       if (resolved && resolved->second == IdentWhat::Typename) {
         *_cur = mod->getTypeMap().at(resolved->first);
       } else {
-        NO_MATCHING_TYPE(name);
+        report(IssueCode::UnknownType, IssueClass::Error, name);
         error = true;
       }
       break;
@@ -480,13 +496,17 @@ static bool beta_pass(qmodule_t *mod) {
     }
 
     Ident *cur = (*_cur)->as<Ident>();
+    if (cur->getWhat()) {
+      return IterOp::Proceed;
+    }
+
     std::string_view name = cur->getName();
 
     auto resolved = resolve_name(mod, name);
 
     if (resolved) {
       if (resolved->second == IdentWhat::Variable) {
-        cur->setWhat(mod->getVariables().left.at(resolved->first));
+        cur->setWhat(mod->getGlobalVariables().left.at(resolved->first));
       } else if (resolved->second == IdentWhat::NamedConstant) {
         cur->setWhat(mod->getNamedConstants().at(resolved->first));
       } else if (resolved->second == IdentWhat::Function) {
@@ -541,7 +561,9 @@ static bool beta_pass(qmodule_t *mod) {
       }
 
       auto cur = (*_cur)->as<Ident>();
-      UNRESOLVED_IDENTIFIER(ident_name);
+
+      report(IssueCode::UnresolvedIdentifier, IssueClass::Error, ident_name, cur->locBeg(),
+             cur->locEnd());
 
       return IterOp::Proceed;
     };
@@ -564,7 +586,8 @@ static bool beta_pass(qmodule_t *mod) {
     Ident *cur = (*_cur)->as<Ident>();
 
     if (!cur->getWhat()) {
-      UNRESOLVED_IDENTIFIER(cur->getName());
+      report(IssueCode::UnresolvedIdentifier, IssueClass::Error, cur->getName(), cur->locBeg(),
+             cur->locEnd());
     }
 
     return IterOp::Proceed;
@@ -586,7 +609,7 @@ bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
   for (auto &[name, fn] : mod->getFunctions()) {
     CONV_DEBUG("Found function: " + std::string(name));
   }
-  for (auto &[name, var] : mod->getVariables()) {
+  for (auto &[name, var] : mod->getGlobalVariables()) {
     CONV_DEBUG("Found variable: " + std::string(name));
   }
 

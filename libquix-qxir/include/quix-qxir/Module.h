@@ -245,7 +245,7 @@ public:
   void setName(const std::string &name) { m_module_name = name; }
 
   auto &getFunctions() { return functions; }
-  auto &getVariables() { return variables; }
+  auto &getGlobalVariables() { return variables; }
   auto &getParameterMap() { return m_parameters; }
   auto &getTypeMap() { return m_typedef_map; }
   auto &getCompositeFields() { return m_composite_fields; }

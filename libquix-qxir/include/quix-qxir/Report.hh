@@ -39,6 +39,7 @@
 #include <functional>
 #include <stdexcept>
 #include <string_view>
+#include <unordered_set>
 
 namespace qparse {
   class Node;
@@ -80,19 +81,26 @@ namespace qxir::diag {
   typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
 
   struct DiagMessage {
-    std::string msg;
-    qlex_loc_t start, end;
-    IssueClass type;
-    IssueCode code;
+    std::string m_msg;
+    qlex_loc_t m_start, m_end;
+    IssueClass m_type;
+    IssueCode m_code;
 
     DiagMessage(std::string_view msg = "", IssueClass type = IssueClass::Debug,
                 IssueCode code = IssueCode::Default, qlex_loc_t start = {0}, qlex_loc_t end = {0})
-        : msg(msg), start(start), end(end), type(type), code(code) {}
+        : m_msg(msg), m_start(start), m_end(end), m_type(type), m_code(code) {}
+
+    uint64_t hash() const;
   };
 
   class DiagnosticManager {
+    struct Channel {
+      std::vector<DiagMessage> vec;
+      std::unordered_set<uint64_t> visited;
+    };
+
     qmodule_t *m_qxir;
-    std::unordered_map<qxir_audit_ticket_t, std::vector<DiagMessage>> m_msgs;
+    std::unordered_map<qxir_audit_ticket_t, Channel> m_msgs;
     qxir_audit_ticket_t m_last_ticket;
 
     std::string mint_clang16_message(const DiagMessage &msg) const;
@@ -118,21 +126,24 @@ namespace qxir::diag {
       if (t == QXIR_AUDIT_ALL) {
         size_t n = 0;
         for (auto &[_, msgs] : m_msgs) {
-          n += msgs.size();
-          msgs.clear();
+          n += msgs.vec.size();
+          msgs.vec.clear();
+          msgs.visited.clear();
         }
         return n;
       } else if (t == QXIR_AUDIT_LAST) {
-        size_t n = m_msgs[m_last_ticket].size();
-        m_msgs[m_last_ticket].clear();
+        size_t n = m_msgs[m_last_ticket].vec.size();
+        m_msgs[m_last_ticket].vec.clear();
+        m_msgs[m_last_ticket].visited.clear();
         return n;
       } else {
         if (!m_msgs.contains(t)) {
           return 0;
         }
 
-        size_t n = m_msgs[t].size();
-        m_msgs[t].clear();
+        size_t n = m_msgs[t].vec.size();
+        m_msgs[t].vec.clear();
+        m_msgs[t].visited.clear();
         return n;
       }
     }
@@ -141,17 +152,17 @@ namespace qxir::diag {
       if (t == QXIR_AUDIT_ALL) {
         size_t n = 0;
         for (const auto &[_, msgs] : m_msgs) {
-          n += msgs.size();
+          n += msgs.vec.size();
         }
         return n;
       } else if (t == QXIR_AUDIT_LAST) {
-        return m_msgs[m_last_ticket].size();
+        return m_msgs[m_last_ticket].vec.size();
       } else {
         if (!m_msgs.contains(t)) {
           return 0;
         }
 
-        return m_msgs[t].size();
+        return m_msgs[t].vec.size();
       }
     }
   };
@@ -200,18 +211,12 @@ namespace qxir::diag {
                         diag::IssueClass::Error, diag::IssueCode::TooManyArguments,          \
                         cur->getLoc().first, cur->getLoc().second));
 
-#define NO_MATCHING_TYPE(_typename)                                                            \
-  mod->getDiag().push(QXIR_AUDIT_CONV,                                                         \
-                      diag::DiagMessage("No matching type named " + std::string(_typename),    \
-                                        diag::IssueClass::Error, diag::IssueCode::UnknownType, \
-                                        cur->getLoc().first, cur->getLoc().second));
+  void report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
+              qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0}, int channel = QXIR_AUDIT_CONV);
 
-#define UNRESOLVED_IDENTIFIER(_id)                                                            \
-  mod->getDiag().push(                                                                        \
-      QXIR_AUDIT_CONV,                                                                        \
-      diag::DiagMessage("Unresolved identifier " + std::string(_id), diag::IssueClass::Error, \
-                        diag::IssueCode::UnresolvedIdentifier, cur->getLoc().first,           \
-                        cur->getLoc().second));
+  void report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
+              std::string_view subject = "", qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0},
+              int channel = QXIR_AUDIT_CONV);
 
 };  // namespace qxir::diag
 

@@ -31,6 +31,7 @@
 
 #define __QUIX_IMPL__
 
+/// TODO: Source location
 #include <parser/Parse.h>
 
 using namespace qparse;
@@ -522,6 +523,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       ftype->set_return_ty(VoidTy::get());
 
       *node = fndecl;
+      (*node)->set_end_pos(tok.start);
       return true;
     }
   }
@@ -541,6 +543,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
         if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
             tok.is<qPuncSemi>()) {
           *node = fndecl;
+          (*node)->set_end_pos(tok.start);
           return true;
         }
       }
@@ -565,6 +568,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       fndecl = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
 
       *node = fndecl;
+      (*node)->set_end_pos(fnbody->get_end_pos());
       return true;
     }
   }
@@ -600,6 +604,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     fndecl->add_tags(std::move(implements));
 
     *node = fndecl;
+    (*node)->set_end_pos(tok.end);
     return true;
   }
 
