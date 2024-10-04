@@ -129,7 +129,7 @@ static const uint8_t expected_msgpack[] = {
     0xd9, 0x01, 0x7d, 0xcc, 0x12, 0xcc, 0x01, 0xcc, 0x12, 0xcc, 0x02, 0x96, 0xcc, 0x00, 0xd9, 0x00,
     0xcc, 0x00, 0xcc, 0x00, 0xcc, 0x00, 0xcc, 0x00};
 
-TEST(LexerRoute, flag_use_json) {
+TEST(MetaRoute, flag_use_json) {
   FILE* source = fmemopen((void*)source_code.data(), source_code.size(), "r");
   ASSERT_NE(source, nullptr);
 
@@ -142,7 +142,7 @@ TEST(LexerRoute, flag_use_json) {
   }
 
   const char* options[] = {
-      "lex",        /* Lexer route */
+      "meta",       /* Meta route */
       "-fuse-json", /* Output as JSON */
       NULL,         /* End of options */
   };
@@ -167,7 +167,7 @@ TEST(LexerRoute, flag_use_json) {
   quix_deinit();
 }
 
-TEST(LexerRoute, flag_use_msgpack) {
+TEST(MetaRoute, flag_use_msgpack) {
   FILE* source = fmemopen((void*)source_code.data(), source_code.size(), "r");
   ASSERT_NE(source, nullptr);
 
@@ -180,7 +180,7 @@ TEST(LexerRoute, flag_use_msgpack) {
   }
 
   const char* options[] = {
-      "lex",           /* Lexer route */
+      "meta",          /* Meta route */
       "-fuse-msgpack", /* Output as MessagePack */
       NULL,            /* End of options */
   };

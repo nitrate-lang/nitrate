@@ -36,7 +36,7 @@
 
 #include <cstdint>
 #include <functional>
-#include <quix-lexer/Classes.hh>
+#include <quix-prep/Classes.hh>
 #include <string_view>
 #include <unordered_set>
 
@@ -392,11 +392,11 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
   return err != EOF;
 }
 
-bool impl_subsys_basic_lexer(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
                              const std::unordered_set<std::string_view> &opts) {
   (void)diag_cb;
 
-  qlex lexer(source, nullptr, qcore_env_current());
+  qprep lexer(source, nullptr, qcore_env_current());
 
   enum class OutMode {
     JSON,

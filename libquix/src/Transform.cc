@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <unordered_set>
 #define LIBQUIX_INTERNAL
 
 #include <quix-codegen/Lib.h>
@@ -79,24 +80,24 @@ LIB_EXPORT void quix_diag_stderr(const char *message, const char *, uint64_t) {
 
 typedef bool (*quix_subsystem_impl)(FILE *source, FILE *output,
                                     std::function<void(const char *)> diag_cb,
-                                    const std::vector<std::string_view> &opts);
+                                    const std::unordered_set<std::string_view> &opts);
 
 bool impl_subsys_basic_lexer(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                             const std::vector<std::string_view> &opts);
+                             const std::unordered_set<std::string_view> &opts);
 
-static bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                             const std::vector<std::string_view> &opts);
+bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+                      const std::unordered_set<std::string_view> &opts);
 
 static bool impl_subsys_parser(FILE *source, FILE *output,
                                std::function<void(const char *)> diag_cb,
-                               const std::vector<std::string_view> &opts);
+                               const std::unordered_set<std::string_view> &opts);
 
 static bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                             const std::vector<std::string_view> &opts);
+                             const std::unordered_set<std::string_view> &opts);
 
 static bool impl_subsys_codegen(FILE *source, FILE *output,
                                 std::function<void(const char *)> diag_cb,
-                                const std::vector<std::string_view> &opts);
+                                const std::unordered_set<std::string_view> &opts);
 
 static const std::unordered_map<std::string_view, quix_subsystem_impl> dispatch_funcs = {
     {"lex", impl_subsys_basic_lexer}, {"meta", impl_subsys_meta},
@@ -125,7 +126,6 @@ LIB_EXPORT bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64
   }
 
   qcore_env env;
-  qcore_env_set("this.noprint", "");
 
   std::vector<std::string_view> opts;
   if (!parse_options(options, opts)) {
@@ -134,8 +134,7 @@ LIB_EXPORT bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64
   }
 
   if (opts.empty()) {
-    qcore_print(QCORE_ERROR, "No options provided");
-    return false;
+    return true;
   }
 
   const auto subsystem = dispatch_funcs.find(opts[0]);
@@ -144,31 +143,22 @@ LIB_EXPORT bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64
     return false;
   }
 
+  std::unordered_set<std::string_view> opts_set(opts.begin() + 1, opts.end());
+
   return subsystem->second(
       source, output,
       [&](const char *msg) {
         /* string_views's in opts are null terminated */
         diag_cb(msg, opts[0].data(), userdata);
       },
-      opts);
+      opts_set);
 }
 
 ///============================================================================///
 
-static bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                             const std::vector<std::string_view> &opts) {
-  (void)source;
-  (void)output;
-  (void)diag_cb;
-  (void)opts;
-
-  /// TODO: Implement preprocess wrapper
-  return false;
-}
-
 static bool impl_subsys_parser(FILE *source, FILE *output,
                                std::function<void(const char *)> diag_cb,
-                               const std::vector<std::string_view> &opts) {
+                               const std::unordered_set<std::string_view> &opts) {
   (void)source;
   (void)output;
   (void)diag_cb;
@@ -179,7 +169,7 @@ static bool impl_subsys_parser(FILE *source, FILE *output,
 }
 
 static bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                             const std::vector<std::string_view> &opts) {
+                             const std::unordered_set<std::string_view> &opts) {
   (void)source;
   (void)output;
   (void)diag_cb;
@@ -191,7 +181,7 @@ static bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(cons
 
 static bool impl_subsys_codegen(FILE *source, FILE *output,
                                 std::function<void(const char *)> diag_cb,
-                                const std::vector<std::string_view> &opts) {
+                                const std::unordered_set<std::string_view> &opts) {
   (void)source;
   (void)output;
   (void)diag_cb;
