@@ -193,7 +193,9 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
 }
 
 static void msgpack_write_uint(int &err, FILE *O, uint64_t x) {
-  if (x <= UINT8_MAX) {
+  if (x <= INT8_MAX) {
+    err |= fputc(x & 0x7f, O);
+  } else if (x <= UINT8_MAX) {
     err |= fputc(0xcc, O);
     err |= fputc(x, O);
   } else if (x <= UINT16_MAX) {
@@ -220,7 +222,9 @@ static void msgpack_write_uint(int &err, FILE *O, uint64_t x) {
 }
 
 static void msgpack_write_str(int &err, FILE *O, const char *buf, size_t sz) {
-  if (sz <= UINT8_MAX) {
+  if (sz <= 31) {
+    err |= fputc(0b10100000 | sz, O);
+  } else if (sz <= UINT8_MAX) {
     err |= fputc(0xd9, O);
     err |= fputc(sz, O);
   } else if (sz <= UINT16_MAX) {
@@ -393,7 +397,7 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
 }
 
 bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                             const std::unordered_set<std::string_view> &opts) {
+                      const std::unordered_set<std::string_view> &opts) {
   (void)diag_cb;
 
   qprep lexer(source, nullptr, qcore_env_current());
