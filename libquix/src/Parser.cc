@@ -220,6 +220,18 @@ public:
       m_ele_count |= ch;
 
       m_mode = InMode::MsgPack;
+    } else if (ch == 0xdc) {
+      m_ele_count = 0;
+
+      if ((ch = fgetc(file)) == EOF) return;
+      m_ele_count |= ch << 8;
+      if ((ch = fgetc(file)) == EOF) return;
+      m_ele_count |= ch;
+
+      m_mode = InMode::MsgPack;
+    } else if ((ch & 0b10010000) == 0b10010000) {
+      m_mode = InMode::MsgPack;
+      m_ele_count = ch & 0b00001111;
     }
   }
 
@@ -246,11 +258,6 @@ static std::optional<qparse_node_t *> parse_tokens(qparse_t *L, qcore_arena_t *a
     return std::nullopt;
   }
 
-  ok = qparse_check(L, root);
-  if (!ok) {
-    return std::nullopt;
-  }
-
   return root;
 }
 
@@ -270,6 +277,7 @@ static bool impl_use_json(qparse_node_t *R, FILE *O, qcore_arena_t *arena) {
 }
 
 static bool impl_use_msgpack(qparse_node_t *R, FILE *O, qcore_arena_t *arena) {
+  /// TODO: Do correct MsgPack serialization
   return impl_use_json(R, O, arena);
 }
 
