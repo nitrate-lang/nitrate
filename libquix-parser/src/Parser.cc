@@ -518,16 +518,13 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
   *out = nullptr;
 
   try {
-    /*=============== Swap in their arena
-     * ===============*/
+    /*=============== Swap in their arena  ===============*/
     qparse::qparse_arena.swap(*arena);
 
-    /*== Install thread-local references to the
-     * parser ==*/
+    /*== Install thread-local references to the parser ==*/
     qparse::diag::install_reference(parser);
 
-    /*==== Facilitate signal handling for the
-     * parser ====*/
+    /*==== Facilitate signal handling for the parser ====*/
     install_sigguard(parser);
     parser_ctx = parser;
 
@@ -538,21 +535,17 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
       parser->failed = true;
     }
 
-    /*==== Clean up signal handling for the parser
-     * ====*/
+    /*==== Clean up signal handling for the parser ====*/
     parser_ctx = nullptr;
     uninstall_sigguard(parser);
 
-    /*== Uninstall thread-local references to the
-     * parser ==*/
+    /*== Uninstall thread-local references to the parser ==*/
     qparse::diag::install_reference(nullptr);
 
-    /*=============== Swap out their arena
-     * ===============*/
+    /*=============== Swap out their arena ===============*/
     qparse::qparse_arena.swap(*arena);
 
-    /*==================== Return status
-     * ====================*/
+    /*==================== Return status ====================*/
     return status && !parser->failed;
   } catch (std::exception &e) {
     qcore_panicf("qparse_do: unhandled exception: %s", e.what());
