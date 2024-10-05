@@ -411,7 +411,7 @@ LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf, qcore_env_t 
   if (!lexer || !conf) {
     return nullptr;
   }
-  static std::atomic<uint64_t> job_id = 0;
+  static std::atomic<uint64_t> job_id = 1;  // 0 is reserved for invalid job
 
   qparse_t *parser = new qparse_t();
 
