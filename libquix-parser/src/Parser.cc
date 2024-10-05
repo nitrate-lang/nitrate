@@ -411,15 +411,17 @@ LIB_EXPORT qparse_t *qparse_new(qlex_t *lexer, qparse_conf_t *conf, qcore_env_t 
   if (!lexer || !conf) {
     return nullptr;
   }
+  static std::atomic<uint64_t> job_id = 0;
 
   qparse_t *parser = new qparse_t();
 
   parser->impl = new qparse_impl_t();
+  parser->env = env;
+  parser->id = job_id++;
   parser->lexer = lexer;
   parser->conf = conf;
   parser->failed = false;
   parser->impl->diag.set_ctx(parser);
-  parser->env = env;
 
   qlex_set_flags(lexer, qlex_get_flags(lexer) | QLEX_NO_COMMENTS);
 

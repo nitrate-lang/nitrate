@@ -33,6 +33,8 @@
 
 #include <parser/Parse.h>
 
+#include <unordered_map>
+
 using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse::diag;
@@ -41,12 +43,28 @@ using namespace qparse::diag;
 
 // Lifetime integrity requires the primitives to be thread-local because the Node Arena allocator is
 // thread-local.
-static thread_local std::map<std::string_view, Type *> primitives = {
-    {"u8", U8::get()},      {"u16", U16::get()},   {"u32", U32::get()}, {"u64", U64::get()},
-    {"u128", U128::get()},  {"i8", I8::get()},     {"i16", I16::get()}, {"i32", I32::get()},
-    {"i64", I64::get()},    {"i128", I128::get()}, {"f16", F16::get()}, {"f32", F32::get()},
-    {"f64", F64::get()},    {"f128", F128::get()}, {"u1", U1::get()},   {"string", StringTy::get()},
-    {"void", VoidTy::get()}};
+static thread_local std::pair<uint64_t, std::unordered_map<std::string_view, Type *>> primitives;
+
+static void init_primitive_types(uint64_t job_id) {
+  primitives = {job_id,
+                {{"u8", U8::get()},
+                 {"u16", U16::get()},
+                 {"u32", U32::get()},
+                 {"u64", U64::get()},
+                 {"u128", U128::get()},
+                 {"i8", I8::get()},
+                 {"i16", I16::get()},
+                 {"i32", I32::get()},
+                 {"i64", I64::get()},
+                 {"i128", I128::get()},
+                 {"f16", F16::get()},
+                 {"f32", F32::get()},
+                 {"f64", F64::get()},
+                 {"f128", F128::get()},
+                 {"u1", U1::get()},
+                 {"string", StringTy::get()},
+                 {"void", VoidTy::get()}}};
+}
 
 bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   /** QUIX TYPE PARSER
@@ -57,6 +75,10 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
    *
    * @return true if it is okay to proceed, false otherwise.
    */
+
+  if (primitives.first != job.id) {
+    init_primitive_types(job.id);
+  }
 
   using namespace std;
 
@@ -152,13 +174,13 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
 
     __builtin_unreachable();
   } else if (tok.is(qName)) {
-    if (primitives.contains(tok.as_string(rd))) {
+    if (primitives.second.contains(tok.as_string(rd))) {
       /** QUIX PRIMITIVE TYPE
        *
        * @brief Parse a primitive type.
        */
 
-      inner = primitives[tok.as_string(rd)];
+      inner = primitives.second[tok.as_string(rd)];
       goto type_suffix;
     } else {
       /** QUIX ANY NAMED TYPE
