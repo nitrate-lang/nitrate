@@ -59,8 +59,6 @@ static const boost::bimap<qparse_val_t, std::string_view> values_bimap =
     make_bimap<qparse_val_t, std::string_view>({
         {QPV_UNKNOWN, "QPV_UNKNOWN"},
         {QPV_FUNCTION, "function"},
-        {QPV_GROUP, "group"},
-        {QPV_REGION, "region"},
         {QPV_STRUCT, "struct"},
         {QPV_UNION, "union"},
         {QPV_TRUE, "true"},

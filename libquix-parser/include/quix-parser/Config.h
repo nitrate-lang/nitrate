@@ -54,8 +54,6 @@ typedef enum qparse_key_t {
 typedef enum qparse_val_t {
   QPV_UNKNOWN = 0,
   QPV_FUNCTION,
-  QPV_GROUP,
-  QPV_REGION,
   QPV_STRUCT,
   QPV_UNION,
   QPV_TRUE,
