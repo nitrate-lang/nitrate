@@ -23,7 +23,7 @@ SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3
                                                 -fsanitize=address 
                                                 -fsanitize=undefined 
                                                 -Wno-error=unused-variable 
-                                                -Wno-unused-parameter 
+                                                -Wno-error=unused-parameter 
                                                 -DQUIX_ID="undefined"
                                                 -mllvm 
                                                 -asan-use-private-alias=1)
