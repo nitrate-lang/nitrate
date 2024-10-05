@@ -1,6 +1,3 @@
-[submodule "docs"]
-	path = docs
-	url = https://github.com/kracken256/qpkg-doc/
 [submodule "orbit-core/alloc"]
 	path = orbit-core/alloc
 	url = https://github.com/quixlang/alloc
