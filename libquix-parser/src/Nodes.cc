@@ -466,7 +466,11 @@ LIB_EXPORT std::string Node::to_string(bool minify, bool binary_repr) const {
     outbuf = (uint8_t *)qparse_repr(this, minify, INDENT_STEP, &len);
   }
 
-  return std::string((char *)outbuf, len);
+  std::string result((char *)outbuf, len);
+
+  free(outbuf);
+
+  return result;
 }
 
 ///=============================================================================

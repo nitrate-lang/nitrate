@@ -51,7 +51,7 @@ struct ConvState {
   bool minify;
 };
 
-typedef std::basic_stringstream<char, std::char_traits<char>, Arena<char>> ConvStream;
+typedef std::stringstream ConvStream;
 
 static String escape_string(const String &input) {
   String output = "\"";
@@ -839,59 +839,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
   }
 }
 
-static char *qparse_repr_arena(const Node *_node, bool minify, size_t indent, qcore_arena_t *arena,
-                               size_t *outlen) {
-  qparse_arena.swap(*arena);
-
-  /* Create a string stream based on the arena */
-  ConvStream ss;
-  ConvState state = {-1, indent, minify};
-  const Node *n = static_cast<const Node *>(_node);
-
-  /* Serialize the AST recursively */
-
-  serialize_recurse(const_cast<Node *>(n), ss, state);
-
-  /**
-   * @brief We can do the following because the std::string destructor will
-   * invoke the arena's destructor, which is a no-op until the arena itself is
-   * destroyed. So we can safely return the string's data pointer knowing it will exists for as long
-   * as the arena does.
-   */
-  std::basic_string<char, std::char_traits<char>, Arena<char>> str = ss.str();
-  *outlen = str.size();
-
-  qparse_arena.swap(*arena);
-
-  char *unsafe_bypass = static_cast<char *>(str.data());
-
-  return unsafe_bypass;
-}
-
-static char *qparse_repr_malloc(const Node *_node, bool minify, size_t indent, size_t *outlen) {
-  qcore_arena scratch;
-  char *out = nullptr, *out_tmp = nullptr;
-
-  try {
-    out = qparse_repr_arena(_node, minify, indent, scratch.get(), outlen);
-
-    if (out) {
-      out_tmp = static_cast<char *>(malloc(*outlen));
-      if (!out_tmp) {
-        qcore_panic("Failed to allocate memory for AST representation");
-      }
-
-      memcpy(out_tmp, out, *outlen);
-
-      out = out_tmp;
-    }
-
-  } catch (...) {
-  }
-
-  return out;
-}
-
 LIB_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify, size_t indent,
                              size_t *outlen) {
   size_t outlen_v = 0;
@@ -901,7 +848,18 @@ LIB_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify, size_t inde
     outlen = &outlen_v;
   }
 
-  return qparse_repr_malloc(static_cast<const Node *>(node), minify, indent, outlen);
+  /* Create a string stream based on the arena */
+  ConvStream ss;
+  ConvState state = {-1, indent, minify};
+  const Node *n = static_cast<const Node *>(node);
+
+  /* Serialize the AST recursively */
+  serialize_recurse(const_cast<Node *>(n), ss, state);
+
+  std::string str = ss.str();
+  *outlen = str.size();
+
+  return strdup(str.c_str());
 }
 
 static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t *out_size) {

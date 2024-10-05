@@ -265,13 +265,14 @@ static bool impl_use_json(qparse_node_t *R, FILE *O) {
   /// TODO: Do correct JSON serialization
   size_t buf_sz = 0;
 
-  // Buf is allocated in the arena
   char *buf = qparse_repr(R, false, 2, &buf_sz);
   if (!buf) {
     return false;
   }
 
   fwrite(buf, 1, buf_sz, O);
+
+  free(buf);
 
   return true;
 }

@@ -513,7 +513,7 @@ static void uninstall_sigguard(qparse_t *parser) {
 }
 
 LIB_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
-  if (!L || !!out) {
+  if (!L || !out) {
     return false;
   }
   *out = nullptr;
@@ -575,6 +575,8 @@ LIB_EXPORT bool qparse_and_dump(qparse_t *L, FILE *out, void *x0, void *x1) {
   char *repr = qparse_repr(node, false, 2, &len);
 
   fwrite(repr, 1, len, out);
+
+  free(repr);
 
   return true;
 }

@@ -1201,6 +1201,7 @@ namespace qpkg::router {
       }
 
       fwrite(out_str, 1, out_len, out_fp);
+      free(out_str);
 
       if (!output.empty()) fclose(out_fp);
 
