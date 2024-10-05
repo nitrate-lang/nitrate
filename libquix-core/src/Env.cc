@@ -137,7 +137,9 @@ LIB_EXPORT void qcore_end() {
 
   switch (g_envs[g_current_env].log_level) {
     case QCORE_DEBUG:
-      ss << "[DEBUG] " << message << std::endl;
+      if (g_envs[g_current_env].env.contains("this.debug")) {
+        ss << "[DEBUG] " << message << std::endl;
+      }
       break;
 
     case QCORE_INFO:
