@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <unordered_set>
 #define LIBQUIX_INTERNAL
 
 #include <quix-codegen/Lib.h>
@@ -40,12 +39,17 @@
 #include <quix-qxir/Lib.h>
 #include <quix/code.h>
 
+#include <cerrno>
+#include <cstddef>
+#include <cstdlib>
 #include <functional>
 #include <string_view>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include "LibMacro.h"
+#include "quix-core/Env.h"
 
 static const char *empty_options[] = {NULL};
 
@@ -104,7 +108,56 @@ static const std::unordered_map<std::string_view, quix_subsystem_impl> dispatch_
     {"codegen", impl_subsys_codegen},
 };
 
-LIB_EXPORT bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64_t userdata,
+static bool check_in_stream_usable(FILE *stream, const char *name) {
+  long pos = ftell(stream);
+  if (pos == -1) {
+    qcore_print(QCORE_DEBUG, "quix_cc: %s pipe is not seekable", name);
+    return false;
+  }
+
+  { /* Check if the stream is empty */
+    int ch = fgetc(stream);
+    if (ch == EOF) {
+      ungetc(ch, stream);
+      return true;
+    }
+    ungetc(ch, stream);
+  }
+
+  if (fseek(stream, 0, SEEK_SET) == -1) {
+    qcore_print(QCORE_DEBUG, "quix_cc: Failed to rewind %s pipe", name);
+    return false;
+  }
+
+  if (fseek(stream, pos, SEEK_SET) == -1) {
+    qcore_print(QCORE_DEBUG, "quix_cc: Failed to restore %s pipe position", name);
+    return false;
+  }
+
+  return true;
+}
+
+static bool check_out_stream_usable(FILE *stream, const char *name) {
+  long pos = ftell(stream);
+  if (pos == -1) {
+    qcore_print(QCORE_DEBUG, "quix_cc: %s pipe is not seekable", name);
+    return false;
+  }
+
+  if (fseek(stream, 0, SEEK_SET) == -1) {
+    qcore_print(QCORE_DEBUG, "quix_cc: Failed to rewind %s pipe", name);
+    return false;
+  }
+
+  if (fseek(stream, pos, SEEK_SET) == -1) {
+    qcore_print(QCORE_DEBUG, "quix_cc: Failed to restore %s pipe position", name);
+    return false;
+  }
+
+  return true;
+}
+
+LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdata,
                         const char *const options[]) {
   /* This API will be used by mortals, protect them from themselves */
   if (!quix_detail_is_init && !quix_lib_init()) {
@@ -112,8 +165,8 @@ LIB_EXPORT bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64
   }
 
   { /* Argument validate and normalize */
-    if (!source) qcore_panic("source pipe is NULL");
-    if (!output) qcore_panic("output pipe is NULL");
+    if (!S) qcore_panic("source pipe is NULL");
+    if (!O) qcore_panic("output pipe is NULL");
 
     if (!options) {
       options = empty_options;
@@ -144,13 +197,61 @@ LIB_EXPORT bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64
 
   std::unordered_set<std::string_view> opts_set(opts.begin() + 1, opts.end());
 
-  return subsystem->second(
-      source, output,
+  bool is_source_usable = check_in_stream_usable(S, "source");
+  bool is_output_usable = check_out_stream_usable(O, "output");
+  errno = 0;
+
+  FILE *in_alias = nullptr, *out_alias = nullptr;
+  char *in_alias_buf = nullptr, *out_alias_buf = nullptr;
+  size_t in_alias_size = 0, out_alias_size = 0;
+
+  if (!is_source_usable) {
+    in_alias = open_memstream(&in_alias_buf, &in_alias_size);
+    if (!in_alias) {
+      qcore_print(QCORE_ERROR, "Failed to open temporary source stream");
+      return false;
+    }
+  } else {
+    in_alias = S;
+  }
+
+  if (!is_output_usable) {
+    out_alias = open_memstream(&out_alias_buf, &out_alias_size);
+    if (!out_alias) {
+      qcore_print(QCORE_ERROR, "Failed to open temporary output stream");
+      if (!is_source_usable) {
+        fclose(in_alias);
+        free(in_alias_buf);
+      }
+      return false;
+    }
+  } else {
+    out_alias = O;
+  }
+
+  bool ok = subsystem->second(
+      in_alias, out_alias,
       [&](const char *msg) {
         /* string_views's in opts are null terminated */
         diag_cb(msg, opts[0].data(), userdata);
       },
       opts_set);
+
+  fflush(out_alias);
+
+  if (!is_source_usable) {
+    fclose(in_alias);
+    ok &= fwrite(in_alias_buf, 1, in_alias_size, S) == in_alias_size;
+    free(in_alias_buf);
+  }
+
+  if (!is_output_usable) {
+    fclose(out_alias);
+    ok &= fwrite(out_alias_buf, 1, out_alias_size, O) == out_alias_size;
+    free(out_alias_buf);
+  }
+
+  return ok;
 }
 
 ///============================================================================///
