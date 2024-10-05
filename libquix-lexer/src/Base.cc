@@ -145,18 +145,24 @@ LIB_EXPORT qlex_loc_t qlex_offset(qlex_t *obj, qlex_loc_t base, qlex_size offset
     bufsz = offset;
 
     if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
-      fseek(obj->m_file, curpos, SEEK_SET);
+      if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
+        qcore_panic("qlex_offset: failed to restore file position");
+      }
       return res;
     }
 
     if (fread(buf, 1, bufsz, obj->m_file) != bufsz) {
       free(buf);
-      fseek(obj->m_file, curpos, SEEK_SET);
+      if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
+        qcore_panic("qlex_offset: failed to restore file position");
+      }
       return res;
     }
 
     buf[bufsz] = '\0';
-    fseek(obj->m_file, curpos, SEEK_SET);
+    if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
+      qcore_panic("qlex_offset: failed to restore file position");
+    }
 
     //===== AUTOMATA TO CALCULATE THE NEW ROW AND COLUMN =====//
     uint32_t row, col;
@@ -245,18 +251,24 @@ LIB_EXPORT qlex_size qlex_spanx(qlex_t *obj, qlex_loc_t start, qlex_loc_t end,
     bufsz = span;
 
     if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
-      fseek(obj->m_file, curpos, SEEK_SET);
+      if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
+        qcore_panic("qlex_spanx: failed to restore file position");
+      }
       return UINT32_MAX;
     }
 
     if (fread(buf, 1, bufsz, obj->m_file) != bufsz) {
       free(buf);
-      fseek(obj->m_file, curpos, SEEK_SET);
+      if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
+        qcore_panic("qlex_spanx: failed to restore file position");
+      }
       return UINT32_MAX;
     }
 
     buf[bufsz] = '\0';
-    fseek(obj->m_file, curpos, SEEK_SET);
+    if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
+      qcore_panic("qlex_spanx: failed to restore file position");
+    }
 
     callback((const char *)buf, bufsz, userdata);
 
@@ -331,7 +343,9 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
       seek_base_pos = tok_beg_offset < SNIPPET_SIZE / 2 ? 0 : tok_beg_offset - SNIPPET_SIZE / 2;
 
       if (fseek(obj->m_file, seek_base_pos, SEEK_SET) != 0) {
-        fseek(obj->m_file, curpos, SEEK_SET);
+        if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
+          qcore_panic("qlex_snippet: failed to restore file position");
+        }
         return nullptr;
       }
     }
@@ -370,12 +384,16 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
         memcpy(output, snippet_buf + slice_start, slice_size);
         output[slice_size] = '\0';
         *offset -= slice_start;
-        fseek(obj->m_file, curpos, SEEK_SET);
+        if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
+          qcore_panic("qlex_snippet: failed to restore file position");
+        }
         return output;
       }
     }
 
-    fseek(obj->m_file, curpos, SEEK_SET);
+    if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
+      qcore_panic("qlex_snippet: failed to restore file position");
+    }
     return nullptr;
   } catch (std::bad_alloc &) {
     return nullptr;
