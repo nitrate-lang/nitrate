@@ -243,6 +243,19 @@ namespace qlex {
     hextable['f'] = 15;
     return hextable;
   }();
+  static constexpr std::array<uint8_t, 256> ws_chars = []() {
+    std::array<uint8_t, 256> tab = {};
+    tab[' '] = 1;
+    tab['\f'] = 1;
+    tab['\n'] = 1;
+    tab['\r'] = 1;
+    tab['\t'] = 1;
+    tab['\v'] = 1;
+
+    tab['\0'] = 1;  // Null byte is also a whitespace character
+
+    return tab;
+  }();
   /// END:   LEXER LOOKUP TABLES
   ///============================================================================///
 
@@ -254,6 +267,8 @@ namespace qlex {
   ///============================================================================///
 
 }  // namespace qlex
+
+static bool lex_is_space(char c) { return qlex::ws_chars[static_cast<uint8_t>(c)]; }
 
 enum class NumType {
   Invalid,
@@ -517,6 +532,16 @@ static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumT
 void qlex_t::reset_automata() { m_pushback.clear(); }
 
 qlex_tok_t qlex_t::next_impl() {
+  /**
+   * **WARNING**: Do not just start editing this function without
+   * having a holistic understanding of all code that depends on the lexer
+   * (most of the pipeline).
+   *
+   * This function provides various undocumented invariant guarantees that
+   * if broken will likely result in internal runtime corruption and other undefined
+   * behavior.
+   * */
+
   /// TODO: Correctly handle token source locations
 
   enum class LexState {
@@ -561,7 +586,7 @@ qlex_tok_t qlex_t::next_impl() {
 
       switch (state) {
         case LexState::Start: {
-          if (std::isspace(c)) {
+          if (lex_is_space(c)) {
             continue;
           } else if (std::isalpha(c) || c == '_') {
             /* Identifier or keyword or operator */
@@ -667,7 +692,7 @@ qlex_tok_t qlex_t::next_impl() {
               if (c == '_') {
                 do {
                   c = getc();
-                } while (std::isspace(c) || c == '_' || c == '\\');
+                } while (lex_is_space(c) || c == '_' || c == '\\');
               }
 
               nbuf += c;
@@ -942,7 +967,7 @@ qlex_tok_t qlex_t::next_impl() {
           } else {
             do {
               c = getc();
-            } while (std::isspace(c) || c == '\\');
+            } while (lex_is_space(c) || c == '\\');
 
             if (c == buf[0]) {
               continue;
