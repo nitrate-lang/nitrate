@@ -44,8 +44,10 @@ using namespace qparse;
 
 ///=============================================================================
 namespace qparse {
-  __attribute__((visibility("default"))) thread_local ArenaAllocatorImpl qparse_arena;
-}
+  void ArenaAllocatorImpl::swap(qcore_arena_t &arena) { std::swap(*m_arena.get(), arena); }
+
+  thread_local ArenaAllocatorImpl qparse_arena;
+}  // namespace qparse
 
 LIB_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
   const std::size_t alignment = 16;
@@ -459,9 +461,9 @@ LIB_EXPORT std::string Node::to_string(bool minify, bool binary_repr) const {
   uint8_t *outbuf = nullptr;
 
   if (binary_repr) {
-    qparse_brepr(this, minify, &qparse_arena.get(), &outbuf, &len);
+    qparse_brepr(this, minify, &outbuf, &len);
   } else {
-    outbuf = (uint8_t *)qparse_repr(this, minify, INDENT_STEP, &qparse_arena.get(), &len);
+    outbuf = (uint8_t *)qparse_repr(this, minify, INDENT_STEP, &len);
   }
 
   return std::string((char *)outbuf, len);

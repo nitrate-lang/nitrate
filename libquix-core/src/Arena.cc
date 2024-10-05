@@ -49,7 +49,8 @@ static inline uintptr_t ALIGNED(uintptr_t ptr, size_t align) {
   return (ptr % align) ? (ptr + (align - (ptr % align))) : ptr;
 }
 
-class qcore_arena_impl_t {
+struct qcore_arena_impl_t {
+private:
   [[noreturn]] void alloc_failed() {
     if (errno == ENOMEM) {
       qcore_panic("qcore_arena_alloc: out of memory");
@@ -62,6 +63,8 @@ class qcore_arena_impl_t {
     void *m_base;
     void *m_offset;
     size_t m_size;
+
+    region_t(void *base, void *offset, size_t size) : m_base(base), m_offset(offset), m_size(size) {}
   };
 
   void alloc_region(size_t size) {
@@ -78,6 +81,8 @@ public:
   qcore_arena_impl_t() = default;
 
   qcore_arena_impl_t(const qcore_arena_impl_t &other) {
+    qcore_debug("TRACE: qcore_arena_impl_t::qcore_arena_impl_t(const qcore_arena_impl_t &)\n");
+
     size_t used = 0;
 
     for (const auto &region : other.m_bases) {
@@ -160,7 +165,7 @@ LIB_EXPORT qcore_arena_t *qcore_arena_open(qcore_arena_t *arena) {
 
 LIB_EXPORT qcore_arena_t *qcore_arena_copy(qcore_arena_t *dst, const qcore_arena_t *src) {
   qcore_assert(src && dst, "qcore_arena_copy: src or dst is null");
-  qcore_debugf("TRACE: qcore_arena_copy(%p, %p)\n", dst, src);
+  qcore_debugf("TRACE: qcore_arena_copy(%p, %p)\n", dst->m_impl, src->m_impl);
 
   dst->m_impl = new qcore_arena_impl_t(*src->m_impl);
 
@@ -173,7 +178,7 @@ LIB_EXPORT void *qcore_arena_alloc(qcore_arena_t *arena, size_t size) {
   qcore_assert(arena, "qcore_arena_alloc: arena is null");
 
   ptr = arena->m_impl->allocate(size, 1);
-  qcore_debugf("TRACE: qcore_arena_alloc(%zu)\t-> %p\n", size, ptr);
+  qcore_debugf("TRACE: qcore_arena_alloc(%p, %zu)\t-> %p\n", arena->m_impl, size, ptr);
 
   return ptr;
 }
@@ -184,7 +189,8 @@ LIB_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *arena, size_t size, size_t 
   qcore_assert(arena, "qcore_arena_alloc_ex: arena is null");
 
   ptr = arena->m_impl->allocate(size, align);
-  qcore_debugf("TRACE: qcore_arena_alloc_ex(%zu, %zu)\t-> %p\n", size, align, ptr);
+  qcore_debugf("TRACE: qcore_arena_alloc_ex(%p, %zu, %zu)\t-> %p\n", arena->m_impl, size, align,
+               ptr);
 
   return ptr;
 }
@@ -196,7 +202,7 @@ LIB_EXPORT size_t qcore_arena_capacity(qcore_arena_t *arena) {
       std::accumulate(arena->m_impl->m_bases.begin(), arena->m_impl->m_bases.end(), 0,
                       [](size_t total, const auto &region) { return total + region.m_size; });
 
-  qcore_debugf("TRACE: qcore_arena_capacity(%p)\t-> %zu\n", arena, total);
+  qcore_debugf("TRACE: qcore_arena_capacity(%p)\t-> %zu\n", arena->m_impl, total);
 
   return total;
 }
@@ -210,7 +216,7 @@ LIB_EXPORT size_t qcore_arena_used(qcore_arena_t *arena) {
                         return total + (uintptr_t)region.m_offset - (uintptr_t)region.m_base;
                       });
 
-  qcore_debugf("TRACE: qcore_arena_used(%p)\t-> %zu\n", arena, total);
+  qcore_debugf("TRACE: qcore_arena_used(%p)\t-> %zu\n", arena->m_impl, total);
 
   return total;
 }
@@ -222,16 +228,16 @@ LIB_EXPORT void qcore_arena_reset(qcore_arena_t *arena) {
     region.m_offset = region.m_base;
   }
 
-  qcore_debugf("TRACE: qcore_arena_reset(%p)\n", arena);
+  qcore_debugf("TRACE: qcore_arena_reset(%p)\n", arena->m_impl);
 }
 
 LIB_EXPORT void qcore_arena_close(qcore_arena_t *arena) {
   qcore_assert(arena, "qcore_arena_close: arena is null");
 
   if (arena->m_impl) {
-    qcore_debugf("TRACE: qcore_arena_close(%p)\n", arena);
+    qcore_debugf("TRACE: qcore_arena_close(%p)\n", arena->m_impl);
   } else {
-    qcore_debugf("TRACE: qcore_arena_close(%p) -> nop\n", arena);
+    qcore_debugf("TRACE: qcore_arena_close(%p) -> nop\n", arena->m_impl);
   }
 
   delete arena->m_impl;

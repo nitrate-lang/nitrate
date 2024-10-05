@@ -1166,9 +1166,8 @@ namespace qpkg::router {
       qparse_conf pconf;
       qparser ctx(lexer.get(), pconf.get(), env.get());
 
-      qcore_arena arena;
       qparse_node_t *root = nullptr;
-      if (!qparse_do(ctx.get(), arena.get(), &root)) {
+      if (!qparse_do(ctx.get(), &root)) {
         auto cb = [](const char *msg, size_t size, uintptr_t data) {
           (void)size;
           (void)data;
@@ -1182,7 +1181,7 @@ namespace qpkg::router {
       }
 
       size_t out_len = 0;
-      char *out_str = qparse_repr(root, false, 2, arena.get(), &out_len);
+      char *out_str = qparse_repr(root, false, 2, &out_len);
       if (!out_str) {
         fclose(fp);
         qerr << "Failed to generate parse tree" << std::endl;
@@ -1229,9 +1228,8 @@ namespace qpkg::router {
       qparse_conf pconf;
       qparser ctx(lexer.get(), pconf.get(), env.get());
 
-      qcore_arena arena;
       qparse_node_t *root = nullptr;
-      if (!qparse_do(ctx.get(), arena.get(), &root)) {
+      if (!qparse_do(ctx.get(), &root)) {
         auto cb = [](const char *msg, size_t size, uintptr_t data) {
           (void)size;
           (void)data;
@@ -1312,7 +1310,7 @@ namespace qpkg::router {
 
       qcore_arena arena;
       qparse_node_t *root = nullptr;
-      if (!qparse_do(ctx.get(), arena.get(), &root)) {
+      if (!qparse_do(ctx.get(), &root)) {
         auto cb = [](const char *msg, size_t size, uintptr_t data) {
           (void)size;
           (void)data;

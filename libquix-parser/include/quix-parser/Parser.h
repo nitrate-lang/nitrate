@@ -32,7 +32,6 @@
 #ifndef __QUIX_PARSER_PARSER_H__
 #define __QUIX_PARSER_PARSER_H__
 
-#include <quix-core/Arena.h>
 #include <quix-core/Env.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Config.h>
@@ -43,16 +42,7 @@
 extern "C" {
 #endif
 
-struct qparse_impl_t;
-typedef struct qparse_impl_t qparse_impl_t;
-
-typedef struct qparse_t {
-  qparse_impl_t *impl; /* Parser implementation struct */
-  qlex_t *lexer;       /* Polymporphic lexer */
-  qparse_conf_t *conf; /* Parser configuration */
-  bool failed;         /* Whether the parser failed (ie syntax errors) */
-  qcore_env_t env;     /* The Environment */
-} qparse_t;
+typedef struct qparse_t qparse_t;
 
 /**
  * @brief Create a new parser instance from non-owning references to a lexer and
@@ -93,48 +83,40 @@ void qparse_free(qparse_t *parser);
  * @param _node The root node of the parse tree.
  * @param minify Whether to minify the output.
  * @param indent The number of spaces to indent the output.
- * @param arena The arena to allocate memory from.
  * @param outlen The length of the output string.
  *
  * @return The serialized parse tree as a string.
  *
  * @note This function is thread safe.
  */
-char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent, qcore_arena_t *arena,
-                  size_t *outlen);
+char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent, size_t *outlen);
 
 /**
  * @brief Serialize a parse tree to a binary representation.
  *
  * @param node The root node of the parse tree.
  * @param compress Whether to compress the output.
- * @param arena The arena to allocate memory from.
  * @param out The output buffer.
  * @param outlen The length of the output buffer.
  *
  * @note This function is thread safe.
  */
-void qparse_brepr(const qparse_node_t *node, bool compress, qcore_arena_t *arena, uint8_t **out,
-                  size_t *outlen);
+void qparse_brepr(const qparse_node_t *node, bool compress, uint8_t **out, size_t *outlen);
 
 /**
  * @brief Parse QUIX code into a parse tree.
  *
  * @param parser The parser instance to use for parsing.
- * @param arena The arena to allocate memory from.
  * @param out The output parse tree.
  *
  * @return Returns true if no non-fatal parsing errors occurred, false otherwise. A value of true,
  * however, does not guarantee that the parse tree is valid.
  *
- * @note If `!parser`, `!arena`, or `!out`, false is returned.
- *
- * @note The `out` node is allocated from the arena and is therefore
- * bound to the arena's lifetime.
+ * @note If `!parser` or `!out`, false is returned.
  *
  * @note This function is thread safe.
  */
-bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t **out);
+bool qparse_do(qparse_t *parser, qparse_node_t **out);
 
 /**
  * @brief Parse QUIX code into a parse tree and dump it to a file.

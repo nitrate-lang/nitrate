@@ -78,8 +78,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     qparser parser(lex.get(), conf.get(), env.get());
 
     qparse_node_t *node = nullptr;
-    qcore_arena arena;
-    if (!qparse_do(parser.get(), arena.get(), &node)) {
+    if (!qparse_do(parser.get(), &node)) {
       return 0;
     }
 

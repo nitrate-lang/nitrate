@@ -38,8 +38,7 @@ int main(int argc, char **argv) {
   qparser parser(lexer.get(), parconf.get(), env.get());
 
   qparse_node_t *node = NULL;
-  qcore_arena arena;
-  if (!qparse_do(parser.get(), arena.get(), &node)) {
+  if (!qparse_do(parser.get(), &node)) {
     printf("Error: %s\n", qparse_strerror());
 
     return -5;

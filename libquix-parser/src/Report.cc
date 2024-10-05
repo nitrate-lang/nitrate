@@ -36,6 +36,7 @@
 #include <quix-core/Error.h>
 #include <quix-parser/Parser.h>
 
+#include <ParserStruct.hh>
 #include <sstream>
 
 using namespace qparse::diag;

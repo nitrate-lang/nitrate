@@ -36,6 +36,7 @@
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Node.h>
 
+#include <ParserStruct.hh>
 #include <cstring>
 #include <quix-core/Classes.hh>
 #include <sstream>
@@ -891,8 +892,8 @@ static char *qparse_repr_malloc(const Node *_node, bool minify, size_t indent, s
   return out;
 }
 
-LIB_EXPORT char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent,
-                             qcore_arena_t *arena, size_t *outlen) {
+LIB_EXPORT char *qparse_repr(const qparse_node_t *node, bool minify, size_t indent,
+                             size_t *outlen) {
   size_t outlen_v = 0;
 
   /* Eliminate internal edge cases */
@@ -900,15 +901,10 @@ LIB_EXPORT char *qparse_repr(const qparse_node_t *_node, bool minify, size_t ind
     outlen = &outlen_v;
   }
 
-  if (arena) {
-    return qparse_repr_arena(static_cast<const Node *>(_node), minify, indent, arena, outlen);
-  } else {
-    return qparse_repr_malloc(static_cast<const Node *>(_node), minify, indent, outlen);
-  }
+  return qparse_repr_malloc(static_cast<const Node *>(node), minify, indent, outlen);
 }
 
-static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t *out_size,
-                        qcore_arena_t *arena) {
+static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t *out_size) {
   struct libdeflate_compressor *ctx{};
 
   /* Allocate a compressor context; level 8 is a fairly good tradeoff */
@@ -918,7 +914,7 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
   *out_size = libdeflate_deflate_compress_bound(ctx, in_size);
 
   /* Allocate memory for the compressed buffer */
-  *out = (uint8_t *)qcore_arena_alloc(arena, *out_size);
+  *out = (uint8_t *)malloc(*out_size);
 
   if (*out == NULL) {
     libdeflate_free_compressor(ctx);
@@ -937,45 +933,26 @@ static void raw_deflate(const uint8_t *in, size_t in_size, uint8_t **out, size_t
   }
 }
 
-LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress, qcore_arena_t *arena,
-                             uint8_t **out, size_t *outlen) {
-  char *repr{};
-  qcore_arena scratch;
-  bool our_arena{};
-
-  /* Open a scratch arena if one is not provided */
-  if (!arena) {
-    arena = scratch.get();
-    our_arena = true;
-  }
-
+LIB_EXPORT void qparse_brepr(const qparse_node_t *_node, bool compress, uint8_t **out,
+                             size_t *outlen) {
   /* Validate the output buffer */
   if (!out || !outlen) {
     qcore_panic("Invalid output buffer for AST representation");
   }
 
   /* Generate the AST representation as ASCII */
-  if ((repr = qparse_repr(static_cast<const Node *>(_node), true, 0, arena, outlen)) == NULL) {
+  char *repr = nullptr;
+  if ((repr = qparse_repr(static_cast<const Node *>(_node), true, 0, outlen)) == NULL) {
     qcore_panic("Failed to generate AST representation");
   }
 
   /* Compress the AST representation */
   if (compress) {
     uint8_t *tmp_out = nullptr;
-    raw_deflate((const uint8_t *)repr, *outlen, &tmp_out, outlen, arena);
+    raw_deflate((const uint8_t *)repr, *outlen, &tmp_out, outlen);
+    free(repr);
     repr = (char *)tmp_out;
-  }
-
-  /* Copy the AST representation to the output buffer, if necessary */
-  if (our_arena) {
-    *out = (uint8_t *)malloc(*outlen);
-    if (!*out) {
-      qcore_panic("Failed to allocate memory for AST representation");
-    }
-
-    memcpy(*out, repr, *outlen);
   } else {
-    /* Otherwise, just return the pointer to the arena alloc'ed buffer */
     *out = (uint8_t *)repr;
   }
 }

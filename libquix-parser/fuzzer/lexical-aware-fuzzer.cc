@@ -184,10 +184,9 @@ void fuzz_round(uint64_t seed) {
 
   qparse_conf conf;
   qparser parse(lex, conf.get(), env.get());
-  qcore_arena arena;
   qparse_node_t *node = nullptr;
 
-  qparse_do(parse.get(), arena.get(), &node);
+  qparse_do(parse.get(), &node);
   qlex_free(lex);
 }
 

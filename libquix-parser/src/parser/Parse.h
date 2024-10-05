@@ -45,6 +45,7 @@
 #include <quix-parser/Node.h>
 #include <quix-parser/Parser.h>
 
+#include <ParserStruct.hh>
 #include <set>
 
 namespace qparse::parser {

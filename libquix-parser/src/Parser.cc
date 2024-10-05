@@ -41,6 +41,7 @@
 #include <setjmp.h>
 #include <signal.h>
 
+#include <ParserStruct.hh>
 #include <atomic>
 #include <cstring>
 #include <quix-core/Classes.hh>
@@ -511,42 +512,42 @@ static void uninstall_sigguard(qparse_t *parser) {
   sigguard_old.clear();
 }
 
-LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t **out) {
-  if (!parser || !arena || !out) {
+LIB_EXPORT bool qparse_do(qparse_t *L, qparse_node_t **out) {
+  if (!L || !!out) {
     return false;
   }
   *out = nullptr;
 
   try {
     /*=============== Swap in their arena  ===============*/
-    qparse::qparse_arena.swap(*arena);
+    qparse::qparse_arena.swap(*L->arena.get());
 
     /*== Install thread-local references to the parser ==*/
-    qparse::diag::install_reference(parser);
+    qparse::diag::install_reference(L);
 
     /*==== Facilitate signal handling for the parser ====*/
-    install_sigguard(parser);
-    parser_ctx = parser;
+    install_sigguard(L);
+    parser_ctx = L;
 
     bool status = false;
     if (setjmp(sigguard_env) == 0) {
-      status = qparse::parser::parse(*parser, parser->lexer, (qparse::Block **)out, false, false);
+      status = qparse::parser::parse(*L, L->lexer, (qparse::Block **)out, false, false);
     } else {
-      parser->failed = true;
+      L->failed = true;
     }
 
     /*==== Clean up signal handling for the parser ====*/
     parser_ctx = nullptr;
-    uninstall_sigguard(parser);
+    uninstall_sigguard(L);
 
     /*== Uninstall thread-local references to the parser ==*/
     qparse::diag::install_reference(nullptr);
 
     /*=============== Swap out their arena ===============*/
-    qparse::qparse_arena.swap(*arena);
+    qparse::qparse_arena.swap(*L->arena.get());
 
     /*==================== Return status ====================*/
-    return status && !parser->failed;
+    return status && !L->failed;
   } catch (std::exception &e) {
     qcore_panicf("qparse_do: unhandled exception: %s", e.what());
   } catch (...) {
@@ -556,23 +557,22 @@ LIB_EXPORT bool qparse_do(qparse_t *parser, qcore_arena_t *arena, qparse_node_t 
   }
 }
 
-LIB_EXPORT bool qparse_and_dump(qparse_t *parser, FILE *out, void *x0, void *x1) {
+LIB_EXPORT bool qparse_and_dump(qparse_t *L, FILE *out, void *x0, void *x1) {
   (void)x0;
   (void)x1;
 
-  qcore_arena arena;
   qparse_node_t *node = nullptr;
 
-  if (!parser || !out) {
+  if (!L || !out) {
     return false;
   }
 
-  if (!qparse_do(parser, arena.get(), &node)) {
+  if (!qparse_do(L, &node)) {
     return false;
   }
 
   size_t len = 0;
-  char *repr = qparse_repr(node, false, 2, arena.get(), &len);
+  char *repr = qparse_repr(node, false, 2, &len);
 
   fwrite(repr, 1, len, out);
 

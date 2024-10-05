@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "quix-core/Arena.h"
 #define LIBQUIX_INTERNAL
+
 #include <quix-core/Lib.h>
 #include <quix/code.h>
 
@@ -238,10 +238,10 @@ public:
   virtual ~DeserializerAdapterLexer() override = default;
 };
 
-static std::optional<qparse_node_t *> parse_tokens(qparse_t *L, qcore_arena_t *arena,
+static std::optional<qparse_node_t *> parse_tokens(qparse_t *L,
                                                    std::function<void(const char *)> diag_cb) {
   qparse_node_t *root = nullptr;
-  bool ok = qparse_do(L, arena, &root);
+  bool ok = qparse_do(L, &root);
 
   ///============================================================================///
   /// Some dangerous code here, be careful!                                      ///
@@ -261,12 +261,12 @@ static std::optional<qparse_node_t *> parse_tokens(qparse_t *L, qcore_arena_t *a
   return root;
 }
 
-static bool impl_use_json(qparse_node_t *R, FILE *O, qcore_arena_t *arena) {
+static bool impl_use_json(qparse_node_t *R, FILE *O) {
   /// TODO: Do correct JSON serialization
   size_t buf_sz = 0;
 
   // Buf is allocated in the arena
-  char *buf = qparse_repr(R, false, 2, arena, &buf_sz);
+  char *buf = qparse_repr(R, false, 2, &buf_sz);
   if (!buf) {
     return false;
   }
@@ -276,9 +276,9 @@ static bool impl_use_json(qparse_node_t *R, FILE *O, qcore_arena_t *arena) {
   return true;
 }
 
-static bool impl_use_msgpack(qparse_node_t *R, FILE *O, qcore_arena_t *arena) {
+static bool impl_use_msgpack(qparse_node_t *R, FILE *O) {
   /// TODO: Do correct MsgPack serialization
-  return impl_use_json(R, O, arena);
+  return impl_use_json(R, O);
 }
 
 bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
@@ -295,7 +295,6 @@ bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const cha
     out_mode = OutMode::MsgPack;
   }
 
-  qcore_arena arena;  // Must outlive the parser
   qparse_conf conf;
 
   { /* Should the parser use the crashguard signal handler? */
@@ -329,7 +328,7 @@ bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const cha
   DeserializerAdapterLexer lex(source, nullptr, qcore_env_current());
   qparser par(&lex, conf.get(), qcore_env_current());
 
-  auto root = parse_tokens(par.get(), arena.get(), diag_cb);
+  auto root = parse_tokens(par.get(), diag_cb);
   if (!root.has_value()) {
     return false;
   }
@@ -338,10 +337,10 @@ bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const cha
 
   switch (out_mode) {
     case OutMode::JSON:
-      ok = impl_use_json(root.value(), output, arena.get());
+      ok = impl_use_json(root.value(), output);
       break;
     case OutMode::MsgPack:
-      ok = impl_use_msgpack(root.value(), output, arena.get());
+      ok = impl_use_msgpack(root.value(), output);
       break;
   }
 

@@ -182,12 +182,12 @@ namespace qparse {
     void *allocate(std::size_t bytes);
     void deallocate(void *ptr) noexcept;
 
-    void swap(qcore_arena_t &arena) { std::swap(*m_arena.get(), arena); }
+    void swap(qcore_arena_t &arena);
 
     qcore_arena_t &get() { return *m_arena.get(); }
   };
 
-  extern "C" thread_local ArenaAllocatorImpl qparse_arena;
+  extern thread_local ArenaAllocatorImpl qparse_arena;
 
   template <class T>
   struct Arena {
@@ -375,6 +375,8 @@ namespace qparse {
     qlex_loc_t get_start_pos() const { return m_pos_start; }
     qlex_loc_t get_end_pos() const { return m_pos_end; }
   };
+
+  constexpr size_t PNODE_BASE_SIZE = sizeof(Node);
 
   class Stmt : public Node {
   public:
