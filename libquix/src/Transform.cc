@@ -88,9 +88,8 @@ bool impl_subsys_basic_lexer(FILE *source, FILE *output, std::function<void(cons
 bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
                       const std::unordered_set<std::string_view> &opts);
 
-static bool impl_subsys_parser(FILE *source, FILE *output,
-                               std::function<void(const char *)> diag_cb,
-                               const std::unordered_set<std::string_view> &opts);
+bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+                        const std::unordered_set<std::string_view> &opts);
 
 static bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
                              const std::unordered_set<std::string_view> &opts);
@@ -155,18 +154,6 @@ LIB_EXPORT bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64
 }
 
 ///============================================================================///
-
-static bool impl_subsys_parser(FILE *source, FILE *output,
-                               std::function<void(const char *)> diag_cb,
-                               const std::unordered_set<std::string_view> &opts) {
-  (void)source;
-  (void)output;
-  (void)diag_cb;
-  (void)opts;
-
-  /// TODO: Implement parser wrapper
-  return false;
-}
 
 static bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
                              const std::unordered_set<std::string_view> &opts) {
