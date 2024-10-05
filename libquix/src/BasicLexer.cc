@@ -34,58 +34,12 @@
 #include <quix-core/Lib.h>
 #include <quix/code.h>
 
+#include <SerialUtil.hh>
 #include <cstdint>
 #include <functional>
 #include <quix-lexer/Classes.hh>
 #include <string_view>
 #include <unordered_set>
-
-static std::string create_json_string(std::string_view input) {
-  std::string output = "\"";
-  output.reserve(input.length() * 2);
-
-  for (char ch : input) {
-    switch (ch) {
-      case '"':
-        output += "\\\"";
-        break;
-      case '\\':
-        output += "\\\\";
-        break;
-      case '\b':
-        output += "\\b";
-        break;
-      case '\f':
-        output += "\\f";
-        break;
-      case '\n':
-        output += "\\n";
-        break;
-      case '\r':
-        output += "\\r";
-        break;
-      case '\t':
-        output += "\\t";
-        break;
-      case '\0':
-        output += "\\0";
-        break;
-      default:
-        if (ch >= 32 && ch < 127) {
-          output += ch;
-        } else {
-          char hex[5];
-          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
-          output += hex;
-        }
-        break;
-    }
-  }
-
-  output += "\"";
-
-  return output;
-}
 
 static bool impl_use_json(qlex_t *L, FILE *O) {
   fputc('[', O);
@@ -192,56 +146,6 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
   return true;
 }
 
-static void msgpack_write_uint(int &err, FILE *O, uint64_t x) {
-  if (x <= INT8_MAX) {
-    err |= fputc(x & 0x7f, O);
-  } else if (x <= UINT8_MAX) {
-    err |= fputc(0xcc, O);
-    err |= fputc(x, O);
-  } else if (x <= UINT16_MAX) {
-    err |= fputc(0xcd, O);
-    err |= fputc((x >> 8) & 0xff, O);
-    err |= fputc(x & 0xff, O);
-  } else if (x <= UINT32_MAX) {
-    err |= fputc(0xce, O);
-    err |= fputc((x >> 24) & 0xff, O);
-    err |= fputc((x >> 16) & 0xff, O);
-    err |= fputc((x >> 8) & 0xff, O);
-    err |= fputc(x & 0xff, O);
-  } else {
-    err |= fputc(0xcf, O);
-    err |= fputc((x >> 56) & 0xff, O);
-    err |= fputc((x >> 48) & 0xff, O);
-    err |= fputc((x >> 40) & 0xff, O);
-    err |= fputc((x >> 32) & 0xff, O);
-    err |= fputc((x >> 24) & 0xff, O);
-    err |= fputc((x >> 16) & 0xff, O);
-    err |= fputc((x >> 8) & 0xff, O);
-    err |= fputc(x & 0xff, O);
-  }
-}
-
-static void msgpack_write_str(int &err, FILE *O, const char *buf, size_t sz) {
-  if (sz <= 31) {
-    err |= fputc(0b10100000 | sz, O);
-  } else if (sz <= UINT8_MAX) {
-    err |= fputc(0xd9, O);
-    err |= fputc(sz, O);
-  } else if (sz <= UINT16_MAX) {
-    err |= fputc(0xda, O);
-    err |= fputc((sz >> 8) & 0xff, O);
-    err |= fputc(sz & 0xff, O);
-  } else if (sz <= UINT32_MAX) {
-    err |= fputc(0xdb, O);
-    err |= fputc((sz >> 24) & 0xff, O);
-    err |= fputc((sz >> 16) & 0xff, O);
-    err |= fputc((sz >> 8) & 0xff, O);
-    err |= fputc(sz & 0xff, O);
-  }
-
-  fwrite(buf, 1, sz, O);
-}
-
 static void msgpack_write_tok(int &err, FILE *O, uint8_t t, std::string_view v, uint32_t a,
                               uint32_t b, uint32_t c, uint32_t d) {
   fputc(0b10010000 | 6, O);
@@ -250,7 +154,7 @@ static void msgpack_write_tok(int &err, FILE *O, uint8_t t, std::string_view v, 
   msgpack_write_uint(err, O, t);
 
   // Write value
-  msgpack_write_str(err, O, v.data(), v.size());
+  msgpack_write_str(err, O, v);
 
   // Write start line
   msgpack_write_uint(err, O, a);
