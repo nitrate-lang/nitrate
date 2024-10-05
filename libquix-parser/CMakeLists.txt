@@ -27,7 +27,7 @@ SET(BUILD_FLAGS_COMMON -g
                        -Wno-mismatched-tags 
                        -Wno-gnu-zero-variadic-macro-arguments 
                        -Wno-return-type-c-linkage)
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQPARSE_ID=${QPARSE_ID})
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQPARSE_ID=${QPARSE_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
                                                 -fsanitize=fuzzer 
                                                 -fsanitize=address

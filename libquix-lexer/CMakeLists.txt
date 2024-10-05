@@ -20,7 +20,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments -Wno-return-type-c-linkage -Wno-return-type-c-linkage)
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQLEX_ID=${QLEX_ID})
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQLEX_ID=${QLEX_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
                                                 -fsanitize=fuzzer 
                                                 -fsanitize=address 

@@ -49,7 +49,7 @@ SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic
                        -Wno-deprecated-enum-enum-conversion
                        
                        )
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DCODEGEN_ID=${CODEGEN_ID} -Wno-unused-parameter)
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DCODEGEN_ID=${CODEGEN_ID} -Wno-unused-parameter)
 SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 
                                               -fsanitize=fuzzer 
                                               -fsanitize=address 

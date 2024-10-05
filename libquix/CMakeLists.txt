@@ -18,7 +18,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-mismatched-tags)
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQUIX_ID=${QUIX_ID})
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQUIX_ID=${QUIX_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
                                                 -fsanitize=address 
                                                 -fsanitize=undefined 
