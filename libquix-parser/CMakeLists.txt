@@ -18,9 +18,25 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments -Wno-return-type-c-linkage -Wno-return-type-c-linkage)
+SET(BUILD_FLAGS_COMMON -g 
+                       -fPIC 
+                       -Wall 
+                       -Wextra 
+                       -pedantic 
+                       -Werror 
+                       -Wno-mismatched-tags 
+                       -Wno-gnu-zero-variadic-macro-arguments 
+                       -Wno-return-type-c-linkage)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQPARSE_ID=${QPARSE_ID})
-SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -DQPARSE_ID="undefined")
+SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
+                                                -fsanitize=fuzzer 
+                                                -fsanitize=address
+                                                -fsanitize=undefined 
+                                                -Wno-error=unused-variable 
+                                                -Wno-error=unused-function 
+                                                -DQPARSE_ID="undefined"
+                                                -mllvm 
+                                                -asan-use-private-alias=1)
 
 if (MEMORY_OVER_SPEED)
   SET(PROJECT_RELEASE_FLAGS ${PROJECT_RELEASE_FLAGS} -DMEMORY_OVER_SPEED=1)
@@ -61,8 +77,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_include_directories(quix-parser PUBLIC src include 
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
-  target_compile_options(quix-parser PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
-  target_link_options(quix-parser PRIVATE -flto)
+  target_compile_options(quix-parser PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden)
+  target_link_options(quix-parser PRIVATE)
   target_link_libraries(quix-parser PRIVATE quix-core quix-lexer deflate)
   add_dependencies(quix-parser quix-core quix-lexer)
 

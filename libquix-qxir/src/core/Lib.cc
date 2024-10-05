@@ -44,7 +44,7 @@
 #endif
 
 static std::atomic<size_t> qxir_lib_ref_count = 0;
-thread_local const char* qqxir_err = "";
+static thread_local const char* qqxir_err = "";
 
 static void increase_stack_size() {
   const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB

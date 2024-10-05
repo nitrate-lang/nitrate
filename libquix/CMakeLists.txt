@@ -19,7 +19,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-mismatched-tags)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQUIX_ID=${QUIX_ID})
-SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-unused-parameter -DQUIX_ID="undefined")
+SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
+                                                -fsanitize=address 
+                                                -fsanitize=undefined 
+                                                -Wno-error=unused-variable 
+                                                -Wno-unused-parameter 
+                                                -DQUIX_ID="undefined"
+                                                -mllvm 
+                                                -asan-use-private-alias=1)
 
 #================== GET SOURCES ==================
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
@@ -62,8 +69,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
                                              ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-parser/include
                                              ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
                                              ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
-  target_compile_options(quix PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
-  target_link_options(quix PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
+  target_compile_options(quix PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden)
+  target_link_options(quix PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   target_link_libraries(quix PRIVATE quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
   add_dependencies(quix quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
 
@@ -78,8 +85,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
   target_compile_options(quix-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-shared PRIVATE quix-core-shared quix-lexer-shared quix-prep-shared quix-parser-shared quix-qxir-shared quix-codegen-shared)
-  add_dependencies(quix-shared quix-core-shared quix-lexer-shared quix-prep-shared quix-parser-shared quix-qxir-shared quix-codegen-shared)
+  target_link_libraries(quix-shared PRIVATE quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
+  add_dependencies(quix-shared quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
   set_target_properties(quix-shared PROPERTIES OUTPUT_NAME quix)
 endif()
 

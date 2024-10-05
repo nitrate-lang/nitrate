@@ -20,7 +20,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQXIR_ID=${QXIR_ID} -Wno-unused-parameter)
-SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -Wno-unused-variable -DQXIR_ID="undefined")
+SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 
+                                              -fsanitize=fuzzer 
+                                              -fsanitize=address 
+                                              -fsanitize=undefined 
+                                              -Wno-error=unused-variable 
+                                              -Wno-error=unused-function 
+                                              -DQXIR_ID="undefined"
+                                              -mllvm 
+                                              -asan-use-private-alias=1)
 
 if (MEMORY_OVER_SPEED)
   SET(PROJECT_RELEASE_FLAGS ${PROJECT_RELEASE_FLAGS} -DMEMORY_OVER_SPEED=1)
@@ -64,8 +72,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-parser/include)
-  target_compile_options(quix-qxir PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
-  target_link_options(quix-qxir PRIVATE -flto)
+  target_compile_options(quix-qxir PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden)
+  target_link_options(quix-qxir PRIVATE)
   target_link_libraries(quix-qxir PRIVATE quix-core quix-parser deflate crypto)
   add_dependencies(quix-qxir quix-core quix-parser)
 

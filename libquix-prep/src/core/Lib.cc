@@ -44,7 +44,7 @@
 #endif
 
 static std::atomic<size_t> qprep_lib_ref_count = 0;
-thread_local const char* qprep_err = "";
+static thread_local const char* qprep_err = "";
 
 bool do_init() {
   cURLpp::initialize();

@@ -19,7 +19,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-mismatched-tags)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DQCORE_ID=${QCORE_ID})
-SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-unused-parameter -DQCORE_ID="undefined")
+SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
+                                                -fsanitize=address 
+                                                -fsanitize=undefined 
+                                                -Wno-error=unused-variable 
+                                                -DQCORE_ID="undefined"
+                                                -mllvm 
+                                                -asan-use-private-alias=1)
 
 #================== GET SOURCES ==================
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
@@ -42,8 +48,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE STATICLIB RELEASE BUILD ================
   add_library(quix-core STATIC ${CXX_SOURCES})
   target_include_directories(quix-core PUBLIC src include)
-  target_compile_options(quix-core PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
-  target_link_options(quix-core PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
+  target_compile_options(quix-core PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden)
+  target_link_options(quix-core PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   target_link_libraries(quix-core PRIVATE )
 
   #================== CREATE SHAREDLIB RELEASE BUILD ================

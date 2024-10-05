@@ -15,8 +15,9 @@ FetchContent_MakeAvailable(googletest)
 
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "src/*.cc")
 add_executable(libquix-test ${TEST_SOURCES})
-target_compile_options(libquix-test PRIVATE -Wall -Wextra -Werror -O3 -fsanitize=address -fsanitize=undefined -flto)
-target_link_libraries(libquix-test gtest_main quix -fsanitize=address -fsanitize=undefined -flto)
+target_compile_options(libquix-test PRIVATE -Wall -Wextra -Werror -O3 -g -fsanitize=address -fsanitize=undefined )
+target_link_libraries(libquix-test gtest_main quix -fsanitize=address -fsanitize=undefined )
 target_include_directories(libquix-test PRIVATE src ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+add_dependencies(libquix-test quix)
 
 install(TARGETS libquix-test DESTINATION bin)

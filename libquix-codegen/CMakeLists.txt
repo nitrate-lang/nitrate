@@ -50,7 +50,15 @@ SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic
                        
                        )
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DNDEBUG -DCODEGEN_ID=${CODEGEN_ID} -Wno-unused-parameter)
-SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined -Wno-error=unused-variable -Wno-error=unused-function -Wno-unused-parameter -Wno-unused-variable -DCODEGEN_ID="undefined")
+SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 
+                                              -fsanitize=fuzzer 
+                                              -fsanitize=address 
+                                              -fsanitize=undefined 
+                                              -Wno-error=unused-variable 
+                                              -Wno-error=unused-function 
+                                              -DCODEGEN_ID="undefined"
+                                              -mllvm 
+                                              -asan-use-private-alias=1)
 
 if (MEMORY_OVER_SPEED)
   SET(PROJECT_RELEASE_FLAGS ${PROJECT_RELEASE_FLAGS} -DMEMORY_OVER_SPEED=1)
@@ -101,8 +109,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
-  target_compile_options(quix-codegen PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
-  target_link_options(quix-codegen PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
+  target_compile_options(quix-codegen PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden)
+  target_link_options(quix-codegen PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   target_link_libraries(quix-codegen PRIVATE quix-core z tinfo ${CLANG_LIB})
   foreach(lib ${LLVM_LIBS})
     target_link_libraries(quix-codegen PRIVATE ${lib})
