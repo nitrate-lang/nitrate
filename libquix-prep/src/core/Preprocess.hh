@@ -57,7 +57,6 @@ struct qprep_impl_t final : public qlex_t {
   size_t m_depth;
 
   virtual qlex_tok_t next_impl() override;
-  virtual void eof_callback() override;
 
   std::optional<std::string> run_lua_code(std::string_view s);
   bool run_and_expand(std::string_view code);

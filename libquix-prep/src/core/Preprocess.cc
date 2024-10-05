@@ -147,8 +147,6 @@ bool qprep_impl_t::run_and_expand(std::string_view code) {
   return true;
 }
 
-void qprep_impl_t::eof_callback() { qlex_t::eof_callback(); }
-
 class RecursiveGuard {
   size_t &m_depth;
 

@@ -118,7 +118,6 @@ public:
   ///============================================================================///
 
   virtual qlex_tok_t next_impl();
-  virtual void eof_callback();
 
   virtual std::optional<qlex_size> loc2offset(qlex_loc_t loc);
   virtual std::optional<std::pair<qlex_size, qlex_size>> loc2rowcol(qlex_loc_t loc);

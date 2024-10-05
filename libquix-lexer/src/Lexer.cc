@@ -516,8 +516,6 @@ static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumT
 
 void qlex_t::reset_automata() { m_pushback.clear(); }
 
-void qlex_t::eof_callback() {}
-
 qlex_tok_t qlex_t::next_impl() {
   /// TODO: Correctly handle token source locations
 
@@ -1350,11 +1348,88 @@ LIB_EXPORT const char *qlex_punctstr(qlex_punc_t punct) {
 LIB_EXPORT void qlex_tok_fromstr(qlex_t *lexer, qlex_ty_t ty, const char *str, qlex_tok_t *out) {
   try {
     out->ty = ty;
+    out->start.tag = out->end.tag = 0;
 
-    out->start.tag = 0;
-    out->start.tag = 0;
+    switch (ty) {
+      case qEofF: {
+        break;
+      }
 
-    out->v.str_idx = lexer->put_string(str);
+      case qErro: {
+        break;
+      }
+
+      case qKeyW: {
+        auto find = qlex::keywords.left.find(str);
+        if (find == qlex::keywords.left.end()) [[unlikely]] {
+          out->ty = qErro;
+        } else {
+          out->v.key = find->second;
+        }
+        break;
+      }
+
+      case qOper: {
+        auto find = qlex::operators.left.find(str);
+        if (find == qlex::operators.left.end()) [[unlikely]] {
+          out->ty = qErro;
+        } else {
+          out->v.op = find->second;
+        }
+        break;
+      }
+
+      case qPunc: {
+        auto find = qlex::punctuation.left.find(str);
+        if (find == qlex::punctuation.left.end()) [[unlikely]] {
+          out->ty = qErro;
+        } else {
+          out->v.punc = find->second;
+        }
+        break;
+      }
+
+      case qName: {
+        out->v.str_idx = lexer->put_string(str);
+        break;
+      }
+
+      case qIntL: {
+        out->v.str_idx = lexer->put_string(str);
+        break;
+      }
+
+      case qNumL: {
+        out->v.str_idx = lexer->put_string(str);
+        break;
+      }
+
+      case qText: {
+        out->v.str_idx = lexer->put_string(str);
+        break;
+      }
+
+      case qChar: {
+        out->v.str_idx = lexer->put_string(str);
+        break;
+      }
+
+      case qMacB: {
+        out->v.str_idx = lexer->put_string(str);
+        break;
+      }
+
+      case qMacr: {
+        out->v.str_idx = lexer->put_string(str);
+        break;
+      }
+
+      case qNote: {
+        out->v.str_idx = lexer->put_string(str);
+        break;
+      }
+    }
+
   } catch (std::bad_alloc &) {
     qcore_panic("qlex_tok_fromstr: failed to create token: out of memory");
   } catch (...) {
