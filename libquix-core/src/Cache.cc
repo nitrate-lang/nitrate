@@ -72,7 +72,7 @@ LIB_EXPORT void qcore_cache_unbind() {
   g_cache_provider.m_write = nullptr;
 }
 
-LIB_EXPORT ssize_t qcore_cache_has(const qcore_cache_key_t *key) {
+LIB_EXPORT int64_t qcore_cache_has(const qcore_cache_key_t *key) {
   std::lock_guard<std::mutex> lock(g_cache_provider.m_lock);
 
   qcore_assert(key, "qcore_cache_has: key is null");

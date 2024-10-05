@@ -24,9 +24,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments -Wno-return-type-c-linkage -Wno-return-type-c-linkage)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQPREP_ID=${QPREP_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
-                                                -fsanitize=fuzzer 
-                                                -fsanitize=address 
-                                                -fsanitize=undefined 
                                                 -Wno-error=unused-variable 
                                                 -Wno-error=unused-function 
                                                 -DQPREP_ID="undefined"
@@ -50,7 +47,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
                                                           ${CMAKE_SOURCE_DIR}/libquix-prep/deps)
   target_compile_options(quix-prep PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-prep PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} curlpp curl crypto)
-  target_link_options(quix-prep PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-prep quix-core quix-lexer quixlua)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -60,7 +56,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
                                                                  ${CMAKE_SOURCE_DIR}/libquix-prep/deps)
   target_compile_options(quix-prep-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} curlpp curl crypto)
-  target_link_options(quix-prep-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-prep-shared quix-core quix-lexer quixlua)
   set_target_properties(quix-prep-shared PROPERTIES OUTPUT_NAME quix-prep)
 

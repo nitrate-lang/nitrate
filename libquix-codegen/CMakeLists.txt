@@ -39,19 +39,21 @@ set(SUPPORT_TARGETS -DTRANSCODE_TARGET_C11
                     -DLLVM_SUUPORT_ALL_TARGETS)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic 
-                       -Werror -Wno-mismatched-tags 
+SET(BUILD_FLAGS_COMMON -g 
+                       -Wall 
+                       -Wextra 
+                       -pedantic 
+                       -Werror 
+                       -Wno-mismatched-tags 
                        -Wno-gnu-zero-variadic-macro-arguments 
                        ${SUPPORT_TARGETS}
                        -I/usr/lib/llvm-14/include 
                        -Wno-deprecated-enum-enum-conversion
-                       
+                       -Wno-error=unused-but-set-variable
+                       -Wno-unused-parameter
                        )
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DCODEGEN_ID=${CODEGEN_ID} -Wno-error=unused-parameter)
 SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 
-                                              -fsanitize=fuzzer 
-                                              -fsanitize=address 
-                                              -fsanitize=undefined 
                                               -Wno-error=unused-variable 
                                               -Wno-error=unused-parameter
                                               -Wno-error=unused-function 
@@ -81,7 +83,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_libraries(quix-codegen PRIVATE ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
-  target_link_options(quix-codegen PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-codegen quix-core quix-qxir)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -96,7 +97,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_link_libraries(quix-codegen-shared PRIVATE ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
-  target_link_options(quix-codegen-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-codegen-shared quix-core quix-qxir)
   set_target_properties(quix-codegen-shared PROPERTIES OUTPUT_NAME quix-codegen)
 

@@ -47,7 +47,6 @@
 #endif
 
 static std::atomic<size_t> qcode_lib_ref_count = 0;
-static thread_local const char* qqcode_err = "";
 
 static void increase_stack_size() {
   const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
@@ -169,10 +168,4 @@ LIB_EXPORT const char* qcode_lib_version() {
   return version_string;
 }
 
-LIB_EXPORT const char* qcode_strerror() {
-  if (!qqcode_err) {
-    qcore_panic("qcode_strerror: qqcode_err is NULL. This is a bug.");
-  }
-
-  return qqcode_err;
-}
+LIB_EXPORT const char* qcode_strerror() { return ""; }

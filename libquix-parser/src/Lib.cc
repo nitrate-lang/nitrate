@@ -44,7 +44,6 @@
 #endif
 
 static std::atomic<size_t> qparse_lib_ref_count = 0;
-static thread_local const char* qparser_err = "";
 
 static void increase_stack_size() {
   const rlim_t kStackSize = 64 * 1024 * 1024;  // min stack size = 64 MB
@@ -146,10 +145,4 @@ LIB_EXPORT const char* qparse_lib_version() {
   return version_string;
 }
 
-LIB_EXPORT const char* qparse_strerror() {
-  if (!qparser_err) {
-    qcore_panic("qparse_strerror: qparser_err is NULL. This is a bug.");
-  }
-
-  return qparser_err;
-}
+LIB_EXPORT const char* qparse_strerror() { return ""; }

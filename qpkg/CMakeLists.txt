@@ -158,17 +158,13 @@ else()
                                         -Wno-mismatched-tags
                                         -Wno-gnu-zero-variadic-macro-arguments
                                         -Wno-error=overlength-strings
-                                        -DQPKG_ID="undefined"
-                                        -fsanitize=address
-                                        -fsanitize=undefined)
+                                        -DQPKG_ID="undefined")
     target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a 
                                        quix-codegen
                                        quix-qxir quix-parser
                                        quix-lexer quix-prep quix-core)
     target_link_options(qpkg PRIVATE -static-libgcc
-                                     -static-libstdc++
-                                     -fsanitize=address
-                                     -fsanitize=undefined)
+                                     -static-libstdc++)
     add_dependencies(qpkg quix-codegen
                           quix-qxir
                           quix-parser
@@ -199,9 +195,7 @@ else()
                                                -DQPKG_ID="undefined"
                                                -fvisibility=hidden
                                                -fvisibility-inlines-hidden
-                                               -DQPKG_LIBRARY
-                                               -fsanitize=address
-                                               -fsanitize=undefined)
+                                               -DQPKG_LIBRARY)
     target_link_libraries(qpkg-static PRIVATE yaml-cpp
                                               libboost_filesystem.a
                                               quix-codegen
@@ -210,9 +204,7 @@ else()
                                               quix-lexer
                                               quix-prep
                                               quix-core)
-    target_link_options(qpkg-static PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map
-                                            -fsanitize=address
-                                            -fsanitize=undefined)
+    target_link_options(qpkg-static PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
     add_dependencies(qpkg-static quix-codegen
                                  quix-qxir
                                  quix-parser
@@ -244,9 +236,7 @@ else()
                                                -DQPKG_ID="undefined"
                                                -fvisibility=hidden
                                                -fvisibility-inlines-hidden
-                                               -DQPKG_LIBRARY
-                                               -fsanitize=address
-                                               -fsanitize=undefined)
+                                               -DQPKG_LIBRARY)
     target_link_libraries(qpkg-shared PRIVATE yaml-cpp
                                               libboost_filesystem.a
                                               quix-codegen-shared
@@ -255,9 +245,7 @@ else()
                                               quix-lexer-shared
                                               quix-prep-shared
                                               quix-core-shared)
-    target_link_options(qpkg-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map
-                                            -fsanitize=address
-                                            -fsanitize=undefined)
+    target_link_options(qpkg-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
     add_dependencies(qpkg-shared quix-codegen-shared
                                  quix-qxir-shared
                                  quix-parser-shared

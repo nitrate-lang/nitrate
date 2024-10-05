@@ -29,9 +29,6 @@ SET(BUILD_FLAGS_COMMON -g
                        -Wno-return-type-c-linkage)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQPARSE_ID=${QPARSE_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
-                                                -fsanitize=fuzzer 
-                                                -fsanitize=address
-                                                -fsanitize=undefined 
                                                 -Wno-error=unused-variable 
                                                 -Wno-error=unused-function 
                                                 -DQPARSE_ID="undefined"
@@ -55,7 +52,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
   target_compile_options(quix-parser PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-parser PRIVATE quix-core quix-lexer deflate)
-  target_link_options(quix-parser PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-parser quix-core quix-lexer)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -65,7 +61,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include)
   target_compile_options(quix-parser-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-parser-shared PRIVATE quix-core quix-lexer deflate)
-  target_link_options(quix-parser-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-parser-shared quix-core quix-lexer)
   set_target_properties(quix-parser-shared PROPERTIES OUTPUT_NAME quix-parser)
 

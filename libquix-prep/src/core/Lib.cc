@@ -44,7 +44,6 @@
 #endif
 
 static std::atomic<size_t> qprep_lib_ref_count = 0;
-static thread_local const char* qprep_err = "";
 
 bool do_init() {
   cURLpp::initialize();
@@ -133,10 +132,4 @@ LIB_EXPORT const char* qprep_lib_version() {
   return version_string;
 }
 
-LIB_EXPORT const char* qprep_strerror() {
-  if (!qprep_err) {
-    qcore_panic("qprep_strerror: qprep_err is NULL");
-  }
-
-  return qprep_err;
-}
+LIB_EXPORT const char* qprep_strerror() { return ""; }

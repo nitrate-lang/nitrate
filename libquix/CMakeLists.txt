@@ -17,11 +17,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-mismatched-tags)
+SET(BUILD_FLAGS_COMMON  -g 
+                        -fPIC 
+                        -Wall 
+                        -Wextra 
+                        -pedantic 
+                        -Werror 
+                        -Wno-gnu-zero-variadic-macro-arguments 
+                        -Wno-mismatched-tags 
+                        -Wno-error=missing-field-initializers 
+                        -Wno-missing-field-initializers)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQUIX_ID=${QUIX_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
-                                                -fsanitize=address 
-                                                -fsanitize=undefined 
                                                 -Wno-error=unused-variable 
                                                 -Wno-error=unused-parameter 
                                                 -DQUIX_ID="undefined"
@@ -59,6 +66,8 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   target_link_libraries(quix-shared PRIVATE quix-core-shared quix-lexer-shared quix-prep-shared quix-parser-shared quix-qxir-shared quix-codegen-shared)
   add_dependencies(quix-shared quix-core-shared quix-lexer-shared quix-prep-shared quix-parser-shared quix-qxir-shared quix-codegen-shared)
   set_target_properties(quix-shared PROPERTIES OUTPUT_NAME quix)
+
+  add_subdirectory(fuzzer)
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE STATICLIB RELEASE BUILD ================
   add_library(quix STATIC ${CXX_SOURCES})

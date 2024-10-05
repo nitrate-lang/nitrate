@@ -42,7 +42,6 @@
 #endif
 
 static std::atomic<size_t> qlex_lib_ref_count = 0;
-static thread_local const char* qlex_err = "";
 
 LIB_EXPORT bool qlex_lib_init() {
   if (qlex_lib_ref_count++ > 1) {
@@ -117,10 +116,4 @@ LIB_EXPORT const char* qlex_lib_version() {
   return version_string;
 }
 
-LIB_EXPORT const char* qlex_strerror() {
-  if (!qlex_err) {
-    qcore_panic("qlex_strerror: qlex_err is NULL");
-  }
-
-  return qlex_err;
-}
+LIB_EXPORT const char* qlex_strerror() { return ""; }

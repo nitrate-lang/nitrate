@@ -52,27 +52,28 @@ TODO: write this section
 
 ## Building
 
-To build the Quix compiler from source, follow these steps:
+**These notes are pending cross-distribution testing.**
 
-1. **Install Dependencies**: Make sure you have all necessary dependencies installed on your system.
-2. **Clone the Repository**: Clone the Quix compiler repository from GitHub using the following command:
-   ```
-   git clone https://github.com/Kracken256/quix
-   ```
-3. **Navigate to the Repository**: Change your current directory to the cloned repository directory:
-   ```
-   cd quix
-   ```
-4. **Build the Compiler**: Build the Quix compiler by running the `make.py --release` command. This will compile the compiler in release mode, which is optimized for performance:
-   ```
-   python make.py --release
-   ```
-   If you want to build the compiler in debug mode, which includes additional debugging information, run the following command instead:
-   ```
-   python make.py --debug
-   ```
-   The build process may take some time to complete, depending on your system's hardware and the size of the Quix compiler source code.
-5. **Verify**: The pipeline will produce a `./bin` folder in the repository root. Inside this folder, you will find the `qpkg` executable, among other binaries. Congratulations! You have successfully built the Quix compiler.
+Build on Debian systems:
+
+```bash
+sudo apt install -y git
+cd ~/Downloads
+git clone --recurse-submodules git@github.com:Kracken256/quix.git
+cd quix
+
+# Install dependencies
+# libpolly-14-dev is not necessary in all distributions. If it does not exist in your package manager, try building without it.
+# If libPolly will be in issue in your build it will manifest as a linker error.
+
+sudo apt install -y clang cmake make llvm-14 upx libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev rapidjson-dev libdeflate-dev libreadline-dev libcurlpp-dev libclang-dev libclang-cpp-dev libpolly-14-dev
+
+# Build the toolchain in release mode
+cmake -S . -B .build/release -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./build
+cmake --build .build/release -j$(nproc)
+cmake --install .build/release
+
+```
 
 ## Contributing
 

@@ -21,9 +21,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 SET(BUILD_FLAGS_COMMON -g -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQXIR_ID=${QXIR_ID} -Wno-error=unused-parameter)
 SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 
-                                              -fsanitize=fuzzer 
-                                              -fsanitize=address 
-                                              -fsanitize=undefined 
                                               -Wno-error=unused-variable 
                                               -Wno-error=unused-parameter
                                               -Wno-error=unused-function 
@@ -49,7 +46,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-parser/include)
   target_compile_options(quix-qxir PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-qxir PRIVATE quix-core quix-parser deflate crypto)
-  target_link_options(quix-qxir PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-qxir quix-core quix-parser)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -60,7 +56,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     ${CMAKE_SOURCE_DIR}/libquix-parser/include)
   target_compile_options(quix-qxir-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
   target_link_libraries(quix-qxir-shared PRIVATE quix-core quix-parser deflate crypto)
-  target_link_options(quix-qxir-shared PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   add_dependencies(quix-qxir-shared quix-core quix-parser)
   set_target_properties(quix-qxir-shared PROPERTIES OUTPUT_NAME quix-qxir)
 

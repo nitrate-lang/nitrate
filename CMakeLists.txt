@@ -10,6 +10,15 @@ enable_testing()
 endif()
 
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined")
+endif()
+
+if (COVERAGE STREQUAL "ON")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   #================== CREATE DEBUG BUILD ==================
   add_subdirectory(libquix-core)
   add_subdirectory(libquix-lexer)
@@ -31,3 +40,18 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   add_subdirectory(qpkg)
 endif()
 
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+  foreach(lib quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen quix)
+    target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+  endforeach()
+
+  foreach(lib quix-core-shared quix-lexer-shared quix-prep-shared quix-parser-shared quix-qxir-shared quix-codegen-shared quix-shared)
+    target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+    target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+  endforeach()
+
+  foreach(lib libquix-basic-lexer-fuzz libquix-prep-fuzzer libquix-qxir-fuzzer)
+    target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
+    target_link_options(${lib} PRIVATE -fsanitize=fuzzer)
+  endforeach()
+endif()
