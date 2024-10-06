@@ -40,6 +40,7 @@ set(SUPPORT_TARGETS -DTRANSCODE_TARGET_C11
 
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g 
+                       -fPIC
                        -Wall 
                        -Wextra 
                        -pedantic 
