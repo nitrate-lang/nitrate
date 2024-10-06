@@ -340,6 +340,9 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
 
     { /* Calculate offsets and seek to the correct position */
       curpos = ftell(obj->m_file);
+      if ((long)curpos == -1) {
+        return nullptr;
+      }
       seek_base_pos = tok_beg_offset < SNIPPET_SIZE / 2 ? 0 : tok_beg_offset - SNIPPET_SIZE / 2;
 
       if (fseek(obj->m_file, seek_base_pos, SEEK_SET) != 0) {
