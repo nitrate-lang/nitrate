@@ -5,7 +5,6 @@ int main() {
   const char *options[] = {"ir", "-fuse-msgpack", NULL};
 
   if (!quix_cc(stdin, stdout, quix_diag_stderr, 0, options)) {
-    printf("Failed to transform input.\n");
     return 1;
   }
 
