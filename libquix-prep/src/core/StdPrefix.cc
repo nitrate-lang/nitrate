@@ -31,20 +31,48 @@
 
 #include <string_view>
 
-std::string_view quix_code_prefix = R"(@(fn define() {
+std::string_view quix_code_prefix = R"(
+@( -- Disable dangerous lua functions
+
+  -- From lbaselib.c
+  dofile = nil;
+  loadfile = nil;
+
+  -- From ldblib.c
+  debug_cli = debug.debug
+  debug = nil
+
+  -- From liolib.c
+  io = nil;
+
+  -- From lmathlib.c
+  math.random = nil;
+  math.randomseed = nil;
+
+  -- From loslib.c
+  os = nil;
+
+  -- From lcorolib.c
+  coroutine = nil;
+
+  -- From loadlib.c
+  package = nil;
+)
+
+@(fn define() {
   -- Read in expected lexical sequence
   local name = quix.next(); local sepr = quix.next();
   local valu = quix.next(); local semi = quix.next();
 
   -- Verify that the sequence is correct
-  if name.ty ~= 'name' then 
-    quix.abort('Expected name in @define macro'); 
+  if name.ty ~= 'name' then
+    quix.abort('Expected name in @define macro');
   end
-  if sepr.ty ~= 'op' or sepr.v ~= '=' then 
-    quix.abort('Expected = in @define macro'); 
+  if sepr.ty ~= 'op' or sepr.v ~= '=' then
+    quix.abort('Expected = in @define macro');
   end
-  if semi.ty ~= 'sym' or semi.v ~= ';' then 
-    quix.abort('Expected ; in @define macro'); 
+  if semi.ty ~= 'sym' or semi.v ~= ';' then
+    quix.abort('Expected ; in @define macro');
   end
 
   -- Set the define in the magic 'def.' namespace
@@ -88,7 +116,7 @@ std::string_view quix_code_prefix = R"(@(fn define() {
 
 @(fn use() {
   -- Read in expected lexical sequence
-  local ver = quix.next(); local semi = quix.next(); 
+  local ver = quix.next(); local semi = quix.next();
 
   -- Verify that the sequence is correct
   if ver.ty ~= 'str' then
@@ -132,7 +160,7 @@ std::string_view quix_code_prefix = R"(@(fn define() {
 
   -- Create target URL
   name = string.gsub(name, '::', '/');
-  name = string.format('http://localhost:%d/api/v1/fetch?job=%s&name=%s.qh', 
+  name = string.format('http://localhost:%d/api/v1/fetch?job=%s&name=%s.qh',
     tonumber(quix.get('this.srvport')),
     quix.get('this.job'),
     name);
@@ -150,7 +178,7 @@ std::string_view quix_code_prefix = R"(@(fn define() {
 })
 
 @(
-  quix.isset = function(name, value) 
+  quix.isset = function(name, value)
     if name == nil then
       quix.abort('Expected name in @isset function');
     end
@@ -162,11 +190,11 @@ std::string_view quix_code_prefix = R"(@(fn define() {
     return flag == value;
   end
 
-  quix.get_target = function() 
+  quix.get_target = function()
     return quix.get('this.target-triple');
   end
 
-  quix.get_host = function() 
+  quix.get_host = function()
     return quix.get('this.host-triple');
   end
 
@@ -195,7 +223,7 @@ std::string_view quix_code_prefix = R"(@(fn define() {
     return true;
   end
 
-  quix.set_flag = function(name, value) 
+  quix.set_flag = function(name, value)
     if try_set(name, value) then
       return;
     end
@@ -203,7 +231,7 @@ std::string_view quix_code_prefix = R"(@(fn define() {
     quix.abort('Immutable flag could not be modified: ', name);
   end
 
-  quix.enstr = function(item) 
+  quix.enstr = function(item)
     if item == nil then
       item = '';
     end
@@ -224,7 +252,7 @@ std::string_view quix_code_prefix = R"(@(fn define() {
     return res .. '"';
   end
 
-  quix.destr = function(item) 
+  quix.destr = function(item)
     if item == nil then
       return '';
     end
