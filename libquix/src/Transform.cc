@@ -193,13 +193,13 @@ LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdat
       },
       opts_set);
 
-  fflush(out_alias);
-
   if (!is_output_usable) {
     fclose(out_alias);
     ok &= fwrite(out_alias_buf, 1, out_alias_size, O) == out_alias_size;
     free(out_alias_buf);
   }
+
+  fflush(O);
 
   return ok;
 }

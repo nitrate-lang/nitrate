@@ -264,8 +264,7 @@ static std::optional<qparse_node_t *> parse_tokens(qparse_t *L,
   return root;
 }
 
-struct SerialState {};
-bool to_json_recurse(qparse::Node *N, json &x, SerialState &S);
+bool to_json_recurse(qparse::Node *N, json &x);
 
 bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
                         const std::unordered_set<std::string_view> &opts) {
@@ -321,10 +320,9 @@ bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const cha
 
   bool ok = false;
 
-  SerialState S;
   json o = json::array();
 
-  if (!to_json_recurse(static_cast<qparse::Node *>(root.value()), o, S)) {
+  if (!to_json_recurse(static_cast<qparse::Node *>(root.value()), o)) {
     return false;
   }
 
@@ -348,9 +346,10 @@ bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const cha
 
 using namespace qparse;
 
-bool to_json_recurse(Node *N, json &x, SerialState &S) {
-  (void)x;
-  (void)S;
+bool to_json_recurse(Node *N, json &x) {
+  /**
+   * WARNING: TODO: Test this code thoughroughly.
+   */
 
   if (!N) {
     x = nullptr;
@@ -370,7 +369,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       auto &y = x[1] = json::array();
 
-      if (!to_json_recurse(N->as<ConstExpr>()->get_value(), y, S)) {
+      if (!to_json_recurse(N->as<ConstExpr>()->get_value(), y)) {
         return false;
       }
 
@@ -388,11 +387,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
       auto &y = x[2] = json::array();
       auto &z = x[3] = json::array();
 
-      if (!to_json_recurse(N->as<BinExpr>()->get_lhs(), y, S)) {
+      if (!to_json_recurse(N->as<BinExpr>()->get_lhs(), y)) {
         return false;
       }
 
-      if (!to_json_recurse(N->as<BinExpr>()->get_rhs(), z, S)) {
+      if (!to_json_recurse(N->as<BinExpr>()->get_rhs(), z)) {
         return false;
       }
 
@@ -409,7 +408,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       auto &y = x[2] = json::array();
 
-      if (!to_json_recurse(N->as<UnaryExpr>()->get_rhs(), y, S)) {
+      if (!to_json_recurse(N->as<UnaryExpr>()->get_rhs(), y)) {
         return false;
       }
 
@@ -424,19 +423,19 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       auto &y = x[1] = json::array();
 
-      if (!to_json_recurse(N->as<TernaryExpr>()->get_cond(), y, S)) {
+      if (!to_json_recurse(N->as<TernaryExpr>()->get_cond(), y)) {
         return false;
       }
 
       auto &z = x[2] = json::array();
 
-      if (!to_json_recurse(N->as<TernaryExpr>()->get_lhs(), z, S)) {
+      if (!to_json_recurse(N->as<TernaryExpr>()->get_lhs(), z)) {
         return false;
       }
 
       auto &w = x[3] = json::array();
 
-      if (!to_json_recurse(N->as<TernaryExpr>()->get_rhs(), w, S)) {
+      if (!to_json_recurse(N->as<TernaryExpr>()->get_rhs(), w)) {
         return false;
       }
 
@@ -528,7 +527,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       Call *W = N->as<Call>();
 
-      if (!to_json_recurse(W->get_func(), x[1], S)) {
+      if (!to_json_recurse(W->get_func(), x[1])) {
         return false;
       }
 
@@ -536,7 +535,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       for (auto &[key, val] : W->get_args()) {
         json z;
-        if (!to_json_recurse(val, z, S)) {
+        if (!to_json_recurse(val, z)) {
           return false;
         }
 
@@ -556,7 +555,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       for (auto &Z : N->as<List>()->get_items()) {
         json z;
-        if (!to_json_recurse(Z, z, S)) {
+        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -572,11 +571,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<Assoc>()->get_key(), x[1], S)) {
+      if (!to_json_recurse(N->as<Assoc>()->get_key(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(N->as<Assoc>()->get_value(), x[2], S)) {
+      if (!to_json_recurse(N->as<Assoc>()->get_value(), x[2])) {
         return false;
       }
 
@@ -591,7 +590,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       Field *W = N->as<Field>();
 
-      if (!to_json_recurse(W->get_base(), x[1], S)) {
+      if (!to_json_recurse(W->get_base(), x[1])) {
         return false;
       }
 
@@ -608,11 +607,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       Index *W = N->as<Index>();
 
-      if (!to_json_recurse(W->get_base(), x[1], S)) {
+      if (!to_json_recurse(W->get_base(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_index(), x[2], S)) {
+      if (!to_json_recurse(W->get_index(), x[2])) {
         return false;
       }
 
@@ -627,15 +626,15 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       Slice *W = N->as<Slice>();
 
-      if (!to_json_recurse(W->get_base(), x[1], S)) {
+      if (!to_json_recurse(W->get_base(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_start(), x[2], S)) {
+      if (!to_json_recurse(W->get_start(), x[2])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_end(), x[3], S)) {
+      if (!to_json_recurse(W->get_end(), x[3])) {
         return false;
       }
 
@@ -657,7 +656,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
         if (std::holds_alternative<String>(Z)) {
           z = std::get<String>(Z).c_str();
         } else {
-          if (!to_json_recurse(std::get<Expr *>(Z), z, S)) {
+          if (!to_json_recurse(std::get<Expr *>(Z), z)) {
             return false;
           }
         }
@@ -689,7 +688,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       for (auto &Z : N->as<SeqPoint>()->get_items()) {
         json z;
-        if (!to_json_recurse(Z, z, S)) {
+        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -707,7 +706,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       auto &y = x[1] = json::array();
 
-      if (!to_json_recurse(N->as<PostUnaryExpr>()->get_lhs(), y, S)) {
+      if (!to_json_recurse(N->as<PostUnaryExpr>()->get_lhs(), y)) {
         return false;
       }
 
@@ -722,7 +721,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<StmtExpr>()->get_stmt(), x[1], S)) {
+      if (!to_json_recurse(N->as<StmtExpr>()->get_stmt(), x[1])) {
         return false;
       }
 
@@ -735,7 +734,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<TypeExpr>()->get_type(), x[1], S)) {
+      if (!to_json_recurse(N->as<TypeExpr>()->get_type(), x[1])) {
         return false;
       }
 
@@ -750,7 +749,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       TemplCall *W = N->as<TemplCall>();
 
-      if (!to_json_recurse(W->get_func(), x[1], S)) {
+      if (!to_json_recurse(W->get_func(), x[1])) {
         return false;
       }
 
@@ -758,7 +757,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       for (auto &[key, val] : W->get_template_args()) {
         json z;
-        if (!to_json_recurse(val, z, S)) {
+        if (!to_json_recurse(val, z)) {
           return false;
         }
 
@@ -769,7 +768,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       for (auto &[key, val] : W->get_args()) {
         json w;
-        if (!to_json_recurse(val, w, S)) {
+        if (!to_json_recurse(val, w)) {
           return false;
         }
 
@@ -785,7 +784,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<RefTy>()->get_item(), x[1], S)) {
+      if (!to_json_recurse(N->as<RefTy>()->get_item(), x[1])) {
         return false;
       }
 
@@ -942,7 +941,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<PtrTy>()->get_item(), x[1], S)) {
+      if (!to_json_recurse(N->as<PtrTy>()->get_item(), x[1])) {
         return false;
       }
 
@@ -979,7 +978,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       x[1] = W->get_name().c_str();
 
-      if (!to_json_recurse(W->get_memtype(), x[2], S)) {
+      if (!to_json_recurse(W->get_memtype(), x[2])) {
         return false;
       }
 
@@ -999,7 +998,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
         z[0] = Z.first.c_str();
         z[1] = json::array();
 
-        if (!to_json_recurse(Z.second, z[1], S)) {
+        if (!to_json_recurse(Z.second, z[1])) {
           return false;
         }
 
@@ -1020,7 +1019,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
       for (auto &Z : N->as<GroupTy>()->get_items()) {
         json z;
 
-        if (!to_json_recurse(Z, z, S)) {
+        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -1041,7 +1040,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
       for (auto &Z : N->as<RegionTy>()->get_items()) {
         json z;
 
-        if (!to_json_recurse(Z, z, S)) {
+        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -1062,7 +1061,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
       for (auto &Z : N->as<UnionTy>()->get_items()) {
         json z;
 
-        if (!to_json_recurse(Z, z, S)) {
+        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -1078,11 +1077,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<ArrayTy>()->get_item(), x[1], S)) {
+      if (!to_json_recurse(N->as<ArrayTy>()->get_item(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(N->as<ArrayTy>()->get_size(), x[2], S)) {
+      if (!to_json_recurse(N->as<ArrayTy>()->get_size(), x[2])) {
         return false;
       }
 
@@ -1095,7 +1094,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<VectorTy>()->get_item(), x[1], S)) {
+      if (!to_json_recurse(N->as<VectorTy>()->get_item(), x[1])) {
         return false;
       }
 
@@ -1108,11 +1107,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<MapTy>()->get_key(), x[1], S)) {
+      if (!to_json_recurse(N->as<MapTy>()->get_key(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(N->as<MapTy>()->get_value(), x[2], S)) {
+      if (!to_json_recurse(N->as<MapTy>()->get_value(), x[2])) {
         return false;
       }
 
@@ -1130,7 +1129,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
       for (auto &Z : N->as<TupleTy>()->get_items()) {
         json z;
 
-        if (!to_json_recurse(Z, z, S)) {
+        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -1146,7 +1145,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<SetTy>()->get_item(), x[1], S)) {
+      if (!to_json_recurse(N->as<SetTy>()->get_item(), x[1])) {
         return false;
       }
 
@@ -1159,7 +1158,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<OptionalTy>()->get_item(), x[1], S)) {
+      if (!to_json_recurse(N->as<OptionalTy>()->get_item(), x[1])) {
         return false;
       }
 
@@ -1174,7 +1173,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       FuncTy *W = N->as<FuncTy>();
 
-      if (!to_json_recurse(W->get_return_ty(), x[1], S)) {
+      if (!to_json_recurse(W->get_return_ty(), x[1])) {
         return false;
       }
 
@@ -1187,11 +1186,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
         z[0] = std::get<0>(Z).c_str();
 
-        if (!to_json_recurse(std::get<1>(Z), z[1], S)) {
+        if (!to_json_recurse(std::get<1>(Z), z[1])) {
           return false;
         }
 
-        if (!to_json_recurse(std::get<2>(Z), z[2], S)) {
+        if (!to_json_recurse(std::get<2>(Z), z[2])) {
           return false;
         }
 
@@ -1229,7 +1228,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       TemplType *W = N->as<TemplType>();
 
-      if (!to_json_recurse(W->get_template(), x[1], S)) {
+      if (!to_json_recurse(W->get_template(), x[1])) {
         return false;
       }
 
@@ -1238,7 +1237,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
       for (auto &Z : W->get_args()) {
         json z;
 
-        if (!to_json_recurse(Z, z, S)) {
+        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -1258,7 +1257,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       x[1] = W->get_name().c_str();
 
-      if (!to_json_recurse(W->get_type(), x[2], S)) {
+      if (!to_json_recurse(W->get_type(), x[2])) {
         return false;
       }
 
@@ -1275,7 +1274,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       x[1] = W->get_name().c_str();
 
-      if (!to_json_recurse(W->get_type(), x[2], S)) {
+      if (!to_json_recurse(W->get_type(), x[2])) {
         return false;
       }
 
@@ -1288,7 +1287,43 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      /// TODO:
+      StructDef *W = N->as<StructDef>();
+
+      x[1] = W->get_name().c_str();
+
+      auto &y = x[2] = json::array();
+
+      for (auto &Z : W->get_fields()) {
+        json z;
+        if (!to_json_recurse(Z, z)) {
+          return false;
+        }
+
+        y.push_back(std::move(z));
+      }
+
+      auto &z = x[3] = json::array();
+
+      for (auto &Z : W->get_methods()) {
+        json w;
+        if (!to_json_recurse(Z, w)) {
+          return false;
+        }
+
+        z.push_back(std::move(w));
+      }
+
+      auto &w = x[4] = json::array();
+
+      for (auto &Z : W->get_static_methods()) {
+        json v;
+        if (!to_json_recurse(Z, v)) {
+          return false;
+        }
+
+        w.push_back(std::move(v));
+      }
+
       break;
     }
 
@@ -1298,7 +1333,43 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      /// TODO:
+      RegionDef *W = N->as<RegionDef>();
+
+      x[1] = W->get_name().c_str();
+
+      auto &y = x[2] = json::array();
+
+      for (auto &Z : W->get_fields()) {
+        json z;
+        if (!to_json_recurse(Z, z)) {
+          return false;
+        }
+
+        y.push_back(std::move(z));
+      }
+
+      auto &z = x[3] = json::array();
+
+      for (auto &Z : W->get_methods()) {
+        json w;
+        if (!to_json_recurse(Z, w)) {
+          return false;
+        }
+
+        z.push_back(std::move(w));
+      }
+
+      auto &w = x[4] = json::array();
+
+      for (auto &Z : W->get_static_methods()) {
+        json v;
+        if (!to_json_recurse(Z, v)) {
+          return false;
+        }
+
+        w.push_back(std::move(v));
+      }
+
       break;
     }
 
@@ -1308,7 +1379,43 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      /// TODO:
+      GroupDef *W = N->as<GroupDef>();
+
+      x[1] = W->get_name().c_str();
+
+      auto &y = x[2] = json::array();
+
+      for (auto &Z : W->get_fields()) {
+        json z;
+        if (!to_json_recurse(Z, z)) {
+          return false;
+        }
+
+        y.push_back(std::move(z));
+      }
+
+      auto &z = x[3] = json::array();
+
+      for (auto &Z : W->get_methods()) {
+        json w;
+        if (!to_json_recurse(Z, w)) {
+          return false;
+        }
+
+        z.push_back(std::move(w));
+      }
+
+      auto &w = x[4] = json::array();
+
+      for (auto &Z : W->get_static_methods()) {
+        json v;
+        if (!to_json_recurse(Z, v)) {
+          return false;
+        }
+
+        w.push_back(std::move(v));
+      }
+
       break;
     }
 
@@ -1318,7 +1425,43 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      /// TODO:
+      UnionDef *W = N->as<UnionDef>();
+
+      x[1] = W->get_name().c_str();
+
+      auto &y = x[2] = json::array();
+
+      for (auto &Z : W->get_fields()) {
+        json z;
+        if (!to_json_recurse(Z, z)) {
+          return false;
+        }
+
+        y.push_back(std::move(z));
+      }
+
+      auto &z = x[3] = json::array();
+
+      for (auto &Z : W->get_methods()) {
+        json w;
+        if (!to_json_recurse(Z, w)) {
+          return false;
+        }
+
+        z.push_back(std::move(w));
+      }
+
+      auto &w = x[4] = json::array();
+
+      for (auto &Z : W->get_static_methods()) {
+        json v;
+        if (!to_json_recurse(Z, v)) {
+          return false;
+        }
+
+        w.push_back(std::move(v));
+      }
+
       break;
     }
 
@@ -1339,7 +1482,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
         z[0] = Z.first.c_str();
         z[1] = json::array();
 
-        if (!to_json_recurse(Z.second, z[1], S)) {
+        if (!to_json_recurse(Z.second, z[1])) {
           return false;
         }
 
@@ -1359,7 +1502,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       x[1] = W->get_name().c_str();
 
-      if (!to_json_recurse(W->get_type(), x[2], S)) {
+      if (!to_json_recurse(W->get_type(), x[2])) {
         return false;
       }
 
@@ -1373,15 +1516,15 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
         y.push_back(std::move(z));
       }
 
-      if (!to_json_recurse(W->get_precond(), x[4], S)) {
+      if (!to_json_recurse(W->get_precond(), x[4])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_postcond(), x[5], S)) {
+      if (!to_json_recurse(W->get_postcond(), x[5])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_body(), x[6], S)) {
+      if (!to_json_recurse(W->get_body(), x[6])) {
         return false;
       }
 
@@ -1404,7 +1547,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
         y.push_back(Z.c_str());
       }
 
-      if (!to_json_recurse(W->get_body(), x[3], S)) {
+      if (!to_json_recurse(W->get_body(), x[3])) {
         return false;
       }
 
@@ -1422,7 +1565,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
       x[1] = W->get_name().c_str();
       x[2] = W->get_abi_name().c_str();
 
-      if (!to_json_recurse(W->get_body(), x[3], S)) {
+      if (!to_json_recurse(W->get_body(), x[3])) {
         return false;
       }
 
@@ -1439,11 +1582,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       x[1] = W->get_name().c_str();
 
-      if (!to_json_recurse(W->get_type(), x[2], S)) {
+      if (!to_json_recurse(W->get_type(), x[2])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_value(), x[3], S)) {
+      if (!to_json_recurse(W->get_value(), x[3])) {
         return false;
       }
 
@@ -1464,7 +1607,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       for (auto &Z : W->get_items()) {
         json z;
-        if (!to_json_recurse(Z, z, S)) {
+        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -1484,11 +1627,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       x[1] = W->get_name().c_str();
 
-      if (!to_json_recurse(W->get_type(), x[2], S)) {
+      if (!to_json_recurse(W->get_type(), x[2])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_value(), x[3], S)) {
+      if (!to_json_recurse(W->get_value(), x[3])) {
         return false;
       }
 
@@ -1505,11 +1648,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       x[1] = W->get_name().c_str();
 
-      if (!to_json_recurse(W->get_type(), x[2], S)) {
+      if (!to_json_recurse(W->get_type(), x[2])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_value(), x[3], S)) {
+      if (!to_json_recurse(W->get_value(), x[3])) {
         return false;
       }
 
@@ -1526,11 +1669,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       x[1] = W->get_name().c_str();
 
-      if (!to_json_recurse(W->get_type(), x[2], S)) {
+      if (!to_json_recurse(W->get_type(), x[2])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_value(), x[3], S)) {
+      if (!to_json_recurse(W->get_value(), x[3])) {
         return false;
       }
 
@@ -1553,7 +1696,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<ReturnStmt>()->get_value(), x[1], S)) {
+      if (!to_json_recurse(N->as<ReturnStmt>()->get_value(), x[1])) {
         return false;
       }
 
@@ -1566,11 +1709,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<ReturnIfStmt>()->get_cond(), x[1], S)) {
+      if (!to_json_recurse(N->as<ReturnIfStmt>()->get_cond(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(N->as<ReturnIfStmt>()->get_value(), x[2], S)) {
+      if (!to_json_recurse(N->as<ReturnIfStmt>()->get_value(), x[2])) {
         return false;
       }
 
@@ -1583,11 +1726,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<RetZStmt>()->get_cond(), x[1], S)) {
+      if (!to_json_recurse(N->as<RetZStmt>()->get_cond(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(N->as<RetZStmt>()->get_value(), x[2], S)) {
+      if (!to_json_recurse(N->as<RetZStmt>()->get_value(), x[2])) {
         return false;
       }
 
@@ -1600,7 +1743,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<RetVStmt>()->get_cond(), x[1], S)) {
+      if (!to_json_recurse(N->as<RetVStmt>()->get_cond(), x[1])) {
         return false;
       }
 
@@ -1633,15 +1776,15 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       IfStmt *W = N->as<IfStmt>();
 
-      if (!to_json_recurse(W->get_cond(), x[1], S)) {
+      if (!to_json_recurse(W->get_cond(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_then(), x[2], S)) {
+      if (!to_json_recurse(W->get_then(), x[2])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_else(), x[3], S)) {
+      if (!to_json_recurse(W->get_else(), x[3])) {
         return false;
       }
 
@@ -1656,11 +1799,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       WhileStmt *W = N->as<WhileStmt>();
 
-      if (!to_json_recurse(W->get_cond(), x[1], S)) {
+      if (!to_json_recurse(W->get_cond(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_body(), x[2], S)) {
+      if (!to_json_recurse(W->get_body(), x[2])) {
         return false;
       }
 
@@ -1675,19 +1818,19 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       ForStmt *W = N->as<ForStmt>();
 
-      if (!to_json_recurse(W->get_init(), x[1], S)) {
+      if (!to_json_recurse(W->get_init(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_cond(), x[2], S)) {
+      if (!to_json_recurse(W->get_cond(), x[2])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_step(), x[3], S)) {
+      if (!to_json_recurse(W->get_step(), x[3])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_body(), x[4], S)) {
+      if (!to_json_recurse(W->get_body(), x[4])) {
         return false;
       }
 
@@ -1705,15 +1848,15 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
       x[1] = W->get_idx_ident().c_str();
       x[2] = W->get_val_ident().c_str();
 
-      if (!to_json_recurse(W->get_maxjobs(), x[3], S)) {
+      if (!to_json_recurse(W->get_maxjobs(), x[3])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_expr(), x[4], S)) {
+      if (!to_json_recurse(W->get_expr(), x[4])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_body(), x[4], S)) {
+      if (!to_json_recurse(W->get_body(), x[4])) {
         return false;
       }
 
@@ -1731,11 +1874,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
       x[1] = W->get_idx_ident().c_str();
       x[2] = W->get_val_ident().c_str();
 
-      if (!to_json_recurse(W->get_expr(), x[3], S)) {
+      if (!to_json_recurse(W->get_expr(), x[3])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_body(), x[4], S)) {
+      if (!to_json_recurse(W->get_body(), x[4])) {
         return false;
       }
 
@@ -1750,11 +1893,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       CaseStmt *W = N->as<CaseStmt>();
 
-      if (!to_json_recurse(W->get_cond(), x[1], S)) {
+      if (!to_json_recurse(W->get_cond(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(W->get_body(), x[2], S)) {
+      if (!to_json_recurse(W->get_body(), x[2])) {
         return false;
       }
 
@@ -1767,11 +1910,11 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<SwitchStmt>()->get_cond(), x[1], S)) {
+      if (!to_json_recurse(N->as<SwitchStmt>()->get_cond(), x[1])) {
         return false;
       }
 
-      if (!to_json_recurse(N->as<SwitchStmt>()->get_default(), x[2], S)) {
+      if (!to_json_recurse(N->as<SwitchStmt>()->get_default(), x[2])) {
         return false;
       }
 
@@ -1779,7 +1922,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
 
       for (auto &Z : N->as<SwitchStmt>()->get_cases()) {
         json z;
-        if (!to_json_recurse(Z, z, S)) {
+        if (!to_json_recurse(Z, z)) {
           return false;
         }
 
@@ -1796,7 +1939,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        */
 
       auto &y = x[1] = json::array();
-      if (!to_json_recurse(N->as<ExprStmt>()->get_expr(), y, S)) {
+      if (!to_json_recurse(N->as<ExprStmt>()->get_expr(), y)) {
         return false;
       }
 
@@ -1809,7 +1952,7 @@ bool to_json_recurse(Node *N, json &x, SerialState &S) {
        * @note [Developer Notes]
        */
 
-      if (!to_json_recurse(N->as<VolStmt>()->get_stmt(), x[1], S)) {
+      if (!to_json_recurse(N->as<VolStmt>()->get_stmt(), x[1])) {
         return false;
       }
 
