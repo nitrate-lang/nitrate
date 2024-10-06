@@ -69,7 +69,7 @@ cd quix
 sudo apt install -y clang cmake make llvm-14 upx libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev rapidjson-dev libdeflate-dev libreadline-dev libcurlpp-dev libclang-dev libclang-cpp-dev libpolly-14-dev
 
 # Build the toolchain in release mode
-cmake -S . -B .build/release -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./build
+cmake -S . -B .build/release -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./build -DCMAKE_CXX_COMPILER=/usr/bin/clang++
 cmake --build .build/release -j$(nproc)
 cmake --install .build/release
 
