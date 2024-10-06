@@ -51,7 +51,7 @@ std::string_view quix_code_prefix = R"(@(fn define() {
   quix.set('def.'.. name.v, valu.v);
 })
 
-@(fn compile_if(cond, terminator) {
+@(fn comp_if(cond, terminator) {
   -- Nothing to do if condition is true
   if cond then
     return
@@ -59,10 +59,10 @@ std::string_view quix_code_prefix = R"(@(fn define() {
 
   -- Default terminator
   if terminator == nil then
-    terminator = 'compile_endif()'
+    terminator = 'comp_endif()'
   end
 
-  -- Handle nested @compile_if blocks
+  -- Handle nested @comp_if blocks
   local rank = 1
   while true do
     local token = quix.next()
@@ -78,13 +78,13 @@ std::string_view quix_code_prefix = R"(@(fn define() {
       end
     end
 
-    if (token.ty == 'macr' and string.match(token.v, '^compile_if(.*)$')) then
+    if (token.ty == 'macr' and string.match(token.v, '^comp_if(.*)$')) then
       rank = rank + 1
     end
   end
 })
 
-@(fn compile_endif() {})
+@(fn comp_endif() {})
 
 @(fn use() {
   -- Read in expected lexical sequence
@@ -150,7 +150,7 @@ std::string_view quix_code_prefix = R"(@(fn define() {
 })
 
 @(
-  function isset(name, value) 
+  quix.isset = function(name, value) 
     if name == nil then
       quix.abort('Expected name in @isset function');
     end
@@ -162,15 +162,15 @@ std::string_view quix_code_prefix = R"(@(fn define() {
     return flag == value;
   end
 
-  function get_target() 
+  quix.get_target = function() 
     return quix.get('this.target-triple');
   end
 
-  function get_host() 
+  quix.get_host = function() 
     return quix.get('this.host-triple');
   end
 
-  function try_set(name, value)
+  quix.try_set = function(name, value)
     if name == nil then
       quix.abort('Expected name in @req_flag_set function');
     end
@@ -195,12 +195,157 @@ std::string_view quix_code_prefix = R"(@(fn define() {
     return true;
   end
 
-  function putflag(name, value) 
+  quix.set_flag = function(name, value) 
     if try_set(name, value) then
       return;
     end
 
     quix.abort('Immutable flag could not be modified: ', name);
+  end
+
+  quix.enstr = function(item) 
+    if item == nil then
+      item = '';
+    end
+
+    item = tostring(item);
+
+    local res = '"';
+
+    for i = 1, #item do
+      -- If the character is in the normal ASCII range, just add it
+      if string.byte(item, i) >= 32 and string.byte(item, i) <= 126 then
+        res = res .. string.sub(item, i, i);
+      else -- Otherwise, add the escape sequence
+        res = res .. string.format('\\x%02x', string.byte(item, i));
+      end
+    end
+
+    return res .. '"';
+  end
+
+  quix.destr = function(item) 
+    if item == nil then
+      return '';
+    end
+
+    if #item < 2 then
+      return item;
+    end
+
+    -- check for "'" or '"' at the beginning and end of the string
+    local first = string.sub(item, 1, 1);
+    local last = string.sub(item, #item, #item);
+
+    if first ~= last or (first ~= '"' and first ~= "'") then
+      error('String is not properly quoted');
+    end
+
+    item = string.sub(item, 2, #item - 1);
+
+    local res = '';
+    local i = 1;
+    while i <= #item do
+      local ch = string.sub(item, i, i);
+
+      if ch == '\\' then
+        local esc = string.sub(item, i + 1, i + 1);
+        if esc == 'x' or esc == 'X' then
+          local hex = string.sub(item, i + 2, i + 3);
+          res = res .. string.byte(tonumber(hex, 16));
+          i = i + 4;
+        elseif esc == 'u' then
+          if string.sub(item, i + 2, i + 2) == '{' then
+            local hex = '';
+            i = i + 3;
+            while string.sub(item, i, i) ~= '}' do
+              hex = hex .. string.sub(item, i, i);
+              i = i + 1;
+            end
+
+            local code = tonumber(hex, 16);
+            i = i + 1;
+
+            -- Escape into UTF-8
+            if code < 0x80 then
+              res = res .. string.char(code);
+            elseif code < 0x800 then
+              res = res .. string.char(0xC0 | (code >> 6));
+              res = res .. string.char(0x80 | (code & 0x3F));
+            elseif code < 0x10000 then
+              res = res .. string.char(0xE0 | (code >> 12));
+              res = res .. string.char(0x80 | ((code >> 6) & 0x3F));
+              res = res .. string.char(0x80 | (code & 0x3F));
+            elseif code < 0x110000 then
+              res = res .. string.char(0xF0 | (code >> 18));
+              res = res .. string.char(0x80 | ((code >> 12) & 0x3F));
+              res = res .. string.char(0x80 | ((code >> 6) & 0x3F));
+              res = res .. string.char(0x80 | (code & 0x3F));
+            else
+              error('Invalid unicode escape');
+            end
+          else
+            error('Invalid unicode escape');
+          end
+        elseif esc == 'o' then
+          local oct = string.sub(item, i + 2, i + 4);
+          res = res .. string.byte(tonumber(oct, 8));
+          i = i + 5;
+        elseif esc == 'b' then
+          if string.sub(item, i + 2, i + 2) == '{' then
+            local bin = '';
+            i = i + 3;
+            while string.sub(item, i, i) ~= '}' do
+              bin = bin .. string.sub(item, i, i);
+              i = i + 1;
+            end
+
+            while #bin % 8 ~= 0 do
+              bin = '0' .. bin;
+            end
+
+            for j = 1, #bin, 8 do
+              res = res .. string.char(tonumber(string.sub(bin, j, j + 7), 2));
+            end
+
+            i = i + 1;
+          else
+            error('Invalid binary escape');
+          end
+        elseif esc == 'n' then
+          res = res .. '\n';
+          i = i + 2;
+        elseif esc == 'r' then
+          res = res .. '\r';
+          i = i + 2;
+        elseif esc == 't' then
+          res = res .. '\t';
+          i = i + 2;
+        elseif esc == 'v' then
+          res = res .. '\v';
+          i = i + 2;
+        elseif esc == 'f' then
+          res = res .. '\f';
+          i = i + 2;
+        elseif esc == 'a' then
+          res = res .. '\a';
+          i = i + 2;
+        elseif esc == '0' then
+          res = res .. '\0';
+          i = i + 2;
+        elseif esc == '\\' then
+          res = res .. '\\';
+          i = i + 2;
+        else
+          error('Unknown escape sequence: \\' .. esc);
+        end
+      else
+        res = res .. ch;
+        i = i + 1;
+      end
+    end
+
+    return res;
   end
 )
 )";
