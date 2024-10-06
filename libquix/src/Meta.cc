@@ -34,58 +34,12 @@
 #include <quix-core/Lib.h>
 #include <quix/code.h>
 
+#include <SerialUtil.hh>
 #include <cstdint>
 #include <functional>
 #include <quix-prep/Classes.hh>
 #include <string_view>
 #include <unordered_set>
-
-static std::string create_json_string(std::string_view input) {
-  std::string output = "\"";
-  output.reserve(input.length() * 2);
-
-  for (char ch : input) {
-    switch (ch) {
-      case '"':
-        output += "\\\"";
-        break;
-      case '\\':
-        output += "\\\\";
-        break;
-      case '\b':
-        output += "\\b";
-        break;
-      case '\f':
-        output += "\\f";
-        break;
-      case '\n':
-        output += "\\n";
-        break;
-      case '\r':
-        output += "\\r";
-        break;
-      case '\t':
-        output += "\\t";
-        break;
-      case '\0':
-        output += "\\0";
-        break;
-      default:
-        if (ch >= 32 && ch < 127) {
-          output += ch;
-        } else {
-          char hex[5];
-          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
-          output += hex;
-        }
-        break;
-    }
-  }
-
-  output += "\"";
-
-  return output;
-}
 
 static bool impl_use_json(qlex_t *L, FILE *O) {
   fputc('[', O);
@@ -192,77 +146,29 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
   return true;
 }
 
-static void msgpack_write_uint(int &err, FILE *O, uint64_t x) {
-  if (x <= INT8_MAX) {
-    err |= fputc(x & 0x7f, O);
-  } else if (x <= UINT8_MAX) {
-    err |= fputc(0xcc, O);
-    err |= fputc(x, O);
-  } else if (x <= UINT16_MAX) {
-    err |= fputc(0xcd, O);
-    err |= fputc((x >> 8) & 0xff, O);
-    err |= fputc(x & 0xff, O);
-  } else if (x <= UINT32_MAX) {
-    err |= fputc(0xce, O);
-    err |= fputc((x >> 24) & 0xff, O);
-    err |= fputc((x >> 16) & 0xff, O);
-    err |= fputc((x >> 8) & 0xff, O);
-    err |= fputc(x & 0xff, O);
-  } else {
-    err |= fputc(0xcf, O);
-    err |= fputc((x >> 56) & 0xff, O);
-    err |= fputc((x >> 48) & 0xff, O);
-    err |= fputc((x >> 40) & 0xff, O);
-    err |= fputc((x >> 32) & 0xff, O);
-    err |= fputc((x >> 24) & 0xff, O);
-    err |= fputc((x >> 16) & 0xff, O);
-    err |= fputc((x >> 8) & 0xff, O);
-    err |= fputc(x & 0xff, O);
-  }
-}
-
-static void msgpack_write_str(int &err, FILE *O, const char *buf, size_t sz) {
-  if (sz <= 31) {
-    err |= fputc(0b10100000 | sz, O);
-  } else if (sz <= UINT8_MAX) {
-    err |= fputc(0xd9, O);
-    err |= fputc(sz, O);
-  } else if (sz <= UINT16_MAX) {
-    err |= fputc(0xda, O);
-    err |= fputc((sz >> 8) & 0xff, O);
-    err |= fputc(sz & 0xff, O);
-  } else if (sz <= UINT32_MAX) {
-    err |= fputc(0xdb, O);
-    err |= fputc((sz >> 24) & 0xff, O);
-    err |= fputc((sz >> 16) & 0xff, O);
-    err |= fputc((sz >> 8) & 0xff, O);
-    err |= fputc(sz & 0xff, O);
-  }
-
-  fwrite(buf, 1, sz, O);
-}
-
-static void msgpack_write_tok(int &err, FILE *O, uint8_t t, std::string_view v, uint32_t a,
-                              uint32_t b, uint32_t c, uint32_t d) {
+static bool msgpack_write_tok(FILE *O, uint8_t t, std::string_view v, uint32_t a, uint32_t b,
+                              uint32_t c, uint32_t d) {
   fputc(0b10010000 | 6, O);
 
   // Write type
-  msgpack_write_uint(err, O, t);
+  if (!msgpack_write_uint(O, t)) return false;
 
   // Write value
-  msgpack_write_str(err, O, v.data(), v.size());
+  if (!msgpack_write_str(O, v)) return false;
 
   // Write start line
-  msgpack_write_uint(err, O, a);
+  if (!msgpack_write_uint(O, a)) return false;
 
   // Write start column
-  msgpack_write_uint(err, O, b);
+  if (!msgpack_write_uint(O, b)) return false;
 
   // Write end line
-  msgpack_write_uint(err, O, c);
+  if (!msgpack_write_uint(O, c)) return false;
 
   // Write end column
-  msgpack_write_uint(err, O, d);
+  if (!msgpack_write_uint(O, d)) return false;
+
+  return true;
 }
 
 static bool impl_use_msgpack(qlex_t *L, FILE *O) {
@@ -297,37 +203,51 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
       }
 
       case qErro: { /* Error, invalid token */
-        msgpack_write_tok(err, O, 2, "", sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 2, "", sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
       case qKeyW: { /* Keyword */
-        msgpack_write_tok(err, O, 3, qlex_kwstr(tok.v.key), sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 3, qlex_kwstr(tok.v.key), sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
       case qOper: { /* Operator */
-        msgpack_write_tok(err, O, 4, qlex_opstr(tok.v.op), sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 4, qlex_opstr(tok.v.op), sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
       case qPunc: { /* Punctuation */
-        msgpack_write_tok(err, O, 5, qlex_punctstr(tok.v.punc), sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 5, qlex_punctstr(tok.v.punc), sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
       case qName: { /* Identifier */
-        msgpack_write_tok(err, O, 6, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 6, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
       case qIntL: { /* Integer literal */
-        msgpack_write_tok(err, O, 7, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 7, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
       case qNumL: { /* Floating-point literal */
-        msgpack_write_tok(err, O, 8, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 8, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
@@ -336,7 +256,9 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
         const char *str = qlex_str(L, &tok, &S);
         std::string_view sv(str, S);
 
-        msgpack_write_tok(err, O, 9, sv, sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 9, sv, sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
@@ -345,17 +267,23 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
         const char *str = qlex_str(L, &tok, &S);
         std::string_view sv(str, S);
 
-        msgpack_write_tok(err, O, 10, sv, sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 10, sv, sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
       case qMacB: { /* Macro block */
-        msgpack_write_tok(err, O, 11, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 11, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
       case qMacr: { /* Macro call */
-        msgpack_write_tok(err, O, 12, qlex_str(L, &tok, nullptr), sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 12, qlex_str(L, &tok, nullptr), sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
 
@@ -364,7 +292,9 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
         const char *str = qlex_str(L, &tok, &S);
         std::string_view sv(str, S);
 
-        msgpack_write_tok(err, O, 13, sv, sl, sc, el, ec);
+        if (!msgpack_write_tok(O, 13, sv, sl, sc, el, ec)) {
+          return false;
+        }
         break;
       }
     }
@@ -372,7 +302,9 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
     num_entries++;
   }
 
-  msgpack_write_tok(err, O, 0, "", 0, 0, 0, 0);
+  if (!msgpack_write_tok(O, 0, "", 0, 0, 0, 0)) {
+    return false;
+  }
   num_entries++;
 
   off_t end_offset = ftello(O);
@@ -397,7 +329,7 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
 }
 
 bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                      const std::unordered_set<std::string_view> &opts) {
+                             const std::unordered_set<std::string_view> &opts) {
   (void)diag_cb;
 
   qprep lexer(source, nullptr, qcore_env_current());

@@ -36,7 +36,7 @@
 
 std::string create_json_string(std::string_view input);
 bool read_json_string(FILE *I, char **str, size_t &len);
-void msgpack_write_uint(int &err, FILE *O, uint64_t x);
+bool msgpack_write_uint(FILE *O, uint64_t x);
 bool msgpack_read_uint(FILE *I, uint64_t &x);
-void msgpack_write_str(int &err, FILE *O, std::string_view str);
+bool msgpack_write_str(FILE *O, std::string_view str);
 bool msgpack_read_str(FILE *I, char **str, size_t &len);

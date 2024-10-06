@@ -35,8 +35,6 @@
 
 #include <SerialUtil.hh>
 
-#define UEOF ((uint32_t) - 1)
-
 std::string create_json_string(std::string_view input) {
   std::string output = "\"";
   output.reserve(input.length() * 2);
@@ -170,78 +168,90 @@ bool read_json_string(FILE *I, char **str, size_t &len) {
   return false;
 }
 
-void msgpack_write_uint(int &err, FILE *O, uint64_t x) {
-  if (x <= INT8_MAX) {
-    err |= fputc(x & 0x7f, O);
-  } else if (x <= UINT8_MAX) {
-    err |= fputc(0xcc, O);
-    err |= fputc(x, O);
-  } else if (x <= UINT16_MAX) {
-    err |= fputc(0xcd, O);
-    err |= fputc((x >> 8) & 0xff, O);
-    err |= fputc(x & 0xff, O);
-  } else if (x <= UINT32_MAX) {
-    err |= fputc(0xce, O);
-    err |= fputc((x >> 24) & 0xff, O);
-    err |= fputc((x >> 16) & 0xff, O);
-    err |= fputc((x >> 8) & 0xff, O);
-    err |= fputc(x & 0xff, O);
-  } else {
-    err |= fputc(0xcf, O);
-    err |= fputc((x >> 56) & 0xff, O);
-    err |= fputc((x >> 48) & 0xff, O);
-    err |= fputc((x >> 40) & 0xff, O);
-    err |= fputc((x >> 32) & 0xff, O);
-    err |= fputc((x >> 24) & 0xff, O);
-    err |= fputc((x >> 16) & 0xff, O);
-    err |= fputc((x >> 8) & 0xff, O);
-    err |= fputc(x & 0xff, O);
+#define FPUTC(__x, __O)         \
+  if (fputc(__x, __O) == EOF) { \
+    return false;               \
   }
+
+#define FGETC(__I)                            \
+  if ((ch = fgetc(__I)) == ((uint32_t)EOF)) { \
+    return false;                             \
+  }
+
+bool msgpack_write_uint(FILE *O, uint64_t x) {
+  if (x <= INT8_MAX) {
+    FPUTC(x & 0x7f, O);
+  } else if (x <= UINT8_MAX) {
+    FPUTC(0xcc, O);
+    FPUTC(x, O);
+  } else if (x <= UINT16_MAX) {
+    FPUTC(0xcd, O);
+    FPUTC((x >> 8) & 0xff, O);
+    FPUTC(x & 0xff, O);
+  } else if (x <= UINT32_MAX) {
+    FPUTC(0xce, O);
+    FPUTC((x >> 24) & 0xff, O);
+    FPUTC((x >> 16) & 0xff, O);
+    FPUTC((x >> 8) & 0xff, O);
+    FPUTC(x & 0xff, O);
+  } else {
+    FPUTC(0xcf, O);
+    FPUTC((x >> 56) & 0xff, O);
+    FPUTC((x >> 48) & 0xff, O);
+    FPUTC((x >> 40) & 0xff, O);
+    FPUTC((x >> 32) & 0xff, O);
+    FPUTC((x >> 24) & 0xff, O);
+    FPUTC((x >> 16) & 0xff, O);
+    FPUTC((x >> 8) & 0xff, O);
+    FPUTC(x & 0xff, O);
+  }
+
+  return true;
 }
 
 bool msgpack_read_uint(FILE *I, uint64_t &x) {
   x = 0;
 
   uint32_t ch;
-  if ((ch = fgetc(I)) == UEOF) return false;
+  FGETC(I);
 
   if ((ch & 0x80) == 0) {
     x = ch;
   } else if (ch == 0xcc) {
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x = ch;
   } else if (ch == 0xcd) {
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x = ch << 8;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= ch;
   } else if (ch == 0xce) {
     x = 0;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= ch << 24;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= ch << 16;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= ch << 8;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= ch;
   } else if (ch == 0xcf) {
     x = 0;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= (uint64_t)ch << 56;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= (uint64_t)ch << 48;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= (uint64_t)ch << 40;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= (uint64_t)ch << 32;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= (uint64_t)ch << 24;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= (uint64_t)ch << 16;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= (uint64_t)ch << 8;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     x |= (uint64_t)ch;
   } else {
     return false;
@@ -250,54 +260,58 @@ bool msgpack_read_uint(FILE *I, uint64_t &x) {
   return true;
 }
 
-void msgpack_write_str(int &err, FILE *O, std::string_view str) {
+bool msgpack_write_str(FILE *O, std::string_view str) {
   size_t sz = str.size();
 
   if (sz <= 31) {
-    err |= fputc(0b10100000 | sz, O);
+    FPUTC(0b10100000 | sz, O);
   } else if (sz <= UINT8_MAX) {
-    err |= fputc(0xd9, O);
-    err |= fputc(sz, O);
+    FPUTC(0xd9, O);
+    FPUTC(sz, O);
   } else if (sz <= UINT16_MAX) {
-    err |= fputc(0xda, O);
-    err |= fputc((sz >> 8) & 0xff, O);
-    err |= fputc(sz & 0xff, O);
+    FPUTC(0xda, O);
+    FPUTC((sz >> 8) & 0xff, O);
+    FPUTC(sz & 0xff, O);
   } else if (sz <= UINT32_MAX) {
-    err |= fputc(0xdb, O);
-    err |= fputc((sz >> 24) & 0xff, O);
-    err |= fputc((sz >> 16) & 0xff, O);
-    err |= fputc((sz >> 8) & 0xff, O);
-    err |= fputc(sz & 0xff, O);
+    FPUTC(0xdb, O);
+    FPUTC((sz >> 24) & 0xff, O);
+    FPUTC((sz >> 16) & 0xff, O);
+    FPUTC((sz >> 8) & 0xff, O);
+    FPUTC(sz & 0xff, O);
   }
 
-  fwrite(str.data(), 1, sz, O);
+  if (fwrite(str.data(), 1, sz, O) != sz) {
+    return false;
+  }
+
+  return true;
 }
 
 bool msgpack_read_str(FILE *I, char **str, size_t &len) {
   len = 0;
 
   uint32_t ch;
-  if ((ch = fgetc(I)) == UEOF) return false;
+  FGETC(I);
 
   if ((ch & 0b10100000) == 0b10100000) {
     len = ch & 0b00011111;
   } else if (ch == 0xd9) {
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     len = ch;
   } else if (ch == 0xda) {
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     len = ch << 8;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     len |= ch;
   } else if (ch == 0xdb) {
     len = 0;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     len |= ch << 24;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     len |= ch << 16;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     len |= ch << 8;
-    if ((ch = fgetc(I)) == UEOF) return false;
+    FGETC(I);
     len |= ch;
   } else {
     return false;
@@ -309,6 +323,7 @@ bool msgpack_read_str(FILE *I, char **str, size_t &len) {
   }
 
   if (fread(*str, 1, len, I) != len) {
+    qcore_panic("msgpack_read_str: fread failed");
     free(*str);
     return false;
   }
