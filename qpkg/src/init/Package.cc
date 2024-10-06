@@ -150,8 +150,7 @@ bool qpkg::init::Package::createPackage() {
       return false;
     }
 
-    if (!touch(m_output / m_name / "include/.gitkeep") ||
-        !touch(m_output / m_name / "test/.gitkeep") || !touch(m_output / m_name / "doc/.gitkeep")) {
+    if (!touch(m_output / m_name / "test/.gitkeep") || !touch(m_output / m_name / "doc/.gitkeep")) {
       LOG(core::ERROR) << "Failed to create package directories" << std::endl;
       return false;
     }
