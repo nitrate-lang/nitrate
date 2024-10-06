@@ -50,7 +50,12 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
                                          ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
                                          ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
   target_compile_options(quix PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix PRIVATE quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
+  target_link_libraries(quix PRIVATE quix-core 
+                                     quix-lexer 
+                                     quix-prep 
+                                     quix-parser 
+                                     quix-qxir 
+                                     quix-codegen)
   add_dependencies(quix quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -63,8 +68,13 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
   target_compile_options(quix-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-shared PRIVATE quix-core-shared quix-lexer-shared quix-prep-shared quix-parser-shared quix-qxir-shared quix-codegen-shared)
-  add_dependencies(quix-shared quix-core-shared quix-lexer-shared quix-prep-shared quix-parser-shared quix-qxir-shared quix-codegen-shared)
+  target_link_libraries(quix-shared PRIVATE quix-core
+                                            quix-lexer
+                                            quix-prep
+                                            quix-parser
+                                            quix-qxir
+                                            quix-codegen)
+  add_dependencies(quix-shared quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
   set_target_properties(quix-shared PROPERTIES OUTPUT_NAME quix)
 
   add_subdirectory(fuzzer)
@@ -80,7 +90,12 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
                                              ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
   target_compile_options(quix PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden)
   target_link_options(quix PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  target_link_libraries(quix PRIVATE quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
+  target_link_libraries(quix PRIVATE quix-core 
+                                     quix-lexer 
+                                     quix-prep 
+                                     quix-parser 
+                                     quix-qxir 
+                                     quix-codegen)
   add_dependencies(quix quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
 
   #================== CREATE SHAREDLIB RELEASE BUILD ================
@@ -94,7 +109,13 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
   target_compile_options(quix-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-shared PRIVATE quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
+  target_link_libraries(quix-shared PRIVATE quix-core 
+                                            quix-lexer 
+                                            quix-prep 
+                                            quix-parser 
+                                            quix-qxir 
+                                            quix-codegen
+                                            )
   add_dependencies(quix-shared quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
   set_target_properties(quix-shared PROPERTIES OUTPUT_NAME quix)
 endif()
