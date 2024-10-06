@@ -1560,10 +1560,9 @@ static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
   }
   /* Indirect call */
   else {
+    /// TODO: Implement conversion for node
+    qcore_implement(__func__);
   }
-
-  /// TODO: Implement conversion for node
-  qcore_implement(__func__);
 }
 
 static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Seq *N) {

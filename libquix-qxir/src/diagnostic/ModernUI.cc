@@ -63,11 +63,11 @@ struct IssueInfo {
 
 static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, IssueInfo>({
     {IssueCode::Default,
-     {"unspecified", /* TODO: Summarize */
+     {"unspecified", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::PTreeInvalid,
-     {"ptree-invalid", /* TODO: Summarize */
+     {"ptree-invalid", /* FIXME: Summarize */
       "This function is expected to return in all possible branches. Why is your function failing "
       "to do so?",
       {"Make sure you have a return statement when you need one.",
@@ -76,49 +76,49 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
        "If you are optimizing, make sure it is knowable that that a particular branch is "
        "impossible to avoid this error."}}},
     {IssueCode::SignalReceived,
-     {"signal-recv", /* TODO: Summarize */
+     {"signal-recv", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::DSPolyCyclicRef,
-     {"ds-cyclic-ref", /* TODO: Summarize */
+     {"ds-cyclic-ref", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::DSNullPtr,
-     {"ds-nullptr", /* TODO: Summarize */
+     {"ds-nullptr", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::DSBadType,
-     {"ds-bad-type", /* TODO: Summarize */
+     {"ds-bad-type", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::DSMissingMod,
-     {"ds-missing-mod", /* TODO: Summarize */
+     {"ds-missing-mod", /* FIXME: Summarize */
       "write me",
       {}}},
 
     {IssueCode::Redefinition,
-     {"redefinition", /* TODO: Summarize */
+     {"redefinition", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::UnknownFunction,
-     {"unknown-function", /* TODO: Summarize */
+     {"unknown-function", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::TooManyArguments,
-     {"too-many-arguments", /* TODO: Summarize */
+     {"too-many-arguments", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::UnknownArgument,
-     {"unknown-argument", /* TODO: Summarize */
+     {"unknown-argument", /* FIXME: Summarize */
       "write me",
       {}}},
 
     {IssueCode::UnknownType,
-     {"unknown-type", /* TODO: Summarize */
+     {"unknown-type", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::UnresolvedIdentifier,
-     {"unresolved-identifier", /* TODO: Summarize */
+     {"unresolved-identifier", /* FIXME: Summarize */
       "404 - Identifier '%s' not found.",
       {"Make sure the identifier is defined in the current scope.", "Check for typos.",
        "Check for visibility."}}},
