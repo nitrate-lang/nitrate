@@ -302,7 +302,7 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
     num_entries++;
   }
 
-  if (!msgpack_write_tok(O, 0, "", 0, 0, 0, 0)) {
+  if (!msgpack_write_tok(O, qEofF, "", 0, 0, 0, 0)) {
     return false;
   }
   num_entries++;
