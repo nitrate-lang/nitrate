@@ -129,6 +129,10 @@ LIB_EXPORT qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *nam
       return nullptr;
     }
 
+    if (!name) {
+      name = "module";
+    }
+
     qmodule_t *obj = createModule(name);
 
     obj->setConf(conf);

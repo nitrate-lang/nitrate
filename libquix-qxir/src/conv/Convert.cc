@@ -88,6 +88,7 @@ static std::mutex sigguard_lock;
 static std::unordered_map<int, sighandler_t> sigguard_old;
 static const std::set<int> sigguard_signals = {SIGABRT, SIGBUS, SIGFPE, SIGILL, SIGSEGV, SIGSYS};
 static thread_local jmp_buf sigguard_env;
+
 thread_local qmodule_t *qxir::current;
 
 static void _signal_handler(int sig) {

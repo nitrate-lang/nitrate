@@ -95,8 +95,8 @@ bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char 
 bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
                         const std::unordered_set<std::string_view> &opts);
 
-static bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                             const std::unordered_set<std::string_view> &opts);
+bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+                      const std::unordered_set<std::string_view> &opts);
 
 static bool impl_subsys_codegen(FILE *source, FILE *output,
                                 std::function<void(const char *)> diag_cb,
@@ -104,38 +104,9 @@ static bool impl_subsys_codegen(FILE *source, FILE *output,
 
 static const std::unordered_map<std::string_view, quix_subsystem_impl> dispatch_funcs = {
     {"lex", impl_subsys_basic_lexer}, {"meta", impl_subsys_meta},
-    {"parse", impl_subsys_parser},    {"qxir", impl_subsys_qxir},
+    {"parse", impl_subsys_parser},    {"ir", impl_subsys_qxir},
     {"codegen", impl_subsys_codegen},
 };
-
-static bool check_in_stream_usable(FILE *stream, const char *name) {
-  long pos = ftell(stream);
-  if (pos == -1) {
-    qcore_print(QCORE_DEBUG, "quix_cc: %s pipe is not seekable", name);
-    return false;
-  }
-
-  { /* Check if the stream is empty */
-    int ch = fgetc(stream);
-    if (ch == EOF) {
-      ungetc(ch, stream);
-      return true;
-    }
-    ungetc(ch, stream);
-  }
-
-  if (fseek(stream, 0, SEEK_SET) == -1) {
-    qcore_print(QCORE_DEBUG, "quix_cc: Failed to rewind %s pipe", name);
-    return false;
-  }
-
-  if (fseek(stream, pos, SEEK_SET) == -1) {
-    qcore_print(QCORE_DEBUG, "quix_cc: Failed to restore %s pipe position", name);
-    return false;
-  }
-
-  return true;
-}
 
 static bool check_out_stream_usable(FILE *stream, const char *name) {
   long pos = ftell(stream);
@@ -197,32 +168,17 @@ LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdat
 
   std::unordered_set<std::string_view> opts_set(opts.begin() + 1, opts.end());
 
-  bool is_source_usable = check_in_stream_usable(S, "source");
   bool is_output_usable = check_out_stream_usable(O, "output");
   errno = 0;
 
-  FILE *in_alias = nullptr, *out_alias = nullptr;
-  char *in_alias_buf = nullptr, *out_alias_buf = nullptr;
-  size_t in_alias_size = 0, out_alias_size = 0;
-
-  if (!is_source_usable) {
-    in_alias = open_memstream(&in_alias_buf, &in_alias_size);
-    if (!in_alias) {
-      qcore_print(QCORE_ERROR, "Failed to open temporary source stream");
-      return false;
-    }
-  } else {
-    in_alias = S;
-  }
+  FILE *out_alias = nullptr;
+  char *out_alias_buf = nullptr;
+  size_t out_alias_size = 0;
 
   if (!is_output_usable) {
     out_alias = open_memstream(&out_alias_buf, &out_alias_size);
     if (!out_alias) {
       qcore_print(QCORE_ERROR, "Failed to open temporary output stream");
-      if (!is_source_usable) {
-        fclose(in_alias);
-        free(in_alias_buf);
-      }
       return false;
     }
   } else {
@@ -230,7 +186,7 @@ LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdat
   }
 
   bool ok = subsystem->second(
-      in_alias, out_alias,
+      S, out_alias,
       [&](const char *msg) {
         /* string_views's in opts are null terminated */
         diag_cb(msg, opts[0].data(), userdata);
@@ -238,12 +194,6 @@ LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdat
       opts_set);
 
   fflush(out_alias);
-
-  if (!is_source_usable) {
-    fclose(in_alias);
-    ok &= fwrite(in_alias_buf, 1, in_alias_size, S) == in_alias_size;
-    free(in_alias_buf);
-  }
 
   if (!is_output_usable) {
     fclose(out_alias);
@@ -255,17 +205,6 @@ LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdat
 }
 
 ///============================================================================///
-
-static bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                             const std::unordered_set<std::string_view> &opts) {
-  (void)source;
-  (void)output;
-  (void)diag_cb;
-  (void)opts;
-
-  /// TODO: Implement qxir wrapper
-  return false;
-}
 
 static bool impl_subsys_codegen(FILE *source, FILE *output,
                                 std::function<void(const char *)> diag_cb,
