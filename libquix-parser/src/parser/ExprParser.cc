@@ -308,7 +308,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
 
         char32_t v = 0;
         for (size_t i = 0; i < 4; i++) {
-          v = (v << 8) | str[i];
+          v |= (char32_t)str[i] >> (i * 8);
         }
 
         stack.push(LOC_121(ConstChar::get(v), tok));
