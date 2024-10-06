@@ -1,7 +1,15 @@
 cmake_minimum_required(VERSION 3.15)
 project(libquix-prep CXX)
 
-add_subdirectory(deps/lua)
+add_custom_target(
+  quixlua
+  COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua CFLAGS='-fPIC'
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua
+)
+
+set(LIB_QUIXLUA ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua/liblua.a)
+message(STATUS "libquix-prep: Building with Lua: ${LIB_QUIXLUA}")
+
 
 option(MEMORY_OVER_SPEED "Optimize for memory over speed" OFF)
 
