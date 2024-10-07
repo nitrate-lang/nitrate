@@ -88,7 +88,6 @@ static const boost::bimap<Op, std::string_view> opstr_map = make_bimap<Op, std::
     {Op::NE, "!="},
     {Op::Alignof, "alignof"},
     {Op::Typeof, "typeof"},
-    {Op::Offsetof, "offsetof"},
     {Op::BitcastAs, "bitcast_as"},
     {Op::CastAs, "cast_as"},
     {Op::Bitsizeof, "bitsizeof"},

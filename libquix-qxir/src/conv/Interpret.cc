@@ -447,11 +447,6 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
           break;
         }
 
-        case Op::Offsetof: {
-          /// TODO:
-          break;
-        }
-
         case Op::Bitsizeof: {
           Type *T = E->getType();
           if (!T) {

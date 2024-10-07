@@ -1185,9 +1185,6 @@ case qOpPlus: {
     case qOpTypeof: {
       return create_simple_call(s, "__detail::type_of", {{"0", rhs}});
     }
-    case qOpOffsetof: {
-      return STD_UNOP(Offsetof);
-    }
     case qOpBitsizeof: {
       return STD_UNOP(Bitsizeof);
     }
@@ -1331,10 +1328,6 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
     }
     case qxir::Op::Typeof: {
       /// TODO: Typeof
-      break;
-    }
-    case qxir::Op::Offsetof: {
-      /// TODO: Offsetof
       break;
     }
     case qxir::Op::Bitsizeof: {

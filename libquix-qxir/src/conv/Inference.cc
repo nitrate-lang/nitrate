@@ -326,10 +326,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             T = nullptr;  // Illegal
             break;
           }
-          case Op::Offsetof: {
-            T = nullptr;  // Illegal
-            break;
-          }
           case Op::BitcastAs: {
             T = B->getRHS()->getType();
             break;
@@ -470,10 +466,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             T = getType<StringTy>();
             break;
           }
-          case Op::Offsetof: {
-            T = getType<U64Ty>();
-            break;
-          }
           case Op::BitcastAs: {
             T = nullptr;  // Illegal
             break;
@@ -597,10 +589,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::Typeof: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Offsetof: {
             T = nullptr;  // Illegal
             break;
           }

@@ -338,7 +338,6 @@ namespace qxir {
     NE,        /* '!=': Not equal to operator */
     Alignof,   /* 'alignof': Alignment of operator */
     Typeof,    /* 'typeof': Type of operator */
-    Offsetof,  /* 'offsetof': Offset of operator */
     BitcastAs, /* 'bitcast_as': Bitcast operator */
     CastAs,    /* 'cast_as': Common operator */
     Bitsizeof, /* 'bitsizeof': Bit size of operator */

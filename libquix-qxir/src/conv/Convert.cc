@@ -585,9 +585,6 @@ qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
     case qOpTypeof: {
       return create_simple_call(s, "__detail::type_of", {{"0", rhs}});
     }
-    case qOpOffsetof: {
-      return STD_UNOP(Offsetof);
-    }
     case qOpBitsizeof: {
       return STD_UNOP(Bitsizeof);
     }
