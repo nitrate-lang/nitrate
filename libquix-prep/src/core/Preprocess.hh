@@ -44,8 +44,9 @@
 struct lua_State;
 
 enum class DeferOp {
-  KeepAround,
-  Uninstall,
+  EmitToken,
+  SkipToken,
+  UninstallHandler,
 };
 
 struct qprep_impl_t;
@@ -69,10 +70,10 @@ struct qprep_impl_t final : public qlex_t {
 
   virtual qlex_tok_t next_impl() override;
 
-  void run_defer_callbacks(qlex_tok_t last);
+  bool run_defer_callbacks(qlex_tok_t last);
 
-  std::optional<std::string> run_lua_code(std::string_view s);
-  bool run_and_expand(std::string_view code);
+  std::optional<std::string> run_lua_code(const std::string &s);
+  bool run_and_expand(const std::string &code);
   void expand_raw(std::string_view code);
   void install_lua_api();
   qlex_t *weak_clone(FILE *file, const char *filename);

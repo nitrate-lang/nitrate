@@ -31,9 +31,7 @@
 
 #define __QUIX_IMPL__
 
-#include <atomic>
 #include <core/Preprocess.hh>
-#include <cstdint>
 #include <qcall/List.hh>
 
 extern "C" {
@@ -107,14 +105,20 @@ int qcall::sys_defer(lua_State* L) {
 
     if (lua_pcall(L, 1, 1, 0) != 0) {
       qcore_print(QCORE_ERROR, "sys_defer: %s\n", lua_tostring(L, -1));
-      return DeferOp::KeepAround;
+      return DeferOp::EmitToken;
+    }
+
+    if (lua_isnil(L, -1)) {
+      return DeferOp::UninstallHandler;
     }
 
     if (!lua_isboolean(L, -1)) {
-      return DeferOp::KeepAround;
+      qcore_print(QCORE_ERROR, "sys_defer: expected boolean return value or nil, got %s\n",
+                  luaL_typename(L, -1));
+      return DeferOp::EmitToken;
     }
 
-    return lua_toboolean(L, -1) ? DeferOp::KeepAround : DeferOp::Uninstall;
+    return lua_toboolean(L, -1) ? DeferOp::EmitToken : DeferOp::SkipToken;
   };
 
   get_engine()->m_core->defer_callbacks.push_back(cb);
