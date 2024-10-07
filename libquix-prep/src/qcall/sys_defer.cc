@@ -31,56 +31,93 @@
 
 #define __QUIX_IMPL__
 
-#include <quix-core/Env.h>
-#include <quix-lexer/Token.h>
+#include <atomic>
+#include <core/Preprocess.hh>
+#include <cstdint>
+#include <qcall/List.hh>
 
-#include <memory>
-#include <optional>
-#include <quix-lexer/Base.hh>
-#include <string_view>
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
-#define get_engine() ((qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
+int qcall::sys_defer(lua_State* L) {
+  /**
+   *   @brief Defer token callback.
+   */
 
-struct lua_State;
+  int nargs = lua_gettop(L);
+  if (nargs < 1) {
+    return luaL_error(L, "sys_emit: expected at least 1 argument, got %d", nargs);
+  }
 
-enum class DeferOp {
-  KeepAround,
-  Uninstall,
-};
+  if (!lua_isfunction(L, 1)) {
+    return luaL_error(L, "sys_emit: expected function as first argument, got %s",
+                      luaL_typename(L, 1));
+  }
 
-struct qprep_impl_t;
+  int id = luaL_ref(L, LUA_REGISTRYINDEX);
+  if (id == LUA_REFNIL) {
+    return luaL_error(L, "sys_emit: failed to store callback in registry");
+  }
 
-typedef std::function<DeferOp(qprep_impl_t *obj, qlex_tok_t last)> DeferCallback;
+  DeferCallback cb = [L, id](qprep_impl_t* obj, qlex_tok_t tok) -> DeferOp {
+    lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Push the function */
 
-extern std::string_view quix_code_prefix;
+    { /* Push the function arguments */
+      lua_newtable(L);
 
-struct qprep_impl_t final : public qlex_t {
-  struct Core {
-    lua_State *L;
-    std::vector<DeferCallback> defer_callbacks;
-    std::deque<qlex_tok_t> buffer;
+      lua_pushstring(L, "ty");
+      lua_pushstring(L, qlex_ty_str(tok.ty));
+      lua_settable(L, -3);
 
-    ~Core();
+      lua_pushstring(L, "v");
+      switch (tok.ty) {
+        case qEofF:
+        case qErro: {
+          lua_pushnil(L);
+          break;
+        }
+        case qKeyW: {
+          lua_pushstring(L, qlex_kwstr(tok.v.key));
+          break;
+        }
+        case qOper: {
+          lua_pushstring(L, qlex_opstr(tok.v.op));
+          break;
+        }
+        case qPunc: {
+          lua_pushstring(L, qlex_punctstr(tok.v.punc));
+          break;
+        }
+        case qIntL:
+        case qNumL:
+        case qText:
+        case qChar:
+        case qName:
+        case qMacB:
+        case qMacr:
+        case qNote: {
+          lua_pushstring(L, obj->get_string(tok.v.str_idx).data());
+          break;
+        }
+      }
+
+      lua_settable(L, -3);
+    }
+
+    if (lua_pcall(L, 1, 1, 0) != 0) {
+      qcore_print(QCORE_ERROR, "sys_defer: %s\n", lua_tostring(L, -1));
+      return DeferOp::KeepAround;
+    }
+
+    if (!lua_isboolean(L, -1)) {
+      return DeferOp::KeepAround;
+    }
+
+    return lua_toboolean(L, -1) ? DeferOp::KeepAround : DeferOp::Uninstall;
   };
 
-  std::shared_ptr<Core> m_core;
-  bool m_do_expanse;
-  size_t m_depth;
+  get_engine()->m_core->defer_callbacks.push_back(cb);
 
-  virtual qlex_tok_t next_impl() override;
-
-  void run_defer_callbacks(qlex_tok_t last);
-
-  std::optional<std::string> run_lua_code(std::string_view s);
-  bool run_and_expand(std::string_view code);
-  void expand_raw(std::string_view code);
-  void install_lua_api();
-  qlex_t *weak_clone(FILE *file, const char *filename);
-
-public:
-  qprep_impl_t(FILE *file, const char *filename, qcore_env_t env);
-  qprep_impl_t(FILE *file, const char *filename, bool is_owned, qcore_env_t env);
-  virtual ~qprep_impl_t() override;
-};
-
-class StopException {};
+  return 0;
+}

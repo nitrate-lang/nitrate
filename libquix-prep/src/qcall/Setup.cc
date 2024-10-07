@@ -34,9 +34,10 @@
 using namespace qcall;
 
 const std::vector<QSysCall> qcall::qsyscalls = {
-    {"next", 0x0010, sys_next}, /* Get the next token from the lexer */
-    {"peek", 0x0011, sys_peek}, /* Peek at the next token from the lexer */
-    {"emit", 0x0012, sys_emit}, /* Emit data subject to recursive expansion */
+    {"next", 0x0010, sys_next},   /* Get the next token from the lexer */
+    {"peek", 0x0011, sys_peek},   /* Peek at the next token from the lexer */
+    {"emit", 0x0012, sys_emit},   /* Emit data subject to recursive expansion */
+    {"defer", 0x0013, sys_defer}, /* Callback after every token is emitted */
 
     {"debug", 0x0051, sys_debug}, /* Print a debug message */
     {"info", 0x0052, sys_info},   /* Print an informational message */
