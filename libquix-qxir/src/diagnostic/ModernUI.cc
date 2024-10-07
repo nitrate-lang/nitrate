@@ -81,8 +81,8 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
       {}}},
     {IssueCode::DSPolyCyclicRef,
      {"ds-cyclic-ref", /* FIXME: Summarize */
-      "write me",
-      {}}},
+      "Cyclic polymorphic node reference detected in module IR data structure.",
+      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
     {IssueCode::DSNullPtr,
      {"ds-nullptr", /* FIXME: Summarize */
       "write me",

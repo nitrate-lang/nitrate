@@ -37,7 +37,7 @@
  * @brief Do type inference on the module.
  */
 
-bool qxir::passes::impl::tyinfer(qmodule_t *mod) {
+bool qxir::transform::impl::tyinfer(qmodule_t *mod) {
   /// TODO: Implement pass
   (void)mod;
 

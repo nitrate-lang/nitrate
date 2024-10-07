@@ -404,18 +404,20 @@ LIB_EXPORT bool Node::is_stmt() const {
 
 LIB_EXPORT bool Node::is_decl() const {
   switch (this_typeid()) {
+    case QAST_NODE_CONST:
+    case QAST_NODE_VAR:
+    case QAST_NODE_LET:
     case QAST_NODE_TYPEDEF:
     case QAST_NODE_FNDECL:
+    case QAST_NODE_FN:
+    case QAST_NODE_COMPOSITE_FIELD:
     case QAST_NODE_STRUCT:
-    case QAST_NODE_REGION:
     case QAST_NODE_GROUP:
+    case QAST_NODE_REGION:
     case QAST_NODE_UNION:
     case QAST_NODE_ENUM:
-    case QAST_NODE_FN:
     case QAST_NODE_SUBSYSTEM:
     case QAST_NODE_EXPORT:
-    case QAST_NODE_COMPOSITE_FIELD:
-    case QAST_NODE_BLOCK:
       return true;
     default:
       return false;

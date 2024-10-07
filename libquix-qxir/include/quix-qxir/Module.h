@@ -161,7 +161,6 @@ namespace qxir {
 
 class qmodule_t {
   std::vector<std::string> m_passes_applied;
-  std::vector<std::string> m_pass_groups_applied;
   std::unordered_set<std::string> m_strings;
   boost::bimap<std::string_view, std::pair<qxir::FnTy *, qxir::Expr *>> functions;
   boost::bimap<std::string_view, qxir::Local *> variables;
@@ -234,12 +233,6 @@ public:
     return std::find(m_passes_applied.begin(), m_passes_applied.end(), label) !=
            m_passes_applied.end();
   }
-
-  bool hasPassGroupBeenRun(const std::string &label) {
-    return std::find(m_pass_groups_applied.begin(), m_pass_groups_applied.end(), label) !=
-           m_pass_groups_applied.end();
-  }
-  void applyPassGroupLabel(const std::string &label) { m_pass_groups_applied.push_back(label); }
 
   const std::string getName() const { return m_module_name; }
   void setName(const std::string &name) { m_module_name = name; }

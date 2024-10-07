@@ -32,14 +32,13 @@
 #ifndef __QUIX_QXIR_PASSES_DECL_H__
 #define __QUIX_QXIR_PASSES_DECL_H__
 
-#include <transform/Pass.hh>
+struct qmodule_t;
 
-namespace qxir::passes::impl {
+namespace qxir::transform::impl {
 #define DECLARE_QIR_PASS(name) bool name(qmodule_t *mod)
 
   DECLARE_QIR_PASS(ds_acyclic);
   DECLARE_QIR_PASS(ds_nullchk);
-  DECLARE_QIR_PASS(ds_chtype);
   DECLARE_QIR_PASS(ds_resolv);
   DECLARE_QIR_PASS(fnflatten);
   DECLARE_QIR_PASS(tyinfer);
@@ -47,6 +46,6 @@ namespace qxir::passes::impl {
 
 #undef DECLARE_QIR_PASS
 
-}  // namespace qxir::passes::impl
+}  // namespace qxir::transform::impl
 
 #endif  // __QUIX_QXIR_PASSES_DECL_H__

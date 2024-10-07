@@ -43,7 +43,7 @@
  * @spacecomplexity O(1)
  */
 
-bool qxir::passes::impl::ds_nullchk(qmodule_t *mod) {
+bool qxir::transform::impl::ds_nullchk(qmodule_t *mod) {
   bool has_bad_null = false;
   bool missing_mod = false;
 

@@ -1964,5 +1964,15 @@ bool to_json_recurse(Node *N, json &x) {
     }
   }
 
+  if (N->is_decl()) {
+    x[x.size()] = N->as<Decl>()->get_visibility();
+
+    auto &y = x[x.size()] = json::array();
+
+    for (auto &Z : N->as<Decl>()->get_tags()) {
+      y.push_back(Z.c_str());
+    }
+  }
+
   return true;
 }

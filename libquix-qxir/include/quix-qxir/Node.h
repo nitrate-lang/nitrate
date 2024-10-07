@@ -1068,7 +1068,6 @@ namespace qxir {
 
   public:
     Asm() : Expr(QIR_NODE_ASM) {
-      /// FIXME: Implement this.
       qcore_implement(__func__);
     }
   };

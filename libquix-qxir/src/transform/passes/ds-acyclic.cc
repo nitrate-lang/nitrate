@@ -30,9 +30,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define __QUIX_IMPL__
-
-#include "quix-qxir/IR.h"
-#include "quix-qxir/Report.hh"
 #define QXIR_USE_CPP_API
 
 #include <quix-qxir/Node.h>
@@ -48,12 +45,11 @@
  * @spacecomplexity O(n)
  */
 
-bool qxir::passes::impl::ds_acyclic(qmodule_t *mod) {
+using namespace qxir::diag;
+
+bool qxir::transform::impl::ds_acyclic(qmodule_t *mod) {
   if (!mod->getRoot()->is_acyclic()) {
-    mod->getDiag().push(
-        QXIR_AUDIT_CONV,
-        diag::DiagMessage("Cyclic polymorphic node reference detected in module IR data structure.",
-                          diag::IssueClass::FatalError, diag::IssueCode::DSPolyCyclicRef));
+    diag::report(IssueCode::DSPolyCyclicRef, IssueClass::FatalError, "");
     return false;
   }
 

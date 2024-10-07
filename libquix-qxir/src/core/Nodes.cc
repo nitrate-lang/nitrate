@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <algorithm>
+#include <variant>
 #define __QUIX_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
@@ -392,7 +394,6 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       return true;
     }
     case QIR_NODE_ASM: {
-      /// FIXME: Implement comparison for QIR_NODE_ASM
       qcore_implement("Expr::cmp_eq for QIR_NODE_ASM");
       break;
     }
@@ -915,7 +916,6 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_ASM: {
-        /// FIXME: Implement hashing for QIR_NODE_ASM
         qcore_implement("QIR_NODE_ASM node hashing");
         break;
       }
@@ -997,12 +997,39 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_TMP: {
-        /*
-          typedef std::variant<LetTmpNodeCradle, CallArgsTmpNodeCradle, FieldTmpNodeCradle,
-          std::string_view> TmpNodeCradle;
-        */
         MIXIN_PRIMITIVE(cur->as<Tmp>()->m_type);
-        /// FIXME: Implement hashing for TmpNodeCradle
+
+        if (std::holds_alternative<LetTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
+          static_assert(std::tuple_size_v<LetTmpNodeCradle> == 2);
+
+          LetTmpNodeCradle &data = std::get<LetTmpNodeCradle>(cur->as<Tmp>()->m_data);
+          MIXIN_STRING(std::get<0>(data));
+          if (std::get<1>(data) != nullptr) {
+            MIXIN_STRING(std::get<1>(data)->getUniqueUUID());
+          }
+        } else if (std::holds_alternative<CallArgsTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
+          static_assert(std::tuple_size_v<CallArgsTmpNodeCradle> == 2);
+          CallArgsTmpNodeCradle &data = std::get<CallArgsTmpNodeCradle>(cur->as<Tmp>()->m_data);
+          if (std::get<0>(data) != nullptr) {
+            MIXIN_STRING(std::get<0>(data)->getUniqueUUID());
+          }
+          for (auto &arg : std::get<1>(data)) {
+            MIXIN_STRING(arg.first);
+            MIXIN_STRING(arg.second->getUniqueUUID());
+          }
+        } else if (std::holds_alternative<FieldTmpNodeCradle>(cur->as<Tmp>()->m_data)) {
+          static_assert(std::tuple_size_v<FieldTmpNodeCradle> == 2);
+          FieldTmpNodeCradle &data = std::get<FieldTmpNodeCradle>(cur->as<Tmp>()->m_data);
+          if (std::get<0>(data) != nullptr) {
+            MIXIN_STRING(std::get<0>(data)->getUniqueUUID());
+          }
+          MIXIN_STRING(std::get<1>(data));
+        } else if (std::holds_alternative<std::string_view>(cur->as<Tmp>()->m_data)) {
+          std::string_view &data = std::get<std::string_view>(cur->as<Tmp>()->m_data);
+          MIXIN_STRING(data);
+        } else {
+          qcore_panic("Unknown TmpNodeCradle inner type");
+        }
         break;
       }
     }

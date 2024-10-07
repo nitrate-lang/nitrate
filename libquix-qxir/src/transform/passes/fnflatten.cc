@@ -80,7 +80,7 @@ static void do_pass(qmodule_t *mod, Expr *&base, std::string cur_scope,
   iterate<dfs_pre, IterMP::none>(base, cb);
 }
 
-bool qxir::passes::impl::fnflatten(qmodule_t *mod) {
+bool qxir::transform::impl::fnflatten(qmodule_t *mod) {
   return true;
   /**
    * This pass in infallible.

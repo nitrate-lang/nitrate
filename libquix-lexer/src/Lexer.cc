@@ -542,8 +542,6 @@ qlex_tok_t qlex_t::next_impl() {
    * behavior.
    * */
 
-  /// TODO: Correctly handle token source locations
-
   enum class LexState {
     Start,
     Identifier,

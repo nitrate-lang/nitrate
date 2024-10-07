@@ -434,7 +434,11 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
         }
 
         case Op::Alignof: {
-          /// TODO:
+          Type *T = E->getType();
+          if (!T) {
+            break;
+          }
+          ANS = create<Int>(T->getAlignBytes());
           break;
         }
 

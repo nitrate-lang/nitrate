@@ -600,7 +600,7 @@ static bool beta_pass(qmodule_t *mod) {
   return !error;
 }
 
-bool qxir::passes::impl::ds_resolv(qmodule_t *mod) {
+bool qxir::transform::impl::ds_resolv(qmodule_t *mod) {
   bool error = false;
 
   error |= !alpha_pass(mod);

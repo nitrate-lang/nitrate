@@ -29,12 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <unordered_map>
-#include <unordered_set>
 #define __QUIX_IMPL__
-
-#include "quix-lexer/Token.h"
-#include "quix-parser/Node.h"
 #define QXIR_USE_CPP_API
 
 #include <quix-core/Error.h>
@@ -54,7 +49,9 @@
 #include <stack>
 #include <string>
 #include <string_view>
-#include <transform/PassManager.hh>
+#include <transform/Transform.hh>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "core/LibMacro.h"
 
@@ -177,7 +174,7 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
 
       if (status) {
         std::stringstream ss;
-        status = qxir::passes::StdTransform::create()->transform(mod, ss);
+        status = qxir::transform::StdTransform::create().transform(mod, ss);
       }
 
       status = !mod->getFailbit();

@@ -29,92 +29,26 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
-#include <quix-core/Error.h>
-#include <quix-qxir/Module.h>
+#ifndef __QUIX_QXIR_PASSES_PASS_MANAGER_H__
+#define __QUIX_QXIR_PASSES_PASS_MANAGER_H__
 
-#include <mutex>
-#include <transform/PassManager.hh>
-#include <transform/passes/Decl.hh>
+#include <functional>
+#include <ostream>
+#include <vector>
 
-using namespace qxir::passes;
+struct qmodule_t;
 
-#ifdef NDEBUG
-#define SAFETY_MODE DependencyFrequency::Once
-#else
-#define SAFETY_MODE DependencyFrequency::Always
-#endif
+namespace qxir::transform {
+  typedef std::function<bool(qmodule_t*)> PassFn;
+  class StdTransform final {
+    std::vector<std::pair<std::string_view, PassFn>> m_passes;
 
-static void seed_passes() {
-  Pass::register_pass("ds-acyclic", impl::ds_acyclic);
-  Pass::register_pass("ds-nullchk", impl::ds_nullchk);
-  Pass::register_pass("ds-chtype", impl::ds_chtype);
-  Pass::register_pass("ds-resolv", impl::ds_resolv);
-  Pass::register_pass("fnflatten", impl::fnflatten);
-  Pass::register_pass("tyinfer", impl::tyinfer);
-  Pass::register_pass("nm-premangle", impl::nm_premangle);
+    StdTransform();
+  public:
+    static const StdTransform& create();
 
-  /* Read-only passes */
-  PassGroup::register_group("g0",
-                            {
-#if !defined(NDEBUG)
-                                "ds-acyclic",
-#endif
-                                "ds-nullchk"},
-                            {});
-  PassGroup::register_group("g1", {"ds-chtype"}, {{"g0", SAFETY_MODE}});
-  PassGroup::register_group("g2", {"ds-resolv"},
-                            {{"g0", SAFETY_MODE}, {"g1", DependencyFrequency::Once}});
+    bool transform(qmodule_t* module, std::ostream& out) const;
+  };
+}  // namespace qxir::transform
 
-  /* Transformative passes */
-  PassGroup::register_group(
-      "g4", {"fnflatten"},
-      {{"g0", SAFETY_MODE}, {"g1", DependencyFrequency::Once}, {"g2", DependencyFrequency::Once}});
-  PassGroup::register_group("g5", {"tyinfer"},
-                            {{"g0", SAFETY_MODE},
-                             {"g1", DependencyFrequency::Once},
-                             {"g2", DependencyFrequency::Once},
-                             {"g4", DependencyFrequency::Once}});
-  PassGroup::register_group("g6", {"nm-premangle"},
-                            {{"g0", SAFETY_MODE},
-                             {"g1", DependencyFrequency::Once},
-                             {"g2", DependencyFrequency::Once},
-                             {"g4", DependencyFrequency::Once},
-                             {"g5", DependencyFrequency::Once}});
-
-  /* Root pass group */
-  PassGroup::register_group("root", {},
-                            {{"g1", DependencyFrequency::Once},
-                             {"g2", DependencyFrequency::Once},
-                             {"g4", DependencyFrequency::Once},
-                             {"g5", DependencyFrequency::Once},
-                             {"g6", DependencyFrequency::Once}});
-}
-
-const PassGroup* StdTransform::optimize_order(std::vector<PassName> passes) {
-  return PassGroup::get("root");
-}
-
-const StdTransform* StdTransform::create() {
-  static std::once_flag flag;
-  std::call_once(flag, seed_passes);
-
-  thread_local StdTransform ptr;
-
-  ptr.m_root = optimize_order({
-      "ds-chtype",    /* Data structure child type */
-      "ds-resolv",    /* Data structure discovery	*/
-      "fnflatten",    /* Function flattening */
-      "tyinfer",      /* Type inference	*/
-      "nm-premangle", /* Name Pre-mangling */
-  });
-
-  return &ptr;
-}
-
-bool StdTransform::transform(qmodule_t* module, std::ostream& out) const {
-  auto res = m_root->transform(module);
-  res.print(out);
-
-  return !!res;
-}
+#endif  // __QUIX_QXIR_PASSES_PASS_MANAGER_H__

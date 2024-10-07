@@ -44,7 +44,6 @@ static std::mutex qxir_modules_mutex;
 
 qmodule_t::qmodule_t(ModuleId id, const std::string &name) {
   m_passes_applied.clear();
-  m_pass_groups_applied.clear();
   m_strings.clear();
   m_diag = std::make_unique<diag::DiagnosticManager>();
   m_diag->set_ctx(this);

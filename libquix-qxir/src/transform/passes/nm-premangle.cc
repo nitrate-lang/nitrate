@@ -353,7 +353,7 @@ static void mangle_local(Local *n) {
   }
 }
 
-bool qxir::passes::impl::nm_premangle(qmodule_t *mod) {
+bool qxir::transform::impl::nm_premangle(qmodule_t *mod) {
   iterate<dfs_pre, IterMP::none>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
     if ((*cur)->getKind() == QIR_NODE_FN) {
       mangle_function((*cur)->as<Fn>());

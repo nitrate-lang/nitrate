@@ -175,7 +175,6 @@ namespace qxir::detail {
         break;
       }
       case QIR_NODE_ASM: {
-        /// FIXME: Implement this
         qcore_implement("QIR_NODE_ASM get_children_sorted");
         break;
       }
