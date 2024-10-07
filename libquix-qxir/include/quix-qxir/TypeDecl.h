@@ -95,7 +95,6 @@ typedef enum qxir_ty_t {
   QIR_NODE_VOID_TY,   /* Void type */
   QIR_NODE_PTR_TY,    /* Pointer type */
   QIR_NODE_OPAQUE_TY, /* Opaque type */
-  QIR_NODE_STRING_TY, /* String type */
   QIR_NODE_STRUCT_TY, /* Struct type */
   QIR_NODE_UNION_TY,  /* Union type */
   QIR_NODE_ARRAY_TY,  /* Array type */

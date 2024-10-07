@@ -62,7 +62,6 @@ static void init_primitive_types(uint64_t job_id) {
                  {"f64", F64::get()},
                  {"f128", F128::get()},
                  {"u1", U1::get()},
-                 {"string", StringTy::get()},
                  {"void", VoidTy::get()}}};
 }
 

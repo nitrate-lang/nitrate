@@ -948,7 +948,7 @@ namespace qxir {
           throw QError();
         }
 
-        BinExpr *s = create<BinExpr>(expr, getType<StringTy>(), Op::CastAs);
+        Expr *s = expr;
         s->setConstExpr(expr->isConstExpr());
         return s;
       } else {
@@ -973,7 +973,6 @@ namespace qxir {
           throw QError();
         }
 
-        expr = create<BinExpr>(expr, getType<StringTy>(), Op::CastAs);
         concated = create<BinExpr>(concated, expr, Op::Plus);
       } else {
         qcore_panic("Invalid fstring item type");
@@ -1268,17 +1267,6 @@ namespace qxir {
      */
 
     return create<OpaqueTy>(memorize(n->get_name()));
-  }
-
-  static Expr *qconv_string_ty(ConvState &s, const qparse::StringTy *n) {
-    /**
-     * @brief Convert a string type to a qxir string type.
-     * @details This is a 1-to-1 conversion of the string type intrinsic.
-     */
-
-    (void)n;
-
-    return create<StringTy>();
   }
 
   static Expr *qconv_enum_ty(ConvState &s, const qparse::EnumTy *n) {
@@ -2753,10 +2741,6 @@ static qxir::Expr *qconv_one(ConvState &s, const qparse::Node *n) {
       out = qconv_opaque_ty(s, n->as<qparse::OpaqueTy>());
       break;
 
-    case QAST_NODE_STRING_TY:
-      out = qconv_string_ty(s, n->as<qparse::StringTy>());
-      break;
-
     case QAST_NODE_ENUM_TY:
       out = qconv_enum_ty(s, n->as<qparse::EnumTy>());
       break;
@@ -3205,10 +3189,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
     case QIR_NODE_OPAQUE_TY: {
       OpaqueTy *n = static_cast<OpaqueTy *>(in);
       out = create<OpaqueTy>(memorize(n->getName()));
-      break;
-    }
-    case QIR_NODE_STRING_TY: {
-      out = create<StringTy>();
       break;
     }
     case QIR_NODE_STRUCT_TY: {

@@ -463,7 +463,9 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
              * The actual detail of what is encoded could be configurable.
              */
 
-            T = getType<StringTy>();
+            // T = getType<StringTy>();
+            /// TODO: Typeof operator result inference
+            qcore_implement("Typeof operator");
             break;
           }
           case Op::BitcastAs: {
@@ -647,7 +649,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         break;
       }
       case QIR_NODE_STRING: {
-        T = getType<StringTy>();
+        T = create<ArrayTy>(getType<I8Ty>(), E->as<String>()->getValue().size() + 1);
         break;
       }
       case QIR_NODE_LIST: {
@@ -690,8 +692,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
           T = B->as<PtrTy>()->getPointee();
         } else if (B->is(QIR_NODE_ARRAY_TY)) {  // [X; N] -> X
           T = B->as<ArrayTy>()->getElement();
-        } else if (B->is(QIR_NODE_STRING_TY)) {  // string -> u8
-          T = getType<U8Ty>();
         } else if (B->is(QIR_NODE_STRUCT_TY)) {  // struct { a, b, c } -> a | b | c
           if (!V->is(QIR_NODE_INT)) {
             T = nullptr;  // Invalid must be of type int to index into a struct
@@ -853,7 +853,6 @@ bool qxir::Type::hasKnownSize() noexcept {
       return this->as<ArrayTy>()->getElement()->hasKnownSize();
     }
     case QIR_NODE_OPAQUE_TY:
-    case QIR_NODE_STRING_TY:
       return false;
     default: {
       qcore_panicf("Invalid type kind: %d", this->getKind());
@@ -896,7 +895,6 @@ bool qxir::Type::hasKnownAlign() noexcept {
       return this->as<ArrayTy>()->getElement()->hasKnownAlign();
     }
     case QIR_NODE_OPAQUE_TY:
-    case QIR_NODE_STRING_TY:
       return false;
     default: {
       qcore_panicf("Invalid type kind: %d", this->getKind());

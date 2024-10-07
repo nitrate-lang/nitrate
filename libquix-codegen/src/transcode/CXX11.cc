@@ -113,9 +113,6 @@
 //         param.use_tuple = true;
 //         break;
 //       case QIR_NODE_STRING:
-//       case QIR_NODE_STRING_TY:
-//         param.use_string = true;
-//         break;
 //       case QIR_NODE_LIST:
 //         param.use_vector = true;
 //         break;
@@ -802,11 +799,6 @@
 
 //     case QIR_NODE_OPAQUE_TY: {
 //       out << n->as<OpaqueTy>()->getName();
-//       break;
-//     }
-
-//     case QIR_NODE_STRING_TY: {
-//       out << "std::string";
 //       break;
 //     }
 

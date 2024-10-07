@@ -80,8 +80,8 @@ CPP_EXPORT uint32_t Expr::getKindSize() const noexcept {
       SIZEOF_ROW(U64Ty),   SIZEOF_ROW(U128Ty),   SIZEOF_ROW(I8Ty),       SIZEOF_ROW(I16Ty),
       SIZEOF_ROW(I32Ty),   SIZEOF_ROW(I64Ty),    SIZEOF_ROW(I128Ty),     SIZEOF_ROW(F16Ty),
       SIZEOF_ROW(F32Ty),   SIZEOF_ROW(F64Ty),    SIZEOF_ROW(F128Ty),     SIZEOF_ROW(VoidTy),
-      SIZEOF_ROW(PtrTy),   SIZEOF_ROW(OpaqueTy), SIZEOF_ROW(StringTy),   SIZEOF_ROW(StructTy),
-      SIZEOF_ROW(UnionTy), SIZEOF_ROW(ArrayTy),  SIZEOF_ROW(FnTy),       SIZEOF_ROW(Tmp),
+      SIZEOF_ROW(PtrTy),   SIZEOF_ROW(OpaqueTy), SIZEOF_ROW(StructTy),   SIZEOF_ROW(UnionTy),
+      SIZEOF_ROW(ArrayTy), SIZEOF_ROW(FnTy),     SIZEOF_ROW(Tmp),
   };
 
   qcore_assert(sizes.size() == QIR_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
@@ -107,8 +107,8 @@ CPP_EXPORT const char *Expr::getKindName() const noexcept {
       NAMEOF_ROW(U64_TY),   NAMEOF_ROW(U128_TY),   NAMEOF_ROW(I8_TY),       NAMEOF_ROW(I16_TY),
       NAMEOF_ROW(I32_TY),   NAMEOF_ROW(I64_TY),    NAMEOF_ROW(I128_TY),     NAMEOF_ROW(F16_TY),
       NAMEOF_ROW(F32_TY),   NAMEOF_ROW(F64_TY),    NAMEOF_ROW(F128_TY),     NAMEOF_ROW(VOID_TY),
-      NAMEOF_ROW(PTR_TY),   NAMEOF_ROW(OPAQUE_TY), NAMEOF_ROW(STRING_TY),   NAMEOF_ROW(STRUCT_TY),
-      NAMEOF_ROW(UNION_TY), NAMEOF_ROW(ARRAY_TY),  NAMEOF_ROW(FN_TY),       NAMEOF_ROW(TMP),
+      NAMEOF_ROW(PTR_TY),   NAMEOF_ROW(OPAQUE_TY), NAMEOF_ROW(STRUCT_TY),   NAMEOF_ROW(UNION_TY),
+      NAMEOF_ROW(ARRAY_TY), NAMEOF_ROW(FN_TY),     NAMEOF_ROW(TMP),
   };
 
   qxir_ty_t type = getKind();
@@ -139,7 +139,6 @@ CPP_EXPORT bool Expr::isType() const noexcept {
     case QIR_NODE_VOID_TY:
     case QIR_NODE_PTR_TY:
     case QIR_NODE_OPAQUE_TY:
-    case QIR_NODE_STRING_TY:
     case QIR_NODE_STRUCT_TY:
     case QIR_NODE_UNION_TY:
     case QIR_NODE_ARRAY_TY:
@@ -413,7 +412,6 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     case QIR_NODE_F64_TY:
     case QIR_NODE_F128_TY:
     case QIR_NODE_VOID_TY:
-    case QIR_NODE_STRING_TY:
       return true;
     case QIR_NODE_PTR_TY: {
       return as<PtrTy>()->m_pointee->cmp_eq(other->as<PtrTy>()->m_pointee);
@@ -719,10 +717,6 @@ CPP_EXPORT std::string_view qxir::Expr::getName() const noexcept {
       break;
     }
 
-    case QIR_NODE_STRING_TY: {
-      break;
-    }
-
     case QIR_NODE_STRUCT_TY: {
       break;
     }
@@ -974,9 +968,6 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         MIXIN_STRING(cur->as<OpaqueTy>()->m_name);
         break;
       }
-      case QIR_NODE_STRING_TY: {
-        break;
-      }
       case QIR_NODE_STRUCT_TY: {
         break;
       }
@@ -1110,7 +1101,6 @@ CPP_EXPORT bool Type::is_function() const { return getKind() == QIR_NODE_FN_TY; 
 
 CPP_EXPORT bool Type::is_composite() const {
   switch (getKind()) {
-    case QIR_NODE_STRING_TY:
     case QIR_NODE_STRUCT_TY:
     case QIR_NODE_UNION_TY:
     case QIR_NODE_ARRAY_TY:
@@ -1218,5 +1208,3 @@ CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
 
   return false;
 }
-
-CPP_EXPORT bool Type::is_string() const { return getKind() == QIR_NODE_STRING_TY; }

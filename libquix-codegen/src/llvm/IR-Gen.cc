@@ -462,7 +462,6 @@ static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
 static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::VoidTy *N);
 static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::PtrTy *N);
 static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::OpaqueTy *N);
-static ty_t QIR_NODE_STRING_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::StringTy *N);
 static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::StructTy *N);
 static ty_t QIR_NODE_UNION_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::UnionTy *N);
 static ty_t QIR_NODE_ARRAY_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::ArrayTy *N);
@@ -698,11 +697,6 @@ auto T(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Expr *N) -> ty_t {
       break;
     }
 
-    case QIR_NODE_STRING_TY: {
-      R = QIR_NODE_STRING_TY_C(m, b, cf, s, N->as<qxir::StringTy>());
-      break;
-    }
-
     case QIR_NODE_STRUCT_TY: {
       R = QIR_NODE_STRUCT_TY_C(m, b, cf, s, N->as<qxir::StructTy>());
       break;
@@ -870,13 +864,6 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llv
 
           E = b.CreateLoad(new_arr->getType()->getPointerElementType(), new_arr);
         }
-      } else if (LT->is_string() && RT->is_ptr_to(qxir::create<qxir::I8Ty>())) {
-        // Get pointer to start of L
-        llvm::Type *ty = llvm::cast<llvm::PointerType>(L->getType())->getPointerElementType();
-        llvm::Value *ptr = b.CreateGEP(ty, L, {b.getInt32(0), b.getInt32(0)});
-
-        // Cast to i8*
-        E = b.CreateBitCast(ptr, R);
       } else {
         std::cout << "Failed to cast from " << LT->getKindName() << " to " << RT->getKindName()
                   << std::endl;
@@ -2326,20 +2313,6 @@ static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   qcore_assert(!N->getName().empty());
 
   return llvm::StructType::create(m.getContext(), N->getName());
-}
-
-static ty_t QIR_NODE_STRING_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                 qxir::StringTy *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-  /// TODO: Implement conversion for node
-  qcore_implement(__func__);
 }
 
 static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,

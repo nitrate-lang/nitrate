@@ -92,7 +92,6 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOID_TY,
   QAST_NODE_PTR_TY,
   QAST_NODE_OPAQUE_TY,
-  QAST_NODE_STRING_TY,
   QAST_NODE_ENUM_TY,
   QAST_NODE_STRUCT_TY,
   QAST_NODE_GROUP_TY,
@@ -139,7 +138,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 90
+#define QAST_NODE_COUNT 89
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -405,7 +404,6 @@ namespace qparse {
     bool is_ref() const;
     bool is_volatile() const;
     bool is_ptr_to(const Type *type) const;
-    bool is_string() const;
 
     virtual Type *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
@@ -703,13 +701,6 @@ namespace qparse {
     VoidTy() = default;
 
     PNODE_IMPL_CORE(VoidTy)
-  };
-
-  class StringTy : public TypeBuiltin {
-  public:
-    StringTy() = default;
-
-    PNODE_IMPL_CORE(StringTy)
   };
 
   class PtrTy : public TypeComplex {

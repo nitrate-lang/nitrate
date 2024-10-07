@@ -233,9 +233,6 @@ namespace qxir::detail {
       case QIR_NODE_OPAQUE_TY: {
         break;
       }
-      case QIR_NODE_STRING_TY: {
-        break;
-      }
       case QIR_NODE_STRUCT_TY: {
         children.reserve(base->as<StructTy>()->m_fields.size());
         for (Type *&child : base->as<StructTy>()->m_fields) {

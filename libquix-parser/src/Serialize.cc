@@ -443,10 +443,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_STRING_TY: {
-      OBJECT_EMPTY("String");
-      break;
-    }
     case QAST_NODE_ENUM_TY: {
       OBJECT_BEGIN("EnumTy");
       OBJECT_STR(n->as<EnumTy>()->get_name());

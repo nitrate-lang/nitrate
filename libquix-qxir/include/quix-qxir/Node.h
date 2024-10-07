@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#define QIR_NODE_COUNT 48
+#define QIR_NODE_COUNT 47
 
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
@@ -303,7 +303,6 @@ namespace qxir {
     bool is_void() const;
     bool is_bool() const;
     bool is_ptr_to(const Type *type) const;
-    bool is_string() const;
   };
 
   ///=============================================================================
@@ -550,13 +549,6 @@ namespace qxir {
 
   public:
     OpaqueTy(std::string_view name) : Type(QIR_NODE_OPAQUE_TY), m_name(name) {}
-  };
-
-  class StringTy final : public Type {
-    QCLASS_REFLECT()
-
-  public:
-    StringTy() : Type(QIR_NODE_STRING_TY) {}
   };
 
   typedef std::vector<Type *, Arena<Type *>> StructFields;
@@ -1153,8 +1145,6 @@ namespace qxir {
       type = new (Arena<F128Ty>().allocate(1)) F128Ty();
     } else if constexpr (std::is_same_v<T, VoidTy>) {
       type = new (Arena<VoidTy>().allocate(1)) VoidTy();
-    } else if constexpr (std::is_same_v<T, StringTy>) {
-      type = new (Arena<StringTy>().allocate(1)) StringTy();
     } else {
       static_assert(!std::is_same_v<T, T>,
                     "qxir::getType<T>(): Can not construct immuntable of this type.");

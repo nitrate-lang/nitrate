@@ -128,7 +128,6 @@ namespace qxir {
   class VoidTy;
   class PtrTy;
   class OpaqueTy;
-  class StringTy;
   class StructTy;
   class UnionTy;
   class ArrayTy;

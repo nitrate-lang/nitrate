@@ -235,11 +235,6 @@ static void mangle_type(Type *n, std::ostream &ss) {
       break;
     }
 
-    case QIR_NODE_STRING_TY: {
-      ss << 'S';
-      break;
-    }
-
     case QIR_NODE_STRUCT_TY: {
       /**
        * @brief Unlike C++, QUIX encodes field types into the name.

@@ -488,10 +488,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       ss << n->as<OpaqueTy>()->getName();
       break;
     }
-    case QIR_NODE_STRING_TY: {
-      ss << "string";
-      break;
-    }
     case QIR_NODE_STRUCT_TY: {
       ss << "%" << n->as<StructTy>()->getUniqId();
       break;
