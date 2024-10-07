@@ -223,7 +223,11 @@ static bool resolve_node(qxir::Expr **_cur) {
         arguments.resize(std::max(user_args.size(), ft->getParams().size()));
 
         const auto &params = mod->getParameterMap().at(funcname);
-        qcore_assert(params.size() == ft->getParams().size());
+        if (params.size() != ft->getParams().size()) {
+          error = true;
+          report(IssueCode::UnknownArgument, IssueClass::Error, funcname);
+          break;
+        }
 
         /* Create a map of parameter names to their positions and types */
         for (size_t i = 0; i < params.size(); i++) {
