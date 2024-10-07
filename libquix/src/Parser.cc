@@ -959,15 +959,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_STRING_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      break;
-    }
-
     case QAST_NODE_ENUM_TY: {
       /**
        * @brief [Brief Description]
@@ -1088,36 +1079,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_VECTOR_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<VectorTy>()->get_item(), x[1])) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_MAP_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<MapTy>()->get_key(), x[1])) {
-        return false;
-      }
-
-      if (!to_json_recurse(N->as<MapTy>()->get_value(), x[2])) {
-        return false;
-      }
-
-      break;
-    }
-
     case QAST_NODE_TUPLE_TY: {
       /**
        * @brief [Brief Description]
@@ -1134,32 +1095,6 @@ bool to_json_recurse(Node *N, json &x) {
         }
 
         y.push_back(std::move(z));
-      }
-
-      break;
-    }
-
-    case QAST_NODE_SET_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<SetTy>()->get_item(), x[1])) {
-        return false;
-      }
-
-      break;
-    }
-
-    case QAST_NODE_RESULT_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      if (!to_json_recurse(N->as<OptionalTy>()->get_item(), x[1])) {
-        return false;
       }
 
       break;

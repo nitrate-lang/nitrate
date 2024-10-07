@@ -63,37 +63,50 @@ LIB_EXPORT const char *Node::type_name(qparse_ty_t type) {
   { QAST_NODE_##__name, "QAST_NODE_" #__name }
 
   static const std::unordered_map<qparse_ty_t, const char *> names = {
-      NAMEOF_ROW(STMT),       NAMEOF_ROW(TYPE),        NAMEOF_ROW(DECL),
-      NAMEOF_ROW(EXPR),       NAMEOF_ROW(CEXPR),       NAMEOF_ROW(UNRES_TY),
-      NAMEOF_ROW(U1_TY),      NAMEOF_ROW(U8_TY),       NAMEOF_ROW(U16_TY),
-      NAMEOF_ROW(U32_TY),     NAMEOF_ROW(U64_TY),      NAMEOF_ROW(U128_TY),
-      NAMEOF_ROW(I8_TY),      NAMEOF_ROW(I16_TY),      NAMEOF_ROW(I32_TY),
-      NAMEOF_ROW(I64_TY),     NAMEOF_ROW(I128_TY),     NAMEOF_ROW(F16_TY),
-      NAMEOF_ROW(F32_TY),     NAMEOF_ROW(F64_TY),      NAMEOF_ROW(F128_TY),
-      NAMEOF_ROW(VOID_TY),    NAMEOF_ROW(STRING_TY),   NAMEOF_ROW(PTR_TY),
-      NAMEOF_ROW(OPAQUE_TY),  NAMEOF_ROW(VECTOR_TY),   NAMEOF_ROW(SET_TY),
-      NAMEOF_ROW(MAP_TY),     NAMEOF_ROW(TUPLE_TY),    NAMEOF_ROW(RESULT_TY),
-      NAMEOF_ROW(ARRAY_TY),   NAMEOF_ROW(ENUM_TY),     NAMEOF_ROW(REF_TY),
-      NAMEOF_ROW(STRUCT_TY),  NAMEOF_ROW(GROUP_TY),    NAMEOF_ROW(REGION_TY),
-      NAMEOF_ROW(UNION_TY),   NAMEOF_ROW(FN_TY),       NAMEOF_ROW(UNEXPR),
-      NAMEOF_ROW(BINEXPR),    NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(TEREXPR),
-      NAMEOF_ROW(INT),        NAMEOF_ROW(FLOAT),       NAMEOF_ROW(BOOL),
-      NAMEOF_ROW(STRING),     NAMEOF_ROW(CHAR),        NAMEOF_ROW(NULL),
-      NAMEOF_ROW(UNDEF),      NAMEOF_ROW(CALL),        NAMEOF_ROW(TEMPL_CALL),
-      NAMEOF_ROW(LIST),       NAMEOF_ROW(ASSOC),       NAMEOF_ROW(FIELD),
-      NAMEOF_ROW(INDEX),      NAMEOF_ROW(SLICE),       NAMEOF_ROW(FSTRING),
-      NAMEOF_ROW(IDENT),      NAMEOF_ROW(SEQ_POINT),   NAMEOF_ROW(STMT_EXPR),
-      NAMEOF_ROW(TYPE_EXPR),  NAMEOF_ROW(BLOCK),       NAMEOF_ROW(VOLSTMT),
-      NAMEOF_ROW(CONST),      NAMEOF_ROW(VAR),         NAMEOF_ROW(LET),
-      NAMEOF_ROW(INLINE_ASM), NAMEOF_ROW(IF),          NAMEOF_ROW(WHILE),
-      NAMEOF_ROW(FOR),        NAMEOF_ROW(FORM),        NAMEOF_ROW(FOREACH),
-      NAMEOF_ROW(BREAK),      NAMEOF_ROW(CONTINUE),    NAMEOF_ROW(RETURN),
-      NAMEOF_ROW(RETIF),      NAMEOF_ROW(RETZ),        NAMEOF_ROW(RETV),
-      NAMEOF_ROW(CASE),       NAMEOF_ROW(SWITCH),      NAMEOF_ROW(TYPEDEF),
-      NAMEOF_ROW(FNDECL),     NAMEOF_ROW(FN),          NAMEOF_ROW(COMPOSITE_FIELD),
-      NAMEOF_ROW(STRUCT),     NAMEOF_ROW(GROUP),       NAMEOF_ROW(REGION),
-      NAMEOF_ROW(UNION),      NAMEOF_ROW(ENUM),        NAMEOF_ROW(SUBSYSTEM),
-      NAMEOF_ROW(EXPORT),     NAMEOF_ROW(EXPR_STMT),
+      NAMEOF_ROW(STMT),        NAMEOF_ROW(TYPE),
+      NAMEOF_ROW(DECL),        NAMEOF_ROW(EXPR),
+      NAMEOF_ROW(CEXPR),       NAMEOF_ROW(UNRES_TY),
+      NAMEOF_ROW(U1_TY),       NAMEOF_ROW(U8_TY),
+      NAMEOF_ROW(U16_TY),      NAMEOF_ROW(U32_TY),
+      NAMEOF_ROW(U64_TY),      NAMEOF_ROW(U128_TY),
+      NAMEOF_ROW(I8_TY),       NAMEOF_ROW(I16_TY),
+      NAMEOF_ROW(I32_TY),      NAMEOF_ROW(I64_TY),
+      NAMEOF_ROW(I128_TY),     NAMEOF_ROW(F16_TY),
+      NAMEOF_ROW(F32_TY),      NAMEOF_ROW(F64_TY),
+      NAMEOF_ROW(F128_TY),     NAMEOF_ROW(VOID_TY),
+      NAMEOF_ROW(STRING_TY),   NAMEOF_ROW(PTR_TY),
+      NAMEOF_ROW(OPAQUE_TY),   NAMEOF_ROW(TUPLE_TY),
+      NAMEOF_ROW(ARRAY_TY),    NAMEOF_ROW(ENUM_TY),
+      NAMEOF_ROW(REF_TY),      NAMEOF_ROW(STRUCT_TY),
+      NAMEOF_ROW(GROUP_TY),    NAMEOF_ROW(REGION_TY),
+      NAMEOF_ROW(UNION_TY),    NAMEOF_ROW(FN_TY),
+      NAMEOF_ROW(UNEXPR),      NAMEOF_ROW(BINEXPR),
+      NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(TEREXPR),
+      NAMEOF_ROW(INT),         NAMEOF_ROW(FLOAT),
+      NAMEOF_ROW(BOOL),        NAMEOF_ROW(STRING),
+      NAMEOF_ROW(CHAR),        NAMEOF_ROW(NULL),
+      NAMEOF_ROW(UNDEF),       NAMEOF_ROW(CALL),
+      NAMEOF_ROW(TEMPL_CALL),  NAMEOF_ROW(LIST),
+      NAMEOF_ROW(ASSOC),       NAMEOF_ROW(FIELD),
+      NAMEOF_ROW(INDEX),       NAMEOF_ROW(SLICE),
+      NAMEOF_ROW(FSTRING),     NAMEOF_ROW(IDENT),
+      NAMEOF_ROW(SEQ_POINT),   NAMEOF_ROW(STMT_EXPR),
+      NAMEOF_ROW(TYPE_EXPR),   NAMEOF_ROW(BLOCK),
+      NAMEOF_ROW(VOLSTMT),     NAMEOF_ROW(CONST),
+      NAMEOF_ROW(VAR),         NAMEOF_ROW(LET),
+      NAMEOF_ROW(INLINE_ASM),  NAMEOF_ROW(IF),
+      NAMEOF_ROW(WHILE),       NAMEOF_ROW(FOR),
+      NAMEOF_ROW(FORM),        NAMEOF_ROW(FOREACH),
+      NAMEOF_ROW(BREAK),       NAMEOF_ROW(CONTINUE),
+      NAMEOF_ROW(RETURN),      NAMEOF_ROW(RETIF),
+      NAMEOF_ROW(RETZ),        NAMEOF_ROW(RETV),
+      NAMEOF_ROW(CASE),        NAMEOF_ROW(SWITCH),
+      NAMEOF_ROW(TYPEDEF),     NAMEOF_ROW(FNDECL),
+      NAMEOF_ROW(FN),          NAMEOF_ROW(COMPOSITE_FIELD),
+      NAMEOF_ROW(STRUCT),      NAMEOF_ROW(GROUP),
+      NAMEOF_ROW(REGION),      NAMEOF_ROW(UNION),
+      NAMEOF_ROW(ENUM),        NAMEOF_ROW(SUBSYSTEM),
+      NAMEOF_ROW(EXPORT),      NAMEOF_ROW(EXPR_STMT),
   };
 
   qcore_assert(names.size() == QAST_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
@@ -134,11 +147,7 @@ LIB_EXPORT uint32_t Node::this_sizeof() const {
       SIZEOF_ROW(StringTy),
       SIZEOF_ROW(PtrTy),
       SIZEOF_ROW(OpaqueTy),
-      SIZEOF_ROW(VectorTy),
-      SIZEOF_ROW(SetTy),
-      SIZEOF_ROW(MapTy),
       SIZEOF_ROW(TupleTy),
-      SIZEOF_ROW(OptionalTy),
       SIZEOF_ROW(ArrayTy),
       SIZEOF_ROW(EnumTy),
       SIZEOF_ROW(RefTy),
@@ -243,11 +252,7 @@ LIB_EXPORT qparse_ty_t Node::this_typeid() const {
       TYPEID_ROW(StringTy, STRING_TY),
       TYPEID_ROW(PtrTy, PTR_TY),
       TYPEID_ROW(OpaqueTy, OPAQUE_TY),
-      TYPEID_ROW(VectorTy, VECTOR_TY),
-      TYPEID_ROW(SetTy, SET_TY),
-      TYPEID_ROW(MapTy, MAP_TY),
       TYPEID_ROW(TupleTy, TUPLE_TY),
-      TYPEID_ROW(OptionalTy, RESULT_TY),
       TYPEID_ROW(ArrayTy, ARRAY_TY),
       TYPEID_ROW(EnumTy, ENUM_TY),
       TYPEID_ROW(RefTy, REF_TY),
@@ -348,11 +353,7 @@ LIB_EXPORT bool Node::is_type() const {
     case QAST_NODE_REGION_TY:
     case QAST_NODE_UNION_TY:
     case QAST_NODE_ARRAY_TY:
-    case QAST_NODE_VECTOR_TY:
-    case QAST_NODE_MAP_TY:
     case QAST_NODE_TUPLE_TY:
-    case QAST_NODE_SET_TY:
-    case QAST_NODE_RESULT_TY:
     case QAST_NODE_FN_TY:
     case QAST_NODE_UNRES_TY:
     case QAST_NODE_INFER_TY:
@@ -513,36 +514,12 @@ LIB_EXPORT bool Type::is_array() const {
   return this_typeid() == QAST_NODE_ARRAY_TY;
 }
 
-LIB_EXPORT bool Type::is_vector() const {
-  if (is<RefTy>()) {
-    return as<RefTy>()->get_item()->is_vector();
-  }
-
-  return this_typeid() == QAST_NODE_VECTOR_TY;
-}
-
 LIB_EXPORT bool Type::is_tuple() const {
   if (is<RefTy>()) {
     return as<RefTy>()->get_item()->is_tuple();
   }
 
   return this_typeid() == QAST_NODE_TUPLE_TY;
-}
-
-LIB_EXPORT bool Type::is_set() const {
-  if (is<RefTy>()) {
-    return as<RefTy>()->get_item()->is_set();
-  }
-
-  return this_typeid() == QAST_NODE_SET_TY;
-}
-
-LIB_EXPORT bool Type::is_map() const {
-  if (is<RefTy>()) {
-    return as<RefTy>()->get_item()->is_map();
-  }
-
-  return this_typeid() == QAST_NODE_MAP_TY;
 }
 
 LIB_EXPORT bool Type::is_pointer() const {
@@ -568,14 +545,10 @@ LIB_EXPORT bool Type::is_composite() const {
 
   switch (this_typeid()) {
     case QAST_NODE_ARRAY_TY:
-    case QAST_NODE_VECTOR_TY:
     case QAST_NODE_TUPLE_TY:
-    case QAST_NODE_SET_TY:
-    case QAST_NODE_MAP_TY:
     case QAST_NODE_STRUCT_TY:
     case QAST_NODE_GROUP_TY:
     case QAST_NODE_REGION_TY:
-    case QAST_NODE_RESULT_TY:
       return true;
     default:
       return false;
@@ -1115,136 +1088,6 @@ void OpaqueTy::print_impl(std::ostream &os, bool debug) const {
 }
 OpaqueTy *OpaqueTy::clone_impl() const { return OpaqueTy::get(m_name); }
 
-bool VectorTy::verify_impl(std::ostream &os) const {
-  if (!m_item) {
-    os << "VectorTy: item type is NULL\n";
-    return false;
-  }
-
-  if (!m_item->verify(os)) {
-    os << "VectorTy: item type is invalid\n";
-    return false;
-  }
-
-  return true;
-}
-
-void VectorTy::canonicalize_impl() {
-  if (m_item) {
-    m_item->canonicalize();
-  }
-}
-
-void VectorTy::print_impl(std::ostream &os, bool debug) const {
-  if (!m_item) {
-    os << "vec<?>";
-    return;
-  }
-
-  os << "vec<";
-  m_item->print(os, debug);
-  os << ">";
-}
-
-VectorTy *VectorTy::clone_impl() const {
-  Type *item = m_item ? m_item->clone() : nullptr;
-  return VectorTy::get(item);
-}
-
-bool SetTy::verify_impl(std::ostream &os) const {
-  if (!m_item) {
-    os << "SetTy: item type is NULL\n";
-    return false;
-  }
-
-  if (!m_item->verify(os)) {
-    os << "SetTy: item type is invalid\n";
-    return false;
-  }
-
-  return true;
-}
-
-void SetTy::canonicalize_impl() {
-  if (m_item) {
-    m_item->canonicalize();
-  }
-}
-
-void SetTy::print_impl(std::ostream &os, bool debug) const {
-  if (!m_item) {
-    os << "set<?>";
-    return;
-  }
-
-  os << "set<";
-  m_item->print(os, debug);
-  os << ">";
-}
-
-SetTy *SetTy::clone_impl() const {
-  Type *item = m_item ? m_item->clone() : nullptr;
-  return SetTy::get(item);
-}
-
-bool MapTy::verify_impl(std::ostream &os) const {
-  if (!m_key) {
-    os << "MapTy: key type is NULL\n";
-    return false;
-  }
-
-  if (!m_value) {
-    os << "MapTy: value type is NULL\n";
-    return false;
-  }
-
-  if (!m_key->verify(os)) {
-    os << "MapTy: key type is invalid\n";
-    return false;
-  }
-
-  if (!m_value->verify(os)) {
-    os << "MapTy: value type is invalid\n";
-    return false;
-  }
-
-  return true;
-}
-
-void MapTy::canonicalize_impl() {
-  if (m_key) {
-    m_key->canonicalize();
-  }
-
-  if (m_value) {
-    m_value->canonicalize();
-  }
-}
-
-void MapTy::print_impl(std::ostream &os, bool debug) const {
-  if (!m_key) {
-    os << "map<?, ";
-  } else {
-    os << "map<";
-    m_key->print(os, debug);
-    os << ", ";
-  }
-
-  if (!m_value) {
-    os << "?>";
-  } else {
-    m_value->print(os, debug);
-    os << ">";
-  }
-}
-
-MapTy *MapTy::clone_impl() const {
-  Type *key = m_key ? m_key->clone() : nullptr;
-  Type *value = m_value ? m_value->clone() : nullptr;
-
-  return MapTy::get(key, value);
-}
-
 bool TupleTy::verify_impl(std::ostream &os) const {
   for (size_t i = 0; i < m_items.size(); i++) {
     if (!m_items[i]) {
@@ -1296,42 +1139,6 @@ TupleTy *TupleTy::clone_impl() const {
   }
 
   return TupleTy::get(items);
-}
-
-bool OptionalTy::verify_impl(std::ostream &os) const {
-  if (!m_item) {
-    os << "OptionalTy: item type is NULL\n";
-    return false;
-  }
-
-  if (!m_item->verify(os)) {
-    os << "OptionalTy: item type is invalid\n";
-    return false;
-  }
-
-  return true;
-}
-
-void OptionalTy::canonicalize_impl() {
-  if (m_item) {
-    m_item->canonicalize();
-  }
-}
-
-void OptionalTy::print_impl(std::ostream &os, bool debug) const {
-  if (!m_item) {
-    os << "opt<?>";
-    return;
-  }
-
-  os << "opt<";
-  m_item->print(os, debug);
-  os << ">";
-}
-
-OptionalTy *OptionalTy::clone_impl() const {
-  Type *item = m_item ? m_item->clone() : nullptr;
-  return OptionalTy::get(item);
 }
 
 bool ArrayTy::verify_impl(std::ostream &os) const {
@@ -5039,20 +4846,8 @@ LIB_EXPORT qparse_node_t *qparse_alloc(qparse_ty_t type, qcore_arena_t *arena) {
     case QAST_NODE_OPAQUE_TY:
       node = OpaqueTy::get();
       break;
-    case QAST_NODE_VECTOR_TY:
-      node = VectorTy::get();
-      break;
-    case QAST_NODE_SET_TY:
-      node = SetTy::get();
-      break;
-    case QAST_NODE_MAP_TY:
-      node = MapTy::get();
-      break;
     case QAST_NODE_TUPLE_TY:
       node = TupleTy::get();
-      break;
-    case QAST_NODE_RESULT_TY:
-      node = OptionalTy::get();
       break;
     case QAST_NODE_ARRAY_TY:
       node = ArrayTy::get();

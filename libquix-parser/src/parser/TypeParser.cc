@@ -213,7 +213,8 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
        * @brief Parse a vector type.
        */
 
-      inner = VectorTy::get(type);
+      inner =
+          TemplType::get(UnresolvedType::get("std::vector"), TemplTypeArgs{TypeExpr::get(type)});
       goto type_suffix;
     }
 
@@ -238,7 +239,8 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
         goto error_end;
       }
 
-      inner = MapTy::get(type, value_type);
+      inner = TemplType::get(UnresolvedType::get("std::map"),
+                             TemplTypeArgs{TypeExpr::get(type), TypeExpr::get(value_type)});
       goto type_suffix;
     }
 
@@ -284,7 +286,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       goto error_end;
     }
 
-    inner = SetTy::get(type);
+    inner = TemplType::get(UnresolvedType::get("std::set"), TemplTypeArgs{TypeExpr::get(type)});
     goto type_suffix;
   } else if (tok.is<qPuncLPar>()) {
     /** QUIX TUPLE TYPE
@@ -400,7 +402,8 @@ type_suffix: {
   while (true) {
     if ((tok = qlex_peek(rd)).is<qOpTernary>()) {
       qlex_next(rd);
-      inner = OptionalTy::get(inner);
+      inner =
+          TemplType::get(UnresolvedType::get("std::result"), TemplTypeArgs{TypeExpr::get(inner)});
       continue;
     }
 

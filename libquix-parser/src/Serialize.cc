@@ -490,34 +490,9 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_VECTOR_TY: {
-      OBJECT_BEGIN("Vec");
-      OBJECT_SUB(n->as<VectorTy>()->get_item());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_MAP_TY: {
-      OBJECT_BEGIN("Map");
-      OBJECT_SUB(n->as<MapTy>()->get_key());
-      OBJECT_SUB(n->as<MapTy>()->get_value());
-      OBJECT_END();
-      break;
-    }
     case QAST_NODE_TUPLE_TY: {
       OBJECT_BEGIN("Tuple");
       OBJECT_ARRAY(n->as<TupleTy>()->get_items());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_SET_TY: {
-      OBJECT_BEGIN("Set");
-      OBJECT_SUB(n->as<SetTy>()->get_item());
-      OBJECT_END();
-      break;
-    }
-    case QAST_NODE_RESULT_TY: {
-      OBJECT_BEGIN("Opt");
-      OBJECT_SUB(n->as<OptionalTy>()->get_item());
       OBJECT_END();
       break;
     }

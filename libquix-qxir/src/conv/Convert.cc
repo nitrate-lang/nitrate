@@ -1409,28 +1409,6 @@ namespace qxir {
     return create<ArrayTy>(item->asType(), size);
   }
 
-  static Expr *qconv_vector_ty(ConvState &s, const qparse::VectorTy *n) {
-    /**
-     * @brief Convert a vector type to a qxir vector type.
-     * @details This is a 1-to-1 conversion of the vector type.
-     */
-
-    // auto item = qconv_one(s, n->get_item());
-    // if (!item) {
-    //   badtree(n, "qparse::VectorTy::get_item() == nullptr");
-    //   throw QError();
-    // }
-
-    // return create<ListTy>(item->asType());
-    qcore_implement(__func__);
-  }
-
-  static Expr *qconv_map_ty(ConvState &s, const qparse::MapTy *n) {
-    /// TODO: map_ty
-
-    throw QError();
-  }
-
   static Expr *qconv_tuple_ty(ConvState &s, const qparse::TupleTy *n) {
     /**
      * @brief Convert a tuple type to a qxir struct type.
@@ -1451,17 +1429,6 @@ namespace qxir {
     return create<StructTy>(std::move(fields));
   }
 
-  static Expr *qconv_set_ty(ConvState &s, const qparse::SetTy *n) {
-    /// TODO: set_ty
-
-    throw QError();
-  }
-
-  static Expr *qconv_result_ty(ConvState &s, const qparse::OptionalTy *n) {
-    /// TODO: result_ty
-
-    throw QError();
-  }
 
   static Expr *qconv_fn_ty(ConvState &s, const qparse::FuncTy *n) {
     /**
@@ -2279,7 +2246,6 @@ namespace qxir {
   }
 
   static Expr *qconv_inline_asm(ConvState &s, const qparse::InlineAsm *n) {
-    /// FIXME: inline_asm
     qcore_implement("qconv_inline_asm");
   }
 
@@ -2815,24 +2781,8 @@ static qxir::Expr *qconv_one(ConvState &s, const qparse::Node *n) {
       out = qconv_array_ty(s, n->as<qparse::ArrayTy>());
       break;
 
-    case QAST_NODE_VECTOR_TY:
-      out = qconv_vector_ty(s, n->as<qparse::VectorTy>());
-      break;
-
-    case QAST_NODE_MAP_TY:
-      out = qconv_map_ty(s, n->as<qparse::MapTy>());
-      break;
-
     case QAST_NODE_TUPLE_TY:
       out = qconv_tuple_ty(s, n->as<qparse::TupleTy>());
-      break;
-
-    case QAST_NODE_SET_TY:
-      out = qconv_set_ty(s, n->as<qparse::SetTy>());
-      break;
-
-    case QAST_NODE_RESULT_TY:
-      out = qconv_result_ty(s, n->as<qparse::OptionalTy>());
       break;
 
     case QAST_NODE_FN_TY:
@@ -3180,7 +3130,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
       break;
     }
     case QIR_NODE_ASM: {
-      /// FIXME: Implement cloning for qxir::Asm
       qcore_implement("QIR_NODE_ASM cloning");
       break;
     }

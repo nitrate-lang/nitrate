@@ -99,11 +99,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_REGION_TY,
   QAST_NODE_UNION_TY,
   QAST_NODE_ARRAY_TY,
-  QAST_NODE_VECTOR_TY,
-  QAST_NODE_MAP_TY,
   QAST_NODE_TUPLE_TY,
-  QAST_NODE_SET_TY,
-  QAST_NODE_RESULT_TY,
   QAST_NODE_FN_TY,
   QAST_NODE_UNRES_TY,
   QAST_NODE_INFER_TY,
@@ -143,7 +139,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 94
+#define QAST_NODE_COUNT 90
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -394,10 +390,7 @@ namespace qparse {
 
     bool is_primitive() const;
     bool is_array() const;
-    bool is_vector() const;
     bool is_tuple() const;
-    bool is_set() const;
-    bool is_map() const;
     bool is_pointer() const;
     bool is_function() const;
     bool is_composite() const;
@@ -748,46 +741,6 @@ namespace qparse {
     PNODE_IMPL_CORE(OpaqueTy)
   };
 
-  class VectorTy : public TypeComposite {
-    Type *m_item;
-
-  public:
-    VectorTy(Type *item = nullptr) : m_item(item) {}
-
-    Type *get_item() const { return m_item; }
-    void set_item(Type *item) { m_item = item; }
-
-    PNODE_IMPL_CORE(VectorTy)
-  };
-
-  class SetTy : public TypeComposite {
-    Type *m_item;
-
-  public:
-    SetTy(Type *item = nullptr) : m_item(item) {}
-
-    Type *get_item() const { return m_item; }
-    void set_item(Type *item) { m_item = item; }
-
-    PNODE_IMPL_CORE(SetTy)
-  };
-
-  class MapTy : public TypeComposite {
-    Type *m_key;
-    Type *m_value;
-
-  public:
-    MapTy(Type *key = nullptr, Type *value = nullptr) : m_key(key), m_value(value) {}
-
-    Type *get_key() const { return m_key; }
-    void set_key(Type *key) { m_key = key; }
-
-    Type *get_value() const { return m_value; }
-    void set_value(Type *value) { m_value = value; }
-
-    PNODE_IMPL_CORE(MapTy)
-  };
-
   typedef std::vector<Type *, Arena<Type *>> TupleTyItems;
   class TupleTy : public TypeComposite {
     TupleTyItems m_items;
@@ -804,18 +757,6 @@ namespace qparse {
     void remove_item(Type *item);
 
     PNODE_IMPL_CORE(TupleTy)
-  };
-
-  class OptionalTy : public TypeComposite {
-    Type *m_item;
-
-  public:
-    OptionalTy(Type *item = nullptr) : m_item(item) {}
-
-    Type *get_item() const { return m_item; }
-    void set_item(Type *item) { m_item = item; }
-
-    PNODE_IMPL_CORE(OptionalTy)
   };
 
   class ArrayTy : public TypeComposite {
