@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
-#include <variant>
 #define __QUIX_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
@@ -48,6 +46,8 @@
 #include <cstring>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
+#include <set>
 
 using namespace qxir;
 
@@ -70,18 +70,18 @@ CPP_EXPORT uint32_t Expr::getKindSize() const noexcept {
   { typeid(__type).hash_code(), sizeof(__type) }
 
   static const std::unordered_map<size_t, uint32_t> sizes = {
-      SIZEOF_ROW(BinExpr), SIZEOF_ROW(UnExpr),   SIZEOF_ROW(PostUnExpr), SIZEOF_ROW(Int),
-      SIZEOF_ROW(Float),   SIZEOF_ROW(String),   SIZEOF_ROW(List),       SIZEOF_ROW(Call),
-      SIZEOF_ROW(Seq),     SIZEOF_ROW(Index),    SIZEOF_ROW(Index),      SIZEOF_ROW(Extern),
-      SIZEOF_ROW(Local),   SIZEOF_ROW(Ret),      SIZEOF_ROW(Brk),        SIZEOF_ROW(Cont),
-      SIZEOF_ROW(If),      SIZEOF_ROW(While),    SIZEOF_ROW(For),        SIZEOF_ROW(Form),
-      SIZEOF_ROW(Case),    SIZEOF_ROW(Switch),   SIZEOF_ROW(Fn),         SIZEOF_ROW(Asm),
-      SIZEOF_ROW(U1Ty),    SIZEOF_ROW(U8Ty),     SIZEOF_ROW(U16Ty),      SIZEOF_ROW(U32Ty),
-      SIZEOF_ROW(U64Ty),   SIZEOF_ROW(U128Ty),   SIZEOF_ROW(I8Ty),       SIZEOF_ROW(I16Ty),
-      SIZEOF_ROW(I32Ty),   SIZEOF_ROW(I64Ty),    SIZEOF_ROW(I128Ty),     SIZEOF_ROW(F16Ty),
-      SIZEOF_ROW(F32Ty),   SIZEOF_ROW(F64Ty),    SIZEOF_ROW(F128Ty),     SIZEOF_ROW(VoidTy),
-      SIZEOF_ROW(PtrTy),   SIZEOF_ROW(OpaqueTy), SIZEOF_ROW(StructTy),   SIZEOF_ROW(UnionTy),
-      SIZEOF_ROW(ArrayTy), SIZEOF_ROW(FnTy),     SIZEOF_ROW(Tmp),
+      SIZEOF_ROW(BinExpr),  SIZEOF_ROW(UnExpr),   SIZEOF_ROW(PostUnExpr), SIZEOF_ROW(Int),
+      SIZEOF_ROW(Float),    SIZEOF_ROW(List),     SIZEOF_ROW(Call),       SIZEOF_ROW(Seq),
+      SIZEOF_ROW(Index),    SIZEOF_ROW(Index),    SIZEOF_ROW(Extern),     SIZEOF_ROW(Local),
+      SIZEOF_ROW(Ret),      SIZEOF_ROW(Brk),      SIZEOF_ROW(Cont),       SIZEOF_ROW(If),
+      SIZEOF_ROW(While),    SIZEOF_ROW(For),      SIZEOF_ROW(Form),       SIZEOF_ROW(Case),
+      SIZEOF_ROW(Switch),   SIZEOF_ROW(Fn),       SIZEOF_ROW(Asm),        SIZEOF_ROW(U1Ty),
+      SIZEOF_ROW(U8Ty),     SIZEOF_ROW(U16Ty),    SIZEOF_ROW(U32Ty),      SIZEOF_ROW(U64Ty),
+      SIZEOF_ROW(U128Ty),   SIZEOF_ROW(I8Ty),     SIZEOF_ROW(I16Ty),      SIZEOF_ROW(I32Ty),
+      SIZEOF_ROW(I64Ty),    SIZEOF_ROW(I128Ty),   SIZEOF_ROW(F16Ty),      SIZEOF_ROW(F32Ty),
+      SIZEOF_ROW(F64Ty),    SIZEOF_ROW(F128Ty),   SIZEOF_ROW(VoidTy),     SIZEOF_ROW(PtrTy),
+      SIZEOF_ROW(OpaqueTy), SIZEOF_ROW(StructTy), SIZEOF_ROW(UnionTy),    SIZEOF_ROW(ArrayTy),
+      SIZEOF_ROW(FnTy),     SIZEOF_ROW(Tmp),
   };
 
   qcore_assert(sizes.size() == QIR_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
@@ -97,18 +97,18 @@ CPP_EXPORT const char *Expr::getKindName() const noexcept {
   { QIR_NODE_##__name, "QIR_NODE_" #__name }
 
   static const std::unordered_map<qxir_ty_t, const char *> names = {
-      NAMEOF_ROW(BINEXPR),  NAMEOF_ROW(UNEXPR),    NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(INT),
-      NAMEOF_ROW(FLOAT),    NAMEOF_ROW(STRING),    NAMEOF_ROW(LIST),        NAMEOF_ROW(CALL),
-      NAMEOF_ROW(SEQ),      NAMEOF_ROW(INDEX),     NAMEOF_ROW(IDENT),       NAMEOF_ROW(EXTERN),
-      NAMEOF_ROW(LOCAL),    NAMEOF_ROW(RET),       NAMEOF_ROW(BRK),         NAMEOF_ROW(CONT),
-      NAMEOF_ROW(IF),       NAMEOF_ROW(WHILE),     NAMEOF_ROW(FOR),         NAMEOF_ROW(FORM),
-      NAMEOF_ROW(CASE),     NAMEOF_ROW(SWITCH),    NAMEOF_ROW(FN),          NAMEOF_ROW(ASM),
-      NAMEOF_ROW(U1_TY),    NAMEOF_ROW(U8_TY),     NAMEOF_ROW(U16_TY),      NAMEOF_ROW(U32_TY),
-      NAMEOF_ROW(U64_TY),   NAMEOF_ROW(U128_TY),   NAMEOF_ROW(I8_TY),       NAMEOF_ROW(I16_TY),
-      NAMEOF_ROW(I32_TY),   NAMEOF_ROW(I64_TY),    NAMEOF_ROW(I128_TY),     NAMEOF_ROW(F16_TY),
-      NAMEOF_ROW(F32_TY),   NAMEOF_ROW(F64_TY),    NAMEOF_ROW(F128_TY),     NAMEOF_ROW(VOID_TY),
-      NAMEOF_ROW(PTR_TY),   NAMEOF_ROW(OPAQUE_TY), NAMEOF_ROW(STRUCT_TY),   NAMEOF_ROW(UNION_TY),
-      NAMEOF_ROW(ARRAY_TY), NAMEOF_ROW(FN_TY),     NAMEOF_ROW(TMP),
+      NAMEOF_ROW(BINEXPR),   NAMEOF_ROW(UNEXPR),    NAMEOF_ROW(POST_UNEXPR), NAMEOF_ROW(INT),
+      NAMEOF_ROW(FLOAT),     NAMEOF_ROW(LIST),      NAMEOF_ROW(CALL),        NAMEOF_ROW(SEQ),
+      NAMEOF_ROW(INDEX),     NAMEOF_ROW(IDENT),     NAMEOF_ROW(EXTERN),      NAMEOF_ROW(LOCAL),
+      NAMEOF_ROW(RET),       NAMEOF_ROW(BRK),       NAMEOF_ROW(CONT),        NAMEOF_ROW(IF),
+      NAMEOF_ROW(WHILE),     NAMEOF_ROW(FOR),       NAMEOF_ROW(FORM),        NAMEOF_ROW(CASE),
+      NAMEOF_ROW(SWITCH),    NAMEOF_ROW(FN),        NAMEOF_ROW(ASM),         NAMEOF_ROW(U1_TY),
+      NAMEOF_ROW(U8_TY),     NAMEOF_ROW(U16_TY),    NAMEOF_ROW(U32_TY),      NAMEOF_ROW(U64_TY),
+      NAMEOF_ROW(U128_TY),   NAMEOF_ROW(I8_TY),     NAMEOF_ROW(I16_TY),      NAMEOF_ROW(I32_TY),
+      NAMEOF_ROW(I64_TY),    NAMEOF_ROW(I128_TY),   NAMEOF_ROW(F16_TY),      NAMEOF_ROW(F32_TY),
+      NAMEOF_ROW(F64_TY),    NAMEOF_ROW(F128_TY),   NAMEOF_ROW(VOID_TY),     NAMEOF_ROW(PTR_TY),
+      NAMEOF_ROW(OPAQUE_TY), NAMEOF_ROW(STRUCT_TY), NAMEOF_ROW(UNION_TY),    NAMEOF_ROW(ARRAY_TY),
+      NAMEOF_ROW(FN_TY),     NAMEOF_ROW(TMP),
   };
 
   qxir_ty_t type = getKind();
@@ -190,9 +190,6 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
     }
     case QIR_NODE_FLOAT: {
       return as<Float>()->getValue() == other->as<Float>()->getValue();
-    }
-    case QIR_NODE_STRING: {
-      return as<String>()->m_data == other->as<String>()->m_data;
     }
     case QIR_NODE_LIST: {
       auto a = as<List>();
@@ -564,10 +561,6 @@ CPP_EXPORT std::string_view qxir::Expr::getName() const noexcept {
       break;
     }
 
-    case QIR_NODE_STRING: {
-      break;
-    }
-
     case QIR_NODE_LIST: {
       break;
     }
@@ -782,6 +775,11 @@ CPP_EXPORT void qxir::Expr::setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexce
   m_loc_size = qlex_span(lexer, loc.first, loc.second);
 }
 
+CPP_EXPORT Type *Expr::asType() noexcept {
+  qcore_assert(isType(), "Failed to cast a non-type node to a type node");
+  return static_cast<Type *>(this);
+}
+
 CPP_EXPORT bool Expr::is(qxir_ty_t type) const noexcept { return type == getKind(); }
 
 CPP_EXPORT void qxir::Expr::dump(std::ostream &os, bool isForDebug) const {
@@ -846,10 +844,6 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
       }
       case QIR_NODE_FLOAT: {
         MIXIN_STRING(cur->as<Float>()->getValue());
-        break;
-      }
-      case QIR_NODE_STRING: {
-        MIXIN_STRING(cur->as<String>()->m_data);
         break;
       }
       case QIR_NODE_LIST: {

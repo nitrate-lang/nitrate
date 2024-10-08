@@ -323,6 +323,20 @@ static qxir::Tmp *create_simple_call(
   qcore_implement(__func__);
 }
 
+static qxir::List *create_string_literal(std::string_view value) {
+  qxir::ListItems items;
+
+  for (char c : value) {
+    items.push_back(qxir::create<qxir::BinExpr>(qxir::create<qxir::Int>(c),
+                                                qxir::getType<qxir::I8Ty>(), qxir::Op::CastAs));
+  }
+
+  items.push_back(qxir::create<qxir::BinExpr>(qxir::create<qxir::Int>(0),
+                                              qxir::getType<qxir::I8Ty>(), qxir::Op::CastAs));
+
+  return qxir::create<qxir::List>(items);
+}
+
 qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) {
 #define STD_BINOP(op) qxir::create<qxir::BinExpr>(lhs, rhs, qxir::Op::op)
 #define ASSIGN_BINOP(op)                                                                    \
@@ -517,7 +531,7 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
       break;
     }
     case qOpIn: {
-      auto methname = qxir::create<qxir::String>("has");
+      auto methname = create_string_literal("has");
       auto method = qxir::create<qxir::Index>(rhs, methname);
       R = qxir::create<qxir::Call>(method, qxir::CallArgs({lhs}));
       break;
@@ -735,7 +749,7 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the string constant.
      */
 
-    return create<String>(memorize(n->get_value()));
+    return create_string_literal(n->get_value());
   }
 
   static Expr *qconv_char(ConvState &s, const qparse::ConstChar *n) {
@@ -874,7 +888,7 @@ namespace qxir {
       throw QError();
     }
 
-    return create<Index>(base, create<String>(memorize(n->get_field())));
+    return create<Index>(base, create_string_literal(n->get_field()));
   }
 
   static Expr *qconv_index(ConvState &s, const qparse::Index *n) {
@@ -925,7 +939,8 @@ namespace qxir {
       throw QError();
     }
 
-    return create<Call>(create<Index>(base, create<String>("slice")), CallArgs({start, end}));
+    return create<Call>(create<Index>(base, create_string_literal("slice")),
+                        CallArgs({start, end}));
   }
 
   static Expr *qconv_fstring(ConvState &s, const qparse::FString *n) {
@@ -934,13 +949,13 @@ namespace qxir {
      */
 
     if (n->get_items().empty()) {
-      return create<String>("");
+      return create_string_literal("");
     }
 
     if (n->get_items().size() == 1) {
       auto val = n->get_items().front();
       if (std::holds_alternative<qparse::String>(val)) {
-        return create<String>(memorize(std::get<qparse::String>(val)));
+        return create_string_literal(std::get<qparse::String>(val));
       } else if (std::holds_alternative<qparse::Expr *>(val)) {
         auto expr = qconv_one(s, std::get<qparse::Expr *>(val));
         if (!expr) {
@@ -956,14 +971,14 @@ namespace qxir {
       }
     }
 
-    Expr *concated = create<String>("");
+    Expr *concated = create_string_literal("");
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
       if (std::holds_alternative<qparse::String>(*it)) {
         auto val = std::get<qparse::String>(*it);
 
         bool was_const = concated->isConstExpr();
-        concated = create<BinExpr>(concated, create<String>(memorize(val)), Op::Plus);
+        concated = create<BinExpr>(concated, create_string_literal(val), Op::Plus);
         concated->setConstExpr(was_const);
       } else if (std::holds_alternative<qparse::Expr *>(*it)) {
         auto val = std::get<qparse::Expr *>(*it);
@@ -1416,7 +1431,6 @@ namespace qxir {
 
     return create<StructTy>(std::move(fields));
   }
-
 
   static Expr *qconv_fn_ty(ConvState &s, const qparse::FuncTy *n) {
     /**
@@ -2998,10 +3012,6 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
       } else {
         out = create<Float>(memorize(n->getStringRepresentation()));
       }
-      break;
-    }
-    case QIR_NODE_STRING: {
-      out = create<String>(memorize(static_cast<String *>(in)->getValue()));
       break;
     }
     case QIR_NODE_LIST: {

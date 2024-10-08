@@ -56,7 +56,6 @@ typedef enum qxir_ty_t {
 
   QIR_NODE_INT,    /* Integer literal */
   QIR_NODE_FLOAT,  /* Floating-point literal */
-  QIR_NODE_STRING, /* String literal */
   QIR_NODE_LIST,   /* List literal */
 
   QIR_NODE_CALL,   /* Function call */

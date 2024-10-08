@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#define QIR_NODE_COUNT 47
+#define QIR_NODE_COUNT 46
 
 /**
  * @brief Clone a QXIR node. Optionally into a different module.
@@ -72,23 +72,16 @@ qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 #include <quix-qxir/Module.h>
 #include <quix-qxir/TypeDecl.h>
 
-#include <any>
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
 #include <cmath>
 #include <functional>
 #include <iostream>
 #include <limits>
-#include <memory>
 #include <optional>
 #include <ostream>
 #include <quix-core/Classes.hh>
-#include <set>
-#include <stdexcept>
 #include <string>
-#include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -136,7 +129,7 @@ namespace qxir {
   }
 };  // namespace qxir
 
-class qxir_node_t {
+struct qxir_node_t {
 public:
   qxir_node_t() = default;
 };
@@ -182,8 +175,7 @@ namespace qxir {
     inline void setConstExpr(bool is_const) noexcept { m_constexpr = is_const; }
     inline void setMutable(bool is_mut) noexcept { m_mutable = is_mut; }
     inline bool isLiteral() const noexcept {
-      return m_node_type == QIR_NODE_INT || m_node_type == QIR_NODE_FLOAT ||
-             m_node_type == QIR_NODE_STRING;
+      return m_node_type == QIR_NODE_INT || m_node_type == QIR_NODE_FLOAT;
     }
 
     // Returns "" if the construct is not named.
@@ -199,16 +191,225 @@ namespace qxir {
 
     Type *getType() noexcept;
 
-    /**
-     * @brief Type-safe cast (type check only in debug mode).
-     *
-     * @tparam T The type to cast to.
-     * @return const T* The casted pointer. It may be nullptr if the source pointer is nullptr.
-     * @warning This function will panic if the cast is invalid.
-     */
     template <typename T>
-    const T *as() const noexcept {
-      return reinterpret_cast<const T *>(this);
+    static T *safe_cast_as(Expr *ptr) noexcept {
+#ifndef NDEBUG
+#define is(_T) (std::is_same_v<T, _T>)
+      static_assert(is(BinExpr) || is(UnExpr) || is(PostUnExpr) || is(Int) || is(Float) ||
+                        is(List) || is(Call) || is(Seq) || is(Index) || is(Ident) || is(Extern) ||
+                        is(Local) || is(Ret) || is(Brk) || is(Cont) || is(If) || is(While) ||
+                        is(For) || is(Form) || is(Case) || is(Switch) || is(Fn) || is(Asm) ||
+                        is(U1Ty) || is(U8Ty) || is(U16Ty) || is(U32Ty) || is(U64Ty) || is(U128Ty) ||
+                        is(I8Ty) || is(I16Ty) || is(I32Ty) || is(I64Ty) || is(I128Ty) ||
+                        is(F16Ty) || is(F32Ty) || is(F64Ty) || is(F128Ty) || is(VoidTy) ||
+                        is(PtrTy) || is(OpaqueTy) || is(StructTy) || is(UnionTy) || is(ArrayTy) ||
+                        is(FnTy) || is(Tmp),
+                    "The requested type target is not supported by this function.");
+#undef is
+#endif
+
+      if (!ptr) {
+        return nullptr;
+      }
+
+#ifndef NDEBUG
+      switch (ptr->getKind()) {
+        case QIR_NODE_BINEXPR: {
+          if constexpr (!std::is_same_v<T, BinExpr>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_UNEXPR: {
+          if constexpr (!std::is_same_v<T, UnExpr>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_POST_UNEXPR: {
+          if constexpr (!std::is_same_v<T, PostUnExpr>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_INT: {
+          if constexpr (!std::is_same_v<T, Int>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_FLOAT: {
+          if constexpr (!std::is_same_v<T, Float>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_LIST: {
+          if constexpr (!std::is_same_v<T, List>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_CALL: {
+          if constexpr (!std::is_same_v<T, Call>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_SEQ: {
+          if constexpr (!std::is_same_v<T, Seq>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_INDEX: {
+          if constexpr (!std::is_same_v<T, Index>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_IDENT: {
+          if constexpr (!std::is_same_v<T, Ident>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_EXTERN: {
+          if constexpr (!std::is_same_v<T, Extern>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_LOCAL: {
+          if constexpr (!std::is_same_v<T, Local>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_RET: {
+          if constexpr (!std::is_same_v<T, Ret>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_BRK: {
+          if constexpr (!std::is_same_v<T, Brk>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_CONT: {
+          if constexpr (!std::is_same_v<T, Cont>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_IF: {
+          if constexpr (!std::is_same_v<T, If>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_WHILE: {
+          if constexpr (!std::is_same_v<T, While>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_FOR: {
+          if constexpr (!std::is_same_v<T, For>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_FORM: {
+          if constexpr (!std::is_same_v<T, Form>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_CASE: {
+          if constexpr (!std::is_same_v<T, Case>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_SWITCH: {
+          if constexpr (!std::is_same_v<T, Switch>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_FN: {
+          if constexpr (!std::is_same_v<T, Fn>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_ASM: {
+          if constexpr (!std::is_same_v<T, Asm>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_U1_TY: {
+          if constexpr (!std::is_same_v<T, U1Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_U8_TY: {
+          if constexpr (!std::is_same_v<T, U8Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_U16_TY: {
+          if constexpr (!std::is_same_v<T, U16Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_U32_TY: {
+          if constexpr (!std::is_same_v<T, U32Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_U64_TY: {
+          if constexpr (!std::is_same_v<T, U64Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_U128_TY: {
+          if constexpr (!std::is_same_v<T, U128Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_I8_TY: {
+          if constexpr (!std::is_same_v<T, I8Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_I16_TY: {
+          if constexpr (!std::is_same_v<T, I16Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_I32_TY: {
+          if constexpr (!std::is_same_v<T, I32Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_I64_TY: {
+          if constexpr (!std::is_same_v<T, I64Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_I128_TY: {
+          if constexpr (!std::is_same_v<T, I128Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_F16_TY: {
+          if constexpr (!std::is_same_v<T, F16Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_F32_TY: {
+          if constexpr (!std::is_same_v<T, F32Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_F64_TY: {
+          if constexpr (!std::is_same_v<T, F64Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_F128_TY: {
+          if constexpr (!std::is_same_v<T, F128Ty>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_VOID_TY: {
+          if constexpr (!std::is_same_v<T, VoidTy>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_PTR_TY: {
+          if constexpr (!std::is_same_v<T, PtrTy>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_OPAQUE_TY: {
+          if constexpr (!std::is_same_v<T, OpaqueTy>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_STRUCT_TY: {
+          if constexpr (!std::is_same_v<T, StructTy>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_UNION_TY: {
+          if constexpr (!std::is_same_v<T, UnionTy>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_ARRAY_TY: {
+          if constexpr (!std::is_same_v<T, ArrayTy>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_FN_TY: {
+          if constexpr (!std::is_same_v<T, FnTy>) goto cast_panic;
+          break;
+        }
+
+#ifdef __QUIX_IMPL__
+        case QIR_NODE_TMP: {
+          if constexpr (!std::is_same_v<T, Tmp>) goto cast_panic;
+          break;
+        }
+#endif
+      }
+#endif
+
+      return static_cast<T *>(ptr);
+
+#ifndef NDEBUG
+    cast_panic:
+      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(), typeid(T).name());
+#endif
     }
 
     /**
@@ -220,11 +421,23 @@ namespace qxir {
      */
     template <typename T>
     T *as() noexcept {
-      return reinterpret_cast<T *>(this);
+      return safe_cast_as<T>(this);
+    }
+
+    /**
+     * @brief Type-safe cast (type check only in debug mode).
+     *
+     * @tparam T The type to cast to.
+     * @return const T* The casted pointer. It may be nullptr if the source pointer is nullptr.
+     * @warning This function will panic if the cast is invalid.
+     */
+    template <typename T>
+    const T *as() const noexcept {
+      return safe_cast_as<T>(const_cast<Expr *>(this));
     }
 
     Expr *asExpr() noexcept { return this; }
-    Type *asType() noexcept { return as<Type>(); }
+    Type *asType() noexcept;
 
     /**
      * @brief Type check.
@@ -699,18 +912,6 @@ namespace qxir {
     void setValue(std::string_view str) noexcept { m_data = str.data(); }
   };
 
-  class String final : public Expr {
-    QCLASS_REFLECT()
-
-    std::string_view m_data;
-
-  public:
-    String(std::string_view data) : Expr(QIR_NODE_STRING), m_data(data) { setConstExpr(true); }
-
-    std::string_view getValue() noexcept { return m_data; }
-    std::string_view setValue(std::string_view data) noexcept { return m_data = data; }
-  };
-
   typedef std::vector<Expr *, Arena<Expr *>> ListItems;
 
   class List final : public Expr {
@@ -1058,9 +1259,7 @@ namespace qxir {
     QCLASS_REFLECT()
 
   public:
-    Asm() : Expr(QIR_NODE_ASM) {
-      qcore_implement(__func__);
-    }
+    Asm() : Expr(QIR_NODE_ASM) { qcore_implement(__func__); }
   };
 
   ///=============================================================================

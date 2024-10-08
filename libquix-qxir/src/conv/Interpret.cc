@@ -472,11 +472,6 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
       break;
     }
 
-    case QIR_NODE_STRING: {
-      ANS = x;
-      break;
-    }
-
     case QIR_NODE_LIST: {
       ANS = x;
       break;
@@ -511,7 +506,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
       }
 
       auto base_kind = base->getKind();
-      if (base_kind != QIR_NODE_LIST && base_kind != QIR_NODE_STRING) {
+      if (base_kind != QIR_NODE_LIST) {
         break;
       }
 
@@ -535,13 +530,6 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
         }
 
         ANS = evaluate_to_literal(list->getItems()[idx_val]);
-      } else if (base_kind == QIR_NODE_STRING) {
-        String *str = base->as<String>();
-        if (idx_val >= str->getValue().size()) {
-          break;
-        }
-
-        ANS = create<Int>(str->getValue()[idx_val]);
       }
 
       break;

@@ -112,7 +112,6 @@
 //       case QIR_NODE_STRUCT_TY:
 //         param.use_tuple = true;
 //         break;
-//       case QIR_NODE_STRING:
 //       case QIR_NODE_LIST:
 //         param.use_vector = true;
 //         break;
@@ -389,11 +388,6 @@
 //       break;
 //     }
 
-//     case QIR_NODE_STRING: {
-//       escape_string(out, n->as<String>()->getValue());
-//       break;
-//     }
-
 //     case QIR_NODE_LIST: {
 //       out << '{';
 //       for (auto it = n->as<List>()->getItems().begin(); it != n->as<List>()->getItems().end();
@@ -459,10 +453,7 @@
 //       recurse(n->as<Index>()->getExpr());
 //       auto tp = n->as<Index>()->getIndex()->getKind();
 
-//       if (tp == QIR_NODE_STRING) {
-//         out << '.';
-//         out << n->as<Index>()->getIndex()->as<String>()->getValue();
-//       } else if (tp == QIR_NODE_INT) {
+//       if (tp == QIR_NODE_INT) {
 //         out << '[';
 //         recurse(n->as<Index>()->getIndex());
 //         out << ']';

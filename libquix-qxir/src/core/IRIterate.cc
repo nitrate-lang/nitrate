@@ -77,9 +77,6 @@ namespace qxir::detail {
       case QIR_NODE_FLOAT: {
         break;
       }
-      case QIR_NODE_STRING: {
-        break;
-      }
       case QIR_NODE_LIST: {
         children.reserve(base->as<List>()->m_items.size());
         for (Expr *&child : base->as<List>()->m_items) {

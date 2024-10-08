@@ -212,7 +212,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
   qxir::current = E->getModule();
 
   if (E->isType()) {
-    T = E->as<Type>();
+    T = E->asType();
   } else {
     switch (E->getKind()) {
       case QIR_NODE_BINEXPR: {
@@ -463,7 +463,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
              * The actual detail of what is encoded could be configurable.
              */
 
-            // T = getType<StringTy>();
             /// TODO: Typeof operator result inference
             qcore_implement("Typeof operator");
             break;
@@ -646,10 +645,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             T = getType<F64Ty>();  // Default to f64
           }
         }
-        break;
-      }
-      case QIR_NODE_STRING: {
-        T = create<ArrayTy>(getType<I8Ty>(), E->as<String>()->getValue().size() + 1);
         break;
       }
       case QIR_NODE_LIST: {

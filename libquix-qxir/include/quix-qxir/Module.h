@@ -134,7 +134,6 @@ namespace qxir {
   class FnTy;
   class Int;
   class Float;
-  class String;
   class List;
   class Call;
   class Seq;

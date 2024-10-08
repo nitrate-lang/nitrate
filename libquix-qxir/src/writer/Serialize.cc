@@ -61,36 +61,21 @@ boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>:
 }
 
 static const boost::bimap<Op, std::string_view> opstr_map = make_bimap<Op, std::string_view>({
-    {Op::Plus, "+"},
-    {Op::Minus, "-"},
-    {Op::Times, "*"},
-    {Op::Slash, "/"},
-    {Op::Percent, "%"},
-    {Op::BitAnd, "&"},
-    {Op::BitOr, "|"},
-    {Op::BitXor, "^"},
-    {Op::BitNot, "~"},
-    {Op::LogicAnd, "&&"},
-    {Op::LogicOr, "||"},
-    {Op::LogicNot, "!"},
-    {Op::LShift, "<<"},
-    {Op::RShift, ">>"},
-    {Op::ROTR, ">>>"},
-    {Op::ROTL, "<<<"},
-    {Op::Inc, "++"},
-    {Op::Dec, "--"},
-    {Op::Set, "="},
-    {Op::LT, "<"},
-    {Op::GT, ">"},
-    {Op::LE, "<="},
-    {Op::GE, ">="},
-    {Op::Eq, "=="},
-    {Op::NE, "!="},
-    {Op::Alignof, "alignof"},
-    {Op::Typeof, "typeof"},
-    {Op::BitcastAs, "bitcast_as"},
-    {Op::CastAs, "cast_as"},
-    {Op::Bitsizeof, "bitsizeof"},
+    {Op::Plus, "+"},         {Op::Minus, "-"},
+    {Op::Times, "*"},        {Op::Slash, "/"},
+    {Op::Percent, "%"},      {Op::BitAnd, "&"},
+    {Op::BitOr, "|"},        {Op::BitXor, "^"},
+    {Op::BitNot, "~"},       {Op::LogicAnd, "&&"},
+    {Op::LogicOr, "||"},     {Op::LogicNot, "!"},
+    {Op::LShift, "<<"},      {Op::RShift, ">>"},
+    {Op::ROTR, ">>>"},       {Op::ROTL, "<<<"},
+    {Op::Inc, "++"},         {Op::Dec, "--"},
+    {Op::Set, "="},          {Op::LT, "<"},
+    {Op::GT, ">"},           {Op::LE, "<="},
+    {Op::GE, ">="},          {Op::Eq, "=="},
+    {Op::NE, "!="},          {Op::Alignof, "alignof"},
+    {Op::Typeof, "typeof"},  {Op::BitcastAs, "bitcast_as"},
+    {Op::CastAs, "cast_as"}, {Op::Bitsizeof, "bitsizeof"},
 });
 
 static inline FILE &operator<<(FILE &ss, const char *s) {
@@ -233,20 +218,54 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       ss << " " << n->as<Float>()->getValue();
       break;
     }
-    case QIR_NODE_STRING: {
-      ss << "%" << n->as<String>()->getUniqId();
-      break;
-    }
     case QIR_NODE_LIST: {
-      ss << "{";
-      for (auto it = n->as<List>()->getItems().begin(); it != n->as<List>()->getItems().end();
-           ++it) {
-        recurse(*it);
-        if (std::next(it) != n->as<List>()->getItems().end()) {
-          ss << ",";
+      // Check if it matches the string literal pattern
+      List *L = n->as<List>();
+      bool is_cstring = false;
+      std::string c_string;
+      for (size_t i = 0; i < L->getItems().size(); i++) {
+        if (L->getItems()[i]->getKind() != QIR_NODE_BINEXPR) {
+          break;
+        }
+
+        BinExpr *BE = L->getItems()[i]->as<BinExpr>();
+
+        if (BE->getLHS()->getKind() != QIR_NODE_INT) {
+          break;
+        }
+
+        if (BE->getRHS()->getKind() != QIR_NODE_I8_TY) {
+          break;
+        }
+
+        if (BE->getOp() != Op::CastAs) {
+          break;
+        }
+
+        c_string.push_back((char)BE->getLHS()->as<Int>()->getNativeRepresentation());
+
+        if (i + 1 == L->getItems().size()) {  // Last item
+          if (BE->getLHS()->as<Int>()->getNativeRepresentation() != 0) {
+            break;
+          }
+
+          is_cstring = true;
+
+          escape_string(ss, c_string);
+          break;
         }
       }
-      ss << "}";
+
+      if (!is_cstring) {
+        ss << "{";
+        for (auto it = L->getItems().begin(); it != L->getItems().end(); ++it) {
+          recurse(*it);
+          if (std::next(it) != L->getItems().end()) {
+            ss << ",";
+          }
+        }
+        ss << "}";
+      }
       break;
     }
     case QIR_NODE_CALL: {
@@ -589,20 +608,6 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
       Expr *n = *_cur;
 
       switch (n->getKind()) {
-        case QIR_NODE_STRING: {
-          uint64_t type_id = n->getUniqId();
-          if (node_ids.contains(type_id)) {
-            break;
-          }
-
-          node_ids.insert(type_id);
-
-          ss << "%" << type_id << " = ";
-          escape_string(ss, n->as<String>()->getValue());
-          ss << "\n";
-          break;
-        }
-
         case QIR_NODE_STRUCT_TY: {
           uint64_t type_id = n->getType()->getUniqId();
           if (node_ids.contains(type_id)) {

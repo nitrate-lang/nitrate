@@ -462,7 +462,6 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State 
                                     qxir::PostUnExpr *N);
 static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Int *N);
 static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Float *N);
-static val_t QIR_NODE_STRING_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::String *N);
 static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::List *N);
 static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Call *N);
 static val_t QIR_NODE_SEQ_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Seq *N);
@@ -530,11 +529,6 @@ auto V(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Expr *N) -> val_t {
 
     case QIR_NODE_FLOAT: {
       R = QIR_NODE_FLOAT_C(m, b, cf, s, N->as<qxir::Float>());
-      break;
-    }
-
-    case QIR_NODE_STRING: {
-      R = QIR_NODE_STRING_C(m, b, cf, s, N->as<qxir::String>());
       break;
     }
 
@@ -1461,18 +1455,6 @@ static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   }
 
   return R;
-}
-
-static val_t QIR_NODE_STRING_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::String *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-  return b.CreateGlobalString(N->getValue(), "", 0, &m);
 }
 
 static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::List *N) {
