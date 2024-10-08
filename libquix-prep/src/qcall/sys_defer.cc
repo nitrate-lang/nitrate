@@ -45,17 +45,17 @@ int qcall::sys_defer(lua_State* L) {
 
   int nargs = lua_gettop(L);
   if (nargs < 1) {
-    return luaL_error(L, "sys_emit: expected at least 1 argument, got %d", nargs);
+    return luaL_error(L, "sys_defer: expected at least 1 argument, got %d", nargs);
   }
 
   if (!lua_isfunction(L, 1)) {
-    return luaL_error(L, "sys_emit: expected function as first argument, got %s",
+    return luaL_error(L, "sys_defer: expected function as first argument, got %s",
                       luaL_typename(L, 1));
   }
 
   int id = luaL_ref(L, LUA_REGISTRYINDEX);
   if (id == LUA_REFNIL) {
-    return luaL_error(L, "sys_emit: failed to store callback in registry");
+    return luaL_error(L, "sys_defer: failed to store callback in registry");
   }
 
   DeferCallback cb = [L, id](qprep_impl_t* obj, qlex_tok_t tok) -> DeferOp {
