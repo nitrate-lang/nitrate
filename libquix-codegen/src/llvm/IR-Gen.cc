@@ -29,13 +29,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <llvm-14/llvm/IR/Function.h>
 #define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
 #include <core/LibMacro.h>
 #include <llvm-14/llvm/IR/BasicBlock.h>
 #include <llvm-14/llvm/IR/DerivedTypes.h>
+#include <llvm-14/llvm/IR/Function.h>
 #include <llvm-14/llvm/IR/GlobalValue.h>
 #include <llvm-14/llvm/IR/Instructions.h>
 #include <llvm-14/llvm/IR/Type.h>
@@ -97,6 +97,38 @@ public:
   }
 
   virtual int overflow(int c) override { return fputc(c, m_file); }
+
+  // Get current position
+  virtual std::streampos seekoff(std::streamoff off, std::ios_base::seekdir way,
+                                  std::ios_base::openmode which) override {
+    if (way == std::ios_base::cur) {
+      if (fseek(m_file, off, SEEK_CUR) == -1) {
+        return -1;
+      }
+    } else if (way == std::ios_base::end) {
+      if (fseek(m_file, off, SEEK_END) == -1) {
+        return -1;
+      }
+    } else if (way == std::ios_base::beg) {
+      if (fseek(m_file, off, SEEK_SET) == -1) {
+        return -1;
+      }
+    }
+
+    std::cout << "seekoff: " << off << std::endl;
+
+    return ftell(m_file);
+  }
+
+  virtual std::streampos seekpos(std::streampos sp, std::ios_base::openmode which) override {
+    if (fseek(m_file, sp, SEEK_SET) == -1) {
+      return -1;
+    }
+
+    std::cout << "seekpos: " << sp << std::endl;
+
+    return ftell(m_file);
+  }
 };
 
 class OStreamDiscard : public std::streambuf {
@@ -129,120 +161,13 @@ public:
   }
 };
 
-/* LLVM IR
-std::unique_ptr<llvm::Module> module = action->takeModule();
-    if (!module) {
-      err << "error: failed to take module" << std::endl;
-      return false;
-    }
-
-    if (llvm::verifyModule(*module, &err_os)) {
-      err << "error: failed to verify module" << std::endl;
-      return false;
-    }
-
-    ///==========================================================================
-
-    // Create the analysis managers.
-    // These must be declared in this order so that they are destroyed in the
-    // correct order due to inter-analysis-manager references.
-    llvm::LoopAnalysisManager LAM;
-    llvm::FunctionAnalysisManager FAM;
-    llvm::CGSCCAnalysisManager CGAM;
-    llvm::ModuleAnalysisManager MAM;
-
-    // Create the new pass manager builder.
-    // Take a look at the PassBuilder constructor parameters for more
-    // customization, e.g. specifying a TargetMachine or various debugging
-    // options.
-    llvm::PassBuilder PB;
-
-    // Register all the basic analyses with the managers.
-    PB.registerModuleAnalyses(MAM);
-    PB.registerCGSCCAnalyses(CGAM);
-    PB.registerFunctionAnalyses(FAM);
-    PB.registerLoopAnalyses(LAM);
-    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-    llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
-
-    // Optimize the IR!
-    MPM.run(*module, MAM);
-
-    ///==========================================================================
-
-    llvm::raw_os_ostream ostream(code);
-    module->print(ostream, nullptr);
-
-    return true;
-*/
-
-/* LLVM OBJECT FILE
- std::unique_ptr<llvm::Module> module = action->takeModule();
-    if (!module) {
-      err << "error: failed to take module" << std::endl;
-      return false;
-    }
-
-    if (llvm::verifyModule(*module, &err_os)) {
-      err << "error: failed to verify module" << std::endl;
-      return false;
-    }
-
-    module->setDataLayout(TargetMachine->createDataLayout());
-    module->setTargetTriple(targetTriple);
-
-    ///==========================================================================
-
-    // Create the analysis managers.
-    // These must be declared in this order so that they are destroyed in the
-    // correct order due to inter-analysis-manager references.
-    llvm::LoopAnalysisManager LAM;
-    llvm::FunctionAnalysisManager FAM;
-    llvm::CGSCCAnalysisManager CGAM;
-    llvm::ModuleAnalysisManager MAM;
-
-    // Create the new pass manager builder.
-    // Take a look at the PassBuilder constructor parameters for more
-    // customization, e.g. specifying a TargetMachine or various debugging
-    // options.
-    llvm::PassBuilder PB;
-
-    // Register all the basic analyses with the managers.
-    PB.registerModuleAnalyses(MAM);
-    PB.registerCGSCCAnalyses(CGAM);
-    PB.registerFunctionAnalyses(FAM);
-    PB.registerLoopAnalyses(LAM);
-    PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
-
-    llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
-
-    // Optimize the IR!
-    MPM.run(*module, MAM);
-
-    ///==========================================================================
-
-    /// FIXME: Figure out how to do this probably with streams
-    std::error_code ec;
-    llvm::SmallVector<char> output_buffer;
-    llvm::raw_svector_ostream code_os(output_buffer);
-
-    llvm::legacy::PassManager pass;
-    TargetMachine->addPassesToEmitFile(pass, code_os, nullptr, llvm::CGFT_ObjectFile);
-    if (!pass.run(*module)) {
-      err << "error: failed to emit object code" << std::endl;
-      return false;
-    }
-
-    code.write(output_buffer.data(), output_buffer.size());
-*/
-
 class ConvError : public std::runtime_error {
 public:
   ConvError(const std::string &msg) : std::runtime_error(msg) {}
 };
 
-typedef std::function<bool(qmodule_t *, qcode_conf_t *, std::ostream &err, llvm::raw_ostream &out)>
+typedef std::function<bool(qmodule_t *, qcode_conf_t *, std::ostream &err,
+                           llvm::raw_pwrite_stream &out)>
     qcode_adapter_fn;
 
 static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE *out,
@@ -302,42 +227,96 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *
 LIB_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e, llvm::raw_ostream &o) -> bool {
+      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e, llvm::raw_pwrite_stream &o) -> bool {
         auto module = fabricate_llvmir(m, c, e, o);
         if (!module) {
           e << "error: failed to fabricate LLVM IR" << std::endl;
           return false;
         }
 
-        if (llvm::verifyModule(*module->get(), &o)) {
-          e << "error: failed to verify module" << std::endl;
-          /// FIXME: Fail here
-          // return false;
-        }
+        bool failed = llvm::verifyModule(*module->get(), &o);
 
         module.value()->print(o, nullptr);
 
-        return true;
+        return failed;
       });
 }
 
 LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e, llvm::raw_ostream &o) -> bool {
-        auto module = fabricate_llvmir(m, c, e, o);
-        if (!module) {
+      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e, llvm::raw_pwrite_stream &o) -> bool {
+        auto module_opt = fabricate_llvmir(m, c, e, o);
+        if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << std::endl;
           return false;
         }
 
-        if (llvm::verifyModule(*module->get(), &o)) {
+        /// FIXME: Get the user compile target options
+        std::string targetTriple = llvm::sys::getDefaultTargetTriple();
+        std::string CPU = "generic";
+        std::string Features = "";
+        bool relocPIC = true;
+
+        llvm::TargetOptions opt;
+        std::string lookupTarget_err;
+        auto Target = llvm::TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+        if (!Target) {
+          e << "error: failed to lookup target: " << lookupTarget_err << std::endl;
+          return false;
+        }
+
+        auto TargetMachine = Target->createTargetMachine(
+            targetTriple, CPU, Features, opt, relocPIC ? llvm::Reloc::PIC_ : llvm::Reloc::Static);
+
+        auto &module = *module_opt.value();
+
+        if (llvm::verifyModule(module, &o)) {
           e << "error: failed to verify module" << std::endl;
           return false;
         }
 
-        /// TODO: Optimization passes
-        /// TODO: Assembly file generation
+        module.setDataLayout(TargetMachine->createDataLayout());
+        module.setTargetTriple(targetTriple);
+
+        ///==========================================================================
+
+        // Create the analysis managers.
+        // These must be declared in this order so that they are destroyed in the
+        // correct order due to inter-analysis-manager references.
+        llvm::LoopAnalysisManager LAM;
+        llvm::FunctionAnalysisManager FAM;
+        llvm::CGSCCAnalysisManager CGAM;
+        llvm::ModuleAnalysisManager MAM;
+
+        // Create the new pass manager builder.
+        // Take a look at the PassBuilder constructor parameters for more
+        // customization, e.g. specifying a TargetMachine or various debugging
+        // options.
+        llvm::PassBuilder PB;
+
+        // Register all the basic analyses with the managers.
+        PB.registerModuleAnalyses(MAM);
+        PB.registerCGSCCAnalyses(CGAM);
+        PB.registerFunctionAnalyses(FAM);
+        PB.registerLoopAnalyses(LAM);
+        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+        llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+
+        // Optimize the IR!
+        MPM.run(module, MAM);
+
+        ///==========================================================================
+
+        std::error_code ec;
+
+        llvm::legacy::PassManager pass;
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr, llvm::CGFT_AssemblyFile);
+        if (!pass.run(module)) {
+          e << "error: failed to emit object code" << std::endl;
+          return false;
+        }
 
         return true;
       });
@@ -346,20 +325,78 @@ LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
 LIB_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE *out) {
   return qcode_adapter(
       module, conf, err, out,
-      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e, llvm::raw_ostream &o) -> bool {
-        auto module = fabricate_llvmir(m, c, e, o);
-        if (!module) {
+      [](qmodule_t *m, qcode_conf_t *c, std::ostream &e, llvm::raw_pwrite_stream &o) -> bool {
+        auto module_opt = fabricate_llvmir(m, c, e, o);
+        if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << std::endl;
           return false;
         }
 
-        if (llvm::verifyModule(*module->get(), &o)) {
+        /// FIXME: Get the user compile target options
+        std::string targetTriple = llvm::sys::getDefaultTargetTriple();
+        std::string CPU = "generic";
+        std::string Features = "";
+        bool relocPIC = true;
+
+        llvm::TargetOptions opt;
+        std::string lookupTarget_err;
+        auto Target = llvm::TargetRegistry::lookupTarget(targetTriple, lookupTarget_err);
+        if (!Target) {
+          e << "error: failed to lookup target: " << lookupTarget_err << std::endl;
+          return false;
+        }
+
+        auto TargetMachine = Target->createTargetMachine(
+            targetTriple, CPU, Features, opt, relocPIC ? llvm::Reloc::PIC_ : llvm::Reloc::Static);
+
+        auto &module = *module_opt.value();
+
+        if (llvm::verifyModule(module, &o)) {
           e << "error: failed to verify module" << std::endl;
           return false;
         }
 
-        /// TODO: Optimization passes
-        /// TODO: Object file generation
+        module.setDataLayout(TargetMachine->createDataLayout());
+        module.setTargetTriple(targetTriple);
+
+        ///==========================================================================
+
+        // Create the analysis managers.
+        // These must be declared in this order so that they are destroyed in the
+        // correct order due to inter-analysis-manager references.
+        llvm::LoopAnalysisManager LAM;
+        llvm::FunctionAnalysisManager FAM;
+        llvm::CGSCCAnalysisManager CGAM;
+        llvm::ModuleAnalysisManager MAM;
+
+        // Create the new pass manager builder.
+        // Take a look at the PassBuilder constructor parameters for more
+        // customization, e.g. specifying a TargetMachine or various debugging
+        // options.
+        llvm::PassBuilder PB;
+
+        // Register all the basic analyses with the managers.
+        PB.registerModuleAnalyses(MAM);
+        PB.registerCGSCCAnalyses(CGAM);
+        PB.registerFunctionAnalyses(FAM);
+        PB.registerLoopAnalyses(LAM);
+        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+
+        llvm::ModulePassManager MPM = PB.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+
+        // Optimize the IR!
+        MPM.run(module, MAM);
+
+        ///==========================================================================
+
+        std::error_code ec;
+
+        llvm::legacy::PassManager pass;
+        TargetMachine->addPassesToEmitFile(pass, o, nullptr, llvm::CGFT_ObjectFile);
+        if (!pass.run(module)) {
+          e << "error: failed to emit object code" << std::endl;
+          return false;
+        }
 
         return true;
       });
