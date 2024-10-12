@@ -10,27 +10,27 @@ using orbit::http::* as .;
 using orbit::markdown::* as .;
 using orbit::log::* as .;
 
-fn main(): i32 {
+fn main() {
     let srv = HttpServerBuilder()
             .bind("0.0.0.0", 8443)          ~> Bind to 0.0.0.0:8443
-            .certs<SnakeOil>(discard: true)  ~> Generate SSL certificates
+            .certs<SnakeOil>(discard: true) ~> Generate SSL certificates
             .build<Perf>();                 ~> Optimize the HTTP server for performance 
                                             ~> (yep, it's that easy! Configure threads
                                             ~> and other settings with the builder)
 
-    srv.get("/hello", (req: HttpRequest, res: &HttpResponse) {    
+    srv.get("/hello", fn (req, res) {    
         res.send(m("# Hello, World!").html());      ~> Convert markdown to HTML (done at compile-time)
     });
 
-    srv.get("/api/v1/user/:id", (req: HttpRequest, res: &HttpResponse) {
+    srv.get("/api/v1/user/:id", fn (req, res) {
         res.send(m(f"**User ID**: {req.param("id")}").html());
     });
     
-    srv.post("/echo", (req: HttpRequest, res: &HttpResponse) {
+    srv.post("/echo", fn (req, res) {
         res.send(req.body());
     });
 
-    ret srv.listen((req: HttpRequest, res: &HttpResponse) { ~> Lets log each request inteligently
+    ret srv.listen(fn (req, res) {      ~> Lets log each request inteligently
         log(info) <<< req << endl;      ~> Use the '<<<' overload to pretty-print the request
-    }).code(); ~> Generate a status code from the Result
+    }).code();                          ~> Generate a status code from the Result
 }
