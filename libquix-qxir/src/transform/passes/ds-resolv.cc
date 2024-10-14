@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
-
 #include "quix-qxir/TypeDecl.h"
 #define QXIR_USE_CPP_API
 #include <quix-qxir/Inference.h>

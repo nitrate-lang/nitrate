@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
-
 #include <sstream>
 
 #include "quix-qxir/TypeDecl.h"

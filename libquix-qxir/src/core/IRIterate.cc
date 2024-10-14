@@ -37,7 +37,6 @@
  * crash, so it should be easy to detect.
  */
 
-#define __QUIX_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <core/LibMacro.h>

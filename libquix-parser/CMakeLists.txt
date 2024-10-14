@@ -15,7 +15,7 @@ message(STATUS "libquix-parser VersionId: ${QPARSE_ID}")
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON -g 
@@ -24,13 +24,10 @@ SET(BUILD_FLAGS_COMMON -g
                        -Wextra 
                        -pedantic 
                        -Werror 
-                       -Wno-mismatched-tags 
-                       -Wno-gnu-zero-variadic-macro-arguments 
-                       -Wno-return-type-c-linkage)
+                       -Wno-return-type-c-linkage
+                       -D__QUIX_IMPL__)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQPARSE_ID=${QPARSE_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
-                                                -Wno-error=unused-variable 
-                                                -Wno-error=unused-function 
                                                 -DQPARSE_ID="undefined"
                                                 -mllvm 
                                                 -asan-use-private-alias=1)

@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
-
 #include <core/Preprocess.hh>
 #include <qcall/List.hh>
 

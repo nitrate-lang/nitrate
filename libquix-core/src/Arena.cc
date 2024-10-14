@@ -64,7 +64,8 @@ private:
     void *m_offset;
     size_t m_size;
 
-    region_t(void *base, void *offset, size_t size) : m_base(base), m_offset(offset), m_size(size) {}
+    region_t(void *base, void *offset, size_t size)
+        : m_base(base), m_offset(offset), m_size(size) {}
   };
 
   void alloc_region(size_t size) {

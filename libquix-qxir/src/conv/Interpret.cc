@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
 #include <core/LibMacro.h>

@@ -3,7 +3,7 @@ project(qpkg CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 #================== CALCULATE BUILD ID ==================
 execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -exec sha256sum {} \; COMMAND sha256sum
@@ -35,8 +35,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                         -Wall
                                         -Wextra
                                         -Wpedantic
-                                        -Wno-mismatched-tags
-                                        -Wno-gnu-zero-variadic-macro-arguments
                                         -Wno-error=overlength-strings
                                         -DQPKG_ID=${QPKG_ID}
                                         -flto)
@@ -69,8 +67,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                -Wall
                                                -Wextra
                                                -Wpedantic
-                                               -Wno-mismatched-tags
-                                               -Wno-gnu-zero-variadic-macro-arguments
                                                -Wno-error=overlength-strings
                                                -DQPKG_ID=${QPKG_ID}
                                                -flto
@@ -112,8 +108,6 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                -Wall
                                                -Wextra
                                                -Wpedantic
-                                               -Wno-mismatched-tags
-                                               -Wno-gnu-zero-variadic-macro-arguments
                                                -Wno-error=overlength-strings
                                                -DQPKG_ID=${QPKG_ID}
                                                -flto
@@ -155,8 +149,6 @@ else()
                                         -Wall
                                         -Wextra
                                         -Wpedantic
-                                        -Wno-mismatched-tags
-                                        -Wno-gnu-zero-variadic-macro-arguments
                                         -Wno-error=overlength-strings
                                         -DQPKG_ID="undefined")
     target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a 
@@ -189,8 +181,6 @@ else()
                                                -Wall
                                                -Wextra
                                                -Wpedantic
-                                               -Wno-mismatched-tags
-                                               -Wno-gnu-zero-variadic-macro-arguments
                                                -Wno-error=overlength-strings
                                                -DQPKG_ID="undefined"
                                                -fvisibility=hidden
@@ -230,8 +220,6 @@ else()
                                                -Wall
                                                -Wextra
                                                -Wpedantic
-                                               -Wno-mismatched-tags
-                                               -Wno-gnu-zero-variadic-macro-arguments
                                                -Wno-error=overlength-strings
                                                -DQPKG_ID="undefined"
                                                -fvisibility=hidden

@@ -48,7 +48,8 @@ struct qparse_impl_t {
   qparse::diag::DiagnosticManager diag;
 };
 
-class qparse_conf_t {
+struct qparse_conf_t {
+private:
   std::vector<qparse_setting_t> m_data;
 
   bool verify_prechange(qparse_key_t key, qparse_val_t value) const {

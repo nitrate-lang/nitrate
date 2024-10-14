@@ -14,7 +14,7 @@ message(STATUS "libquix VersionId: ${QUIX_ID}")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 #================== SET BUILD FLAGS ==================
 SET(BUILD_FLAGS_COMMON  -g 
@@ -22,15 +22,10 @@ SET(BUILD_FLAGS_COMMON  -g
                         -Wall 
                         -Wextra 
                         -pedantic 
-                        -Werror 
-                        -Wno-gnu-zero-variadic-macro-arguments 
-                        -Wno-mismatched-tags 
-                        -Wno-error=missing-field-initializers 
-                        -Wno-missing-field-initializers)
+                        -Werror
+                        -D__QUIX_IMPL__)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQUIX_ID=${QUIX_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
-                                                -Wno-error=unused-variable 
-                                                -Wno-error=unused-parameter 
                                                 -DQUIX_ID="undefined"
                                                 -mllvm 
                                                 -asan-use-private-alias=1)

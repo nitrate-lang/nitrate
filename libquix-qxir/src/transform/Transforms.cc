@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
-
 #include <quix-core/Error.h>
 #include <quix-qxir/Module.h>
 

@@ -30,7 +30,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define __QUIX_LEXER_IMPL__
-#define __QUIX_IMPL__
 
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>

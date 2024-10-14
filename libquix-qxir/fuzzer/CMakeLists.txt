@@ -5,9 +5,9 @@ set(SOURCE "fuzzer.cc")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
-SET(FLAGS -O3 -g -Wall -Wextra -pedantic -Werror -Wno-error=mismatched-tags -Wno-error=gnu-zero-variadic-macro-arguments -Wno-gnu-zero-variadic-macro-arguments -Wno-mismatched-tags)
+SET(FLAGS -O3 -g -Wall -Wextra -pedantic -Werror)
 
 add_executable(libquix-qxir-fuzzer ${SOURCE})
 target_include_directories(libquix-qxir-fuzzer PUBLIC ../include ${CMAKE_SOURCE_DIR}/libquix-core/include)

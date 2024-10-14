@@ -44,6 +44,7 @@ namespace qxir::transform {
     std::vector<std::pair<std::string_view, PassFn>> m_passes;
 
     StdTransform();
+
   public:
     static const StdTransform& create();
 

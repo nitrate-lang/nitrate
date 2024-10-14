@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
 #include <core/LibMacro.h>
@@ -411,7 +410,8 @@
 //         recurse(n->as<Call>()->getTarget());
 //       }
 //       out << '(';
-//       for (auto it = n->as<Call>()->getArgs().begin(); it != n->as<Call>()->getArgs().end(); ++it) {
+//       for (auto it = n->as<Call>()->getArgs().begin(); it != n->as<Call>()->getArgs().end();
+//       ++it) {
 //         recurse(*it);
 //         if (std::next(it) != n->as<Call>()->getArgs().end()) {
 //           out << ',';

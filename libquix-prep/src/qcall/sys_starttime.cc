@@ -29,12 +29,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <exception>
-#define __QUIX_IMPL__
-
 #include <quix-core/Env.h>
 #include <quix-core/Error.h>
 
+#include <exception>
 #include <qcall/List.hh>
 #include <string>
 

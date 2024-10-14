@@ -29,9 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstddef>
-#define __QUIX_IMPL__
-
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-parser/Node.h>
@@ -40,6 +37,7 @@
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
+#include <cstddef>
 #include <cstdint>
 #include <quix-qxir/Report.hh>
 #include <sstream>

@@ -329,7 +329,7 @@ static bool impl_use_msgpack(qlex_t *L, FILE *O) {
 }
 
 bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
-                             const std::unordered_set<std::string_view> &opts) {
+                      const std::unordered_set<std::string_view> &opts) {
   (void)diag_cb;
 
   qprep lexer(source, nullptr, qcore_env_current());

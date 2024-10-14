@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.15)
 project(quix-compiler-suite CXX)
 
+# Weird compiler warning with macro arguments. Disable it.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=gnu-zero-variadic-macro-arguments -Wno-gnu-zero-variadic-macro-arguments")
+
 if (STRIP_OUTPUT STREQUAL "ON")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s")
 endif()

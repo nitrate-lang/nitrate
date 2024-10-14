@@ -157,7 +157,8 @@ namespace qxir {
 #endif
 }  // namespace qxir
 
-class qmodule_t {
+struct qmodule_t {
+private:
   std::vector<std::string> m_passes_applied;
   std::unordered_set<std::string> m_strings;
   boost::bimap<std::string_view, std::pair<qxir::FnTy *, qxir::Expr *>> functions;

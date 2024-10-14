@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
 #include <quix-qxir/Node.h>
@@ -47,7 +46,7 @@ bool qxir::transform::impl::ds_nullchk(qmodule_t *mod) {
   bool has_bad_null = false;
   bool missing_mod = false;
 
-  const auto cb = [&has_bad_null, &missing_mod, mod](Expr *par, Expr **_cur) -> IterOp {
+  const auto cb = [&has_bad_null, &missing_mod, mod](Expr *, Expr **_cur) -> IterOp {
     if (*_cur == nullptr) [[unlikely]] {
       has_bad_null = true;
 

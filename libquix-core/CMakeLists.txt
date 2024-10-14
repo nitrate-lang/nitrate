@@ -14,13 +14,12 @@ message(STATUS "libquix-core VersionId: ${QCORE_ID}")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-gnu-zero-variadic-macro-arguments -Wno-mismatched-tags)
+SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -D__QUIX_IMPL__)
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQCORE_ID=${QCORE_ID})
 SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3
-                                                -Wno-error=unused-variable 
                                                 -DQCORE_ID="undefined"
                                                 -mllvm 
                                                 -asan-use-private-alias=1)

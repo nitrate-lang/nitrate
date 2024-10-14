@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
-
 #include <libdeflate.h>
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>
@@ -604,7 +602,7 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
   {
     std::unordered_set<uint64_t> node_ids;
 
-    auto cb = [&](Expr *par, Expr **_cur) -> IterOp {
+    auto cb = [&](Expr *, Expr **_cur) -> IterOp {
       Expr *n = *_cur;
 
       switch (n->getKind()) {
@@ -748,6 +746,8 @@ static bool to_binform(Expr *node, bool compress, FILE &out) {
 
 LIB_EXPORT bool qxir_write(const qxir_node_t *_node, qxir_serial_t mode, FILE *out, size_t *outlen,
                            uint32_t argcnt, ...) {
+  (void)argcnt;
+
   bool status;
   Expr *node;
   long start, end;

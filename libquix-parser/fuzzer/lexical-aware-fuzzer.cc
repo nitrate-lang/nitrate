@@ -1,5 +1,4 @@
 
-#define __QUIX_IMPL__
 
 #include <quix-parser/Lib.h>
 #include <quix-parser/Parser.h>

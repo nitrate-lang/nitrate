@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
-
 #define QXIR_USE_CPP_API
 
 #include <quix-qxir/Inference.h>
@@ -51,7 +49,7 @@ using namespace qxir;
 
 static void do_pass(qmodule_t *mod, Expr *&base, std::string cur_scope,
                     std::vector<Fn **> &functions) {
-  IterCallback cb = [mod, cur_scope, &functions](Expr *par, Expr **cur) -> IterOp {
+  IterCallback cb = [mod, cur_scope, &functions](Expr *, Expr **cur) -> IterOp {
     if ((*cur)->getKind() != QIR_NODE_FN) {
       return IterOp::Proceed;
     }

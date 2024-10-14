@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <core/LibMacro.h>
@@ -44,10 +43,10 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <cstdint>
 #include <cstring>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <variant>
-#include <set>
 
 using namespace qxir;
 
@@ -502,7 +501,7 @@ static bool isCyclicUtil(qxir::Expr *base, std::unordered_set<qxir::Expr *> &vis
 
     // Recur for all the vertices adjacent
     // to this vertex
-    iterate<IterMode::children>(base, [&](qxir::Expr *par, qxir::Expr **cur) -> IterOp {
+    iterate<IterMode::children>(base, [&](qxir::Expr *, qxir::Expr **cur) -> IterOp {
       if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) [[unlikely]] {
         has_cycle = true;
         return IterOp::Abort;
@@ -525,7 +524,7 @@ CPP_EXPORT bool qxir::Expr::is_acyclic() const noexcept {
   bool has_cycle = false;
 
   Expr *ptr = const_cast<Expr *>(this);
-  iterate<IterMode::children>(ptr, [&](Expr *par, Expr **cur) -> IterOp {
+  iterate<IterMode::children>(ptr, [&](Expr *, Expr **cur) -> IterOp {
     if (!visited.contains(*cur) && isCyclicUtil(*cur, visited, recStack)) [[unlikely]] {
       has_cycle = true;
       return IterOp::Abort;

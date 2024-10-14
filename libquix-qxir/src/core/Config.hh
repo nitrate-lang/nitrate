@@ -38,7 +38,8 @@
 #include <optional>
 #include <vector>
 
-class qxir_conf_t {
+struct qxir_conf_t {
+private:
   std::vector<qxir_setting_t> m_data;
 
   bool verify_prechange(qxir_key_t key, qxir_val_t value) const {

@@ -54,9 +54,9 @@ typedef enum qxir_ty_t {
   QIR_NODE_UNEXPR,      /* Unary expression */
   QIR_NODE_POST_UNEXPR, /* Postfix unary expression */
 
-  QIR_NODE_INT,    /* Integer literal */
-  QIR_NODE_FLOAT,  /* Floating-point literal */
-  QIR_NODE_LIST,   /* List literal */
+  QIR_NODE_INT,   /* Integer literal */
+  QIR_NODE_FLOAT, /* Floating-point literal */
+  QIR_NODE_LIST,  /* List literal */
 
   QIR_NODE_CALL,   /* Function call */
   QIR_NODE_SEQ,    /* Sequence */

@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>

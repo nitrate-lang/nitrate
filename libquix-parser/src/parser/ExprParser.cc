@@ -31,7 +31,6 @@
 
 /// TODO: Source location
 #define __QUIX_LEXER_IMPL__
-#define __QUIX_IMPL__
 
 #include <parser/Parse.h>
 #include <quix-parser/Node.h>

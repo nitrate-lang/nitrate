@@ -29,7 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define __QUIX_IMPL__
 #define QXIR_USE_CPP_API
 
 #include <core/LibMacro.h>
@@ -100,7 +99,7 @@ public:
 
   // Get current position
   virtual std::streampos seekoff(std::streamoff off, std::ios_base::seekdir way,
-                                  std::ios_base::openmode which) override {
+                                 std::ios_base::openmode which) override {
     if (way == std::ios_base::cur) {
       if (fseek(m_file, off, SEEK_CUR) == -1) {
         return -1;

@@ -15,15 +15,12 @@ message(STATUS "libquix-qxir VersionId: ${QXIR_ID}")
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-mismatched-tags -Wno-gnu-zero-variadic-macro-arguments)
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQXIR_ID=${QXIR_ID} -Wno-error=unused-parameter)
+SET(BUILD_FLAGS_COMMON -g -fPIC -Wall -Wextra -pedantic -Werror -Wno-error=unused-parameter -D__QUIX_IMPL__)
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQXIR_ID=${QXIR_ID})
 SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 
-                                              -Wno-error=unused-variable 
-                                              -Wno-error=unused-parameter
-                                              -Wno-error=unused-function 
                                               -DQXIR_ID="undefined"
                                               -mllvm 
                                               -asan-use-private-alias=1)
