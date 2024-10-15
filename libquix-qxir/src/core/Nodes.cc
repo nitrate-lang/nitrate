@@ -775,7 +775,11 @@ CPP_EXPORT void qxir::Expr::setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexce
 }
 
 CPP_EXPORT Type *Expr::asType() noexcept {
-  qcore_assert(isType(), "Failed to cast a non-type node to a type node");
+#ifndef NDEBUG
+  if (!isType()) {
+    qcore_panicf("Failed to cast a non-type node to a type node: %s", getKindName());
+  }
+#endif
   return static_cast<Type *>(this);
 }
 

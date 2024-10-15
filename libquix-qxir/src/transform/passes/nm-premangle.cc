@@ -82,7 +82,7 @@ static void encode_ns_size_value(std::string_view input, std::ostream &ss) {
   }
 }
 
-static void mangle_type(Type *n, std::ostream &ss) {
+void mangle_type(Type *n, std::ostream &ss) {
   /**
    * @brief Name mangling for QUIX is inspired by the Itanium C++ ABI.
    * @ref https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling

@@ -176,10 +176,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
 #define recurse(x) serialize_recurse(x, ss, state)
 #endif
 
-  if (n->isConstExpr() && !n->isLiteral() && !n->isType()) {
-    ss << "const ";
-  }
-
   switch (n->getKind()) {
     case QIR_NODE_BINEXPR: {
       ss << "(";

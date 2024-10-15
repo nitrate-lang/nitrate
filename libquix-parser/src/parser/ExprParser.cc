@@ -149,25 +149,25 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
    * @return true if it is okay to proceed, false otherwise
    */
 
-  qlex_tok_t tok;
-  std::string tmp;
-  std::string_view fstr;
-  FStringItems items;
-  size_t state = 0, w_beg = 0, w_end = 0;
-  Expr *expr = nullptr;
 
-  tok = qlex_next(rd);
+  qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qText)) {
     syntax(tok, "Expected a string literal in F-string expression");
   }
 
-  {
+  std::string_view fstr;
+  { /* Get the string literal */
     size_t len;
     const char *ptr = qlex_str(rd, &tok, &len);
     fstr = std::string_view(ptr, len);
   }
 
+  std::string tmp;
   tmp.reserve(fstr.size());
+
+  FStringItems items;
+  size_t state = 0, w_beg = 0, w_end = 0;
+  Expr *expr = nullptr;
 
   for (size_t i = 0; i < fstr.size(); i++) {
     char c = fstr[i];
@@ -194,6 +194,7 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
 
       if (!tmp.empty()) {
         items.push_back(std::move(tmp));
+        tmp.clear();
       }
 
       items.push_back(expr);
@@ -210,6 +211,7 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
 
   if (!tmp.empty()) {
     items.push_back(std::move(tmp));
+    tmp.clear();
   }
 
   if (state != 0) {

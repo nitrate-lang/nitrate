@@ -38,6 +38,8 @@
 #include <string_view>
 #include <transform/passes/Decl.hh>
 
+/// TODO: Worst code ever written. Refactor this.
+
 /**
  * @brief Remove the temporary node and replace it with the resolved node.
  *

@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <llvm-14/llvm/IR/Constant.h>
+#include <llvm-14/llvm/IR/GlobalVariable.h>
 #define QXIR_USE_CPP_API
 
 #include <core/LibMacro.h>
@@ -99,7 +101,7 @@ public:
 
   // Get current position
   virtual std::streampos seekoff(std::streamoff off, std::ios_base::seekdir way,
-                                 std::ios_base::openmode which) override {
+                                 std::ios_base::openmode) override {
     if (way == std::ios_base::cur) {
       if (fseek(m_file, off, SEEK_CUR) == -1) {
         return -1;
@@ -114,17 +116,13 @@ public:
       }
     }
 
-    std::cout << "seekoff: " << off << std::endl;
-
     return ftell(m_file);
   }
 
-  virtual std::streampos seekpos(std::streampos sp, std::ios_base::openmode which) override {
+  virtual std::streampos seekpos(std::streampos sp, std::ios_base::openmode) override {
     if (fseek(m_file, sp, SEEK_SET) == -1) {
       return -1;
     }
-
-    std::cout << "seekpos: " << sp << std::endl;
 
     return ftell(m_file);
   }
@@ -132,7 +130,7 @@ public:
 
 class OStreamDiscard : public std::streambuf {
 public:
-  virtual std::streamsize xsputn(const char *s, std::streamsize n) override { return n; }
+  virtual std::streamsize xsputn(const char *, std::streamsize n) override { return n; }
   virtual int overflow(int c) override { return c; }
 };
 
@@ -237,7 +235,7 @@ LIB_EXPORT bool qcode_ir(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE 
 
         module.value()->print(o, nullptr);
 
-        return failed;
+        return !failed;
       });
 }
 
@@ -415,6 +413,7 @@ struct State {
   std::stack<llvm::GlobalValue::LinkageTypes> linkage;
   std::stack<std::pair<llvm::Function *, std::unordered_map<std::string_view, llvm::AllocaInst *>>>
       locals;
+  std::unordered_map<std::string_view, llvm::GlobalVariable *> globals;
   std::unordered_map<std::string_view, llvm::Function *> functions;
   struct LoopBlock {
     llvm::BasicBlock *step;
@@ -438,17 +437,24 @@ struct State {
   }
 
   std::optional<llvm::Value *> find_named_value(std::string_view name) {
-    for (const auto &[cur_name, inst] : locals.top().second) {
-      if (cur_name == name) {
-        return inst;
+    if (in_fn) {
+      for (const auto &[cur_name, inst] : locals.top().second) {
+        if (cur_name == name) {
+          return inst;
+        }
+      }
+    }
+
+    {
+      auto global = globals.find(name);
+      if (global != globals.end()) {
+        return global->second;
       }
     }
 
     if (auto it = functions.find(name); it != functions.end()) {
       return it->second;
     }
-
-    /// TODO: Global variables.
 
     debug("Failed to find named value: " << name);
     return std::nullopt;
@@ -759,10 +765,9 @@ auto T(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Expr *N) -> ty_t {
   return R;
 }
 
-static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *src,
-                                                                     qcode_conf_t *c,
+static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *src, qcode_conf_t *,
                                                                      std::ostream &e,
-                                                                     llvm::raw_ostream &out) {
+                                                                     llvm::raw_ostream &) {
   static thread_local std::unique_ptr<llvm::LLVMContext> context;
 
   qxir::Expr *root = src->getRoot();
@@ -1363,7 +1368,7 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
   return R;
 }
 
-static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
+static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &, State &s,
                                     qxir::PostUnExpr *N) {
   /**
    * @brief [Write explanation here]
@@ -1373,11 +1378,89 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State 
    * @note [Write assumptions here]
    */
 
-  /// TODO: Implement conversion for node
-  qcore_implement(__func__);
+  val_t R;
+
+  switch (N->getOp()) {
+    case qxir::Op::Inc: {
+      if (N->getExpr()->getKind() != QIR_NODE_IDENT) {
+        qcore_panic("expected identifier for increment");
+      }
+
+      qxir::Ident *I = N->getExpr()->as<qxir::Ident>();
+      auto find = s.find_named_value(I->getName());
+      if (!find) {
+        qcore_panic("failed to find identifier for increment");
+      }
+
+      llvm::Value *V = find.value();
+
+      if (!V->getType()->isPointerTy()) {
+        qcore_panic("expected pointer type for increment");
+      }
+
+      llvm::Value *current = b.CreateLoad(V->getType()->getPointerElementType(), V);
+      llvm::Value *new_val;
+
+      if (current->getType()->isIntegerTy()) {
+        new_val = b.CreateAdd(
+            current, llvm::ConstantInt::get(
+                         m.getContext(), llvm::APInt(N->getExpr()->getType()->getSizeBits(), 1)));
+      } else if (current->getType()->isFloatingPointTy()) {
+        new_val = b.CreateFAdd(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
+      } else {
+        qcore_panic("unexpected type for increment");
+      }
+
+      b.CreateStore(new_val, V);
+
+      R = current;
+      break;
+    }
+    case qxir::Op::Dec: {
+      if (N->getExpr()->getKind() != QIR_NODE_IDENT) {
+        qcore_panic("expected identifier for decrement");
+      }
+
+      qxir::Ident *I = N->getExpr()->as<qxir::Ident>();
+      auto find = s.find_named_value(I->getName());
+      if (!find) {
+        qcore_panic("failed to find identifier for decrement");
+      }
+
+      llvm::Value *V = find.value();
+
+      if (!V->getType()->isPointerTy()) {
+        qcore_panic("expected pointer type for decrement");
+      }
+
+      llvm::Value *current = b.CreateLoad(V->getType()->getPointerElementType(), V);
+      llvm::Value *new_val;
+
+      if (current->getType()->isIntegerTy()) {
+        new_val = b.CreateSub(
+            current, llvm::ConstantInt::get(
+                         m.getContext(), llvm::APInt(N->getExpr()->getType()->getSizeBits(), 1)));
+      } else if (current->getType()->isFloatingPointTy()) {
+        new_val = b.CreateFSub(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
+      } else {
+        qcore_panic("unexpected type for decrement");
+      }
+
+      b.CreateStore(new_val, V);
+
+      R = current;
+      break;
+    }
+
+    default: {
+      qcore_panic("unexpected post-unary operator");
+    }
+  }
+
+  return R;
 }
 
-static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Int *N) {
+static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::Int *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1431,7 +1514,7 @@ fold_lit:
   return R;
 }
 
-static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Float *N) {
+static val_t QIR_NODE_FLOAT_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::Float *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1495,18 +1578,38 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
 
       return llvm::ConstantArray::get(AT, items_ref);
     } else {
-      qcore_implement("non-const array");
+      llvm::ArrayType *AT = llvm::ArrayType::get(items[0]->getType(), items.size());
+      llvm::AllocaInst *AI = b.CreateAlloca(AT);
+
+      for (size_t i = 0; i < items.size(); i++) {
+        b.CreateStore(items[i], b.CreateStructGEP(AT, AI, i));
+      }
+
+      return b.CreateLoad(AT, AI);
     }
   } else {  // It's an implicit struct value
+    std::vector<llvm::Type *> types;
+    types.reserve(items.size());
+    for (auto &item : items) {
+      types.push_back(item->getType());
+    }
+
     if (N->isConstExpr()) {
-      qcore_implement("const struct");
+      llvm::StructType *ST = llvm::StructType::get(m.getContext(), types, true);
+      llvm::ArrayRef<llvm::Constant *> items_ref(reinterpret_cast<llvm::Constant **>(items.data()),
+                                                 items.size());
+      return llvm::ConstantStruct::get(ST, items_ref);
     } else {
-      qcore_implement("non-const struct");
+      llvm::StructType *ST = llvm::StructType::get(m.getContext(), types, true);
+      llvm::AllocaInst *AI = b.CreateAlloca(ST);
+
+      for (size_t i = 0; i < items.size(); i++) {
+        b.CreateStore(items[i], b.CreateStructGEP(ST, AI, i));
+      }
+
+      return b.CreateLoad(ST, AI);
     }
   }
-
-  /// TODO: Implement conversion for node
-  qcore_implement(__func__);
 }
 
 static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Call *N) {
@@ -1558,8 +1661,53 @@ static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
   }
   /* Indirect call */
   else {
-    /// TODO: Implement conversion for node
-    qcore_implement(__func__);
+    val_t T = V(m, b, cf, s, N->getTarget());
+    if (!T) {
+      debug("Failed to get target");
+      return std::nullopt;
+    }
+
+    if (!T.value()->getType()->isPointerTy()) {
+      debug("Expected pointer type for target");
+      return std::nullopt;
+    }
+
+    llvm::Value *target = b.CreateLoad(T.value()->getType()->getPointerElementType(), T.value());
+
+    if (!target->getType()->isFunctionTy()) {
+      debug("Expected function type for target");
+      return std::nullopt;
+    }
+
+    llvm::FunctionType *FT = llvm::cast<llvm::FunctionType>(target->getType());
+
+    std::vector<llvm::Value *> args;
+
+    { /* Arguments */
+      args.reserve(N->getArgs().size());
+
+      for (auto &node : N->getArgs()) {
+        val_t R = V(m, b, cf, s, node);
+        if (!R) {
+          debug("Failed to get argument");
+          return std::nullopt;
+        }
+
+        args.push_back(R.value());
+      }
+    }
+
+    { /* Verify call */
+      if (!(FT->getNumParams() == args.size() ||
+            (FT->isVarArg() && FT->getNumParams() <= args.size()))) {
+        debug("Expected " << FT->getNumParams() << " arguments, but got " << args.size());
+        return std::nullopt;
+      }
+    }
+
+    llvm::Function *func = llvm::cast<llvm::Function>(target);
+
+    return b.CreateCall(func, args);
   }
 }
 
@@ -1598,11 +1746,48 @@ static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
    * @note [Write assumptions here]
    */
 
-  /// TODO: Implement conversion for node
-  qcore_implement(__func__);
+  val_t I = V(m, b, cf, s, N->getIndex());
+  if (!I) {
+    debug("Failed to get index");
+    return std::nullopt;
+  }
+
+  if (N->getExpr()->getKind() == QIR_NODE_IDENT) {
+    qxir::Ident *B = N->getExpr()->as<qxir::Ident>();
+    auto find = s.find_named_value(B->getName());
+    if (!find) {
+      debug("Failed to find named value " << B->getName());
+      return std::nullopt;
+    }
+
+    if (!find.value()->getType()->getPointerElementType()) {
+      qcore_panic("unexpected type for index");
+    }
+
+    llvm::Type *base_ty = find.value()->getType()->getPointerElementType();
+
+    if (base_ty->isArrayTy()) {
+      llvm::Value *zero = llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, 0));
+      llvm::Value *indices[] = {zero, I.value()};
+
+      llvm::Value *elem = b.CreateGEP(base_ty, find.value(), indices);
+
+      return b.CreateLoad(base_ty->getArrayElementType(), elem);
+    } else if (base_ty->isPointerTy()) {
+      llvm::Value *elem = b.CreateGEP(base_ty->getPointerElementType(), find.value(), I.value());
+
+      return b.CreateLoad(base_ty->getPointerElementType(), elem);
+    } else {
+      qcore_panic("unexpected type for index");
+    }
+  } else if (N->getExpr()->getKind() == QIR_NODE_LIST) {
+    qcore_implement(__func__);
+  } else {
+    qcore_panic("unexpected base expression for index");
+  }
 }
 
-static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Ident *N) {
+static val_t QIR_NODE_IDENT_C(ctx_t &, craft_t &b, const Mode &, State &s, qxir::Ident *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1611,25 +1796,17 @@ static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
    * @note [Write assumptions here]
    */
 
-  if (s.in_fn) {
-    auto &locals = s.locals.top().second;
-    auto it = locals.find(N->getName());
-    if (it == locals.end()) {
-      debug("Failed to find local " << N->getName());
-      return std::nullopt;
-    }
-
-    /// FIXME: ???
-    return b.CreateLoad(it->second->getAllocatedType(), it->second);
-  } else {
-    auto it = m.getNamedValue(N->getName());
-    if (!it) {
-      debug("Failed to find global " << N->getName());
-      return std::nullopt;
-    }
-
-    return it;
+  auto find = s.find_named_value(N->getName());
+  if (!find) {
+    debug("Failed to find named value " << N->getName());
+    return std::nullopt;
   }
+
+  if (find.value()->getType()->isPointerTy()) {
+    return b.CreateLoad(find.value()->getType()->getPointerElementType(), find.value());
+  }
+
+  qcore_panic("unexpected type for identifier");
 }
 
 static val_t QIR_NODE_EXTERN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Extern *N) {
@@ -1664,18 +1841,16 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
    * @note [Write assumptions here]
    */
 
-  //  N->getN
+  ty_t R_T = T(m, b, cf, s, N->getValue()->getType());
+  if (!R_T) {
+    debug("Failed to get type");
+    return std::nullopt;
+  }
 
   if (s.in_fn) {
     val_t R = V(m, b, cf, s, N->getValue());
     if (!R) {
       debug("Failed to get value");
-      return std::nullopt;
-    }
-
-    ty_t R_T = T(m, b, cf, s, N->getValue()->getType());
-    if (!R_T) {
-      debug("Failed to get type");
       return std::nullopt;
     }
 
@@ -1695,18 +1870,17 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
       s.functions.emplace(N->getName(), F);
       return F;
     } else {
-      qcore_implement("global variables");
+      llvm::GlobalVariable *global =
+          new llvm::GlobalVariable(m, R_T.value(), false, s.linkage.top(), nullptr, N->getName(),
+                                   nullptr, llvm::GlobalValue::NotThreadLocal, llvm::None, false);
+
+      global->setInitializer(llvm::Constant::getNullValue(R_T.value()));
+
+      s.globals.emplace(N->getName(), global);
+
+      /// FIXME: Set the initializer value during program load???
+      return global;
     }
-    // /*
-    // GlobalVariable(Type *Ty, bool isConstExprant, LinkageTypes Linkage, Constant *Initializer =
-    // nullptr, const Twine &Name = "", ThreadLocalMode = NotThreadLocal, unsigned int AddressSpace
-    // = 0, bool isExternallyInitialized = false)*/
-    //     llvm::GlobalVariable *global = new llvm::GlobalVariable(R_T.value(), false,
-    //     s.linkage.top(), R.value(), N->getName());
-
-    // return global;
-
-    qcore_implement("global variables");
   }
 }
 
@@ -1739,7 +1913,7 @@ static val_t QIR_NODE_RET_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
   return R;
 }
 
-static val_t QIR_NODE_BRK_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Brk *N) {
+static val_t QIR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s, qxir::Brk *) {
   /**
    * @brief [Write explanation here]
    *
@@ -1754,7 +1928,7 @@ static val_t QIR_NODE_BRK_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
   return b.CreateBr(s.loops.top().exit);
 }
 
-static val_t QIR_NODE_CONT_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Cont *N) {
+static val_t QIR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s, qxir::Cont *) {
   /**
    * @brief [Write explanation here]
    *
@@ -1945,7 +2119,7 @@ static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
   return end;
 }
 
-static val_t QIR_NODE_FORM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Form *N) {
+static val_t QIR_NODE_FORM_C(ctx_t &, craft_t &, const Mode &, State &, qxir::Form *) {
   /**
    * @brief [Write explanation here]
    *
@@ -1958,17 +2132,30 @@ static val_t QIR_NODE_FORM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
   qcore_implement(__func__);
 }
 
-static val_t QIR_NODE_CASE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Case *N) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
+static val_t QIR_NODE_CASE_C(ctx_t &, craft_t &, const Mode &, State &, qxir::Case *) {
+  qcore_panic("code path unreachable");
+}
 
-  /// TODO: Implement conversion for node
-  qcore_implement(__func__);
+static bool check_switch_trivial(qxir::Switch *N) {
+  qxir::Type *C_T = N->getCond()->getType();
+
+  if (!C_T->is_integral()) {
+    return false;
+  }
+
+  for (auto &node : N->getCases()) {
+    qxir::Case *C = node->as<qxir::Case>();
+
+    if (!C->getCond()->isConstExpr()) {
+      return false;
+    }
+
+    if (!C->getCond()->getType()->cmp_eq(C_T)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Switch *N) {
@@ -1980,8 +2167,56 @@ static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
    * @note [Write assumptions here]
    */
 
-  /// TODO: Implement conversion for node
-  qcore_implement(__func__);
+  val_t R = V(m, b, cf, s, N->getCond());
+  if (!R) {
+    debug("Failed to get condition");
+    return std::nullopt;
+  }
+
+  bool is_trivial = check_switch_trivial(N);
+
+  if (is_trivial) {
+    // Build basic switch
+
+    llvm::BasicBlock *end = llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
+    s.loops.push({nullptr, end});
+
+    llvm::SwitchInst *SI = b.CreateSwitch(R.value(), end, N->getCases().size());
+
+    for (auto &node : N->getCases()) {
+      qxir::Case *C = node->as<qxir::Case>();
+
+      val_t R_C = V(m, b, cf, s, C->getCond());
+      if (!R_C) {
+        debug("Failed to get case condition");
+        return std::nullopt;
+      }
+
+      llvm::BasicBlock *case_block =
+          llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
+      b.SetInsertPoint(case_block);
+
+      val_t R_B = V(m, b, cf, s, C->getBody());
+      if (!R_B) {
+        debug("Failed to get case body");
+        return std::nullopt;
+      }
+
+      b.CreateBr(end);
+
+      SI->addCase(llvm::cast<llvm::ConstantInt>(R_C.value()), case_block);
+    }
+
+    s.loops.pop();
+
+    b.SetInsertPoint(end);
+
+    return SI;
+  } else {
+    // if-else chain
+    qcore_implement("non-trivial switch");
+    /// TODO: Implement conversion for node
+  }
 }
 
 static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Fn *N) {
@@ -2095,7 +2330,7 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
   return fn;
 }
 
-static val_t QIR_NODE_ASM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Asm *N) {
+static val_t QIR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &, qxir::Asm *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2104,11 +2339,10 @@ static val_t QIR_NODE_ASM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
    * @note [Write assumptions here]
    */
 
-  /// TODO: Implement conversion for node
   qcore_implement(__func__);
 }
 
-static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::U1Ty *N) {
+static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::U1Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2120,7 +2354,7 @@ static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
   return llvm::Type::getInt1Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::U8Ty *N) {
+static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::U8Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2132,7 +2366,7 @@ static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
   return llvm::Type::getInt8Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::U16Ty *N) {
+static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::U16Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2144,7 +2378,7 @@ static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::Type::getInt16Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::U32Ty *N) {
+static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::U32Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2156,7 +2390,7 @@ static ty_t QIR_NODE_U32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::Type::getInt32Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::U64Ty *N) {
+static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::U64Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2168,7 +2402,7 @@ static ty_t QIR_NODE_U64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::Type::getInt64Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::U128Ty *N) {
+static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::U128Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2180,7 +2414,7 @@ static ty_t QIR_NODE_U128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
   return llvm::Type::getInt128Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::I8Ty *N) {
+static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::I8Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2192,7 +2426,7 @@ static ty_t QIR_NODE_I8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
   return llvm::Type::getInt8Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::I16Ty *N) {
+static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::I16Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2204,7 +2438,7 @@ static ty_t QIR_NODE_I16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::Type::getInt16Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::I32Ty *N) {
+static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::I32Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2216,7 +2450,7 @@ static ty_t QIR_NODE_I32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::Type::getInt32Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::I64Ty *N) {
+static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::I64Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2228,7 +2462,7 @@ static ty_t QIR_NODE_I64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::Type::getInt64Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::I128Ty *N) {
+static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::I128Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2240,7 +2474,7 @@ static ty_t QIR_NODE_I128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
   return llvm::Type::getInt128Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::F16Ty *N) {
+static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::F16Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2252,7 +2486,7 @@ static ty_t QIR_NODE_F16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::Type::getHalfTy(m.getContext());
 }
 
-static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::F32Ty *N) {
+static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::F32Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2264,7 +2498,7 @@ static ty_t QIR_NODE_F32_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::Type::getFloatTy(m.getContext());
 }
 
-static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::F64Ty *N) {
+static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::F64Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2276,7 +2510,7 @@ static ty_t QIR_NODE_F64_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::Type::getDoubleTy(m.getContext());
 }
 
-static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::F128Ty *N) {
+static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::F128Ty *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2288,7 +2522,7 @@ static ty_t QIR_NODE_F128_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
   return llvm::Type::getFP128Ty(m.getContext());
 }
 
-static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::VoidTy *N) {
+static ty_t QIR_NODE_VOID_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::VoidTy *) {
   /**
    * @brief [Write explanation here]
    *
@@ -2318,8 +2552,7 @@ static ty_t QIR_NODE_PTR_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   return llvm::PointerType::get(R.value(), 0);
 }
 
-static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
-                                 qxir::OpaqueTy *N) {
+static ty_t QIR_NODE_OPAQUE_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::OpaqueTy *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -2359,7 +2592,7 @@ static ty_t QIR_NODE_STRUCT_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s,
   return llvm::StructType::get(m.getContext(), elements, true);
 }
 
-static ty_t QIR_NODE_UNION_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::UnionTy *N) {
+static ty_t QIR_NODE_UNION_TY_C(ctx_t &, craft_t &, const Mode &, State &, qxir::UnionTy *) {
   /**
    * @brief [Write explanation here]
    *

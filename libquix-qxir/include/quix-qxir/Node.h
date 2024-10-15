@@ -573,7 +573,11 @@ namespace qxir {
 
   public:
     BinExpr(Expr *lhs, Expr *rhs, Op op)
-        : Expr(QIR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
+        : Expr(QIR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {
+      if (lhs->isConstExpr() && rhs->isConstExpr()) {
+        setConstExpr(true);
+      }
+    }
 
     Expr *getLHS() noexcept { return m_lhs; }
     Expr *getRHS() noexcept { return m_rhs; }
@@ -591,7 +595,9 @@ namespace qxir {
     Op m_op;
 
   public:
-    UnExpr(Expr *expr, Op op) : Expr(QIR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
+    UnExpr(Expr *expr, Op op) : Expr(QIR_NODE_UNEXPR), m_expr(expr), m_op(op) {
+      setConstExpr(expr->isConstExpr());
+    }
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -607,7 +613,9 @@ namespace qxir {
     Op m_op;
 
   public:
-    PostUnExpr(Expr *expr, Op op) : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
+    PostUnExpr(Expr *expr, Op op) : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {
+      setConstExpr(expr->isConstExpr());
+    }
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -920,7 +928,11 @@ namespace qxir {
     ListItems m_items;
 
   public:
-    List(const ListItems &items) : Expr(QIR_NODE_LIST), m_items(items) {}
+    List(const ListItems &items) : Expr(QIR_NODE_LIST), m_items(items) {
+      if (std::all_of(items.begin(), items.end(), [](Expr *item) { return item->isConstExpr(); })) {
+        setConstExpr(true);
+      }
+    }
 
     const ListItems &getItems() const noexcept { return m_items; }
     ListItems &getItems() noexcept { return m_items; }
@@ -965,7 +977,11 @@ namespace qxir {
     SeqItems m_items;
 
   public:
-    Seq(const SeqItems &items) : Expr(QIR_NODE_SEQ), m_items(items) {}
+    Seq(const SeqItems &items) : Expr(QIR_NODE_SEQ), m_items(items) {
+      if (std::all_of(items.begin(), items.end(), [](Expr *item) { return item->isConstExpr(); })) {
+        setConstExpr(true);
+      }
+    }
 
     const SeqItems &getItems() const noexcept { return m_items; }
     SeqItems &getItems() noexcept { return m_items; }
@@ -980,7 +996,11 @@ namespace qxir {
     Expr *m_index;
 
   public:
-    Index(Expr *expr, Expr *index) : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {}
+    Index(Expr *expr, Expr *index) : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {
+      if (expr->isConstExpr() && index->isConstExpr()) {
+        setConstExpr(true);
+      }
+    }
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -1012,7 +1032,9 @@ namespace qxir {
 
   public:
     Extern(Expr *value, std::string_view abi_name)
-        : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
+        : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {
+      setConstExpr(value->isConstExpr());
+    }
 
     std::string_view getAbiName() const noexcept { return m_abi_name; }
     std::string_view setAbiName(std::string_view abi_name) noexcept {
@@ -1032,7 +1054,9 @@ namespace qxir {
 
   public:
     Local(std::string_view name, Expr *value, AbiTag abi_tag)
-        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value), m_abi_tag(abi_tag) {}
+        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value), m_abi_tag(abi_tag) {
+      setConstExpr(value->isConstExpr());
+    }
 
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
 
@@ -1049,7 +1073,7 @@ namespace qxir {
     Expr *m_expr;
 
   public:
-    Ret(Expr *expr) : Expr(QIR_NODE_RET), m_expr(expr) {}
+    Ret(Expr *expr) : Expr(QIR_NODE_RET), m_expr(expr) { setConstExpr(expr->isConstExpr()); }
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -1078,7 +1102,11 @@ namespace qxir {
 
   public:
     If(Expr *cond, Expr *then, Expr *else_)
-        : Expr(QIR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
+        : Expr(QIR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {
+      if (cond->isConstExpr() && then->isConstExpr() && else_->isConstExpr()) {
+        setConstExpr(true);
+      }
+    }
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1097,7 +1125,11 @@ namespace qxir {
     Seq *m_body;
 
   public:
-    While(Expr *cond, Seq *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
+    While(Expr *cond, Seq *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {
+      if (cond->isConstExpr() && body->isConstExpr()) {
+        setConstExpr(true);
+      }
+    }
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1116,7 +1148,12 @@ namespace qxir {
 
   public:
     For(Expr *init, Expr *cond, Expr *step, Expr *body)
-        : Expr(QIR_NODE_FOR), m_init(init), m_cond(cond), m_step(step), m_body(body) {}
+        : Expr(QIR_NODE_FOR), m_init(init), m_cond(cond), m_step(step), m_body(body) {
+      if (init->isConstExpr() && cond->isConstExpr() && step->isConstExpr() &&
+          body->isConstExpr()) {
+        setConstExpr(true);
+      }
+    }
 
     Expr *getInit() noexcept { return m_init; }
     Expr *setInit(Expr *init) noexcept { return m_init = init; }
@@ -1148,7 +1185,11 @@ namespace qxir {
           m_val_ident(val_ident),
           m_maxjobs(maxjobs),
           m_expr(expr),
-          m_body(body) {}
+          m_body(body) {
+      if (maxjobs->isConstExpr() && expr->isConstExpr() && body->isConstExpr()) {
+        setConstExpr(true);
+      }
+    }
 
     std::string_view getIdxIdent() noexcept { return m_idx_ident; }
     std::string_view setIdxIdent(std::string_view idx_ident) noexcept {
@@ -1177,7 +1218,11 @@ namespace qxir {
     Expr *m_body;
 
   public:
-    Case(Expr *cond, Expr *body) : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {}
+    Case(Expr *cond, Expr *body) : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {
+      if (cond->isConstExpr() && body->isConstExpr()) {
+        setConstExpr(true);
+      }
+    }
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1197,7 +1242,12 @@ namespace qxir {
 
   public:
     Switch(Expr *cond, const SwitchCases &cases, Expr *default_)
-        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_default(default_), m_cases(cases) {}
+        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_default(default_), m_cases(cases) {
+      if (cond->isConstExpr() && default_->isConstExpr() &&
+          std::all_of(cases.begin(), cases.end(), [](Case *c) { return c->isConstExpr(); })) {
+        setConstExpr(true);
+      }
+    }
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1234,7 +1284,15 @@ namespace qxir {
           m_return(ret_ty),
           m_body(body),
           m_variadic(variadic),
-          m_abi_tag(abi_tag) {}
+          m_abi_tag(abi_tag) {
+      if (std::all_of(params.begin(), params.end(),
+                      [](const std::pair<Type *, std::string_view> &p) {
+                        return p.first->isConstExpr();
+                      }) &&
+          body->isConstExpr()) {
+        setConstExpr(true);
+      }
+    }
 
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
 

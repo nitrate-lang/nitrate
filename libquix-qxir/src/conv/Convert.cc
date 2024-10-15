@@ -309,15 +309,16 @@ static std::string_view memorize(qparse::String sv) {
 }
 
 static qxir::Tmp *create_simple_call(
-    ConvState &, std::string_view,
+    ConvState &, std::string_view name,
     std::vector<std::pair<std::string_view, qxir::Expr *>,
-                qxir::Arena<std::pair<std::string_view, qxir::Expr *>>> = {}) {
-  // qxir::CallArgsTmpNodeCradle datapack;
+                qxir::Arena<std::pair<std::string_view, qxir::Expr *>>>
+        args = {}) {
+  qxir::CallArgsTmpNodeCradle datapack;
 
-  // std::get<0>(datapack) = qxir::create<qxir::Ident>(memorize(name), nullptr);
-  // std::get<1>(datapack) = std::move(args);
+  std::get<0>(datapack) = qxir::create<qxir::Ident>(memorize(name), nullptr);
+  std::get<1>(datapack) = std::move(args);
 
-  // return create<qxir::Tmp>(qxir::TmpType::CALL, std::move(datapack));
+  return create<qxir::Tmp>(qxir::TmpType::CALL, std::move(datapack));
   qcore_implement(__func__);
 }
 
@@ -554,6 +555,7 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
   return R;
 }
 
+void mangle_type(qxir::Type *n, std::ostream &ss);
 qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
 #define STD_UNOP(op) qxir::create<qxir::UnExpr>(rhs, qxir::Op::op)
 
@@ -595,7 +597,11 @@ qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
       return STD_UNOP(Alignof);
     }
     case qOpTypeof: {
-      return create_simple_call(s, "__detail::type_of", {{"0", rhs}});
+      auto inferred = rhs->getType();
+      qcore_assert(inferred, "qOpTypeof: inferred == nullptr");
+      std::stringstream mangled;
+      mangle_type(inferred, mangled);
+      return create_string_literal(mangled.str());
     }
     case qOpBitsizeof: {
       return STD_UNOP(Bitsizeof);
