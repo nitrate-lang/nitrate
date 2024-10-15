@@ -1,0 +1,4 @@
+-I
+src
+-I
+../../libquix/include
