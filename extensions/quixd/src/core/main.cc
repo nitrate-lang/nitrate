@@ -1,12 +1,11 @@
-#include <argparse.hh>
+#include <core/argparse.hh>
+#include <core/license-data.hh>
+#include <core/server.hh>
 #include <csignal>
 #include <filesystem>
 #include <iostream>
-#include <istream>
-#include <license-data.hh>
 #include <memory>
 #include <optional>
-#include <server.hh>
 
 static constexpr void create_parser(argparse::ArgumentParser& parser) {
   ///=================== BASIC CONFIGURATION ======================
@@ -113,14 +112,11 @@ int main(int argc, char** argv) {
 
   { /* Setup log file */
     std::string log_file = parser.get<std::string>("--log");
-    std::cout << "[INFO] Using log file \"" << log_file << "\"" << std::endl;
 
     google::InitGoogleLogging(argv[0]);
 
     static MyLogSink sink(log_file);
     google::AddLogSink(&sink);
-
-    // close(STDERR_FILENO);
   }
 
   install_signal_handlers();

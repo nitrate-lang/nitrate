@@ -4,9 +4,9 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include <core/server.hh>
 #include <cstdint>
 #include <cstring>
-#include <server.hh>
 #include <stdexcept>
 
 using ManagedHandle = std::optional<std::unique_ptr<Connection>>;

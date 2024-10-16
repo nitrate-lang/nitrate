@@ -1,7 +1,7 @@
 #include <rapidjson/document.h>
 #include <rapidjson/istreamwrapper.h>
 
-#include <server.hh>
+#include <core/server.hh>
 #include <string>
 
 std::optional<Configuration> parse_config(const std::string& path) {
