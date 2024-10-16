@@ -27,5 +27,6 @@ file(GLOB_RECURSE SOURCES "src/*.cc")
 add_executable(quixd ${SOURCES})
 target_include_directories(quixd PRIVATE src)
 target_compile_options(quixd PRIVATE -O3 -Wall -Wextra -Werror -pedantic)
+target_link_libraries(quixd PRIVATE libglog.a libgflags.a)
 
 install(TARGETS quixd DESTINATION bin)
