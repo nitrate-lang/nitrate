@@ -79,7 +79,8 @@ static void do_pass(qmodule_t *mod, Expr *&base, std::string cur_scope,
 }
 
 bool qxir::transform::impl::fnflatten(qmodule_t *mod) {
-  return true;
+  return true; /// FIXME: This pass is broken. See TODO.md
+  
   /**
    * This pass in infallible.
    */

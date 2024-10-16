@@ -1017,7 +1017,6 @@ namespace qxir {
     auto str = s.cur_named(n->get_name());
 
     return create<Ident>(memorize(std::string_view(str)), nullptr);
-    qcore_implement(__func__);
   }
 
   static Expr *qconv_seq_point(ConvState &s, const qparse::SeqPoint *n) {

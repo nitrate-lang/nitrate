@@ -245,7 +245,7 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
     qlex_tok_t tok = qlex_peek(rd);
 
     if (tok.is(qEofF)) {
-      syntax(tok, "Unexpected end of file while parsing expression");
+      // syntax(tok, "Unexpected end of file while parsing expression");
       return false;
     }
 
