@@ -4,6 +4,10 @@ project(quix-compiler-suite CXX)
 # Weird compiler warning with macro arguments. Disable it.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=gnu-zero-variadic-macro-arguments -Wno-gnu-zero-variadic-macro-arguments")
 
+# Modern security hardening flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector -fPIC")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,relro,-z,now")
+
 if (STRIP_OUTPUT STREQUAL "ON")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s")
 endif()
