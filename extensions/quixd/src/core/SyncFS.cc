@@ -34,29 +34,29 @@ struct SyncFS::Impl {
     }
 
     void sync() {
-      // m_line_to_offset.clear();
+      m_line_to_offset.clear();
+      m_line_to_offset.shrink_to_fit();
 
-      // std::stringstream ss(m_content);
-      // size_t offset = 0, line_size_w_eol, line_size;
-      // while (lsp_read_line(ss, line_size, line_size_w_eol)) {
-      //   m_line_to_offset.emplace_back(offset, line_size);
-      //   offset += line_size_w_eol;
-      // }
+      std::stringstream ss(m_content);
+      size_t offset = 0, line_size_w_eol, line_size;
+      while (lsp_read_line(ss, line_size, line_size_w_eol)) {
+        m_line_to_offset.emplace_back(offset, line_size);
+        offset += line_size_w_eol;
+      }
 
-      // if (m_line_to_offset.empty()) {  // never empty
-      //   m_line_to_offset.emplace_back(0, 0);
-      // }
+      if (m_line_to_offset.empty()) {  // never empty
+        m_line_to_offset.emplace_back(0, 0);
+      }
 
-      std::fstream copy("/tmp/quixd-copy.txt", std::ios::out);
-      copy << m_content;
+      m_line_to_offset.shrink_to_fit();
     }
 
   public:
-    File(const std::string& mime_type) : m_mime_type(mime_type) { sync(); }
+    File(std::string_view mime_type) : m_mime_type(mime_type) { sync(); }
 
     const std::string& content() const noexcept { return m_content; }
 
-    void set_content(const std::string& content) {
+    void set_content(std::string_view content) {
       m_content = content;
       sync();
     }
@@ -84,10 +84,10 @@ std::optional<size_t> SyncFS::compressed_size() const noexcept {
 
 SyncFS::SyncFS() {
   m_impl = std::make_unique<Impl>();
-  LOG(INFO) << "Creating syncronized virtual file system";
+  LOG(INFO) << "Creating mirrored file system abstraction";
 }
 
-SyncFS::~SyncFS() { LOG(INFO) << "Destroying syncronized virtual file system"; }
+SyncFS::~SyncFS() { LOG(INFO) << "Destroying mirrored file system abstraction"; }
 
 SyncFS& SyncFS::the() {
   static SyncFS instance;
@@ -96,9 +96,44 @@ SyncFS& SyncFS::the() {
 
 ///===========================================================================
 
-void SyncFS::select(const std::string& path) noexcept { m_current = path; }
+static std::string url_decode(std::string_view str) {
+  std::string result;
+  result.reserve(str.size());
 
-SyncFS::OpenCode SyncFS::open(const std::string& mime_type) noexcept {
+  for (size_t i = 0; i < str.size(); i++) {
+    if (str[i] == '%' && i + 2 < str.size()) {
+      char c = 0;
+      for (size_t j = 1; j <= 2; j++) {
+        c <<= 4;
+        if (str[i + j] >= '0' && str[i + j] <= '9') {
+          c |= str[i + j] - '0';
+        } else if (str[i + j] >= 'A' && str[i + j] <= 'F') {
+          c |= str[i + j] - 'A' + 10;
+        } else if (str[i + j] >= 'a' && str[i + j] <= 'f') {
+          c |= str[i + j] - 'a' + 10;
+        } else {
+          return {};
+        }
+      }
+      result.push_back(c);
+      i += 2;
+    } else {
+      result.push_back(str[i]);
+    }
+  }
+
+  return result;
+}
+void SyncFS::select_uri(std::string_view uri) noexcept {
+  if (!uri.starts_with("file://")) {
+    LOG(ERROR) << "URI scheme not supported: " << uri;
+    return;
+  }
+  uri.remove_prefix(7);  // remove "file://"
+  m_current = url_decode(uri);
+}
+
+SyncFS::OpenCode SyncFS::open(std::string_view mime_type) noexcept {
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
     return OpenCode::ALREADY_OPEN;

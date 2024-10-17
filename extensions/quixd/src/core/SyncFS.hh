@@ -51,7 +51,7 @@ public:
    * @brief Set the current file to act on.
    * @note This is a thread-local operation.
    */
-  void select(const std::string& path) noexcept;
+  void select_uri(std::string_view uri) noexcept;
 
   ///===========================================================================
   /// BEGIN: Data synchronization functions
@@ -61,7 +61,7 @@ public:
    * @brief Open the current file.
    * @note This function is thread-safe.
    */
-  OpenCode open(const std::string& mime_type) noexcept;
+  OpenCode open(std::string_view mime_type) noexcept;
 
   /**
    * @brief Close the current file.

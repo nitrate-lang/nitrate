@@ -30,11 +30,6 @@ static void do_didSave(const lsp::NotificationMessage& notif) {
   }
 
   std::string uri = text_document["uri"].GetString();
-  if (!uri.starts_with("file://")) {
-    LOG(ERROR) << "uri is not a file";
-    return;
-  }
-  uri = uri.substr(7);
 
   LOG(INFO) << "Saving file: " << uri;
 }

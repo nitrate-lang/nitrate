@@ -29,14 +29,7 @@ static void do_didClose(const lsp::NotificationMessage& notif) {
   }
 
   std::string uri = text_document["uri"].GetString();
-
-  if (!uri.starts_with("file://")) {
-    LOG(ERROR) << "uri is not a file uri";
-    return;
-  }
-  uri = uri.substr(7);
-
-  SyncFS::the().select(uri);
+  SyncFS::the().select_uri(uri);
   auto close_code = SyncFS::the().close();
 
   switch (close_code) {

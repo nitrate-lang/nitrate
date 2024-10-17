@@ -1,3 +1,4 @@
+#include <rapidjson/allocators.h>
 #include <rapidjson/document.h>
 
 #include <core/SyncFS.hh>
@@ -13,9 +14,6 @@ struct Change {
 };
 
 static void do_didChange(const lsp::NotificationMessage& notif) {
-  static std::mutex m;
-  std::lock_guard lock(m);
-  
   if (!notif.params().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument field in didChange notification";
     return;
@@ -49,11 +47,6 @@ static void do_didChange(const lsp::NotificationMessage& notif) {
   }
 
   std::string uri = text_document["uri"].GetString();
-  if (!uri.starts_with("file://")) {
-    LOG(ERROR) << "uri field in textDocument object is not a file uri";
-    return;
-  }
-  uri = uri.substr(7);
   DocVersion version = text_document["version"].GetInt64();
 
   if (!notif.params().HasMember("contentChanges")) {
@@ -68,15 +61,15 @@ static void do_didChange(const lsp::NotificationMessage& notif) {
 
   const auto& content_changes = notif.params()["contentChanges"].GetArray();
 
+  static std::mutex m;
+  std::lock_guard lock(m);
   static std::unordered_map<std::string, DocVersion> latest;
 
   if (latest[uri] > version) {
     return;
   }
 
-  latest[uri] = version;
-
-  SyncFS::the().select(uri);
+  SyncFS::the().select_uri(uri);
 
   for (const auto& content_change : content_changes) {
     if (!content_change.IsObject()) {
@@ -94,10 +87,13 @@ static void do_didChange(const lsp::NotificationMessage& notif) {
       return;
     }
 
-    std::string_view text(content_change["text"].GetString(), content_change["text"].GetStringLength());
+    std::string_view text(content_change["text"].GetString(),
+                          content_change["text"].GetStringLength());
 
     SyncFS::the().replace(0, SyncFS::the().size().value(), text);
   }
+
+  latest[uri] = version;
 }
 
 ADD_NOTIFICATION_HANDLER("textDocument/didChange", do_didChange);

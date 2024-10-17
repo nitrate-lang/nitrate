@@ -60,18 +60,10 @@ static void do_didOpen(const lsp::NotificationMessage& notif) {
   }
 
   std::string uri = text_document["uri"].GetString();
-
-  if (!uri.starts_with("file://")) {
-    LOG(ERROR) << "Invalid uri: " << uri;
-    return;
-  }
-
-  uri = uri.substr(7);
-
   std::string language_id = text_document["languageId"].GetString();
   std::string text = text_document["text"].GetString();
 
-  SyncFS::the().select(uri);
+  SyncFS::the().select_uri(uri);
 
   auto open_code = SyncFS::the().open(language_id);
   switch (open_code) {
