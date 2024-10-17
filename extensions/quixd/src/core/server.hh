@@ -3,6 +3,7 @@
 #include <glog/logging.h>
 #include <rapidjson/document.h>
 
+#include <core/thread-pool.hh>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -38,17 +39,24 @@ std::optional<Configuration> parse_config(const std::string& path);
 
 enum class ConnectionType { Pipe, Port, Stdio };
 
-class Connection : public std::iostream {
+class BufIStream : public std::istream {
   std::shared_ptr<std::streambuf> m_buf;
 
 public:
-  Connection(std::shared_ptr<std::streambuf> buf) : std::iostream(buf.get()), m_buf(buf) {}
-  ~Connection();
+  BufIStream(std::shared_ptr<std::streambuf> buf) : std::istream(buf.get()), m_buf(buf) {}
 };
 
-std::optional<std::unique_ptr<Connection>> open_connection(ConnectionType type,
-                                                           const std::string& param);
-bool start_language_server(std::iostream& channel, const Configuration& config);
+class BufOStream : public std::ostream {
+  std::shared_ptr<std::streambuf> m_buf;
+
+public:
+  BufOStream(std::shared_ptr<std::streambuf> buf) : std::ostream(buf.get()), m_buf(buf) {}
+  ~BufOStream();
+};
+
+using Connection = std::pair<std::unique_ptr<BufIStream>, std::unique_ptr<BufOStream>>;
+
+std::optional<Connection> open_connection(ConnectionType type, const std::string& param);
 
 namespace lsp {
   enum class MessageType { Request, Notification };
@@ -164,19 +172,35 @@ namespace lsp {
 typedef std::function<void(const lsp::RequestMessage&, lsp::ResponseMessage&)> RequestHandler;
 typedef std::function<void(const lsp::NotificationMessage&)> NotificationHandler;
 
-class ServerDispatcher {
-  std::function<void(const lsp::Message* request)> m_callback;
+class ServerContext {
+  ThreadPool m_thread_pool;
+  std::function<void(const lsp::Message* message)> m_callback;
   std::unordered_map<std::string, RequestHandler> m_request_handlers;
   std::unordered_map<std::string, NotificationHandler> m_notification_handlers;
+  std::queue<std::function<void()>> m_request_queue;
+  std::mutex m_request_queue_mutex;
+  std::mutex m_io_mutex;
 
-  ServerDispatcher() = default;
+  ServerContext() = default;
+
+  ServerContext(const ServerContext&) = delete;
+  ServerContext(ServerContext&&) = delete;
+
+  void request_queue_loop(std::stop_token st);
+
+  void handle_request(const lsp::RequestMessage& request, std::ostream& out) noexcept;
+  void handle_notification(const lsp::NotificationMessage& notif) noexcept;
+
+  std::optional<std::unique_ptr<lsp::Message>> next_message(std::istream& in);
+
+  void dispatch(const std::shared_ptr<lsp::Message> message, std::ostream& out);
 
 public:
-  static ServerDispatcher& the();
+  static ServerContext& the();
 
-  void dispatch(const lsp::Message* request, std::iostream& channel);
+  [[noreturn]] void start_server(Connection& io);
 
-  void set_callback(std::function<void(const lsp::Message* request)> callback) {
+  void set_callback(std::function<void(const lsp::Message* message)> callback) {
     m_callback = std::move(callback);
   }
 
@@ -189,18 +213,18 @@ public:
   }
 };
 
-#define ADD_REQUEST_HANDLER(method, handler)                                                      \
-  namespace {                                                                                     \
-    struct Register_##handler {                                                                   \
-      Register_##handler() { ServerDispatcher::the().register_request_handler(method, handler); } \
-    } register_##handler;                                                                         \
+#define ADD_REQUEST_HANDLER(method, handler)                                                   \
+  namespace {                                                                                  \
+    struct Register_##handler {                                                                \
+      Register_##handler() { ServerContext::the().register_request_handler(method, handler); } \
+    } register_##handler;                                                                      \
   }
 
-#define ADD_NOTIFICATION_HANDLER(method, handler)                               \
-  namespace {                                                                   \
-    struct Register_##handler {                                                 \
-      Register_##handler() {                                                    \
-        ServerDispatcher::the().register_notification_handler(method, handler); \
-      }                                                                         \
-    } register_##handler;                                                       \
+#define ADD_NOTIFICATION_HANDLER(method, handler)                            \
+  namespace {                                                                \
+    struct Register_##handler {                                              \
+      Register_##handler() {                                                 \
+        ServerContext::the().register_notification_handler(method, handler); \
+      }                                                                      \
+    } register_##handler;                                                    \
   }

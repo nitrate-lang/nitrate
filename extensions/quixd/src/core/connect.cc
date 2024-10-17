@@ -9,7 +9,7 @@
 #include <cstring>
 #include <stdexcept>
 
-using ManagedHandle = std::optional<std::unique_ptr<Connection>>;
+using ManagedHandle = std::optional<Connection>;
 
 static ManagedHandle connect_to_pipe(const std::string& path);
 static ManagedHandle connect_to_tcp_port(uint16_t tcp_port);
@@ -141,8 +141,10 @@ static ManagedHandle connect_to_pipe(const std::string& path) {
     return std::nullopt;
   }
 
-  auto thing = std::make_shared<FdStreamBuf>(conn.value());
-  auto stream = std::make_unique<Connection>(thing);
+  auto in_buf = std::make_shared<FdStreamBuf>(conn.value());
+  auto out_buf = std::make_shared<FdStreamBuf>(conn.value());
+  auto stream =
+      std::make_pair(std::make_unique<BufIStream>(in_buf), std::make_unique<BufOStream>(out_buf));
 
   LOG(INFO) << "Connected to UNIX socket " << path;
 
@@ -196,8 +198,10 @@ static ManagedHandle connect_to_tcp_port(uint16_t tcp_port) {
     return std::nullopt;
   }
 
-  auto thing = std::make_shared<FdStreamBuf>(conn.value());
-  auto stream = std::make_unique<Connection>(thing);
+  auto in_buf = std::make_shared<FdStreamBuf>(conn.value());
+  auto out_buf = std::make_shared<FdStreamBuf>(conn.value());
+  auto stream =
+      std::make_pair(std::make_unique<BufIStream>(in_buf), std::make_unique<BufOStream>(out_buf));
 
   LOG(INFO) << "Connected to TCP port " << tcp_port;
 
@@ -207,50 +211,10 @@ static ManagedHandle connect_to_tcp_port(uint16_t tcp_port) {
 static ManagedHandle connect_to_stdio() {
   LOG(INFO) << "Connecting to stdio";
 
-  class MyStreamBuf : public std::streambuf {
-    std::ostream& m_output;
-    std::istream& m_input;
-
-  public:
-    MyStreamBuf(std::ostream& output, std::istream& input) : m_output(output), m_input(input) {}
-
-    virtual int_type overflow(int_type ch) override {
-      if (ch != EOF) {
-        char c = ch;
-        m_output.write(&c, 1);
-      }
-
-      return ch;
-    }
-
-    virtual std::streamsize xsputn(const char* s, std::streamsize count) override {
-      m_output.write(s, count);
-
-      return count;
-    }
-
-    virtual int_type underflow() override {
-      char c;
-      m_input.read(&c, 1);
-
-      if (m_input.eof()) {
-        return traits_type::eof();
-      }
-
-      setg(&c, &c, &c + 1);
-
-      return traits_type::to_int_type(c);
-    }
-
-    virtual std::streamsize xsgetn(char* s, std::streamsize count) override {
-      m_input.read(s, count);
-
-      return m_input.gcount();
-    }
-  };
-
-  auto thing = std::make_shared<MyStreamBuf>(std::cout, std::cin);
-  auto stream = std::make_unique<Connection>(thing);
+  auto in_buf = std::make_shared<FdStreamBuf>(STDIN_FILENO);
+  auto out_buf = std::make_shared<FdStreamBuf>(STDOUT_FILENO);
+  auto stream =
+      std::make_pair(std::make_unique<BufIStream>(in_buf), std::make_unique<BufOStream>(out_buf));
 
   LOG(INFO) << "Connected to stdio";
 
@@ -259,8 +223,7 @@ static ManagedHandle connect_to_stdio() {
 
 ///==========================================================
 
-Connection::~Connection() {
+BufOStream::~BufOStream() {
   LOG(INFO) << "Closing connection";
-
   flush();
 }

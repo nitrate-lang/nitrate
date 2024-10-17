@@ -113,6 +113,7 @@ int main(int argc, char** argv) {
   { /* Setup log file */
     std::string log_file = parser.get<std::string>("--log");
 
+    FLAGS_stderrthreshold = google::FATAL;
     google::InitGoogleLogging(argv[0]);
 
     static MyLogSink sink(log_file);
@@ -144,7 +145,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  std::unique_ptr<Connection> channel;
+  Connection channel;
   { /* Setup connection */
     std::string connect_param;
     ConnectionType connection_type;
@@ -180,10 +181,5 @@ int main(int argc, char** argv) {
     channel = std::move(channel_opt.value());
   }
 
-  if (!start_language_server(*channel, *config)) {
-    LOG(ERROR) << "An error occured in the language server";
-    return 1;
-  }
-
-  return 0;
+  ServerContext::the().start_server(channel);
 }

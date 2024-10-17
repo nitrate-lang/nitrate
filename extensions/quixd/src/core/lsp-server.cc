@@ -3,33 +3,46 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
+#include <chrono>
 #include <core/server.hh>
 #include <functional>
 #include <memory>
+#include <stop_token>
 
-/**
- * - Implement the LSP protocol textDocument/didOpen, textDocument/didClose methods
- * - Implement the LSP protocol textDocument/didChange method
- * - Implement the LSP protocol textDocument/completion method
- * - Implement the LSP protocol textDocument/hover method
- * - Implement the LSP protocol textDocument/definition method
- * - Implement the LSP protocol textDocument/references method
- * - Implement the LSP protocol textDocument/documentSymbol method
- * - Implement the LSP protocol textDocument/documentHighlight method
- * - Implement the LSP protocol textDocument/documentLink method
- * - Implement the LSP protocol textDocument/documentColor method
- * - Implement the LSP protocol textDocument/colorPresentation method
- * - Implement the LSP protocol textDocument/formatting method
- * - Implement the LSP protocol textDocument/rangeFormatting method
- * - Implement the LSP protocol textDocument/onTypeFormatting method
- */
-
-ServerDispatcher& ServerDispatcher::the() {
-  static ServerDispatcher instance;
+ServerContext& ServerContext::the() {
+  static ServerContext instance;
   return instance;
 }
 
-std::optional<std::unique_ptr<lsp::Message>> next_request(std::iostream& io) {
+void ServerContext::request_queue_loop(std::stop_token st) {
+  while (!st.stop_requested()) {
+    std::function<void()> job;
+    {
+      std::unique_lock<std::mutex> lock(m_request_queue_mutex);
+
+      if (m_request_queue.empty()) {
+        lock.unlock();
+
+        // Climate change is real, lets do our part
+        std::this_thread::sleep_for(std::chrono::milliseconds(3));
+        continue;
+      }
+
+      job = m_request_queue.front();
+      m_request_queue.pop();
+    }
+
+    job();
+  }
+}
+
+std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::istream& io) {
+  /**
+   * We don't need to lock the std::istream because this is the only place where we read from it in
+   * a single threaded context. The ostream is seperately locked because it is written to from
+   * any number of threads.
+   */
+
   try {
     size_t content_length = 0;
     std::string body;
@@ -38,18 +51,36 @@ std::optional<std::unique_ptr<lsp::Message>> next_request(std::iostream& io) {
       std::string header;
       std::getline(io, header);
 
-      if (header.empty() || std::isspace(header[0])) {
+      if (header.ends_with("\r")) {
+        header.pop_back();
+      }
+
+      if (header.empty()) {
         break;
       } else if (header.starts_with("Content-Length: ")) {
         content_length = std::stoul(header.substr(16));
       } else if (header.starts_with("Content-Type: ")) {
         LOG(WARNING) << "Ignoring Content-Type header";
+      } else {
+        LOG(WARNING) << "Ignoring unknown header: " << header;
       }
+    }
+
+    if (content_length == 0) {
+      return std::nullopt;
     }
 
     { /* Read the body */
       body.resize(content_length);
-      io.read(body.data(), content_length);
+      size_t bytes_read = 0;
+      while (bytes_read < content_length) {
+        io.read(body.data() + bytes_read, content_length - bytes_read);
+        if (io.eof() || io.fail()) {
+          LOG(ERROR) << "Failed to read message body";
+          return std::nullopt;
+        }
+        bytes_read += io.gcount();
+      }
     }
 
     { /* Parse the body */
@@ -127,35 +158,33 @@ std::optional<std::unique_ptr<lsp::Message>> next_request(std::iostream& io) {
       }
     }
   } catch (const std::exception& e) {
-    LOG(ERROR) << "Failed to parse request: " << e.what();
+    LOG(ERROR) << "Failed to parse message: " << e.what();
     return std::nullopt;
   }
 }
 
-bool start_language_server(std::iostream& io, const Configuration& config) {
-  (void)config;
-
-  ServerDispatcher& dispatcher = ServerDispatcher::the();
+[[noreturn]] void ServerContext::start_server(Connection& io) {
+  m_thread_pool.Start();
+  m_thread_pool.QueueJob([this](std::stop_token st) { request_queue_loop(st); });
 
   while (true) {
-    auto request = next_request(io);
-    if (!request) {
-      break;
+    auto message = next_message(*io.first);
+    if (!message.has_value()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      continue;
     }
 
-    dispatcher.dispatch(request.value().get(), io);
+    std::shared_ptr<lsp::Message> message_ptr = std::move(*message);
+    dispatch(message_ptr, *io.second);
   }
-
-  return true;
 }
 
-void ServerDispatcher::dispatch(const lsp::Message* request, std::iostream& io) {
-  if (m_callback) {
-    m_callback(request);
-  }
+void ServerContext::handle_request(const lsp::RequestMessage& req, std::ostream& io) noexcept {
+  try {
+    if (m_callback) {
+      m_callback(&req);
+    }
 
-  if (request->type() == lsp::MessageType::Request) {
-    const lsp::RequestMessage& req = *static_cast<const lsp::RequestMessage*>(request);
     auto response = lsp::ResponseMessage::from_request(req);
 
     auto it = m_request_handlers.find(req.method());
@@ -202,12 +231,27 @@ void ServerDispatcher::dispatch(const lsp::Message* request, std::iostream& io) 
 
     writer.EndObject();
 
-    std::string response_body(buffer.GetString(), buffer.GetSize());
-    response_body =
-        "Content-Length: " + std::to_string(response_body.size()) + "\r\n\r\n" + response_body;
-    io << response_body;
-  } else {
-    const lsp::NotificationMessage& notif = *static_cast<const lsp::NotificationMessage*>(request);
+    {
+      /**
+       * We must guard the ostream because it is written to from any number of threads.
+       * The language server protocol dicates the use of message id to distinguish between
+       * different transactions (RequestMessage/ResponseMessage pairs).
+       */
+
+      std::lock_guard<std::mutex> lock(m_io_mutex);
+      io << "Content-Length: " << std::to_string(buffer.GetSize()) << "\r\n\r\n"
+         << std::string_view(buffer.GetString(), buffer.GetSize());
+    }
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Failed to handle request: " << e.what();
+  }
+}
+
+void ServerContext::handle_notification(const lsp::NotificationMessage& notif) noexcept {
+  try {
+    if (m_callback) {
+      m_callback(&notif);
+    }
 
     auto it = m_notification_handlers.find(notif.method());
     if (it == m_notification_handlers.end()) {
@@ -216,5 +260,22 @@ void ServerDispatcher::dispatch(const lsp::Message* request, std::iostream& io) 
     }
 
     it->second(notif);
+  } catch (const std::exception& e) {
+    LOG(ERROR) << "Failed to handle notification: " << e.what();
+  }
+}
+
+void ServerContext::dispatch(const std::shared_ptr<lsp::Message> message, std::ostream& io) {
+  if (message->type() == lsp::MessageType::Request) {
+    std::lock_guard<std::mutex> lock(m_request_queue_mutex);
+    m_request_queue.push([this, message, &io]() {
+      handle_request(*std::static_pointer_cast<lsp::RequestMessage>(message), io);
+    });
+  } else if (message->type() == lsp::MessageType::Notification) {
+    m_thread_pool.QueueJob([this, message](std::stop_token) {
+      handle_notification(*std::static_pointer_cast<lsp::NotificationMessage>(message));
+    });
+  } else {
+    LOG(ERROR) << "Unsupported message type";
   }
 }

@@ -15,15 +15,7 @@ static void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp
   server_info.AddMember("version", "0.0.1", alloc);
 
   auto& capabilities = (*resp)["capabilities"];
-  // capabilities.AddMember("textDocumentSync", Value(kNumberType), alloc);
-  // capabilities.AddMember("hoverProvider", Value(kTrueType), alloc);
-  // capabilities.AddMember("definitionProvider", Value(kTrueType), alloc);
-  // capabilities.AddMember("referencesProvider", Value(kTrueType), alloc);
-  // capabilities.AddMember("documentSymbolProvider", Value(kTrueType), alloc);
-  // capabilities.AddMember("workspaceSymbolProvider", Value(kTrueType), alloc);
-  // capabilities.AddMember("documentFormattingProvider", Value(kTrueType), alloc);
   capabilities.AddMember("completionProvider", Value(kObjectType), alloc);
-
 }
 
 ADD_REQUEST_HANDLER("initialize", do_initialize);
