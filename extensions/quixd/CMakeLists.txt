@@ -5,28 +5,14 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-if (STRIP_OUTPUT STREQUAL "ON")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s")
-endif()
-
-if (BUILD_TESTING)
-enable_testing()
-endif()
-
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined")
-endif()
-
-if (COVERAGE STREQUAL "ON")
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
-  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
-endif()
-
 file(GLOB_RECURSE SOURCES "src/*.cc")
+
+find_library(libglog libglog.a REQUIRED)
+find_library(libgflags libgflags.a REQUIRED)
 
 add_executable(quixd ${SOURCES})
 target_include_directories(quixd PRIVATE src)
 target_compile_options(quixd PRIVATE -O3 -Wall -Wextra -Werror -pedantic)
-target_link_libraries(quixd PRIVATE libglog.a libgflags.a)
+target_link_libraries(quixd PRIVATE ${libglog} ${libgflags})
 
 install(TARGETS quixd DESTINATION bin)
