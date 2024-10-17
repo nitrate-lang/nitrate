@@ -16,6 +16,8 @@ static void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp
 
   auto& capabilities = (*resp)["capabilities"];
   capabilities.AddMember("completionProvider", Value(kObjectType), alloc);
+  capabilities.AddMember("positionEncodings", "utf-8", alloc);
+  capabilities.AddMember("textDocumentSync", 1, alloc);  // Full sync
 }
 
 ADD_REQUEST_HANDLER("initialize", do_initialize);

@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include <core/server.hh>
+#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <stdexcept>
@@ -104,13 +105,23 @@ public:
   }
 
   virtual std::streamsize xsgetn(char* s, std::streamsize count) override {
-    ssize_t res = read(m_fd, s, count);
+    std::streamsize bytes_read = 0;
 
-    if (res < 0) {
-      throw std::runtime_error("Failed to read from stream");
+    while (bytes_read < count) {
+      ssize_t n = read(m_fd, s + bytes_read, count - bytes_read);
+      if (n == -1) {
+        LOG(ERROR) << "Failed to read from stream: " << strerror(errno);
+        throw std::runtime_error("Failed to read from stream");
+      }
+
+      if (n == 0) {
+        break;
+      }
+
+      bytes_read += n;
     }
 
-    return res;
+    return bytes_read;
   }
 };
 

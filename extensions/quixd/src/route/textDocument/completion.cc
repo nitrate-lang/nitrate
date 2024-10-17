@@ -1,9 +1,12 @@
 #include <rapidjson/document.h>
+
 #include <core/server.hh>
 
 using namespace rapidjson;
 
 static void do_completion(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
+  /// TODO: Implement completion logic
+
   auto& alloc = resp->GetAllocator();
 
   std::vector<std::string> completions = {"foo", "bar", "baz"};

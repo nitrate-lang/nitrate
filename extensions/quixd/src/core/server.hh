@@ -76,16 +76,16 @@ namespace lsp {
   class RequestMessage : public Message {
     MessageId m_id;
     std::string m_method;
-    rapidjson::Value m_params;
+    rapidjson::Document m_params;
 
   public:
-    RequestMessage(const MessageId& id, const std::string& method, rapidjson::Value params)
+    RequestMessage(const MessageId& id, const std::string& method, rapidjson::Document params)
         : Message(MessageType::Request), m_id(id), m_method(method), m_params(std::move(params)) {}
     virtual ~RequestMessage() = default;
 
     const MessageId& id() const { return m_id; }
     const std::string& method() const { return m_method; }
-    const rapidjson::Value& params() const { return m_params; }
+    const rapidjson::Document& params() const { return m_params; }
 
     void print(std::ostream& os) const {
       os << "{\"id\": ";
@@ -100,26 +100,118 @@ namespace lsp {
 
   class NotificationMessage : public Message {
     std::string m_method;
-    rapidjson::Value m_params;
+    rapidjson::Document m_params;
 
   public:
-    NotificationMessage(const std::string& method, rapidjson::Value params)
+    NotificationMessage(const std::string& method, rapidjson::Document params)
         : Message(MessageType::Notification), m_method(method), m_params(std::move(params)) {}
     virtual ~NotificationMessage() = default;
 
     const std::string& method() const { return m_method; }
-    const rapidjson::Value& params() const { return m_params; }
+    const rapidjson::Document& params() const { return m_params; }
 
     void print(std::ostream& os) const { os << "{\"method\": \"" << m_method << "\"}"; }
   };
 
-  struct ResponseError {
-    int m_code;
-    std::string m_message;
-    std::optional<rapidjson::Value> m_data;
+  enum class ErrorCodes {
+    // Defined by JSON-RPC
+    ParseError = -32700,
+    InvalidRequest = -32600,
+    MethodNotFound = -32601,
+    InvalidParams = -32602,
+    InternalError = -32603,
 
-    ResponseError(int code, const std::string& message,
-                  std::optional<rapidjson::Value> data = std::nullopt)
+    /**
+     * This is the start range of JSON-RPC reserved error codes.
+     * It doesn't denote a real error code. No LSP error codes should
+     * be defined between the start and end range. For backwards
+     * compatibility the `ServerNotInitialized` and the `UnknownErrorCode`
+     * are left in the range.
+     *
+     * @since 3.16.0
+     */
+    jsonrpcReservedErrorRangeStart = -32099,
+    /** @deprecated use jsonrpcReservedErrorRangeStart */
+    serverErrorStart = jsonrpcReservedErrorRangeStart,
+
+    /**
+     * Error code indicating that a server received a notification or
+     * request before the server has received the `initialize` request.
+     */
+    ServerNotInitialized = -32002,
+    UnknownErrorCode = -32001,
+
+    /**
+     * This is the end range of JSON-RPC reserved error codes.
+     * It doesn't denote a real error code.
+     *
+     * @since 3.16.0
+     */
+    jsonrpcReservedErrorRangeEnd = -32000,
+    /** @deprecated use jsonrpcReservedErrorRangeEnd */
+    serverErrorEnd = jsonrpcReservedErrorRangeEnd,
+
+    /**
+     * This is the start range of LSP reserved error codes.
+     * It doesn't denote a real error code.
+     *
+     * @since 3.16.0
+     */
+    lspReservedErrorRangeStart = -32899,
+
+    /**
+     * A request failed but it was syntactically correct, e.g the
+     * method name was known and the parameters were valid. The error
+     * message should contain human readable information about why
+     * the request failed.
+     *
+     * @since 3.17.0
+     */
+    RequestFailed = -32803,
+
+    /**
+     * The server cancelled the request. This error code should
+     * only be used for requests that explicitly support being
+     * server cancellable.
+     *
+     * @since 3.17.0
+     */
+    ServerCancelled = -32802,
+
+    /**
+     * The server detected that the content of a document got
+     * modified outside normal conditions. A server should
+     * NOT send this error code if it detects a content change
+     * in it unprocessed messages. The result even computed
+     * on an older state might still be useful for the client.
+     *
+     * If a client decides that a result is not of any use anymore
+     * the client should cancel the request.
+     */
+    ContentModified = -32801,
+
+    /**
+     * The client has canceled a request and a server has detected
+     * the cancel.
+     */
+    RequestCancelled = -32800,
+
+    /**
+     * This is the end range of LSP reserved error codes.
+     * It doesn't denote a real error code.
+     *
+     * @since 3.16.0
+     */
+    lspReservedErrorRangeEnd = -32800,
+  };
+
+  struct ResponseError {
+    ErrorCodes m_code;
+    std::string m_message;
+    std::optional<rapidjson::Document> m_data;
+
+    ResponseError(ErrorCodes code, const std::string& message,
+                  std::optional<rapidjson::Document> data = std::nullopt)
         : m_code(code), m_message(message), m_data(std::move(data)) {}
   };
 
@@ -166,7 +258,13 @@ namespace lsp {
       }
       return m_result.value();
     }
+
+    void error(ErrorCodes code, const std::string& message,
+               std::optional<rapidjson::Document> data = std::nullopt) {
+      m_error = ResponseError(code, message, std::move(data));
+    }
   };
+
 }  // namespace lsp
 
 typedef std::function<void(const lsp::RequestMessage&, lsp::ResponseMessage&)> RequestHandler;

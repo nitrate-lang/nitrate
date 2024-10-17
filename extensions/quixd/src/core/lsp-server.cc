@@ -44,7 +44,7 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
    */
 
   try {
-    size_t content_length = 0;
+    size_t remaining_bytes = 0;
     std::string body;
 
     while (true) { /* Parse the headers */
@@ -58,7 +58,7 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
       if (header.empty()) {
         break;
       } else if (header.starts_with("Content-Length: ")) {
-        content_length = std::stoul(header.substr(16));
+        remaining_bytes = std::stoul(header.substr(16));
       } else if (header.starts_with("Content-Type: ")) {
         LOG(WARNING) << "Ignoring Content-Type header";
       } else {
@@ -66,20 +66,22 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
       }
     }
 
-    if (content_length == 0) {
+    if (remaining_bytes == 0) {
       return std::nullopt;
     }
 
     { /* Read the body */
-      body.resize(content_length);
+      body.resize(remaining_bytes);
       size_t bytes_read = 0;
-      while (bytes_read < content_length) {
-        io.read(body.data() + bytes_read, content_length - bytes_read);
-        if (io.eof() || io.fail()) {
+
+      while (remaining_bytes > 0) {
+        if (!io.read(body.data() + bytes_read, remaining_bytes)) {
           LOG(ERROR) << "Failed to read message body";
           return std::nullopt;
         }
+
         bytes_read += io.gcount();
+        remaining_bytes -= io.gcount();
       }
     }
 
@@ -120,7 +122,7 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
       if (!doc.HasMember("id")) { /* Notification */
         if (!doc.HasMember("params")) {
           return std::make_unique<lsp::NotificationMessage>(
-              doc["method"].GetString(), rapidjson::Value(rapidjson::kObjectType));
+              doc["method"].GetString(), rapidjson::Document(rapidjson::kObjectType));
         }
 
         if (!doc["params"].IsObject() && !doc["params"].IsArray()) {
@@ -128,22 +130,24 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
           return std::nullopt;
         }
 
+        rapidjson::Document params;
+        params.CopyFrom(doc["params"], params.GetAllocator());
         return std::make_unique<lsp::NotificationMessage>(doc["method"].GetString(),
-                                                          std::move(doc["params"]));
+                                                          std::move(params));
       } else { /* Request or error */
         if (!doc["id"].IsString() && !doc["id"].IsInt()) {
           LOG(ERROR) << "id is not a string or integer";
           return std::nullopt;
         }
 
-        rapidjson::Value params;
+        rapidjson::Document params;
         if (doc.HasMember("params")) {
           if (!doc["params"].IsObject() && !doc["params"].IsArray()) {
             LOG(ERROR) << "params is not an object or array";
             return std::nullopt;
           }
 
-          params = std::move(doc["params"]);
+          params.CopyFrom(doc["params"], params.GetAllocator());
         } else {
           params.SetObject();
         }
@@ -189,6 +193,10 @@ void ServerContext::handle_request(const lsp::RequestMessage& req, std::ostream&
 
     auto it = m_request_handlers.find(req.method());
     if (it == m_request_handlers.end()) {
+      if (req.method().starts_with("$/")) {
+        LOG(INFO) << "Ignoring request: " << req.method();
+        return;
+      }
       LOG(WARNING) << "No request handler for method: " << req.method();
       return;
     }
@@ -216,7 +224,7 @@ void ServerContext::handle_request(const lsp::RequestMessage& req, std::ostream&
       writer.Key("error");
       writer.StartObject();
       writer.Key("code");
-      writer.Int(response.error()->m_code);
+      writer.Int((int)response.error()->m_code);
       writer.Key("message");
       writer.String(response.error()->m_message.c_str());
       if (response.error()->m_data.has_value()) {
@@ -255,6 +263,11 @@ void ServerContext::handle_notification(const lsp::NotificationMessage& notif) n
 
     auto it = m_notification_handlers.find(notif.method());
     if (it == m_notification_handlers.end()) {
+      if (notif.method().starts_with("$/")) {
+        LOG(INFO) << "Ignoring notification: " << notif.method();
+        return;
+      }
+
       LOG(WARNING) << "No notify handler for method: " << notif.method();
       return;
     }
