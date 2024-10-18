@@ -211,10 +211,7 @@ void ServerContext::handle_request(const lsp::RequestMessage& req, std::ostream&
     writer.Int(std::get<int64_t>(response.id()));
   }
 
-  if (response.result().has_value()) {
-    writer.Key("result");
-    response.result()->Accept(writer);
-  } else if (response.error().has_value()) {
+  if (response.error().has_value()) {
     writer.Key("error");
     writer.StartObject();
     writer.Key("code");
@@ -227,8 +224,13 @@ void ServerContext::handle_request(const lsp::RequestMessage& req, std::ostream&
     }
     writer.EndObject();
   } else {
-    LOG(ERROR) << "Response has neither result nor error";
-    return;
+    if (response.result().has_value()) {
+      writer.Key("result");
+      response.result()->Accept(writer);
+    } else {
+      writer.Key("result");
+      writer.Null();
+    }
   }
 
   writer.EndObject();
