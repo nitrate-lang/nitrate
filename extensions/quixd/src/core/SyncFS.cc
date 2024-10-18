@@ -1,3 +1,5 @@
+#include <openssl/sha.h>
+
 #include <cmath>
 #include <core/SyncFS.hh>
 #include <core/server.hh>
@@ -54,7 +56,7 @@ struct SyncFS::Impl {
   public:
     File(std::string_view mime_type) : m_mime_type(mime_type) { sync(); }
 
-    const std::string& content() const noexcept { return m_content; }
+    const std::string& content() const { return m_content; }
 
     void set_content(std::string_view content) {
       m_content = content;
@@ -66,9 +68,9 @@ struct SyncFS::Impl {
       sync();
     }
 
-    size_t get_size() const noexcept { return m_content.size(); }
+    size_t get_size() const { return m_content.size(); }
 
-    const char* get_mime_type() const noexcept { return m_mime_type.c_str(); }
+    const char* get_mime_type() const { return m_mime_type.c_str(); }
   };
 
   std::unordered_map<std::string, File> m_files;
@@ -77,7 +79,7 @@ struct SyncFS::Impl {
 
 thread_local std::string SyncFS::m_current;
 
-std::optional<size_t> SyncFS::compressed_size() const noexcept {
+std::optional<size_t> SyncFS::compressed_size() const {
   // No compression yet
   return size();
 }
@@ -124,7 +126,7 @@ static std::string url_decode(std::string_view str) {
 
   return result;
 }
-void SyncFS::select_uri(std::string_view uri) noexcept {
+void SyncFS::select_uri(std::string_view uri) {
   if (!uri.starts_with("file://")) {
     LOG(ERROR) << "URI scheme not supported: " << uri;
     return;
@@ -133,36 +135,35 @@ void SyncFS::select_uri(std::string_view uri) noexcept {
   m_current = url_decode(uri);
 }
 
-SyncFS::OpenCode SyncFS::open(std::string_view mime_type) noexcept {
+SyncFS::OpenCode SyncFS::open(std::string_view mime_type) {
+  std::lock_guard lock(m_impl->m_mutex);
+
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
     return OpenCode::ALREADY_OPEN;
   }
 
-  try {
-    if (!std::filesystem::exists(m_current)) {
-      return OpenCode::NOT_FOUND;
-    }
+  if (!std::filesystem::exists(m_current)) {
+    return OpenCode::NOT_FOUND;
+  }
 
-    std::ifstream file(m_current);
-    if (!file.is_open()) {
-      return OpenCode::OPEN_FAILED;
-    }
-
-    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-    Impl::File f(mime_type);
-    f.set_content(std::move(content));
-    m_impl->m_files.emplace(m_current, std::move(f));
-
-    return OpenCode::OK;
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "Failed to open file: " << e.what();
+  std::ifstream file(m_current);
+  if (!file.is_open()) {
     return OpenCode::OPEN_FAILED;
   }
+
+  std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+  Impl::File f(mime_type);
+  f.set_content(std::move(content));
+  m_impl->m_files.emplace(m_current, std::move(f));
+
+  return OpenCode::OK;
 }
 
-SyncFS::CloseCode SyncFS::close() noexcept {
+SyncFS::CloseCode SyncFS::close() {
+  std::lock_guard lock(m_impl->m_mutex);
+
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
     m_impl->m_files.erase(it);
@@ -172,15 +173,12 @@ SyncFS::CloseCode SyncFS::close() noexcept {
   return CloseCode::NOT_OPEN;
 }
 
-SyncFS::ReplaceCode SyncFS::replace(size_t offset, size_t length, std::string_view text) noexcept {
+SyncFS::ReplaceCode SyncFS::replace(size_t offset, size_t length, std::string_view text) {
+  std::lock_guard lock(m_impl->m_mutex);
+
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
-    try {
-      it->second.replace(offset, length, text);
-    } catch (const std::exception& e) {
-      LOG(ERROR) << "Failed to replace text: " << e.what();
-      return ReplaceCode::REPLACE_FAILED;
-    }
+    it->second.replace(offset, length, text);
 
     return ReplaceCode::OK;
   }
@@ -188,7 +186,7 @@ SyncFS::ReplaceCode SyncFS::replace(size_t offset, size_t length, std::string_vi
   return ReplaceCode::NOT_OPEN;
 }
 
-std::optional<const char*> SyncFS::mime_type() const noexcept {
+std::optional<const char*> SyncFS::mime_type() const {
   std::lock_guard lock(m_impl->m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
@@ -198,7 +196,7 @@ std::optional<const char*> SyncFS::mime_type() const noexcept {
   return std::nullopt;
 }
 
-std::optional<size_t> SyncFS::size() const noexcept {
+std::optional<size_t> SyncFS::size() const {
   std::lock_guard lock(m_impl->m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
@@ -208,7 +206,7 @@ std::optional<size_t> SyncFS::size() const noexcept {
   return std::nullopt;
 }
 
-bool SyncFS::read_current(std::string& content) const noexcept {
+bool SyncFS::read_current(std::string& content) const {
   std::lock_guard lock(m_impl->m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
@@ -217,4 +215,25 @@ bool SyncFS::read_current(std::string& content) const noexcept {
     return true;
   }
   return false;
+}
+
+std::optional<std::array<uint8_t, 20>> SyncFS::thumbprint() const {
+  std::lock_guard lock(m_impl->m_mutex);
+
+  auto it = m_impl->m_files.find(m_current);
+  if (it != m_impl->m_files.end()) [[likely]] {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    SHA_CTX ctx;
+    SHA1_Init(&ctx);
+    SHA1_Update(&ctx, it->second.content().data(), it->second.content().size());
+
+    std::array<uint8_t, 20> digest;
+    SHA1_Final(digest.data(), &ctx);
+#pragma GCC diagnostic pop
+
+    return digest;
+  }
+
+  return std::nullopt;
 }

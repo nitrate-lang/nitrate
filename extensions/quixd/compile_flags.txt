@@ -2,3 +2,10 @@
 src
 -I
 ../../libquix/include
+-O3 
+-Wall 
+-Wextra 
+-Werror 
+-pedantic 
+-fno-exceptions 
+-fno-rtti

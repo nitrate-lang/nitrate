@@ -16,7 +16,7 @@ class SyncFS {
    * @note This function is thread-safe.
    * @note This is how much space the file takes in memory.
    */
-  std::optional<size_t> compressed_size() const noexcept;
+  std::optional<size_t> compressed_size() const;
 
   SyncFS();
   ~SyncFS();
@@ -51,7 +51,7 @@ public:
    * @brief Set the current file to act on.
    * @note This is a thread-local operation.
    */
-  void select_uri(std::string_view uri) noexcept;
+  void select_uri(std::string_view uri);
 
   ///===========================================================================
   /// BEGIN: Data synchronization functions
@@ -61,19 +61,19 @@ public:
    * @brief Open the current file.
    * @note This function is thread-safe.
    */
-  OpenCode open(std::string_view mime_type) noexcept;
+  OpenCode open(std::string_view mime_type);
 
   /**
    * @brief Close the current file.
    * @note This function is thread-safe.
    */
-  CloseCode close() noexcept;
+  CloseCode close();
 
   /**
    * @brief Replace a portion of the current file with new text.
    * @note This function is thread-safe.
    */
-  ReplaceCode replace(size_t offset, size_t length, std::string_view text) noexcept;
+  ReplaceCode replace(size_t offset, size_t length, std::string_view text);
 
   ///===========================================================================
   /// END: Data synchronization functions
@@ -87,13 +87,13 @@ public:
    * @brief Get the current file mime type.
    * @note This function is thread-safe.
    */
-  std::optional<const char*> mime_type() const noexcept;
+  std::optional<const char*> mime_type() const;
 
   /**
    * @brief Get the current file size in bytes.
    * @note This function is thread-safe.
    */
-  std::optional<size_t> size() const noexcept;
+  std::optional<size_t> size() const;
 
   /**
    * @brief Get the current file content.
@@ -101,7 +101,11 @@ public:
    * @return True if the file was read successfully, false otherwise.
    * @note This function is thread-safe.
    */
-  bool read_current(std::string& content) const noexcept;
+  bool read_current(std::string& content) const;
+
+  using Digest = std::array<uint8_t, 20>;
+
+  std::optional<Digest> thumbprint() const;
 
   // /**
   //  * @brief Convert a row-column pair to an absolute offset.
@@ -117,7 +121,7 @@ public:
   //  * in the 3rd row.
   //  * @note This function is thread-safe.
   //  */
-  // std::optional<size_t> rc2abs(size_t row, size_t col) const noexcept;
+  // std::optional<size_t> rc2abs(size_t row, size_t col) const;
 
   ///===========================================================================
   /// END: Data access functions

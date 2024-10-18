@@ -98,12 +98,7 @@ int main(int argc, char** argv) {
   argparse::ArgumentParser parser("quixd", "1.0");
   create_parser(parser);
 
-  try {
-    parser.parse_args(args);
-  } catch (const std::runtime_error& e) {
-    std::cerr << e.what() << std::endl;
-    return 1;
-  }
+  parser.parse_args(args);
 
   if (parser["--license"] == true) {
     std::cout << license_text << std::endl;

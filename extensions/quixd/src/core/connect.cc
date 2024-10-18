@@ -4,11 +4,10 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include <charconv>
 #include <core/server.hh>
-#include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <stdexcept>
 
 using ManagedHandle = std::optional<Connection>;
 
@@ -24,18 +23,14 @@ ManagedHandle open_connection(ConnectionType type, const std::string& param) {
 
     case ConnectionType::Port: {
       uint16_t port = 0;
-      try {
-        int port_tmp = std::stoi(param);
 
-        if (port_tmp < 0 || port_tmp > UINT16_MAX) {
-          throw std::out_of_range("");
-        }
-
-        port = port_tmp;
-      } catch (std::invalid_argument&) {
+      std::from_chars_result res = std::from_chars(param.data(), param.data() + param.size(), port);
+      if (res.ec != std::errc()) {
         LOG(ERROR) << "Invalid port number: " << param;
         return std::nullopt;
-      } catch (std::out_of_range&) {
+      }
+
+      if (port < 0 || port > UINT16_MAX) {
         LOG(ERROR) << "Port number is out of the range of valid TCP ports";
         return std::nullopt;
       }
@@ -67,7 +62,7 @@ public:
       char c = ch;
       if (write(m_fd, &c, 1) != 1) {
         LOG(ERROR) << "Failed to write to stream: " << strerror(errno);
-        throw std::runtime_error("Failed to write to stream");
+        return traits_type::eof();
       }
     }
 
@@ -80,7 +75,7 @@ public:
       ssize_t n = write(m_fd, s + written, count - written);
       if (n == -1) {
         LOG(ERROR) << "Failed to write to stream: " << strerror(errno);
-        throw std::runtime_error("Failed to write to stream");
+        return written;
       }
       written += n;
     }
@@ -92,7 +87,8 @@ public:
     char c;
     ssize_t res = read(m_fd, &c, 1);
     if (res < 0) {
-      throw std::runtime_error("Failed to read from stream");
+      LOG(ERROR) << "Failed to read from stream: " << strerror(errno);
+      return traits_type::eof();
     }
 
     if (res == 0) {
@@ -111,7 +107,7 @@ public:
       ssize_t n = read(m_fd, s + bytes_read, count - bytes_read);
       if (n == -1) {
         LOG(ERROR) << "Failed to read from stream: " << strerror(errno);
-        throw std::runtime_error("Failed to read from stream");
+        return bytes_read;
       }
 
       if (n == 0) {

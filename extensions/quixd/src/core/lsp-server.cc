@@ -43,127 +43,122 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
    * any number of threads.
    */
 
-  try {
-    size_t remaining_bytes = 0;
-    std::string body;
+  size_t remaining_bytes = 0;
+  std::string body;
 
-    while (true) { /* Parse the headers */
-      std::string header;
-      std::getline(io, header);
+  while (true) { /* Parse the headers */
+    std::string header;
+    std::getline(io, header);
 
-      if (header.ends_with("\r")) {
-        header.pop_back();
-      }
-
-      if (header.empty()) {
-        break;
-      } else if (header.starts_with("Content-Length: ")) {
-        remaining_bytes = std::stoul(header.substr(16));
-      } else if (header.starts_with("Content-Type: ")) {
-        LOG(WARNING) << "Ignoring Content-Type header";
-      } else {
-        LOG(WARNING) << "Ignoring unknown header: " << header;
-      }
+    if (header.ends_with("\r")) {
+      header.pop_back();
     }
 
-    if (remaining_bytes == 0) {
+    if (header.empty()) {
+      break;
+    } else if (header.starts_with("Content-Length: ")) {
+      remaining_bytes = std::stoul(header.substr(16));
+    } else if (header.starts_with("Content-Type: ")) {
+      LOG(WARNING) << "Ignoring Content-Type header";
+    } else {
+      LOG(WARNING) << "Ignoring unknown header: " << header;
+    }
+  }
+
+  if (remaining_bytes == 0) {
+    return std::nullopt;
+  }
+
+  { /* Read the body */
+    body.resize(remaining_bytes);
+    size_t bytes_read = 0;
+
+    while (remaining_bytes > 0) {
+      if (!io.read(body.data() + bytes_read, remaining_bytes)) {
+        LOG(ERROR) << "Failed to read message body";
+        return std::nullopt;
+      }
+
+      bytes_read += io.gcount();
+      remaining_bytes -= io.gcount();
+    }
+  }
+
+  { /* Parse the body */
+    rapidjson::Document doc;
+    doc.Parse(body.c_str(), body.size());
+
+    if (doc.HasParseError()) {
+      LOG(ERROR) << "Failed to parse JSON: " << doc.GetParseError();
       return std::nullopt;
     }
 
-    { /* Read the body */
-      body.resize(remaining_bytes);
-      size_t bytes_read = 0;
-
-      while (remaining_bytes > 0) {
-        if (!io.read(body.data() + bytes_read, remaining_bytes)) {
-          LOG(ERROR) << "Failed to read message body";
-          return std::nullopt;
-        }
-
-        bytes_read += io.gcount();
-        remaining_bytes -= io.gcount();
-      }
+    if (!doc.HasMember("jsonrpc")) {
+      LOG(ERROR) << "Request is missing jsonrpc";
+      return std::nullopt;
     }
 
-    { /* Parse the body */
-      rapidjson::Document doc;
-      doc.Parse(body.c_str(), body.size());
+    if (!doc["jsonrpc"].IsString()) {
+      LOG(ERROR) << "jsonrpc is not a string";
+      return std::nullopt;
+    }
 
-      if (doc.HasParseError()) {
-        LOG(ERROR) << "Failed to parse JSON: " << doc.GetParseError();
+    if (doc["jsonrpc"].GetString() != std::string_view("2.0")) {
+      LOG(ERROR) << "Unsupported jsonrpc version: " << doc["jsonrpc"].GetString();
+      return std::nullopt;
+    }
+
+    if (!doc.HasMember("method")) {
+      LOG(ERROR) << "Request is missing method";
+      return std::nullopt;
+    }
+
+    if (!doc["method"].IsString()) {
+      LOG(ERROR) << "method is not a string";
+      return std::nullopt;
+    }
+
+    if (!doc.HasMember("id")) { /* Notification */
+      if (!doc.HasMember("params")) {
+        return std::make_unique<lsp::NotificationMessage>(
+            doc["method"].GetString(), rapidjson::Document(rapidjson::kObjectType));
+      }
+
+      if (!doc["params"].IsObject() && !doc["params"].IsArray()) {
+        LOG(ERROR) << "params is not an object or array";
         return std::nullopt;
       }
 
-      if (!doc.HasMember("jsonrpc")) {
-        LOG(ERROR) << "Request is missing jsonrpc";
+      rapidjson::Document params;
+      params.CopyFrom(doc["params"], params.GetAllocator());
+      return std::make_unique<lsp::NotificationMessage>(doc["method"].GetString(),
+                                                        std::move(params));
+    } else { /* Request or error */
+      if (!doc["id"].IsString() && !doc["id"].IsInt()) {
+        LOG(ERROR) << "id is not a string or integer";
         return std::nullopt;
       }
 
-      if (!doc["jsonrpc"].IsString()) {
-        LOG(ERROR) << "jsonrpc is not a string";
-        return std::nullopt;
-      }
-
-      if (doc["jsonrpc"].GetString() != std::string_view("2.0")) {
-        LOG(ERROR) << "Unsupported jsonrpc version: " << doc["jsonrpc"].GetString();
-        return std::nullopt;
-      }
-
-      if (!doc.HasMember("method")) {
-        LOG(ERROR) << "Request is missing method";
-        return std::nullopt;
-      }
-
-      if (!doc["method"].IsString()) {
-        LOG(ERROR) << "method is not a string";
-        return std::nullopt;
-      }
-
-      if (!doc.HasMember("id")) { /* Notification */
-        if (!doc.HasMember("params")) {
-          return std::make_unique<lsp::NotificationMessage>(
-              doc["method"].GetString(), rapidjson::Document(rapidjson::kObjectType));
-        }
-
+      rapidjson::Document params;
+      if (doc.HasMember("params")) {
         if (!doc["params"].IsObject() && !doc["params"].IsArray()) {
           LOG(ERROR) << "params is not an object or array";
           return std::nullopt;
         }
 
-        rapidjson::Document params;
         params.CopyFrom(doc["params"], params.GetAllocator());
-        return std::make_unique<lsp::NotificationMessage>(doc["method"].GetString(),
-                                                          std::move(params));
-      } else { /* Request or error */
-        if (!doc["id"].IsString() && !doc["id"].IsInt()) {
-          LOG(ERROR) << "id is not a string or integer";
-          return std::nullopt;
-        }
+      } else {
+        params.SetObject();
+      }
 
-        rapidjson::Document params;
-        if (doc.HasMember("params")) {
-          if (!doc["params"].IsObject() && !doc["params"].IsArray()) {
-            LOG(ERROR) << "params is not an object or array";
-            return std::nullopt;
-          }
-
-          params.CopyFrom(doc["params"], params.GetAllocator());
-        } else {
-          params.SetObject();
-        }
-
-        if (doc["id"].IsString()) {
-          return std::make_unique<lsp::RequestMessage>(
-              doc["id"].GetString(), doc["method"].GetString(), std::move(params));
-        } else {
-          return std::make_unique<lsp::RequestMessage>(
-              doc["id"].GetInt(), doc["method"].GetString(), std::move(params));
-        }
+      if (doc["id"].IsString()) {
+        return std::make_unique<lsp::RequestMessage>(doc["id"].GetString(),
+                                                     doc["method"].GetString(), std::move(params));
+      } else {
+        return std::make_unique<lsp::RequestMessage>(doc["id"].GetInt(), doc["method"].GetString(),
+                                                     std::move(params));
       }
     }
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "Failed to parse message: " << e.what();
-    return std::nullopt;
   }
 }
 
@@ -183,99 +178,91 @@ std::optional<std::unique_ptr<lsp::Message>> ServerContext::next_message(std::is
   }
 }
 
-void ServerContext::handle_request(const lsp::RequestMessage& req, std::ostream& io) noexcept {
-  try {
-    if (m_callback) {
-      m_callback(&req);
-    }
+void ServerContext::handle_request(const lsp::RequestMessage& req, std::ostream& io) {
+  if (m_callback) {
+    m_callback(&req);
+  }
 
-    auto response = lsp::ResponseMessage::from_request(req);
+  auto response = lsp::ResponseMessage::from_request(req);
 
-    auto it = m_request_handlers.find(req.method());
-    if (it == m_request_handlers.end()) {
-      if (req.method().starts_with("$/")) {
-        LOG(INFO) << "Ignoring request: " << req.method();
-        return;
-      }
-      LOG(WARNING) << "No request handler for method: " << req.method();
+  auto it = m_request_handlers.find(req.method());
+  if (it == m_request_handlers.end()) {
+    if (req.method().starts_with("$/")) {
+      LOG(INFO) << "Ignoring request: " << req.method();
       return;
     }
+    LOG(WARNING) << "No request handler for method: " << req.method();
+    return;
+  }
 
-    it->second(req, response);
+  it->second(req, response);
 
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  rapidjson::StringBuffer buffer;
+  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
 
+  writer.StartObject();
+  writer.Key("jsonrpc");
+  writer.String("2.0");
+
+  writer.Key("id");
+  if (std::holds_alternative<std::string>(response.id())) {
+    writer.String(std::get<std::string>(response.id()).c_str());
+  } else {
+    writer.Int(std::get<int64_t>(response.id()));
+  }
+
+  if (response.result().has_value()) {
+    writer.Key("result");
+    response.result()->Accept(writer);
+  } else if (response.error().has_value()) {
+    writer.Key("error");
     writer.StartObject();
-    writer.Key("jsonrpc");
-    writer.String("2.0");
-
-    writer.Key("id");
-    if (std::holds_alternative<std::string>(response.id())) {
-      writer.String(std::get<std::string>(response.id()).c_str());
-    } else {
-      writer.Int(std::get<int64_t>(response.id()));
+    writer.Key("code");
+    writer.Int((int)response.error()->m_code);
+    writer.Key("message");
+    writer.String(response.error()->m_message.c_str());
+    if (response.error()->m_data.has_value()) {
+      writer.Key("data");
+      response.error()->m_data->Accept(writer);
     }
-
-    if (response.result().has_value()) {
-      writer.Key("result");
-      response.result()->Accept(writer);
-    } else if (response.error().has_value()) {
-      writer.Key("error");
-      writer.StartObject();
-      writer.Key("code");
-      writer.Int((int)response.error()->m_code);
-      writer.Key("message");
-      writer.String(response.error()->m_message.c_str());
-      if (response.error()->m_data.has_value()) {
-        writer.Key("data");
-        response.error()->m_data->Accept(writer);
-      }
-      writer.EndObject();
-    } else {
-      LOG(ERROR) << "Response has neither result nor error";
-      return;
-    }
-
     writer.EndObject();
+  } else {
+    LOG(ERROR) << "Response has neither result nor error";
+    return;
+  }
 
-    {
-      /**
-       * We must guard the ostream because it is written to from any number of threads.
-       * The language server protocol dicates the use of message id to distinguish between
-       * different transactions (RequestMessage/ResponseMessage pairs).
-       */
+  writer.EndObject();
 
-      std::lock_guard<std::mutex> lock(m_io_mutex);
-      io << "Content-Length: " << std::to_string(buffer.GetSize()) << "\r\n\r\n"
-         << std::string_view(buffer.GetString(), buffer.GetSize());
-    }
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "Failed to handle request: " << e.what();
+  {
+    /**
+     * We must guard the ostream because it is written to from any number of threads.
+     * The language server protocol dicates the use of message id to distinguish between
+     * different transactions (RequestMessage/ResponseMessage pairs).
+     */
+
+    std::lock_guard<std::mutex> lock(m_io_mutex);
+    io << "Content-Length: " << std::to_string(buffer.GetSize()) << "\r\n\r\n"
+       << std::string_view(buffer.GetString(), buffer.GetSize());
   }
 }
 
-void ServerContext::handle_notification(const lsp::NotificationMessage& notif) noexcept {
-  try {
-    if (m_callback) {
-      m_callback(&notif);
-    }
+void ServerContext::handle_notification(const lsp::NotificationMessage& notif) {
+  if (m_callback) {
+    m_callback(&notif);
+  }
 
-    auto it = m_notification_handlers.find(notif.method());
-    if (it == m_notification_handlers.end()) {
-      if (notif.method().starts_with("$/")) {
-        LOG(INFO) << "Ignoring notification: " << notif.method();
-        return;
-      }
-
-      LOG(WARNING) << "No notify handler for method: " << notif.method();
+  auto it = m_notification_handlers.find(notif.method());
+  if (it == m_notification_handlers.end()) {
+    if (notif.method().starts_with("$/")) {
+      LOG(INFO) << "Ignoring notification: " << notif.method();
       return;
     }
 
-    it->second(notif);
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "Failed to handle notification: " << e.what();
+    LOG(WARNING) << "No notify handler for method: " << notif.method();
+    return;
   }
+
+  it->second(notif);
 }
 
 void ServerContext::dispatch(const std::shared_ptr<lsp::Message> message, std::ostream& io) {

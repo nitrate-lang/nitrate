@@ -286,8 +286,8 @@ class ServerContext {
 
   void request_queue_loop(std::stop_token st);
 
-  void handle_request(const lsp::RequestMessage& request, std::ostream& out) noexcept;
-  void handle_notification(const lsp::NotificationMessage& notif) noexcept;
+  void handle_request(const lsp::RequestMessage& request, std::ostream& out);
+  void handle_notification(const lsp::NotificationMessage& notif);
 
   std::optional<std::unique_ptr<lsp::Message>> next_message(std::istream& in);
 
