@@ -364,82 +364,155 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_REF_TY: {
       OBJECT_BEGIN("Mut");
       OBJECT_SUB(n->as<RefTy>()->get_item());
+      OBJECT_SUB(n->as<RefTy>()->get_width());
+      OBJECT_SUB(n->as<RefTy>()->get_range().first);
+      OBJECT_SUB(n->as<RefTy>()->get_range().second);
       OBJECT_END();
       break;
     }
     case QAST_NODE_U1_TY: {
-      OBJECT_EMPTY("U1");
+      OBJECT_BEGIN("U1");
+      OBJECT_SUB(n->as<U1>()->get_width());
+      OBJECT_SUB(n->as<U1>()->get_range().first);
+      OBJECT_SUB(n->as<U1>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_U8_TY: {
-      OBJECT_EMPTY("U8");
+      OBJECT_BEGIN("U8");
+      OBJECT_SUB(n->as<U8>()->get_width());
+      OBJECT_SUB(n->as<U8>()->get_range().first);
+      OBJECT_SUB(n->as<U8>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_U16_TY: {
-      OBJECT_EMPTY("U16");
+      OBJECT_BEGIN("U16");
+      OBJECT_SUB(n->as<U16>()->get_width());
+      OBJECT_SUB(n->as<U16>()->get_range().first);
+      OBJECT_SUB(n->as<U16>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_U32_TY: {
-      OBJECT_EMPTY("U32");
+      OBJECT_BEGIN("U32");
+      OBJECT_SUB(n->as<U32>()->get_width());
+      OBJECT_SUB(n->as<U32>()->get_range().first);
+      OBJECT_SUB(n->as<U32>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_U64_TY: {
-      OBJECT_EMPTY("U64");
+      OBJECT_BEGIN("U64");
+      OBJECT_SUB(n->as<U64>()->get_width());
+      OBJECT_SUB(n->as<U64>()->get_range().first);
+      OBJECT_SUB(n->as<U64>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_U128_TY: {
-      OBJECT_EMPTY("U128");
+      OBJECT_BEGIN("U128");
+      OBJECT_SUB(n->as<U128>()->get_width());
+      OBJECT_SUB(n->as<U128>()->get_range().first);
+      OBJECT_SUB(n->as<U128>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_I8_TY: {
-      OBJECT_EMPTY("I8");
+      OBJECT_BEGIN("I8");
+      OBJECT_SUB(n->as<I8>()->get_width());
+      OBJECT_SUB(n->as<I8>()->get_range().first);
+      OBJECT_SUB(n->as<I8>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_I16_TY: {
-      OBJECT_EMPTY("I16");
+      OBJECT_BEGIN("I16");
+      OBJECT_SUB(n->as<I16>()->get_width());
+      OBJECT_SUB(n->as<I16>()->get_range().first);
+      OBJECT_SUB(n->as<I16>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_I32_TY: {
-      OBJECT_EMPTY("I32");
+      OBJECT_BEGIN("I32");
+      OBJECT_SUB(n->as<I32>()->get_width());
+      OBJECT_SUB(n->as<I32>()->get_range().first);
+      OBJECT_SUB(n->as<I32>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_I64_TY: {
-      OBJECT_EMPTY("I64");
+      OBJECT_BEGIN("I64");
+      OBJECT_SUB(n->as<I64>()->get_width());
+      OBJECT_SUB(n->as<I64>()->get_range().first);
+      OBJECT_SUB(n->as<I64>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_I128_TY: {
-      OBJECT_EMPTY("I128");
+      OBJECT_BEGIN("I128");
+      OBJECT_SUB(n->as<I128>()->get_width());
+      OBJECT_SUB(n->as<I128>()->get_range().first);
+      OBJECT_SUB(n->as<I128>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_F16_TY: {
-      OBJECT_EMPTY("F16");
+      OBJECT_BEGIN("F16");
+      OBJECT_SUB(n->as<F16>()->get_width());
+      OBJECT_SUB(n->as<F16>()->get_range().first);
+      OBJECT_SUB(n->as<F16>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_F32_TY: {
-      OBJECT_EMPTY("F32");
+      OBJECT_BEGIN("F32");
+      OBJECT_SUB(n->as<F32>()->get_width());
+      OBJECT_SUB(n->as<F32>()->get_range().first);
+      OBJECT_SUB(n->as<F32>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_F64_TY: {
-      OBJECT_EMPTY("F64");
+      OBJECT_BEGIN("F64");
+      OBJECT_SUB(n->as<F64>()->get_width());
+      OBJECT_SUB(n->as<F64>()->get_range().first);
+      OBJECT_SUB(n->as<F64>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_F128_TY: {
-      OBJECT_EMPTY("F128");
+      OBJECT_BEGIN("F128");
+      OBJECT_SUB(n->as<F128>()->get_width());
+      OBJECT_SUB(n->as<F128>()->get_range().first);
+      OBJECT_SUB(n->as<F128>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_VOID_TY: {
-      OBJECT_EMPTY("Void");
+      OBJECT_BEGIN("Void");
+      OBJECT_SUB(n->as<VoidTy>()->get_width());
+      OBJECT_SUB(n->as<VoidTy>()->get_range().first);
+      OBJECT_SUB(n->as<VoidTy>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_PTR_TY: {
       OBJECT_BEGIN("Ptr");
       OBJECT_SUB(n->as<PtrTy>()->get_item());
+      OBJECT_SUB(n->as<PtrTy>()->get_width());
+      OBJECT_SUB(n->as<PtrTy>()->get_range().first);
+      OBJECT_SUB(n->as<PtrTy>()->get_range().second);
       OBJECT_END();
       break;
     }
     case QAST_NODE_OPAQUE_TY: {
       OBJECT_BEGIN("Opaque");
       OBJECT_STR(n->as<OpaqueTy>()->get_name());
+      OBJECT_SUB(n->as<OpaqueTy>()->get_width());
+      OBJECT_SUB(n->as<OpaqueTy>()->get_range().first);
+      OBJECT_SUB(n->as<OpaqueTy>()->get_range().second);
       OBJECT_END();
       break;
     }
@@ -447,6 +520,9 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_BEGIN("EnumTy");
       OBJECT_STR(n->as<EnumTy>()->get_name());
       OBJECT_SUB(n->as<EnumTy>()->get_memtype());
+      OBJECT_SUB(n->as<EnumTy>()->get_width());
+      OBJECT_SUB(n->as<EnumTy>()->get_range().first);
+      OBJECT_SUB(n->as<EnumTy>()->get_range().second);
       OBJECT_END();
       break;
     }
@@ -458,24 +534,36 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
         OBJECT_SUB(v);
         OBJECT_END();
       }
+      OBJECT_SUB(n->as<StructTy>()->get_width());
+      OBJECT_SUB(n->as<StructTy>()->get_range().first);
+      OBJECT_SUB(n->as<StructTy>()->get_range().second);
       OBJECT_END();
       break;
     }
     case QAST_NODE_GROUP_TY: {
       OBJECT_BEGIN("Group");
       OBJECT_ARRAY(n->as<GroupTy>()->get_items());
+      OBJECT_SUB(n->as<GroupTy>()->get_width());
+      OBJECT_SUB(n->as<GroupTy>()->get_range().first);
+      OBJECT_SUB(n->as<GroupTy>()->get_range().second);
       OBJECT_END();
       break;
     }
     case QAST_NODE_REGION_TY: {
       OBJECT_BEGIN("Region");
       OBJECT_ARRAY(n->as<RegionTy>()->get_items());
+      OBJECT_SUB(n->as<RegionTy>()->get_width());
+      OBJECT_SUB(n->as<RegionTy>()->get_range().first);
+      OBJECT_SUB(n->as<RegionTy>()->get_range().second);
       OBJECT_END();
       break;
     }
     case QAST_NODE_UNION_TY: {
       OBJECT_BEGIN("Union");
       OBJECT_ARRAY(n->as<UnionTy>()->get_items());
+      OBJECT_SUB(n->as<UnionTy>()->get_width());
+      OBJECT_SUB(n->as<UnionTy>()->get_range().first);
+      OBJECT_SUB(n->as<UnionTy>()->get_range().second);
       OBJECT_END();
       break;
     }
@@ -483,12 +571,18 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_BEGIN("Array");
       OBJECT_SUB(n->as<ArrayTy>()->get_item());
       OBJECT_SUB(n->as<ArrayTy>()->get_size());
+      OBJECT_SUB(n->as<ArrayTy>()->get_width());
+      OBJECT_SUB(n->as<ArrayTy>()->get_range().first);
+      OBJECT_SUB(n->as<ArrayTy>()->get_range().second);
       OBJECT_END();
       break;
     }
     case QAST_NODE_TUPLE_TY: {
       OBJECT_BEGIN("Tuple");
       OBJECT_ARRAY(n->as<TupleTy>()->get_items());
+      OBJECT_SUB(n->as<TupleTy>()->get_width());
+      OBJECT_SUB(n->as<TupleTy>()->get_range().first);
+      OBJECT_SUB(n->as<TupleTy>()->get_range().second);
       OBJECT_END();
       break;
     }
@@ -508,23 +602,36 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       indent(ss, state);
       state.indent--;
       ss << "\"" << n->as<FuncTy>()->get_purity() << "\"";
+      OBJECT_SUB(n->as<FuncTy>()->get_width());
+      OBJECT_SUB(n->as<FuncTy>()->get_range().first);
+      OBJECT_SUB(n->as<FuncTy>()->get_range().second);
       OBJECT_END();
       break;
     }
     case QAST_NODE_UNRES_TY: {
       OBJECT_BEGIN("Unres");
       OBJECT_STR(n->as<UnresolvedType>()->get_name());
+      OBJECT_SUB(n->as<UnresolvedType>()->get_width());
+      OBJECT_SUB(n->as<UnresolvedType>()->get_range().first);
+      OBJECT_SUB(n->as<UnresolvedType>()->get_range().second);
       OBJECT_END();
       break;
     }
     case QAST_NODE_INFER_TY: {
-      OBJECT_EMPTY("Infer");
+      OBJECT_BEGIN("Infer");
+      OBJECT_SUB(n->as<InferType>()->get_width());
+      OBJECT_SUB(n->as<InferType>()->get_range().first);
+      OBJECT_SUB(n->as<InferType>()->get_range().second);
+      OBJECT_END();
       break;
     }
     case QAST_NODE_TEMPL_TY: {
       OBJECT_BEGIN("TType");
       OBJECT_SUB(n->as<TemplType>()->get_template());
       OBJECT_ARRAY(n->as<TemplType>()->get_args());
+      OBJECT_SUB(n->as<TemplType>()->get_width());
+      OBJECT_SUB(n->as<TemplType>()->get_range().first);
+      OBJECT_SUB(n->as<TemplType>()->get_range().second);
       OBJECT_END();
       break;
     }

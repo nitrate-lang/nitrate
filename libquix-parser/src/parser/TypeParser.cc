@@ -33,6 +33,8 @@
 
 #include <unordered_map>
 
+#include "quix-lexer/Token.h"
+
 using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse::diag;
@@ -397,7 +399,59 @@ type_suffix: {
    */
 
   while (true) {
-    if ((tok = qlex_peek(rd)).is<qOpTernary>()) {
+    tok = qlex_peek(rd);
+
+    if (tok.is<qPuncColn>()) { /* Parse bit-field width */
+      qlex_next(rd);
+      tok = qlex_peek(rd);
+
+      if (tok.is<qPuncLBrk>()) { /* Parse confinement range */
+        qlex_next(rd);
+
+        Expr *start = nullptr, *end = nullptr;
+
+        tok = qlex_peek(rd);
+        if (tok.is<qPuncColn>()) {
+          start = nullptr;
+        } else {
+          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncColn)}, &start)) {
+            syntax(tok, "Expected start of confinement range");
+            goto error_end;
+          }
+        }
+        qlex_next(rd);
+        tok = qlex_peek(rd);
+
+        if (tok.is<qPuncRBrk>()) {
+          end = nullptr;
+        } else {
+          if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncRBrk)}, &end)) {
+            syntax(tok, "Expected end of confinement range");
+            goto error_end;
+          }
+        }
+        qlex_next(rd);
+
+        inner->set_range(ConstExpr::get(start), ConstExpr::get(end));
+      } else {
+        Expr *expr = nullptr;
+        if (!parse_expr(job, rd,
+                        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
+                         qlex_tok_t(qPunc, qPuncColn), qlex_tok_t(qPunc, qPuncRPar),
+                         qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncRCur),
+                         qlex_tok_t(qOper, qOpSet)},
+                        &expr)) {
+          syntax(tok, "Expected expression for bit-field width");
+          goto error_end;
+        }
+
+        inner->set_width(ConstExpr::get(expr));
+      }
+
+      continue;
+    }
+
+    if (tok.is<qOpTernary>()) { /* Parse optional type */
       qlex_next(rd);
       inner =
           TemplType::get(UnresolvedType::get("std::result"), TemplTypeArgs{TypeExpr::get(inner)});

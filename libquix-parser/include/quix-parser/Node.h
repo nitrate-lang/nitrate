@@ -382,12 +382,16 @@ namespace qparse {
     virtual Stmt *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
   };
 
+  class ConstExpr;
+
   class Type : public Node {
   protected:
+    ConstExpr *m_width, *m_range_start, *m_range_end;
     bool m_volatile;
 
   public:
-    Type(bool is_volatile = false) : m_volatile(is_volatile) {}
+    Type(bool is_volatile = false)
+        : m_width(nullptr), m_range_start(nullptr), m_range_end(nullptr), m_volatile(is_volatile) {}
 
     bool is_primitive() const;
     bool is_array() const;
@@ -408,6 +412,15 @@ namespace qparse {
     bool is_ptr_to(const Type *type) const;
 
     virtual Type *clone(ArenaAllocatorImpl &arena = qparse_arena) const = 0;
+
+    ConstExpr *get_width() const { return m_width; }
+    void set_width(ConstExpr *width) { m_width = width; }
+
+    std::pair<ConstExpr *, ConstExpr *> get_range() const { return {m_range_start, m_range_end}; }
+    void set_range(ConstExpr *start, ConstExpr *end) {
+      m_range_start = start;
+      m_range_end = end;
+    }
   };
 
   typedef std::set<String, std::less<String>, Arena<String>> DeclTags;
