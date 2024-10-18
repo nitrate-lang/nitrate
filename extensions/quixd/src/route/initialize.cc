@@ -15,9 +15,12 @@ static void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp
   server_info.AddMember("version", "0.0.1", alloc);
 
   auto& capabilities = (*resp)["capabilities"];
-  capabilities.AddMember("completionProvider", Value(kObjectType), alloc);
   capabilities.AddMember("positionEncodings", "utf-8", alloc);
   capabilities.AddMember("textDocumentSync", 1, alloc);  // Full sync
+
+  capabilities.AddMember("completionProvider", Value(kObjectType), alloc);
+  capabilities.AddMember("declarationProvider", true, alloc);
+  capabilities.AddMember("definitionProvider", true, alloc);
 }
 
 ADD_REQUEST_HANDLER("initialize", do_initialize);

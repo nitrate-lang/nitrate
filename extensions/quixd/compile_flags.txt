@@ -1,7 +1,11 @@
 -I
 src
 -I
-../../libquix/include
+../../libquix-parser/include
+-I
+../../libquix-lexer/include
+-I
+../../libquix-core/include
 -O3 
 -Wall 
 -Wextra 

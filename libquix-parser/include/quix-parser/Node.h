@@ -285,6 +285,8 @@ namespace qparse {
     String(const char *str) : std::basic_string<char, std::char_traits<char>, Arena<char>>(str) {}
     String(const std::string &str)
         : std::basic_string<char, std::char_traits<char>, Arena<char>>(str.c_str(), str.size()) {}
+
+    std::string_view view() const { return std::string_view(data(), size()); }
   };
 
   class Node : public qparse_node_t {
