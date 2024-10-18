@@ -5,18 +5,17 @@ This is the implementation of a language server for the QUIX programming languag
 ## Progress on LSP Features
 
 - ✅ Multi-threaded request handling and cancellation support
-- 🚧 Did Open Text Document
-- 🚧 Did Change Text Document
-- 🚧 Will Save Text Document
-- 🚧 Will Save Document Wait Until
-- 🚧 Did Save Text Document
-- 🚧 Did Close Text Document
+- ✅ Did Open Text Document
+- ✅ Did Change Text Document
+- ✅ Will Save Text Document
+- ❌ Will Save Document Wait Until
+- ✅ Did Save Text Document
+- ✅ Did Close Text Document
 - 🚧 Rename a Text Document
-- 🚧 Overview - Notebook Document
-- 🚧 Did Open Notebook Document
-- 🚧 Did Change Notebook Document
-- 🚧 Did Save Notebook Document
-- 🚧 Did Close Notebook Document
+- ❌ Did Open Notebook Document
+- ❌ Did Change Notebook Document
+- ❌ Did Save Notebook Document
+- ❌ Did Close Notebook Document
 - 🚧 Go to Declaration
 - 🚧 Go to Definition
 - 🚧 Go to Type Definition
