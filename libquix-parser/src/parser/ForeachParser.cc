@@ -46,21 +46,23 @@ bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (!tok.is(qName)) {
     syntax(tok, "Expected identifier as index variable in foreach statement");
   }
-  std::string idx_ident = tok.as_string(rd);
+  std::string first_ident = tok.as_string(rd), second_ident;
 
   tok = qlex_next(rd);
-  if (!tok.is<qPuncComa>()) {
-    syntax(tok, "Expected ',' after index variable in foreach statement");
+
+  if (tok.is<qPuncComa>()) {
+    tok = qlex_next(rd);
+    if (!tok.is(qName)) {
+      syntax(tok, "Expected identifier as value variable in foreach statement");
+    }
+
+    second_ident = tok.as_string(rd);
+
+    tok = qlex_next(rd);
+  } else {
+    second_ident = "_";
   }
 
-  tok = qlex_next(rd);
-  if (!tok.is(qName)) {
-    syntax(tok, "Expected identifier as value variable in foreach statement");
-  }
-
-  std::string val_ident = tok.as_string(rd);
-
-  tok = qlex_next(rd);
   if (!tok.is<qOpIn>()) {
     syntax(tok, "Expected 'in' after value variable in foreach statement");
   }
@@ -95,7 +97,7 @@ bool qparse::parser::parse_foreach(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
   }
 
-  *node = ForeachStmt::get(idx_ident, val_ident, expr, block);
+  *node = ForeachStmt::get(first_ident, second_ident, expr, block);
   (*node)->set_end_pos(block->get_end_pos());
 
   return true;
