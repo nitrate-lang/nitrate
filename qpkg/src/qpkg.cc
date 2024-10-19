@@ -49,7 +49,6 @@
 #include <quix-prep/Classes.hh>
 #include <unordered_map>
 
-#include "quix-codegen/Config.h"
 #include "quix-codegen/Lib.h"
 #if QPKG_DEV_TOOLS
 // #include <dev/bench/bench.hh>
@@ -67,7 +66,6 @@
 // #include <string>
 // #include <thread>
 // #include <vector>
-#include <atomic>
 
 #ifndef QPKG_ID
 #warning "QPKG_ID not defined"
@@ -1424,81 +1422,73 @@ namespace qpkg::router {
 #endif
 }  // namespace qpkg::router
 
+static bool do_libs_init() {
+  if (!qcore_lib_init()) {
+    qerr << "Failed to initialize QUIX-CORE library" << std::endl;
+    return false;
+  }
+
+  if (!qlex_lib_init()) {
+    qerr << "Failed to initialize QUIX-LEX library" << std::endl;
+    return false;
+  }
+
+  if (!qprep_lib_init()) {
+    qerr << "Failed to initialize QUIX-PREP library" << std::endl;
+    return false;
+  }
+
+  if (!qparse_lib_init()) {
+    qerr << "Failed to initialize QUIX-PARSE library" << std::endl;
+    return false;
+  }
+
+  if (!qxir_lib_init()) {
+    qerr << "Failed to initialize QUIX-IR library" << std::endl;
+    return false;
+  }
+
+  if (!qcode_lib_init()) {
+    qerr << "Failed to initialize QUIX-CODE library" << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+static void do_libs_deinit() {
+  qcore_lib_deinit();
+  qlex_lib_deinit();
+  qprep_lib_deinit();
+  qparse_lib_deinit();
+  qxir_lib_deinit();
+  qcode_lib_deinit();
+}
+
 extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc, char *argv[],
                                                                    bool use_color) {
-  std::vector<std::string> args(argv, argv + argc);
-
-  static std::mutex libs_inited_mutex;
-  static std::once_flag parsers_inited;
-  bool libs_inited = false;
-
   g_use_colors = use_color;
-
   qpkg::core::FormatAdapter::PluginAndInit(false, g_use_colors);
 
-  { /* Initialize libraries if not already initialized */
-    std::lock_guard<std::mutex> lock(libs_inited_mutex);
+  std::vector<std::string> args(argv, argv + argc);
 
-    if (!libs_inited) {
-      if (!qcore_lib_init()) {
-        qerr << "Failed to initialize QUIX-CORE library" << std::endl;
-        return -1;
-      }
-
-      if (!qlex_lib_init()) {
-        qerr << "Failed to initialize QUIX-LEX library" << std::endl;
-        return -1;
-      }
-
-      if (!qprep_lib_init()) {
-        qerr << "Failed to initialize QUIX-PREP library" << std::endl;
-        return -1;
-      }
-
-      if (!qparse_lib_init()) {
-        qerr << "Failed to initialize QUIX-PARSE library" << std::endl;
-        return -1;
-      }
-
-      if (!qxir_lib_init()) {
-        qerr << "Failed to initialize QUIX-IR library" << std::endl;
-        return -1;
-      }
-
-      if (!qcode_lib_init()) {
-        qerr << "Failed to initialize QUIX-CODE library" << std::endl;
-        return -1;
-      }
-
-      libs_inited = true;
-    }
-  }
-
-  { /* Handle edge case for scripts */
-    if (args.size() >= 2 && args[1] == "run") {
-      std::vector<std::string> run_args(args.begin() + 2, args.end());
-      return qpkg::router::run_run_mode(run_args);
-    }
-  }
-
-  /* Setup argument parser instances */
-  static thread_local ArgumentParser init_parser("init", "1.0", default_arguments::help);
-  static thread_local ArgumentParser build_parser("build", "1.0", default_arguments::help);
-  static thread_local ArgumentParser clean_parser("clean", "1.0", default_arguments::help);
-  static thread_local ArgumentParser update_parser("update", "1.0", default_arguments::help);
-  static thread_local ArgumentParser install_parser("install", "1.0", default_arguments::help);
-  static thread_local ArgumentParser doc_parser("doc", "1.0", default_arguments::help);
-  static thread_local ArgumentParser format_parser("format", "1.0", default_arguments::help);
-  static thread_local ArgumentParser list_parser("list", "1.0", default_arguments::help);
-  static thread_local ArgumentParser test_parser("test", "1.0", default_arguments::help);
+  static ArgumentParser init_parser("init", "1.0", default_arguments::help);
+  static ArgumentParser build_parser("build", "1.0", default_arguments::help);
+  static ArgumentParser clean_parser("clean", "1.0", default_arguments::help);
+  static ArgumentParser update_parser("update", "1.0", default_arguments::help);
+  static ArgumentParser install_parser("install", "1.0", default_arguments::help);
+  static ArgumentParser doc_parser("doc", "1.0", default_arguments::help);
+  static ArgumentParser format_parser("format", "1.0", default_arguments::help);
+  static ArgumentParser list_parser("list", "1.0", default_arguments::help);
+  static ArgumentParser test_parser("test", "1.0", default_arguments::help);
 #if QPKG_DEV_TOOLS
-  static thread_local ArgumentParser dev_parser("dev", "1.0", default_arguments::help);
-  static thread_local std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
-      dev_subparsers;
+  static ArgumentParser dev_parser("dev", "1.0", default_arguments::help);
+  static std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> dev_subparsers;
 #endif
-  static thread_local ArgumentParser program("qpkg", qpkg_deps_version_string());
+  static ArgumentParser program("qpkg", qpkg_deps_version_string());
 
   { /* Configure argument parser instances once */
+    static std::once_flag parsers_inited;
     std::call_once(parsers_inited, [&]() {
       argparse_setup::setup_argparse(program, init_parser, build_parser, clean_parser,
                                      update_parser, install_parser, doc_parser, format_parser,
@@ -1509,6 +1499,26 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
 #endif
       );
     });
+  }
+
+  class LibInit {
+  public:
+    LibInit() = default;
+    bool operator()() { return do_libs_init(); }
+    ~LibInit() { do_libs_deinit(); }
+  };
+
+  LibInit lib_init;
+  if (!lib_init()) {
+    qerr << "Failed to initialize libraries" << std::endl;
+    return -1;
+  }
+
+  { /* Handle edge case for scripts */
+    if (args.size() >= 2 && args[1] == "run") {
+      std::vector<std::string> run_args(args.begin() + 2, args.end());
+      return qpkg::router::run_run_mode(run_args);
+    }
   }
 
   { /* Parse arguments */
