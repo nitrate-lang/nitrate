@@ -96,6 +96,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
 
         if (!expr) {
           syntax(tok, "Expected valid expression");
+          return false;
         }
 
         tok = qlex_next(rd);

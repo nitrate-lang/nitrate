@@ -39,15 +39,13 @@
 #include <quix-core/Error.h>
 #include <quix-parser/Parser.h>
 
-#include <stdexcept>
-
 class qparse_conf final {
   qparse_conf_t *m_conf;
 
 public:
   qparse_conf(bool use_default = true) {
     if ((m_conf = qparse_conf_new(use_default)) == nullptr) {
-      throw std::runtime_error("qparse_conf_new failed");
+      qcore_panic("qparse_conf_new failed");
     }
   }
   ~qparse_conf() { qparse_conf_free(m_conf); }
@@ -61,7 +59,7 @@ class qparser final {
 public:
   qparser(qlex_t *scanner, qparse_conf_t *conf, qcore_env_t env) {
     if ((m_parser = qparse_new(scanner, conf, env)) == nullptr) {
-      throw std::runtime_error("qparse_new failed");
+      qcore_panic("qparse_new failed");
     }
   }
   ~qparser() { qparse_free(m_parser); }

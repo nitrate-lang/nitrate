@@ -1,0 +1,12 @@
+-g 
+-fPIC 
+-Wall 
+-Wextra 
+-pedantic 
+-Werror 
+-D__QUIX_IMPL__
+-DQCORE_ID="undefined"
+-fno-exceptions
+-fno-rtti
+-I
+include
