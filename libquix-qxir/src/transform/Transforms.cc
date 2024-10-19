@@ -42,7 +42,7 @@ StdTransform::StdTransform() {
       {"ds-acyclic", impl::ds_acyclic},    /* Verify that the module is acyclic */
       {"ds-nullchk", impl::ds_nullchk},    /* Verify that the module is null-safe */
       {"ds-resolv", impl::ds_resolv},      /* Resolve all symbols */
-      {"fnflatten", impl::fnflatten},      /* Flatten all nested functions */
+      {"ds-flatten", impl::ds_flatten},    /* Flatten all nested functions */
       {"tyinfer", impl::tyinfer},          /* Do type inference */
       {"nm-premangle", impl::nm_premangle} /* Mangle all names */
   };

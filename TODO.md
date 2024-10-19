@@ -1,7 +1,5 @@
 # Project TODO List
 
-fn-flatten pass broke QIR_NODE_EXTERN, need to fix.
-
 ---
 
 - Garbage Collection

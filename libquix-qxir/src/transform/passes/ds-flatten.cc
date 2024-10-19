@@ -29,6 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <unordered_set>
+
 #define QXIR_USE_CPP_API
 
 #include <quix-qxir/Inference.h>
@@ -39,7 +41,7 @@
 #include <transform/passes/Decl.hh>
 
 /**
- * @brief Move nested functions to the top level.
+ * @brief Move nested linkable symbols to the top level.
  *
  * @timecomplexity O(n)
  * @spacecomplexity O(n)
@@ -47,30 +49,62 @@
 
 using namespace qxir;
 
-static void do_pass(qmodule_t *mod, Expr *&base, std::string cur_scope,
-                    std::vector<Fn **> &functions) {
-  IterCallback cb = [mod, cur_scope, &functions](Expr *, Expr **cur) -> IterOp {
+static void flatten_externs(qmodule_t *mod) {
+  /**
+   * This one is simple. We don't manipulate any names, just move the extern
+   * nodes.
+   */
+  std::unordered_set<Expr **> externs;
+
+  IterCallback cb = [&externs](Expr *, Expr **cur) -> IterOp {
+    if ((*cur)->getKind() == QIR_NODE_EXTERN) {
+      externs.insert(cur);
+    }
+
+    return IterOp::Proceed;
+  };
+
+  iterate<dfs_pre, IterMP::none>(mod->getRoot(), cb);
+
+  Seq *root = mod->getRoot()->as<Seq>();
+  for (auto ele : externs) {
+    Expr *obj = *ele;
+
+    bool at_global_scope =
+        std::find(root->getItems().begin(), root->getItems().end(), obj) != root->getItems().end();
+
+    if (!at_global_scope) {
+      *reinterpret_cast<Expr **>(ele) = getType<VoidTy>();
+      root->addItem(obj);
+    }
+  }
+}
+
+static void flatten_functions_recurse(qmodule_t *mod, Expr *&base, std::string cur_scope,
+                                      std::unordered_set<Expr **> &functions) {
+  IterCallback cb = [mod, cur_scope, &functions](Expr *par, Expr **cur) -> IterOp {
     if ((*cur)->getKind() != QIR_NODE_FN) {
       return IterOp::Proceed;
     }
 
-    std::string new_scope;
+    bool is_extern = par ? par->getKind() == QIR_NODE_EXTERN : false;
 
-    { /* Handle name change */
-      static thread_local std::atomic<uint64_t> counter = 0;
-      std::string orig_name = std::string((*cur)->as<Fn>()->getName());
-      if (orig_name.empty()) {
-        orig_name = std::to_string(counter++);
-      }
+    static thread_local std::atomic<uint64_t> counter = 0;
+    std::string orig_name = std::string((*cur)->as<Fn>()->getName());
+    if (orig_name.empty()) {
+      orig_name = "$_" + std::to_string(counter++);
+    }
 
-      new_scope = cur_scope.empty() ? orig_name : cur_scope + "::" + orig_name;
+    std::string new_scope = cur_scope.empty() ? orig_name : cur_scope + "::" + orig_name;
 
-      (*cur)->as<Fn>()->setName(mod->internString(new_scope));
-      functions.push_back(reinterpret_cast<Fn **>(cur));
+    (*cur)->as<Fn>()->setName(mod->internString(new_scope));
+
+    if (!is_extern) { /* Handle name change */
+      functions.insert(cur);
     }
 
     Expr *body = (*cur)->as<Fn>()->getBody();
-    do_pass(mod, body, new_scope, functions);
+    flatten_functions_recurse(mod, body, new_scope, functions);
 
     return IterOp::SkipChildren;
   };
@@ -78,36 +112,36 @@ static void do_pass(qmodule_t *mod, Expr *&base, std::string cur_scope,
   iterate<dfs_pre, IterMP::none>(base, cb);
 }
 
-bool qxir::transform::impl::fnflatten(qmodule_t *mod) {
-  return true; /// FIXME: This pass is broken. See TODO.md
-  
+static void flatten_functions(qmodule_t *mod) {
+  std::unordered_set<Expr **> functions;
+
+  flatten_functions_recurse(mod, mod->getRoot(), "", functions);
+
+  /**
+   * Replace nested functions with identifier aliases
+   * only if they are not at the global scope.
+   */
+  Seq *root = mod->getRoot()->as<Seq>();
+  for (auto ele : functions) {
+    Expr *obj = *ele;
+
+    bool at_global_scope =
+        std::find(root->getItems().begin(), root->getItems().end(), obj) != root->getItems().end();
+
+    if (!at_global_scope) {
+      *reinterpret_cast<Expr **>(ele) = create<Ident>(obj->getName(), obj);
+      root->addItem(obj);
+    }
+  }
+}
+
+bool qxir::transform::impl::ds_flatten(qmodule_t *mod) {
   /**
    * This pass in infallible.
    */
 
-  std::vector<Fn **> functions;
-
-  /** Iterate over the module and:
-   *  - Treat function names like namespaces and rename them to be unique
-   *  - Add each function to the list
-   */
-  do_pass(mod, mod->getRoot(), "", functions);
-
-  /**
-   * Erase the function definitions from the original location
-   * (replace with a void type which is a NOP).
-   *
-   * Add the functions to the root node. eg flatten the functions.
-   */
-  Seq *root = mod->getRoot()->as<Seq>();
-  for (Fn **fn_member : functions) {
-    Fn *fn = *fn_member;
-
-    Expr **generic = reinterpret_cast<Expr **>(fn_member);
-    *generic = getType<VoidTy>();
-
-    root->addItem(fn);
-  }
+  flatten_externs(mod);
+  flatten_functions(mod);
 
   return true;
 }
