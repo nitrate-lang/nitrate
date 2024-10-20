@@ -51,6 +51,10 @@ struct ConvState {
   int32_t indent;
   size_t indent_width;
   bool minify;
+  std::unordered_set<uint64_t> types;
+
+  ConvState(size_t index_width, bool minify)
+      : indent(0), indent_width(index_width), minify(minify) {}
 };
 
 template <typename L, typename R>
@@ -152,7 +156,7 @@ static void indent(FILE &ss, ConvState &state) {
   }
 }
 
-static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
+static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &state
 #if !defined(NDEBUG)
                               ,
                               std::unordered_set<Expr *> &visited, bool is_cylic
@@ -171,9 +175,11 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
     }
     visited.insert(n);
   }
-#define recurse(x) serialize_recurse(x, ss, state, visited, is_cylic)
+#define recurse(x) serialize_recurse(x, ss, typedefs, state, visited, is_cylic)
+#define recurse_ex(x, stream) serialize_recurse(x, stream, typedefs, state, visited, is_cylic)
 #else
-#define recurse(x) serialize_recurse(x, ss, state)
+#define recurse(x) serialize_recurse(x, ss, typedefs, state)
+#define recurse_ex(x, stream) serialize_recurse(x, stream, typedefs, state)
 #endif
 
   switch (n->getKind()) {
@@ -215,6 +221,10 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
     case QIR_NODE_LIST: {
       // Check if it matches the string literal pattern
       List *L = n->as<List>();
+
+      recurse(L->getType());
+      ss << " ";
+
       bool is_cstring = false;
       std::string c_string;
       for (size_t i = 0; i < L->getItems().size(); i++) {
@@ -306,7 +316,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       break;
     }
     case QIR_NODE_IDENT: {
-      ss << n->as<Ident>()->getName();
+      recurse(n->as<Ident>()->getType());
+      ss << " " << n->as<Ident>()->getName();
       break;
     }
     case QIR_NODE_EXTERN: {
@@ -318,8 +329,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
     }
     case QIR_NODE_LOCAL: {
       ss << "local ";
-      recurse(n->as<Local>()->getType());
-      ss << " ";
       ss << n->as<Local>()->getName();
       if (n->as<Local>()->getValue()->isType()) {
       } else {
@@ -502,11 +511,59 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
       break;
     }
     case QIR_NODE_STRUCT_TY: {
-      ss << "%" << n->as<StructTy>()->getUniqId();
+      uint64_t type_id = n->as<StructTy>()->getUniqId();
+      if (!state.types.contains(type_id)) {
+        typedefs << "%" << type_id << " = struct {";
+        state.indent++;
+        indent(typedefs, state);
+        for (auto it = n->as<StructTy>()->getFields().begin();
+             it != n->as<StructTy>()->getFields().end(); ++it) {
+          if ((*it)->getKind() == QIR_NODE_STRUCT_TY || (*it)->getKind() == QIR_NODE_UNION_TY) {
+            typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
+          } else {
+            recurse_ex(*it, typedefs);
+          }
+          typedefs << ",";
+
+          if (std::next(it) != n->as<StructTy>()->getFields().end()) {
+            indent(typedefs, state);
+          }
+        }
+        state.indent--;
+        indent(typedefs, state);
+        typedefs << "}\n";
+        state.types.insert(type_id);
+      }
+
+      ss << "%" << type_id;
       break;
     }
     case QIR_NODE_UNION_TY: {
-      ss << "%" << n->as<UnionTy>()->getUniqId();
+      uint64_t type_id = n->as<UnionTy>()->getUniqId();
+      if (!state.types.contains(type_id)) {
+        typedefs << "%" << type_id << " = union {";
+        state.indent++;
+        indent(typedefs, state);
+        for (auto it = n->as<UnionTy>()->getFields().begin();
+             it != n->as<UnionTy>()->getFields().end(); ++it) {
+          if ((*it)->getKind() == QIR_NODE_STRUCT_TY || (*it)->getKind() == QIR_NODE_UNION_TY) {
+            typedefs << "%" << (*it)->as<StructTy>()->getUniqId();
+          } else {
+            recurse_ex(*it, typedefs);
+          }
+          typedefs << ",";
+
+          if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
+            indent(typedefs, state);
+          }
+        }
+        state.indent--;
+        indent(typedefs, state);
+        typedefs << "}\n";
+        state.types.insert(type_id);
+      }
+
+      ss << "%" << type_id;
       break;
     }
     case QIR_NODE_ARRAY_TY: {
@@ -547,7 +604,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, ConvState &state
 }
 
 static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
-  ConvState state = {0, indent_size, minify};
+  ConvState state(indent_size, minify);
   qmodule_t *mod = node->getModule();
 
   if (!minify) {
@@ -595,94 +652,134 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
   bool is_cylic = !node->is_acyclic();
 #endif
 
-  {
-    std::unordered_set<uint64_t> node_ids;
+  //   {
+  //     std::unordered_set<uint64_t> node_ids;
 
-    auto cb = [&](Expr *, Expr **_cur) -> IterOp {
-      Expr *n = *_cur;
+  //     auto cb = [&](Expr *, Expr **_cur) -> IterOp {
+  //       Expr *n = *_cur;
 
-      switch (n->getKind()) {
-        case QIR_NODE_STRUCT_TY: {
-          uint64_t type_id = n->getType()->getUniqId();
-          if (node_ids.contains(type_id)) {
-            break;
-          }
-          node_ids.insert(type_id);
-          ss << "%" << type_id << " = struct {";
+  //       switch (n->getKind()) {
+  //         case QIR_NODE_STRUCT_TY: {
+  //           uint64_t type_id = n->getType()->getUniqId();
+  //           if (node_ids.contains(type_id)) {
+  //             break;
+  //           }
+  //           node_ids.insert(type_id);
+  //           ss << "%" << type_id << " = struct {";
 
-          state.indent++;
-          indent(ss, state);
-          for (auto it = n->as<StructTy>()->getFields().begin();
-               it != n->as<StructTy>()->getFields().end(); ++it) {
-            serialize_recurse(*it, ss, state
-#if !defined(NDEBUG)
-                              ,
-                              v, is_cylic
-#endif
-            );
-            ss << ",";
+  //           state.indent++;
+  //           indent(ss, state);
+  //           for (auto it = n->as<StructTy>()->getFields().begin();
+  //                it != n->as<StructTy>()->getFields().end(); ++it) {
+  //             serialize_recurse(*it, ss, state
+  // #if !defined(NDEBUG)
+  //                               ,
+  //                               v, is_cylic
+  // #endif
+  //             );
+  //             ss << ",";
 
-            if (std::next(it) != n->as<StructTy>()->getFields().end()) {
-              indent(ss, state);
-            }
-          }
-          state.indent--;
-          indent(ss, state);
-          ss << "}\n";
-          break;
-        }
+  //             if (std::next(it) != n->as<StructTy>()->getFields().end()) {
+  //               indent(ss, state);
+  //             }
+  //           }
+  //           state.indent--;
+  //           indent(ss, state);
+  //           ss << "}\n";
+  //           break;
+  //         }
 
-        case QIR_NODE_UNION_TY: {
-          uint64_t type_id = n->getType()->getUniqId();
-          if (node_ids.contains(type_id)) {
-            break;
-          }
-          node_ids.insert(type_id);
-          ss << "%" << type_id << " = union {";
-          state.indent++;
-          indent(ss, state);
-          for (auto it = n->as<UnionTy>()->getFields().begin();
-               it != n->as<UnionTy>()->getFields().end(); ++it) {
-            serialize_recurse(*it, ss, state
-#if !defined(NDEBUG)
-                              ,
-                              v, is_cylic
-#endif
-            );
-            ss << ",";
+  //         case QIR_NODE_UNION_TY: {
+  //           uint64_t type_id = n->getType()->getUniqId();
+  //           if (node_ids.contains(type_id)) {
+  //             break;
+  //           }
+  //           node_ids.insert(type_id);
+  //           ss << "%" << type_id << " = union {";
+  //           state.indent++;
+  //           indent(ss, state);
+  //           for (auto it = n->as<UnionTy>()->getFields().begin();
+  //                it != n->as<UnionTy>()->getFields().end(); ++it) {
+  //             serialize_recurse(*it, ss, state
+  // #if !defined(NDEBUG)
+  //                               ,
+  //                               v, is_cylic
+  // #endif
+  //             );
+  //             ss << ",";
 
-            if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
-              indent(ss, state);
-            }
-          }
-          state.indent--;
-          indent(ss, state);
-          ss << "}\n";
-          break;
-        }
+  //             if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
+  //               indent(ss, state);
+  //             }
+  //           }
+  //           state.indent--;
+  //           indent(ss, state);
+  //           ss << "}\n";
+  //           break;
+  //         }
 
-        default: {
-          break;
-        }
-      }
+  //         default: {
+  //           break;
+  //         }
+  //       }
 
-      return IterOp::Proceed;
-    };
+  //       return IterOp::Proceed;
+  //     };
 
-    iterate<dfs_pre>(node, cb);
+  //     iterate<dfs_pre>(node, cb);
 
-    if (node_ids.size() > 0) {
-      ss << "\n";
-    }
+  //     if (node_ids.size() > 0) {
+  //       ss << "\n";
+  //     }
+  //   }
+
+  // std::stringstream body, typedefs;
+  // FILE *body = tmpfile();
+  char *body_content = NULL, *typedef_content = NULL;
+  size_t body_content_size = 0, typedef_content_size = 0;
+  FILE *body = open_memstream(&body_content, &body_content_size);
+  if (!body) {
+    return false;
+  }
+  FILE *typedefs = open_memstream(&typedef_content, &typedef_content_size);
+  if (!typedefs) {
+    return false;
   }
 
-  /* Serialize the AST recursively */
-  return serialize_recurse(node, ss, state
+  try {
+    /* Serialize the AST recursively */
+    bool result = serialize_recurse(node, *body, *typedefs, state
 #if !defined(NDEBUG)
-                           ,
-                           v, is_cylic
+                                    ,
+                                    v, is_cylic
 #endif
-  );
+    );
+
+    if (!result) {
+      fclose(typedefs);
+      fclose(body);
+      free(body_content);
+      free(typedef_content);
+      return false;
+    }
+
+    fclose(typedefs);
+    fclose(body);
+
+    fwrite(typedef_content, 1, typedef_content_size, &ss);
+    fwrite(body_content, 1, body_content_size, &ss);
+
+    free(body_content);
+    free(typedef_content);
+
+    return true;
+  } catch (...) {
+    fclose(typedefs);
+    fclose(body);
+    free(body_content);
+    free(typedef_content);
+    return false;
+  }
 }
 
 static bool raw_deflate(const uint8_t *in, size_t in_size, FILE &out) {
