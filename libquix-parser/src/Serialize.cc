@@ -201,7 +201,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       break;
     }
     case QAST_NODE_TEREXPR: {
-      OBJECT_BEGIN("TExpr");
+      OBJECT_BEGIN("TerExpr");
       OBJECT_SUB(n->as<TernaryExpr>()->get_cond());
       OBJECT_SUB(n->as<TernaryExpr>()->get_lhs());
       OBJECT_SUB(n->as<TernaryExpr>()->get_rhs());
