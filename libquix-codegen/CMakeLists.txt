@@ -51,6 +51,8 @@ SET(BUILD_FLAGS_COMMON -g
                        -Wno-error=unused-but-set-variable
                        -Wno-unused-parameter
                        -D__QUIX_IMPL__
+                       -fno-rtti
+                       -fno-exceptions
                        )
 SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DCODEGEN_ID=${CODEGEN_ID})
 SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 

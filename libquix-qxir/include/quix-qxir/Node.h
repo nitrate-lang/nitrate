@@ -84,6 +84,7 @@ qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 #include <string>
 #include <variant>
 #include <vector>
+#include <charconv>
 
 namespace qxir {
   class ArenaAllocatorImpl {
@@ -168,6 +169,106 @@ namespace qxir {
     uint32_t getKindSize() const noexcept;
     qxir_ty_t getKind() const noexcept { return m_node_type; }
     const char *getKindName() const noexcept;
+
+    template <typename T>
+    constexpr static const char *getKindName() noexcept {
+      if constexpr (std::is_same_v<T, BinExpr>) {
+        return "BinExpr";
+      } else if constexpr (std::is_same_v<T, UnExpr>) {
+        return "UnExpr";
+      } else if constexpr (std::is_same_v<T, PostUnExpr>) {
+        return "PostUnExpr";
+      } else if constexpr (std::is_same_v<T, Int>) {
+        return "Int";
+      } else if constexpr (std::is_same_v<T, Float>) {
+        return "Float";
+      } else if constexpr (std::is_same_v<T, List>) {
+        return "List";
+      } else if constexpr (std::is_same_v<T, Call>) {
+        return "Call";
+      } else if constexpr (std::is_same_v<T, Seq>) {
+        return "Seq";
+      } else if constexpr (std::is_same_v<T, Index>) {
+        return "Index";
+      } else if constexpr (std::is_same_v<T, Ident>) {
+        return "Ident";
+      } else if constexpr (std::is_same_v<T, Extern>) {
+        return "Extern";
+      } else if constexpr (std::is_same_v<T, Local>) {
+        return "Local";
+      } else if constexpr (std::is_same_v<T, Ret>) {
+        return "Ret";
+      } else if constexpr (std::is_same_v<T, Brk>) {
+        return "Brk";
+      } else if constexpr (std::is_same_v<T, Cont>) {
+        return "Cont";
+      } else if constexpr (std::is_same_v<T, If>) {
+        return "If";
+      } else if constexpr (std::is_same_v<T, While>) {
+        return "While";
+      } else if constexpr (std::is_same_v<T, For>) {
+        return "For";
+      } else if constexpr (std::is_same_v<T, Form>) {
+        return "Form";
+      } else if constexpr (std::is_same_v<T, Case>) {
+        return "Case";
+      } else if constexpr (std::is_same_v<T, Switch>) {
+        return "Switch";
+      } else if constexpr (std::is_same_v<T, Fn>) {
+        return "Fn";
+      } else if constexpr (std::is_same_v<T, Asm>) {
+        return "Asm";
+      } else if constexpr (std::is_same_v<T, U1Ty>) {
+        return "U1Ty";
+      } else if constexpr (std::is_same_v<T, U8Ty>) {
+        return "U8Ty";
+      } else if constexpr (std::is_same_v<T, U16Ty>) {
+        return "U16Ty";
+      } else if constexpr (std::is_same_v<T, U32Ty>) {
+        return "U32Ty";
+      } else if constexpr (std::is_same_v<T, U64Ty>) {
+        return "U64Ty";
+      } else if constexpr (std::is_same_v<T, U128Ty>) {
+        return "U128Ty";
+      } else if constexpr (std::is_same_v<T, I8Ty>) {
+        return "I8Ty";
+      } else if constexpr (std::is_same_v<T, I16Ty>) {
+        return "I16Ty";
+      } else if constexpr (std::is_same_v<T, I32Ty>) {
+        return "I32Ty";
+      } else if constexpr (std::is_same_v<T, I64Ty>) {
+        return "I64Ty";
+      } else if constexpr (std::is_same_v<T, I128Ty>) {
+        return "I128Ty";
+      } else if constexpr (std::is_same_v<T, F16Ty>) {
+        return "F16Ty";
+      } else if constexpr (std::is_same_v<T, F32Ty>) {
+        return "F32Ty";
+      } else if constexpr (std::is_same_v<T, F64Ty>) {
+        return "F64Ty";
+      } else if constexpr (std::is_same_v<T, F128Ty>) {
+        return "F128Ty";
+      } else if constexpr (std::is_same_v<T, VoidTy>) {
+        return "VoidTy";
+      } else if constexpr (std::is_same_v<T, PtrTy>) {
+        return "PtrTy";
+      } else if constexpr (std::is_same_v<T, OpaqueTy>) {
+        return "OpaqueTy";
+      } else if constexpr (std::is_same_v<T, StructTy>) {
+        return "StructTy";
+      } else if constexpr (std::is_same_v<T, UnionTy>) {
+        return "UnionTy";
+      } else if constexpr (std::is_same_v<T, ArrayTy>) {
+        return "ArrayTy";
+      } else if constexpr (std::is_same_v<T, FnTy>) {
+        return "FnTy";
+      } else if constexpr (std::is_same_v<T, Tmp>) {
+        return "Tmp";
+      } else {
+        static_assert(!std::is_same_v<T, T>,
+                      "The requested type target is not supported by this function.");
+      }
+    }
 
     bool isType() const noexcept;
     inline bool isConstExpr() const noexcept { return m_constexpr; }
@@ -408,7 +509,7 @@ namespace qxir {
 
 #ifndef NDEBUG
     cast_panic:
-      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(), typeid(T).name());
+      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(), Expr::getKindName<T>());
 #endif
     }
 
@@ -1492,11 +1593,13 @@ namespace qxir {
     if constexpr (IS_T(std::string)) {
       return r->as<Int>()->getValue();
     } else if constexpr (IS_T(uint64_t)) {
-      try {
-        return std::stoull(r->as<Int>()->getValue());
-      } catch (const std::exception &e) {
-        return std::nullopt;
+      uint64_t val;
+      auto data = r->as<Int>()->getValue();
+      if (std::from_chars(data.data(), data.data() + data.size(), val).ec == std::errc()) {
+        return val;
       }
+
+      return std::nullopt;
     }
 
     return std::nullopt;

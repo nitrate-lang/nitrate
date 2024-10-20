@@ -31,3 +31,4 @@
 -I
 .build/debug/_deps/googletest-src/googletest/include
 -D__QUIX_IMPL__
+-DLLVM_SUUPORT_ALL_TARGETS

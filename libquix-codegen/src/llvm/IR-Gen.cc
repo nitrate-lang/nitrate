@@ -29,15 +29,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <llvm-14/llvm/IR/Constant.h>
-#include <llvm-14/llvm/IR/GlobalVariable.h>
 #define QXIR_USE_CPP_API
 
 #include <core/LibMacro.h>
 #include <llvm-14/llvm/IR/BasicBlock.h>
+#include <llvm-14/llvm/IR/Constant.h>
 #include <llvm-14/llvm/IR/DerivedTypes.h>
 #include <llvm-14/llvm/IR/Function.h>
 #include <llvm-14/llvm/IR/GlobalValue.h>
+#include <llvm-14/llvm/IR/GlobalVariable.h>
 #include <llvm-14/llvm/IR/Instructions.h>
 #include <llvm-14/llvm/IR/Type.h>
 #include <llvm-14/llvm/IR/Value.h>
@@ -70,22 +70,25 @@
 #include <quix-core/Error.h>
 #include <quix-qxir/Module.h>
 #include <quix-qxir/Node.h>
+#include <quix-qxir/TypeDecl.h>
 #include <sys/types.h>
 
 #include <charconv>
 #include <cstdint>
-#include <exception>
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <stack>
-#include <stdexcept>
 #include <streambuf>
 #include <unordered_map>
 
-#include "quix-qxir/TypeDecl.h"
-
 #define debug(...) std::cerr << "[debug]: ln " << __LINE__ << ": " << __VA_ARGS__ << std::endl
+
+/// HACK: Fix linker error with c++ boost.
+void boost::throw_exception(std::exception const &m) {
+  debug("boost::throw_exception: " << m.what());
+  std::terminate();
+}
 
 class OStreamWriter : public std::streambuf {
   FILE *m_file;
@@ -158,62 +161,50 @@ public:
   }
 };
 
-class ConvError : public std::runtime_error {
-public:
-  ConvError(const std::string &msg) : std::runtime_error(msg) {}
-};
-
 typedef std::function<bool(qmodule_t *, qcode_conf_t *, std::ostream &err,
                            llvm::raw_pwrite_stream &out)>
     qcode_adapter_fn;
 
 static bool qcode_adapter(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE *out,
                           qcode_adapter_fn impl) {
-  try {
-    std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
+  std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 
-    {
-      /* If the error stream is provided, use it. Otherwise, discard the output. */
-      if (err) {
-        err_stream_buf = std::make_unique<OStreamWriter>(err);
-      } else {
-        err_stream_buf = std::make_unique<OStreamDiscard>();
-      }
-
-      /* If the output stream is provided, use it. Otherwise, discard the output. */
-      if (out) {
-        out_stream_buf = std::make_unique<OStreamWriter>(out);
-      } else {
-        out_stream_buf = std::make_unique<OStreamDiscard>();
-      }
+  {
+    /* If the error stream is provided, use it. Otherwise, discard the output. */
+    if (err) {
+      err_stream_buf = std::make_unique<OStreamWriter>(err);
+    } else {
+      err_stream_buf = std::make_unique<OStreamDiscard>();
     }
 
-    std::ostream err_stream(err_stream_buf.get());
-    std::ostream out_stream(out_stream_buf.get());
-
-    {
-      my_pwrite_ostream llvm_adapt(out_stream);
-      if (!impl(module, conf, err_stream, llvm_adapt)) {
-        err_stream.flush();
-        out_stream.flush();
-        err &&fflush(err);
-        out &&fflush(out);
-        return false;
-      }
+    /* If the output stream is provided, use it. Otherwise, discard the output. */
+    if (out) {
+      out_stream_buf = std::make_unique<OStreamWriter>(out);
+    } else {
+      out_stream_buf = std::make_unique<OStreamDiscard>();
     }
-
-    err_stream.flush();
-    out_stream.flush();
-    err &&fflush(err);
-    out &&fflush(out);
-
-    return true;
-  } catch (std::exception &e) {
-    fprintf(err, "%s", e.what());
-    err &&fflush(err);
-    out &&fflush(out);
-    return false;
   }
+
+  std::ostream err_stream(err_stream_buf.get());
+  std::ostream out_stream(out_stream_buf.get());
+
+  {
+    my_pwrite_ostream llvm_adapt(out_stream);
+    if (!impl(module, conf, err_stream, llvm_adapt)) {
+      err_stream.flush();
+      out_stream.flush();
+      err &&fflush(err);
+      out &&fflush(out);
+      return false;
+    }
+  }
+
+  err_stream.flush();
+  out_stream.flush();
+  err &&fflush(err);
+  out &&fflush(out);
+
+  return true;
 }
 
 static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *module,
@@ -632,7 +623,8 @@ auto V(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Expr *N) -> val_t {
     }
 
     default: {
-      throw ConvError("Expected an expression, but got: " + std::string(N->getKindName()));
+      debug("Expected an expression, but got: " << N->getKindName());
+      return std::nullopt;
     }
   }
 
@@ -758,7 +750,8 @@ auto T(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Expr *N) -> ty_t {
     }
 
     default: {
-      throw ConvError("Expected a type, but got: " + std::string(N->getKindName()));
+      debug("Expected a type, but got: " << N->getKindName());
+      return std::nullopt;
     }
   }
 
@@ -1492,7 +1485,11 @@ static val_t QIR_NODE_INT_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::In
         lit_istr.remove_prefix(1);
       }
 
-      R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(128, lit128));
+      if (lit128 > UINT64_MAX) {
+        R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(128, lit128));
+      } else {
+        R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(64, lit128));
+      }
     }
   }
 
