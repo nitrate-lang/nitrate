@@ -142,34 +142,17 @@ std::string_view quix_code_prefix = R"(
   if semi.ty ~= 'sym' or semi.v ~= ';' then
     quix.abort('Expected semicolon after module name');
   end
-  if name.ty == 'str' then
-    local content = quix.fetch(name.v);
-    if content == nil then
-      quix.abort('Failed to fetch module: ', quix.errno);
-    end
-    quix.debug(string.format('Fetched module: %s (%d bytes)', name.v, #content));
-    return content;
+  
+  if name.ty ~= 'str' and name.ty ~= 'name' then
+    quix.abort('Expected string literal or identifier after @import.');
   end
-  if name.ty ~= 'name' then
-    quix.abort('Expected module name after @import.');
-  end
+
   name = name.v;
 
-  -- Begin processing the import
-  quix.debug('Processing import of module: ', name);
-
-  -- Create target URL
-  name = string.gsub(name, '::', '/');
-  name = string.format('http://localhost:%d/api/v1/fetch?job=%s&name=%s.qh',
-    tonumber(quix.get('this.srvport')),
-    quix.get('this.job'),
-    name);
-
-  -- Fetch the module
-  quix.debug('Attempting to open module: ', name);
+  quix.debug('Attempting to import module: ', name);
   local content = quix.fetch(name);
   if content == nil then
-    quix.abort('Failed to fetch module: ', quix.errno);
+    quix.abort('Failed to import module: ', quix.errno);
   end
 
   quix.debug(string.format('Fetched module: %s (%d bytes)', name, #content));

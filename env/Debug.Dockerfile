@@ -13,8 +13,7 @@ RUN apt update --fix-missing && apt upgrade -y
 RUN apt install -y cmake make clang llvm-14 upx gnupg2 dpkg-dev
 RUN apt install -y  libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev \
                     rapidjson-dev libdeflate-dev libreadline-dev libclang-dev      \
-                    libclang-cpp-dev nlohmann-json3-dev libcurl4-openssl-dev       \
-                    libgoogle-glog-dev
+                    libclang-cpp-dev nlohmann-json3-dev libgoogle-glog-dev
 RUN apt purge -y gcc g++
 RUN apt autoremove -y
 
@@ -30,14 +29,6 @@ RUN echo "deb-src https://la.mirrors.clouvider.net/ubuntu noble-backports main r
 RUN echo "deb-src http://security.ubuntu.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list
 RUN apt-key adv --recv-keys --keyserver keyserver.ubuntu.com A6616109451BBBF2 
 RUN apt update
-
-########################## Install libcurlpp ###########################
-WORKDIR /opt
-RUN apt source -y libcurlpp-dev
-WORKDIR /opt/curlpp-0.8.1
-RUN cmake -S . -B .build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_CXX_FLAGS="-fPIC" || exit 1
-RUN cmake --build .build -j`nproc` || exit 1
-RUN cmake --install .build || exit 1
 
 ########################## Cleanup container ##########################
 WORKDIR /

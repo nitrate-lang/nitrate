@@ -34,7 +34,6 @@
 #include <quix-prep/Lib.h>
 
 #include <atomic>
-#include <curlpp/cURLpp.hpp>
 
 #include "core/LibMacro.h"
 
@@ -45,15 +44,9 @@
 
 static std::atomic<size_t> qprep_lib_ref_count = 0;
 
-bool do_init() {
-  cURLpp::initialize();
-  return true;
-}
+bool do_init() { return true; }
 
-void do_deinit() {
-  cURLpp::terminate();
-  return;
-}
+void do_deinit() { return; }
 
 LIB_EXPORT bool qprep_lib_init() {
   if (qprep_lib_ref_count++ > 1) {

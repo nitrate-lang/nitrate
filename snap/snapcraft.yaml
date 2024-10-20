@@ -22,7 +22,6 @@ parts:
       - libyaml-cpp-dev
       - libhpdf-dev
       - libssl-dev
-      - libcurlpp-dev
       - llvm-14-dev
       - libclang-14-dev
       - libclang-cpp14-dev
@@ -32,7 +31,6 @@ parts:
       - libreadline-dev
     stage-packages:
       - git
-      - libcurlpp0
       - libdeflate0
       - libllvm14
       - libclang-cpp14

@@ -49,7 +49,7 @@ const std::vector<QSysCall> qcall::qsyscalls = {
     {"get", 0x0080, sys_get}, /* Get a value from the environment */
     {"set", 0x0081, sys_set}, /* Set a value in the environment */
 
-    {"fetch", 0x0082, sys_fetch}, /* Fetch arbitrary data by URL using curl */
+    {"fetch", 0x0082, sys_fetch}, /* Import module */
 
     {"random", 0x00A0, sys_random}, /* Get a cryptographic random number */
 

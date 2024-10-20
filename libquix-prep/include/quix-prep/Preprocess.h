@@ -52,6 +52,23 @@ extern "C" {
  */
 qlex_t *qprep_new(FILE *file, const char *filename, qcore_env_t env);
 
+/**
+ * @brief Fetch source code for a module by import name.
+ *
+ * @param ctx Preprocessor context.
+ * @param import_name Import name of the module.
+ * @param data Pointer to the source code.
+ * @param size Size of the source code.
+ * @param any User-defined data.
+ *
+ * @return True if the module was fetched successfully, false otherwise.
+ * @note This function is thread-safe.
+ */
+typedef bool (*qprep_fetch_module_t)(qlex_t *ctx, const char *import_name, char **data,
+                                     size_t *size, uintptr_t any);
+
+void qprep_set_fetch_module(qlex_t *ctx, qprep_fetch_module_t fetch_fn, uintptr_t any);
+
 #ifdef __cplusplus
 }
 #endif

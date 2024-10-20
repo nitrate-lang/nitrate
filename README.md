@@ -66,7 +66,7 @@ cd quix
 # libpolly-14-dev is not necessary in all distributions. If it does not exist in your package manager, try building without it.
 # If libPolly will be in issue in your build it will manifest as a linker error.
 
-sudo apt install -y clang cmake make llvm-14 upx libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev rapidjson-dev libdeflate-dev libreadline-dev libcurlpp-dev libclang-dev libclang-cpp-dev nlohmann-json3-dev libpolly-14-dev
+sudo apt install -y clang cmake make llvm-14 upx libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev rapidjson-dev libdeflate-dev libreadline-dev libclang-dev libclang-cpp-dev nlohmann-json3-dev libpolly-14-dev
 
 # Build the toolchain in release mode
 cmake -S . -B .build/release -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=./build -DCMAKE_CXX_COMPILER=/usr/bin/clang++

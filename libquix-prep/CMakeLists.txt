@@ -52,7 +52,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
                                                           ${CMAKE_SOURCE_DIR}/libquix-lexer/include
                                                           ${CMAKE_SOURCE_DIR}/libquix-prep/deps)
   target_compile_options(quix-prep PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-prep PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} curlpp curl crypto)
+  target_link_libraries(quix-prep PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} crypto)
   add_dependencies(quix-prep quix-core quix-lexer quixlua)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
@@ -61,7 +61,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
                                                                  ${CMAKE_SOURCE_DIR}/libquix-lexer/include
                                                                  ${CMAKE_SOURCE_DIR}/libquix-prep/deps)
   target_compile_options(quix-prep-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} curlpp curl crypto)
+  target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} crypto)
   add_dependencies(quix-prep-shared quix-core quix-lexer quixlua)
   set_target_properties(quix-prep-shared PROPERTIES OUTPUT_NAME quix-prep)
 
@@ -75,7 +75,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
                                                           ${CMAKE_SOURCE_DIR}/libquix-prep/deps)
   target_compile_options(quix-prep PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden)
   target_link_options(quix-prep PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  target_link_libraries(quix-prep PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} curlpp curl crypto)
+  target_link_libraries(quix-prep PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} crypto)
   add_dependencies(quix-prep quix-core quix-lexer quixlua)
 
   #================== CREATE SHAREDLIB RELEASE BUILD ================
@@ -85,7 +85,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
                                                                  ${CMAKE_SOURCE_DIR}/libquix-prep/deps)
   target_compile_options(quix-prep-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
   target_link_options(quix-prep-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
-  target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} curlpp curl crypto)
+  target_link_libraries(quix-prep-shared PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} crypto)
   add_dependencies(quix-prep-shared quix-core quix-lexer quixlua)
   set_target_properties(quix-prep-shared PROPERTIES OUTPUT_NAME quix-prep)
 

@@ -29,73 +29,87 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <quix-core/Env.h>
+
+#include <core/Preprocess.hh>
+#include <cstddef>
 #include <qcall/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-#include <quix-core/Env.h>
-
-#include <atomic>
-#include <curlpp/Easy.hpp>
-#include <curlpp/Options.hpp>
-#include <curlpp/cURLpp.hpp>
-#include <list>
-#include <sstream>
+#include <algorithm>
+#include <optional>
+#include <regex>
 #include <string>
 
-static std::atomic<uint64_t> sys_fetch_request_count = 0;
+static bool is_valid_import_name(const std::string &name) {
+  if (name.empty()) {
+    return false;
+  }
 
-int qcall::sys_fetch(lua_State* L) {
+  if (std::any_of(name.begin(), name.end(), [](char c) { return c & 0x80; })) {
+    return false;
+  }
+
+  std::regex re(R"(^[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*$)");
+  return std::regex_match(name, re);
+}
+
+static void canonicalize_import_name(std::string &name) {
+  // Don't assume that filesystems are case-sensitive.
+  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+}
+
+static std::optional<std::string> fetch_module_data(qprep_impl_t *obj, const char *name) {
+  if (!obj->m_fetch_module.first) {
+    return std::nullopt;
+  }
+
+  char *module_data = NULL;
+  size_t module_size = 0;
+
+  // Always put off to tomorrow what can be done today.
+  if (!obj->m_fetch_module.first(obj, name, &module_data, &module_size,
+                                 obj->m_fetch_module.second)) {
+    return std::nullopt;
+  }
+
+  std::string data(module_data, module_size);
+  free(module_data);
+
+  return data;
+}
+
+int qcall::sys_fetch(lua_State *L) {
   /**
    * @brief Download a file.
    */
 
+  qprep_impl_t *obj = get_engine();
+
   int nargs = lua_gettop(L);
-  if (nargs < 1) {
-    return luaL_error(L, "expected at least 1 argument, got %d", nargs);
+  if (nargs != 1) {
+    return luaL_error(L, "expected 1 argument, got %d", nargs);
   }
 
   if (!lua_isstring(L, 1)) {
     return luaL_error(L, "expected string, got %s", lua_typename(L, lua_type(L, 1)));
   }
 
-  bool bypass_cache = false;
-  if (nargs > 1) {
-    if (!lua_isboolean(L, 2)) {
-      return luaL_error(L, "expected boolean, got %s", lua_typename(L, lua_type(L, 2)));
-    }
+  std::string import_name = lua_tostring(L, 1);
 
-    bypass_cache = lua_toboolean(L, 2);
+  if (!is_valid_import_name(import_name)) {
+    return luaL_error(L, "invalid import name");
   }
-  (void)bypass_cache;
 
-  const char* unsafe_uri = lua_tostring(L, 1);
+  canonicalize_import_name(import_name);
 
-  try {
-    std::stringstream result;
-    curlpp::Easy request;
-
-    request.setOpt(new curlpp::options::Url(unsafe_uri));
-    request.setOpt(new curlpp::options::FollowLocation(true));
-    request.setOpt(new curlpp::options::WriteStream(&result));
-
-    std::list<std::string> header = {
-        "User-Agent: QUIX Compiler Suite",
-        "QUIX-Request-Id: " + std::to_string(++sys_fetch_request_count),
-        "QUIX-Session-Id: " + std::string(qcore_env_get("this.job")),
-    };
-    request.setOpt(new curlpp::options::HttpHeader(header));
-
-    request.perform();
-
-    lua_pushstring(L, result.str().c_str());
-
+  if (auto data = fetch_module_data(obj, import_name.c_str())) {
+    lua_pushstring(L, data->c_str());
     return 1;
-  } catch (curlpp::RuntimeError& e) {
-    return luaL_error(L, "curlpp::RuntimeError: %s", e.what());
-  } catch (curlpp::LogicError& e) {
-    return luaL_error(L, "curlpp::LogicError: %s", e.what());
+  } else {
+    return luaL_error(L, "failed to fetch module");
   }
 }

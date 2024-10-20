@@ -31,8 +31,10 @@
 
 #include <quix-core/Env.h>
 #include <quix-lexer/Token.h>
+#include <quix-prep/Preprocess.h>
 
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <quix-lexer/Base.hh>
 #include <string_view>
@@ -55,7 +57,7 @@ extern std::string_view quix_code_prefix;
 
 struct qprep_impl_t final : public qlex_t {
   struct Core {
-    lua_State *L;
+    lua_State *L = nullptr;
     std::vector<DeferCallback> defer_callbacks;
     std::deque<qlex_tok_t> buffer;
 
@@ -63,8 +65,10 @@ struct qprep_impl_t final : public qlex_t {
   };
 
   std::shared_ptr<Core> m_core;
-  bool m_do_expanse;
-  size_t m_depth;
+  std::pair<qprep_fetch_module_t, uintptr_t> m_fetch_module;
+  std::mutex m_mutex;
+  bool m_do_expanse = true;
+  size_t m_depth = 0;
 
   virtual qlex_tok_t next_impl() override;
 
