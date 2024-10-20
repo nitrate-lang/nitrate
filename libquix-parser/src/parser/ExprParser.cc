@@ -149,7 +149,6 @@ static bool parse_fstring(qparse_t &job, FString **node, qlex_t *rd, size_t dept
    * @return true if it is okay to proceed, false otherwise
    */
 
-
   qlex_tok_t tok = qlex_next(rd);
   if (!tok.is(qText)) {
     syntax(tok, "Expected a string literal in F-string expression");
@@ -390,8 +389,15 @@ bool qparse::parser::parse_expr(qparse_t &job, qlex_t *rd, std::set<qlex_tok_t> 
             }
 
             Expr *expr = nullptr;
-            if (!parse_expr(job, rd, terminators, &expr, depth + 1) || !expr) {
+            auto terminators_copy = terminators;
+            terminators_copy.insert(qlex_tok_t(qPunc, qPuncRPar));
+            if (!parse_expr(job, rd, terminators_copy, &expr, depth + 1) || !expr) {
               syntax(tok, "Expected an expression in parentheses");
+              return false;
+            }
+
+            if (!qlex_next(rd).is<qPuncRPar>()) {
+              syntax(tok, "Expected ')' to close the parentheses");
               return false;
             }
 
