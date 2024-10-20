@@ -174,6 +174,9 @@ typedef enum qlex_key_t {
   qKRetv,       /* 'retv' */
   qKForm,       /* 'form' */
   qKForeach,    /* 'foreach' */
+  qKTry,        /* 'try' */
+  qKCatch,      /* 'catch' */
+  qKThrow,      /* 'throw' */
   qK__Asm__,    /* '__asm__' */
   qKVoid,       /* 'void' */
   qKUndef,      /* 'undef' */
