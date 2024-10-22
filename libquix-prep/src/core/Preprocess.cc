@@ -377,7 +377,7 @@ LIB_EXPORT qlex_t *qprep_new(FILE *file, const char *filename, qcore_env_t env) 
 }
 
 LIB_EXPORT void qprep_set_fetch_module(qlex_t *ctx, qprep_fetch_module_t fetch_fn, uintptr_t any) {
-  qprep_impl_t *obj = (qprep_impl_t *)ctx;
+  qprep_impl_t *obj = reinterpret_cast<qprep_impl_t *>(ctx);
   std::lock_guard<std::mutex> lock(obj->m_mutex);
 
   obj->m_fetch_module = {fetch_fn, any};

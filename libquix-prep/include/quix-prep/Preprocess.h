@@ -57,16 +57,25 @@ qlex_t *qprep_new(FILE *file, const char *filename, qcore_env_t env);
  *
  * @param ctx Preprocessor context.
  * @param import_name Import name of the module.
- * @param data Pointer to the source code.
- * @param size Size of the source code.
+ * @param[out] content malloc'd buffer containing the module source code.
+ * @param[out] content_size Size of the `content` buffer.
  * @param any User-defined data.
  *
  * @return True if the module was fetched successfully, false otherwise.
  * @note This function is thread-safe.
  */
-typedef bool (*qprep_fetch_module_t)(qlex_t *ctx, const char *import_name, char **data,
-                                     size_t *size, uintptr_t any);
+typedef bool (*qprep_fetch_module_t)(qlex_t *ctx, const char *import_name, char **content,
+                                     size_t *content_size, uintptr_t any);
 
+/**
+ * @brief Set the fetch module function for the preprocessor context.
+ *
+ * @param ctx Preprocessor context.
+ * @param fetch_fn Fetch module function.
+ * @param any User-defined data to pass to the fetch function.
+ *
+ * @note This function is thread-safe.
+ */
 void qprep_set_fetch_module(qlex_t *ctx, qprep_fetch_module_t fetch_fn, uintptr_t any);
 
 #ifdef __cplusplus
