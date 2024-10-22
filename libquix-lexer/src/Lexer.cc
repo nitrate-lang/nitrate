@@ -178,7 +178,6 @@ namespace qlex {
           {"==", qOpEq},
           {"!=", qOpNE},
           {"as", qOpAs},
-          {"is", qOpIs},
           {"in", qOpIn},
           {"sizeof", qOpSizeof},
           {"alignof", qOpAlignof},
@@ -193,7 +192,6 @@ namespace qlex {
   static const boost::bimap<std::string_view, qlex_op_t> word_operators =
       make_bimap<std::string_view, qlex_op_t>({
           {"as", qOpAs},
-          {"is", qOpIs},
           {"in", qOpIn},
           {"sizeof", qOpSizeof},
           {"alignof", qOpAlignof},

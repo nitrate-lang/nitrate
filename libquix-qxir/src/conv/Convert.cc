@@ -525,10 +525,6 @@ qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, 
       R = STD_BINOP(CastAs);
       break;
     }
-    case qOpIs: {
-      R = create_simple_call(s, "__detail::_is", {{"lhs", lhs}, {"rhs", rhs}});
-      break;
-    }
     case qOpIn: {
       auto methname = create_string_literal("has");
       auto method = qxir::create<qxir::Index>(rhs, methname);

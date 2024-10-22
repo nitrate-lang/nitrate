@@ -112,7 +112,6 @@ typedef enum qlex_op_t {
   qOpEq,          /* '==': Equal to operator */
   qOpNE,          /* '!=': Not equal to operator */
   qOpAs,          /* 'as': Type cast operator */
-  qOpIs,          /* 'is': Generic check operator */
   qOpIn,          /* 'in': Generic membership operator */
   qOpSizeof,      /* 'sizeof': Size of operator */
   qOpAlignof,     /* 'alignof': Alignment of operator */
