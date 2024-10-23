@@ -42,7 +42,7 @@ target_link_libraries(quix-parser-shared PUBLIC quix-core-shared quix-lexer-shar
 add_dependencies(quix-parser-shared quix-core-shared quix-lexer-shared)
 set_target_properties(quix-parser-shared PROPERTIES OUTPUT_NAME quix-parser)
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   add_subdirectory(tests)
   add_subdirectory(fuzzer)
 endif()

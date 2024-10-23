@@ -43,7 +43,7 @@ target_link_libraries(quix-qxir-shared PUBLIC quix-core-shared quix-parser-share
 set_target_properties(quix-qxir-shared PROPERTIES OUTPUT_NAME quix-qxir)
 add_dependencies(quix-qxir-shared quix-core-shared quix-parser-shared)
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   add_subdirectory(tests)
   add_subdirectory(fuzzer)
 endif()

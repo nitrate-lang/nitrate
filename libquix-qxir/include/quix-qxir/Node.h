@@ -74,6 +74,7 @@ qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
+#include <charconv>
 #include <cmath>
 #include <functional>
 #include <iostream>
@@ -84,7 +85,6 @@ qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 #include <string>
 #include <variant>
 #include <vector>
-#include <charconv>
 
 namespace qxir {
   class ArenaAllocatorImpl {

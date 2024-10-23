@@ -38,7 +38,7 @@ target_link_libraries(quix-lexer-shared PUBLIC quix-core-shared)
 set_target_properties(quix-lexer-shared PROPERTIES OUTPUT_NAME quix-lexer)
 add_dependencies(quix-lexer-shared quix-core-shared)
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   add_subdirectory(tests)
 endif()
 

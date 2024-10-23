@@ -43,23 +43,23 @@
 
 #include "LibMacro.h"
 
-#ifndef QUIX_ID
-#warning "QUIX_ID must be defined"
-#define QUIX_ID "?"
+#ifndef __TARGET_VERSION
+#warning "__TARGET_VERSION must be defined"
+#define __TARGET_VERSION "?"
 #endif
 
 extern "C" {
-__attribute__((visibility("default"))) bool quix_detail_is_init;
+__attribute__((visibility("default"))) bool quix_lib_ready;
 }
 
 static std::atomic<size_t> quix_lib_ref_count = 0;
 
 static bool do_init() {
-  quix_detail_is_init = true;
+  quix_lib_ready = true;
   return true;
 }
 
-static void do_deinit() { quix_detail_is_init = false; }
+static void do_deinit() { quix_lib_ready = false; }
 
 LIB_EXPORT bool quix_lib_init() {
   if (quix_lib_ref_count++ > 1) {
@@ -111,7 +111,7 @@ LIB_EXPORT void quix_deinit() {
 LIB_EXPORT const char* quix_lib_version() {
   static const char* version_string =
 
-      "[" QUIX_ID
+      "[" __TARGET_VERSION
       "] ["
 
 #if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \

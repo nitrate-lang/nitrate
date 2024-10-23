@@ -18,7 +18,7 @@ Dependency graph of the module pass system. Arrows indicate system dependencies.
 
 | Pass Identifier | Pass Name           | Summary                                                       | Implementation Notes                          |
 | --------------- | ------------------- | ------------------------------------------------------------- | --------------------------------------------- |
-| `ds-flatten`     | Function flattening | Flattens all nested functions within the module.              | Standalone (g4) deps [`g0`, `g1`, `g2`, `g3`] |
+| `ds-flatten`    | Function flattening | Flattens all nested functions within the module.              | Standalone (g4) deps [`g0`, `g1`, `g2`, `g3`] |
 | `tyinfer`       | Type inference      | Applies type annotations to all constructs within the module. | Standalone (g5) deps [`g0`, `g1`, `g2`]       |
 | `nm-premangle`  | Name Pre-mangling   | Adds some metadata to named constructs within the module.     | Standalone (g6) deps [`g0`, `g1`, `g2`, `g5`] |
 
