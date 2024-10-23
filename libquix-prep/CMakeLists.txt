@@ -29,7 +29,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type-c-linkage -D__TARGET_VERSION=\\\"undefined\\\"")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type-c-linkage -D__TARGET_VERSION=\\\"${__TARGET_VERSION}\\\"")
-  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map")
 else()
   message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE}")
 endif()
@@ -38,18 +37,18 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 add_library(quix-prep STATIC ${CXX_SOURCES})
 target_include_directories(quix-prep PUBLIC src "include"
-  ${CMAKE_SOURCE_DIR}/libquix-core/include
-  ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-  ${CMAKE_SOURCE_DIR}/libquix-prep/deps)
-target_link_libraries(quix-prep PRIVATE quix-core quix-lexer ${LIB_QUIXLUA} crypto)
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/deps)
+target_link_libraries(quix-prep PUBLIC quix-core quix-lexer ${LIB_QUIXLUA} crypto)
 add_dependencies(quix-prep quix-core quix-lexer quixlua)
 
 add_library(quix-prep-shared SHARED ${CXX_SOURCES})
 target_include_directories(quix-prep-shared PUBLIC src "include"
-  ${CMAKE_SOURCE_DIR}/libquix-core/include
-  ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-  ${CMAKE_SOURCE_DIR}/libquix-prep/deps)
-target_link_libraries(quix-prep-shared PRIVATE quix-core-shared quix-lexer-shared ${LIB_QUIXLUA} crypto)
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/deps)
+target_link_libraries(quix-prep-shared PUBLIC quix-core-shared quix-lexer-shared ${LIB_QUIXLUA} crypto)
 add_dependencies(quix-prep-shared quix-core-shared quix-lexer-shared quixlua)
 set_target_properties(quix-prep-shared PROPERTIES OUTPUT_NAME quix-prep)
 

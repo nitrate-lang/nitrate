@@ -1,7 +1,7 @@
 #include <quix-core/Classes.hh>
 #include <quix-prep/Classes.hh>
 
-__attribute__((visibility("default"))) extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data,
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data,
                                                                              size_t Size) {
   if (Size == 0) {
     return 0;

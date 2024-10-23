@@ -38,7 +38,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                         -Wno-error=overlength-strings
                                         -DQPKG_ID=${QPKG_ID}
                                        )
-    target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a
+    target_link_libraries(qpkg PUBLIC yaml-cpp libboost_filesystem.a
                                        quix-codegen
                                        quix-qxir quix-parser
                                        quix-lexer quix-prep quix-core)
@@ -73,7 +73,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                -fvisibility=hidden
                                                -fvisibility-inlines-hidden
                                                -DQPKG_LIBRARY)
-    target_link_libraries(qpkg-static PRIVATE yaml-cpp
+    target_link_libraries(qpkg-static PUBLIC yaml-cpp
                                               libboost_filesystem.a
                                               quix-codegen
                                               quix-qxir
@@ -114,7 +114,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                -fvisibility=hidden
                                                -fvisibility-inlines-hidden
                                                -DQPKG_LIBRARY)
-    target_link_libraries(qpkg-shared PRIVATE yaml-cpp
+    target_link_libraries(qpkg-shared PUBLIC yaml-cpp
                                               libboost_filesystem.a
                                               quix-codegen-shared
                                               quix-qxir-shared
@@ -151,7 +151,7 @@ else()
                                         -Wpedantic
                                         -Wno-error=overlength-strings
                                         -DQPKG_ID="undefined")
-    target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a 
+    target_link_libraries(qpkg PUBLIC yaml-cpp libboost_filesystem.a 
                                        quix-codegen
                                        quix-qxir quix-parser
                                        quix-lexer quix-prep quix-core)
@@ -186,7 +186,7 @@ else()
                                                -fvisibility=hidden
                                                -fvisibility-inlines-hidden
                                                -DQPKG_LIBRARY)
-    target_link_libraries(qpkg-static PRIVATE yaml-cpp
+    target_link_libraries(qpkg-static PUBLIC yaml-cpp
                                               libboost_filesystem.a
                                               quix-codegen
                                               quix-qxir
@@ -225,7 +225,7 @@ else()
                                                -fvisibility=hidden
                                                -fvisibility-inlines-hidden
                                                -DQPKG_LIBRARY)
-    target_link_libraries(qpkg-shared PRIVATE yaml-cpp
+    target_link_libraries(qpkg-shared PUBLIC yaml-cpp
                                               libboost_filesystem.a
                                               quix-codegen-shared
                                               quix-qxir-shared

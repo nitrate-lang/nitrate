@@ -4,6 +4,7 @@ project(quix-compiler-suite CXX)
 option(MEMORY_OVER_SPEED "Optimize for memory over speed" OFF)
 option(COVERAGE "Enable coverage" OFF)
 option(STRIP_OUTPUT "Strip output" OFF)
+option(BUILD_TESTING "Build tests" ON)
 
 if (BUILD_TESTING)
   enable_testing()
@@ -26,7 +27,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -pedantic -Werror \
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 if (STRIP_OUTPUT STREQUAL "ON")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -s")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s")
+  set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -s")
 endif()
 
 # Inject the optimization intent
@@ -91,9 +93,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
       target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
     endif()
   endforeach()
+endif()
 
+if (BUILD_TESTING)
   foreach(lib libquix-basic-lexer-fuzz libquix-prep-fuzzer libquix-qxir-fuzzer)
     target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
-    target_link_options(${lib} PRIVATE -fsanitize=fuzzer)
+    target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   endforeach()
 endif()

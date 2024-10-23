@@ -45,6 +45,8 @@
 #include <quix-lexer/Base.hh>
 #include <string_view>
 
+#include "LibMacro.h"
+
 extern "C" {
 #include <lua/lauxlib.h>
 #include <lua/lua.h>
@@ -179,7 +181,7 @@ public:
   bool should_stop() { return m_depth >= MAX_RECURSION_DEPTH; }
 };
 
-qlex_tok_t qprep_impl_t::next_impl() {
+CPP_EXPORT qlex_tok_t qprep_impl_t::next_impl() {
   qlex_tok_t x{};
 
   try {
@@ -362,7 +364,7 @@ qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned, qcor
   expand_raw(quix_code_prefix);
 }
 
-qprep_impl_t::~qprep_impl_t() {}
+CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
 
 ///=============================================================================
 

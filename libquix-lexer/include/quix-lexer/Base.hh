@@ -52,7 +52,7 @@
 #include <unordered_map>
 #endif
 
-struct qlex_t {
+struct __attribute__((visibility("default"))) qlex_t {
 private:
   ///============================================================================///
   /// BEGIN: PERFORMANCE HYPER PARAMETERS

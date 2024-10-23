@@ -55,7 +55,7 @@ typedef std::function<DeferOp(qprep_impl_t *obj, qlex_tok_t last)> DeferCallback
 
 extern std::string_view quix_code_prefix;
 
-struct qprep_impl_t final : public qlex_t {
+struct __attribute__((visibility("default"))) qprep_impl_t final : public qlex_t {
   struct Core {
     lua_State *L = nullptr;
     std::vector<DeferCallback> defer_callbacks;

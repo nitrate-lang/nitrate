@@ -66,31 +66,31 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
   #================== CREATE STATICLIB DEBUG BUILD ==================
   add_library(quix-codegen STATIC ${CXX_SOURCES})
   target_include_directories(quix-codegen PUBLIC src include
-    ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include)
   target_compile_options(quix-codegen PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-codegen PRIVATE quix-core)
+  target_link_libraries(quix-codegen PUBLIC quix-core)
   foreach(lib ${LLVM_LIBS})
-    target_link_libraries(quix-codegen PRIVATE ${lib})
+    target_link_libraries(quix-codegen PUBLIC ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
-  target_link_libraries(quix-codegen PRIVATE z tinfo)
+  target_link_libraries(quix-codegen PUBLIC z tinfo)
   add_dependencies(quix-codegen quix-core quix-qxir)
 
   #================== CREATE SHAREDLIB DEBUG BUILD ==================
   add_library(quix-codegen-shared SHARED ${CXX_SOURCES})
   target_include_directories(quix-codegen-shared PUBLIC src include
-    ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include)
   target_compile_options(quix-codegen-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
-  target_link_libraries(quix-codegen-shared PRIVATE quix-core)
+  target_link_libraries(quix-codegen-shared PUBLIC quix-core)
   foreach(lib ${LLVM_LIBS})
-    target_link_libraries(quix-codegen-shared PRIVATE ${lib})
+    target_link_libraries(quix-codegen-shared PUBLIC ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
-  target_link_libraries(quix-codegen PRIVATE z tinfo)
+  target_link_libraries(quix-codegen PUBLIC z tinfo)
   add_dependencies(quix-codegen-shared quix-core quix-qxir)
   set_target_properties(quix-codegen-shared PROPERTIES OUTPUT_NAME quix-codegen)
 
@@ -99,33 +99,33 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE STATICLIB RELEASE BUILD ================
   add_library(quix-codegen STATIC ${CXX_SOURCES})
   target_include_directories(quix-codegen PUBLIC src include 
-    ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include)
   target_compile_options(quix-codegen PRIVATE ${PROJECT_RELEASE_FLAGS})
   target_link_options(quix-codegen PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  target_link_libraries(quix-codegen PRIVATE quix-core)
+  target_link_libraries(quix-codegen PUBLIC quix-core)
   foreach(lib ${LLVM_LIBS})
-    target_link_libraries(quix-codegen PRIVATE ${lib})
+    target_link_libraries(quix-codegen PUBLIC ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
-  target_link_libraries(quix-codegen PRIVATE z tinfo)
+  target_link_libraries(quix-codegen PUBLIC z tinfo)
   add_dependencies(quix-codegen quix-core quix-qxir)
 
   #================== CREATE STATICLIB RELEASE BUILD ================
   add_library(quix-codegen-shared SHARED ${CXX_SOURCES})
   target_include_directories(quix-codegen-shared PUBLIC src include 
-    ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include)
   target_compile_options(quix-codegen-shared PRIVATE ${PROJECT_RELEASE_FLAGS})
   target_link_options(quix-codegen-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  target_link_libraries(quix-codegen-shared PRIVATE quix-core-shared)
+  target_link_libraries(quix-codegen-shared PUBLIC quix-core-shared)
   foreach(lib ${LLVM_LIBS})
-    target_link_libraries(quix-codegen-shared PRIVATE ${lib})
+    target_link_libraries(quix-codegen-shared PUBLIC ${lib})
     message(STATUS "Linking ${lib}")
   endforeach()
-  target_link_libraries(quix-codegen-shared PRIVATE z tinfo)
+  target_link_libraries(quix-codegen-shared PUBLIC z tinfo)
   add_dependencies(quix-codegen-shared quix-core-shared quix-qxir)
   set_target_properties(quix-codegen-shared PROPERTIES OUTPUT_NAME quix-codegen)
 endif()
