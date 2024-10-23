@@ -131,7 +131,7 @@ static bool check_out_stream_usable(FILE *stream, const char *name) {
 LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdata,
                         const char *const options[]) {
   /* This API will be used by mortals, protect them from themselves */
-  if (!quix_detail_is_init && !quix_lib_init()) {
+  if (!quix_lib_ready && !quix_lib_init()) {
     return false;
   }
 

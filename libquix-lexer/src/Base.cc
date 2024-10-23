@@ -436,7 +436,7 @@ LIB_EXPORT qlex_tok_t qlex_peek(qlex_t *self) {
 
 ///============================================================================///
 
-std::optional<qlex_size> qlex_t::loc2offset(qlex_loc_t loc) {
+CPP_EXPORT std::optional<qlex_size> qlex_t::loc2offset(qlex_loc_t loc) {
   if (m_tag_to_off.find(loc.tag) == m_tag_to_off.end()) [[unlikely]] {
     return std::nullopt;
   }
@@ -444,7 +444,7 @@ std::optional<qlex_size> qlex_t::loc2offset(qlex_loc_t loc) {
   return m_tag_to_off[loc.tag];
 }
 
-std::optional<std::pair<qlex_size, qlex_size>> qlex_t::loc2rowcol(qlex_loc_t loc) {
+CPP_EXPORT std::optional<std::pair<qlex_size, qlex_size>> qlex_t::loc2rowcol(qlex_loc_t loc) {
   if (m_tag_to_loc.left.find(loc.tag) == m_tag_to_loc.left.end()) [[unlikely]] {
     return std::nullopt;
   }
@@ -461,7 +461,7 @@ std::optional<std::pair<qlex_size, qlex_size>> qlex_t::loc2rowcol(qlex_loc_t loc
   return std::make_pair(row, col);
 }
 
-qlex_loc_t qlex_t::save_loc(qlex_size row, qlex_size col, qlex_size offset) {
+CPP_EXPORT qlex_loc_t qlex_t::save_loc(qlex_size row, qlex_size col, qlex_size offset) {
   if (row <= 2097152 || col <= 1024) [[likely]] {
     clever_me_t bits;
     static_assert(sizeof(bits) == sizeof(qlex_size));
@@ -484,40 +484,12 @@ qlex_loc_t qlex_t::save_loc(qlex_size row, qlex_size col, qlex_size offset) {
   }
 }
 
-qlex_loc_t qlex_t::cur_loc() { return save_loc(m_row, m_col, m_offset); }
+CPP_EXPORT qlex_loc_t qlex_t::cur_loc() { return save_loc(m_row, m_col, m_offset); }
 
 ///============================================================================///
 
-void qlex_t::push_impl(const qlex_tok_t *tok) {
-  m_tok_buf.insert(m_tok_buf.begin(), *tok);
-  m_next_tok.ty = qErro;
-}
-
-void qlex_t::collect_impl(const qlex_tok_t *tok) {
-  switch (tok->ty) {
-    case qEofF:
-    case qErro:
-    case qKeyW:
-    case qOper:
-    case qPunc:
-      break;
-    case qName:
-    case qIntL:
-    case qNumL:
-    case qText:
-    case qChar:
-    case qMacB:
-    case qMacr:
-    case qNote:
-      release_string(tok->v.str_idx);
-      break;
-  }
-}
-
-///============================================================================///
-
-std::string_view qlex_t::get_string(qlex_size idx) {
-#ifdef MEMORY_OVER_SPEED
+CPP_EXPORT std::string_view qlex_t::get_string(qlex_size idx) {
+#if MEMORY_OVER_SPEED == 1
   if (auto it = m_strings->first.left.find(idx); it != m_strings->first.left.end()) [[likely]] {
     return it->second;
   }
@@ -530,8 +502,8 @@ std::string_view qlex_t::get_string(qlex_size idx) {
   return "";
 }
 
-qlex_size qlex_t::put_string(std::string_view str) {
-#ifdef MEMORY_OVER_SPEED
+CPP_EXPORT qlex_size qlex_t::put_string(std::string_view str) {
+#if MEMORY_OVER_SPEED == 1
   if (auto it = m_strings->first.right.find(str); it != m_strings->first.right.end()) {
     return it->second;
   }
@@ -548,8 +520,8 @@ qlex_size qlex_t::put_string(std::string_view str) {
 #endif
 }
 
-void qlex_t::release_string(qlex_size idx) {
-#ifdef MEMORY_OVER_SPEED
+CPP_EXPORT void qlex_t::release_string(qlex_size idx) {
+#if MEMORY_OVER_SPEED == 1
 
 #else
   if (auto it = m_strings->first.find(idx); it != m_strings->first.end()) [[likely]] {
@@ -558,7 +530,7 @@ void qlex_t::release_string(qlex_size idx) {
 #endif
 }
 
-void qlex_t::replace_interner(StringInterner new_interner) { m_strings = new_interner; }
+CPP_EXPORT void qlex_t::replace_interner(StringInterner new_interner) { m_strings = new_interner; }
 
 ///============================================================================///
 
@@ -591,30 +563,6 @@ char qlex_t::getc() {
   return m_last_ch = m_getc_buf[m_getc_pos++];
 }
 
-qlex_tok_t qlex_t::next() {
-  qlex_tok_t tok;
-
-  if (m_next_tok.ty != qErro) {
-    tok = m_next_tok;
-    m_next_tok.ty = qErro;
-  } else {
-    do {
-      m_next_tok.ty = qErro;
-      tok = step_buffer();
-    } while (m_flags & QLEX_NO_COMMENTS && tok.ty == qNote);
-  }
-
-  return tok;
-}
-
-qlex_tok_t qlex_t::peek() {
-  if (m_next_tok.ty != qErro) {
-    return m_next_tok;
-  }
-
-  return m_next_tok = next();
-}
-
 qlex_tok_t qlex_t::step_buffer() {
   qlex_tok_t tok;
 
@@ -632,4 +580,56 @@ qlex_tok_t qlex_t::step_buffer() {
   }
 
   return tok;
+}
+
+CPP_EXPORT qlex_tok_t qlex_t::next() {
+  qlex_tok_t tok;
+
+  if (m_next_tok.ty != qErro) {
+    tok = m_next_tok;
+    m_next_tok.ty = qErro;
+  } else {
+    do {
+      m_next_tok.ty = qErro;
+      tok = step_buffer();
+    } while (m_flags & QLEX_NO_COMMENTS && tok.ty == qNote);
+  }
+
+  return tok;
+}
+
+CPP_EXPORT qlex_tok_t qlex_t::peek() {
+  if (m_next_tok.ty != qErro) {
+    return m_next_tok;
+  }
+
+  return m_next_tok = next();
+}
+
+///============================================================================///
+
+CPP_EXPORT void qlex_t::push_impl(const qlex_tok_t *tok) {
+  m_tok_buf.insert(m_tok_buf.begin(), *tok);
+  m_next_tok.ty = qErro;
+}
+
+CPP_EXPORT void qlex_t::collect_impl(const qlex_tok_t *tok) {
+  switch (tok->ty) {
+    case qEofF:
+    case qErro:
+    case qKeyW:
+    case qOper:
+    case qPunc:
+      break;
+    case qName:
+    case qIntL:
+    case qNumL:
+    case qText:
+    case qChar:
+    case qMacB:
+    case qMacr:
+    case qNote:
+      release_string(tok->v.str_idx);
+      break;
+  }
 }

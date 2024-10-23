@@ -94,7 +94,7 @@ bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64_t userdata
  * with any *external* components that were initialized by the library. If the library is not
  * initialized, this function will do nothing.
  *
- * @note To check if the library is initialized, use the `quix_detail_is_init` variable. Beware
+ * @note To check if the library is initialized, use the `quix_lib_ready` variable. Beware
  * that this variable is not atomic, therefore may not be safe in a multithreaded environment.
  *
  * @note This function is thread-safe.
@@ -112,7 +112,7 @@ void quix_diag_stdout(const char *, const char *, uint64_t);
 void quix_diag_stderr(const char *, const char *, uint64_t);
 
 #ifdef LIBQUIX_INTERNAL
-extern bool quix_detail_is_init;
+extern bool quix_lib_ready;
 bool quix_lib_init();
 #endif
 

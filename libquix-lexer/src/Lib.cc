@@ -36,9 +36,9 @@
 
 #include "LibMacro.h"
 
-#ifndef QLEX_ID
-#warning "QLEX_ID must be defined"
-#define QLEX_ID "?"
+#ifndef __TARGET_VERSION
+#warning "__TARGET_VERSION must be defined"
+#define __TARGET_VERSION "?"
 #endif
 
 static std::atomic<size_t> qlex_lib_ref_count = 0;
@@ -71,7 +71,7 @@ LIB_EXPORT void qlex_lib_deinit() {
 LIB_EXPORT const char* qlex_lib_version() {
   static const char* version_string =
 
-      "[" QLEX_ID
+      "[" __TARGET_VERSION
       "] ["
 
 #if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \

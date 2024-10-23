@@ -38,9 +38,9 @@
 
 #include "core/LibMacro.h"
 
-#ifndef QXIR_ID
-#warning "QXIR_ID must be defined"
-#define QXIR_ID "?"
+#ifndef __TARGET_VERSION
+#warning "__TARGET_VERSION must be defined"
+#define __TARGET_VERSION "?"
 #endif
 
 static std::atomic<size_t> qxir_lib_ref_count = 0;
@@ -100,7 +100,7 @@ LIB_EXPORT void qxir_lib_deinit() {
 LIB_EXPORT const char* qxir_lib_version() {
   static const char* version_string =
 
-      "[" QXIR_ID
+      "[" __TARGET_VERSION
       "] ["
 
 #if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \

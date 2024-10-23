@@ -31,12 +31,12 @@ cmake_dependent_option(YAML_CPP_BUILD_TESTS
 cmake_dependent_option(YAML_MSVC_SHARED_RT
   "MSVC: Build yaml-cpp with shared runtime libs (/MD)" ON
   "CMAKE_SYSTEM_NAME MATCHES Windows" OFF)
- 
-if (YAML_CPP_FORMAT_SOURCE)
-    find_program(YAML_CPP_CLANG_FORMAT_EXE NAMES clang-format)
+
+if(YAML_CPP_FORMAT_SOURCE)
+  find_program(YAML_CPP_CLANG_FORMAT_EXE NAMES clang-format)
 endif()
 
-if (YAML_BUILD_SHARED_LIBS)
+if(YAML_BUILD_SHARED_LIBS)
   set(yaml-cpp-type SHARED)
   set(yaml-cpp-label-postfix "shared")
 else()
@@ -49,14 +49,14 @@ set(build-windows-dll $<AND:$<BOOL:${CMAKE_HOST_WIN32}>,${build-shared}>)
 set(not-msvc $<NOT:$<CXX_COMPILER_ID:MSVC>>)
 set(msvc-shared_rt $<BOOL:${YAML_MSVC_SHARED_RT}>)
 
-if (NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
   set(CMAKE_MSVC_RUNTIME_LIBRARY
     MultiThreaded$<$<CONFIG:Debug>:Debug>$<${msvc-shared_rt}:DLL>)
 endif()
 
 set(contrib-pattern "src/contrib/*.cpp")
 set(src-pattern "src/*.cpp")
-if (CMAKE_VERSION VERSION_GREATER 3.12)
+if(CMAKE_VERSION VERSION_GREATER 3.12)
   list(INSERT contrib-pattern 0 CONFIGURE_DEPENDS)
   list(INSERT src-pattern 0 CONFIGURE_DEPENDS)
 endif()
@@ -79,59 +79,59 @@ add_library(yaml-cpp::yaml-cpp ALIAS yaml-cpp)
 
 set_property(TARGET yaml-cpp
   PROPERTY
-    MSVC_RUNTIME_LIBRARY ${CMAKE_MSVC_RUNTIME_LIBRARY})
+  MSVC_RUNTIME_LIBRARY ${CMAKE_MSVC_RUNTIME_LIBRARY})
 set_property(TARGET yaml-cpp
   PROPERTY
-    CXX_STANDARD_REQUIRED ON)
+  CXX_STANDARD_REQUIRED ON)
 
 set_property(TARGET yaml-cpp PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(yaml-cpp
   PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   PRIVATE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
 
-if (NOT DEFINED CMAKE_CXX_STANDARD)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
   set_target_properties(yaml-cpp
     PROPERTIES
-      CXX_STANDARD 11)
+    CXX_STANDARD 11)
 endif()
 
 if(YAML_CPP_MAIN_PROJECT)
   target_compile_options(yaml-cpp
     PRIVATE -O3 -g
-      $<${not-msvc}:-Wall -Wextra -Wshadow -Weffc++ -Wno-long-long>
-      $<${not-msvc}:-pedantic -pedantic-errors>)
+    $<${not-msvc}:-Wall -Wextra -Wshadow -Weffc++ -Wno-long-long>
+    $<${not-msvc}:-pedantic -pedantic-errors>)
 endif()
 
 target_compile_options(yaml-cpp
   PRIVATE -O3 -g
-    $<$<AND:${backport-msvc-runtime},${msvc-rt-mtd-static}>:-MTd>
-    $<$<AND:${backport-msvc-runtime},${msvc-rt-mt-static}>:-MT>
-    $<$<AND:${backport-msvc-runtime},${msvc-rt-mtd-dll}>:-MDd>
-    $<$<AND:${backport-msvc-runtime},${msvc-rt-mt-dll}>:-MD>
+  $<$<AND:${backport-msvc-runtime},${msvc-rt-mtd-static}>:-MTd>
+  $<$<AND:${backport-msvc-runtime},${msvc-rt-mt-static}>:-MT>
+  $<$<AND:${backport-msvc-runtime},${msvc-rt-mtd-dll}>:-MDd>
+  $<$<AND:${backport-msvc-runtime},${msvc-rt-mt-dll}>:-MD>
 
-    # /wd4127 = disable warning C4127 "conditional expression is constant"
-    # http://msdn.microsoft.com/en-us/library/6t66728h.aspx
-    # /wd4355 = disable warning C4355 "'this' : used in base member initializer list
-    # http://msdn.microsoft.com/en-us/library/3c594ae3.aspx
-    $<$<CXX_COMPILER_ID:MSVC>:/W3 /wd4127 /wd4355>)
+  # /wd4127 = disable warning C4127 "conditional expression is constant"
+  # http://msdn.microsoft.com/en-us/library/6t66728h.aspx
+  # /wd4355 = disable warning C4355 "'this' : used in base member initializer list
+  # http://msdn.microsoft.com/en-us/library/3c594ae3.aspx
+  $<$<CXX_COMPILER_ID:MSVC>:/W3 /wd4127 /wd4355>)
 
 target_compile_definitions(yaml-cpp
   PUBLIC
-    $<$<NOT:$<BOOL:${YAML_BUILD_SHARED_LIBS}>>:YAML_CPP_STATIC_DEFINE>
+  $<$<NOT:$<BOOL:${YAML_BUILD_SHARED_LIBS}>>:YAML_CPP_STATIC_DEFINE>
   PRIVATE
-    $<${build-windows-dll}:${PROJECT_NAME}_DLL>
-    $<$<NOT:$<BOOL:${YAML_CPP_BUILD_CONTRIB}>>:YAML_CPP_NO_CONTRIB>)
+  $<${build-windows-dll}:${PROJECT_NAME}_DLL>
+  $<$<NOT:$<BOOL:${YAML_CPP_BUILD_CONTRIB}>>:YAML_CPP_NO_CONTRIB>)
 
 target_sources(yaml-cpp
   PRIVATE
-    $<$<BOOL:${YAML_CPP_BUILD_CONTRIB}>:${yaml-cpp-contrib-sources}>
-    ${yaml-cpp-sources})
+  $<$<BOOL:${YAML_CPP_BUILD_CONTRIB}>:${yaml-cpp-contrib-sources}>
+  ${yaml-cpp-sources})
 
-if (NOT DEFINED CMAKE_DEBUG_POSTFIX)
+if(NOT DEFINED CMAKE_DEBUG_POSTFIX)
   set(CMAKE_DEBUG_POSTFIX "d")
 endif()
 
@@ -156,7 +156,7 @@ write_basic_package_version_file(
 
 configure_file(yaml-cpp.pc.in yaml-cpp.pc @ONLY)
 
-if (YAML_CPP_INSTALL)
+if(YAML_CPP_INSTALL)
   install(TARGETS yaml-cpp
     EXPORT yaml-cpp-targets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -164,13 +164,13 @@ if (YAML_CPP_INSTALL)
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR})
   install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-                FILES_MATCHING PATTERN "*.h")
+    FILES_MATCHING PATTERN "*.h")
   install(EXPORT yaml-cpp-targets
     NAMESPACE yaml-cpp::
     DESTINATION "${CONFIG_EXPORT_DIR}")
   install(FILES
-      "${PROJECT_BINARY_DIR}/yaml-cpp-config.cmake"
-      "${PROJECT_BINARY_DIR}/yaml-cpp-config-version.cmake"
+    "${PROJECT_BINARY_DIR}/yaml-cpp-config.cmake"
+    "${PROJECT_BINARY_DIR}/yaml-cpp-config-version.cmake"
     DESTINATION "${CONFIG_EXPORT_DIR}")
   install(FILES "${PROJECT_BINARY_DIR}/yaml-cpp.pc"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
@@ -185,7 +185,7 @@ if(YAML_CPP_BUILD_TOOLS)
   add_subdirectory(util)
 endif()
 
-if (YAML_CPP_FORMAT_SOURCE AND YAML_CPP_CLANG_FORMAT_EXE)
+if(YAML_CPP_FORMAT_SOURCE AND YAML_CPP_CLANG_FORMAT_EXE)
   add_custom_target(format
     COMMAND clang-format --style=file -i $<TARGET_PROPERTY:yaml-cpp,SOURCES>
     COMMAND_EXPAND_LISTS

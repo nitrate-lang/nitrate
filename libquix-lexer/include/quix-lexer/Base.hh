@@ -48,11 +48,11 @@
 
 #include "quix-core/Env.h"
 
-#ifndef MEMORY_OVER_SPEED
+#if MEMORY_OVER_SPEED == 1
 #include <unordered_map>
 #endif
 
-struct qlex_t {
+struct __attribute__((visibility("default"))) qlex_t {
 private:
   ///============================================================================///
   /// BEGIN: PERFORMANCE HYPER PARAMETERS
@@ -87,7 +87,7 @@ private:
   qlex_size m_offset;
   char m_last_ch;
 
-#ifdef MEMORY_OVER_SPEED
+#if MEMORY_OVER_SPEED == 1
   typedef std::shared_ptr<std::pair<boost::bimap<qlex_size, std::string>, qlex_size>>
       StringInterner;
 #else

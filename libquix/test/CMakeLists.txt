@@ -19,7 +19,7 @@ endif()
 
 file(GLOB_RECURSE TEST_SOURCES CONFIGURE_DEPENDS "src/*.cc")
 add_executable(libquix-test ${TEST_SOURCES})
-target_compile_options(libquix-test PRIVATE -Wall -Wextra -Werror -O3 -g)
+target_compile_options(libquix-test PRIVATE -O3)
 target_link_libraries(libquix-test gtest_main quix)
 target_include_directories(libquix-test PRIVATE src ${CMAKE_CURRENT_SOURCE_DIR}/../include)
 add_dependencies(libquix-test quix)
