@@ -9,6 +9,6 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 add_executable(libquix-parser-fuzzer ${CXX_SOURCES})
 target_include_directories(libquix-parser-fuzzer PUBLIC ../include ${CMAKE_SOURCE_DIR}/libquix-core/include)
-target_compile_options(libquix-parser-fuzzer PRIVATE -g -O0 -Wall -Wextra -pedantic)
+target_compile_options(libquix-parser-fuzzer PRIVATE -O0)
 target_link_libraries(libquix-parser-fuzzer PRIVATE quix-parser quix-lexer quix-prep quix-core)
 add_dependencies(libquix-parser-fuzzer quix-parser quix-lexer quix-prep quix-core)

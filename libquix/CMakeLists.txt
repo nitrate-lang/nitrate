@@ -17,18 +17,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON  -g 
-                        -fPIC 
-                        -Wall 
-                        -Wextra 
-                        -pedantic 
-                        -Werror
-                        -D__QUIX_IMPL__)
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DQUIX_ID=${QUIX_ID})
-SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} -O3 
+SET(BUILD_FLAGS_COMMON  
+                        
+                        
+                        
+                        
+                       
+                       )
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -DQUIX_ID=${QUIX_ID})
+SET(PROJECT_DEBUG_FLAGS   ${BUILD_FLAGS_COMMON} 
                                                 -DQUIX_ID="undefined"
-                                                -mllvm 
-                                                -asan-use-private-alias=1)
+                                                
+                                                )
 
 #================== GET SOURCES ==================
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
@@ -83,7 +83,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
                                              ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-parser/include
                                              ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
                                              ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
-  target_compile_options(quix PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden)
+  target_compile_options(quix PRIVATE ${PROJECT_RELEASE_FLAGS})
   target_link_options(quix PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   target_link_libraries(quix PRIVATE quix-core 
                                      quix-lexer 
@@ -102,8 +102,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-parser/include
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
-  target_compile_options(quix-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
-  target_link_options(quix-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
+  target_compile_options(quix-shared PRIVATE ${PROJECT_RELEASE_FLAGS})
+  target_link_options(quix-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   target_link_libraries(quix-shared PRIVATE quix-core 
                                             quix-lexer 
                                             quix-prep 

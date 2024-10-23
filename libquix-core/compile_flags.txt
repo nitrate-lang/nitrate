@@ -5,7 +5,7 @@
 -pedantic 
 -Werror 
 -D__QUIX_IMPL__
--DQCORE_ID="undefined"
+-D__TARGET_VERSION="undefined"
 -fno-exceptions
 -fno-rtti
 -I

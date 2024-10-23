@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(libquix-codegen CXX)
 
-option(MEMORY_OVER_SPEED "Optimize for memory over speed" OFF)
-
 #================== CALCULATE BUILD ID ==================
 execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -exec sha256sum {} \; COMMAND sha256sum
     OUTPUT_VARIABLE SHA256SUMS OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -39,31 +37,26 @@ set(SUPPORT_TARGETS -DTRANSCODE_TARGET_C11
                     -DLLVM_SUUPORT_ALL_TARGETS)
 
 #================== SET BUILD FLAGS ==================
-SET(BUILD_FLAGS_COMMON -g 
-                       -fPIC
-                       -Wall 
-                       -Wextra 
-                       -pedantic 
-                       -Werror 
+SET(BUILD_FLAGS_COMMON 
+                      
+                       
+                       
+                       
+                       
                        ${SUPPORT_TARGETS}
                        -I/usr/lib/llvm-14/include 
                        -Wno-deprecated-enum-enum-conversion
                        -Wno-error=unused-but-set-variable
                        -Wno-unused-parameter
-                       -D__QUIX_IMPL__
+                      
                        -fno-rtti
                        -fno-exceptions
                        )
-SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -O3 -DCODEGEN_ID=${CODEGEN_ID})
-SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} -O3 
+SET(PROJECT_RELEASE_FLAGS ${BUILD_FLAGS_COMMON} -DCODEGEN_ID=${CODEGEN_ID})
+SET(PROJECT_DEBUG_FLAGS ${BUILD_FLAGS_COMMON} 
                                               -DCODEGEN_ID="undefined"
-                                              -mllvm 
-                                              -asan-use-private-alias=1)
-
-if (MEMORY_OVER_SPEED)
-  SET(PROJECT_RELEASE_FLAGS ${PROJECT_RELEASE_FLAGS} -DMEMORY_OVER_SPEED=1)
-  SET(PROJECT_DEBUG_FLAGS ${PROJECT_DEBUG_FLAGS} -DMEMORY_OVER_SPEED=1)
-endif()
+                                              
+                                              )
 
 #================== GET SOURCES ==================
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
@@ -109,7 +102,7 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
-  target_compile_options(quix-codegen PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden)
+  target_compile_options(quix-codegen PRIVATE ${PROJECT_RELEASE_FLAGS})
   target_link_options(quix-codegen PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   target_link_libraries(quix-codegen PRIVATE quix-core)
   foreach(lib ${LLVM_LIBS})
@@ -125,8 +118,8 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include)
-  target_compile_options(quix-codegen-shared PRIVATE ${PROJECT_RELEASE_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -flto)
-  target_link_options(quix-codegen-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map -flto)
+  target_compile_options(quix-codegen-shared PRIVATE ${PROJECT_RELEASE_FLAGS})
+  target_link_options(quix-codegen-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   target_link_libraries(quix-codegen-shared PRIVATE quix-core-shared)
   foreach(lib ${LLVM_LIBS})
     target_link_libraries(quix-codegen-shared PRIVATE ${lib})

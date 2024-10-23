@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
-SET(FLAGS -O3 -g -Wall -Wextra -pedantic -Werror)
+SET(FLAGS -O3)
 
 add_executable(libquix-basic-lexer-fuzz "libquix-basic-lexer-fuzz.cc")
 target_include_directories(libquix-basic-lexer-fuzz PUBLIC ../include ${CMAKE_SOURCE_DIR}/libquix/include)

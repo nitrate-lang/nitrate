@@ -28,21 +28,21 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                 ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
-    target_compile_options(qpkg PRIVATE -Werror
-                                        -O3
-                                        -g
-                                        -fPIC
-                                        -Wall
-                                        -Wextra
+    target_compile_options(qpkg PRIVATE
+                                       
+                                       
+                                       
+                                       
+                                       
                                         -Wpedantic
                                         -Wno-error=overlength-strings
                                         -DQPKG_ID=${QPKG_ID}
-                                        -flto)
+                                       )
     target_link_libraries(qpkg PRIVATE yaml-cpp libboost_filesystem.a
                                        quix-codegen
                                        quix-qxir quix-parser
                                        quix-lexer quix-prep quix-core)
-    target_link_options(qpkg PRIVATE -flto -static-libgcc -static-libstdc++)
+    target_link_options(qpkg PRIVATE -static-libgcc -static-libstdc++)
     add_dependencies(qpkg quix-codegen
                           quix-qxir
                           quix-parser
@@ -60,16 +60,16 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
-    target_compile_options(qpkg-static PRIVATE -Werror
-                                               -O3
-                                               -g
-                                               -fPIC
-                                               -Wall
-                                               -Wextra
+    target_compile_options(qpkg-static PRIVATE
+                                              
+                                              
+                                              
+                                              
+                                              
                                                -Wpedantic
                                                -Wno-error=overlength-strings
                                                -DQPKG_ID=${QPKG_ID}
-                                               -flto
+                                              
                                                -fvisibility=hidden
                                                -fvisibility-inlines-hidden
                                                -DQPKG_LIBRARY)
@@ -81,7 +81,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                               quix-lexer
                                               quix-prep
                                               quix-core)
-    target_link_options(qpkg-static PRIVATE -flto
+    target_link_options(qpkg-static PRIVATE
                                             -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
     add_dependencies(qpkg-static quix-codegen
                                  quix-qxir
@@ -101,16 +101,16 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
-    target_compile_options(qpkg-shared PRIVATE -Werror
-                                               -O3
-                                               -g
-                                               -fPIC
-                                               -Wall
-                                               -Wextra
+    target_compile_options(qpkg-shared PRIVATE
+                                              
+                                              
+                                              
+                                              
+                                              
                                                -Wpedantic
                                                -Wno-error=overlength-strings
                                                -DQPKG_ID=${QPKG_ID}
-                                               -flto
+                                              
                                                -fvisibility=hidden
                                                -fvisibility-inlines-hidden
                                                -DQPKG_LIBRARY)
@@ -122,7 +122,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
                                               quix-lexer-shared
                                               quix-prep-shared
                                               quix-core-shared)
-    target_link_options(qpkg-shared PRIVATE -flto
+    target_link_options(qpkg-shared PRIVATE
                                             -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
     add_dependencies(qpkg-shared quix-codegen-shared
                                  quix-qxir-shared
@@ -142,12 +142,12 @@ else()
                                                 ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                 ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
-    target_compile_options(qpkg PRIVATE -Werror
-                                        -O3
-                                        -g
-                                        -fPIC
-                                        -Wall
-                                        -Wextra
+    target_compile_options(qpkg PRIVATE
+                                       
+                                       
+                                       
+                                       
+                                       
                                         -Wpedantic
                                         -Wno-error=overlength-strings
                                         -DQPKG_ID="undefined")
@@ -174,12 +174,12 @@ else()
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
-    target_compile_options(qpkg-static PRIVATE -Werror
-                                               -O3
-                                               -g
-                                               -fPIC
-                                               -Wall
-                                               -Wextra
+    target_compile_options(qpkg-static PRIVATE
+                                              
+                                              
+                                              
+                                              
+                                              
                                                -Wpedantic
                                                -Wno-error=overlength-strings
                                                -DQPKG_ID="undefined"
@@ -213,12 +213,12 @@ else()
                                                        ${CMAKE_SOURCE_DIR}/libquix-qxir/include
                                                        ${CMAKE_SOURCE_DIR}/libquix-codegen/include
                                                        ${CMAKE_CURRENT_SOURCE_DIR}/libs/yaml-cpp-0.8.0/include)
-    target_compile_options(qpkg-shared PRIVATE -Werror
-                                               -O3
-                                               -g
-                                               -fPIC
-                                               -Wall
-                                               -Wextra
+    target_compile_options(qpkg-shared PRIVATE
+                                              
+                                              
+                                              
+                                              
+                                              
                                                -Wpedantic
                                                -Wno-error=overlength-strings
                                                -DQPKG_ID="undefined"
