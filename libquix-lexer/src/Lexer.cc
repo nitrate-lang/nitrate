@@ -56,7 +56,7 @@
 
 ///============================================================================///
 /// BEGIN: LEXICAL GRAMMAR CONSTRAINTS
-#define FLOATING_POINT_PRECISION 128
+#define FLOATING_POINT_PRECISION 20
 /// END:   LEXICAL GRAMMAR CONSTRAINTS
 ///============================================================================///
 
@@ -133,9 +133,6 @@ namespace qlex {
 
   static const boost::bimap<std::string_view, qlex_op_t> operators =
       make_bimap<std::string_view, qlex_op_t>({
-          {"?", qOpTernary},
-          {"=>", qOpArrow},
-          {".", qOpDot},
           {"+", qOpPlus},
           {"-", qOpMinus},
           {"*", qOpTimes},
@@ -145,16 +142,20 @@ namespace qlex {
           {"|", qOpBitOr},
           {"^", qOpBitXor},
           {"~", qOpBitNot},
+          {"<<", qOpLShift},
+          {">>", qOpRShift},
+          {"<<<", qOpROTL},
+          {">>>", qOpROTR},
           {"&&", qOpLogicAnd},
           {"||", qOpLogicOr},
           {"^^", qOpLogicXor},
           {"!", qOpLogicNot},
-          {"<<", qOpLShift},
-          {">>", qOpRShift},
-          {">>>", qOpROTR},
-          {"<<<", qOpROTL},
-          {"++", qOpInc},
-          {"--", qOpDec},
+          {"<", qOpLT},
+          {">", qOpGT},
+          {"<=", qOpLE},
+          {">=", qOpGE},
+          {"==", qOpEq},
+          {"!=", qOpNE},
           {"=", qOpSet},
           {"+=", qOpPlusSet},
           {"-=", qOpMinusSet},
@@ -169,24 +170,23 @@ namespace qlex {
           {"^^=", qOpLogicXorSet},
           {"<<=", qOpLShiftSet},
           {">>=", qOpRShiftSet},
-          {">>>=", qOpROTRSet},
           {"<<<=", qOpROTLSet},
-          {"<", qOpLT},
-          {">", qOpGT},
-          {"<=", qOpLE},
-          {">=", qOpGE},
-          {"==", qOpEq},
-          {"!=", qOpNE},
+          {">>>=", qOpROTRSet},
+          {"++", qOpInc},
+          {"--", qOpDec},
           {"as", qOpAs},
+          {"bitcast_as", qOpBitcastAs},
           {"in", qOpIn},
+          {"out", qOpOut},
           {"sizeof", qOpSizeof},
+          {"bitsizeof", qOpBitsizeof},
           {"alignof", qOpAlignof},
           {"typeof", qOpTypeof},
+          {".", qOpDot},
           {"..", qOpRange},
           {"...", qOpEllipsis},
-          {"bitcast_as", qOpBitcastAs},
-          {"bitsizeof", qOpBitsizeof},
-          {"out", qOpOut},
+          {"=>", qOpArrow},
+          {"?", qOpTernary},
       });
 
   static const boost::bimap<std::string_view, qlex_op_t> word_operators =
@@ -411,7 +411,7 @@ static bool canonicalize_float(std::string_view input, std::string &norm) {
   }
 
   std::stringstream ss;
-  ss << std::setprecision(FLOATING_POINT_PRECISION) << x;
+  ss << std::fixed << std::setprecision(FLOATING_POINT_PRECISION) << x;
   norm = ss.str();
 
   return true;
