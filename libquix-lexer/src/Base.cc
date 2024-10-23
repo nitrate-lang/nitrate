@@ -517,7 +517,7 @@ void qlex_t::collect_impl(const qlex_tok_t *tok) {
 ///============================================================================///
 
 std::string_view qlex_t::get_string(qlex_size idx) {
-#ifdef MEMORY_OVER_SPEED
+#if MEMORY_OVER_SPEED == 1
   if (auto it = m_strings->first.left.find(idx); it != m_strings->first.left.end()) [[likely]] {
     return it->second;
   }
@@ -531,7 +531,7 @@ std::string_view qlex_t::get_string(qlex_size idx) {
 }
 
 qlex_size qlex_t::put_string(std::string_view str) {
-#ifdef MEMORY_OVER_SPEED
+#if MEMORY_OVER_SPEED == 1
   if (auto it = m_strings->first.right.find(str); it != m_strings->first.right.end()) {
     return it->second;
   }
@@ -549,7 +549,7 @@ qlex_size qlex_t::put_string(std::string_view str) {
 }
 
 void qlex_t::release_string(qlex_size idx) {
-#ifdef MEMORY_OVER_SPEED
+#if MEMORY_OVER_SPEED == 1
 
 #else
   if (auto it = m_strings->first.find(idx); it != m_strings->first.end()) [[likely]] {
