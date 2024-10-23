@@ -37,9 +37,9 @@
 
 #include "core/LibMacro.h"
 
-#ifndef QPREP_ID
-#warning "QPREP_ID must be defined"
-#define QPREP_ID "?"
+#ifndef __TARGET_VERSION
+#warning "__TARGET_VERSION must be defined"
+#define __TARGET_VERSION "?"
 #endif
 
 static std::atomic<size_t> qprep_lib_ref_count = 0;
@@ -80,7 +80,7 @@ LIB_EXPORT void qprep_lib_deinit() {
 LIB_EXPORT const char* qprep_lib_version() {
   static const char* version_string =
 
-      "[" QPREP_ID
+      "[" __TARGET_VERSION
       "] ["
 
 #if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || \

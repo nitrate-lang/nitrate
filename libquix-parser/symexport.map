@@ -1,7 +1,7 @@
 {
     global:
-        qlex_*;
-        _Z*qlex_t*;
+        qparse_*;
+        _Z*;
     local:
         *;
 };

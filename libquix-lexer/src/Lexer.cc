@@ -529,7 +529,7 @@ static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumT
 
 void qlex_t::reset_automata() { m_pushback.clear(); }
 
-qlex_tok_t qlex_t::next_impl() {
+CPP_EXPORT qlex_tok_t qlex_t::next_impl() {
   /**
    * **WARNING**: Do not just start editing this function without
    * having a holistic understanding of all code that depends on the lexer
