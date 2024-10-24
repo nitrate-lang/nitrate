@@ -141,7 +141,7 @@ static bool impl_use_json(qlex_t *L, FILE *O) {
     }
   }
 
-  fprintf(O, "[0,\"\",0,0,0,0]]");
+  fprintf(O, "[1,\"\",0,0,0,0]]");
 
   return true;
 }
