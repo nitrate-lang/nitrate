@@ -34,7 +34,6 @@
 
 #include <quix-qxir/Config.h>
 #include <quix-qxir/IR.h>
-#include <quix-qxir/Inference.h>
 #include <quix-qxir/Module.h>
 #include <quix-qxir/Node.h>
 #include <stdbool.h>

@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/LibMacro.h>
-#include <quix-qxir/Inference.h>
+#include <quix-qxir/IR.h>
 #include <quix-qxir/Node.h>
 
 #include <boost/multiprecision/cpp_int.hpp>

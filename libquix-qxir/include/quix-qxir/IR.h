@@ -343,6 +343,16 @@ size_t qxir_diag_clear(qmodule_t *qxir, qxir_audit_ticket_t ticket);
  */
 size_t qxir_max_modules(void);
 
+/**
+ * @brief Performs type inference on a QXIR node.
+ *
+ * @param node Node to perform type inference on.
+ * @return Type of the node or NULL if inference failed.
+ *
+ * @note This function is thread-safe.
+ */
+qxir_node_t *qxir_infer(qxir_node_t *node);
+
 #ifdef __cplusplus
 }
 #endif

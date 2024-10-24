@@ -34,7 +34,7 @@
 #include <core/LibMacro.h>
 #include <openssl/evp.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/Inference.h>
+#include <quix-qxir/IR.h>
 #include <quix-qxir/Module.h>
 #include <quix-qxir/Node.h>
 
