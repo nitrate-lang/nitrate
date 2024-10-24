@@ -1093,10 +1093,6 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
   return gen("qxir");
 }
 
-CPP_EXPORT std::string qxir::Expr::getUniqueUUID() noexcept {
-  return boost::uuids::to_string(hash());
-}
-
 CPP_EXPORT qmodule_t *qxir::Expr::getModule() const noexcept { return ::getModule(m_module_idx); }
 
 CPP_EXPORT void qxir::Expr::setModule(qmodule_t *module) noexcept {

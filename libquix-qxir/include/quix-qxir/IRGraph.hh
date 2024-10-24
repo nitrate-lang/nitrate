@@ -36,7 +36,7 @@
 #error "This header is C++ only."
 #endif
 
-#include <quix-core/Arena.h>
+#include <quix-core/Memory.h>
 #include <quix-core/Error.h>
 #include <quix-lexer/Token.h>
 #include <quix-qxir/TypeDecl.h>
@@ -538,7 +538,7 @@ namespace qxir {
      * @return std::string The unique identifier.
      * @note Wrapper around hash()
      */
-    std::string getUniqueUUID() noexcept;
+    std::string getUniqueUUID() noexcept { return boost::uuids::to_string(hash()); }
 
     /**
      * @brief Get a short code to uniquely identify the node.
@@ -548,7 +548,7 @@ namespace qxir {
     uint64_t getUniqId() const;
   } __attribute__((packed)) __attribute__((aligned(8)));
 
-#define EXPR_SIZE sizeof(Expr)
+  constexpr size_t EXPR_SIZE = sizeof(Expr);
 
   class Type : public Expr {
     uint64_t getAlignBits();

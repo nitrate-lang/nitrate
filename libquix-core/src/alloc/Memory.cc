@@ -29,63 +29,70 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_CLASSES_H__
-#define __QUIX_CORE_CLASSES_H__
+// #define QCORE_NDEBUG
 
-#ifndef __cplusplus
-#error "This header is for C++ only."
-#endif
-
+#include <quix-core/Error.h>
 #include <quix-core/Memory.h>
-#include <quix-core/Env.h>
 
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <chrono>
-#include <random>
+#include <alloc/Collection.hh>
 
-class qcore_arena final {
-  qcore_arena_t m_arena;
+#include "../LibMacro.h"
 
-public:
-  qcore_arena() { qcore_arena_open(&m_arena); }
-  ~qcore_arena() { qcore_arena_close(&m_arena); }
+LIB_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A, qcore_alloc_mode_t mode,
+                                              bool is_thread_safe) {
+  qcore_assert(A != nullptr, "qcore_arena_open_ex: invalid arena");
 
-  qcore_arena_t *get() { return &m_arena; }
-};
+  mem::qcore_arena_t *X;
 
-class qcore_env final {
-  qcore_env_t m_env;
-
-public:
-  qcore_env() {
-    std::random_device rd;
-    std::uniform_int_distribution<uintptr_t> gen;
-    m_env = qcore_env_create(gen(rd));
-    qcore_env_set_current(m_env);
-
-    {  // Set a random job ID
-      boost::uuids::random_generator gen;
-      boost::uuids::uuid uuid = gen();
-      std::string uuid_str = boost::uuids::to_string(uuid);
-      qcore_env_set("this.job", uuid_str.c_str());
+  switch (mode) {
+    case QCORE_GSA_V0:
+      X = new mem::gsa_v0_t();
+      break;
+    case QCORE_RISA_V0:
+      X = new mem::risa_v0_t();
+      break;
+    case QCORE_AUTO: {
+#if MEMORY_OVER_SPEED == 1
+      X = new mem::risa_v0_t();
+#else
+      X = new mem::gsa_v0_t();
+#endif
+      break;
     }
 
-    // Set the default QUIX FS server port
-    qcore_env_set("this.srvport", "52781");
-
-    {  // Set the compiler start time
-      std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-      std::chrono::milliseconds ms =
-          std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
-
-      qcore_env_set("this.created_at", std::to_string(ms.count()).c_str());
+    default: {
+      qcore_panicf("qcore_arena_open_ex: invalid mode %d", mode);
     }
   }
-  ~qcore_env() { qcore_env_destroy(m_env); }
 
-  qcore_env_t &get() { return m_env; }
-};
+  X->open(is_thread_safe);
 
-#endif  // __QUIX_CORE_CLASSES_H__
+  *A = reinterpret_cast<qcore_arena_t>(X);
+
+  qcore_debugf("TRACE: qcore_arena_open_ex(%p, %d, %d)\t-> %p\n", A, mode, is_thread_safe, X);
+
+  return A;
+}
+
+LIB_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size, size_t align) {
+  void *ptr;
+
+  qcore_assert(A != nullptr, "qcore_arena_alloc_ex: invalid arena");
+
+  ptr = reinterpret_cast<mem::qcore_arena_t *>(*A)->alloc(size, align);
+
+  qcore_debugf("TRACE: qcore_arena_alloc_ex(%p, %zu, %zu)\t-> %p\n", A, size, align, ptr);
+
+  return ptr;
+}
+
+LIB_EXPORT void qcore_arena_close(qcore_arena_t *A) {
+  qcore_assert(A != nullptr, "qcore_arena_close: invalid arena");
+
+  mem::qcore_arena_t *X = reinterpret_cast<mem::qcore_arena_t *>(*A);
+  size_t total_used = X->close();
+
+  qcore_debugf("TRACE: qcore_arena_close(%p)\t-> %zu\n", A, total_used);
+
+  delete X;
+}

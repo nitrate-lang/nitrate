@@ -32,7 +32,7 @@
 #ifndef __QUIX_QXIR_MODULE_H__
 #define __QUIX_QXIR_MODULE_H__
 
-#include <quix-core/Arena.h>
+#include <quix-core/Memory.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-qxir/TypeDecl.h>
 

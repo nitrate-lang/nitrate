@@ -29,63 +29,63 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_CLASSES_H__
-#define __QUIX_CORE_CLASSES_H__
+#pragma once
 
-#ifndef __cplusplus
-#error "This header is for C++ only."
-#endif
+#include <cstddef>
+#include <cstdint>
+#include <mutex>
+#include <vector>
 
-#include <quix-core/Memory.h>
-#include <quix-core/Env.h>
+namespace mem {
+  class qcore_arena_t {
+  public:
+    virtual ~qcore_arena_t() = default;
+    virtual void open(bool thread_safe) = 0;
+    virtual void *alloc(size_t size, size_t align) = 0;
+    virtual size_t close() = 0;
+  };
 
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <chrono>
-#include <random>
+  class gsa_v0_t final : public qcore_arena_t {
+    struct region_t {
+      uintptr_t base = 0;
+      uintptr_t offset = 0;
+      size_t size = 0;
+    };
+    std::vector<region_t> m_bases;
+    std::mutex m_mutex;
+    bool m_thread_safe;
 
-class qcore_arena final {
-  qcore_arena_t m_arena;
-
-public:
-  qcore_arena() { qcore_arena_open(&m_arena); }
-  ~qcore_arena() { qcore_arena_close(&m_arena); }
-
-  qcore_arena_t *get() { return &m_arena; }
-};
-
-class qcore_env final {
-  qcore_env_t m_env;
-
-public:
-  qcore_env() {
-    std::random_device rd;
-    std::uniform_int_distribution<uintptr_t> gen;
-    m_env = qcore_env_create(gen(rd));
-    qcore_env_set_current(m_env);
-
-    {  // Set a random job ID
-      boost::uuids::random_generator gen;
-      boost::uuids::uuid uuid = gen();
-      std::string uuid_str = boost::uuids::to_string(uuid);
-      qcore_env_set("this.job", uuid_str.c_str());
+    void alloc_region(size_t size) {
+      uintptr_t base = (uintptr_t) new uint8_t[size];
+      m_bases.push_back({base, base, size});
     }
 
-    // Set the default QUIX FS server port
-    qcore_env_set("this.srvport", "52781");
+  public:
+    virtual ~gsa_v0_t() = default;
+    void open(bool thread_safe) override;
+    void *alloc(size_t size, size_t align) override;
+    size_t close() override;
+  };
 
-    {  // Set the compiler start time
-      std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-      std::chrono::milliseconds ms =
-          std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+  class risa_v0_t final : public qcore_arena_t {
+    struct region_t {
+      uintptr_t base = 0;
+      uintptr_t offset = 0;
+      size_t size = 0;
+    };
+    std::vector<region_t> m_bases;
+    std::mutex m_mutex;
+    bool m_thread_safe;
 
-      qcore_env_set("this.created_at", std::to_string(ms.count()).c_str());
+    void alloc_region(size_t size) {
+      uintptr_t base = (uintptr_t) new uint8_t[size];
+      m_bases.push_back({base, base, size});
     }
-  }
-  ~qcore_env() { qcore_env_destroy(m_env); }
 
-  qcore_env_t &get() { return m_env; }
-};
-
-#endif  // __QUIX_CORE_CLASSES_H__
+  public:
+    virtual ~risa_v0_t() = default;
+    void open(bool thread_safe) override;
+    void *alloc(size_t size, size_t align) override;
+    size_t close() override;
+  };
+}  // namespace mem

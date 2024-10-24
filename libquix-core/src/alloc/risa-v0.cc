@@ -29,63 +29,74 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_CLASSES_H__
-#define __QUIX_CORE_CLASSES_H__
+#include <quix-core/Error.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-#ifndef __cplusplus
-#error "This header is for C++ only."
-#endif
+#include <alloc/Collection.hh>
+#include <cstring>
+#include <vector>
 
-#include <quix-core/Memory.h>
-#include <quix-core/Env.h>
+#define REGION_SIZE (1024 * 16)
 
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <chrono>
-#include <random>
+static inline uintptr_t ALIGNED(uintptr_t ptr, size_t align) {
+  return (ptr % align) ? (ptr + (align - (ptr % align))) : ptr;
+}
 
-class qcore_arena final {
-  qcore_arena_t m_arena;
+void mem::risa_v0_t::open(bool thread_safe) {
+  m_thread_safe = thread_safe;
+  alloc_region(REGION_SIZE);
+}
 
-public:
-  qcore_arena() { qcore_arena_open(&m_arena); }
-  ~qcore_arena() { qcore_arena_close(&m_arena); }
+size_t mem::risa_v0_t::close() {
+  size_t total = 0;
 
-  qcore_arena_t *get() { return &m_arena; }
-};
+  for (size_t i = 0; i < m_bases.size(); i++) {
+    total += m_bases[i].size;
+    delete[] reinterpret_cast<uint8_t *>(m_bases[i].base);
+  }
 
-class qcore_env final {
-  qcore_env_t m_env;
+  return total;
+}
 
-public:
-  qcore_env() {
-    std::random_device rd;
-    std::uniform_int_distribution<uintptr_t> gen;
-    m_env = qcore_env_create(gen(rd));
-    qcore_env_set_current(m_env);
+void *mem::risa_v0_t::alloc(size_t size, size_t alignment) {
+  if (size == 0 || alignment == 0) {
+    return nullptr;
+  }
 
-    {  // Set a random job ID
-      boost::uuids::random_generator gen;
-      boost::uuids::uuid uuid = gen();
-      std::string uuid_str = boost::uuids::to_string(uuid);
-      qcore_env_set("this.job", uuid_str.c_str());
-    }
+  if (m_thread_safe) {
+    m_mutex.lock();
+  }
 
-    // Set the default QUIX FS server port
-    qcore_env_set("this.srvport", "52781");
+  uintptr_t start, ret_ptr;
 
-    {  // Set the compiler start time
-      std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-      std::chrono::milliseconds ms =
-          std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+  if (size > REGION_SIZE) [[unlikely]] {
+    alloc_region(size);
+  }
 
-      qcore_env_set("this.created_at", std::to_string(ms.count()).c_str());
+  for (auto it = m_bases.rbegin(); it != m_bases.rend(); ++it) {
+    start = ALIGNED(it->offset, alignment);
+
+    if ((start + size) <= it->base + it->size) [[likely]] {
+      it->offset = start + size;
+      ret_ptr = start;
+      goto end;
     }
   }
-  ~qcore_env() { qcore_env_destroy(m_env); }
 
-  qcore_env_t &get() { return m_env; }
-};
+  alloc_region(REGION_SIZE);
 
-#endif  // __QUIX_CORE_CLASSES_H__
+  ret_ptr = start = ALIGNED(m_bases.back().offset, alignment);
+  if ((start + size) > m_bases.back().base + m_bases.back().size) [[unlikely]] {
+    qcore_panicf("Out of memory: failed to allocate %zu bytes @ alignment %zu", size, alignment);
+  }
+
+  m_bases.back().offset = start + size;
+
+end:
+  if (m_thread_safe) {
+    m_mutex.unlock();
+  }
+
+  return reinterpret_cast<void *>(ret_ptr);
+}
