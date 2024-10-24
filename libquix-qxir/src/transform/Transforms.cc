@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <quix-core/Error.h>
-#include <quix-qxir/Module.h>
+#include <quix-qxir/Module.hh>
 
 #include <transform/Transform.hh>
 #include <transform/passes/Decl.hh>

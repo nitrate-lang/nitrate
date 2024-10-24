@@ -39,7 +39,6 @@
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>
 #include <quix-lexer/Token.h>
-#include <quix-qxir/Module.h>
 #include <quix-qxir/TypeDecl.h>
 
 #include <boost/uuid/uuid.hpp>
@@ -52,6 +51,7 @@
 #include <optional>
 #include <ostream>
 #include <quix-core/Classes.hh>
+#include <quix-qxir/Module.hh>
 #include <string>
 #include <variant>
 #include <vector>
@@ -136,104 +136,105 @@ namespace qxir {
           m_start_loc{0},
           m_loc_size(0) {}
 
-    uint32_t getKindSize() const noexcept;
+    static uint32_t getKindSize(qxir_ty_t kind) noexcept;
     qxir_ty_t getKind() const noexcept { return m_node_type; }
-    const char *getKindName() const noexcept;
+    const char *getKindName() const noexcept { return getKindName(m_node_type); }
+    static const char *getKindName(qxir_ty_t kind) noexcept;
 
     template <typename T>
-    constexpr static const char *getKindName() noexcept {
+    constexpr static qxir_ty_t getTypeCode() noexcept {
       if constexpr (std::is_same_v<T, BinExpr>) {
-        return "BinExpr";
+        return QIR_NODE_BINEXPR;
       } else if constexpr (std::is_same_v<T, UnExpr>) {
-        return "UnExpr";
+        return QIR_NODE_UNEXPR;
       } else if constexpr (std::is_same_v<T, PostUnExpr>) {
-        return "PostUnExpr";
+        return QIR_NODE_POST_UNEXPR;
       } else if constexpr (std::is_same_v<T, Int>) {
-        return "Int";
+        return QIR_NODE_INT;
       } else if constexpr (std::is_same_v<T, Float>) {
-        return "Float";
+        return QIR_NODE_FLOAT;
       } else if constexpr (std::is_same_v<T, List>) {
-        return "List";
+        return QIR_NODE_LIST;
       } else if constexpr (std::is_same_v<T, Call>) {
-        return "Call";
+        return QIR_NODE_CALL;
       } else if constexpr (std::is_same_v<T, Seq>) {
-        return "Seq";
+        return QIR_NODE_SEQ;
       } else if constexpr (std::is_same_v<T, Index>) {
-        return "Index";
+        return QIR_NODE_INDEX;
       } else if constexpr (std::is_same_v<T, Ident>) {
-        return "Ident";
+        return QIR_NODE_IDENT;
       } else if constexpr (std::is_same_v<T, Extern>) {
-        return "Extern";
+        return QIR_NODE_EXTERN;
       } else if constexpr (std::is_same_v<T, Local>) {
-        return "Local";
+        return QIR_NODE_LOCAL;
       } else if constexpr (std::is_same_v<T, Ret>) {
-        return "Ret";
+        return QIR_NODE_RET;
       } else if constexpr (std::is_same_v<T, Brk>) {
-        return "Brk";
+        return QIR_NODE_BRK;
       } else if constexpr (std::is_same_v<T, Cont>) {
-        return "Cont";
+        return QIR_NODE_CONT;
       } else if constexpr (std::is_same_v<T, If>) {
-        return "If";
+        return QIR_NODE_IF;
       } else if constexpr (std::is_same_v<T, While>) {
-        return "While";
+        return QIR_NODE_WHILE;
       } else if constexpr (std::is_same_v<T, For>) {
-        return "For";
+        return QIR_NODE_FOR;
       } else if constexpr (std::is_same_v<T, Form>) {
-        return "Form";
+        return QIR_NODE_FORM;
       } else if constexpr (std::is_same_v<T, Case>) {
-        return "Case";
+        return QIR_NODE_CASE;
       } else if constexpr (std::is_same_v<T, Switch>) {
-        return "Switch";
+        return QIR_NODE_SWITCH;
       } else if constexpr (std::is_same_v<T, Fn>) {
-        return "Fn";
+        return QIR_NODE_FN;
       } else if constexpr (std::is_same_v<T, Asm>) {
-        return "Asm";
+        return QIR_NODE_ASM;
       } else if constexpr (std::is_same_v<T, U1Ty>) {
-        return "U1Ty";
+        return QIR_NODE_U1_TY;
       } else if constexpr (std::is_same_v<T, U8Ty>) {
-        return "U8Ty";
+        return QIR_NODE_U8_TY;
       } else if constexpr (std::is_same_v<T, U16Ty>) {
-        return "U16Ty";
+        return QIR_NODE_U16_TY;
       } else if constexpr (std::is_same_v<T, U32Ty>) {
-        return "U32Ty";
+        return QIR_NODE_U32_TY;
       } else if constexpr (std::is_same_v<T, U64Ty>) {
-        return "U64Ty";
+        return QIR_NODE_U64_TY;
       } else if constexpr (std::is_same_v<T, U128Ty>) {
-        return "U128Ty";
+        return QIR_NODE_U128_TY;
       } else if constexpr (std::is_same_v<T, I8Ty>) {
-        return "I8Ty";
+        return QIR_NODE_I8_TY;
       } else if constexpr (std::is_same_v<T, I16Ty>) {
-        return "I16Ty";
+        return QIR_NODE_I16_TY;
       } else if constexpr (std::is_same_v<T, I32Ty>) {
-        return "I32Ty";
+        return QIR_NODE_I32_TY;
       } else if constexpr (std::is_same_v<T, I64Ty>) {
-        return "I64Ty";
+        return QIR_NODE_I64_TY;
       } else if constexpr (std::is_same_v<T, I128Ty>) {
-        return "I128Ty";
+        return QIR_NODE_I128_TY;
       } else if constexpr (std::is_same_v<T, F16Ty>) {
-        return "F16Ty";
+        return QIR_NODE_F16_TY;
       } else if constexpr (std::is_same_v<T, F32Ty>) {
-        return "F32Ty";
+        return QIR_NODE_F32_TY;
       } else if constexpr (std::is_same_v<T, F64Ty>) {
-        return "F64Ty";
+        return QIR_NODE_F64_TY;
       } else if constexpr (std::is_same_v<T, F128Ty>) {
-        return "F128Ty";
+        return QIR_NODE_F128_TY;
       } else if constexpr (std::is_same_v<T, VoidTy>) {
-        return "VoidTy";
+        return QIR_NODE_VOID_TY;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
-        return "PtrTy";
+        return QIR_NODE_PTR_TY;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
-        return "OpaqueTy";
+        return QIR_NODE_OPAQUE_TY;
       } else if constexpr (std::is_same_v<T, StructTy>) {
-        return "StructTy";
+        return QIR_NODE_STRUCT_TY;
       } else if constexpr (std::is_same_v<T, UnionTy>) {
-        return "UnionTy";
+        return QIR_NODE_UNION_TY;
       } else if constexpr (std::is_same_v<T, ArrayTy>) {
-        return "ArrayTy";
+        return QIR_NODE_ARRAY_TY;
       } else if constexpr (std::is_same_v<T, FnTy>) {
-        return "FnTy";
+        return QIR_NODE_FN_TY;
       } else if constexpr (std::is_same_v<T, Tmp>) {
-        return "Tmp";
+        return QIR_NODE_TMP;
       } else {
         static_assert(!std::is_same_v<T, T>,
                       "The requested type target is not supported by this function.");
@@ -264,20 +265,8 @@ namespace qxir {
 
     template <typename T>
     static T *safe_cast_as(Expr *ptr) noexcept {
-#ifndef NDEBUG
-#define is(_T) (std::is_same_v<T, _T>)
-      static_assert(is(BinExpr) || is(UnExpr) || is(PostUnExpr) || is(Int) || is(Float) ||
-                        is(List) || is(Call) || is(Seq) || is(Index) || is(Ident) || is(Extern) ||
-                        is(Local) || is(Ret) || is(Brk) || is(Cont) || is(If) || is(While) ||
-                        is(For) || is(Form) || is(Case) || is(Switch) || is(Fn) || is(Asm) ||
-                        is(U1Ty) || is(U8Ty) || is(U16Ty) || is(U32Ty) || is(U64Ty) || is(U128Ty) ||
-                        is(I8Ty) || is(I16Ty) || is(I32Ty) || is(I64Ty) || is(I128Ty) ||
-                        is(F16Ty) || is(F32Ty) || is(F64Ty) || is(F128Ty) || is(VoidTy) ||
-                        is(PtrTy) || is(OpaqueTy) || is(StructTy) || is(UnionTy) || is(ArrayTy) ||
-                        is(FnTy) || is(Tmp),
-                    "The requested type target is not supported by this function.");
-#undef is
-#endif
+      if constexpr (getTypeCode<T>()) {
+      }  // Validate the type via a static_assert in getTypeCode.
 
       if (!ptr) {
         return nullptr;
@@ -479,7 +468,7 @@ namespace qxir {
 
 #ifndef NDEBUG
     cast_panic:
-      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(), Expr::getKindName<T>());
+      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(), getKindName(getTypeCode<T>()));
 #endif
     }
 

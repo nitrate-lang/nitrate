@@ -89,7 +89,7 @@ qmodule_t *qxir_new(qlex_t *lexer, qxir_conf_t *conf, const char *name);
 void qxir_free(qmodule_t *qxir);
 
 typedef enum qxir_serial_t {
-  QXIR_SERIAL_CODE = 0,     /* Human readable ASCII text */
+  QXIR_SERIAL_CODE = 0, /* Human readable ASCII text */
 } qxir_serial_t;
 
 /**
@@ -366,6 +366,10 @@ qxir_node_t *qxir_infer(qxir_node_t *node);
  * @note Be nice to this function, it does more than you think.
  */
 qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
+
+qlex_t *qxir_get_lexer(qmodule_t *mod);
+qxir_node_t *qxir_base(qmodule_t *mod);
+qxir_conf_t *qxir_get_conf(qmodule_t *mod);
 
 #ifdef __cplusplus
 }

@@ -31,7 +31,7 @@
 
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/Module.h>
+#include <quix-qxir/Module.hh>
 
 #include <mutex>
 
@@ -63,18 +63,7 @@ qmodule_t::~qmodule_t() {
   m_root = nullptr;
 }
 
-ModuleId qmodule_t::getModuleId() noexcept { return m_id; }
-
 Type *qmodule_t::lookupType(TypeID tid) { return m_type_mgr->get(tid); }
-
-void qmodule_t::setRoot(qxir::Expr *root) noexcept { m_root = root; }
-qxir::Expr *&qmodule_t::getRoot() noexcept { return m_root; }
-
-void qmodule_t::setLexer(qlex_t *lexer) noexcept { m_lexer = lexer; }
-qlex_t *qmodule_t::getLexer() noexcept { return m_lexer; }
-
-void qmodule_t::setConf(qxir_conf_t *conf) noexcept { m_conf = conf; }
-qxir_conf_t *qmodule_t::getConf() noexcept { return m_conf; }
 
 void qmodule_t::enableDiagnostics(bool is_enabled) noexcept { m_diagnostics_enabled = is_enabled; }
 
@@ -164,12 +153,8 @@ LIB_EXPORT size_t qxir_max_modules(void) { return MAX_MODULE_INSTANCES; }
 
 LIB_EXPORT qlex_t *qxir_get_lexer(qmodule_t *mod) { return mod->getLexer(); }
 
-LIB_EXPORT void qxir_set_lexer(qmodule_t *mod, qlex_t *lexer) { mod->setLexer(lexer); }
-
 LIB_EXPORT qxir_node_t *qxir_base(qmodule_t *mod) {
   return reinterpret_cast<qxir_node_t *>(mod->getRoot());
 }
 
 LIB_EXPORT qxir_conf_t *qxir_get_conf(qmodule_t *mod) { return mod->getConf(); }
-
-LIB_EXPORT void qxir_set_conf(qmodule_t *mod, qxir_conf_t *conf) { mod->setConf(conf); }

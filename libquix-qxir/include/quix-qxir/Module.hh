@@ -32,34 +32,15 @@
 #ifndef __QUIX_QXIR_MODULE_H__
 #define __QUIX_QXIR_MODULE_H__
 
+#include <quix-core/Arena.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-qxir/TypeDecl.h>
-
-#include <quix-core/Classes.hh>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-qlex_t *qxir_get_lexer(qmodule_t *mod);
-void qxir_set_lexer(qmodule_t *mod, qlex_t *lexer);
-qxir_node_t *qxir_base(qmodule_t *mod);
-qxir_conf_t *qxir_get_conf(qmodule_t *mod);
-void qxir_set_conf(qmodule_t *mod, qxir_conf_t *conf);
-
-#ifdef __cplusplus
-}
-#endif
-
-#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QUIX_IMPL__)
-
-#include <quix-core/Arena.h>
 
 #include <boost/bimap.hpp>
 #include <cstdint>
 #include <limits>
 #include <memory>
-#include <optional>
+#include <quix-core/Classes.hh>
 #include <quix-qxir/Report.hh>
 #include <string>
 #include <unordered_set>
@@ -157,77 +138,78 @@ namespace qxir {
 #endif
 }  // namespace qxir
 
-struct qmodule_t {
+struct qmodule_t final {
 private:
-  std::vector<std::string> m_passes_applied;
-  std::unordered_set<std::string> m_strings;
-  boost::bimap<std::string_view, std::pair<qxir::FnTy *, qxir::Expr *>> functions;
-  boost::bimap<std::string_view, qxir::Local *> variables;
-  std::unordered_map<std::string_view,
-                     std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
-      m_parameters;
-  std::unordered_map<std::string_view, qxir::Type *> m_typedef_map;
-  std::unordered_map<std::string_view,
-                     std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>
-      m_composite_fields;
-  std::unordered_map<std::string_view, qxir::Expr *> m_named_constants;
-  std::unique_ptr<qxir::diag::DiagnosticManager> m_diag;
-  std::unique_ptr<qxir::TypeManager> m_type_mgr;
-  qxir::TargetInfo m_target_info;
-  std::string m_module_name;
+  using FunctionNameBimap = boost::bimap<std::string_view, std::pair<qxir::FnTy *, qxir::Expr *>>;
+  using GlobalVariableNameBimap = boost::bimap<std::string_view, qxir::Local *>;
+  using FunctionParamMap =
+      std::unordered_map<std::string_view,
+                         std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>;
+  using TypenameMap = std::unordered_map<std::string_view, qxir::Type *>;
+  using CompositeFieldMap =
+      std::unordered_map<std::string_view,
+                         std::vector<std::tuple<std::string, qxir::Type *, qxir::Expr *>>>;
+  using NamedConstMap = std::unordered_map<std::string_view, qxir::Expr *>;
+
+  ///=============================================================================
+  qxir::Expr *m_root; /* Root node of the module */
+  ///=============================================================================
+
+  ///=============================================================================
+  /// BEGIN: Data structures requisite for efficient lowering
+  FunctionNameBimap functions;          /* Lookup for function names to their nodes */
+  GlobalVariableNameBimap variables;    /* Lookup for global variables names to their nodes */
+  FunctionParamMap m_parameters;        /* Lookup for function parameters */
+  TypenameMap m_typedef_map;            /* Lookup type names to their type nodes */
+  CompositeFieldMap m_composite_fields; /* */
+  NamedConstMap m_named_constants;      /* Lookup for named constants */
+  bool m_failbit;                       /* Set if module lowering fails */
+
+  void reset_module_temporaries(void) {
+    functions.clear(), variables.clear(), m_parameters.clear();
+    m_typedef_map.clear(), m_composite_fields.clear(), m_named_constants.clear();
+    m_failbit = false;
+  }
+  /// END: Data structures requisite for efficient lowering
+  ///=============================================================================
+
+  std::unique_ptr<qxir::diag::DiagnosticManager> m_diag; /* Diagnostic manager instance */
+  std::unique_ptr<qxir::TypeManager> m_type_mgr;         /* Type manager instance */
+  std::unordered_set<std::string> m_strings;             /* Interned strings */
+  std::vector<std::string> m_passes_applied;             /* Module mutation tracking */
+  qxir::TargetInfo m_target_info;                        /* Build target information */
+  std::string m_module_name;                             /* Not nessesarily unique module name */
+  qxir::ModuleId m_id;                                   /* Module ID unique to the
+                                                            process during its lifetime */
+  bool m_diagnostics_enabled;
+
   qcore_arena m_node_arena;
   qxir_conf_t *m_conf;
   qlex_t *m_lexer;
-  qxir::Expr *m_root;
-  qxir::ModuleId m_id;
-  bool m_diagnostics_enabled;
-  bool m_failbit;
 
 public:
   qmodule_t(qxir::ModuleId id, const std::string &name = "?");
   ~qmodule_t();
 
-  /**
-   * @brief Get the module ID.
-   * @return ModuleId
-   */
-  qxir::ModuleId getModuleId() noexcept;
+  qxir::ModuleId getModuleId() noexcept { return m_id; }
 
-  /**
-   * @brief Lookup a type by its type ID.
-   * @param tid Type ID
-   * @return Type* or nullptr if not found
-   */
   qxir::Type *lookupType(qxir::TypeID tid);
 
-  void setRoot(qxir::Expr *root) noexcept;
-  qxir::Expr *&getRoot() noexcept;
+  void setRoot(qxir::Expr *root) noexcept { m_root = root; }
+  qxir::Expr *&getRoot() noexcept { return m_root; }
 
-  void setLexer(qlex_t *lexer) noexcept;
-  qlex_t *getLexer() noexcept;
+  void setLexer(qlex_t *lexer) noexcept { m_lexer = lexer; }
+  qlex_t *getLexer() noexcept { return m_lexer; }
 
-  void setConf(qxir_conf_t *conf) noexcept;
-  qxir_conf_t *getConf() noexcept;
+  void setConf(qxir_conf_t *conf) noexcept { m_conf = conf; }
+  qxir_conf_t *getConf() noexcept { return m_conf; }
 
-  /**
-   * @brief Enable or disable diagnostics.
-   * @param is_enabled Enable diagnostics
-   */
   void enableDiagnostics(bool is_enabled) noexcept;
-
   bool isDiagnosticsEnabled() const noexcept { return m_diagnostics_enabled; }
 
-  /**
-   * @brief Make it known that a pass has been applied to the module.
-   * @param label Pass label
-   */
   void applyPassLabel(const std::string &label) { m_passes_applied.push_back(label); }
   const auto &getPassesApplied() const { return m_passes_applied; }
 
-  /**
-   * @brief Check if a pass has been applied to the module.
-   * @param label Pass label
-   */
   bool hasPassBeenRun(const std::string &label) {
     return std::find(m_passes_applied.begin(), m_passes_applied.end(), label) !=
            m_passes_applied.end();
@@ -243,11 +225,6 @@ public:
   auto &getCompositeFields() { return m_composite_fields; }
   auto &getNamedConstants() { return m_named_constants; }
 
-  /**
-   * @brief Intern a string.
-   * @param sv String view
-   * @return reference to the interned string
-   */
   std::string_view internString(std::string_view sv);
 
   qcore_arena_t &getNodeArena() { return *m_node_arena.get(); }
@@ -260,7 +237,7 @@ public:
   bool getFailbit() const { return m_failbit; }
 };
 
-#define QMODULE_SIZE sizeof(qmodule_t)
+constexpr size_t QMODULE_SIZE = sizeof(qmodule_t);
 
 namespace qxir {
   qmodule_t *getModule(ModuleId mid);
@@ -268,5 +245,3 @@ namespace qxir {
 }  // namespace qxir
 
 #endif
-
-#endif  // __QUIX_QXIR_MODULE_H__
