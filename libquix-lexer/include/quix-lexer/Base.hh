@@ -57,6 +57,7 @@ private:
   ///============================================================================///
   /// BEGIN: PERFORMANCE HYPER PARAMETERS
   static constexpr qlex_size GETC_BUFFER_SIZE = 4096;
+  static constexpr qlex_size TOKEN_BUFFER_SIZE = 2048;
   /// END:   PERFORMANCE HYPER PARAMETERS
   ///============================================================================///
 
@@ -78,6 +79,7 @@ private:
   std::array<char, GETC_BUFFER_SIZE> m_getc_buf;
 
   std::vector<qlex_tok_t> m_tok_buf;
+  size_t m_tok_buf_pos;
   std::deque<char> m_pushback;
 
   qlex_tok_t m_next_tok;
@@ -141,6 +143,7 @@ public:
 
   qlex_t(FILE *file, const char *filename, bool is_owned, qcore_env_t env)
       : m_getc_pos(GETC_BUFFER_SIZE),
+        m_tok_buf_pos(0),
         m_next_tok({}),
         m_row(1),
         m_col(0),

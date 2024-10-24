@@ -564,22 +564,29 @@ char qlex_t::getc() {
 }
 
 qlex_tok_t qlex_t::step_buffer() {
-  qlex_tok_t tok;
+  if (m_tok_buf_pos == m_tok_buf.size()) [[unlikely]] {
+    qlex_tok_t tok;
 
-  if (!m_tok_buf.empty()) {
-    tok = m_tok_buf.back();
-    m_tok_buf.pop_back();
-  } else {
-    try {
-      m_tok_buf.push_back(next_impl());
-      tok = m_tok_buf.back();
-      m_tok_buf.pop_back();
-    } catch (GetCExcept &) {
-      tok.ty = qEofF;
+    m_tok_buf.clear();
+
+    for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
+      try {
+        tok = next_impl();
+        m_tok_buf.push_back(tok);
+      } catch (GetCExcept &) {
+        break;
+      }
     }
+
+    if (m_tok_buf.empty()) [[unlikely]] {
+      tok.ty = qEofF;
+      return tok;
+    }
+
+    m_tok_buf_pos = 0;
   }
 
-  return tok;
+  return m_tok_buf[m_tok_buf_pos++];
 }
 
 CPP_EXPORT qlex_tok_t qlex_t::next() {
