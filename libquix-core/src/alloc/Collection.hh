@@ -45,7 +45,7 @@ namespace mem {
     virtual size_t close() = 0;
   };
 
-  class gsa_v0_t final : public qcore_arena_t {
+  class gba_v0_t final : public qcore_arena_t {
     struct region_t {
       uintptr_t base = 0;
       uintptr_t offset = 0;
@@ -61,13 +61,13 @@ namespace mem {
     }
 
   public:
-    virtual ~gsa_v0_t() = default;
+    virtual ~gba_v0_t() = default;
     void open(bool thread_safe) override;
     void *alloc(size_t size, size_t align) override;
     size_t close() override;
   };
 
-  class risa_v0_t final : public qcore_arena_t {
+  class riba_v0_t final : public qcore_arena_t {
     struct region_t {
       uintptr_t base = 0;
       uintptr_t offset = 0;
@@ -83,7 +83,7 @@ namespace mem {
     }
 
   public:
-    virtual ~risa_v0_t() = default;
+    virtual ~riba_v0_t() = default;
     void open(bool thread_safe) override;
     void *alloc(size_t size, size_t align) override;
     size_t close() override;

@@ -43,12 +43,12 @@ static inline uintptr_t ALIGNED(uintptr_t ptr, size_t align) {
   return (ptr % align) ? (ptr + (align - (ptr % align))) : ptr;
 }
 
-void mem::gsa_v0_t::open(bool thread_safe) {
+void mem::gba_v0_t::open(bool thread_safe) {
   m_thread_safe = thread_safe;
   alloc_region(REGION_SIZE);
 }
 
-size_t mem::gsa_v0_t::close() {
+size_t mem::gba_v0_t::close() {
   size_t total = 0;
   
   for (size_t i = 0; i < m_bases.size(); i++) {
@@ -59,7 +59,7 @@ size_t mem::gsa_v0_t::close() {
   return total;
 }
 
-void *mem::gsa_v0_t::alloc(size_t size, size_t alignment) {
+void *mem::gba_v0_t::alloc(size_t size, size_t alignment) {
   if (size == 0 || alignment == 0) {
     return nullptr;
   }

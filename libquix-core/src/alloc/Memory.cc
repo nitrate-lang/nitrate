@@ -45,17 +45,17 @@ LIB_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A, qcore_alloc_mode
   mem::qcore_arena_t *X;
 
   switch (mode) {
-    case QCORE_GSA_V0:
-      X = new mem::gsa_v0_t();
+    case QCORE_GBA_V0:
+      X = new mem::gba_v0_t();
       break;
-    case QCORE_RISA_V0:
-      X = new mem::risa_v0_t();
+    case QCORE_RIBA_V0:
+      X = new mem::riba_v0_t();
       break;
     case QCORE_AUTO: {
 #if MEMORY_OVER_SPEED == 1
-      X = new mem::risa_v0_t();
+      X = new mem::riba_v0_t();
 #else
-      X = new mem::gsa_v0_t();
+      X = new mem::gba_v0_t();
 #endif
       break;
     }
@@ -91,7 +91,8 @@ LIB_EXPORT void qcore_arena_close(qcore_arena_t *A) {
 
   mem::qcore_arena_t *X = reinterpret_cast<mem::qcore_arena_t *>(*A);
   size_t total_used = X->close();
-
+  (void)total_used;
+  
   qcore_debugf("TRACE: qcore_arena_close(%p)\t-> %zu\n", A, total_used);
 
   delete X;

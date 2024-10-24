@@ -44,13 +44,13 @@ extern "C" {
 ///=============================================================================
 
 typedef enum {
-  QCORE_GSA_V0 = 0,  /* General-purpose slab allocator: [fastest, wastes memory with alignment] */
-  QCORE_RISA_V0 = 1, /* Reverse-iteration slab allocator: [fast, no waste] */
+  QCORE_GBA_V0 = 0,  /* General-purpose bump allocator: [fastest, wastes memory with alignment] */
+  QCORE_RIBA_V0 = 1, /* Reverse-iteration bump allocator: [fast, no waste] */
 
-  QCORE_AUTO = 1000, /* Any slab allocator */
+  QCORE_AUTO = 1000, /* Any arena allocator */
 
-  QCORE_GSA = QCORE_GSA_V0,
-  QCORE_RISA = QCORE_RISA_V0,
+  QCORE_GBA = QCORE_GBA_V0,
+  QCORE_RIBA = QCORE_RIBA_V0,
 } qcore_alloc_mode_t;
 
 typedef uintptr_t qcore_arena_t;
@@ -58,22 +58,22 @@ typedef uintptr_t qcore_arena_t;
 ///=============================================================================
 
 /**
- * @brief Open a slab allocator specified by the mode.
- * @param A The context to open the slab allocator.
- * @param mode Type of slab allocator to open.
- * @param is_thread_safe Whether the slab allocator is thread-safe.
- * @return The context of the opened slab allocator.
+ * @brief Open a bump allocator specified by the mode.
+ * @param A The context to open the bump allocator.
+ * @param mode Type of bump allocator to open.
+ * @param is_thread_safe Whether the bump allocator is thread-safe.
+ * @return The context of the opened bump allocator.
  *
  * @note This function is thread-safe.
  */
 qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A, qcore_alloc_mode_t mode, bool is_thread_safe);
 
 /**
- * @brief Open a QCORE_AUTO slab allocator.
- * @param A The context to open the slab allocator.
- * @return The context of the opened slab allocator.
+ * @brief Open a QCORE_AUTO bump allocator.
+ * @param A The context to open the bump allocator.
+ * @return The context of the opened bump allocator.
  *
- * @warning The returned slab allocator is NOT thread-safe.
+ * @warning The returned bump allocator is NOT thread-safe.
  * @note This function is thread-safe.
  */
 static inline qcore_arena_t *qcore_arena_open(qcore_arena_t *A) {
@@ -81,16 +81,16 @@ static inline qcore_arena_t *qcore_arena_open(qcore_arena_t *A) {
 }
 
 /**
- * @brief Close the slab allocator.
- * @param A The context of the slab allocator to close.
+ * @brief Close the bump allocator.
+ * @param A The context of the bump allocator to close.
  *
  * @note This function is thread-safe.
  */
 void qcore_arena_close(qcore_arena_t *A);
 
 /**
- * @brief Allocate memory from the slab allocator.
- * @param A The context of the slab allocator.
+ * @brief Allocate memory from the bump allocator.
+ * @param A The context of the bump allocator.
  * @param size The size of the memory to allocate.
  * @param align The alignment of the memory to allocate.
  * @return The allocated memory.
@@ -100,8 +100,8 @@ void qcore_arena_close(qcore_arena_t *A);
 void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size, size_t align);
 
 /**
- * @brief Allocate memory from the slab allocator with default alignment.
- * @param A The context of the slab allocator.
+ * @brief Allocate memory from the bump allocator with default alignment.
+ * @param A The context of the bump allocator.
  * @param size The size of the memory to allocate.
  * @return The allocated memory.
  *
