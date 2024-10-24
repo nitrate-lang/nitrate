@@ -57,7 +57,7 @@ int qcall::sys_defer(lua_State* L) {
   }
 
   DeferCallback cb = [L, id](qprep_impl_t* obj, qlex_tok_t tok) -> DeferOp {
-    lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Push the function */
+    lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Get the function */
 
     { /* Push the function arguments */
       lua_newtable(L);
@@ -101,22 +101,49 @@ int qcall::sys_defer(lua_State* L) {
       lua_settable(L, -3);
     }
 
-    if (lua_pcall(L, 1, 1, 0) != 0) {
-      qcore_print(QCORE_ERROR, "sys_defer: %s\n", lua_tostring(L, -1));
-      return DeferOp::EmitToken;
+    int err = lua_pcall(L, 1, 1, 0);
+    DeferOp R;
+
+    switch (err) {
+      case LUA_OK: {
+        if (lua_isnil(L, -1)) {
+          return DeferOp::UninstallHandler;
+        }
+
+        if (!lua_isboolean(L, -1)) {
+          qcore_print(QCORE_ERROR, "sys_defer: expected boolean return value or nil, got %s\n",
+                      luaL_typename(L, -1));
+          return DeferOp::EmitToken;
+        }
+
+        R = lua_toboolean(L, -1) ? DeferOp::EmitToken : DeferOp::SkipToken;
+        break;
+      }
+      case LUA_ERRRUN: {
+        qcore_print(QCORE_ERROR, "sys_defer: lua: %s\n", lua_tostring(L, -1));
+        R = DeferOp::EmitToken;
+        break;
+      }
+      case LUA_ERRMEM: {
+        qcore_print(QCORE_ERROR, "sys_defer: memory allocation error\n");
+        R = DeferOp::EmitToken;
+        break;
+      }
+      case LUA_ERRERR: {
+        qcore_print(QCORE_ERROR, "sys_defer: error in error handler\n");
+        R = DeferOp::EmitToken;
+        break;
+      }
+      default: {
+        qcore_print(QCORE_ERROR, "sys_defer: unexpected error %d\n", err);
+        R = DeferOp::EmitToken;
+        break;
+      }
     }
 
-    if (lua_isnil(L, -1)) {
-      return DeferOp::UninstallHandler;
-    }
+    lua_pop(L, 1);
 
-    if (!lua_isboolean(L, -1)) {
-      qcore_print(QCORE_ERROR, "sys_defer: expected boolean return value or nil, got %s\n",
-                  luaL_typename(L, -1));
-      return DeferOp::EmitToken;
-    }
-
-    return lua_toboolean(L, -1) ? DeferOp::EmitToken : DeferOp::SkipToken;
+    return R;
   };
 
   get_engine()->m_core->defer_callbacks.push_back(cb);
