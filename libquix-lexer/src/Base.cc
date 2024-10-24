@@ -462,7 +462,7 @@ CPP_EXPORT std::optional<std::pair<qlex_size, qlex_size>> qlex_t::loc2rowcol(qle
 }
 
 CPP_EXPORT qlex_loc_t qlex_t::save_loc(qlex_size row, qlex_size col, qlex_size offset) {
-  if (row <= 2097152 || col <= 1024) [[likely]] {
+  if (row <= 2097152 && col <= 1024) [[likely]] {
     clever_me_t bits;
     static_assert(sizeof(bits) == sizeof(qlex_size));
 
