@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QXIR_USE_CPP_API
-
 #include <quix-qxir/IRGraph.hh>
 
 #include <transform/passes/Decl.hh>

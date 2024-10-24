@@ -32,17 +32,12 @@
 #ifndef __QUIX_QXIR_PASSES_PASS_MANAGER_H__
 #define __QUIX_QXIR_PASSES_PASS_MANAGER_H__
 
-#include <functional>
 #include <ostream>
-#include <vector>
 
 struct qmodule_t;
 
 namespace qxir::transform {
-  typedef std::function<bool(qmodule_t*)> PassFn;
   class StdTransform final {
-    std::vector<std::pair<std::string_view, PassFn>> m_passes;
-
     StdTransform();
 
   public:

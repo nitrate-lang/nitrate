@@ -36,8 +36,8 @@
 #error "This header is C++ only."
 #endif
 
-#include <quix-core/Memory.h>
 #include <quix-core/Error.h>
+#include <quix-core/Memory.h>
 #include <quix-lexer/Token.h>
 #include <quix-qxir/TypeDecl.h>
 
@@ -988,11 +988,7 @@ namespace qxir {
     ListItems m_items;
 
   public:
-    List(const ListItems &items) : Expr(QIR_NODE_LIST), m_items(items) {
-      if (std::all_of(items.begin(), items.end(), [](Expr *item) { return item->isConstExpr(); })) {
-        setConstExpr(true);
-      }
-    }
+    List(const ListItems &items) : Expr(QIR_NODE_LIST), m_items(items) {}
 
     const ListItems &getItems() const noexcept { return m_items; }
     ListItems &getItems() noexcept { return m_items; }
@@ -1037,11 +1033,7 @@ namespace qxir {
     SeqItems m_items;
 
   public:
-    Seq(const SeqItems &items) : Expr(QIR_NODE_SEQ), m_items(items) {
-      if (std::all_of(items.begin(), items.end(), [](Expr *item) { return item->isConstExpr(); })) {
-        setConstExpr(true);
-      }
-    }
+    Seq(const SeqItems &items) : Expr(QIR_NODE_SEQ), m_items(items) {}
 
     const SeqItems &getItems() const noexcept { return m_items; }
     SeqItems &getItems() noexcept { return m_items; }
@@ -1302,12 +1294,7 @@ namespace qxir {
 
   public:
     Switch(Expr *cond, const SwitchCases &cases, Expr *default_)
-        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_default(default_), m_cases(cases) {
-      if (cond->isConstExpr() && default_->isConstExpr() &&
-          std::all_of(cases.begin(), cases.end(), [](Case *c) { return c->isConstExpr(); })) {
-        setConstExpr(true);
-      }
-    }
+        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_default(default_), m_cases(cases) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1344,15 +1331,7 @@ namespace qxir {
           m_return(ret_ty),
           m_body(body),
           m_variadic(variadic),
-          m_abi_tag(abi_tag) {
-      if (std::all_of(params.begin(), params.end(),
-                      [](const std::pair<Type *, std::string_view> &p) {
-                        return p.first->isConstExpr();
-                      }) &&
-          body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+          m_abi_tag(abi_tag) {}
 
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
 

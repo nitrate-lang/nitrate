@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QXIR_USE_CPP_API
-
 #include <core/LibMacro.h>
 #include <llvm-14/llvm/IR/BasicBlock.h>
 #include <llvm-14/llvm/IR/Constant.h>

@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QXIR_USE_CPP_API
-
 #include <quix-core/Error.h>
 #include <quix-parser/Parser.h>
 #include <quix-qxir/IR.h>

@@ -29,8 +29,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QXIR_USE_CPP_API
-
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-qxir/IR.h>

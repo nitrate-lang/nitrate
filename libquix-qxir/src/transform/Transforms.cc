@@ -30,38 +30,36 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <quix-core/Error.h>
-#include <quix-qxir/Module.hh>
 
+#include <quix-qxir/Module.hh>
 #include <transform/Transform.hh>
 #include <transform/passes/Decl.hh>
 
 using namespace qxir::transform;
 
-StdTransform::StdTransform() {
-  m_passes = {
-      {"ds-acyclic", impl::ds_acyclic},    /* Verify that the module is acyclic */
-      {"ds-nullchk", impl::ds_nullchk},    /* Verify that the module is null-safe */
-      {"ds-resolv", impl::ds_resolv},      /* Resolve all symbols */
-      {"ds-flatten", impl::ds_flatten},    /* Flatten all nested functions */
-      {"tyinfer", impl::tyinfer},          /* Do type inference */
-      {"nm-premangle", impl::nm_premangle} /* Mangle all names */
-  };
-}
+StdTransform::StdTransform() {}
 
 const StdTransform& StdTransform::create() {
   static StdTransform ptr;
   return ptr;
 }
 
-bool StdTransform::transform(qmodule_t* module, std::ostream& out) const {
-  for (const auto& [name, fn] : m_passes) {
-    if (!fn(module)) {
-      out << "Error: Pass '" << name << "' failed." << std::endl;
-      return false;
-    }
-
-    module->applyPassLabel(std::string(name));
+bool StdTransform::transform(qmodule_t* M, std::ostream& err) const {
+#define RUN_PASS(name, fn)                                        \
+  {                                                               \
+    if (!fn(M)) {                                                 \
+      err << "Error: Pass '" << name << "' failed." << std::endl; \
+      return false;                                               \
+    }                                                             \
+    M->applyPassLabel(name);                                      \
   }
+
+  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
+  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
+  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
+  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
+  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
+  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
 
   return true;
 }
