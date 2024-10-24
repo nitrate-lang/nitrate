@@ -35,7 +35,11 @@
 #include <quix-qxir/Config.h>
 #include <quix-qxir/IR.h>
 #include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
+
+#ifdef __cplusplus
+#include <quix-qxir/IRGraph.hh>
+#endif
+
 #include <stdbool.h>
 
 #ifdef __cplusplus

@@ -35,7 +35,7 @@
 #include <quix-parser/Parser.h>
 #include <quix-qxir/IR.h>
 #include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IRGraph.hh>
 #include <setjmp.h>
 #include <signal.h>
 

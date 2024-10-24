@@ -32,39 +32,9 @@
 #ifndef __QUIX_QXIR_NODE_H__
 #define __QUIX_QXIR_NODE_H__
 
-#include <quix-qxir/TypeDecl.h>
-
-#ifdef __cplusplus
-extern "C" {
+#ifndef __cplusplus
+#error "This header is C++ only."
 #endif
-
-#define QIR_NODE_COUNT 46
-
-/**
- * @brief Clone a QXIR node. Optionally into a different module.
- *
- * @param dst The destination module context or NULL to clone into the same context.
- * @param node The node to clone.
- *
- * @return qxir_node_t* The cloned node.
- *
- * @note If `dst` NULL, the function will clone into the same module.
- * @note If `node` NULL, the function will return NULL.
- * @note This clone is a deep copy.
- *
- * @note Be nice to this function, it does more than you think.
- */
-qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
-
-#ifdef __cplusplus
-}
-#endif
-
-///=============================================================================
-/// END: ABSTRACT SYNTAX TREE DATA TYPES
-///=============================================================================
-
-#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QUIX_IMPL__)
 
 #include <quix-core/Arena.h>
 #include <quix-core/Error.h>
@@ -1609,5 +1579,3 @@ namespace qxir {
 }  // namespace qxir
 
 #endif
-
-#endif  // __QUIX_QXIR_NODE_H__

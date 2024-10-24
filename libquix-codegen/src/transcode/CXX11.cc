@@ -34,7 +34,7 @@
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-qxir/IR.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IRGraph.hh>
 
 #include <boost/multiprecision/cpp_int.hpp>
 // #include <chrono>

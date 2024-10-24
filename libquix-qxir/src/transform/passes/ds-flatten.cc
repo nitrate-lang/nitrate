@@ -34,7 +34,7 @@
 #define QXIR_USE_CPP_API
 
 #include <quix-qxir/IR.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IRGraph.hh>
 
 #include <atomic>
 #include <boost/bimap.hpp>

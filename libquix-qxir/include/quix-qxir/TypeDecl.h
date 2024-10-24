@@ -104,6 +104,8 @@ typedef enum qxir_ty_t {
 #endif
 } qxir_ty_t;
 
+#define QIR_NODE_COUNT 46
+
 typedef struct qxir_conf_t qxir_conf_t;
 
 typedef enum qxir_key_t {

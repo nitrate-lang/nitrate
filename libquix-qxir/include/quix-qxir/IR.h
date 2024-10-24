@@ -90,8 +90,6 @@ void qxir_free(qmodule_t *qxir);
 
 typedef enum qxir_serial_t {
   QXIR_SERIAL_CODE = 0,     /* Human readable ASCII text */
-  QXIR_SERIAL_CODE_MIN = 1, /* Minified human readable ASCII text */
-  QXIR_SERIAL_B10 = 2,      /* Binary representation 1.0 */
 } qxir_serial_t;
 
 /**
@@ -352,6 +350,22 @@ size_t qxir_max_modules(void);
  * @note This function is thread-safe.
  */
 qxir_node_t *qxir_infer(qxir_node_t *node);
+
+/**
+ * @brief Clone a QXIR node. Optionally into a different module.
+ *
+ * @param dst The destination module context or NULL to clone into the same context.
+ * @param node The node to clone.
+ *
+ * @return qxir_node_t* The cloned node.
+ *
+ * @note If `dst` NULL, the function will clone into the same module.
+ * @note If `node` NULL, the function will return NULL.
+ * @note This clone is a deep copy.
+ *
+ * @note Be nice to this function, it does more than you think.
+ */
+qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 
 #ifdef __cplusplus
 }

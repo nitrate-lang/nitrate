@@ -69,7 +69,7 @@
 #include <quix-codegen/Config.h>
 #include <quix-core/Error.h>
 #include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IRGraph.hh>
 #include <quix-qxir/TypeDecl.h>
 #include <sys/types.h>
 

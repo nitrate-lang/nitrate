@@ -33,7 +33,7 @@
 #include <quix-core/Error.h>
 #include <quix-parser/Node.h>
 #include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IRGraph.hh>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>

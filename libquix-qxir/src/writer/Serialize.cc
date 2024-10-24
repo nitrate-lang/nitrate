@@ -29,10 +29,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <libdeflate.h>
+#include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-qxir/Lib.h>
+#include <quix-qxir/TypeDecl.h>
 
 #include <chrono>
 #include <cstddef>
@@ -41,9 +42,6 @@
 #include <iomanip>
 #include <sstream>
 #include <unordered_set>
-
-#include "core/LibMacro.h"
-#include "quix-qxir/TypeDecl.h"
 
 using namespace qxir;
 
@@ -652,89 +650,6 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
   bool is_cylic = !node->is_acyclic();
 #endif
 
-  //   {
-  //     std::unordered_set<uint64_t> node_ids;
-
-  //     auto cb = [&](Expr *, Expr **_cur) -> IterOp {
-  //       Expr *n = *_cur;
-
-  //       switch (n->getKind()) {
-  //         case QIR_NODE_STRUCT_TY: {
-  //           uint64_t type_id = n->getType()->getUniqId();
-  //           if (node_ids.contains(type_id)) {
-  //             break;
-  //           }
-  //           node_ids.insert(type_id);
-  //           ss << "%" << type_id << " = struct {";
-
-  //           state.indent++;
-  //           indent(ss, state);
-  //           for (auto it = n->as<StructTy>()->getFields().begin();
-  //                it != n->as<StructTy>()->getFields().end(); ++it) {
-  //             serialize_recurse(*it, ss, state
-  // #if !defined(NDEBUG)
-  //                               ,
-  //                               v, is_cylic
-  // #endif
-  //             );
-  //             ss << ",";
-
-  //             if (std::next(it) != n->as<StructTy>()->getFields().end()) {
-  //               indent(ss, state);
-  //             }
-  //           }
-  //           state.indent--;
-  //           indent(ss, state);
-  //           ss << "}\n";
-  //           break;
-  //         }
-
-  //         case QIR_NODE_UNION_TY: {
-  //           uint64_t type_id = n->getType()->getUniqId();
-  //           if (node_ids.contains(type_id)) {
-  //             break;
-  //           }
-  //           node_ids.insert(type_id);
-  //           ss << "%" << type_id << " = union {";
-  //           state.indent++;
-  //           indent(ss, state);
-  //           for (auto it = n->as<UnionTy>()->getFields().begin();
-  //                it != n->as<UnionTy>()->getFields().end(); ++it) {
-  //             serialize_recurse(*it, ss, state
-  // #if !defined(NDEBUG)
-  //                               ,
-  //                               v, is_cylic
-  // #endif
-  //             );
-  //             ss << ",";
-
-  //             if (std::next(it) != n->as<UnionTy>()->getFields().end()) {
-  //               indent(ss, state);
-  //             }
-  //           }
-  //           state.indent--;
-  //           indent(ss, state);
-  //           ss << "}\n";
-  //           break;
-  //         }
-
-  //         default: {
-  //           break;
-  //         }
-  //       }
-
-  //       return IterOp::Proceed;
-  //     };
-
-  //     iterate<dfs_pre>(node, cb);
-
-  //     if (node_ids.size() > 0) {
-  //       ss << "\n";
-  //     }
-  //   }
-
-  // std::stringstream body, typedefs;
-  // FILE *body = tmpfile();
   char *body_content = NULL, *typedef_content = NULL;
   size_t body_content_size = 0, typedef_content_size = 0;
   FILE *body = open_memstream(&body_content, &body_content_size);
@@ -782,61 +697,6 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
   }
 }
 
-static bool raw_deflate(const uint8_t *in, size_t in_size, FILE &out) {
-  struct libdeflate_compressor *ctx{};
-
-  /* Allocate a compressor context; level 8 is a fairly good tradeoff */
-  ctx = libdeflate_alloc_compressor(8);
-  if (!ctx) {
-    return false;
-  }
-
-  /* Compute the largest possible compressed buffer size */
-  size_t out_size = libdeflate_deflate_compress_bound(ctx, in_size);
-
-  uint8_t *buf = new uint8_t[out_size];
-
-  out_size = libdeflate_deflate_compress(ctx, in, in_size, buf, out_size);
-
-  libdeflate_free_compressor(ctx);
-
-  /* Check for compression failure */
-  if (out_size == 0) {
-    delete[] buf;
-    return false;
-  }
-
-  fwrite(buf, 1, out_size, &out);
-
-  delete[] buf;
-
-  return true;
-}
-
-static bool to_binform(Expr *node, bool compress, FILE &out) {
-  char *membuf;
-  size_t memlen;
-
-  FILE *mem = open_memstream(&membuf, &memlen);
-
-  /* Generate the AST representation as ASCII */
-  if (!to_codeform(node, true, 0, *mem)) {
-    fclose(mem);
-    return false;
-  }
-
-  if (compress) {
-    if (!raw_deflate((const uint8_t *)membuf, memlen, out)) {
-      fclose(mem);
-      return false;
-    }
-  }
-
-  fclose(mem);
-
-  return true;
-}
-
 LIB_EXPORT bool qxir_write(const qxir_node_t *_node, qxir_serial_t mode, FILE *out, size_t *outlen,
                            uint32_t argcnt, ...) {
   (void)argcnt;
@@ -857,14 +717,6 @@ LIB_EXPORT bool qxir_write(const qxir_node_t *_node, qxir_serial_t mode, FILE *o
     switch (mode) {
       case QXIR_SERIAL_CODE: {
         status = to_codeform(node, false, 2, *out);
-        break;
-      }
-      case QXIR_SERIAL_CODE_MIN: {
-        status = to_codeform(node, true, 0, *out);
-        break;
-      }
-      case QXIR_SERIAL_B10: {
-        status = to_binform(node, true, *out);
         break;
       }
     }

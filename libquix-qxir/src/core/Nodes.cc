@@ -36,13 +36,13 @@
 #include <quix-core/Error.h>
 #include <quix-qxir/IR.h>
 #include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
 
 #include <boost/uuid/name_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <cstdint>
 #include <cstring>
+#include <quix-qxir/IRGraph.hh>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -792,7 +792,7 @@ CPP_EXPORT void qxir::Expr::dump(std::ostream &os, bool isForDebug) const {
   size_t len = 0;
 
   FILE *fmembuf = open_memstream(&cstr, &len);
-  if (!qxir_write(this, QXIR_SERIAL_CODE_MIN, fmembuf, nullptr, 0)) {
+  if (!qxir_write(this, QXIR_SERIAL_CODE, fmembuf, nullptr, 0)) {
     qcore_panic("Failed to dump expression");
   }
   fflush(fmembuf);

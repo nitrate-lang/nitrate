@@ -32,7 +32,7 @@
 #include "quix-qxir/TypeDecl.h"
 #define QXIR_USE_CPP_API
 #include <quix-qxir/IR.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IRGraph.hh>
 
 #include <boost/bimap.hpp>
 #include <string_view>

@@ -40,7 +40,7 @@
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <core/LibMacro.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IRGraph.hh>
 
 #include <algorithm>
 #include <future>
