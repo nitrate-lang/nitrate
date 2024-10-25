@@ -31,10 +31,10 @@
 
 #include <core/LibMacro.h>
 #include <quix-qxir/IR.h>
-#include <quix-qxir/IRGraph.hh>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cstdint>
+#include <quix-qxir/IRGraph.hh>
 
 using namespace qxir;
 

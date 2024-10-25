@@ -30,9 +30,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <quix-qxir/IR.h>
-#include <quix-qxir/IRGraph.hh>
 
 #include <boost/bimap.hpp>
+#include <quix-qxir/IRGraph.hh>
 #include <string_view>
 #include <transform/passes/Decl.hh>
 

@@ -31,21 +31,21 @@
 
 /**
  * WARNING: This code technically uses unspecified behavior in C++. It assumes that
- * adding the __QXIR_NODE_REFLECT_IMPL__ define (which will change the visibility of)
+ * adding the __QXIR_NODE_REFLECT_IMPL__ define, which will change the visibility of
  * private fields will not change the overall memory layout of any of the used polymorphic
  * class types. On the bright side, if this assumption is wrong, the code will certainly
- * crash, so it should be easy to detect.
+ * crash on test cases, so it should be easy to detect faults.
  */
 
 #define __QXIR_NODE_REFLECT_IMPL__  // Make private fields accessible
 
 #include <core/LibMacro.h>
-#include <quix-qxir/IRGraph.hh>
 
 #include <algorithm>
 #include <future>
 #include <list>
 #include <queue>
+#include <quix-qxir/IRGraph.hh>
 #include <stack>
 
 namespace qxir::detail {

@@ -32,8 +32,6 @@
 #include <quix-core/Error.h>
 #include <quix-parser/Parser.h>
 #include <quix-qxir/IR.h>
-#include <quix-qxir/Module.hh>
-#include <quix-qxir/IRGraph.hh>
 #include <setjmp.h>
 #include <signal.h>
 
@@ -41,6 +39,8 @@
 #include <core/Config.hh>
 #include <cstring>
 #include <quix-qxir/Classes.hh>
+#include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Module.hh>
 #include <quix-qxir/Report.hh>
 #include <sstream>
 #include <stack>
