@@ -3092,6 +3092,10 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
       qcore_implement("QIR_NODE_ASM cloning");
       break;
     }
+    case QIR_NODE_IGN: {
+      out = create<Ign>();
+      break;
+    }
     case QIR_NODE_U1_TY: {
       out = create<U1Ty>();
       break;

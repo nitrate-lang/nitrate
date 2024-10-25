@@ -174,6 +174,9 @@ namespace qxir::detail {
         qcore_implement("QIR_NODE_ASM get_children_sorted");
         break;
       }
+      case QIR_NODE_IGN: {
+        break;
+      }
       case QIR_NODE_U1_TY: {
         break;
       }

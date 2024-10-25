@@ -133,6 +133,7 @@ namespace qxir {
   class Switch;
   class Fn;
   class Asm;
+  class Ign;
 #ifdef __QUIX_IMPL__
   class Tmp;
 #endif

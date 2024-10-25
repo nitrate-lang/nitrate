@@ -89,6 +89,7 @@ CPP_EXPORT uint32_t Expr::getKindSize(qxir_ty_t type) noexcept {
       {QIR_NODE_SWITCH, sizeof(Switch)},
       {QIR_NODE_FN, sizeof(Fn)},
       {QIR_NODE_ASM, sizeof(Asm)},
+      {QIR_NODE_IGN, sizeof(Ign)},
       {QIR_NODE_U1_TY, sizeof(U1Ty)},
       {QIR_NODE_U8_TY, sizeof(U8Ty)},
       {QIR_NODE_U16_TY, sizeof(U16Ty)},
@@ -141,9 +142,10 @@ CPP_EXPORT const char *Expr::getKindName(qxir_ty_t type) noexcept {
       {QIR_NODE_FOR, "QIR_NODE_FOR"},
       {QIR_NODE_FORM, "QIR_NODE_FORM"},
       {QIR_NODE_CASE, "QIR_NODE_CASE"},
-      {QIR_NODE_SWITCH, "QIR_NODE_SWITCH"},
+      {QIR_NODE_SWITCH, "QIR_NODE_SWITCH"},\
       {QIR_NODE_FN, "QIR_NODE_FN"},
       {QIR_NODE_ASM, "QIR_NODE_ASM"},
+      {QIR_NODE_IGN, "QIR_NODE_IGN"},
       {QIR_NODE_U1_TY, "QIR_NODE_U1_TY"},
       {QIR_NODE_U8_TY, "QIR_NODE_U8_TY"},
       {QIR_NODE_U16_TY, "QIR_NODE_U16_TY"},
@@ -448,6 +450,9 @@ CPP_EXPORT bool qxir::Expr::cmp_eq(const qxir::Expr *other) const {
       qcore_implement("Expr::cmp_eq for QIR_NODE_ASM");
       break;
     }
+    case QIR_NODE_IGN: {
+      return true;
+    }
     case QIR_NODE_U1_TY:
     case QIR_NODE_U8_TY:
     case QIR_NODE_U16_TY:
@@ -679,6 +684,10 @@ CPP_EXPORT std::string_view qxir::Expr::getName() const noexcept {
     }
 
     case QIR_NODE_SWITCH: {
+      break;
+    }
+
+    case QIR_NODE_IGN: {
       break;
     }
 
@@ -956,6 +965,9 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
         break;
       }
       case QIR_NODE_SWITCH: {
+        break;
+      }
+      case QIR_NODE_IGN: {
         break;
       }
       case QIR_NODE_FN: {

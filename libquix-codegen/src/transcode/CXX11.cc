@@ -32,9 +32,9 @@
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-qxir/IR.h>
-#include <quix-qxir/IRGraph.hh>
 
 #include <boost/multiprecision/cpp_int.hpp>
+#include <quix-qxir/IRGraph.hh>
 // #include <chrono>
 #include <core/Config.hh>
 // #include <cstdint>
@@ -699,6 +699,10 @@
 //       qcore_implement("Inline assembly");
 //       break;
 //     }
+
+// case QIR_NODE_IGN: {
+//   break;
+// }
 
 //     case QIR_NODE_U1_TY: {
 //       out << "bool";

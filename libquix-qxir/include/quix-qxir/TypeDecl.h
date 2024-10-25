@@ -75,6 +75,7 @@ typedef enum qxir_ty_t {
   QIR_NODE_SWITCH, /* Switch statement */
   QIR_NODE_FN,     /* Function definition */
   QIR_NODE_ASM,    /* Inline assembly */
+  QIR_NODE_IGN,    /* TODO: No-op */
 
   QIR_NODE_U1_TY,     /* 1-bit unsigned integer (boolean) */
   QIR_NODE_U8_TY,     /* 8-bit unsigned integer */
@@ -104,7 +105,7 @@ typedef enum qxir_ty_t {
 #endif
 } qxir_ty_t;
 
-#define QIR_NODE_COUNT 46
+#define QIR_NODE_COUNT 47
 
 typedef struct qxir_conf_t qxir_conf_t;
 
