@@ -39,18 +39,17 @@
  * @spacecomplexity O(1)
  */
 
+using namespace qxir::diag;
+
 bool qxir::transform::impl::ds_nullchk(qmodule_t *mod) {
   bool has_bad_null = false;
   bool missing_mod = false;
 
-  const auto cb = [&has_bad_null, &missing_mod, mod](Expr *, Expr **_cur) -> IterOp {
+  const auto cb = [&has_bad_null, &missing_mod](Expr *, Expr **_cur) -> IterOp {
     if (*_cur == nullptr) [[unlikely]] {
       has_bad_null = true;
 
-      mod->getDiag().push(
-          QXIR_AUDIT_CONV,
-          diag::DiagMessage("Illegal nullptr pointer found in module IR data structure.",
-                            diag::IssueClass::FatalError, diag::IssueCode::DSNullPtr));
+      diag::report(IssueCode::DSNullPtr, IssueClass::FatalError, "");
       return IterOp::Abort;
     }
 
@@ -59,12 +58,8 @@ bool qxir::transform::impl::ds_nullchk(qmodule_t *mod) {
     if (cur->getModule() == nullptr) [[unlikely]] {
       missing_mod = true;
 
-      mod->getDiag().push(
-          QXIR_AUDIT_CONV,
-          diag::DiagMessage(
-              "Module pointer missing in node of type " + std::string(cur->getKindName()),
-              diag::IssueClass::FatalError, diag::IssueCode::DSMissingMod, cur->getLoc().first,
-              cur->getLoc().second));
+      diag::report(IssueCode::DSMissingMod, IssueClass::FatalError, cur->getLoc().first,
+                   cur->getLoc().second);
       return IterOp::Abort;
     }
 

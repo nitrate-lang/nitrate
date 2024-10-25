@@ -279,6 +279,9 @@ typedef struct qlex_tok_t final {
   bool operator<(const qlex_tok_t &rhs) const {
     if (ty != rhs.ty) return ty < rhs.ty;
     switch (ty) {
+      case qEofF:
+      case qErro:
+        return false;
       case qPunc:
         return v.punc < rhs.v.punc;
       case qOper:
@@ -288,10 +291,12 @@ typedef struct qlex_tok_t final {
       case qIntL:
       case qNumL:
       case qText:
+      case qName:
       case qChar:
+      case qMacB:
+      case qMacr:
+      case qNote:
         return v.str_idx < rhs.v.str_idx;
-      default:
-        return false;
     }
   }
 } __attribute__((packed)) qlex_tok_t;

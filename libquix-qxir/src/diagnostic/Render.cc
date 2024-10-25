@@ -374,11 +374,6 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
         handler(mint_modern_message(msg), msg.m_type);
         break;
       }
-
-      default: {
-        handler(mint_plain_message(msg), msg.m_type);
-        break;
-      }
     }
   }
 

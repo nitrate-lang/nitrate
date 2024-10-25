@@ -434,6 +434,9 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       recurse(n->as<Fn>()->getBody());
       break;
     }
+    case QIR_NODE_ASM: {
+      qcore_implement("ASM serialization");
+    }
     case QIR_NODE_U1_TY: {
       ss << "u1";
       break;
@@ -592,9 +595,6 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       ss << "`" << static_cast<uint64_t>(n->as<Tmp>()->getTmpType());
       ss << ";" << n->as<Tmp>()->getData().index() << "`";
       break;
-    }
-    default: {
-      qcore_panicf("Unknown node type: %d", n->getKind());
     }
   }
 
