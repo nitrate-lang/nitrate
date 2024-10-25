@@ -60,8 +60,7 @@ namespace qxir::diag {
   };
 
   enum class IssueCode {
-    Default = 0,
-
+    CompilerError,
     SignalReceived,
     PTreeInvalid,
     DSPolyCyclicRef,
@@ -76,6 +75,8 @@ namespace qxir::diag {
 
     UnknownType,
     UnresolvedIdentifier,
+
+    Default = IssueCode::CompilerError,
   };
 
   typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;

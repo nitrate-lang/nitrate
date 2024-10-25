@@ -33,13 +33,13 @@
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Node.h>
-#include <quix-qxir/Module.hh>
-#include <quix-qxir/IRGraph.hh>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
 #include <cstdint>
 #include <iomanip>
+#include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Module.hh>
 #include <quix-qxir/Report.hh>
 #include <sstream>
 
@@ -61,40 +61,29 @@ struct IssueInfo {
 /// FIXME: Write correct stuff here
 
 static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, IssueInfo>({
-    {IssueCode::Default,
-     {"unspecified", /* FIXME: Summarize */
-      "write me",
-      {}}},
+    {IssueCode::CompilerError, {"Compiler Error", "An error occurred during compilation.", {}}},
     {IssueCode::PTreeInvalid,
      {"ptree-invalid", /* FIXME: Summarize */
-      "This function is expected to return in all possible branches. Why is your function failing "
-      "to do so?",
-      {"Make sure you have a return statement when you need one.",
-       "If you are using a loop and avoiding a return, ensure that it is knowable that the loop "
-       "will always terminate.",
-       "If you are optimizing, make sure it is knowable that that a particular branch is "
-       "impossible to avoid this error."}}},
-    {IssueCode::SignalReceived,
-     {"signal-recv", /* FIXME: Summarize */
-      "write me",
+      "Parse tree is not okay.",
       {}}},
+    {IssueCode::SignalReceived,
+     {"signal-recv", "The compiler received an unrecoverable process signal.", {}}},
     {IssueCode::DSPolyCyclicRef,
-     {"ds-cyclic-ref", /* FIXME: Summarize */
-      "Cyclic polymorphic node reference detected in module IR data structure.",
+     {"ds-cyclic-ref",
+      "Cyclic polymorphic node reference detected in internal module IR data structure.",
       {"This is an (INTERNAL) compiler error. Please report this issue."}}},
     {IssueCode::DSNullPtr,
-     {"ds-nullptr", /* FIXME: Summarize */
-      "write me",
-      {}}},
+     {"ds-nullptr",
+      "Nullptr detected in internal module IR data structure.",
+      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
     {IssueCode::DSBadType,
-     {"ds-bad-type", /* FIXME: Summarize */
-      "write me",
-      {}}},
+     {"ds-bad-type",
+      "Internal module IR data structure contains a bad type.",
+      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
     {IssueCode::DSMissingMod,
-     {"ds-missing-mod", /* FIXME: Summarize */
-      "write me",
-      {}}},
-
+     {"ds-missing-mod",
+      "Internal module IR data structure contains a node with a missing module pointer.",
+      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
     {IssueCode::Redefinition,
      {"redefinition", /* FIXME: Summarize */
       "write me",
