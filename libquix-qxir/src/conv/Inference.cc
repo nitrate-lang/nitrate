@@ -797,6 +797,10 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         T = getType<VoidTy>();
         break;
       }
+      case QIR_NODE_IGN: {
+        T = getType<VoidTy>();
+        break;
+      }
       case QIR_NODE_TMP: {
         qcore_panic("Temporary nodes must be resolved with more information prior to inference");
         break;

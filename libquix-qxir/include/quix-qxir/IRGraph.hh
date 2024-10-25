@@ -189,6 +189,8 @@ namespace qxir {
         return QIR_NODE_FN;
       } else if constexpr (std::is_same_v<T, Asm>) {
         return QIR_NODE_ASM;
+      } else if constexpr (std::is_same_v<T, Ign>) {
+        return QIR_NODE_IGN;
       } else if constexpr (std::is_same_v<T, U1Ty>) {
         return QIR_NODE_U1_TY;
       } else if constexpr (std::is_same_v<T, U8Ty>) {
@@ -364,6 +366,10 @@ namespace qxir {
         }
         case QIR_NODE_ASM: {
           if constexpr (!std::is_same_v<T, Asm>) goto cast_panic;
+          break;
+        }
+        case QIR_NODE_IGN: {
+          if constexpr (!std::is_same_v<T, Ign>) goto cast_panic;
           break;
         }
         case QIR_NODE_U1_TY: {
@@ -1357,6 +1363,13 @@ namespace qxir {
 
   public:
     Asm() : Expr(QIR_NODE_ASM) { qcore_implement(__func__); }
+  };
+
+  class Ign final : public Expr {
+    QCLASS_REFLECT()
+
+  public:
+    Ign() : Expr(QIR_NODE_IGN) {}
   };
 
   ///=============================================================================
