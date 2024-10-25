@@ -39,9 +39,7 @@
 /// TODO: Worst code ever written. Refactor this.
 
 /**
- * @brief Remove the temporary node and replace it with the resolved node.
- *
- * @details See code.
+ * @brief Remove the temporary nodes and replace them with a resolved node.
  *
  * @timecomplexity O(n)
  * @spacecomplexity O(n)
@@ -352,8 +350,9 @@ static bool resolve_node(qxir::Expr **_cur) {
       break;
     }
 
-    default: {
-      qcore_panicf("Invalid temporary type: %d", static_cast<int>(tt));
+    case TmpType::BAD: {
+      qcore_panic("Bad temporary node found in the IR data structure.");
+      break;
     }
   }
 

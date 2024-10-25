@@ -40,10 +40,7 @@
  * @brief Canonicalize the names of things in the module.
  *
  * @timecomplexity O(n)
- * @spacecomplexity O(n)
- * @reason: If every node must be mangled, the memory consumption is
- * proportional to the number of nodes. In practice, its quite small and bounded by language
- * semantics.
+ * @spacecomplexity O(1)
  */
 
 using namespace qxir;
@@ -306,12 +303,11 @@ static void mangle_function(Fn *n) {
     case qxir::AbiTag::Internal:
     case qxir::AbiTag::QUIX: {
       std::stringstream ss;
-      ss << "_Q";
 
+      ss << "_Q";  // QUIX ABI prefix
       encode_ns_size_value(n->getName(), ss);
       mangle_type(n->getType(), ss);
-
-      ss << "_0";
+      ss << "_0";  // ABI version 0
 
       n->setName(n->getModule()->internString(ss.str()));
       break;
@@ -330,12 +326,11 @@ static void mangle_local(Local *n) {
     case qxir::AbiTag::Internal:
     case qxir::AbiTag::QUIX: {
       std::stringstream ss;
-      ss << "_Q";
 
+      ss << "_Q";  // QUIX ABI prefix
       encode_ns_size_value(n->getName(), ss);
       mangle_type(n->getType(), ss);
-
-      ss << "_0";
+      ss << "_0";  // ABI version 0
 
       n->setName(n->getModule()->internString(ss.str()));
       break;
