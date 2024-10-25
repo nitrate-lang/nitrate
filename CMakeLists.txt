@@ -21,6 +21,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -pedantic -Werror \
                     -Wno-error=unused-parameter \
                     -Wno-error=unused-command-line-argument \
                     -Wno-unused-command-line-argument \
+                    -Wno-error=missing-field-initializers   \
+                    -Wno-missing-field-initializers \
                     -D__QUIX_IMPL__")
 
 # Enable full optimization in general
