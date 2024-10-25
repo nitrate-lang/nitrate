@@ -35,16 +35,7 @@
 #include <transform/Transform.hh>
 #include <transform/passes/Decl.hh>
 
-using namespace qxir::transform;
-
-StdTransform::StdTransform() {}
-
-const StdTransform& StdTransform::create() {
-  static StdTransform ptr;
-  return ptr;
-}
-
-bool StdTransform::transform(qmodule_t* M, std::ostream& err) const {
+bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
 #define RUN_PASS(name, fn)                                        \
   {                                                               \
     if (!fn(M)) {                                                 \

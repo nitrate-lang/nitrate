@@ -29,22 +29,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_PASSES_PASS_MANAGER_H__
-#define __QUIX_QXIR_PASSES_PASS_MANAGER_H__
+#ifndef __QUIX_QXIR_TRANSFORM_TRANSFORM_HH__
+#define __QUIX_QXIR_TRANSFORM_TRANSFORM_HH__
 
 #include <ostream>
 
 struct qmodule_t;
 
 namespace qxir::transform {
-  class StdTransform final {
-    StdTransform();
-
-  public:
-    static const StdTransform& create();
-
-    bool transform(qmodule_t* module, std::ostream& out) const;
-  };
+  bool std_transform(qmodule_t* module, std::ostream& err);
 }  // namespace qxir::transform
 
-#endif  // __QUIX_QXIR_PASSES_PASS_MANAGER_H__
+#endif  // __QUIX_QXIR_TRANSFORM_TRANSFORM_HH__

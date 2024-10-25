@@ -171,7 +171,7 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
 
       if (status) {
         std::stringstream ss;
-        status = qxir::transform::StdTransform::create().transform(mod, ss);
+        status = qxir::transform::std_transform(mod, ss);
       }
 
       status = !mod->getFailbit();
@@ -334,7 +334,7 @@ static qxir::List *create_string_literal(std::string_view value) {
   return qxir::create<qxir::List>(items);
 }
 
-qxir::Expr *qconv_lower_binexpr(ConvState &s, qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) {
+qxir::Expr *qconv_lower_binexpr(ConvState &, qxir::Expr *lhs, qxir::Expr *rhs, qlex_op_t op) {
 #define STD_BINOP(op) qxir::create<qxir::BinExpr>(lhs, rhs, qxir::Op::op)
 #define ASSIGN_BINOP(op)                                                                    \
   qxir::create<qxir::BinExpr>(                                                              \
