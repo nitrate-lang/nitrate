@@ -31,9 +31,9 @@
 
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/Module.hh>
 
 #include <mutex>
+#include <quix-qxir/Module.hh>
 
 using namespace qxir;
 

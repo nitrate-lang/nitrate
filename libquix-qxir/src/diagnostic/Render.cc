@@ -32,13 +32,13 @@
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-parser/Node.h>
-#include <quix-qxir/Module.hh>
-#include <quix-qxir/IRGraph.hh>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
 #include <cstddef>
 #include <cstdint>
+#include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Module.hh>
 #include <quix-qxir/Report.hh>
 #include <sstream>
 
