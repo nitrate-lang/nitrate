@@ -1416,59 +1416,105 @@ namespace qxir {
   };
 #endif
 
-#define TYPE_SIZE sizeof(Expr)
   extern thread_local qmodule_t *current;
 
-  template <typename T>
-  constexpr T *getType() {
-    Type *type = nullptr;
-    if constexpr (std::is_same_v<T, U1Ty>) {
-      type = new (Arena<U1Ty>().allocate(1)) U1Ty();
-    } else if constexpr (std::is_same_v<T, U8Ty>) {
-      type = new (Arena<U8Ty>().allocate(1)) U8Ty();
-    } else if constexpr (std::is_same_v<T, U16Ty>) {
-      type = new (Arena<U16Ty>().allocate(1)) U16Ty();
-    } else if constexpr (std::is_same_v<T, U32Ty>) {
-      type = new (Arena<U32Ty>().allocate(1)) U32Ty();
-    } else if constexpr (std::is_same_v<T, U64Ty>) {
-      type = new (Arena<U64Ty>().allocate(1)) U64Ty();
-    } else if constexpr (std::is_same_v<T, U128Ty>) {
-      type = new (Arena<U128Ty>().allocate(1)) U128Ty();
-    } else if constexpr (std::is_same_v<T, I8Ty>) {
-      type = new (Arena<I8Ty>().allocate(1)) I8Ty();
-    } else if constexpr (std::is_same_v<T, I16Ty>) {
-      type = new (Arena<I16Ty>().allocate(1)) I16Ty();
-    } else if constexpr (std::is_same_v<T, I32Ty>) {
-      type = new (Arena<I32Ty>().allocate(1)) I32Ty();
-    } else if constexpr (std::is_same_v<T, I64Ty>) {
-      type = new (Arena<I64Ty>().allocate(1)) I64Ty();
-    } else if constexpr (std::is_same_v<T, I128Ty>) {
-      type = new (Arena<I128Ty>().allocate(1)) I128Ty();
-    } else if constexpr (std::is_same_v<T, F16Ty>) {
-      type = new (Arena<F16Ty>().allocate(1)) F16Ty();
-    } else if constexpr (std::is_same_v<T, F32Ty>) {
-      type = new (Arena<F32Ty>().allocate(1)) F32Ty();
-    } else if constexpr (std::is_same_v<T, F64Ty>) {
-      type = new (Arena<F64Ty>().allocate(1)) F64Ty();
-    } else if constexpr (std::is_same_v<T, F128Ty>) {
-      type = new (Arena<F128Ty>().allocate(1)) F128Ty();
-    } else if constexpr (std::is_same_v<T, VoidTy>) {
-      type = new (Arena<VoidTy>().allocate(1)) VoidTy();
-    } else {
-      static_assert(!std::is_same_v<T, T>,
-                    "qxir::getType<T>(): Can not construct immuntable of this type.");
+  static auto already_alloc = [](qxir_ty_t ty) -> void * {
+    auto it = current->getKeyMap().find((uint64_t)ty);
+    if (it != current->getKeyMap().end()) [[likely]] {
+      return reinterpret_cast<void *>(it->second);
     }
 
-    type->setModule(current);
+    return nullptr;
+  };
 
-    return static_cast<T *>(type);
-  }
+  static auto alloc_memorize = [](qxir_ty_t ty, void *ptr) -> void {
+    current->getKeyMap().emplace((uint64_t)ty, reinterpret_cast<uintptr_t>(ptr));
+  };
 
   template <typename T, typename... Args>
-  static T *create(Args &&...args) {
-    void *raw = Arena<T>().allocate(1);
-    auto ptr = new (raw) T(std::forward<Args>(args)...);
+  constexpr static T *create(Args &&...args) {
+    /**
+     * Create nodes and minimize the number of allocations by reusing stateless
+     * nodes.
+     *
+     * @note The base class contains source location information, this information will be lost in
+     * deduplicated nodes. In addition, the constExpr bit and the mutable bit will be lost, but
+     * these have no semantic significance in the contexts where deduplicated nodes are used.
+     */
+
+    constexpr qxir_ty_t ty = Expr::getTypeCode<T>();
+    T *ptr = nullptr;
+
+#define REUSE_ALLOCATION()                                             \
+  if ((ptr = (T *)already_alloc(ty)) == nullptr) [[unlikely]] {        \
+    ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
+    alloc_memorize(ty, (void *)ptr);                                   \
+  }
+
+    switch (ty) {
+      case QIR_NODE_BINEXPR:
+      case QIR_NODE_UNEXPR:
+      case QIR_NODE_POST_UNEXPR:
+      case QIR_NODE_INT:
+      case QIR_NODE_FLOAT:
+      case QIR_NODE_LIST:
+      case QIR_NODE_CALL:
+      case QIR_NODE_SEQ:
+      case QIR_NODE_INDEX:
+      case QIR_NODE_IDENT:
+      case QIR_NODE_EXTERN:
+      case QIR_NODE_LOCAL:
+      case QIR_NODE_RET:
+        ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+        break;
+      case QIR_NODE_BRK:
+      case QIR_NODE_CONT:
+        REUSE_ALLOCATION();
+        break;
+      case QIR_NODE_IF:
+      case QIR_NODE_WHILE:
+      case QIR_NODE_FOR:
+      case QIR_NODE_FORM:
+      case QIR_NODE_CASE:
+      case QIR_NODE_SWITCH:
+      case QIR_NODE_FN:
+      case QIR_NODE_ASM:
+        ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+        break;
+      case QIR_NODE_IGN:
+      case QIR_NODE_U1_TY:
+      case QIR_NODE_U8_TY:
+      case QIR_NODE_U16_TY:
+      case QIR_NODE_U32_TY:
+      case QIR_NODE_U64_TY:
+      case QIR_NODE_U128_TY:
+      case QIR_NODE_I8_TY:
+      case QIR_NODE_I16_TY:
+      case QIR_NODE_I32_TY:
+      case QIR_NODE_I64_TY:
+      case QIR_NODE_I128_TY:
+      case QIR_NODE_F16_TY:
+      case QIR_NODE_F32_TY:
+      case QIR_NODE_F64_TY:
+      case QIR_NODE_F128_TY:
+      case QIR_NODE_VOID_TY:
+        REUSE_ALLOCATION();
+        break;
+      case QIR_NODE_PTR_TY:
+      case QIR_NODE_OPAQUE_TY:
+      case QIR_NODE_STRUCT_TY:
+      case QIR_NODE_UNION_TY:
+      case QIR_NODE_ARRAY_TY:
+      case QIR_NODE_FN_TY:
+      case QIR_NODE_TMP:
+        ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+        break;
+    }
+
+#undef REUSE_ALLOCATION
+
     ptr->setModule(current);
+
     return ptr;
   }
 

@@ -91,15 +91,15 @@ static bool is_primitive_numeric(qxir_ty_t ty) {
 static Type *signed_complement(qxir_ty_t ty) {
   switch (ty) {
     case QIR_NODE_I8_TY:
-      return getType<U8Ty>();
+      return create<U8Ty>();
     case QIR_NODE_I16_TY:
-      return getType<U16Ty>();
+      return create<U16Ty>();
     case QIR_NODE_I32_TY:
-      return getType<U32Ty>();
+      return create<U32Ty>();
     case QIR_NODE_I64_TY:
-      return getType<U64Ty>();
+      return create<U64Ty>();
     case QIR_NODE_I128_TY:
-      return getType<U128Ty>();
+      return create<U128Ty>();
     default:
       return nullptr;
   }
@@ -125,19 +125,19 @@ static Type *binexpr_promote(Type *L, Type *R) {
     }
 
     if (L->is(QIR_NODE_F128_TY) || R->is(QIR_NODE_F128_TY)) {
-      return getType<F128Ty>();
+      return create<F128Ty>();
     }
 
     if (L->is(QIR_NODE_F64_TY) || R->is(QIR_NODE_F64_TY)) {
-      return getType<F64Ty>();
+      return create<F64Ty>();
     }
 
     if (L->is(QIR_NODE_F32_TY) || R->is(QIR_NODE_F32_TY)) {
-      return getType<F32Ty>();
+      return create<F32Ty>();
     }
 
     if (L->is(QIR_NODE_F16_TY) || R->is(QIR_NODE_F16_TY)) {
-      return getType<F16Ty>();
+      return create<F16Ty>();
     }
     ///===========================================================================
 
@@ -253,15 +253,15 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::LogicAnd: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::LogicOr: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::LogicNot: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::LShift: {
@@ -293,27 +293,27 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::LT: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::GT: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::LE: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::GE: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::Eq: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::NE: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::Alignof: {
@@ -391,7 +391,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::LogicNot: {
-            T = getType<U1Ty>();
+            T = create<U1Ty>();
             break;
           }
           case Op::LShift: {
@@ -447,7 +447,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::Alignof: {
-            T = getType<U64Ty>();
+            T = create<U64Ty>();
             break;
           }
           case Op::Typeof: {
@@ -474,7 +474,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::Bitsizeof: {
-            T = getType<U64Ty>();
+            T = create<U64Ty>();
             break;
           }
         }
@@ -611,19 +611,19 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
 
         if (I->isNativeRepresentation()) {
           if (I->getNativeRepresentation() > UINT32_MAX) {
-            T = getType<I64Ty>();
+            T = create<I64Ty>();
           } else {
-            T = getType<I32Ty>();
+            T = create<I32Ty>();
           }
         } else {
           std::string_view val = I->getStringRepresentation();
           boost::multiprecision::cpp_int num(val.data());
           if (num > UINT64_MAX) {
-            T = getType<I128Ty>();
+            T = create<I128Ty>();
           } else if (num > UINT32_MAX) {
-            T = getType<I64Ty>();
+            T = create<I64Ty>();
           } else {
-            T = getType<I32Ty>();
+            T = create<I32Ty>();
           }
         }
         break;
@@ -632,15 +632,15 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         Float *F = E->as<Float>();
 
         if (F->isNativeRepresentation()) {
-          T = getType<F64Ty>();
+          T = create<F64Ty>();
         } else {
           std::string_view val = F->getStringRepresentation();
           if (val.ends_with("f128")) {
-            T = getType<F128Ty>();
+            T = create<F128Ty>();
           } else if (val.ends_with("f32")) {
-            T = getType<F32Ty>();
+            T = create<F32Ty>();
           } else {
-            T = getType<F64Ty>();  // Default to f64
+            T = create<F64Ty>();  // Default to f64
           }
         }
         break;
@@ -671,7 +671,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
       }
       case QIR_NODE_SEQ: {
         if (E->as<Seq>()->getItems().empty()) {
-          T = getType<VoidTy>();
+          T = create<VoidTy>();
         } else {
           T = E->as<Seq>()->getItems().back()->getType();
         }
@@ -740,7 +740,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         break;
       }
       case QIR_NODE_EXTERN: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_LOCAL: {
@@ -752,35 +752,35 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         break;
       }
       case QIR_NODE_BRK: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_CONT: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_IF: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_WHILE: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_FOR: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_FORM: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_CASE: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_SWITCH: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_FN: {
@@ -794,11 +794,11 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         break;
       }
       case QIR_NODE_ASM: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_IGN: {
-        T = getType<VoidTy>();
+        T = create<VoidTy>();
         break;
       }
       case QIR_NODE_TMP: {
