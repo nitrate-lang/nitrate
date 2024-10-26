@@ -325,11 +325,11 @@ static qxir::List *create_string_literal(std::string_view value) {
 
   for (char c : value) {
     items.push_back(qxir::create<qxir::BinExpr>(qxir::create<qxir::Int>(c),
-                                                qxir::getType<qxir::I8Ty>(), qxir::Op::CastAs));
+                                                qxir::create<qxir::I8Ty>(), qxir::Op::CastAs));
   }
 
   items.push_back(qxir::create<qxir::BinExpr>(qxir::create<qxir::Int>(0),
-                                              qxir::getType<qxir::I8Ty>(), qxir::Op::CastAs));
+                                              qxir::create<qxir::I8Ty>(), qxir::Op::CastAs));
 
   return qxir::create<qxir::List>(items);
 }
@@ -1556,7 +1556,7 @@ namespace qxir {
       size_t field_align = field->asType()->getAlignBytes();
       size_t padding = align(offset, field_align) - offset;
       if (padding > 0) {
-        fields.push_back(create<ArrayTy>(getType<U8Ty>(), padding));
+        fields.push_back(create<ArrayTy>(create<U8Ty>(), padding));
       }
 
       fields.push_back(field->asType());
@@ -1705,7 +1705,7 @@ namespace qxir {
         size_t field_align = (*it)->getAlignBytes();
         size_t padding = align(offset, field_align) - offset;
         if (padding > 0) {
-          fields.push_back(create<ArrayTy>(getType<U8Ty>(), padding));
+          fields.push_back(create<ArrayTy>(create<U8Ty>(), padding));
         }
 
         fields.push_back(*it);

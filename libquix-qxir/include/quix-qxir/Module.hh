@@ -153,7 +153,8 @@ private:
   using NamedConstMap = std::unordered_map<std::string_view, qxir::Expr *>;
 
   ///=============================================================================
-  qxir::Expr *m_root; /* Root node of the module */
+  qxir::Expr *m_root;                               /* Root node of the module */
+  std::unordered_map<uint64_t, uint64_t> m_key_map; /* Place for IRGraph key-value pairs */
   ///=============================================================================
 
   ///=============================================================================
@@ -204,6 +205,8 @@ public:
 
   void setConf(qxir_conf_t *conf) noexcept { m_conf = conf; }
   qxir_conf_t *getConf() noexcept { return m_conf; }
+
+  std::unordered_map<uint64_t, uint64_t> &getKeyMap() noexcept { return m_key_map; }
 
   void enableDiagnostics(bool is_enabled) noexcept;
   bool isDiagnosticsEnabled() const noexcept { return m_diagnostics_enabled; }
