@@ -616,7 +616,6 @@ namespace qxir {
     Eq,        /* '==': Equal to operator */
     NE,        /* '!=': Not equal to operator */
     Alignof,   /* 'alignof': Alignment of operator */
-    Typeof,    /* 'typeof': Type of operator */
     BitcastAs, /* 'bitcast_as': Bitcast operator */
     CastAs,    /* 'cast_as': Common operator */
     Bitsizeof, /* 'bitsizeof': Bit size of operator */
