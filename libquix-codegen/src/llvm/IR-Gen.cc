@@ -411,11 +411,8 @@ struct State {
   std::stack<llvm::GlobalValue::LinkageTypes> linkage;
   std::stack<std::pair<llvm::Function *, std::unordered_map<std::string_view, llvm::AllocaInst *>>>
       locals;
-  struct LoopBlock {
-    llvm::BasicBlock *step;
-    llvm::BasicBlock *exit;
-  };
-  std::stack<LoopBlock> loops;
+  std::stack<llvm::BasicBlock *> breaks;
+  std::stack<llvm::BasicBlock *> continues;
 
   bool in_fn;
   bool did_ret;
@@ -1398,10 +1395,6 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
                                  llvm::APInt(64, N->getExpr()->getType()->getAlignBytes()));
       break;
     }
-    case qxir::Op::Typeof: {
-      /// TODO: Typeof
-      break;
-    }
     case qxir::Op::Bitsizeof: {
       R = llvm::ConstantInt::get(m.getContext(),
                                  llvm::APInt(64, N->getExpr()->getType()->getSizeBits()));
@@ -1938,7 +1931,7 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
 
       global->setInitializer(llvm::Constant::getNullValue(R_T.value()));
 
-      /// FIXME: Set the initializer value during program load???
+      /// TODO: Set the initializer value during program load???
       return global;
     }
   }
@@ -1982,10 +1975,11 @@ static val_t QIR_NODE_BRK_C(ctx_t &, craft_t &b, const Mode &, State &s, qxir::B
    * @note [Write assumptions here]
    */
 
-  qcore_assert(!s.loops.empty(), "break statement outside of loop?");
+  qcore_assert(!s.breaks.empty(), "break statement outside of loop?");
+  qcore_assert(s.breaks.top(), "break statement outside of loop?");
 
   s.did_brk = true;
-  return b.CreateBr(s.loops.top().exit);
+  return b.CreateBr(s.breaks.top());
 }
 
 static val_t QIR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s, qxir::Cont *) {
@@ -1997,10 +1991,11 @@ static val_t QIR_NODE_CONT_C(ctx_t &, craft_t &b, const Mode &, State &s, qxir::
    * @note [Write assumptions here]
    */
 
-  qcore_assert(!s.loops.empty(), "continue statement outside of loop?");
+  qcore_assert(!s.continues.empty(), "continue statement outside of loop?");
+  qcore_assert(s.continues.top(), "continue statement outside of loop?");
 
   s.did_cont = true;
-  return b.CreateBr(s.loops.top().step);
+  return b.CreateBr(s.continues.top());
 }
 
 static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::If *N) {
@@ -2082,7 +2077,8 @@ static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
 
   b.CreateCondBr(R.value(), body, end);
   b.SetInsertPoint(body);
-  s.loops.push({body, end});
+  s.breaks.push(end);
+  s.continues.push(begin);
 
   bool did_brk = s.did_brk;
   bool did_cont = s.did_cont;
@@ -2101,7 +2097,8 @@ static val_t QIR_NODE_WHILE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   s.did_cont = did_cont;
   s.did_ret = old_ret;
 
-  s.loops.pop();
+  s.continues.pop();
+  s.breaks.pop();
 
   b.SetInsertPoint(end);
 
@@ -2141,7 +2138,8 @@ static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
 
   b.CreateCondBr(R_C.value(), body, end);
   b.SetInsertPoint(body);
-  s.loops.push({begin, end});
+  s.breaks.push(end);
+  s.continues.push(step);
 
   bool did_brk = s.did_brk;
   bool did_cont = s.did_cont;
@@ -2170,7 +2168,8 @@ static val_t QIR_NODE_FOR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir
 
   b.CreateBr(begin);
 
-  s.loops.pop();
+  s.continues.pop();
+  s.breaks.pop();
 
   b.SetInsertPoint(end);
 
@@ -2230,14 +2229,17 @@ static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
   bool is_trivial = check_switch_trivial(N);
 
   if (is_trivial) {
-    // Build basic switch
-
     llvm::BasicBlock *end = llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
-    s.loops.push({nullptr, end});
+    s.breaks.push(end);
 
     llvm::SwitchInst *SI = b.CreateSwitch(R.value(), end, N->getCases().size());
 
     for (auto &node : N->getCases()) {
+      llvm::BasicBlock *case_block =
+          llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
+      b.SetInsertPoint(case_block);
+      case_block->moveBefore(end);
+
       qxir::Case *C = node->as<qxir::Case>();
 
       val_t R_C = V(m, b, cf, s, C->getCond());
@@ -2246,30 +2248,75 @@ static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
         return std::nullopt;
       }
 
-      llvm::BasicBlock *case_block =
-          llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
-      b.SetInsertPoint(case_block);
-
+      bool did_ret = s.did_ret;
       val_t R_B = V(m, b, cf, s, C->getBody());
       if (!R_B) {
         debug("Failed to get case body");
         return std::nullopt;
       }
-
-      b.CreateBr(end);
+      s.did_ret = did_ret;
 
       SI->addCase(llvm::cast<llvm::ConstantInt>(R_C.value()), case_block);
     }
 
-    s.loops.pop();
+    s.breaks.pop();
 
     b.SetInsertPoint(end);
 
     return SI;
   } else {
-    // if-else chain
-    qcore_implement("non-trivial switch");
-    /// TODO: Implement conversion for node
+    qcore_implement(__func__);
+    //   /// TODO: Implement conversion for node
+
+    //   llvm::BasicBlock *end = llvm::BasicBlock::Create(m.getContext(), "", s.locals.top().first);
+    //   s.blocks.push({nullptr, end});
+
+    //   for (auto &node : N->getCases()) {
+    //     qxir::Case *C = node->as<qxir::Case>();
+
+    //     val_t R_C = V(m, b, cf, s, C->getCond());
+    //     if (!R_C) {
+    //       debug("Failed to get case condition");
+    //       return std::nullopt;
+    //     }
+
+    //     llvm::BasicBlock *then, *els, *end;
+
+    //     then = llvm::BasicBlock::Create(m.getContext(), "then", s.locals.top().first);
+    //     els = llvm::BasicBlock::Create(m.getContext(), "else", s.locals.top().first);
+    //     end = llvm::BasicBlock::Create(m.getContext(), "end", s.locals.top().first);
+
+    //     b.CreateCondBr(R.value(), then, els);
+    //     b.SetInsertPoint(then);
+
+    //     bool old_did_ret = s.did_ret;
+    //     val_t R_T = V(m, b, cf, s, C->getBody());
+    //     if (!R_T) {
+    //       debug("Failed to get cond");
+    //       return std::nullopt;
+    //     }
+
+    //     if (!s.did_ret) {
+    //       b.CreateBr(end);
+    //     }
+    //     s.did_ret = old_did_ret;
+
+    //     b.SetInsertPoint(els);
+
+    //     s.did_ret = false;
+    //     val_t R_E = V(m, b, cf, s, N->getElse());
+    //     if (!R_E) {
+    //       debug("Failed to get else");
+    //       return std::nullopt;
+    //     }
+    //     if (!s.did_ret) {
+    //       b.CreateBr(end);
+    //     }
+    //     s.did_ret = old_did_ret;
+    //     b.SetInsertPoint(end);
+
+    //     return end;
+    //   }
   }
 }
 

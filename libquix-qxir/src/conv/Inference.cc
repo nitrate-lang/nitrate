@@ -320,10 +320,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             T = nullptr;  // Illegal
             break;
           }
-          case Op::Typeof: {
-            T = nullptr;  // Illegal
-            break;
-          }
           case Op::BitcastAs: {
             T = B->getRHS()->getType();
             break;
@@ -450,21 +446,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             T = create<U64Ty>();
             break;
           }
-          case Op::Typeof: {
-            /**
-             * JUSTIFICATION: How about the typeinfo is just serialized
-             * as a string with some standard format?
-             *
-             * That way I don't have to add a way for the type inference system
-             * to create/push new types to context like C++20's std::type_info.
-             *
-             * The actual detail of what is encoded could be configurable.
-             */
-
-            /// TODO: Typeof operator result inference
-            qcore_implement("Typeof operator");
-            break;
-          }
           case Op::BitcastAs: {
             T = nullptr;  // Illegal
             break;
@@ -584,10 +565,6 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::Alignof: {
-            T = nullptr;  // Illegal
-            break;
-          }
-          case Op::Typeof: {
             T = nullptr;  // Illegal
             break;
           }
