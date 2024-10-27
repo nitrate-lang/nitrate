@@ -2,6 +2,17 @@
 
 ---
 
+- QUIX IR dev:
+  - A lot of work to do on IR dev. 
+    - Formalize the IR expression nodes and semantics.
+    - Space-optimize library implementation
+    - Canonicolize function foreach IR node
+    - Add a way to register IR passes at and runtime.
+    - Add a phase ordering pipeline to apply the registered passes in a manner that ensures dependancies and correctness.
+    - Serialize and deserialize IR
+    - Add a builder API to generate IR like llvm::Builder.
+    - Cleanup `IRGraph.hh` header
+
 - Garbage Collection
   - Summary:
     - A runtime-less garbage collection system that will have the collector invoked

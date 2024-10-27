@@ -828,7 +828,7 @@ CPP_EXPORT qlex_loc_t qxir::Expr::locEnd() const noexcept {
   return qlex_offset(lexer, m_start_loc, m_loc_size);
 }
 
-CPP_EXPORT void qxir::Expr::setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept {
+CPP_EXPORT void qxir::Expr::setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept {
   qmodule_t *mod = getModule();
   qcore_assert(mod != nullptr, "Module is not set");
 
@@ -842,7 +842,7 @@ CPP_EXPORT void qxir::Expr::setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexce
 CPP_EXPORT Type *Expr::asType() noexcept {
 #ifndef NDEBUG
   if (!isType()) {
-    qcore_panicf("Failed to cast a non-type node to a type node: %s", getKindName());
+    qcore_panicf("Failed to cast a non-type node `%s` to a type node", getKindName());
   }
 #endif
   return static_cast<Type *>(this);
@@ -1107,7 +1107,7 @@ CPP_EXPORT boost::uuids::uuid qxir::Expr::hash() noexcept {
 
 CPP_EXPORT qmodule_t *qxir::Expr::getModule() const noexcept { return ::getModule(m_module_idx); }
 
-CPP_EXPORT void qxir::Expr::setModule(qmodule_t *module) noexcept {
+CPP_EXPORT void qxir::Expr::setModuleDangerous(qmodule_t *module) noexcept {
   m_module_idx = module->getModuleId();
 }
 

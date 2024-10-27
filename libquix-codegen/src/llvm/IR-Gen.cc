@@ -66,8 +66,6 @@
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Config.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/Module.hh>
-#include <quix-qxir/IRGraph.hh>
 #include <quix-qxir/TypeDecl.h>
 #include <sys/types.h>
 
@@ -76,15 +74,21 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Module.hh>
 #include <stack>
 #include <streambuf>
 #include <unordered_map>
 
+#if defined(QCORE_DEBUG)
 #define debug(...) std::cerr << "[debug]: ln " << __LINE__ << ": " << __VA_ARGS__ << std::endl
+#else
+#define debug(...)
+#endif
 
 /// HACK: Fix linker error with c++ boost.
 void boost::throw_exception(std::exception const &m) {
-  debug("boost::throw_exception: " << m.what());
+  std::cerr << "boost::throw_exception: " << m.what();
   std::terminate();
 }
 
@@ -397,13 +401,16 @@ struct Mode {
   bool unused;
 };
 
+enum class PtrClass {
+  DataPtr,
+  Function,
+};
+
 struct State {
   std::stack<std::pair<llvm::AllocaInst *, llvm::BasicBlock *>> return_val;
   std::stack<llvm::GlobalValue::LinkageTypes> linkage;
   std::stack<std::pair<llvm::Function *, std::unordered_map<std::string_view, llvm::AllocaInst *>>>
       locals;
-  std::unordered_map<std::string_view, llvm::GlobalVariable *> globals;
-  std::unordered_map<std::string_view, llvm::Function *> functions;
   struct LoopBlock {
     llvm::BasicBlock *step;
     llvm::BasicBlock *exit;
@@ -417,7 +424,7 @@ struct State {
 
   static State defaults() {
     State s;
-    s.linkage.push(llvm::GlobalValue::LinkageTypes::InternalLinkage);
+    s.linkage.push(llvm::GlobalValue::LinkageTypes::PrivateLinkage);
     s.in_fn = false;
     s.did_ret = false;
     s.did_brk = false;
@@ -425,24 +432,22 @@ struct State {
     return s;
   }
 
-  std::optional<llvm::Value *> find_named_value(std::string_view name) {
+  std::optional<std::pair<llvm::Value *, PtrClass>> find_named_value(ctx_t &m,
+                                                                     std::string_view name) {
     if (in_fn) {
       for (const auto &[cur_name, inst] : locals.top().second) {
         if (cur_name == name) {
-          return inst;
+          return {{inst, PtrClass::DataPtr}};
         }
       }
     }
 
-    {
-      auto global = globals.find(name);
-      if (global != globals.end()) {
-        return global->second;
-      }
+    if (llvm::GlobalVariable *global = m.getGlobalVariable(name)) {
+      return {{global, PtrClass::DataPtr}};
     }
 
-    if (auto it = functions.find(name); it != functions.end()) {
-      return it->second;
+    if (llvm::Function *func = m.getFunction(name)) {
+      return {{func, PtrClass::Function}};
     }
 
     debug("Failed to find named value: " << name);
@@ -762,6 +767,30 @@ auto T(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Expr *N) -> ty_t {
   return R;
 }
 
+static void make_forward_declaration(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Fn *N) {
+  std::vector<llvm::Type *> args;
+  for (auto &arg : N->getParams()) {
+    auto ty = T(m, b, cf, s, arg.first);
+    if (!ty) {
+      debug("Failed to forward declare function: " << N->getName());
+      return;
+    }
+
+    args.push_back(*ty);
+  }
+
+  auto ret_ty = T(m, b, cf, s, N->getReturn());
+  if (!ret_ty) {
+    debug("Failed to forward declare function: " << N->getName());
+    return;
+  }
+
+  auto fn_ty = llvm::FunctionType::get(*ret_ty, args, false);
+  m.getOrInsertFunction(N->getName(), fn_ty);
+
+  debug("Forward declared function: " << N->getName());
+}
+
 static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *src, qcode_conf_t *,
                                                                      std::ostream &e,
                                                                      llvm::raw_ostream &) {
@@ -778,14 +807,27 @@ static std::optional<std::unique_ptr<llvm::Module>> fabricate_llvmir(qmodule_t *
     return std::nullopt;
   }
 
-  qxir::Seq *seq = root->as<qxir::Seq>();
-
   context = std::make_unique<llvm::LLVMContext>();
   std::unique_ptr<llvm::IRBuilder<>> b = std::make_unique<llvm::IRBuilder<>>(*context);
   std::unique_ptr<llvm::Module> m = std::make_unique<llvm::Module>(src->getName(), *context);
 
   Mode cf; /* For readonly config settings */
   State s = State::defaults();
+
+  // Forward declare all functions
+  qxir::iterate<qxir::dfs_pre, qxir::IterMP::none>(
+      root, [&](qxir::Expr *, qxir::Expr **N) -> qxir::IterOp {
+        if ((*N)->getKind() == QIR_NODE_SEQ || (*N)->getKind() == QIR_NODE_EXTERN) {
+          return qxir::IterOp::Proceed;
+        } else if ((*N)->getKind() != QIR_NODE_FN) {
+          return qxir::IterOp::SkipChildren;
+        }
+
+        make_forward_declaration(*m, *b, cf, s, (*N)->as<qxir::Fn>());
+        return qxir::IterOp::Proceed;
+      });
+
+  qxir::Seq *seq = root->as<qxir::Seq>();
 
   for (auto &node : seq->getItems()) {
     val_t R = V(*m, *b, cf, s, node);
@@ -1088,12 +1130,15 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
       }
 
       qxir::Ident *I = N->getLHS()->as<qxir::Ident>();
-      auto find = s.find_named_value(I->getName());
+      auto find = s.find_named_value(m, I->getName());
       if (!find) {
         qcore_panic("failed to find named value");
       }
+      if (find->second != PtrClass::DataPtr) {
+        qcore_panic("expected data pointer");
+      }
 
-      b.CreateStore(R.value(), find.value());
+      b.CreateStore(R.value(), find->first);
 
       E = R;
       break;
@@ -1247,12 +1292,12 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
       }
 
       qxir::Ident *I = N->getExpr()->as<qxir::Ident>();
-      auto find = s.find_named_value(I->getName());
+      auto find = s.find_named_value(m, I->getName());
       if (!find) {
         qcore_panic("failed to find identifier for address_of");
       }
 
-      llvm::Value *V = find.value();
+      llvm::Value *V = find->first;
       if (!V->getType()->isPointerTy()) {
         qcore_panic("expected pointer type for address_of");
       }
@@ -1276,12 +1321,16 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
       }
 
       qxir::Ident *I = N->getExpr()->as<qxir::Ident>();
-      auto find = s.find_named_value(I->getName());
+      auto find = s.find_named_value(m, I->getName());
       if (!find) {
         qcore_panic("failed to find identifier for increment");
       }
 
-      llvm::Value *V = find.value();
+      if (find->second != PtrClass::DataPtr) {
+        qcore_panic("expected data pointer");
+      }
+
+      llvm::Value *V = find->first;
 
       if (!V->getType()->isPointerTy()) {
         qcore_panic("expected pointer type for increment");
@@ -1311,12 +1360,16 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
       }
 
       qxir::Ident *I = N->getExpr()->as<qxir::Ident>();
-      auto find = s.find_named_value(I->getName());
+      auto find = s.find_named_value(m, I->getName());
       if (!find) {
         qcore_panic("failed to find identifier for decrement");
       }
 
-      llvm::Value *V = find.value();
+      if (find->second != PtrClass::DataPtr) {
+        qcore_panic("expected data pointer");
+      }
+
+      llvm::Value *V = find->first;
 
       if (!V->getType()->isPointerTy()) {
         qcore_panic("expected pointer type for decrement");
@@ -1384,12 +1437,16 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &, State &s
       }
 
       qxir::Ident *I = N->getExpr()->as<qxir::Ident>();
-      auto find = s.find_named_value(I->getName());
+      auto find = s.find_named_value(m, I->getName());
       if (!find) {
         qcore_panic("failed to find identifier for increment");
       }
 
-      llvm::Value *V = find.value();
+      if (find->second != PtrClass::DataPtr) {
+        qcore_panic("expected data pointer");
+      }
+
+      llvm::Value *V = find->first;
 
       if (!V->getType()->isPointerTy()) {
         qcore_panic("expected pointer type for increment");
@@ -1419,12 +1476,16 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &, State &s
       }
 
       qxir::Ident *I = N->getExpr()->as<qxir::Ident>();
-      auto find = s.find_named_value(I->getName());
+      auto find = s.find_named_value(m, I->getName());
       if (!find) {
         qcore_panic("failed to find identifier for decrement");
       }
 
-      llvm::Value *V = find.value();
+      if (find->second != PtrClass::DataPtr) {
+        qcore_panic("expected data pointer");
+      }
+
+      llvm::Value *V = find->first;
 
       if (!V->getType()->isPointerTy()) {
         qcore_panic("expected pointer type for decrement");
@@ -1572,22 +1633,14 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
   });
 
   if (is_homogeneous) {  // It's a Basic Array
-    if (N->isConstExpr()) {
-      llvm::ArrayType *AT = llvm::ArrayType::get(items[0]->getType(), items.size());
-      llvm::ArrayRef<llvm::Constant *> items_ref(reinterpret_cast<llvm::Constant **>(items.data()),
-                                                 items.size());
+    llvm::ArrayType *AT = llvm::ArrayType::get(items[0]->getType(), items.size());
+    llvm::AllocaInst *AI = b.CreateAlloca(AT);
 
-      return llvm::ConstantArray::get(AT, items_ref);
-    } else {
-      llvm::ArrayType *AT = llvm::ArrayType::get(items[0]->getType(), items.size());
-      llvm::AllocaInst *AI = b.CreateAlloca(AT);
-
-      for (size_t i = 0; i < items.size(); i++) {
-        b.CreateStore(items[i], b.CreateStructGEP(AT, AI, i));
-      }
-
-      return b.CreateLoad(AT, AI);
+    for (size_t i = 0; i < items.size(); i++) {
+      b.CreateStore(items[i], b.CreateStructGEP(AT, AI, i));
     }
+
+    return b.CreateLoad(AT, AI);
   } else {  // It's an implicit struct value
     std::vector<llvm::Type *> types;
     types.reserve(items.size());
@@ -1595,21 +1648,14 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
       types.push_back(item->getType());
     }
 
-    if (N->isConstExpr()) {
-      llvm::StructType *ST = llvm::StructType::get(m.getContext(), types, true);
-      llvm::ArrayRef<llvm::Constant *> items_ref(reinterpret_cast<llvm::Constant **>(items.data()),
-                                                 items.size());
-      return llvm::ConstantStruct::get(ST, items_ref);
-    } else {
-      llvm::StructType *ST = llvm::StructType::get(m.getContext(), types, true);
-      llvm::AllocaInst *AI = b.CreateAlloca(ST);
+    llvm::StructType *ST = llvm::StructType::get(m.getContext(), types, true);
+    llvm::AllocaInst *AI = b.CreateAlloca(ST);
 
-      for (size_t i = 0; i < items.size(); i++) {
-        b.CreateStore(items[i], b.CreateStructGEP(ST, AI, i));
-      }
-
-      return b.CreateLoad(ST, AI);
+    for (size_t i = 0; i < items.size(); i++) {
+      b.CreateStore(items[i], b.CreateStructGEP(ST, AI, i));
     }
+
+    return b.CreateLoad(ST, AI);
   }
 }
 
@@ -1625,13 +1671,18 @@ static val_t QIR_NODE_CALL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
   /* Direct call */
   if (!N->getTarget()->getName().empty()) {
     std::string_view fn_name = N->getTarget()->getName();
-    auto find = s.find_named_value(fn_name);
+    auto find = s.find_named_value(m, fn_name);
     if (!find) {
       debug("Failed to find function " << fn_name);
       return std::nullopt;
     }
 
-    llvm::Function *func_def = llvm::cast<llvm::Function>(find.value());
+    if (find->second != PtrClass::Function) {
+      debug("Expected function pointer");
+      return std::nullopt;
+    }
+
+    llvm::Function *func_def = llvm::cast<llvm::Function>(find->first);
     llvm::FunctionType *FT = func_def->getFunctionType();
 
     std::vector<llvm::Value *> args;
@@ -1755,27 +1806,31 @@ static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
 
   if (N->getExpr()->getKind() == QIR_NODE_IDENT) {
     qxir::Ident *B = N->getExpr()->as<qxir::Ident>();
-    auto find = s.find_named_value(B->getName());
+    auto find = s.find_named_value(m, B->getName());
     if (!find) {
       debug("Failed to find named value " << B->getName());
       return std::nullopt;
     }
 
-    if (!find.value()->getType()->getPointerElementType()) {
+    if (find->second != PtrClass::DataPtr) {
+      qcore_panic("expected data pointer");
+    }
+
+    if (!find->first->getType()->getPointerElementType()) {
       qcore_panic("unexpected type for index");
     }
 
-    llvm::Type *base_ty = find.value()->getType()->getPointerElementType();
+    llvm::Type *base_ty = find->first->getType()->getPointerElementType();
 
     if (base_ty->isArrayTy()) {
       llvm::Value *zero = llvm::ConstantInt::get(m.getContext(), llvm::APInt(32, 0));
       llvm::Value *indices[] = {zero, I.value()};
 
-      llvm::Value *elem = b.CreateGEP(base_ty, find.value(), indices);
+      llvm::Value *elem = b.CreateGEP(base_ty, find->first, indices);
 
       return b.CreateLoad(base_ty->getArrayElementType(), elem);
     } else if (base_ty->isPointerTy()) {
-      llvm::Value *elem = b.CreateGEP(base_ty->getPointerElementType(), find.value(), I.value());
+      llvm::Value *elem = b.CreateGEP(base_ty->getPointerElementType(), find->first, I.value());
 
       return b.CreateLoad(base_ty->getPointerElementType(), elem);
     } else {
@@ -1788,7 +1843,7 @@ static val_t QIR_NODE_INDEX_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   }
 }
 
-static val_t QIR_NODE_IDENT_C(ctx_t &, craft_t &b, const Mode &, State &s, qxir::Ident *N) {
+static val_t QIR_NODE_IDENT_C(ctx_t &m, craft_t &b, const Mode &, State &s, qxir::Ident *N) {
   /**
    * @brief [Write explanation here]
    *
@@ -1797,14 +1852,20 @@ static val_t QIR_NODE_IDENT_C(ctx_t &, craft_t &b, const Mode &, State &s, qxir:
    * @note [Write assumptions here]
    */
 
-  auto find = s.find_named_value(N->getName());
+  auto find = s.find_named_value(m, N->getName());
   if (!find) {
     debug("Failed to find named value " << N->getName());
     return std::nullopt;
   }
 
-  if (find.value()->getType()->isPointerTy()) {
-    return b.CreateLoad(find.value()->getType()->getPointerElementType(), find.value());
+  debug("Found named value " << N->getName());
+
+  if (find->second == PtrClass::Function) {
+    return find->first;
+  } else {
+    if (find->first->getType()->isPointerTy()) {
+      return b.CreateLoad(find->first->getType()->getPointerElementType(), find->first);
+    }
   }
 
   qcore_panic("unexpected type for identifier");
@@ -1849,35 +1910,33 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
   }
 
   if (s.in_fn) {
-    val_t R = V(m, b, cf, s, N->getValue());
-    if (!R) {
-      debug("Failed to get value");
-      return std::nullopt;
+    llvm::AllocaInst *local = b.CreateAlloca(R_T.value(), nullptr, N->getName());
+
+    if (N->getValue()) {
+      val_t R = V(m, b, cf, s, N->getValue());
+      if (!R) {
+        debug("Failed to get value");
+        return std::nullopt;
+      }
+      b.CreateStore(R.value(), local);
+    } else {
+      b.CreateStore(llvm::Constant::getNullValue(R_T.value()), local);
     }
 
-    llvm::AllocaInst *local = b.CreateAlloca(R_T.value(), nullptr, N->getName());
-    b.CreateStore(R.value(), local);
-
     s.locals.top().second.emplace(N->getName(), local);
-
     return local;
   } else {
     if (N->getValue()->getKind() == QIR_NODE_FN_TY) {
       qxir::FnTy *FT = N->getValue()->as<qxir::FnTy>();
       llvm::FunctionType *F_T = llvm::cast<llvm::FunctionType>(T(m, b, cf, s, FT).value());
 
-      llvm::Function *F = llvm::Function::Create(F_T, s.linkage.top(), N->getName(), &m);
-
-      s.functions.emplace(N->getName(), F);
-      return F;
+      return m.getOrInsertFunction(N->getName(), F_T).getCallee();
     } else {
       llvm::GlobalVariable *global =
           new llvm::GlobalVariable(m, R_T.value(), false, s.linkage.top(), nullptr, N->getName(),
                                    nullptr, llvm::GlobalValue::NotThreadLocal, llvm::None, false);
 
       global->setInitializer(llvm::Constant::getNullValue(R_T.value()));
-
-      s.globals.emplace(N->getName(), global);
 
       /// FIXME: Set the initializer value during program load???
       return global;
@@ -1983,12 +2042,10 @@ static val_t QIR_NODE_IF_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
   b.SetInsertPoint(els);
 
   s.did_ret = false;
-  if (N->getElse()->getKind() != QIR_NODE_VOID_TY) {
-    val_t R_E = V(m, b, cf, s, N->getElse());
-    if (!R_E) {
-      debug("Failed to get else");
-      return std::nullopt;
-    }
+  val_t R_E = V(m, b, cf, s, N->getElse());
+  if (!R_E) {
+    debug("Failed to get else");
+    return std::nullopt;
   }
   if (!s.did_ret) {
     b.CreateBr(end);
@@ -2147,10 +2204,6 @@ static bool check_switch_trivial(qxir::Switch *N) {
   for (auto &node : N->getCases()) {
     qxir::Case *C = node->as<qxir::Case>();
 
-    if (!C->getCond()->isConstExpr()) {
-      return false;
-    }
-
     if (!C->getCond()->getType()->cmp_eq(C_T)) {
       return false;
     }
@@ -2263,11 +2316,11 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
     ret_ty = R.value();
   }
 
-  llvm::FunctionType *fn_ty = llvm::FunctionType::get(ret_ty, params, N->isVariadic());
+  llvm::FunctionType *fn_ty = llvm::FunctionType::get(ret_ty, params, false);
+  llvm::Value *callee = m.getOrInsertFunction(N->getName(), fn_ty).getCallee();
+  llvm::Function *fn = llvm::dyn_cast<llvm::Function>(callee);
 
-  llvm::Function *fn = llvm::Function::Create(fn_ty, s.linkage.top(), N->getName(), &m);
   s.locals.push({fn, {}});
-  s.functions[N->getName()] = fn;
 
   { /* Lower function body */
     llvm::BasicBlock *entry, *exit;
@@ -2352,8 +2405,7 @@ static val_t QIR_NODE_IGN_C(ctx_t &, craft_t &, const Mode &, State &, qxir::Ign
    * @note [Write assumptions here]
    */
 
-  /// TODO: Implement conversion for node
-  qcore_implement(__func__);
+  return nullptr;
 }
 
 static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::U1Ty *) {

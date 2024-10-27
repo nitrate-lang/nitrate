@@ -542,10 +542,6 @@ qxir::Expr *qconv_lower_binexpr(ConvState &, qxir::Expr *lhs, qxir::Expr *rhs, q
     }
   }
 
-  if (op == qOpBitcastAs || op == qOpAs) {
-    R->setConstExpr(lhs->isConstExpr() && rhs->isConstExpr());
-  }
-
   return R;
 }
 
@@ -631,8 +627,6 @@ namespace qxir {
       badtree(n, "qparse::ConstExpr::get_value() == nullptr");
       throw QError();
     }
-
-    c->setConstExpr(true);
 
     return c;
   }
@@ -831,7 +825,6 @@ namespace qxir {
      */
 
     ListItems items;
-    bool not_const = false;
 
     for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
       auto item = qconv_one(s, *it);
@@ -841,15 +834,9 @@ namespace qxir {
       }
 
       items.push_back(item);
-      if (!item->isConstExpr()) {
-        not_const = true;
-      }
     }
 
-    List *list = create<List>(std::move(items));
-    list->setConstExpr(!not_const);
-
-    return list;
+    return create<List>(std::move(items));
   }
 
   static Expr *qconv_assoc(ConvState &s, const qparse::Assoc *n) {
@@ -961,9 +948,7 @@ namespace qxir {
           throw QError();
         }
 
-        Expr *s = expr;
-        s->setConstExpr(expr->isConstExpr());
-        return s;
+        return expr;
       } else {
         qcore_panic("Invalid fstring item type");
       }
@@ -975,9 +960,7 @@ namespace qxir {
       if (std::holds_alternative<qparse::String>(*it)) {
         auto val = std::get<qparse::String>(*it);
 
-        bool was_const = concated->isConstExpr();
         concated = create<BinExpr>(concated, create_string_literal(val), Op::Plus);
-        concated->setConstExpr(was_const);
       } else if (std::holds_alternative<qparse::Expr *>(*it)) {
         auto val = std::get<qparse::Expr *>(*it);
         auto expr = qconv_one(s, val);
@@ -1894,13 +1877,13 @@ namespace qxir {
     /* Produce the function preconditions */
     if ((precond = qconv_one(s, n->get_precond()))) {
       precond = create<If>(create<UnExpr>(precond, Op::LogicNot),
-                           create_simple_call(s, "__detail::precond_fail"), create<VoidTy>());
+                           create_simple_call(s, "__detail::precond_fail"), create<Ign>());
     }
 
     /* Produce the function postconditions */
     if ((postcond = qconv_one(s, n->get_postcond()))) {
       postcond = create<If>(create<UnExpr>(postcond, Op::LogicNot),
-                            create_simple_call(s, "__detail::postcond_fail"), create<VoidTy>());
+                            create_simple_call(s, "__detail::postcond_fail"), create<Ign>());
     }
 
     { /* Produce the function body */
@@ -2252,7 +2235,7 @@ namespace qxir {
     }
     val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
-    return create<If>(cond, create<Ret>(val), create<VoidTy>());
+    return create<If>(cond, create<Ret>(val), create<Ign>());
   }
 
   static Expr *qconv_retz(ConvState &s, const qparse::RetZStmt *n) {
@@ -2277,7 +2260,7 @@ namespace qxir {
     }
     val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
-    return create<If>(inv_cond, create<Ret>(val), create<VoidTy>());
+    return create<If>(inv_cond, create<Ret>(val), create<Ign>());
   }
 
   static Expr *qconv_retv(ConvState &s, const qparse::RetVStmt *n) {
@@ -2293,7 +2276,7 @@ namespace qxir {
     }
     cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
 
-    return create<If>(cond, create<Ret>(create<VoidTy>()), create<VoidTy>());
+    return create<If>(cond, create<Ret>(create<Ign>()), create<Ign>());
   }
 
   static Expr *qconv_break(ConvState &, const qparse::BreakStmt *) {
@@ -2337,7 +2320,7 @@ namespace qxir {
     }
 
     if (!els) {
-      els = create<VoidTy>();
+      els = create<Ign>();
     }
 
     return create<If>(cond, then, els);
@@ -2508,7 +2491,7 @@ namespace qxir {
         throw QError();
       }
     } else {
-      def = create<VoidTy>();
+      def = create<Ign>();
     }
 
     return create<Switch>(cond, std::move(cases), def);
@@ -2865,7 +2848,7 @@ static qxir::Expr *qconv_one(ConvState &s, const qparse::Node *n) {
     qcore_panicf("qxir: conversion failed for node type: %d", static_cast<int>(n->this_typeid()));
   }
 
-  out->setLoc({n->get_start_pos(), n->get_end_pos()});
+  out->setLocDangerous({n->get_start_pos(), n->get_end_pos()});
 
   return out;
 }
@@ -3212,8 +3195,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
 
   qcore_assert(out != nullptr, "qxir_clone: failed to clone node");
 
-  out->setLoc(in->getLoc());
-  out->setConstExpr(in->isConstExpr());
+  out->setLocDangerous(in->getLoc());
   out->setMutable(in->isMutable());
 
   map[in] = out;

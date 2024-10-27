@@ -294,6 +294,10 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       state.indent++;
       indent(ss, state);
       for (auto it = n->as<Seq>()->getItems().begin(); it != n->as<Seq>()->getItems().end(); ++it) {
+        if ((*it)->getKind() == QIR_NODE_IGN) {
+          continue;
+        }
+
         recurse(*it);
         ss << ",";
 
@@ -405,10 +409,8 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
         ss << ",";
         indent(ss, state);
       }
-      if (n->as<Switch>()->getDefault()->getKind() != QIR_NODE_VOID_TY) {
-        ss << "default: ";
-        recurse(n->as<Switch>()->getDefault());
-      }
+      ss << "default: ";
+      recurse(n->as<Switch>()->getDefault());
       state.indent--;
       indent(ss, state);
       ss << "}";
