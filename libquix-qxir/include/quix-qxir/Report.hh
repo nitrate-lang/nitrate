@@ -67,6 +67,7 @@ namespace qxir::diag {
     DSNullPtr,
     DSBadType,
     DSMissingMod,
+    DSBadTmpNode,
 
     Redefinition,
     UnknownFunction,

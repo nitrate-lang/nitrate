@@ -200,6 +200,7 @@ CPP_EXPORT bool Expr::isType() const noexcept {
     case QIR_NODE_UNION_TY:
     case QIR_NODE_ARRAY_TY:
     case QIR_NODE_FN_TY:
+    case QIR_NODE_TMP:
       return true;
     default:
       return false;
