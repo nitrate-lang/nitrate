@@ -29,100 +29,24 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_TYPE_DECL_H__
-#define __QUIX_QXIR_TYPE_DECL_H__
+#ifndef __QUIX_QXIR_FORMAT_HH__
+#define __QUIX_QXIR_FORMAT_HH__
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef __cplusplus
+#error "This header is C++ only."
 #endif
 
-/**
- * @brief Quixcc abstract syntax tree node.
- */
-typedef struct qxir_node_t qxir_node_t;
+#include <optional>
+#include <string>
+#include <quix-qxir/IRGraph.hh>
 
-/**
- * @brief Quixcc QXIR module.
- */
-typedef struct qmodule_t qmodule_t;
+namespace qxir {
+  class SymbolEncoding final {
+  public:
+    SymbolEncoding() = default;
 
-/**
- * @brief Quixcc abstract syntax tree node type.
- */
-typedef enum qxir_ty_t {
-  QIR_NODE_BINEXPR,     /* Binary expression */
-  QIR_NODE_UNEXPR,      /* Unary expression */
-  QIR_NODE_POST_UNEXPR, /* Postfix unary expression */
+    std::optional<std::string> mangle_name(const qxir::Expr* symbol, AbiTag abi = AbiTag::Default) noexcept;
+  };
+};  // namespace qxir
 
-  QIR_NODE_INT,   /* Integer literal */
-  QIR_NODE_FLOAT, /* Floating-point literal */
-  QIR_NODE_LIST,  /* List literal */
-
-  QIR_NODE_CALL,   /* Function call */
-  QIR_NODE_SEQ,    /* Sequence */
-  QIR_NODE_INDEX,  /* Index / member access */
-  QIR_NODE_IDENT,  /* Identifier */
-  QIR_NODE_EXTERN, /* Linker visibility modifier */
-  QIR_NODE_LOCAL,  /* Variable declaration */
-  QIR_NODE_RET,    /* Return statement */
-  QIR_NODE_BRK,    /* Break statement */
-  QIR_NODE_CONT,   /* Continue statement */
-  QIR_NODE_IF,     /* If statement */
-  QIR_NODE_WHILE,  /* While loop */
-  QIR_NODE_FOR,    /* For loop */
-  QIR_NODE_FORM,   /* Parallel for loop */
-  QIR_NODE_CASE,   /* Case statement */
-  QIR_NODE_SWITCH, /* Switch statement */
-  QIR_NODE_FN,     /* Function definition */
-  QIR_NODE_ASM,    /* Inline assembly */
-  QIR_NODE_IGN,    /* TODO: No-op */
-
-  QIR_NODE_U1_TY,     /* 1-bit unsigned integer (boolean) */
-  QIR_NODE_U8_TY,     /* 8-bit unsigned integer */
-  QIR_NODE_U16_TY,    /* 16-bit unsigned integer */
-  QIR_NODE_U32_TY,    /* 32-bit unsigned integer */
-  QIR_NODE_U64_TY,    /* 64-bit unsigned integer */
-  QIR_NODE_U128_TY,   /* 128-bit unsigned integer */
-  QIR_NODE_I8_TY,     /* 8-bit signed integer */
-  QIR_NODE_I16_TY,    /* 16-bit signed integer */
-  QIR_NODE_I32_TY,    /* 32-bit signed integer */
-  QIR_NODE_I64_TY,    /* 64-bit signed integer */
-  QIR_NODE_I128_TY,   /* 128-bit signed integer */
-  QIR_NODE_F16_TY,    /* 16-bit floating-point */
-  QIR_NODE_F32_TY,    /* 32-bit floating-point */
-  QIR_NODE_F64_TY,    /* 64-bit floating-point */
-  QIR_NODE_F128_TY,   /* 128-bit floating-point */
-  QIR_NODE_VOID_TY,   /* Void type */
-  QIR_NODE_PTR_TY,    /* Pointer type */
-  QIR_NODE_OPAQUE_TY, /* Opaque type */
-  QIR_NODE_STRUCT_TY, /* Struct type */
-  QIR_NODE_UNION_TY,  /* Union type */
-  QIR_NODE_ARRAY_TY,  /* Array type */
-  QIR_NODE_FN_TY,     /* Function type */
-
-  QIR_NODE_TMP, /* Temp node; must be resolved with more information */
-} qxir_ty_t;
-
-#define QIR_NODE_COUNT 47
-
-typedef struct qxir_conf_t qxir_conf_t;
-
-typedef enum qxir_key_t {
-  QQK_UNKNOWN = 0,
-  QQK_CRASHGUARD,
-  QQV_FASTERROR,
-} qxir_key_t;
-
-typedef enum qxir_val_t {
-  QQV_UNKNOWN = 0,
-  QQV_TRUE,
-  QQV_FALSE,
-  QQV_ON = QQV_TRUE,
-  QQV_OFF = QQV_FALSE,
-} qxir_val_t;
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif  // __QUIX_QXIR_TYPE_DECL_H__
+#endif  // __QUIX_QXIR_FORMAT_HH__

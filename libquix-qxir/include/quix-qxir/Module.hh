@@ -134,9 +134,7 @@ namespace qxir {
   class Fn;
   class Asm;
   class Ign;
-#ifdef __QUIX_IMPL__
   class Tmp;
-#endif
 }  // namespace qxir
 
 struct qmodule_t final {

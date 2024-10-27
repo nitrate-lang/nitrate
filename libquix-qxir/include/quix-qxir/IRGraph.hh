@@ -118,7 +118,7 @@ namespace qxir {
 
     qxir_ty_t m_node_type : 6;        /* Typecode of this node. */
     qxir::ModuleId m_module_idx : 16; /* The module context index. */
-    uint64_t m_constexpr : 1;         /* Is this expression a constant expression? */
+    uint64_t m_res : 1;               /* reserved */
     uint64_t m_mutable : 1;           /* Is this expression mutable? */
 
     qlex_loc_t m_start_loc;
@@ -131,7 +131,7 @@ namespace qxir {
     Expr(qxir_ty_t ty)
         : m_node_type(ty),
           m_module_idx(std::numeric_limits<ModuleId>::max()),
-          m_constexpr(0),
+          m_res(0),
           m_mutable(1),
           m_start_loc{0},
           m_loc_size(0) {}
@@ -244,10 +244,7 @@ namespace qxir {
     }
 
     bool isType() const noexcept;
-    inline bool isConstExpr() const noexcept { return m_constexpr; }
     inline bool isMutable() const noexcept { return m_mutable; }
-    inline void setConstExpr(bool is_const) noexcept { m_constexpr = is_const; }
-    inline void setMutable(bool is_mut) noexcept { m_mutable = is_mut; }
     inline bool isLiteral() const noexcept {
       return m_node_type == QIR_NODE_INT || m_node_type == QIR_NODE_FLOAT;
     }
@@ -258,11 +255,8 @@ namespace qxir {
     std::pair<qlex_loc_t, qlex_loc_t> getLoc() const noexcept;
     qlex_loc_t locBeg() const noexcept;
     qlex_loc_t locEnd() const noexcept;
-    void setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
 
     qmodule_t *getModule() const noexcept;
-    void setModule(qmodule_t *module) noexcept;
-
     Type *getType() noexcept;
 
     template <typename T>
@@ -461,12 +455,10 @@ namespace qxir {
           break;
         }
 
-#ifdef __QUIX_IMPL__
         case QIR_NODE_TMP: {
           if constexpr (!std::is_same_v<T, Tmp>) goto cast_panic;
           break;
         }
-#endif
       }
 #endif
 
@@ -552,6 +544,15 @@ namespace qxir {
      * @note This code may be different for different compiler runs.
      */
     uint64_t getUniqId() const;
+
+    ///=====================================================================
+    /// BEGIN: Internal library use only
+    void setModuleDangerous(qmodule_t *module) noexcept;
+    void setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
+    inline void setMutable(bool is_mut) noexcept { m_mutable = is_mut; }
+    /// END:   Internal library use only
+    ///=====================================================================
+
   } __attribute__((packed)) __attribute__((aligned(8)));
 
   constexpr size_t EXPR_SIZE = sizeof(Expr);
@@ -560,7 +561,7 @@ namespace qxir {
     uint64_t getAlignBits();
 
   public:
-    Type(qxir_ty_t ty) : Expr(ty) { setConstExpr(true); }
+    Type(qxir_ty_t ty) : Expr(ty) {}
 
     bool hasKnownSize() noexcept;
     bool hasKnownAlign() noexcept;
@@ -639,11 +640,7 @@ namespace qxir {
 
   public:
     BinExpr(Expr *lhs, Expr *rhs, Op op)
-        : Expr(QIR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {
-      if (lhs->isConstExpr() && rhs->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+        : Expr(QIR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *getLHS() noexcept { return m_lhs; }
     Expr *getRHS() noexcept { return m_rhs; }
@@ -661,9 +658,7 @@ namespace qxir {
     Op m_op;
 
   public:
-    UnExpr(Expr *expr, Op op) : Expr(QIR_NODE_UNEXPR), m_expr(expr), m_op(op) {
-      setConstExpr(expr->isConstExpr());
-    }
+    UnExpr(Expr *expr, Op op) : Expr(QIR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -679,9 +674,7 @@ namespace qxir {
     Op m_op;
 
   public:
-    PostUnExpr(Expr *expr, Op op) : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {
-      setConstExpr(expr->isConstExpr());
-    }
+    PostUnExpr(Expr *expr, Op op) : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -921,12 +914,11 @@ namespace qxir {
     static constexpr uint64_t FLAG_BIT = 1ULL << 63;
 
   public:
-    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} { setConstExpr(true); }
+    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} {}
 
     Int(std::string_view str) : Expr(QIR_NODE_INT), m_data{.m_str = str.data()} {
       qcore_assert((m_data.m_u64 & FLAG_BIT) == 0,
                    "Optimized code assumed an invariant that does not hold on this architecture.");
-      setConstExpr(true);
     }
 
     bool isNativeRepresentation() const noexcept { return m_data.m_u64 & FLAG_BIT; }
@@ -962,8 +954,8 @@ namespace qxir {
     static_assert(sizeof(double) == 8);
 
   public:
-    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} { setConstExpr(true); }
-    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} { setConstExpr(true); }
+    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} {}
+    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} {}
 
     bool isNativeRepresentation() const noexcept { return std::holds_alternative<double>(m_data); }
 
@@ -1054,11 +1046,7 @@ namespace qxir {
     Expr *m_index;
 
   public:
-    Index(Expr *expr, Expr *index) : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {
-      if (expr->isConstExpr() && index->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+    Index(Expr *expr, Expr *index) : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -1090,9 +1078,7 @@ namespace qxir {
 
   public:
     Extern(Expr *value, std::string_view abi_name)
-        : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {
-      setConstExpr(value->isConstExpr());
-    }
+        : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getAbiName() const noexcept { return m_abi_name; }
     std::string_view setAbiName(std::string_view abi_name) noexcept {
@@ -1112,9 +1098,7 @@ namespace qxir {
 
   public:
     Local(std::string_view name, Expr *value, AbiTag abi_tag)
-        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value), m_abi_tag(abi_tag) {
-      setConstExpr(value->isConstExpr());
-    }
+        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value), m_abi_tag(abi_tag) {}
 
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
 
@@ -1131,7 +1115,7 @@ namespace qxir {
     Expr *m_expr;
 
   public:
-    Ret(Expr *expr) : Expr(QIR_NODE_RET), m_expr(expr) { setConstExpr(expr->isConstExpr()); }
+    Ret(Expr *expr) : Expr(QIR_NODE_RET), m_expr(expr) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -1160,11 +1144,7 @@ namespace qxir {
 
   public:
     If(Expr *cond, Expr *then, Expr *else_)
-        : Expr(QIR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {
-      if (cond->isConstExpr() && then->isConstExpr() && else_->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+        : Expr(QIR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1183,11 +1163,7 @@ namespace qxir {
     Seq *m_body;
 
   public:
-    While(Expr *cond, Seq *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {
-      if (cond->isConstExpr() && body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+    While(Expr *cond, Seq *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1206,12 +1182,7 @@ namespace qxir {
 
   public:
     For(Expr *init, Expr *cond, Expr *step, Expr *body)
-        : Expr(QIR_NODE_FOR), m_init(init), m_cond(cond), m_step(step), m_body(body) {
-      if (init->isConstExpr() && cond->isConstExpr() && step->isConstExpr() &&
-          body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+        : Expr(QIR_NODE_FOR), m_init(init), m_cond(cond), m_step(step), m_body(body) {}
 
     Expr *getInit() noexcept { return m_init; }
     Expr *setInit(Expr *init) noexcept { return m_init = init; }
@@ -1243,11 +1214,7 @@ namespace qxir {
           m_val_ident(val_ident),
           m_maxjobs(maxjobs),
           m_expr(expr),
-          m_body(body) {
-      if (maxjobs->isConstExpr() && expr->isConstExpr() && body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+          m_body(body) {}
 
     std::string_view getIdxIdent() noexcept { return m_idx_ident; }
     std::string_view setIdxIdent(std::string_view idx_ident) noexcept {
@@ -1276,11 +1243,7 @@ namespace qxir {
     Expr *m_body;
 
   public:
-    Case(Expr *cond, Expr *body) : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {
-      if (cond->isConstExpr() && body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+    Case(Expr *cond, Expr *body) : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1376,8 +1339,6 @@ namespace qxir {
   /// END: EXPRESSIONS
   ///=============================================================================
 
-#ifdef __QUIX_IMPL__
-
   enum class TmpType {
     NULL_LITERAL,
     UNDEF_LITERAL,
@@ -1414,7 +1375,6 @@ namespace qxir {
     TmpNodeCradle &getData() noexcept { return m_data; }
     const TmpNodeCradle &getData() const noexcept { return m_data; }
   };
-#endif
 
   extern thread_local qmodule_t *current;
 
@@ -1513,7 +1473,7 @@ namespace qxir {
 
 #undef REUSE_ALLOCATION
 
-    ptr->setModule(current);
+    ptr->setModuleDangerous(current);
 
     return ptr;
   }
