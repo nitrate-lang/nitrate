@@ -37,15 +37,17 @@
 #endif
 
 #include <optional>
-#include <string>
 #include <quix-qxir/IRGraph.hh>
+#include <string>
 
 namespace qxir {
   class SymbolEncoding final {
   public:
     SymbolEncoding() = default;
 
-    std::optional<std::string> mangle_name(const qxir::Expr* symbol, AbiTag abi = AbiTag::Default) noexcept;
+    std::optional<std::string> mangle_name(const qxir::Expr* symbol, AbiTag abi) const noexcept;
+
+    std::optional<std::string> demangle_name(std::string_view symbol) const noexcept;
   };
 };  // namespace qxir
 

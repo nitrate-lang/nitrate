@@ -39,6 +39,7 @@
 #include <core/Config.hh>
 #include <cstring>
 #include <quix-qxir/Classes.hh>
+#include <quix-qxir/Format.hh>
 #include <quix-qxir/IRGraph.hh>
 #include <quix-qxir/Module.hh>
 #include <quix-qxir/Report.hh>
@@ -545,7 +546,6 @@ qxir::Expr *qconv_lower_binexpr(ConvState &, qxir::Expr *lhs, qxir::Expr *rhs, q
   return R;
 }
 
-void mangle_type(qxir::Type *n, std::ostream &ss);
 qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
 #define STD_UNOP(op) qxir::create<qxir::UnExpr>(rhs, qxir::Op::op)
 
@@ -589,9 +589,14 @@ qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
     case qOpTypeof: {
       auto inferred = rhs->getType();
       qcore_assert(inferred, "qOpTypeof: inferred == nullptr");
-      std::stringstream mangled;
-      mangle_type(inferred, mangled);
-      return create_string_literal(mangled.str());
+      qxir::SymbolEncoding se;
+      auto res = se.mangle_name(inferred, qxir::AbiTag::QUIX);
+      if (!res) {
+        badtree(nullptr, "Failed to mangle type");
+        throw QError();
+      }
+
+      return create_string_literal(res.value());
     }
     case qOpBitsizeof: {
       return STD_UNOP(Bitsizeof);
