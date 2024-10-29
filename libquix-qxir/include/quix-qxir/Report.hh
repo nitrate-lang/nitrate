@@ -69,13 +69,14 @@ namespace qxir::diag {
     DSMissingMod,
     DSBadTmpNode,
 
-    Redefinition,
+    FunctionRedefinition,
     UnknownFunction,
     TooManyArguments,
     UnknownArgument,
 
     UnknownType,
     UnresolvedIdentifier,
+    TypeRedefinition,
 
     MissingReturn,
 
@@ -184,14 +185,14 @@ namespace qxir::diag {
   mod->getDiag().push(                                                               \
       QXIR_AUDIT_CONV,                                                               \
       diag::DiagMessage("Variable named " + std::string(_varname) + " is redefined", \
-                        diag::IssueClass::Error, diag::IssueCode::Redefinition,      \
+                        diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition,      \
                         cur->getLoc().first, cur->getLoc().second));
 
 #define DUPLICATE_FUNCTION(_varname)                                                 \
   mod->getDiag().push(                                                               \
       QXIR_AUDIT_CONV,                                                               \
       diag::DiagMessage("Function named " + std::string(_varname) + " is redefined", \
-                        diag::IssueClass::Error, diag::IssueCode::Redefinition,      \
+                        diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition,      \
                         cur->getLoc().first, cur->getLoc().second));
 
 #define NO_MATCHING_FUNCTION(_funcname)                                                            \

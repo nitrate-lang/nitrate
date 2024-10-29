@@ -88,8 +88,8 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
      {"ds-bad-tmp-node",
       "Internal module IR data structure contains an unexpected temporary node.",
       {"This is an (INTERNAL) compiler error. Please report this issue."}}},
-    {IssueCode::Redefinition,
-     {"redefinition", /* FIXME: Summarize */
+    {IssueCode::FunctionRedefinition,
+     {"function-redefinition", /* FIXME: Summarize */
       "write me",
       {}}},
     {IssueCode::UnknownFunction,
@@ -113,6 +113,11 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
      {"unresolved-identifier", /* FIXME: Summarize */
       "404 - Identifier '%s' not found.",
       {"Make sure the identifier is defined in the current scope.", "Check for typos.",
+       "Check for visibility."}}},
+    {IssueCode::TypeRedefinition,
+     {"type-redefinition",
+      "Type '%s' is redefined.",
+      {"Ensure that the one-defintion-rule (ODR) is obeyed.", "Check for typos.",
        "Check for visibility."}}},
 
     {IssueCode::MissingReturn,

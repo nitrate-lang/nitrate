@@ -60,13 +60,14 @@ static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
         {IssueCode::DSMissingMod, "-Werror=ds-missing-mod"},
         {IssueCode::DSBadTmpNode, "-Werror=ds-bad-tmp-node"},
 
-        {IssueCode::Redefinition, "-Werror=redefinition"},
+        {IssueCode::FunctionRedefinition, "-Werror=redefinition"},
         {IssueCode::UnknownFunction, "-Werror=unknown-function"},
         {IssueCode::TooManyArguments, "-Werror=too-many-arguments"},
         {IssueCode::UnknownArgument, "-Werror=unknown-argument"},
 
         {IssueCode::UnknownType, "-Werror=unknown-type"},
         {IssueCode::UnresolvedIdentifier, "-Werror=unresolved-identifier"},
+        {IssueCode::TypeRedefinition, "-Werror=type-redefinition"},
 
         {IssueCode::MissingReturn, "-Wmissing-return"},
     });
