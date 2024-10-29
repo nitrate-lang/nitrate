@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-// #define QCORE_NDEBUG
+#define QCORE_NDEBUG
 
 #include <quix-core/Error.h>
 #include <quix-core/Memory.h>
@@ -81,7 +81,7 @@ LIB_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size, size_t alig
 
   ptr = reinterpret_cast<mem::qcore_arena_t *>(*A)->alloc(size, align);
 
-  // qcore_debugf("TRACE: qcore_arena_alloc_ex(%p, %zu, %zu)\t-> %p\n", A, size, align, ptr);
+  qcore_debugf("TRACE: qcore_arena_alloc_ex(%p, %zu, %zu)\t-> %p\n", A, size, align, ptr);
 
   return ptr;
 }
