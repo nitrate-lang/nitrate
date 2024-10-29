@@ -1456,6 +1456,11 @@ namespace qxir {
     auto str = s.cur_named(n->get_name());
     auto name = memorize(std::string_view(str));
 
+    if (current->getTypeMap().contains(name)) {
+      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+             n->get_end_pos());
+    }
+
     auto type = qconv_one(s, n->get_type());
     if (!type) {
       badtree(n, "qparse::TypedefDecl::get_type() == nullptr");
@@ -1530,6 +1535,14 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the struct definition.
      */
 
+    std::string name = s.cur_named(n->get_name());
+    auto sv = memorize(std::string_view(name));
+
+    if (current->getTypeMap().contains(sv)) {
+      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+             n->get_end_pos());
+    }
+
     StructFields fields;
     std::vector<Expr *> items;
     size_t offset = 0;
@@ -1553,9 +1566,6 @@ namespace qxir {
       fields.push_back(field->asType());
       offset += field->asType()->getSizeBytes();
     }
-
-    std::string name = s.cur_named(n->get_name());
-    auto sv = memorize(std::string_view(name));
 
     StructTy *st = create<StructTy>(std::move(fields));
 
@@ -1604,6 +1614,14 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the region definition.
      */
 
+    std::string name = s.cur_named(n->get_name());
+    auto sv = memorize(std::string_view(name));
+
+    if (current->getTypeMap().contains(sv)) {
+      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+             n->get_end_pos());
+    }
+
     StructFields fields;
     std::vector<Expr *> items;
 
@@ -1619,9 +1637,6 @@ namespace qxir {
 
       fields.push_back(field->asType());
     }
-
-    std::string name = s.cur_named(n->get_name());
-    auto sv = memorize(std::string_view(name));
 
     StructTy *st = create<StructTy>(std::move(fields));
 
@@ -1670,6 +1685,14 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the group definition.
      */
 
+    std::string name = s.cur_named(n->get_name());
+    auto sv = memorize(std::string_view(name));
+
+    if (current->getTypeMap().contains(sv)) {
+      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+             n->get_end_pos());
+    }
+
     StructFields fields;
     std::vector<Expr *> items;
 
@@ -1703,9 +1726,6 @@ namespace qxir {
         offset += (*it)->getSizeBytes();
       }
     }
-
-    std::string name = s.cur_named(n->get_name());
-    auto sv = memorize(std::string_view(name));
 
     StructTy *st = create<StructTy>(std::move(fields));
 
@@ -1754,6 +1774,14 @@ namespace qxir {
      * @details This is a 1-to-1 conversion of the union definition.
      */
 
+    std::string name = s.cur_named(n->get_name());
+    auto sv = memorize(std::string_view(name));
+
+    if (current->getTypeMap().contains(sv)) {
+      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+             n->get_end_pos());
+    }
+
     UnionFields fields;
     std::vector<Expr *> items;
 
@@ -1769,9 +1797,6 @@ namespace qxir {
 
       fields.push_back(field->asType());
     }
-
-    std::string name = s.cur_named(n->get_name());
-    auto sv = memorize(std::string_view(name));
 
     UnionTy *st = create<UnionTy>(std::move(fields));
 
@@ -1822,6 +1847,11 @@ namespace qxir {
 
     std::string name = s.cur_named(n->get_name());
     auto sv = memorize(std::string_view(name));
+
+    if (current->getTypeMap().contains(sv)) {
+      report(IssueCode::TypeRedefinition, IssueClass::Error, n->get_name(), n->get_start_pos(),
+             n->get_end_pos());
+    }
 
     Type *type = nullptr;
     if (n->get_type()) {
@@ -2142,7 +2172,7 @@ namespace qxir {
         local->getModule()->getDiag().push(
             QXIR_AUDIT_CONV,
             diag::DiagMessage("Variable named " + std::string(name) + " is redefined",
-                              diag::IssueClass::Error, diag::IssueCode::Redefinition,
+                              diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition,
                               n->get_start_pos(), n->get_end_pos()));
       }
       s.local_scope.top()[name] = local;
@@ -2190,7 +2220,7 @@ namespace qxir {
         local->getModule()->getDiag().push(
             QXIR_AUDIT_CONV,
             diag::DiagMessage("Variable named " + std::string(name) + " is redefined",
-                              diag::IssueClass::Error, diag::IssueCode::Redefinition,
+                              diag::IssueClass::Error, diag::IssueCode::TypeRedefinition,
                               n->get_start_pos(), n->get_end_pos()));
       }
       s.local_scope.top()[name] = local;
