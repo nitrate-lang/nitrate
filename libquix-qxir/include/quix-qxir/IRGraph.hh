@@ -1286,12 +1286,12 @@ namespace qxir {
     std::string_view m_name;
     Params m_params;
     Type *m_return;
-    Seq *m_body;
+    Expr *m_body;
     bool m_variadic;
     AbiTag m_abi_tag;
 
   public:
-    Fn(std::string_view name, const Params &params, Type *ret_ty, Seq *body, bool variadic,
+    Fn(std::string_view name, const Params &params, Type *ret_ty, Expr *body, bool variadic,
        AbiTag abi_tag)
         : Expr(QIR_NODE_FN),
           m_name(name),
@@ -1310,8 +1310,8 @@ namespace qxir {
     Type *getReturn() noexcept { return m_return; }
     Type *setReturn(Type *ret_ty) noexcept { return m_return = ret_ty; }
 
-    Seq *getBody() noexcept { return m_body; }
-    Seq *setBody(Seq *body) noexcept { return m_body = body; }
+    Expr *getBody() noexcept { return m_body; }
+    Expr *setBody(Seq *body) noexcept { return m_body = body; }
 
     bool isVariadic() noexcept { return m_variadic; }
     void setVariadic(bool variadic) noexcept { m_variadic = variadic; }

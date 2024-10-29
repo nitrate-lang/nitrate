@@ -2365,6 +2365,16 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
 
   llvm::FunctionType *fn_ty = llvm::FunctionType::get(ret_ty, params, false);
   llvm::Value *callee = m.getOrInsertFunction(N->getName(), fn_ty).getCallee();
+
+  if (N->getBody()->getKind() == QIR_NODE_IGN) {
+    // It is a declaration
+    return callee;
+  } else if (N->getBody()->getKind() != QIR_NODE_SEQ) {
+    s.in_fn = in_fn_old;
+    debug("Unexpected body for function");
+    return std::nullopt;
+  }
+
   llvm::Function *fn = llvm::dyn_cast<llvm::Function>(callee);
 
   s.locals.push({fn, {}});
@@ -2407,7 +2417,7 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
 
     bool old_did_ret = s.did_ret;
 
-    for (auto &node : N->getBody()->getItems()) {
+    for (auto &node : N->getBody()->as<qxir::Seq>()->getItems()) {
       val_t R = V(m, b, cf, s, node);
       if (!R) {
         s.return_val.pop();
