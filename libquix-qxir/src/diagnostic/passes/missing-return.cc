@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+#////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
 /// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
@@ -29,38 +29,36 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
-
+#include <quix-qxir/IRGraph.hh>
 #include <quix-qxir/Module.hh>
 #include <transform/PassManager.hh>
-#include <transform/Transform.hh>
-#include <transform/passes/Decl.hh>
 
-bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
-#define RUN_PASS(name, fn)                                        \
-  {                                                               \
-    if (!fn(M)) {                                                 \
-      err << "Error: Pass '" << name << "' failed." << std::endl; \
-      return false;                                               \
-    }                                                             \
-    M->applyPassLabel(name);                                      \
-  }
+using namespace qxir::diag;
 
-  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
-  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
-  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
-  RUN_PASS("ds-verify", impl::ds_verify);       /* Verify the module */
-  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
-  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
-  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
+void qxir::checks::missing_return(qmodule_t* M) {
+  /**
+   * Check that functions that require a return statement actually have one.
+   * Declarations and non-applicable functions are ignored.
+   */
 
-  return true;
-}
+  for (auto& [key, val] : M->getFunctions()) {
+    FnTy* fnty = val.first;
+    Fn* fn = val.second;
 
-void qxir::transform::do_semantic_analysis(qmodule_t* M) {
-  for (const auto& [_, val] : diag::PassRegistry::the().get_passes()) {
-    val.second(M);
+    /* Skip the function declarations and all functions that have a void return type. */
+    if (fn->getBody()->getKind() == QIR_NODE_IGN ||
+        fnty->getReturn()->getKind() == QIR_NODE_VOID_TY) {
+      continue;
+    }
 
-    M->applyPassLabel(val.first);
+    /* If the function has a non-void return type, then we need to check if there is a return
+     * statement. */
+    Seq* body = fn->getBody()->as<Seq>();
+    bool any_ret = std::any_of(body->getItems().begin(), body->getItems().end(),
+                               [](auto item) { return item->getKind() == QIR_NODE_RET; });
+
+    if (!any_ret) { /* If no return statement is found, this is an error. */
+      report(IssueCode::MissingReturn, IssueClass::Error, key, fn->locBeg(), fn->locEnd());
+    }
   }
 }

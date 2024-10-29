@@ -67,6 +67,8 @@ static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
 
         {IssueCode::UnknownType, "-Werror=unknown-type"},
         {IssueCode::UnresolvedIdentifier, "-Werror=unresolved-identifier"},
+
+        {IssueCode::MissingReturn, "-Wmissing-return"},
     });
 
 ///============================================================================///
