@@ -175,6 +175,10 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
         status = qxir::transform::std_transform(mod, ss);
       }
 
+      if (status) {
+        qxir::transform::do_semantic_analysis(mod);
+      }
+
       status = !mod->getFailbit();
     } catch (QError &e) {
       // QError exception is control flow to abort the recursive lowering
@@ -1504,19 +1508,18 @@ namespace qxir {
       }
     }
 
-    // auto obj = create<Fn>(str, std::move(params), nullptr, fty->is_variadic());
-
-    auto fnty = qconv_one(s, fty);
+    Expr *fnty = qconv_one(s, fty);
     if (!fnty) {
       badtree(n, "qparse::FnDecl::get_type() == nullptr");
       throw QError();
     }
 
-    Local *local = create<Local>(str, fnty, s.abi_mode);
+    Fn *fn = create<Fn>(str, std::move(params), fnty->as<FnTy>()->getReturn(), create<Ign>(),
+                        fty->is_variadic(), s.abi_mode);
 
-    current->getFunctions().insert({str, {fnty->as<FnTy>(), local}});
+    current->getFunctions().insert({str, {fnty->as<FnTy>(), fn}});
 
-    return local;
+    return fn;
   }
 
 #define align(x, a) (((x) + (a) - 1) & ~((a) - 1))

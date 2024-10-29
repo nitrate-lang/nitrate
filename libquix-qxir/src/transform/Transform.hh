@@ -38,6 +38,7 @@ struct qmodule_t;
 
 namespace qxir::transform {
   bool std_transform(qmodule_t* module, std::ostream& err);
+  void do_semantic_analysis(qmodule_t* module);
 }  // namespace qxir::transform
 
 #endif  // __QUIX_QXIR_TRANSFORM_TRANSFORM_HH__

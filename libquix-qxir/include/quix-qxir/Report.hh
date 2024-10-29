@@ -77,6 +77,8 @@ namespace qxir::diag {
     UnknownType,
     UnresolvedIdentifier,
 
+    MissingReturn,
+
     Default = IssueCode::CompilerError,
   };
 

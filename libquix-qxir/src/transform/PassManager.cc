@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+#////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
 /// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
@@ -29,38 +29,29 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/LibMacro.h>
 #include <quix-core/Error.h>
 
-#include <quix-qxir/Module.hh>
 #include <transform/PassManager.hh>
-#include <transform/Transform.hh>
-#include <transform/passes/Decl.hh>
 
-bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
-#define RUN_PASS(name, fn)                                        \
-  {                                                               \
-    if (!fn(M)) {                                                 \
-      err << "Error: Pass '" << name << "' failed." << std::endl; \
-      return false;                                               \
-    }                                                             \
-    M->applyPassLabel(name);                                      \
-  }
+using namespace qxir::diag;
 
-  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
-  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
-  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
-  RUN_PASS("ds-verify", impl::ds_verify);       /* Verify the module */
-  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
-  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
-  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
-
-  return true;
+CPP_EXPORT PassRegistry& PassRegistry::the() {
+  static PassRegistry instance;
+  return instance;
 }
 
-void qxir::transform::do_semantic_analysis(qmodule_t* M) {
-  for (const auto& [_, val] : diag::PassRegistry::the().get_passes()) {
-    val.second(M);
-
-    M->applyPassLabel(val.first);
+CPP_EXPORT void PassRegistry::register_check(const std::string& name, const std::string& flag,
+                                             check_func_t func) {
+  if (m_passes.contains(flag)) {
+    qcore_panicf("Diagnostic pass '%s' (flag %s) already registered", name.c_str(), flag.c_str());
   }
+
+  m_passes[flag] = {name, func};
+}
+
+void PassRegistry::link_builtin_checks() {
+  using namespace qxir::checks;
+
+  register_check("missing-return", "-Wmissing-return", missing_return);
 }
