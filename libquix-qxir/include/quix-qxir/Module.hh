@@ -139,7 +139,7 @@ namespace qxir {
 
 struct qmodule_t final {
 private:
-  using FunctionNameBimap = boost::bimap<std::string_view, std::pair<qxir::FnTy *, qxir::Expr *>>;
+  using FunctionNameBimap = boost::bimap<std::string_view, std::pair<qxir::FnTy *, qxir::Fn *>>;
   using GlobalVariableNameBimap = boost::bimap<std::string_view, qxir::Local *>;
   using FunctionParamMap =
       std::unordered_map<std::string_view,

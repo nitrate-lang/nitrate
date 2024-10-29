@@ -417,7 +417,7 @@ static bool alpha_pass(qmodule_t *mod) {
   }
 
   { /* Phase 2 */
-    std::vector<std::pair<std::string_view, std::pair<FnTy *, Expr *>>> simped;
+    std::vector<std::pair<std::string_view, std::pair<FnTy *, Fn *>>> simped;
 
     for (auto it = mod->getFunctions().begin(); it != mod->getFunctions().end(); it++) {
       simped.push_back({(*it).left, {(*it).right.first, (*it).right.second}});
