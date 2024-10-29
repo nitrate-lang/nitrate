@@ -39,14 +39,6 @@
 
 struct qmodule_t;
 
-namespace qxir::checks {
-#define DECLARE_PASS(name) void name(qmodule_t*)
-
-  DECLARE_PASS(missing_return);
-
-#undef DECLARE_PASS
-}  // namespace qxir::checks
-
 namespace qxir::diag {
   typedef std::function<void(qmodule_t*)> check_func_t;
 

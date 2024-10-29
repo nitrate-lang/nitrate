@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+#////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
 /// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
@@ -29,38 +29,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
+#include <diagnostic/List.hh>
 
-#include <quix-qxir/Module.hh>
-#include <transform/PassManager.hh>
-#include <transform/Transform.hh>
-#include <transform/passes/Decl.hh>
-
-bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
-#define RUN_PASS(name, fn)                                        \
-  {                                                               \
-    if (!fn(M)) {                                                 \
-      err << "Error: Pass '" << name << "' failed." << std::endl; \
-      return false;                                               \
-    }                                                             \
-    M->applyPassLabel(name);                                      \
-  }
-
-  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
-  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
-  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
-  RUN_PASS("ds-verify", impl::ds_verify);       /* Verify the module */
-  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
-  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
-  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
-
-  return true;
-}
-
-void qxir::transform::do_semantic_analysis(qmodule_t* M) {
-  for (const auto& [_, val] : diag::PassRegistry::the().get_passes()) {
-    val.second(M);
-
-    M->applyCheckLabel(val.first);
-  }
+void qxir::checks::bad_cast(qmodule_t* M) {
+  /// TODO: Implement the bad_cast diagnostic pass.
+  (void)M;
 }
