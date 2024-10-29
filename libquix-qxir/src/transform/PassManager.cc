@@ -32,6 +32,7 @@
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
 
+#include <diagnostic/List.hh>
 #include <transform/PassManager.hh>
 
 using namespace qxir::diag;
@@ -48,10 +49,4 @@ CPP_EXPORT void PassRegistry::register_check(const std::string& name, const std:
   }
 
   m_passes[flag] = {name, func};
-}
-
-void PassRegistry::link_builtin_checks() {
-  using namespace qxir::checks;
-
-  register_check("missing-return", "-Wmissing-return", missing_return);
 }

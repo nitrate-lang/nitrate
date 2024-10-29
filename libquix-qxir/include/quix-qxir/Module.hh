@@ -177,6 +177,7 @@ private:
   std::unique_ptr<qxir::TypeManager> m_type_mgr;         /* Type manager instance */
   std::unordered_set<std::string> m_strings;             /* Interned strings */
   std::vector<std::string> m_passes_applied;             /* Module mutation tracking */
+  std::vector<std::string> m_checks_applied;             /* Module analysis pass tracking */
   qxir::TargetInfo m_target_info;                        /* Build target information */
   std::string m_module_name;                             /* Not nessesarily unique module name */
   qxir::ModuleId m_id;                                   /* Module ID unique to the
@@ -211,6 +212,8 @@ public:
 
   void applyPassLabel(const std::string &label) { m_passes_applied.push_back(label); }
   const auto &getPassesApplied() const { return m_passes_applied; }
+  void applyCheckLabel(const std::string &label) { m_checks_applied.push_back(label); }
+  const auto &getChecksApplied() const { return m_checks_applied; }
 
   bool hasPassBeenRun(const std::string &label) {
     return std::find(m_passes_applied.begin(), m_passes_applied.end(), label) !=

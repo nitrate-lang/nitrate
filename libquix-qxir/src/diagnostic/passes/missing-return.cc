@@ -29,9 +29,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <diagnostic/List.hh>
 #include <quix-qxir/IRGraph.hh>
 #include <quix-qxir/Module.hh>
-#include <transform/PassManager.hh>
 
 using namespace qxir::diag;
 

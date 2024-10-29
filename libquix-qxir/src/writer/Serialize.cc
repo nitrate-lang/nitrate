@@ -629,13 +629,35 @@ static bool to_codeform(Expr *node, bool minify, size_t indent_size, FILE &ss) {
       ss << "; Module: " << mod->getName() << "\n";
     }
 
-    { /* Print the passes applied */
+    { /* Print the mutation passes applied */
       ss << "; Passes: [";
       size_t i = 0;
       for (auto it = mod->getPassesApplied().begin(); it != mod->getPassesApplied().end(); ++it) {
         ss << *it;
 
         if (std::next(it) != mod->getPassesApplied().end()) {
+          ss << ",";
+
+          if (!minify) {
+            ss << " ";
+            if (i % 6 == 0 && i != 0) {
+              ss << "\n;          ";
+            }
+          }
+        }
+
+        i++;
+      }
+      ss << "]\n";
+    }
+
+    { /* Print the analysis passes applied */
+      ss << "; Checks: [";
+      size_t i = 0;
+      for (auto it = mod->getChecksApplied().begin(); it != mod->getChecksApplied().end(); ++it) {
+        ss << *it;
+
+        if (std::next(it) != mod->getChecksApplied().end()) {
           ss << ",";
 
           if (!minify) {
