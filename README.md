@@ -1,15 +1,15 @@
-# Quix Compiler
+# Nitrate Project
 
-*Project is in rapid development. It will not compile to anything useful yet.*
+*This project is in rapid development. It will not compile to anything useful yet.*
 
-QUIX is a high-level, statically typed, memory-safe\*, garbage-collected\*, high-performance, object-oriented, general-purpose systems programming language designed to be safe, expressive, and performant. QUIX supports runtime reflection, low-level memory access, namespaces, generics, type inference, packed data types, classes, operator overloading, coroutines, default initializers, arbitrary precision math, RAII, automatic memory management, and metaprogramming.
-QUIX is especially well-suited for library development, game development, and systems programming. QUIX is designed to be a modern, safe, and expressive alternative to C++ and Rust.
+Nitrate is a high-level, statically typed, memory-safe, garbage-collected\*, high-performance, object-oriented, general-purpose programming language designed to be safe, expressive, and performant. Nitrate supports runtime reflection, low-level memory access, namespaces, generics, type inference, packed data types, classes, operator overloading, coroutines, default initializers, arbitrary precision math, RAII, automatic memory management, inline assembly, and compile time evaluation metaprogramming.
+Nitrate is especially well-suited for library development, system service development, and general applications. Nitrate is a modern, safe, and expressive alternative to C++.
 
-Official website: [https://merica.dev](https://merica.dev)
+Official website: [https://nitrate.dev](https://nitrate.dev)
 
 ## Table of Contents
 
-- [Quix Compiler](#quix-compiler)
+- [Nitrate Project](#nitrate-project)
   - [Table of Contents](#table-of-contents)
   - [Technical Detail](#technical-detail)
     - [General Architecture](#general-architecture)
@@ -28,17 +28,17 @@ Official website: [https://merica.dev](https://merica.dev)
 
 ---
 
-The QUIX Compiler has a reasonably standard architecture, with a complex preprocessor that is essentially an LUA interpreter, an optimizer, and the LLVM backend. Two custom IRs are used in this compiler's middle end to facilitate the correct and comprehendible translation of the high-level language into native binary code. The compiler is written entirely in "modern" C++ and is designed to be fast, efficient, easy to maintain, and extend.
+The Nitrate Compiler has a reasonably standard architecture, with a complex preprocessor that is essentially a LUA interpreter, followed by an optimizer, and the LLVM backend. Two custom IRs are used in this compiler's middle-end to facilitate the correct and comprehendible translation of the high-level language into native binary code. The compiler is written entirely in modern C++20 and is designed to be fast, efficient, easy to maintain, and extend.
 
-![QUIX](https://github.com/user-attachments/assets/f814a347-fb0a-485c-bb7a-8d8a7706ee22)
+![Nitrate](https://github.com/user-attachments/assets/f814a347-fb0a-485c-bb7a-8d8a7706ee22)
 
 ### Preprocessor Engine Architecture
 
 ---
 
-Some programming languages like Rust have extremely complex macro systems that can feel more like writing theoretical computer science papers than writing helpful code. QUIX has the most potent macro systems of any programming language. QUIX accomplishes this by just embedding a complete LUA interpreter into the preprocessor. You can write `metastatic` functions that may take in arguments and return values that will be recursively preprocessed until there are no more macros to expand. This recursion enables the creation of extraordinarily powerful custom constructs that are *readable*, *understandable*, and *compiler-time performant*. The LUA interpreter context exists for the entire duration of the preprocessor, which is effectively the entire compilation unit, meaning the state is preserved between macros. How hard would it be if you wanted to write a macro in Rust that would do a SHA-3 cryptographic hash at compile time? In QUIX, simply use LUA to implement the standard algorithm as you would in regular programs and then call your macro like `@sha3_256("You data to hash")` which may occur anywhere in your code (as it applies before parsing). QUIX just made elegant macros a solved problem. Also, macros are loosely (optionally) type-checked on input and output, which catches wierd issues early.
+Some programming languages like C++ have strange and complex macro/template metaprogramming systems that can feel more like writing theoretical computer science papers than writing traditional application code. Nitrate has the most potent macro system of any programming language. Nitrate accomplishes this by embedding a complete LUA interpreter into the preprocessor. You can write LUA functions that may take in arguments and return values that will be recursively preprocessed by LUA until there are no more macros to expand. This recursion enables the creation of extraordinarily powerful custom constructs that are *readable*, *understandable*, and *compile-time performant*. The LUA interpreter context exists for the entire duration of the preprocessor, which is the entire compilation unit, meaning the state is preserved between macros. How hard would it be if you wanted to write a macro in C++ that would do a SHA-3 cryptographic hash at compile time? In Nitrate, simply use LUA to implement the standard algorithm as you would in regular languages and then call your macro like `@sha3_256("You data to hash")` which may occur anywhere in your code (as it applies before parsing). Nitrate just made elegant macros a solved problem. Also, macros are optionally type-checked on input and output, which catches many weird issues early.
 
-![QUIX](https://github.com/user-attachments/assets/754f8c82-bcbe-4a30-98dc-10312979b784)
+![Nitrate](https://github.com/user-attachments/assets/754f8c82-bcbe-4a30-98dc-10312979b784)
 
 ### Optimizer Engine Architecture
 
@@ -61,8 +61,8 @@ Build on Debian systems:
 ```bash
 sudo apt install -y git
 cd ~/Downloads
-git clone --recurse-submodules git@github.com:Kracken256/quix.git
-cd quix
+git clone --recurse-submodules git@github.com:Kracken256/nitrate.git
+cd nitrate
 
 # Install dependencies
 # libpolly-14-dev is not necessary in all distributions. If it does not exist in your package manager, try building without it.
@@ -83,7 +83,7 @@ TODO: write this section
 
 ## Diagnostic Reporting
 
-The following is an example of an error message generated by the Quix compiler:
+The following is an example of an error message generated by the Nitrate compiler:
 In reality, the error message would be colorized.
 
 ```plaintext
@@ -107,5 +107,5 @@ examples/test.q:3:9-?:?: error: ptree-invalid
 
 ## License
 
-The Quix compiler is free software released under the GNU Lesser General Public License 2.1 (LGPL 2.1). See the `LICENSE` file for more information.
+The Nitrate Project is free software released under the GNU Lesser General Public License 2.1 (LGPL 2.1). See the `LICENSE` file for more information.
 
