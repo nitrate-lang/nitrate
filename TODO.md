@@ -11,7 +11,11 @@
     - Add a phase ordering pipeline to apply the registered passes in a manner that ensures dependancies and correctness.
     - Serialize and deserialize IR
     - Add a builder API to generate IR like llvm::Builder.
-    - Cleanup `IRGraph.hh` header
+    - Make IR synthesis like: [parse-tree -> quasi-IR -> IR -> IR-finalization passes -> IR];
+      - Finalization passes include:
+        - Name mangling
+        - Final checks on the data structure itself
+        - Others as I think of them.
 
 - Garbage Collection
   - Summary:
