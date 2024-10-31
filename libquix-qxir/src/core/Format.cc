@@ -658,7 +658,7 @@ std::optional<std::string> qxir::SymbolEncoding::mangle_name(const qxir::Expr *s
   }
 
   std::string_view name = symbol->getName();
-  Type *type = const_cast<Expr *>(symbol)->getType();
+  Type *type = const_cast<Expr *>(symbol)->getType().value_or(nullptr);
   if (!type) {
     return std::nullopt;
   }

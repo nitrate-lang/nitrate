@@ -257,7 +257,7 @@ namespace qxir {
     qlex_loc_t locEnd() const noexcept;
 
     qmodule_t *getModule() const noexcept;
-    Type *getType() noexcept;
+    std::optional<Type *> getType() noexcept;
 
     template <typename T>
     static T *safe_cast_as(Expr *ptr) noexcept {

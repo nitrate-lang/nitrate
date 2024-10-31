@@ -34,6 +34,7 @@
 #include <boost/bimap.hpp>
 #include <quix-qxir/Format.hh>
 #include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Report.hh>
 #include <transform/passes/Decl.hh>
 
 /**
@@ -44,18 +45,22 @@
  */
 
 using namespace qxir;
+using namespace qxir::diag;
 
 bool qxir::transform::impl::nm_premangle(qmodule_t *mod) {
   SymbolEncoding se;
+  bool failed = false;
 
-  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [&se, mod](Expr *, Expr **cur) -> IterOp {
+  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
     if ((*cur)->getKind() == QIR_NODE_FN) {
       Fn *fn = (*cur)->as<Fn>();
       auto name = se.mangle_name(fn, fn->getAbiTag());
       if (name) [[likely]] {
         fn->setName(mod->internString(*name));
       } else {
-        qcore_panicf("Failed to mangle function name");
+        failed = true;
+        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, fn->getName(), fn->locBeg(),
+               fn->locEnd());
       }
     } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
       Local *local = (*cur)->as<Local>();
@@ -63,7 +68,9 @@ bool qxir::transform::impl::nm_premangle(qmodule_t *mod) {
       if (name) [[likely]] {
         local->setName(mod->internString(*name));
       } else {
-        qcore_panicf("Failed to mangle local name");
+        failed = true;
+        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(), local->locBeg(),
+               local->locEnd());
       }
     }
 
@@ -86,5 +93,5 @@ bool qxir::transform::impl::nm_premangle(qmodule_t *mod) {
     return IterOp::Proceed;
   });
 
-  return true;
+  return !failed;
 }

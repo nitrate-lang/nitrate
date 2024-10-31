@@ -150,11 +150,11 @@ static qxir::Expr *qconv_one(ConvState &s, const qparse::Node *node);
 static std::vector<qxir::Expr *> qconv_any(ConvState &s, const qparse::Node *node);
 
 LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics) {
+  qcore_assert(mod, "qxir_lower: mod == nullptr");
+
   if (!base) {
     return false;
   }
-
-  qcore_assert(mod, "qxir_lower: mod == nullptr");
 
   std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
   install_sigguard(mod);
@@ -162,35 +162,35 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
   mod->setRoot(nullptr);
   mod->enableDiagnostics(diagnostics);
 
-  volatile bool status = false;  // For sanity
+  volatile bool success = false;
 
   if (setjmp(sigguard_env) == 0) {
     try {
       ConvState s;
       mod->setRoot(qconv_one(s, static_cast<const qparse::Node *>(base)));
-      status = !mod->getFailbit();
 
-      if (status) {
+      success = !mod->getFailbit();
+
+      /* Perform the required transformations and checks
+         if the first translation was successful */
+      if (success) {
         std::stringstream ss;
-        status = qxir::transform::std_transform(mod, ss);
+
+        /* Perform the required transformations */
+        success = qxir::transform::std_transform(mod, ss);
+        if (success) {
+          qxir::transform::do_semantic_analysis(mod);
+        } else {
+          report(IssueCode::CompilerError, IssueClass::Debug, ss.str());
+        }
+
+        success = success && !mod->getFailbit();
       }
-
-      if (status) {
-        qxir::transform::do_semantic_analysis(mod);
-      }
-
-      status = !mod->getFailbit();
-    } catch (QError &e) {
-      // QError exception is control flow to abort the recursive lowering
-
-      status = false;  // For sanity
-
-      /**
-       * At this point status is false, so we can continue to the cleanup
-       */
+    } catch (QError &) {
+      success = false;
     }
   } else {
-    status = false;  // For sanity
+    success = false;
 
     /**
      * A signal (what is usually a fatal error) was caught,
@@ -200,27 +200,13 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
      */
   }
 
-  if (!status) {
-    mod->getDiag().push(QXIR_AUDIT_CONV,
-                        DiagMessage("Compilation failed", IssueClass::Error, IssueCode::Default));
-  }
-
-  // iterate<qxir::dfs_pre>(mod->getRoot(), [mod](qxir::Expr *par, qxir::Expr **cur) -> qxir::IterOp
-  // {
-  //   auto pos = (*cur)->getLoc();
-
-  //   mod->getDiag().push(
-  //       QXIR_AUDIT_CONV,
-  //       qxir::diag::DiagMessage("Testing reporting", qxir::diag::IssueClass::Warn,
-  //                               qxir::diag::IssueCode::Default, pos.first, pos.second));
-  //   return qxir::IterOp::Proceed;
-  // });
+  success || report(IssueCode::CompilerError, IssueClass::Error, "failed");
 
   qxir::current = nullptr;
   uninstall_sigguard();
   std::swap(qxir::qxir_arena.get(), mod->getNodeArena());
 
-  return status;
+  return success;
 }
 
 LIB_EXPORT bool qxir_justprint(qparse_node_t *base, FILE *out, qxir_serial_t mode, qxir_node_cb cb,
@@ -592,9 +578,14 @@ qxir::Expr *qconv_lower_unexpr(ConvState &s, qxir::Expr *rhs, qlex_op_t op) {
     }
     case qOpTypeof: {
       auto inferred = rhs->getType();
+      if (!inferred.has_value()) {
+        badtree(nullptr, "qOpTypeof: rhs->getType() == nullptr");
+        throw QError();
+      }
+
       qcore_assert(inferred, "qOpTypeof: inferred == nullptr");
       qxir::SymbolEncoding se;
-      auto res = se.mangle_name(inferred, qxir::AbiTag::QUIX);
+      auto res = se.mangle_name(inferred.value(), qxir::AbiTag::QUIX);
       if (!res) {
         badtree(nullptr, "Failed to mangle type");
         throw QError();

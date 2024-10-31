@@ -44,6 +44,9 @@ bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
       return false;                                               \
     }                                                             \
     M->applyPassLabel(name);                                      \
+    if (M->getFailbit()) {                                        \
+      return false;                                               \
+    }                                                             \
   }
 
   RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */

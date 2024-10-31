@@ -59,6 +59,7 @@ void qxir::checks::missing_return(qmodule_t* M) {
 
     if (!any_ret) { /* If no return statement is found, this is an error. */
       report(IssueCode::MissingReturn, IssueClass::Error, key, fn->locBeg(), fn->locEnd());
+      M->setFailbit(true);
     }
   }
 }
