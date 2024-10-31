@@ -73,14 +73,17 @@ namespace qxir::diag {
     UnknownFunction,
     TooManyArguments,
     UnknownArgument,
+    TypeInference,
+    NameManglingTypeInfer,
 
     UnknownType,
     UnresolvedIdentifier,
     TypeRedefinition,
+    BadCast,
 
     MissingReturn,
 
-    Default = IssueCode::CompilerError,
+    Info,
   };
 
   typedef std::function<void(std::string_view, IssueClass)> DiagnosticMessageHandler;
@@ -92,7 +95,7 @@ namespace qxir::diag {
     IssueCode m_code;
 
     DiagMessage(std::string_view msg = "", IssueClass type = IssueClass::Debug,
-                IssueCode code = IssueCode::Default, qlex_loc_t start = {0}, qlex_loc_t end = {0})
+                IssueCode code = IssueCode::Info, qlex_loc_t start = {0}, qlex_loc_t end = {0})
         : m_msg(msg), m_start(start), m_end(end), m_type(type), m_code(code) {}
 
     uint64_t hash() const;
@@ -179,20 +182,20 @@ namespace qxir::diag {
 
 #define CONV_DEBUG(_msg)               \
   mod->getDiag().push(QXIR_AUDIT_CONV, \
-                      diag::DiagMessage(_msg, diag::IssueClass::Debug, diag::IssueCode::Default));
+                      diag::DiagMessage(_msg, diag::IssueClass::Debug, diag::IssueCode::Info));
 
-#define DUPLICATE_VARIABLE(_varname)                                                 \
-  mod->getDiag().push(                                                               \
-      QXIR_AUDIT_CONV,                                                               \
-      diag::DiagMessage("Variable named " + std::string(_varname) + " is redefined", \
-                        diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition,      \
+#define DUPLICATE_VARIABLE(_varname)                                                    \
+  mod->getDiag().push(                                                                  \
+      QXIR_AUDIT_CONV,                                                                  \
+      diag::DiagMessage("Variable named " + std::string(_varname) + " is redefined",    \
+                        diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition, \
                         cur->getLoc().first, cur->getLoc().second));
 
-#define DUPLICATE_FUNCTION(_varname)                                                 \
-  mod->getDiag().push(                                                               \
-      QXIR_AUDIT_CONV,                                                               \
-      diag::DiagMessage("Function named " + std::string(_varname) + " is redefined", \
-                        diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition,      \
+#define DUPLICATE_FUNCTION(_varname)                                                    \
+  mod->getDiag().push(                                                                  \
+      QXIR_AUDIT_CONV,                                                                  \
+      diag::DiagMessage("Function named " + std::string(_varname) + " is redefined",    \
+                        diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition, \
                         cur->getLoc().first, cur->getLoc().second));
 
 #define NO_MATCHING_FUNCTION(_funcname)                                                            \
@@ -216,10 +219,18 @@ namespace qxir::diag {
                         diag::IssueClass::Error, diag::IssueCode::TooManyArguments,          \
                         cur->getLoc().first, cur->getLoc().second));
 
-  void report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
+  /**
+   * @brief Report a diagnostic message
+   * @return true always
+   */
+  bool report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
               qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0}, int channel = QXIR_AUDIT_CONV);
 
-  void report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
+  /**
+   * @brief Report a diagnostic message
+   * @return true always
+   */
+  bool report(diag::IssueCode code, diag::IssueClass type = diag::IssueClass::Error,
               std::string_view subject = "", qlex_loc_t loc_start = {0}, qlex_loc_t loc_end = {0},
               int channel = QXIR_AUDIT_CONV);
 

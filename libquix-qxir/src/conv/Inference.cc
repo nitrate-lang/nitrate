@@ -106,6 +106,10 @@ static Type *signed_complement(qxir_ty_t ty) {
 }
 
 static Type *binexpr_promote(Type *L, Type *R) {
+  if (L == nullptr || R == nullptr) {
+    return nullptr;
+  }
+
   ///===========================================================================
   /// NOTE: If L && R are the same type, the type is their identity.
   if (L->cmp_eq(R)) {
@@ -185,6 +189,8 @@ static Type *binexpr_promote(Type *L, Type *R) {
   ///===========================================================================
   /// NOTE: Non-primitive numeric types are promoted according to the following rules:
   {
+    return nullptr;
+
     /// TODO: Non-primitive numeric type promotion
     qcore_implement("Non-primitive numeric type promotion");
 
@@ -217,39 +223,48 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         BinExpr *B = E->as<BinExpr>();
         switch (B->getOp()) {
           case Op::Plus: {
-            T = binexpr_promote(B->getLHS()->getType(), B->getRHS()->getType());
+            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
+                                B->getRHS()->getType().value_or(nullptr));
             break;
           }
           case Op::Minus: {
-            T = binexpr_promote(B->getLHS()->getType(), B->getRHS()->getType());
+            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
+                                B->getRHS()->getType().value_or(nullptr));
             break;
           }
           case Op::Times: {
-            T = binexpr_promote(B->getLHS()->getType(), B->getRHS()->getType());
+            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
+                                B->getRHS()->getType().value_or(nullptr));
             break;
           }
           case Op::Slash: {
-            T = binexpr_promote(B->getLHS()->getType(), B->getRHS()->getType());
+            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
+                                B->getRHS()->getType().value_or(nullptr));
             break;
           }
           case Op::Percent: {
-            T = binexpr_promote(B->getLHS()->getType(), B->getRHS()->getType());
+            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
+                                B->getRHS()->getType().value_or(nullptr));
             break;
           }
           case Op::BitAnd: {
-            T = binexpr_promote(B->getLHS()->getType(), B->getRHS()->getType());
+            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
+                                B->getRHS()->getType().value_or(nullptr));
             break;
           }
           case Op::BitOr: {
-            T = binexpr_promote(B->getLHS()->getType(), B->getRHS()->getType());
+            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
+                                B->getRHS()->getType().value_or(nullptr));
             break;
           }
           case Op::BitXor: {
-            T = binexpr_promote(B->getLHS()->getType(), B->getRHS()->getType());
+            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
+                                B->getRHS()->getType().value_or(nullptr));
             break;
           }
           case Op::BitNot: {
-            T = binexpr_promote(B->getLHS()->getType(), B->getRHS()->getType());
+            T = binexpr_promote(B->getLHS()->getType().value_or(nullptr),
+                                B->getRHS()->getType().value_or(nullptr));
             break;
           }
           case Op::LogicAnd: {
@@ -265,19 +280,19 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::LShift: {
-            T = B->getLHS()->getType();
+            T = B->getLHS()->getType().value_or(nullptr);
             break;
           }
           case Op::RShift: {
-            T = B->getLHS()->getType();
+            T = B->getLHS()->getType().value_or(nullptr);
             break;
           }
           case Op::ROTR: {
-            T = B->getLHS()->getType();
+            T = B->getLHS()->getType().value_or(nullptr);
             break;
           }
           case Op::ROTL: {
-            T = B->getLHS()->getType();
+            T = B->getLHS()->getType().value_or(nullptr);
             break;
           }
           case Op::Inc: {
@@ -289,7 +304,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::Set: {
-            T = B->getRHS()->getType();
+            T = B->getRHS()->getType().value_or(nullptr);
             break;
           }
           case Op::LT: {
@@ -321,11 +336,11 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::BitcastAs: {
-            T = B->getRHS()->getType();
+            T = B->getRHS()->getType().value_or(nullptr);
             break;
           }
           case Op::CastAs: {
-            T = B->getRHS()->getType();
+            T = B->getRHS()->getType().value_or(nullptr);
             break;
           }
           case Op::Bitsizeof: {
@@ -339,16 +354,19 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         UnExpr *U = E->as<UnExpr>();
         switch (E->as<UnExpr>()->getOp()) {
           case Op::Plus: {
-            T = U->getExpr()->getType();
+            T = U->getExpr()->getType().value_or(nullptr);
             break;
           }
           case Op::Minus: {
-            T = U->getExpr()->getType();
+            T = U->getExpr()->getType().value_or(nullptr);
             break;
           }
           case Op::Times: {
-            if (U->getExpr()->getType()->is(QIR_NODE_PTR_TY)) {
-              T = U->getExpr()->getType()->as<PtrTy>()->getPointee();
+            Type *x = U->getExpr()->getType().value_or(nullptr);
+            if (!x) {
+              T = nullptr;
+            } else if (x->is(QIR_NODE_PTR_TY)) {
+              T = x->as<PtrTy>()->getPointee();
             } else {
               T = nullptr;  // Invalid operation: * is only valid on pointers
             }
@@ -363,7 +381,12 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::BitAnd: {
-            T = create<PtrTy>(U->getExpr()->getType());
+            Type *x = U->getExpr()->getType().value_or(nullptr);
+            if (x) {
+              T = create<PtrTy>(x);
+            } else {
+              T = nullptr;
+            }
             break;
           }
           case Op::BitOr: {
@@ -375,7 +398,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::BitNot: {
-            T = U->getExpr()->getType();
+            T = U->getExpr()->getType().value_or(nullptr);
             break;
           }
           case Op::LogicAnd: {
@@ -407,11 +430,11 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::Inc: {
-            T = U->getExpr()->getType();
+            T = U->getExpr()->getType().value_or(nullptr);
             break;
           }
           case Op::Dec: {
-            T = U->getExpr()->getType();
+            T = U->getExpr()->getType().value_or(nullptr);
             break;
           }
           case Op::Set: {
@@ -529,11 +552,11 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
             break;
           }
           case Op::Inc: {
-            T = P->getExpr()->getType();
+            T = P->getExpr()->getType().value_or(nullptr);
             break;
           }
           case Op::Dec: {
-            T = P->getExpr()->getType();
+            T = P->getExpr()->getType().value_or(nullptr);
             break;
           }
           case Op::Set: {
@@ -628,7 +651,12 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         } else {
           std::vector<Type *> types;
           for (auto &item : E->as<List>()->getItems()) {
-            types.push_back(item->getType());
+            Type *x = item->getType().value_or(nullptr);
+            if (!x) {
+              T = nullptr;
+              break;
+            }
+            types.push_back(x);
           }
 
           bool homogeneous = std::all_of(types.begin(), types.end(),
@@ -643,19 +671,29 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         break;
       }
       case QIR_NODE_CALL: {
-        T = E->as<Call>()->getTarget()->getType()->as<FnTy>()->getReturn();
+        Type *x = E->as<Call>()->getTarget()->getType().value_or(nullptr);
+        if (!x) {
+          T = nullptr;
+        } else {
+          qcore_assert(x->getKind() == QIR_NODE_FN_TY, "Call target must be a function");
+          T = x->as<FnTy>()->getReturn();
+        }
         break;
       }
       case QIR_NODE_SEQ: {
         if (E->as<Seq>()->getItems().empty()) {
           T = create<VoidTy>();
         } else {
-          T = E->as<Seq>()->getItems().back()->getType();
+          T = E->as<Seq>()->getItems().back()->getType().value_or(nullptr);
         }
         break;
       }
       case QIR_NODE_INDEX: {
-        Type *B = E->as<Index>()->getExpr()->getType();
+        Type *B = E->as<Index>()->getExpr()->getType().value_or(nullptr);
+        if (!B) {
+          T = nullptr;
+          break;
+        }
         Expr *V = E->as<Index>()->getIndex();
 
         if (B->is(QIR_NODE_PTR_TY)) {  // *X -> X
@@ -713,7 +751,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
       }
       case QIR_NODE_IDENT: {
         qcore_assert(E->as<Ident>()->getWhat() != nullptr, "Ident node has no target");
-        T = E->as<Ident>()->getWhat()->getType();
+        T = E->as<Ident>()->getWhat()->getType().value_or(nullptr);
         break;
       }
       case QIR_NODE_EXTERN: {
@@ -721,11 +759,11 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
         break;
       }
       case QIR_NODE_LOCAL: {
-        T = E->as<Local>()->getValue()->getType();
+        T = E->as<Local>()->getValue()->getType().value_or(nullptr);
         break;
       }
       case QIR_NODE_RET: {
-        T = E->as<Ret>()->getExpr()->getType();
+        T = E->as<Ret>()->getExpr()->getType().value_or(nullptr);
         break;
       }
       case QIR_NODE_BRK: {
@@ -763,7 +801,13 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
       case QIR_NODE_FN: {
         FnParams params;
         for (auto &param : E->as<Fn>()->getParams()) {
-          params.push_back(param.first->getType());
+          Type *paramType = param.first->getType().value_or(nullptr);
+          if (paramType) {
+            params.push_back(paramType);
+          } else {
+            T = nullptr;
+            break;
+          }
         }
 
         FnAttrs attrs;

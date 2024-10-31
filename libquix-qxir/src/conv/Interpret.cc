@@ -175,7 +175,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
             }
           }
 
-          Type *T = L->getType();
+          Type *T = L->getType().value_or(nullptr);
           if (!T) {
             break;
           }
@@ -204,7 +204,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
             }
           }
 
-          Type *T = L->getType();
+          Type *T = L->getType().value_or(nullptr);
           if (!T) {
             break;
           }
@@ -432,7 +432,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
         }
 
         case Op::Alignof: {
-          Type *T = E->getType();
+          Type *T = E->getType().value_or(nullptr);
           if (!T) {
             break;
           }
@@ -441,7 +441,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
         }
 
         case Op::Bitsizeof: {
-          Type *T = E->getType();
+          Type *T = E->getType().value_or(nullptr);
           if (!T) {
             break;
           }

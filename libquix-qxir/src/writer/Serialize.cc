@@ -221,12 +221,12 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       break;
     }
     case QIR_NODE_INT: {
-      recurse(n->as<Int>()->getType());
+      recurse(n->as<Int>()->getType().value_or(nullptr));
       ss << " " << n->as<Int>()->getValue();
       break;
     }
     case QIR_NODE_FLOAT: {
-      recurse(n->as<Float>()->getType());
+      recurse(n->as<Float>()->getType().value_or(nullptr));
       ss << " " << n->as<Float>()->getValue();
       break;
     }
@@ -234,7 +234,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       // Check if it matches the string literal pattern
       List *L = n->as<List>();
 
-      recurse(L->getType());
+      recurse(L->getType().value_or(nullptr));
       ss << " ";
 
       bool is_cstring = false;
@@ -332,7 +332,7 @@ static bool serialize_recurse(Expr *n, FILE &ss, FILE &typedefs, ConvState &stat
       break;
     }
     case QIR_NODE_IDENT: {
-      recurse(n->as<Ident>()->getType());
+      recurse(n->as<Ident>()->getType().value_or(nullptr));
       ss << " " << n->as<Ident>()->getName();
       break;
     }

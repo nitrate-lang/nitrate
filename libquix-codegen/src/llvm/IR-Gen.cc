@@ -900,9 +900,14 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llv
 
           for (size_t i = 0; i < ST->getFields().size(); i++) {
             std::cout << "Casting element " << i << std::endl;
+            auto x = base->getElement()->getType();
+            if (!x.has_value()) {
+              debug("Failed to get element type");
+              return std::nullopt;
+            }
+
             val_t F = binexpr_do_cast(m, b, cf, s, b.CreateExtractValue(L, i), qxir::Op::CastAs,
-                                      new_st_ty->getElementType(i), base->getElement()->getType(),
-                                      ST->getFields()[i]);
+                                      new_st_ty->getElementType(i), x.value(), ST->getFields()[i]);
             if (!F) {
               debug("Failed to cast element " << i);
               return std::nullopt;
@@ -922,9 +927,18 @@ static val_t binexpr_do_cast(ctx_t &m, craft_t &b, const Mode &cf, State &s, llv
           llvm::AllocaInst *new_arr = b.CreateAlloca(new_arr_ty);
 
           for (size_t i = 0; i < FROM->getCount(); i++) {
+            auto x = FROM->getElement()->getType();
+            if (!x.has_value()) {
+              debug("Failed to get element type");
+              return std::nullopt;
+            }
+            auto y = TO->getElement()->getType();
+            if (!y.has_value()) {
+              debug("Failed to get element type");
+              return std::nullopt;
+            }
             val_t F = binexpr_do_cast(m, b, cf, s, b.CreateExtractValue(L, i), qxir::Op::CastAs,
-                                      new_arr_ty->getElementType(), FROM->getElement()->getType(),
-                                      TO->getElement()->getType());
+                                      new_arr_ty->getElementType(), x.value(), y.value());
             if (!F) {
               debug("Failed to cast element " << i);
               return std::nullopt;
@@ -977,13 +991,13 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
       return std::nullopt;
     }
 
-    qxir::Type *L_T = N->getLHS()->getType();
+    qxir::Type *L_T = N->getLHS()->getType().value_or(nullptr);
     if (!L_T) {
       debug("Failed to get LHS type");
       return std::nullopt;
     }
 
-    qxir::Type *R_T = N->getRHS()->getType();
+    qxir::Type *R_T = N->getRHS()->getType().value_or(nullptr);
     if (!R_T) {
       debug("Failed to get RHS type");
       return std::nullopt;
@@ -1017,9 +1031,14 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
 
     case qxir::Op::Slash: { /* '/': Division operator */
       PROD_LHS()
-      if (N->getLHS()->getType()->is_signed()) {
+      auto x = N->getLHS()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      if (x.value()->is_signed()) {
         E = b.CreateSDiv(L.value(), R.value());
-      } else if (N->getLHS()->getType()->is_unsigned()) {
+      } else if (x.value()->is_unsigned()) {
         E = b.CreateUDiv(L.value(), R.value());
       } else {
         qcore_panic("unexpected type for division");
@@ -1029,9 +1048,14 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
 
     case qxir::Op::Percent: { /* '%': Modulus operator */
       PROD_LHS()
-      if (N->getLHS()->getType()->is_signed()) {
+      auto x = N->getLHS()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      if (x.value()->is_signed()) {
         E = b.CreateSRem(L.value(), R.value());
-      } else if (N->getLHS()->getType()->is_unsigned()) {
+      } else if (x.value()->is_unsigned()) {
         E = b.CreateURem(L.value(), R.value());
       } else {
         qcore_panic("unexpected type for modulus");
@@ -1077,9 +1101,14 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
 
     case qxir::Op::RShift: { /* '>>': Right shift operator */
       PROD_LHS()
-      if (N->getLHS()->getType()->is_signed()) {
+      auto x = N->getLHS()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      if (x.value()->is_signed()) {
         E = b.CreateAShr(L.value(), R.value());
-      } else if (N->getLHS()->getType()->is_unsigned()) {
+      } else if (x.value()->is_unsigned()) {
         E = b.CreateLShr(L.value(), R.value());
       } else {
         qcore_panic("unexpected type for shift");
@@ -1090,8 +1119,12 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
     case qxir::Op::ROTR: { /* '>>>': Rotate right operator */
       PROD_LHS()
       // Formula: (L >> (R % num_bits)) | (L << ((num_bits - R) % num_bits))
-
-      size_t num_bits = N->getLHS()->getType()->getSizeBits();
+      auto x = N->getLHS()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      size_t num_bits = x.value()->getSizeBits();
       llvm::ConstantInt *num_bits_c =
           llvm::ConstantInt::get(m.getContext(), llvm::APInt(num_bits, num_bits));
 
@@ -1108,7 +1141,12 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
       PROD_LHS()
       // Formula: (L << (R % num_bits)) | (L >> ((num_bits - R) % num_bits))
 
-      size_t num_bits = N->getLHS()->getType()->getSizeBits();
+      auto x = N->getLHS()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      size_t num_bits = x.value()->getSizeBits();
       llvm::ConstantInt *num_bits_c =
           llvm::ConstantInt::get(m.getContext(), llvm::APInt(num_bits, num_bits));
 
@@ -1143,9 +1181,14 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
 
     case qxir::Op::LT: { /* '<': Less than operator */
       PROD_LHS()
-      if (N->getLHS()->getType()->is_signed()) {
+      auto x = N->getLHS()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      if (x.value()->is_signed()) {
         E = b.CreateICmpSLT(L.value(), R.value());
-      } else if (N->getLHS()->getType()->is_unsigned()) {
+      } else if (x.value()->is_unsigned()) {
         E = b.CreateICmpULT(L.value(), R.value());
       } else {
         qcore_panic("unexpected type for comparison");
@@ -1155,9 +1198,14 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
 
     case qxir::Op::GT: { /* '>': Greater than operator */
       PROD_LHS()
-      if (N->getLHS()->getType()->is_signed()) {
+      auto x = N->getLHS()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      if (x.value()->is_signed()) {
         E = b.CreateICmpSGT(L.value(), R.value());
-      } else if (N->getLHS()->getType()->is_unsigned()) {
+      } else if (x.value()->is_unsigned()) {
         E = b.CreateICmpUGT(L.value(), R.value());
       } else {
         qcore_panic("unexpected type for comparison");
@@ -1167,9 +1215,14 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
 
     case qxir::Op::LE: { /* '<=': Less than or equal to operator */
       PROD_LHS()
-      if (N->getLHS()->getType()->is_signed()) {
+      auto x = N->getLHS()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      if (x.value()->is_signed()) {
         E = b.CreateICmpSLE(L.value(), R.value());
-      } else if (N->getLHS()->getType()->is_unsigned()) {
+      } else if (x.value()->is_unsigned()) {
         E = b.CreateICmpULE(L.value(), R.value());
       } else {
         qcore_panic("unexpected type for comparison");
@@ -1179,9 +1232,10 @@ static val_t QIR_NODE_BINEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, 
 
     case qxir::Op::GE: { /* '>=': Greater than or equal to operator */
       PROD_LHS()
-      if (N->getLHS()->getType()->is_signed()) {
+      auto x = N->getLHS()->getType();
+      if (x.value()->is_signed()) {
         E = b.CreateICmpSGE(L.value(), R.value());
-      } else if (N->getLHS()->getType()->is_unsigned()) {
+      } else if (x.value()->is_unsigned()) {
         E = b.CreateICmpUGE(L.value(), R.value());
       } else {
         qcore_panic("unexpected type for comparison");
@@ -1337,9 +1391,14 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
+        auto x = N->getExpr()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return std::nullopt;
+        }
         new_val = b.CreateAdd(
-            current, llvm::ConstantInt::get(
-                         m.getContext(), llvm::APInt(N->getExpr()->getType()->getSizeBits(), 1)));
+            current,
+            llvm::ConstantInt::get(m.getContext(), llvm::APInt(x.value()->getSizeBits(), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFAdd(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
@@ -1376,9 +1435,14 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
+        auto x = N->getExpr()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return std::nullopt;
+        }
         new_val = b.CreateSub(
-            current, llvm::ConstantInt::get(
-                         m.getContext(), llvm::APInt(N->getExpr()->getType()->getSizeBits(), 1)));
+            current,
+            llvm::ConstantInt::get(m.getContext(), llvm::APInt(x.value()->getSizeBits(), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFSub(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
@@ -1391,13 +1455,21 @@ static val_t QIR_NODE_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, q
       break;
     }
     case qxir::Op::Alignof: {
-      R = llvm::ConstantInt::get(m.getContext(),
-                                 llvm::APInt(64, N->getExpr()->getType()->getAlignBytes()));
+      auto x = N->getExpr()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(64, x.value()->getAlignBytes()));
       break;
     }
     case qxir::Op::Bitsizeof: {
-      R = llvm::ConstantInt::get(m.getContext(),
-                                 llvm::APInt(64, N->getExpr()->getType()->getSizeBits()));
+      auto x = N->getExpr()->getType();
+      if (!x.has_value()) {
+        debug("Failed to get type");
+        return std::nullopt;
+      }
+      R = llvm::ConstantInt::get(m.getContext(), llvm::APInt(64, x.value()->getSizeBits()));
       break;
     }
 
@@ -1449,9 +1521,14 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &, State &s
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
+        auto x = N->getExpr()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return std::nullopt;
+        }
         new_val = b.CreateAdd(
-            current, llvm::ConstantInt::get(
-                         m.getContext(), llvm::APInt(N->getExpr()->getType()->getSizeBits(), 1)));
+            current,
+            llvm::ConstantInt::get(m.getContext(), llvm::APInt(x.value()->getSizeBits(), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFAdd(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
@@ -1488,9 +1565,14 @@ static val_t QIR_NODE_POST_UNEXPR_C(ctx_t &m, craft_t &b, const Mode &, State &s
       llvm::Value *new_val;
 
       if (current->getType()->isIntegerTy()) {
+        auto x = N->getExpr()->getType();
+        if (!x.has_value()) {
+          debug("Failed to get type");
+          return std::nullopt;
+        }
         new_val = b.CreateSub(
-            current, llvm::ConstantInt::get(
-                         m.getContext(), llvm::APInt(N->getExpr()->getType()->getSizeBits(), 1)));
+            current,
+            llvm::ConstantInt::get(m.getContext(), llvm::APInt(x.value()->getSizeBits(), 1)));
       } else if (current->getType()->isFloatingPointTy()) {
         new_val = b.CreateFSub(current, llvm::ConstantFP::get(m.getContext(), llvm::APFloat(1.0)));
       } else {
@@ -1896,7 +1978,13 @@ static val_t QIR_NODE_LOCAL_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qx
    * @note [Write assumptions here]
    */
 
-  ty_t R_T = T(m, b, cf, s, N->getValue()->getType());
+  auto x = N->getValue()->getType();
+  if (!x.has_value()) {
+    debug("Failed to get type");
+    return std::nullopt;
+  }
+
+  ty_t R_T = T(m, b, cf, s, x.value());
   if (!R_T) {
     debug("Failed to get type");
     return std::nullopt;
@@ -2194,16 +2282,24 @@ static val_t QIR_NODE_CASE_C(ctx_t &, craft_t &, const Mode &, State &, qxir::Ca
 }
 
 static bool check_switch_trivial(qxir::Switch *N) {
-  qxir::Type *C_T = N->getCond()->getType();
+  auto C_T = N->getCond()->getType();
+  if (!C_T) {
+    debug("Failed to get condition type");
+    return false;
+  }
 
-  if (!C_T->is_integral()) {
+  if (!C_T.value()->is_integral()) {
     return false;
   }
 
   for (auto &node : N->getCases()) {
     qxir::Case *C = node->as<qxir::Case>();
-
-    if (!C->getCond()->getType()->cmp_eq(C_T)) {
+    auto x = C->getCond()->getType();
+    if (!x) {
+      debug("Failed to get case condition type");
+      return false;
+    }
+    if (!x.value()->cmp_eq(C_T.value())) {
       return false;
     }
   }
@@ -2353,7 +2449,13 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
 
   { /* Lower return type */
     // Use type inference to get return type
-    ty_t R = T(m, b, cf, s, N->getType()->as<qxir::FnTy>()->getReturn());
+    auto x = N->getType();
+    if (!x.has_value()) {
+      s.in_fn = in_fn_old;
+      debug("Failed to get return type");
+      return std::nullopt;
+    }
+    ty_t R = T(m, b, cf, s, x.value()->as<qxir::FnTy>()->getReturn());
     if (!R) {
       s.in_fn = in_fn_old;
       debug("Failed to get return type");

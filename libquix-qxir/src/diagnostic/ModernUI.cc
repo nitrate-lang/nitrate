@@ -61,7 +61,8 @@ struct IssueInfo {
 /// FIXME: Write correct stuff here
 
 static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, IssueInfo>({
-    {IssueCode::CompilerError, {"Compiler Error", "An error occurred during compilation.", {}}},
+    {IssueCode::Info, {"info", "%s", {}}},
+    {IssueCode::CompilerError, {"Compiler Error", "An error occurred during compilation: %s", {}}},
     {IssueCode::PTreeInvalid,
      {"ptree-invalid", /* FIXME: Summarize */
       "Parse tree is not okay.",
@@ -104,6 +105,16 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
      {"unknown-argument", /* FIXME: Summarize */
       "write me",
       {}}},
+    {IssueCode::TypeInference,
+     {"type-inference", /* FIXME: Summarize */
+      "Preliminary type checking failed.",
+      {}}},
+    {IssueCode::NameManglingTypeInfer,
+     {"nm-type-infer", /* FIXME: Summarize */
+      "Failed to mangle the name of symbol named: '%s'.",
+      {
+          "Ensure that the symbol node is correctly typed.",
+      }}},
 
     {IssueCode::UnknownType,
      {"unknown-type", /* FIXME: Summarize */
@@ -119,6 +130,12 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
       "Type '%s' is redefined.",
       {"Ensure that the one-defintion-rule (ODR) is obeyed.", "Check for typos.",
        "Check for visibility."}}},
+    {IssueCode::BadCast,
+     {"bad-cast",
+      "%s",
+      {
+          /* TODO: Add fixes */
+      }}},
 
     {IssueCode::MissingReturn,
      {"missing-return",
