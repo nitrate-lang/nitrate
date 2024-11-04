@@ -29,15 +29,24 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <quix-qxir/IRGraph.hh>
 #include <transform/passes/Decl.hh>
 
 /**
  * @brief Do type inference on the module.
  */
 
-bool qxir::transform::impl::tyinfer(qmodule_t *mod) {
-  /// TODO: Implement pass
-  (void)mod;
+using namespace qxir::diag;
+
+bool qxir::transform::impl::tyinfer(qmodule_t* M) {
+  iterate<dfs_pre>(M->getRoot(), [&](Expr*, Expr** C) -> IterOp {
+    if (!(*C)->getType().has_value()) {
+      report(IssueCode::TypeInference, IssueClass::Error, (*C)->locBeg(), (*C)->locEnd());
+      M->setFailbit(true);
+    }
+
+    return IterOp::Proceed;
+  });
 
   return true;
 }

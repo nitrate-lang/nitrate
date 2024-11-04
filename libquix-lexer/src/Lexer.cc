@@ -508,8 +508,10 @@ static bool canonicalize_number(qlex::num_buf_t &number, std::string &norm, NumT
       }
       break;
     }
-    default:
-      break;
+    case NumType::Invalid:
+    case NumType::Floating: {
+      __builtin_unreachable();
+    }
   }
 
   std::stringstream ss;

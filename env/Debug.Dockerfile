@@ -14,7 +14,7 @@ RUN apt install -y cmake make clang llvm-14 upx gnupg2 dpkg-dev
 RUN apt install -y  libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev \
                     rapidjson-dev libdeflate-dev libreadline-dev libclang-dev      \
                     libclang-cpp-dev nlohmann-json3-dev libgoogle-glog-dev
-RUN apt purge -y gcc g++
+RUN apt purge -y g++
 RUN apt autoremove -y
 
 ############################ Install clang #############################

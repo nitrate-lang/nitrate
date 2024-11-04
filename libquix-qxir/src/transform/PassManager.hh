@@ -1,4 +1,5 @@
-////////////////////////////////////////////////////////////////////////////////
+#include <unordered_map>
+#////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
 /// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
@@ -29,41 +30,34 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
+#ifndef __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#define __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 
-#include <quix-qxir/Module.hh>
-#include <transform/PassManager.hh>
-#include <transform/Transform.hh>
-#include <transform/passes/Decl.hh>
+#include <functional>
+#include <string>
+#include <unordered_map>
 
-bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
-#define RUN_PASS(name, fn)                                        \
-  {                                                               \
-    if (!fn(M)) {                                                 \
-      err << "Error: Pass '" << name << "' failed." << std::endl; \
-      return false;                                               \
-    }                                                             \
-    M->applyPassLabel(name);                                      \
-    if (M->getFailbit()) {                                        \
-      return false;                                               \
-    }                                                             \
-  }
+struct qmodule_t;
 
-  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
-  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
-  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
-  RUN_PASS("ds-verify", impl::ds_verify);       /* Verify the module */
-  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
-  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
-  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
+namespace qxir::diag {
+  typedef std::function<void(qmodule_t*)> check_func_t;
 
-  return true;
-}
+  class PassRegistry {
+    using flag_name = std::string;
+    using pass_name = std::string;
 
-void qxir::transform::do_semantic_analysis(qmodule_t* M) {
-  for (const auto& [_, val] : diag::PassRegistry::the().get_passes()) {
-    val.second(M);
+    std::unordered_map<flag_name, std::pair<pass_name, check_func_t>> m_passes;
 
-    M->applyCheckLabel(val.first);
-  }
-}
+    void link_builtin_checks();
+    PassRegistry() { link_builtin_checks(); }
+
+  public:
+    static PassRegistry& the();
+
+    void register_check(const std::string& name, const std::string& flag, check_func_t func);
+
+    const auto& get_passes() const { return m_passes; }
+  };
+}  // namespace qxir::diag
+
+#endif  // __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__

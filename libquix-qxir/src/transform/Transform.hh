@@ -29,27 +29,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_PASSES_PASS_MANAGER_H__
-#define __QUIX_QXIR_PASSES_PASS_MANAGER_H__
+#ifndef __QUIX_QXIR_TRANSFORM_TRANSFORM_HH__
+#define __QUIX_QXIR_TRANSFORM_TRANSFORM_HH__
 
-#include <functional>
 #include <ostream>
-#include <vector>
 
 struct qmodule_t;
 
 namespace qxir::transform {
-  typedef std::function<bool(qmodule_t*)> PassFn;
-  class StdTransform final {
-    std::vector<std::pair<std::string_view, PassFn>> m_passes;
-
-    StdTransform();
-
-  public:
-    static const StdTransform& create();
-
-    bool transform(qmodule_t* module, std::ostream& out) const;
-  };
+  bool std_transform(qmodule_t* module, std::ostream& err);
+  void do_semantic_analysis(qmodule_t* module);
 }  // namespace qxir::transform
 
-#endif  // __QUIX_QXIR_PASSES_PASS_MANAGER_H__
+#endif  // __QUIX_QXIR_TRANSFORM_TRANSFORM_HH__

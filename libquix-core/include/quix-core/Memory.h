@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_CORE_ARENA_H__
-#define __QUIX_CORE_ARENA_H__
+#ifndef __QUIX_CORE_MEMORY_H__
+#define __QUIX_CORE_MEMORY_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,129 +39,80 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 
-struct qcore_arena_impl_t;
+#define QCORE_ALLOC_ALIGN_DEFAULT 16
+
+///=============================================================================
+
+typedef enum {
+  QCORE_GBA_V0 = 0,  /* General-purpose bump allocator: [fastest, wastes memory with alignment] */
+  QCORE_RIBA_V0 = 1, /* Reverse-iteration bump allocator: [fast, no waste] */
+
+  QCORE_AUTO = 1000, /* Any arena allocator */
+
+  QCORE_GBA = QCORE_GBA_V0,
+  QCORE_RIBA = QCORE_RIBA_V0,
+} qcore_alloc_mode_t;
+
+typedef uintptr_t qcore_arena_t;
+
+///=============================================================================
 
 /**
- * @brief Quixcc general-purpose arena allocator.
- */
-typedef struct qcore_arena_t {
-  struct qcore_arena_impl_t *m_impl;
-} qcore_arena_t;
-
-/**
- * @brief Initializes an arena allocator.
+ * @brief Open a bump allocator specified by the mode.
+ * @param A The context to open the bump allocator.
+ * @param mode Type of bump allocator to open.
+ * @param is_thread_safe Whether the bump allocator is thread-safe.
+ * @return The context of the opened bump allocator.
  *
- * @param arena The arena to initialize.
- *
- * @return The initialized arena.
- *
- * @note If the arena is currently open, it will be reset and all of its memory
- * will be LEAKED.
  * @note This function is thread-safe.
  */
-qcore_arena_t *qcore_arena_open(qcore_arena_t *arena);
+qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A, qcore_alloc_mode_t mode, bool is_thread_safe);
 
 /**
- * @brief Copy an arena allocator.
+ * @brief Open a QCORE_AUTO bump allocator.
+ * @param A The context to open the bump allocator.
+ * @return The context of the opened bump allocator.
  *
- * @param dst The arena to copy to.
- * @param src The arena to copy from.
- *
- * @return The copied arena.
- *
- * @warning This is a shallow byte-by-byte copy.
- * @note Note that the copied arena is a new instance and must be closed separately.
+ * @warning The returned bump allocator is NOT thread-safe.
  * @note This function is thread-safe.
  */
-qcore_arena_t *qcore_arena_copy(qcore_arena_t *dst, const qcore_arena_t *src);
+static inline qcore_arena_t *qcore_arena_open(qcore_arena_t *A) {
+  return qcore_arena_open_ex(A, QCORE_AUTO, false);
+}
 
 /**
- * @brief Allocates memory from the arena.
+ * @brief Close the bump allocator.
+ * @param A The context of the bump allocator to close.
  *
- * @param arena The arena to allocate memory from.
- * @param size The size of the memory to allocate.
- *
- * @return A pointer to the allocated memory.
- *
- * @note The arena is resized automatically when needed.
- * @note Out-of-memory errors will panic.
- * @note The returned pointer is never NULL.
- * @note The returned memory is not initialized.
- * @warning DO NOT free the returned memory manually.
  * @note This function is thread-safe.
- *
- * @warning All pointers are owned by the arena and will be freed
- * when the arena is closed.
  */
-void *qcore_arena_alloc(qcore_arena_t *arena, size_t size);
+void qcore_arena_close(qcore_arena_t *A);
 
 /**
- * @brief Allocates memory from the arena with a specific alignment.
- *
- * @param arena The arena to allocate memory from.
+ * @brief Allocate memory from the bump allocator.
+ * @param A The context of the bump allocator.
  * @param size The size of the memory to allocate.
  * @param align The alignment of the memory to allocate.
+ * @return The allocated memory.
  *
- * @return A pointer to the allocated memory.
- *
- * @note The arena is resized automatically when needed.
- * @note Out-of-memory errors will panic.
- * @note The returned pointer is never NULL.
- * @note The returned memory is not initialized.
- * @warning DO NOT free the returned memory manually.
  * @note This function is thread-safe.
- *
- * @warning All pointers are owned by the arena and will be freed
- * when the arena is closed.
  */
-void *qcore_arena_alloc_ex(qcore_arena_t *arena, size_t size, size_t align);
+void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size, size_t align);
 
 /**
- * @brief Returns the total memory usage of the arena.
- *
- * @param arena The arena to get the size of.
- *
- * @return The total size of the arena.
- *
- * @note This function is thread-safe.
- */
-size_t qcore_arena_capacity(qcore_arena_t *arena);
-
-/**
- * @brief Returns the total size of all allocated memory from the arena.
- *
- * @param arena The arena to get the used memory of.
- *
- * @return The amount of memory used in the arena.
+ * @brief Allocate memory from the bump allocator with default alignment.
+ * @param A The context of the bump allocator.
+ * @param size The size of the memory to allocate.
+ * @return The allocated memory.
  *
  * @note This function is thread-safe.
  */
-size_t qcore_arena_used(qcore_arena_t *arena);
-
-/**
- * @brief Resets an arena allocator.
- *
- * @param arena The arena to reset.
- *
- * @note This function is thread-safe.
- * @note This will make the existing memory available for reuse within the arena.
- * @note All memory allocated within the arena is invalid after this call.
- */
-void qcore_arena_reset(qcore_arena_t *arena);
-
-/**
- * @brief Closes an arena allocator.
- *
- * @param arena The arena to close.
- *
- * @note If the arena is already closed, this is a no-op.
- * @note This will free all memory allocated from the arena.
- * @note This function is thread-safe.
- */
-void qcore_arena_close(qcore_arena_t *arena);
+static inline void *qcore_arena_alloc(qcore_arena_t *A, size_t size) {
+  return qcore_arena_alloc_ex(A, size, QCORE_ALLOC_ALIGN_DEFAULT);
+}
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif  // __QUIX_CORE_ARENA_H__
+#endif

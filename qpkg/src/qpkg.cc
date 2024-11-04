@@ -31,25 +31,24 @@
 
 #include <argparse.h>
 #include <quix-codegen/Code.h>
+#include <quix-codegen/Lib.h>
 #include <quix-core/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-prep/Lib.h>
 #include <quix-qxir/Lib.h>
 
-#include <quix-codegen/Classes.hh>
-#include <quix-core/Classes.hh>
-#include <quix-parser/Classes.hh>
-#include <quix-qxir/Classes.hh>
-
-// #include <build/EngineBuilder.hh>
 #include <clean/Cleanup.hh>
 #include <core/Config.hh>
 #include <core/Logger.hh>
+#include <quix-codegen/Classes.hh>
+#include <quix-core/Classes.hh>
+#include <quix-parser/Classes.hh>
 #include <quix-prep/Classes.hh>
+#include <quix-qxir/Classes.hh>
+#include <quix-qxir/Format.hh>
 #include <unordered_map>
 
-#include "quix-codegen/Lib.h"
 #if QPKG_DEV_TOOLS
 // #include <dev/bench/bench.hh>
 // #include <dev/test/test.hh>
@@ -68,18 +67,20 @@
 // #include <vector>
 
 #ifndef QPKG_ID
-#warning "QPKG_ID not defined"
+#error "QPKG_ID not defined"
 #define QPKG_ID "?"
 #endif
 
 thread_local std::ostream &qout = std::cout;
 thread_local std::ostream &qerr = std::cerr;
 
-static char *quixcc_cc_demangle(const char *mangled_name) {
-  /// TODO: implement
-  (void)mangled_name;
-  qerr << "demangle not implemented yet" << std::endl;
-  return nullptr;
+static std::optional<std::string> quixcc_cc_demangle(std::string_view mangled_name) {
+  if (mangled_name.starts_with("@")) {
+    mangled_name.remove_prefix(1);
+  }
+  
+  qxir::SymbolEncoding codec;
+  return codec.demangle_name(mangled_name);
 }
 
 static std::string qpkg_deps_version_string() {
@@ -1402,15 +1403,13 @@ namespace qpkg::router {
       return 0;
     } else if (parser.is_used("--demangle")) {
       std::string input = parser.get<std::string>("--demangle");
-      char *demangled_name = quixcc_cc_demangle(input.c_str());
+      auto demangled_name = quixcc_cc_demangle(input.c_str());
       if (!demangled_name) {
         qerr << "Failed to demangle symbol" << std::endl;
         return 1;
       }
 
-      qout << demangled_name << std::endl;
-
-      free(demangled_name);
+      qout << demangled_name.value() << std::endl;
       return 0;
     }
 

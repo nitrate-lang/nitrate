@@ -29,21 +29,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "quix-qxir/TypeDecl.h"
-#define QXIR_USE_CPP_API
-#include <quix-qxir/Inference.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IR.h>
 
 #include <boost/bimap.hpp>
+#include <quix-qxir/IRGraph.hh>
 #include <string_view>
 #include <transform/passes/Decl.hh>
 
 /// TODO: Worst code ever written. Refactor this.
 
 /**
- * @brief Remove the temporary node and replace it with the resolved node.
- *
- * @details See code.
+ * @brief Remove the temporary nodes and replace them with a resolved node.
  *
  * @timecomplexity O(n)
  * @spacecomplexity O(n)
@@ -354,8 +350,9 @@ static bool resolve_node(qxir::Expr **_cur) {
       break;
     }
 
-    default: {
-      qcore_panicf("Invalid temporary type: %d", static_cast<int>(tt));
+    case TmpType::BAD: {
+      qcore_panic("Bad temporary node found in the IR data structure.");
+      break;
     }
   }
 
@@ -420,7 +417,7 @@ static bool alpha_pass(qmodule_t *mod) {
   }
 
   { /* Phase 2 */
-    std::vector<std::pair<std::string_view, std::pair<FnTy *, Expr *>>> simped;
+    std::vector<std::pair<std::string_view, std::pair<FnTy *, Fn *>>> simped;
 
     for (auto it = mod->getFunctions().begin(); it != mod->getFunctions().end(); it++) {
       simped.push_back({(*it).left, {(*it).right.first, (*it).right.second}});

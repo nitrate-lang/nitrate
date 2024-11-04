@@ -29,16 +29,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define QXIR_USE_CPP_API
-
 #include <core/LibMacro.h>
-#include <quix-qxir/Inference.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IR.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cstddef>
 #include <cstdint>
+#include <quix-qxir/IRGraph.hh>
 
 using namespace qxir;
 
@@ -177,7 +175,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
             }
           }
 
-          Type *T = L->getType();
+          Type *T = L->getType().value_or(nullptr);
           if (!T) {
             break;
           }
@@ -206,7 +204,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
             }
           }
 
-          Type *T = L->getType();
+          Type *T = L->getType().value_or(nullptr);
           if (!T) {
             break;
           }
@@ -367,6 +365,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
         }
 
         default: {
+          qcore_panic("Unknown binary operator in expression evaluation");
           break;
         }
       }
@@ -433,7 +432,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
         }
 
         case Op::Alignof: {
-          Type *T = E->getType();
+          Type *T = E->getType().value_or(nullptr);
           if (!T) {
             break;
           }
@@ -441,13 +440,8 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
           break;
         }
 
-        case Op::Typeof: {
-          ANS = E->getType();
-          break;
-        }
-
         case Op::Bitsizeof: {
-          Type *T = E->getType();
+          Type *T = E->getType().value_or(nullptr);
           if (!T) {
             break;
           }
@@ -455,6 +449,7 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
           break;
         }
         default: {
+          qcore_panic("Unknown unary operator in expression evaluation");
           break;
         }
       }
@@ -535,10 +530,11 @@ qxir::Expr *qxir::evaluate_to_literal(qxir::Expr *x) noexcept {
     }
 
     case QIR_NODE_TMP: {
-      qcore_panicf("Unexpected temporary node in expression evaluation: %d", (int)x->getKind());
+      qcore_panicf("Unexpected temporary node in expression evaluation: %s", x->getKindName());
     }
 
     default: {
+      qcore_panicf("Unknown node kind in expression evaluation: %s", x->getKindName());
       break;
     }
   }

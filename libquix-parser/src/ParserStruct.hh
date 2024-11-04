@@ -1,6 +1,6 @@
 #pragma once
 
-#include <quix-core/Arena.h>
+#include <quix-core/Memory.h>
 #include <quix-core/Env.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Config.h>

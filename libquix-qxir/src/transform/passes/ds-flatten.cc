@@ -29,16 +29,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <unordered_set>
-
-#define QXIR_USE_CPP_API
-
-#include <quix-qxir/Inference.h>
-#include <quix-qxir/Node.h>
+#include <quix-qxir/IR.h>
 
 #include <atomic>
 #include <boost/bimap.hpp>
+#include <quix-qxir/IRGraph.hh>
 #include <transform/passes/Decl.hh>
+#include <unordered_set>
 
 /**
  * @brief Move nested linkable symbols to the top level.
@@ -67,14 +64,16 @@ static void flatten_externs(qmodule_t *mod) {
   iterate<dfs_pre, IterMP::none>(mod->getRoot(), cb);
 
   Seq *root = mod->getRoot()->as<Seq>();
+  std::unordered_set<Expr *> global_scope;
+  for (auto ele : root->getItems()) {
+    global_scope.insert(ele);
+  }
+
   for (auto ele : externs) {
     Expr *obj = *ele;
 
-    bool at_global_scope =
-        std::find(root->getItems().begin(), root->getItems().end(), obj) != root->getItems().end();
-
-    if (!at_global_scope) {
-      *reinterpret_cast<Expr **>(ele) = getType<VoidTy>();
+    if (!global_scope.contains(obj)) {
+      *reinterpret_cast<Expr **>(ele) = create<Ign>();
       root->addItem(obj);
     }
   }
@@ -122,13 +121,15 @@ static void flatten_functions(qmodule_t *mod) {
    * only if they are not at the global scope.
    */
   Seq *root = mod->getRoot()->as<Seq>();
+  std::unordered_set<Expr *> global_scope;
+  for (auto ele : root->getItems()) {
+    global_scope.insert(ele);
+  }
+
   for (auto ele : functions) {
     Expr *obj = *ele;
 
-    bool at_global_scope =
-        std::find(root->getItems().begin(), root->getItems().end(), obj) != root->getItems().end();
-
-    if (!at_global_scope) {
+    if (!global_scope.contains(obj)) {
       *reinterpret_cast<Expr **>(ele) = create<Ident>(obj->getName(), obj);
       root->addItem(obj);
     }

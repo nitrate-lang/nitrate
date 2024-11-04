@@ -43,6 +43,7 @@ namespace qxir::transform::impl {
   DECLARE_QIR_PASS(ds_flatten);
   DECLARE_QIR_PASS(tyinfer);
   DECLARE_QIR_PASS(nm_premangle);
+  DECLARE_QIR_PASS(ds_verify);
 
 #undef DECLARE_QIR_PASS
 
