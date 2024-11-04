@@ -93,6 +93,10 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
      {"function-redefinition", /* FIXME: Summarize */
       "write me",
       {}}},
+    {IssueCode::VariableRedefinition,
+     {"variable-redefinition", /* FIXME: Summarize */
+      "Variable '%s' is redefined.",
+      {"Ensure that all variables in scope are only defined once."}}},
     {IssueCode::UnknownFunction,
      {"unknown-function", /* FIXME: Summarize */
       "write me",

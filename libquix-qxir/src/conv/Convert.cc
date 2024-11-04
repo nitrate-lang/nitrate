@@ -2160,11 +2160,8 @@ namespace qxir {
       local->setMutable(false);
 
       if (s.local_scope.top().contains(name)) {
-        local->getModule()->getDiag().push(
-            QXIR_AUDIT_CONV,
-            diag::DiagMessage("Variable named " + std::string(name) + " is redefined",
-                              diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition,
-                              n->get_start_pos(), n->get_end_pos()));
+        report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
+               n->get_start_pos(), n->get_end_pos());
       }
       s.local_scope.top()[name] = local;
       return local;
@@ -2208,11 +2205,8 @@ namespace qxir {
       Local *local = create<Local>(name, init, s.abi_mode);
 
       if (s.local_scope.top().contains(name)) {
-        local->getModule()->getDiag().push(
-            QXIR_AUDIT_CONV,
-            diag::DiagMessage("Variable named " + std::string(name) + " is redefined",
-                              diag::IssueClass::Error, diag::IssueCode::TypeRedefinition,
-                              n->get_start_pos(), n->get_end_pos()));
+        report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
+               n->get_start_pos(), n->get_end_pos());
       }
       s.local_scope.top()[name] = local;
       return local;
