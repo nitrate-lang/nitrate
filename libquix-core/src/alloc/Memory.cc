@@ -29,27 +29,71 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_INFERENCE_H__
-#define __QUIX_QXIR_INFERENCE_H__
+#define QCORE_NDEBUG
 
-#include <quix-qxir/TypeDecl.h>
+#include <quix-core/Error.h>
+#include <quix-core/Memory.h>
 
-#ifdef __cplusplus
-extern "C" {
+#include <alloc/Collection.hh>
+
+#include "../LibMacro.h"
+
+LIB_EXPORT qcore_arena_t *qcore_arena_open_ex(qcore_arena_t *A, qcore_alloc_mode_t mode,
+                                              bool is_thread_safe) {
+  qcore_assert(A != nullptr, "qcore_arena_open_ex: invalid arena");
+
+  mem::qcore_arena_t *X;
+
+  switch (mode) {
+    case QCORE_GBA_V0:
+      X = new mem::gba_v0_t();
+      break;
+    case QCORE_RIBA_V0:
+      X = new mem::riba_v0_t();
+      break;
+    case QCORE_AUTO: {
+#if MEMORY_OVER_SPEED == 1
+      X = new mem::riba_v0_t();
+#else
+      X = new mem::gba_v0_t();
 #endif
+      break;
+    }
 
-/**
- * @brief Performs type inference on a QXIR node.
- *
- * @param node Node to perform type inference on.
- * @return Type of the node or NULL if inference failed.
- *
- * @note This function is thread-safe.
- */
-qxir_node_t *qxir_infer(qxir_node_t *node);
+    default: {
+      qcore_panicf("qcore_arena_open_ex: invalid mode %d", mode);
+    }
+  }
 
-#ifdef __cplusplus
+  X->open(is_thread_safe);
+
+  *A = reinterpret_cast<qcore_arena_t>(X);
+
+  qcore_debugf("TRACE: qcore_arena_open_ex(%p, %d, %d)\t-> %p\n", A, mode, is_thread_safe, X);
+
+  return A;
 }
-#endif
 
-#endif  // __QUIX_QXIR_INFERENCE_H__
+LIB_EXPORT void *qcore_arena_alloc_ex(qcore_arena_t *A, size_t size, size_t align) {
+  void *ptr;
+
+  qcore_assert(A != nullptr, "qcore_arena_alloc_ex: invalid arena");
+
+  ptr = reinterpret_cast<mem::qcore_arena_t *>(*A)->alloc(size, align);
+
+  qcore_debugf("TRACE: qcore_arena_alloc_ex(%p, %zu, %zu)\t-> %p\n", A, size, align, ptr);
+
+  return ptr;
+}
+
+LIB_EXPORT void qcore_arena_close(qcore_arena_t *A) {
+  qcore_assert(A != nullptr, "qcore_arena_close: invalid arena");
+
+  mem::qcore_arena_t *X = reinterpret_cast<mem::qcore_arena_t *>(*A);
+  size_t total_used = X->close();
+  (void)total_used;
+  
+  qcore_debugf("TRACE: qcore_arena_close(%p)\t-> %zu\n", A, total_used);
+
+  delete X;
+}

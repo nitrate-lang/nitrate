@@ -10,3 +10,5 @@
 -fno-rtti
 -I
 include
+-I
+src

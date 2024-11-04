@@ -36,7 +36,7 @@
 #error "This header is for C++ only."
 #endif
 
-#include <quix-core/Arena.h>
+#include <quix-core/Memory.h>
 #include <quix-core/Env.h>
 
 #include <boost/uuid/uuid.hpp>

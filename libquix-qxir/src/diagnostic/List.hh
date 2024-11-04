@@ -29,41 +29,29 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
+#ifndef __QUIX_QXIR_DIAG_LIST_H__
+#define __QUIX_QXIR_DIAG_LIST_H__
 
-#include <quix-qxir/Module.hh>
 #include <transform/PassManager.hh>
-#include <transform/Transform.hh>
-#include <transform/passes/Decl.hh>
 
-bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
-#define RUN_PASS(name, fn)                                        \
-  {                                                               \
-    if (!fn(M)) {                                                 \
-      err << "Error: Pass '" << name << "' failed." << std::endl; \
-      return false;                                               \
-    }                                                             \
-    M->applyPassLabel(name);                                      \
-    if (M->getFailbit()) {                                        \
-      return false;                                               \
-    }                                                             \
+struct qmodule_t;
+
+namespace qxir::checks {
+#define DECLARE_PASS(name) void name(qmodule_t*)
+
+  DECLARE_PASS(missing_return);
+  DECLARE_PASS(bad_cast);
+
+#undef DECLARE_PASS
+}  // namespace qxir::checks
+
+namespace qxir::diag {
+  inline void PassRegistry::link_builtin_checks() {
+    using namespace qxir::checks;
+
+    register_check("missing-return", "-Wmissing-return", missing_return);
+    register_check("bad-cast", "-Wbad-cast", bad_cast);
   }
+}  // namespace qxir::diag
 
-  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
-  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
-  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
-  RUN_PASS("ds-verify", impl::ds_verify);       /* Verify the module */
-  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
-  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
-  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
-
-  return true;
-}
-
-void qxir::transform::do_semantic_analysis(qmodule_t* M) {
-  for (const auto& [_, val] : diag::PassRegistry::the().get_passes()) {
-    val.second(M);
-
-    M->applyCheckLabel(val.first);
-  }
-}
+#endif  // __QUIX_QXIR_DIAG_LIST_H__

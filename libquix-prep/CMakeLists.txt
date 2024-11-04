@@ -18,7 +18,8 @@ message(STATUS "libquix-prep VersionId: ${__TARGET_VERSION}")
 #===================== BUILD LUA ======================
 add_custom_target(
   quixlua
-  COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua CFLAGS='-fPIC'
+  ALL
+  COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua CFLAGS='-fPIC -DLUA_COMPAT_5_3'
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua
 )
 set(LIB_QUIXLUA ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua/liblua.a)

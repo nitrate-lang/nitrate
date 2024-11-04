@@ -151,7 +151,7 @@ qlex_loc_t qparse_endpos(qparse_node_t *node);
 
 #if (defined(__cplusplus)) || defined(__QPARSE_IMPL__)
 
-#include <quix-core/Arena.h>
+#include <quix-core/Memory.h>
 #include <quix-core/Error.h>
 #include <quix-lexer/Token.h>
 

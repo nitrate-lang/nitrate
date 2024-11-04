@@ -32,44 +32,13 @@
 #ifndef __QUIX_QXIR_NODE_H__
 #define __QUIX_QXIR_NODE_H__
 
-#include <quix-qxir/TypeDecl.h>
-
-#ifdef __cplusplus
-extern "C" {
+#ifndef __cplusplus
+#error "This header is C++ only."
 #endif
 
-#define QIR_NODE_COUNT 46
-
-/**
- * @brief Clone a QXIR node. Optionally into a different module.
- *
- * @param dst The destination module context or NULL to clone into the same context.
- * @param node The node to clone.
- *
- * @return qxir_node_t* The cloned node.
- *
- * @note If `dst` NULL, the function will clone into the same module.
- * @note If `node` NULL, the function will return NULL.
- * @note This clone is a deep copy.
- *
- * @note Be nice to this function, it does more than you think.
- */
-qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
-
-#ifdef __cplusplus
-}
-#endif
-
-///=============================================================================
-/// END: ABSTRACT SYNTAX TREE DATA TYPES
-///=============================================================================
-
-#if (defined(__cplusplus) && defined(QXIR_USE_CPP_API)) || defined(__QUIX_IMPL__)
-
-#include <quix-core/Arena.h>
 #include <quix-core/Error.h>
+#include <quix-core/Memory.h>
 #include <quix-lexer/Token.h>
-#include <quix-qxir/Module.h>
 #include <quix-qxir/TypeDecl.h>
 
 #include <boost/uuid/uuid.hpp>
@@ -82,6 +51,7 @@ qxir_node_t *qxir_clone(qmodule_t *dst, const qxir_node_t *node);
 #include <optional>
 #include <ostream>
 #include <quix-core/Classes.hh>
+#include <quix-qxir/Module.hh>
 #include <string>
 #include <variant>
 #include <vector>
@@ -148,7 +118,7 @@ namespace qxir {
 
     qxir_ty_t m_node_type : 6;        /* Typecode of this node. */
     qxir::ModuleId m_module_idx : 16; /* The module context index. */
-    uint64_t m_constexpr : 1;         /* Is this expression a constant expression? */
+    uint64_t m_res : 1;               /* reserved */
     uint64_t m_mutable : 1;           /* Is this expression mutable? */
 
     qlex_loc_t m_start_loc;
@@ -161,109 +131,112 @@ namespace qxir {
     Expr(qxir_ty_t ty)
         : m_node_type(ty),
           m_module_idx(std::numeric_limits<ModuleId>::max()),
-          m_constexpr(0),
+          m_res(0),
           m_mutable(1),
           m_start_loc{0},
           m_loc_size(0) {}
 
-    uint32_t getKindSize() const noexcept;
+    static uint32_t getKindSize(qxir_ty_t kind) noexcept;
     qxir_ty_t getKind() const noexcept { return m_node_type; }
-    const char *getKindName() const noexcept;
+    const char *getKindName() const noexcept { return getKindName(m_node_type); }
+    static const char *getKindName(qxir_ty_t kind) noexcept;
 
     template <typename T>
-    constexpr static const char *getKindName() noexcept {
+    constexpr static qxir_ty_t getTypeCode() noexcept {
       if constexpr (std::is_same_v<T, BinExpr>) {
-        return "BinExpr";
+        return QIR_NODE_BINEXPR;
       } else if constexpr (std::is_same_v<T, UnExpr>) {
-        return "UnExpr";
+        return QIR_NODE_UNEXPR;
       } else if constexpr (std::is_same_v<T, PostUnExpr>) {
-        return "PostUnExpr";
+        return QIR_NODE_POST_UNEXPR;
       } else if constexpr (std::is_same_v<T, Int>) {
-        return "Int";
+        return QIR_NODE_INT;
       } else if constexpr (std::is_same_v<T, Float>) {
-        return "Float";
+        return QIR_NODE_FLOAT;
       } else if constexpr (std::is_same_v<T, List>) {
-        return "List";
+        return QIR_NODE_LIST;
       } else if constexpr (std::is_same_v<T, Call>) {
-        return "Call";
+        return QIR_NODE_CALL;
       } else if constexpr (std::is_same_v<T, Seq>) {
-        return "Seq";
+        return QIR_NODE_SEQ;
       } else if constexpr (std::is_same_v<T, Index>) {
-        return "Index";
+        return QIR_NODE_INDEX;
       } else if constexpr (std::is_same_v<T, Ident>) {
-        return "Ident";
+        return QIR_NODE_IDENT;
       } else if constexpr (std::is_same_v<T, Extern>) {
-        return "Extern";
+        return QIR_NODE_EXTERN;
       } else if constexpr (std::is_same_v<T, Local>) {
-        return "Local";
+        return QIR_NODE_LOCAL;
       } else if constexpr (std::is_same_v<T, Ret>) {
-        return "Ret";
+        return QIR_NODE_RET;
       } else if constexpr (std::is_same_v<T, Brk>) {
-        return "Brk";
+        return QIR_NODE_BRK;
       } else if constexpr (std::is_same_v<T, Cont>) {
-        return "Cont";
+        return QIR_NODE_CONT;
       } else if constexpr (std::is_same_v<T, If>) {
-        return "If";
+        return QIR_NODE_IF;
       } else if constexpr (std::is_same_v<T, While>) {
-        return "While";
+        return QIR_NODE_WHILE;
       } else if constexpr (std::is_same_v<T, For>) {
-        return "For";
+        return QIR_NODE_FOR;
       } else if constexpr (std::is_same_v<T, Form>) {
-        return "Form";
+        return QIR_NODE_FORM;
       } else if constexpr (std::is_same_v<T, Case>) {
-        return "Case";
+        return QIR_NODE_CASE;
       } else if constexpr (std::is_same_v<T, Switch>) {
-        return "Switch";
+        return QIR_NODE_SWITCH;
       } else if constexpr (std::is_same_v<T, Fn>) {
-        return "Fn";
+        return QIR_NODE_FN;
       } else if constexpr (std::is_same_v<T, Asm>) {
-        return "Asm";
+        return QIR_NODE_ASM;
+      } else if constexpr (std::is_same_v<T, Ign>) {
+        return QIR_NODE_IGN;
       } else if constexpr (std::is_same_v<T, U1Ty>) {
-        return "U1Ty";
+        return QIR_NODE_U1_TY;
       } else if constexpr (std::is_same_v<T, U8Ty>) {
-        return "U8Ty";
+        return QIR_NODE_U8_TY;
       } else if constexpr (std::is_same_v<T, U16Ty>) {
-        return "U16Ty";
+        return QIR_NODE_U16_TY;
       } else if constexpr (std::is_same_v<T, U32Ty>) {
-        return "U32Ty";
+        return QIR_NODE_U32_TY;
       } else if constexpr (std::is_same_v<T, U64Ty>) {
-        return "U64Ty";
+        return QIR_NODE_U64_TY;
       } else if constexpr (std::is_same_v<T, U128Ty>) {
-        return "U128Ty";
+        return QIR_NODE_U128_TY;
       } else if constexpr (std::is_same_v<T, I8Ty>) {
-        return "I8Ty";
+        return QIR_NODE_I8_TY;
       } else if constexpr (std::is_same_v<T, I16Ty>) {
-        return "I16Ty";
+        return QIR_NODE_I16_TY;
       } else if constexpr (std::is_same_v<T, I32Ty>) {
-        return "I32Ty";
+        return QIR_NODE_I32_TY;
       } else if constexpr (std::is_same_v<T, I64Ty>) {
-        return "I64Ty";
+        return QIR_NODE_I64_TY;
       } else if constexpr (std::is_same_v<T, I128Ty>) {
-        return "I128Ty";
+        return QIR_NODE_I128_TY;
       } else if constexpr (std::is_same_v<T, F16Ty>) {
-        return "F16Ty";
+        return QIR_NODE_F16_TY;
       } else if constexpr (std::is_same_v<T, F32Ty>) {
-        return "F32Ty";
+        return QIR_NODE_F32_TY;
       } else if constexpr (std::is_same_v<T, F64Ty>) {
-        return "F64Ty";
+        return QIR_NODE_F64_TY;
       } else if constexpr (std::is_same_v<T, F128Ty>) {
-        return "F128Ty";
+        return QIR_NODE_F128_TY;
       } else if constexpr (std::is_same_v<T, VoidTy>) {
-        return "VoidTy";
+        return QIR_NODE_VOID_TY;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
-        return "PtrTy";
+        return QIR_NODE_PTR_TY;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
-        return "OpaqueTy";
+        return QIR_NODE_OPAQUE_TY;
       } else if constexpr (std::is_same_v<T, StructTy>) {
-        return "StructTy";
+        return QIR_NODE_STRUCT_TY;
       } else if constexpr (std::is_same_v<T, UnionTy>) {
-        return "UnionTy";
+        return QIR_NODE_UNION_TY;
       } else if constexpr (std::is_same_v<T, ArrayTy>) {
-        return "ArrayTy";
+        return QIR_NODE_ARRAY_TY;
       } else if constexpr (std::is_same_v<T, FnTy>) {
-        return "FnTy";
+        return QIR_NODE_FN_TY;
       } else if constexpr (std::is_same_v<T, Tmp>) {
-        return "Tmp";
+        return QIR_NODE_TMP;
       } else {
         static_assert(!std::is_same_v<T, T>,
                       "The requested type target is not supported by this function.");
@@ -271,10 +244,7 @@ namespace qxir {
     }
 
     bool isType() const noexcept;
-    inline bool isConstExpr() const noexcept { return m_constexpr; }
     inline bool isMutable() const noexcept { return m_mutable; }
-    inline void setConstExpr(bool is_const) noexcept { m_constexpr = is_const; }
-    inline void setMutable(bool is_mut) noexcept { m_mutable = is_mut; }
     inline bool isLiteral() const noexcept {
       return m_node_type == QIR_NODE_INT || m_node_type == QIR_NODE_FLOAT;
     }
@@ -285,29 +255,14 @@ namespace qxir {
     std::pair<qlex_loc_t, qlex_loc_t> getLoc() const noexcept;
     qlex_loc_t locBeg() const noexcept;
     qlex_loc_t locEnd() const noexcept;
-    void setLoc(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
 
     qmodule_t *getModule() const noexcept;
-    void setModule(qmodule_t *module) noexcept;
-
-    Type *getType() noexcept;
+    std::optional<Type *> getType() noexcept;
 
     template <typename T>
     static T *safe_cast_as(Expr *ptr) noexcept {
-#ifndef NDEBUG
-#define is(_T) (std::is_same_v<T, _T>)
-      static_assert(is(BinExpr) || is(UnExpr) || is(PostUnExpr) || is(Int) || is(Float) ||
-                        is(List) || is(Call) || is(Seq) || is(Index) || is(Ident) || is(Extern) ||
-                        is(Local) || is(Ret) || is(Brk) || is(Cont) || is(If) || is(While) ||
-                        is(For) || is(Form) || is(Case) || is(Switch) || is(Fn) || is(Asm) ||
-                        is(U1Ty) || is(U8Ty) || is(U16Ty) || is(U32Ty) || is(U64Ty) || is(U128Ty) ||
-                        is(I8Ty) || is(I16Ty) || is(I32Ty) || is(I64Ty) || is(I128Ty) ||
-                        is(F16Ty) || is(F32Ty) || is(F64Ty) || is(F128Ty) || is(VoidTy) ||
-                        is(PtrTy) || is(OpaqueTy) || is(StructTy) || is(UnionTy) || is(ArrayTy) ||
-                        is(FnTy) || is(Tmp),
-                    "The requested type target is not supported by this function.");
-#undef is
-#endif
+      if constexpr (getTypeCode<T>()) {
+      }  // Validate the type via a static_assert in getTypeCode.
 
       if (!ptr) {
         return nullptr;
@@ -407,6 +362,10 @@ namespace qxir {
           if constexpr (!std::is_same_v<T, Asm>) goto cast_panic;
           break;
         }
+        case QIR_NODE_IGN: {
+          if constexpr (!std::is_same_v<T, Ign>) goto cast_panic;
+          break;
+        }
         case QIR_NODE_U1_TY: {
           if constexpr (!std::is_same_v<T, U1Ty>) goto cast_panic;
           break;
@@ -496,12 +455,10 @@ namespace qxir {
           break;
         }
 
-#ifdef __QUIX_IMPL__
         case QIR_NODE_TMP: {
           if constexpr (!std::is_same_v<T, Tmp>) goto cast_panic;
           break;
         }
-#endif
       }
 #endif
 
@@ -509,7 +466,7 @@ namespace qxir {
 
 #ifndef NDEBUG
     cast_panic:
-      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(), Expr::getKindName<T>());
+      qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(), getKindName(getTypeCode<T>()));
 #endif
     }
 
@@ -579,7 +536,7 @@ namespace qxir {
      * @return std::string The unique identifier.
      * @note Wrapper around hash()
      */
-    std::string getUniqueUUID() noexcept;
+    std::string getUniqueUUID() noexcept { return boost::uuids::to_string(hash()); }
 
     /**
      * @brief Get a short code to uniquely identify the node.
@@ -587,15 +544,24 @@ namespace qxir {
      * @note This code may be different for different compiler runs.
      */
     uint64_t getUniqId() const;
+
+    ///=====================================================================
+    /// BEGIN: Internal library use only
+    void setModuleDangerous(qmodule_t *module) noexcept;
+    void setLocDangerous(std::pair<qlex_loc_t, qlex_loc_t> loc) noexcept;
+    inline void setMutable(bool is_mut) noexcept { m_mutable = is_mut; }
+    /// END:   Internal library use only
+    ///=====================================================================
+
   } __attribute__((packed)) __attribute__((aligned(8)));
 
-#define EXPR_SIZE sizeof(Expr)
+  constexpr size_t EXPR_SIZE = sizeof(Expr);
 
   class Type : public Expr {
     uint64_t getAlignBits();
 
   public:
-    Type(qxir_ty_t ty) : Expr(ty) { setConstExpr(true); }
+    Type(qxir_ty_t ty) : Expr(ty) {}
 
     bool hasKnownSize() noexcept;
     bool hasKnownAlign() noexcept;
@@ -650,7 +616,6 @@ namespace qxir {
     Eq,        /* '==': Equal to operator */
     NE,        /* '!=': Not equal to operator */
     Alignof,   /* 'alignof': Alignment of operator */
-    Typeof,    /* 'typeof': Type of operator */
     BitcastAs, /* 'bitcast_as': Bitcast operator */
     CastAs,    /* 'cast_as': Common operator */
     Bitsizeof, /* 'bitsizeof': Bit size of operator */
@@ -674,11 +639,7 @@ namespace qxir {
 
   public:
     BinExpr(Expr *lhs, Expr *rhs, Op op)
-        : Expr(QIR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {
-      if (lhs->isConstExpr() && rhs->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+        : Expr(QIR_NODE_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     Expr *getLHS() noexcept { return m_lhs; }
     Expr *getRHS() noexcept { return m_rhs; }
@@ -696,9 +657,7 @@ namespace qxir {
     Op m_op;
 
   public:
-    UnExpr(Expr *expr, Op op) : Expr(QIR_NODE_UNEXPR), m_expr(expr), m_op(op) {
-      setConstExpr(expr->isConstExpr());
-    }
+    UnExpr(Expr *expr, Op op) : Expr(QIR_NODE_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -714,9 +673,7 @@ namespace qxir {
     Op m_op;
 
   public:
-    PostUnExpr(Expr *expr, Op op) : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {
-      setConstExpr(expr->isConstExpr());
-    }
+    PostUnExpr(Expr *expr, Op op) : Expr(QIR_NODE_POST_UNEXPR), m_expr(expr), m_op(op) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Op getOp() noexcept { return m_op; }
@@ -956,12 +913,11 @@ namespace qxir {
     static constexpr uint64_t FLAG_BIT = 1ULL << 63;
 
   public:
-    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} { setConstExpr(true); }
+    Int(uint64_t u64) : Expr(QIR_NODE_INT), m_data{.m_u64 = u64 | FLAG_BIT} {}
 
     Int(std::string_view str) : Expr(QIR_NODE_INT), m_data{.m_str = str.data()} {
       qcore_assert((m_data.m_u64 & FLAG_BIT) == 0,
                    "Optimized code assumed an invariant that does not hold on this architecture.");
-      setConstExpr(true);
     }
 
     bool isNativeRepresentation() const noexcept { return m_data.m_u64 & FLAG_BIT; }
@@ -997,8 +953,8 @@ namespace qxir {
     static_assert(sizeof(double) == 8);
 
   public:
-    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} { setConstExpr(true); }
-    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} { setConstExpr(true); }
+    Float(double f64) : Expr(QIR_NODE_FLOAT), m_data{f64} {}
+    Float(std::string_view str) : Expr(QIR_NODE_FLOAT), m_data{str.data()} {}
 
     bool isNativeRepresentation() const noexcept { return std::holds_alternative<double>(m_data); }
 
@@ -1029,11 +985,7 @@ namespace qxir {
     ListItems m_items;
 
   public:
-    List(const ListItems &items) : Expr(QIR_NODE_LIST), m_items(items) {
-      if (std::all_of(items.begin(), items.end(), [](Expr *item) { return item->isConstExpr(); })) {
-        setConstExpr(true);
-      }
-    }
+    List(const ListItems &items) : Expr(QIR_NODE_LIST), m_items(items) {}
 
     const ListItems &getItems() const noexcept { return m_items; }
     ListItems &getItems() noexcept { return m_items; }
@@ -1078,11 +1030,7 @@ namespace qxir {
     SeqItems m_items;
 
   public:
-    Seq(const SeqItems &items) : Expr(QIR_NODE_SEQ), m_items(items) {
-      if (std::all_of(items.begin(), items.end(), [](Expr *item) { return item->isConstExpr(); })) {
-        setConstExpr(true);
-      }
-    }
+    Seq(const SeqItems &items) : Expr(QIR_NODE_SEQ), m_items(items) {}
 
     const SeqItems &getItems() const noexcept { return m_items; }
     SeqItems &getItems() noexcept { return m_items; }
@@ -1097,11 +1045,7 @@ namespace qxir {
     Expr *m_index;
 
   public:
-    Index(Expr *expr, Expr *index) : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {
-      if (expr->isConstExpr() && index->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+    Index(Expr *expr, Expr *index) : Expr(QIR_NODE_INDEX), m_expr(expr), m_index(index) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -1133,9 +1077,7 @@ namespace qxir {
 
   public:
     Extern(Expr *value, std::string_view abi_name)
-        : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {
-      setConstExpr(value->isConstExpr());
-    }
+        : Expr(QIR_NODE_EXTERN), m_abi_name(abi_name), m_value(value) {}
 
     std::string_view getAbiName() const noexcept { return m_abi_name; }
     std::string_view setAbiName(std::string_view abi_name) noexcept {
@@ -1155,9 +1097,7 @@ namespace qxir {
 
   public:
     Local(std::string_view name, Expr *value, AbiTag abi_tag)
-        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value), m_abi_tag(abi_tag) {
-      setConstExpr(value->isConstExpr());
-    }
+        : Expr(QIR_NODE_LOCAL), m_name(name), m_value(value), m_abi_tag(abi_tag) {}
 
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
 
@@ -1174,7 +1114,7 @@ namespace qxir {
     Expr *m_expr;
 
   public:
-    Ret(Expr *expr) : Expr(QIR_NODE_RET), m_expr(expr) { setConstExpr(expr->isConstExpr()); }
+    Ret(Expr *expr) : Expr(QIR_NODE_RET), m_expr(expr) {}
 
     Expr *getExpr() noexcept { return m_expr; }
     Expr *setExpr(Expr *expr) noexcept { return m_expr = expr; }
@@ -1203,11 +1143,7 @@ namespace qxir {
 
   public:
     If(Expr *cond, Expr *then, Expr *else_)
-        : Expr(QIR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {
-      if (cond->isConstExpr() && then->isConstExpr() && else_->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+        : Expr(QIR_NODE_IF), m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1226,11 +1162,7 @@ namespace qxir {
     Seq *m_body;
 
   public:
-    While(Expr *cond, Seq *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {
-      if (cond->isConstExpr() && body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+    While(Expr *cond, Seq *body) : Expr(QIR_NODE_WHILE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1249,12 +1181,7 @@ namespace qxir {
 
   public:
     For(Expr *init, Expr *cond, Expr *step, Expr *body)
-        : Expr(QIR_NODE_FOR), m_init(init), m_cond(cond), m_step(step), m_body(body) {
-      if (init->isConstExpr() && cond->isConstExpr() && step->isConstExpr() &&
-          body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+        : Expr(QIR_NODE_FOR), m_init(init), m_cond(cond), m_step(step), m_body(body) {}
 
     Expr *getInit() noexcept { return m_init; }
     Expr *setInit(Expr *init) noexcept { return m_init = init; }
@@ -1286,11 +1213,7 @@ namespace qxir {
           m_val_ident(val_ident),
           m_maxjobs(maxjobs),
           m_expr(expr),
-          m_body(body) {
-      if (maxjobs->isConstExpr() && expr->isConstExpr() && body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+          m_body(body) {}
 
     std::string_view getIdxIdent() noexcept { return m_idx_ident; }
     std::string_view setIdxIdent(std::string_view idx_ident) noexcept {
@@ -1319,11 +1242,7 @@ namespace qxir {
     Expr *m_body;
 
   public:
-    Case(Expr *cond, Expr *body) : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {
-      if (cond->isConstExpr() && body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+    Case(Expr *cond, Expr *body) : Expr(QIR_NODE_CASE), m_cond(cond), m_body(body) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1343,12 +1262,7 @@ namespace qxir {
 
   public:
     Switch(Expr *cond, const SwitchCases &cases, Expr *default_)
-        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_default(default_), m_cases(cases) {
-      if (cond->isConstExpr() && default_->isConstExpr() &&
-          std::all_of(cases.begin(), cases.end(), [](Case *c) { return c->isConstExpr(); })) {
-        setConstExpr(true);
-      }
-    }
+        : Expr(QIR_NODE_SWITCH), m_cond(cond), m_default(default_), m_cases(cases) {}
 
     Expr *getCond() noexcept { return m_cond; }
     Expr *setCond(Expr *cond) noexcept { return m_cond = cond; }
@@ -1372,12 +1286,12 @@ namespace qxir {
     std::string_view m_name;
     Params m_params;
     Type *m_return;
-    Seq *m_body;
+    Expr *m_body;
     bool m_variadic;
     AbiTag m_abi_tag;
 
   public:
-    Fn(std::string_view name, const Params &params, Type *ret_ty, Seq *body, bool variadic,
+    Fn(std::string_view name, const Params &params, Type *ret_ty, Expr *body, bool variadic,
        AbiTag abi_tag)
         : Expr(QIR_NODE_FN),
           m_name(name),
@@ -1385,15 +1299,7 @@ namespace qxir {
           m_return(ret_ty),
           m_body(body),
           m_variadic(variadic),
-          m_abi_tag(abi_tag) {
-      if (std::all_of(params.begin(), params.end(),
-                      [](const std::pair<Type *, std::string_view> &p) {
-                        return p.first->isConstExpr();
-                      }) &&
-          body->isConstExpr()) {
-        setConstExpr(true);
-      }
-    }
+          m_abi_tag(abi_tag) {}
 
     std::string_view setName(std::string_view name) noexcept { return m_name = name; }
 
@@ -1404,8 +1310,8 @@ namespace qxir {
     Type *getReturn() noexcept { return m_return; }
     Type *setReturn(Type *ret_ty) noexcept { return m_return = ret_ty; }
 
-    Seq *getBody() noexcept { return m_body; }
-    Seq *setBody(Seq *body) noexcept { return m_body = body; }
+    Expr *getBody() noexcept { return m_body; }
+    Expr *setBody(Seq *body) noexcept { return m_body = body; }
 
     bool isVariadic() noexcept { return m_variadic; }
     void setVariadic(bool variadic) noexcept { m_variadic = variadic; }
@@ -1421,11 +1327,16 @@ namespace qxir {
     Asm() : Expr(QIR_NODE_ASM) { qcore_implement(__func__); }
   };
 
+  class Ign final : public Expr {
+    QCLASS_REFLECT()
+
+  public:
+    Ign() : Expr(QIR_NODE_IGN) {}
+  };
+
   ///=============================================================================
   /// END: EXPRESSIONS
   ///=============================================================================
-
-#ifdef __QUIX_IMPL__
 
   enum class TmpType {
     NULL_LITERAL,
@@ -1463,61 +1374,106 @@ namespace qxir {
     TmpNodeCradle &getData() noexcept { return m_data; }
     const TmpNodeCradle &getData() const noexcept { return m_data; }
   };
-#endif
 
-#define TYPE_SIZE sizeof(Expr)
   extern thread_local qmodule_t *current;
 
-  template <typename T>
-  constexpr T *getType() {
-    Type *type = nullptr;
-    if constexpr (std::is_same_v<T, U1Ty>) {
-      type = new (Arena<U1Ty>().allocate(1)) U1Ty();
-    } else if constexpr (std::is_same_v<T, U8Ty>) {
-      type = new (Arena<U8Ty>().allocate(1)) U8Ty();
-    } else if constexpr (std::is_same_v<T, U16Ty>) {
-      type = new (Arena<U16Ty>().allocate(1)) U16Ty();
-    } else if constexpr (std::is_same_v<T, U32Ty>) {
-      type = new (Arena<U32Ty>().allocate(1)) U32Ty();
-    } else if constexpr (std::is_same_v<T, U64Ty>) {
-      type = new (Arena<U64Ty>().allocate(1)) U64Ty();
-    } else if constexpr (std::is_same_v<T, U128Ty>) {
-      type = new (Arena<U128Ty>().allocate(1)) U128Ty();
-    } else if constexpr (std::is_same_v<T, I8Ty>) {
-      type = new (Arena<I8Ty>().allocate(1)) I8Ty();
-    } else if constexpr (std::is_same_v<T, I16Ty>) {
-      type = new (Arena<I16Ty>().allocate(1)) I16Ty();
-    } else if constexpr (std::is_same_v<T, I32Ty>) {
-      type = new (Arena<I32Ty>().allocate(1)) I32Ty();
-    } else if constexpr (std::is_same_v<T, I64Ty>) {
-      type = new (Arena<I64Ty>().allocate(1)) I64Ty();
-    } else if constexpr (std::is_same_v<T, I128Ty>) {
-      type = new (Arena<I128Ty>().allocate(1)) I128Ty();
-    } else if constexpr (std::is_same_v<T, F16Ty>) {
-      type = new (Arena<F16Ty>().allocate(1)) F16Ty();
-    } else if constexpr (std::is_same_v<T, F32Ty>) {
-      type = new (Arena<F32Ty>().allocate(1)) F32Ty();
-    } else if constexpr (std::is_same_v<T, F64Ty>) {
-      type = new (Arena<F64Ty>().allocate(1)) F64Ty();
-    } else if constexpr (std::is_same_v<T, F128Ty>) {
-      type = new (Arena<F128Ty>().allocate(1)) F128Ty();
-    } else if constexpr (std::is_same_v<T, VoidTy>) {
-      type = new (Arena<VoidTy>().allocate(1)) VoidTy();
-    } else {
-      static_assert(!std::is_same_v<T, T>,
-                    "qxir::getType<T>(): Can not construct immuntable of this type.");
+  static auto already_alloc = [](qxir_ty_t ty) -> void * {
+    auto it = current->getKeyMap().find((uint64_t)ty);
+    if (it != current->getKeyMap().end()) [[likely]] {
+      return reinterpret_cast<void *>(it->second);
     }
 
-    type->setModule(current);
+    return nullptr;
+  };
 
-    return static_cast<T *>(type);
-  }
+  static auto alloc_memorize = [](qxir_ty_t ty, void *ptr) -> void {
+    current->getKeyMap().emplace((uint64_t)ty, reinterpret_cast<uintptr_t>(ptr));
+  };
 
   template <typename T, typename... Args>
-  static T *create(Args &&...args) {
-    void *raw = Arena<T>().allocate(1);
-    auto ptr = new (raw) T(std::forward<Args>(args)...);
-    ptr->setModule(current);
+  constexpr static T *create(Args &&...args) {
+    /**
+     * Create nodes and minimize the number of allocations by reusing stateless
+     * nodes.
+     *
+     * @note The base class contains source location information, this information will be lost in
+     * deduplicated nodes. In addition, the constExpr bit and the mutable bit will be lost, but
+     * these have no semantic significance in the contexts where deduplicated nodes are used.
+     */
+
+    constexpr qxir_ty_t ty = Expr::getTypeCode<T>();
+    T *ptr = nullptr;
+
+#define REUSE_ALLOCATION()                                             \
+  if ((ptr = (T *)already_alloc(ty)) == nullptr) [[unlikely]] {        \
+    ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
+    alloc_memorize(ty, (void *)ptr);                                   \
+  }
+
+    switch (ty) {
+      case QIR_NODE_BINEXPR:
+      case QIR_NODE_UNEXPR:
+      case QIR_NODE_POST_UNEXPR:
+      case QIR_NODE_INT:
+      case QIR_NODE_FLOAT:
+      case QIR_NODE_LIST:
+      case QIR_NODE_CALL:
+      case QIR_NODE_SEQ:
+      case QIR_NODE_INDEX:
+      case QIR_NODE_IDENT:
+      case QIR_NODE_EXTERN:
+      case QIR_NODE_LOCAL:
+      case QIR_NODE_RET:
+        ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+        break;
+      case QIR_NODE_BRK:
+      case QIR_NODE_CONT:
+        REUSE_ALLOCATION();
+        break;
+      case QIR_NODE_IF:
+      case QIR_NODE_WHILE:
+      case QIR_NODE_FOR:
+      case QIR_NODE_FORM:
+      case QIR_NODE_CASE:
+      case QIR_NODE_SWITCH:
+      case QIR_NODE_FN:
+      case QIR_NODE_ASM:
+        ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+        break;
+      case QIR_NODE_IGN:
+      case QIR_NODE_U1_TY:
+      case QIR_NODE_U8_TY:
+      case QIR_NODE_U16_TY:
+      case QIR_NODE_U32_TY:
+      case QIR_NODE_U64_TY:
+      case QIR_NODE_U128_TY:
+      case QIR_NODE_I8_TY:
+      case QIR_NODE_I16_TY:
+      case QIR_NODE_I32_TY:
+      case QIR_NODE_I64_TY:
+      case QIR_NODE_I128_TY:
+      case QIR_NODE_F16_TY:
+      case QIR_NODE_F32_TY:
+      case QIR_NODE_F64_TY:
+      case QIR_NODE_F128_TY:
+      case QIR_NODE_VOID_TY:
+        REUSE_ALLOCATION();
+        break;
+      case QIR_NODE_PTR_TY:
+      case QIR_NODE_OPAQUE_TY:
+      case QIR_NODE_STRUCT_TY:
+      case QIR_NODE_UNION_TY:
+      case QIR_NODE_ARRAY_TY:
+      case QIR_NODE_FN_TY:
+      case QIR_NODE_TMP:
+        ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+        break;
+    }
+
+#undef REUSE_ALLOCATION
+
+    ptr->setModuleDangerous(current);
+
     return ptr;
   }
 
@@ -1609,5 +1565,3 @@ namespace qxir {
 }  // namespace qxir
 
 #endif
-
-#endif  // __QUIX_QXIR_NODE_H__

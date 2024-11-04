@@ -29,41 +29,26 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
+#ifndef __QUIX_QXIR_FORMAT_HH__
+#define __QUIX_QXIR_FORMAT_HH__
 
-#include <quix-qxir/Module.hh>
-#include <transform/PassManager.hh>
-#include <transform/Transform.hh>
-#include <transform/passes/Decl.hh>
+#ifndef __cplusplus
+#error "This header is C++ only."
+#endif
 
-bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
-#define RUN_PASS(name, fn)                                        \
-  {                                                               \
-    if (!fn(M)) {                                                 \
-      err << "Error: Pass '" << name << "' failed." << std::endl; \
-      return false;                                               \
-    }                                                             \
-    M->applyPassLabel(name);                                      \
-    if (M->getFailbit()) {                                        \
-      return false;                                               \
-    }                                                             \
-  }
+#include <optional>
+#include <quix-qxir/IRGraph.hh>
+#include <string>
 
-  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
-  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
-  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
-  RUN_PASS("ds-verify", impl::ds_verify);       /* Verify the module */
-  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
-  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
-  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
+namespace qxir {
+  class SymbolEncoding final {
+  public:
+    SymbolEncoding() = default;
 
-  return true;
-}
+    std::optional<std::string> mangle_name(const qxir::Expr* symbol, AbiTag abi) const noexcept;
 
-void qxir::transform::do_semantic_analysis(qmodule_t* M) {
-  for (const auto& [_, val] : diag::PassRegistry::the().get_passes()) {
-    val.second(M);
+    std::optional<std::string> demangle_name(std::string_view symbol) const noexcept;
+  };
+};  // namespace qxir
 
-    M->applyCheckLabel(val.first);
-  }
-}
+#endif  // __QUIX_QXIR_FORMAT_HH__

@@ -462,7 +462,7 @@ CPP_EXPORT std::optional<std::pair<qlex_size, qlex_size>> qlex_t::loc2rowcol(qle
 }
 
 CPP_EXPORT qlex_loc_t qlex_t::save_loc(qlex_size row, qlex_size col, qlex_size offset) {
-  if (row <= 2097152 || col <= 1024) [[likely]] {
+  if (row <= 2097152 && col <= 1024) [[likely]] {
     clever_me_t bits;
     static_assert(sizeof(bits) == sizeof(qlex_size));
 
@@ -564,22 +564,29 @@ char qlex_t::getc() {
 }
 
 qlex_tok_t qlex_t::step_buffer() {
-  qlex_tok_t tok;
+  if (m_tok_buf_pos == m_tok_buf.size()) [[unlikely]] {
+    qlex_tok_t tok;
 
-  if (!m_tok_buf.empty()) {
-    tok = m_tok_buf.back();
-    m_tok_buf.pop_back();
-  } else {
-    try {
-      m_tok_buf.push_back(next_impl());
-      tok = m_tok_buf.back();
-      m_tok_buf.pop_back();
-    } catch (GetCExcept &) {
-      tok.ty = qEofF;
+    m_tok_buf.clear();
+
+    for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
+      try {
+        tok = next_impl();
+        m_tok_buf.push_back(tok);
+      } catch (GetCExcept &) {
+        break;
+      }
     }
+
+    if (m_tok_buf.empty()) [[unlikely]] {
+      tok.ty = qEofF;
+      return tok;
+    }
+
+    m_tok_buf_pos = 0;
   }
 
-  return tok;
+  return m_tok_buf[m_tok_buf_pos++];
 }
 
 CPP_EXPORT qlex_tok_t qlex_t::next() {

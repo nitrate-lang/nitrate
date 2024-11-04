@@ -29,41 +29,63 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
+#pragma once
 
-#include <quix-qxir/Module.hh>
-#include <transform/PassManager.hh>
-#include <transform/Transform.hh>
-#include <transform/passes/Decl.hh>
+#include <cstddef>
+#include <cstdint>
+#include <mutex>
+#include <vector>
 
-bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
-#define RUN_PASS(name, fn)                                        \
-  {                                                               \
-    if (!fn(M)) {                                                 \
-      err << "Error: Pass '" << name << "' failed." << std::endl; \
-      return false;                                               \
-    }                                                             \
-    M->applyPassLabel(name);                                      \
-    if (M->getFailbit()) {                                        \
-      return false;                                               \
-    }                                                             \
-  }
+namespace mem {
+  class qcore_arena_t {
+  public:
+    virtual ~qcore_arena_t() = default;
+    virtual void open(bool thread_safe) = 0;
+    virtual void *alloc(size_t size, size_t align) = 0;
+    virtual size_t close() = 0;
+  };
 
-  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
-  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
-  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
-  RUN_PASS("ds-verify", impl::ds_verify);       /* Verify the module */
-  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
-  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
-  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
+  class gba_v0_t final : public qcore_arena_t {
+    struct region_t {
+      uintptr_t base = 0;
+      uintptr_t offset = 0;
+      size_t size = 0;
+    };
+    std::vector<region_t> m_bases;
+    std::mutex m_mutex;
+    bool m_thread_safe;
 
-  return true;
-}
+    void alloc_region(size_t size) {
+      uintptr_t base = (uintptr_t) new uint8_t[size];
+      m_bases.push_back({base, base, size});
+    }
 
-void qxir::transform::do_semantic_analysis(qmodule_t* M) {
-  for (const auto& [_, val] : diag::PassRegistry::the().get_passes()) {
-    val.second(M);
+  public:
+    virtual ~gba_v0_t() = default;
+    void open(bool thread_safe) override;
+    void *alloc(size_t size, size_t align) override;
+    size_t close() override;
+  };
 
-    M->applyCheckLabel(val.first);
-  }
-}
+  class riba_v0_t final : public qcore_arena_t {
+    struct region_t {
+      uintptr_t base = 0;
+      uintptr_t offset = 0;
+      size_t size = 0;
+    };
+    std::vector<region_t> m_bases;
+    std::mutex m_mutex;
+    bool m_thread_safe;
+
+    void alloc_region(size_t size) {
+      uintptr_t base = (uintptr_t) new uint8_t[size];
+      m_bases.push_back({base, base, size});
+    }
+
+  public:
+    virtual ~riba_v0_t() = default;
+    void open(bool thread_safe) override;
+    void *alloc(size_t size, size_t align) override;
+    size_t close() override;
+  };
+}  // namespace mem

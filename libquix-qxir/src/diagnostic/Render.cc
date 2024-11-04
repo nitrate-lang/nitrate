@@ -32,13 +32,13 @@
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
 #include <quix-parser/Node.h>
-#include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
 #include <cstddef>
 #include <cstdint>
+#include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Module.hh>
 #include <quix-qxir/Report.hh>
 #include <sstream>
 
@@ -51,21 +51,29 @@ boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>:
 
 static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
     make_bimap<IssueCode, std::string_view>({
-        {IssueCode::Default, "-Wdefault"},
+        {IssueCode::Info, ""},
         {IssueCode::PTreeInvalid, "-Werror=ptree-invalid"},
         {IssueCode::SignalReceived, "-Werror=signal-recv"},
         {IssueCode::DSPolyCyclicRef, "-Werror=ds-cyclic-ref"},
         {IssueCode::DSNullPtr, "-Werror=ds-nullptr"},
         {IssueCode::DSBadType, "-Werror=ds-bad-type"},
         {IssueCode::DSMissingMod, "-Werror=ds-missing-mod"},
+        {IssueCode::DSBadTmpNode, "-Werror=ds-bad-tmp-node"},
 
-        {IssueCode::Redefinition, "-Werror=redefinition"},
+        {IssueCode::FunctionRedefinition, "-Werror=redefinition"},
+        {IssueCode::VariableRedefinition, "-Werror=variable-redefinition"},
         {IssueCode::UnknownFunction, "-Werror=unknown-function"},
         {IssueCode::TooManyArguments, "-Werror=too-many-arguments"},
         {IssueCode::UnknownArgument, "-Werror=unknown-argument"},
+        {IssueCode::TypeInference, "-Werror=type-inference"},
+        {IssueCode::NameManglingTypeInfer, "-Werror=nm-type-infer"},
 
         {IssueCode::UnknownType, "-Werror=unknown-type"},
         {IssueCode::UnresolvedIdentifier, "-Werror=unresolved-identifier"},
+        {IssueCode::TypeRedefinition, "-Werror=type-redefinition"},
+        {IssueCode::BadCast, "-Werror=bad-cast"},
+
+        {IssueCode::MissingReturn, "-Wmissing-return"},
     });
 
 ///============================================================================///
@@ -124,7 +132,7 @@ std::string DiagnosticManager::mint_plain_message(const DiagMessage &msg) const 
 
   ss << ": " << msg.m_msg;
 
-  if (msg.m_code != IssueCode::Default) {
+  if (msg.m_code != IssueCode::Info) {
     ss << " [" << issue_code_bimap.left.at(msg.m_code) << "]";
   }
 
@@ -178,35 +186,35 @@ std::string DiagnosticManager::mint_clang16_message(const DiagMessage &msg) cons
   switch (msg.m_type) {
     case IssueClass::Debug:
       ss << "\x1b[1mdebug:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Default) {
+      if (msg.m_code != IssueCode::Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[1m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Info:
       ss << "\x1b[37;1minfo:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Default) {
+      if (msg.m_code != IssueCode::Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[37;1m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Warn:
       ss << "\x1b[35;1mwarning:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Default) {
+      if (msg.m_code != IssueCode::Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[35;1m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::Error:
       ss << "\x1b[31;1merror:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Default) {
+      if (msg.m_code != IssueCode::Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[31;1m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
       break;
     case IssueClass::FatalError:
       ss << "\x1b[31;1;4mfatal error:\x1b[0m " << msg.m_msg;
-      if (msg.m_code != IssueCode::Default) {
+      if (msg.m_code != IssueCode::Info) {
         ss << " \x1b[39;1m[\x1b[0m\x1b[31;1;4m" << issue_code_bimap.left.at(msg.m_code)
            << "\x1b[0m\x1b[39;1m]\x1b[0m";
       }
@@ -374,11 +382,6 @@ size_t DiagnosticManager::dump_diagnostic_vector(std::vector<DiagMessage> &vec,
         handler(mint_modern_message(msg), msg.m_type);
         break;
       }
-
-      default: {
-        handler(mint_plain_message(msg), msg.m_type);
-        break;
-      }
     }
   }
 
@@ -476,12 +479,16 @@ LIB_EXPORT size_t qxir_diag_clear(qmodule_t *qxir, qxir_audit_ticket_t ticket) {
   return qxir->getDiag().clear(ticket);
 }
 
-void qxir::diag::report(diag::IssueCode code, diag::IssueClass type, qlex_loc_t loc_start,
+bool qxir::diag::report(diag::IssueCode code, diag::IssueClass type, qlex_loc_t loc_start,
                         qlex_loc_t loc_end, int channel) {
   current->getDiag().push(channel, diag::DiagMessage("", type, code, loc_start, loc_end));
+
+  return true;
 }
 
-void qxir::diag::report(diag::IssueCode code, diag::IssueClass type, std::string_view subject,
+bool qxir::diag::report(diag::IssueCode code, diag::IssueClass type, std::string_view subject,
                         qlex_loc_t loc_start, qlex_loc_t loc_end, int channel) {
   current->getDiag().push(channel, diag::DiagMessage(subject, type, code, loc_start, loc_end));
+
+  return true;
 }

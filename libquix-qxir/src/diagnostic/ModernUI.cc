@@ -33,13 +33,13 @@
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>
 #include <quix-parser/Node.h>
-#include <quix-qxir/Module.h>
-#include <quix-qxir/Node.h>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
 #include <cstdint>
 #include <iomanip>
+#include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Module.hh>
 #include <quix-qxir/Report.hh>
 #include <sstream>
 
@@ -61,44 +61,42 @@ struct IssueInfo {
 /// FIXME: Write correct stuff here
 
 static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, IssueInfo>({
-    {IssueCode::Default,
-     {"unspecified", /* FIXME: Summarize */
-      "write me",
-      {}}},
+    {IssueCode::Info, {"info", "%s", {}}},
+    {IssueCode::CompilerError, {"Compiler Error", "An error occurred during compilation: %s", {}}},
     {IssueCode::PTreeInvalid,
      {"ptree-invalid", /* FIXME: Summarize */
-      "This function is expected to return in all possible branches. Why is your function failing "
-      "to do so?",
-      {"Make sure you have a return statement when you need one.",
-       "If you are using a loop and avoiding a return, ensure that it is knowable that the loop "
-       "will always terminate.",
-       "If you are optimizing, make sure it is knowable that that a particular branch is "
-       "impossible to avoid this error."}}},
-    {IssueCode::SignalReceived,
-     {"signal-recv", /* FIXME: Summarize */
-      "write me",
+      "Parse tree is not okay.",
       {}}},
+    {IssueCode::SignalReceived,
+     {"signal-recv", "The compiler received an unrecoverable process signal.", {}}},
     {IssueCode::DSPolyCyclicRef,
-     {"ds-cyclic-ref", /* FIXME: Summarize */
-      "Cyclic polymorphic node reference detected in module IR data structure.",
+     {"ds-cyclic-ref",
+      "Cyclic polymorphic node reference detected in internal module IR data structure.",
       {"This is an (INTERNAL) compiler error. Please report this issue."}}},
     {IssueCode::DSNullPtr,
-     {"ds-nullptr", /* FIXME: Summarize */
-      "write me",
-      {}}},
+     {"ds-nullptr",
+      "Nullptr detected in internal module IR data structure.",
+      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
     {IssueCode::DSBadType,
-     {"ds-bad-type", /* FIXME: Summarize */
-      "write me",
-      {}}},
+     {"ds-bad-type",
+      "Internal module IR data structure contains a bad type.",
+      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
     {IssueCode::DSMissingMod,
-     {"ds-missing-mod", /* FIXME: Summarize */
+     {"ds-missing-mod",
+      "Internal module IR data structure contains a node with a missing module pointer.",
+      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
+    {IssueCode::DSBadTmpNode,
+     {"ds-bad-tmp-node",
+      "Internal module IR data structure contains an unexpected temporary node.",
+      {"This is an (INTERNAL) compiler error. Please report this issue."}}},
+    {IssueCode::FunctionRedefinition,
+     {"function-redefinition", /* FIXME: Summarize */
       "write me",
       {}}},
-
-    {IssueCode::Redefinition,
-     {"redefinition", /* FIXME: Summarize */
-      "write me",
-      {}}},
+    {IssueCode::VariableRedefinition,
+     {"variable-redefinition", /* FIXME: Summarize */
+      "Variable '%s' is redefined.",
+      {"Ensure that all variables in scope are only defined once."}}},
     {IssueCode::UnknownFunction,
      {"unknown-function", /* FIXME: Summarize */
       "write me",
@@ -111,6 +109,16 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
      {"unknown-argument", /* FIXME: Summarize */
       "write me",
       {}}},
+    {IssueCode::TypeInference,
+     {"type-inference", /* FIXME: Summarize */
+      "Preliminary type checking failed.",
+      {}}},
+    {IssueCode::NameManglingTypeInfer,
+     {"nm-type-infer", /* FIXME: Summarize */
+      "Failed to mangle the name of symbol named: '%s'.",
+      {
+          "Ensure that the symbol node is correctly typed.",
+      }}},
 
     {IssueCode::UnknownType,
      {"unknown-type", /* FIXME: Summarize */
@@ -121,6 +129,24 @@ static const boost::bimap<IssueCode, IssueInfo> details = make_bimap<IssueCode, 
       "404 - Identifier '%s' not found.",
       {"Make sure the identifier is defined in the current scope.", "Check for typos.",
        "Check for visibility."}}},
+    {IssueCode::TypeRedefinition,
+     {"type-redefinition",
+      "Type '%s' is redefined.",
+      {"Ensure that the one-defintion-rule (ODR) is obeyed.", "Check for typos.",
+       "Check for visibility."}}},
+    {IssueCode::BadCast,
+     {"bad-cast",
+      "%s",
+      {
+          /* TODO: Add fixes */
+      }}},
+
+    {IssueCode::MissingReturn,
+     {"missing-return",
+      "Function '%s' is missing a return statement.",
+      {"Make sure all code paths return a value.",
+       "Check for missing return statements in conditional branches.",
+       "If your code is complicated, consider using an unreachable assertion."}}},
 });
 
 ///============================================================================///

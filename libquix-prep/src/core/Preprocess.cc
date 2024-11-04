@@ -182,6 +182,8 @@ public:
 };
 
 CPP_EXPORT qlex_tok_t qprep_impl_t::next_impl() {
+func_entry:  // do tail call optimization manually
+
   qlex_tok_t x{};
 
   try {
@@ -223,7 +225,7 @@ CPP_EXPORT qlex_tok_t qprep_impl_t::next_impl() {
           }
 
           expand_raw(value);
-          return this->next_impl();
+          goto func_entry;
         }
 
         case qMacB: {
@@ -274,7 +276,7 @@ CPP_EXPORT qlex_tok_t qprep_impl_t::next_impl() {
             }
           }
 
-          return this->next_impl();
+          goto func_entry;
         }
 
         case qMacr: {
@@ -288,7 +290,7 @@ CPP_EXPORT qlex_tok_t qprep_impl_t::next_impl() {
               goto emit_token;
             }
 
-            return this->next_impl();
+            goto func_entry;
           } else {
             if (!run_and_expand("return " + std::string(body) + "()")) {
               qcore_print(QCORE_ERROR, "Failed to expand macro function: %s\n", body.data());
@@ -296,7 +298,7 @@ CPP_EXPORT qlex_tok_t qprep_impl_t::next_impl() {
               goto emit_token;
             }
 
-            return this->next_impl();
+            goto func_entry;
           }
         }
       }
@@ -306,7 +308,7 @@ CPP_EXPORT qlex_tok_t qprep_impl_t::next_impl() {
     if (!m_do_expanse || run_defer_callbacks(x)) { /* Emit the token */
       return x;
     } else { /* Skip the token */
-      return this->next_impl();
+      goto func_entry;
     }
   } catch (StopException &) {
     x.ty = qEofF;
