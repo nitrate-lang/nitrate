@@ -61,6 +61,7 @@ static const boost::bimap<IssueCode, std::string_view> issue_code_bimap =
         {IssueCode::DSBadTmpNode, "-Werror=ds-bad-tmp-node"},
 
         {IssueCode::FunctionRedefinition, "-Werror=redefinition"},
+        {IssueCode::VariableRedefinition, "-Werror=variable-redefinition"},
         {IssueCode::UnknownFunction, "-Werror=unknown-function"},
         {IssueCode::TooManyArguments, "-Werror=too-many-arguments"},
         {IssueCode::UnknownArgument, "-Werror=unknown-argument"},

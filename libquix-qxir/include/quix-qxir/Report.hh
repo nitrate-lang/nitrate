@@ -70,6 +70,7 @@ namespace qxir::diag {
     DSBadTmpNode,
 
     FunctionRedefinition,
+    VariableRedefinition,
     UnknownFunction,
     TooManyArguments,
     UnknownArgument,
@@ -183,20 +184,6 @@ namespace qxir::diag {
 #define CONV_DEBUG(_msg)               \
   mod->getDiag().push(QXIR_AUDIT_CONV, \
                       diag::DiagMessage(_msg, diag::IssueClass::Debug, diag::IssueCode::Info));
-
-#define DUPLICATE_VARIABLE(_varname)                                                    \
-  mod->getDiag().push(                                                                  \
-      QXIR_AUDIT_CONV,                                                                  \
-      diag::DiagMessage("Variable named " + std::string(_varname) + " is redefined",    \
-                        diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition, \
-                        cur->getLoc().first, cur->getLoc().second));
-
-#define DUPLICATE_FUNCTION(_varname)                                                    \
-  mod->getDiag().push(                                                                  \
-      QXIR_AUDIT_CONV,                                                                  \
-      diag::DiagMessage("Function named " + std::string(_varname) + " is redefined",    \
-                        diag::IssueClass::Error, diag::IssueCode::FunctionRedefinition, \
-                        cur->getLoc().first, cur->getLoc().second));
 
 #define NO_MATCHING_FUNCTION(_funcname)                                                            \
   mod->getDiag().push(QXIR_AUDIT_CONV,                                                             \
