@@ -37,6 +37,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Dump OS information
+      run: |
+        echo "OS: ${{ runner.os }}"
+        echo "OS Version: ${{ runner.os_version }}"
+        echo "Architecture: ${{ runner.arch }}"
+        cat /etc/os-release
+      shell: bash
+
     - name: Install dependencies
       run: |
         sudo apt-get update
