@@ -19,10 +19,10 @@ message(STATUS "libquix-prep VersionId: ${__TARGET_VERSION}")
 add_custom_target(
   quixlua
   ALL
-  COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua CFLAGS='-fPIC -DLUA_COMPAT_5_3'
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua
+  COMMAND make -C ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua CFLAGS='-fPIC -DLUA_COMPAT_5_3'
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua
 )
-set(LIB_QUIXLUA ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua/liblua.a)
+set(LIB_QUIXLUA ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua/liblua.a)
 message(STATUS "libquix-prep: Building with Lua: ${LIB_QUIXLUA}")
 
 #================== SET BUILD FLAGS ==================
@@ -40,7 +40,7 @@ add_library(quix-prep STATIC ${CXX_SOURCES})
 target_include_directories(quix-prep PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/deps)
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/third_party)
 target_link_libraries(quix-prep PUBLIC quix-core quix-lexer ${LIB_QUIXLUA} crypto)
 add_dependencies(quix-prep quix-core quix-lexer quixlua)
 
@@ -48,7 +48,7 @@ add_library(quix-prep-shared SHARED ${CXX_SOURCES})
 target_include_directories(quix-prep-shared PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/deps)
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/third_party)
 target_link_libraries(quix-prep-shared PUBLIC quix-core-shared quix-lexer-shared ${LIB_QUIXLUA} crypto)
 add_dependencies(quix-prep-shared quix-core-shared quix-lexer-shared quixlua)
 set_target_properties(quix-prep-shared PROPERTIES OUTPUT_NAME quix-prep)
