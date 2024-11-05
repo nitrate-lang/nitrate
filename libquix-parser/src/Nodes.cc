@@ -46,7 +46,7 @@ using namespace qparse;
 namespace qparse {
   void ArenaAllocatorImpl::swap(qcore_arena_t &arena) { std::swap(*m_arena.get(), arena); }
 
-  thread_local ArenaAllocatorImpl qparse_arena;
+  CPP_EXPORT thread_local ArenaAllocatorImpl qparse_arena;
 }  // namespace qparse
 
 LIB_EXPORT void *ArenaAllocatorImpl::allocate(std::size_t size) {
