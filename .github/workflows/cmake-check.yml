@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms
+name: CMake check
 
 on:
   push:
@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
 
       # Set up a matrix to run the following 3 configurations:
-      # 2. <Linux, Release, latest GCC compiler toolchain on the default runner image, default generator>
-      # 3. <Linux, Release, latest Clang compiler toolchain on the default runner image, default generator>
+      # 1. <Linux, Release, latest GCC compiler toolchain on the default runner image, default generator>
+      # 2. <Linux, Release, latest Clang compiler toolchain on the default runner image, default generator>
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
@@ -36,6 +36,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt install -y cmake make clang llvm-14 upx gnupg2 dpkg-dev
+        sudo apt install -y  libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev \
+        sudo                 rapidjson-dev libdeflate-dev libreadline-dev libclang-dev      \
+        sudo                 libclang-cpp-dev nlohmann-json3-dev libgoogle-glog-dev
+        sudo apt purge -y g++
+      shell: bash
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
