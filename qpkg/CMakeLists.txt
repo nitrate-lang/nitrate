@@ -33,10 +33,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     -Wno-error=overlength-strings
     -DQPKG_ID=${QPKG_ID}
   )
-  target_link_libraries(qpkg PUBLIC yaml-cpp libboost_filesystem.a
+  target_link_libraries(qpkg PUBLIC libboost_filesystem.a
     quix-codegen
-    quix-qxir quix-parser
-    quix-lexer quix-prep quix-core)
+    quix-qxir
+    quix-parser
+    quix-lexer
+    quix-prep
+    quix-core
+    yaml-cpp)
   target_link_options(qpkg PRIVATE -static-libgcc -static-libstdc++)
   add_dependencies(qpkg quix-codegen
     quix-qxir
@@ -62,14 +66,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     -fvisibility=hidden
     -fvisibility-inlines-hidden
     -DQPKG_LIBRARY)
-  target_link_libraries(qpkg-cmd PUBLIC yaml-cpp
-    libboost_filesystem.a
+  target_link_libraries(qpkg-cmd PUBLIC libboost_filesystem.a
     quix-codegen
     quix-qxir
     quix-parser
     quix-lexer
     quix-prep
-    quix-core)
+    quix-core
+    yaml-cpp)
   target_link_options(qpkg-cmd PRIVATE
     -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   add_dependencies(qpkg-cmd quix-codegen
@@ -94,10 +98,14 @@ else()
     -Wpedantic
     -Wno-error=overlength-strings
     "-DQPKG_ID=\"undefined\"")
-  target_link_libraries(qpkg PUBLIC yaml-cpp libboost_filesystem.a
+  target_link_libraries(qpkg PUBLIC libboost_filesystem.a
     quix-codegen
-    quix-qxir quix-parser
-    quix-lexer quix-prep quix-core)
+    quix-qxir
+    quix-parser
+    quix-lexer
+    quix-prep
+    quix-core
+    yaml-cpp)
   target_link_options(qpkg PRIVATE -static-libgcc
     -static-libstdc++)
   add_dependencies(qpkg quix-codegen
@@ -123,14 +131,15 @@ else()
     -fvisibility=hidden
     -fvisibility-inlines-hidden
     -DQPKG_LIBRARY)
-  target_link_libraries(qpkg-cmd PUBLIC yaml-cpp
-    libboost_filesystem.a
+  target_link_libraries(qpkg-cmd PUBLIC libboost_filesystem.a
     quix-codegen
     quix-qxir
     quix-parser
     quix-lexer
     quix-prep
-    quix-core)
+    quix-core
+    yaml-cpp
+    yaml-cpp)
   target_link_options(qpkg-cmd PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   add_dependencies(qpkg-cmd quix-codegen
     quix-qxir

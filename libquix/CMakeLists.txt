@@ -51,5 +51,4 @@ if(BUILD_TESTING)
 endif()
 
 install(TARGETS quix DESTINATION lib)
-install(TARGETS quix DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

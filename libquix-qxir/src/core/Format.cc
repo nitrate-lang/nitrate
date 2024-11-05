@@ -29,6 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/LibMacro.h>
 #include <quix-core/Error.h>
 
 #include <cstddef>
@@ -645,8 +646,8 @@ static std::optional<std::string> demangle_quix_abi(std::string_view name) {
   return ss.str();
 }
 
-std::optional<std::string> qxir::SymbolEncoding::mangle_name(const qxir::Expr *symbol,
-                                                             AbiTag abi) const noexcept {
+CPP_EXPORT std::optional<std::string> qxir::SymbolEncoding::mangle_name(const qxir::Expr *symbol,
+                                                                        AbiTag abi) const noexcept {
   static std::unordered_set<qxir_ty_t> valid = {
       QIR_NODE_FN,
       QIR_NODE_LOCAL,
@@ -678,7 +679,7 @@ std::optional<std::string> qxir::SymbolEncoding::mangle_name(const qxir::Expr *s
   }
 }
 
-std::optional<std::string> qxir::SymbolEncoding::demangle_name(
+CPP_EXPORT std::optional<std::string> qxir::SymbolEncoding::demangle_name(
     std::string_view symbol) const noexcept {
   if (symbol.empty()) {
     return std::nullopt;
