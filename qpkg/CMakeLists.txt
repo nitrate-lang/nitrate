@@ -29,11 +29,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
   target_compile_options(qpkg PRIVATE
-
-
-
-
-
     -Wpedantic
     -Wno-error=overlength-strings
     -DQPKG_ID=${QPKG_ID}
@@ -61,15 +56,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
   target_compile_options(qpkg-static PRIVATE
-
-
-
-
-
     -Wpedantic
     -Wno-error=overlength-strings
     -DQPKG_ID=${QPKG_ID}
-
     -fvisibility=hidden
     -fvisibility-inlines-hidden
     -DQPKG_LIBRARY)
@@ -102,15 +91,9 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
   target_compile_options(qpkg-shared PRIVATE
-
-
-
-
-
     -Wpedantic
     -Wno-error=overlength-strings
     -DQPKG_ID=${QPKG_ID}
-
     -fvisibility=hidden
     -fvisibility-inlines-hidden
     -DQPKG_LIBRARY)
@@ -143,14 +126,9 @@ else()
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
   target_compile_options(qpkg PRIVATE
-
-
-
-
-
     -Wpedantic
     -Wno-error=overlength-strings
-    -DQPKG_ID= "undefined")
+    "-DQPKG_ID=\"undefined\"")
   target_link_libraries(qpkg PUBLIC yaml-cpp libboost_filesystem.a
     quix-codegen
     quix-qxir quix-parser
@@ -175,14 +153,9 @@ else()
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
   target_compile_options(qpkg-static PRIVATE
-
-
-
-
-
     -Wpedantic
     -Wno-error=overlength-strings
-    -DQPKG_ID= "undefined"
+    "-DQPKG_ID=\"undefined\""
     -fvisibility=hidden
     -fvisibility-inlines-hidden
     -DQPKG_LIBRARY)
@@ -213,15 +186,9 @@ else()
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
-  target_compile_options(qpkg-shared PRIVATE
-
-
-
-
-
-    -Wpedantic
+  target_compile_options(qpkg-shared PRIVATE -Wpedantic
     -Wno-error=overlength-strings
-    -DQPKG_ID= "undefined"
+    "-DQPKG_ID=\"undefined\""
     -fvisibility=hidden
     -fvisibility-inlines-hidden
     -DQPKG_LIBRARY)
