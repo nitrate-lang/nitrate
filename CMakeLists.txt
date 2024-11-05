@@ -6,7 +6,7 @@ option(COVERAGE "Enable coverage" OFF)
 option(STRIP_OUTPUT "Strip output" OFF)
 option(BUILD_TESTING "Build tests" ON)
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   enable_testing()
 endif()
 
@@ -28,36 +28,36 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -pedantic -Werror \
 # Enable full optimization in general
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
-if (STRIP_OUTPUT STREQUAL "ON")
+if(STRIP_OUTPUT STREQUAL "ON")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -s")
 endif()
 
 # Inject the optimization intent
-if (MEMORY_OVER_SPEED)
+if(MEMORY_OVER_SPEED)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMEMORY_OVER_SPEED=1")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMEMORY_OVER_SPEED=0")
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   # Fix issue with ASAN and private aliases
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mllvm -asan-use-private-alias=1")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address -fsanitize=undefined")
-elseif (CMAKE_BUILD_TYPE STREQUAL "Release")
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNDEBUG -fvisibility=hidden -fvisibility-inlines-hidden -flto")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -flto")
-else ()
+else()
   message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
-if (COVERAGE STREQUAL "ON")
+if(COVERAGE STREQUAL "ON")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   #================== CREATE DEBUG BUILD ==================
   add_subdirectory(libquix-core)
   add_subdirectory(libquix-lexer)
@@ -81,23 +81,22 @@ elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   # add_subdirectory(extensions/quixd)
 endif()
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-  foreach(lib quix-core quix-core-shared 
-              quix-lexer quix-lexer-shared 
-              quix-prep quix-prep-shared
-              quix-parser quix-parser-shared
-              quix-qxir quix-qxir-shared
-              quix-codegen quix-codegen-shared
-              quix quix-shared)
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  foreach(lib quix-core
+    quix-lexer
+    quix-prep
+    quix-parser
+    quix-qxir
+    quix-codegen
+    quix)
     target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
-    # Check if it ends in '-shared'
-    if (${lib} MATCHES ".*-shared$")
+    if(TARGET ${lib} AND TARGET ${lib}::shared)
       target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
     endif()
   endforeach()
 endif()
 
-if (BUILD_TESTING)
+if(BUILD_TESTING)
   foreach(lib libquix-basic-lexer-fuzz libquix-prep-fuzzer libquix-qxir-fuzzer)
     target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
     target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)

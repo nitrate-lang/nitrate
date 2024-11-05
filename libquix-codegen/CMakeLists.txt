@@ -55,39 +55,24 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-codegen STATIC ${CXX_SOURCES})
+add_library(quix-codegen ${CXX_SOURCES})
 target_include_directories(quix-codegen PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
   /usr/lib/llvm-14/include)
-target_link_libraries(quix-codegen PUBLIC quix-core)
+target_link_libraries(quix-codegen PUBLIC quix-core quix-qxir)
 foreach(lib ${LLVM_LIBS})
   target_link_libraries(quix-codegen PUBLIC ${lib})
   message(STATUS "Linking ${lib}")
 endforeach()
 target_link_libraries(quix-codegen PUBLIC z tinfo)
 add_dependencies(quix-codegen quix-core quix-qxir)
-
-add_library(quix-codegen-shared SHARED ${CXX_SOURCES})
-target_include_directories(quix-codegen-shared PUBLIC src "include"
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
-  /usr/lib/llvm-14/include)
-target_link_libraries(quix-codegen-shared PUBLIC quix-core-shared quix-qxir-shared)
-foreach(lib ${LLVM_LIBS})
-  target_link_libraries(quix-codegen-shared PUBLIC ${lib})
-  message(STATUS "Linking ${lib}")
-endforeach()
-target_link_libraries(quix-codegen PUBLIC z tinfo)
-add_dependencies(quix-codegen-shared quix-core-shared quix-qxir-shared)
-set_target_properties(quix-codegen-shared PROPERTIES OUTPUT_NAME quix-codegen)
+set_target_properties(quix-codegen PROPERTIES OUTPUT_NAME quix-codegen)
 
 if(BUILD_TESTING)
   add_subdirectory(tests)
 endif()
 
-install(TARGETS quix-codegen-shared DESTINATION lib)
 install(TARGETS quix-codegen DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

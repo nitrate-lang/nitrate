@@ -46,23 +46,23 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     quix-core
     yaml-cpp)
 
-  #================== CREATE STATICLIB RELEASE BUILD ================
-  add_library(qpkg-static STATIC ${QPKG_CXX_SOURCES})
-  target_include_directories(qpkg-static PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
+  #================== CREATE LIBRARY RELEASE BUILD ================
+  add_library(qpkg-cmd ${QPKG_CXX_SOURCES})
+  target_include_directories(qpkg-cmd PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-prep/include
     ${CMAKE_SOURCE_DIR}/libquix-parser/include
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
-  target_compile_options(qpkg-static PRIVATE
+  target_compile_options(qpkg-cmd PRIVATE
     -Wpedantic
     -Wno-error=overlength-strings
     -DQPKG_ID=${QPKG_ID}
     -fvisibility=hidden
     -fvisibility-inlines-hidden
     -DQPKG_LIBRARY)
-  target_link_libraries(qpkg-static PUBLIC yaml-cpp
+  target_link_libraries(qpkg-cmd PUBLIC yaml-cpp
     libboost_filesystem.a
     quix-codegen
     quix-qxir
@@ -70,51 +70,16 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     quix-lexer
     quix-prep
     quix-core)
-  target_link_options(qpkg-static PRIVATE
+  target_link_options(qpkg-cmd PRIVATE
     -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  add_dependencies(qpkg-static quix-codegen
+  add_dependencies(qpkg-cmd quix-codegen
     quix-qxir
     quix-parser
     quix-lexer
     quix-prep
     quix-core
     yaml-cpp)
-  set_target_properties(qpkg-static PROPERTIES OUTPUT_NAME qpkg)
-
-  #================== CREATE SHAREDLIB RELEASE BUILD ================
-  add_library(qpkg-shared SHARED ${QPKG_CXX_SOURCES})
-  target_include_directories(qpkg-shared PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-prep/include
-    ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include
-    ${CMAKE_SOURCE_DIR}/libquix-codegen/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
-  target_compile_options(qpkg-shared PRIVATE
-    -Wpedantic
-    -Wno-error=overlength-strings
-    -DQPKG_ID=${QPKG_ID}
-    -fvisibility=hidden
-    -fvisibility-inlines-hidden
-    -DQPKG_LIBRARY)
-  target_link_libraries(qpkg-shared PUBLIC yaml-cpp
-    libboost_filesystem.a
-    quix-codegen-shared
-    quix-qxir-shared
-    quix-parser-shared
-    quix-lexer-shared
-    quix-prep-shared
-    quix-core-shared)
-  target_link_options(qpkg-shared PRIVATE
-    -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  add_dependencies(qpkg-shared quix-codegen-shared
-    quix-qxir-shared
-    quix-parser-shared
-    quix-lexer-shared
-    quix-prep-shared
-    quix-core-shared
-    yaml-cpp)
-  set_target_properties(qpkg-shared PROPERTIES OUTPUT_NAME qpkg)
+  set_target_properties(qpkg-cmd PROPERTIES OUTPUT_NAME qpkg)
 else()
   #================== CREATE APPLICATION DEBUG BUILD ================
   add_executable(qpkg ${QPKG_CXX_SOURCES})
@@ -143,23 +108,22 @@ else()
     quix-core
     yaml-cpp)
 
-  #================== CREATE STATICLIB DEBUG BUILD ================
-  add_library(qpkg-static STATIC ${QPKG_CXX_SOURCES})
-  target_include_directories(qpkg-static PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
+  #================== CREATE LIBRARY DEBUG BUILD ================
+  add_library(qpkg-cmd ${QPKG_CXX_SOURCES})
+  target_include_directories(qpkg-cmd PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-prep/include
     ${CMAKE_SOURCE_DIR}/libquix-parser/include
     ${CMAKE_SOURCE_DIR}/libquix-qxir/include
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
-  target_compile_options(qpkg-static PRIVATE
-    -Wpedantic
+  target_compile_options(qpkg-cmd PRIVATE -Wpedantic
     -Wno-error=overlength-strings
     "-DQPKG_ID=\"undefined\""
     -fvisibility=hidden
     -fvisibility-inlines-hidden
     -DQPKG_LIBRARY)
-  target_link_libraries(qpkg-static PUBLIC yaml-cpp
+  target_link_libraries(qpkg-cmd PUBLIC yaml-cpp
     libboost_filesystem.a
     quix-codegen
     quix-qxir
@@ -167,50 +131,16 @@ else()
     quix-lexer
     quix-prep
     quix-core)
-  target_link_options(qpkg-static PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  add_dependencies(qpkg-static quix-codegen
+  target_link_options(qpkg-cmd PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
+  add_dependencies(qpkg-cmd quix-codegen
     quix-qxir
     quix-parser
     quix-lexer
     quix-prep
     quix-core
     yaml-cpp)
-  set_target_properties(qpkg-static PROPERTIES OUTPUT_NAME qpkg)
-
-  #================== CREATE SHAREDLIB DEBUG BUILD ================
-  add_library(qpkg-shared SHARED ${QPKG_CXX_SOURCES})
-  target_include_directories(qpkg-shared PRIVATE src ${CMAKE_SOURCE_DIR}/libquix-core/include
-    ${CMAKE_SOURCE_DIR}/libquix-lexer/include
-    ${CMAKE_SOURCE_DIR}/libquix-prep/include
-    ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include
-    ${CMAKE_SOURCE_DIR}/libquix-codegen/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
-  target_compile_options(qpkg-shared PRIVATE -Wpedantic
-    -Wno-error=overlength-strings
-    "-DQPKG_ID=\"undefined\""
-    -fvisibility=hidden
-    -fvisibility-inlines-hidden
-    -DQPKG_LIBRARY)
-  target_link_libraries(qpkg-shared PUBLIC yaml-cpp
-    libboost_filesystem.a
-    quix-codegen-shared
-    quix-qxir-shared
-    quix-parser-shared
-    quix-lexer-shared
-    quix-prep-shared
-    quix-core-shared)
-  target_link_options(qpkg-shared PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
-  add_dependencies(qpkg-shared quix-codegen-shared
-    quix-qxir-shared
-    quix-parser-shared
-    quix-lexer-shared
-    quix-prep-shared
-    quix-core-shared
-    yaml-cpp)
-  set_target_properties(qpkg-shared PROPERTIES OUTPUT_NAME qpkg)
+  set_target_properties(qpkg-cmd PROPERTIES OUTPUT_NAME qpkg)
 endif()
 
-install(TARGETS qpkg-shared DESTINATION lib)
-install(TARGETS qpkg-static DESTINATION lib)
+install(TARGETS qpkg-cmd DESTINATION lib)
 install(TARGETS qpkg DESTINATION bin)

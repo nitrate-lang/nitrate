@@ -36,7 +36,7 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-prep STATIC ${CXX_SOURCES})
+add_library(quix-prep ${CXX_SOURCES})
 target_include_directories(quix-prep PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
@@ -44,20 +44,10 @@ target_include_directories(quix-prep PUBLIC src "include"
 target_link_libraries(quix-prep PUBLIC quix-core quix-lexer ${LIB_QUIXLUA} crypto)
 add_dependencies(quix-prep quix-core quix-lexer quixlua)
 
-add_library(quix-prep-shared SHARED ${CXX_SOURCES})
-target_include_directories(quix-prep-shared PUBLIC src "include"
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/third_party)
-target_link_libraries(quix-prep-shared PUBLIC quix-core-shared quix-lexer-shared ${LIB_QUIXLUA} crypto)
-add_dependencies(quix-prep-shared quix-core-shared quix-lexer-shared quixlua)
-set_target_properties(quix-prep-shared PROPERTIES OUTPUT_NAME quix-prep)
-
 if(BUILD_TESTING)
   add_subdirectory(tests)
   add_subdirectory(fuzzer)
 endif()
 
-install(TARGETS quix-prep-shared DESTINATION lib)
 install(TARGETS quix-prep DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
