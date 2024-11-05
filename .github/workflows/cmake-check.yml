@@ -48,7 +48,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt clean
-        sudo apt update --fix-missing && apt upgrade -y
+        sudo apt update --fix-missing && sudo apt upgrade -y
         sudo apt install -y cmake make clang llvm-14 upx gnupg2 dpkg-dev
         sudo apt install -y libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev \
                             rapidjson-dev libdeflate-dev libreadline-dev libclang-dev      \
