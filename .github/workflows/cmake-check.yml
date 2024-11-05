@@ -52,7 +52,7 @@ jobs:
         sudo apt install -y cmake make clang llvm-14 upx gnupg2 dpkg-dev
         sudo apt install -y libssl-dev libboost-all-dev libzstd-dev libclang-common-14-dev \
                             rapidjson-dev libdeflate-dev libreadline-dev libclang-dev      \
-                            libclang-cpp-dev nlohmann-json3-dev libgoogle-glog-dev
+                            libclang-cpp-dev nlohmann-json3-dev libgoogle-glog-dev libunwind-dev
         sudo apt purge -y g++
       shell: bash
 
