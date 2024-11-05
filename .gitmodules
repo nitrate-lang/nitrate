@@ -17,6 +17,6 @@
 	path = orbit-platform/file
 	url = https://github.com/quixlang/file
 [submodule "libquix-prep/deps/lua"]
-	path = libquix-prep/deps/lua
+	path = libquix-prep/third_party/lua
 	url = https://github.com/lua/lua
 	branch = v5.4
