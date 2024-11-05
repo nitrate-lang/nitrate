@@ -37,7 +37,7 @@ RUN rm -rf /opt/*
 # Make the build script
 RUN echo "#!/bin/sh" > /opt/build.sh
 RUN echo "mkdir -p /app/.build/debug" >> /opt/build.sh
-RUN echo "cmake -S /app -B /app/.build/debug -DCMAKE_BUILD_TYPE=Debug -DCOVERAGE=OFF -DCMAKE_INSTALL_PREFIX=/app/build || exit 1" >> /opt/build.sh
+RUN echo "cmake -S /app -B /app/.build/debug -DCMAKE_BUILD_TYPE=Debug -DCOVERAGE=OFF -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=/app/build || exit 1" >> /opt/build.sh
 RUN echo "cmake --build /app/.build/debug -j`nproc` || exit 1" >> /opt/build.sh
 RUN echo "mkdir -p /app/build" >> /opt/build.sh
 RUN echo "rm -rf /app/build/*" >> /opt/build.sh

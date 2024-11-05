@@ -27,21 +27,14 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-lexer STATIC ${CXX_SOURCES})
+add_library(quix-lexer ${CXX_SOURCES})
 target_include_directories(quix-lexer PUBLIC src "include" ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include)
 target_link_libraries(quix-lexer PUBLIC quix-core)
 add_dependencies(quix-lexer quix-core)
-
-add_library(quix-lexer-shared SHARED ${CXX_SOURCES})
-target_include_directories(quix-lexer-shared PUBLIC src "include" ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include)
-target_link_libraries(quix-lexer-shared PUBLIC quix-core-shared)
-set_target_properties(quix-lexer-shared PROPERTIES OUTPUT_NAME quix-lexer)
-add_dependencies(quix-lexer-shared quix-core-shared)
 
 if(BUILD_TESTING)
   add_subdirectory(tests)
 endif()
 
-install(TARGETS quix-lexer-shared DESTINATION lib)
 install(TARGETS quix-lexer DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

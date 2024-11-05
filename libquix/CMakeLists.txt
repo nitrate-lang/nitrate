@@ -27,7 +27,7 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix STATIC ${CXX_SOURCES})
+add_library(quix ${CXX_SOURCES})
 target_include_directories(quix PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
@@ -43,30 +43,13 @@ target_link_libraries(quix PUBLIC quix-core
   quix-qxir
   quix-codegen)
 add_dependencies(quix quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
-
-add_library(quix-shared SHARED ${CXX_SOURCES})
-target_include_directories(quix-shared PUBLIC src "include"
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-parser/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
-target_compile_options(quix-shared PRIVATE ${PROJECT_DEBUG_FLAGS})
-target_link_libraries(quix-shared PUBLIC quix-core-shared
-  quix-lexer-shared
-  quix-prep-shared
-  quix-parser-shared
-  quix-qxir-shared
-  quix-codegen-shared)
-add_dependencies(quix-shared quix-core-shared quix-lexer-shared quix-prep-shared quix-parser-shared quix-qxir-shared quix-codegen-shared)
-set_target_properties(quix-shared PROPERTIES OUTPUT_NAME quix)
+set_target_properties(quix PROPERTIES OUTPUT_NAME quix)
 
 if(BUILD_TESTING)
   add_subdirectory(test)
   add_subdirectory(fuzzer)
 endif()
 
-install(TARGETS quix-shared DESTINATION lib)
+install(TARGETS quix DESTINATION lib)
 install(TARGETS quix DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

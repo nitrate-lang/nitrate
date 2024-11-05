@@ -26,7 +26,7 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-qxir STATIC ${CXX_SOURCES})
+add_library(quix-qxir ${CXX_SOURCES})
 target_include_directories(quix-qxir PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
@@ -34,20 +34,10 @@ target_include_directories(quix-qxir PUBLIC src "include"
 target_link_libraries(quix-qxir PUBLIC quix-core quix-parser deflate crypto)
 add_dependencies(quix-qxir quix-core quix-parser)
 
-add_library(quix-qxir-shared SHARED ${CXX_SOURCES})
-target_include_directories(quix-qxir-shared PUBLIC src "include"
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-parser/include)
-target_link_libraries(quix-qxir-shared PUBLIC quix-core-shared quix-parser-shared deflate crypto)
-set_target_properties(quix-qxir-shared PROPERTIES OUTPUT_NAME quix-qxir)
-add_dependencies(quix-qxir-shared quix-core-shared quix-parser-shared)
-
 if(BUILD_TESTING)
   add_subdirectory(tests)
   add_subdirectory(fuzzer)
 endif()
 
-install(TARGETS quix-qxir-shared DESTINATION lib)
 install(TARGETS quix-qxir DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

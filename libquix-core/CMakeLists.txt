@@ -27,13 +27,8 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-core STATIC ${CXX_SOURCES})
+add_library(quix-core ${CXX_SOURCES})
 target_include_directories(quix-core PUBLIC src "include")
 
-add_library(quix-core-shared SHARED ${CXX_SOURCES})
-target_include_directories(quix-core-shared PUBLIC src "include")
-set_target_properties(quix-core-shared PROPERTIES OUTPUT_NAME quix-core)
-
-install(TARGETS quix-core-shared DESTINATION lib)
 install(TARGETS quix-core DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
