@@ -1467,7 +1467,12 @@ namespace qxir {
     Params params;
     qparse::FuncTy *fty = n->get_type();
 
-    auto name = s.cur_named(n->get_name());
+    std::string name;
+    if (s.abi_mode == AbiTag::C) {
+      name = n->get_name();
+    } else {
+      name = s.cur_named(n->get_name());
+    }
     auto str = memorize(std::string_view(name));
 
     current->getParameterMap()[str] = {};
