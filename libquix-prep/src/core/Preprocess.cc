@@ -136,6 +136,10 @@ std::optional<std::string> qprep_impl_t::run_lua_code(const std::string &s) {
 }
 
 void qprep_impl_t::expand_raw(std::string_view code) {
+  if (code.empty()) {
+    return;
+  }
+
   FILE *resbuf = fmemopen((void *)code.data(), code.size(), "rb");
   if (resbuf == nullptr) {
     qcore_panic("qprep_impl_t::next_impl: failed to create a memory buffer");
