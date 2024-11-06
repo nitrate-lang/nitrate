@@ -1565,7 +1565,7 @@ namespace qxir {
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1582,7 +1582,7 @@ namespace qxir {
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1636,7 +1636,7 @@ namespace qxir {
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1653,7 +1653,7 @@ namespace qxir {
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1725,7 +1725,7 @@ namespace qxir {
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1742,7 +1742,7 @@ namespace qxir {
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1796,7 +1796,7 @@ namespace qxir {
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1813,7 +1813,7 @@ namespace qxir {
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
