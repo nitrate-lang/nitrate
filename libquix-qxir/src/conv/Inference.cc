@@ -973,7 +973,7 @@ CPP_EXPORT uint64_t qxir::Type::getSizeBits() {
       break;
     }
     case QIR_NODE_PTR_TY: {
-      size = getModule()->getTargetInfo().getPointerSize() * 8;
+      size = getModule()->getTargetInfo().PointerSizeBytes * 8;
       break;
     }
     case QIR_NODE_STRUCT_TY: {
@@ -995,7 +995,7 @@ CPP_EXPORT uint64_t qxir::Type::getSizeBits() {
       break;
     }
     case QIR_NODE_FN_TY: {
-      size = getModule()->getTargetInfo().getPointerSize() * 8;
+      size = getModule()->getTargetInfo().PointerSizeBytes * 8;
       break;
     }
     default: {
@@ -1077,7 +1077,7 @@ CPP_EXPORT uint64_t qxir::Type::getAlignBits() {
       break;
     }
     case QIR_NODE_PTR_TY: {
-      align = getModule()->getTargetInfo().getPointerSize() * 8;
+      align = getModule()->getTargetInfo().PointerSizeBytes * 8;
       break;
     }
     case QIR_NODE_STRUCT_TY: {
@@ -1099,7 +1099,7 @@ CPP_EXPORT uint64_t qxir::Type::getAlignBits() {
       break;
     }
     case QIR_NODE_FN_TY: {
-      align = getModule()->getTargetInfo().getPointerSize() * 8;
+      align = getModule()->getTargetInfo().PointerSizeBytes * 8;
       break;
     }
     default: {

@@ -242,10 +242,10 @@ LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
           return false;
         }
 
-        /// FIXME: Get the user compile target options
-        std::string targetTriple = llvm::sys::getDefaultTargetTriple();
-        std::string CPU = "generic";
-        std::string Features = "";
+        std::string targetTriple =
+            m->getTargetInfo().TargetTriple.value_or(llvm::sys::getDefaultTargetTriple());
+        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
+        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         llvm::TargetOptions opt;
@@ -322,10 +322,10 @@ LIB_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
           return false;
         }
 
-        /// FIXME: Get the user compile target options
-        std::string targetTriple = llvm::sys::getDefaultTargetTriple();
-        std::string CPU = "generic";
-        std::string Features = "";
+        std::string targetTriple =
+            m->getTargetInfo().TargetTriple.value_or(llvm::sys::getDefaultTargetTriple());
+        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
+        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         llvm::TargetOptions opt;
