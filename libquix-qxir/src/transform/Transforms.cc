@@ -56,6 +56,7 @@ bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
   RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
   RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
   RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
+  RUN_PASS("ds-clean", impl::ds_clean);         /* Cleanup IR */
 
   return true;
 }
