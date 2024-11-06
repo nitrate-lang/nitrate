@@ -48,7 +48,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        sudo snap remove firefox
+        sudo apt purge -y firefox
         sudo apt clean
         sudo apt update --fix-missing && sudo apt upgrade -y
         sudo apt install -y cmake make clang llvm-14 upx gnupg2 dpkg-dev
