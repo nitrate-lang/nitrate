@@ -46,6 +46,13 @@
 #define PROJECT_REPO_URL "https://github.com/Kracken256/quix"
 #define PANIC_LINE_LENGTH 80
 
+#if defined(__GLIBC__)
+#include <gnu/libc-version.h>
+static std::string libc_version = std::string("GLIBC ") + gnu_get_libc_version();
+#else
+#error "This libc version is not supported here"
+#endif
+
 static std::string base64_encode(const std::string &in) {
   std::string out;
 
@@ -240,8 +247,9 @@ static void panic_render_report(const std::vector<std::string> &lines) {
   std::cerr << "\x1b[31;1m┃\x1b[0m\n";
   std::cerr << "\x1b[31;1m┗━━━━━━┫ END STACK TRACE ┣━━\x1b[0m\n\n";
 
-  std::cerr << "Lib Version: " __TARGET_VERSION "\n\n";
-  std::cerr << "The libquixcc library has encountered a fatal internal "
+  std::cerr << "libc version: " << libc_version << std::endl;
+
+  std::cerr << "The application has encountered a fatal internal "
                "error.\n\n";
   std::cerr << "\x1b[32;40;1;4mPlease report this error\x1b[0m to the QuixCC "
                "developers "
