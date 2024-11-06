@@ -184,27 +184,9 @@ static Type *binexpr_promote(Type *L, Type *R) {
   }
   ///===========================================================================
 
-  else
-
-  ///===========================================================================
-  /// NOTE: Non-primitive numeric types are promoted according to the following rules:
-  {
+  else {
     return nullptr;
-
-    /// TODO: Non-primitive numeric type promotion
-    qcore_implement("Non-primitive numeric type promotion");
-
-    /**
-     * @note
-     *
-     * 1. User defined type conversion
-     * 2. Complex string expressions like `"HELLO" * 2` == `"HELLOHELLO"`
-     * 3. Complex list expressions like `[1, 2, 3] * 2` == `[2, 4, 6]` or `[1, 2, 3] + [4, 5, 6] ==
-     * [1, 2, 3, 4, 5, 6]`
-     * 4. Everything else gets either an error or void?
-     */
   }
-  ///===========================================================================
 }
 
 LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
