@@ -297,6 +297,8 @@ typedef struct qlex_tok_t final {
       case qMacr:
       case qNote:
         return v.str_idx < rhs.v.str_idx;
+      default:
+        __builtin_unreachable();
     }
   }
 } __attribute__((packed)) qlex_tok_t;
