@@ -30,11 +30,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Report.hh>
 #include <string>
 #include <transform/passes/Decl.hh>
-
-#include "quix-qxir/Report.hh"
-#include "quix-qxir/TypeDecl.h"
 
 /**
  * @brief Cleanup the IR
@@ -286,8 +284,9 @@ static void seq_sweep_ign_nodes(Expr* P, Expr** C) {
   }
 }
 
-static void remove_empty_seq(Expr*, Expr** C) {
-  if ((*C)->getKind() == QIR_NODE_SEQ) {
+static void ignore_empty_seq(Expr* P, Expr** C) {
+  /* Don't ignore the root node! */
+  if (P && (*C)->getKind() == QIR_NODE_SEQ) {
     Seq* S = (*C)->as<Seq>();
 
     if (S->getItems().empty()) {
@@ -296,12 +295,26 @@ static void remove_empty_seq(Expr*, Expr** C) {
   }
 }
 
-static void remove_empty_extern(Expr*, Expr** C) {
+static void ignore_empty_extern(Expr*, Expr** C) {
   if ((*C)->getKind() == QIR_NODE_EXTERN) {
     Extern* E = (*C)->as<Extern>();
 
     if (E->getValue()->getKind() == QIR_NODE_IGN) {
       *C = create<Ign>();
+    }
+  }
+}
+
+static void remove_unneeded_cast(Expr*, Expr** C) {
+  if ((*C)->getKind() == QIR_NODE_BINEXPR) {
+    BinExpr* E = (*C)->as<BinExpr>();
+
+    if (E->getOp() == Op::CastAs || E->getOp() == Op::BitcastAs) {
+      Type* LHT = E->getLHS()->getType().value_or(nullptr);
+
+      if (LHT && LHT->cmp_eq(E->getRHS())) {
+        *C = E->getLHS();
+      }
     }
   }
 }
@@ -324,10 +337,11 @@ static size_t garbage_collect_round(qmodule_t* M, size_t& iteration) {
     });
   }
 
-  { /* Erase non-functional nodes */
+  { /* Simplify nodes / ignore garbage */
     iterate<dfs_post>(M->getRoot(), [](Expr* P, Expr** C) -> IterOp {
-      remove_empty_seq(P, C);
-      remove_empty_extern(P, C);
+      ignore_empty_seq(P, C);
+      ignore_empty_extern(P, C);
+      remove_unneeded_cast(P, C);
       return IterOp ::Proceed;
     });
   }
