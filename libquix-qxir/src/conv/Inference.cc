@@ -629,7 +629,7 @@ LIB_EXPORT qxir_node_t *qxir_infer(qxir_node_t *_node) {
       }
       case QIR_NODE_LIST: {
         if (E->as<List>()->getItems().empty()) {
-          T = nullptr;  // Can not infer empty list type
+          T = create<StructTy>(StructFields());
         } else {
           std::vector<Type *> types;
           for (auto &item : E->as<List>()->getItems()) {
