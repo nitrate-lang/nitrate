@@ -11,7 +11,16 @@ if(BUILD_TESTING)
 endif()
 
 # Weird compiler warning with macro arguments. Disable it.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=gnu-zero-variadic-macro-arguments -Wno-gnu-zero-variadic-macro-arguments")
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=gnu-zero-variadic-macro-arguments \
+                                          -Wno-gnu-zero-variadic-macro-arguments       \
+                                          -Wno-error=unused-command-line-argument      \
+                                          -Wno-unused-command-line-argument"  )
+else()
+  message(FATAL_ERROR "Unsupported compiler pair: '${CMAKE_CXX_COMPILER}' and '${CMAKE_C_COMPILER}'")
+endif()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 # Modern security hardening flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector -fPIC")
@@ -19,8 +28,6 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-z,relro,-z,now")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -pedantic -Werror \
                     -Wno-error=unused-parameter \
-                    -Wno-error=unused-command-line-argument \
-                    -Wno-unused-command-line-argument \
                     -Wno-error=missing-field-initializers   \
                     -Wno-missing-field-initializers \
                     -D__QUIX_IMPL__")
