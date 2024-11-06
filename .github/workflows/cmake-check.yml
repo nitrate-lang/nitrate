@@ -78,8 +78,8 @@ jobs:
     - name: Test
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: |
-        echo 0 | sudo tee /proc/sys/kernel/randomize_va_space # Disable ASLR for sanitizers
-        ctest --build-config ${{ matrix.build_type }}
+        sudo sysctl -w vm.mmap_rnd_bits=28 # Disable ASLR for sanitizers
+        ctest --build-config ${{ matrix.build_type }} --rerun-failed --output-on-failure
       shell: bash
 
     - name: Save CMake Cache
