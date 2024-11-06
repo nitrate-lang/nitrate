@@ -98,6 +98,33 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
     }
 
     return true;
+  }
+  if (L->getKind() == QIR_NODE_ARRAY_TY && R->getKind() == QIR_NODE_STRUCT_TY) {
+    ArrayTy* LS = L->as<ArrayTy>();
+    StructTy* RS = R->as<StructTy>();
+
+    if (LS->getCount() != RS->getFields().size()) {
+      report(IssueCode::BadCast, IssueClass::Error,
+             prepare("`as` expected both types to have the same number of entries", L, R),
+             N->locBeg(), N->locEnd());
+      M->setFailbit(true);
+
+      return false;
+    }
+
+    for (size_t i = 0; i < LS->getCount(); i++) {
+      Type* RT = RS->getFields()[i];
+
+      if (!verify_cast_as(M, N, LS->getElement(), RT)) {
+        report(IssueCode::BadCast, IssueClass::Error,
+               prepare("Field cast failed in recursive array to struct cast", L, R), N->locBeg(),
+               N->locEnd());
+        M->setFailbit(true);
+        return false;
+      }
+    }
+
+    return true;
   } else if (L->getKind() == QIR_NODE_STRUCT_TY || R->getKind() == QIR_NODE_STRUCT_TY) {
     report(IssueCode::BadCast, IssueClass::Error, prepare("Bad cast to/from struct type", L, R),
            N->locBeg(), N->locEnd());
