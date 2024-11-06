@@ -286,7 +286,7 @@ static void seq_sweep_ign_nodes(Expr* P, Expr** C) {
 
 static void ignore_empty_seq(Expr* P, Expr** C) {
   /* Don't ignore the root node! */
-  if (P && (*C)->getKind() == QIR_NODE_SEQ) {
+  if (P && P->getKind() == QIR_NODE_SEQ && (*C)->getKind() == QIR_NODE_SEQ) {
     Seq* S = (*C)->as<Seq>();
 
     if (S->getItems().empty()) {

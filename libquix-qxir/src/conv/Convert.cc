@@ -985,6 +985,8 @@ namespace qxir {
      */
 
     if (s.inside_function) {
+      qcore_assert(!s.local_scope.empty());
+
       auto find = s.local_scope.top().find(n->get_name());
       if (find != s.local_scope.top().end()) {
         return create<Ident>(memorize(n->get_name()), find->second);
@@ -2164,6 +2166,7 @@ namespace qxir {
       Local *local = create<Local>(name, init, s.abi_mode);
       local->setMutable(false);
 
+      qcore_assert(!s.local_scope.empty());
       if (s.local_scope.top().contains(name)) {
         report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
                n->get_start_pos(), n->get_end_pos());
@@ -2209,6 +2212,7 @@ namespace qxir {
       std::string_view name = memorize(n->get_name());
       Local *local = create<Local>(name, init, s.abi_mode);
 
+      qcore_assert(!s.local_scope.empty());
       if (s.local_scope.top().contains(name)) {
         report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
                n->get_start_pos(), n->get_end_pos());
