@@ -50,7 +50,7 @@ class CppFILE {
 
 public:
   CppFILE(const uint8_t *data, size_t size) {
-    m_fp = fmemopen((void *)data, size, "r");
+    m_fp = fmemopen((void *)data, size, "rb");
     if (m_fp == nullptr) {
       throw std::runtime_error("fmemopen failed");
     }

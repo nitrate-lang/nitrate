@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
   qxir_lib_init();
 
   FILE *source = NULL;
-  if ((source = fopen(path, "r")) == NULL) {
+  if ((source = fopen(path, "rb")) == NULL) {
     printf("Error: %s\n", strerror(errno));
 
     return -1;

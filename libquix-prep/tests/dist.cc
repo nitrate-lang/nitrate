@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  FILE *file = fopen(args[1].data(), "r");
+  FILE *file = fopen(args[1].data(), "rb");
   if (!file) {
     std::cerr << "Failed to open file: " << args[1] << std::endl;
     return 1;

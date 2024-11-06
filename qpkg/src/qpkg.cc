@@ -78,7 +78,7 @@ static std::optional<std::string> quixcc_cc_demangle(std::string_view mangled_na
   if (mangled_name.starts_with("@")) {
     mangled_name.remove_prefix(1);
   }
-  
+
   qxir::SymbolEncoding codec;
   return codec.demangle_name(mangled_name);
 }
@@ -1152,7 +1152,7 @@ namespace qpkg::router {
       std::string source = parse_parser.get<std::string>("source");
       std::string output = parse_parser.get<std::string>("--output");
 
-      FILE *fp = fopen(source.c_str(), "r");
+      FILE *fp = fopen(source.c_str(), "rb");
       if (!fp) {
         qerr << "Failed to open source file" << std::endl;
         return 1;
@@ -1216,7 +1216,7 @@ namespace qpkg::router {
       std::string opts = qxir_parser.get<std::string>("--opts");
       bool verbose = qxir_parser["--verbose"] == true;
 
-      FILE *fp = fopen(source.c_str(), "r");
+      FILE *fp = fopen(source.c_str(), "rb");
       if (!fp) {
         qerr << "Failed to open source file" << std::endl;
         return 1;
@@ -1296,7 +1296,7 @@ namespace qpkg::router {
       bool verbose = qxir_parser["--verbose"] == true;
       std::string target = qxir_parser.get<std::string>("--target");
 
-      FILE *fp = fopen(source.c_str(), "r");
+      FILE *fp = fopen(source.c_str(), "rb");
       if (!fp) {
         qerr << "Failed to open source file" << std::endl;
         return 1;

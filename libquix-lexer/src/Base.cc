@@ -58,7 +58,7 @@ LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename
       filename = "<unknown>";
     }
 
-    FILE *file = fmemopen((void *)src, len, "r");
+    FILE *file = fmemopen((void *)src, len, "rb");
     if (!file) {
       return nullptr;
     }

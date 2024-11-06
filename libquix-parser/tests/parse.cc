@@ -19,7 +19,7 @@ int main(int argc, char **argv) {
   const char *path = argv[1];
 
   FILE *source = NULL;
-  if ((source = fopen(path, "r")) == NULL) {
+  if ((source = fopen(path, "rb")) == NULL) {
     printf("Error: %s\n", strerror(errno));
     return -1;
   }

@@ -98,7 +98,7 @@ static const uint8_t expected_msgpack[] = {
     0x00, 0x00, 0x00, 0x00};
 
 TEST(LexerRoute, flag_use_json) {
-  FILE* source = fmemopen((void*)source_code.data(), source_code.size(), "r");
+  FILE* source = fmemopen((void*)source_code.data(), source_code.size(), "rb");
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
@@ -136,7 +136,7 @@ TEST(LexerRoute, flag_use_json) {
 }
 
 TEST(LexerRoute, flag_use_msgpack) {
-  FILE* source = fmemopen((void*)source_code.data(), source_code.size(), "r");
+  FILE* source = fmemopen((void*)source_code.data(), source_code.size(), "rb");
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;

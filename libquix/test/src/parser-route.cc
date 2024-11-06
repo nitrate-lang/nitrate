@@ -182,7 +182,7 @@ TEST(ParseRoute, msgpack_to_msgpack) {
 }
 
 TEST(ParseRoute, json_to_json) {
-  FILE* source = fmemopen((void*)json_tokens.data(), json_tokens.size(), "r");
+  FILE* source = fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb");
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
@@ -220,7 +220,7 @@ TEST(ParseRoute, json_to_json) {
 }
 
 TEST(ParseRoute, json_to_msgpack) {
-  FILE* source = fmemopen((void*)json_tokens.data(), json_tokens.size(), "r");
+  FILE* source = fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb");
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
