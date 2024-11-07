@@ -45,7 +45,7 @@ class qprep final {
   qlex_t *m_lex;
 
 public:
-  qprep(FILE *fp, const char *filename, qcore_env_t env) {
+  qprep(std::shared_ptr<std::istream> fp, const char *filename, qcore_env_t env) {
     if ((m_lex = qprep_new(fp, filename, env)) == nullptr) {
       throw std::runtime_error("qlex_new failed");
     }

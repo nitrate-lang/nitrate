@@ -43,6 +43,7 @@
 #include <optional>
 #include <qcall/List.hh>
 #include <quix-lexer/Base.hh>
+#include <sstream>
 #include <string_view>
 
 #include "LibMacro.h"
@@ -136,17 +137,10 @@ std::optional<std::string> qprep_impl_t::run_lua_code(const std::string &s) {
 }
 
 void qprep_impl_t::expand_raw(std::string_view code) {
-  if (code.empty()) {
-    return;
-  }
-
-  FILE *resbuf = fmemopen((void *)code.data(), code.size(), "rb");
-  if (resbuf == nullptr) {
-    qcore_panic("qprep_impl_t::next_impl: failed to create a memory buffer");
-  }
+  auto ss = std::make_shared<std::istringstream>(std::string(code.data(), code.size()));
 
   {
-    qlex_t *clone = weak_clone(resbuf, m_filename);
+    qlex_t *clone = weak_clone(ss, m_filename);
 
     qlex_tok_t tok;
     std::vector<qlex_tok_t> tokens;
@@ -160,8 +154,6 @@ void qprep_impl_t::expand_raw(std::string_view code) {
       m_core->buffer.push_front(*it);
     }
   }
-
-  fclose(resbuf);
 }
 
 bool qprep_impl_t::run_and_expand(const std::string &code) {
@@ -332,7 +324,7 @@ void qprep_impl_t::install_lua_api() {
   lua_setglobal(m_core->L, "quix");
 }
 
-qlex_t *qprep_impl_t::weak_clone(FILE *file, const char *filename) {
+qlex_t *qprep_impl_t::weak_clone(std::shared_ptr<std::istream> file, const char *filename) {
   qprep_impl_t *clone = new qprep_impl_t(file, filename, m_env);
 
   clone->m_core = m_core;
@@ -343,15 +335,17 @@ qlex_t *qprep_impl_t::weak_clone(FILE *file, const char *filename) {
   return clone;
 }
 
-qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, qcore_env_t env)
-    : qlex_t(file, filename, false, env) {
+qprep_impl_t::qprep_impl_t(std::shared_ptr<std::istream> file, const char *filename,
+                           qcore_env_t env)
+    : qlex_t(file, filename, env) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
   m_depth = 0;
 }
 
-qprep_impl_t::qprep_impl_t(FILE *file, const char *filename, bool is_owned, qcore_env_t env)
-    : qlex_t(file, filename, is_owned, env) {
+qprep_impl_t::qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env,
+                           const char *filename)
+    : qlex_t(file, filename, env) {
   m_core = std::make_shared<Core>();
   m_do_expanse = true;
   m_depth = 0;
@@ -374,9 +368,10 @@ CPP_EXPORT qprep_impl_t::~qprep_impl_t() {}
 
 ///=============================================================================
 
-LIB_EXPORT qlex_t *qprep_new(FILE *file, const char *filename, qcore_env_t env) {
+CPP_EXPORT qlex_t *qprep_new(std::shared_ptr<std::istream> file, const char *filename,
+                             qcore_env_t env) {
   try {
-    return new qprep_impl_t(file, filename, false, env);
+    return new qprep_impl_t(file, env, filename);
   } catch (std::bad_alloc &) {
     return nullptr;
   } catch (...) {

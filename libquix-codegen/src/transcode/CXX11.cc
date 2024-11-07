@@ -31,10 +31,10 @@
 
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/IR.h>
+#include <quix-ir/IR.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
-#include <quix-qxir/IRGraph.hh>
+#include <quix-ir/IRGraph.hh>
 // #include <chrono>
 #include <core/Config.hh>
 // #include <cstdint>

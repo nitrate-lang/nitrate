@@ -87,25 +87,30 @@ class DeserializerAdapterLexer final : public qlex_t {
     char *str = nullptr;
 
     { /* Read the token array */
-      size_t str_len;
-      if (fscanf(m_file, "[%u,", &ty) != 1) [[unlikely]] {
-        return {.ty = qErro};
-      }
+      size_t str_len = 0;
 
+      if (m_file->get() != '[') return {.ty = qErro};
+      (*m_file) >> ty;
       ty &= 0xff;
+      if (m_file->get() != ',') return {.ty = qErro};
 
-      if (!read_json_string(m_file, &str, str_len)) [[unlikely]] {
+      if (!read_json_string(*m_file, &str, str_len)) [[unlikely]] {
         return {.ty = qErro};
       }
 
-      if (fscanf(m_file, ",%u,%u,%u,%u]", &a, &b, &c, &d) != 4) [[unlikely]] {
-        free(str);
-        return {.ty = qErro};
-      }
+      if (m_file->get() != ',') return {.ty = qErro};
+      (*m_file) >> a;
+      if (m_file->get() != ',') return {.ty = qErro};
+      (*m_file) >> b;
+      if (m_file->get() != ',') return {.ty = qErro};
+      (*m_file) >> c;
+      if (m_file->get() != ',') return {.ty = qErro};
+      (*m_file) >> d;
+      if (m_file->get() != ']') return {.ty = qErro};
     }
 
     { /* Check the delimiter */
-      char delim = fgetc(m_file);
+      char delim = m_file->get();
 
       if (delim == ']') [[unlikely]] {
         m_eof_bit = true;
@@ -144,23 +149,23 @@ class DeserializerAdapterLexer final : public qlex_t {
 
     { /* Read the token array */
       // Array start byte for 6 elements
-      if (fgetc(m_file) != 0x96) {
+      if (m_file->get() != 0x96) {
         return {.ty = qErro};
       }
 
       size_t str_len;
 
-      if (!msgpack_read_uint(m_file, ty)) [[unlikely]] {
+      if (!msgpack_read_uint(*m_file, ty)) [[unlikely]] {
         return {.ty = qErro};
       }
       ty &= 0xff;
 
-      if (!msgpack_read_str(m_file, &str, str_len)) [[unlikely]] {
+      if (!msgpack_read_str(*m_file, &str, str_len)) [[unlikely]] {
         return {.ty = qErro};
       }
 
-      if (!msgpack_read_uint(m_file, a) || !msgpack_read_uint(m_file, b) ||
-          !msgpack_read_uint(m_file, c) || !msgpack_read_uint(m_file, d)) [[unlikely]] {
+      if (!msgpack_read_uint(*m_file, a) || !msgpack_read_uint(*m_file, b) ||
+          !msgpack_read_uint(*m_file, c) || !msgpack_read_uint(*m_file, d)) [[unlikely]] {
         free(str);
         return {.ty = qErro};
       }
@@ -200,9 +205,10 @@ class DeserializerAdapterLexer final : public qlex_t {
   }
 
 public:
-  DeserializerAdapterLexer(FILE *file, const char *filename, qcore_env_t env)
-      : qlex_t(file, filename, false, env) {
-    int ch = fgetc(file);
+  DeserializerAdapterLexer(std::shared_ptr<std::istream> file, const char *filename,
+                           qcore_env_t env)
+      : qlex_t(file, filename, env) {
+    int ch = file->get();
 
     m_mode = InMode::BadCodec;
     m_eof_bit = false;
@@ -213,22 +219,22 @@ public:
     } else if (ch == 0xdd) {
       m_ele_count = 0;
 
-      if ((ch = fgetc(file)) == EOF) return;
+      if ((ch = file->get()) == EOF) return;
       m_ele_count |= ch << 24;
-      if ((ch = fgetc(file)) == EOF) return;
+      if ((ch = file->get()) == EOF) return;
       m_ele_count |= ch << 16;
-      if ((ch = fgetc(file)) == EOF) return;
+      if ((ch = file->get()) == EOF) return;
       m_ele_count |= ch << 8;
-      if ((ch = fgetc(file)) == EOF) return;
+      if ((ch = file->get()) == EOF) return;
       m_ele_count |= ch;
 
       m_mode = InMode::MsgPack;
     } else if (ch == 0xdc) {
       m_ele_count = 0;
 
-      if ((ch = fgetc(file)) == EOF) return;
+      if ((ch = file->get()) == EOF) return;
       m_ele_count |= ch << 8;
-      if ((ch = fgetc(file)) == EOF) return;
+      if ((ch = file->get()) == EOF) return;
       m_ele_count |= ch;
 
       m_mode = InMode::MsgPack;
@@ -266,7 +272,8 @@ static std::optional<qparse_node_t *> parse_tokens(qparse_t *L,
 
 bool to_json_recurse(qparse::Node *N, json &x);
 
-bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
+                        std::function<void(const char *)> diag_cb,
                         const std::unordered_set<std::string_view> &opts) {
   enum class OutMode {
     JSON,

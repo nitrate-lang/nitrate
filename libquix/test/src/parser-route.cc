@@ -106,14 +106,15 @@ static const uint8_t expected_msgpack[] = {
     0x75, 0x74, 0x6f};
 
 TEST(ParseRoute, msgpack_to_json) {
-  FILE* source = fmemopen((void*)msgpack_tokens, sizeof(msgpack_tokens), "rb");
+  quix_stream_t* source =
+      quix_from(fmemopen((void*)msgpack_tokens, sizeof(msgpack_tokens), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    fclose(source);
+    quix_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -124,7 +125,7 @@ TEST(ParseRoute, msgpack_to_json) {
   };
 
   if (!quix_cc(source, output, quix_diag_stderr, 0, options)) {
-    fclose(source);
+    quix_fclose(source);
     fclose(output);
     free(output_buf);
     quix_deinit();
@@ -132,7 +133,7 @@ TEST(ParseRoute, msgpack_to_json) {
     FAIL() << "Failed to run quix_cc.";
   }
 
-  fclose(source);
+  quix_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -144,14 +145,15 @@ TEST(ParseRoute, msgpack_to_json) {
 }
 
 TEST(ParseRoute, msgpack_to_msgpack) {
-  FILE* source = fmemopen((void*)msgpack_tokens, sizeof(msgpack_tokens), "rb");
+  quix_stream_t* source =
+      quix_from(fmemopen((void*)msgpack_tokens, sizeof(msgpack_tokens), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    fclose(source);
+    quix_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -162,7 +164,7 @@ TEST(ParseRoute, msgpack_to_msgpack) {
   };
 
   if (!quix_cc(source, output, nullptr, 0, options)) {
-    fclose(source);
+    quix_fclose(source);
     fclose(output);
     free(output_buf);
     quix_deinit();
@@ -170,7 +172,7 @@ TEST(ParseRoute, msgpack_to_msgpack) {
     FAIL() << "Failed to run quix_cc.";
   }
 
-  fclose(source);
+  quix_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -182,14 +184,15 @@ TEST(ParseRoute, msgpack_to_msgpack) {
 }
 
 TEST(ParseRoute, json_to_json) {
-  FILE* source = fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb");
+  quix_stream_t* source =
+      quix_from(fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    fclose(source);
+    quix_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -200,7 +203,7 @@ TEST(ParseRoute, json_to_json) {
   };
 
   if (!quix_cc(source, output, quix_diag_stderr, 0, options)) {
-    fclose(source);
+    quix_fclose(source);
     fclose(output);
     free(output_buf);
     quix_deinit();
@@ -208,7 +211,7 @@ TEST(ParseRoute, json_to_json) {
     FAIL() << "Failed to run quix_cc.";
   }
 
-  fclose(source);
+  quix_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -220,14 +223,15 @@ TEST(ParseRoute, json_to_json) {
 }
 
 TEST(ParseRoute, json_to_msgpack) {
-  FILE* source = fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb");
+  quix_stream_t* source =
+      quix_from(fmemopen((void*)json_tokens.data(), json_tokens.size(), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    fclose(source);
+    quix_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -238,7 +242,7 @@ TEST(ParseRoute, json_to_msgpack) {
   };
 
   if (!quix_cc(source, output, nullptr, 0, options)) {
-    fclose(source);
+    quix_fclose(source);
     fclose(output);
     free(output_buf);
     quix_deinit();
@@ -246,7 +250,7 @@ TEST(ParseRoute, json_to_msgpack) {
     FAIL() << "Failed to run quix_cc.";
   }
 
-  fclose(source);
+  quix_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);

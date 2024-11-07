@@ -2,6 +2,7 @@
     global:
         qlex_*;
         *qlex_t*;
+        *qlex_new*;
     local:
         *;
 };

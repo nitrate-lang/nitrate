@@ -36,8 +36,9 @@
 #include <stdio.h>
 
 #ifdef __cplusplus
-extern "C" {
-#endif
+
+#include <istream>
+#include <memory>
 
 /**
  * @brief Create a new preprocessor context.
@@ -50,7 +51,13 @@ extern "C" {
  * @note The lifetime of the file stream and environment must exceed the lifetime of the lexer.
  * @note This function is thread-safe.
  */
-qlex_t *qprep_new(FILE *file, const char *filename, qcore_env_t env);
+qlex_t *qprep_new(std::shared_ptr<std::istream> file, const char *filename, qcore_env_t env);
+
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Fetch source code for a module by import name.

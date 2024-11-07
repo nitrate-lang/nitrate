@@ -33,20 +33,22 @@
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Lib.h>
 #include <quix-core/Lib.h>
+#include <quix-ir/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-prep/Lib.h>
-#include <quix-qxir/Lib.h>
 
 #include <clean/Cleanup.hh>
 #include <core/Config.hh>
 #include <core/Logger.hh>
+#include <fstream>
+#include <ios>
 #include <quix-codegen/Classes.hh>
 #include <quix-core/Classes.hh>
+#include <quix-ir/Classes.hh>
+#include <quix-ir/Format.hh>
 #include <quix-parser/Classes.hh>
 #include <quix-prep/Classes.hh>
-#include <quix-qxir/Classes.hh>
-#include <quix-qxir/Format.hh>
 #include <unordered_map>
 
 #if QPKG_DEV_TOOLS
@@ -1152,8 +1154,8 @@ namespace qpkg::router {
       std::string source = parse_parser.get<std::string>("source");
       std::string output = parse_parser.get<std::string>("--output");
 
-      FILE *fp = fopen(source.c_str(), "rb");
-      if (!fp) {
+      auto fp = std::make_shared<std::ifstream>(source, std::ios_base::in | std::ios_base::binary);
+      if (!fp->is_open()) {
         qerr << "Failed to open source file" << std::endl;
         return 1;
       }
@@ -1174,7 +1176,6 @@ namespace qpkg::router {
         };
 
         qparse_dumps(ctx.get(), false, cb, 0);
-        fclose(fp);
         qerr << "Failed to parse source" << std::endl;
         return 1;
       }
@@ -1182,7 +1183,6 @@ namespace qpkg::router {
       size_t out_len = 0;
       char *out_str = qparse_repr(root, false, 2, &out_len);
       if (!out_str) {
-        fclose(fp);
         qerr << "Failed to generate parse tree" << std::endl;
         return 1;
       }
@@ -1191,7 +1191,6 @@ namespace qpkg::router {
       if (!output.empty()) {
         out_fp = fopen(output.c_str(), "w");
         if (!out_fp) {
-          fclose(fp);
           qerr << "Failed to open output file" << std::endl;
           return 1;
         }
@@ -1204,8 +1203,6 @@ namespace qpkg::router {
 
       if (!output.empty()) fclose(out_fp);
 
-      fclose(fp);
-
       return 0;
     } else if (parser.is_subcommand_used("qxir")) {
       auto &qxir_parser = *subparsers.at("qxir");
@@ -1216,8 +1213,8 @@ namespace qpkg::router {
       std::string opts = qxir_parser.get<std::string>("--opts");
       bool verbose = qxir_parser["--verbose"] == true;
 
-      FILE *fp = fopen(source.c_str(), "rb");
-      if (!fp) {
+      auto fp = std::make_shared<std::ifstream>(source, std::ios_base::in | std::ios_base::binary);
+      if (!fp->is_open()) {
         qerr << "Failed to open source file" << std::endl;
         return 1;
       }
@@ -1237,7 +1234,6 @@ namespace qpkg::router {
         };
 
         qparse_dumps(ctx.get(), false, cb, 0);
-        fclose(fp);
         qerr << "Failed to parse source" << std::endl;
         return 1;
       }
@@ -1255,7 +1251,6 @@ namespace qpkg::router {
       if (!qxir_lower(qmod.get(), root, true)) {
         qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
                        g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
-        fclose(fp);
         return 1;
       }
 
@@ -1266,7 +1261,6 @@ namespace qpkg::router {
       if (!output.empty()) {
         out_fp = fopen(output.c_str(), "w");
         if (!out_fp) {
-          fclose(fp);
           qerr << "Failed to open output file" << std::endl;
           return 1;
         }
@@ -1276,14 +1270,11 @@ namespace qpkg::router {
 
       if (!qxir_write(qxir_base(qmod.get()), QXIR_SERIAL_CODE, out_fp, nullptr, 0)) {
         if (!output.empty()) fclose(out_fp);
-        fclose(fp);
         qerr << "Failed to generate QXIR tree" << std::endl;
         return 1;
       }
 
       if (!output.empty()) fclose(out_fp);
-
-      fclose(fp);
 
       return 0;
     } else if (parser.is_subcommand_used("codegen")) {
@@ -1296,8 +1287,8 @@ namespace qpkg::router {
       bool verbose = qxir_parser["--verbose"] == true;
       std::string target = qxir_parser.get<std::string>("--target");
 
-      FILE *fp = fopen(source.c_str(), "rb");
-      if (!fp) {
+      auto fp = std::make_shared<std::ifstream>(source, std::ios_base::in | std::ios_base::binary);
+      if (!fp->is_open()) {
         qerr << "Failed to open source file" << std::endl;
         return 1;
       }
@@ -1318,7 +1309,6 @@ namespace qpkg::router {
         };
 
         qparse_dumps(ctx.get(), false, cb, 0);
-        fclose(fp);
         qerr << "Failed to parse source" << std::endl;
         return 1;
       }
@@ -1336,7 +1326,6 @@ namespace qpkg::router {
       if (!qxir_lower(qmod.get(), root, true)) {
         qxir_diag_read(qmod.get(), QXIR_AUDIT_ALL,
                        g_use_colors ? QXIR_DIAG_COLOR : QXIR_DIAG_NOCOLOR, cb, verbose);
-        fclose(fp);
         return 1;
       }
 
@@ -1347,7 +1336,6 @@ namespace qpkg::router {
       if (!output.empty()) {
         out_fp = fopen(output.c_str(), "w");
         if (!out_fp) {
-          fclose(fp);
           qerr << "Failed to open output file" << std::endl;
           return 1;
         }
@@ -1365,7 +1353,6 @@ namespace qpkg::router {
         if (!qcode_transcode(qmod.get(), qcode_conf.get(), target_map.at(target), QCODE_GOOGLE,
                              nullptr, out_fp)) {
           if (!output.empty()) fclose(out_fp);
-          fclose(fp);
           qerr << "Failed to generate code" << std::endl;
           return 1;
         }
@@ -1373,21 +1360,18 @@ namespace qpkg::router {
         if (target == "ir") {
           if (!qcode_ir(qmod.get(), qcode_conf.get(), stderr, out_fp)) {
             if (!output.empty()) fclose(out_fp);
-            fclose(fp);
             qerr << "Failed to generate code" << std::endl;
             return 1;
           }
         } else if (target == "asm") {
           if (!qcode_asm(qmod.get(), qcode_conf.get(), stderr, out_fp)) {
             if (!output.empty()) fclose(out_fp);
-            fclose(fp);
             qerr << "Failed to generate code" << std::endl;
             return 1;
           }
         } else if (target == "obj") {
           if (!qcode_obj(qmod.get(), qcode_conf.get(), stderr, out_fp)) {
             if (!output.empty()) fclose(out_fp);
-            fclose(fp);
             qerr << "Failed to generate code" << std::endl;
             return 1;
           }
@@ -1397,8 +1381,6 @@ namespace qpkg::router {
       }
 
       if (!output.empty()) fclose(out_fp);
-
-      fclose(fp);
 
       return 0;
     } else if (parser.is_used("--demangle")) {

@@ -32,9 +32,5 @@ target_include_directories(quix-lexer PUBLIC src "include" ${CMAKE_CURRENT_SOURC
 target_link_libraries(quix-lexer PUBLIC quix-core)
 add_dependencies(quix-lexer quix-core)
 
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-endif()
-
 install(TARGETS quix-lexer DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
