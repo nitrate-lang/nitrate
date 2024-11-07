@@ -59,7 +59,7 @@ add_library(quix-codegen ${CXX_SOURCES})
 target_include_directories(quix-codegen PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-ir/include
   /usr/lib/llvm-14/include)
 target_link_libraries(quix-codegen PUBLIC quix-core quix-qxir)
 foreach(lib ${LLVM_LIBS})
