@@ -29,43 +29,64 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-core/Error.h>
-
-#include <quix-qxir/Module.hh>
-#include <transform/PassManager.hh>
-#include <transform/Transform.hh>
+#include <quix-qxir/IRGraph.hh>
 #include <transform/passes/Decl.hh>
 
-bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
-#define RUN_PASS(name, fn)                                        \
-  {                                                               \
-    if (!fn(M)) {                                                 \
-      err << "Error: Pass '" << name << "' failed." << std::endl; \
-      return false;                                               \
-    }                                                             \
-    M->applyPassLabel(name);                                      \
-    if (M->getFailbit()) {                                        \
-      return false;                                               \
-    }                                                             \
+/**
+ * @brief Insert destructors to stack-allocated local variables
+ *
+ * @timecomplexity O(n)
+ * @spacecomplexity O(1)
+ */
+
+using namespace qxir::diag;
+using namespace qxir;
+
+bool qxir::transform::impl::raii(qmodule_t *M) {
+  for (auto &[k, v] : M->getFunctions()) {
+    Expr *F = v.second->getBody();
+
+    iterate<dfs_pre>(F, [](Expr *, Expr **C) -> IterOp {
+      if ((*C)->getKind() != QIR_NODE_SEQ) {
+        return IterOp::Proceed;
+      }
+
+      ///==========================================================
+      /// Foreach scope in function:
+
+      SeqItems &SI = (*C)->as<Seq>()->getItems();
+
+      /// For each unconditional branch instruction call
+      /// destructors in reverse order
+      auto first_ubr = std::find_if(SI.begin(), SI.end(), [](Expr *E) {
+        qxir_ty_t ty = E->getKind();
+        return ty == QIR_NODE_RET || ty == QIR_NODE_CONT || ty == QIR_NODE_BRK;
+      });
+
+      for (size_t i = 0; i < SI.size(); ++i) {
+        Expr *E = SI[i];
+
+        if (E->getKind() == QIR_NODE_LOCAL) {
+          Local *L = E->as<Local>();
+          Fn *D = create<Ign>()->as<Fn>();
+
+          /// TODO: Get the destructor function
+
+          UnExpr *addr_of = create<UnExpr>(L, Op::BitAnd);
+          CallArgs args = CallArgs({addr_of});
+          Call *C = create<Call>(D, std::move(args));
+
+          SI.insert(first_ubr, C);
+        }
+      }
+
+      ///==========================================================
+
+      return IterOp::Proceed;
+    });
   }
 
-  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
-  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
-  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
-  RUN_PASS("ds-verify", impl::ds_verify);       /* Verify the module */
-  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
-  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
-  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
-  RUN_PASS("ds-clean", impl::ds_clean);         /* Cleanup IR */
-  RUN_PASS("raii", impl::raii);                 /* Insert destructors */
+  /// TODO: Implement support for RAII
 
   return true;
-}
-
-void qxir::transform::do_semantic_analysis(qmodule_t* M) {
-  for (const auto& [_, val] : diag::PassRegistry::the().get_passes()) {
-    val.second(M);
-
-    M->applyCheckLabel(val.first);
-  }
 }

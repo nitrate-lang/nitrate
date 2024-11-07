@@ -45,6 +45,7 @@ namespace qxir::transform::impl {
   DECLARE_QIR_PASS(nm_premangle);
   DECLARE_QIR_PASS(ds_verify);
   DECLARE_QIR_PASS(ds_clean);
+  DECLARE_QIR_PASS(raii);
 
 #undef DECLARE_QIR_PASS
 
