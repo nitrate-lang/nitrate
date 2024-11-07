@@ -43,7 +43,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <ios>
 #include <quix-lexer/Base.hh>
+#include <sstream>
 #include <utility>
 
 #include "LibMacro.h"
@@ -58,18 +60,12 @@ LIB_EXPORT qlex_t *qlex_direct(const char *src, size_t len, const char *filename
       filename = "<unknown>";
     }
 
-    FILE *file = fmemopen((void *)src, len, "rb");
-    if (!file) {
-      return nullptr;
-    }
+    auto ss = std::make_shared<std::istringstream>(std::string(src, len));
 
-    qlex_t *obj = qlex_new(file, filename, env);
+    qlex_t *obj = qlex_new(ss, filename, env);
     if (!obj) {
-      fclose(file);
       return nullptr;
     }
-
-    obj->m_is_owned = true;
 
     return obj;
   } catch (std::bad_alloc &) {
@@ -123,45 +119,38 @@ LIB_EXPORT qlex_size qlex_col(qlex_t *obj, qlex_loc_t loc) {
 
 LIB_EXPORT qlex_loc_t qlex_offset(qlex_t *obj, qlex_loc_t base, qlex_size offset) {
   try {
-    long curpos;
+    long curpos = 0;
     std::optional<qlex_size> seek_base_pos;
     uint8_t *buf = nullptr;
-    size_t bufsz;
+    std::streamsize bufsz = 0;
     qlex_loc_t res{.tag = 0};
 
     if (!(seek_base_pos = obj->loc2offset(base))) {
       return res;
     }
 
-    if ((curpos = ftell(obj->m_file)) == -1) {
+    if ((curpos = obj->m_file->tellg()) == -1) {
       return res;
     }
 
-    if (fseek(obj->m_file, *seek_base_pos + offset, SEEK_SET) != 0) {
-      return res;
-    }
+    obj->m_file->seekg(*seek_base_pos + offset, std::ios_base::beg);
 
     bufsz = offset;
 
     if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
-      if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
-        qcore_panic("qlex_offset: failed to restore file position");
-      }
+      obj->m_file->seekg(curpos, std::ios_base::beg);
       return res;
     }
 
-    if (fread(buf, 1, bufsz, obj->m_file) != bufsz) {
+    if (!obj->m_file->read((char *)buf, bufsz)) {
       free(buf);
-      if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
-        qcore_panic("qlex_offset: failed to restore file position");
-      }
+      obj->m_file->seekg(curpos, std::ios_base::beg);
+
       return res;
     }
 
     buf[bufsz] = '\0';
-    if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
-      qcore_panic("qlex_offset: failed to restore file position");
-    }
+    obj->m_file->seekg(curpos, std::ios_base::beg);
 
     //===== AUTOMATA TO CALCULATE THE NEW ROW AND COLUMN =====//
     uint32_t row, col;
@@ -176,7 +165,7 @@ LIB_EXPORT qlex_loc_t qlex_offset(qlex_t *obj, qlex_loc_t base, qlex_size offset
       return res;
     }
 
-    for (size_t i = 0; i < bufsz; i++) {
+    for (std::streamsize i = 0; i < bufsz; i++) {
       if (buf[i] == '\n') {
         row++;
         col = 1;
@@ -235,39 +224,31 @@ LIB_EXPORT qlex_size qlex_spanx(qlex_t *obj, qlex_loc_t start, qlex_loc_t end,
 
     qlex_size span = *endoff - *begoff;
 
-    long curpos;
+    long curpos = 0;
     uint8_t *buf = nullptr;
-    size_t bufsz;
+    std::streamsize bufsz = 0;
 
-    if ((curpos = ftell(obj->m_file)) == -1) {
+    if ((curpos = obj->m_file->tellg()) == -1) {
       return UINT32_MAX;
     }
 
-    if (fseek(obj->m_file, *begoff, SEEK_SET) != 0) {
-      return UINT32_MAX;
-    }
+    obj->m_file->seekg(*begoff, std::ios_base::beg);
 
     bufsz = span;
 
     if ((buf = (uint8_t *)malloc(bufsz + 1)) == nullptr) {
-      if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
-        qcore_panic("qlex_spanx: failed to restore file position");
-      }
+      obj->m_file->seekg(curpos, std::ios_base::beg);
       return UINT32_MAX;
     }
 
-    if (fread(buf, 1, bufsz, obj->m_file) != bufsz) {
+    if (!obj->m_file->read((char *)buf, bufsz)) {
       free(buf);
-      if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
-        qcore_panic("qlex_spanx: failed to restore file position");
-      }
+      obj->m_file->seekg(curpos, std::ios_base::beg);
       return UINT32_MAX;
     }
 
     buf[bufsz] = '\0';
-    if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
-      qcore_panic("qlex_spanx: failed to restore file position");
-    }
+    obj->m_file->seekg(curpos, std::ios_base::beg);
 
     callback((const char *)buf, bufsz, userdata);
 
@@ -332,22 +313,18 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
     }
 
     { /* Calculate offsets and seek to the correct position */
-      curpos = ftell(obj->m_file);
+      curpos = obj->m_file->tellg();
       if ((long)curpos == -1) {
         return nullptr;
       }
       seek_base_pos = tok_beg_offset < SNIPPET_SIZE / 2 ? 0 : tok_beg_offset - SNIPPET_SIZE / 2;
 
-      if (fseek(obj->m_file, seek_base_pos, SEEK_SET) != 0) {
-        if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
-          qcore_panic("qlex_snippet: failed to restore file position");
-        }
-        return nullptr;
-      }
+      obj->m_file->seekg(seek_base_pos, std::ios_base::beg);
     }
 
     { /* Read the snippet and calculate token offset */
-      read = fread(snippet_buf, 1, SNIPPET_SIZE, obj->m_file);
+      obj->m_file->read(snippet_buf, SNIPPET_SIZE);
+      read = obj->m_file->gcount();
       memset(snippet_buf + read, 0, SNIPPET_SIZE - read);
 
       if (tok_beg_offset < SNIPPET_SIZE / 2) {
@@ -380,16 +357,13 @@ LIB_EXPORT char *qlex_snippet(qlex_t *obj, qlex_tok_t tok, qlex_size *offset) {
         memcpy(output, snippet_buf + slice_start, slice_size);
         output[slice_size] = '\0';
         *offset -= slice_start;
-        if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
-          qcore_panic("qlex_snippet: failed to restore file position");
-        }
+        obj->m_file->seekg(curpos, std::ios_base::beg);
         return output;
       }
     }
 
-    if (fseek(obj->m_file, curpos, SEEK_SET) != 0) {
-      qcore_panic("qlex_snippet: failed to restore file position");
-    }
+    obj->m_file->seekg(curpos, std::ios_base::beg);
+
     return nullptr;
   } catch (std::bad_alloc &) {
     return nullptr;
@@ -533,7 +507,8 @@ class GetCExcept {};
 char qlex_t::getc() {
   /* Refill the buffer if necessary */
   if (m_getc_pos == GETC_BUFFER_SIZE) [[unlikely]] {
-    size_t read = fread(m_getc_buf.data(), 1, GETC_BUFFER_SIZE, m_file);
+    m_file->read(m_getc_buf.data(), GETC_BUFFER_SIZE);
+    size_t read = m_file->gcount();
 
     if (read == 0) [[unlikely]] {
       throw GetCExcept();

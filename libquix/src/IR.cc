@@ -37,7 +37,7 @@
 #include <SerialUtil.hh>
 #include <functional>
 #include <quix-core/Classes.hh>
-#include <quix-qxir/Classes.hh>
+#include <quix-ir/Classes.hh>
 #include <string_view>
 #include <unordered_set>
 
@@ -56,7 +56,8 @@ static bool impl_use_msgpack(qmodule_t *R, FILE *O) {
   return impl_use_json(R, O);
 }
 
-bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
+                      std::function<void(const char *)> diag_cb,
                       const std::unordered_set<std::string_view> &opts) {
   enum class OutMode {
     JSON,

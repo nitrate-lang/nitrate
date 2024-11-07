@@ -25,7 +25,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-prep/include
     ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+    ${CMAKE_SOURCE_DIR}/libquix-ir/include
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
   target_compile_options(qpkg PRIVATE
@@ -35,7 +35,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   )
   target_link_libraries(qpkg PUBLIC libboost_filesystem.a
     quix-codegen
-    quix-qxir
+    quix-ir
     quix-parser
     quix-lexer
     quix-prep
@@ -43,7 +43,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     yaml-cpp)
   target_link_options(qpkg PRIVATE -static-libgcc -static-libstdc++)
   add_dependencies(qpkg quix-codegen
-    quix-qxir
+    quix-ir
     quix-parser
     quix-lexer
     quix-prep
@@ -56,7 +56,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-prep/include
     ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+    ${CMAKE_SOURCE_DIR}/libquix-ir/include
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
   target_compile_options(qpkg-cmd PRIVATE
@@ -68,7 +68,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     -DQPKG_LIBRARY)
   target_link_libraries(qpkg-cmd PUBLIC libboost_filesystem.a
     quix-codegen
-    quix-qxir
+    quix-ir
     quix-parser
     quix-lexer
     quix-prep
@@ -77,7 +77,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
   target_link_options(qpkg-cmd PRIVATE
     -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   add_dependencies(qpkg-cmd quix-codegen
-    quix-qxir
+    quix-ir
     quix-parser
     quix-lexer
     quix-prep
@@ -91,7 +91,7 @@ else()
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-prep/include
     ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+    ${CMAKE_SOURCE_DIR}/libquix-ir/include
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
   target_compile_options(qpkg PRIVATE
@@ -100,7 +100,7 @@ else()
     "-DQPKG_ID=\"undefined\"")
   target_link_libraries(qpkg PUBLIC libboost_filesystem.a
     quix-codegen
-    quix-qxir
+    quix-ir
     quix-parser
     quix-lexer
     quix-prep
@@ -109,7 +109,7 @@ else()
   target_link_options(qpkg PRIVATE -static-libgcc
     -static-libstdc++)
   add_dependencies(qpkg quix-codegen
-    quix-qxir
+    quix-ir
     quix-parser
     quix-lexer
     quix-prep
@@ -122,7 +122,7 @@ else()
     ${CMAKE_SOURCE_DIR}/libquix-lexer/include
     ${CMAKE_SOURCE_DIR}/libquix-prep/include
     ${CMAKE_SOURCE_DIR}/libquix-parser/include
-    ${CMAKE_SOURCE_DIR}/libquix-qxir/include
+    ${CMAKE_SOURCE_DIR}/libquix-ir/include
     ${CMAKE_SOURCE_DIR}/libquix-codegen/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0/include)
   target_compile_options(qpkg-cmd PRIVATE -Wpedantic
@@ -133,7 +133,7 @@ else()
     -DQPKG_LIBRARY)
   target_link_libraries(qpkg-cmd PUBLIC libboost_filesystem.a
     quix-codegen
-    quix-qxir
+    quix-ir
     quix-parser
     quix-lexer
     quix-prep
@@ -142,7 +142,7 @@ else()
     yaml-cpp)
   target_link_options(qpkg-cmd PRIVATE -Wl,--version-script,${CMAKE_CURRENT_SOURCE_DIR}/symexport.map)
   add_dependencies(qpkg-cmd quix-codegen
-    quix-qxir
+    quix-ir
     quix-parser
     quix-lexer
     quix-prep

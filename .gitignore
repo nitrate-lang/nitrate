@@ -41,7 +41,7 @@ main.c
 libquix-lexer/fuzzer/corpus/*
 libquix-prep/fuzzer/corpus/*
 libquix-parser/fuzzer/corpus/*
-libquix-qxir/fuzzer/corpus/*
+libquix-ir/fuzzer/corpus/*
 libquix/fuzzer/the-corpus/
 fuzz-*.log
 *.snap

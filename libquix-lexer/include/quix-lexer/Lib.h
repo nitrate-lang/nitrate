@@ -32,13 +32,13 @@
 #ifndef __QUIX_LEXER_LIB_H__
 #define __QUIX_LEXER_LIB_H__
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <quix-lexer/Lexer.h>
 #include <quix-lexer/Token.h>
 #include <stdbool.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Initialize the library.

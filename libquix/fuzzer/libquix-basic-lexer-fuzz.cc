@@ -5,7 +5,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     return 0;
   }
 
-  FILE *fp = fmemopen((void *)Data, Size, "rb");
+  quix_stream_t *fp = quix_from(fmemopen((void *)Data, Size, "rb"), true);
   if (fp == NULL) {
     return 0;
   }
@@ -15,12 +15,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
   const char *options[] = {"lex", "-fuse-msgpack", NULL};
 
   if (!quix_cc(fp, out, quix_diag_stderr, 0, options)) {
-    fclose(fp);
+    quix_fclose(fp);
     fclose(out);
     return 0;
   }
 
-  fclose(fp);
+  quix_fclose(fp);
   fclose(out);
 
   return 0;

@@ -66,7 +66,7 @@
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Config.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/TypeDecl.h>
+#include <quix-ir/TypeDecl.h>
 #include <sys/types.h>
 
 #include <charconv>
@@ -74,8 +74,8 @@
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Module.hh>
+#include <quix-ir/IRGraph.hh>
+#include <quix-ir/Module.hh>
 #include <stack>
 #include <streambuf>
 #include <unordered_map>
@@ -476,7 +476,6 @@ static val_t QIR_NODE_CASE_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
 static val_t QIR_NODE_SWITCH_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Switch *N);
 static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Fn *N);
 static val_t QIR_NODE_ASM_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Asm *N);
-static val_t QIR_NODE_IGN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Ign *N);
 static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::U1Ty *N);
 static ty_t QIR_NODE_U8_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::U8Ty *N);
 static ty_t QIR_NODE_U16_TY_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::U16Ty *N);
@@ -620,7 +619,7 @@ auto V(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir::Expr *N) -> val_t {
     }
 
     case QIR_NODE_IGN: {
-      R = QIR_NODE_IGN_C(m, b, cf, s, N->as<qxir::Ign>());
+      R = nullptr;
       break;
     }
 
@@ -1686,8 +1685,9 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
    */
 
   if (N->getItems().empty()) {
-    debug("Empty list");
-    return std::nullopt;
+    llvm::StructType *ST = llvm::StructType::get(m.getContext(), {}, true);
+    llvm::AllocaInst *AI = b.CreateAlloca(ST);
+    return b.CreateLoad(ST, AI);
   }
 
   std::vector<llvm::Value *> items;
@@ -2553,18 +2553,6 @@ static val_t QIR_NODE_ASM_C(ctx_t &, craft_t &, const Mode &, State &, qxir::Asm
    */
 
   qcore_implement(__func__);
-}
-
-static val_t QIR_NODE_IGN_C(ctx_t &, craft_t &, const Mode &, State &, qxir::Ign *) {
-  /**
-   * @brief [Write explanation here]
-   *
-   * @note [Write expected behavior here]
-   *
-   * @note [Write assumptions here]
-   */
-
-  return nullptr;
 }
 
 static ty_t QIR_NODE_U1_TY_C(ctx_t &m, craft_t &, const Mode &, State &, qxir::U1Ty *) {
