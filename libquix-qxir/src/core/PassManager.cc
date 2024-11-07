@@ -29,25 +29,91 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-qxir/IRGraph.hh>
-#include <transform/passes/Decl.hh>
+#include <core/LibMacro.h>
+#include <quix-core/Error.h>
 
-/**
- * @brief Ensure that the module IR data structure is acyclic.
- *
- * @note If nodes are optimized via deduplication, this will break.
- *
- * @timecomplexity O(n)
- * @spacecomplexity O(n)
- */
+#include <core/PassManager.hh>
 
-using namespace qxir::diag;
+using namespace qxir::pass;
 
-bool qxir::transform::impl::ds_acyclic(qmodule_t *mod) {
-  if (!mod->getRoot()->is_acyclic()) {
-    diag::report(IssueCode::DSPolyCyclicRef, IssueClass::FatalError, "");
-    return false;
+CPP_EXPORT PassRegistry& PassRegistry::the() {
+  static PassRegistry instance;
+  return instance;
+}
+
+CPP_EXPORT void PassRegistry::addPass(const std::string& name, pass_func_t func) {
+  if (m_passes.contains(name)) {
+    qcore_panicf("Pass '%s' already registered to function @ %p", name.c_str(),
+                 m_passes[name].target<void>());
+  }
+
+  m_passes[name] = func;
+}
+
+CPP_EXPORT bool PassRegistry::hasPass(const std::string& name) const {
+  return m_passes.contains(name);
+}
+
+CPP_EXPORT ModulePass PassRegistry::get(const std::string& name) {
+  PassRegistry& inst = the();
+
+  auto it = inst.m_passes.find(name);
+  if (it == inst.m_passes.end()) {
+    qcore_panicf("Pass '%s' not registered", name.c_str());
+  }
+
+  return ModulePass(it->first, it->second);
+}
+
+///==============================================================================
+
+CPP_EXPORT bool PassGroup::run(qmodule_t* module,
+                               std::function<void(std::string_view)> on_success) {
+  for (const auto& pass : m_sequence) {
+    if (!pass.run(module)) {
+      return false;
+    }
+
+    if (on_success) {
+      on_success(pass.getName());
+    }
   }
 
   return true;
 }
+
+///==============================================================================
+
+PassGroupRegistry& PassGroupRegistry::the() {
+  static PassGroupRegistry instance;
+  return instance;
+}
+
+CPP_EXPORT void PassGroupRegistry::addGroup(const std::string& name,
+                                            std::initializer_list<std::string_view> passes) {
+  if (m_groups.contains(name)) {
+    qcore_panicf("Pass group '%s' already registered", name.c_str());
+  }
+
+  m_groups[name] = std::vector<ModulePass>();
+  for (const auto& pass : passes) {
+    m_groups[name].push_back(PassRegistry::get(std::string(pass)));
+  }
+}
+
+CPP_EXPORT bool PassGroupRegistry::hasGroup(const std::string& name) const {
+  return m_groups.contains(name);
+}
+
+CPP_EXPORT PassGroup PassGroupRegistry::get(const std::string& name) {
+  PassGroupRegistry& inst = the();
+
+  auto it = inst.m_groups.find(name);
+  if (it == inst.m_groups.end()) {
+    qcore_panicf("Pass group '%s' not registered", name.c_str());
+  }
+
+  return PassGroup(name, it->second);
+}
+
+///==============================================================================

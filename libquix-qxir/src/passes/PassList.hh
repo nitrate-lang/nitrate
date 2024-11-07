@@ -1,4 +1,4 @@
-#////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
 /// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
@@ -29,37 +29,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <diagnostic/List.hh>
-#include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Module.hh>
+#ifndef __QUIX_QXIR_PASSES_LIST_H__
+#define __QUIX_QXIR_PASSES_LIST_H__
 
-using namespace qxir::diag;
+struct qmodule_t;
 
-void qxir::checks::missing_return(qmodule_t* M) {
-  /**
-   * Check that functions that require a return statement actually have one.
-   * Declarations and non-applicable functions are ignored.
-   */
+namespace qxir::pass {
+#define SEMANTIC_PASS(name) bool name(qmodule_t *mod)
+#define TRANSFORM_PASS(name) bool name(qmodule_t *mod)
+#define OPTIMIZE_PASS(name) bool name(qmodule_t *mod)
 
-  for (auto& [key, val] : M->getFunctions()) {
-    FnTy* fnty = val.first;
-    Fn* fn = val.second;
+  TRANSFORM_PASS(ds_acyclic);
+  TRANSFORM_PASS(ds_nullchk);
+  TRANSFORM_PASS(ds_resolv);
+  TRANSFORM_PASS(ds_flatten);
+  TRANSFORM_PASS(ds_tyinfer);
+  TRANSFORM_PASS(ds_mangle);
+  TRANSFORM_PASS(ds_verify);
+  TRANSFORM_PASS(ds_clean);
+  TRANSFORM_PASS(ds_raii);
 
-    /* Skip the function declarations and all functions that have a void return type. */
-    if (fn->getBody()->getKind() == QIR_NODE_IGN ||
-        fnty->getReturn()->getKind() == QIR_NODE_VOID_TY) {
-      continue;
-    }
+  SEMANTIC_PASS(chk_missing_return);
+  SEMANTIC_PASS(chk_bad_cast);
 
-    /* If the function has a non-void return type, then we need to check if there is a return
-     * statement. */
-    Seq* body = fn->getBody()->as<Seq>();
-    bool any_ret = std::any_of(body->getItems().begin(), body->getItems().end(),
-                               [](auto item) { return item->getKind() == QIR_NODE_RET; });
+#undef OPTIMIZE_PASS
+#undef TRANSFORM_PASS
+#undef SEMANTIC_PASS
 
-    if (!any_ret) { /* If no return statement is found, this is an error. */
-      report(IssueCode::MissingReturn, IssueClass::Error, key, fn->locBeg(), fn->locEnd());
-      M->setFailbit(true);
-    }
-  }
-}
+}  // namespace qxir::pass
+
+#endif  // __QUIX_QXIR_PASSES_LIST_H__

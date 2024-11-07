@@ -1,4 +1,5 @@
-////////////////////////////////////////////////////////////////////////////////
+#include <unordered_map>
+#////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
 /// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
@@ -29,24 +30,88 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-qxir/IRGraph.hh>
-#include <transform/passes/Decl.hh>
+#ifndef __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#define __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 
-/**
- * @brief Do type inference on the module.
- */
+#include <functional>
+#include <ostream>
+#include <span>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
-using namespace qxir::diag;
+struct qmodule_t;
 
-bool qxir::transform::impl::tyinfer(qmodule_t* M) {
-  iterate<dfs_pre>(M->getRoot(), [&](Expr*, Expr** C) -> IterOp {
-    if (!(*C)->getType().has_value()) {
-      report(IssueCode::TypeInference, IssueClass::Error, (*C)->locBeg(), (*C)->locEnd());
-      M->setFailbit(true);
+namespace qxir::pass {
+  typedef std::function<bool(qmodule_t*)> pass_func_t;
+
+  class ModulePass {
+    std::string_view name;
+    pass_func_t func;
+
+  public:
+    ModulePass(std::string_view name, pass_func_t func) : name(name), func(func) {}
+
+    bool run(qmodule_t* module) const { return func(module); }
+
+    std::string_view getName() const { return name; }
+    pass_func_t getFunc() const { return func; }
+  };
+
+  class PassRegistry final {
+    std::unordered_map<std::string, pass_func_t> m_passes;
+
+    void link_builtin();
+    PassRegistry() { link_builtin(); }
+
+  public:
+    static PassRegistry& the();
+
+    void addPass(const std::string& name, pass_func_t func);
+    bool hasPass(const std::string& name) const;
+    static ModulePass get(const std::string& name);
+
+    auto begin() { return m_passes.cbegin(); }
+    auto end() { return m_passes.cend(); }
+  };
+
+  class PassGroup final {
+    std::string_view m_name;
+    std::span<const ModulePass> m_sequence;
+
+  public:
+    PassGroup() = default;
+    PassGroup(std::string_view name, std::span<ModulePass> passes)
+        : m_name(name), m_sequence(passes) {}
+
+    bool run(qmodule_t* module, std::function<void(std::string_view name)> on_success = nullptr);
+
+    std::string_view getName() const { return m_name; }
+
+    auto begin() const { return m_sequence.begin(); }
+    auto end() const { return m_sequence.end(); }
+  };
+
+  class PassGroupRegistry final {
+    std::unordered_map<std::string, std::vector<ModulePass>> m_groups;
+
+    void link_builtin();
+
+    PassGroupRegistry() {
+      PassRegistry::the();  // Ensure the pass registry is already initialized
+      link_builtin();
     }
 
-    return IterOp::Proceed;
-  });
+  public:
+    static PassGroupRegistry& the();
 
-  return true;
-}
+    void addGroup(const std::string& name, std::initializer_list<std::string_view> passes);
+    bool hasGroup(const std::string& name) const;
+    static PassGroup get(const std::string& name);
+
+    auto begin() { return m_groups.cbegin(); }
+    auto end() { return m_groups.cend(); }
+  };
+}  // namespace qxir::pass
+
+#endif  // __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__

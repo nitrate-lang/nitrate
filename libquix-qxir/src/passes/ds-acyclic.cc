@@ -29,71 +29,25 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-qxir/IR.h>
-
-#include <boost/bimap.hpp>
-#include <quix-qxir/Format.hh>
+#include <passes/PassList.hh>
 #include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Report.hh>
-#include <transform/passes/Decl.hh>
 
 /**
- * @brief Canonicalize the names of things in the module.
+ * @brief Ensure that the module IR data structure is acyclic.
+ *
+ * @note If nodes are optimized via deduplication, this will break.
  *
  * @timecomplexity O(n)
- * @spacecomplexity O(1)
+ * @spacecomplexity O(n)
  */
 
-using namespace qxir;
 using namespace qxir::diag;
 
-bool qxir::transform::impl::nm_premangle(qmodule_t *mod) {
-  SymbolEncoding se;
-  bool failed = false;
+bool qxir::pass::ds_acyclic(qmodule_t *mod) {
+  if (!mod->getRoot()->is_acyclic()) {
+    diag::report(IssueCode::DSPolyCyclicRef, IssueClass::FatalError, "");
+    return false;
+  }
 
-  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
-    if ((*cur)->getKind() == QIR_NODE_FN) {
-      Fn *fn = (*cur)->as<Fn>();
-      auto name = se.mangle_name(fn, fn->getAbiTag());
-      if (name) [[likely]] {
-        fn->setName(mod->internString(*name));
-      } else {
-        failed = true;
-        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, fn->getName(), fn->locBeg(),
-               fn->locEnd());
-      }
-    } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
-      Local *local = (*cur)->as<Local>();
-      auto name = se.mangle_name(local, local->getAbiTag());
-      if (name) [[likely]] {
-        qcore_assert(!name->empty());
-        local->setName(mod->internString(*name));
-      } else {
-        failed = true;
-        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(),
-               local->locBeg(), local->locEnd());
-      }
-    }
-
-    return IterOp::Proceed;
-  });
-
-  /* Update identifiers to use the new names */
-  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
-    if ((*cur)->getKind() != QIR_NODE_IDENT) {
-      return IterOp::Proceed;
-    }
-
-    Ident *ident = (*cur)->as<Ident>();
-    if (!ident->getWhat()) {
-      return IterOp::Proceed;
-    }
-
-    qcore_assert(!ident->getWhat()->getName().empty());
-    ident->setName(ident->getWhat()->getName());
-
-    return IterOp::Proceed;
-  });
-
-  return !failed;
+  return true;
 }

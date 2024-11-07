@@ -29,120 +29,34 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-qxir/IR.h>
-
-#include <atomic>
-#include <boost/bimap.hpp>
+#include <passes/PassList.hh>
 #include <quix-qxir/IRGraph.hh>
-#include <transform/passes/Decl.hh>
-#include <unordered_set>
+
+#include "quix-qxir/TypeDecl.h"
 
 /**
- * @brief Move nested linkable symbols to the top level.
+ * @brief Ensure that the module IR data structure does not have any Tmp nodes.
  *
  * @timecomplexity O(n)
- * @spacecomplexity O(n)
+ * @spacecomplexity O(1)
  */
 
-using namespace qxir;
+using namespace qxir::diag;
 
-static void flatten_externs(qmodule_t *mod) {
-  /**
-   * This one is simple. We don't manipulate any names, just move the extern
-   * nodes.
-   */
-  std::unordered_set<Expr **> externs;
+bool qxir::pass::ds_verify(qmodule_t *mod) {
+  size_t tmp_total = 0;
 
-  IterCallback cb = [&externs](Expr *, Expr **cur) -> IterOp {
-    if ((*cur)->getKind() == QIR_NODE_EXTERN) {
-      externs.insert(cur);
+  const auto cb = [&tmp_total](Expr *, Expr **_cur) -> IterOp {
+    if ((*_cur)->getKind() == QIR_NODE_TMP) [[unlikely]] {
+      Tmp *tmp = (*_cur)->as<Tmp>();
+      report(IssueCode::DSBadTmpNode, IssueClass::FatalError, tmp->locBeg(), tmp->locEnd());
+      tmp_total++;
     }
 
     return IterOp::Proceed;
   };
 
-  iterate<dfs_pre, IterMP::none>(mod->getRoot(), cb);
+  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
 
-  Seq *root = mod->getRoot()->as<Seq>();
-  std::unordered_set<Expr *> global_scope;
-  for (auto ele : root->getItems()) {
-    global_scope.insert(ele);
-  }
-
-  for (auto ele : externs) {
-    Expr *obj = *ele;
-
-    if (!global_scope.contains(obj)) {
-      *reinterpret_cast<Expr **>(ele) = createIgn();
-      root->addItem(obj);
-    }
-  }
-}
-
-static void flatten_functions_recurse(qmodule_t *mod, Expr *&base, std::string cur_scope,
-                                      std::unordered_set<Expr **> &functions) {
-  IterCallback cb = [mod, cur_scope, &functions](Expr *par, Expr **cur) -> IterOp {
-    if ((*cur)->getKind() != QIR_NODE_FN) {
-      return IterOp::Proceed;
-    }
-
-    bool is_extern = par ? par->getKind() == QIR_NODE_EXTERN : false;
-
-    static thread_local std::atomic<uint64_t> counter = 0;
-    std::string orig_name = std::string((*cur)->as<Fn>()->getName());
-    if (orig_name.empty()) {
-      orig_name = "$_" + std::to_string(counter++);
-    }
-
-    std::string new_scope = cur_scope.empty() ? orig_name : cur_scope + "::" + orig_name;
-
-    (*cur)->as<Fn>()->setName(mod->internString(new_scope));
-
-    if (!is_extern) { /* Handle name change */
-      functions.insert(cur);
-    }
-
-    Expr *body = (*cur)->as<Fn>()->getBody();
-    flatten_functions_recurse(mod, body, new_scope, functions);
-
-    return IterOp::SkipChildren;
-  };
-
-  iterate<dfs_pre, IterMP::none>(base, cb);
-}
-
-static void flatten_functions(qmodule_t *mod) {
-  std::unordered_set<Expr **> functions;
-
-  flatten_functions_recurse(mod, mod->getRoot(), "", functions);
-
-  /**
-   * Replace nested functions with identifier aliases
-   * only if they are not at the global scope.
-   */
-  Seq *root = mod->getRoot()->as<Seq>();
-  std::unordered_set<Expr *> global_scope;
-  for (auto ele : root->getItems()) {
-    global_scope.insert(ele);
-  }
-
-  for (auto ele : functions) {
-    Expr *obj = *ele;
-
-    if (!global_scope.contains(obj)) {
-      *reinterpret_cast<Expr **>(ele) = create<Ident>(obj->getName(), obj);
-      root->addItem(obj);
-    }
-  }
-}
-
-bool qxir::transform::impl::ds_flatten(qmodule_t *mod) {
-  /**
-   * This pass in infallible.
-   */
-
-  flatten_externs(mod);
-  flatten_functions(mod);
-
-  return true;
+  return tmp_total == 0;
 }

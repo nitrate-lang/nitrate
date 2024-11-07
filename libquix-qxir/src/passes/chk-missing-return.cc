@@ -1,4 +1,3 @@
-#include <unordered_map>
 #////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
@@ -30,34 +29,39 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
-#define __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+#include <passes/PassList.hh>
+#include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Module.hh>
 
-#include <functional>
-#include <string>
-#include <unordered_map>
+using namespace qxir::diag;
 
-struct qmodule_t;
+bool qxir::pass::chk_missing_return(qmodule_t* M) {
+  /**
+   * Check that functions that require a return statement actually have one.
+   * Declarations and non-applicable functions are ignored.
+   */
 
-namespace qxir::diag {
-  typedef std::function<void(qmodule_t*)> check_func_t;
+  for (auto& [key, val] : M->getFunctions()) {
+    FnTy* fnty = val.first;
+    Fn* fn = val.second;
 
-  class PassRegistry {
-    using flag_name = std::string;
-    using pass_name = std::string;
+    /* Skip the function declarations and all functions that have a void return type. */
+    if (fn->getBody()->getKind() == QIR_NODE_IGN ||
+        fnty->getReturn()->getKind() == QIR_NODE_VOID_TY) {
+      continue;
+    }
 
-    std::unordered_map<flag_name, std::pair<pass_name, check_func_t>> m_passes;
+    /* If the function has a non-void return type, then we need to check if there is a return
+     * statement. */
+    Seq* body = fn->getBody()->as<Seq>();
+    bool any_ret = std::any_of(body->getItems().begin(), body->getItems().end(),
+                               [](auto item) { return item->getKind() == QIR_NODE_RET; });
 
-    void link_builtin_checks();
-    PassRegistry() { link_builtin_checks(); }
+    if (!any_ret) { /* If no return statement is found, this is an error. */
+      report(IssueCode::MissingReturn, IssueClass::Error, key, fn->locBeg(), fn->locEnd());
+      M->setFailbit(true);
+    }
+  }
 
-  public:
-    static PassRegistry& the();
-
-    void register_check(const std::string& name, const std::string& flag, check_func_t func);
-
-    const auto& get_passes() const { return m_passes; }
-  };
-}  // namespace qxir::diag
-
-#endif  // __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
+  return true;
+}

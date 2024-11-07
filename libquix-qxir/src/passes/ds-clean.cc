@@ -29,10 +29,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <passes/PassList.hh>
 #include <quix-qxir/IRGraph.hh>
 #include <quix-qxir/Report.hh>
 #include <string>
-#include <transform/passes/Decl.hh>
 
 /**
  * @brief Cleanup the IR
@@ -355,7 +355,7 @@ static size_t garbage_collect_round(qmodule_t* M, size_t& iteration) {
   return node_count;
 }
 
-bool qxir::transform::impl::ds_clean(qmodule_t* M) {
+bool qxir::pass::ds_clean(qmodule_t* M) {
   /* Run garbage collection until there is no more removable garbage */
   NodeCount last_count = -1, cur_count = 0;
   size_t gc_iter = 0;

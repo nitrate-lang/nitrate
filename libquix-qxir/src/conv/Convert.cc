@@ -43,15 +43,14 @@
 #include <quix-qxir/IRGraph.hh>
 #include <quix-qxir/Module.hh>
 #include <quix-qxir/Report.hh>
-#include <sstream>
 #include <stack>
 #include <string>
 #include <string_view>
-#include <transform/Transform.hh>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "core/LibMacro.h"
+#include "core/PassManager.hh"
 
 using namespace qxir::diag;
 
@@ -174,14 +173,18 @@ LIB_EXPORT bool qxir_lower(qmodule_t *mod, qparse_node_t *base, bool diagnostics
       /* Perform the required transformations and checks
          if the first translation was successful */
       if (success) {
-        std::stringstream ss;
-
         /* Perform the required transformations */
-        success = qxir::transform::std_transform(mod, ss);
+        success = qxir::pass::PassGroupRegistry::get("ds").run(mod, [&](std::string_view name) {
+          /* Track the pass name */
+          mod->applyPassLabel(std::string(name));
+        });
         if (success) {
-          qxir::transform::do_semantic_analysis(mod);
+          success = qxir::pass::PassGroupRegistry::get("chk").run(mod, [&](std::string_view name) {
+            /* Track the analysis pass name */
+            mod->applyCheckLabel(std::string(name));
+          });
         } else {
-          report(IssueCode::CompilerError, IssueClass::Debug, ss.str());
+          report(IssueCode::CompilerError, IssueClass::Debug, "");
         }
 
         success = success && !mod->getFailbit();
