@@ -39,11 +39,13 @@
 #include <quix-core/Error.h>
 #include <quix-lexer/Lexer.h>
 
+#include <istream>
+
 class qlex final {
   qlex_t *m_lex;
 
 public:
-  qlex(FILE *fp, const char *filename, qcore_env_t env) {
+  qlex(std::shared_ptr<std::istream> fp, const char *filename, qcore_env_t env) {
     if ((m_lex = qlex_new(fp, filename, env)) == nullptr) {
       qcore_panic("qlex_new failed");
     }

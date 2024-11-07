@@ -114,8 +114,7 @@ public:
   qlex_flags_t m_flags;
 
   const char *m_filename;
-  FILE *m_file;
-  bool m_is_owned;
+  std::shared_ptr<std::istream> m_file;
 
   ///============================================================================///
 
@@ -141,7 +140,7 @@ public:
 
   ///============================================================================///
 
-  qlex_t(FILE *file, const char *filename, bool is_owned, qcore_env_t env)
+  qlex_t(std::shared_ptr<std::istream> file, const char *filename, qcore_env_t env)
       : m_getc_pos(GETC_BUFFER_SIZE),
         m_tok_buf_pos(0),
         m_next_tok({}),
@@ -156,19 +155,14 @@ public:
         m_env(env),
         m_flags(0),
         m_filename(filename),
-        m_file(file),
-        m_is_owned(is_owned) {
+        m_file(file) {
     if (!m_filename) {
       m_filename = "<unknown>";
     }
 
     m_next_tok.ty = qErro;
   }
-  virtual ~qlex_t() {
-    if (m_is_owned) {
-      fclose(m_file);
-    }
-  }
+  virtual ~qlex_t() {}
 };
 
 #endif  // __QUIX_LEXER_BASE_H__

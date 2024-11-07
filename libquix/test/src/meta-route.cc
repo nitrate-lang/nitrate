@@ -98,14 +98,15 @@ static const uint8_t expected_msgpack[] = {
     0x00, 0x00, 0x00, 0x00};
 
 TEST(MetaRoute, flag_use_json) {
-  FILE* source = fmemopen((void*)source_code.data(), source_code.size(), "rb");
+  quix_stream_t* source =
+      quix_from(fmemopen((void*)source_code.data(), source_code.size(), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    fclose(source);
+    quix_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -116,7 +117,7 @@ TEST(MetaRoute, flag_use_json) {
   };
 
   if (!quix_cc(source, output, nullptr, 0, options)) {
-    fclose(source);
+    quix_fclose(source);
     fclose(output);
     free(output_buf);
     quix_deinit();
@@ -124,7 +125,7 @@ TEST(MetaRoute, flag_use_json) {
     FAIL() << "Failed to run quix_cc.";
   }
 
-  fclose(source);
+  quix_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);
@@ -136,14 +137,15 @@ TEST(MetaRoute, flag_use_json) {
 }
 
 TEST(MetaRoute, flag_use_msgpack) {
-  FILE* source = fmemopen((void*)source_code.data(), source_code.size(), "rb");
+  quix_stream_t* source =
+      quix_from(fmemopen((void*)source_code.data(), source_code.size(), "rb"), true);
   ASSERT_NE(source, nullptr);
 
   char* output_buf = nullptr;
   size_t output_size = 0;
   FILE* output = open_memstream(&output_buf, &output_size);
   if (output == nullptr) {
-    fclose(source);
+    quix_fclose(source);
     FAIL() << "Failed to open memory stream.";
   }
 
@@ -154,7 +156,7 @@ TEST(MetaRoute, flag_use_msgpack) {
   };
 
   if (!quix_cc(source, output, nullptr, 0, options)) {
-    fclose(source);
+    quix_fclose(source);
     fclose(output);
     free(output_buf);
     quix_deinit();
@@ -162,7 +164,7 @@ TEST(MetaRoute, flag_use_msgpack) {
     FAIL() << "Failed to run quix_cc.";
   }
 
-  fclose(source);
+  quix_fclose(source);
   fclose(output);
 
   std::string_view output_code(output_buf, output_size);

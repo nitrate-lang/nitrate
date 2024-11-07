@@ -32,3 +32,5 @@
 .build/debug/_deps/googletest-src/googletest/include
 -D__QUIX_IMPL__
 -DLLVM_SUUPORT_ALL_TARGETS
+-Wno-error=missing-field-initializers
+-Wno-missing-field-initializers

@@ -82,18 +82,18 @@ std::string create_json_string(std::string_view input) {
   return output;
 }
 
-bool read_json_string(FILE *I, char **str, size_t &len) {
+bool read_json_string(std::istream &I, char **str, size_t &len) {
   size_t cap = 0;
   *str = nullptr;
   len = 0;
 
   int ch;
 
-  if ((ch = fgetc(I)) != '"') {
+  if ((ch = I.get()) != '"') {
     return false;
   }
 
-  while ((ch = fgetc(I)) != EOF) {
+  while ((ch = I.get()) != EOF) {
     if (ch == '"') {
       *str = (char *)realloc(*str, len + 1);
       if (!*str) {
@@ -103,7 +103,7 @@ bool read_json_string(FILE *I, char **str, size_t &len) {
       (*str)[len] = '\0';
       return true;
     } else if (ch == '\\') {
-      ch = fgetc(I);
+      ch = I.get();
       if (ch == EOF) {
         return false;
       }
@@ -130,7 +130,7 @@ bool read_json_string(FILE *I, char **str, size_t &len) {
         case 'x': {
           int hex = 0;
           for (int i = 0; i < 2; i++) {
-            ch = fgetc(I);
+            ch = I.get();
             if (ch == EOF) {
               return false;
             }
@@ -173,9 +173,9 @@ bool read_json_string(FILE *I, char **str, size_t &len) {
     return false;               \
   }
 
-#define FGETC(__I)                            \
-  if ((ch = fgetc(__I)) == ((uint32_t)EOF)) { \
-    return false;                             \
+#define FGETC(__I)                           \
+  if ((ch = __I.get()) == ((uint32_t)EOF)) { \
+    return false;                            \
   }
 
 bool msgpack_write_uint(FILE *O, uint64_t x) {
@@ -209,7 +209,7 @@ bool msgpack_write_uint(FILE *O, uint64_t x) {
   return true;
 }
 
-bool msgpack_read_uint(FILE *I, uint64_t &x) {
+bool msgpack_read_uint(std::istream &I, uint64_t &x) {
   x = 0;
 
   uint32_t ch;
@@ -287,7 +287,7 @@ bool msgpack_write_str(FILE *O, std::string_view str) {
   return true;
 }
 
-bool msgpack_read_str(FILE *I, char **str, size_t &len) {
+bool msgpack_read_str(std::istream &I, char **str, size_t &len) {
   len = 0;
 
   uint32_t ch;
@@ -322,7 +322,7 @@ bool msgpack_read_str(FILE *I, char **str, size_t &len) {
     return false;
   }
 
-  if (fread(*str, 1, len, I) != len) {
+  if (!I.read(*str, len)) {
     qcore_panic("msgpack_read_str: fread failed");
     free(*str);
     return false;

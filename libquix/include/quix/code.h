@@ -32,13 +32,21 @@
 #ifndef __LIBQUIX_CODE_H__
 #define __LIBQUIX_CODE_H__
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <stdio.h>
+typedef struct quix_stream_t quix_stream_t;
+
+void quix_fclose(quix_stream_t *);
+quix_stream_t *quix_from(FILE *, bool auto_close);
+quix_stream_t *quix_join(size_t num, /* ... FILE* */...);
+quix_stream_t *quix_joinv(size_t num, /* ... FILE* */ va_list va);
+quix_stream_t *quix_njoin(size_t num, FILE **streams);
 
 typedef void (*quix_diag_cb)(const char *message, const char *by, uint64_t userdata);
 
@@ -53,8 +61,7 @@ typedef void (*quix_diag_cb)(const char *message, const char *by, uint64_t userd
  *
  * @return `true` if the transformation was successful, `false` otherwise.
  *
- * @note The `source` can not be the same pipe as the `output`. This exclusion is not checking
- * internally.
+ * @note The `source` can not be the same pipe as the `output`.
  * @note The `diag_cb` function is optional. If provided, it will be called to report diagnostics.
  * The `userdata` parameter will be passed to the callback function on each invocation. `userdata`
  * can be used to create closures. `userdata` can be any value, it is not checked internally.
@@ -82,7 +89,7 @@ typedef void (*quix_diag_cb)(const char *message, const char *by, uint64_t userd
  * for an otherwise valid call. This is not a bug, but a feature to maximize the efficiency of the
  * system.
  */
-bool quix_cc(FILE *source, FILE *output, quix_diag_cb diag_cb, uint64_t userdata,
+bool quix_cc(quix_stream_t *source, FILE *output, quix_diag_cb diag_cb, uint64_t userdata,
              const char *const options[]);
 
 /**
