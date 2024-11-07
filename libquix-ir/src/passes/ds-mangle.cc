@@ -29,13 +29,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-qxir/IR.h>
+#include <quix-ir/IR.h>
 
 #include <boost/bimap.hpp>
 #include <passes/PassList.hh>
-#include <quix-qxir/Format.hh>
-#include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Report.hh>
+#include <quix-ir/Format.hh>
+#include <quix-ir/IRGraph.hh>
+#include <quix-ir/Report.hh>
 
 /**
  * @brief Canonicalize the names of things in the module.

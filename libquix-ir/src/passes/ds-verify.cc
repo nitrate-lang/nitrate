@@ -30,9 +30,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <passes/PassList.hh>
-#include <quix-qxir/IRGraph.hh>
+#include <quix-ir/IRGraph.hh>
 
-#include "quix-qxir/TypeDecl.h"
+#include "quix-ir/TypeDecl.h"
 
 /**
  * @brief Ensure that the module IR data structure does not have any Tmp nodes.

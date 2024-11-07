@@ -37,7 +37,7 @@
 #include <SerialUtil.hh>
 #include <functional>
 #include <quix-core/Classes.hh>
-#include <quix-qxir/Classes.hh>
+#include <quix-ir/Classes.hh>
 #include <string_view>
 #include <unordered_set>
 

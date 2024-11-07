@@ -40,9 +40,9 @@ target_link_libraries(quix PUBLIC quix-core
   quix-lexer
   quix-prep
   quix-parser
-  quix-qxir
+  quix-ir
   quix-codegen)
-add_dependencies(quix quix-core quix-lexer quix-prep quix-parser quix-qxir quix-codegen)
+add_dependencies(quix quix-core quix-lexer quix-prep quix-parser quix-ir quix-codegen)
 set_target_properties(quix PROPERTIES OUTPUT_NAME quix)
 
 if(BUILD_TESTING)

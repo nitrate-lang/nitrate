@@ -29,12 +29,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-qxir/IR.h>
+#include <quix-ir/IR.h>
 
 #include <atomic>
 #include <boost/bimap.hpp>
 #include <passes/PassList.hh>
-#include <quix-qxir/IRGraph.hh>
+#include <quix-ir/IRGraph.hh>
 #include <unordered_set>
 
 /**

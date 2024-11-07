@@ -30,19 +30,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <quix-core/Error.h>
+#include <quix-ir/IR.h>
 #include <quix-parser/Parser.h>
-#include <quix-qxir/IR.h>
 #include <setjmp.h>
 #include <signal.h>
 
 #include <atomic>
 #include <core/Config.hh>
 #include <cstring>
-#include <quix-qxir/Classes.hh>
-#include <quix-qxir/Format.hh>
-#include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Module.hh>
-#include <quix-qxir/Report.hh>
+#include <quix-ir/Classes.hh>
+#include <quix-ir/Format.hh>
+#include <quix-ir/IRGraph.hh>
+#include <quix-ir/Module.hh>
+#include <quix-ir/Report.hh>
 #include <stack>
 #include <string>
 #include <string_view>

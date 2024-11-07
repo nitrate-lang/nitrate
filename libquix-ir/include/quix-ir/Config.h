@@ -32,7 +32,7 @@
 #ifndef __QUIX_QXIR_CONFIG_H__
 #define __QUIX_QXIR_CONFIG_H__
 
-#include <quix-qxir/TypeDecl.h>
+#include <quix-ir/TypeDecl.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>

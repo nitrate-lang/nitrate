@@ -9,5 +9,5 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 add_executable(libquix-ir-fuzzer ${SOURCE})
 target_include_directories(libquix-ir-fuzzer PUBLIC ../include ${CMAKE_SOURCE_DIR}/libquix-core/include)
-target_link_libraries(libquix-ir-fuzzer PUBLIC quix-qxir quix-lexer quix-prep quix-core)
-add_dependencies(libquix-ir-fuzzer quix-qxir quix-lexer quix-prep quix-core)
+target_link_libraries(libquix-ir-fuzzer PUBLIC quix-ir quix-lexer quix-prep quix-core)
+add_dependencies(libquix-ir-fuzzer quix-ir quix-lexer quix-prep quix-core)

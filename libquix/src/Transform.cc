@@ -33,10 +33,10 @@
 
 #include <quix-codegen/Lib.h>
 #include <quix-core/Lib.h>
+#include <quix-ir/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-prep/Lib.h>
-#include <quix-qxir/Lib.h>
 #include <quix/code.h>
 
 #include <cerrno>

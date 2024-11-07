@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <passes/PassList.hh>
-#include <quix-qxir/IRGraph.hh>
+#include <quix-ir/IRGraph.hh>
 
 /**
  * @brief Do type inference on the module.

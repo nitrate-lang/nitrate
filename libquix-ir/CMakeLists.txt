@@ -26,18 +26,18 @@ endif()
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
-add_library(quix-qxir ${CXX_SOURCES})
-target_include_directories(quix-qxir PUBLIC src "include"
+add_library(quix-ir ${CXX_SOURCES})
+target_include_directories(quix-ir PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-parser/include)
-target_link_libraries(quix-qxir PUBLIC quix-core quix-parser deflate crypto)
-add_dependencies(quix-qxir quix-core quix-parser)
+target_link_libraries(quix-ir PUBLIC quix-core quix-parser deflate crypto)
+add_dependencies(quix-ir quix-core quix-parser)
 
 if(BUILD_TESTING)
   add_subdirectory(tests)
   add_subdirectory(fuzzer)
 endif()
 
-install(TARGETS quix-qxir DESTINATION lib)
+install(TARGETS quix-ir DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

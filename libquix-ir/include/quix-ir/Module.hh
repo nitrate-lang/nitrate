@@ -33,15 +33,15 @@
 #define __QUIX_QXIR_MODULE_H__
 
 #include <quix-core/Memory.h>
+#include <quix-ir/TypeDecl.h>
 #include <quix-lexer/Lexer.h>
-#include <quix-qxir/TypeDecl.h>
 
 #include <boost/bimap.hpp>
 #include <cstdint>
 #include <limits>
 #include <memory>
 #include <quix-core/Classes.hh>
-#include <quix-qxir/Report.hh>
+#include <quix-ir/Report.hh>
 #include <string>
 #include <unordered_set>
 #include <vector>

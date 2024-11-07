@@ -33,20 +33,20 @@
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Lib.h>
 #include <quix-core/Lib.h>
+#include <quix-ir/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-prep/Lib.h>
-#include <quix-qxir/Lib.h>
 
 #include <clean/Cleanup.hh>
 #include <core/Config.hh>
 #include <core/Logger.hh>
 #include <quix-codegen/Classes.hh>
 #include <quix-core/Classes.hh>
+#include <quix-ir/Classes.hh>
+#include <quix-ir/Format.hh>
 #include <quix-parser/Classes.hh>
 #include <quix-prep/Classes.hh>
-#include <quix-qxir/Classes.hh>
-#include <quix-qxir/Format.hh>
 #include <unordered_map>
 
 #if QPKG_DEV_TOOLS

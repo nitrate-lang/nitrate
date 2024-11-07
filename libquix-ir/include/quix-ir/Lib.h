@@ -32,12 +32,12 @@
 #ifndef __QUIX_QXIR_LIB_H__
 #define __QUIX_QXIR_LIB_H__
 
-#include <quix-qxir/Config.h>
-#include <quix-qxir/IR.h>
+#include <quix-ir/Config.h>
+#include <quix-ir/IR.h>
 
 #ifdef __cplusplus
-#include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Module.hh>
+#include <quix-ir/IRGraph.hh>
+#include <quix-ir/Module.hh>
 #endif
 
 #include <stdbool.h>

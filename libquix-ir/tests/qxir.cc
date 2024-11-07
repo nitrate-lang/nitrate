@@ -1,9 +1,9 @@
 
 #include <errno.h>
+#include <quix-ir/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-prep/Lib.h>
-#include <quix-qxir/Lib.h>
 #include <stdio.h>
 #include <string.h>
 

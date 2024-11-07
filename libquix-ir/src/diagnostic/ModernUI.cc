@@ -38,9 +38,9 @@
 #include <core/Config.hh>
 #include <cstdint>
 #include <iomanip>
-#include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Module.hh>
-#include <quix-qxir/Report.hh>
+#include <quix-ir/IRGraph.hh>
+#include <quix-ir/Module.hh>
+#include <quix-ir/Report.hh>
 #include <sstream>
 
 using namespace qxir::diag;

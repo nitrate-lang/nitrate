@@ -30,8 +30,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <passes/PassList.hh>
-#include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Report.hh>
+#include <quix-ir/IRGraph.hh>
+#include <quix-ir/Report.hh>
 #include <string>
 
 /**

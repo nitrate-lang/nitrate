@@ -66,7 +66,7 @@
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Config.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/TypeDecl.h>
+#include <quix-ir/TypeDecl.h>
 #include <sys/types.h>
 
 #include <charconv>
@@ -74,8 +74,8 @@
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Module.hh>
+#include <quix-ir/IRGraph.hh>
+#include <quix-ir/Module.hh>
 #include <stack>
 #include <streambuf>
 #include <unordered_map>

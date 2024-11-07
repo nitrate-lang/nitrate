@@ -30,13 +30,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/LibMacro.h>
-#include <quix-qxir/IR.h>
+#include <quix-ir/IR.h>
 
 #include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <cstddef>
 #include <cstdint>
-#include <quix-qxir/IRGraph.hh>
+#include <quix-ir/IRGraph.hh>
 
 using namespace qxir;
 

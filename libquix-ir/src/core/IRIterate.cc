@@ -45,7 +45,7 @@
 #include <future>
 #include <list>
 #include <queue>
-#include <quix-qxir/IRGraph.hh>
+#include <quix-ir/IRGraph.hh>
 #include <stack>
 
 namespace qxir::detail {
