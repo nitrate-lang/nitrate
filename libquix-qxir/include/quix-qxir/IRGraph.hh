@@ -189,7 +189,7 @@ namespace qxir {
         return QIR_NODE_FN;
       } else if constexpr (std::is_same_v<T, Asm>) {
         return QIR_NODE_ASM;
-      } else if constexpr (std::is_same_v<T, Ign>) {
+      } else if constexpr (std::is_same_v<T, Expr>) {
         return QIR_NODE_IGN;
       } else if constexpr (std::is_same_v<T, U1Ty>) {
         return QIR_NODE_U1_TY;
@@ -363,7 +363,7 @@ namespace qxir {
           break;
         }
         case QIR_NODE_IGN: {
-          if constexpr (!std::is_same_v<T, Ign>) goto cast_panic;
+          if constexpr (!std::is_same_v<T, Expr>) goto cast_panic;
           break;
         }
         case QIR_NODE_U1_TY: {
@@ -1327,13 +1327,6 @@ namespace qxir {
     Asm() : Expr(QIR_NODE_ASM) { qcore_implement(__func__); }
   };
 
-  class Ign final : public Expr {
-    QCLASS_REFLECT()
-
-  public:
-    Ign() : Expr(QIR_NODE_IGN) {}
-  };
-
   ///=============================================================================
   /// END: EXPRESSIONS
   ///=============================================================================
@@ -1390,6 +1383,8 @@ namespace qxir {
     current->getKeyMap().emplace((uint64_t)ty, reinterpret_cast<uintptr_t>(ptr));
   };
 
+  Expr *createIgn();
+
   template <typename T, typename... Args>
   constexpr static T *create(Args &&...args) {
     /**
@@ -1407,6 +1402,7 @@ namespace qxir {
 #define REUSE_ALLOCATION()                                             \
   if ((ptr = (T *)already_alloc(ty)) == nullptr) [[unlikely]] {        \
     ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
+    ptr->setModuleDangerous(current);                                  \
     alloc_memorize(ty, (void *)ptr);                                   \
   }
 
@@ -1425,6 +1421,7 @@ namespace qxir {
       case QIR_NODE_LOCAL:
       case QIR_NODE_RET:
         ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+        ptr->setModuleDangerous(current);
         break;
       case QIR_NODE_BRK:
       case QIR_NODE_CONT:
@@ -1439,6 +1436,7 @@ namespace qxir {
       case QIR_NODE_FN:
       case QIR_NODE_ASM:
         ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+        ptr->setModuleDangerous(current);
         break;
       case QIR_NODE_IGN:
       case QIR_NODE_U1_TY:
@@ -1467,12 +1465,11 @@ namespace qxir {
       case QIR_NODE_FN_TY:
       case QIR_NODE_TMP:
         ptr = new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...);
+        ptr->setModuleDangerous(current);
         break;
     }
 
 #undef REUSE_ALLOCATION
-
-    ptr->setModuleDangerous(current);
 
     return ptr;
   }

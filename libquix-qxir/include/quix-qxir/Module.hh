@@ -130,7 +130,6 @@ namespace qxir {
   class Switch;
   class Fn;
   class Asm;
-  class Ign;
   class Tmp;
 }  // namespace qxir
 

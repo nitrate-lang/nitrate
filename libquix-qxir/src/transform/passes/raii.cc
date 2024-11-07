@@ -68,7 +68,7 @@ bool qxir::transform::impl::raii(qmodule_t *M) {
 
         if (E->getKind() == QIR_NODE_LOCAL) {
           Local *L = E->as<Local>();
-          Fn *D = create<Ign>()->as<Fn>();
+          Fn *D = createIgn()->as<Fn>();
 
           /// TODO: Get the destructor function
 

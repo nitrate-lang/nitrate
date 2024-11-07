@@ -89,7 +89,7 @@ CPP_EXPORT uint32_t Expr::getKindSize(qxir_ty_t type) noexcept {
       {QIR_NODE_SWITCH, sizeof(Switch)},
       {QIR_NODE_FN, sizeof(Fn)},
       {QIR_NODE_ASM, sizeof(Asm)},
-      {QIR_NODE_IGN, sizeof(Ign)},
+      {QIR_NODE_IGN, sizeof(Expr)},
       {QIR_NODE_U1_TY, sizeof(U1Ty)},
       {QIR_NODE_U8_TY, sizeof(U8Ty)},
       {QIR_NODE_U16_TY, sizeof(U16Ty)},
@@ -171,7 +171,7 @@ CPP_EXPORT const char *Expr::getKindName(qxir_ty_t type) noexcept {
       {QIR_NODE_TMP, "tmp"},
   };
 
-  qcore_assert(names.size() == QIR_NODE_COUNT, "Polymorphic type size lookup table is incomplete");
+  qcore_assert(names.size() == QIR_NODE_COUNT, "Polymorphic type name lookup table is incomplete");
 
   return names.at(type);
 }
@@ -1269,4 +1269,16 @@ CPP_EXPORT bool Type::is_ptr_to(const Type *type) const {
   }
 
   return false;
+}
+
+Expr *qxir::createIgn() {
+  Expr *ptr = nullptr;
+
+  if ((ptr = (Expr *)already_alloc(QIR_NODE_IGN)) == nullptr) [[unlikely]] {
+    ptr = new (Arena<Expr>().allocate(1)) Expr(QIR_NODE_IGN);
+    ptr->setModuleDangerous(current);
+    alloc_memorize(QIR_NODE_IGN, (void *)ptr);
+  }
+
+  return ptr;
 }
