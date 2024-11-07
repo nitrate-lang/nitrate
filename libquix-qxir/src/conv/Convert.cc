@@ -985,6 +985,8 @@ namespace qxir {
      */
 
     if (s.inside_function) {
+      qcore_assert(!s.local_scope.empty());
+
       auto find = s.local_scope.top().find(n->get_name());
       if (find != s.local_scope.top().end()) {
         return create<Ident>(memorize(n->get_name()), find->second);
@@ -1467,7 +1469,12 @@ namespace qxir {
     Params params;
     qparse::FuncTy *fty = n->get_type();
 
-    auto name = s.cur_named(n->get_name());
+    std::string name;
+    if (s.abi_mode == AbiTag::C) {
+      name = n->get_name();
+    } else {
+      name = s.cur_named(n->get_name());
+    }
     auto str = memorize(std::string_view(name));
 
     current->getParameterMap()[str] = {};
@@ -1565,7 +1572,7 @@ namespace qxir {
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1582,7 +1589,7 @@ namespace qxir {
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1636,7 +1643,7 @@ namespace qxir {
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1653,7 +1660,7 @@ namespace qxir {
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1725,7 +1732,7 @@ namespace qxir {
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1742,7 +1749,7 @@ namespace qxir {
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1796,7 +1803,7 @@ namespace qxir {
     for (auto it = n->get_methods().begin(); it != n->get_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -1813,7 +1820,7 @@ namespace qxir {
     for (auto it = n->get_static_methods().begin(); it != n->get_static_methods().end(); ++it) {
       qparse::FnDecl *cur_meth = *it;
       auto old_name = cur_meth->get_name();
-      cur_meth->set_name(ns_join(name, old_name));
+      cur_meth->set_name(ns_join(n->get_name(), old_name));
 
       auto method = qconv_one(s, *it);
 
@@ -2159,6 +2166,7 @@ namespace qxir {
       Local *local = create<Local>(name, init, s.abi_mode);
       local->setMutable(false);
 
+      qcore_assert(!s.local_scope.empty());
       if (s.local_scope.top().contains(name)) {
         report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
                n->get_start_pos(), n->get_end_pos());
@@ -2204,6 +2212,7 @@ namespace qxir {
       std::string_view name = memorize(n->get_name());
       Local *local = create<Local>(name, init, s.abi_mode);
 
+      qcore_assert(!s.local_scope.empty());
       if (s.local_scope.top().contains(name)) {
         report(IssueCode::VariableRedefinition, IssueClass::Error, n->get_name(),
                n->get_start_pos(), n->get_end_pos());

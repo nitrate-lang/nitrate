@@ -30,39 +30,39 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/LibMacro.h>
+#include <llvm-14/llvm/ExecutionEngine/ExecutionEngine.h>
+#include <llvm-14/llvm/ExecutionEngine/MCJIT.h>
+#include <llvm-14/llvm/ExecutionEngine/SectionMemoryManager.h>
 #include <llvm-14/llvm/IR/BasicBlock.h>
 #include <llvm-14/llvm/IR/Constant.h>
+#include <llvm-14/llvm/IR/DataLayout.h>
 #include <llvm-14/llvm/IR/DerivedTypes.h>
 #include <llvm-14/llvm/IR/Function.h>
 #include <llvm-14/llvm/IR/GlobalValue.h>
 #include <llvm-14/llvm/IR/GlobalVariable.h>
+#include <llvm-14/llvm/IR/IRBuilder.h>
 #include <llvm-14/llvm/IR/Instructions.h>
+#include <llvm-14/llvm/IR/LLVMContext.h>
+#include <llvm-14/llvm/IR/LegacyPassManager.h>
+#include <llvm-14/llvm/IR/PassManager.h>
 #include <llvm-14/llvm/IR/Type.h>
 #include <llvm-14/llvm/IR/Value.h>
-#include <llvm/ExecutionEngine/ExecutionEngine.h>
-#include <llvm/ExecutionEngine/MCJIT.h>
-#include <llvm/ExecutionEngine/SectionMemoryManager.h>
-#include <llvm/IR/DataLayout.h>
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/LLVMContext.h>
-#include <llvm/IR/LegacyPassManager.h>
-#include <llvm/IR/PassManager.h>
-#include <llvm/IR/Verifier.h>
-#include <llvm/InitializePasses.h>
-#include <llvm/MC/TargetRegistry.h>
-#include <llvm/Passes/PassBuilder.h>
-#include <llvm/Support/CodeGen.h>
-#include <llvm/Support/Host.h>
-#include <llvm/Support/ManagedStatic.h>
-#include <llvm/Support/MemoryBuffer.h>
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/Support/raw_os_ostream.h>
-#include <llvm/Support/raw_ostream.h>
-#include <llvm/Target/TargetMachine.h>
-#include <llvm/Target/TargetOptions.h>
-#include <llvm/Transforms/IPO.h>
-#include <llvm/Transforms/IPO/PassManagerBuilder.h>
-#include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm-14/llvm/IR/Verifier.h>
+#include <llvm-14/llvm/InitializePasses.h>
+#include <llvm-14/llvm/MC/TargetRegistry.h>
+#include <llvm-14/llvm/Passes/PassBuilder.h>
+#include <llvm-14/llvm/Support/CodeGen.h>
+#include <llvm-14/llvm/Support/Host.h>
+#include <llvm-14/llvm/Support/ManagedStatic.h>
+#include <llvm-14/llvm/Support/MemoryBuffer.h>
+#include <llvm-14/llvm/Support/TargetSelect.h>
+#include <llvm-14/llvm/Support/raw_os_ostream.h>
+#include <llvm-14/llvm/Support/raw_ostream.h>
+#include <llvm-14/llvm/Target/TargetMachine.h>
+#include <llvm-14/llvm/Target/TargetOptions.h>
+#include <llvm-14/llvm/Transforms/IPO.h>
+#include <llvm-14/llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm-14/llvm/Transforms/InstCombine/InstCombine.h>
 #include <quix-codegen/Code.h>
 #include <quix-codegen/Config.h>
 #include <quix-core/Error.h>
@@ -242,10 +242,10 @@ LIB_EXPORT bool qcode_asm(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
           return false;
         }
 
-        /// FIXME: Get the user compile target options
-        std::string targetTriple = llvm::sys::getDefaultTargetTriple();
-        std::string CPU = "generic";
-        std::string Features = "";
+        std::string targetTriple =
+            m->getTargetInfo().TargetTriple.value_or(llvm::sys::getDefaultTargetTriple());
+        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
+        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         llvm::TargetOptions opt;
@@ -322,10 +322,10 @@ LIB_EXPORT bool qcode_obj(qmodule_t *module, qcode_conf_t *conf, FILE *err, FILE
           return false;
         }
 
-        /// FIXME: Get the user compile target options
-        std::string targetTriple = llvm::sys::getDefaultTargetTriple();
-        std::string CPU = "generic";
-        std::string Features = "";
+        std::string targetTriple =
+            m->getTargetInfo().TargetTriple.value_or(llvm::sys::getDefaultTargetTriple());
+        std::string CPU = m->getTargetInfo().CPU.value_or("generic");
+        std::string Features = m->getTargetInfo().CPUFeatures.value_or("");
         bool relocPIC = true;
 
         llvm::TargetOptions opt;

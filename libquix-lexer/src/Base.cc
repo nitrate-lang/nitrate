@@ -296,16 +296,11 @@ LIB_EXPORT void qlex_rect(qlex_t *obj, qlex_size x_0, qlex_size y_0, qlex_size x
       qcore_panic("qlex_rect: buffer too small");
     }
 
-    // Fill background with spaces
     memset(out, fill, buf_size);
     out[buf_size] = '\0';
 
-    // qlex_size base_off = 0;
-
     for (size_t i = 0; i < height; i++) {
       qlex_size start_off = 0, end_off = 10;
-
-      /// TODO: Calculate the start and end offsets
 
       qlex_loc_t start = obj->save_loc(y_0 + i, x_0, start_off);
       qlex_loc_t end = obj->save_loc(y_0 + i, x_1, end_off);
@@ -315,7 +310,6 @@ LIB_EXPORT void qlex_rect(qlex_t *obj, qlex_size x_0, qlex_size y_0, qlex_size x
           [](const char *str, qlex_size len, uintptr_t ptr) { memcpy((void *)ptr, str, len); },
           (uintptr_t)(out + i * width));
     }
-
   } catch (...) {
   }
 }
