@@ -35,6 +35,7 @@
 #include <sys/resource.h>
 
 #include <atomic>
+#include <core/PassManager.hh>
 
 #include "core/LibMacro.h"
 
@@ -64,6 +65,8 @@ static void increase_stack_size() {
 
 static bool do_init() {
   increase_stack_size();
+
+  qxir::pass::PassGroupRegistry::RegisterBuiltinGroups();
 
   return true;
 }

@@ -50,21 +50,26 @@ void qxir::pass::PassRegistry::link_builtin() {
   addPass("chk-bad-cast", chk_bad_cast);
 }
 
-void qxir::pass::PassGroupRegistry::link_builtin() {
-  addGroup("ds", {
-                     "ds-acyclic", /* Verify that the module is acyclic */
-                     "ds-nullchk", /* Verify that the module is null-safe */
-                     "ds-resolv",  /* Resolve all symbols */
-                     "ds-verify",  /* Verify the module */
-                     "ds-flatten", /* Flatten all nested functions */
-                     "ds-tyinfer", /* Do type inference */
-                     "ds-mangle",  /* Mangle all names */
-                     "ds-clean",   /* Cleanup IR */
-                     "ds-raii",    /* Insert destructors */
-                 });
+void qxir::pass::PassGroupRegistry::RegisterBuiltinGroups() {
+  PassGroupBuilder()
+      .addPass("ds-clean") /* Cleanup IR */
+      /* Add more cleanup passes: [dead-code removal, ?] */
+      .build("reduce");
 
-  addGroup("chk", {
-                      "chk-missing-return", /* Check for missing return statements */
-                      "chk-bad-cast",       /* Check for bad casts */
-                  });
+  PassGroupBuilder()
+      .addPass("ds-acyclic") /* Verify that the module is acyclic */
+      .addPass("ds-nullchk") /* Verify that the module is null-safe */
+      .addPass("ds-resolv")  /* Resolve all symbols */
+      .addPass("ds-verify")  /* Verify the module */
+      .addPass("ds-flatten") /* Flatten all nested functions */
+      .addPass("ds-tyinfer") /* Do type inference */
+      .addPass("ds-mangle")  /* Mangle all names */
+      .addPass("ds-raii")    /* Insert destructors */
+      .addGroup("reduce")
+      .build("ds");
+
+  PassGroupBuilder()
+      .addPass("chk-missing-return") /* Check for missing return statements */
+      .addPass("chk-bad-cast")       /* Check for bad casts */
+      .build("chk");
 }

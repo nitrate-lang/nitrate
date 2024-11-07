@@ -33,8 +33,8 @@
 #ifndef __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 #define __QUIX_QXIR_DIAGNOSE_PASSES_AUTO_REGISTER_H__
 
+#include <atomic>
 #include <functional>
-#include <ostream>
 #include <span>
 #include <string>
 #include <unordered_map>
@@ -60,6 +60,7 @@ namespace qxir::pass {
 
   class PassRegistry final {
     std::unordered_map<std::string, pass_func_t> m_passes;
+    std::mutex m_lock;
 
     void link_builtin();
     PassRegistry() { link_builtin(); }
@@ -68,11 +69,13 @@ namespace qxir::pass {
     static PassRegistry& the();
 
     void addPass(const std::string& name, pass_func_t func);
-    bool hasPass(const std::string& name) const;
+    bool hasPass(const std::string& name);
     static ModulePass get(const std::string& name);
 
-    auto begin() { return m_passes.cbegin(); }
-    auto end() { return m_passes.cend(); }
+    auto getPasses() {
+      std::lock_guard<std::mutex> lock(m_lock);
+      return m_passes;
+    }
   };
 
   class PassGroup final {
@@ -94,23 +97,46 @@ namespace qxir::pass {
 
   class PassGroupRegistry final {
     std::unordered_map<std::string, std::vector<ModulePass>> m_groups;
-
-    void link_builtin();
+    std::mutex m_lock;
 
     PassGroupRegistry() {
       PassRegistry::the();  // Ensure the pass registry is already initialized
-      link_builtin();
     }
 
   public:
     static PassGroupRegistry& the();
 
     void addGroup(const std::string& name, std::initializer_list<std::string_view> passes);
-    bool hasGroup(const std::string& name) const;
+    void addGroup(const std::string& name, const std::vector<std::string>& passes);
+    bool hasGroup(const std::string& name);
     static PassGroup get(const std::string& name);
 
-    auto begin() { return m_groups.cbegin(); }
-    auto end() { return m_groups.cend(); }
+    auto getGroups() {
+      std::lock_guard<std::mutex> lock(m_lock);
+      return m_groups;
+    }
+
+    static void RegisterBuiltinGroups();
+  };
+
+  class PassGroupBuilder final {
+    std::vector<std::string> m_passes;
+    std::pair<size_t, bool> m_verified;
+
+    void phase_order();
+    bool verify_state() const;
+
+  public:
+    PassGroupBuilder() = default;
+
+    PassGroupBuilder& addPass(const std::string& name);
+    PassGroupBuilder& addPassFrom(const std::vector<std::string>& list);
+    PassGroupBuilder& addGroup(const std::string& name);
+    PassGroupBuilder& addGroupFrom(const std::vector<std::string>& list);
+
+    bool verify();
+
+    PassGroup build(const std::string& name, bool optimize_order = true);
   };
 }  // namespace qxir::pass
 
