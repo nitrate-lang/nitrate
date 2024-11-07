@@ -67,16 +67,17 @@ bool qxir::transform::impl::raii(qmodule_t *M) {
         Expr *E = SI[i];
 
         if (E->getKind() == QIR_NODE_LOCAL) {
-          Local *L = E->as<Local>();
-          Fn *D = createIgn()->as<Fn>();
+          (void)first_ubr;
+          // Local *L = E->as<Local>();
+          // Fn *D = createIgn()->as<Fn>();
 
           /// TODO: Get the destructor function
 
-          UnExpr *addr_of = create<UnExpr>(L, Op::BitAnd);
-          CallArgs args = CallArgs({addr_of});
-          Call *C = create<Call>(D, std::move(args));
+          // UnExpr *addr_of = create<UnExpr>(L, Op::BitAnd);
+          // CallArgs args = CallArgs({addr_of});
+          // Call *C = create<Call>(D, std::move(args));
 
-          SI.insert(first_ubr, C);
+          // SI.insert(first_ubr, C);
         }
       }
 
