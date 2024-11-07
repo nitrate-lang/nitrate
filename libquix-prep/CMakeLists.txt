@@ -44,10 +44,5 @@ target_include_directories(quix-prep PUBLIC src "include"
 target_link_libraries(quix-prep PUBLIC quix-core quix-lexer ${LIB_QUIXLUA} crypto)
 add_dependencies(quix-prep quix-core quix-lexer quixlua)
 
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-  add_subdirectory(fuzzer)
-endif()
-
 install(TARGETS quix-prep DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

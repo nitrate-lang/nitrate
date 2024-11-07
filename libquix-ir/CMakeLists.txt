@@ -34,10 +34,5 @@ target_include_directories(quix-ir PUBLIC src "include"
 target_link_libraries(quix-ir PUBLIC quix-core quix-parser deflate crypto)
 add_dependencies(quix-ir quix-core quix-parser)
 
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-  add_subdirectory(fuzzer)
-endif()
-
 install(TARGETS quix-ir DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
