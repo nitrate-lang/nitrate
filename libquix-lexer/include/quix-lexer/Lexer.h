@@ -38,16 +38,17 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct qlex_t qlex_t;
 
 #define QLEX_FLAG_NONE 0
 #define QLEX_NO_COMMENTS 0x01
 
 typedef uint32_t qlex_flags_t;
+
+#ifdef __cplusplus
+
+#include <istream>
+#include <memory>
 
 /**
  * @brief Create a new lexer context.
@@ -60,13 +61,13 @@ typedef uint32_t qlex_flags_t;
  * @note The lifetime of the file stream and environment must exceed the lifetime of the lexer.
  * @note This function is thread-safe.
  */
-qlex_t *qlex_new(FILE *file, const char *filename, qcore_env_t env);
+qlex_t *qlex_new(std::shared_ptr<std::istream> file, const char *filename, qcore_env_t env);
 
-typedef uintptr_t qlex_cxx_std_istream_t;
-qlex_t *qlex_istream__libextra(qlex_cxx_std_istream_t istream, const char *filename);
+#endif
 
-#define __qlex_istream(istream, filename) \
-  qlex_istream__libextra(std::bit_cast<qlex_cxx_std_istream_t>(&istream), filename)
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Create a new lexer context from a string.

@@ -32,12 +32,12 @@
 #ifndef __QUIX_PREP_LIB_H__
 #define __QUIX_PREP_LIB_H__
 
+#include <quix-prep/Preprocess.h>
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <quix-prep/Preprocess.h>
-#include <stdbool.h>
 
 /**
  * @brief Initialize the library.

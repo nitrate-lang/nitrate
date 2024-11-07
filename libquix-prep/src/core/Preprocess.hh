@@ -78,11 +78,11 @@ struct __attribute__((visibility("default"))) qprep_impl_t final : public qlex_t
   bool run_and_expand(const std::string &code);
   void expand_raw(std::string_view code);
   void install_lua_api();
-  qlex_t *weak_clone(FILE *file, const char *filename);
+  qlex_t *weak_clone(std::shared_ptr<std::istream> file, const char *filename);
 
 public:
-  qprep_impl_t(FILE *file, const char *filename, qcore_env_t env);
-  qprep_impl_t(FILE *file, const char *filename, bool is_owned, qcore_env_t env);
+  qprep_impl_t(std::shared_ptr<std::istream> file, const char *filename, qcore_env_t env);
+  qprep_impl_t(std::shared_ptr<std::istream> file, qcore_env_t env, const char *filename);
   virtual ~qprep_impl_t() override;
 };
 

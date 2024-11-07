@@ -29,33 +29,78 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_PREP_CLASSES_H__
-#define __QUIX_PREP_CLASSES_H__
+#pragma once
 
-#ifndef __cplusplus
-#error "This header is for C++ only."
-#endif
+#include <queue>
+#include <streambuf>
+#include <vector>
 
-#include <quix-core/Error.h>
-#include <quix-prep/Preprocess.h>
-
-#include <stdexcept>
-
-class qprep final {
-  qlex_t *m_lex;
+struct quix_stream_t : public std::streambuf {
+private:
+  std::queue<FILE*> m_files;
+  char ch;
+  bool m_close_me;
 
 public:
-  qprep(std::shared_ptr<std::istream> fp, const char *filename, qcore_env_t env) {
-    if ((m_lex = qprep_new(fp, filename, env)) == nullptr) {
-      throw std::runtime_error("qlex_new failed");
+  quix_stream_t(FILE* f, bool auto_close) {
+    m_files.push(f);
+    m_close_me = auto_close;
+  }
+  quix_stream_t(std::vector<FILE*> stream_join) {
+    for (auto f : stream_join) {
+      m_files.push(f);
+    }
+    m_close_me = false;
+  }
+  virtual ~quix_stream_t() {
+    if (m_close_me) {
+      while (!m_files.empty()) {
+        auto f = m_files.front();
+        m_files.pop();
+        fclose(f);
+      }
     }
   }
-  ~qprep() { qlex_free(m_lex); }
 
-  qlex_t *get() {
-    qcore_assert(m_lex != nullptr);
-    return m_lex;
+  virtual int_type underflow() override {
+    if (m_files.empty()) {
+      return traits_type::eof();
+    }
+
+    int c;
+    ch = c = fgetc(m_files.front());
+
+    if (feof(m_files.front())) {
+      m_files.pop();
+      return underflow();
+    } else if (ferror(m_files.front())) {
+      return traits_type::eof();
+    }
+
+    setg(&ch, &ch, &ch + 1);
+
+    return traits_type::to_int_type(ch);
+  }
+
+  virtual std::streamsize xsgetn(char* s, std::streamsize count) override {
+    if (m_files.empty()) {
+      return 0;
+    }
+
+    std::streamsize bytes_read = 0;
+
+    while (bytes_read < count) {
+      size_t n = fread(s + bytes_read, 1, count - bytes_read, m_files.front());
+      bytes_read += n;
+
+      if (feof(m_files.front())) {
+        m_files.pop();
+        return bytes_read + xsgetn(s + bytes_read, count - bytes_read);
+      } else if (ferror(m_files.front())) {
+        return 0;
+      }
+    }
+
+    return bytes_read;
   }
 };
-
-#endif  // __QUIX_PREP_CLASSES_H__

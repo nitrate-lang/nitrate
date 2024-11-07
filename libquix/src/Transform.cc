@@ -30,8 +30,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LIBQUIX_INTERNAL
-
 #include <quix-codegen/Lib.h>
+#include <quix-core/Env.h>
 #include <quix-core/Lib.h>
 #include <quix-ir/Lib.h>
 #include <quix-lexer/Lib.h>
@@ -39,7 +39,9 @@
 #include <quix-prep/Lib.h>
 #include <quix/code.h>
 
+#include <Stream.hh>
 #include <cerrno>
+#include <cstdarg>
 #include <cstddef>
 #include <cstdlib>
 #include <functional>
@@ -49,7 +51,6 @@
 #include <vector>
 
 #include "LibMacro.h"
-#include "quix-core/Env.h"
 
 static const char *empty_options[] = {NULL};
 
@@ -82,23 +83,27 @@ LIB_EXPORT void quix_diag_stderr(const char *message, const char *, uint64_t) {
   fprintf(stderr, "%s", message);
 }
 
-typedef bool (*quix_subsystem_impl)(FILE *source, FILE *output,
+typedef bool (*quix_subsystem_impl)(std::shared_ptr<std::istream> source, FILE *output,
                                     std::function<void(const char *)> diag_cb,
                                     const std::unordered_set<std::string_view> &opts);
 
-bool impl_subsys_basic_lexer(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+bool impl_subsys_basic_lexer(std::shared_ptr<std::istream> source, FILE *output,
+                             std::function<void(const char *)> diag_cb,
                              const std::unordered_set<std::string_view> &opts);
 
-bool impl_subsys_meta(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+bool impl_subsys_meta(std::shared_ptr<std::istream> source, FILE *output,
+                      std::function<void(const char *)> diag_cb,
                       const std::unordered_set<std::string_view> &opts);
 
-bool impl_subsys_parser(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
+                        std::function<void(const char *)> diag_cb,
                         const std::unordered_set<std::string_view> &opts);
 
-bool impl_subsys_qxir(FILE *source, FILE *output, std::function<void(const char *)> diag_cb,
+bool impl_subsys_qxir(std::shared_ptr<std::istream> source, FILE *output,
+                      std::function<void(const char *)> diag_cb,
                       const std::unordered_set<std::string_view> &opts);
 
-static bool impl_subsys_codegen(FILE *source, FILE *output,
+static bool impl_subsys_codegen(std::shared_ptr<std::istream> source, FILE *output,
                                 std::function<void(const char *)> diag_cb,
                                 const std::unordered_set<std::string_view> &opts);
 
@@ -128,7 +133,7 @@ static bool check_out_stream_usable(FILE *stream, const char *name) {
   return true;
 }
 
-LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdata,
+LIB_EXPORT bool quix_cc(quix_stream_t *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdata,
                         const char *const options[]) {
   /* This API will be used by mortals, protect them from themselves */
   if (!quix_lib_ready && !quix_lib_init()) {
@@ -185,8 +190,10 @@ LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdat
     out_alias = O;
   }
 
+  auto input_stream = std::make_shared<std::istream>(S);
+
   bool ok = subsystem->second(
-      S, out_alias,
+      input_stream, out_alias,
       [&](const char *msg) {
         /* string_views's in opts are null terminated */
         diag_cb(msg, opts[0].data(), userdata);
@@ -206,7 +213,7 @@ LIB_EXPORT bool quix_cc(FILE *S, FILE *O, quix_diag_cb diag_cb, uint64_t userdat
 
 ///============================================================================///
 
-static bool impl_subsys_codegen(FILE *source, FILE *output,
+static bool impl_subsys_codegen(std::shared_ptr<std::istream> source, FILE *output,
                                 std::function<void(const char *)> diag_cb,
                                 const std::unordered_set<std::string_view> &opts) {
   (void)source;
@@ -216,4 +223,38 @@ static bool impl_subsys_codegen(FILE *source, FILE *output,
 
   /// TODO: Implement codegen wrapper
   return false;
+}
+
+LIB_EXPORT void quix_fclose(quix_stream_t *f) { delete f; }
+
+LIB_EXPORT quix_stream_t *quix_from(FILE *f, bool auto_close) {
+  if (!f) {
+    return nullptr;
+  }
+
+  return new quix_stream_t(f, auto_close);
+}
+
+LIB_EXPORT quix_stream_t *quix_join(size_t num, ...) {
+  va_list va;
+  va_start(va, num);
+  quix_stream_t *obj = quix_joinv(num, va);
+  va_end(va);
+
+  return obj;
+}
+
+LIB_EXPORT quix_stream_t *quix_joinv(size_t num, va_list va) {
+  std::vector<FILE *> streams;
+  streams.resize(num);
+
+  for (size_t i = 0; i < num; i++) {
+    streams[i] = va_arg(va, FILE *);
+  }
+
+  return new quix_stream_t(streams);
+}
+
+LIB_EXPORT quix_stream_t *quix_njoin(size_t num, FILE **files) {
+  return new quix_stream_t(std::vector<FILE *>(files, files + num));
 }
