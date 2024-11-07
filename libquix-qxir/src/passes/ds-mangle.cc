@@ -29,34 +29,71 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <quix-qxir/IRGraph.hh>
-#include <transform/passes/Decl.hh>
+#include <quix-qxir/IR.h>
 
-#include "quix-qxir/TypeDecl.h"
+#include <boost/bimap.hpp>
+#include <passes/PassList.hh>
+#include <quix-qxir/Format.hh>
+#include <quix-qxir/IRGraph.hh>
+#include <quix-qxir/Report.hh>
 
 /**
- * @brief Ensure that the module IR data structure does not have any Tmp nodes.
+ * @brief Canonicalize the names of things in the module.
  *
  * @timecomplexity O(n)
  * @spacecomplexity O(1)
  */
 
+using namespace qxir;
 using namespace qxir::diag;
 
-bool qxir::transform::impl::ds_verify(qmodule_t *mod) {
-  size_t tmp_total = 0;
+bool qxir::pass::ds_mangle(qmodule_t *mod) {
+  SymbolEncoding se;
+  bool failed = false;
 
-  const auto cb = [&tmp_total](Expr *, Expr **_cur) -> IterOp {
-    if ((*_cur)->getKind() == QIR_NODE_TMP) [[unlikely]] {
-      Tmp *tmp = (*_cur)->as<Tmp>();
-      report(IssueCode::DSBadTmpNode, IssueClass::FatalError, tmp->locBeg(), tmp->locEnd());
-      tmp_total++;
+  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [&](Expr *, Expr **cur) -> IterOp {
+    if ((*cur)->getKind() == QIR_NODE_FN) {
+      Fn *fn = (*cur)->as<Fn>();
+      auto name = se.mangle_name(fn, fn->getAbiTag());
+      if (name) [[likely]] {
+        fn->setName(mod->internString(*name));
+      } else {
+        failed = true;
+        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, fn->getName(), fn->locBeg(),
+               fn->locEnd());
+      }
+    } else if ((*cur)->getKind() == QIR_NODE_LOCAL) {
+      Local *local = (*cur)->as<Local>();
+      auto name = se.mangle_name(local, local->getAbiTag());
+      if (name) [[likely]] {
+        qcore_assert(!name->empty());
+        local->setName(mod->internString(*name));
+      } else {
+        failed = true;
+        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(),
+               local->locBeg(), local->locEnd());
+      }
     }
 
     return IterOp::Proceed;
-  };
+  });
 
-  iterate<IterMode::dfs_pre, IterMP::none>(mod->getRoot(), cb);
+  /* Update identifiers to use the new names */
+  iterate<dfs_pre, IterMP::none>(mod->getRoot(), [](Expr *, Expr **cur) -> IterOp {
+    if ((*cur)->getKind() != QIR_NODE_IDENT) {
+      return IterOp::Proceed;
+    }
 
-  return tmp_total == 0;
+    Ident *ident = (*cur)->as<Ident>();
+    if (!ident->getWhat()) {
+      return IterOp::Proceed;
+    }
+
+    qcore_assert(!ident->getWhat()->getName().empty());
+    ident->setName(ident->getWhat()->getName());
+
+    return IterOp::Proceed;
+  });
+
+  return !failed;
 }

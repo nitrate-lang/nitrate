@@ -1,4 +1,4 @@
-#////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///  ░▒▓██████▓▒░░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░░▒▓██████▓▒░ ░▒▓██████▓▒░  ///
 /// ░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░▒▓█▓▒░░▒▓█▓▒░ ///
@@ -29,24 +29,65 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/LibMacro.h>
-#include <quix-core/Error.h>
+#include <passes/PassList.hh>
+#include <quix-qxir/IRGraph.hh>
 
-#include <diagnostic/List.hh>
-#include <transform/PassManager.hh>
+/**
+ * @brief Insert destructors to stack-allocated local variables
+ *
+ * @timecomplexity O(n)
+ * @spacecomplexity O(1)
+ */
 
 using namespace qxir::diag;
+using namespace qxir;
 
-CPP_EXPORT PassRegistry& PassRegistry::the() {
-  static PassRegistry instance;
-  return instance;
-}
+bool qxir::pass::ds_raii(qmodule_t *M) {
+  for (auto &[k, v] : M->getFunctions()) {
+    Expr *F = v.second->getBody();
 
-CPP_EXPORT void PassRegistry::register_check(const std::string& name, const std::string& flag,
-                                             check_func_t func) {
-  if (m_passes.contains(flag)) {
-    qcore_panicf("Diagnostic pass '%s' (flag %s) already registered", name.c_str(), flag.c_str());
+    iterate<dfs_pre>(F, [](Expr *, Expr **C) -> IterOp {
+      if ((*C)->getKind() != QIR_NODE_SEQ) {
+        return IterOp::Proceed;
+      }
+
+      ///==========================================================
+      /// Foreach scope in function:
+
+      SeqItems &SI = (*C)->as<Seq>()->getItems();
+
+      /// For each unconditional branch instruction call
+      /// destructors in reverse order
+      auto first_ubr = std::find_if(SI.begin(), SI.end(), [](Expr *E) {
+        qxir_ty_t ty = E->getKind();
+        return ty == QIR_NODE_RET || ty == QIR_NODE_CONT || ty == QIR_NODE_BRK;
+      });
+
+      for (size_t i = 0; i < SI.size(); ++i) {
+        Expr *E = SI[i];
+
+        if (E->getKind() == QIR_NODE_LOCAL) {
+          (void)first_ubr;
+          // Local *L = E->as<Local>();
+          // Fn *D = createIgn()->as<Fn>();
+
+          /// TODO: Get the destructor function
+
+          // UnExpr *addr_of = create<UnExpr>(L, Op::BitAnd);
+          // CallArgs args = CallArgs({addr_of});
+          // Call *C = create<Call>(D, std::move(args));
+
+          // SI.insert(first_ubr, C);
+        }
+      }
+
+      ///==========================================================
+
+      return IterOp::Proceed;
+    });
   }
 
-  m_passes[flag] = {name, func};
+  /// TODO: Implement support for RAII
+
+  return true;
 }

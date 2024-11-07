@@ -29,8 +29,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <passes/PassList.hh>
 #include <quix-qxir/IRGraph.hh>
-#include <transform/passes/Decl.hh>
 
 /**
  * @brief Ensure that no nodes are nullptr or have missing module pointers.
@@ -41,7 +41,7 @@
 
 using namespace qxir::diag;
 
-bool qxir::transform::impl::ds_nullchk(qmodule_t *mod) {
+bool qxir::pass::ds_nullchk(qmodule_t *mod) {
   bool has_bad_null = false;
   bool missing_mod = false;
 

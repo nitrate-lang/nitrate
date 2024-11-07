@@ -29,29 +29,24 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __QUIX_QXIR_DIAG_LIST_H__
-#define __QUIX_QXIR_DIAG_LIST_H__
+#include <passes/PassList.hh>
+#include <quix-qxir/IRGraph.hh>
 
-#include <transform/PassManager.hh>
+/**
+ * @brief Do type inference on the module.
+ */
 
-struct qmodule_t;
+using namespace qxir::diag;
 
-namespace qxir::checks {
-#define DECLARE_PASS(name) void name(qmodule_t*)
+bool qxir::pass::ds_tyinfer(qmodule_t* M) {
+  iterate<dfs_pre>(M->getRoot(), [&](Expr*, Expr** C) -> IterOp {
+    if (!(*C)->getType().has_value()) {
+      report(IssueCode::TypeInference, IssueClass::Error, (*C)->locBeg(), (*C)->locEnd());
+      M->setFailbit(true);
+    }
 
-  DECLARE_PASS(missing_return);
-  DECLARE_PASS(bad_cast);
+    return IterOp::Proceed;
+  });
 
-#undef DECLARE_PASS
-}  // namespace qxir::checks
-
-namespace qxir::diag {
-  inline void PassRegistry::link_builtin_checks() {
-    using namespace qxir::checks;
-
-    register_check("missing-return", "-Wmissing-return", missing_return);
-    register_check("bad-cast", "-Wbad-cast", bad_cast);
-  }
-}  // namespace qxir::diag
-
-#endif  // __QUIX_QXIR_DIAG_LIST_H__
+  return true;
+}

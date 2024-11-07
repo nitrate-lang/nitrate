@@ -32,9 +32,9 @@
 #include <quix-qxir/IR.h>
 
 #include <boost/bimap.hpp>
+#include <passes/PassList.hh>
 #include <quix-qxir/IRGraph.hh>
 #include <string_view>
-#include <transform/passes/Decl.hh>
 
 /// TODO: Worst code ever written. Refactor this.
 
@@ -603,7 +603,7 @@ static bool beta_pass(qmodule_t *mod) {
   return !error;
 }
 
-bool qxir::transform::impl::ds_resolv(qmodule_t *mod) {
+bool qxir::pass::ds_resolv(qmodule_t *mod) {
   bool error = false;
 
   error |= !alpha_pass(mod);

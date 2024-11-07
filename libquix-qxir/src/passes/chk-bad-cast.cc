@@ -29,7 +29,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <diagnostic/List.hh>
+#include <passes/PassList.hh>
 #include <quix-qxir/IRGraph.hh>
 
 using namespace qxir;
@@ -194,7 +194,7 @@ static bool verify_cast_as(qmodule_t* M, Expr* N, Type* L, Type* R) {
   return false;
 }
 
-void qxir::checks::bad_cast(qmodule_t* M) {
+bool qxir::pass::chk_bad_cast(qmodule_t* M) {
   /**
    * Perform validation checks on `cast_as` expressions to ensure that the cast is indeed
    * accecptable.
@@ -224,4 +224,6 @@ void qxir::checks::bad_cast(qmodule_t* M) {
 
     return IterOp::Proceed;
   });
+
+  return true;
 }

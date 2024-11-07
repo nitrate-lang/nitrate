@@ -31,41 +31,40 @@
 
 #include <quix-core/Error.h>
 
+#include <core/PassManager.hh>
+#include <passes/PassList.hh>
 #include <quix-qxir/Module.hh>
-#include <transform/PassManager.hh>
-#include <transform/Transform.hh>
-#include <transform/passes/Decl.hh>
 
-bool qxir::transform::std_transform(qmodule_t* M, std::ostream& err) {
-#define RUN_PASS(name, fn)                                        \
-  {                                                               \
-    if (!fn(M)) {                                                 \
-      err << "Error: Pass '" << name << "' failed." << std::endl; \
-      return false;                                               \
-    }                                                             \
-    M->applyPassLabel(name);                                      \
-    if (M->getFailbit()) {                                        \
-      return false;                                               \
-    }                                                             \
-  }
+void qxir::pass::PassRegistry::link_builtin() {
+  addPass("ds-acyclic", ds_acyclic);
+  addPass("ds-nullchk", ds_nullchk);
+  addPass("ds-resolv", ds_resolv);
+  addPass("ds-verify", ds_verify);
+  addPass("ds-flatten", ds_flatten);
+  addPass("ds-tyinfer", ds_tyinfer);
+  addPass("ds-mangle", ds_mangle);
+  addPass("ds-clean", ds_clean);
+  addPass("ds-raii", ds_raii);
 
-  RUN_PASS("ds-acyclic", impl::ds_acyclic);     /* Verify that the module is acyclic */
-  RUN_PASS("ds-nullchk", impl::ds_nullchk);     /* Verify that the module is null-safe */
-  RUN_PASS("ds-resolv", impl::ds_resolv);       /* Resolve all symbols */
-  RUN_PASS("ds-verify", impl::ds_verify);       /* Verify the module */
-  RUN_PASS("ds-flatten", impl::ds_flatten);     /* Flatten all nested functions */
-  RUN_PASS("tyinfer", impl::tyinfer);           /* Do type inference */
-  RUN_PASS("nm-premangle", impl::nm_premangle); /* Mangle all names */
-  RUN_PASS("ds-clean", impl::ds_clean);         /* Cleanup IR */
-  RUN_PASS("raii", impl::raii);                 /* Insert destructors */
-
-  return true;
+  addPass("chk-missing-return", chk_missing_return);
+  addPass("chk-bad-cast", chk_bad_cast);
 }
 
-void qxir::transform::do_semantic_analysis(qmodule_t* M) {
-  for (const auto& [_, val] : diag::PassRegistry::the().get_passes()) {
-    val.second(M);
+void qxir::pass::PassGroupRegistry::link_builtin() {
+  addGroup("ds", {
+                     "ds-acyclic", /* Verify that the module is acyclic */
+                     "ds-nullchk", /* Verify that the module is null-safe */
+                     "ds-resolv",  /* Resolve all symbols */
+                     "ds-verify",  /* Verify the module */
+                     "ds-flatten", /* Flatten all nested functions */
+                     "ds-tyinfer", /* Do type inference */
+                     "ds-mangle",  /* Mangle all names */
+                     "ds-clean",   /* Cleanup IR */
+                     "ds-raii",    /* Insert destructors */
+                 });
 
-    M->applyCheckLabel(val.first);
-  }
+  addGroup("chk", {
+                      "chk-missing-return", /* Check for missing return statements */
+                      "chk-bad-cast",       /* Check for bad casts */
+                  });
 }
