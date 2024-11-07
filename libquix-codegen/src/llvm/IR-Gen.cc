@@ -1685,8 +1685,9 @@ static val_t QIR_NODE_LIST_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxi
    */
 
   if (N->getItems().empty()) {
-    debug("Empty list");
-    return std::nullopt;
+    llvm::StructType *ST = llvm::StructType::get(m.getContext(), {}, true);
+    llvm::AllocaInst *AI = b.CreateAlloca(ST);
+    return b.CreateLoad(ST, AI);
   }
 
   std::vector<llvm::Value *> items;
