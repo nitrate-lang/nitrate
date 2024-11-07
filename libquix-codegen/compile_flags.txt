@@ -5,9 +5,9 @@
 -I
 ../libquix-parser/include
 -I
-../libquix-qxir/include
+../libquix-ir/include
 -I
-../libquix-qxir/src
+../libquix-ir/src
 -I
 include
 -I

@@ -24,12 +24,12 @@ extern "C" int LLVMFuzzerInitialize(int *argc, char **argv) {
   qxir_lib_init();
 
   std::cout << "+===========================================================+\n";
-  std::cout << "Initialized libquix-lexer, libquix-prep, libquix-parser, and libquix-qxir\n";
+  std::cout << "Initialized libquix-lexer, libquix-prep, libquix-parser, and libquix-ir\n";
   std::cout << "VERSIONS:\n";
   std::cout << "  - libquix-lexer: " << qlex_lib_version() << std::endl;
   std::cout << "  - libquix-prep: " << qprep_lib_version() << std::endl;
   std::cout << "  - libquix-parser: " << qparse_lib_version() << std::endl;
-  std::cout << "  - libquix-qxir: " << qxir_lib_version() << std::endl;
+  std::cout << "  - libquix-ir: " << qxir_lib_version() << std::endl;
   std::cout << "End of VERSIONS\n";
   std::cout << "+===========================================================+\n";
   return 0;
@@ -41,7 +41,7 @@ extern "C" int LLVMFuzzerFinalize() {
   qprep_lib_deinit();
   qlex_lib_deinit();
 
-  std::cout << "Deinitialized libquix-lexer, libquix-parser, and libquix-qxir" << std::endl;
+  std::cout << "Deinitialized libquix-lexer, libquix-parser, and libquix-ir" << std::endl;
   return 0;
 }
 

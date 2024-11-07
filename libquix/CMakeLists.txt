@@ -33,7 +33,7 @@ target_include_directories(quix PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-prep/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-parser/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-qxir/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-ir/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-codegen/include)
 target_compile_options(quix PRIVATE ${PROJECT_DEBUG_FLAGS})
 target_link_libraries(quix PUBLIC quix-core

@@ -13,9 +13,9 @@
 -I
 ./libquix-parser/src
 -I
-./libquix-qxir/include
+./libquix-ir/include
 -I
-./libquix-qxir/src
+./libquix-ir/src
 -I
 ./libquix-codegen/include
 -I

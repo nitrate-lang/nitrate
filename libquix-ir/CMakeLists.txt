@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(libquix-qxir CXX)
+project(libquix-ir CXX)
 
 #================== CONFIGURE BUILD ==================
 set(CMAKE_CXX_STANDARD 20)
@@ -13,7 +13,7 @@ string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
 string(TOUPPER ${SHA256SUMS} SHA256SUMS)
 string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"QXIR_${SHA256SUMS}\"")
-message(STATUS "libquix-qxir VersionId: ${__TARGET_VERSION}")
+message(STATUS "libquix-ir VersionId: ${__TARGET_VERSION}")
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
