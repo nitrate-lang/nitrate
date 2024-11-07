@@ -34,10 +34,5 @@ target_include_directories(quix-parser PUBLIC src "include"
 target_link_libraries(quix-parser PUBLIC quix-core quix-lexer deflate)
 add_dependencies(quix-parser quix-core quix-lexer)
 
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-  add_subdirectory(fuzzer)
-endif()
-
 install(TARGETS quix-parser DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

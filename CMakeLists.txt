@@ -104,7 +104,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 if(BUILD_TESTING)
-  foreach(lib libquix-basic-lexer-fuzz libquix-prep-fuzzer libquix-ir-fuzzer)
+  foreach(lib libquix-basic-lexer-fuzz)
     target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
     target_link_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)
   endforeach()

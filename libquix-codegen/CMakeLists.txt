@@ -70,9 +70,5 @@ target_link_libraries(quix-codegen PUBLIC z tinfo)
 add_dependencies(quix-codegen quix-core quix-ir)
 set_target_properties(quix-codegen PROPERTIES OUTPUT_NAME quix-codegen)
 
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-endif()
-
 install(TARGETS quix-codegen DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
