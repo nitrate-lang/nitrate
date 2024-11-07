@@ -51,7 +51,7 @@ static void seq_mark_non_functional(Expr* P, Expr** C) {
 
   Expr* N = *C;
 
-#define IGNORE_NODE() *C = create<Ign>()
+#define IGNORE_NODE() *C = createIgn()
 
   switch (N->getKind()) {
     case QIR_NODE_BINEXPR: {
@@ -290,7 +290,7 @@ static void ignore_empty_seq(Expr* P, Expr** C) {
     Seq* S = (*C)->as<Seq>();
 
     if (S->getItems().empty()) {
-      *C = create<Ign>();
+      *C = createIgn();
     }
   }
 }
@@ -300,7 +300,7 @@ static void ignore_empty_extern(Expr*, Expr** C) {
     Extern* E = (*C)->as<Extern>();
 
     if (E->getValue()->getKind() == QIR_NODE_IGN) {
-      *C = create<Ign>();
+      *C = createIgn();
     }
   }
 }

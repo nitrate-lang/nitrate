@@ -1517,7 +1517,7 @@ namespace qxir {
       throw QError();
     }
 
-    Fn *fn = create<Fn>(str, std::move(params), fnty->as<FnTy>()->getReturn(), create<Ign>(),
+    Fn *fn = create<Fn>(str, std::move(params), fnty->as<FnTy>()->getReturn(), createIgn(),
                         fty->is_variadic(), s.abi_mode);
 
     current->getFunctions().insert({str, {fnty->as<FnTy>(), fn}});
@@ -1913,13 +1913,13 @@ namespace qxir {
     /* Produce the function preconditions */
     if ((precond = qconv_one(s, n->get_precond()))) {
       precond = create<If>(create<UnExpr>(precond, Op::LogicNot),
-                           create_simple_call(s, "__detail::precond_fail"), create<Ign>());
+                           create_simple_call(s, "__detail::precond_fail"), createIgn());
     }
 
     /* Produce the function postconditions */
     if ((postcond = qconv_one(s, n->get_postcond()))) {
       postcond = create<If>(create<UnExpr>(postcond, Op::LogicNot),
-                            create_simple_call(s, "__detail::postcond_fail"), create<Ign>());
+                            create_simple_call(s, "__detail::postcond_fail"), createIgn());
     }
 
     { /* Produce the function body */
@@ -2267,7 +2267,7 @@ namespace qxir {
     }
     val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
-    return create<If>(cond, create<Ret>(val), create<Ign>());
+    return create<If>(cond, create<Ret>(val), createIgn());
   }
 
   static Expr *qconv_retz(ConvState &s, const qparse::RetZStmt *n) {
@@ -2292,7 +2292,7 @@ namespace qxir {
     }
     val = create<BinExpr>(val, s.return_type, Op::CastAs);
 
-    return create<If>(inv_cond, create<Ret>(val), create<Ign>());
+    return create<If>(inv_cond, create<Ret>(val), createIgn());
   }
 
   static Expr *qconv_retv(ConvState &s, const qparse::RetVStmt *n) {
@@ -2308,7 +2308,7 @@ namespace qxir {
     }
     cond = create<BinExpr>(cond, create<U1Ty>(), Op::CastAs);
 
-    return create<If>(cond, create<Ret>(create<Ign>()), create<Ign>());
+    return create<If>(cond, create<Ret>(createIgn()), createIgn());
   }
 
   static Expr *qconv_break(ConvState &, const qparse::BreakStmt *) {
@@ -2352,7 +2352,7 @@ namespace qxir {
     }
 
     if (!els) {
-      els = create<Ign>();
+      els = createIgn();
     }
 
     return create<If>(cond, then, els);
@@ -2523,7 +2523,7 @@ namespace qxir {
         throw QError();
       }
     } else {
-      def = create<Ign>();
+      def = createIgn();
     }
 
     return create<Switch>(cond, std::move(cases), def);
@@ -3108,7 +3108,7 @@ static qxir_node_t *qxir_clone_impl(const qxir_node_t *_node,
       break;
     }
     case QIR_NODE_IGN: {
-      out = create<Ign>();
+      out = createIgn();
       break;
     }
     case QIR_NODE_U1_TY: {

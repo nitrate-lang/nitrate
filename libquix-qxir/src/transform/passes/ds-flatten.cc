@@ -73,7 +73,7 @@ static void flatten_externs(qmodule_t *mod) {
     Expr *obj = *ele;
 
     if (!global_scope.contains(obj)) {
-      *reinterpret_cast<Expr **>(ele) = create<Ign>();
+      *reinterpret_cast<Expr **>(ele) = createIgn();
       root->addItem(obj);
     }
   }
