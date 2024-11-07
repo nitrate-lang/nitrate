@@ -93,7 +93,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     quix-lexer
     quix-prep
     quix-parser
-    quix-qxir
+    quix-ir
     quix-codegen
     quix)
     target_compile_options(${lib} PRIVATE -fsanitize=fuzzer -fsanitize=address -fsanitize=undefined)

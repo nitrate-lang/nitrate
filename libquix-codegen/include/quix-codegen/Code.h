@@ -33,7 +33,7 @@
 #define __QUIX_CODEGEN_CODE_H__
 
 #include <quix-codegen/Config.h>
-#include <quix-qxir/TypeDecl.h>
+#include <quix-ir/TypeDecl.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

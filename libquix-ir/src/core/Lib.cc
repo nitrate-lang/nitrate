@@ -30,8 +30,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <quix-core/Lib.h>
+#include <quix-ir/Lib.h>
 #include <quix-parser/Lib.h>
-#include <quix-qxir/Lib.h>
 #include <sys/resource.h>
 
 #include <atomic>

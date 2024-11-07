@@ -38,8 +38,8 @@
 
 #include <quix-core/Error.h>
 #include <quix-core/Memory.h>
+#include <quix-ir/TypeDecl.h>
 #include <quix-lexer/Token.h>
-#include <quix-qxir/TypeDecl.h>
 
 #include <boost/uuid/uuid.hpp>
 #include <cassert>
@@ -51,7 +51,7 @@
 #include <optional>
 #include <ostream>
 #include <quix-core/Classes.hh>
-#include <quix-qxir/Module.hh>
+#include <quix-ir/Module.hh>
 #include <string>
 #include <variant>
 #include <vector>

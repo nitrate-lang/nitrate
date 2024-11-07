@@ -34,15 +34,15 @@
 #include <core/LibMacro.h>
 #include <openssl/evp.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/IR.h>
+#include <quix-ir/IR.h>
 
 #include <boost/uuid/name_generator.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <cstdint>
 #include <cstring>
-#include <quix-qxir/IRGraph.hh>
-#include <quix-qxir/Module.hh>
+#include <quix-ir/IRGraph.hh>
+#include <quix-ir/Module.hh>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>

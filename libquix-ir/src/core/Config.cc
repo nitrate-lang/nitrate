@@ -31,7 +31,7 @@
 
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
-#include <quix-qxir/Config.h>
+#include <quix-ir/Config.h>
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>

@@ -30,7 +30,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <passes/PassList.hh>
-#include <quix-qxir/IRGraph.hh>
+#include <quix-ir/IRGraph.hh>
 
 using namespace qxir;
 using namespace qxir::diag;

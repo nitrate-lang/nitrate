@@ -33,8 +33,8 @@
 #include <quix-core/Error.h>
 
 #include <cstddef>
-#include <quix-qxir/Format.hh>
-#include <quix-qxir/IRGraph.hh>
+#include <quix-ir/Format.hh>
+#include <quix-ir/IRGraph.hh>
 #include <sstream>
 #include <unordered_set>
 

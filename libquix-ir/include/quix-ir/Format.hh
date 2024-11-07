@@ -37,7 +37,7 @@
 #endif
 
 #include <optional>
-#include <quix-qxir/IRGraph.hh>
+#include <quix-ir/IRGraph.hh>
 #include <string>
 
 namespace qxir {

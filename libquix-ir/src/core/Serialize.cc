@@ -31,9 +31,9 @@
 
 #include <core/LibMacro.h>
 #include <quix-core/Error.h>
+#include <quix-ir/Lib.h>
+#include <quix-ir/TypeDecl.h>
 #include <quix-lexer/Lexer.h>
-#include <quix-qxir/Lib.h>
-#include <quix-qxir/TypeDecl.h>
 
 #include <chrono>
 #include <cstddef>

@@ -37,8 +37,8 @@
 #endif
 
 #include <quix-core/Error.h>
-#include <quix-qxir/Config.h>
-#include <quix-qxir/IR.h>
+#include <quix-ir/Config.h>
+#include <quix-ir/IR.h>
 
 #include <stdexcept>
 

@@ -31,7 +31,7 @@
 
 #define __QUIX_QXIR_IMPL__
 
-#include <quix-qxir/Config.h>
+#include <quix-ir/Config.h>
 
 #include <vector>
 

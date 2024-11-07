@@ -33,7 +33,7 @@
 
 #include <core/PassManager.hh>
 #include <passes/PassList.hh>
-#include <quix-qxir/Module.hh>
+#include <quix-ir/Module.hh>
 
 void qxir::pass::PassRegistry::link_builtin() {
   addPass("ds-acyclic", ds_acyclic);

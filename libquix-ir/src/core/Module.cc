@@ -33,7 +33,7 @@
 #include <quix-core/Error.h>
 
 #include <mutex>
-#include <quix-qxir/Module.hh>
+#include <quix-ir/Module.hh>
 
 using namespace qxir;
 

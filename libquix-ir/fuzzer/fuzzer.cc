@@ -1,16 +1,16 @@
+#include <quix-ir/Lib.h>
 #include <quix-lexer/Lib.h>
 #include <quix-parser/Lib.h>
 #include <quix-prep/Lib.h>
-#include <quix-qxir/Lib.h>
 
 #include <cstdio>
 #include <iostream>
 #include <quix-core/Classes.hh>
+#include <quix-ir/Classes.hh>
 #include <quix-parser/Classes.hh>
 #include <quix-prep/Classes.hh>
-#include <quix-qxir/Classes.hh>
 
-#include "quix-qxir/TypeDecl.h"
+#include "quix-ir/TypeDecl.h"
 
 extern "C" const char *__asan_default_options() { return "detect_leaks=0"; }
 

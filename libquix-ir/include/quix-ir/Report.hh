@@ -32,8 +32,8 @@
 #ifndef __QUIX_QXIR_REPORT_H__
 #define __QUIX_QXIR_REPORT_H__
 
+#include <quix-ir/IR.h>
 #include <quix-lexer/Token.h>
-#include <quix-qxir/IR.h>
 
 #include <cstdarg>
 #include <functional>
