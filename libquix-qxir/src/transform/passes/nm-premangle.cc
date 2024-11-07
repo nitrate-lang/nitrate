@@ -66,11 +66,12 @@ bool qxir::transform::impl::nm_premangle(qmodule_t *mod) {
       Local *local = (*cur)->as<Local>();
       auto name = se.mangle_name(local, local->getAbiTag());
       if (name) [[likely]] {
+        qcore_assert(!name->empty());
         local->setName(mod->internString(*name));
       } else {
         failed = true;
-        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(), local->locBeg(),
-               local->locEnd());
+        report(IssueCode::NameManglingTypeInfer, IssueClass::Error, local->getName(),
+               local->locBeg(), local->locEnd());
       }
     }
 
@@ -88,6 +89,7 @@ bool qxir::transform::impl::nm_premangle(qmodule_t *mod) {
       return IterOp::Proceed;
     }
 
+    qcore_assert(!ident->getWhat()->getName().empty());
     ident->setName(ident->getWhat()->getName());
 
     return IterOp::Proceed;

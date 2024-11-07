@@ -36,8 +36,8 @@
 #error "This header is for C++ only."
 #endif
 
-#include <quix-core/Memory.h>
 #include <quix-core/Env.h>
+#include <quix-core/Memory.h>
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
@@ -71,9 +71,6 @@ public:
       std::string uuid_str = boost::uuids::to_string(uuid);
       qcore_env_set("this.job", uuid_str.c_str());
     }
-
-    // Set the default QUIX FS server port
-    qcore_env_set("this.srvport", "52781");
 
     {  // Set the compiler start time
       std::chrono::system_clock::time_point now = std::chrono::system_clock::now();

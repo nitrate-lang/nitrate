@@ -514,6 +514,7 @@ static bool beta_pass(qmodule_t *mod) {
         cur->setWhat(mod->getFunctions().left.at(resolved->first).first);
       }
 
+      qcore_assert(!resolved->first.empty());
       cur->setName(memorize(resolved->first));
 
       return IterOp::Proceed;
@@ -556,7 +557,8 @@ static bool beta_pass(qmodule_t *mod) {
 
       for (auto &[param_name, param_type, param_default] : mod->getParameterMap().at(name)) {
         if (param_name == ident_name) {
-          (*_cur)->as<Ident>()->setWhat(param_type);
+          /// FIXME: Should point to a symbol
+          // (*_cur)->as<Ident>()->setWhat(param_type);
           return IterOp::Proceed;
         }
       }

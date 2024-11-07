@@ -74,11 +74,8 @@ namespace qxir {
   constexpr size_t MAX_MODULE_INSTANCES = std::numeric_limits<ModuleId>::max();
 
   struct TargetInfo {
-    uint16_t m_pointer_size;
-
-    TargetInfo() : m_pointer_size(8) {}
-
-    uint16_t getPointerSize() const { return m_pointer_size; }
+    uint16_t PointerSizeBytes = 8;
+    std::optional<std::string> TargetTriple, CPU, CPUFeatures;
   };
 
   class Expr;
