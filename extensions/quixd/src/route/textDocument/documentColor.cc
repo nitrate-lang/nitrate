@@ -102,7 +102,8 @@ static void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessag
   SyncFS::the().select_uri(uri);
 
   SyncFS::the().wait_for_open();
-  LOG(INFO) << "Requesting document color";
+
+  LOG(INFO) << "Requested document color box";
 
   std::string text_content;
   if (!SyncFS::the().read_current(text_content)) {
@@ -283,8 +284,6 @@ static void do_documentColor(const lsp::RequestMessage& req, lsp::ResponseMessag
 
     resp->PushBack(color_info, resp->GetAllocator());
   }
-
-  LOG(INFO) << "Response: " << resp.to_string();
 
   return;
 }
