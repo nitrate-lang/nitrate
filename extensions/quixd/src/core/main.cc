@@ -1,3 +1,5 @@
+#include <boost/assert/source_location.hpp>
+#include <boost/throw_exception.hpp>
 #include <core/argparse.hh>
 #include <core/license-data.hh>
 #include <core/server.hh>
@@ -6,6 +8,11 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+
+void boost::throw_exception(std::exception const& e, boost::source_location const&) {
+  LOG(ERROR) << e.what();
+  abort();
+}
 
 static constexpr void create_parser(argparse::ArgumentParser& parser) {
   ///=================== BASIC CONFIGURATION ======================

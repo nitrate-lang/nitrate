@@ -12,10 +12,11 @@ find_library(libgflags libgflags.a REQUIRED)
 
 add_executable(quixd ${SOURCES})
 target_include_directories(quixd PRIVATE src
-                                         ${CMAKE_CURRENT_SOURCE_DIR}/../../libquix-core/include
-                                         ${CMAKE_CURRENT_SOURCE_DIR}/../../libquix-lexer/include
-                                         ${CMAKE_CURRENT_SOURCE_DIR}/../../libquix-parser/include)
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../libquix-core/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../libquix-lexer/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../libquix-parser/include)
 target_compile_options(quixd PRIVATE -O3 -fno-exceptions)
-target_link_libraries(quixd PUBLIC ${libglog} ${libgflags} crypto)
+target_link_libraries(quixd PUBLIC quix ${libglog} ${libgflags} crypto)
+add_dependencies(quixd quix)
 
 install(TARGETS quixd DESTINATION bin)

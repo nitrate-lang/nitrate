@@ -8,6 +8,9 @@
 using namespace rapidjson;
 
 static void do_declaration(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
+  resp.error(lsp::ErrorCodes::RequestFailed, "Not implemented");
+  return;
+
   /// TODO: Implement declaration request
 
   if (!req.params().HasMember("textDocument")) {
@@ -67,39 +70,39 @@ static void do_declaration(const lsp::RequestMessage& req, lsp::ResponseMessage&
 
   (void)line;
   (void)character;
-  std::string current_word;  /// TODO: Get the current word
+  // std::string current_word;  /// TODO: Get the current word
 
-  lang::ParseTree tree = lang::ParseTreeCache::the().get(uri, true).value_or(nullptr);
-  if (!tree) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "No parse tree for this document");
-    return;
-  }
+  // lang::ParseTree tree = lang::ParseTreeCache::the().get(uri, true).value_or(nullptr);
+  // if (!tree) {
+  //   resp.error(lsp::ErrorCodes::InvalidParams, "No parse tree for this document");
+  //   return;
+  // }
 
   /// TODO: Also must take into account the current scope
   /// TODO: Also must take into name resolution / namespaces
   /// TODO: If the semantics are illegal where there are duplicate names, emit the first one?
   /// TODO: Fuck, we don't know the original file name because of the macro preprocessing
   /// TODO: The macros (like @import) completely loose source location information
-  /// TODO: Its like there are two types of locations, static locations and post-processed locations.
-  /// We want static (unprocessed) locations herenow. How do i get that? My whole codebase is not
-  /// legacy...
+  /// TODO: Its like there are two types of locations, static locations and post-processed
+  /// locations. We want static (unprocessed) locations herenow. How do i get that? My whole
+  /// codebase is not legacy...
 
-  tree->root()->iterate([&](const qparse::Node* node) {
-    if (!node->is_decl() || node->as<qparse::Decl>()->get_name().view() != current_word)
-        [[likely]] {
-      return true;
-    }
+  // tree->root()->iterate([&](const qparse::Node* node) {
+  //   if (!node->is_decl() || node->as<qparse::Decl>()->get_name().view() != current_word)
+  //       [[likely]] {
+  //     return true;
+  //   }
 
-    const qparse::Decl* decl = node->as<qparse::Decl>();
+  //   const qparse::Decl* decl = node->as<qparse::Decl>();
 
-    auto start_pos = decl->get_start_pos();
+  //   auto start_pos = decl->get_start_pos();
 
-    resp->SetObject();
-    resp->AddMember("line", qlex_line(tree->lexer(), start_pos), resp->GetAllocator());
-    resp->AddMember("character", qlex_col(tree->lexer(), start_pos), resp->GetAllocator());
+  //   resp->SetObject();
+  //   resp->AddMember("line", qlex_line(tree->lexer(), start_pos), resp->GetAllocator());
+  //   resp->AddMember("character", qlex_col(tree->lexer(), start_pos), resp->GetAllocator());
 
-    return false;
-  });
+  //   return false;
+  // });
 }
 
 ADD_REQUEST_HANDLER("textDocument/declaration", do_declaration);

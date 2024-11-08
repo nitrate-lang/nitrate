@@ -2,6 +2,8 @@
 
 #include <glog/logging.h>
 #include <rapidjson/document.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/writer.h>
 
 #include <core/thread-pool.hh>
 #include <fstream>
@@ -244,6 +246,42 @@ namespace lsp {
     const MessageId& id() const { return m_id; }
     std::optional<rapidjson::Document>& result() { return m_result; }
     std::optional<ResponseError>& error() { return m_error; }
+
+    std::string to_string() const {
+      rapidjson::StringBuffer buffer;
+      rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+      rapidjson::Document doc(rapidjson::kObjectType);
+      doc.SetObject();
+      doc.AddMember("jsonrpc", "2.0", doc.GetAllocator());
+      if (std::holds_alternative<std::string>(m_id)) {
+        rapidjson::Value id;
+        id.SetString(std::get<std::string>(m_id).c_str(), std::get<std::string>(m_id).size(),
+                     doc.GetAllocator());
+        doc.AddMember("id", id, doc.GetAllocator());
+      } else {
+        doc.AddMember("id", std::get<int64_t>(m_id), doc.GetAllocator());
+      }
+      if (m_result.has_value()) {
+        rapidjson::Value result(rapidjson::kObjectType);
+        result.CopyFrom(m_result.value(), doc.GetAllocator());
+        doc.AddMember("result", result, doc.GetAllocator());
+      } else if (m_error.has_value()) {
+        rapidjson::Value error(rapidjson::kObjectType);
+        error.AddMember("code", (int)m_error.value().m_code, doc.GetAllocator());
+        rapidjson::Value message;
+        message.SetString(m_error.value().m_message.c_str(), m_error.value().m_message.size(),
+                          doc.GetAllocator());
+        error.AddMember("message", message, doc.GetAllocator());
+        if (m_error.value().m_data.has_value()) {
+          rapidjson::Value data(rapidjson::kObjectType);
+          data.CopyFrom(m_error.value().m_data.value(), doc.GetAllocator());
+          error.AddMember("data", data, doc.GetAllocator());
+        }
+        doc.AddMember("error", error, doc.GetAllocator());
+      }
+      doc.Accept(writer);
+      return buffer.GetString();
+    }
 
     rapidjson::Document* operator->() {
       if (!m_result.has_value()) {

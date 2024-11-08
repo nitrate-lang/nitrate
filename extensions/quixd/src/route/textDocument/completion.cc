@@ -11,10 +11,12 @@ public:
   static ParseTreeSet& the();
 
   std::optional<std::shared_ptr<ParseTree>> get(std::string_view uri) const;
-
 };
 
 static void do_completion(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
+  resp.error(lsp::ErrorCodes::RequestFailed, "Not implemented");
+  return;
+
   /// TODO: Implement completion logic
 
   /**
