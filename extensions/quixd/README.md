@@ -50,7 +50,7 @@ This is the implementation of a language server for the QUIX programming languag
 - 🚧 Signature Help
 - 🚧 Code Action
 - 🚧 Code Action Resolve
-- 🚧 Document Color
+- ✅ Document Color
 - 🚧 Color Presentation
 - 🚧 Formatting
 - 🚧 Range Formatting

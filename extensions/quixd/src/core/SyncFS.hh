@@ -1,22 +1,23 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <optional>
 #include <string>
 
 class SyncFS {
-  static thread_local std::string m_current;
-
   struct Impl;
-
   std::unique_ptr<Impl> m_impl;
+  std::string m_current;
+  std::mutex m_mutex;
+  std::atomic<bool> m_opened;
 
   /**
    * @brief Get the current file compressed size in bytes.
    * @note This function is thread-safe.
    * @note This is how much space the file takes in memory.
    */
-  std::optional<size_t> compressed_size() const;
+  std::optional<size_t> compressed_size();
 
   SyncFS();
   ~SyncFS();
@@ -87,13 +88,13 @@ public:
    * @brief Get the current file mime type.
    * @note This function is thread-safe.
    */
-  std::optional<const char*> mime_type() const;
+  std::optional<const char*> mime_type();
 
   /**
    * @brief Get the current file size in bytes.
    * @note This function is thread-safe.
    */
-  std::optional<size_t> size() const;
+  std::optional<size_t> size();
 
   /**
    * @brief Get the current file content.
@@ -101,11 +102,13 @@ public:
    * @return True if the file was read successfully, false otherwise.
    * @note This function is thread-safe.
    */
-  bool read_current(std::string& content) const;
+  bool read_current(std::string& content);
 
   using Digest = std::array<uint8_t, 20>;
 
-  std::optional<Digest> thumbprint() const;
+  std::optional<Digest> thumbprint();
+
+  void wait_for_open();
 
   // /**
   //  * @brief Convert a row-column pair to an absolute offset.

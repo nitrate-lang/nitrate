@@ -74,12 +74,9 @@ struct SyncFS::Impl {
   };
 
   std::unordered_map<std::string, File> m_files;
-  std::mutex m_mutex;
 };
 
-thread_local std::string SyncFS::m_current;
-
-std::optional<size_t> SyncFS::compressed_size() const {
+std::optional<size_t> SyncFS::compressed_size() {
   // No compression yet
   return size();
 }
@@ -127,6 +124,8 @@ static std::string url_decode(std::string_view str) {
   return result;
 }
 void SyncFS::select_uri(std::string_view uri) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
   if (!uri.starts_with("file://")) {
     LOG(ERROR) << "URI scheme not supported: " << uri;
     return;
@@ -136,19 +135,22 @@ void SyncFS::select_uri(std::string_view uri) {
 }
 
 SyncFS::OpenCode SyncFS::open(std::string_view mime_type) {
-  std::lock_guard lock(m_impl->m_mutex);
+  std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
+    m_opened = true;
     return OpenCode::ALREADY_OPEN;
   }
 
   if (!std::filesystem::exists(m_current)) {
+    m_opened = false;
     return OpenCode::NOT_FOUND;
   }
 
   std::ifstream file(m_current);
   if (!file.is_open()) {
+    m_opened = false;
     return OpenCode::OPEN_FAILED;
   }
 
@@ -158,11 +160,14 @@ SyncFS::OpenCode SyncFS::open(std::string_view mime_type) {
   f.set_content(std::move(content));
   m_impl->m_files.emplace(m_current, std::move(f));
 
+  m_opened = true;
   return OpenCode::OK;
 }
 
 SyncFS::CloseCode SyncFS::close() {
-  std::lock_guard lock(m_impl->m_mutex);
+  m_opened = false;
+
+  std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
@@ -174,7 +179,7 @@ SyncFS::CloseCode SyncFS::close() {
 }
 
 SyncFS::ReplaceCode SyncFS::replace(size_t offset, size_t length, std::string_view text) {
-  std::lock_guard lock(m_impl->m_mutex);
+  std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
@@ -186,8 +191,8 @@ SyncFS::ReplaceCode SyncFS::replace(size_t offset, size_t length, std::string_vi
   return ReplaceCode::NOT_OPEN;
 }
 
-std::optional<const char*> SyncFS::mime_type() const {
-  std::lock_guard lock(m_impl->m_mutex);
+std::optional<const char*> SyncFS::mime_type() {
+  std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
@@ -196,8 +201,8 @@ std::optional<const char*> SyncFS::mime_type() const {
   return std::nullopt;
 }
 
-std::optional<size_t> SyncFS::size() const {
-  std::lock_guard lock(m_impl->m_mutex);
+std::optional<size_t> SyncFS::size() {
+  std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
@@ -206,8 +211,8 @@ std::optional<size_t> SyncFS::size() const {
   return std::nullopt;
 }
 
-bool SyncFS::read_current(std::string& content) const {
-  std::lock_guard lock(m_impl->m_mutex);
+bool SyncFS::read_current(std::string& content) {
+  std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
@@ -217,8 +222,8 @@ bool SyncFS::read_current(std::string& content) const {
   return false;
 }
 
-std::optional<std::array<uint8_t, 20>> SyncFS::thumbprint() const {
-  std::lock_guard lock(m_impl->m_mutex);
+std::optional<std::array<uint8_t, 20>> SyncFS::thumbprint() {
+  std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_impl->m_files.find(m_current);
   if (it != m_impl->m_files.end()) [[likely]] {
@@ -236,4 +241,12 @@ std::optional<std::array<uint8_t, 20>> SyncFS::thumbprint() const {
   }
 
   return std::nullopt;
+}
+
+void SyncFS::wait_for_open() {
+  while (!m_opened) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+
+  return;
 }
