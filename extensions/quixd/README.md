@@ -63,4 +63,4 @@ This is the implementation of a language server for the QUIX programming languag
 
 - The language server is built automatically when building the QUIX toolchain. 
   Use the build tool provided in the root of the repository. 
-- Instructions for standalone building is are documented.
+- Instructions for standalone building are not documented.
