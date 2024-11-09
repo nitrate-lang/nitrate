@@ -51,10 +51,8 @@
 #include <quix-prep/Classes.hh>
 #include <unordered_map>
 
-#if QPKG_DEV_TOOLS
 // #include <dev/bench/bench.hh>
 // #include <dev/test/test.hh>
-#endif
 // #include <run/RunScript.hh>
 
 // #include <filesystem>
@@ -86,7 +84,7 @@ static std::optional<std::string> quixcc_cc_demangle(std::string_view mangled_na
 }
 
 static std::string qpkg_deps_version_string() {
-#define QPKG_STABLE false /* TODO: Automate setting of 'is stable build' flag */
+#define QPKG_STABLE false /* FIXME: Automate setting of 'is stable build' flag */
 
   std::stringstream ss;
 
@@ -572,7 +570,6 @@ namespace argparse_setup {
         .nargs(1);
   }
 
-#if QPKG_DEV_TOOLS
   void setup_argparse_dev(
       ArgumentParser &parser,
       std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) {
@@ -678,19 +675,12 @@ namespace argparse_setup {
     parser.add_subparser(*subparsers["codegen"]);
   }
 
-#endif
-
   void setup_argparse(
       ArgumentParser &parser, ArgumentParser &init_parser, ArgumentParser &build_parser,
       ArgumentParser &clean_parser, ArgumentParser &update_parser, ArgumentParser &install_parser,
       ArgumentParser &doc_parser, ArgumentParser &format_parser, ArgumentParser &list_parser,
-      ArgumentParser &test_parser
-#if QPKG_DEV_TOOLS
-      ,
-      ArgumentParser &dev_parser,
-      std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &dev_subparsers
-#endif
-  ) {
+      ArgumentParser &test_parser, ArgumentParser &dev_parser,
+      std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &dev_subparsers) {
     using namespace argparse;
 
     setup_argparse_init(init_parser);
@@ -702,9 +692,7 @@ namespace argparse_setup {
     setup_argparse_format(format_parser);
     setup_argparse_list(list_parser);
     setup_argparse_test(test_parser);
-#if QPKG_DEV_TOOLS
     setup_argparse_dev(dev_parser, dev_subparsers);
-#endif
 
     parser.add_subparser(init_parser);
     parser.add_subparser(build_parser);
@@ -715,9 +703,7 @@ namespace argparse_setup {
     parser.add_subparser(format_parser);
     parser.add_subparser(list_parser);
     parser.add_subparser(test_parser);
-#if QPKG_DEV_TOOLS
     parser.add_subparser(dev_parser);
-#endif
 
     parser.add_argument("--license")
         .help("show license information")
@@ -995,8 +981,6 @@ namespace qpkg::router {
     qerr << "test not implemented yet" << std::endl;
     return 1;
   }
-
-#if QPKG_DEV_TOOLS || 1
 
   namespace dev::bench {
     int run_benchmark_lexer() {
@@ -1400,7 +1384,6 @@ namespace qpkg::router {
 
     return 1;
   }
-#endif
 }  // namespace qpkg::router
 
 static bool do_libs_init() {
@@ -1438,12 +1421,12 @@ static bool do_libs_init() {
 }
 
 static void do_libs_deinit() {
-  qcore_lib_deinit();
-  qlex_lib_deinit();
-  qprep_lib_deinit();
-  qparse_lib_deinit();
-  qxir_lib_deinit();
   qcode_lib_deinit();
+  qxir_lib_deinit();
+  qparse_lib_deinit();
+  qprep_lib_deinit();
+  qlex_lib_deinit();
+  qcore_lib_deinit();
 }
 
 extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc, char *argv[],
@@ -1462,10 +1445,8 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
   static ArgumentParser format_parser("format", "1.0", default_arguments::help);
   static ArgumentParser list_parser("list", "1.0", default_arguments::help);
   static ArgumentParser test_parser("test", "1.0", default_arguments::help);
-#if QPKG_DEV_TOOLS
   static ArgumentParser dev_parser("dev", "1.0", default_arguments::help);
   static std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> dev_subparsers;
-#endif
   static ArgumentParser program("qpkg", qpkg_deps_version_string());
 
   { /* Configure argument parser instances once */
@@ -1473,12 +1454,7 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
     std::call_once(parsers_inited, [&]() {
       argparse_setup::setup_argparse(program, init_parser, build_parser, clean_parser,
                                      update_parser, install_parser, doc_parser, format_parser,
-                                     list_parser, test_parser
-#if QPKG_DEV_TOOLS
-                                     ,
-                                     dev_parser, dev_subparsers
-#endif
-      );
+                                     list_parser, test_parser, dev_parser, dev_subparsers);
     });
   }
 
@@ -1495,7 +1471,7 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
     return -1;
   }
 
-  { /* Handle edge case for scripts */
+  { /* Handle edge case for run scripts */
     if (args.size() >= 2 && args[1] == "run") {
       std::vector<std::string> run_args(args.begin() + 2, args.end());
       return qpkg::router::run_run_mode(run_args);
@@ -1533,10 +1509,8 @@ extern "C" __attribute__((visibility("default"))) int qpkg_command(int32_t argc,
     return qpkg::router::run_list_mode(list_parser);
   } else if (program.is_subcommand_used("test")) {
     return qpkg::router::run_test_mode(test_parser);
-#if QPKG_DEV_TOOLS
   } else if (program.is_subcommand_used("dev")) {
     return qpkg::router::run_dev_mode(dev_parser, dev_subparsers);
-#endif
   } else {
     qerr << "No command specified" << std::endl;
     qerr << program;
