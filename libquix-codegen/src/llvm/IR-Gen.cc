@@ -2510,8 +2510,8 @@ static val_t QIR_NODE_FN_C(ctx_t &m, craft_t &b, const Mode &cf, State &s, qxir:
     for (size_t i = 0; i < N->getParams().size(); i++) {
       fn->getArg(i)->setName(N->getParams()[i].second);
 
-      std::string ploc_name = "_Q" + std::string(N->getParams()[i].second);
-      llvm::AllocaInst *param_alloc = b.CreateAlloca(fn->getArg(i)->getType(), nullptr, ploc_name);
+      llvm::AllocaInst *param_alloc =
+          b.CreateAlloca(fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);
 
       b.CreateStore(fn->getArg(i), param_alloc);
       s.locals.top().second.emplace(N->getParams()[i].second, param_alloc);

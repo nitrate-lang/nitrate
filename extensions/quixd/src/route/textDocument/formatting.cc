@@ -610,13 +610,29 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_ARRAY_TY: {
-      /// TODO:
+      ArrayTy* N = C->as<ArrayTy>();
+      O << "[";
+      automaton_recurse(N->get_item(), S, O);
+      O << "; ";
+      automaton_recurse(N->get_size(), S, O);
+      O << "]";
       put_type_metadata(C->as<qparse::Type>(), S, O);
       break;
     }
 
     case QAST_NODE_TUPLE_TY: {
-      /// TODO:
+      TupleTy* N = C->as<TupleTy>();
+
+      O << "(";
+      for (auto it = N->get_items().begin(); it != N->get_items().end(); ++it) {
+        automaton_recurse(*it, S, O);
+
+        if (std::next(it) != N->get_items().end()) {
+          O << ", ";
+        }
+      }
+      O << ")";
+
       put_type_metadata(C->as<qparse::Type>(), S, O);
       break;
     }
@@ -640,7 +656,25 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_TEMPL_TY: {
-      /// TODO:
+      TemplType* N = C->as<TemplType>();
+      if (N->get_template()->this_typeid() == QAST_NODE_UNRES_TY &&
+          N->get_template()->as<UnresolvedType>()->get_name() == "__builtin_result") {
+        qcore_assert(N->get_args().size() == 1);
+
+        automaton_recurse(N->get_args().front(), S, O);
+        O << "?";
+      } else {
+        automaton_recurse(N->get_template(), S, O);
+        O << "<";
+        for (auto it = N->get_args().begin(); it != N->get_args().end(); ++it) {
+          automaton_recurse(*it, S, O);
+
+          if (std::next(it) != N->get_args().end()) {
+            O << ", ";
+          }
+        }
+        O << ">";
+      }
       put_type_metadata(C->as<qparse::Type>(), S, O);
       break;
     }
@@ -821,6 +855,7 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
       if (arrow_syntax) {
         O << "=> ";
         automaton_recurse(N->get_body()->get_items().front(), S, O);
+        O << ";";
       } else {
         automaton_recurse(N->get_body(), S, O);
 
@@ -978,6 +1013,10 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_BLOCK: {
+      static const std::unordered_set<qparse_ty_t> no_has_semicolon = {
+          QAST_NODE_FN,
+      };
+
       Block* N = C->as<Block>();
 
       if (S.did_root) {
@@ -990,7 +1029,10 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
           for (auto& stmt : C->as<Block>()->get_items()) {
             put_indent(S, O);
             automaton_recurse(stmt, S, O);
-            O << ";\n";
+            if (!no_has_semicolon.contains(stmt->this_typeid())) {
+              O << ";";
+            }
+            O << "\n";
           }
 
           S.bra_depth--;
@@ -1008,14 +1050,15 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
 
         for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
           automaton_recurse(*it, S, O);
+          if (!no_has_semicolon.contains((*it)->this_typeid())) {
+            O << ";";
+          }
           if (std::next(it) != N->get_items().end()) {
             if (double_sep.contains((*it)->this_typeid())) {
-              O << ";\n\n";
+              O << "\n\n";
             } else {
               O << "\n";
             }
-          } else {
-            O << ";";
           }
         }
         O << "\n";
