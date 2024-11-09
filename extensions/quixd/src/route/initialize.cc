@@ -22,6 +22,7 @@ static void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp
   // capabilities.AddMember("declarationProvider", true, alloc);
   // capabilities.AddMember("definitionProvider", true, alloc);
   capabilities.AddMember("colorProvider", true, alloc);
+  capabilities.AddMember("documentFormattingProvider", true, alloc);
 }
 
 ADD_REQUEST_HANDLER("initialize", do_initialize);
