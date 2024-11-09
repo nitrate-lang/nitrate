@@ -1237,21 +1237,6 @@ namespace qxir {
     return create<OpaqueTy>(memorize(n->get_name()));
   }
 
-  static Expr *qconv_enum_ty(ConvState &s, qparse::EnumTy *n) {
-    /**
-     * @brief Convert an enum type to a qxir enum type.
-     * @details If the enum type has a member type, we convert it to a qxir
-     *        type. Otherwise, we wrap it for later conversion.
-     */
-
-    auto memtype = qconv_one(s, n->get_memtype());
-    if (!memtype) {
-      return create<Tmp>(TmpType::ENUM, memorize(n->get_name()));
-    }
-
-    return memtype;
-  }
-
   static Expr *qconv_struct_ty(ConvState &s, qparse::StructTy *n) {
     /**
      * @brief Convert a struct type to a qxir struct type.
@@ -2736,10 +2721,6 @@ static qxir::Expr *qconv_one(ConvState &s, qparse::Node *n) {
 
     case QAST_NODE_OPAQUE_TY:
       out = qconv_opaque_ty(s, n->as<qparse::OpaqueTy>());
-      break;
-
-    case QAST_NODE_ENUM_TY:
-      out = qconv_enum_ty(s, n->as<qparse::EnumTy>());
       break;
 
     case QAST_NODE_STRUCT_TY:

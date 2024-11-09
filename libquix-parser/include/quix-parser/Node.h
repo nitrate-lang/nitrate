@@ -92,7 +92,6 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOID_TY,
   QAST_NODE_PTR_TY,
   QAST_NODE_OPAQUE_TY,
-  QAST_NODE_ENUM_TY,
   QAST_NODE_STRUCT_TY,
   QAST_NODE_GROUP_TY,
   QAST_NODE_REGION_TY,
@@ -138,7 +137,7 @@ typedef enum qparse_ty_t {
   QAST_NODE_VOLSTMT,
 } qparse_ty_t;
 
-#define QAST_NODE_COUNT 89
+#define QAST_NODE_COUNT 88
 
 typedef struct qparse_node_t qparse_node_t;
 
@@ -776,22 +775,6 @@ namespace qparse {
     void set_size(ConstExpr *size) { m_size = size; }
 
     PNODE_IMPL_CORE(ArrayTy)
-  };
-
-  class EnumTy : public TypeComplex {
-    String m_name;
-    Type *m_memtype;
-
-  public:
-    EnumTy(String name = "", Type *memtype = nullptr) : m_name(name), m_memtype(memtype) {}
-
-    String get_name() { return m_name; }
-    void set_name(String name) { m_name = name; }
-
-    Type *get_memtype() { return m_memtype; }
-    void set_memtype(Type *memtype) { m_memtype = memtype; }
-
-    PNODE_IMPL_CORE(EnumTy)
   };
 
   class RefTy : public TypeComplex {
