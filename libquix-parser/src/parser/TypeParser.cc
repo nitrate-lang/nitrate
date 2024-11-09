@@ -453,8 +453,8 @@ type_suffix: {
 
     if (tok.is<qOpTernary>()) { /* Parse optional type */
       qlex_next(rd);
-      inner =
-          TemplType::get(UnresolvedType::get("std::result"), TemplTypeArgs{TypeExpr::get(inner)});
+      inner = TemplType::get(UnresolvedType::get("__builtin_result"),
+                             TemplTypeArgs{TypeExpr::get(inner)});
       continue;
     }
 
