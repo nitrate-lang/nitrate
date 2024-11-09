@@ -96,8 +96,8 @@ static Call *parse_function_call(qparse_t &job, Expr *callee, qlex_t *rd, size_t
          * @brief
          */
 
-        qlex_insert(rd, ident);
         qlex_insert(rd, tok);
+        qlex_insert(rd, ident);
         goto parse_pos_arg;
       }
 

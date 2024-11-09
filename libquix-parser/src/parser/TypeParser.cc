@@ -33,6 +33,7 @@
 
 #include <unordered_map>
 
+#include "quix-lexer/Lexer.h"
 #include "quix-lexer/Token.h"
 
 using namespace qparse;
@@ -366,18 +367,17 @@ type_suffix: {
 
     while (true) {
       tok = qlex_peek(rd);
-      if (tok.is<qOpGT>() || tok.ty == qEofF) {
+      if (tok.is<qOpGT>() || tok.is<qOpRShift>() || tok.is<qOpROTR>() || tok.ty == qEofF) {
         break;
       }
 
-      Expr *arg = nullptr;
-      if (!parse_expr(job, rd, {qlex_tok_t(qOper, qOpGT), qlex_tok_t(qPunc, qPuncComa)}, &arg) ||
-          !arg) {
+      Type *arg = nullptr;
+      if (!parse_type(job, rd, &arg)) {
         syntax(tok, "Expected a template type argument");
         goto error_end;
       }
 
-      args.push_back(arg);
+      args.push_back(TypeExpr::get(arg));
 
       tok = qlex_peek(rd);
       if (tok.is<qPuncComa>()) {
@@ -385,10 +385,21 @@ type_suffix: {
       }
     }
 
-    if (!(tok = qlex_next(rd)).is<qOpGT>()) {
+    tok = qlex_next(rd);
+
+    if (tok.is<qOpGT>()) {
+    } else if (tok.is<qOpRShift>()) {
+      tok.v.op = qOpGT;
+      qlex_insert(rd, tok);
+    } else if (tok.is<qOpROTR>()) {
+      tok.v.op = qOpRShift;
+      qlex_insert(rd, tok);
+    } else {
       syntax(tok, "Expected '>' after template type arguments");
       goto error_end;
     }
+
+    qlex_peek(rd);
 
     inner = TemplType::get(inner, args);
   }
