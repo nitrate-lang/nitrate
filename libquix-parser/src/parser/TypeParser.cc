@@ -403,7 +403,7 @@ type_suffix: {
   while (true) {
     tok = qlex_peek(rd);
 
-    if (tok.is<qPuncColn>()) { /* Parse bit-field width */
+    if (tok.is<qPuncColn>()) { /* Parse bit-field width or confinement range */
       qlex_next(rd);
       tok = qlex_peek(rd);
 
@@ -435,13 +435,21 @@ type_suffix: {
         qlex_next(rd);
 
         inner->set_range(ConstExpr::get(start), ConstExpr::get(end));
-      } else {
+      } else { /* Parse bit-field width */
         Expr *expr = nullptr;
         if (!parse_expr(job, rd,
-                        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
-                         qlex_tok_t(qPunc, qPuncColn), qlex_tok_t(qPunc, qPuncRPar),
-                         qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncRCur),
-                         qlex_tok_t(qOper, qOpSet)},
+                        {
+                            qlex_tok_t(qPunc, qPuncRPar),  //
+                            qlex_tok_t(qPunc, qPuncRBrk),  //
+                            qlex_tok_t(qPunc, qPuncLCur),  //
+                            qlex_tok_t(qPunc, qPuncRCur),  //
+                            qlex_tok_t(qPunc, qPuncComa),  //
+                            qlex_tok_t(qPunc, qPuncColn),  //
+                            qlex_tok_t(qPunc, qPuncSemi),  //
+                            qlex_tok_t(qOper, qOpSet),     //
+                            qlex_tok_t(qOper, qOpMinus),   //
+                            qlex_tok_t(qOper, qOpGT),      //
+                        },
                         &expr)) {
           syntax(tok, "Expected expression for bit-field width");
           goto error_end;
