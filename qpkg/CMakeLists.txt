@@ -14,9 +14,10 @@ string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(QPKG_ID "\"QPKG_${SHA256SUMS}\"")
 message(STATUS "qpkg VersionId: ${QPKG_ID}")
 
-file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
-
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/yaml-cpp-0.8.0)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/third_party/quixd)
+
+file(GLOB_RECURSE QPKG_CXX_SOURCES "src/*.cc")
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
   #================== CREATE APPLICATION RELEASE BUILD ================

@@ -100,7 +100,7 @@ void signal_handler(int signal) {
   }
 }
 
-int main(int argc, char** argv) {
+int quixd_main(int argc, char** argv) {
   std::vector<std::string> args(argv, argv + argc);
   argparse::ArgumentParser parser("quixd", "1.0");
   create_parser(parser);
