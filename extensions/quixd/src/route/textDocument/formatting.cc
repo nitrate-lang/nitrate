@@ -151,8 +151,6 @@ static std::string escape_string_literal(AutomatonState& S, std::string_view str
   return res;
 }
 
-/// TODO: Finish implementing formatter
-
 static void put_indent(AutomatonState& S, std::ostream& O) {
   if (S.bra_depth) {
     O << std::string(S.bra_depth * 2, ' ');
@@ -586,26 +584,22 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_STRUCT_TY: {
-      /// TODO:
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      qcore_panic("Unreachable");
       break;
     }
 
     case QAST_NODE_GROUP_TY: {
-      /// TODO:
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      qcore_panic("Unreachable");
       break;
     }
 
     case QAST_NODE_REGION_TY: {
-      /// TODO:
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      qcore_panic("Unreachable");
       break;
     }
 
     case QAST_NODE_UNION_TY: {
-      /// TODO:
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      qcore_panic("Unreachable");
       break;
     }
 
@@ -638,7 +632,64 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_FN_TY: {
-      /// TODO:
+      static const std::unordered_map<FuncPurity, std::string> purity_str = {
+          {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
+          {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
+          {FuncPurity::PURE, " pure"},
+          {FuncPurity::QUASIPURE, " quasipure"},
+          {FuncPurity::RETROPURE, " retropure"}};
+
+      FuncTy* N = C->as<FuncTy>();
+
+      std::string props;
+      props += purity_str.at(N->get_purity());
+
+      if (N->is_noexcept()) {
+        props += " noexcept";
+      }
+
+      if (N->is_foreign()) {
+        props += " foreign";
+      }
+
+      if (N->is_crashpoint()) {
+        props += " crashpoint";
+      }
+
+      O << "fn";
+      if (!props.empty()) {
+        O << std::move(props);
+      }
+
+      O << "(";
+      for (auto it = N->get_params().begin(); it != N->get_params().end(); it++) {
+        O << std::get<0>(*it);
+        auto param_ty = std::get<1>(*it);
+        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) || std::get<2>(*it)) {
+          O << ": ";
+          automaton_recurse(std::get<1>(*it), S, O);
+          if (std::get<2>(*it)) {
+            O << " = ";
+            automaton_recurse(std::get<2>(*it), S, O);
+          }
+        }
+
+        if (std::next(it) != N->get_params().end() || N->is_variadic()) {
+          O << ", ";
+        }
+      }
+
+      if (N->is_variadic()) {
+        O << "...";
+      }
+
+      O << ")";
+
+      if (N->get_return_ty() && N->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
+        O << ": ";
+        automaton_recurse(N->get_return_ty(), S, O);
+      }
+
       put_type_metadata(C->as<qparse::Type>(), S, O);
       break;
     }
@@ -1008,7 +1059,18 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_COMPOSITE_FIELD: {
-      /// TODO:
+      CompositeField* N = C->as<CompositeField>();
+
+      O << N->get_name() << ": ";
+      automaton_recurse(N->get_type(), S, O);
+
+      if (N->get_value()) {
+        O << " = ";
+        automaton_recurse(N->get_value(), S, O);
+      }
+
+      O << ",";
+
       break;
     }
 
