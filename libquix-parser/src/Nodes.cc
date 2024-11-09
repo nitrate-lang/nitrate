@@ -3108,7 +3108,7 @@ void WhileStmt::print_impl(std::ostream &os, bool debug) {
 
 WhileStmt *WhileStmt::clone_impl() {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
-  Stmt *body = m_body ? m_body->clone() : nullptr;
+  Block *body = m_body ? m_body->clone() : nullptr;
 
   return WhileStmt::get(cond, body);
 }
@@ -3293,7 +3293,7 @@ void FormStmt::print_impl(std::ostream &os, bool debug) {
 FormStmt *FormStmt::clone_impl() {
   Expr *expr = m_expr ? m_expr->clone() : nullptr;
   Expr *maxjobs = m_maxjobs ? m_maxjobs->clone() : nullptr;
-  Stmt *body = m_body ? m_body->clone() : nullptr;
+  Block *body = m_body ? m_body->clone() : nullptr;
 
   return FormStmt::get(m_idx_ident, m_val_ident, expr, maxjobs, body);
 }
@@ -3352,7 +3352,7 @@ void ForeachStmt::print_impl(std::ostream &os, bool debug) {
 
 ForeachStmt *ForeachStmt::clone_impl() {
   Expr *expr = m_expr ? m_expr->clone() : nullptr;
-  Stmt *body = m_body ? m_body->clone() : nullptr;
+  Block *body = m_body ? m_body->clone() : nullptr;
 
   return ForeachStmt::get(m_idx_ident, m_val_ident, expr, body);
 }
@@ -3625,7 +3625,7 @@ void CaseStmt::print_impl(std::ostream &os, bool debug) {
 
 CaseStmt *CaseStmt::clone_impl() {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
-  Stmt *body = m_body ? m_body->clone() : nullptr;
+  Block *body = m_body ? m_body->clone() : nullptr;
 
   return CaseStmt::get(cond, body);
 }

@@ -1442,16 +1442,16 @@ namespace qparse {
   class WhileStmt : public FlowStmt {
   protected:
     Expr *m_cond;
-    Stmt *m_body;
+    Block *m_body;
 
   public:
-    WhileStmt(Expr *cond = nullptr, Stmt *body = nullptr) : m_cond(cond), m_body(body) {}
+    WhileStmt(Expr *cond = nullptr, Block *body = nullptr) : m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
     void set_cond(Expr *cond) { m_cond = cond; }
 
-    Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
+    Block *get_body() { return m_body; }
+    void set_body(Block *body) { m_body = body; }
 
     PNODE_IMPL_CORE(WhileStmt)
   };
@@ -1488,11 +1488,11 @@ namespace qparse {
     String m_val_ident;
     Expr *m_expr;
     Expr *m_maxjobs;
-    Stmt *m_body;
+    Block *m_body;
 
   public:
     FormStmt(String idx_ident = "", String val_ident = "", Expr *expr = nullptr,
-             Expr *maxjobs = nullptr, Stmt *body = nullptr)
+             Expr *maxjobs = nullptr, Block *body = nullptr)
         : m_idx_ident(idx_ident),
           m_val_ident(val_ident),
           m_expr(expr),
@@ -1511,8 +1511,8 @@ namespace qparse {
     Expr *get_maxjobs() { return m_maxjobs; }
     void set_maxjobs(Expr *maxjobs) { m_maxjobs = maxjobs; }
 
-    Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
+    Block *get_body() { return m_body; }
+    void set_body(Block *body) { m_body = body; }
 
     PNODE_IMPL_CORE(FormStmt)
   };
@@ -1522,11 +1522,11 @@ namespace qparse {
     String m_idx_ident;
     String m_val_ident;
     Expr *m_expr;
-    Stmt *m_body;
+    Block *m_body;
 
   public:
     ForeachStmt(String idx_ident = "", String val_ident = "", Expr *expr = nullptr,
-                Stmt *body = nullptr)
+                Block *body = nullptr)
         : m_idx_ident(idx_ident), m_val_ident(val_ident), m_expr(expr), m_body(body) {}
 
     String get_idx_ident() { return m_idx_ident; }
@@ -1538,8 +1538,8 @@ namespace qparse {
     Expr *get_expr() { return m_expr; }
     void set_expr(Expr *expr) { m_expr = expr; }
 
-    Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
+    Block *get_body() { return m_body; }
+    void set_body(Block *body) { m_body = body; }
 
     PNODE_IMPL_CORE(ForeachStmt)
   };
@@ -1621,16 +1621,16 @@ namespace qparse {
   class CaseStmt : public FlowStmt {
   protected:
     Expr *m_cond;
-    Stmt *m_body;
+    Block *m_body;
 
   public:
-    CaseStmt(Expr *cond = nullptr, Stmt *body = nullptr) : m_cond(cond), m_body(body) {}
+    CaseStmt(Expr *cond = nullptr, Block *body = nullptr) : m_cond(cond), m_body(body) {}
 
     Expr *get_cond() { return m_cond; }
     void set_cond(Expr *cond) { m_cond = cond; }
 
-    Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
+    Block *get_body() { return m_body; }
+    void set_body(Block *body) { m_body = body; }
 
     PNODE_IMPL_CORE(CaseStmt)
   };
