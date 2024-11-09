@@ -510,7 +510,6 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_TEMPL_CALL: {
-      /// FIXME: Verify this one is correct
       TemplCall* N = C->as<TemplCall>();
 
       automaton_recurse(N->get_func(), S, O);
@@ -949,7 +948,6 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_ENUM: {
-      /// TODO:
       EnumDef* N = C->as<EnumDef>();
       O << "enum " << N->get_name();
 
