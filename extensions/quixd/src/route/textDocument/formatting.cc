@@ -305,17 +305,6 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
   S.bra_depth--;
   put_indent(S);
   S.line << "}";
-
-  if (!N->get_tags().empty()) {
-    S.line << " with [";
-    for (auto it = N->get_tags().begin(); it != N->get_tags().end(); it++) {
-      S.line << *it;
-      if (std::next(it) != N->get_tags().end()) {
-        S.line << ", ";
-      }
-    }
-    S.line << "]";
-  }
 }
 
 static void recurse(qparse::Node* C, AutomatonState& S) {
@@ -1223,16 +1212,6 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
 
       recurse(N->get_body(), S);
 
-      if (!N->get_tags().empty()) {
-        S.line << " with [";
-        for (auto it = N->get_tags().begin(); it != N->get_tags().end(); it++) {
-          S.line << *it;
-          if (std::next(it) != N->get_tags().end()) {
-            S.line << ", ";
-          }
-        }
-        S.line << "]";
-      }
       break;
     }
 
@@ -1664,6 +1643,21 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       S.line << "volatile ";
       recurse(N->get_stmt(), S);
       break;
+    }
+  }
+
+  if (C->is_decl()) {
+    Decl* N = C->as<Decl>();
+
+    if (!N->get_tags().empty()) {
+      S.line << " with [";
+      for (auto it = N->get_tags().begin(); it != N->get_tags().end(); it++) {
+        S.line << *it;
+        if (std::next(it) != N->get_tags().end()) {
+          S.line << ", ";
+        }
+      }
+      S.line << "]";
     }
   }
 }
