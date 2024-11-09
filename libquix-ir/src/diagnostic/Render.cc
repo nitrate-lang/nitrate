@@ -435,7 +435,7 @@ namespace qxir::diag {
     }
   }
 
-  void badtree(const qparse::Node *node, std::string_view fmt, ...) {
+  void badtree(qparse::Node *node, std::string_view fmt, ...) {
     if (!node) {
       qcore_panic("badtree: node is NULL");
     }
