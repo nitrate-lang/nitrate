@@ -11,6 +11,7 @@
 #include <quix-parser/Classes.hh>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 
 using namespace rapidjson;
 
@@ -186,18 +187,6 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
   using namespace qparse;
 
   if (!C) {
-    return;
-  }
-
-  if (!S.did_root) {
-    S.did_root = true;
-
-    Block* stmts = C->as<Block>();
-    for (auto node : stmts->get_items()) {
-      automaton_recurse(node, S, O);
-      O << ";\n";
-    }
-
     return;
   }
 
@@ -392,6 +381,7 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     case QAST_NODE_SEQ_POINT: {
       SeqPoint* N = C->as<SeqPoint>();
 
+      O << "(";
       for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
         automaton_recurse(*it, S, O);
 
@@ -399,6 +389,7 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
           O << ", ";
         }
       }
+      O << ")";
       break;
     }
 
@@ -415,7 +406,7 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_TYPE_EXPR: {
-      /// TODO:
+      automaton_recurse(C->as<TypeExpr>()->get_type(), S, O);
       break;
     }
 
@@ -613,7 +604,72 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_FNDECL: {
-      /// TODO:
+      static const std::unordered_map<FuncPurity, std::string> purity_str = {
+          {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
+          {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
+          {FuncPurity::PURE, " pure"},
+          {FuncPurity::QUASIPURE, " quasipure"},
+          {FuncPurity::RETROPURE, " retropure"}};
+
+      FnDecl* N = C->as<FnDecl>();
+      FuncTy* F = N->get_type();
+      if (!F) {
+        break;
+      }
+
+      std::string props;
+      props += purity_str.at(F->get_purity());
+
+      if (F->is_noexcept()) {
+        props += " noexcept";
+      }
+
+      if (F->is_foreign()) {
+        props += " foreign";
+      }
+
+      if (F->is_crashpoint()) {
+        props += " crashpoint";
+      }
+
+      if (!N->get_name().empty()) {
+        props += " " + N->get_name();
+      }
+
+      O << "fn";
+      if (!props.empty()) {
+        O << std::move(props);
+      }
+
+      O << "(";
+      for (auto it = F->get_params().begin(); it != F->get_params().end(); it++) {
+        O << std::get<0>(*it);
+        auto param_ty = std::get<1>(*it);
+        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) || std::get<2>(*it)) {
+          O << ": ";
+          automaton_recurse(std::get<1>(*it), S, O);
+          if (std::get<2>(*it)) {
+            O << " = ";
+            automaton_recurse(std::get<2>(*it), S, O);
+          }
+        }
+
+        if (std::next(it) != F->get_params().end() || F->is_variadic()) {
+          O << ", ";
+        }
+      }
+
+      if (F->is_variadic()) {
+        O << "...";
+      }
+
+      O << ")";
+
+      if (F->get_return_ty() && F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
+        O << ": ";
+        automaton_recurse(F->get_return_ty(), S, O);
+      }
+
       break;
     }
 
@@ -643,7 +699,104 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_FN: {
-      /// TODO:
+      static const std::unordered_map<FuncPurity, std::string> purity_str = {
+          {FuncPurity::IMPURE_THREAD_UNSAFE, ""},
+          {FuncPurity::IMPURE_THREAD_SAFE, " tsafe"},
+          {FuncPurity::PURE, " pure"},
+          {FuncPurity::QUASIPURE, " quasipure"},
+          {FuncPurity::RETROPURE, " retropure"}};
+
+      FnDef* N = C->as<FnDef>();
+      FuncTy* F = N->get_type();
+      if (!F) {
+        break;
+      }
+
+      std::string props;
+      props += purity_str.at(F->get_purity());
+
+      if (F->is_noexcept()) {
+        props += " noexcept";
+      }
+
+      if (F->is_foreign()) {
+        props += " foreign";
+      }
+
+      if (F->is_crashpoint()) {
+        props += " crashpoint";
+      }
+
+      if (!N->get_name().empty()) {
+        props += " " + N->get_name();
+      }
+
+      O << "fn";
+      if (!props.empty()) {
+        O << std::move(props);
+      }
+
+      O << "(";
+      for (auto it = F->get_params().begin(); it != F->get_params().end(); it++) {
+        O << std::get<0>(*it);
+        auto param_ty = std::get<1>(*it);
+        if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) || std::get<2>(*it)) {
+          O << ": ";
+          automaton_recurse(std::get<1>(*it), S, O);
+          if (std::get<2>(*it)) {
+            O << " = ";
+            automaton_recurse(std::get<2>(*it), S, O);
+          }
+        }
+
+        if (std::next(it) != F->get_params().end() || F->is_variadic()) {
+          O << ", ";
+        }
+      }
+
+      if (F->is_variadic()) {
+        O << "...";
+      }
+
+      O << ")";
+
+      if (F->get_return_ty() && F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
+        O << ": ";
+        automaton_recurse(F->get_return_ty(), S, O);
+      }
+      O << " ";
+
+      bool arrow_syntax =
+          (N->get_body()->get_items().size() == 1) && !N->get_precond() && !N->get_postcond();
+
+      if (arrow_syntax) {
+        O << "=> ";
+        automaton_recurse(N->get_body()->get_items().front(), S, O);
+      } else {
+        automaton_recurse(N->get_body(), S, O);
+
+        bool promises = N->get_precond() || N->get_postcond();
+        if (promises) {
+          O << " promise {\n";
+          S.bra_depth++;
+          if (N->get_precond()) {
+            put_indent(S, O);
+            O << "in ";
+            automaton_recurse(N->get_precond(), S, O);
+            O << ";\n";
+          }
+
+          if (N->get_postcond()) {
+            put_indent(S, O);
+            O << "out ";
+            automaton_recurse(N->get_postcond(), S, O);
+            O << ";\n";
+          }
+          S.bra_depth--;
+          O << "}";
+        }
+      }
+
       break;
     }
 
@@ -674,7 +827,7 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
             O << ", ";
           }
         }
-        O << "] ";
+        O << "]";
       }
       break;
     }
@@ -692,62 +845,137 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     case QAST_NODE_BLOCK: {
       Block* N = C->as<Block>();
 
-      if (N->get_items().empty()) {
-        O << "{}";
-      } else {
-        O << "{\n";
-        S.bra_depth++;
+      if (S.did_root) {
+        if (N->get_items().empty()) {
+          O << "{}";
+        } else {
+          O << "{\n";
+          S.bra_depth++;
 
-        for (auto& stmt : C->as<Block>()->get_items()) {
+          for (auto& stmt : C->as<Block>()->get_items()) {
+            put_indent(S, O);
+            automaton_recurse(stmt, S, O);
+            O << ";\n";
+          }
+
+          S.bra_depth--;
           put_indent(S, O);
-          automaton_recurse(stmt, S, O);
-          O << ";\n";
+          O << "}";
         }
+      } else {
+        static const std::unordered_set<qparse_ty_t> double_sep = {
+            QAST_NODE_FNDECL, QAST_NODE_STRUCT,    QAST_NODE_REGION,
+            QAST_NODE_GROUP,  QAST_NODE_UNION,     QAST_NODE_ENUM,
+            QAST_NODE_FN,     QAST_NODE_SUBSYSTEM, QAST_NODE_EXPORT,
+        };
 
-        S.bra_depth--;
-        put_indent(S, O);
-        O << "}";
+        S.did_root = true;
+
+        for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
+          automaton_recurse(*it, S, O);
+          if (std::next(it) != N->get_items().end()) {
+            if (double_sep.contains((*it)->this_typeid())) {
+              O << ";\n\n";
+            } else {
+              O << "\n";
+            }
+          } else {
+            O << ";";
+          }
+        }
+        O << "\n";
       }
+
       break;
     }
 
     case QAST_NODE_CONST: {
-      /// TODO:
+      ConstDecl* N = C->as<ConstDecl>();
+      O << "const " << N->get_name();
+      if (N->get_type()) {
+        O << ": ";
+        automaton_recurse(N->get_type(), S, O);
+      }
+      if (N->get_value()) {
+        O << " = ";
+        automaton_recurse(N->get_value(), S, O);
+      }
       break;
     }
 
     case QAST_NODE_VAR: {
-      /// TODO:
+      VarDecl* N = C->as<VarDecl>();
+      O << "var " << N->get_name();
+      if (N->get_type()) {
+        O << ": ";
+        automaton_recurse(N->get_type(), S, O);
+      }
+      if (N->get_value()) {
+        O << " = ";
+        automaton_recurse(N->get_value(), S, O);
+      }
       break;
     }
 
     case QAST_NODE_LET: {
-      /// TODO:
+      LetDecl* N = C->as<LetDecl>();
+      O << "let " << N->get_name();
+      if (N->get_type()) {
+        O << ": ";
+        automaton_recurse(N->get_type(), S, O);
+      }
+      if (N->get_value()) {
+        O << " = ";
+        automaton_recurse(N->get_value(), S, O);
+      }
       break;
     }
 
     case QAST_NODE_INLINE_ASM: {
-      /// TODO:
+      qcore_panic("Asm format is not implemented");
       break;
     }
 
     case QAST_NODE_RETURN: {
-      /// TODO:
+      ReturnStmt* N = C->as<ReturnStmt>();
+
+      O << "ret";
+      if (N->get_value()) {
+        O << " ";
+        automaton_recurse(N->get_value(), S, O);
+      }
+
       break;
     }
 
     case QAST_NODE_RETIF: {
-      /// TODO:
+      ReturnIfStmt* N = C->as<ReturnIfStmt>();
+
+      O << "retif";
+      automaton_recurse(N->get_cond(), S, O);
+      O << ", ";
+      automaton_recurse(N->get_value(), S, O);
+
       break;
     }
 
     case QAST_NODE_RETZ: {
-      /// TODO:
+      RetZStmt* N = C->as<RetZStmt>();
+
+      O << "retz";
+      automaton_recurse(N->get_cond(), S, O);
+      O << ", ";
+      automaton_recurse(N->get_value(), S, O);
+
       break;
     }
 
     case QAST_NODE_RETV: {
-      /// TODO:
+      RetVStmt* N = C->as<RetVStmt>();
+
+      O << "retv";
+      automaton_recurse(N->get_cond(), S, O);
+
       break;
     }
 
@@ -762,7 +990,32 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_IF: {
-      /// TODO:
+      IfStmt* N = C->as<IfStmt>();
+
+      O << "if ";
+      automaton_recurse(N->get_cond(), S, O);
+
+      if (N->get_then()->get_items().size() == 1) {
+        O << " => ";
+        automaton_recurse(N->get_then()->get_items().front(), S, O);
+        if (N->get_else()) {
+          O << ";";
+        }
+      } else {
+        O << " ";
+        automaton_recurse(N->get_then(), S, O);
+      }
+
+      if (N->get_else()) {
+        if (N->get_else()->get_items().size() == 1) {
+          O << " else => ";
+          automaton_recurse(N->get_else()->get_items().front(), S, O);
+        } else {
+          O << " else ";
+          automaton_recurse(N->get_else(), S, O);
+        }
+      }
+
       break;
     }
 
