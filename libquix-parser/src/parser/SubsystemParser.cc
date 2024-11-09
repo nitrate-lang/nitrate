@@ -81,43 +81,20 @@ bool qparse::parser::parse_subsystem(qparse_t &job, qlex_t *rd, Stmt **node) {
     syntax(qlex_peek(rd), "Expected block in subsystem definition");
   }
 
-  std::set<std::string> implements;
+  std::set<ConstExpr *> attributes;
   tok = qlex_peek(rd);
   if (tok.is<qKWith>()) {
     qlex_next(rd);
-    tok = qlex_next(rd);
-    if (!tok.is<qPuncLBrk>()) {
-      syntax(tok, "Expected '[' after 'impl' keyword");
+
+    if (!parse_attributes(job, rd, attributes)) {
+      return false;
     }
-
-    while (true) {
-      tok = qlex_next(rd);
-      if (tok.is(qEofF)) {
-        syntax(tok, "Unexpected end of file in 'impl' list");
-        break;
-      }
-
-      if (tok.is<qPuncRBrk>()) break;
-
-      if (!tok.is(qName)) {
-        syntax(tok, "Expected tag name in 'impl' list");
-      }
-
-      implements.insert(tok.as_string(rd));
-
-      tok = qlex_peek(rd);
-      if (tok.is<qPuncComa>()) {
-        qlex_next(rd);
-      }
-    }
-
-    tok = qlex_peek(rd);
   }
 
   SubsystemDecl *sub = SubsystemDecl::get(name, block);
   sub->set_end_pos(block->get_end_pos());
   sub->add_deps(deps);
-  sub->add_tags(std::move(implements));
+  sub->add_tags(std::move(attributes));
 
   *node = sub;
 

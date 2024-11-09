@@ -422,7 +422,7 @@ namespace qparse {
     }
   };
 
-  typedef std::set<String, std::less<String>, Arena<String>> DeclTags;
+  typedef std::set<ConstExpr *, std::less<ConstExpr *>, Arena<ConstExpr *>> DeclTags;
 
   class Decl : public Stmt {
   protected:
@@ -432,7 +432,7 @@ namespace qparse {
     Visibility m_visibility;
 
   public:
-    Decl(String name = "", Type *type = nullptr, std::initializer_list<String> tags = {},
+    Decl(String name = "", Type *type = nullptr, std::initializer_list<ConstExpr *> tags = {},
          Visibility visibility = Visibility::PRIVATE)
         : m_tags(tags), m_name(name), m_type(type), m_visibility(visibility) {}
 
@@ -443,14 +443,14 @@ namespace qparse {
     void set_type(Type *type) { m_type = type; }
 
     DeclTags &get_tags() { return m_tags; }
-    void add_tag(String tag) { m_tags.insert(tag); }
-    void add_tags(const std::set<std::string> &tags) {
+    void add_tag(ConstExpr *tag) { m_tags.insert(tag); }
+    void add_tags(const std::set<ConstExpr *> &tags) {
       for (const auto &tag : tags) {
         m_tags.insert(tag);
       }
     }
     void clear_tags() { m_tags.clear(); }
-    void remove_tag(String tag) { m_tags.erase(tag); }
+    void remove_tag(ConstExpr *tag) { m_tags.erase(tag); }
 
     Visibility get_visibility() { return m_visibility; }
     void set_visibility(Visibility visibility) { m_visibility = visibility; }
@@ -1300,14 +1300,22 @@ namespace qparse {
   ///=============================================================================
 
   typedef std::vector<Stmt *, Arena<Stmt *>> BlockItems;
+
+  enum class SafetyMode {
+    Unknown = 0,
+    Safe = 1,
+    Unsafe = 2,
+  };
+
   class Block : public Stmt {
   protected:
     BlockItems m_items;
-    bool m_unsafe;
+    SafetyMode m_safety;
 
   public:
-    Block(std::initializer_list<Stmt *> items = {}) : m_items(items), m_unsafe(false) {}
-    Block(const BlockItems &items) : m_items(items), m_unsafe(false) {}
+    Block(std::initializer_list<Stmt *> items = {})
+        : m_items(items), m_safety(SafetyMode::Unknown) {}
+    Block(const BlockItems &items, SafetyMode safety) : m_items(items), m_safety(safety) {}
 
     BlockItems &get_items() { return m_items; }
     void add_item(Stmt *item);
@@ -1315,8 +1323,8 @@ namespace qparse {
     void clear_items();
     void remove_item(Stmt *item);
 
-    bool is_unsafe() { return m_unsafe; }
-    void set_unsafe(bool unsafe) { m_unsafe = unsafe; }
+    SafetyMode get_safety() { return m_safety; }
+    void set_safety(SafetyMode safety) { m_safety = safety; }
 
     PNODE_IMPL_CORE(Block)
   };

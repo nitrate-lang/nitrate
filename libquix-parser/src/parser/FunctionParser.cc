@@ -32,6 +32,9 @@
 /// TODO: Source location
 #include <parser/Parse.h>
 
+#include "quix-lexer/Lexer.h"
+#include "quix-lexer/Token.h"
+
 using namespace qparse;
 using namespace qparse::parser;
 using namespace qparse::diag;
@@ -431,50 +434,6 @@ static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job, Expr *&r
   return true;
 }
 
-static bool parse_with_tags(qlex_tok_t &c, qlex_t *rd, std::set<std::string> &implements) {
-  if (c.is<qKWith>()) {
-    qlex_next(rd);
-    c = qlex_next(rd);
-    if (!c.is<qPuncLBrk>()) {
-      syntax(c, "Expected '[' after 'impl'");
-      return false;
-    }
-
-    while (true) {
-      c = qlex_next(rd);
-      if (c.is(qEofF)) {
-        syntax(c, "Unexpected EOF in 'impl' block");
-        return false;
-      }
-
-      if (c.is<qPuncRBrk>()) {
-        break;
-      }
-
-      if (!c.is(qName)) {
-        syntax(c, "Expected a trait name after 'impl'");
-        return false;
-      }
-
-      if (implements.contains(c.as_string(rd))) {
-        syntax(c, "Duplicate trait implementation");
-        return false;
-      }
-
-      implements.insert(c.as_string(rd));
-
-      c = qlex_peek(rd);
-      if (c.is<qPuncComa>()) {
-        qlex_next(rd);
-      }
-    }
-
-    c = qlex_peek(rd);
-  }
-
-  return true;
-}
-
 bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   FnDecl *fndecl = FnDecl::get();
   FuncTy *ftype = FuncTy::get();
@@ -518,6 +477,18 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() || tok.is<qPuncSemi>()) {
       ftype->set_return_ty(VoidTy::get());
 
+      tok = qlex_peek(rd);
+      if (tok.is<qKWith>()) {
+        std::set<ConstExpr *> attributes;
+        qlex_next(rd);
+
+        if (!parse_attributes(job, rd, attributes)) {
+          return true;
+        }
+
+        fndecl->add_tags(std::move(attributes));
+      }
+
       *node = fndecl;
       (*node)->set_end_pos(tok.start);
       return true;
@@ -538,6 +509,17 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       { /* Function declaration with explicit return type */
         if (tok.is<qPuncRPar>() || tok.is<qPuncRBrk>() || tok.is<qPuncRCur>() ||
             tok.is<qPuncSemi>()) {
+          tok = qlex_peek(rd);
+          if (tok.is<qKWith>()) {
+            std::set<ConstExpr *> attributes;
+            qlex_next(rd);
+
+            if (!parse_attributes(job, rd, attributes)) {
+              return true;
+            }
+
+            fndecl->add_tags(std::move(attributes));
+          }
           *node = fndecl;
           (*node)->set_end_pos(tok.start);
           return true;
@@ -561,7 +543,23 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
         ftype->set_return_ty(VoidTy::get());
       }
 
+      while ((tok = qlex_peek(rd)).is<qPuncSemi>()) {
+        qlex_next(rd);
+      }
+
       fndecl = FnDef::get(fndecl, fnbody, nullptr, nullptr, captures);
+
+      tok = qlex_peek(rd);
+      if (tok.is<qKWith>()) {
+        std::set<ConstExpr *> attributes;
+        qlex_next(rd);
+
+        if (!parse_attributes(job, rd, attributes)) {
+          return true;
+        }
+
+        fndecl->add_tags(std::move(attributes));
+      }
 
       *node = fndecl;
       (*node)->set_end_pos(fnbody->get_end_pos());
@@ -572,7 +570,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
   if (tok.is<qPuncLCur>()) {
     Block *fnbody = nullptr;
     Expr *req_in = nullptr, *req_out = nullptr;
-    std::set<std::string> implements;
+    std::set<ConstExpr *> attributes;
 
     if (!parse(job, rd, &fnbody)) {
       syntax(tok, "Expected a block after '{'");
@@ -584,8 +582,13 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       return false;
     }
 
-    if (!parse_with_tags(tok, rd, implements)) {
-      return false;
+    tok = qlex_peek(rd);
+    if (tok.is<qKWith>()) {
+      qlex_next(rd);
+
+      if (!parse_attributes(job, rd, attributes)) {
+        return true;
+      }
     }
 
     if (!ftype->get_return_ty()) {
@@ -593,7 +596,7 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
 
     fndecl = FnDef::get(fndecl, fnbody, req_in, req_out, captures);
-    fndecl->add_tags(std::move(implements));
+    fndecl->add_tags(std::move(attributes));
 
     *node = fndecl;
     (*node)->set_end_pos(tok.end);

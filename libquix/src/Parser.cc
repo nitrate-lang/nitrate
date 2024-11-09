@@ -1506,7 +1506,7 @@ bool to_json_recurse(Node *N, json &x) {
 
       Block *W = N->as<Block>();
 
-      x[1] = W->is_unsafe();
+      x[1] = (int)W->get_safety();
 
       json &y = x[2] = json::array();
 
@@ -1875,7 +1875,12 @@ bool to_json_recurse(Node *N, json &x) {
     auto &y = x[x.size()] = json::array();
 
     for (auto &Z : N->as<Decl>()->get_tags()) {
-      y.push_back(Z.c_str());
+      json z;
+      if (!to_json_recurse(Z, z)) {
+        return false;
+      }
+
+      y.push_back(std::move(z));
     }
   }
 
