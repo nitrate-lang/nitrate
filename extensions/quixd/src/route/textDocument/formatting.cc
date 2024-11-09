@@ -231,7 +231,12 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_TEREXPR: {
-      /// TODO:
+      TernaryExpr* N = C->as<TernaryExpr>();
+      automaton_recurse(N->get_cond(), S, O);
+      O << " ? ";
+      automaton_recurse(N->get_lhs(), S, O);
+      O << " : ";
+      automaton_recurse(N->get_rhs(), S, O);
       break;
     }
 
@@ -251,7 +256,9 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_CHAR: {
-      /// TODO:
+      ConstChar* N = C->as<ConstChar>();
+      qcore_assert(N->get_value() >= 0 && N->get_value() <= 255);
+      O << escape_char_literal(N->get_value());
       break;
     }
 
@@ -275,7 +282,23 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_CALL: {
-      /// TODO:
+      Call* N = C->as<Call>();
+
+      automaton_recurse(N->get_func(), S, O);
+
+      O << "(";
+      for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
+        if (!std::isdigit(it->first.at(0))) {
+          O << it->first;
+          O << ": ";
+        }
+        automaton_recurse(it->second, S, O);
+
+        if (std::next(it) != N->get_args().end()) {
+          O << ", ";
+        }
+      }
+      O << ")";
       break;
     }
 
@@ -411,7 +434,39 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_TEMPL_CALL: {
-      /// TODO:
+      /// FIXME: Verify this one is correct
+      TemplCall* N = C->as<TemplCall>();
+
+      automaton_recurse(N->get_func(), S, O);
+
+      O << "<";
+      for (auto it = N->get_template_args().begin(); it != N->get_template_args().end(); it++) {
+        if (!std::isdigit(it->first.at(0))) {
+          O << it->first;
+          O << ": ";
+        }
+        automaton_recurse(it->second, S, O);
+
+        if (std::next(it) != N->get_template_args().end()) {
+          O << ", ";
+        }
+      }
+      O << ">";
+
+      O << "(";
+      for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
+        if (!std::isdigit(it->first.at(0))) {
+          O << it->first;
+          O << ": ";
+        }
+        automaton_recurse(it->second, S, O);
+
+        if (std::next(it) != N->get_args().end()) {
+          O << ", ";
+        }
+      }
+      O << ")";
+
       break;
     }
 
@@ -579,7 +634,7 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_UNRES_TY: {
-      /// TODO:
+      O << C->as<UnresolvedType>()->get_name();
       put_type_metadata(C->as<qparse::Type>(), S, O);
       break;
     }
@@ -1135,279 +1190,13 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_VOLSTMT: {
-      /// TODO:
+      VolStmt* N = C->as<VolStmt>();
+      O << "volatile ";
+      automaton_recurse(N->get_stmt(), S, O);
       break;
     }
   }
 }
-
-// static void format_automaton(qlex_t* L, qlex_tok_t T, AutomatonState& S, std::ostream& O) {
-//   if (S.eof) {
-//     return;
-//   }
-
-//   if (!T.is<qPuncRCur>() && S.last.is<qPuncSemi>()) {
-//     put_indent(S, O);
-//   }
-
-//   switch (T.ty) {
-//     case qEofF: {
-//       S.lword = false;
-//       S.eof = true;
-//       break;
-//     }
-
-//     case qErro: {
-//       O << " " << token_tostr() << " ";
-//       break;
-//     }
-
-//     case qKeyW: {
-//       if (S.lword) O << " ";
-
-//       O << token_tostr();
-//       S.lword = true;
-//       break;
-//     }
-
-//     case qOper: {
-//       if (S.last.ty == qOper) {
-//         O << " ";
-//         S.lword = false;
-//       }
-
-//       switch (T.v.op) {
-//         case qOpPlus:
-//         case qOpMinus:
-//         case qOpTimes:
-//         case qOpSlash:
-//         case qOpPercent:
-//         case qOpBitAnd:
-//         case qOpBitOr:
-//         case qOpBitXor:
-//         case qOpBitNot:
-//         case qOpLShift:
-//         case qOpRShift:
-//         case qOpROTL:
-//         case qOpROTR:
-//         case qOpLogicAnd:
-//         case qOpLogicOr:
-//         case qOpLogicXor:
-//         case qOpLogicNot:
-//         case qOpLT:
-//         case qOpGT:
-//         case qOpLE:
-//         case qOpGE:
-//         case qOpEq:
-//         case qOpNE:
-//           O << token_tostr();
-//           S.lword = false;
-//           break;
-//         case qOpSet:
-//         case qOpPlusSet:
-//         case qOpMinusSet:
-//         case qOpTimesSet:
-//         case qOpSlashSet:
-//         case qOpPercentSet:
-//         case qOpBitAndSet:
-//         case qOpBitOrSet:
-//         case qOpBitXorSet:
-//         case qOpLogicAndSet:
-//         case qOpLogicOrSet:
-//         case qOpLogicXorSet:
-//         case qOpLShiftSet:
-//         case qOpRShiftSet:
-//         case qOpROTLSet:
-//         case qOpROTRSet:
-//           if (S.lword) O << " ";
-//           O << token_tostr() << " ";
-//           S.lword = false;
-//           break;
-//         case qOpInc:
-//         case qOpDec:
-//           O << token_tostr();
-//           S.lword = false;
-//           break;
-//         case qOpAs:
-//           if (S.lword) O << " ";
-//           O << token_tostr();
-//           S.lword = true;
-//           break;
-//         case qOpBitcastAs:
-//           if (S.lword) O << " ";
-//           O << token_tostr();
-//           S.lword = true;
-//           break;
-//         case qOpIn:
-//           if (S.lword) O << " ";
-//           O << token_tostr();
-//           S.lword = true;
-//           break;
-//         case qOpOut:
-//           if (S.lword) O << " ";
-//           O << token_tostr();
-//           S.lword = true;
-//           break;
-//         case qOpSizeof:
-//           if (S.lword) O << " ";
-//           O << token_tostr();
-//           S.lword = true;
-//           break;
-//         case qOpBitsizeof:
-//           if (S.lword) O << " ";
-//           O << token_tostr();
-//           S.lword = true;
-//           break;
-//         case qOpAlignof:
-//           if (S.lword) O << " ";
-//           O << token_tostr();
-//           S.lword = true;
-//           break;
-//         case qOpTypeof:
-//           if (S.lword) O << " ";
-//           O << token_tostr();
-//           S.lword = true;
-//           break;
-//         case qOpDot:
-//           O << token_tostr();
-//           S.lword = false;
-//           break;
-//         case qOpRange:
-//           O << " " << token_tostr() << " ";
-//           S.lword = false;
-//           break;
-//         case qOpEllipsis:
-//           O << " " << token_tostr();
-//           S.lword = false;
-//           break;
-//         case qOpArrow:
-//           O << " " << token_tostr() << " ";
-//           S.lword = false;
-//           break;
-//         case qOpTernary:
-//           O << " " << token_tostr() << " ";
-//           S.lword = false;
-//           break;
-//       }
-
-//       break;
-//     }
-
-//     case qPunc: {
-//       switch (T.v.punc) {
-//         case qPuncLPar:
-//           O << token_tostr();
-//           S.par_depth++;
-//           break;
-
-//         case qPuncRPar:
-//           O << token_tostr();
-//           if (S.par_depth > 0) S.par_depth--;
-//           break;
-
-//         case qPuncLBrk:
-//           O << token_tostr();
-//           S.brk_depth++;
-//           break;
-
-//         case qPuncRBrk:
-//           O << token_tostr();
-//           if (S.brk_depth > 0) S.brk_depth--;
-//           break;
-
-//         case qPuncLCur:
-//           if (S.lword) O << " ";
-//           O << token_tostr() << "\n";
-//           S.bra_depth++;
-//           put_indent(S, O);
-//           break;
-
-//         case qPuncRCur:
-//           O << token_tostr();
-//           if (S.bra_depth > 0) S.bra_depth--;
-//           break;
-
-//         case qPuncComa:
-//           O << token_tostr();
-//           O << " ";
-//           break;
-
-//         case qPuncColn:
-//           O << token_tostr();
-//           O << " ";
-//           break;
-
-//         case qPuncSemi:
-//           O << token_tostr() << "\n";
-//           break;
-//       }
-
-//       S.lword = false;
-//       break;
-//     }
-
-//     case qName: {
-//       if (S.lword) O << " ";
-
-//       O << token_tostr();
-
-//       S.lword = true;
-//       break;
-//     }
-
-//     case qIntL: {
-//       if (S.lword) O << " ";
-//       O << token_tostr();
-//       S.lword = true;
-//       break;
-//     }
-
-//     case qNumL: {
-//       if (S.lword) O << " ";
-//       O << token_tostr();
-//       S.lword = true;
-//       break;
-//     }
-
-//     case qText: {
-//       O << escape_string_literal(S, token_tostr());
-//       S.lword = false;
-//       break;
-//     }
-
-//     case qChar: {
-//       auto text = token_tostr();
-//       qcore_assert(text.size() == 1);
-//       O << escape_char_literal(text[0]);
-//       S.lword = false;
-//       break;
-//     }
-
-//     case qMacB: {
-//       O << "@(" << token_tostr() << ")\n";
-
-//       S.lword = false;
-//       break;
-//     }
-
-//     case qMacr: {
-//       auto text = token_tostr();
-//       O << "@" << text;
-
-//       S.lword = !text.ends_with(")");
-//       break;
-//     }
-
-//     case qNote: {
-//       O << "/*" << token_tostr() << "*/";
-
-//       S.lword = false;
-//       break;
-//     }
-//   }
-
-//   S.last = T;
-// }
 
 static void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   if (!req.params().HasMember("textDocument")) {
