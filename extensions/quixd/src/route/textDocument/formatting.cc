@@ -882,7 +882,93 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_EXPORT: {
-      /// TODO:
+      ExportDecl* N = C->as<ExportDecl>();
+      std::vector<Stmt*> imports, exports;
+
+      for (auto it = N->get_body()->get_items().begin(); it != N->get_body()->get_items().end();
+           it++) {
+        qparse_ty_t ty = (*it)->this_typeid();
+
+        if (ty == QAST_NODE_FNDECL) {
+          imports.push_back(*it);
+        } else if (ty == QAST_NODE_FN) {
+          exports.push_back(*it);
+        } else if (ty == QAST_NODE_LET) {
+          LetDecl* V = (*it)->as<LetDecl>();
+          V->get_value() ? exports.push_back(*it) : imports.push_back(*it);
+        } else if (ty == QAST_NODE_VAR) {
+          VarDecl* V = (*it)->as<VarDecl>();
+          V->get_value() ? exports.push_back(*it) : imports.push_back(*it);
+        } else if (ty == QAST_NODE_CONST) {
+          ConstDecl* V = (*it)->as<ConstDecl>();
+          V->get_value() ? exports.push_back(*it) : imports.push_back(*it);
+        }
+      }
+
+      if (imports.size() == 1) {
+        O << "import ";
+        if (N->get_abi_name().empty()) {
+          O << "\"std\"";
+        } else {
+          O << escape_string_literal(S, N->get_abi_name());
+        }
+        O << " ";
+
+        automaton_recurse(imports.front(), S, O);
+      } else if (!imports.empty()) {
+        O << "import ";
+        if (N->get_abi_name().empty()) {
+          O << "\"std\"";
+        } else {
+          O << escape_string_literal(S, N->get_abi_name());
+        }
+        O << " {\n";
+        S.bra_depth++;
+
+        for (auto& stmt : imports) {
+          put_indent(S, O);
+          automaton_recurse(stmt, S, O);
+          O << ";\n";
+        }
+
+        S.bra_depth--;
+        put_indent(S, O);
+
+        O << "}";
+      }
+
+      if (exports.size() == 1) {
+        O << "pub ";
+        if (N->get_abi_name().empty()) {
+          O << "\"std\"";
+        } else {
+          O << escape_string_literal(S, N->get_abi_name());
+        }
+        O << " ";
+
+        automaton_recurse(exports.front(), S, O);
+      } else if (!exports.empty()) {
+        O << "pub ";
+        if (N->get_abi_name().empty()) {
+          O << "\"std\"";
+        } else {
+          O << escape_string_literal(S, N->get_abi_name());
+        }
+        O << " {\n";
+        S.bra_depth++;
+
+        for (auto& stmt : exports) {
+          put_indent(S, O);
+          automaton_recurse(stmt, S, O);
+          O << ";\n";
+        }
+
+        S.bra_depth--;
+        put_indent(S, O);
+
+        O << "}";
+      }
+
       break;
     }
 
