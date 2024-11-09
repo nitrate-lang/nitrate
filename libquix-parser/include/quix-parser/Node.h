@@ -1420,21 +1420,21 @@ namespace qparse {
   class IfStmt : public FlowStmt {
   protected:
     Expr *m_cond;
-    Stmt *m_then;
-    Stmt *m_else;
+    Block *m_then;
+    Block *m_else;
 
   public:
-    IfStmt(Expr *cond = nullptr, Stmt *then = nullptr, Stmt *else_ = nullptr)
+    IfStmt(Expr *cond = nullptr, Block *then = nullptr, Block *else_ = nullptr)
         : m_cond(cond), m_then(then), m_else(else_) {}
 
     Expr *get_cond() { return m_cond; }
     void set_cond(Expr *cond) { m_cond = cond; }
 
-    Stmt *get_then() { return m_then; }
-    void set_then(Stmt *then) { m_then = then; }
+    Block *get_then() { return m_then; }
+    void set_then(Block *then) { m_then = then; }
 
-    Stmt *get_else() { return m_else; }
-    void set_else(Stmt *else_) { m_else = else_; }
+    Block *get_else() { return m_else; }
+    void set_else(Block *else_) { m_else = else_; }
 
     PNODE_IMPL_CORE(IfStmt)
   };
@@ -1689,12 +1689,12 @@ namespace qparse {
   class FnDef : public FnDecl {
   protected:
     FnCaptures m_captures;
-    Stmt *m_body;
+    Block *m_body;
     Expr *m_precond;
     Expr *m_postcond;
 
   public:
-    FnDef(FnDecl *decl = nullptr, Stmt *body = nullptr, Expr *precond = nullptr,
+    FnDef(FnDecl *decl = nullptr, Block *body = nullptr, Expr *precond = nullptr,
           Expr *postcond = nullptr, FnCaptures captures = {})
         : FnDecl(decl->get_name(), decl->get_type()),
           m_captures(captures),
@@ -1702,8 +1702,8 @@ namespace qparse {
           m_precond(precond),
           m_postcond(postcond) {}
 
-    Stmt *get_body() { return m_body; }
-    void set_body(Stmt *body) { m_body = body; }
+    Block *get_body() { return m_body; }
+    void set_body(Block *body) { m_body = body; }
 
     Expr *get_precond() { return m_precond; }
     void set_precond(Expr *precond) { m_precond = precond; }
