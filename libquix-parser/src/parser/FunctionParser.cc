@@ -380,12 +380,9 @@ static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job, Expr *&r
         break;
       }
 
-      Expr *expr = nullptr;
       qlex_next(rd);
       if (c.is<qOpIn>()) {
-        if (!req_in) {
-          req_in = ConstBool::get(true);
-        }
+        Expr *expr = nullptr;
 
         if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
           syntax(c, "Expected an expression after 'in'");
@@ -398,14 +395,13 @@ static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job, Expr *&r
           return false;
         }
 
-        expr = UnaryExpr::get(qOpLogicNot, expr);
-        expr = UnaryExpr::get(qOpLogicNot, expr);
-
-        req_in = BinExpr::get(req_in, qOpLogicAnd, expr);
-      } else if (c.is<qOpOut>()) {
-        if (!req_out) {
-          req_out = ConstBool::get(true);
+        if (req_in) {
+          req_in = BinExpr::get(req_in, qOpLogicAnd, expr);
+        } else {
+          req_in = expr;
         }
+      } else if (c.is<qOpOut>()) {
+        Expr *expr = nullptr;
 
         if (!parse_expr(job, rd, {qlex_tok_t(qPunc, qPuncSemi)}, &expr) || !expr) {
           syntax(c, "Expected an expression after 'out'");
@@ -418,9 +414,11 @@ static bool parse_constraints(qlex_tok_t &c, qlex_t *rd, qparse_t &job, Expr *&r
           return false;
         }
 
-        expr = UnaryExpr::get(qOpLogicNot, expr);
-        expr = UnaryExpr::get(qOpLogicNot, expr);
-        req_out = BinExpr::get(req_out, qOpLogicAnd, expr);
+        if (req_out) {
+          req_out = BinExpr::get(req_out, qOpLogicAnd, expr);
+        } else {
+          req_out = expr;
+        }
       } else {
         syntax(c, "Expected 'in' or 'out' after 'req'");
         return false;
