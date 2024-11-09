@@ -35,6 +35,7 @@
 
 #include "quix-lexer/Lexer.h"
 #include "quix-lexer/Token.h"
+#include "quix-parser/Node.h"
 
 using namespace qparse;
 using namespace qparse::parser;
@@ -42,29 +43,23 @@ using namespace qparse::diag;
 
 /// TODO: Source location
 
-// Lifetime integrity requires the primitives to be thread-local because the Node Arena allocator is
-// thread-local.
-static thread_local std::pair<uint64_t, std::unordered_map<std::string_view, Type *>> primitives;
-
-static void init_primitive_types(uint64_t job_id) {
-  primitives = {job_id,
-                {{"u8", U8::get()},
-                 {"u16", U16::get()},
-                 {"u32", U32::get()},
-                 {"u64", U64::get()},
-                 {"u128", U128::get()},
-                 {"i8", I8::get()},
-                 {"i16", I16::get()},
-                 {"i32", I32::get()},
-                 {"i64", I64::get()},
-                 {"i128", I128::get()},
-                 {"f16", F16::get()},
-                 {"f32", F32::get()},
-                 {"f64", F64::get()},
-                 {"f128", F128::get()},
-                 {"u1", U1::get()},
-                 {"void", VoidTy::get()}}};
-}
+static const std::unordered_map<std::string_view, Type *(*)()> primitive_types = {
+    {"u1", []() -> Type * { return U1::get(); }},
+    {"u8", []() -> Type * { return U8::get(); }},
+    {"u16", []() -> Type * { return U16::get(); }},
+    {"u32", []() -> Type * { return U32::get(); }},
+    {"u64", []() -> Type * { return U64::get(); }},
+    {"u128", []() -> Type * { return U128::get(); }},
+    {"i8", []() -> Type * { return I8::get(); }},
+    {"i16", []() -> Type * { return I16::get(); }},
+    {"i32", []() -> Type * { return I32::get(); }},
+    {"i64", []() -> Type * { return I64::get(); }},
+    {"i128", []() -> Type * { return I128::get(); }},
+    {"f16", []() -> Type * { return F16::get(); }},
+    {"f32", []() -> Type * { return F32::get(); }},
+    {"f64", []() -> Type * { return F64::get(); }},
+    {"f128", []() -> Type * { return F128::get(); }},
+    {"void", []() -> Type * { return VoidTy::get(); }}};
 
 bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   /** QUIX TYPE PARSER
@@ -75,10 +70,6 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
    *
    * @return true if it is okay to proceed, false otherwise.
    */
-
-  if (primitives.first != job.id) {
-    init_primitive_types(job.id);
-  }
 
   using namespace std;
 
@@ -174,13 +165,13 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
 
     __builtin_unreachable();
   } else if (tok.is(qName)) {
-    if (primitives.second.contains(tok.as_string(rd))) {
+    if (primitive_types.contains(tok.as_string(rd))) {
       /** QUIX PRIMITIVE TYPE
        *
        * @brief Parse a primitive type.
        */
 
-      inner = primitives.second[tok.as_string(rd)];
+      inner = primitive_types.at(tok.as_string(rd))();
       goto type_suffix;
     } else {
       /** QUIX ANY NAMED TYPE
