@@ -1650,11 +1650,27 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
     Decl* N = C->as<Decl>();
 
     if (!N->get_tags().empty()) {
+      size_t split_on = N->get_tags().size() <= 6 ? 6 : std::ceil(std::sqrt(N->get_tags().size()));
+
       S.line << " with [";
+
+      S.line.seekg(0, std::ios::end);
+      size_t line_size = S.line.tellg(), i = 0;
+
       for (auto it = N->get_tags().begin(); it != N->get_tags().end(); it++) {
         S.line << *it;
+
+        i++;
         if (std::next(it) != N->get_tags().end()) {
-          S.line << ", ";
+          S.line << ",";
+
+          if (i % split_on == 0) {
+            S.line << "\n";
+            S.flush_line();
+            S.line << std::string(line_size, ' ');
+          } else {
+            S.line << " ";
+          }
         }
       }
       S.line << "]";
