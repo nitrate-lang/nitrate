@@ -599,7 +599,7 @@ LIB_EXPORT bool qparse_check(qparse_t *parser, const qparse_node_t *base) {
   }
 
   /* Safety is overrated */
-  return static_cast<const qparse::Node *>(base)->verify();
+  return const_cast<qparse::Node *>(static_cast<const qparse::Node *>(base))->verify();
 }
 
 LIB_EXPORT void qparse_dumps(qparse_t *parser, bool no_ansi, qparse_dump_cb cb, uintptr_t data) {

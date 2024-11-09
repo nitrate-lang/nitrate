@@ -179,7 +179,7 @@ namespace qxir::diag {
   /**
    * @brief Report a syntax error
    */
-  void badtree(const qparse::Node *node, std::string_view fmt, ...);
+  void badtree(qparse::Node *node, std::string_view fmt, ...);
 
 #define CONV_DEBUG(_msg)               \
   mod->getDiag().push(QXIR_AUDIT_CONV, \
