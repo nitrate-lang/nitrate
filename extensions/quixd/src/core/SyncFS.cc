@@ -244,8 +244,13 @@ std::optional<std::array<uint8_t, 20>> SyncFS::thumbprint() {
 }
 
 void SyncFS::wait_for_open() {
-  while (!m_opened) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  while (true) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (m_impl->m_files.contains(m_current)) {
+      return;
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2));
   }
 
   return;
