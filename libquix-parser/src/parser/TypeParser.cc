@@ -205,7 +205,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
        */
 
       inner =
-          TemplType::get(UnresolvedType::get("std::vector"), TemplTypeArgs{TypeExpr::get(type)});
+          TemplType::get(UnresolvedType::get("__builtin_vec"), TemplTypeArgs{TypeExpr::get(type)});
       goto type_suffix;
     }
 
@@ -230,7 +230,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
         goto error_end;
       }
 
-      inner = TemplType::get(UnresolvedType::get("std::map"),
+      inner = TemplType::get(UnresolvedType::get("__builtin_umap"),
                              TemplTypeArgs{TypeExpr::get(type), TypeExpr::get(value_type)});
       goto type_suffix;
     }
@@ -277,7 +277,8 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       goto error_end;
     }
 
-    inner = TemplType::get(UnresolvedType::get("std::set"), TemplTypeArgs{TypeExpr::get(type)});
+    inner =
+        TemplType::get(UnresolvedType::get("__builtin_uset"), TemplTypeArgs{TypeExpr::get(type)});
     goto type_suffix;
   } else if (tok.is<qPuncLPar>()) {
     /** QUIX TUPLE TYPE
