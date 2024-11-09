@@ -3054,8 +3054,8 @@ void IfStmt::print_impl(std::ostream &os, bool debug) {
 
 IfStmt *IfStmt::clone_impl() {
   Expr *cond = m_cond ? m_cond->clone() : nullptr;
-  Stmt *then = m_then ? m_then->clone() : nullptr;
-  Stmt *els = m_else ? m_else->clone() : nullptr;
+  Block *then = m_then ? m_then->clone() : nullptr;
+  Block *els = m_else ? m_else->clone() : nullptr;
 
   return IfStmt::get(cond, then, els);
 }
@@ -3869,7 +3869,7 @@ void FnDef::print_impl(std::ostream &os, bool debug) {
 }
 
 FnDef *FnDef::clone_impl() {
-  Stmt *body = m_body ? m_body->clone() : nullptr;
+  Block *body = m_body ? m_body->clone() : nullptr;
   FnDecl *decl = FnDecl::clone_impl();
   Expr *precond = m_precond ? m_precond->clone() : nullptr;
   Expr *postcond = m_postcond ? m_postcond->clone() : nullptr;
