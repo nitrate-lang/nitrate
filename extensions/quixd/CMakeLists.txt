@@ -15,7 +15,7 @@ target_include_directories(quixd PRIVATE src
   ${CMAKE_CURRENT_SOURCE_DIR}/../../libquix-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../libquix-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../../libquix-parser/include)
-target_compile_options(quixd PRIVATE -O3 -fno-exceptions)
+target_compile_options(quixd PRIVATE -O3 -fno-exceptions -Wno-return-type-c-linkage)
 target_link_libraries(quixd PUBLIC quix ${libglog} ${libgflags} crypto)
 add_dependencies(quixd quix)
 
