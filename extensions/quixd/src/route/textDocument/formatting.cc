@@ -310,10 +310,10 @@ static void put_composite_defintion(T* N, AutomatonState& S) {
 static void recurse(qparse::Node* C, AutomatonState& S) {
   /**
    * TODO: Resolve the following issues:
-   * - Parentheses are currently lost and the order of operation is not preserved;
+   * - Parentheses are currently lost and the order of sub-expressions is not preserved;
    * - Integer literals loose their original base.
    * - Code comments are lost
-   * - Format is not avaliable if macros are present
+   * - Code with macros is not supported
    * - Maximum line width is not supported at all (might me okay)
    */
 
@@ -1333,12 +1333,13 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       static const std::unordered_set<qparse_ty_t> no_has_semicolon = {
           QAST_NODE_FN,
           QAST_NODE_EXPORT,
+          QAST_NODE_BLOCK,
       };
 
       static const std::unordered_set<qparse_ty_t> double_sep = {
-          QAST_NODE_FNDECL, QAST_NODE_STRUCT,    QAST_NODE_REGION,
-          QAST_NODE_GROUP,  QAST_NODE_UNION,     QAST_NODE_ENUM,
-          QAST_NODE_FN,     QAST_NODE_SUBSYSTEM, QAST_NODE_EXPORT,
+          QAST_NODE_FNDECL, QAST_NODE_STRUCT, QAST_NODE_REGION, QAST_NODE_GROUP,
+          QAST_NODE_UNION,  QAST_NODE_ENUM,   QAST_NODE_FN,     QAST_NODE_SUBSYSTEM,
+          QAST_NODE_EXPORT, QAST_NODE_BLOCK,
       };
 
       Block* N = C->as<Block>();
@@ -1346,9 +1347,44 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       bool did_root = S.did_root;
       S.did_root = true;
 
-      if (did_root && N->get_items().empty()) {
+      if (did_root && N->get_items().empty() && N->get_safety() == SafetyMode::Unknown) {
         S.line << "{}";
         break;
+      }
+
+      if (N->get_safety() == SafetyMode::Unsafe) {
+        if (N->get_items().empty()) {
+          break;
+        }
+
+        S.line << "/* UNS"
+                  "AFE: */ unsafe ";
+
+        if (N->get_items().size() == 1) {
+          Stmt* stmt = N->get_items()[0];
+          recurse(stmt, S);
+          if (!no_has_semicolon.contains(stmt->this_typeid())) {
+            S.line << ";";
+          }
+
+          break;
+        }
+      } else if (N->get_safety() == SafetyMode::Safe) {
+        if (N->get_items().empty()) {
+          break;
+        }
+
+        S.line << "safe ";
+
+        if (N->get_items().size() == 1) {
+          Stmt* stmt = N->get_items()[0];
+          recurse(stmt, S);
+          if (!no_has_semicolon.contains(stmt->this_typeid())) {
+            S.line << ";";
+          }
+
+          break;
+        }
       }
 
       if (did_root) {
@@ -1452,7 +1488,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
     case QAST_NODE_RETIF: {
       ReturnIfStmt* N = C->as<ReturnIfStmt>();
 
-      S.line << "retif";
+      S.line << "retif ";
       recurse(N->get_cond(), S);
       S.line << ", ";
       recurse(N->get_value(), S);
@@ -1463,7 +1499,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
     case QAST_NODE_RETZ: {
       RetZStmt* N = C->as<RetZStmt>();
 
-      S.line << "retz";
+      S.line << "retz ";
       recurse(N->get_cond(), S);
       S.line << ", ";
       recurse(N->get_value(), S);
@@ -1474,7 +1510,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
     case QAST_NODE_RETV: {
       RetVStmt* N = C->as<RetVStmt>();
 
-      S.line << "retv";
+      S.line << "retv ";
       recurse(N->get_cond(), S);
 
       break;
@@ -1658,7 +1694,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       size_t line_size = S.line.tellg(), i = 0;
 
       for (auto it = N->get_tags().begin(); it != N->get_tags().end(); it++) {
-        S.line << *it;
+        recurse(*it, S);
 
         i++;
         if (std::next(it) != N->get_tags().end()) {

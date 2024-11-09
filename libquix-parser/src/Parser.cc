@@ -346,7 +346,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
             }
           }
 
-          block->set_unsafe(true);
+          block->set_safety(SafetyMode::Unsafe);
           node = block;
           break;
         }
@@ -363,7 +363,7 @@ bool qparse::parser::parse(qparse_t &job, qlex_t *rd, Block **group, bool expect
               return false;
             }
           }
-          block->set_unsafe(false);
+          block->set_safety(SafetyMode::Safe);
           node = block;
           break;
         }

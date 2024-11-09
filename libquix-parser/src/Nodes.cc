@@ -2692,7 +2692,7 @@ Block *Block::clone_impl() {
     }
   }
 
-  return Block::get(items);
+  return Block::get(items, m_safety);
 }
 
 LIB_EXPORT void Block::add_item(Stmt *item) { m_items.push_back(item); }

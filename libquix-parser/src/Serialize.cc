@@ -636,7 +636,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_BEGIN("FnDecl");
       OBJECT_STR(n->as<FnDecl>()->get_name());
       OBJECT_SUB(n->as<FnDecl>()->get_type());
-      OBJECT_TAGS(n->as<FnDecl>()->get_tags());
+      OBJECT_ARRAY(n->as<FnDecl>()->get_tags());
       OBJECT_NUM((int)n->as<FnDecl>()->get_visibility());
       OBJECT_END();
       break;
@@ -647,7 +647,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_ARRAY(n->as<StructDef>()->get_fields());
       OBJECT_ARRAY(n->as<StructDef>()->get_methods());
       OBJECT_ARRAY(n->as<StructDef>()->get_static_methods());
-      OBJECT_TAGS(n->as<StructDef>()->get_tags());
+      OBJECT_ARRAY(n->as<StructDef>()->get_tags());
       OBJECT_NUM((int)n->as<StructDef>()->get_visibility());
       OBJECT_END();
       break;
@@ -658,7 +658,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_ARRAY(n->as<RegionDef>()->get_fields());
       OBJECT_ARRAY(n->as<RegionDef>()->get_methods());
       OBJECT_ARRAY(n->as<RegionDef>()->get_static_methods());
-      OBJECT_TAGS(n->as<RegionDef>()->get_tags());
+      OBJECT_ARRAY(n->as<RegionDef>()->get_tags());
       OBJECT_NUM((int)n->as<RegionDef>()->get_visibility());
       OBJECT_END();
       break;
@@ -669,7 +669,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_ARRAY(n->as<GroupDef>()->get_fields());
       OBJECT_ARRAY(n->as<GroupDef>()->get_methods());
       OBJECT_ARRAY(n->as<GroupDef>()->get_static_methods());
-      OBJECT_TAGS(n->as<GroupDef>()->get_tags());
+      OBJECT_ARRAY(n->as<GroupDef>()->get_tags());
       OBJECT_NUM((int)n->as<GroupDef>()->get_visibility());
       OBJECT_END();
       break;
@@ -680,7 +680,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_ARRAY(n->as<UnionDef>()->get_fields());
       OBJECT_ARRAY(n->as<UnionDef>()->get_methods());
       OBJECT_ARRAY(n->as<UnionDef>()->get_static_methods());
-      OBJECT_TAGS(n->as<UnionDef>()->get_tags());
+      OBJECT_ARRAY(n->as<UnionDef>()->get_tags());
       OBJECT_NUM((int)n->as<UnionDef>()->get_visibility());
       OBJECT_END();
       break;
@@ -700,7 +700,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       }
       ss << "]";
       state.indent--;
-      OBJECT_TAGS(n->as<EnumDef>()->get_tags());
+      OBJECT_ARRAY(n->as<EnumDef>()->get_tags());
       OBJECT_NUM((int)n->as<EnumDef>()->get_visibility());
       OBJECT_END();
       break;
@@ -722,7 +722,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_SUB(n->as<FnDef>()->get_type());
       OBJECT_SUB(n->as<FnDef>()->get_precond());
       OBJECT_SUB(n->as<FnDef>()->get_postcond());
-      OBJECT_TAGS(n->as<FnDef>()->get_tags());
+      OBJECT_ARRAY(n->as<FnDef>()->get_tags());
       OBJECT_SUB(n->as<FnDef>()->get_body());
       OBJECT_END();
       break;
@@ -730,7 +730,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_SUBSYSTEM: {
       OBJECT_BEGIN("Subsystem");
       OBJECT_STR(n->as<SubsystemDecl>()->get_name());
-      OBJECT_TAGS(n->as<SubsystemDecl>()->get_tags());
+      OBJECT_ARRAY(n->as<SubsystemDecl>()->get_tags());
       OBJECT_TAGS(n->as<SubsystemDecl>()->get_deps());
       OBJECT_SUB(n->as<SubsystemDecl>()->get_body());
       OBJECT_END();
@@ -754,7 +754,7 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
     case QAST_NODE_BLOCK: {
       OBJECT_BEGIN("Blk");
       OBJECT_ARRAY(n->as<Block>()->get_items());
-      OBJECT_NUM(n->as<Block>()->is_unsafe());
+      OBJECT_NUM((int)n->as<Block>()->get_safety());
       OBJECT_END();
       break;
     }
