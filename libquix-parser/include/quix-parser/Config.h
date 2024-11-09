@@ -45,7 +45,6 @@ extern "C" {
 
 typedef enum qparse_key_t {
   QPK_UNKNOWN = 0,
-  QPK_NO_AUTO_IMPL,
   QPK_VERBOSE,
   QPK_CRASHGUARD,
   QPV_FASTERROR,
@@ -53,9 +52,6 @@ typedef enum qparse_key_t {
 
 typedef enum qparse_val_t {
   QPV_UNKNOWN = 0,
-  QPV_FUNCTION,
-  QPV_STRUCT,
-  QPV_UNION,
   QPV_TRUE,
   QPV_FALSE,
   QPV_ON = QPV_TRUE,
