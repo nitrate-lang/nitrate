@@ -516,16 +516,6 @@ static void serialize_recurse(Node *n, ConvStream &ss, ConvState &state) {
       OBJECT_END();
       break;
     }
-    case QAST_NODE_ENUM_TY: {
-      OBJECT_BEGIN("EnumTy");
-      OBJECT_STR(n->as<EnumTy>()->get_name());
-      OBJECT_SUB(n->as<EnumTy>()->get_memtype());
-      OBJECT_SUB(n->as<EnumTy>()->get_width());
-      OBJECT_SUB(n->as<EnumTy>()->get_range().first);
-      OBJECT_SUB(n->as<EnumTy>()->get_range().second);
-      OBJECT_END();
-      break;
-    }
     case QAST_NODE_STRUCT_TY: {
       OBJECT_BEGIN("Struct");
       for (const auto &[k, v] : n->as<StructTy>()->get_items()) {

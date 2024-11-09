@@ -585,12 +585,6 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
       break;
     }
 
-    case QAST_NODE_ENUM_TY: {
-      /// TODO:
-      put_type_metadata(C->as<qparse::Type>(), S, O);
-      break;
-    }
-
     case QAST_NODE_STRUCT_TY: {
       /// TODO:
       put_type_metadata(C->as<qparse::Type>(), S, O);

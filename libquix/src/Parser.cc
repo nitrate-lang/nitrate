@@ -966,23 +966,6 @@ bool to_json_recurse(Node *N, json &x) {
       break;
     }
 
-    case QAST_NODE_ENUM_TY: {
-      /**
-       * @brief [Brief Description]
-       * @note [Developer Notes]
-       */
-
-      EnumTy *W = N->as<EnumTy>();
-
-      x[1] = W->get_name().c_str();
-
-      if (!to_json_recurse(W->get_memtype(), x[2])) {
-        return false;
-      }
-
-      break;
-    }
-
     case QAST_NODE_STRUCT_TY: {
       /**
        * @brief [Brief Description]
