@@ -6,6 +6,7 @@
 #include <core/SyncFS.hh>
 #include <core/server.hh>
 #include <cstdint>
+#include <memory>
 #include <quix-core/Classes.hh>
 #include <quix-lexer/Classes.hh>
 #include <quix-parser/Classes.hh>
@@ -32,19 +33,19 @@ struct FormattingOptions {
 };
 
 struct AutomatonState {
-  qlex_tok_t last;
-  size_t brk_depth /* Square bracket */, par_depth /* Parantheis */, bra_depth /* Curly bracket */;
-  bool lword;
-  bool eof;
-  bool did_root;
+public:
+  size_t brk_depth = 0 /* Parentheses */, bra_depth = 0 /* Curly bracket */;
+  bool did_root = false;
 
-  AutomatonState() {
-    last = {};
-    brk_depth = par_depth = bra_depth = 0;
-    lword = false;
-    eof = false;
-    did_root = false;
+  std::stringstream S;
+  std::stringstream line;
+
+  void flush_line() {
+    S << line.str();
+    line.str("");
   }
+
+  AutomatonState() {}
 };
 
 static std::string escape_char_literal(char ch) {
@@ -81,107 +82,160 @@ static std::string escape_char_literal(char ch) {
   }
 }
 
-static std::string escape_string_literal_chunk(AutomatonState&, std::string_view str) {
-  std::string res = "";
-  res.reserve(str.size());
-
+static void escape_string_literal_chunk(AutomatonState& S, std::string_view str) {
   for (char ch : str) {
     switch (ch) {
       case '\n':
-        res += "\\n";
+        S.line << "\\n";
         break;
       case '\t':
-        res += "\\t";
+        S.line << "\\t";
         break;
       case '\r':
-        res += "\\r";
+        S.line << "\\r";
         break;
       case '\v':
-        res += "\\v";
+        S.line << "\\v";
         break;
       case '\f':
-        res += "\\f";
+        S.line << "\\f";
         break;
       case '\b':
-        res += "\\b";
+        S.line << "\\b";
         break;
       case '\a':
-        res += "\\a";
+        S.line << "\\a";
         break;
       case '\\':
-        res += "\\\\";
+        S.line << "\\\\";
         break;
       case '"':
-        res += "\\\"";
+        S.line << "\\\"";
         break;
       default:
-        res += ch;
+        S.line << ch;
         break;
     }
   }
-
-  return res;
 }
 
-static std::string escape_string_literal(AutomatonState& S, std::string_view str) {
+static void escape_string_literal(AutomatonState& S, std::string_view str) {
   constexpr size_t max_chunk_size = 60;
 
   if (str.empty()) {
-    return "\"\"";
+    S.line << "\"\"";
   }
 
   size_t num_chunks = str.size() / max_chunk_size;
   size_t rem = str.size() % max_chunk_size;
 
-  std::string res;
+  S.line.seekg(0, std::ios::end);
+  size_t line_size = S.line.tellg();
 
   for (size_t i = 0; i < num_chunks; i++) {
-    res += "\"" + escape_string_literal_chunk(S, str.substr(i * max_chunk_size, max_chunk_size)) +
-           "\"";
+    S.line << "\"";
+    escape_string_literal_chunk(S, str.substr(i * max_chunk_size, max_chunk_size));
+    S.line << "\"";
 
     if (rem > 0 || i < num_chunks - 1) {
-      res += " \\\n";
+      S.line << " \\\n";
+      S.flush_line();
+      if (line_size) {
+        S.line << std::string(line_size, ' ');
+      }
     }
   }
 
   if (rem > 0) {
-    res +=
-        "\"" + escape_string_literal_chunk(S, str.substr(num_chunks * max_chunk_size, rem)) + "\"";
+    S.line << "\"";
+    escape_string_literal_chunk(S, str.substr(num_chunks * max_chunk_size, rem));
+    S.line << "\"";
   }
-
-  return res;
 }
 
-static void put_indent(AutomatonState& S, std::ostream& O) {
+static void write_float_literal_chunk(AutomatonState& S, std::string_view float_str) {
+  constexpr size_t insert_sep_every = 10;
+
+  bool already_write_type_suffix = false;
+
+  for (size_t i = 0; i < float_str.size(); i++) {
+    bool underscore = false;
+
+    if (!already_write_type_suffix && i != 0 && (i % (insert_sep_every)) == 0) {
+      underscore = true;
+    } else if (!already_write_type_suffix && !std::isdigit(float_str[i]) && float_str[i] != '.') {
+      already_write_type_suffix = true;
+      underscore = true;
+    }
+
+    if (underscore) {
+      S.line << "_";
+    }
+
+    S.line << float_str[i];
+  }
+}
+
+static void write_float_literal(AutomatonState& S, std::string_view float_str) {
+  constexpr size_t max_chunk_size = 50;
+
+  if (float_str.empty()) {
+    S.line << "";
+  }
+
+  size_t num_chunks = float_str.size() / max_chunk_size;
+  size_t rem = float_str.size() % max_chunk_size;
+
+  S.line.seekg(0, std::ios::end);
+  size_t line_size = S.line.tellg();
+
+  for (size_t i = 0; i < num_chunks; i++) {
+    write_float_literal_chunk(S, float_str.substr(i * max_chunk_size, max_chunk_size));
+
+    if (rem > 0 || i < num_chunks - 1) {
+      S.line << "_ \\\n";
+      S.flush_line();
+      if (line_size) {
+        S.line << std::string(line_size, ' ');
+      }
+    }
+  }
+
+  if (rem > 0) {
+    write_float_literal_chunk(S, float_str.substr(num_chunks * max_chunk_size, rem));
+  }
+}
+
+static void put_indent(AutomatonState& S) {
   if (S.bra_depth) {
-    O << std::string(S.bra_depth * 2, ' ');
+    S.line << std::string(S.bra_depth * 2, ' ');
   }
   if (S.brk_depth) {
-    O << std::string(S.brk_depth * 2, ' ');
+    S.line << std::string(S.brk_depth * 2, ' ');
   }
 }
 
-static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& O);
+static void recurse(qparse::Node* C, AutomatonState& S);
 
-static void put_type_metadata(qparse::Type* N, AutomatonState& S, std::ostream& O) {
+static void put_type_metadata(qparse::Type* N, AutomatonState& S) {
   auto range = N->get_range();
 
   if (range.first || range.second) {
-    O << ": [";
-    automaton_recurse(range.first, S, O);
-    O << ":";
-    automaton_recurse(range.second, S, O);
-    O << "]";
+    S.line << ": [";
+    recurse(range.first, S);
+    S.line << ":";
+    recurse(range.second, S);
+    S.line << "]";
   }
 
   if (N->get_width()) {
-    O << ": ";
-    automaton_recurse(N->get_width(), S, O);
+    S.line << ": ";
+    recurse(N->get_width(), S);
   }
 }
 
 template <typename T>
-static void put_composite_defintion(T* N, AutomatonState& S, std::ostream& O) {
+static void put_composite_defintion(T* N, AutomatonState& S) {
   using namespace qparse;
 
   static const std::unordered_map<Visibility, std::string_view> vis_str = {
@@ -190,7 +244,7 @@ static void put_composite_defintion(T* N, AutomatonState& S, std::ostream& O) {
       {Visibility::PROTECTED, "pro"},
   };
 
-  O << " " << N->get_name() << " ";
+  S.line << " " << N->get_name() << " ";
 
   bool has_fields = !N->get_fields().empty();
   bool has_methods = !N->get_methods().empty();
@@ -198,67 +252,80 @@ static void put_composite_defintion(T* N, AutomatonState& S, std::ostream& O) {
 
   bool empty = !has_fields && !has_methods && !has_static_methods && N->get_tags().empty();
   if (empty) {
-    O << "{}";
+    S.line << "{}";
     return;
   }
 
-  O << "{\n";
+  S.line << "{\n";
+  S.flush_line();
   S.bra_depth++;
 
   for (auto it = N->get_fields().begin(); it != N->get_fields().end(); it++) {
-    put_indent(S, O);
+    put_indent(S);
 
-    O << vis_str.at((*it)->get_visibility()) << " ";
-    automaton_recurse(*it, S, O);
-    O << "\n";
+    S.line << vis_str.at((*it)->get_visibility()) << " ";
+    recurse(*it, S);
+    S.line << "\n";
+    S.flush_line();
   }
 
   if (has_methods) {
     if (has_fields) {
-      O << "\n";
+      S.line << "\n";
+      S.flush_line();
     }
 
     for (auto it = N->get_methods().begin(); it != N->get_methods().end(); it++) {
-      put_indent(S, O);
+      put_indent(S);
 
-      O << vis_str.at((*it)->get_visibility()) << " ";
-      automaton_recurse(*it, S, O);
-      O << ";\n";
+      S.line << vis_str.at((*it)->get_visibility()) << " ";
+      recurse(*it, S);
+      S.line << ";\n";
+      S.flush_line();
     }
   }
 
   if (has_static_methods) {
     if (has_fields || has_methods) {
-      O << "\n";
+      S.line << "\n";
+      S.flush_line();
     }
 
     for (auto it = N->get_static_methods().begin(); it != N->get_static_methods().end(); it++) {
-      put_indent(S, O);
+      put_indent(S);
 
-      O << vis_str.at((*it)->get_visibility()) << " static ";
-      automaton_recurse(*it, S, O);
-      O << ";\n";
+      S.line << vis_str.at((*it)->get_visibility()) << " static ";
+      recurse(*it, S);
+      S.line << ";\n";
+      S.flush_line();
     }
   }
 
   S.bra_depth--;
-  put_indent(S, O);
-  O << "}";
+  put_indent(S);
+  S.line << "}";
 
   if (!N->get_tags().empty()) {
-    O << " with [";
+    S.line << " with [";
     for (auto it = N->get_tags().begin(); it != N->get_tags().end(); it++) {
-      O << *it;
+      S.line << *it;
       if (std::next(it) != N->get_tags().end()) {
-        O << ", ";
+        S.line << ", ";
       }
     }
-    O << "]";
+    S.line << "]";
   }
 }
 
-static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& O) {
-  (void)escape_char_literal;
+static void recurse(qparse::Node* C, AutomatonState& S) {
+  /**
+   * TODO: Resolve the following issues:
+   * - Parentheses are currently lost and the order of operation is not preserved;
+   * - Integer literals loose their original base.
+   * - Code comments are lost
+   * - Format is not avaliable is macros are present
+   * -
+   */
 
   using namespace qparse;
 
@@ -275,32 +342,32 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     }
 
     case QAST_NODE_CEXPR: {
-      automaton_recurse(C->as<ConstExpr>()->get_value(), S, O);
+      recurse(C->as<ConstExpr>()->get_value(), S);
       break;
     }
 
     case QAST_NODE_BINEXPR: {
       BinExpr* N = C->as<BinExpr>();
-      automaton_recurse(N->get_lhs(), S, O);
-      O << " " << N->get_op() << " ";
-      automaton_recurse(N->get_rhs(), S, O);
+      recurse(N->get_lhs(), S);
+      S.line << " " << N->get_op() << " ";
+      recurse(N->get_rhs(), S);
       break;
     }
 
     case QAST_NODE_UNEXPR: {
       UnaryExpr* N = C->as<UnaryExpr>();
-      O << N->get_op();
+      S.line << N->get_op();
       switch (N->get_op()) {
         case qOpSizeof:
         case qOpBitsizeof:
         case qOpAlignof:
         case qOpTypeof:
-          O << "(";
-          automaton_recurse(N->get_rhs(), S, O);
-          O << ")";
+          S.line << "(";
+          recurse(N->get_rhs(), S);
+          S.line << ")";
           break;
         default:
-          automaton_recurse(N->get_rhs(), S, O);
+          recurse(N->get_rhs(), S);
           break;
       }
       break;
@@ -308,73 +375,73 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
 
     case QAST_NODE_TEREXPR: {
       TernaryExpr* N = C->as<TernaryExpr>();
-      automaton_recurse(N->get_cond(), S, O);
-      O << " ? ";
-      automaton_recurse(N->get_lhs(), S, O);
-      O << " : ";
-      automaton_recurse(N->get_rhs(), S, O);
+      recurse(N->get_cond(), S);
+      S.line << " ? ";
+      recurse(N->get_lhs(), S);
+      S.line << " : ";
+      recurse(N->get_rhs(), S);
       break;
     }
 
     case QAST_NODE_INT: {
-      O << C->as<ConstInt>()->get_value();
+      S.line << C->as<ConstInt>()->get_value();
       break;
     }
 
     case QAST_NODE_FLOAT: {
-      O << C->as<ConstFloat>()->get_value();
+      write_float_literal(S, C->as<ConstFloat>()->get_value());
       break;
     }
 
     case QAST_NODE_STRING: {
-      O << escape_string_literal(S, C->as<ConstString>()->get_value());
+      escape_string_literal(S, C->as<ConstString>()->get_value());
       break;
     }
 
     case QAST_NODE_CHAR: {
       ConstChar* N = C->as<ConstChar>();
       qcore_assert(N->get_value() >= 0 && N->get_value() <= 255);
-      O << escape_char_literal(N->get_value());
+      S.line << escape_char_literal(N->get_value());
       break;
     }
 
     case QAST_NODE_BOOL: {
       if (C->as<ConstBool>()->get_value()) {
-        O << "true";
+        S.line << "true";
       } else {
-        O << "false";
+        S.line << "false";
       }
       break;
     }
 
     case QAST_NODE_NULL: {
-      O << "null";
+      S.line << "null";
       break;
     }
 
     case QAST_NODE_UNDEF: {
-      O << "undef";
+      S.line << "undef";
       break;
     }
 
     case QAST_NODE_CALL: {
       Call* N = C->as<Call>();
 
-      automaton_recurse(N->get_func(), S, O);
+      recurse(N->get_func(), S);
 
-      O << "(";
+      S.line << "(";
       for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
         if (!std::isdigit(it->first.at(0))) {
-          O << it->first;
-          O << ": ";
+          S.line << it->first;
+          S.line << ": ";
         }
-        automaton_recurse(it->second, S, O);
+        recurse(it->second, S);
 
         if (std::next(it) != N->get_args().end()) {
-          O << ", ";
+          S.line << ", ";
         }
       }
-      O << ")";
+      S.line << ")";
       break;
     }
 
@@ -382,281 +449,294 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
       List* N = C->as<List>();
       auto ty = N->get_items().front()->this_typeid();
       if (N->get_items().size() > 0 && (ty == QAST_NODE_ASSOC || ty == QAST_NODE_LIST)) {
-        O << "[\n";
+        S.line << "[\n";
+        S.flush_line();
         S.brk_depth++;
         for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
-          put_indent(S, O);
-          automaton_recurse(*it, S, O);
-          O << ",\n";
+          put_indent(S);
+          recurse(*it, S);
+          S.line << ",\n";
+          S.flush_line();
         }
         S.brk_depth--;
-        put_indent(S, O);
-        O << "]";
+        put_indent(S);
+        S.line << "]";
       } else {
         size_t split_on =
             N->get_items().size() <= 8 ? 8 : std::ceil(std::sqrt(N->get_items().size()));
 
-        O << "[";
+        S.line << "[";
         size_t i = 0;
         for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
-          automaton_recurse(*it, S, O);
+          recurse(*it, S);
 
           i++;
           if (std::next(it) != N->get_items().end()) {
-            O << ",";
+            S.line << ",";
             if (i % split_on == 0) {
-              O << "\n ";
-              put_indent(S, O);
+              S.line << "\n";
+              S.flush_line();
+              S.line << " ";
+              put_indent(S);
             } else {
-              O << " ";
+              S.line << " ";
             }
           }
         }
-        O << "]";
+        S.line << "]";
       }
       break;
     }
 
     case QAST_NODE_ASSOC: {
       Assoc* N = C->as<Assoc>();
-      O << "{";
-      automaton_recurse(N->get_key(), S, O);
-      O << ": ";
-      automaton_recurse(N->get_value(), S, O);
-      O << "}";
+      S.line << "{";
+      recurse(N->get_key(), S);
+      S.line << ": ";
+      recurse(N->get_value(), S);
+      S.line << "}";
       break;
     }
 
     case QAST_NODE_FIELD: {
       Field* N = C->as<Field>();
-      automaton_recurse(N->get_base(), S, O);
-      O << "." << N->get_field();
+      recurse(N->get_base(), S);
+      S.line << "." << N->get_field();
       break;
     }
 
     case QAST_NODE_INDEX: {
       Index* N = C->as<Index>();
-      automaton_recurse(N->get_base(), S, O);
-      O << "[";
-      automaton_recurse(N->get_index(), S, O);
-      O << "]";
+      recurse(N->get_base(), S);
+      S.line << "[";
+      recurse(N->get_index(), S);
+      S.line << "]";
       break;
     }
 
     case QAST_NODE_SLICE: {
       Slice* N = C->as<Slice>();
-      automaton_recurse(N->get_base(), S, O);
-      O << "[";
-      automaton_recurse(N->get_start(), S, O);
-      O << ":";
-      automaton_recurse(N->get_end(), S, O);
-      O << "]";
+      recurse(N->get_base(), S);
+      S.line << "[";
+      recurse(N->get_start(), S);
+      S.line << ":";
+      recurse(N->get_end(), S);
+      S.line << "]";
       break;
     }
 
     case QAST_NODE_FSTRING: {
       FString* N = C->as<FString>();
-      O << "f\"";
+      S.line << "f\"";
       for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
         if (std::holds_alternative<String>(*it)) {
-          O << escape_string_literal_chunk(S, std::get<String>(*it));
+          escape_string_literal_chunk(S, std::get<String>(*it));
         } else {
-          O << "{";
-          std::stringstream ss;
-          automaton_recurse(std::get<Expr*>(*it), S, ss);
-          O << escape_string_literal_chunk(S, ss.str());
-          O << "}";
+          S.line << "{";
+          std::stringstream swap_line, swap_buffer;
+          std::swap(S.line, swap_line);
+          std::swap(S.S, swap_buffer);
+
+          recurse(std::get<Expr*>(*it), S);
+
+          std::swap(S.line, swap_line);
+          std::swap(S.S, swap_buffer);
+
+          swap_buffer << swap_line.str();
+
+          escape_string_literal_chunk(S, swap_buffer.str());
+          S.line << "}";
         }
       }
-      O << "\"";
+      S.line << "\"";
       break;
     }
 
     case QAST_NODE_IDENT: {
-      O << C->as<Ident>()->get_name();
+      S.line << C->as<Ident>()->get_name();
       break;
     }
 
     case QAST_NODE_SEQ_POINT: {
       SeqPoint* N = C->as<SeqPoint>();
 
-      O << "(";
+      S.line << "(";
       for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
-        automaton_recurse(*it, S, O);
+        recurse(*it, S);
 
         if (std::next(it) != N->get_items().end()) {
-          O << ", ";
+          S.line << ", ";
         }
       }
-      O << ")";
+      S.line << ")";
       break;
     }
 
     case QAST_NODE_POST_UNEXPR: {
       PostUnaryExpr* N = C->as<PostUnaryExpr>();
-      automaton_recurse(N->get_lhs(), S, O);
-      O << N->get_op();
+      recurse(N->get_lhs(), S);
+      S.line << N->get_op();
       break;
     }
 
     case QAST_NODE_STMT_EXPR: {
-      automaton_recurse(C->as<StmtExpr>()->get_stmt(), S, O);
+      recurse(C->as<StmtExpr>()->get_stmt(), S);
       break;
     }
 
     case QAST_NODE_TYPE_EXPR: {
-      automaton_recurse(C->as<TypeExpr>()->get_type(), S, O);
+      recurse(C->as<TypeExpr>()->get_type(), S);
       break;
     }
 
     case QAST_NODE_TEMPL_CALL: {
       TemplCall* N = C->as<TemplCall>();
 
-      automaton_recurse(N->get_func(), S, O);
+      recurse(N->get_func(), S);
 
-      O << "<";
+      S.line << "<";
       for (auto it = N->get_template_args().begin(); it != N->get_template_args().end(); it++) {
         if (!std::isdigit(it->first.at(0))) {
-          O << it->first;
-          O << ": ";
+          S.line << it->first;
+          S.line << ": ";
         }
-        automaton_recurse(it->second, S, O);
+        recurse(it->second, S);
 
         if (std::next(it) != N->get_template_args().end()) {
-          O << ", ";
+          S.line << ", ";
         }
       }
-      O << ">";
+      S.line << ">";
 
-      O << "(";
+      S.line << "(";
       for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
         if (!std::isdigit(it->first.at(0))) {
-          O << it->first;
-          O << ": ";
+          S.line << it->first;
+          S.line << ": ";
         }
-        automaton_recurse(it->second, S, O);
+        recurse(it->second, S);
 
         if (std::next(it) != N->get_args().end()) {
-          O << ", ";
+          S.line << ", ";
         }
       }
-      O << ")";
+      S.line << ")";
 
       break;
     }
 
     case QAST_NODE_REF_TY: {
-      O << "&";
-      automaton_recurse(C->as<RefTy>()->get_item(), S, O);
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "&";
+      recurse(C->as<RefTy>()->get_item(), S);
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_U1_TY: {
-      O << "u1";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "u1";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_U8_TY: {
-      O << "u8";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "u8";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_U16_TY: {
-      O << "u16";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "u16";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_U32_TY: {
-      O << "u32";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "u32";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_U64_TY: {
-      O << "u64";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "u64";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_U128_TY: {
-      O << "u128";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "u128";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_I8_TY: {
-      O << "i8";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "i8";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_I16_TY: {
-      O << "i16";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "i16";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_I32_TY: {
-      O << "i32";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "i32";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_I64_TY: {
-      O << "i64";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "i64";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_I128_TY: {
-      O << "i128";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "i128";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_F16_TY: {
-      O << "f16";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "f16";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_F32_TY: {
-      O << "f32";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "f32";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_F64_TY: {
-      O << "f64";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "f64";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_F128_TY: {
-      O << "f128";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "f128";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_VOID_TY: {
-      O << "void";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "void";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_PTR_TY: {
-      O << "*";
-      automaton_recurse(C->as<PtrTy>()->get_item(), S, O);
+      S.line << "*";
+      recurse(C->as<PtrTy>()->get_item(), S);
       break;
     }
 
     case QAST_NODE_OPAQUE_TY: {
-      O << "opaque(" << C->as<OpaqueTy>()->get_name() << ")";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "opaque(" << C->as<OpaqueTy>()->get_name() << ")";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
@@ -682,29 +762,29 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
 
     case QAST_NODE_ARRAY_TY: {
       ArrayTy* N = C->as<ArrayTy>();
-      O << "[";
-      automaton_recurse(N->get_item(), S, O);
-      O << "; ";
-      automaton_recurse(N->get_size(), S, O);
-      O << "]";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "[";
+      recurse(N->get_item(), S);
+      S.line << "; ";
+      recurse(N->get_size(), S);
+      S.line << "]";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_TUPLE_TY: {
       TupleTy* N = C->as<TupleTy>();
 
-      O << "(";
+      S.line << "(";
       for (auto it = N->get_items().begin(); it != N->get_items().end(); ++it) {
-        automaton_recurse(*it, S, O);
+        recurse(*it, S);
 
         if (std::next(it) != N->get_items().end()) {
-          O << ", ";
+          S.line << ", ";
         }
       }
-      O << ")";
+      S.line << ")";
 
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
@@ -733,53 +813,53 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
         props += " crashpoint";
       }
 
-      O << "fn";
+      S.line << "fn";
       if (!props.empty()) {
-        O << std::move(props);
+        S.line << std::move(props);
       }
 
-      O << "(";
+      S.line << "(";
       for (auto it = N->get_params().begin(); it != N->get_params().end(); it++) {
-        O << std::get<0>(*it);
+        S.line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
         if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) || std::get<2>(*it)) {
-          O << ": ";
-          automaton_recurse(std::get<1>(*it), S, O);
+          S.line << ": ";
+          recurse(std::get<1>(*it), S);
           if (std::get<2>(*it)) {
-            O << " = ";
-            automaton_recurse(std::get<2>(*it), S, O);
+            S.line << " = ";
+            recurse(std::get<2>(*it), S);
           }
         }
 
         if (std::next(it) != N->get_params().end() || N->is_variadic()) {
-          O << ", ";
+          S.line << ", ";
         }
       }
 
       if (N->is_variadic()) {
-        O << "...";
+        S.line << "...";
       }
 
-      O << ")";
+      S.line << ")";
 
       if (N->get_return_ty() && N->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
-        O << ": ";
-        automaton_recurse(N->get_return_ty(), S, O);
+        S.line << ": ";
+        recurse(N->get_return_ty(), S);
       }
 
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_UNRES_TY: {
-      O << C->as<UnresolvedType>()->get_name();
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << C->as<UnresolvedType>()->get_name();
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_INFER_TY: {
-      O << "?";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << "?";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
@@ -791,61 +871,61 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
 
         if (name == "__builtin_result") {
           qcore_assert(N->get_args().size() == 1);
-          automaton_recurse(N->get_args().front(), S, O);
-          O << "?";
+          recurse(N->get_args().front(), S);
+          S.line << "?";
 
-          put_type_metadata(C->as<qparse::Type>(), S, O);
+          put_type_metadata(C->as<qparse::Type>(), S);
           break;
         } else if (name == "__builtin_vec") {
           qcore_assert(N->get_args().size() == 1);
 
-          O << "[";
-          automaton_recurse(N->get_args().front(), S, O);
-          O << "]";
+          S.line << "[";
+          recurse(N->get_args().front(), S);
+          S.line << "]";
 
-          put_type_metadata(C->as<qparse::Type>(), S, O);
+          put_type_metadata(C->as<qparse::Type>(), S);
           break;
         } else if (name == "__builtin_uset") {
           qcore_assert(N->get_args().size() == 1);
 
-          O << "{";
-          automaton_recurse(N->get_args().front(), S, O);
-          O << "}";
+          S.line << "{";
+          recurse(N->get_args().front(), S);
+          S.line << "}";
 
-          put_type_metadata(C->as<qparse::Type>(), S, O);
+          put_type_metadata(C->as<qparse::Type>(), S);
           break;
         } else if (name == "__builtin_umap") {
           qcore_assert(N->get_args().size() == 2);
 
-          O << "[";
-          automaton_recurse(N->get_args()[0], S, O);
-          O << "->";
-          automaton_recurse(N->get_args()[1], S, O);
-          O << "]";
+          S.line << "[";
+          recurse(N->get_args()[0], S);
+          S.line << "->";
+          recurse(N->get_args()[1], S);
+          S.line << "]";
 
-          put_type_metadata(C->as<qparse::Type>(), S, O);
+          put_type_metadata(C->as<qparse::Type>(), S);
           break;
         }
       }
 
-      automaton_recurse(N->get_template(), S, O);
-      O << "<";
+      recurse(N->get_template(), S);
+      S.line << "<";
       for (auto it = N->get_args().begin(); it != N->get_args().end(); ++it) {
-        automaton_recurse(*it, S, O);
+        recurse(*it, S);
 
         if (std::next(it) != N->get_args().end()) {
-          O << ", ";
+          S.line << ", ";
         }
       }
-      O << ">";
-      put_type_metadata(C->as<qparse::Type>(), S, O);
+      S.line << ">";
+      put_type_metadata(C->as<qparse::Type>(), S);
       break;
     }
 
     case QAST_NODE_TYPEDEF: {
       TypedefDecl* N = C->as<TypedefDecl>();
-      O << "type " << N->get_name() << " = ";
-      automaton_recurse(N->get_type(), S, O);
+      S.line << "type " << N->get_name() << " = ";
+      recurse(N->get_type(), S);
       break;
     }
 
@@ -882,106 +962,108 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
         props += " " + N->get_name();
       }
 
-      O << "fn";
+      S.line << "fn";
       if (!props.empty()) {
-        O << std::move(props);
+        S.line << std::move(props);
       }
 
-      O << "(";
+      S.line << "(";
       for (auto it = F->get_params().begin(); it != F->get_params().end(); it++) {
         if (std::get<0>(*it) == "this") {
           continue;
         }
 
-        O << std::get<0>(*it);
+        S.line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
         if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) || std::get<2>(*it)) {
-          O << ": ";
-          automaton_recurse(std::get<1>(*it), S, O);
+          S.line << ": ";
+          recurse(std::get<1>(*it), S);
           if (std::get<2>(*it)) {
-            O << " = ";
-            automaton_recurse(std::get<2>(*it), S, O);
+            S.line << " = ";
+            recurse(std::get<2>(*it), S);
           }
         }
 
         if (std::next(it) != F->get_params().end() || F->is_variadic()) {
-          O << ", ";
+          S.line << ", ";
         }
       }
 
       if (F->is_variadic()) {
-        O << "...";
+        S.line << "...";
       }
 
-      O << ")";
+      S.line << ")";
 
       if (F->get_return_ty() && F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
-        O << ": ";
-        automaton_recurse(F->get_return_ty(), S, O);
+        S.line << ": ";
+        recurse(F->get_return_ty(), S);
       }
 
       break;
     }
 
     case QAST_NODE_STRUCT: {
-      O << "struct";
-      put_composite_defintion(C->as<StructDef>(), S, O);
+      S.line << "struct";
+      put_composite_defintion(C->as<StructDef>(), S);
       break;
     }
 
     case QAST_NODE_REGION: {
-      O << "region";
-      put_composite_defintion(C->as<RegionDef>(), S, O);
+      S.line << "region";
+      put_composite_defintion(C->as<RegionDef>(), S);
       break;
     }
 
     case QAST_NODE_GROUP: {
-      O << "group";
-      put_composite_defintion(C->as<GroupDef>(), S, O);
+      S.line << "group";
+      put_composite_defintion(C->as<GroupDef>(), S);
       break;
     }
 
     case QAST_NODE_UNION: {
-      O << "union";
-      put_composite_defintion(C->as<UnionDef>(), S, O);
+      S.line << "union";
+      put_composite_defintion(C->as<UnionDef>(), S);
       break;
     }
 
     case QAST_NODE_ENUM: {
       EnumDef* N = C->as<EnumDef>();
-      O << "enum " << N->get_name();
+      S.line << "enum " << N->get_name();
 
       if (N->get_type()) {
-        O << ": ";
-        automaton_recurse(N->get_type(), S, O);
-        O << " ";
+        S.line << ": ";
+        recurse(N->get_type(), S);
+        S.line << " ";
       } else {
-        O << " ";
+        S.line << " ";
       }
 
       if (N->get_items().empty()) {
-        O << "{}";
+        S.line << "{}";
         break;
       }
 
-      O << "{\n";
+      S.line << "{\n";
+      S.flush_line();
       S.bra_depth++;
 
       for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
-        put_indent(S, O);
+        put_indent(S);
 
-        O << it->first;
+        S.line << it->first;
         if (it->second) {
-          O << " = ";
-          automaton_recurse(it->second, S, O);
+          S.line << " = ";
+          recurse(it->second, S);
         }
 
-        O << ",\n";
+        S.line << ",\n";
+        S.flush_line();
       }
 
       S.bra_depth--;
-      put_indent(S, O);
-      O << "}";
+      put_indent(S);
+      S.line << "}";
 
       break;
     }
@@ -1019,74 +1101,77 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
         props += " " + N->get_name();
       }
 
-      O << "fn";
+      S.line << "fn";
       if (!props.empty()) {
-        O << std::move(props);
+        S.line << std::move(props);
       }
 
-      O << "(";
+      S.line << "(";
       for (auto it = F->get_params().begin(); it != F->get_params().end(); it++) {
         if (std::get<0>(*it) == "this") {
           continue;
         }
 
-        O << std::get<0>(*it);
+        S.line << std::get<0>(*it);
         auto param_ty = std::get<1>(*it);
         if ((param_ty && param_ty->this_typeid() != QAST_NODE_INFER_TY) || std::get<2>(*it)) {
-          O << ": ";
-          automaton_recurse(std::get<1>(*it), S, O);
+          S.line << ": ";
+          recurse(std::get<1>(*it), S);
           if (std::get<2>(*it)) {
-            O << " = ";
-            automaton_recurse(std::get<2>(*it), S, O);
+            S.line << " = ";
+            recurse(std::get<2>(*it), S);
           }
         }
 
         if (std::next(it) != F->get_params().end() || F->is_variadic()) {
-          O << ", ";
+          S.line << ", ";
         }
       }
 
       if (F->is_variadic()) {
-        O << "...";
+        S.line << "...";
       }
 
-      O << ")";
+      S.line << ")";
 
       if (F->get_return_ty() && F->get_return_ty()->this_typeid() != QAST_NODE_VOID_TY) {
-        O << ": ";
-        automaton_recurse(F->get_return_ty(), S, O);
+        S.line << ": ";
+        recurse(F->get_return_ty(), S);
       }
-      O << " ";
+      S.line << " ";
 
       bool arrow_syntax =
           (N->get_body()->get_items().size() == 1) && !N->get_precond() && !N->get_postcond();
 
       if (arrow_syntax) {
-        O << "=> ";
-        automaton_recurse(N->get_body()->get_items().front(), S, O);
-        O << ";";
+        S.line << "=> ";
+        recurse(N->get_body()->get_items().front(), S);
+        S.line << ";";
       } else {
-        automaton_recurse(N->get_body(), S, O);
+        recurse(N->get_body(), S);
 
         bool promises = N->get_precond() || N->get_postcond();
         if (promises) {
-          O << " promise {\n";
+          S.line << " promise {\n";
+          S.flush_line();
           S.bra_depth++;
           if (N->get_precond()) {
-            put_indent(S, O);
-            O << "in ";
-            automaton_recurse(N->get_precond(), S, O);
-            O << ";\n";
+            put_indent(S);
+            S.line << "in ";
+            recurse(N->get_precond(), S);
+            S.line << ";\n";
+            S.flush_line();
           }
 
           if (N->get_postcond()) {
-            put_indent(S, O);
-            O << "out ";
-            automaton_recurse(N->get_postcond(), S, O);
-            O << ";\n";
+            put_indent(S);
+            S.line << "out ";
+            recurse(N->get_postcond(), S);
+            S.line << ";\n";
+            S.flush_line();
           }
           S.bra_depth--;
-          O << "}";
+          S.line << "}";
         }
       }
 
@@ -1095,32 +1180,32 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
 
     case QAST_NODE_SUBSYSTEM: {
       SubsystemDecl* N = C->as<SubsystemDecl>();
-      O << "subsystem " << N->get_name();
+      S.line << "subsystem " << N->get_name();
 
       if (!N->get_deps().empty()) {
-        O << ": [";
+        S.line << ": [";
         for (auto it = N->get_deps().begin(); it != N->get_deps().end(); it++) {
-          O << *it;
+          S.line << *it;
           if (std::next(it) != N->get_deps().end()) {
-            O << ", ";
+            S.line << ", ";
           }
         }
-        O << "]";
+        S.line << "]";
       }
 
-      O << " ";
+      S.line << " ";
 
-      automaton_recurse(N->get_body(), S, O);
+      recurse(N->get_body(), S);
 
       if (!N->get_tags().empty()) {
-        O << " with [";
+        S.line << " with [";
         for (auto it = N->get_tags().begin(); it != N->get_tags().end(); it++) {
-          O << *it;
+          S.line << *it;
           if (std::next(it) != N->get_tags().end()) {
-            O << ", ";
+            S.line << ", ";
           }
         }
-        O << "]";
+        S.line << "]";
       }
       break;
     }
@@ -1150,67 +1235,71 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
       }
 
       if (imports.size() == 1) {
-        O << "import ";
+        S.line << "import ";
         if (N->get_abi_name().empty()) {
-          O << "\"std\"";
+          S.line << "\"std\"";
         } else {
-          O << escape_string_literal(S, N->get_abi_name());
+          escape_string_literal(S, N->get_abi_name());
         }
-        O << " ";
+        S.line << " ";
 
-        automaton_recurse(imports.front(), S, O);
+        recurse(imports.front(), S);
       } else if (!imports.empty()) {
-        O << "import ";
+        S.line << "import ";
         if (N->get_abi_name().empty()) {
-          O << "\"std\"";
+          S.line << "\"std\"";
         } else {
-          O << escape_string_literal(S, N->get_abi_name());
+          escape_string_literal(S, N->get_abi_name());
         }
-        O << " {\n";
+        S.line << " {\n";
+        S.flush_line();
         S.bra_depth++;
 
         for (auto& stmt : imports) {
-          put_indent(S, O);
-          automaton_recurse(stmt, S, O);
-          O << ";\n";
+          put_indent(S);
+          recurse(stmt, S);
+          S.line << ";\n";
+          S.flush_line();
         }
 
         S.bra_depth--;
-        put_indent(S, O);
+        put_indent(S);
 
-        O << "}";
+        S.line << "}";
       }
 
       if (exports.size() == 1) {
-        O << "pub ";
+        S.line << "pub ";
         if (N->get_abi_name().empty()) {
-          O << "\"std\"";
+          S.line << "\"std\"";
         } else {
-          O << escape_string_literal(S, N->get_abi_name());
+          escape_string_literal(S, N->get_abi_name());
         }
-        O << " ";
+        S.line << " ";
 
-        automaton_recurse(exports.front(), S, O);
+        recurse(exports.front(), S);
       } else if (!exports.empty()) {
-        O << "pub ";
+        S.line << "pub ";
         if (N->get_abi_name().empty()) {
-          O << "\"std\"";
+          S.line << "\"std\"";
         } else {
-          O << escape_string_literal(S, N->get_abi_name());
+          escape_string_literal(S, N->get_abi_name());
         }
-        O << " {\n";
+        S.line << " {\n";
+        S.flush_line();
         S.bra_depth++;
 
         for (auto& stmt : exports) {
-          put_indent(S, O);
-          automaton_recurse(stmt, S, O);
-          O << ";\n";
+          put_indent(S);
+          recurse(stmt, S);
+          S.line << ";\n";
+          S.flush_line();
         }
 
         S.bra_depth--;
-        put_indent(S, O);
+        put_indent(S);
 
-        O << "}";
+        S.line << "}";
       }
 
       break;
@@ -1219,15 +1308,15 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     case QAST_NODE_COMPOSITE_FIELD: {
       CompositeField* N = C->as<CompositeField>();
 
-      O << N->get_name() << ": ";
-      automaton_recurse(N->get_type(), S, O);
+      S.line << N->get_name() << ": ";
+      recurse(N->get_type(), S);
 
       if (N->get_value()) {
-        O << " = ";
-        automaton_recurse(N->get_value(), S, O);
+        S.line << " = ";
+        recurse(N->get_value(), S);
       }
 
-      O << ",";
+      S.line << ",";
 
       break;
     }
@@ -1249,22 +1338,23 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
       S.did_root = true;
 
       if (did_root && N->get_items().empty()) {
-        O << "{}";
+        S.line << "{}";
         break;
       }
 
       if (did_root) {
-        O << "{\n";
+        S.line << "{\n";
+        S.flush_line();
         S.bra_depth++;
       }
 
       for (auto it = N->get_items().begin(); it != N->get_items().end(); ++it) {
         qparse_ty_t ty = (*it)->this_typeid();
 
-        put_indent(S, O);
-        automaton_recurse(*it, S, O);
+        put_indent(S);
+        recurse(*it, S);
         if (!no_has_semicolon.contains(ty)) {
-          O << ";";
+          S.line << ";";
         }
 
         bool do_double_line =
@@ -1272,16 +1362,20 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
             (std::next(it) != N->get_items().end() && (*std::next(it))->this_typeid() != ty);
 
         if (std::next(it) != N->get_items().end() && do_double_line) {
-          O << "\n\n";
+          S.line << "\n\n";
+          S.flush_line();
         } else {
-          O << "\n";
+          S.line << "\n";
+          S.flush_line();
         }
       }
 
       if (did_root) {
         S.bra_depth--;
-        put_indent(S, O);
-        O << "}";
+        put_indent(S);
+        S.line << "}";
+      } else {
+        S.flush_line();
       }
 
       break;
@@ -1289,42 +1383,42 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
 
     case QAST_NODE_CONST: {
       ConstDecl* N = C->as<ConstDecl>();
-      O << "const " << N->get_name();
+      S.line << "const " << N->get_name();
       if (N->get_type()) {
-        O << ": ";
-        automaton_recurse(N->get_type(), S, O);
+        S.line << ": ";
+        recurse(N->get_type(), S);
       }
       if (N->get_value()) {
-        O << " = ";
-        automaton_recurse(N->get_value(), S, O);
+        S.line << " = ";
+        recurse(N->get_value(), S);
       }
       break;
     }
 
     case QAST_NODE_VAR: {
       VarDecl* N = C->as<VarDecl>();
-      O << "var " << N->get_name();
+      S.line << "var " << N->get_name();
       if (N->get_type()) {
-        O << ": ";
-        automaton_recurse(N->get_type(), S, O);
+        S.line << ": ";
+        recurse(N->get_type(), S);
       }
       if (N->get_value()) {
-        O << " = ";
-        automaton_recurse(N->get_value(), S, O);
+        S.line << " = ";
+        recurse(N->get_value(), S);
       }
       break;
     }
 
     case QAST_NODE_LET: {
       LetDecl* N = C->as<LetDecl>();
-      O << "let " << N->get_name();
+      S.line << "let " << N->get_name();
       if (N->get_type()) {
-        O << ": ";
-        automaton_recurse(N->get_type(), S, O);
+        S.line << ": ";
+        recurse(N->get_type(), S);
       }
       if (N->get_value()) {
-        O << " = ";
-        automaton_recurse(N->get_value(), S, O);
+        S.line << " = ";
+        recurse(N->get_value(), S);
       }
       break;
     }
@@ -1337,10 +1431,10 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     case QAST_NODE_RETURN: {
       ReturnStmt* N = C->as<ReturnStmt>();
 
-      O << "ret";
+      S.line << "ret";
       if (N->get_value()) {
-        O << " ";
-        automaton_recurse(N->get_value(), S, O);
+        S.line << " ";
+        recurse(N->get_value(), S);
       }
 
       break;
@@ -1349,10 +1443,10 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     case QAST_NODE_RETIF: {
       ReturnIfStmt* N = C->as<ReturnIfStmt>();
 
-      O << "retif";
-      automaton_recurse(N->get_cond(), S, O);
-      O << ", ";
-      automaton_recurse(N->get_value(), S, O);
+      S.line << "retif";
+      recurse(N->get_cond(), S);
+      S.line << ", ";
+      recurse(N->get_value(), S);
 
       break;
     }
@@ -1360,10 +1454,10 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     case QAST_NODE_RETZ: {
       RetZStmt* N = C->as<RetZStmt>();
 
-      O << "retz";
-      automaton_recurse(N->get_cond(), S, O);
-      O << ", ";
-      automaton_recurse(N->get_value(), S, O);
+      S.line << "retz";
+      recurse(N->get_cond(), S);
+      S.line << ", ";
+      recurse(N->get_value(), S);
 
       break;
     }
@@ -1371,46 +1465,46 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
     case QAST_NODE_RETV: {
       RetVStmt* N = C->as<RetVStmt>();
 
-      O << "retv";
-      automaton_recurse(N->get_cond(), S, O);
+      S.line << "retv";
+      recurse(N->get_cond(), S);
 
       break;
     }
 
     case QAST_NODE_BREAK: {
-      O << "break";
+      S.line << "break";
       break;
     }
 
     case QAST_NODE_CONTINUE: {
-      O << "continue";
+      S.line << "continue";
       break;
     }
 
     case QAST_NODE_IF: {
       IfStmt* N = C->as<IfStmt>();
 
-      O << "if ";
-      automaton_recurse(N->get_cond(), S, O);
+      S.line << "if ";
+      recurse(N->get_cond(), S);
 
       if (N->get_then()->get_items().size() == 1) {
-        O << " => ";
-        automaton_recurse(N->get_then()->get_items().front(), S, O);
+        S.line << " => ";
+        recurse(N->get_then()->get_items().front(), S);
         if (N->get_else()) {
-          O << ";";
+          S.line << ";";
         }
       } else {
-        O << " ";
-        automaton_recurse(N->get_then(), S, O);
+        S.line << " ";
+        recurse(N->get_then(), S);
       }
 
       if (N->get_else()) {
         if (N->get_else()->get_items().size() == 1) {
-          O << " else => ";
-          automaton_recurse(N->get_else()->get_items().front(), S, O);
+          S.line << " else => ";
+          recurse(N->get_else()->get_items().front(), S);
         } else {
-          O << " else ";
-          automaton_recurse(N->get_else(), S, O);
+          S.line << " else ";
+          recurse(N->get_else(), S);
         }
       }
 
@@ -1419,123 +1513,126 @@ static void automaton_recurse(qparse::Node* C, AutomatonState& S, std::ostream& 
 
     case QAST_NODE_WHILE: {
       WhileStmt* N = C->as<WhileStmt>();
-      O << "while ";
-      automaton_recurse(N->get_cond(), S, O);
-      O << " ";
+      S.line << "while ";
+      recurse(N->get_cond(), S);
+      S.line << " ";
 
       if (N->get_body()->get_items().size() == 1) {
-        O << "=> ";
-        automaton_recurse(N->get_body()->get_items().front(), S, O);
+        S.line << "=> ";
+        recurse(N->get_body()->get_items().front(), S);
       } else {
-        automaton_recurse(N->get_body(), S, O);
+        recurse(N->get_body(), S);
       }
       break;
     }
 
     case QAST_NODE_FOR: {
       ForStmt* N = C->as<ForStmt>();
-      O << "for (";
+      S.line << "for (";
 
-      automaton_recurse(N->get_init(), S, O);
-      O << ";";
-      if (N->get_init()) O << " ";
+      recurse(N->get_init(), S);
+      S.line << ";";
+      if (N->get_init()) S.line << " ";
 
-      automaton_recurse(N->get_cond(), S, O);
-      O << ";";
-      if (N->get_cond()) O << " ";
+      recurse(N->get_cond(), S);
+      S.line << ";";
+      if (N->get_cond()) S.line << " ";
 
-      automaton_recurse(N->get_step(), S, O);
+      recurse(N->get_step(), S);
 
-      O << ") ";
+      S.line << ") ";
 
       if (N->get_body()->get_items().size() == 1) {
-        O << "=> ";
-        automaton_recurse(N->get_body()->get_items().front(), S, O);
+        S.line << "=> ";
+        recurse(N->get_body()->get_items().front(), S);
       } else {
-        automaton_recurse(N->get_body(), S, O);
+        recurse(N->get_body(), S);
       }
       break;
     }
 
     case QAST_NODE_FORM: {
       FormStmt* N = C->as<FormStmt>();
-      O << "form (";
-      automaton_recurse(N->get_maxjobs(), S, O);
-      O << ") (" << N->get_idx_ident() << ", " << N->get_val_ident() << " in ";
-      automaton_recurse(N->get_expr(), S, O);
+      S.line << "form (";
+      recurse(N->get_maxjobs(), S);
+      S.line << ") (" << N->get_idx_ident() << ", " << N->get_val_ident() << " in ";
+      recurse(N->get_expr(), S);
 
-      O << ") ";
+      S.line << ") ";
 
       if (N->get_body()->get_items().size() == 1) {
-        O << "=> ";
-        automaton_recurse(N->get_body()->get_items().front(), S, O);
+        S.line << "=> ";
+        recurse(N->get_body()->get_items().front(), S);
       } else {
-        automaton_recurse(N->get_body(), S, O);
+        recurse(N->get_body(), S);
       }
       break;
     }
 
     case QAST_NODE_FOREACH: {
       ForeachStmt* N = C->as<ForeachStmt>();
-      O << "foreach (" << N->get_idx_ident() << ", " << N->get_val_ident() << " in ";
-      automaton_recurse(N->get_expr(), S, O);
+      S.line << "foreach (" << N->get_idx_ident() << ", " << N->get_val_ident() << " in ";
+      recurse(N->get_expr(), S);
 
-      O << ") ";
+      S.line << ") ";
 
       if (N->get_body()->get_items().size() == 1) {
-        O << "=> ";
-        automaton_recurse(N->get_body()->get_items().front(), S, O);
+        S.line << "=> ";
+        recurse(N->get_body()->get_items().front(), S);
       } else {
-        automaton_recurse(N->get_body(), S, O);
+        recurse(N->get_body(), S);
       }
       break;
     }
 
     case QAST_NODE_CASE: {
       CaseStmt* N = C->as<CaseStmt>();
-      O << "case ";
-      automaton_recurse(N->get_cond(), S, O);
-      O << ": ";
-      automaton_recurse(N->get_body(), S, O);
+      S.line << "case ";
+      recurse(N->get_cond(), S);
+      S.line << ": ";
+      recurse(N->get_body(), S);
       break;
     }
 
     case QAST_NODE_SWITCH: {
       SwitchStmt* N = C->as<SwitchStmt>();
-      O << "switch ";
-      automaton_recurse(N->get_cond(), S, O);
+      S.line << "switch ";
+      recurse(N->get_cond(), S);
       if (N->get_cases().empty() && !N->get_default()) {
-        O << " {}";
+        S.line << " {}";
       } else {
-        O << " {\n";
+        S.line << " {\n";
+        S.flush_line();
         S.bra_depth++;
         for (auto& stmt : N->get_cases()) {
-          put_indent(S, O);
-          automaton_recurse(stmt, S, O);
-          O << "\n";
+          put_indent(S);
+          recurse(stmt, S);
+          S.line << "\n";
+          S.flush_line();
         }
         if (N->get_default()) {
-          put_indent(S, O);
-          O << "default: ";
-          automaton_recurse(N->get_default(), S, O);
-          O << "\n";
+          put_indent(S);
+          S.line << "default: ";
+          recurse(N->get_default(), S);
+          S.line << "\n";
+          S.flush_line();
         }
         S.bra_depth--;
-        put_indent(S, O);
-        O << "}";
+        put_indent(S);
+        S.line << "}";
       }
       break;
     }
 
     case QAST_NODE_EXPR_STMT: {
-      automaton_recurse(C->as<ExprStmt>()->get_expr(), S, O);
+      recurse(C->as<ExprStmt>()->get_expr(), S);
       break;
     }
 
     case QAST_NODE_VOLSTMT: {
       VolStmt* N = C->as<VolStmt>();
-      O << "volatile ";
-      automaton_recurse(N->get_stmt(), S, O);
+      S.line << "volatile ";
+      recurse(N->get_stmt(), S);
       break;
     }
   }
@@ -1625,10 +1722,9 @@ static void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& 
 
   LOG(INFO) << "Requested document format";
 
-  std::stringstream formatted_text;
   AutomatonState S;
 
-  automaton_recurse(static_cast<qparse::Node*>(root), S, formatted_text);
+  recurse(static_cast<qparse::Node*>(root), S);
 
   ///==========================================================
   /// Send the whole new file contents
@@ -1642,7 +1738,7 @@ static void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& 
   edit["range"].AddMember("end", Value(kObjectType), resp->GetAllocator());
   edit["range"]["end"].AddMember("line", SIZE_MAX, resp->GetAllocator());
   edit["range"]["end"].AddMember("character", SIZE_MAX, resp->GetAllocator());
-  std::string new_text = formatted_text.str();
+  std::string new_text = S.S.str();
   edit.AddMember("newText", Value(new_text.c_str(), new_text.size(), resp->GetAllocator()).Move(),
                  resp->GetAllocator());
 
