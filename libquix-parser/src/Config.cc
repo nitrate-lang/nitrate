@@ -49,7 +49,6 @@ boost::bimap<L, R> make_bimap(std::initializer_list<typename boost::bimap<L, R>:
 static const boost::bimap<qparse_key_t, std::string_view> options_bimap =
     make_bimap<qparse_key_t, std::string_view>({
         {QPK_UNKNOWN, "QPK_UNKNOWN"},
-        {QPK_NO_AUTO_IMPL, "-fno-auto-impl"},
         {QPK_VERBOSE, "-fverbose"},
         {QPK_CRASHGUARD, "-fcrashguard"},
         {QPV_FASTERROR, "-ffasterror"},
@@ -58,9 +57,6 @@ static const boost::bimap<qparse_key_t, std::string_view> options_bimap =
 static const boost::bimap<qparse_val_t, std::string_view> values_bimap =
     make_bimap<qparse_val_t, std::string_view>({
         {QPV_UNKNOWN, "QPV_UNKNOWN"},
-        {QPV_FUNCTION, "function"},
-        {QPV_STRUCT, "struct"},
-        {QPV_UNION, "union"},
         {QPV_TRUE, "true"},
         {QPV_FALSE, "false"},
     });

@@ -185,7 +185,7 @@ bool parser::parse_union(qparse_t &job, qlex_t *rd, Stmt **node) {
       static_cast<FnDecl *>(method)->set_visibility(vis);
 
       { /* Add the 'this' parameter to the method */
-        FuncParam fn_this{"this", PtrTy::get(UnresolvedType::get(name)), nullptr};
+        FuncParam fn_this{"this", RefTy::get(UnresolvedType::get(name)), nullptr};
 
         if (method->is<FnDecl>()) {
           fdecl = static_cast<FnDecl *>(method);
@@ -247,13 +247,7 @@ bool parser::parse_union(qparse_t &job, qlex_t *rd, Stmt **node) {
     }
   }
 
-  { /* The compiler may automatically generate traits for the definition */
-    tok = qlex_peek(rd);
-    if (!job.conf->has(QPK_NO_AUTO_IMPL, QPV_UNION)) {
-      implements.insert("auto");
-    }
-  }
-
+  tok = qlex_peek(rd);
   { /* Check for an implementation/trait list */
     if (tok.is<qKWith>()) {
       qlex_next(rd);

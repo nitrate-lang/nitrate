@@ -297,26 +297,6 @@ bool impl_subsys_parser(std::shared_ptr<std::istream> source, FILE *output,
     }
   }
 
-  { /* Should we implement the default construct attributes? */
-    if (opts.contains("-fparse-autoimpl-func=off")) {
-      qparse_conf_setopt(conf.get(), QPK_NO_AUTO_IMPL, QPV_FUNCTION);
-    } else if (opts.contains("-fparse-autoimpl-func=on")) {
-      // ignore; its the default
-    }
-
-    if (opts.contains("-fparse-autoimpl-struct=off")) {
-      qparse_conf_setopt(conf.get(), QPK_NO_AUTO_IMPL, QPV_STRUCT);
-    } else if (opts.contains("-fparse-autoimpl-struct=on")) {
-      // ignore; its the default
-    }
-
-    if (opts.contains("-fparse-autoimpl-union=off")) {
-      qparse_conf_setopt(conf.get(), QPK_NO_AUTO_IMPL, QPV_UNION);
-    } else if (opts.contains("-fparse-autoimpl-union=on")) {
-      // ignore; its the default
-    }
-  }
-
   DeserializerAdapterLexer lex(source, nullptr, qcore_env_current());
   qparser par(&lex, conf.get(), qcore_env_current());
 

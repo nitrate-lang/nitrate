@@ -588,10 +588,6 @@ bool qparse::parser::parse_function(qparse_t &job, qlex_t *rd, Stmt **node) {
       return false;
     }
 
-    if (!job.conf->has(QPK_NO_AUTO_IMPL, QPV_FUNCTION)) {
-      implements.insert("auto");
-    }
-
     if (!ftype->get_return_ty()) {
       ftype->set_return_ty(VoidTy::get());
     }
