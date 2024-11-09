@@ -36,6 +36,7 @@ struct AutomatonState {
 public:
   size_t brk_depth = 0 /* Parentheses */, bra_depth = 0 /* Curly bracket */;
   bool did_root = false;
+  size_t tabSize = 0;
 
   std::stringstream S;
   std::stringstream line;
@@ -45,7 +46,7 @@ public:
     line.str("");
   }
 
-  AutomatonState() {}
+  AutomatonState(size_t theTabSize) { tabSize = theTabSize; }
 };
 
 static std::string escape_char_literal(char ch) {
@@ -208,10 +209,10 @@ static void write_float_literal(AutomatonState& S, std::string_view float_str) {
 
 static void put_indent(AutomatonState& S) {
   if (S.bra_depth) {
-    S.line << std::string(S.bra_depth * 2, ' ');
+    S.line << std::string(S.bra_depth * S.tabSize, ' ');
   }
   if (S.brk_depth) {
-    S.line << std::string(S.brk_depth * 2, ' ');
+    S.line << std::string(S.brk_depth * S.tabSize, ' ');
   }
 }
 
@@ -323,8 +324,8 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
    * - Parentheses are currently lost and the order of operation is not preserved;
    * - Integer literals loose their original base.
    * - Code comments are lost
-   * - Format is not avaliable is macros are present
-   * -
+   * - Format is not avaliable if macros are present
+   * - Maximum line width is not supported at all (might me okay)
    */
 
   using namespace qparse;
@@ -430,15 +431,37 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
       recurse(N->get_func(), S);
 
       S.line << "(";
+
+      S.line.seekg(0, std::ios::end);
+      size_t line_size = S.line.tellg();
+
+      size_t split_on = -1, i = 0;
+
+      if (std::any_of(N->get_args().begin(), N->get_args().end(),
+                      [](auto x) { return !std::isdigit(x.first.at(0)); })) {
+        split_on = 1;
+      } else if (N->get_args().size() > 6) {
+        split_on = std::ceil(std::sqrt(N->get_args().size()));
+      }
+
       for (auto it = N->get_args().begin(); it != N->get_args().end(); it++) {
         if (!std::isdigit(it->first.at(0))) {
           S.line << it->first;
           S.line << ": ";
         }
         recurse(it->second, S);
+        i++;
 
         if (std::next(it) != N->get_args().end()) {
-          S.line << ", ";
+          S.line << ",";
+
+          if (i % split_on == 0) {
+            S.line << "\n";
+            S.flush_line();
+            S.line << std::string(line_size, ' ');
+          } else {
+            S.line << " ";
+          }
         }
       }
       S.line << ")";
@@ -466,6 +489,10 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
             N->get_items().size() <= 8 ? 8 : std::ceil(std::sqrt(N->get_items().size()));
 
         S.line << "[";
+
+        S.line.seekg(0, std::ios::end);
+        size_t line_size = S.line.tellg();
+
         size_t i = 0;
         for (auto it = N->get_items().begin(); it != N->get_items().end(); it++) {
           recurse(*it, S);
@@ -476,8 +503,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
             if (i % split_on == 0) {
               S.line << "\n";
               S.flush_line();
-              S.line << " ";
-              put_indent(S);
+              S.line << std::string(line_size, ' ');
             } else {
               S.line << " ";
             }
@@ -1278,6 +1304,9 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
         S.line << " ";
 
         recurse(exports.front(), S);
+        if (exports.front()->this_typeid() != QAST_NODE_FN) {
+          S.line << ";";
+        }
       } else if (!exports.empty()) {
         S.line << "pub ";
         if (N->get_abi_name().empty()) {
@@ -1324,6 +1353,7 @@ static void recurse(qparse::Node* C, AutomatonState& S) {
     case QAST_NODE_BLOCK: {
       static const std::unordered_set<qparse_ty_t> no_has_semicolon = {
           QAST_NODE_FN,
+          QAST_NODE_EXPORT,
       };
 
       static const std::unordered_set<qparse_ty_t> double_sep = {
@@ -1679,6 +1709,11 @@ static void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& 
     return;
   }
 
+  if (req.params()["options"]["tabSize"].GetUint() == 0) {
+    resp.error(lsp::ErrorCodes::InvalidParams, "options.tabSize is 0");
+    return;
+  }
+
   if (!req.params()["options"].HasMember("insertSpaces")) {
     resp.error(lsp::ErrorCodes::InvalidParams, "Missing options.insertSpaces");
     return;
@@ -1722,7 +1757,7 @@ static void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& 
 
   LOG(INFO) << "Requested document format";
 
-  AutomatonState S;
+  AutomatonState S(options.tabSize);
 
   recurse(static_cast<qparse::Node*>(root), S);
 
