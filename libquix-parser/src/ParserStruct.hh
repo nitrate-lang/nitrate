@@ -2,7 +2,7 @@
 
 #include <nitrate-core/Env.h>
 #include <nitrate-core/Memory.h>
-#include <quix-lexer/Lexer.h>
+#include <nitrate-lexer/Lexer.h>
 #include <quix-parser/Config.h>
 #include <quix-parser/Node.h>
 #include <stdbool.h>

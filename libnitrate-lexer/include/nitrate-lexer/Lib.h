@@ -32,8 +32,8 @@
 #ifndef __QUIX_LEXER_LIB_H__
 #define __QUIX_LEXER_LIB_H__
 
-#include <quix-lexer/Lexer.h>
-#include <quix-lexer/Token.h>
+#include <nitrate-lexer/Lexer.h>
+#include <nitrate-lexer/Token.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

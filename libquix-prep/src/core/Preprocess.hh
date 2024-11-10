@@ -30,13 +30,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Env.h>
-#include <quix-lexer/Token.h>
+#include <nitrate-lexer/Token.h>
 #include <quix-prep/Preprocess.h>
 
 #include <memory>
 #include <mutex>
+#include <nitrate-lexer/Base.hh>
 #include <optional>
-#include <quix-lexer/Base.hh>
 #include <string_view>
 
 #define get_engine() ((qprep_impl_t *)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))

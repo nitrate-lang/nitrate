@@ -58,7 +58,7 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 add_library(quix-codegen ${CXX_SOURCES})
 target_include_directories(quix-codegen PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-ir/include
   /usr/lib/llvm-14/include)
 target_link_libraries(quix-codegen PUBLIC nitrate-core quix-ir)

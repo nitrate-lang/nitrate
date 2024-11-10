@@ -31,9 +31,9 @@
 
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
+#include <nitrate-lexer/Lexer.h>
 #include <quix-ir/Lib.h>
 #include <quix-ir/TypeDecl.h>
-#include <quix-lexer/Lexer.h>
 
 #include <chrono>
 #include <cstddef>

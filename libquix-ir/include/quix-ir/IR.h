@@ -32,8 +32,8 @@
 #ifndef __QUIX_QXIR_QXIR_H__
 #define __QUIX_QXIR_QXIR_H__
 
+#include <nitrate-lexer/Lexer.h>
 #include <quix-ir/TypeDecl.h>
-#include <quix-lexer/Lexer.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus

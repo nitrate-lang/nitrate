@@ -33,7 +33,7 @@
 #define __QUIX_PARSER_PARSER_H__
 
 #include <nitrate-core/Env.h>
-#include <quix-lexer/Lexer.h>
+#include <nitrate-lexer/Lexer.h>
 #include <quix-parser/Config.h>
 #include <quix-parser/Node.h>
 #include <stdbool.h>

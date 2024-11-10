@@ -32,7 +32,7 @@
 #ifndef __QUIX_PARSER_NODE_H__
 #define __QUIX_PARSER_NODE_H__
 
-#include <quix-lexer/Token.h>
+#include <nitrate-lexer/Token.h>
 
 /**
  * @brief Quixcc abstract syntax tree node.
@@ -152,7 +152,7 @@ qlex_loc_t qparse_endpos(qparse_node_t *node);
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
-#include <quix-lexer/Token.h>
+#include <nitrate-lexer/Token.h>
 
 #include <cassert>
 #include <iostream>

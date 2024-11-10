@@ -3,7 +3,7 @@
 -I
 ./libnitrate-core/include
 -I
-./libquix-lexer/include
+./libnitrate-lexer/include
 -I
 ./libquix-prep/include
 -I

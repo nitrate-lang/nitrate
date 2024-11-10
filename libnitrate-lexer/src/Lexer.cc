@@ -32,7 +32,7 @@
 #define __QUIX_LEXER_IMPL__
 
 #include <nitrate-core/Error.h>
-#include <quix-lexer/Lexer.h>
+#include <nitrate-lexer/Lexer.h>
 #include <string.h>
 
 #include <array>
@@ -46,7 +46,7 @@
 #include <cstdio>
 #include <deque>
 #include <iomanip>
-#include <quix-lexer/Base.hh>
+#include <nitrate-lexer/Base.hh>
 #include <string>
 #include <string_view>
 #include <utility>

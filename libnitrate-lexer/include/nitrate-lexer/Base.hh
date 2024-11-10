@@ -33,8 +33,8 @@
 #define __QUIX_LEXER_BASE_H__
 
 #include <nitrate-core/Error.h>
-#include <quix-lexer/Lexer.h>
-#include <quix-lexer/Token.h>
+#include <nitrate-lexer/Lexer.h>
+#include <nitrate-lexer/Token.h>
 
 #include <array>
 #include <boost/bimap.hpp>

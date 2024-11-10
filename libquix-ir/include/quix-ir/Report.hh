@@ -32,8 +32,8 @@
 #ifndef __QUIX_QXIR_REPORT_H__
 #define __QUIX_QXIR_REPORT_H__
 
+#include <nitrate-lexer/Token.h>
 #include <quix-ir/IR.h>
-#include <quix-lexer/Token.h>
 
 #include <cstdarg>
 #include <functional>

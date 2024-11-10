@@ -37,7 +37,7 @@
 #include <SerialUtil.hh>
 #include <cstdint>
 #include <functional>
-#include <quix-lexer/Classes.hh>
+#include <nitrate-lexer/Classes.hh>
 #include <string_view>
 #include <unordered_set>
 

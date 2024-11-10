@@ -31,7 +31,7 @@
 
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
-#include <quix-lexer/Lexer.h>
+#include <nitrate-lexer/Lexer.h>
 #include <quix-parser/Node.h>
 
 #include <boost/bimap.hpp>

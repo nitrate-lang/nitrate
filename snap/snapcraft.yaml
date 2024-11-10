@@ -37,7 +37,7 @@ parts:
         snapcraftctl stage
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-core.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-lexer.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate-lexer.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-prep.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-parser.a
         rm $SNAPCRAFT_PART_INSTALL/usr/lib/libquix-ir.a

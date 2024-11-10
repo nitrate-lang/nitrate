@@ -29,7 +29,7 @@ file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 add_library(quix-ir ${CXX_SOURCES})
 target_include_directories(quix-ir PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
-  ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-lexer/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libquix-parser/include)
 target_link_libraries(quix-ir PUBLIC nitrate-core quix-parser deflate crypto)
 add_dependencies(quix-ir nitrate-core quix-parser)

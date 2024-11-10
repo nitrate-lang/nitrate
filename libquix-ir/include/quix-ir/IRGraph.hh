@@ -38,8 +38,8 @@
 
 #include <nitrate-core/Error.h>
 #include <nitrate-core/Memory.h>
+#include <nitrate-lexer/Token.h>
 #include <quix-ir/TypeDecl.h>
-#include <quix-lexer/Token.h>
 
 #include <boost/uuid/uuid.hpp>
 #include <cassert>

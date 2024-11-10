@@ -38,9 +38,9 @@
 #include <cstdint>
 #include <functional>
 #include <nitrate-core/Classes.hh>
+#include <nitrate-lexer/Base.hh>
+#include <nitrate-lexer/Classes.hh>
 #include <nlohmann/json.hpp>
-#include <quix-lexer/Base.hh>
-#include <quix-lexer/Classes.hh>
 #include <quix-parser/Classes.hh>
 #include <string_view>
 #include <unordered_set>

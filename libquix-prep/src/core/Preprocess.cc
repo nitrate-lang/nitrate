@@ -31,18 +31,18 @@
 
 #include <core/LibMacro.h>
 #include <nitrate-core/Error.h>
-#include <quix-lexer/Lexer.h>
-#include <quix-lexer/Lib.h>
-#include <quix-lexer/Token.h>
+#include <nitrate-lexer/Lexer.h>
+#include <nitrate-lexer/Lib.h>
+#include <nitrate-lexer/Token.h>
 #include <quix-prep/Lib.h>
 
 #include <core/Preprocess.hh>
 #include <cstddef>
 #include <memory>
 #include <new>
+#include <nitrate-lexer/Base.hh>
 #include <optional>
 #include <qcall/List.hh>
-#include <quix-lexer/Base.hh>
 #include <sstream>
 #include <string_view>
 
