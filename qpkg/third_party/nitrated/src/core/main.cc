@@ -30,7 +30,7 @@ static constexpr void create_parser(argparse::ArgumentParser& parser) {
       .default_value(std::string(""))
       .help("Specify the configuration file");
 
-  parser.add_argument("--log").default_value("quixd-lsp.log").help("Specify the log file");
+  parser.add_argument("--log").default_value("nitrated-lsp.log").help("Specify the log file");
 
   ///=================== CONNECTION CONFIGURATION ======================
 
@@ -69,7 +69,7 @@ void signal_handler(int signal) {
   switch (signal) {
     case SIGINT:
     case SIGTERM:
-      LOG(INFO) << "Shutting down quixd";
+      LOG(INFO) << "Shutting down nitrated";
       erase_signals();
       exit(0);
       break;
@@ -104,7 +104,7 @@ void signal_handler(int signal) {
   }
 }
 
-LIB_EXPORT int quixd_main(int argc, char** argv) {
+LIB_EXPORT int nitrated_main(int argc, char** argv) {
   std::vector<std::string> args(argv, argv + argc);
 
   {
@@ -116,10 +116,10 @@ LIB_EXPORT int quixd_main(int argc, char** argv) {
       }
     }
 
-    LOG(INFO) << "Starting quixd: \"" << str << "\"";
+    LOG(INFO) << "Starting nitrated: \"" << str << "\"";
   }
 
-  argparse::ArgumentParser parser("quixd", "1.0");
+  argparse::ArgumentParser parser("nitrated", "1.0");
   create_parser(parser);
 
   parser.parse_args(args);

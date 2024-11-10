@@ -18,7 +18,7 @@ let client: LanguageClient;
 export function activate(context: ExtensionContext) {
   const homeDir = require('os').homedir();
 
-  const lspLogPath = path.join(homeDir, 'quixd-lsp.log');
+  const lspLogPath = path.join(homeDir, 'nitrated-lsp.log');
 
   const serverOptions: ServerOptions = {
     command: "qpkg",
