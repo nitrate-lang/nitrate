@@ -106,6 +106,8 @@ namespace qparse::parser {
   bool parse_switch(qparse_t &job, qlex_t *rd, Stmt **node);
 
   bool parse_inline_asm(qparse_t &job, qlex_t *rd, Stmt **node);
+
+  bool parse_attributes(qparse_t &job, qlex_t *rd, std::set<ConstExpr *> &attributes);
 };  // namespace qparse::parser
 
 #endif  // __QUIXCC_PARSE_H__

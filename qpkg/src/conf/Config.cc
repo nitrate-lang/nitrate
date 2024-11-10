@@ -127,7 +127,7 @@ std::string qpkg::conf::ConfigGroup::dump(qpkg::conf::ConfigItemSerializationTar
       if (std::next(it) != m_items.end()) ss << std::endl;
     }
   } else {
-    LOG(qpkg::core::FATAL) << "Unsupported serialization target" << std::endl;
+    LOG(FATAL) << "Unsupported serialization target" << std::endl;
   }
 
   return ss.str();

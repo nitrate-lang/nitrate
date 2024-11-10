@@ -33,7 +33,9 @@
 
 #include <unordered_map>
 
+#include "quix-lexer/Lexer.h"
 #include "quix-lexer/Token.h"
+#include "quix-parser/Node.h"
 
 using namespace qparse;
 using namespace qparse::parser;
@@ -41,29 +43,23 @@ using namespace qparse::diag;
 
 /// TODO: Source location
 
-// Lifetime integrity requires the primitives to be thread-local because the Node Arena allocator is
-// thread-local.
-static thread_local std::pair<uint64_t, std::unordered_map<std::string_view, Type *>> primitives;
-
-static void init_primitive_types(uint64_t job_id) {
-  primitives = {job_id,
-                {{"u8", U8::get()},
-                 {"u16", U16::get()},
-                 {"u32", U32::get()},
-                 {"u64", U64::get()},
-                 {"u128", U128::get()},
-                 {"i8", I8::get()},
-                 {"i16", I16::get()},
-                 {"i32", I32::get()},
-                 {"i64", I64::get()},
-                 {"i128", I128::get()},
-                 {"f16", F16::get()},
-                 {"f32", F32::get()},
-                 {"f64", F64::get()},
-                 {"f128", F128::get()},
-                 {"u1", U1::get()},
-                 {"void", VoidTy::get()}}};
-}
+static const std::unordered_map<std::string_view, Type *(*)()> primitive_types = {
+    {"u1", []() -> Type * { return U1::get(); }},
+    {"u8", []() -> Type * { return U8::get(); }},
+    {"u16", []() -> Type * { return U16::get(); }},
+    {"u32", []() -> Type * { return U32::get(); }},
+    {"u64", []() -> Type * { return U64::get(); }},
+    {"u128", []() -> Type * { return U128::get(); }},
+    {"i8", []() -> Type * { return I8::get(); }},
+    {"i16", []() -> Type * { return I16::get(); }},
+    {"i32", []() -> Type * { return I32::get(); }},
+    {"i64", []() -> Type * { return I64::get(); }},
+    {"i128", []() -> Type * { return I128::get(); }},
+    {"f16", []() -> Type * { return F16::get(); }},
+    {"f32", []() -> Type * { return F32::get(); }},
+    {"f64", []() -> Type * { return F64::get(); }},
+    {"f128", []() -> Type * { return F128::get(); }},
+    {"void", []() -> Type * { return VoidTy::get(); }}};
 
 bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   /** QUIX TYPE PARSER
@@ -74,10 +70,6 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
    *
    * @return true if it is okay to proceed, false otherwise.
    */
-
-  if (primitives.first != job.id) {
-    init_primitive_types(job.id);
-  }
 
   using namespace std;
 
@@ -173,13 +165,13 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
 
     __builtin_unreachable();
   } else if (tok.is(qName)) {
-    if (primitives.second.contains(tok.as_string(rd))) {
+    if (primitive_types.contains(tok.as_string(rd))) {
       /** QUIX PRIMITIVE TYPE
        *
        * @brief Parse a primitive type.
        */
 
-      inner = primitives.second[tok.as_string(rd)];
+      inner = primitive_types.at(tok.as_string(rd))();
       goto type_suffix;
     } else {
       /** QUIX ANY NAMED TYPE
@@ -213,7 +205,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
        */
 
       inner =
-          TemplType::get(UnresolvedType::get("std::vector"), TemplTypeArgs{TypeExpr::get(type)});
+          TemplType::get(UnresolvedType::get("__builtin_vec"), TemplTypeArgs{TypeExpr::get(type)});
       goto type_suffix;
     }
 
@@ -238,7 +230,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
         goto error_end;
       }
 
-      inner = TemplType::get(UnresolvedType::get("std::map"),
+      inner = TemplType::get(UnresolvedType::get("__builtin_umap"),
                              TemplTypeArgs{TypeExpr::get(type), TypeExpr::get(value_type)});
       goto type_suffix;
     }
@@ -285,7 +277,8 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       goto error_end;
     }
 
-    inner = TemplType::get(UnresolvedType::get("std::set"), TemplTypeArgs{TypeExpr::get(type)});
+    inner =
+        TemplType::get(UnresolvedType::get("__builtin_uset"), TemplTypeArgs{TypeExpr::get(type)});
     goto type_suffix;
   } else if (tok.is<qPuncLPar>()) {
     /** QUIX TUPLE TYPE
@@ -366,18 +359,17 @@ type_suffix: {
 
     while (true) {
       tok = qlex_peek(rd);
-      if (tok.is<qOpGT>() || tok.ty == qEofF) {
+      if (tok.is<qOpGT>() || tok.is<qOpRShift>() || tok.is<qOpROTR>() || tok.ty == qEofF) {
         break;
       }
 
-      Expr *arg = nullptr;
-      if (!parse_expr(job, rd, {qlex_tok_t(qOper, qOpGT), qlex_tok_t(qPunc, qPuncComa)}, &arg) ||
-          !arg) {
+      Type *arg = nullptr;
+      if (!parse_type(job, rd, &arg)) {
         syntax(tok, "Expected a template type argument");
         goto error_end;
       }
 
-      args.push_back(arg);
+      args.push_back(TypeExpr::get(arg));
 
       tok = qlex_peek(rd);
       if (tok.is<qPuncComa>()) {
@@ -385,10 +377,21 @@ type_suffix: {
       }
     }
 
-    if (!(tok = qlex_next(rd)).is<qOpGT>()) {
+    tok = qlex_next(rd);
+
+    if (tok.is<qOpGT>()) {
+    } else if (tok.is<qOpRShift>()) {
+      tok.v.op = qOpGT;
+      qlex_insert(rd, tok);
+    } else if (tok.is<qOpROTR>()) {
+      tok.v.op = qOpRShift;
+      qlex_insert(rd, tok);
+    } else {
       syntax(tok, "Expected '>' after template type arguments");
       goto error_end;
     }
+
+    qlex_peek(rd);
 
     inner = TemplType::get(inner, args);
   }
@@ -401,7 +404,7 @@ type_suffix: {
   while (true) {
     tok = qlex_peek(rd);
 
-    if (tok.is<qPuncColn>()) { /* Parse bit-field width */
+    if (tok.is<qPuncColn>()) { /* Parse bit-field width or confinement range */
       qlex_next(rd);
       tok = qlex_peek(rd);
 
@@ -433,13 +436,21 @@ type_suffix: {
         qlex_next(rd);
 
         inner->set_range(ConstExpr::get(start), ConstExpr::get(end));
-      } else {
+      } else { /* Parse bit-field width */
         Expr *expr = nullptr;
         if (!parse_expr(job, rd,
-                        {qlex_tok_t(qPunc, qPuncComa), qlex_tok_t(qPunc, qPuncSemi),
-                         qlex_tok_t(qPunc, qPuncColn), qlex_tok_t(qPunc, qPuncRPar),
-                         qlex_tok_t(qPunc, qPuncRBrk), qlex_tok_t(qPunc, qPuncRCur),
-                         qlex_tok_t(qOper, qOpSet)},
+                        {
+                            qlex_tok_t(qPunc, qPuncRPar),  //
+                            qlex_tok_t(qPunc, qPuncRBrk),  //
+                            qlex_tok_t(qPunc, qPuncLCur),  //
+                            qlex_tok_t(qPunc, qPuncRCur),  //
+                            qlex_tok_t(qPunc, qPuncComa),  //
+                            qlex_tok_t(qPunc, qPuncColn),  //
+                            qlex_tok_t(qPunc, qPuncSemi),  //
+                            qlex_tok_t(qOper, qOpSet),     //
+                            qlex_tok_t(qOper, qOpMinus),   //
+                            qlex_tok_t(qOper, qOpGT),      //
+                        },
                         &expr)) {
           syntax(tok, "Expected expression for bit-field width");
           goto error_end;
@@ -453,8 +464,8 @@ type_suffix: {
 
     if (tok.is<qOpTernary>()) { /* Parse optional type */
       qlex_next(rd);
-      inner =
-          TemplType::get(UnresolvedType::get("std::result"), TemplTypeArgs{TypeExpr::get(inner)});
+      inner = TemplType::get(UnresolvedType::get("__builtin_result"),
+                             TemplTypeArgs{TypeExpr::get(inner)});
       continue;
     }
 

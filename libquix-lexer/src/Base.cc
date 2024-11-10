@@ -533,29 +533,19 @@ char qlex_t::getc() {
 }
 
 qlex_tok_t qlex_t::step_buffer() {
-  if (m_tok_buf_pos == m_tok_buf.size()) [[unlikely]] {
-    qlex_tok_t tok;
+  qlex_tok_t tok;
 
-    m_tok_buf.clear();
-
-    for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
-      try {
-        tok = next_impl();
-        m_tok_buf.push_back(tok);
-      } catch (GetCExcept &) {
-        break;
-      }
-    }
-
-    if (m_tok_buf.empty()) [[unlikely]] {
+  if (m_tok_buf.empty()) {
+    try {
+      return next_impl();
+    } catch (GetCExcept &) {
       tok.ty = qEofF;
-      return tok;
     }
-
-    m_tok_buf_pos = 0;
+  } else {
+    tok = m_tok_buf.front();
+    m_tok_buf.pop_front();
   }
-
-  return m_tok_buf[m_tok_buf_pos++];
+  return tok;
 }
 
 CPP_EXPORT qlex_tok_t qlex_t::next() {
@@ -585,7 +575,7 @@ CPP_EXPORT qlex_tok_t qlex_t::peek() {
 ///============================================================================///
 
 CPP_EXPORT void qlex_t::push_impl(const qlex_tok_t *tok) {
-  m_tok_buf.insert(m_tok_buf.begin(), *tok);
+  m_tok_buf.push_front(*tok);
   m_next_tok.ty = qErro;
 }
 
