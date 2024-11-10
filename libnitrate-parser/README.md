@@ -1,7 +1,7 @@
-# QUIX Parser Library
+# Nitrate Parser Library
 
-This library is a part of the [QUIX](https://qpkg.io) project. It provides a
-flexible and efficient parser for the [QUIX](https://qpkg.io/language) programming
+This library is a part of the [Nitrate](https://qpkg.io) project. It provides a
+flexible and efficient parser for the [Nitrate](https://qpkg.io/language) programming
 language.
 
 ## Features
@@ -20,9 +20,9 @@ Techniques such as arena allocation and string interning improve performance and
 
 ## Building
 
-This library is built as a part of the QUIX program repository.
+This library is built as a part of the Nitrate program repository.
 There is no documentation for building this library separately without the rest
-of the QUIX project build system.
+of the Nitrate project build system.
 
 ## Bugs and Issues
 

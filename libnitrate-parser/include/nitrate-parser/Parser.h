@@ -104,7 +104,7 @@ char *qparse_repr(const qparse_node_t *_node, bool minify, size_t indent, size_t
 void qparse_brepr(const qparse_node_t *node, bool compress, uint8_t **out, size_t *outlen);
 
 /**
- * @brief Parse QUIX code into a parse tree.
+ * @brief Parse Nitrate code into a parse tree.
  *
  * @param parser The parser instance to use for parsing.
  * @param out The output parse tree.
@@ -119,7 +119,7 @@ void qparse_brepr(const qparse_node_t *node, bool compress, uint8_t **out, size_
 bool qparse_do(qparse_t *parser, qparse_node_t **out);
 
 /**
- * @brief Parse QUIX code into a parse tree and dump it to a file.
+ * @brief Parse Nitrate code into a parse tree and dump it to a file.
  *
  * @param parser The parser instance to use for parsing.
  * @param out The file to dump the parse tree to.

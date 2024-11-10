@@ -623,9 +623,9 @@ namespace qxir {
 
   enum class AbiTag {
     C,
-    QUIX,
+    Nitrate,
     Internal,
-    Default = QUIX,
+    Default = Nitrate,
   };
 
   std::ostream &operator<<(std::ostream &os, Op op);

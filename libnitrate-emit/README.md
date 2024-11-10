@@ -1,1 +1,1 @@
-# QUIX CodeGen Library
+# Nitrate CodeGen Library

@@ -11,7 +11,7 @@ fn print_cb_impl(data: [u8]) {
 }
 
 fn pure halt_cb_impl(): null {
-  /* The QUIX Specification dictates that the halt callback MUST:
+  /* The Nitrate Specification dictates that the halt callback MUST:
    *   1. Reset the entire system such that all state is lost,
    *   2. OR literally **halt** the system.
    *

@@ -2,10 +2,11 @@
 
 #include <string_view>
 
-constexpr std::string_view license_text = R"(The QUIXD LSP Server is part of QUIX Compiler Suite.
+constexpr std::string_view license_text =
+    R"(The Nitrate LSP Server is part of Nitrate Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
 
-The QUIX Compiler Suite is free software: you can redistribute it and/or modify
+The Nitrate Compiler Suite is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 2.1 of the License, or
 (at your option) any later version.

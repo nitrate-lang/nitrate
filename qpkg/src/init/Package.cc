@@ -119,7 +119,7 @@ void qpkg::init::Package::writeMain() {
     return;
   }
 
-  main << R"(@use "v1.0";  ~> Use v1.0 of QUIX
+  main << R"(@use "v1.0";  ~> Use v1.0 of Nitrate
 
 @import std;  ~> Import the standard library
 

@@ -128,10 +128,10 @@ std::string_view quix_code_prefix = R"(
 
   -- For now only support v1.0
   if ver.v ~= 'v1.0' then
-    quix.abort('Unsupported QUIX environment version: ', ver.v);
+    quix.abort('Unsupported Nitrate environment version: ', ver.v);
   end
 
-  quix.debug('Using QUIX environment version: ', ver.v);
+  quix.debug('Using Nitrate environment version: ', ver.v);
 })
 
 @(fn import() {

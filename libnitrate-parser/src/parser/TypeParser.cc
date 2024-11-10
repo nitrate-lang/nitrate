@@ -62,9 +62,9 @@ static const std::unordered_map<std::string_view, Type *(*)()> primitive_types =
     {"void", []() -> Type * { return VoidTy::get(); }}};
 
 bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
-  /** QUIX TYPE PARSER
+  /** Nitrate TYPE PARSER
    *
-   * @brief Given a Scanner, parse tokens into a QUIX type node.
+   * @brief Given a Scanner, parse tokens into a Nitrate type node.
    *
    * @note No validation is done here. This is just a parser.
    *
@@ -87,7 +87,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   if ((tok = qlex_next(rd)).ty == qKeyW) {
     switch (tok.as<qlex_key_t>()) {
       case qKVoid: {
-        /** QUIX VOID TYPE
+        /** Nitrate VOID TYPE
          *
          * @brief Parse a void type.
          */
@@ -97,7 +97,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       }
 
       case qKFn: {
-        /** QUIX FUNCTION TYPE
+        /** Nitrate FUNCTION TYPE
          *
          * @brief Parse a function type.
          *
@@ -127,7 +127,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       }
 
       case qKOpaque: {
-        /** QUIX OPAQUE TYPE
+        /** Nitrate OPAQUE TYPE
          *
          * @brief Parse an opaque type.
          *
@@ -166,7 +166,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
     __builtin_unreachable();
   } else if (tok.is(qName)) {
     if (primitive_types.contains(tok.as_string(rd))) {
-      /** QUIX PRIMITIVE TYPE
+      /** Nitrate PRIMITIVE TYPE
        *
        * @brief Parse a primitive type.
        */
@@ -174,7 +174,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       inner = primitive_types.at(tok.as_string(rd))();
       goto type_suffix;
     } else {
-      /** QUIX ANY NAMED TYPE
+      /** Nitrate ANY NAMED TYPE
        *
        * @brief Parse a named type.
        *
@@ -199,7 +199,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
     }
 
     if ((tok = qlex_next(rd)).is<qPuncRBrk>()) {
-      /** QUIX VECTOR TYPE
+      /** Nitrate VECTOR TYPE
        *
        * @brief Parse a vector type.
        */
@@ -210,7 +210,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
     }
 
     if (tok.is<qOpMinus>()) {
-      /** QUIX MAP TYPE
+      /** Nitrate MAP TYPE
        *
        * @brief Parse a map type.
        */
@@ -235,7 +235,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
       goto type_suffix;
     }
 
-    /** QUIX ARRAY TYPE
+    /** Nitrate ARRAY TYPE
      *
      * @brief Parse an array type.
      */
@@ -262,7 +262,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
     inner = ArrayTy::get(type, size);
     goto type_suffix;
   } else if (tok.is<qPuncLCur>()) {
-    /** QUIX SET TYPE
+    /** Nitrate SET TYPE
      *
      * @brief Parse a set type.
      */
@@ -281,7 +281,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
         TemplType::get(UnresolvedType::get("__builtin_uset"), TemplTypeArgs{TypeExpr::get(type)});
     goto type_suffix;
   } else if (tok.is<qPuncLPar>()) {
-    /** QUIX TUPLE TYPE
+    /** Nitrate TUPLE TYPE
      *
      * @brief Parse a tuple type.
      */
@@ -308,7 +308,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
     inner = TupleTy::get(TupleTyItems(types.begin(), types.end()));
     goto type_suffix;
   } else if (tok.is<qOpTimes>()) {
-    /** QUIX POINTER TYPE
+    /** Nitrate POINTER TYPE
      *
      * @brief Parse a pointer type.
      */
@@ -321,7 +321,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
     inner = PtrTy::get(type);
     goto type_suffix;
   } else if (tok.is<qOpBitAnd>()) {
-    /** QUIX MUTABLE TYPE
+    /** Nitrate MUTABLE TYPE
      *
      * @brief Parse a mutable type.
      */
@@ -334,7 +334,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
     inner = RefTy::get(type);
     goto type_suffix;
   } else if (tok.is<qOpTernary>()) {
-    /** QUIX INFERRED TYPE
+    /** Nitrate INFERRED TYPE
      *
      * @brief Parse an inferred type.
      */
@@ -347,7 +347,7 @@ bool qparse::parser::parse_type(qparse_t &job, qlex_t *rd, Type **node) {
   }
 
 type_suffix: {
-  /** QUIX TEMPLATE TYPES
+  /** Nitrate TEMPLATE TYPES
    *
    */
 
@@ -396,7 +396,7 @@ type_suffix: {
     inner = TemplType::get(inner, args);
   }
 
-  /** QUIX TYPE SUFFIXES
+  /** Nitrate TYPE SUFFIXES
    *
    * @brief Parse type suffixes (syntax sugar).
    */

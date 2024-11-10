@@ -1,1 +1,1 @@
-# QUIX Core Utilities
+# Nitrate Core Utilities

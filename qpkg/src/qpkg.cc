@@ -105,10 +105,10 @@ static std::string qpkg_deps_version_string() {
 }
 
 constexpr const char *FULL_LICENSE =
-    R"(This file is part of QUIX Compiler Suite.
+    R"(This file is part of Nitrate Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
 
-The QUIX Compiler Suite is free software: you can redistribute it and/or modify
+The Nitrate Compiler Suite is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 2.1 of the License, or
 (at your option) any later version.
@@ -606,7 +606,7 @@ namespace argparse_setup {
         .implicit_value(true);
 
     /*================== OTHER STUFF =================*/
-    parser.add_argument("--demangle").help("demangle QUIX symbol names").nargs(1);
+    parser.add_argument("--demangle").help("demangle Nitrate symbol names").nargs(1);
 
     /*================= BENCH SUBPARSER =================*/
     auto bench = std::make_unique<ArgumentParser>("bench", "1.0", default_arguments::help);

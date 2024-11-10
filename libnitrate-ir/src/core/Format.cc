@@ -145,7 +145,7 @@ static bool decode_ns_size_value(std::string_view &input, std::ostream &ss) {
 
 static void mangle_type(Type *n, std::ostream &ss) {
   /**
-   * @brief Name mangling for QUIX is inspired by the Itanium C++ ABI.
+   * @brief Name mangling for Nitrate is inspired by the Itanium C++ ABI.
    * @ref https://itanium-cxx-abi.github.io/cxx-abi/abi.html#mangling
    *
    *  <builtin-type> ::= v	# void
@@ -296,7 +296,7 @@ static void mangle_type(Type *n, std::ostream &ss) {
 
     case QIR_NODE_STRUCT_TY: {
       /**
-       * @brief Unlike C++, QUIX encodes field types into the name.
+       * @brief Unlike C++, Nitrate encodes field types into the name.
        * Making any changes to a struct will break ABI compatibility
        * at link time avoiding runtime UB.
        */
@@ -311,7 +311,7 @@ static void mangle_type(Type *n, std::ostream &ss) {
 
     case QIR_NODE_UNION_TY: {
       /**
-       * @brief Unlike C++, QUIX encodes field types into the name.
+       * @brief Unlike C++, Nitrate encodes field types into the name.
        * Making any changes to a union will break ABI compatibility
        * at link time avoiding runtime UB.
        */
@@ -334,7 +334,7 @@ static void mangle_type(Type *n, std::ostream &ss) {
 
     case QIR_NODE_FN_TY: {
       /**
-       * @brief Unlike C++, QUIX also encodes the parameter types
+       * @brief Unlike C++, Nitrate also encodes the parameter types
        * into the name. This is to avoid runtime UB when calling
        * functions with the wrong number of arguments.
        * These bugs will be caught at link time.
@@ -539,7 +539,7 @@ static std::string mangle_c_abi(std::string_view name, Type *) {
 static std::string mangle_quix_abi(std::string_view name, Type *type) {
   std::stringstream ss;
 
-  ss << "_Q";  // QUIX ABI prefix
+  ss << "_Q";  // Nitrate ABI prefix
   encode_ns_size_value(name, ss);
   mangle_type(type, ss);
   ss << "_0";  // ABI version 0
@@ -602,11 +602,11 @@ static void escape_string(std::ostream &ss, std::string_view input) {
 
 static std::optional<std::string> demangle_quix_abi(std::string_view name) {
   if (name.size() < 2) {
-    printf("Failed to decode QUIX ABI prefix\n");
+    printf("Failed to decode Nitrate ABI prefix\n");
     return std::nullopt;
   }
 
-  name.remove_prefix(2);  // Remove QUIX ABI prefix
+  name.remove_prefix(2);  // Remove Nitrate ABI prefix
 
   if (!name.ends_with("_0")) {  // Version check
     printf("Failed to decode ABI version\n");
@@ -669,7 +669,7 @@ CPP_EXPORT std::optional<std::string> qxir::SymbolEncoding::mangle_name(const qx
       return mangle_c_abi(name, type);
     }
 
-    case AbiTag::QUIX: {
+    case AbiTag::Nitrate: {
       return mangle_quix_abi(name, type);
     }
 
